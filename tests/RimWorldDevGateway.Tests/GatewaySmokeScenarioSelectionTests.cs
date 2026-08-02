@@ -83,6 +83,21 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Quicktest_waits_for_playable_state_before_main_thread_def_export()
+    {
+        var smokePath = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Invoke-GatewaySmoke.ps1");
+        var source = File.ReadAllText(smokePath);
+        var waitIndex = source.IndexOf("gateway-smoke-wait-playing-before-def-export", StringComparison.Ordinal);
+        var exportIndex = source.IndexOf("gateway-smoke-def-export", StringComparison.Ordinal);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(waitIndex, Is.GreaterThanOrEqualTo(0), "The quicktest pre-export wait marker is missing.");
+            Assert.That(exportIndex, Is.GreaterThan(waitIndex), "Def export must run after quicktest reaches a playable map.");
+        });
+    }
+
+    [Test]
     public void Caravan_scenario_source_shape_clears_random_inventory_and_embeds_the_plate()
     {
         var sourcePath = Path.Combine(
@@ -96,6 +111,30 @@ public sealed class GatewaySmokeScenarioSelectionTests
         {
             Assert.That(source, Does.Contain("innerContainer.ClearAndDestroyContents()"));
             Assert.That(source, Does.Contain("TryEmbedPlate(plate)"));
+            Assert.That(source, Does.Not.Contain("innerContainer.TryAdd(plate"));
+        });
+    }
+
+    [Test]
+    public void Animal_caravan_scenario_source_shape_uses_a_dog_without_competing_forage_and_keeps_ware_embedded_or_loose()
+    {
+        var sourcePath = Path.Combine(
+            FindSourceRepositoryRoot(),
+            "scripts",
+            "Scenarios",
+            "immersive-chefs-animal-caravan-dining-setup.csx");
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(source, Does.Contain("DefDatabase<PawnKindDef>.GetNamed(\"LabradorRetriever\")"));
+            Assert.That(source, Does.Contain("PawnKindDefOf.Colonist"));
+            Assert.That(source, Does.Contain("new[] { escort, animal }"));
+            Assert.That(source, Does.Contain("escort.needs.food.CurLevelPercentage = 1f"));
+            Assert.That(source, Does.Contain("escort.skills.GetSkill(SkillDefOf.Plants).Level = 0"));
+            Assert.That(source, Does.Contain("innerContainer.ClearAndDestroyContents()"));
+            Assert.That(source, Does.Contain("TryEmbedPlate(plate)"));
+            Assert.That(source, Does.Contain("innerContainer.TryAdd(silverware"));
             Assert.That(source, Does.Not.Contain("innerContainer.TryAdd(plate"));
         });
     }

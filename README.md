@@ -179,6 +179,17 @@ Start directly at the reusable Immersive Chefs caravan-dining scene, with the ca
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the equivalent animal-exclusion scene to observe a Labrador retriever eat an intentionally cold, poor, contaminated plated meal without collecting the visible silverware. Its fully fed human escort has no Plants skill, preventing caravan forage from masking which food the animal consumes:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-animal-caravan-dining `
+  -InteractiveHoldSeconds 120 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell

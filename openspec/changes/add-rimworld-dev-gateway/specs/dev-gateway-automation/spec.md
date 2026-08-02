@@ -40,7 +40,7 @@ Mutating automation runs SHALL accept a caller idempotency key, retain its bound
 - **THEN** the gateway returns `idempotency_conflict` before starting new work
 
 ### Requirement: Quickstart launch and readiness flow
-The host smoke command SHALL be able to launch RimWorld with an isolated save-data folder, `-quicktest`, and a minimal explicit mod list consisting of Core, zero or more caller-supplied additional package IDs, and the gateway in that order; discover and authenticate through the session manifest; verify through the raw endpoint that RimWorld actually loaded that ordered list; accept optional expected target-mod log markers; reject common mod/gateway load or initialization exception signatures; and wait with bounded diagnostics for both gateway readiness and a playable map before invoking setup. With no additional package IDs, the default SHALL remain Core plus the gateway. This command SHALL use direct HTTP and SHALL NOT require the optional companion client.
+The host smoke command SHALL be able to launch RimWorld with an isolated save-data folder, `-quicktest`, and a minimal explicit mod list consisting of Core, zero or more caller-supplied additional package IDs, and the gateway in that order; discover and authenticate through the session manifest; verify through the raw endpoint that RimWorld actually loaded that ordered list; accept optional expected target-mod log markers; reject common mod/gateway load or initialization exception signatures; and wait with bounded diagnostics for both gateway readiness and a playable map before invoking any main-thread Def export, integration verification, or scenario setup. With no additional package IDs, the default SHALL remain Core plus the gateway. This command SHALL use direct HTTP and SHALL NOT require the optional companion client.
 
 #### Scenario: Quickstart reaches a playable map
 - **WHEN** the host launches a supported RimWorld build with valid mod paths, optional additional package IDs, and a scenario descriptor
@@ -66,6 +66,10 @@ The host SHALL also accept an explicit named scenario descriptor from `scripts/S
 #### Scenario: Caravan dining setup is selected
 - **WHEN** the exact mod list includes `fumblesneeze.immersivechefs` and the caller selects `immersive-chefs-caravan-dining`
 - **THEN** the host clears the generated pawn's randomized inventory, creates and selects a caravan containing only the intended covered meal with its exact plate embedded and silverware, shows the native Items tab without a separate pre-ingestion plate row, captures the ready scene, arms the pawn's hunger, and pauses so native ingestion can be observed returning that plate as a new inventory row
+
+#### Scenario: Animal caravan exclusion setup is selected
+- **WHEN** the exact mod list includes `fumblesneeze.immersivechefs` and the caller selects `immersive-chefs-animal-caravan-dining`
+- **THEN** the host creates a caravan with a fully fed Plants-0 human escort, a starving Labrador retriever, an intentionally cold, poor, contaminated plated meal, and loose silverware; captures the native Items scene without a separate plate row; and pauses so native animal ingestion can be observed returning the unused plate while leaving silverware untouched and without competing caravan forage
 
 ### Requirement: Declarative quickstart spawn setup
 The built-in `quickstart.spawn` automation SHALL accept a version-one descriptor with required `version: 1`, optional `center: { x, z }`, optional `clearRadius`, and optional `buildings`, `items`, `pawns`, `research`, and `gameConditions` arrays. Building entries SHALL accept `defName`, optional `stuff`, `count`, `quality`, `offset: { x, z }`, and `powerOn`; item entries SHALL use the same shape without `powerOn`; pawn entries SHALL accept `kindDefName`, `count`, and `offset`; research SHALL accept either a Def-name string or `{ defName }`; and game-condition entries SHALL accept `defName` and `durationTicks`.

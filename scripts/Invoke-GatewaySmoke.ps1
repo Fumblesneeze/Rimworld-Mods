@@ -4162,22 +4162,13 @@ try {
         throw 'Status did not report developerOnly and unrestrictedExecutionEnabled.'
     }
 
-    $defExportResponse = Invoke-GatewayJsonPost `
-        -Uri "$baseUrl/defs/export" `
-        -Token $manifest.token `
-        -RequestId 'gateway-smoke-def-export' `
-        -Body (New-GatewayDefSmokeRequest)
-    $defExportEnvelope = Assert-GatewayDefExportSmokeResult `
-        -Response $defExportResponse `
-        -ArtifactPath $defExportPath
-
     if ($Quicktest) {
         $playableDeadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
         while ([datetime]::UtcNow -lt $playableDeadline) {
             $playableStatusResponse = Invoke-GatewayGet `
                 -Uri "$baseUrl/status" `
                 -Token $manifest.token `
-                -RequestId 'gateway-smoke-wait-playing-before-tests'
+                -RequestId 'gateway-smoke-wait-playing-before-def-export'
             if ([int]$playableStatusResponse.StatusCode -eq 200) {
                 $playableStatus = $playableStatusResponse.Content | ConvertFrom-Json
                 if ($playableStatus.ok -and
@@ -4193,9 +4184,18 @@ try {
         }
 
         if ([string]$status.result.programState -ne 'Playing' -or $null -eq $status.result.map) {
-            throw "Timed out after $TimeoutSeconds seconds waiting for a playable quicktest map before integration polling. See $playerLogPath"
+            throw "Timed out after $TimeoutSeconds seconds waiting for a playable quicktest map before main-thread verification. See $playerLogPath"
         }
     }
+
+    $defExportResponse = Invoke-GatewayJsonPost `
+        -Uri "$baseUrl/defs/export" `
+        -Token $manifest.token `
+        -RequestId 'gateway-smoke-def-export' `
+        -Body (New-GatewayDefSmokeRequest)
+    $defExportEnvelope = Assert-GatewayDefExportSmokeResult `
+        -Response $defExportResponse `
+        -ArtifactPath $defExportPath
 
     $integrationTestsEnvelope = $null
     $integrationTestsPersistedPath = $null
