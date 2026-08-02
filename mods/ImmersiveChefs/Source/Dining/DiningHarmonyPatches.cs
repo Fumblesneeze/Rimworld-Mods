@@ -26,7 +26,7 @@ internal static class DiningIngestionOutcomePatch
     {
         __state = null;
         if (__instance is not ThingWithComps meal || !MealCoveragePolicy.IsCovered(meal.def) ||
-            !ingester.RaceProps.Humanlike)
+            !DiningPawnPolicy.AppliesDiningConsequences(ingester.RaceProps.Humanlike))
         {
             return;
         }
@@ -262,7 +262,7 @@ internal static class UnifiedFoodPoisoningPatch
         __state = PoisonPercent(__instance);
         if (__instance.parent is not ThingWithComps meal ||
             !MealCoveragePolicy.IsCovered(meal.def) ||
-            !ingester.RaceProps.Humanlike)
+            !DiningPawnPolicy.AppliesDiningConsequences(ingester.RaceProps.Humanlike))
         {
             return;
         }

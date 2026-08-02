@@ -4,7 +4,12 @@
 
 ### Requirement: Eaters acquire service ware
 
-For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or owning Gastronomy server SHALL try to reserve and collect one reachable silverware unit in addition to the meal while preserving normal reachability, reservation, forbidden-item, and danger rules. Selection SHALL be deterministic: clean silverware first; if none is eligible, dirty silverware only when `DirtyWareFallback=Always` or when it is `Urgent only` and the diner is at or below `EmergencyHungerThreshold`; otherwise no silverware. Failure to obtain a permitted setting SHALL NOT block ingestion and SHALL record the missing-silverware dining consequence. In `Off` mode the workflow SHALL neither select silverware nor record a missing-silverware consequence. Pemmican, packaged/travel survival meals, raw food, drinks, drugs, baby food, and animal feeding SHALL remain hand-eaten exclusions.
+For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or owning Gastronomy server SHALL try to reserve and collect one reachable silverware unit in addition to the meal while preserving normal reachability, reservation, forbidden-item, and danger rules. Selection SHALL be deterministic: clean silverware first; if none is eligible, dirty silverware only when `DirtyWareFallback=Always` or when it is `Urgent only` and the diner is at or below `EmergencyHungerThreshold`; otherwise no silverware. Failure to obtain a permitted setting SHALL NOT block ingestion and SHALL record the missing-silverware dining consequence. In `Off` mode the workflow SHALL neither select silverware nor record a missing-silverware consequence. Pemmican, packaged/travel survival meals, raw food, drinks, drugs, baby food, and animal feeding SHALL remain hand-eaten exclusions. A non-humanlike animal eating any meal SHALL never acquire plate or silverware and SHALL receive no Immersive Chefs temperature, culinary-quality, tableware, dining-standard, memory/thought, or custom food-poisoning consequence.
+
+#### Scenario: Animal eats a normal meal
+
+- **WHEN** a non-humanlike animal ingests a covered meal at any temperature or culinary quality
+- **THEN** Immersive Chefs applies no ware acquisition, dining memory/thought, or custom poisoning behavior, and any embedded plate is recovered unused without changing sanitation
 
 #### Scenario: Colonist collects silverware
 

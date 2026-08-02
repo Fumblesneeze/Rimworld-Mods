@@ -1,5 +1,10 @@
 namespace ImmersiveChefs;
 
+public static class DiningPawnPolicy
+{
+    public static bool AppliesDiningConsequences(bool humanlike) => humanlike;
+}
+
 public readonly struct CaravanWareCandidate<T>
 {
     public CaravanWareCandidate(T item, bool isDirty, float serviceScore)

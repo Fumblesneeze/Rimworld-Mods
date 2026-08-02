@@ -6,6 +6,12 @@ namespace ImmersiveChefs.Tests;
 public sealed class CaravanDiningPolicyTests
 {
     [Test]
+    public void Animals_never_enter_tableware_temperature_quality_or_thought_consequences()
+    {
+        Assert.That(DiningPawnPolicy.AppliesDiningConsequences(humanlike: false), Is.False);
+    }
+
+    [Test]
     public void Caravan_selection_prefers_best_clean_ware_before_dirty_ware()
     {
         var dirtyExcellent = new CaravanWareCandidate<string>("dirty", isDirty: true, serviceScore: 100f);

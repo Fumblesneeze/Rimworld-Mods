@@ -182,6 +182,68 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CaravanIngestionReturnsTheExactEmbeddedPlateOnlyAfterEating()
+    {
+        var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var caravan = CaravanMaker.MakeCaravan(
+            new[] { pawn },
+            Faction.OfPlayer,
+            Find.CurrentMap.Tile,
+            addToWorldPawnsIfNotAlready: true);
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var silverware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+            ThingDefOf.Steel);
+
+        try
+        {
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            IntegrationAssert.True(
+                meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
+                "The fixture must begin with its exact plate contained by the meal.");
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.TryAdd(meal, canMergeWithExistingStacks: false),
+                "The fixture must put its plated meal in caravan inventory.");
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.TryAdd(silverware, canMergeWithExistingStacks: false),
+                "The fixture must put its silverware in caravan inventory.");
+            IntegrationAssert.True(
+                !pawn.inventory.innerContainer.Contains(plate),
+                "An embedded plate must not be a direct loose caravan inventory item before eating.");
+
+            meal.Ingested(pawn, 0.9f);
+            caravan.RecacheInventory();
+
+            IntegrationAssert.True(
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, plate)),
+                "Eating must move the exact plate out of the consumed meal and into caravan inventory.");
+            IntegrationAssert.True(
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, silverware)),
+                "Eating must return the exact selected silverware to caravan inventory.");
+            IntegrationAssert.Equal(
+                WashProvenance.WildWater,
+                plate.GetComp<CompSanitation>().WashProvenance,
+                "The returned embedded plate must receive caravan wild-water wash provenance.");
+        }
+        finally
+        {
+            if (!caravan.Destroyed)
+            {
+                caravan.Destroy();
+            }
+
+            if (!pawn.Destroyed)
+            {
+                pawn.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void CancelledCaravanIngestionRestoresUnusedWareWithoutWashing()
     {
         var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);

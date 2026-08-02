@@ -434,7 +434,7 @@ internal static class DiningSessionRegistry
     {
         var pasteDispenser = meal is Building_NutrientPasteDispenser;
         if ((!MealCoveragePolicy.IsCovered(meal.def) && !pasteDispenser) ||
-            !pawn.RaceProps.Humanlike || Sessions.TryGetValue(job, out _))
+            !DiningPawnPolicy.AppliesDiningConsequences(pawn.RaceProps.Humanlike) || Sessions.TryGetValue(job, out _))
         {
             return true;
         }
@@ -501,7 +501,8 @@ internal static class DiningSessionRegistry
 
     internal static void TryAttachTravel(Pawn pawn, ThingWithComps meal)
     {
-        if (!MealCoveragePolicy.IsCovered(meal.def) || !pawn.RaceProps.Humanlike ||
+        if (!MealCoveragePolicy.IsCovered(meal.def) ||
+            !DiningPawnPolicy.AppliesDiningConsequences(pawn.RaceProps.Humanlike) ||
             PawnSessions.TryGetValue(pawn, out _))
         {
             return;
