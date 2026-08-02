@@ -156,13 +156,30 @@ Run the Immersive Chefs XML/integration matrix with both loaded mods:
   -TimeoutSeconds 180
 ```
 
-For a playable quickstart:
+For a quiet playable quicktest (wait for the map and run only read-only raw-C#/live-mod health checks; do not spawn, select, click, pan, zoom, toggle game state, or run a setup scenario):
 
 ```powershell
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -TimeoutSeconds 300
 ```
 
-Keep an isolated verified game open for hands-on behavior checks after the automated gateway pass:
+Run the comprehensive Gateway surface regression explicitly when that is what you intend to test:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -Scenario gateway-regression -TimeoutSeconds 300
+```
+
+Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus silverware (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-caravan-dining `
+  -InteractiveHoldSeconds 900 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
+Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -InteractiveHoldSeconds 900 `
@@ -171,7 +188,7 @@ Keep an isolated verified game open for hands-on behavior checks after the autom
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
-The hold is bounded to 0–3600 seconds, begins only after the normal smoke assertions pass, records its state in the ignored evidence directory, and still uses exact-PID cleanup. During the hold, use the generated `SavedData\DevGateway\current.json` only as a live local credential; never commit or paste it.
+Scenario descriptors live in `scripts\Scenarios`. Selecting one is always explicit through `-Scenario`; omitting the option never runs one. Required packages are checked against both the configured set and RimWorld's actual live loaded set. Screenshot step names must be unique and begin with `scenario-`, preventing them from replacing standard evidence. The hold is bounded to 0–3600 seconds, begins only after the selected setup and normal non-mutating readiness assertions pass, records its state in the ignored evidence directory, and still uses exact-PID cleanup. The final flushed Player log is rescanned after scenario/hold execution and exact-process shutdown. During the hold, use the generated `SavedData\DevGateway\current.json` only as a live local credential; never commit or paste it.
 
 The runners refuse to reuse an existing RimWorld process, use a unique `-savedatafolder`, preserve the normal `ModsConfig.xml`, bind evidence and cleanup to the launched process, and remove only their owned live mod stage. The gateway exposes unrestricted code execution by design, so use it only in an isolated developer session. Read [Gateway.md](docs/Gateway.md) before its first live run.
 

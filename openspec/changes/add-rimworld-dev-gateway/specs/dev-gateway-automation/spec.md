@@ -50,6 +50,23 @@ The host smoke command SHALL be able to launch RimWorld with an isolated save-da
 - **WHEN** the launched process exits, logs a mod error, or exceeds the readiness deadline before a playable map exists
 - **THEN** the host fails with the PID, gateway/log evidence, isolated configuration, and reason and does not alter the user's normal mod configuration
 
+### Requirement: Explicit quicktest scenario boundary
+Launching with `-Quicktest` and no scenario SHALL wait for a playable isolated map without running scenario mutations or the Gateway surface-regression battery. It SHALL still run a harmless raw-C# health probe that proves Mono.CSharp evaluation, live Unity/Gateway/EmbedIO access, and the actual ordered loaded-mod list. In particular, the default quicktest SHALL NOT spawn temporary things or pawns, change selection, invoke debug actions or gizmos, apply designators, move or zoom the camera, toggle developer/god mode through the REPL, connect FlaUI, or inject raw input. The former comprehensive surface exercise SHALL run only when the caller explicitly selects the reserved `gateway-regression` scenario.
+
+The host SHALL also accept an explicit named scenario descriptor from `scripts/Scenarios`. A descriptor SHALL declare schema version one, its matching name, required loaded package IDs, and ordered steps. Version one host scenario steps SHALL support raw C# source files and exact-process screenshots, resolve source files within the descriptor directory, reject missing required package IDs against the configured set before dry-run/launch and again against the actual live loaded set before setup, require case-insensitively unique scenario-prefixed screenshot names so standard evidence cannot be overwritten, retain a per-step result artifact, and execute no descriptor when the scenario option is omitted. After scenario execution or an interactive hold, the host SHALL stop the exact owned process and rescan the flushed Player log before reporting success.
+
+#### Scenario: Ordinary quicktest stays quiet
+- **WHEN** the caller launches with `-Quicktest` and omits `-Scenario`
+- **THEN** the host reaches a playable map, proves raw C# health and the actual loaded mod list without mutation, and does not run the Gateway regression or any named setup descriptor
+
+#### Scenario: Gateway regression is explicit
+- **WHEN** the caller launches with `-Quicktest -Scenario gateway-regression`
+- **THEN** the host runs the comprehensive spawn, selection, developer-action, gizmo, designator, camera, desktop, and raw-input regression and retains its evidence
+
+#### Scenario: Caravan dining setup is selected
+- **WHEN** the exact mod list includes `fumblesneeze.immersivechefs` and the caller selects `immersive-chefs-caravan-dining`
+- **THEN** the host clears the generated pawn's randomized inventory, creates and selects a caravan containing only the intended covered meal with its exact plate embedded and silverware, shows the native Items tab without a separate pre-ingestion plate row, captures the ready scene, arms the pawn's hunger, and pauses so native ingestion can be observed returning that plate as a new inventory row
+
 ### Requirement: Declarative quickstart spawn setup
 The built-in `quickstart.spawn` automation SHALL accept a version-one descriptor with required `version: 1`, optional `center: { x, z }`, optional `clearRadius`, and optional `buildings`, `items`, `pawns`, `research`, and `gameConditions` arrays. Building entries SHALL accept `defName`, optional `stuff`, `count`, `quality`, `offset: { x, z }`, and `powerOn`; item entries SHALL use the same shape without `powerOn`; pawn entries SHALL accept `kindDefName`, `count`, and `offset`; research SHALL accept either a Def-name string or `{ defName }`; and game-condition entries SHALL accept `defName` and `durationTicks`.
 
@@ -75,7 +92,7 @@ Before invoking setup, the quickstart flow SHALL retain the initial authenticate
 - **THEN** the host writes an evidence bundle sufficient to identify the exact process, ordered Core/additional/gateway configuration, spawned objects, post-setup state and visible scene, correlated log page, and idempotent replay
 
 ### Requirement: Truthful redundant desktop evidence
-The isolated host smoke SHALL require a nonempty authenticated Gateway end-of-frame PNG from the exact launched process. A separate FlaUI desktop/window capture MAY supplement that image but SHALL NOT be the only visual evidence. The host SHALL write `flaui-evidence.json` with an explicit `completed` or `unavailable` state, bounded failure detail, window count when available, and the actual FlaUI screenshot path only when that file exists and is nonempty. It SHALL NOT copy or relabel the Gateway PNG as a FlaUI screenshot.
+The isolated host smoke SHALL require a nonempty authenticated Gateway end-of-frame PNG from the exact launched process. When the explicit `gateway-regression` scenario is selected, a separate FlaUI desktop/window capture MAY supplement that image but SHALL NOT be the only visual evidence. That scenario SHALL write `flaui-evidence.json` with an explicit `completed` or `unavailable` state, bounded failure detail, window count when available, and the actual FlaUI screenshot path only when that file exists and is nonempty. It SHALL NOT copy or relabel the Gateway PNG as a FlaUI screenshot. A quiet or product-specific scenario SHALL NOT connect FlaUI or inject its regression click merely to produce redundant evidence.
 
 When the mandatory Gateway PNG already exists, a bounded FlaUI window-list or screenshot failure SHALL be retained as `unavailable` and SHALL NOT abort the remaining exact-PID input probe or cleanup. The same FlaUI failure SHALL remain fatal when the mandatory Gateway PNG is absent or empty. Every FlaUI child command SHALL have a host-enforced timeout and SHALL be terminated only through its retained process handle; failure to confirm termination SHALL remain fatal. The host SHALL observe service state before setup, record service-start and connection attempts before invoking their side effects, preserve a pre-existing disconnected service, and reconcile an attempted connection to observed `disconnected` state and an owned service start to observed `stopped` state even when a command times out or returns malformed output.
 

@@ -5,9 +5,11 @@ Proves the packaged RimWorld Dev Gateway inside an isolated RimWorld process.
 .DESCRIPTION
 Builds and deploys only the developer gateway, writes an isolated Core-plus-gateway ModsConfig,
 launches one exact RimWorld PID, discovers its session manifest, exercises authenticated EmbedIO
-status/UI/log routes and the in-process raw C# REPL, rejects an unauthenticated call, captures FlaUI
-evidence, and verifies that the normal ModsConfig hash did not change. With -Quicktest it also waits
-for a playable map and proves the idempotent quickstart.spawn automation. With -RunIntegrationTests
+status/UI/log routes and the in-process raw C# REPL, rejects an unauthenticated call, and verifies
+that the normal ModsConfig hash did not change. With -Quicktest it waits for a playable map without
+running setup mutations. -Scenario gateway-regression explicitly runs the idempotent quickstart,
+semantic-control, FlaUI, and raw-input regression; another named scenario loads its descriptor from
+scripts/Scenarios. With -RunIntegrationTests
 it builds/stages startup-gated tests, verifies the selected lifecycle, and retains finalized-Def and
 test-result artifacts; -IntegrationFailureProbe is the Gateway fixture's expected-failure map run.
 Exit codes: 0 success,
@@ -32,6 +34,12 @@ its own nonzero parameter-binding exit (normally 1).
 
 .EXAMPLE
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -InteractiveHoldSeconds 900
+
+.EXAMPLE
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -Scenario gateway-regression -TimeoutSeconds 300
+
+.EXAMPLE
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -Scenario immersive-chefs-caravan-dining -InteractiveHoldSeconds 900
 #>
 [CmdletBinding()]
 param(
@@ -59,6 +67,8 @@ param(
 
     [switch]$Quicktest,
 
+    [string]$Scenario,
+
     [switch]$RunIntegrationTests,
 
     [switch]$IntegrationFailureProbe,
@@ -81,6 +91,99 @@ $knownExpansionIds = @(
     'ludeon.rimworld.anomaly',
     'ludeon.rimworld.odyssey'
 )
+
+function Resolve-GatewaySmokeScenario {
+    param(
+        [AllowEmptyString()][string]$ScenarioName,
+        [Parameter(Mandatory)][string]$ScenarioDirectory,
+        [Parameter(Mandatory)][bool]$Quicktest
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ScenarioName)) {
+        return [pscustomobject]@{
+            Name = 'none'
+            RunsGatewayRegression = $false
+            DescriptorPath = $null
+            Descriptor = $null
+        }
+    }
+
+    $normalized = $ScenarioName.Trim().ToLowerInvariant()
+    if (-not $Quicktest) {
+        throw "Gateway scenario '$normalized' requires -Quicktest."
+    }
+
+    if ($normalized -ceq 'gateway-regression') {
+        return [pscustomobject]@{
+            Name = $normalized
+            RunsGatewayRegression = $true
+            DescriptorPath = $null
+            Descriptor = $null
+        }
+    }
+
+    if ($normalized -cnotmatch '^[a-z0-9][a-z0-9._-]{0,63}$') {
+        throw "Gateway scenario name is invalid: '$ScenarioName'"
+    }
+
+    $descriptorPath = [System.IO.Path]::GetFullPath((Join-Path $ScenarioDirectory "$normalized.json"))
+    if (-not (Test-Path -LiteralPath $descriptorPath -PathType Leaf)) {
+        throw "Gateway scenario does not exist: $descriptorPath"
+    }
+
+    $descriptor = Get-Content -LiteralPath $descriptorPath -Raw | ConvertFrom-Json -ErrorAction Stop
+    if ([int]$descriptor.schemaVersion -ne 1 -or [string]$descriptor.name -cne $normalized) {
+        throw "Gateway scenario descriptor identity is invalid: $descriptorPath"
+    }
+    if ($null -eq $descriptor.steps) {
+        throw "Gateway scenario descriptor has no steps: $descriptorPath"
+    }
+
+    $screenshotFileNames = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($step in @($descriptor.steps)) {
+        if ([string]$step.kind -cne 'screenshot') {
+            continue
+        }
+
+        $fileName = [string]$step.fileName
+        if ($fileName -cnotmatch '^scenario-[a-z0-9][a-z0-9._-]{0,54}\.png$') {
+            throw "Gateway scenario screenshot file names must begin with 'scenario-': '$fileName'"
+        }
+        if (-not $screenshotFileNames.Add($fileName)) {
+            throw "Gateway scenario '$normalized' has duplicate screenshot file name '$fileName'."
+        }
+    }
+
+    return [pscustomobject]@{
+        Name = $normalized
+        RunsGatewayRegression = $false
+        DescriptorPath = $descriptorPath
+        Descriptor = $descriptor
+    }
+}
+
+function Assert-GatewayScenarioRequiredPackages {
+    param(
+        [Parameter(Mandatory)][object]$ScenarioPlan,
+        [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$PackageIds,
+        [Parameter(Mandatory)][ValidateSet('configured', 'loaded')][string]$PackageState
+    )
+
+    if ($null -eq $ScenarioPlan.Descriptor) {
+        return
+    }
+
+    foreach ($requiredPackageIdValue in @($ScenarioPlan.Descriptor.requiredPackageIds)) {
+        $requiredPackageId = [string]$requiredPackageIdValue
+        if (-not (Test-GatewayPackageId -Value $requiredPackageId)) {
+            throw "Gateway scenario '$($ScenarioPlan.Name)' has invalid required package ID '$requiredPackageId'."
+        }
+        if ($PackageIds -inotcontains $requiredPackageId) {
+            throw "Gateway scenario '$($ScenarioPlan.Name)' requires $PackageState mod '$requiredPackageId'."
+        }
+    }
+}
 
 function Write-Result {
     param([pscustomobject]$Result)
@@ -718,6 +821,28 @@ function Get-GatewayRuntimeLogErrors {
     return @(Select-String `
         -LiteralPath $Path `
         -Pattern '(?i)(FileNotFoundException|TypeLoadException|MissingMethodException|ReflectionTypeLoadException|Root level exception|Exception:|Error while instantiating a mod|Could not instantiate|Could not resolve cross-reference|XML error|not a Def type or could not be found|Patch operation .* failed|EmbedIO.*(error|exception)|Mono\.CSharp.*(error|exception)|Swan\.Lite.*(error|exception)|System\.ValueTuple.*(error|exception))')
+}
+
+function Assert-GatewayFinalPlayerLog {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [AllowEmptyString()][string]$BearerToken
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "Final Player.log is missing: $Path"
+    }
+
+    $finalPlayerLog = Get-Content -LiteralPath $Path -Raw
+    if (-not [string]::IsNullOrEmpty($BearerToken) -and
+        $finalPlayerLog.Contains($BearerToken, [StringComparison]::Ordinal)) {
+        throw 'The bearer token leaked into Player.log after scenario execution or shutdown.'
+    }
+
+    $finalRuntimeErrors = @(Get-GatewayRuntimeLogErrors -Path $Path)
+    if ($finalRuntimeErrors.Count -gt 0) {
+        throw "Player.log contains a mod or gateway load/runtime error after scenario execution and exact-process shutdown. See $Path"
+    }
 }
 
 function Read-ValidatedGatewayCurrentManifest {
@@ -3568,12 +3693,36 @@ if ([string]::IsNullOrWhiteSpace($ArtifactsPath)) {
     $ArtifactsPath = Join-Path $repositoryRoot 'artifacts\GatewaySmoke'
 }
 
+$scenarioDirectory = Join-Path $repositoryRoot 'scripts\Scenarios'
+try {
+    $scenarioPlan = Resolve-GatewaySmokeScenario `
+        -ScenarioName $Scenario `
+        -ScenarioDirectory $scenarioDirectory `
+        -Quicktest ([bool]$Quicktest)
+}
+catch {
+    Exit-InvalidInput $_.Exception.Message
+}
+$runGatewayRegressionScenario = [bool]$scenarioPlan.RunsGatewayRegression
+if ($RequireRawClick -and -not $runGatewayRegressionScenario) {
+    Exit-InvalidInput '-RequireRawClick is only valid with -Scenario gateway-regression.'
+}
+try {
+    Assert-GatewayScenarioRequiredPackages `
+        -ScenarioPlan $scenarioPlan `
+        -PackageIds $activeModIds `
+        -PackageState 'configured'
+}
+catch {
+    Exit-InvalidInput $_.Exception.Message
+}
+
 if ([string]::IsNullOrWhiteSpace($QuickstartDescriptorPath)) {
     $QuickstartDescriptorPath = Join-Path $repositoryRoot 'scripts\Fixtures\GatewayQuickstartSmoke.json'
 }
 
 $resolvedQuickstartDescriptorPath = [System.IO.Path]::GetFullPath($QuickstartDescriptorPath)
-if ($Quicktest -and -not (Test-Path -LiteralPath $resolvedQuickstartDescriptorPath -PathType Leaf)) {
+if ($runGatewayRegressionScenario -and -not (Test-Path -LiteralPath $resolvedQuickstartDescriptorPath -PathType Leaf)) {
     Exit-InvalidInput "Quickstart descriptor does not exist: $resolvedQuickstartDescriptorPath"
 }
 
@@ -3653,6 +3802,7 @@ $dragRemoveInvokePath = Join-Path $runDirectory 'gizmo-drag-remove-invoke.json'
 $dragRemoveApplyPath = Join-Path $runDirectory 'interaction-drag-remove-apply.json'
 $interactionFinalPath = Join-Path $runDirectory 'interaction-final.json'
 $planCleanupPath = Join-Path $runDirectory 'interaction-plan-cleanup.json'
+$scenarioResultPath = Join-Path $runDirectory 'scenario.json'
 $interactiveHoldPath = Join-Path $runDirectory 'interactive-hold.json'
 $shutdownPath = Join-Path $runDirectory 'shutdown.json'
 $hostRequestJournalPath = Join-Path $runDirectory 'last-host-request.json'
@@ -3705,12 +3855,15 @@ if ($DryRun) {
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
         Screenshot = $screenshotPath
-        FlaUiEvidence = $flaUiEvidencePath
+        FlaUiEvidence = if ($runGatewayRegressionScenario) { $flaUiEvidencePath } else { $null }
         CSharpEndpoint = '/api/v1/executions/csharp'
         Quicktest = [bool]$Quicktest
+        Scenario = [string]$scenarioPlan.Name
+        ScenarioDescriptor = if ($null -ne $scenarioPlan.Descriptor) { [string]$scenarioPlan.DescriptorPath } else { $null }
+        RunsGatewayRegressionScenario = $runGatewayRegressionScenario
         RunIntegrationTests = [bool]$RunIntegrationTests
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
-        QuickstartDescriptor = if ($Quicktest) { $resolvedQuickstartDescriptorPath } else { $null }
+        QuickstartDescriptor = if ($runGatewayRegressionScenario) { $resolvedQuickstartDescriptorPath } else { $null }
         LaunchArguments = $launchArguments
         NormalConfigHashBefore = $normalConfigHashBefore
         NormalConfigHashAfter = Get-OptionalFileHash -Path $normalModsConfigPath
@@ -3718,7 +3871,7 @@ if ($DryRun) {
     exit 0
 }
 
-if ($null -eq (Get-Command flaui -ErrorAction SilentlyContinue)) {
+if ($runGatewayRegressionScenario -and $null -eq (Get-Command flaui -ErrorAction SilentlyContinue)) {
     Exit-InvalidInput 'FlaUI CLI is not installed or not available on PATH.'
 }
 
@@ -3731,7 +3884,12 @@ $launchedProcess = $null
 $flaUiServiceWasRunning = $true
 $flaUiServiceStartAttempted = $false
 $flaUiConnectionAttempted = $false
-$flaUiDesktopEvidence = $null
+$flaUiDesktopEvidence = [pscustomobject]@{
+    WindowCount = 0
+    Screenshot = $null
+}
+$clickOutcome = 'not-requested'
+$loadedModIds = @()
 $failureMessage = $null
 $failureRecords = [System.Collections.Generic.List[object]]::new()
 $result = $null
@@ -4013,6 +4171,32 @@ try {
         -Response $defExportResponse `
         -ArtifactPath $defExportPath
 
+    if ($Quicktest) {
+        $playableDeadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
+        while ([datetime]::UtcNow -lt $playableDeadline) {
+            $playableStatusResponse = Invoke-GatewayGet `
+                -Uri "$baseUrl/status" `
+                -Token $manifest.token `
+                -RequestId 'gateway-smoke-wait-playing-before-tests'
+            if ([int]$playableStatusResponse.StatusCode -eq 200) {
+                $playableStatus = $playableStatusResponse.Content | ConvertFrom-Json
+                if ($playableStatus.ok -and
+                    [string]$playableStatus.result.programState -eq 'Playing' -and
+                    $null -ne $playableStatus.result.map) {
+                    $status = $playableStatus
+                    $playableStatusResponse.Content | Set-Content -LiteralPath $statusPath -Encoding UTF8
+                    break
+                }
+            }
+
+            Start-Sleep -Seconds 1
+        }
+
+        if ([string]$status.result.programState -ne 'Playing' -or $null -eq $status.result.map) {
+            throw "Timed out after $TimeoutSeconds seconds waiting for a playable quicktest map before integration polling. See $playerLogPath"
+        }
+    }
+
     $integrationTestsEnvelope = $null
     $integrationTestsPersistedPath = $null
     if ($RunIntegrationTests) {
@@ -4150,42 +4334,29 @@ try {
     }
 
     $executionUri = "$baseUrl/executions/csharp"
-    $declarationResponse = Invoke-GatewayTextPost `
-        -Uri $executionUri `
-        -Token $manifest.token `
-        -RequestId 'gateway-smoke-execution-declare' `
-        -Source 'var gatewaySmokeOriginalDevMode = Prefs.DevMode; Prefs.DevMode = !gatewaySmokeOriginalDevMode;'
-    $declarationResponse.Content | Set-Content -LiteralPath $executionPath -Encoding UTF8
-    $declarationEnvelope = $declarationResponse.Content | ConvertFrom-Json
-    if ([int]$declarationResponse.StatusCode -ne 200 -or
-        -not $declarationEnvelope.ok -or
-        -not $declarationEnvelope.result.Succeeded) {
-        throw "Raw C# declaration/mutation failed with HTTP $([int]$declarationResponse.StatusCode). See $executionPath"
-    }
-
     $stateResponse = Invoke-GatewayTextPost `
         -Uri $executionUri `
         -Token $manifest.token `
         -RequestId 'gateway-smoke-execution-state' `
-        -Source 'string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}|{1}|{2}|{3}|{4}|{5}|{6}", Prefs.DevMode != gatewaySmokeOriginalDevMode, UnityEngine.Time.frameCount, Thread.CurrentThread.ManagedThreadId, Current.ProgramState, typeof(RimWorldDevGateway.GatewayDispatcher).FullName, typeof(EmbedIO.WebServer).FullName, string.Join(",", LoadedModManager.RunningModsListForReading.Select(mod => mod.PackageId)))'
+        -Source 'string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}|{1}|{2}|{3}|{4}|{5}|{6}", UnityEngine.Time.frameCount, Thread.CurrentThread.ManagedThreadId, Current.ProgramState, typeof(RimWorldDevGateway.GatewayDispatcher).FullName, typeof(EmbedIO.WebServer).FullName, typeof(Mono.CSharp.Evaluator).FullName, string.Join(",", LoadedModManager.RunningModsListForReading.Select(mod => mod.PackageId)))'
     $stateResponse.Content | Set-Content -LiteralPath $executionStatePath -Encoding UTF8
     $stateEnvelope = $stateResponse.Content | ConvertFrom-Json
     if ([int]$stateResponse.StatusCode -ne 200 -or
         -not $stateEnvelope.ok -or
         -not $stateEnvelope.result.Succeeded -or
         [string]$stateEnvelope.result.Type -ne 'System.String') {
-        throw "Raw C# stateful probe failed with HTTP $([int]$stateResponse.StatusCode). See $executionStatePath"
+        throw "Raw C# health probe failed with HTTP $([int]$stateResponse.StatusCode). See $executionStatePath"
     }
 
     $probeParts = ([string]$stateEnvelope.result.Value).Split('|')
     if ($probeParts.Count -ne 7 -or
-        [string]$probeParts[0] -ne 'True' -or
-        [int]$probeParts[1] -lt 0 -or
-        [int]$probeParts[2] -le 0 -or
-        [string]::IsNullOrWhiteSpace([string]$probeParts[3]) -or
-        [string]$probeParts[4] -ne 'RimWorldDevGateway.GatewayDispatcher' -or
-        [string]$probeParts[5] -ne 'EmbedIO.WebServer') {
-        throw "Raw C# probe did not prove persistent state, live Unity inspection, and mutation. See $executionStatePath"
+        [int]$probeParts[0] -lt 0 -or
+        [int]$probeParts[1] -le 0 -or
+        [string]::IsNullOrWhiteSpace([string]$probeParts[2]) -or
+        [string]$probeParts[3] -ne 'RimWorldDevGateway.GatewayDispatcher' -or
+        [string]$probeParts[4] -ne 'EmbedIO.WebServer' -or
+        [string]$probeParts[5] -ne 'Mono.CSharp.Evaluator') {
+        throw "Raw C# health probe did not prove live Unity, Gateway, EmbedIO, and Mono.CSharp access. See $executionStatePath"
     }
 
     $loadedModIds = @(([string]$probeParts[6]).Split(',', [System.StringSplitOptions]::RemoveEmptyEntries))
@@ -4200,18 +4371,39 @@ try {
             throw "RimWorld did not load the requested ordered mod list. Requested: $($activeModIds -join ', '); loaded: $($loadedModIds -join ', ')"
         }
     }
+    Assert-GatewayScenarioRequiredPackages `
+        -ScenarioPlan $scenarioPlan `
+        -PackageIds $loadedModIds `
+        -PackageState 'loaded'
 
-    $restoreResponse = Invoke-GatewayTextPost `
-        -Uri $executionUri `
-        -Token $manifest.token `
-        -RequestId 'gateway-smoke-execution-restore' `
-        -Source 'Prefs.DevMode = gatewaySmokeOriginalDevMode;'
-    $restoreResponse.Content | Set-Content -LiteralPath $executionRestorePath -Encoding UTF8
-    $restoreEnvelope = $restoreResponse.Content | ConvertFrom-Json
-    if ([int]$restoreResponse.StatusCode -ne 200 -or
-        -not $restoreEnvelope.ok -or
-        -not $restoreEnvelope.result.Succeeded) {
-        throw "Raw C# state restoration failed with HTTP $([int]$restoreResponse.StatusCode). See $executionRestorePath"
+    if ($runGatewayRegressionScenario) {
+        $declarationResponse = Invoke-GatewayTextPost `
+            -Uri $executionUri `
+            -Token $manifest.token `
+            -RequestId 'gateway-smoke-execution-declare' `
+            -Source 'var gatewaySmokeOriginalDevMode = Prefs.DevMode; Prefs.DevMode = !gatewaySmokeOriginalDevMode; Prefs.DevMode != gatewaySmokeOriginalDevMode'
+        $declarationResponse.Content | Set-Content -LiteralPath $executionPath -Encoding UTF8
+        $declarationEnvelope = $declarationResponse.Content | ConvertFrom-Json
+        if ([int]$declarationResponse.StatusCode -ne 200 -or
+            -not $declarationEnvelope.ok -or
+            -not $declarationEnvelope.result.Succeeded -or
+            -not [bool]$declarationEnvelope.result.Value) {
+            throw "Raw C# declaration/mutation failed with HTTP $([int]$declarationResponse.StatusCode). See $executionPath"
+        }
+
+        $restoreResponse = Invoke-GatewayTextPost `
+            -Uri $executionUri `
+            -Token $manifest.token `
+            -RequestId 'gateway-smoke-execution-restore' `
+            -Source '(new System.Func<bool>(() => { var changed = Prefs.DevMode != gatewaySmokeOriginalDevMode; Prefs.DevMode = gatewaySmokeOriginalDevMode; return changed && Prefs.DevMode == gatewaySmokeOriginalDevMode; }))()'
+        $restoreResponse.Content | Set-Content -LiteralPath $executionRestorePath -Encoding UTF8
+        $restoreEnvelope = $restoreResponse.Content | ConvertFrom-Json
+        if ([int]$restoreResponse.StatusCode -ne 200 -or
+            -not $restoreEnvelope.ok -or
+            -not $restoreEnvelope.result.Succeeded -or
+            -not [bool]$restoreEnvelope.result.Value) {
+            throw "Raw C# persistent-state restoration failed with HTTP $([int]$restoreResponse.StatusCode). See $executionRestorePath"
+        }
     }
 
     $uiResponse = Invoke-GatewayGet -Uri "$baseUrl/ui-state" -Token $manifest.token -RequestId 'gateway-smoke-ui'
@@ -4266,6 +4458,7 @@ try {
             throw "Timed out after $TimeoutSeconds seconds waiting for a playable quicktest map. See $playerLogPath"
         }
 
+        if ($runGatewayRegressionScenario) {
         $gameStateInitialResponse = Invoke-GatewayGet `
             -Uri "$baseUrl/game-state" `
             -Token $manifest.token `
@@ -5355,6 +5548,7 @@ try {
         if ($pathfinderStateLogEntries.Count -ne 1) {
             throw "Immediate debug-action evidence did not contain exactly one emitted 'Pathfinder State' log entry. See $postQuickstartLogsPath"
         }
+        }
     }
 
     $gatewayHeaders = @{
@@ -5408,6 +5602,7 @@ try {
         throw "Player.log contains a mod or gateway load/runtime error. See $playerLogPath"
     }
 
+    if ($runGatewayRegressionScenario) {
     $serviceStatusBefore = Invoke-FlaUiJson -Arguments @('service', 'status')
     if (-not ($serviceStatusBefore.PSObject.Properties.Name -contains 'running')) {
         throw 'FlaUI service status omitted running before setup.'
@@ -5501,6 +5696,80 @@ try {
             throw "Gateway raw click failed with HTTP $([int]$clickResponse.StatusCode). See $clickPath"
         }
     }
+    }
+
+    if ($null -ne $scenarioPlan.Descriptor) {
+        $scenarioStepResults = [System.Collections.Generic.List[object]]::new()
+        $scenarioDescriptorDirectory = Split-Path -Parent ([string]$scenarioPlan.DescriptorPath)
+        $scenarioDescriptorPrefix = $scenarioDescriptorDirectory.TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+        $scenarioStepIndex = 0
+        foreach ($step in @($scenarioPlan.Descriptor.steps)) {
+            $scenarioStepIndex++
+            $stepId = [string]$step.id
+            if ($stepId -cnotmatch '^[a-z0-9][a-z0-9._-]{0,63}$') {
+                throw "Gateway scenario '$($scenarioPlan.Name)' has invalid step id '$stepId'."
+            }
+
+            $kind = [string]$step.kind
+            switch ($kind) {
+                'csharp' {
+                    $sourcePath = [System.IO.Path]::GetFullPath((Join-Path $scenarioDescriptorDirectory ([string]$step.sourceFile)))
+                    if (-not $sourcePath.StartsWith($scenarioDescriptorPrefix, [StringComparison]::OrdinalIgnoreCase) -or
+                        -not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+                        throw "Gateway scenario '$($scenarioPlan.Name)' has invalid C# source path for step '$stepId'."
+                    }
+
+                    $stepArtifactPath = Join-Path $runDirectory "scenario-$scenarioStepIndex-$stepId.json"
+                    $stepResponse = Invoke-GatewayTextPost `
+                        -Uri "$baseUrl/executions/csharp" `
+                        -Token $manifest.token `
+                        -RequestId "gateway-scenario-$($scenarioPlan.Name)-$stepId" `
+                        -Source (Get-Content -LiteralPath $sourcePath -Raw)
+                    $stepResponse.Content | Set-Content -LiteralPath $stepArtifactPath -Encoding UTF8
+                    $stepEnvelope = $stepResponse.Content | ConvertFrom-Json -ErrorAction Stop
+                    if ([int]$stepResponse.StatusCode -ne 200 -or
+                        -not $stepEnvelope.ok -or
+                        -not $stepEnvelope.result.Succeeded) {
+                        throw "Gateway scenario '$($scenarioPlan.Name)' C# step '$stepId' failed. See $stepArtifactPath"
+                    }
+
+                    $scenarioStepResults.Add([pscustomobject]@{
+                        Id = $stepId
+                        Kind = $kind
+                        Artifact = $stepArtifactPath
+                    })
+                }
+                'screenshot' {
+                    $fileName = [string]$step.fileName
+                    if ($fileName -cnotmatch '^[a-z0-9][a-z0-9._-]{0,63}\.png$') {
+                        throw "Gateway scenario '$($scenarioPlan.Name)' has invalid screenshot file name '$fileName'."
+                    }
+
+                    $stepArtifactPath = Join-Path $runDirectory $fileName
+                    Save-GatewayScreenshot `
+                        -BaseUrl $baseUrl `
+                        -Token $manifest.token `
+                        -RequestId "gateway-scenario-$($scenarioPlan.Name)-$stepId" `
+                        -ArtifactPath $stepArtifactPath
+                    $scenarioStepResults.Add([pscustomobject]@{
+                        Id = $stepId
+                        Kind = $kind
+                        Artifact = $stepArtifactPath
+                    })
+                }
+                default {
+                    throw "Gateway scenario '$($scenarioPlan.Name)' has unsupported step kind '$kind'."
+                }
+            }
+        }
+
+        [pscustomobject][ordered]@{
+            Name = [string]$scenarioPlan.Name
+            Descriptor = [string]$scenarioPlan.DescriptorPath
+            Status = 'completed'
+            Steps = @($scenarioStepResults)
+        } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $scenarioResultPath -Encoding UTF8
+    }
 
     if ($InteractiveHoldSeconds -gt 0) {
         $holdStartedUtc = [datetime]::UtcNow
@@ -5591,7 +5860,7 @@ try {
         UnrestrictedExecutionEnabled = $status.result.unrestrictedExecutionEnabled
         UnauthorizedStatusCode = [int]$unauthorized.StatusCode
         FlaUiWindowCount = $flaUiDesktopEvidence.WindowCount
-        FlaUiEvidence = $flaUiEvidencePath
+        FlaUiEvidence = if ($runGatewayRegressionScenario) { $flaUiEvidencePath } else { $null }
         ModsConfig = $modsConfigPath
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
@@ -5604,68 +5873,72 @@ try {
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
         UiStateResponse = $uiStatePath
         LogsResponse = $logsPath
-        PostQuickstartStatusResponse = if ($Quicktest) { $postQuickstartStatusPath } else { $null }
-        PostQuickstartUiStateResponse = if ($Quicktest) { $postQuickstartUiStatePath } else { $null }
-        PostQuickstartLogsResponse = if ($Quicktest) { $postQuickstartLogsPath } else { $null }
+        PostQuickstartStatusResponse = if ($runGatewayRegressionScenario) { $postQuickstartStatusPath } else { $null }
+        PostQuickstartUiStateResponse = if ($runGatewayRegressionScenario) { $postQuickstartUiStatePath } else { $null }
+        PostQuickstartLogsResponse = if ($runGatewayRegressionScenario) { $postQuickstartLogsPath } else { $null }
         ActionsResponse = $actionsPath
         AutomationsResponse = $automationsPath
         GatewayScreenshot = $gatewayScreenshotPath
-        ClickResponse = $clickPath
+        ClickResponse = if ($runGatewayRegressionScenario) { $clickPath } else { $null }
         ClickOutcome = $clickOutcome
-        ExecutionResponse = $executionPath
+        ExecutionResponse = if ($runGatewayRegressionScenario) { $executionPath } else { $null }
         ExecutionStateResponse = $executionStatePath
-        ExecutionRestoreResponse = $executionRestorePath
+        ExecutionRestoreResponse = if ($runGatewayRegressionScenario) { $executionRestorePath } else { $null }
         Quicktest = [bool]$Quicktest
-        QuickstartDescriptor = if ($Quicktest) { $resolvedQuickstartDescriptorPath } else { $null }
-        QuickstartResponse = if ($Quicktest) { $quickstartPath } else { $null }
-        QuickstartReplayResponse = if ($Quicktest) { $quickstartReplayPath } else { $null }
-        QuickstartRunId = if ($Quicktest) { [string]$quickstartRun.RunId } else { $null }
-        GameStateInitialResponse = if ($Quicktest) { $gameStateInitialPath } else { $null }
-        GameStateEnableDevResponse = if ($Quicktest) { $gameStateEnableDevPath } else { $null }
-        GameStatePauseResponse = if ($Quicktest) { $gameStatePausePath } else { $null }
-        GameStateSpeedResponse = if ($Quicktest) { $gameStateSpeedPath } else { $null }
-        GameStateRestoreResponse = if ($Quicktest) { $gameStateRestorePath } else { $null }
-        ThingsMapResponse = if ($Quicktest) { $thingsMapPath } else { $null }
-        ThingsViewResponse = if ($Quicktest) { $thingsViewPath } else { $null }
-        ThingInspectBuildingResponse = if ($Quicktest) { $thingInspectBuildingPath } else { $null }
-        ThingInspectPawnResponse = if ($Quicktest) { $thingInspectPawnPath } else { $null }
-        SelectionSetResponse = if ($Quicktest) { $selectionSetPath } else { $null }
-        SelectionQueryResponse = if ($Quicktest) { $selectionQueryPath } else { $null }
-        SelectionRestoreResponse = if ($Quicktest) { $selectionRestorePath } else { $null }
-        DirectSpawnResponse = if ($Quicktest) { $directSpawnPath } else { $null }
-        DirectSpawnReplayResponse = if ($Quicktest) { $directSpawnReplayPath } else { $null }
-        DirectSpawnQueryResponse = if ($Quicktest) { $directSpawnQueryPath } else { $null }
-        DirectSpawnCleanupResponse = if ($Quicktest) { $directSpawnCleanupPath } else { $null }
-        DirectSpawnCleanupQueryResponse = if ($Quicktest) { $directSpawnCleanupQueryPath } else { $null }
-        CameraBeforeResponse = if ($Quicktest) { $cameraBeforePath } else { $null }
-        CameraMoveResponse = if ($Quicktest) { $cameraMovePath } else { $null }
-        CameraAfterMoveStateResponse = if ($Quicktest) { $cameraAfterMoveStatePath } else { $null }
-        CameraZoomResponse = if ($Quicktest) { $cameraZoomPath } else { $null }
-        CameraAfterZoomStateResponse = if ($Quicktest) { $cameraAfterZoomStatePath } else { $null }
-        CameraRestoreResponse = if ($Quicktest) { $cameraRestorePath } else { $null }
-        CameraRestoredStateResponse = if ($Quicktest) { $cameraRestoredStatePath } else { $null }
-        CameraBeforeScreenshot = if ($Quicktest) { $cameraBeforeScreenshotPath } else { $null }
-        CameraAfterMoveScreenshot = if ($Quicktest) { $cameraAfterMoveScreenshotPath } else { $null }
-        CameraAfterZoomScreenshot = if ($Quicktest) { $cameraAfterZoomScreenshotPath } else { $null }
-        CameraRestoredScreenshot = if ($Quicktest) { $cameraRestoredScreenshotPath } else { $null }
-        DebugActionsQueryResponse = if ($Quicktest) { $debugActionsQueryPath } else { $null }
-        DebugActionInvokeResponse = if ($Quicktest) { $debugActionInvokePath } else { $null }
-        PawnGizmosQueryResponse = if ($Quicktest) { $pawnGizmosQueryPath } else { $null }
-        PawnGizmoToggleResponse = if ($Quicktest) { $pawnGizmoTogglePath } else { $null }
-        PawnGizmosRestoreQueryResponse = if ($Quicktest) { $pawnGizmosRestoreQueryPath } else { $null }
-        PawnGizmoRestoreResponse = if ($Quicktest) { $pawnGizmoRestorePath } else { $null }
-        ArchitectGizmosQueryResponse = if ($Quicktest) { $architectGizmosQueryPath } else { $null }
-        DragInvokeResponse = if ($Quicktest) { $dragInvokePath } else { $null }
-        InteractionCurrentResponse = if ($Quicktest) { $interactionCurrentPath } else { $null }
-        InteractionCancelResponse = if ($Quicktest) { $interactionCancelPath } else { $null }
-        DragReinvokeResponse = if ($Quicktest) { $dragReinvokePath } else { $null }
-        DragApplyResponse = if ($Quicktest) { $dragApplyPath } else { $null }
-        PlanCreatedResponse = if ($Quicktest) { $planCreatedPath } else { $null }
-        DragRemoveInvokeResponse = if ($Quicktest) { $dragRemoveInvokePath } else { $null }
-        DragRemoveApplyResponse = if ($Quicktest) { $dragRemoveApplyPath } else { $null }
-        InteractionFinalResponse = if ($Quicktest) { $interactionFinalPath } else { $null }
-        PlanCleanupResponse = if ($Quicktest) { $planCleanupPath } else { $null }
-        CorrelatedSemanticRequestIds = if ($Quicktest) { $semanticRequestIds } else { @() }
+        Scenario = [string]$scenarioPlan.Name
+        ScenarioDescriptor = if ($null -ne $scenarioPlan.Descriptor) { [string]$scenarioPlan.DescriptorPath } else { $null }
+        ScenarioResult = if ($null -ne $scenarioPlan.Descriptor) { $scenarioResultPath } else { $null }
+        RunsGatewayRegressionScenario = $runGatewayRegressionScenario
+        QuickstartDescriptor = if ($runGatewayRegressionScenario) { $resolvedQuickstartDescriptorPath } else { $null }
+        QuickstartResponse = if ($runGatewayRegressionScenario) { $quickstartPath } else { $null }
+        QuickstartReplayResponse = if ($runGatewayRegressionScenario) { $quickstartReplayPath } else { $null }
+        QuickstartRunId = if ($runGatewayRegressionScenario) { [string]$quickstartRun.RunId } else { $null }
+        GameStateInitialResponse = if ($runGatewayRegressionScenario) { $gameStateInitialPath } else { $null }
+        GameStateEnableDevResponse = if ($runGatewayRegressionScenario) { $gameStateEnableDevPath } else { $null }
+        GameStatePauseResponse = if ($runGatewayRegressionScenario) { $gameStatePausePath } else { $null }
+        GameStateSpeedResponse = if ($runGatewayRegressionScenario) { $gameStateSpeedPath } else { $null }
+        GameStateRestoreResponse = if ($runGatewayRegressionScenario) { $gameStateRestorePath } else { $null }
+        ThingsMapResponse = if ($runGatewayRegressionScenario) { $thingsMapPath } else { $null }
+        ThingsViewResponse = if ($runGatewayRegressionScenario) { $thingsViewPath } else { $null }
+        ThingInspectBuildingResponse = if ($runGatewayRegressionScenario) { $thingInspectBuildingPath } else { $null }
+        ThingInspectPawnResponse = if ($runGatewayRegressionScenario) { $thingInspectPawnPath } else { $null }
+        SelectionSetResponse = if ($runGatewayRegressionScenario) { $selectionSetPath } else { $null }
+        SelectionQueryResponse = if ($runGatewayRegressionScenario) { $selectionQueryPath } else { $null }
+        SelectionRestoreResponse = if ($runGatewayRegressionScenario) { $selectionRestorePath } else { $null }
+        DirectSpawnResponse = if ($runGatewayRegressionScenario) { $directSpawnPath } else { $null }
+        DirectSpawnReplayResponse = if ($runGatewayRegressionScenario) { $directSpawnReplayPath } else { $null }
+        DirectSpawnQueryResponse = if ($runGatewayRegressionScenario) { $directSpawnQueryPath } else { $null }
+        DirectSpawnCleanupResponse = if ($runGatewayRegressionScenario) { $directSpawnCleanupPath } else { $null }
+        DirectSpawnCleanupQueryResponse = if ($runGatewayRegressionScenario) { $directSpawnCleanupQueryPath } else { $null }
+        CameraBeforeResponse = if ($runGatewayRegressionScenario) { $cameraBeforePath } else { $null }
+        CameraMoveResponse = if ($runGatewayRegressionScenario) { $cameraMovePath } else { $null }
+        CameraAfterMoveStateResponse = if ($runGatewayRegressionScenario) { $cameraAfterMoveStatePath } else { $null }
+        CameraZoomResponse = if ($runGatewayRegressionScenario) { $cameraZoomPath } else { $null }
+        CameraAfterZoomStateResponse = if ($runGatewayRegressionScenario) { $cameraAfterZoomStatePath } else { $null }
+        CameraRestoreResponse = if ($runGatewayRegressionScenario) { $cameraRestorePath } else { $null }
+        CameraRestoredStateResponse = if ($runGatewayRegressionScenario) { $cameraRestoredStatePath } else { $null }
+        CameraBeforeScreenshot = if ($runGatewayRegressionScenario) { $cameraBeforeScreenshotPath } else { $null }
+        CameraAfterMoveScreenshot = if ($runGatewayRegressionScenario) { $cameraAfterMoveScreenshotPath } else { $null }
+        CameraAfterZoomScreenshot = if ($runGatewayRegressionScenario) { $cameraAfterZoomScreenshotPath } else { $null }
+        CameraRestoredScreenshot = if ($runGatewayRegressionScenario) { $cameraRestoredScreenshotPath } else { $null }
+        DebugActionsQueryResponse = if ($runGatewayRegressionScenario) { $debugActionsQueryPath } else { $null }
+        DebugActionInvokeResponse = if ($runGatewayRegressionScenario) { $debugActionInvokePath } else { $null }
+        PawnGizmosQueryResponse = if ($runGatewayRegressionScenario) { $pawnGizmosQueryPath } else { $null }
+        PawnGizmoToggleResponse = if ($runGatewayRegressionScenario) { $pawnGizmoTogglePath } else { $null }
+        PawnGizmosRestoreQueryResponse = if ($runGatewayRegressionScenario) { $pawnGizmosRestoreQueryPath } else { $null }
+        PawnGizmoRestoreResponse = if ($runGatewayRegressionScenario) { $pawnGizmoRestorePath } else { $null }
+        ArchitectGizmosQueryResponse = if ($runGatewayRegressionScenario) { $architectGizmosQueryPath } else { $null }
+        DragInvokeResponse = if ($runGatewayRegressionScenario) { $dragInvokePath } else { $null }
+        InteractionCurrentResponse = if ($runGatewayRegressionScenario) { $interactionCurrentPath } else { $null }
+        InteractionCancelResponse = if ($runGatewayRegressionScenario) { $interactionCancelPath } else { $null }
+        DragReinvokeResponse = if ($runGatewayRegressionScenario) { $dragReinvokePath } else { $null }
+        DragApplyResponse = if ($runGatewayRegressionScenario) { $dragApplyPath } else { $null }
+        PlanCreatedResponse = if ($runGatewayRegressionScenario) { $planCreatedPath } else { $null }
+        DragRemoveInvokeResponse = if ($runGatewayRegressionScenario) { $dragRemoveInvokePath } else { $null }
+        DragRemoveApplyResponse = if ($runGatewayRegressionScenario) { $dragRemoveApplyPath } else { $null }
+        InteractionFinalResponse = if ($runGatewayRegressionScenario) { $interactionFinalPath } else { $null }
+        PlanCleanupResponse = if ($runGatewayRegressionScenario) { $planCleanupPath } else { $null }
+        CorrelatedSemanticRequestIds = if ($runGatewayRegressionScenario) { $semanticRequestIds } else { @() }
         ShutdownResponse = $shutdownPath
         SessionTombstone = $tombstonePath
         HostRequestJournal = $hostRequestJournalPath
@@ -5951,6 +6224,19 @@ finally {
             -Category 'stage-cleanup' `
             -Message "Integration-test stage-cleanup status persistence failed: $($_.Exception.Message)"
     }
+}
+
+$finalBearerToken = if ($null -ne $manifest) { [string]$manifest.token } else { '' }
+try {
+    Assert-GatewayFinalPlayerLog `
+        -Path $playerLogPath `
+        -BearerToken $finalBearerToken
+}
+catch {
+    Add-GatewaySmokeFailure `
+        -Failures $failureRecords `
+        -Category 'primary' `
+        -Message "Final Player.log verification failed: $($_.Exception.Message)"
 }
 
 $normalConfigHashRead = Get-GatewaySmokeOptionalHashSafely `

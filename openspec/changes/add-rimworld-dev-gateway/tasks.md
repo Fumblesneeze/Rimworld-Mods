@@ -163,3 +163,12 @@
 - [ ] 23.2 Run an independent code-review pass over Def export, test loading/execution, lifecycle wiring, and staging security/cleanup; resolve every accepted finding and rerun affected checks.
 - [ ] 23.3 In a fresh isolated Core-plus-Gateway process with the startup flag, observe the settled main menu, retrieve a known finalized Core Def export, and prove the staged main-menu fixture reports the expected real XML-patched value without gateway/runtime/test exceptions.
 - [ ] 23.4 In a separate isolated playable-map run, prove a `PlayableMapLoaded` fixture executes once and the Gateway stays responsive after one deliberately failing fixture; retain screenshots and exact-process evidence. Integration assertions remain supporting evidence and do not waive player-workflow acceptance for gameplay features.
+
+## 24. mods/RimWorldDevGateway — Explicit verification scenarios
+
+- [x] 24.1 RED/GREEN: prove quicktest resolves to no scenario by default, reserves the existing comprehensive surface battery behind explicit `gateway-regression`, and resolves named descriptors deterministically.
+- [x] 24.2 Keep default quicktest free of temporary spawning, selection, debug/gizmo/designator, camera, REPL dev-mode, FlaUI, and raw-input mutations; retain those probes behind the explicit Gateway regression scenario.
+- [x] 24.3 Add the version-one host descriptor runner with required-package validation, descriptor-local raw C# sources, per-step artifacts, and exact-process screenshots.
+- [x] 24.4 Run and observe the `immersive-chefs-caravan-dining` scenario with Immersive Chefs loaded, confirm the native Items scene hides the embedded plate before eating and shows that exact plate after deliberate unpausing/ingestion, and retain the behavior evidence.
+- [x] 24.5 Resolve the focused runner review: retain non-mutating Mono.CSharp/live-mod health in every smoke mode, validate scenario requirements before dry-run and against the live loaded set, reject colliding/reserved screenshot names, and rescan the flushed Player log after scenario/hold and exact-PID shutdown.
+- [x] 24.6 Resolve the final re-review by making a missing final Player log fatal, clearing generated pawn inventory for repeatable scenes, naming source-shape tests honestly, rerunning the full Gateway matrix, and repeating the native before/action/after observation with clean exact-PID cleanup.
