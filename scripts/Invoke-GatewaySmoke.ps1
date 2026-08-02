@@ -29,6 +29,9 @@ its own nonzero parameter-binding exit (normally 1).
 
 .EXAMPLE
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -RunIntegrationTests -IntegrationFailureProbe -TimeoutSeconds 300
+
+.EXAMPLE
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -InteractiveHoldSeconds 900
 #>
 [CmdletBinding()]
 param(
@@ -50,6 +53,9 @@ param(
 
     [ValidateRange(30, 600)]
     [int]$TimeoutSeconds = 180,
+
+    [ValidateRange(0, 3600)]
+    [int]$InteractiveHoldSeconds = 0,
 
     [switch]$Quicktest,
 
@@ -3647,6 +3653,7 @@ $dragRemoveInvokePath = Join-Path $runDirectory 'gizmo-drag-remove-invoke.json'
 $dragRemoveApplyPath = Join-Path $runDirectory 'interaction-drag-remove-apply.json'
 $interactionFinalPath = Join-Path $runDirectory 'interaction-final.json'
 $planCleanupPath = Join-Path $runDirectory 'interaction-plan-cleanup.json'
+$interactiveHoldPath = Join-Path $runDirectory 'interactive-hold.json'
 $shutdownPath = Join-Path $runDirectory 'shutdown.json'
 $hostRequestJournalPath = Join-Path $runDirectory 'last-host-request.json'
 $failureDiagnosticsPath = Join-Path $runDirectory 'failure-diagnostics.json'
@@ -3693,6 +3700,7 @@ if ($DryRun) {
             }
         })
         RequireRawClick = [bool]$RequireRawClick
+        InteractiveHoldSeconds = [int]$InteractiveHoldSeconds
         ModsConfig = $modsConfigPath
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
@@ -5369,6 +5377,7 @@ try {
                 -PassThru `
                 -SkipHttpErrorCheck
         }
+
     if ([int]$gatewayScreenshotResponse.StatusCode -ne 200) {
         throw "Gateway screenshot failed with HTTP $([int]$gatewayScreenshotResponse.StatusCode)."
     }
@@ -5493,6 +5502,36 @@ try {
         }
     }
 
+    if ($InteractiveHoldSeconds -gt 0) {
+        $holdStartedUtc = [datetime]::UtcNow
+        $holdDeadline = $holdStartedUtc.AddSeconds($InteractiveHoldSeconds)
+        [pscustomobject][ordered]@{
+            Status = 'active'
+            ProcessId = [int]$launchedProcess.Id
+            StartedUtc = $holdStartedUtc.ToString('O')
+            UntilUtc = $holdDeadline.ToString('O')
+            Manifest = $manifestPath
+        } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $interactiveHoldPath -Encoding UTF8
+
+        Write-Host "Interactive verification hold active until $($holdDeadline.ToLocalTime().ToString('T')); state: $interactiveHoldPath"
+        while ([datetime]::UtcNow -lt $holdDeadline) {
+            $launchedProcess.Refresh()
+            if ($launchedProcess.HasExited) {
+                throw "RimWorld exited during the interactive verification hold. See $playerLogPath"
+            }
+
+            Start-Sleep -Seconds 1
+        }
+
+        [pscustomobject][ordered]@{
+            Status = 'completed'
+            ProcessId = [int]$launchedProcess.Id
+            StartedUtc = $holdStartedUtc.ToString('O')
+            CompletedUtc = [datetime]::UtcNow.ToString('O')
+            Manifest = $manifestPath
+        } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $interactiveHoldPath -Encoding UTF8
+    }
+
     $shutdownHeaders = @{
         Authorization = "Bearer $($manifest.token)"
         'X-Request-Id' = 'gateway-smoke-shutdown'
@@ -5541,6 +5580,7 @@ try {
         LiveGameVersion = [string]$manifest.gameVersion
         GatewayModVersion = [string]$manifest.modVersion
         ProcessId = $launchedProcess.Id
+        InteractiveHoldSeconds = [int]$InteractiveHoldSeconds
         ActiveMods = $activeModIds
         LoadedMods = $loadedModIds
         ExpectedLogMarkers = @($validatedLogMarkers)

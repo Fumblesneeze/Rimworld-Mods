@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <ThingDef Name="ImmersiveChefs_KitchenwareBase" ParentName="ResourceBase" Abstract="True">
+    <thingClass>ThingWithComps</thingClass>
+    <category>Item</category>
+    <drawerType>MapMeshOnly</drawerType>
+    <useHitPoints>true</useHitPoints>
+    <selectable>true</selectable>
+    <alwaysHaulable>true</alwaysHaulable>
+    <drawGUIOverlay>true</drawGUIOverlay>
+    <rotatable>false</rotatable>
+    <techLevel>Neolithic</techLevel>
+    <statBases>
+      <MaxHitPoints>160</MaxHitPoints>
+      <DeteriorationRate>1</DeteriorationRate>
+      <Flammability>0.2</Flammability>
+      <MarketValue>18</MarketValue>
+      <Mass>1</Mass>
+    </statBases>
+    <thingCategories>
+      <li>ImmersiveChefs_Kitchenware</li>
+    </thingCategories>
+    <comps>
+      <li Class="CompProperties_Forbiddable" />
+      <li>
+        <compClass>CompQuality</compClass>
+      </li>
+      <li Class="ImmersiveChefs.CompProperties_Sanitation" />
+      <li Class="ImmersiveChefs.CompProperties_KitchenwareStats" />
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
+    <defName>ImmersiveChefs_Cookware</defName>
+    <label>cookware set</label>
+    <description>One complete reusable kitchen set: a pot, pan, lids, handles and small utensils. Its material and craftsmanship affect cooking speed, cleanliness, comfort and culinary quality.</description>
+    <graphicData>
+      <texPath>Things/Item/Resource/Steel</texPath>
+      <graphicClass>Graphic_StackCount</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(0.95,0.95)</drawSize>
+    </graphicData>
+    <stackLimit>1</stackLimit>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Stony</li>
+    </stuffCategories>
+    <statBases>
+      <MaxHitPoints>220</MaxHitPoints>
+      <MarketValue>55</MarketValue>
+      <Mass>4</Mass>
+    </statBases>
+    <modExtensions>
+      <li Class="ImmersiveChefs.KitchenwareExtension">
+        <product>Cookware</product>
+        <plateEquivalent>4</plateEquivalent>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
+    <defName>ImmersiveChefs_Plate</defName>
+    <label>plate</label>
+    <description>A reusable plate for one meal portion. Its material and craftsmanship affect dining comfort, eating speed and sanitation.</description>
+    <graphicData>
+      <texPath>Things/Item/Resource/Silver</texPath>
+      <graphicClass>Graphic_StackCount</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(0.65,0.65)</drawSize>
+    </graphicData>
+    <stackLimit>25</stackLimit>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+    </stuffCategories>
+    <statBases>
+      <MaxHitPoints>90</MaxHitPoints>
+      <MarketValue>8</MarketValue>
+      <Mass>0.35</Mass>
+    </statBases>
+    <modExtensions>
+      <li Class="ImmersiveChefs.KitchenwareExtension">
+        <product>Plate</product>
+        <plateEquivalent>1</plateEquivalent>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
+    <defName>ImmersiveChefs_AdobePlate</defName>
+    <label>adobe plate</label>
+    <description>A crude fixed-material plate formed from adobe bricks. It is porous, fragile and extremely difficult to keep sanitary.</description>
+    <graphicData><texPath>Things/Item/Resource/StoneBlocks</texPath><graphicClass>Graphic_StackCount</graphicClass><color>(0.62,0.43,0.25)</color><drawSize>(0.65,0.65)</drawSize></graphicData>
+    <stackLimit>25</stackLimit>
+    <statBases><MaxHitPoints>45</MaxHitPoints><Flammability>0.35</Flammability><MarketValue>3</MarketValue><Mass>0.45</Mass></statBases>
+    <modExtensions>
+      <li Class="ImmersiveChefs.KitchenwareExtension"><product>Plate</product><fixedMaterialKind>Adobe</fixedMaterialKind><plateEquivalent>1</plateEquivalent></li>
+    </modExtensions>
+  </ThingDef>
+
+  <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
+    <defName>ImmersiveChefs_Silverware</defName>
+    <label>silverware setting</label>
+    <description>A reusable fork, spoon and knife setting for one diner. Its material and craftsmanship affect dining comfort and sanitation.</description>
+    <graphicData>
+      <texPath>Things/Item/Resource/Gold</texPath>
+      <graphicClass>Graphic_StackCount</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(0.55,0.55)</drawSize>
+    </graphicData>
+    <stackLimit>50</stackLimit>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+    </stuffCategories>
+    <statBases>
+      <MaxHitPoints>70</MaxHitPoints>
+      <MarketValue>5</MarketValue>
+      <Mass>0.15</Mass>
+    </statBases>
+    <modExtensions>
+      <li Class="ImmersiveChefs.KitchenwareExtension">
+        <product>Silverware</product>
+        <plateEquivalent>0.25</plateEquivalent>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
+    <defName>ImmersiveChefs_GlitterworldCookware</defName>
+    <label>glitterworld cookware set</label>
+    <description>A self-cleaning, nonflammable cookware set imported from a glitterworld. It cannot be manufactured locally.</description>
+    <graphicData>
+      <texPath>Things/Item/Resource/Plasteel</texPath>
+      <graphicClass>Graphic_StackCount</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <color>(0.55,0.95,1)</color>
+      <drawSize>(0.95,0.95)</drawSize>
+    </graphicData>
+    <stackLimit>1</stackLimit>
+    <techLevel>Spacer</techLevel>
+    <tradeability>Buyable</tradeability>
+    <generateCommonality>0.08</generateCommonality>
+    <statBases>
+      <MaxHitPoints>480</MaxHitPoints>
+      <Flammability>0</Flammability>
+      <MarketValue>900</MarketValue>
+      <Mass>2.5</Mass>
+    </statBases>
+    <modExtensions>
+      <li Class="ImmersiveChefs.KitchenwareExtension">
+        <product>Cookware</product>
+        <fixedMaterialKind>Glitterworld</fixedMaterialKind>
+        <selfCleaning>true</selfCleaning>
+        <plateEquivalent>4</plateEquivalent>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <ThingDef ParentName="ApparelBase">
+    <defName>ImmersiveChefs_ChefsKnife</defName>
+    <label>chef's knife set</label>
+    <description>A cook's personal set of chef's knives. It is worn on the utility belt and improves culinary work without replacing a weapon.</description>
+    <graphicData>
+      <texPath>Things/Item/Equipment/WeaponMelee/Knife</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(0.8,0.8)</drawSize>
+    </graphicData>
+    <stuffCategories>
+      <li>Metallic</li>
+    </stuffCategories>
+    <statBases>
+      <MaxHitPoints>180</MaxHitPoints>
+      <Flammability>0</Flammability>
+      <MarketValue>70</MarketValue>
+      <Mass>1.2</Mass>
+    </statBases>
+    <thingCategories>
+      <li>ApparelUtility</li>
+    </thingCategories>
+    <apparel>
+      <countsAsClothingForNudity>false</countsAsClothingForNudity>
+      <careIfWornByCorpse>false</careIfWornByCorpse>
+      <careIfDamaged>false</careIfDamaged>
+      <wearPerDay>0</wearPerDay>
+      <bodyPartGroups>
+        <li>Waist</li>
+      </bodyPartGroups>
+      <layers>
+        <li>Belt</li>
+      </layers>
+      <developmentalStageFilter>Adult</developmentalStageFilter>
+    </apparel>
+    <comps>
+      <li Class="ImmersiveChefs.CompProperties_KitchenwareStats" />
+    </comps>
+    <modExtensions>
+      <li Class="ImmersiveChefs.KitchenwareExtension">
+        <product>ChefsKnife</product>
+      </li>
+    </modExtensions>
+  </ThingDef>
+</Defs>

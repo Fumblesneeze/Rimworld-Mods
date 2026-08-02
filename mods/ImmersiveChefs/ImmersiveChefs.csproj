@@ -1,4 +1,5 @@
-<Project Sdk="Zlepper.RimWorld.ModSdk/0.0.9">
+<Project>
+  <Import Project="Sdk.props" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
   <PropertyGroup>
     <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
     <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
@@ -11,8 +12,8 @@
     <IncludeHarmony>true</IncludeHarmony>
     <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
     <Description>
-      Establishes the loadable, tested foundation for the planned Immersive Chefs kitchen simulation.
-      Gameplay systems are specified separately and are not included in this baseline package yet.
+      Adds Stuff-aware kitchenware, meal service, sanitation, preparation, cooperative cooking,
+      culinary quality and temperature, dining standards, and guarded optional integrations.
     </Description>
   </PropertyGroup>
 
@@ -29,4 +30,23 @@
     <RimWorldLoadAfter Include="OskarPotocki.VanillaFactionsExpanded.Core" />
     <RimWorldLoadAfter Include="VanillaExpanded.VNutrientE" />
   </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+
+  <!-- ModSdk 0.0.9's optional XSD generator cannot traverse RimWorld 1.6's
+       recursive Def graph. XML is instead validated by the staged Def host and
+       the in-game finalized-Def suite. Keep this opt-in until the SDK is fixed. -->
+  <PropertyGroup>
+    <ImmersiveChefsGenerateDefXsd Condition="'$(ImmersiveChefsGenerateDefXsd)' == ''">false</ImmersiveChefsGenerateDefXsd>
+  </PropertyGroup>
+  <Target Name="GenerateDefXsds"
+          AfterTargets="Build;CopyMod"
+          Inputs="@(RimWorldDefFiles);@(Reference);@(RimWorldCompilationResult)"
+          Outputs="$(DefsXsdFileName)"
+          Condition="'$(ImmersiveChefsGenerateDefXsd)' == 'true' and '@(RimWorldResourceDefs)' != ''">
+    <GenerateXdsFilesForDefs References="@(Reference)"
+                             RimWorldCompilationResult="@(RimWorldCompilationResult)"
+                             RimWorldDefFiles="@(RimWorldDefFiles)"
+                             XmlSchemaFileName="$(DefsXsdFileName)" />
+  </Target>
 </Project>

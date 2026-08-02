@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <JobDef>
+    <defName>ImmersiveChefs_DispensePreparedPaste</defName>
+    <driverClass>ImmersiveChefs.JobDriver_DispensePreparedPaste</driverClass>
+    <reportString>Dispensing prepared cooking paste.</reportString>
+    <casualInterruptible>true</casualInterruptible>
+  </JobDef>
+</Defs>

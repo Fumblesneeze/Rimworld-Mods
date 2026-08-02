@@ -54,4 +54,72 @@ public sealed class IntegrationCatalogTests
                 Throws.TypeOf<NotSupportedException>());
         });
     }
+
+    [Test]
+    public void DisabledProcessorFrameworkDoesNotActivateEvenWhenLoaded()
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { "syrchalis.processor.framework" });
+        var settings = new ImmersiveChefsSettings
+        {
+            ProcessorFramework = OptionalIntegrationMode.Off
+        };
+
+        Assert.That(
+            OptionalIntegrationPolicy.IsEnabled(
+                OptionalIntegration.ProcessorFramework,
+                snapshot,
+                settings),
+            Is.False);
+    }
+
+    [Test]
+    public void GastronomyRequiresItsActiveCashRegisterDependency()
+    {
+        var gastronomyOnly = IntegrationCatalog.Detect(new[] { "orion.gastronomy" });
+        var complete = IntegrationCatalog.Detect(new[]
+        {
+            "orion.gastronomy",
+            "orion.cashregister"
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.Gastronomy,
+                    gastronomyOnly,
+                    new ImmersiveChefsSettings()),
+                Is.False);
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.Gastronomy,
+                    complete,
+                    new ImmersiveChefsSettings()),
+                Is.True);
+        });
+    }
+
+    [Test]
+    public void NutrientPasteExpandedRequiresVanillaExpandedFramework()
+    {
+        var pasteOnly = IntegrationCatalog.Detect(new[] { "vanillaexpanded.vnutriente" });
+        var complete = IntegrationCatalog.Detect(new[]
+        {
+            "vanillaexpanded.vnutriente",
+            "oskarpotocki.vanillafactionsexpanded.core"
+        });
+
+        Assert.That(
+            OptionalIntegrationPolicy.IsEnabled(
+                OptionalIntegration.VanillaNutrientPasteExpanded,
+                pasteOnly,
+                new ImmersiveChefsSettings()),
+            Is.False);
+        Assert.That(
+            OptionalIntegrationPolicy.IsEnabled(
+                OptionalIntegration.VanillaNutrientPasteExpanded,
+                complete,
+                new ImmersiveChefsSettings()),
+            Is.True);
+    }
 }

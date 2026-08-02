@@ -45,11 +45,15 @@ The read result SHALL expose `Entries`, `OldestCursor`, `NewestCursor`, `History
 - **THEN** the response reports `HistoryEvicted: true` and starts with the oldest retained entry independently of whether the returned page is also truncated
 
 ### Requirement: Correlated operation logging
-Every gateway request and main-thread operation SHALL carry one request ID through admission, dispatch, progress, completion, timeout, and exception logging, while authentication failures SHALL be logged without token material.
+Every gateway request and main-thread operation SHALL carry one request ID through admission, dispatch, progress, completion, timeout, and exception logging, while authentication failures SHALL be logged without token material. HTTP-listener and transport-worker diagnostics SHALL append directly to the gateway's thread-safe ring buffer and SHALL NOT call `Verse.Log`, Unity logging, or otherwise mutate RimWorld's developer-log collection from a transport thread.
 
 #### Scenario: Raw execution throws
 - **WHEN** a raw C# submission throws during request `exec-7`
 - **THEN** both the error response and captured exception log contain request ID `exec-7` and neither contains the bearer token
+
+#### Scenario: Developer log is open during HTTP traffic
+- **WHEN** RimWorld's developer-log window is rendering while authenticated gateway requests complete on transport threads
+- **THEN** request diagnostics remain available through `GET /api/v1/logs` without mutating the developer-log collection, throwing a collection-modified GUI exception, or preventing later main-thread operations from starting
 
 ### Requirement: End-of-frame screenshots
 `POST /api/v1/screenshots` SHALL capture the current RimWorld client at end-of-frame on the main thread, encode a valid PNG, return capture dimensions and request metadata, and release temporary Unity resources. The endpoint SHALL enforce bounded concurrent captures, dimensions, response size, and timeout.

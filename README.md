@@ -4,10 +4,20 @@ This repository is the RimWorld 1.6 development workspace for **Immersive Chefs*
 
 | Mod | Package ID | Current state |
 | --- | --- | --- |
-| Immersive Chefs | `fumblesneeze.immersivechefs` | Loadable and host-tested baseline. The accepted cookware, tableware, sanitation, preparation, station, temperature, and meal-quality behavior is specified but not implemented yet. |
+| Immersive Chefs | `fumblesneeze.immersivechefs` | Playable pre-release implementation with Stuff-aware kitchenware, meal service, sanitation, preparation, cooperative stations, culinary quality/temperature, dining standards, and guarded optional integrations. |
 | RimWorld Dev Gateway | `fumblesneeze.rimworlddevgateway` | Authenticated loopback development API, in-game integration-test runner, and unrestricted in-process C# REPL. Never enable it for ordinary or untrusted play. |
 
 Immersive Chefs does not reference or ship the gateway. Harmony is its only required gameplay dependency; all other mod integrations are optional and resolved at runtime.
+
+## Current gameplay
+
+Immersive Chefs adds cookware sets, plates, stackable silverware, belt-slot chef's knives, preparation and specialist stations, hand dishwashing, two dishwasher sizes, a microwave, meal temperature/quality, and colony/Royalty dining expectations. Covered meal recipes reserve cookware and plates, diners collect place settings, and used ware returns dirty for the Cleaning work type. Simple/Fine/Lavish recipes use separate configurable work multipliers; pemmican and travel/packaged meals remain hand foods.
+
+Kitchenware is Stuff-aware. Primitive stone/adobe/wood paths, smithy-era metals, machining-era metals/plastics, and trade/quest-only self-cleaning glitterworld cookware use material and craftsmanship to derive cleanliness, speed, comfort, durability, and culinary modifiers. Optional adapters are detected for Processor Framework, Expanded Materials, ABS polymer, Dubs Bad Hygiene, Gastronomy, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, and Vanilla Nutrient Paste Expanded. Their individual `Auto` setting can be changed to `Off` when troubleshooting.
+
+Active cooking, dining, service, and assistant jobs safely restart after loading a save. RimWorld persists the exact physical ware; Immersive Chefs returns any session-carried items and retries the interrupted job so process-local coordination state cannot duplicate or strand them.
+
+This is still pre-release. Current-schema saves are supported, but migration from older development builds and uninstall cleanup are not. Ceramic/porcelain content, Vanilla Cooking Expanded complexity classification, food preservation, and food waste are deliberately deferred.
 
 ## Install the toolchain
 
@@ -151,6 +161,17 @@ For a playable quickstart:
 ```powershell
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -TimeoutSeconds 300
 ```
+
+Keep an isolated verified game open for hands-on behavior checks after the automated gateway pass:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -InteractiveHoldSeconds 900 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
+The hold is bounded to 0–3600 seconds, begins only after the normal smoke assertions pass, records its state in the ignored evidence directory, and still uses exact-PID cleanup. During the hold, use the generated `SavedData\DevGateway\current.json` only as a live local credential; never commit or paste it.
 
 The runners refuse to reuse an existing RimWorld process, use a unique `-savedatafolder`, preserve the normal `ModsConfig.xml`, bind evidence and cleanup to the launched process, and remove only their owned live mod stage. The gateway exposes unrestricted code execution by design, so use it only in an isolated developer session. Read [Gateway.md](docs/Gateway.md) before its first live run.
 

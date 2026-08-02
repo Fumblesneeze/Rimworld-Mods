@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <WorkGiverDef>
+    <defName>ImmersiveChefs_AssistCooking</defName>
+    <label>assist cooking</label>
+    <giverClass>ImmersiveChefs.WorkGiver_AssistCooking</giverClass>
+    <workType>Cooking</workType>
+    <priorityInType>85</priorityInType>
+    <verb>assist cooking at</verb>
+    <gerund>assisting cooking at</gerund>
+    <scanThings>true</scanThings>
+  </WorkGiverDef>
+</Defs>

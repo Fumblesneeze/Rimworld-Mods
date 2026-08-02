@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+  <Operation Class="PatchOperationFindMod">
+    <mods><li>Expanded Materials - Masonry</li></mods>
+    <match Class="PatchOperationAdd">
+      <xpath>Defs</xpath>
+      <value>
+        <RecipeDef>
+          <defName>ImmersiveChefs_MakeAdobePlates</defName>
+          <label>make adobe plates x4</label>
+          <description>Form four crude plates from adobe bricks.</description>
+          <jobString>Making adobe plates.</jobString>
+          <workAmount>550</workAmount>
+          <workSpeedStat>GeneralLaborSpeed</workSpeedStat>
+          <workSkill>Crafting</workSkill>
+          <requiredGiverWorkType>Crafting</requiredGiverWorkType>
+          <effectWorking>ConstructMetal</effectWorking>
+          <ingredients><li><filter><thingDefs><li>EM_AdobeBricks</li></thingDefs></filter><count>20</count></li></ingredients>
+          <fixedIngredientFilter><thingDefs><li>EM_AdobeBricks</li></thingDefs></fixedIngredientFilter>
+          <products><ImmersiveChefs_AdobePlate>4</ImmersiveChefs_AdobePlate></products>
+          <recipeUsers><li>CraftingSpot</li></recipeUsers>
+        </RecipeDef>
+      </value>
+    </match>
+  </Operation>
+</Patch>

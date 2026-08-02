@@ -99,6 +99,31 @@ public sealed class GatewayLoopbackServerTests
     }
 
     [Test]
+    public void Transport_request_diagnostics_are_appended_directly_to_the_gateway_buffer()
+    {
+        const string token = "server-test-token";
+        var logs = new GatewayLogBuffer(capacity: 16);
+        using var server = new GatewayLoopbackServer(
+            token,
+            (_, _) => GatewayHttpResponse.Empty(204, "No Content"));
+        server.AttachLogBuffer(logs);
+        server.RecordRequestCompleted(
+            "transport-buffer-test",
+            "GET",
+            "/api/v1/status",
+            statusCode: 204,
+            elapsedMilliseconds: 7);
+        var captured = logs.Read(afterExclusive: 0, limit: 16).Entries;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(captured, Has.Count.EqualTo(1));
+            Assert.That(captured[0].RequestId, Is.EqualTo("transport-buffer-test"));
+            Assert.That(captured[0].Message, Does.Contain("completed with HTTP 204"));
+        });
+    }
+
+    [Test]
     public void Server_uses_EmbedIO_managed_mode_on_IPv4_loopback_and_admits_only_authenticated_non_browser_requests()
     {
         RequireUnityMonoManagedListener();

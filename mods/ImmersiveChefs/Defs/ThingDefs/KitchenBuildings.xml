@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <ThingDef Name="ImmersiveChefs_DishwasherBase" ParentName="BuildingBase" Abstract="True">
+    <thingClass>Building</thingClass>
+    <drawerType>MapMeshOnly</drawerType>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <fillPercent>0.5</fillPercent>
+    <useHitPoints>true</useHitPoints>
+    <designationCategory>Production</designationCategory>
+    <hasInteractionCell>true</hasInteractionCell>
+    <interactionCellOffset>(0,0,-1)</interactionCellOffset>
+    <surfaceType>Item</surfaceType>
+    <constructionSkillPrerequisite>4</constructionSkillPrerequisite>
+    <statBases>
+      <WorkToBuild>1800</WorkToBuild>
+      <MaxHitPoints>180</MaxHitPoints>
+      <Flammability>0.5</Flammability>
+    </statBases>
+    <comps>
+      <li Class="CompProperties_Power"><compClass>CompPowerTrader</compClass><basePowerConsumption>300</basePowerConsumption></li>
+      <li Class="CompProperties_Flickable" />
+      <li Class="CompProperties_Breakdownable" />
+    </comps>
+    <tickerType>Rare</tickerType>
+  </ThingDef>
+
+  <ThingDef ParentName="ImmersiveChefs_DishwasherBase">
+    <defName>ImmersiveChefs_Dishwasher</defName>
+    <label>dishwasher</label>
+    <description>A domestic powered dishwasher. It preserves the identity, material, quality and durability of up to 16 place settings while a cycle pauses safely through power loss.</description>
+    <graphicData><texPath>Things/Building/Production/TableTailorElectric</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(2,1)</drawSize></graphicData>
+    <size>(2,1)</size>
+    <costList><Steel>90</Steel><ComponentIndustrial>3</ComponentIndustrial></costList>
+    <researchPrerequisites><li>ImmersiveChefs_Dishwashing</li></researchPrerequisites>
+    <comps><li Class="ImmersiveChefs.CompProperties_Dishwasher"><basePlateCapacity>16</basePlateCapacity></li></comps>
+  </ThingDef>
+
+  <ThingDef ParentName="ImmersiveChefs_DishwasherBase">
+    <defName>ImmersiveChefs_IndustrialDishwasher</defName>
+    <label>industrial dishwasher</label>
+    <description>A high-throughput powered dishwasher with capacity for 64 place settings.</description>
+    <graphicData><texPath>Things/Building/Production/TableMachining</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(3,1)</drawSize></graphicData>
+    <size>(3,1)</size>
+    <costList><Steel>220</Steel><ComponentIndustrial>8</ComponentIndustrial></costList>
+    <researchPrerequisites><li>ImmersiveChefs_ProfessionalKitchens</li></researchPrerequisites>
+    <comps><li Class="ImmersiveChefs.CompProperties_Dishwasher"><basePlateCapacity>64</basePlateCapacity><baseCycleTicks>1800</baseCycleTicks></li></comps>
+  </ThingDef>
+</Defs>

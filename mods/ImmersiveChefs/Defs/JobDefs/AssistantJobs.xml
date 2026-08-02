@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <JobDef>
+    <defName>ImmersiveChefs_AssistCooking</defName>
+    <driverClass>ImmersiveChefs.JobDriver_AssistCooking</driverClass>
+    <reportString>Manning linked kitchen station.</reportString>
+    <alwaysShowWeapon>false</alwaysShowWeapon>
+    <casualInterruptible>true</casualInterruptible>
+  </JobDef>
+</Defs>

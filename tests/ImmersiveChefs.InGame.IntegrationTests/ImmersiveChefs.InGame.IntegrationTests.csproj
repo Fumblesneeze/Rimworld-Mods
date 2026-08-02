@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <RimWorldInGameIntegrationTest>true</RimWorldInGameIntegrationTest>
     <RimWorldIntegrationTestOwnerPackageId>fumblesneeze.immersivechefs</RimWorldIntegrationTestOwnerPackageId>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(DefaultSteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,7 @@
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="0Harmony"><HintPath>$(HarmonyAssemblyPath)</HintPath><Private>false</Private></Reference>
   </ItemGroup>
 
   <ItemGroup>

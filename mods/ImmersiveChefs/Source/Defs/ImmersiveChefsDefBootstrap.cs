@@ -1,0 +1,158 @@
+using Verse;
+
+namespace ImmersiveChefs;
+
+internal static class ImmersiveChefsDefBootstrap
+{
+    private static bool scheduled;
+    private static bool applied;
+
+    public static void Apply()
+    {
+        if (scheduled)
+        {
+            return;
+        }
+
+        scheduled = true;
+        LongEventHandler.ExecuteWhenFinished(ApplyFinalizedDefs);
+    }
+
+    private static void ApplyFinalizedDefs()
+    {
+        if (applied)
+        {
+            return;
+        }
+
+        applied = true;
+        OptionalMaterialAdapter.ValidateAndConfigure();
+        var classifier = OptionalMaterialAdapter.CreateClassifier();
+        foreach (var recipe in DefDatabase<RecipeDef>.AllDefsListForReading)
+        {
+            var extension = recipe.GetModExtension<KitchenwareRecipeExtension>();
+            if (extension is null || recipe.ingredients is null || recipe.ingredients.Count == 0)
+            {
+                continue;
+            }
+
+            var materialFilter = recipe.ingredients[0].filter;
+            foreach (var thingDef in DefDatabase<ThingDef>.AllDefsListForReading)
+            {
+                var allowed = AllowsMaterial(classifier, extension, thingDef);
+                materialFilter.SetAllow(thingDef, allowed);
+                recipe.fixedIngredientFilter?.SetAllow(thingDef, allowed || thingDef.defName == "WoodLog");
+            }
+        }
+
+        AddMealComponents();
+        EnablePreparedIngredients();
+
+        PreparedFoodRuntime.Initialize(ImmersiveChefsMod.Settings.PreparedRotMultiplier);
+        RecipeWorkRuntime.Initialize(ImmersiveChefsMod.Settings);
+        InitializeOptionalAdapters();
+    }
+
+    private static void InitializeOptionalAdapters()
+    {
+        var integrations = ImmersiveChefsMod.Integrations;
+        if (integrations is null || ImmersiveChefsMod.HarmonyInstance is null)
+        {
+            return;
+        }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene) &&
+            !DubsWaterAdapter.TryInitializeDishwasherDefs(out var dubsReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.DubsBadHygiene, dubsReason);
+        }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.ProcessorFramework) &&
+            !ProcessorFrameworkAdapter.TryInitialize(ImmersiveChefsMod.HarmonyInstance, out var reason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.ProcessorFramework, reason);
+        }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.Gastronomy) &&
+            !GastronomyAdapter.TryInitialize(ImmersiveChefsMod.HarmonyInstance, out var gastronomyReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.Gastronomy, gastronomyReason);
+        }
+    }
+
+    private static void EnablePreparedIngredients()
+    {
+        var preparedDef = DefDatabase<ThingDef>.GetNamedSilentFail("ImmersiveChefs_PreparedFood");
+        if (preparedDef is null)
+        {
+            return;
+        }
+
+        foreach (var recipe in DefDatabase<RecipeDef>.AllDefsListForReading.Where(MealCoveragePolicy.IsCovered))
+        {
+            recipe.fixedIngredientFilter?.SetAllow(preparedDef, true);
+            recipe.defaultIngredientFilter?.SetAllow(preparedDef, true);
+            foreach (var ingredient in recipe.ingredients ?? Enumerable.Empty<IngredientCount>())
+            {
+                ingredient.filter.SetAllow(preparedDef, true);
+            }
+        }
+
+        var prepRecipe = DefDatabase<RecipeDef>.GetNamedSilentFail("ImmersiveChefs_PrepareIngredients");
+        prepRecipe?.fixedIngredientFilter?.SetAllow(preparedDef, false);
+        foreach (var ingredient in prepRecipe?.ingredients ?? Enumerable.Empty<IngredientCount>())
+        {
+            ingredient.filter.SetAllow(preparedDef, false);
+        }
+    }
+
+    private static void AddMealComponents()
+    {
+        foreach (var thingDef in DefDatabase<ThingDef>.AllDefsListForReading.Where(MealCoveragePolicy.IsCovered))
+        {
+            if (thingDef.thingClass is null || !typeof(ThingWithComps).IsAssignableFrom(thingDef.thingClass))
+            {
+                continue;
+            }
+
+            thingDef.comps ??= new List<CompProperties>();
+            if (thingDef.comps.All(properties => properties.compClass != typeof(CompEmbeddedWare)))
+            {
+                thingDef.comps.Add(new CompProperties_EmbeddedWare());
+            }
+
+            if (thingDef.comps.All(properties => properties.compClass != typeof(CompCulinaryState)))
+            {
+                thingDef.comps.Add(new CompProperties_CulinaryState());
+            }
+        }
+    }
+
+    private static bool AllowsMaterial(
+        KitchenMaterialClassifier classifier,
+        KitchenwareRecipeExtension recipe,
+        ThingDef material)
+    {
+        if (material.stuffProps is null)
+        {
+            return false;
+        }
+
+        var categories = material.stuffProps.categories;
+        var descriptor = new KitchenMaterialDescriptor(
+            material.defName,
+            categories?.Any(category => category.defName.Equals("Metallic", StringComparison.OrdinalIgnoreCase)) == true,
+            categories?.Any(category => category.defName.Equals("Woody", StringComparison.OrdinalIgnoreCase)) == true,
+            categories?.Any(category => category.defName.Equals("Stony", StringComparison.OrdinalIgnoreCase)) == true);
+        var classification = classifier.Classify(descriptor, recipe.product);
+        if (classification is null)
+        {
+            return false;
+        }
+
+        return KitchenMaterialFabricationPolicy.Allows(
+            recipe.product,
+            recipe.fabricationTier,
+            classification);
+    }
+}

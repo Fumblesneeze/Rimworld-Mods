@@ -136,6 +136,7 @@
 - [x] 19.8 RED/GREEN: serialize click, drag, chord, and text through one off-main-thread cancellation-aware input lane and retain that lane through guaranteed best-effort input release.
 - [x] 19.9 RED/GREEN: retain and retry listener, runtime, and session ownership when shutdown cleanup fails instead of committing a false stopped state or blocking recovery with an orphaned locator.
 - [x] 19.10 RED/GREEN: keep `last-request.json` on the newest active admission under concurrent completion and isolate/log broken selected-Thing and gizmo-owner enumeration while retaining healthy results.
+- [ ] 19.11 RED/GREEN: keep transport-worker request diagnostics out of `Verse.Log`, append them directly to the gateway ring buffer with correlation, and prove an open developer-log window remains responsive during HTTP traffic.
 
 ## 20. mods/RimWorldDevGateway — Finalized Def export
 

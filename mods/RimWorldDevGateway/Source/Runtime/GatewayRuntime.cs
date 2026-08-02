@@ -155,6 +155,10 @@ public sealed class GatewayRuntime : IDisposable
                     sessionLease.Token,
                     (request, requestId) => requestJournal.Track(request, requestId, router.Handle)) ??
                     throw new InvalidOperationException("The gateway transport factory returned null.");
+                if (transport is IGatewayTransportLogTarget transportLogTarget)
+                {
+                    transportLogTarget.AttachLogBuffer(logBuffer);
+                }
                 var boundPort = transport.Start(preferredPort);
                 activeManifest = sessionLease.Publish(boundPort);
                 Volatile.Write(ref state, Running);

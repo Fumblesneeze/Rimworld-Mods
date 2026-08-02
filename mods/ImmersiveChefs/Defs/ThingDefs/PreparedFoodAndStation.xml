@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <ThingDef ParentName="OrganicProductBase">
+    <defName>ImmersiveChefs_PreparedFood</defName>
+    <label>prepared ingredients</label>
+    <description>Chopped, trimmed and portioned ingredients ready for final cooking. Inspection preserves their nutrition, origin and preparation quality.</description>
+    <thingClass>ThingWithComps</thingClass>
+    <graphicData>
+      <texPath>Things/Item/Resource/PlantFoodRaw/AgaveFruit</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+    </graphicData>
+    <stackLimit>75</stackLimit>
+    <statBases>
+      <Nutrition>0.05</Nutrition>
+      <MarketValue>1.4</MarketValue>
+      <Mass>0.03</Mass>
+      <FoodPoisonChanceFixedHuman>0.02</FoodPoisonChanceFixedHuman>
+    </statBases>
+    <ingestible>
+      <foodType>Processed</foodType>
+      <preferability>RawBad</preferability>
+      <tasteThought>AteRawFood</tasteThought>
+      <ingestEffect>EatVegetarian</ingestEffect>
+      <ingestSound>RawVegetable_Eat</ingestSound>
+    </ingestible>
+    <thingCategories><li>FoodRaw</li></thingCategories>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <comps>
+      <li Class="CompProperties_Forbiddable" />
+      <li Class="CompProperties_Rottable"><daysToRotStart>8</daysToRotStart><rotDestroys>true</rotDestroys></li>
+      <li Class="ImmersiveChefs.CompProperties_PreparedFood" />
+      <li Class="CompProperties_Ingredients"><splitTransferableFoodKind>true</splitTransferableFoodKind></li>
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="BenchBase">
+    <defName>ImmersiveChefs_PrepStation</defName>
+    <label>ingredient prep station</label>
+    <description>A professional worktable for washing, trimming, chopping and portioning ingredients before final cooking.</description>
+    <thingClass>Building_WorkTable</thingClass>
+    <graphicData><texPath>Things/Building/Production/TableButcher</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(3.5,1.5)</drawSize></graphicData>
+    <size>(3,1)</size>
+    <altitudeLayer>Building</altitudeLayer>
+    <fillPercent>0.5</fillPercent>
+    <passability>PassThroughOnly</passability>
+    <pathCost>50</pathCost>
+    <useHitPoints>true</useHitPoints>
+    <hasInteractionCell>true</hasInteractionCell>
+    <interactionCellOffset>(0,0,-1)</interactionCellOffset>
+    <surfaceType>Item</surfaceType>
+    <designationCategory>Production</designationCategory>
+    <researchPrerequisites><li>ImmersiveChefs_ProfessionalKitchens</li></researchPrerequisites>
+    <costList><Steel>80</Steel><ComponentIndustrial>2</ComponentIndustrial></costList>
+    <statBases><WorkToBuild>1800</WorkToBuild><MaxHitPoints>180</MaxHitPoints><Flammability>0.3</Flammability><Cleanliness>2</Cleanliness></statBases>
+    <recipes><li>ImmersiveChefs_PrepareIngredients</li></recipes>
+    <inspectorTabs><li>ITab_Bills</li></inspectorTabs>
+    <building><spawnedConceptLearnOpportunity>BillsTab</spawnedConceptLearnOpportunity><paintable>true</paintable><workTableRoomRole>Kitchen</workTableRoomRole></building>
+    <placeWorkers><li>PlaceWorker_PreventInteractionSpotOverlap</li></placeWorkers>
+  </ThingDef>
+</Defs>

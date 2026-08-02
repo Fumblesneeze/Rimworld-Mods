@@ -19,11 +19,16 @@ internal interface IGatewayLoopbackHost : IDisposable
     Task RunAsync(CancellationToken cancellationToken);
 }
 
+internal interface IGatewayTransportLogTarget
+{
+    void AttachLogBuffer(GatewayLogBuffer buffer);
+}
+
 internal delegate IGatewayLoopbackHost GatewayLoopbackHostFactory(
     string prefix,
     RequestHandlerCallback handler);
 
-public sealed class GatewayLoopbackServer : IGatewayTransport
+public sealed class GatewayLoopbackServer : IGatewayTransport, IGatewayTransportLogTarget
 {
     public const int MaximumHeaderBytes = 16 * 1024;
     public const int MaximumBodyBytes = 32 * 1024 * 1024;
@@ -43,6 +48,7 @@ public sealed class GatewayLoopbackServer : IGatewayTransport
     private IGatewayLoopbackHost? webServer;
     private CancellationTokenSource? runCancellation;
     private Task? runTask;
+    private GatewayLogBuffer? logBuffer;
     private bool disposed;
 
     public GatewayLoopbackServer(
@@ -131,6 +137,29 @@ public sealed class GatewayLoopbackServer : IGatewayTransport
         }
     }
 
+    internal void AttachLogBuffer(GatewayLogBuffer buffer)
+    {
+        if (buffer is null)
+        {
+            throw new ArgumentNullException(nameof(buffer));
+        }
+
+        lock (lifecycleLock)
+        {
+            ThrowIfDisposed();
+            if (webServer is not null)
+            {
+                throw new InvalidOperationException(
+                    "Transport diagnostics must be attached before the listener starts.");
+            }
+
+            logBuffer = buffer;
+        }
+    }
+
+    void IGatewayTransportLogTarget.AttachLogBuffer(GatewayLogBuffer buffer) =>
+        AttachLogBuffer(buffer);
+
     public int Start(int preferredPort = 0)
     {
         if (preferredPort is < 0 or > 65535)
@@ -216,10 +245,10 @@ public sealed class GatewayLoopbackServer : IGatewayTransport
         var admission = requestGate.TryEnter();
         if (admission is null)
         {
-            LogWithRequestScope(
+            AppendTransportLog(
+                "Warning",
                 requestId,
-                () => Verse.Log.Warning(
-                    $"[RimWorldDevGateway] Request {requestId} rejected: concurrent request capacity reached."));
+                $"[RimWorldDevGateway] Request {requestId} rejected: concurrent request capacity reached.");
             var busy = GatewayTransportResponsePolicy.Error(
                 503,
                 "Service Unavailable",
@@ -319,18 +348,19 @@ public sealed class GatewayLoopbackServer : IGatewayTransport
         }
         catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
         {
-            LogWithRequestScope(
+            AppendTransportLog(
+                "Warning",
                 requestId,
-                () => Verse.Log.Warning(
-                    $"[RimWorldDevGateway] Request {requestId} was cancelled by the HTTP client."));
+                $"[RimWorldDevGateway] Request {requestId} was cancelled by the HTTP client.");
             return;
         }
         catch (Exception exception)
         {
-            LogWithRequestScope(
+            AppendTransportLog(
+                "Error",
                 requestId,
-                () => Verse.Log.Error(
-                    $"[RimWorldDevGateway] Request {requestId} failed: {exception}"));
+                $"[RimWorldDevGateway] Request {requestId} failed: {exception.Message}",
+                exception.ToString());
             response = GatewayTransportResponsePolicy.Error(
                 500,
                 "Internal Server Error",
@@ -345,12 +375,12 @@ public sealed class GatewayLoopbackServer : IGatewayTransport
             maximumResponseBytes,
             requestId,
             stopwatch.ElapsedMilliseconds);
-        LogWithRequestScope(
+        RecordRequestCompleted(
             requestId,
-            () => Verse.Log.Message(
-                $"[RimWorldDevGateway] Request {requestId} " +
-                $"{context.Request.HttpMethod} {context.Request.Url.AbsolutePath} completed " +
-                $"with HTTP {response.StatusCode} in {stopwatch.ElapsedMilliseconds} ms."));
+            context.Request.HttpMethod,
+            context.Request.Url.AbsolutePath,
+            response.StatusCode,
+            stopwatch.ElapsedMilliseconds);
         await WriteResponseAsync(context, response, requestId).ConfigureAwait(false);
         context.SetHandled();
         }
@@ -373,6 +403,35 @@ public sealed class GatewayLoopbackServer : IGatewayTransport
         {
             GatewayRequestScope.CurrentRequestId = previousRequestId;
         }
+    }
+
+    private void AppendTransportLog(
+        string severity,
+        string requestId,
+        string message,
+        string? stack = null)
+    {
+        logBuffer?.Append(
+            severity,
+            message,
+            stack,
+            Thread.CurrentThread.ManagedThreadId.ToString(
+                System.Globalization.CultureInfo.InvariantCulture),
+            requestId);
+    }
+
+    internal void RecordRequestCompleted(
+        string requestId,
+        string method,
+        string path,
+        int statusCode,
+        long elapsedMilliseconds)
+    {
+        AppendTransportLog(
+            "Message",
+            requestId,
+            $"[RimWorldDevGateway] Request {requestId} {method} {path} completed " +
+            $"with HTTP {statusCode} in {elapsedMilliseconds} ms.");
     }
 
     private static async Task<GatewayHttpRequest> CreateRequestAsync(IHttpContext context)

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+  <Operation Class="PatchOperationSequence">
+    <operations>
+      <li Class="PatchOperationAdd">
+        <xpath>/Defs/RecipeDef[defName="CookMealSimple" or defName="CookMealSimpleBulk"]</xpath>
+        <value><modExtensions><li Class="ImmersiveChefs.MealCoverageExtension"><complexity>Simple</complexity></li></modExtensions></value>
+      </li>
+      <li Class="PatchOperationAdd">
+        <xpath>/Defs/RecipeDef[defName="CookMealFine" or defName="CookMealFine_Veg" or defName="CookMealFine_Meat" or defName="CookMealFineBulk" or defName="CookMealFineBulk_Meat" or defName="CookMealFineBulk_Veg"]</xpath>
+        <value><modExtensions><li Class="ImmersiveChefs.MealCoverageExtension"><complexity>Advanced</complexity></li></modExtensions></value>
+      </li>
+      <li Class="PatchOperationAdd">
+        <xpath>/Defs/RecipeDef[defName="CookMealLavish" or defName="CookMealLavish_Meat" or defName="CookMealLavish_Veg" or defName="CookMealLavishBulk" or defName="CookMealLavishBulk_Veg" or defName="CookMealLavishBulk_Meat"]</xpath>
+        <value><modExtensions><li Class="ImmersiveChefs.MealCoverageExtension"><complexity>Elaborate</complexity></li></modExtensions></value>
+      </li>
+    </operations>
+  </Operation>
+</Patch>

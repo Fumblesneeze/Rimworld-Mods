@@ -1,0 +1,151 @@
+using NUnit.Framework;
+using System.Reflection;
+using Verse;
+
+namespace ImmersiveChefs.Tests;
+
+[TestFixture]
+public sealed class PersistentStateTests
+{
+    [Test]
+    public void Sanitation_round_trip_preserves_dirty_state_and_stack_identity()
+    {
+        var dirty = new SanitationStateModel();
+        dirty.MarkDirty();
+
+        var restored = SanitationStateModel.Restore(dirty.Capture());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(restored.IsDirty, Is.True);
+            Assert.That(restored.CanStackWith(new SanitationStateModel()), Is.False);
+            Assert.That(restored.CanStackWith(SanitationStateModel.Restore(restored.Capture())), Is.True);
+        });
+    }
+
+    [Test]
+    public void Splitting_a_meal_stack_transfers_exact_plate_bindings_without_duplication()
+    {
+        var meals = new MealStackState(new[]
+        {
+            new PlateBinding("ImmersiveChefs_Plate", "Steel", 4, 91, false),
+            new PlateBinding("ImmersiveChefs_Plate", "Gold", 3, 73, true),
+            new PlateBinding("ImmersiveChefs_PlateAdobe", null, 2, 48, false)
+        });
+
+        var split = meals.SplitOff(2);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(meals.PlateBindings, Has.Count.EqualTo(1));
+            Assert.That(meals.PlateBindings[0].StuffDefName, Is.EqualTo("Steel"));
+            Assert.That(split.PlateBindings.Select(binding => binding.StuffDefName),
+                Is.EqualTo(new string?[] { "Gold", null }));
+            Assert.That(meals.PlateBindings.Count + split.PlateBindings.Count, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public void Prepared_food_round_trip_preserves_nutrition_quality_and_safety_provenance()
+    {
+        var prepared = new PreparedFoodState(
+            new[]
+            {
+                new IngredientContribution("RawPotatoes", 0.55f, 2),
+                new IngredientContribution("Meat_Human", 0.70f, 1)
+            },
+            preparationQuality: 87,
+            preparerThingId: "Pawn_Chef_12",
+            dietaryFlags: DietaryFlags.Plant | DietaryFlags.Animal | DietaryFlags.HumanMeat,
+            exactSourcesHidden: false,
+            ingredientPoisonChance: 0.03f);
+
+        var restored = PreparedFoodState.Restore(prepared.Capture());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(restored.TotalNutrition, Is.EqualTo(1.25f).Within(0.0001f));
+            Assert.That(restored.PreparationQuality, Is.EqualTo(87));
+            Assert.That(restored.PreparerThingId, Is.EqualTo("Pawn_Chef_12"));
+            Assert.That(restored.DietaryFlags.HasFlag(DietaryFlags.HumanMeat), Is.True);
+            Assert.That(restored.Contributions.Select(item => item.DefName),
+                Is.EqualTo(new[] { "RawPotatoes", "Meat_Human" }));
+            Assert.That(restored.IngredientPoisonChance, Is.EqualTo(0.03f));
+        });
+    }
+
+    [Test]
+    public void Culinary_serving_state_round_trip_preserves_temperature_contamination_and_reheats()
+    {
+        var serving = new CulinaryServingRecord(
+            qualityScore: 72,
+            temperatureCelsius: 4.5f,
+            contamination: ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate,
+            microwaveReheatCount: 2,
+            lastThermalTick: 123456);
+
+        var restored = CulinaryServingRecord.Restore(serving.Capture());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(restored.QualityScore, Is.EqualTo(72));
+            Assert.That(restored.TemperatureCelsius, Is.EqualTo(4.5f));
+            Assert.That(restored.Contamination,
+                Is.EqualTo(ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate));
+            Assert.That(restored.MicrowaveReheatCount, Is.EqualTo(2));
+            Assert.That(restored.LastThermalTick, Is.EqualTo(123456));
+        });
+    }
+
+    [Test]
+    public void Full_stack_ingestion_defers_destroy_recovery_and_job_cleanup_until_callbacks_finish()
+    {
+        var lifecycle = new IngestionLifecycleState();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lifecycle.ShouldRecoverEmbeddedWareOnDestroy, Is.True);
+            Assert.That(lifecycle.ShouldCancelDiningSessionOnJobCleanup, Is.True);
+        });
+
+        lifecycle.Begin();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lifecycle.ShouldRecoverEmbeddedWareOnDestroy, Is.False);
+            Assert.That(lifecycle.ShouldCancelDiningSessionOnJobCleanup, Is.False);
+        });
+
+        lifecycle.End();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lifecycle.ShouldRecoverEmbeddedWareOnDestroy, Is.True);
+            Assert.That(lifecycle.ShouldCancelDiningSessionOnJobCleanup, Is.True);
+        });
+    }
+
+    [Test]
+    public void Rimworld_identity_split_preserves_culinary_serving_state()
+    {
+        var meal = new ThingWithComps { stackCount = 1 };
+        var culinary = new CompCulinaryState { parent = meal };
+        typeof(ThingWithComps)
+            .GetField("comps", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(meal, new List<ThingComp> { culinary });
+        culinary.ReplaceServings(new[]
+        {
+            new CulinaryServingRecord(82, 62f, ContaminationSources.None, 0, 100)
+        });
+
+        culinary.PostSplitOff(meal);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(culinary.Servings, Has.Count.EqualTo(1));
+            Assert.That(culinary.Servings[0].QualityScore, Is.EqualTo(82));
+            Assert.That(culinary.Servings[0].TemperatureCelsius, Is.EqualTo(62f));
+        });
+    }
+
+}

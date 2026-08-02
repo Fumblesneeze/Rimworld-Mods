@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <RecipeDef>
+    <defName>ImmersiveChefs_PrepareIngredients</defName>
+    <label>prepare ingredients</label>
+    <description>Prepare half a nutrition unit of edible ingredients into ten cooking portions while retaining their provenance.</description>
+    <jobString>Preparing ingredients.</jobString>
+    <workAmount>400</workAmount>
+    <workSpeedStat>CookSpeed</workSpeedStat>
+    <workSkill>Cooking</workSkill>
+    <requiredGiverWorkType>Cooking</requiredGiverWorkType>
+    <effectWorking>Cook</effectWorking>
+    <soundWorking>Recipe_CookMeal</soundWorking>
+    <ingredients>
+      <li><filter><categories><li>Foods</li></categories></filter><count>0.5</count></li>
+    </ingredients>
+    <fixedIngredientFilter><categories><li>Foods</li></categories></fixedIngredientFilter>
+    <ingredientValueGetterClass>IngredientValueGetter_Nutrition</ingredientValueGetterClass>
+    <products><ImmersiveChefs_PreparedFood>10</ImmersiveChefs_PreparedFood></products>
+    <skillRequirements><Cooking>2</Cooking></skillRequirements>
+    <allowMixingIngredients>true</allowMixingIngredients>
+  </RecipeDef>
+</Defs>

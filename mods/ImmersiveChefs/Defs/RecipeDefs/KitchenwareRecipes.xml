@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <RecipeDef Name="ImmersiveChefs_KitchenwareRecipeBase" Abstract="True">
+    <workAmount>900</workAmount>
+    <workSpeedStat>GeneralLaborSpeed</workSpeedStat>
+    <workSkill>Crafting</workSkill>
+    <requiredGiverWorkType>Crafting</requiredGiverWorkType>
+    <effectWorking>Smith</effectWorking>
+    <soundWorking>Recipe_Smith</soundWorking>
+    <productHasIngredientStuff>true</productHasIngredientStuff>
+    <fixedIngredientFilter>
+      <categories>
+        <li>Root</li>
+      </categories>
+    </fixedIngredientFilter>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MakePrimitiveCookware</defName>
+    <label>make primitive stone cookware</label>
+    <description>Make one primitive cookware set from stone blocks, with wood for handles and utensils.</description>
+    <jobString>Making primitive stone cookware.</jobString>
+    <ingredients>
+      <li><filter><categories><li>Root</li></categories></filter><count>40</count></li>
+      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>5</count></li>
+    </ingredients>
+    <products><ImmersiveChefs_Cookware>1</ImmersiveChefs_Cookware></products>
+    <recipeUsers><li>CraftingSpot</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cookware</product><fabricationTier>PrimitiveStone</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MakeMedievalCookware</defName>
+    <label>smith medieval cookware</label>
+    <description>Smith one complete cookware set from an intermediate metal, with wood for handles and utensils.</description>
+    <jobString>Smithing cookware.</jobString>
+    <workAmount>1500</workAmount>
+    <ingredients>
+      <li><filter><categories><li>Root</li></categories></filter><count>50</count></li>
+      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>5</count></li>
+    </ingredients>
+    <products><ImmersiveChefs_Cookware>1</ImmersiveChefs_Cookware></products>
+    <recipeUsers><li>FueledSmithy</li><li>ElectricSmithy</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cookware</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MakeModernCookware</defName>
+    <label>machine modern cookware</label>
+    <description>Machine one complete cookware set from a modern metal, with wood for handles and utensils.</description>
+    <jobString>Machining cookware.</jobString>
+    <workAmount>1800</workAmount>
+    <effectWorking>Cook</effectWorking>
+    <soundWorking>Recipe_Machining</soundWorking>
+    <ingredients>
+      <li><filter><categories><li>Root</li></categories></filter><count>50</count></li>
+      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>5</count></li>
+    </ingredients>
+    <products><ImmersiveChefs_Cookware>1</ImmersiveChefs_Cookware></products>
+    <recipeUsers><li>TableMachining</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cookware</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MakeChefsKnife</defName>
+    <label>make chef's knife set</label>
+    <description>Machine one personal chef's knife set from metal.</description>
+    <jobString>Machining a chef's knife set.</jobString>
+    <workAmount>1400</workAmount>
+    <effectWorking>Cook</effectWorking>
+    <soundWorking>Recipe_Machining</soundWorking>
+    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>30</count></li></ingredients>
+    <products><ImmersiveChefs_ChefsKnife>1</ImmersiveChefs_ChefsKnife></products>
+    <recipeUsers><li>TableMachining</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>ChefsKnife</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MakeSoftPlates</defName>
+    <label>make soft plates x4</label>
+    <description>Make four plates from wood or another registered soft material.</description>
+    <jobString>Making plates.</jobString>
+    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>20</count></li></ingredients>
+    <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
+    <recipeUsers><li>CraftingSpot</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>Soft</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MakeSoftSilverware</defName>
+    <label>make soft silverware x4</label>
+    <description>Make four silverware settings from wood or another registered soft material.</description>
+    <jobString>Making silverware.</jobString>
+    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
+    <products><ImmersiveChefs_Silverware>4</ImmersiveChefs_Silverware></products>
+    <recipeUsers><li>CraftingSpot</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Silverware</product><fabricationTier>Soft</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_SmithPlates</defName>
+    <label>smith metal plates x4</label>
+    <description>Smith four plates from an intermediate metal.</description>
+    <jobString>Smithing plates.</jobString>
+    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>20</count></li></ingredients>
+    <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
+    <recipeUsers><li>FueledSmithy</li><li>ElectricSmithy</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_SmithSilverware</defName>
+    <label>smith metal silverware x4</label>
+    <description>Smith four silverware settings from an intermediate metal.</description>
+    <jobString>Smithing silverware.</jobString>
+    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
+    <products><ImmersiveChefs_Silverware>4</ImmersiveChefs_Silverware></products>
+    <recipeUsers><li>FueledSmithy</li><li>ElectricSmithy</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Silverware</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MachinePlates</defName>
+    <label>machine plates x4</label>
+    <description>Machine four plates from any eligible metal or registered plastic.</description>
+    <jobString>Machining plates.</jobString>
+    <effectWorking>Cook</effectWorking>
+    <soundWorking>Recipe_Machining</soundWorking>
+    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>20</count></li></ingredients>
+    <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
+    <recipeUsers><li>TableMachining</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MachineSilverware</defName>
+    <label>machine silverware x4</label>
+    <description>Machine four silverware settings from any eligible metal or registered plastic.</description>
+    <jobString>Machining silverware.</jobString>
+    <effectWorking>Cook</effectWorking>
+    <soundWorking>Recipe_Machining</soundWorking>
+    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
+    <products><ImmersiveChefs_Silverware>4</ImmersiveChefs_Silverware></products>
+    <recipeUsers><li>TableMachining</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Silverware</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
+  </RecipeDef>
+</Defs>

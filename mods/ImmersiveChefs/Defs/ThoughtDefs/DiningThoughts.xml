@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <ThoughtDef>
+    <defName>ImmersiveChefs_CulinaryQuality</defName>
+    <thoughtClass>ImmersiveChefs.Thought_MemoryCulinaryQuality</thoughtClass>
+    <durationDays>1</durationDays>
+    <stackLimit>1</stackLimit>
+    <stages>
+      <li><label>awful cooking</label><description>That meal was appalling.</description><baseMoodEffect>-6</baseMoodEffect></li>
+      <li><label>poor cooking</label><description>That meal was badly prepared.</description><baseMoodEffect>-3</baseMoodEffect></li>
+      <li><label>ordinary cooking</label><description>That meal was unremarkable.</description><baseMoodEffect>0</baseMoodEffect></li>
+      <li><label>good cooking</label><description>That was a good meal.</description><baseMoodEffect>2</baseMoodEffect></li>
+      <li><label>excellent cooking</label><description>That meal was excellent.</description><baseMoodEffect>4</baseMoodEffect></li>
+      <li><label>masterful cooking</label><description>That meal was masterfully prepared.</description><baseMoodEffect>6</baseMoodEffect></li>
+      <li><label>legendary cooking</label><description>That was an unforgettable meal.</description><baseMoodEffect>8</baseMoodEffect></li>
+    </stages>
+  </ThoughtDef>
+
+  <ThoughtDef>
+    <defName>ImmersiveChefs_MealTemperature</defName>
+    <durationDays>1</durationDays>
+    <stackLimit>1</stackLimit>
+    <stages>
+      <li><label>steaming hot meal</label><description>The meal was served steaming hot.</description><baseMoodEffect>2</baseMoodEffect></li>
+      <li><label>warm meal</label><description>The meal was pleasantly warm.</description><baseMoodEffect>1</baseMoodEffect></li>
+      <li><label>room-temperature meal</label><description>The meal was neither warm nor cold.</description><baseMoodEffect>0</baseMoodEffect></li>
+      <li><label>cold meal</label><description>I had to eat a cold meal.</description><baseMoodEffect>-3</baseMoodEffect></li>
+      <li><label>frozen meal</label><description>I had to eat a frozen meal.</description><baseMoodEffect>-6</baseMoodEffect></li>
+    </stages>
+  </ThoughtDef>
+
+  <ThoughtDef>
+    <defName>ImmersiveChefs_DiningExperience</defName>
+    <durationDays>1</durationDays>
+    <stackLimit>1</stackLimit>
+    <stages>
+      <li><label>proper place setting</label><description>I ate with a proper plate and silverware.</description><baseMoodEffect>1</baseMoodEffect></li>
+      <li><label>ate without silverware</label><description>I had no silverware for my meal.</description><baseMoodEffect>-3</baseMoodEffect></li>
+      <li><label>ate without a plate</label><description>I had no plate for my meal.</description><baseMoodEffect>-4</baseMoodEffect></li>
+      <li><label>ate without tableware</label><description>I had neither a plate nor silverware.</description><baseMoodEffect>-7</baseMoodEffect></li>
+      <li><label>ate with dirty tableware</label><description>My place setting was dirty.</description><baseMoodEffect>-6</baseMoodEffect></li>
+      <li><label>disappointing dining comfort</label><description>My place setting was less comfortable than I expect.</description><baseMoodEffect>-3</baseMoodEffect></li>
+      <li><label>inferior tableware</label><description>The material and craftsmanship of my tableware did not meet my standards.</description><baseMoodEffect>-4</baseMoodEffect></li>
+      <li><label>meal too simple</label><description>This meal was too simple for my current station.</description><baseMoodEffect>-4</baseMoodEffect></li>
+      <li><label>poor culinary standard</label><description>The cooking quality did not meet my current expectations.</description><baseMoodEffect>-4</baseMoodEffect></li>
+      <li><label>several dining standards unmet</label><description>This entire dining experience was beneath my standards.</description><baseMoodEffect>-6</baseMoodEffect></li>
+    </stages>
+  </ThoughtDef>
+
+</Defs>

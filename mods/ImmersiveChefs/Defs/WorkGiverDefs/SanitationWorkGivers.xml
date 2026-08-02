@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <WorkGiverDef>
+    <defName>ImmersiveChefs_DoDishes</defName>
+    <label>do dishes</label>
+    <giverClass>ImmersiveChefs.WorkGiver_DoDishes</giverClass>
+    <workType>Cleaning</workType>
+    <verb>wash</verb>
+    <gerund>doing dishes</gerund>
+    <priorityInType>8</priorityInType>
+    <scanThings>true</scanThings>
+    <scanCells>false</scanCells>
+    <requiredCapacities><li>Manipulation</li></requiredCapacities>
+  </WorkGiverDef>
+</Defs>
