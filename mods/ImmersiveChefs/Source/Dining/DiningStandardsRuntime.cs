@@ -36,7 +36,7 @@ internal static class DiningStandardsRuntime
             return 0;
         }
 
-        var plate = KitchenwareRuntime.Describe(dining?.Plate);
+        var plate = dining?.PlateServiceSnapshot ?? KitchenwareRuntime.Describe(dining?.Plate);
         var silverware = KitchenwareRuntime.Describe(dining?.Silverware);
         // Every covered serving is expected to carry its actual embedded plate. This also
         // catches meals imported from an older save or produced by another mod, which have

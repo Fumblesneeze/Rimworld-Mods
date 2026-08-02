@@ -19,4 +19,9 @@ public sealed class IngestionLifecycleState
             depth--;
         }
     }
+
+    public void Abort()
+    {
+        depth = 0;
+    }
 }

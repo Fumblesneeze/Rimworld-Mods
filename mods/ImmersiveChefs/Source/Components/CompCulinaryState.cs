@@ -88,7 +88,7 @@ public sealed class CompCulinaryState : ThingComp
     {
         while (servings.Count < parent.stackCount)
         {
-            var ambient = parent.SpawnedOrAnyParentSpawned ? parent.AmbientTemperature : 21f;
+            var ambient = parent.AmbientTemperature;
             var tick = Find.TickManager?.TicksGame ?? 0;
             servings.Add(CulinaryServingData.From(new CulinaryServingRecord(
                 40, ambient, ContaminationSources.None, 0, tick)));
@@ -184,7 +184,7 @@ public sealed class CompCulinaryState : ThingComp
 
         var record = servings[index].ToRecord();
         record.AdvanceTemperature(
-            parent.SpawnedOrAnyParentSpawned ? parent.AmbientTemperature : 21f,
+            parent.AmbientTemperature,
             Find.TickManager?.TicksGame ?? record.LastThermalTick,
             ImmersiveChefsMod.Settings.ThermalHalfLifeHours);
         servings[index] = CulinaryServingData.From(record);

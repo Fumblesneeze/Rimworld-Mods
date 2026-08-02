@@ -35,6 +35,8 @@ public static class MealCoveragePolicy
                (foodType & (FoodTypeFlags.Fluid | FoodTypeFlags.Liquor)) == 0;
     }
 
+    internal static bool IsBuiltInExcluded(string defName) => BuiltInExclusions.Contains(defName);
+
     public static int ServingCount(RecipeDef recipe)
     {
         return recipe.products?

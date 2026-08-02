@@ -148,6 +148,22 @@ public sealed class PersistentStateTests
     }
 
     [Test]
+    public void Failed_ingestion_can_abort_every_nested_lifecycle_scope()
+    {
+        var lifecycle = new IngestionLifecycleState();
+        lifecycle.Begin();
+        lifecycle.Begin();
+
+        lifecycle.Abort();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lifecycle.ShouldRecoverEmbeddedWareOnDestroy, Is.True);
+            Assert.That(lifecycle.ShouldCancelDiningSessionOnJobCleanup, Is.True);
+        });
+    }
+
+    [Test]
     public void Rimworld_identity_split_preserves_culinary_serving_state()
     {
         var meal = new ThingWithComps { stackCount = 1 };

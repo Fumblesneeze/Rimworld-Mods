@@ -10,32 +10,48 @@ internal static class DiningIngestionOutcomePatch
 {
     private sealed class Snapshot
     {
-        internal Snapshot(ThingDef mealDef, CulinaryServingRecord? serving)
+        internal Snapshot(ThingDef mealDef, CompEmbeddedWare? embeddedWare)
         {
             MealDef = mealDef;
-            Serving = serving;
+            EmbeddedWare = embeddedWare;
         }
 
         internal ThingDef MealDef { get; }
-        internal CulinaryServingRecord? Serving { get; }
+        internal CompEmbeddedWare? EmbeddedWare { get; }
+        internal CulinaryServingRecord? Serving { get; set; }
+        internal bool Completed { get; set; }
     }
 
     private static void Prefix(Thing __instance, Pawn ingester, out Snapshot? __state)
     {
         __state = null;
-        if (__instance is not ThingWithComps meal || !MealCoveragePolicy.IsCovered(meal.def))
+        if (__instance is not ThingWithComps meal || !MealCoveragePolicy.IsCovered(meal.def) ||
+            !ingester.RaceProps.Humanlike)
         {
             return;
         }
 
+        var snapshot = new Snapshot(meal.def, meal.GetComp<CompEmbeddedWare>());
+        __state = snapshot;
+        DiningSessionRegistry.TryAttachTravel(ingester, meal);
         DiningSessionRegistry.BeginIngestion(ingester);
-        __state = new Snapshot(meal.def, meal.GetComp<CompCulinaryState>()?.PeekCurrentServing());
+        snapshot.Serving = meal.GetComp<CompCulinaryState>()?.PeekCurrentServing();
+        snapshot.Serving?.AddContamination(
+            DiningSessionRegistry.Current(ingester)?.TravelPlateContamination ?? ContaminationSources.None);
     }
 
-    private static void Postfix(Pawn ingester, Snapshot? __state)
+    private static void Postfix(Pawn ingester, float __result, Snapshot? __state)
     {
         if (__state is null)
         {
+            return;
+        }
+
+        if (!CaravanDiningPolicy.WasIngested(__result))
+        {
+            __state.EmbeddedWare?.AbortIngestion();
+            DiningSessionRegistry.EndIngestion(ingester);
+            __state.Completed = true;
             return;
         }
 
@@ -56,7 +72,19 @@ internal static class DiningIngestionOutcomePatch
         finally
         {
             DiningSessionRegistry.Complete(ingester);
+            __state.Completed = true;
         }
+    }
+
+    private static Exception? Finalizer(Pawn ingester, Snapshot? __state, Exception? __exception)
+    {
+        if (__state is not null && !__state.Completed)
+        {
+            __state.EmbeddedWare?.AbortIngestion();
+            DiningSessionRegistry.EndIngestion(ingester);
+        }
+
+        return __exception;
     }
 }
 
@@ -232,7 +260,9 @@ internal static class UnifiedFoodPoisoningPatch
     private static void Prefix(CompFoodPoisonable __instance, Pawn ingester, out float __state)
     {
         __state = PoisonPercent(__instance);
-        if (__instance.parent is not ThingWithComps meal || !MealCoveragePolicy.IsCovered(meal.def))
+        if (__instance.parent is not ThingWithComps meal ||
+            !MealCoveragePolicy.IsCovered(meal.def) ||
+            !ingester.RaceProps.Humanlike)
         {
             return;
         }

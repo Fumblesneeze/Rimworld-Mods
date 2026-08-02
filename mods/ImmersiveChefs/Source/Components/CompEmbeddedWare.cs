@@ -1,4 +1,5 @@
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 
 namespace ImmersiveChefs;
@@ -86,6 +87,12 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
             var plate = ReleasePlateThing();
             if (plate is not null)
             {
+                if (!ingester.RaceProps.Humanlike)
+                {
+                    ReturnUnusedPlate(plate, ingester);
+                    return;
+                }
+
                 (plate as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
                 if (!DiningSessionRegistry.CapturePlate(ingester, plate))
                 {
@@ -97,6 +104,11 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
         {
             ingestionLifecycle.End();
         }
+    }
+
+    internal void AbortIngestion()
+    {
+        ingestionLifecycle.Abort();
     }
 
     public override void PostPreApplyDamage(ref DamageInfo dinfo, out bool absorbed)
@@ -216,5 +228,26 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
         }
 
         GenPlace.TryPlaceThing(plate, position, map, ThingPlaceMode.Near);
+    }
+
+    private static void ReturnUnusedPlate(Thing plate, Pawn ingester)
+    {
+        if (CaravanUtility.GetCaravan(ingester) is { } caravan)
+        {
+            var destination = ingester.inventory?.innerContainer ??
+                              caravan.PawnsListForReading
+                                  .Select(pawn => pawn.inventory?.innerContainer)
+                                  .FirstOrDefault(container => container is not null);
+            if (destination?.TryAdd(plate, canMergeWithExistingStacks: false) == true)
+            {
+                caravan.RecacheInventory();
+                return;
+            }
+
+            Log.Error("[ImmersiveChefs] Could not return an animal-excluded meal's plate to caravan inventory.");
+            return;
+        }
+
+        PlacePlate(plate, ingester.PositionHeld, ingester.MapHeld);
     }
 }

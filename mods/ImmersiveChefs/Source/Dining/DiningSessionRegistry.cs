@@ -1,13 +1,22 @@
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 using Verse.AI;
 
 namespace ImmersiveChefs;
 
-internal sealed class DiningSession
+internal sealed class DiningSession : IThingHolder
 {
+    private readonly Caravan? caravan;
+    private readonly ThingOwner<Thing> travelWare;
+    private CompEmbeddedWare? travelEmbedded;
+    private Thing? travelPlate;
+    private bool travelPlateImported;
+    private bool travelPlateWasDirty;
+    private WashProvenance travelPlateWashProvenance;
+
     internal DiningSession(
         Pawn pawn,
         Job job,
@@ -15,35 +24,85 @@ internal sealed class DiningSession
         Thing? reservedPlate,
         Thing? microwave,
         Pawn? servingPawn = null)
+        : this(pawn, job, null, silverware, reservedPlate, microwave, servingPawn)
+    {
+    }
+
+    internal DiningSession(Pawn pawn, Caravan caravan)
+        : this(pawn, null, caravan, null, null, null, null)
+    {
+    }
+
+    private DiningSession(
+        Pawn pawn,
+        Job? job,
+        Caravan? caravan,
+        Thing? silverware,
+        Thing? reservedPlate,
+        Thing? microwave,
+        Pawn? servingPawn)
     {
         Pawn = pawn;
         Job = job;
-        Silverware = silverware;
-        var sanitation = (silverware as ThingWithComps)?.GetComp<CompSanitation>();
-        SilverwareWasDirty = sanitation?.IsDirty == true;
-        SilverwareWasWildWaterWashed = sanitation?.WashedInWildWater == true;
-        SilverwareServiceScore = silverware is null ? null : KitchenwareRuntime.ServiceScore(silverware);
+        this.caravan = caravan;
+        travelWare = new ThingOwner<Thing>(this, oneStackOnly: false, LookMode.Deep);
+        SetSilverware(silverware);
         Microwave = microwave;
         ReservedPlate = reservedPlate;
         ServingPawn = servingPawn;
     }
 
     internal Pawn Pawn { get; }
-    internal Job Job { get; }
-    internal Thing? Silverware { get; }
+    internal Job? Job { get; }
+    internal Thing? Silverware { get; private set; }
     internal Thing? CarriedSilverware { get; private set; }
     internal Thing? ReservedPlate { get; }
     internal Thing? CarriedPlate { get; private set; }
-    internal bool SilverwareWasDirty { get; }
-    internal bool SilverwareWasWildWaterWashed { get; }
-    internal float? SilverwareServiceScore { get; }
+    internal bool SilverwareWasDirty { get; private set; }
+    internal bool SilverwareWasWildWaterWashed { get; private set; }
+    internal float? SilverwareServiceScore { get; private set; }
     internal Thing? Plate { get; private set; }
+    internal ServiceWareSnapshot? PlateServiceSnapshot { get; private set; }
+    internal ContaminationSources TravelPlateContamination { get; private set; }
     internal Thing? Microwave { get; }
     internal Pawn? ServingPawn { get; }
 
     internal void CapturePlate(Thing plate)
     {
+        if (caravan is not null && plate.holdingOwner is null)
+        {
+            Plate = plate;
+            if (!travelWare.TryAdd(plate, canMergeWithExistingStacks: false))
+            {
+                throw new InvalidOperationException("Caravan dining could not retain the released plate.");
+            }
+        }
+
         Plate = plate;
+    }
+
+    internal void AcquireTravelSilverware(Thing? silverware)
+    {
+        if (caravan is null)
+        {
+            throw new InvalidOperationException("Only caravan dining sessions can acquire travel ware.");
+        }
+
+        SetSilverware(TakeOneForTravel(silverware));
+    }
+
+    internal void TrackTravelPlate(CompEmbeddedWare embedded, Thing plate, bool imported)
+    {
+        travelEmbedded = embedded;
+        travelPlate = plate;
+        travelPlateImported = imported;
+        var sanitation = (plate as ThingWithComps)?.GetComp<CompSanitation>();
+        travelPlateWasDirty = sanitation?.IsDirty == true;
+        travelPlateWashProvenance = sanitation?.WashProvenance ?? WashProvenance.None;
+        PlateServiceSnapshot = KitchenwareRuntime.Describe(plate);
+        TravelPlateContamination = SanitationContamination.ForPlate(
+            travelPlateWasDirty,
+            travelPlateWashProvenance);
     }
 
     internal void PickupSilverware()
@@ -145,6 +204,12 @@ internal sealed class DiningSession
 
     internal void Finish()
     {
+        if (caravan is not null)
+        {
+            ReturnTravelWare(washedAfterUse: true);
+            return;
+        }
+
         var clearingOrigin = Pawn.PositionHeld;
         DropPlate();
         if (Plate is { } embeddedPlate && Pawn.MapHeld is { } plateMap)
@@ -176,8 +241,129 @@ internal sealed class DiningSession
 
     internal void Cancel()
     {
+        if (caravan is not null)
+        {
+            RecoverImportedPlateForCancellation();
+            RestoreTravelPlateSanitation();
+            ReturnTravelWare(washedAfterUse: false);
+            return;
+        }
+
         DropPlate();
         DropCarried();
+    }
+
+    public ThingOwner GetDirectlyHeldThings() => travelWare;
+
+    public void GetChildHolders(List<IThingHolder> outChildren)
+    {
+        ThingOwnerUtility.AppendThingHoldersFromThings(outChildren, travelWare);
+    }
+
+    IThingHolder? IThingHolder.ParentHolder => caravan;
+
+    private void SetSilverware(Thing? silverware)
+    {
+        Silverware = silverware;
+        var sanitation = (silverware as ThingWithComps)?.GetComp<CompSanitation>();
+        SilverwareWasDirty = sanitation?.IsDirty == true;
+        SilverwareWasWildWaterWashed = sanitation?.WashedInWildWater == true;
+        SilverwareServiceScore = silverware is null ? null : KitchenwareRuntime.ServiceScore(silverware);
+    }
+
+    private Thing? TakeOneForTravel(Thing? ware)
+    {
+        if (ware is null || ware.Destroyed || ware.stackCount <= 0)
+        {
+            return null;
+        }
+
+        if (ware.holdingOwner is { } source)
+        {
+            Thing? transferred;
+            return source.TryTransferToContainer(
+                       ware,
+                       travelWare,
+                       1,
+                       out transferred,
+                       canMergeWithExistingStacks: false) == 1
+                ? transferred
+                : null;
+        }
+
+        var single = ware.stackCount > 1 ? ware.SplitOff(1) : ware;
+        return travelWare.TryAdd(single, canMergeWithExistingStacks: false) ? single : null;
+    }
+
+    private void ReturnTravelWare(bool washedAfterUse)
+    {
+        if (caravan is null)
+        {
+            return;
+        }
+
+        var destination = Pawn.inventory?.innerContainer ??
+                          caravan.PawnsListForReading
+                              .Select(candidate => candidate.inventory?.innerContainer)
+                              .FirstOrDefault(container => container is not null);
+        if (destination is null)
+        {
+            Log.Error("[ImmersiveChefs] Caravan dining could not find a pawn inventory for returned tableware.");
+            return;
+        }
+
+        foreach (var ware in travelWare.InnerListForReading.ToList())
+        {
+            if (washedAfterUse)
+            {
+                (ware as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean(WashProvenance.WildWater);
+            }
+
+            var count = ware.stackCount;
+            if (travelWare.TryTransferToContainer(
+                    ware,
+                    destination,
+                    count,
+                    canMergeWithExistingStacks: false) != count)
+            {
+                Log.Error($"[ImmersiveChefs] Caravan dining could not return {ware.LabelCap} to inventory.");
+            }
+        }
+
+        Plate = null;
+        CarriedSilverware = null;
+        caravan.RecacheInventory();
+    }
+
+    private void RecoverImportedPlateForCancellation()
+    {
+        if (!travelPlateImported || Plate is not null || travelEmbedded is null || travelPlate is null ||
+            !ReferenceEquals(travelEmbedded.PeekPlateThing(), travelPlate))
+        {
+            return;
+        }
+
+        Plate = travelEmbedded.ReleasePlateThing();
+        if (Plate is not null && Plate.holdingOwner is null &&
+            !travelWare.TryAdd(Plate, canMergeWithExistingStacks: false))
+        {
+            throw new InvalidOperationException("Caravan dining could not recover its unused imported plate.");
+        }
+    }
+
+    private void RestoreTravelPlateSanitation()
+    {
+        if (Plate is null || !ReferenceEquals(Plate, travelPlate) ||
+            (Plate as ThingWithComps)?.GetComp<CompSanitation>() is not { } sanitation)
+        {
+            return;
+        }
+
+        sanitation.MarkClean(travelPlateWashProvenance);
+        if (travelPlateWasDirty)
+        {
+            sanitation.MarkDirty();
+        }
     }
 
     private void DropPlate()
@@ -232,14 +418,14 @@ internal static class DiningSessionRegistry
 
     private sealed class ActiveIngestion
     {
-        internal ActiveIngestion(Job job, DiningSession session)
+        internal ActiveIngestion(Job? job, DiningSession session)
         {
             Job = job;
             Session = session;
             Lifecycle.Begin();
         }
 
-        internal Job Job { get; }
+        internal Job? Job { get; }
         internal DiningSession Session { get; }
         internal IngestionLifecycleState Lifecycle { get; } = new();
     }
@@ -311,6 +497,81 @@ internal static class DiningSessionRegistry
         PawnSessions.Remove(pawn);
         PawnSessions.Add(pawn, session);
         return true;
+    }
+
+    internal static void TryAttachTravel(Pawn pawn, ThingWithComps meal)
+    {
+        if (!MealCoveragePolicy.IsCovered(meal.def) || !pawn.RaceProps.Humanlike ||
+            PawnSessions.TryGetValue(pawn, out _))
+        {
+            return;
+        }
+
+        var caravan = CaravanUtility.GetCaravan(pawn);
+        if (caravan is null)
+        {
+            return;
+        }
+
+        Thing? plate = null;
+        Thing? silverware = null;
+        var settings = ImmersiveChefsMod.Settings;
+        if (settings.WareRequirementMode != WareRequirementMode.Off)
+        {
+            var emergency = pawn.needs?.food?.CurLevelPercentage <= settings.EmergencyHungerThreshold;
+            if (meal.GetComp<CompEmbeddedWare>()?.PeekPlateThing() is null)
+            {
+                plate = SelectTravelWare(
+                    caravan,
+                    KitchenwareProduct.Plate,
+                    emergency,
+                    settings.WareRequirementMode);
+            }
+
+            silverware = SelectTravelWare(
+                caravan,
+                KitchenwareProduct.Silverware,
+                emergency,
+                WareRequirementMode.Prefer);
+        }
+
+        var session = new DiningSession(pawn, caravan);
+        PawnSessions.Add(pawn, session);
+        try
+        {
+            session.AcquireTravelSilverware(silverware);
+            if (meal.GetComp<CompEmbeddedWare>() is { } embedded)
+            {
+                if (embedded.PeekPlateThing() is { } existingPlate)
+                {
+                    session.TrackTravelPlate(embedded, existingPlate, imported: false);
+                }
+                else if (plate is not null)
+                {
+                    if (embedded.TryEmbedPlate(plate) && embedded.PeekPlateThing() is { } importedPlate)
+                    {
+                        session.TrackTravelPlate(embedded, importedPlate, imported: true);
+                    }
+                }
+            }
+
+            caravan.RecacheInventory();
+        }
+        catch
+        {
+            try
+            {
+                session.Cancel();
+            }
+            catch (Exception cleanupError)
+            {
+                Log.Error($"[ImmersiveChefs] Caravan dining rollback failed: {cleanupError.GetType().Name}: {cleanupError.Message}");
+            }
+
+            PawnSessions.Remove(pawn);
+            caravan.RecacheInventory();
+            throw;
+        }
     }
 
     internal static void TryAttachServed(
@@ -428,7 +689,10 @@ internal static class DiningSessionRegistry
         {
             active.Session.Finish();
             active.Lifecycle.End();
-            Sessions.Remove(active.Job);
+            if (active.Job is not null)
+            {
+                Sessions.Remove(active.Job);
+            }
             PawnSessions.Remove(pawn);
             ActiveIngestions.Remove(pawn);
             return;
@@ -437,7 +701,10 @@ internal static class DiningSessionRegistry
         if (PawnSessions.TryGetValue(pawn, out var pawnSession))
         {
             pawnSession.Finish();
-            Sessions.Remove(pawnSession.Job);
+            if (pawnSession.Job is not null)
+            {
+                Sessions.Remove(pawnSession.Job);
+            }
             PawnSessions.Remove(pawn);
             return;
         }
@@ -460,7 +727,10 @@ internal static class DiningSessionRegistry
 
         active.Lifecycle.End();
         active.Session.Cancel();
-        Sessions.Remove(active.Job);
+        if (active.Job is not null)
+        {
+            Sessions.Remove(active.Job);
+        }
         PawnSessions.Remove(pawn);
         ActiveIngestions.Remove(pawn);
     }
@@ -535,6 +805,27 @@ internal static class DiningSessionRegistry
         var wantDirty = selection.Use == WareUse.Dirty;
         var selected = candidates.FirstOrDefault(candidate => candidate.Dirty == wantDirty)?.Thing;
         return selected is not null && pawn.Reserve(selected, job, 1, 1) ? selected : null;
+    }
+
+    private static Thing? SelectTravelWare(
+        Caravan caravan,
+        KitchenwareProduct product,
+        bool emergency,
+        WareRequirementMode mode)
+    {
+        var candidates = caravan.AllThings
+            .Where(thing => !thing.Destroyed && thing.stackCount > 0)
+            .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
+            .Select(thing => new CaravanWareCandidate<Thing>(
+                thing,
+                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,
+                KitchenwareRuntime.ServiceScore(thing)))
+            .ToList();
+        return CaravanDiningPolicy.SelectWare(
+            candidates,
+            mode,
+            ImmersiveChefsMod.Settings.DirtyWareFallback,
+            emergency);
     }
 }
 

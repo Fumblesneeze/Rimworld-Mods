@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
+using RimWorld.Planet;
 using RimWorldDevGateway.IntegrationTesting;
 using Verse;
 using Verse.AI;
@@ -69,6 +70,290 @@ public static class FinalizedImmersiveChefsIntegrationTests
             "MealSimple must receive culinary serving state after final Def initialization.");
         IntegrationAssert.True(meal.comps.Any(comp => comp.compClass == typeof(CompIngredients)),
             "MealSimple must retain vanilla CompIngredients for variety compatibility.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedTravelFoodsUseTheCoverageContract()
+    {
+        IntegrationAssert.True(
+            MealCoveragePolicy.IsCovered(ThingDefOf.MealSimple),
+            "A normal finalized meal must keep Immersive Chefs state while travelling.");
+        IntegrationAssert.True(
+            !MealCoveragePolicy.IsCovered(ThingDefOf.Pemmican),
+            "Pemmican must remain a hand-eaten travel-food exclusion.");
+        IntegrationAssert.True(
+            !MealCoveragePolicy.IsCovered(ThingDefOf.MealSurvivalPack),
+            "Packaged survival meals must remain a hand-eaten travel-food exclusion.");
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CaravanIngestionReturnsTheExactWareWashedInWildWater()
+    {
+        var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var caravan = CaravanMaker.MakeCaravan(
+            new[] { pawn },
+            Faction.OfPlayer,
+            Find.CurrentMap.Tile,
+            addToWorldPawnsIfNotAlready: true);
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var silverware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+            ThingDefOf.Steel);
+        var originalPlateId = plate.ThingID;
+        var originalSilverwareId = silverware.ThingID;
+
+        try
+        {
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            var thermalStartTick = Math.Max(
+                0,
+                Find.TickManager.TicksGame - ThermalCalculator.TicksPerHour);
+            meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
+            {
+                new CulinaryServingRecord(
+                    60,
+                    70f,
+                    ContaminationSources.None,
+                    0,
+                    thermalStartTick)
+            });
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.TryAdd(meal, canMergeWithExistingStacks: false),
+                "The travel fixture must put its meal in the caravan inventory.");
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.TryAdd(plate, canMergeWithExistingStacks: false),
+                "The travel fixture must put its plate in the caravan inventory.");
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.TryAdd(silverware, canMergeWithExistingStacks: false),
+                "The travel fixture must put its silverware in the caravan inventory.");
+
+            var tileAmbient = GenTemperature.GetTemperatureAtTile(caravan.Tile);
+            var expectedTemperature = ThermalCalculator.TemperatureAfter(
+                70f,
+                tileAmbient,
+                Find.TickManager.TicksGame - thermalStartTick,
+                ImmersiveChefsMod.Settings.ThermalHalfLifeHours);
+            var travelServing = meal.GetComp<CompCulinaryState>().PeekCurrentServing();
+            IntegrationAssert.True(
+                Math.Abs(meal.AmbientTemperature - tileAmbient) < 0.01f,
+                "A held caravan meal must resolve RimWorld's current world-tile ambient temperature.");
+            IntegrationAssert.True(
+                travelServing is not null && Math.Abs(travelServing.TemperatureCelsius - expectedTemperature) < 0.01f,
+                $"Caravan meal temperature must continue moving toward the current world-tile climate " +
+                $"(expected {expectedTemperature:0.###}, actual {travelServing?.TemperatureCelsius:0.###}, " +
+                $"ambient {tileAmbient:0.###}).");
+
+            meal.Ingested(pawn, 0.9f);
+            caravan.RecacheInventory();
+
+            var returnedPlate = caravan.AllThings.SingleOrDefault(thing => thing.ThingID == originalPlateId);
+            var returnedSilverware = caravan.AllThings.SingleOrDefault(thing => thing.ThingID == originalSilverwareId);
+            IntegrationAssert.True(
+                ReferenceEquals(plate, returnedPlate),
+                "Caravan dining must return the exact selected plate Thing without replacement or duplication.");
+            IntegrationAssert.True(
+                ReferenceEquals(silverware, returnedSilverware),
+                "Caravan dining must return the exact selected silverware Thing without replacement or duplication.");
+            IntegrationAssert.Equal(
+                WashProvenance.WildWater,
+                plate.GetComp<CompSanitation>().WashProvenance,
+                "Travel-washed plates must retain the wild-water risk marker.");
+            IntegrationAssert.Equal(
+                WashProvenance.WildWater,
+                silverware.GetComp<CompSanitation>().WashProvenance,
+                "Travel-washed silverware must retain the wild-water risk marker.");
+        }
+        finally
+        {
+            if (!caravan.Destroyed)
+            {
+                caravan.Destroy();
+            }
+
+            if (!pawn.Destroyed)
+            {
+                pawn.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CancelledCaravanIngestionRestoresUnusedWareWithoutWashing()
+    {
+        var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var caravan = CaravanMaker.MakeCaravan(
+            new[] { pawn },
+            Faction.OfPlayer,
+            Find.CurrentMap.Tile,
+            addToWorldPawnsIfNotAlready: true);
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var silverware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+            ThingDefOf.Steel);
+
+        try
+        {
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.WildWater);
+            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
+            {
+                new CulinaryServingRecord(
+                    55,
+                    20f,
+                    ContaminationSources.DirtyCookware,
+                    0,
+                    Find.TickManager.TicksGame)
+            });
+            pawn.inventory.innerContainer.TryAdd(meal, canMergeWithExistingStacks: false);
+            pawn.inventory.innerContainer.TryAdd(plate, canMergeWithExistingStacks: false);
+            pawn.inventory.innerContainer.TryAdd(silverware, canMergeWithExistingStacks: false);
+
+            DiningSessionRegistry.TryAttachTravel(pawn, meal);
+            IntegrationAssert.True(
+                ReferenceEquals(meal.GetComp<CompEmbeddedWare>().PeekPlateThing(), plate),
+                "The cancellation fixture must import its exact loose caravan plate before rollback.");
+            DiningSessionRegistry.BeginIngestion(pawn);
+            DiningSessionRegistry.EndIngestion(pawn);
+            caravan.RecacheInventory();
+
+            IntegrationAssert.True(
+                meal.GetComp<CompEmbeddedWare>().PeekPlateThing() is null,
+                "A cancelled travel attempt must detach the plate it imported into an unplated meal.");
+            IntegrationAssert.True(
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, plate)),
+                "A cancelled travel attempt must return the exact unused plate.");
+            IntegrationAssert.True(
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, silverware)),
+                "A cancelled travel attempt must return the exact unused silverware.");
+            IntegrationAssert.Equal(
+                ContaminationSources.DirtyCookware,
+                meal.GetComp<CompCulinaryState>().PeekCurrentServing()!.Contamination,
+                "A cancelled travel attempt must leave the uneaten meal's prior contamination unchanged.");
+            IntegrationAssert.True(
+                !plate.GetComp<CompSanitation>().IsDirty,
+                "Cancellation must preserve a clean unused plate's sanitation state.");
+            IntegrationAssert.Equal(
+                WashProvenance.WildWater,
+                plate.GetComp<CompSanitation>().WashProvenance,
+                "Cancellation must preserve the unused plate's prior wild-water provenance.");
+            IntegrationAssert.Equal(
+                WashProvenance.Safe,
+                silverware.GetComp<CompSanitation>().WashProvenance,
+                "Cancellation must not claim that the unused silverware was washed in wild water.");
+        }
+        finally
+        {
+            if (!caravan.Destroyed)
+            {
+                caravan.Destroy();
+            }
+
+            if (!pawn.Destroyed)
+            {
+                pawn.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CaravanAnimalsDoNotUseOrDestroyTableware()
+    {
+        var animal = PawnGenerator.GeneratePawn(PawnKindDefOf.Muffalo, Faction.OfPlayer);
+        var caravan = CaravanMaker.MakeCaravan(
+            new[] { animal },
+            Faction.OfPlayer,
+            Find.CurrentMap.Tile,
+            addToWorldPawnsIfNotAlready: true);
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var silverware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+            ThingDefOf.Steel);
+        var settings = ImmersiveChefsMod.Settings;
+        var originalCulinaryQualityEnabled = settings.CulinaryQualityEnabled;
+        var originalMealTemperatureEnabled = settings.MealTemperatureEnabled;
+        var originalFoodPoisoningEffectScale = settings.FoodPoisoningEffectScale;
+        var originalMaximumCustomPoisonChance = settings.MaximumCustomPoisonChance;
+        var originalMicrowaveExtraPoisonChance = settings.MicrowaveExtraPoisonChance;
+
+        try
+        {
+            settings.CulinaryQualityEnabled = true;
+            settings.MealTemperatureEnabled = true;
+            settings.FoodPoisoningEffectScale = 3f;
+            settings.MaximumCustomPoisonChance = 1f;
+            settings.MicrowaveExtraPoisonChance = 5f;
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
+            {
+                new CulinaryServingRecord(
+                    0,
+                    -20f,
+                    ContaminationSources.DirtyCookware |
+                    ContaminationSources.DirtyPlate |
+                    ContaminationSources.DirtySilverware |
+                    ContaminationSources.WildWaterCookware |
+                    ContaminationSources.WildWaterPlate |
+                    ContaminationSources.WildWaterSilverware,
+                    20,
+                    Find.TickManager.TicksGame)
+            });
+            AccessTools.Field(typeof(CompFoodPoisonable), "poisonPct")
+                .SetValue(meal.GetComp<CompFoodPoisonable>(), 0f);
+            IntegrationAssert.True(
+                meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
+                "The animal exclusion fixture must start with a plated meal.");
+            animal.inventory.innerContainer.TryAdd(meal, canMergeWithExistingStacks: false);
+            animal.inventory.innerContainer.TryAdd(silverware, canMergeWithExistingStacks: false);
+
+            meal.Ingested(animal, 0.9f);
+            caravan.RecacheInventory();
+
+            IntegrationAssert.True(
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, plate)),
+                "An animal eating a meal must return its exact unused plate to caravan inventory.");
+            IntegrationAssert.True(
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, silverware)),
+                "Animal ingestion must not select or consume caravan silverware.");
+            IntegrationAssert.Equal(
+                WashProvenance.Safe,
+                plate.GetComp<CompSanitation>().WashProvenance,
+                "An animal-excluded plate must retain its original wash provenance.");
+            IntegrationAssert.Equal(
+                WashProvenance.Safe,
+                silverware.GetComp<CompSanitation>().WashProvenance,
+                "Animal-excluded silverware must retain its original wash provenance.");
+            IntegrationAssert.True(
+                animal.health.hediffSet.GetFirstHediffOfDef(HediffDefOf.FoodPoisoning) is null,
+                "Animal ingestion must not apply Immersive Chefs' custom food-poisoning risk.");
+        }
+        finally
+        {
+            settings.CulinaryQualityEnabled = originalCulinaryQualityEnabled;
+            settings.MealTemperatureEnabled = originalMealTemperatureEnabled;
+            settings.FoodPoisoningEffectScale = originalFoodPoisoningEffectScale;
+            settings.MaximumCustomPoisonChance = originalMaximumCustomPoisonChance;
+            settings.MicrowaveExtraPoisonChance = originalMicrowaveExtraPoisonChance;
+            if (!caravan.Destroyed)
+            {
+                caravan.Destroy();
+            }
+
+            if (!animal.Destroyed)
+            {
+                animal.Destroy(DestroyMode.Vanish);
+            }
+        }
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
