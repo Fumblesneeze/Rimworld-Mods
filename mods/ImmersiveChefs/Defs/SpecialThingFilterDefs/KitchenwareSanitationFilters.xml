@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <SpecialThingFilterDef>
+    <defName>ImmersiveChefs_AllowCleanKitchenware</defName>
+    <label>clean kitchenware</label>
+    <description>Allow clean cookware, plates, and silverware, including items washed with wild water.</description>
+    <parentCategory>ImmersiveChefs_Kitchenware</parentCategory>
+    <allowedByDefault>true</allowedByDefault>
+    <saveKey>immersiveChefsAllowCleanKitchenware</saveKey>
+    <workerClass>ImmersiveChefs.SpecialThingFilterWorker_CleanKitchenware</workerClass>
+  </SpecialThingFilterDef>
+
+  <SpecialThingFilterDef>
+    <defName>ImmersiveChefs_AllowDirtyKitchenware</defName>
+    <label>dirty kitchenware</label>
+    <description>Allow cookware, plates, and silverware that require washing.</description>
+    <parentCategory>ImmersiveChefs_Kitchenware</parentCategory>
+    <allowedByDefault>true</allowedByDefault>
+    <saveKey>immersiveChefsAllowDirtyKitchenware</saveKey>
+    <workerClass>ImmersiveChefs.SpecialThingFilterWorker_DirtyKitchenware</workerClass>
+  </SpecialThingFilterDef>
+</Defs>

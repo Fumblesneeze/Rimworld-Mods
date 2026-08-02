@@ -153,7 +153,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
         foreach (var thing in Contents.InnerListForReading)
         {
-            (thing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean();
+            (thing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean(WashProvenance.Safe);
         }
 
         EjectAll();

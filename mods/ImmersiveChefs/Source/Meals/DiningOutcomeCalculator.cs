@@ -64,6 +64,9 @@ public static class DiningOutcomeCalculator
         percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtyCookware) ? 15f : 0f;
         percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtyPlate) ? 15f : 0f;
         percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtySilverware) ? 10f : 0f;
+        percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterCookware) ? 5f : 0f;
+        percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterPlate) ? 4f : 0f;
+        percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterSilverware) ? 3f : 0f;
         percentagePoints += ServiceDelta(inputs.PlateServiceScore);
         percentagePoints += ServiceDelta(inputs.SilverwareServiceScore);
         percentagePoints += Math.Max(0, inputs.MicrowaveReheatCount) *

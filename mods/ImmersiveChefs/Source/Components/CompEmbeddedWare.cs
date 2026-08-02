@@ -203,7 +203,8 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
             plate.Stuff?.defName,
             (int)quality,
             plate.HitPoints,
-            (plate as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true);
+            (plate as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,
+            (plate as ThingWithComps)?.GetComp<CompSanitation>()?.WashProvenance ?? WashProvenance.None);
     }
 
     private static void PlacePlate(Thing plate, IntVec3 position, Map? map)

@@ -12,12 +12,15 @@ internal sealed class ReservedWarePortion
         Thing = thing;
         Count = count;
         RemainingCount = count;
-        WasDirty = (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true;
+        var sanitation = (thing as ThingWithComps)?.GetComp<CompSanitation>();
+        WasDirty = sanitation?.IsDirty == true;
+        WasWildWaterWashed = sanitation?.WashedInWildWater == true;
     }
 
     internal Thing Thing { get; private set; }
     internal int Count { get; }
     internal bool WasDirty { get; }
+    internal bool WasWildWaterWashed { get; }
     internal int RemainingCount { get; private set; }
 
     internal void ReplaceWithHeldThing(Thing thing)
@@ -141,19 +144,21 @@ internal sealed class CookingSession
 
         for (var index = 0; index < product.stackCount; index++)
         {
-            var contamination = ContaminationSources.None;
-            if (!WareExempt && Cookware?.WasDirty == true)
-            {
-                contamination |= ContaminationSources.DirtyCookware;
-            }
+            var contamination = WareExempt
+                ? ContaminationSources.None
+                : SanitationContamination.ForCookware(
+                    Cookware?.WasDirty == true,
+                    Cookware?.WasWildWaterWashed == true
+                        ? WashProvenance.WildWater
+                        : WashProvenance.Safe);
 
             var embeddedPlate = embeddedWare is null ? null : TryEmbedNextPlate(embeddedWare);
             if (embeddedPlate is not null)
             {
-                if ((embeddedPlate as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true)
-                {
-                    contamination |= ContaminationSources.DirtyPlate;
-                }
+                var sanitation = (embeddedPlate as ThingWithComps)?.GetComp<CompSanitation>();
+                contamination |= SanitationContamination.ForPlate(
+                    sanitation?.IsDirty == true,
+                    sanitation?.WashProvenance ?? WashProvenance.None);
             }
             else if (!WareExempt)
             {

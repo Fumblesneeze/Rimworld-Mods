@@ -44,7 +44,10 @@ public sealed class JobDriver_DoDishes : JobDriver
         yield return Toils_General.WaitWith(TargetIndex.B, duration, useProgressBar: true);
         yield return Toils_General.DoAtomic(() =>
         {
-            (pawn.carryTracker.CarriedThing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean();
+            var provenance = job.GetTarget(TargetIndex.C).IsValid
+                ? WashProvenance.Safe
+                : WashProvenance.WildWater;
+            (pawn.carryTracker.CarriedThing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean(provenance);
             pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
         });
     }

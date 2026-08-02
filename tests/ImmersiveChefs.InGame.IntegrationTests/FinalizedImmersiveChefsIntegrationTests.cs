@@ -4,6 +4,7 @@ using HarmonyLib;
 using RimWorld;
 using RimWorldDevGateway.IntegrationTesting;
 using Verse;
+using Verse.AI;
 
 namespace ImmersiveChefs.InGame.IntegrationTests;
 
@@ -70,6 +71,30 @@ public static class FinalizedImmersiveChefsIntegrationTests
             "MealSimple must retain vanilla CompIngredients for variety compatibility.");
     }
 
+    [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void SanitationStorageFiltersAreFinalizedAgainstKitchenware()
+    {
+        var cleanFilter = DefDatabase<SpecialThingFilterDef>.GetNamedSilentFail(
+            "ImmersiveChefs_AllowCleanKitchenware");
+        var dirtyFilter = DefDatabase<SpecialThingFilterDef>.GetNamedSilentFail(
+            "ImmersiveChefs_AllowDirtyKitchenware");
+        IntegrationAssert.NotNull(cleanFilter, "The clean kitchenware storage filter must finalize.");
+        IntegrationAssert.NotNull(dirtyFilter, "The dirty kitchenware storage filter must finalize.");
+
+        var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+        IntegrationAssert.NotNull(cleanFilter!.Worker, "The clean filter worker must instantiate.");
+        IntegrationAssert.NotNull(dirtyFilter!.Worker, "The dirty filter worker must instantiate.");
+        IntegrationAssert.True(
+            cleanFilter.allowedByDefault && dirtyFilter.allowedByDefault,
+            "Both sanitation filters must preserve vanilla storage behavior until a player disables one.");
+        IntegrationAssert.True(
+            cleanFilter.Worker.CanEverMatch(plateDef),
+            "The finalized clean filter must recognize the plate Def.");
+        IntegrationAssert.True(
+            dirtyFilter.Worker.CanEverMatch(plateDef),
+            "The finalized dirty filter must recognize the plate Def.");
+    }
+
     [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void EmbeddedMealOwnsAndReleasesTheExactPlateThing()
     {
@@ -81,15 +106,164 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var embedded = ((ThingWithComps)meal).GetComp<CompEmbeddedWare>();
 
         IntegrationAssert.True(embedded.TryEmbedPlate(plate), "The finalized meal must accept one physical plate.");
+        ((ThingWithComps)plate).GetComp<CompSanitation>().MarkClean(WashProvenance.WildWater);
         IntegrationAssert.True(
             ReferenceEquals(plate, embedded.PeekPlateThing()),
             "Embedding must retain the original Thing instance.");
+        IntegrationAssert.Equal(
+            WashProvenance.WildWater,
+            embedded.Bindings.Single().WashProvenance,
+            "The lightweight plate binding must retain sanitation provenance.");
         var released = embedded.ReleasePlateThing();
         IntegrationAssert.True(
             ReferenceEquals(plate, released),
             "Releasing must return the exact original Thing instance.");
         IntegrationAssert.Equal(plateId, released!.ThingID, "The plate LoadID must remain unchanged.");
 
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void RealStorageFiltersAndStackingTrackSpawnedSanitationTransitions()
+    {
+        var map = Find.CurrentMap;
+        var pawn = map.mapPawns.FreeColonistsSpawned.First();
+        var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+        var cleanSpecial = DefDatabase<SpecialThingFilterDef>.GetNamed("ImmersiveChefs_AllowCleanKitchenware");
+        var dirtySpecial = DefDatabase<SpecialThingFilterDef>.GetNamed("ImmersiveChefs_AllowDirtyKitchenware");
+        var zoneCells = map.AllCells
+            .Where(cell =>
+                cell.Standable(map) &&
+                map.zoneManager.ZoneAt(cell) is null &&
+                cell.GetFirstItem(map) is null &&
+                cell.GetEdifice(map) is null)
+            .OrderBy(cell => cell.DistanceToSquared(pawn.Position))
+            .Take(2)
+            .ToList();
+        IntegrationAssert.Equal(2, zoneCells.Count, "The quickstart map must provide two stockpile fixture cells.");
+
+        var cleanZone = new Zone_Stockpile(StorageSettingsPreset.DefaultStockpile, map.zoneManager);
+        var dirtyZone = new Zone_Stockpile(StorageSettingsPreset.DefaultStockpile, map.zoneManager);
+        map.zoneManager.RegisterZone(cleanZone);
+        map.zoneManager.RegisterZone(dirtyZone);
+        cleanZone.AddCell(zoneCells[0]);
+        dirtyZone.AddCell(zoneCells[1]);
+        ConfigureSanitationStockpile(cleanZone, plateDef, cleanSpecial, dirtySpecial, clean: true);
+        ConfigureSanitationStockpile(dirtyZone, plateDef, cleanSpecial, dirtySpecial, clean: false);
+
+        var plate = (ThingWithComps)ThingMaker.MakeThing(plateDef, ThingDefOf.Steel);
+        var other = (ThingWithComps)ThingMaker.MakeThing(plateDef, ThingDefOf.Steel);
+        GenSpawn.Spawn(plate, zoneCells[0], map);
+
+        try
+        {
+            var sanitation = plate.GetComp<CompSanitation>();
+            var otherSanitation = other.GetComp<CompSanitation>();
+            sanitation.MarkClean(WashProvenance.WildWater);
+            otherSanitation.MarkClean(WashProvenance.Safe);
+
+            IntegrationAssert.True(
+                !sanitation.AllowStackWith(other),
+                "Equal clean plates with different wash provenance must not stack and erase safety state.");
+
+            var dirtyOnly = new ThingFilter();
+            dirtyOnly.SetAllow(plateDef, allow: true);
+            dirtyOnly.SetAllow(cleanSpecial, allow: false);
+            dirtyOnly.SetAllow(dirtySpecial, allow: true);
+            IntegrationAssert.True(!dirtyOnly.Allows(plate), "A clean plate must be excluded from dirty-only storage.");
+            IntegrationAssert.True(
+                !map.listerHaulables.ThingsPotentiallyNeedingHauling().Contains(plate),
+                "A clean plate already in clean-only storage must not be queued for hauling.");
+
+            sanitation.MarkDirty();
+            IntegrationAssert.True(
+                dirtyOnly.Allows(plate),
+                "A spawned plate must enter dirty-only storage eligibility immediately after being dirtied.");
+            IntegrationAssert.True(
+                map.listerHaulables.ThingsPotentiallyNeedingHauling().Contains(plate),
+                "Dirtifying a spawned plate must invalidate the haul cache for its clean-only stockpile.");
+            var haulJob = HaulAIUtility.HaulToStorageJob(pawn, plate, forced: true);
+            IntegrationAssert.NotNull(haulJob, "RimWorld must find the dirty-only stockpile after invalidation.");
+            IntegrationAssert.Equal(
+                zoneCells[1],
+                haulJob!.GetTarget(Verse.AI.TargetIndex.B).Cell,
+                "RimWorld's native hauling selector must route the dirty plate to dirty-only storage.");
+
+            var cleanOnly = new ThingFilter();
+            cleanOnly.SetAllow(plateDef, allow: true);
+            cleanOnly.SetAllow(cleanSpecial, allow: true);
+            cleanOnly.SetAllow(dirtySpecial, allow: false);
+            IntegrationAssert.True(!cleanOnly.Allows(plate), "A dirty plate must be excluded from clean-only storage.");
+
+            sanitation.MarkClean(WashProvenance.Safe);
+            IntegrationAssert.True(
+                cleanOnly.Allows(plate),
+                "A spawned plate must enter clean-only storage eligibility immediately after being washed.");
+        }
+        finally
+        {
+            if (!plate.Destroyed)
+            {
+                plate.Destroy(DestroyMode.Vanish);
+            }
+
+            if (!other.Destroyed)
+            {
+                other.Destroy(DestroyMode.Vanish);
+            }
+
+            cleanZone.Delete();
+            dirtyZone.Delete();
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void TypedWashSourcesWriteVanillaSerializableJobTargets()
+    {
+        var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+        var dirtyWare = ThingMaker.MakeThing(plateDef, ThingDefOf.Steel);
+        var fixture = ThingMaker.MakeThing(plateDef, ThingDefOf.Steel);
+        try
+        {
+            var safe = WorkGiver_DoDishes.CreateJob(
+                dirtyWare,
+                DishwashingDestination.ForHandwashing(fixture, WashProvenance.Safe));
+            var wild = WorkGiver_DoDishes.CreateJob(
+                dirtyWare,
+                DishwashingDestination.ForHandwashing(Find.CurrentMap.Center, WashProvenance.WildWater));
+
+            IntegrationAssert.True(
+                safe.GetTarget(Verse.AI.TargetIndex.C).HasThing,
+                "A validated safe fixture must persist its provenance marker in vanilla Job target C.");
+            IntegrationAssert.True(
+                !wild.GetTarget(Verse.AI.TargetIndex.C).IsValid,
+                "A wild-water destination must leave vanilla Job target C unset.");
+        }
+        finally
+        {
+            if (!dirtyWare.Destroyed)
+            {
+                dirtyWare.Destroy(DestroyMode.Vanish);
+            }
+
+            if (!fixture.Destroyed)
+            {
+                fixture.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
+    private static void ConfigureSanitationStockpile(
+        Zone_Stockpile zone,
+        ThingDef plateDef,
+        SpecialThingFilterDef cleanSpecial,
+        SpecialThingFilterDef dirtySpecial,
+        bool clean)
+    {
+        zone.settings.Priority = StoragePriority.Critical;
+        zone.settings.filter.SetDisallowAll();
+        zone.settings.filter.SetAllow(plateDef, allow: true);
+        zone.settings.filter.SetAllow(cleanSpecial, allow: clean);
+        zone.settings.filter.SetAllow(dirtySpecial, allow: !clean);
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]

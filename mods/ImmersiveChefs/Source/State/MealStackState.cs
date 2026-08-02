@@ -9,7 +9,8 @@ public sealed class PlateBinding
         string? stuffDefName,
         int quality,
         int hitPoints,
-        bool isDirty)
+        bool isDirty,
+        WashProvenance washProvenance)
     {
         if (string.IsNullOrWhiteSpace(plateDefName))
         {
@@ -21,6 +22,7 @@ public sealed class PlateBinding
         Quality = quality;
         HitPoints = Math.Max(1, hitPoints);
         IsDirty = isDirty;
+        WashProvenance = washProvenance;
     }
 
     public string PlateDefName { get; }
@@ -32,6 +34,8 @@ public sealed class PlateBinding
     public int HitPoints { get; }
 
     public bool IsDirty { get; }
+
+    public WashProvenance WashProvenance { get; }
 }
 
 public sealed class MealStackState

@@ -24,13 +24,34 @@ public sealed class PersistentStateTests
     }
 
     [Test]
+    public void Sanitation_round_trip_preserves_wild_water_provenance_and_prevents_lossy_stacking()
+    {
+        var wildWashed = new SanitationStateModel();
+        wildWashed.MarkClean(WashProvenance.WildWater);
+        wildWashed.MarkDirty();
+
+        var restored = SanitationStateModel.Restore(wildWashed.Capture());
+        var safelyWashed = new SanitationStateModel();
+        safelyWashed.MarkClean(WashProvenance.Safe);
+        safelyWashed.MarkDirty();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(restored.IsDirty, Is.True);
+            Assert.That(restored.WashProvenance, Is.EqualTo(WashProvenance.WildWater));
+            Assert.That(restored.CanStackWith(safelyWashed), Is.False);
+            Assert.That(restored.CanStackWith(SanitationStateModel.Restore(restored.Capture())), Is.True);
+        });
+    }
+
+    [Test]
     public void Splitting_a_meal_stack_transfers_exact_plate_bindings_without_duplication()
     {
         var meals = new MealStackState(new[]
         {
-            new PlateBinding("ImmersiveChefs_Plate", "Steel", 4, 91, false),
-            new PlateBinding("ImmersiveChefs_Plate", "Gold", 3, 73, true),
-            new PlateBinding("ImmersiveChefs_PlateAdobe", null, 2, 48, false)
+            new PlateBinding("ImmersiveChefs_Plate", "Steel", 4, 91, false, WashProvenance.Safe),
+            new PlateBinding("ImmersiveChefs_Plate", "Gold", 3, 73, true, WashProvenance.WildWater),
+            new PlateBinding("ImmersiveChefs_PlateAdobe", null, 2, 48, false, WashProvenance.None)
         });
 
         var split = meals.SplitOff(2);
@@ -41,6 +62,7 @@ public sealed class PersistentStateTests
             Assert.That(meals.PlateBindings[0].StuffDefName, Is.EqualTo("Steel"));
             Assert.That(split.PlateBindings.Select(binding => binding.StuffDefName),
                 Is.EqualTo(new string?[] { "Gold", null }));
+            Assert.That(split.PlateBindings[0].WashProvenance, Is.EqualTo(WashProvenance.WildWater));
             Assert.That(meals.PlateBindings.Count + split.PlateBindings.Count, Is.EqualTo(3));
         });
     }

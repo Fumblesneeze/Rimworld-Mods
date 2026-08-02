@@ -47,4 +47,39 @@ public sealed class DiningCalculationTests
                 ContaminationSources.DirtyPlate | ContaminationSources.DirtySilverware), Is.True);
         });
     }
+
+    [Test]
+    public void Wild_water_plate_and_silverware_add_the_specified_bounded_risk()
+    {
+        var chance = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
+            baseChance: 0.02f,
+            qualityScore: 50,
+            thermalBand: ThermalBand.Warm,
+            contamination: ContaminationSources.WildWaterPlate | ContaminationSources.WildWaterSilverware,
+            plateServiceScore: null,
+            silverwareServiceScore: null,
+            microwaveReheatCount: 0,
+            microwaveExtraPercentagePoints: 0.5f,
+            effectScale: 1f,
+            maximumChance: 0.50f));
+
+        Assert.That(chance, Is.EqualTo(0.09f).Within(0.0001f));
+    }
+
+    [Test]
+    public void Sanitation_state_maps_to_both_dirty_and_wild_water_contamination()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                SanitationContamination.ForCookware(isDirty: true, WashProvenance.WildWater),
+                Is.EqualTo(ContaminationSources.DirtyCookware | ContaminationSources.WildWaterCookware));
+            Assert.That(
+                SanitationContamination.ForPlate(isDirty: false, WashProvenance.WildWater),
+                Is.EqualTo(ContaminationSources.WildWaterPlate));
+            Assert.That(
+                SanitationContamination.ForSilverware(isDirty: true, WashProvenance.Safe),
+                Is.EqualTo(ContaminationSources.DirtySilverware));
+        });
+    }
 }

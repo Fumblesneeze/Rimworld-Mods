@@ -19,7 +19,9 @@ internal sealed class DiningSession
         Pawn = pawn;
         Job = job;
         Silverware = silverware;
-        SilverwareWasDirty = (silverware as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true;
+        var sanitation = (silverware as ThingWithComps)?.GetComp<CompSanitation>();
+        SilverwareWasDirty = sanitation?.IsDirty == true;
+        SilverwareWasWildWaterWashed = sanitation?.WashedInWildWater == true;
         SilverwareServiceScore = silverware is null ? null : KitchenwareRuntime.ServiceScore(silverware);
         Microwave = microwave;
         ReservedPlate = reservedPlate;
@@ -33,6 +35,7 @@ internal sealed class DiningSession
     internal Thing? ReservedPlate { get; }
     internal Thing? CarriedPlate { get; private set; }
     internal bool SilverwareWasDirty { get; }
+    internal bool SilverwareWasWildWaterWashed { get; }
     internal float? SilverwareServiceScore { get; }
     internal Thing? Plate { get; private set; }
     internal Thing? Microwave { get; }
@@ -106,7 +109,9 @@ internal sealed class DiningSession
             return;
         }
 
-        var dirty = (CarriedPlate as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true;
+        var sanitation = (CarriedPlate as ThingWithComps)?.GetComp<CompSanitation>();
+        var dirty = sanitation?.IsDirty == true;
+        var wildWaterWashed = sanitation?.WashedInWildWater == true;
         var embedded = withComps.GetComp<CompEmbeddedWare>();
         if (embedded is null || !embedded.TryEmbedPlate(CarriedPlate))
         {
@@ -123,14 +128,18 @@ internal sealed class DiningSession
                 new CulinaryServingRecord(
                     20,
                     70f,
-                    dirty ? ContaminationSources.DirtyPlate : ContaminationSources.None,
+                    SanitationContamination.ForPlate(
+                        dirty,
+                        wildWaterWashed ? WashProvenance.WildWater : WashProvenance.Safe),
                     0,
                     Find.TickManager?.TicksGame ?? 0)
             });
         }
-        else if (dirty)
+        else
         {
-            culinary?.AddContaminationToCurrent(ContaminationSources.DirtyPlate);
+            culinary?.AddContaminationToCurrent(SanitationContamination.ForPlate(
+                dirty,
+                wildWaterWashed ? WashProvenance.WildWater : WashProvenance.Safe));
         }
     }
 

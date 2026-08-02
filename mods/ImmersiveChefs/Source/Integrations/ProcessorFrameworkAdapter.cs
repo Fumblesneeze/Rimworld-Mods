@@ -237,7 +237,7 @@ internal static class ProcessorFrameworkAdapter
         {
             foreach (var thing in originals)
             {
-                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean();
+                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean(WashProvenance.Safe);
             }
         }
 

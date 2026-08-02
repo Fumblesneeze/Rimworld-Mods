@@ -44,10 +44,11 @@ internal static class DiningIngestionOutcomePatch
         {
             if (__state.Serving is { } serving)
             {
-                if (dining?.SilverwareWasDirty == true)
-                {
-                    serving.AddContamination(ContaminationSources.DirtySilverware);
-                }
+                serving.AddContamination(SanitationContamination.ForSilverware(
+                    dining?.SilverwareWasDirty == true,
+                    dining?.SilverwareWasWildWaterWashed == true
+                        ? WashProvenance.WildWater
+                        : WashProvenance.Safe));
 
                 DiningExperience.Apply(ingester, __state.MealDef, serving, dining);
             }
@@ -244,23 +245,30 @@ internal static class UnifiedFoodPoisoningPatch
 
         var dining = DiningSessionRegistry.Current(ingester);
         var contamination = record.Contamination;
-        if (dining?.SilverwareWasDirty == true)
-        {
-            contamination |= ContaminationSources.DirtySilverware;
-        }
+        contamination |= SanitationContamination.ForSilverware(
+            dining?.SilverwareWasDirty == true,
+            dining?.SilverwareWasWildWaterWashed == true
+                ? WashProvenance.WildWater
+                : WashProvenance.Safe);
+
+        var embeddedPlate = meal.GetComp<CompEmbeddedWare>()?.PeekPlateThing();
+        var servicePlate = dining?.Plate ?? embeddedPlate;
+        var plateSanitation = (servicePlate as ThingWithComps)?.GetComp<CompSanitation>();
+        contamination |= SanitationContamination.ForPlate(
+            plateSanitation?.IsDirty == true,
+            plateSanitation?.WashProvenance ?? WashProvenance.None);
 
         var settings = ImmersiveChefsMod.Settings;
         var band = settings.MealTemperatureEnabled
             ? ThermalCalculator.BandFor(record.TemperatureCelsius)
             : ThermalBand.RoomTemperature;
-        var embeddedPlate = meal.GetComp<CompEmbeddedWare>()?.PeekPlateThing();
         PoisonPercent(__instance) = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
             __state,
             settings.CulinaryQualityEnabled ? record.QualityScore : 50,
             band,
             contamination,
-            (dining?.Plate ?? embeddedPlate) is { } servicePlate
-                ? KitchenwareRuntime.ServiceScore(servicePlate)
+            servicePlate is { } plate
+                ? KitchenwareRuntime.ServiceScore(plate)
                 : null,
             dining?.SilverwareServiceScore,
             record.MicrowaveReheatCount,
