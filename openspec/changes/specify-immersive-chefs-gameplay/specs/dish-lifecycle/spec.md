@@ -3,7 +3,7 @@
 **Owning mod:** Immersive Chefs (`fumblesneeze.immersivechefs`) at `mods/ImmersiveChefs`.
 
 ### Requirement: Persistent sanitation state
-Every reusable cookware set, plate, and silverware set SHALL carry a serialized sanitation state of clean or dirty. The state SHALL survive saving, loading, hauling, storage, caravan transfer, and placement inside an item container without being reset. Chef's knives SHALL use only their intrinsic material-cleanliness stat and SHALL not receive this mutable sanitation component in the planned scope.
+Every reusable cookware set, plate, and silverware set SHALL carry a serialized sanitation state of clean or dirty plus the provenance of its last completed wash: safe fixture/appliance, wild water, or none. The state and provenance SHALL survive saving, loading, hauling, storage, caravan transfer, and placement inside an item container without being reset. Chef's knives SHALL use only their intrinsic material-cleanliness stat and SHALL not receive this mutable sanitation component in the planned scope.
 
 #### Scenario: Dirty ware survives a save cycle
 - **WHEN** a dirty plate, cookware set, or silverware set is saved and the game is loaded again
@@ -13,8 +13,12 @@ Every reusable cookware set, plate, and silverware set SHALL carry a serialized 
 - **WHEN** otherwise compatible clean and dirty ware occupy the same storage cell
 - **THEN** they remain separate stacks, while items with matching sanitation, Stuff, and quality may stack normally
 
+#### Scenario: Wash provenance constrains stacking
+- **WHEN** otherwise compatible safely washed and wild-water-washed clean ware occupy the same storage cell
+- **THEN** they remain separate stacks so the wild-water poisoning provenance cannot be erased by merging
+
 ### Requirement: Lossless service-ware metadata
-A plated meal stack SHALL serialize one plate binding per serving, including the plate Def, Stuff, craftsmanship quality, remaining hit points, and sanitation state. Splitting or partially consuming a stack SHALL transfer the corresponding number of bindings, and merging SHALL occur only when the bindings can be combined without erasing material, quality, durability, or sanitation distinctions.
+A plated meal stack SHALL serialize one plate binding per serving, including the plate Def, Stuff, craftsmanship quality, remaining hit points, sanitation state, and wash provenance. Splitting or partially consuming a stack SHALL transfer the corresponding number of bindings, and merging SHALL occur only when the bindings can be combined without erasing material, quality, durability, sanitation, or wash-provenance distinctions.
 
 #### Scenario: Split a plated meal stack
 - **WHEN** three servings with three bound plates are split into stacks of one and two servings
@@ -124,6 +128,34 @@ Hand-washing jobs SHALL choose reachable, allowed water sources in this order: a
 #### Scenario: Terrain fallback is disabled
 - **WHEN** no eligible fixture exists and terrain handwashing is disabled
 - **THEN** no hand-washing job is issued solely from a water-terrain cell
+
+### Requirement: Wild-water washing is usable but not sanitary-equivalent
+
+A completed wash at a recognized supplied fixture or dishwasher SHALL mark ware clean with safe-wash provenance. A completed wash at water terrain SHALL mark it clean with wild-water provenance. Caravan travel washing SHALL produce the same wild-water provenance. The provenance SHALL remain until a later completed wash replaces it and SHALL be included at the next applicable cooking or dining poisoning calculation even though the ware is selectable as clean.
+
+#### Scenario: Terrain-washed plate is reused
+- **WHEN** a dirty plate is washed at a water-terrain fallback and later used for an eligible meal
+- **THEN** it is selectable as clean and its wild-water provenance contributes the specified plate risk to ingestion
+
+#### Scenario: Dishwasher removes wild-water provenance
+- **WHEN** wild-water-washed ware completes a powered dishwasher cycle
+- **THEN** the same item remains clean and its wash provenance becomes safe
+
+### Requirement: Players can separate clean and dirty ware in storage
+
+Immersive Chefs SHALL add mutually exclusive `Clean kitchenware` and `Dirty kitchenware` special storage filters covering reusable cookware, plates, and silverware. Existing stockpiles SHALL continue to accept both states when neither filter is deliberately excluded. Normal use, plate recovery, and interrupted jobs SHALL NOT automatically forbid dirty ware; player forbiddance SHALL remain authoritative for selection, hauling, and cleaning. When sanitation or wash provenance changes, the item SHALL notify normal storage logic so it can be hauled from a dirty-only stockpile to an eligible clean stockpile or vice versa without changing ownership.
+
+#### Scenario: Player creates a dirty-dish stockpile
+- **WHEN** a stockpile allows `Dirty kitchenware` and excludes `Clean kitchenware`
+- **THEN** dirty reusable ware is eligible for that stockpile and safely or wild-water-washed clean ware is not
+
+#### Scenario: A stored plate becomes clean
+- **WHEN** a dirty plate from a dirty-only stockpile completes washing
+- **THEN** the same plate becomes ineligible for that stockpile and can be hauled to an allowed clean storage destination
+
+#### Scenario: Dirty ware is forbidden by the player
+- **WHEN** the player forbids a dirty item
+- **THEN** ordinary hauling and `Doing dishes` respect the forbiddance until the player allows it
 
 ### Requirement: Identity-preserving dishwashers
 Immersive Chefs SHALL provide a dishwasher with a base capacity of 16 plate-equivalents and an industrial dishwasher with a base capacity of 64 plate-equivalents before applying `DishwasherCapacityScale`. A wash cycle SHALL preserve each input item's Def, Stuff, craftsmanship quality, hit points, stack count, and other components while changing only sanitation-related state, and clean output SHALL be available for hauling when the cycle completes.

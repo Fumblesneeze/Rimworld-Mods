@@ -57,6 +57,22 @@ When `Orion.Gastronomy` and its required `Orion.CashRegister` dependency are act
 - **WHEN** Gastronomy files exist locally but its package ID is not in the active mod list
 - **THEN** no Gastronomy adapter patch is installed
 
+### Requirement: Hospitality guests preserve host and inventory ownership
+
+When `Orion.Hospitality` is active and the locally supported `Hospitality.Utilities.GuestUtility.IsArrivedGuest` shape validates, Immersive Chefs SHALL recognize arrived guests without a compile-time Hospitality reference. Eligible guests SHALL use colony silverware first and personal inventory silverware only as fallback, while Hospitality retains visitor ownership, allowed-area, shopping, food-source, lord, and departure behavior. If validation fails, only the Hospitality adapter SHALL disable itself and ordinary non-Hospitality guest behavior SHALL remain available.
+
+#### Scenario: Hospitality is downloaded but inactive
+- **WHEN** Hospitality Continued files exist locally but `Orion.Hospitality` is absent from the active mod list
+- **THEN** Immersive Chefs installs no Hospitality reflection or Harmony integration
+
+#### Scenario: Arrived guest eats with colony service
+- **WHEN** the validated Hospitality adapter identifies an arrived guest and reachable colony silverware exists
+- **THEN** the guest uses that setting without changing Hospitality's guest status, allowed area, or departure ownership
+
+#### Scenario: Hospitality changes its guest utility shape
+- **WHEN** `Orion.Hospitality` is active but the expected arrived-guest method is absent or incompatible
+- **THEN** one actionable warning disables only Hospitality-specific recognition and Immersive Chefs continues its base dining behavior
+
 ### Requirement: Variety integrations preserve provenance components
 
 With `Evyatar108.VarietyMattersImprovedRedux`, `VanillaExpanded.VanillaFoodVarietyExpanded`, or other compatible food-variety mods active, Immersive Chefs SHALL preserve `CompIngredients` and unknown ThingComps through preparation, cooking, plating, stacking, reheating, and spoilage. Variety calculations SHALL continue to observe the original ingredient data unless a specified paste-preparation rule intentionally hides exact sources.

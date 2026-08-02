@@ -63,3 +63,13 @@
 - [ ] 8.2 IN-GAME: Run isolated minimal, all-supported, and incompatibility smoke matrices through the repo's gateway/FlaUI tooling, retaining state/log/screenshot evidence and restoring any normal configuration in `finally`.
 - [x] 8.3 REFACTOR: Perform independent correctness/test and KISS/compatibility reviews, fix accepted findings, and rerun the complete matrix.
 - [x] 8.4 DOCUMENT: Update player settings, compatibility, current-schema save behavior, known limitations, and troubleshooting documentation; state that pre-release migration/uninstall cleanup, ceramics/porcelain, Vanilla Cooking Expanded classification, food waste, and preservation are deferred.
+
+## 9. mods/ImmersiveChefs - Travel, guests, assisted feeding, and storage
+
+- [x] 9.1 SPEC: Define caravan cooling and exact ware conservation, automatic wild-water travel washing, Hospitality guest source priority, independent-child and patient-feeding rules, missing-silverware dirt, and clean/dirty storage and forbiddance behavior.
+- [ ] 9.2 TDD RED: Add failing pure tests for wash provenance, risk deltas, caravan ambient selection, service-ware source priority, diner/feeder consequence ownership, self-feeding eligibility, and storage-filter predicates.
+- [ ] 9.3 TDD GREEN: Extend serialized sanitation and culinary state plus selection/outcome policies with the smallest implementation that passes the new pure tests.
+- [ ] 9.4 TDD RED/GREEN: Add guarded runtime patches for caravan ingestion/cooling, map eating and patient feeding, bounded vanilla dirt creation, exact holder returns, and storage notifications; add loaded-game integration tests for concrete Def and Harmony shapes.
+- [ ] 9.5 COMPATIBILITY: Inventory locally downloaded Hospitality Continued, implement its package-and-shape-gated guest adapter without a hard reference, and verify absent, inactive, active-compatible, and changed-shape behavior.
+- [ ] 9.6 IN-GAME: Through actual pawn jobs and player-observable behavior, verify a caravan meal cools and returns exact clean wild-water-provenance ware; a Hospitality guest prefers colony then inventory silverware; an independent child dines normally; a nurse feeding conscious/unconscious patients assigns thoughts correctly; missing silverware creates bounded dirt; and clean/dirty stockpile filters and forbiddance affect hauling/cleaning.
+- [ ] 9.7 REVIEW: Review only this incremental diff for correctness, Harmony compatibility, state conservation, test honesty, and KISS; resolve findings and rerun the affected and full matrices.

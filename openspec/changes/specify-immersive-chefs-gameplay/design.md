@@ -1,8 +1,8 @@
 ## Context
 
-Immersive Chefs currently has a loadable RimWorld 1.6/Harmony baseline and a package-ID integration catalog, but no gameplay implementation. The requested simulation crosses recipes, reservations, Thing stacking, ingestion, rot, temperatures, work givers, linked buildings, Royalty expectations, and several independently optional mods. Harmony is the only required third-party mod. Local Workshop inspection found usable Expanded Materials metals and adobe, Dubs Bad Hygiene, Gastronomy, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, Vanilla Nutrient Paste Expanded, ABS polymer, Processor Framework, and a downloaded but inactive Vanilla Cooking Expanded; it did not find a suitable RimWorld 1.6 ceramic material mod or brass Def.
+Immersive Chefs has a loadable RimWorld 1.6/Harmony implementation baseline. The requested simulation crosses recipes, reservations, Thing stacking, ingestion, rot, temperatures, work givers, linked buildings, caravans, Royalty expectations, and several independently optional mods. Harmony is the only required third-party mod. Local Workshop inspection found usable Expanded Materials metals and adobe, Dubs Bad Hygiene, Hospitality Continued, Gastronomy, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, Vanilla Nutrient Paste Expanded, ABS polymer, Processor Framework, and a downloaded but inactive Vanilla Cooking Expanded; it did not find a suitable RimWorld 1.6 ceramic material mod or brass Def.
 
-This document defines implementation architecture for the planned contract. It does not claim that gameplay is implemented.
+This document defines the implementation architecture and acceptance contract; completed behavior is tracked in `tasks.md` and is accepted only after its in-game observation task is complete.
 
 ## Goals / Non-Goals
 
@@ -17,7 +17,8 @@ This document defines implementation architecture for the planned contract. It d
 **Non-Goals:**
 
 - Food waste, canning, fermentation, and other preservation systems. The data model will leave extension points, but no inactive feature will alter play.
-- Drinks, drugs, baby food, animal feeding, knife washing, detergent, dish breakage, utensil wear, cross-contamination simulation, or caravan dishwashing.
+- Drinks, drugs, baby food, animal feeding, knife washing, detergent, dish breakage, utensil wear, or general cross-contamination simulation beyond the explicit wild-water wash provenance.
+- Player-visible caravan dishwashing jobs or caravan washing buildings; travel washing is an automatic journey abstraction.
 - Replacing Variety Matters, food-variety content mods, or nutrient-paste overhaul logic.
 - Compile-time references to optional mod assemblies.
 - Ceramic/porcelain content or research, Vanilla Cooking Expanded recipe classification, and compatibility migrations between unreleased development schemas.
@@ -68,9 +69,17 @@ Dining standards compare material-category scores, plate/silverware comfort, mea
 
 Integration activation requires both a known package ID and the expected Def/type/member shape. Reflection is isolated behind adapters and cached after validation. Failure disables only that adapter and logs one actionable warning. Harmony patches target the narrowest stable public behavior, use prepare guards, preserve original return values/state, and avoid transpilers where a prefix/postfix or Def patch can express the behavior.
 
-The base implementation preserves `CompIngredients` and other unknown ThingComps. This is the main compatibility boundary for Variety Matters and food-variety mods.
+The base implementation preserves `CompIngredients` and other unknown ThingComps. This is the main compatibility boundary for Variety Matters and food-variety mods. Hospitality support recognizes an arrived guest only through the active `Orion.Hospitality` adapter and its validated `Hospitality.Utilities.GuestUtility.IsArrivedGuest` shape; colony service ware remains the first source and the guest's inventory is the fallback.
 
-### 9. Settings separate restart-required classification from live tuning
+### 9. Travel and assisted dining reuse the same physical ware lifecycle
+
+Eligible meals keep cooling while held by a caravan, using the caravan tile's outdoor temperature as ambient. A caravan diner uses the serving's exact embedded plate or, for an imported unplated serving, attaches an eligible loose caravan plate at dining selection; silverware is selected from caravan inventory. After ingestion the same plate and silverware return to caravan inventory. The journey then abstracts routine washing by marking those items clean with wild-water provenance. Wild-water washing is not equivalent to safe fixture or dishwasher cleaning: it leaves the item usable and clean while adding a small deterministic poisoning-risk input until a later safe wash replaces that provenance.
+
+Map guests use available colony service ware first and may fall back to their own inventory. A child enters the ordinary dining workflow when vanilla allows independent eating; baby food, milk, and other toddler-feeding exclusions remain untouched. For patient feeding, the feeder acquires and carries the silverware but the dining result belongs to the patient. A missing-silverware thought applies only when that patient is conscious, and eating or feeding without silverware creates one bounded vanilla dirt event at the actual eating location when a map exists.
+
+Dirty ware remains ordinarily haulable and is not automatically forbidden. Player forbiddance remains authoritative. Two mutually exclusive special storage filters expose clean and dirty kitchenware so players can create dedicated wash-input and clean-service stockpiles; sanitation changes notify normal storage hauling so cleaned ware can leave dirty-only storage.
+
+### 10. Settings separate restart-required classification from live tuning
 
 | Setting | Default | Allowed values | Application |
 |---|---:|---:|---|
@@ -105,7 +114,7 @@ The base implementation preserves `CompIngredients` and other unknown ThingComps
 
 Restart-required settings alter generated Defs, recipe users, or classification caches. Live settings are read at job selection or outcome calculation. Save/load within the same development schema SHALL preserve state, but backward migration between unreleased schemas and uninstall cleanup are deliberately deferred until release readiness.
 
-### 10. Progression comes from workstations and two kitchen researches
+### 11. Progression comes from workstations and two kitchen researches
 
 Kitchenware recipes have no Immersive Chefs research prerequisite. The actual vanilla workstation gates provide progression: a crafting spot supports primitive stone cookware and soft service ware; fueled/electric smithies support medieval cookware and intermediate metals; and the machining table supports modern cookware, chef's knives, and a late universal service-ware route. A data-driven fabrication tier distinguishes soft, intermediate, and modern materials; unknown compatible metals default to the smithy tier unless explicitly registered otherwise.
 
@@ -134,7 +143,6 @@ Kitchenware recipes have no Immersive Chefs research prerequisite. The actual va
 
 ## Open Questions
 
-- Should caravans eventually carry reusable ware state, or should all travel-food behavior remain excluded?
 - Food preservation and food waste need separate future OpenSpec changes; waste hooks must distinguish edible leftovers, spoilage, discarded prep, and sanitation residues before implementation.
 - Vanilla Cooking Expanded needs a future compatibility change that explicitly classifies its recipes after its live behavior and Defs are verified; the current change does not guess those tiers.
 

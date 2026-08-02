@@ -35,6 +35,67 @@ The mod SHALL calculate plate and silverware cleanliness, material comfort, and 
 - **WHEN** an eligible pawn consumes a meal from a dirty wooden plate with dirty wooden silverware
 - **THEN** the ingestion outcome includes their bounded cleanliness and comfort penalties and at most one unmet-dining-standard thought
 
+### Requirement: Guests use colony service before personal fallback
+
+An eligible map guest SHALL search reachable, allowed colony silverware before silverware in the guest's own inventory. This behavior SHALL apply to ordinary non-hostile guests and, when `Orion.Hospitality` is active and its adapter validates, pawns recognized by Hospitality as arrived guests. Inventory fallback SHALL preserve the same clean-first and dirty-fallback policy. Colony ware SHALL remain colony property, and cancellation before eating SHALL return it without changing sanitation.
+
+#### Scenario: Hospitality guest uses colony silverware
+
+- **WHEN** an arrived Hospitality guest starts an eligible meal and clean colony silverware is reachable
+- **THEN** the dining job selects the colony setting before otherwise eligible silverware in the guest's inventory
+
+#### Scenario: Guest falls back to personal silverware
+
+- **WHEN** no colony silverware is eligible and the guest carries an eligible setting
+- **THEN** that exact carried setting is used and returned dirty to the guest's inventory after eating
+
+### Requirement: Independent children and assisted patients follow diner-aware rules
+
+A child SHALL enter the ordinary plate, silverware, temperature, quality, and dining-standard workflow as soon as vanilla permits that pawn to choose and eat food independently. Baby food, milk, and other non-self-feeding toddler workflows SHALL remain excluded. When one pawn feeds an eligible meal to another pawn, including a patient, the feeder SHALL acquire and carry the silverware, but ware comfort, cleanliness, poisoning, and dining memories SHALL be evaluated for the fed pawn. If no permitted silverware exists, the missing-silverware memory SHALL be added to the fed pawn only when that pawn is conscious; the feeder SHALL NOT receive it on the patient's behalf.
+
+On a spawned map, an eligible self-eating or assisted-feeding event completed without silverware SHALL create one bounded instance of ordinary vanilla dirt at the actual eating location. It SHALL not create dirt for excluded food, aborted jobs, `WareRequirementMode=Off`, or a world-holder ingestion event with no map.
+
+#### Scenario: Self-feeding child eats normally
+
+- **WHEN** vanilla allows a child to start an ordinary eating job for an eligible meal
+- **THEN** the child follows the same ware acquisition, dish return, and dining effects as an adult
+
+#### Scenario: Nurse feeds a conscious patient without silverware
+
+- **WHEN** a nurse completes feeding an eligible meal to a conscious patient and no permitted silverware exists
+- **THEN** the patient receives the missing-silverware consequence, the nurse does not, and one vanilla dirt event is created at the feeding location
+
+#### Scenario: Nurse feeds an unconscious patient
+
+- **WHEN** a nurse completes feeding an eligible meal to an unconscious patient without silverware
+- **THEN** no missing-silverware memory is added to either pawn while physical plate recovery and the bounded dirt event still occur
+
+### Requirement: Caravan dining conserves reusable service ware
+
+An eligible meal eaten from a caravan SHALL retain the same temperature, culinary state, plate, silverware, and dining effects as its map equivalent. The serving SHALL cool toward the current caravan tile's outdoor temperature while held by the caravan. The diner SHALL use the serving's exact embedded plate or, when an imported serving is unplated, SHALL select and attach one loose caravan plate under the clean-first fallback policy before ingestion. Silverware SHALL be selected from the caravan inventory under the same policy. If an unplated serving has no permitted loose plate, ingestion SHALL remain non-blocking and record the missing-plate consequence. After ingestion, the exact used plate and any selected silverware SHALL be returned to caravan inventory without replacement or duplication. Pemmican, packaged survival meals, registered travel foods, raw food, drinks, drugs, baby food, and animal feeding SHALL remain excluded.
+
+The caravan journey SHALL abstract routine washing after each eligible dining event: returned ware becomes clean with wild-water wash provenance. It remains usable, but the next applicable poisoning calculation SHALL include the same wild-water provenance risk as ware washed at a water-terrain fallback on a map.
+
+#### Scenario: Caravan pawn eats a plated meal
+
+- **WHEN** a caravan pawn consumes an eligible serving with an embedded plate and selects caravan silverware
+- **THEN** the same plate and silverware appear in caravan inventory after ingestion, clean with wild-water provenance, and no replacement items are spawned
+
+#### Scenario: Caravan meal becomes cold
+
+- **WHEN** an eligible meal remains in a caravan on a cold world tile long enough to cross a thermal boundary
+- **THEN** its inspect state and eventual ingestion use the colder current serving temperature
+
+#### Scenario: Caravan plates an imported serving at dining time
+
+- **WHEN** an eligible unplated serving and an eligible loose plate exist in caravan inventory
+- **THEN** that exact plate is attached for the dining event and returned after ingestion without requiring a map work surface
+
+#### Scenario: Caravan pawn eats travel food
+
+- **WHEN** a caravan pawn consumes pemmican or a registered packaged travel meal
+- **THEN** no plate or silverware is selected, returned, washed, or reported missing
+
 ### Requirement: Colony expectations scale gradually
 
 When `ColonyDiningStandards` is enabled, the mod SHALL derive minimum service comfort, material category, meal complexity, and culinary-quality score from the pawn's current expectation level using the table below. Colony standards SHALL be disabled independently and SHALL not apply wealth expectations to prisoners.

@@ -91,11 +91,16 @@ At ingestion the mod SHALL begin with the compatible base-game poisoning probabi
 | Dirty cookware used to cook the serving | `+15` |
 | Dirty plate | `+15` |
 | Dirty silverware | `+10` |
+| Wild-water-washed cookware | `+5` |
+| Wild-water-washed plate | `+4` |
+| Wild-water-washed silverware | `+3` |
 | Plate service score | `(50 - normalized service score) * 0.03` |
 | Silverware service score | `(50 - normalized service score) * 0.03` |
 | Microwave reheating | `MicrowaveExtraPoisonChance` for each completed reheat |
 
 The normalized plate or silverware service score SHALL be `clamp(0.75 * craftsmanship score + 0.25 * material-cleanliness score, 0, 100)`, using the kitchenware system's normalized values; an absent item contributes no service-score delta. The sum of custom deltas SHALL be multiplied by `FoodPoisoningEffectScale`, the final probability SHALL be clamped from zero through `MaximumCustomPoisonChance`, and the mod MUST NOT lower a compatible base probability that already exceeds that configured cap. Dirty cookware contamination SHALL remain on the serving record even after the cookware itself is dropped. A pawn eating a serving involving any dirty cookware, plate, or silverware SHALL additionally receive one non-stacking `Ate with dirty kitchenware` thought at mood `-6` for one in-game day.
+
+Wild-water provenance SHALL be evaluated independently from dirty state, SHALL be preserved in cookware contamination snapshots and embedded plate bindings, and SHALL use the same deltas whether the wash occurred at map water terrain or through caravan travel abstraction. The general `FoodPoisoningEffectScale` and `MaximumCustomPoisonChance` SHALL apply to these deltas. Safely washing an item before use SHALL remove its wild-water delta.
 
 #### Scenario: Dirty full place setting is dramatically riskier
 - **WHEN** a pawn eats a serving cooked with dirty cookware from a dirty plate using dirty silverware at default settings
@@ -109,6 +114,10 @@ The normalized plate or silverware service score SHALL be `clamp(0.75 * craftsma
 #### Scenario: Configured risk cap is enforced
 - **WHEN** the scaled custom deltas would raise a base poisoning probability below the configured cap to more than `MaximumCustomPoisonChance`
 - **THEN** the final probability is limited to `MaximumCustomPoisonChance`
+
+#### Scenario: Wild-water place setting adds bounded risk
+- **WHEN** a pawn eats a warm, otherwise clean serving cooked without dirty cookware from a wild-water-washed plate using wild-water-washed silverware
+- **THEN** the custom risk includes `+7` percentage points from wash provenance before scaling and the configured cap
 
 ### Requirement: Pawns reheat eligible cold meals in a microwave
 The mod SHALL provide a powered microwave building unlocked directly by vanilla `Electricity` that accepts one eligible plated meal serving per heating job. It SHALL require neither `ImmersiveChefs_Dishwashing` nor `ImmersiveChefs_ProfessionalKitchens`. When meal temperature is enabled, a pawn intending to eat a serving below `AutoMicrowaveBelow` SHALL prefer a reachable, allowed, powered, and reservable microwave before ingesting it. A completed cycle SHALL set that serving to `60°C`, subtract `MicrowaveQualityLoss` from its culinary score without going below zero, increment its reheat count, and add the per-reheat poisoning delta at eventual ingestion. If no usable microwave exists, reheating MUST remain optional and MUST NOT prevent eating. Recipes excluded by the meal-production contract MUST remain excluded from automatic microwave jobs.

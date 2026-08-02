@@ -9,12 +9,13 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - Specify prepared ingredients, nutrient-paste preparation, rapidly perishable provenance, and preparation-quality effects.
 - Specify manned linked kitchen stations whose assistants contribute only while the lead cook is actively cooking.
 - Specify culinary quality, temperature, reheating, poisoning risk, dining thoughts, expectations, and Royalty standards.
+- Specify caravan cooling and reusable tableware, guest and Hospitality ware sourcing, child and patient feeding, wild-water sanitation provenance, missing-silverware dirt, and clean/dirty stockpile filters.
 - Specify optional integrations for locally installed material, hygiene, restaurant, variety, and nutrient-paste mods without making them hard dependencies.
 - Specify player-facing settings and safe emergency fallbacks so the simulation cannot deadlock or starve pawns.
 - Specify `Dishwashing` and `Professional Kitchens` research while leaving ordinary tableware progression to the crafting spot, smithies, and machining table.
 - Record food preservation/canning and food waste as future extension points; neither is in this change's implementation scope.
 - Defer ceramic/porcelain content and recipe classification for Vanilla Cooking Expanded to later compatibility changes.
-- This change is a **planned gameplay contract only**. It does not implement gameplay behavior.
+- This change is the gameplay contract governing the implementation and its remaining in-game acceptance work.
 
 ## Capabilities
 
@@ -35,7 +36,7 @@ None.
 
 ## Impact
 
-The eventual implementation will primarily affect `mods/ImmersiveChefs`, including Defs, XML patches, Harmony patches, serialized components, jobs/work givers, buildings, settings, compatibility adapters, and tests. Harmony remains the sole required third-party mod; Processor Framework, Expanded Materials, Dubs Bad Hygiene, Gastronomy, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, Vanilla Nutrient Paste Expanded, and compatible material mods remain optional.
+The implementation primarily affects `mods/ImmersiveChefs`, including Defs, XML patches, Harmony patches, serialized components, jobs/work givers, buildings, settings, compatibility adapters, and tests. Harmony remains the sole required third-party mod; Processor Framework, Expanded Materials, Dubs Bad Hygiene, Hospitality, Gastronomy, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, Vanilla Nutrient Paste Expanded, and compatible material mods remain optional.
 
 ## Affected Mods
 
