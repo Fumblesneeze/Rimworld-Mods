@@ -1,0 +1,165 @@
+using System.IO;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using HarmonyLib;
+using NUnit.Framework;
+
+namespace ImmersiveChefs.Harmony.Tests;
+
+[TestFixture]
+[NonParallelizable]
+public sealed class HarmonyIsolationTests
+{
+    [Test]
+    public void Explicit_patch_scope_changes_only_the_scoped_call_and_restores_the_original()
+    {
+        var target = typeof(HarmonyProbe).GetMethod(nameof(HarmonyProbe.Read), BindingFlags.Public | BindingFlags.Static)!;
+        var postfix = typeof(HarmonyProbePatch).GetMethod(nameof(HarmonyProbePatch.Postfix), BindingFlags.Public | BindingFlags.Static)!;
+
+        Assert.That(HarmonyProbe.Read(), Is.EqualTo("original"));
+
+        using (HarmonyPatchScope.ApplyPostfix("fumblesneeze.immersivechefs.tests.patch-scope", target, postfix))
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(HarmonyProbe.Read(), Is.EqualTo("patched"));
+                Assert.That(
+                    HarmonyLib.Harmony.GetPatchInfo(target)?.Postfixes.Count(patch =>
+                        patch.owner == "fumblesneeze.immersivechefs.tests.patch-scope"),
+                    Is.EqualTo(1));
+            });
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(HarmonyProbe.Read(), Is.EqualTo("original"));
+            Assert.That(
+                HarmonyLib.Harmony.GetPatchInfo(target)?.Owners.Contains("fumblesneeze.immersivechefs.tests.patch-scope") ?? false,
+                Is.False);
+        });
+    }
+
+    [Test]
+    public void Patch_scope_removes_its_owner_when_the_test_body_throws()
+    {
+        const string ownerId = "fumblesneeze.immersivechefs.tests.throwing-patch-scope";
+        var target = typeof(HarmonyProbe).GetMethod(nameof(HarmonyProbe.Read), BindingFlags.Public | BindingFlags.Static)!;
+        var postfix = typeof(HarmonyProbePatch).GetMethod(nameof(HarmonyProbePatch.Postfix), BindingFlags.Public | BindingFlags.Static)!;
+
+        Assert.That(
+            () =>
+            {
+                using (HarmonyPatchScope.ApplyPostfix(ownerId, target, postfix))
+                {
+                    Assert.That(HarmonyProbe.Read(), Is.EqualTo("patched"));
+                    throw new DeliberateTestBodyException();
+                }
+            },
+            Throws.TypeOf<DeliberateTestBodyException>());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(HarmonyProbe.Read(), Is.EqualTo("original"));
+            Assert.That(HarmonyLib.Harmony.HasAnyPatches(ownerId), Is.False);
+        });
+    }
+
+    [Test]
+    public void Runtime_harmony_copy_matches_the_explicit_configured_source()
+    {
+        var testAssembly = typeof(HarmonyIsolationTests).Assembly;
+        var sourcePath = testAssembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .Single(attribute => attribute.Key == "HarmonyAssemblyPath")
+            .Value;
+        var runtimeAssembly = typeof(HarmonyLib.Harmony).Assembly;
+        var sourceIdentity = AssemblyName.GetAssemblyName(sourcePath);
+        var sourceHash = ComputeSha256(sourcePath);
+        var runtimeHash = ComputeSha256(runtimeAssembly.Location);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sourceIdentity.Name, Is.EqualTo("0Harmony"));
+            Assert.That(runtimeAssembly.GetName().FullName, Is.EqualTo(sourceIdentity.FullName));
+            Assert.That(runtimeHash, Is.EqualTo(sourceHash));
+            Assert.That(runtimeAssembly.ManifestModule.ModuleVersionId, Is.Not.EqualTo(Guid.Empty));
+        });
+
+        TestContext.Progress.WriteLine(
+            $"Harmony source={sourcePath}; version={sourceIdentity.Version}; " +
+            $"sha256={sourceHash}; mvid={runtimeAssembly.ManifestModule.ModuleVersionId:D}");
+    }
+
+    [Test]
+    public void Failed_patch_acquisition_leaves_no_owner_or_changed_behavior()
+    {
+        const string ownerId = "fumblesneeze.immersivechefs.tests.failed-patch-acquisition";
+        var target = typeof(HarmonyProbe).GetMethod(nameof(HarmonyProbe.Read), BindingFlags.Public | BindingFlags.Static)!;
+        var invalidPostfix = typeof(HarmonyProbePatch).GetMethod(
+            nameof(HarmonyProbePatch.InvalidPostfix),
+            BindingFlags.Public | BindingFlags.Static)!;
+
+        Assert.That(
+            () => HarmonyPatchScope.ApplyPostfix(ownerId, target, invalidPostfix),
+            Throws.Exception);
+        Assert.Multiple(() =>
+        {
+            Assert.That(HarmonyProbe.Read(), Is.EqualTo("original"));
+            Assert.That(HarmonyLib.Harmony.HasAnyPatches(ownerId), Is.False);
+        });
+    }
+
+    [Test]
+    public void Failed_cleanup_can_be_retried_before_the_scope_becomes_disposed()
+    {
+        var attempts = 0;
+        var scope = HarmonyPatchScope.CreateCleanupProbe(() =>
+        {
+            attempts++;
+            if (attempts == 1)
+            {
+                throw new DeliberateCleanupException();
+            }
+        });
+
+        Assert.That(() => scope.Dispose(), Throws.TypeOf<DeliberateCleanupException>());
+        Assert.That(() => scope.Dispose(), Throws.Nothing);
+        scope.Dispose();
+
+        Assert.That(attempts, Is.EqualTo(2));
+    }
+
+    private static string ComputeSha256(string path)
+    {
+        using var stream = File.OpenRead(path);
+        using var sha256 = SHA256.Create();
+        return BitConverter.ToString(sha256.ComputeHash(stream)).Replace("-", string.Empty);
+    }
+
+    private static class HarmonyProbe
+    {
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static string Read() => "original";
+    }
+
+    private static class HarmonyProbePatch
+    {
+        public static void Postfix(ref string __result)
+        {
+            __result = "patched";
+        }
+
+        public static void InvalidPostfix(string parameterThatDoesNotExist)
+        {
+        }
+    }
+
+    private sealed class DeliberateTestBodyException : Exception
+    {
+    }
+
+    private sealed class DeliberateCleanupException : Exception
+    {
+    }
+}

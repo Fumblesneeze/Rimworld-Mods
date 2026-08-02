@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup Condition="'$(UsingZlepperRimWorldSdk)' == 'true' and '$(DeployToGame)' != 'true'">
+    <RimWorldModPackageFolder>$(ArtifactsRoot)GameMods\$(RimWorldPackageId)</RimWorldModPackageFolder>
+  </PropertyGroup>
+</Project>

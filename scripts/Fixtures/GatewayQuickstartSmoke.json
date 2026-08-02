@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "clearRadius": 4,
+  "buildings": [
+    {
+      "defName": "Table2x2c",
+      "stuff": "WoodLog",
+      "count": 1,
+      "quality": "Good",
+      "offset": { "x": 0, "z": 0 }
+    },
+    {
+      "defName": "DiningChair",
+      "stuff": "Steel",
+      "count": 2,
+      "quality": "Normal",
+      "offset": { "x": 3, "z": 0 }
+    }
+  ],
+  "items": [
+    {
+      "defName": "Steel",
+      "count": 75,
+      "offset": { "x": -3, "z": 0 }
+    },
+    {
+      "defName": "ComponentIndustrial",
+      "count": 5,
+      "offset": { "x": -3, "z": 1 }
+    }
+  ],
+  "pawns": [
+    {
+      "kindDefName": "Colonist",
+      "count": 1,
+      "offset": { "x": 0, "z": 4 }
+    }
+  ]
+}

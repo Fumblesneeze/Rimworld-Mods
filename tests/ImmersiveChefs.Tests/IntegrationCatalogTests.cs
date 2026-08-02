@@ -1,0 +1,57 @@
+using NUnit.Framework;
+
+namespace ImmersiveChefs.Tests;
+
+[TestFixture]
+public sealed class IntegrationCatalogTests
+{
+    private static readonly string[][] UnknownOrEmptyPackageSets =
+    {
+        Array.Empty<string>(),
+        new[] { "someone.elses.mod" }
+    };
+
+    [Test]
+    public void Detect_marks_a_recognized_loaded_integration_active()
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { "dubwise.dubsbadhygiene" });
+
+        Assert.That(snapshot.IsActive(OptionalIntegration.DubsBadHygiene), Is.True);
+    }
+
+    [TestCaseSource(nameof(UnknownOrEmptyPackageSets))]
+    public void Detect_returns_a_complete_inactive_snapshot_for_unknown_or_empty_packages(string[] packageIds)
+    {
+        var snapshot = IntegrationCatalog.Detect(packageIds);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(snapshot.States, Has.Count.EqualTo(11));
+            Assert.That(snapshot.States.Values, Has.All.False);
+        });
+    }
+
+    [Test]
+    public void Detect_normalizes_duplicates_and_returns_immutable_results()
+    {
+        var snapshot = IntegrationCatalog.Detect(new[]
+        {
+            "DUBWISE.DUBSBADHYGIENE",
+            "dubwise.dubsbadhygiene",
+            "SYRCHALIS.PROCESSOR.FRAMEWORK"
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(snapshot.Active, Is.EquivalentTo(new[]
+            {
+                OptionalIntegration.DubsBadHygiene,
+                OptionalIntegration.ProcessorFramework
+            }));
+            Assert.That(snapshot.Active, Has.Count.EqualTo(2));
+            Assert.That(
+                () => ((IDictionary<OptionalIntegration, bool>)snapshot.States)[OptionalIntegration.Royalty] = true,
+                Throws.TypeOf<NotSupportedException>());
+        });
+    }
+}

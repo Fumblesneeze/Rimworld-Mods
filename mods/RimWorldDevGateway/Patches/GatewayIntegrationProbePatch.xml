@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <Operation Class="PatchOperationAddModExtension">
+    <xpath>/Defs/ThingDef[defName="Steel"]</xpath>
+    <value>
+      <li Class="RimWorldDevGateway.GatewayIntegrationProbeExtension">
+        <marker>patched-by-gateway-xml</marker>
+      </li>
+    </value>
+  </Operation>
+</Patch>

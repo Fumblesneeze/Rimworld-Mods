@@ -1,0 +1,23 @@
+schema: spec-driven
+
+context: |
+  This repository is a RimWorld mod monorepo. OpenSpec artifacts live at repository root under openspec/, while each playable mod lives under mods/<ModName>/.
+  The first mod is Immersive Chefs, package ID fumblesneeze.immersivechefs, owned at mods/ImmersiveChefs.
+  The development machine currently runs RimWorld 1.6 from F:\Steam\steamapps\common\RimWorld and stores Workshop content under F:\Steam\steamapps\workshop\content\294100.
+  Harmony is the only required third-party mod. All gameplay integrations must be optional and discovered by package ID without hard assembly references unless a future integration design explicitly isolates a reflection adapter.
+  Fast tests run outside RimWorld; Unity lifecycle, initialized Def databases, maps, jobs, rendering, and complete mod-load behavior require an in-game verification tier.
+  Product specs may describe planned behavior, but proposals and task states must clearly distinguish implemented behavior from future scope.
+
+rules:
+  proposal:
+    - Include an "Affected Mods" section with each mod's display name, package ID, and repository-relative path.
+    - State whether gameplay behavior is implemented by the change or only specified for later work.
+  design:
+    - Keep optional integrations behind package-ID detection and avoid compile-time references to optional mod assemblies.
+    - Include rollback and restoration behavior for any process that changes RimWorld's ModsConfig.xml.
+  specs:
+    - Immediately below each delta-operation heading, identify the owning mod with display name, package ID, and repository-relative path.
+    - Give every normative requirement at least one observable WHEN/THEN scenario.
+  tasks:
+    - Prefix implementation section headings with the owning repository-relative mod path.
+    - Separate TDD red, green, refactor, build, and in-game verification work.

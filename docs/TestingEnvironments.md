@@ -1,0 +1,105 @@
+# Host test environments
+
+The repository's Zlepper testing SDK is a compiler and NUnit configuration layer, not a running RimWorld harness. Version `0.0.9` references `Assembly-CSharp.dll` and `UnityEngine.CoreModule.dll`; it does not load mods, construct `Mod` classes, apply Harmony, parse Def XML, populate `DefDatabase<T>`, or reset RimWorld static state.
+
+That distinction determines which test environment to use.
+
+## Decision table
+
+| Test need | Host-test treatment | What it proves |
+| --- | --- | --- |
+| Pure calculations or state machines | Pass ordinary values or product-owned immutable snapshots | Domain behavior only |
+| Optional package present/absent | Pass explicit package IDs to `IntegrationCatalog` or another narrow public boundary | Package-selection logic, not a loaded mod |
+| One Immersive Chefs Harmony patch | Use the process-isolated `ImmersiveChefs.Harmony` suite; patch one explicit target with a unique owner and unpatch in cleanup | Patch method/signature behavior under the exact installed Harmony DLL |
+| Lookup of a small known Def | Construct a minimal `Def` subclass and register it with `DefDatabaseScope<T>` in the process-isolated `ImmersiveChefs.Defs` suite | Code interacting with `DefDatabase<T>` and the fixture's declared fields |
+| Source XML shape/XPath | Parse the source file with standard XML APIs | Repository XML structure only; no inheritance, cross-references, or PatchOperations |
+| Installed optional assembly shape | Use a dedicated process/project with an explicit path, hash/MVID, and reflection contract | Type/member compatibility only; not a loaded mod |
+| Real `ThingDef`, `RecipeDef`, `DefOf`, XML inheritance, cross-references, or conditional patches | Load the exact mod list in isolated RimWorld and inspect the real post-load database as supporting evidence | RimWorld's actual loader result |
+| Repeatable finalized Def/XML/full-Harmony assertions across selected mod lists | Use an opted-in `*.IntegrationTests.dll` staged outside `Assemblies`, then start the Dev Gateway with its integration-test flag | Once-per-process assertions at a real game lifecycle point; still not player-behavior acceptance |
+| Another mod's constructor, static initialization, complete Harmony patch set, or gameplay interaction | Run the installed mod in isolated RimWorld | Genuine mod activation and runtime integration |
+
+## Available suites
+
+`Invoke-Tests.ps1` starts a separate `dotnet test` process for each registered project:
+
+```powershell
+# All three Immersive Chefs host environments
+.\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs -Configuration Release
+
+# Exact environments
+.\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs.Unit -Configuration Release
+.\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs.Harmony -Configuration Release
+.\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs.Defs -Configuration Release
+```
+
+The suites are:
+
+- `ImmersiveChefs.Unit`: ordinary tests. An assembly-level setup proves `LoadedModManager.RunningModsListForReading` is empty, `0Harmony` is not loaded, and a representative Def database is empty before any test fixture runs; assembly teardown repeats the assertions as a leak guard.
+- `ImmersiveChefs.Harmony`: references the exact installed Workshop `0Harmony.dll`, currently assembly version `2.4.1.0`, and owns failure-safe explicit patch cleanup. It compares the configured source DLL with the runtime copy and the wrapper retains name/version/MVID/SHA-256 in `ImmersiveChefs.Harmony.dependencies.json`. Override its location with `-HarmonyAssemblyPath` when the configured Workshop layout differs.
+- `ImmersiveChefs.Defs`: owns host-side Def database mutation. Its fixture is non-parallel, requires the matching generic database to be empty, takes exclusive ownership of that whole database for the scope, and clears the whole database in cleanup. Tests must register every intended entry through the scope and must not add unrelated entries while it is active. It refuses pre-populated state without touching name or short-hash lookups.
+
+Do not move patch or DefDatabase tests into the ordinary suite. NUnit fixtures in one assembly share an AppDomain and RimWorld/Harmony static state; `[NonParallelizable]` prevents concurrency but does not create a clean runtime.
+
+## In-game integration assemblies
+
+`RimWorldDevGateway.IntegrationTesting` is a small assertion/attribute contract, not another test engine. Opt-in projects set `RimWorldInGameIntegrationTest=true`, declare one `RimWorldIntegrationTestOwnerPackageId`, output a name ending `.IntegrationTests.dll`, and provide a matching `.integrationtests.json` manifest. They do not reference NUnit or VSTest and ordinary `Invoke-Tests.ps1` runs do not execute them.
+
+Build and stage the selected owner before a fresh isolated launch:
+
+```powershell
+.\scripts\Build-InGameIntegrationTests.ps1 `
+  -ActivePackageIds 'ludeon.rimworld','fumblesneeze.rimworlddevgateway' `
+  -RimWorldPath 'F:\Steam\steamapps\common\RimWorld' `
+  -SteamModContentFolder 'F:\Steam\steamapps\workshop\content\294100' `
+  -Configuration Release
+
+.\scripts\Invoke-GatewaySmoke.ps1 `
+  -RunIntegrationTests `
+  -TimeoutSeconds 180
+```
+
+The host command requires the complete nonempty ordered active package sequence; omission is invalid and never means "build all." It evaluates reusable required/forbidden constraints or an `activePackageSetMode: "exact"` sequence before building and stages only the DLL and strict, duplicate-free manifest under a marker-owned repository test-mod tree. Exact mode rejects missing, extra, and reordered packages before build, after-build manifest drift before staging, and the actual in-game active order before assembly loading. It prepares each complete owner bundle in a same-volume sibling directory, then publishes it by rename; a copy or commit failure exposes neither a partial stage nor destroys the previous complete owned stage. Gateway smoke first records the builder's full dry-run plan, then publishes those exact candidates under each owning live mod's versioned `DevIntegrationTests` directory only for that isolated run and removes every registered marker-owned candidate in `finally`. For every staged DLL it records the exact full CLR assembly identity and the runtime source identity `<owner package ID>/<manifest filename>`; completed endpoint, repeat, and persisted snapshots must contain a one-to-one `DiscoveredAssemblies` mapping with matching count/source/full identity, and every descriptor and result must map back to exactly one such assembly. It never places tests in `Assemblies`, and the game never compiles source. The Gateway scans only active mods and only with `-devGatewayRunIntegrationTests`. One bounded background worker at a time loads and reflects a source while Unity polls without waiting; only marked-method invocation runs on the main thread. One background persistence lane commits attachment, running, and terminal snapshots. `GET /api/v1/integration-tests` is retryable-pending before the first durable commit and thereafter exposes exactly the last token-free artifact state. The smoke retains this response and retries only exact HTTP `503`, exact `integration_test_status_pending`, and exact boolean `retryable: true`; every other error stays fatal. A failed write retries the same candidate without invoking or rerunning a test. Use a new process for each ordered mod matrix; that process boundary is also the only cancellation for a reflection worker stuck inside mod code.
+
+Use `[IntegrationTest(RunAt.MainMenuLoaded)]` for finalized Def values, PatchOperations, `DefOf`, and complete startup Harmony ownership. Use `PlayableMapLoaded` only when the assertion genuinely needs a current map. These tests replace synthetic host assumptions, not the native player workflow required to accept gameplay.
+
+## Are test Defs mocked or loaded?
+
+Neither description fits every tier:
+
+- Prefer not to expose a raw RimWorld Def to domain code. Map the needed fields into a small immutable product-owned value and test that value normally.
+- A host DefDatabase test uses a **constructed real `Verse.Def` fixture**. It is not a mock, but it was not loaded from XML and does not carry RimWorld's full post-load invariants.
+- Register every lightweight Def required by that test in one scope. Do not seed Core/Workshop Defs or snapshot-and-restore a populated database: rebuilding RimWorld's short-hash cache reaches a Unity-Mono collection API unavailable in this testhost.
+- Avoid constructing `ThingDef` and similar Unity-backed Defs in the host. `ThingDef` initializes `BaseContent`/shaders and fails without Unity. An uninitialized object is at most a narrowly documented field-reading fake, never evidence of valid game data.
+- Do not call `DirectXmlToObject`, `DirectXmlLoader`, or `PlayDataLoader` as a shortcut in NUnit. The actual probe reached `XmlInheritance`/type discovery and failed on a Unity internal call. Do not build a substitute RimWorld loader.
+- Real mod/Core Defs are **loaded in RimWorld**, using the exact isolated mod list. Inspecting the final Def database or Harmony owner is useful supporting evidence, but acceptance still requires the player action and observable game behavior mandated by `AGENTS.md`.
+- A bounded Gateway Def export is another view of that same finalized runtime database. It is diagnostic JSON, not canonical source XML; use exact filters and continuation cursors when authoring patches.
+
+## Tests involving an optional mod
+
+Use the least powerful tier that answers the question:
+
+1. Test package-ID decisions by injecting the active package set. This is the ordinary unit-test path.
+2. When an adapter depends on an external type/member shape, add a dedicated process-isolated test project that loads the exact installed assembly by explicit path and verifies its hash/MVID and public shape.
+3. When Immersive Chefs supplies a Harmony adapter, apply only that adapter's patch in its isolated Harmony process and remove its unique owner in cleanup.
+4. When correctness depends on the external mod's normal loader, constructor, patches, Defs, XML, or static state, stop calling it a unit test. Use the isolated in-game mod combination and complete the real player workflow.
+
+Referencing an external DLL is not the same as loading its RimWorld mod. Manually setting `LoadedModManager` or calling another mod's `PatchAll` in a partly initialized host would create a synthetic environment with misleading confidence.
+
+## When a test appears to need a mod, patches, and Defs together
+
+First separate the claim being tested:
+
+- If package presence alone selects product policy, inject the exact package-ID set into the ordinary unpatched public boundary.
+- If one Immersive Chefs patch supplies the behavior, add that explicit target and owner to the isolated Harmony suite; do not bootstrap the production `Mod` or another mod's complete `PatchAll` lifecycle.
+- If the rule needs several small product-owned Def-shaped records, construct all required lightweight `Def` fixtures and pass them together to one `DefDatabaseScope<T>.Register(...)` call in the Def suite.
+- If correctness requires both a Harmony patch and lightweight Def fixtures but not Unity, create a dedicated process-isolated test project for that concrete adapter rather than contaminating either general suite. Add it only when a real behavior requires the combination.
+- If the named mod must actually be active, or any required Def is a real Core/Workshop `ThingDef`, `RecipeDef`, `DefOf`, inherited XML object, cross-reference, or PatchOperation result, the test is an isolated RimWorld integration profile, not a unit test. Launch the ordered mod list, assert the required Def names in the real post-load database as preflight evidence, and then perform the player workflow required by `AGENTS.md`.
+
+This boundary allows test-specific environments without pretending that a DLL reference or hand-populated static list is a normally loaded RimWorld mod.
+
+## Current capability probes
+
+- [Unpatched host characterization](../tests/ImmersiveChefs.Tests/TestHostIsolationTests.cs)
+- [Scoped Harmony patch](../tests/ImmersiveChefs.Harmony.Tests/HarmonyIsolationTests.cs)
+- [Scoped Def database](../tests/ImmersiveChefs.Defs.Tests/DefDatabaseIsolationTests.cs)
+- [OpenSpec contract](../openspec/changes/prove-host-test-environments/specs/developer-verification/spec.md)

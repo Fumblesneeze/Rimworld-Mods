@@ -1,0 +1,32 @@
+<Project Sdk="Zlepper.RimWorld.ModSdk/0.0.9">
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <RimWorldModName>Immersive Chefs</RimWorldModName>
+    <RimWorldPackageId>fumblesneeze.immersivechefs</RimWorldPackageId>
+    <Authors>Fumblesneeze</Authors>
+    <AssemblyName>ImmersiveChefs</AssemblyName>
+    <RootNamespace>ImmersiveChefs</RootNamespace>
+    <IncludeHarmony>true</IncludeHarmony>
+    <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
+    <Description>
+      Establishes the loadable, tested foundation for the planned Immersive Chefs kitchen simulation.
+      Gameplay systems are specified separately and are not included in this baseline package yet.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <RimWorldLoadAfter Include="Ludeon.RimWorld.Royalty" />
+    <RimWorldLoadAfter Include="syrchalis.processor.framework" />
+    <RimWorldLoadAfter Include="Argon.ExpandedMaterials.Metals" />
+    <RimWorldLoadAfter Include="Argon.ExpandedMaterials.Masonry" />
+    <RimWorldLoadAfter Include="Mlie.SimplySublimeABSPolymer" />
+    <RimWorldLoadAfter Include="Dubwise.DubsBadHygiene" />
+    <RimWorldLoadAfter Include="Orion.Gastronomy" />
+    <RimWorldLoadAfter Include="Evyatar108.VarietyMattersImprovedRedux" />
+    <RimWorldLoadAfter Include="VanillaExpanded.VanillaFoodVarietyExpanded" />
+    <RimWorldLoadAfter Include="OskarPotocki.VanillaFactionsExpanded.Core" />
+    <RimWorldLoadAfter Include="VanillaExpanded.VNutrientE" />
+  </ItemGroup>
+</Project>

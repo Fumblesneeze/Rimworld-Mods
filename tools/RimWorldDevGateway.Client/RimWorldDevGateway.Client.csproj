@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net480</TargetFramework>
+    <AssemblyName>RimWorldDevGateway.Client</AssemblyName>
+    <RootNamespace>RimWorldDevGateway.Client</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <BaseOutputPath>$(ArtifactsRoot)HostTools\</BaseOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.Contracts\RimWorldDevGateway.Contracts.csproj" />
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+</Project>

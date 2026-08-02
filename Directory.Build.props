@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <RepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))</RepositoryRoot>
+    <ArtifactsRoot>$(RepositoryRoot)artifacts\</ArtifactsRoot>
+    <DefaultRimWorldPath>F:\Steam\steamapps\common\RimWorld</DefaultRimWorldPath>
+    <DefaultSteamModContentFolder>F:\Steam\steamapps\workshop\content\294100</DefaultSteamModContentFolder>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+</Project>

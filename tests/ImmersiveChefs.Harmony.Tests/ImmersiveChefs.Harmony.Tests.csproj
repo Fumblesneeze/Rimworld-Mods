@@ -1,0 +1,27 @@
+<Project Sdk="Zlepper.RimWorld.ModSdk.Testing/0.0.9">
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(SteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
+    <RootNamespace>ImmersiveChefs.Harmony.Tests</RootNamespace>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\mods\ImmersiveChefs\ImmersiveChefs.csproj" />
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyAssemblyPath)</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <PackageReference Update="NUnit3TestAdapter" Version="6.2.0" PrivateAssets="all" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>HarmonyAssemblyPath</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(HarmonyAssemblyPath)'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <Target Name="ValidateHarmonyTestAssembly" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(HarmonyAssemblyPath)')" Text="The Harmony test assembly does not exist: $(HarmonyAssemblyPath). Set HarmonyAssemblyPath to the 0Harmony.dll loaded by RimWorld." />
+  </Target>
+</Project>
