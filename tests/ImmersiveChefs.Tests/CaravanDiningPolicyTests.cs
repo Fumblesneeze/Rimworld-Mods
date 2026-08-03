@@ -20,9 +20,9 @@ public sealed class CaravanDiningPolicyTests
     [Test]
     public void Caravan_selection_prefers_best_clean_ware_before_dirty_ware()
     {
-        var dirtyExcellent = new CaravanWareCandidate<string>("dirty", isDirty: true, serviceScore: 100f);
-        var cleanPoor = new CaravanWareCandidate<string>("clean-poor", isDirty: false, serviceScore: 20f);
-        var cleanGood = new CaravanWareCandidate<string>("clean-good", isDirty: false, serviceScore: 70f);
+        var dirtyExcellent = new ServiceWareCandidate<string>("dirty", isDirty: true, serviceScore: 100f);
+        var cleanPoor = new ServiceWareCandidate<string>("clean-poor", isDirty: false, serviceScore: 20f);
+        var cleanGood = new ServiceWareCandidate<string>("clean-good", isDirty: false, serviceScore: 70f);
 
         var selected = CaravanDiningPolicy.SelectWare(
             new[] { dirtyExcellent, cleanPoor, cleanGood },
@@ -38,7 +38,7 @@ public sealed class CaravanDiningPolicyTests
     {
         var candidates = new[]
         {
-            new CaravanWareCandidate<string>("dirty", isDirty: true, serviceScore: 80f)
+            new ServiceWareCandidate<string>("dirty", isDirty: true, serviceScore: 80f)
         };
 
         Assert.Multiple(() =>
@@ -65,7 +65,7 @@ public sealed class CaravanDiningPolicyTests
     {
         var candidates = new[]
         {
-            new CaravanWareCandidate<string>("clean", isDirty: false, serviceScore: 80f)
+            new ServiceWareCandidate<string>("clean", isDirty: false, serviceScore: 80f)
         };
 
         var selected = CaravanDiningPolicy.SelectWare(

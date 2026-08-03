@@ -56,6 +56,19 @@ public sealed class CompSanitation : ThingComp
                washProvenance == otherComp.washProvenance;
     }
 
+    public override void PostSplitOff(Thing piece)
+    {
+        base.PostSplitOff(piece);
+        if ((piece as ThingWithComps)?.GetComp<CompSanitation>() is not { } splitSanitation)
+        {
+            return;
+        }
+
+        splitSanitation.dirty = dirty;
+        splitSanitation.washProvenance = washProvenance;
+        splitSanitation.schemaVersion = schemaVersion;
+    }
+
     public override string CompInspectStringExtra()
     {
         if (SelfCleaning)

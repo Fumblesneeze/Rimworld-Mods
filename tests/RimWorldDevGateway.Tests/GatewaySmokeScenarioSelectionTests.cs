@@ -173,6 +173,40 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Hospitality_guest_scenario_is_explicit_and_arms_two_native_ingest_jobs()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptor = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-hospitality-guest-dining.json"));
+        var setup = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-hospitality-guest-dining-setup.csx"));
+        var arm = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-hospitality-guest-dining-arm.csx"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("\"orion.hospitality\""));
+            Assert.That(descriptor, Does.Contain("\"kind\": \"csharp\""));
+            Assert.That(setup, Does.Contain("OnGuestJoinedLate"));
+            Assert.That(setup, Does.Contain("GetMethod(\"Arrive\")"));
+            Assert.That(
+                setup,
+                Does.Contain("guest.foodRestriction = new Pawn_FoodRestrictionTracker(guest)"),
+                "Hospitality's guest thoughts require the ordinary RimWorld food-policy tracker.");
+            Assert.That(setup, Does.Contain("innerContainer.TryAdd(personalCutlery"));
+            Assert.That(setup, Does.Contain("GenSpawn.Spawn(colonyCutlery"));
+            Assert.That(setup, Does.Contain("ThingDefOf.Wall"));
+            Assert.That(arm, Does.Contain("JobMaker.MakeJob(JobDefOf.Ingest"));
+            Assert.That(arm, Does.Contain("StartJob"));
+            Assert.That(arm, Does.Contain("Find.TickManager.Pause()"));
+            Assert.That(arm, Does.Not.Contain("Find.TickManager.TogglePaused()"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

@@ -78,6 +78,12 @@ internal static class ImmersiveChefsDefBootstrap
         {
             OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.Gastronomy, gastronomyReason);
         }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.Hospitality) &&
+            !HospitalityAdapter.TryInitialize(out var hospitalityReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.Hospitality, hospitalityReason);
+        }
     }
 
     private static void EnablePreparedIngredients()

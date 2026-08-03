@@ -166,7 +166,11 @@ internal static class IngestCutleryToilsPatch
         if (pawn.CurJob is { } job && DiningSessionRegistry.HasPickup(job) &&
             DiningSessionRegistry.CutleryFor(job) is { } cutlery)
         {
-            yield return GotoCapturedThing(cutlery, PathEndMode.Touch);
+            if (cutlery.Spawned)
+            {
+                yield return GotoCapturedThing(cutlery, PathEndMode.Touch);
+            }
+
             yield return new Toil
             {
                 initAction = () => DiningSessionRegistry.Pickup(pawn),

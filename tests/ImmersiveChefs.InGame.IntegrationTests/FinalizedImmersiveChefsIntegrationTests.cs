@@ -1719,4 +1719,378 @@ public static class FinalizedImmersiveChefsIntegrationTests
             .Count(owner => owner == ImmersiveChefsMod.PackageId) ?? 0;
         IntegrationAssert.Equal(1, owners, "Gastronomy serving must have one guarded Immersive Chefs bridge.");
     }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void ActiveGastronomyServedColonyCutleryReturnsToTheMap()
+    {
+        var gastronomyActive = LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(mod.PackageId, "orion.gastronomy", StringComparison.OrdinalIgnoreCase));
+        if (!gastronomyActive)
+        {
+            return;
+        }
+
+        var map = Find.CurrentMap;
+        var cells = map.AllCells
+            .Where(cell => cell.Standable(map) && cell.GetThingList(map).Count == 0)
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .Take(2)
+            .ToList();
+        IntegrationAssert.Equal(2, cells.Count, "The Gastronomy fixture needs two empty walkable cells.");
+        var patron = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var server = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var cancelledCutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        var completedCutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        var cancelledJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+        var completedJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+
+        try
+        {
+            GenSpawn.Spawn(patron, cells[0], map);
+            GenSpawn.Spawn(server, cells[1], map);
+            cancelledCutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            completedCutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            IntegrationAssert.True(
+                patron.inventory.innerContainer.TryAdd(cancelledCutlery, canMergeWithExistingStacks: false),
+                "The waiter-delivered cancellation fixture must begin in the patron inventory.");
+
+            DiningSessionRegistry.TryAttachServed(patron, cancelledJob, meal, cancelledCutlery, server);
+            DiningSessionRegistry.Cleanup(patron, cancelledJob);
+
+            IntegrationAssert.True(
+                patron.inventory.innerContainer.TryAdd(completedCutlery, canMergeWithExistingStacks: false),
+                "The waiter-delivered completion fixture must begin in the patron inventory.");
+            DiningSessionRegistry.TryAttachServed(patron, completedJob, meal, completedCutlery, server);
+            DiningSessionRegistry.Complete(patron);
+
+            IntegrationAssert.True(
+                cancelledCutlery.Spawned && !patron.inventory.innerContainer.Contains(cancelledCutlery),
+                "Cancelling served dining must return exact unused colony cutlery to the map.");
+            IntegrationAssert.False(
+                cancelledCutlery.GetComp<CompSanitation>().IsDirty,
+                "Cancelling served dining must leave the unused colony cutlery clean.");
+            IntegrationAssert.True(
+                completedCutlery.Spawned && !patron.inventory.innerContainer.Contains(completedCutlery),
+                "Completing served dining must return exact used colony cutlery to the map.");
+            IntegrationAssert.True(
+                completedCutlery.GetComp<CompSanitation>().IsDirty,
+                "Completing served dining must return the used colony cutlery dirty.");
+        }
+        finally
+        {
+            DiningSessionRegistry.Cleanup(patron, cancelledJob);
+            DiningSessionRegistry.Cleanup(patron, completedJob);
+            foreach (var thing in new Thing[] { cancelledCutlery, completedCutlery, meal, patron, server })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void PersonalCutleryStackSplitPreservesSanitationAcrossCancelAndCompletion()
+    {
+        var map = Find.CurrentMap;
+        var playerFaction = Faction.OfPlayer;
+        var guestFaction = Find.FactionManager.AllFactionsListForReading.First(faction =>
+            faction != playerFaction && !faction.HostileTo(playerFaction) && !faction.def.hidden);
+        var guest = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            guestFaction,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var dirtyStack = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        ThingWithComps? completionStack = null;
+        var cancellationJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+        Job? completionJob = null;
+        var originalRequirementMode = ImmersiveChefsMod.Settings.WareRequirementMode;
+        var originalDirtyFallback = ImmersiveChefsMod.Settings.DirtyWareFallback;
+
+        try
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = WareRequirementMode.Prefer;
+            ImmersiveChefsMod.Settings.DirtyWareFallback = DirtyWareFallback.Always;
+            var fixtureCell = map.AllCells
+                .Where(cell => cell.Standable(map) && cell.GetThingList(map).Count == 0)
+                .OrderBy(cell => cell.DistanceToSquared(map.Center))
+                .First();
+            GenSpawn.Spawn(guest, fixtureCell, map);
+            GenSpawn.Spawn(meal, fixtureCell, map);
+
+            dirtyStack.stackCount = 2;
+            dirtyStack.GetComp<CompSanitation>().MarkClean(WashProvenance.WildWater);
+            dirtyStack.GetComp<CompSanitation>().MarkDirty();
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.TryAdd(dirtyStack, canMergeWithExistingStacks: false),
+                "The cancellation fixture must start as a two-item personal stack.");
+            IntegrationAssert.True(
+                DiningSessionRegistry.TryAttach(guest, cancellationJob, meal),
+                "The guest must attach a personal-stack cancellation session.");
+            var cancellationSession = DiningSessionRegistry.Current(guest);
+            IntegrationAssert.True(
+                ReferenceEquals(cancellationSession?.Cutlery, dirtyStack),
+                "The dirty personal stack must be the exact selected fallback.");
+            cancellationSession!.PickupCutlery();
+            var cancelledPiece = cancellationSession.CarriedCutlery as ThingWithComps;
+            IntegrationAssert.NotNull(cancelledPiece, "Personal pickup must retain one exact split item.");
+            DiningSessionRegistry.Cleanup(guest, cancellationJob);
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.Contains(cancelledPiece!) &&
+                cancelledPiece!.GetComp<CompSanitation>().IsDirty &&
+                cancelledPiece.GetComp<CompSanitation>().WashProvenance == WashProvenance.WildWater,
+                "Cancellation must preserve dirty wild-water sanitation on the split personal item.");
+
+            guest.inventory.innerContainer.ClearAndDestroyContents();
+            completionStack = (ThingWithComps)ThingMaker.MakeThing(
+                DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+                ThingDefOf.Steel);
+            completionStack.stackCount = 2;
+            completionStack.GetComp<CompSanitation>().MarkClean(WashProvenance.WildWater);
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.TryAdd(completionStack, canMergeWithExistingStacks: false),
+                "The completion fixture must start as a two-item personal stack.");
+            completionJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+            IntegrationAssert.True(
+                DiningSessionRegistry.TryAttach(guest, completionJob, meal),
+                "The guest must attach a personal-stack completion session.");
+            var completionSession = DiningSessionRegistry.Current(guest);
+            IntegrationAssert.True(
+                ReferenceEquals(completionSession?.Cutlery, completionStack),
+                "The clean personal stack must be the exact selected fallback.");
+            completionSession!.PickupCutlery();
+            var completedPiece = completionSession.CarriedCutlery as ThingWithComps;
+            IntegrationAssert.NotNull(completedPiece, "Personal completion must retain one exact split item.");
+            DiningSessionRegistry.Complete(guest);
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.Contains(completedPiece!) &&
+                completedPiece!.GetComp<CompSanitation>().IsDirty &&
+                completedPiece.GetComp<CompSanitation>().WashProvenance == WashProvenance.WildWater,
+                "Completed dining must dirty the split personal item without losing wild-water provenance.");
+        }
+        finally
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = originalRequirementMode;
+            ImmersiveChefsMod.Settings.DirtyWareFallback = originalDirtyFallback;
+            DiningSessionRegistry.Cleanup(guest, cancellationJob);
+            if (completionJob is not null)
+            {
+                DiningSessionRegistry.Cleanup(guest, completionJob);
+            }
+
+            guest.ClearAllReservations(releaseDestinationsOnlyIfObsolete: false);
+            guest.inventory.innerContainer.ClearAndDestroyContents();
+            foreach (var thing in new Thing[] { dirtyStack, meal, guest })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+
+            if (completionStack is not null && !completionStack.Destroyed)
+            {
+                completionStack.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void ActiveHospitalityValidatesTheExactArrivedGuestShape()
+    {
+        var hospitalityActive = LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(mod.PackageId, "orion.hospitality", StringComparison.OrdinalIgnoreCase));
+        if (!hospitalityActive)
+        {
+            return;
+        }
+
+        var utilityType = AccessTools.TypeByName("Hospitality.Utilities.GuestUtility");
+        IntegrationAssert.NotNull(
+            utilityType,
+            "Active Hospitality must expose its public GuestUtility type.");
+        IntegrationAssert.True(
+            HospitalityAdapter.TryBind(utilityType, out var predicate, out var reason),
+            "Active Hospitality must match the validated IsArrivedGuest(Pawn, out CompGuest) shape: " + reason);
+        IntegrationAssert.NotNull(
+            predicate,
+            "A compatible active Hospitality assembly must produce an arrived-guest predicate.");
+        IntegrationAssert.True(
+            ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.Hospitality),
+            "The default Auto setting must enable the shape-compatible active Hospitality adapter.");
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void ActiveHospitalityGuestPrefersColonyCutleryAndRetainsPersonalFallback()
+    {
+        var hospitalityActive = LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(mod.PackageId, "orion.hospitality", StringComparison.OrdinalIgnoreCase));
+        if (!hospitalityActive)
+        {
+            return;
+        }
+
+        var map = Find.CurrentMap;
+        var playerFaction = Faction.OfPlayer;
+        var guestFaction = Find.FactionManager.AllFactionsListForReading.First(faction =>
+            faction != playerFaction && !faction.HostileTo(playerFaction) && !faction.def.hidden);
+        var guest = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            guestFaction,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        guest.Name = new NameSingle("Hospitality Ware Guest");
+        guest.inventory.innerContainer.ClearAndDestroyContents();
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var colonyCutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        var personalCutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        var originalRequirementMode = ImmersiveChefsMod.Settings.WareRequirementMode;
+        var firstJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+        Job? fallbackJob = null;
+        object? hospitalityMapComponent = null;
+        Type? hospitalityMapComponentType = null;
+
+        try
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = WareRequirementMode.Prefer;
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            colonyCutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            personalCutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            IntegrationAssert.True(
+                meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
+                "The Hospitality fixture meal must retain its exact clean plate.");
+
+            var fixtureCell = map.AllCells
+                .Where(cell => cell.Standable(map) && cell.GetThingList(map).Count == 0)
+                .OrderBy(cell => cell.DistanceToSquared(map.Center))
+                .First();
+            GenSpawn.Spawn(guest, fixtureCell, map);
+            GenSpawn.Spawn(meal, fixtureCell, map);
+            GenSpawn.Spawn(colonyCutlery, fixtureCell, map);
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.TryAdd(personalCutlery, canMergeWithExistingStacks: false),
+                "The arrived guest must start with exact personal cutlery in its real inventory.");
+
+            var compGuestType = AccessTools.TypeByName("Hospitality.CompGuest");
+            IntegrationAssert.NotNull(compGuestType, "Active Hospitality must expose CompGuest.");
+            var compGuest = guest.AllComps.FirstOrDefault(compGuestType!.IsInstanceOfType);
+            IntegrationAssert.NotNull(
+                compGuest,
+                "Hospitality must attach CompGuest to the finalized human pawn Def.");
+            hospitalityMapComponentType = AccessTools.TypeByName("Hospitality.Hospitality_MapComponent");
+            IntegrationAssert.NotNull(
+                hospitalityMapComponentType,
+                "Active Hospitality must expose its map-owned guest registry.");
+            hospitalityMapComponent = map.components.FirstOrDefault(
+                hospitalityMapComponentType!.IsInstanceOfType);
+            IntegrationAssert.NotNull(
+                hospitalityMapComponent,
+                "Hospitality must construct its real map component before guest dining.");
+            AccessTools.Method(hospitalityMapComponentType, "OnGuestJoinedLate")
+                .Invoke(hospitalityMapComponent, new object[] { guest });
+            AccessTools.Method(compGuestType, "Arrive").Invoke(compGuest, Array.Empty<object>());
+            IntegrationAssert.True(
+                HospitalityAdapter.IsArrivedGuest(guest),
+                "The real active Hospitality utility must recognize the fixture pawn as arrived.");
+
+            IntegrationAssert.True(
+                DiningSessionRegistry.TryAttach(guest, firstJob, meal),
+                "The arrived guest must attach an ordinary dining session.");
+            IntegrationAssert.True(
+                ReferenceEquals(DiningSessionRegistry.Current(guest)?.Cutlery, colonyCutlery),
+                "Reachable colony cutlery must outrank the guest's eligible personal cutlery.");
+            DiningSessionRegistry.Cleanup(guest, firstJob);
+            guest.ClearAllReservations(releaseDestinationsOnlyIfObsolete: false);
+            colonyCutlery.Destroy(DestroyMode.Vanish);
+
+            fallbackJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+            IntegrationAssert.True(
+                DiningSessionRegistry.TryAttach(guest, fallbackJob, meal),
+                "The arrived guest must attach its personal-fallback dining session.");
+            var fallbackSession = DiningSessionRegistry.Current(guest);
+            IntegrationAssert.True(
+                ReferenceEquals(fallbackSession?.Cutlery, personalCutlery),
+                "With no eligible colony setting, the guest must select its exact personal cutlery.");
+            fallbackSession!.PickupCutlery();
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.Contains(personalCutlery),
+                "Personal cutlery must remain in the guest's inventory while in use.");
+            DiningSessionRegistry.Cleanup(guest, fallbackJob);
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.Contains(personalCutlery) &&
+                !personalCutlery.GetComp<CompSanitation>().IsDirty &&
+                !personalCutlery.Spawned,
+                "Cancellation must retain the exact clean personal setting in guest inventory.");
+
+            fallbackJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+            IntegrationAssert.True(
+                DiningSessionRegistry.TryAttach(guest, fallbackJob, meal),
+                "The arrived guest must reattach after a cancelled personal-fallback session.");
+            fallbackSession = DiningSessionRegistry.Current(guest);
+            IntegrationAssert.True(
+                ReferenceEquals(fallbackSession?.Cutlery, personalCutlery),
+                "The replacement session must select the same exact personal setting.");
+            fallbackSession!.PickupCutlery();
+            DiningSessionRegistry.Complete(guest);
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.Contains(personalCutlery) &&
+                personalCutlery.GetComp<CompSanitation>().IsDirty &&
+                !personalCutlery.Spawned,
+                "The exact personal setting must return dirty to the guest inventory after dining.");
+        }
+        finally
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = originalRequirementMode;
+            guest.ClearAllReservations(releaseDestinationsOnlyIfObsolete: false);
+            if (fallbackJob is not null)
+            {
+                DiningSessionRegistry.Cleanup(guest, fallbackJob);
+            }
+
+            if (hospitalityMapComponent is not null && hospitalityMapComponentType is not null)
+            {
+                AccessTools.Method(hospitalityMapComponentType, "OnGuestAdopted")
+                    .Invoke(hospitalityMapComponent, new object[] { guest });
+            }
+
+            foreach (var thing in new Thing[] { colonyCutlery, meal, plate, guest })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+
+            if (!personalCutlery.Destroyed)
+            {
+                personalCutlery.holdingOwner?.Remove(personalCutlery);
+                personalCutlery.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
 }

@@ -19,6 +19,28 @@ public sealed class IntegrationCatalogTests
         Assert.That(snapshot.IsActive(OptionalIntegration.DubsBadHygiene), Is.True);
     }
 
+    [Test]
+    public void Detect_marks_the_loaded_hospitality_package_active()
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { "orion.hospitality" });
+
+        Assert.That(snapshot.IsActive(OptionalIntegration.Hospitality), Is.True);
+    }
+
+    [Test]
+    public void Disabled_hospitality_setting_prevents_activation_when_loaded()
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { "orion.hospitality" });
+        var settings = new ImmersiveChefsSettings
+        {
+            Hospitality = OptionalIntegrationMode.Off
+        };
+
+        Assert.That(
+            OptionalIntegrationPolicy.IsEnabled(OptionalIntegration.Hospitality, snapshot, settings),
+            Is.False);
+    }
+
     [TestCaseSource(nameof(UnknownOrEmptyPackageSets))]
     public void Detect_returns_a_complete_inactive_snapshot_for_unknown_or_empty_packages(string[] packageIds)
     {
@@ -26,7 +48,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(11));
+            Assert.That(snapshot.States, Has.Count.EqualTo(12));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }

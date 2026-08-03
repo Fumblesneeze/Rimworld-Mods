@@ -13,7 +13,7 @@ Immersive Chefs does not reference or ship the gateway. Harmony is its only requ
 
 Immersive Chefs adds cookware sets, plates, stackable cutlery, belt-slot chef's knives, preparation and specialist stations, hand dishwashing, two dishwasher sizes, a microwave, meal temperature/quality, and colony/Royalty dining expectations. Covered meal recipes reserve cookware and plates, diners collect place settings, and used ware returns dirty for the Cleaning work type. Simple/Fine/Lavish recipes use separate configurable work multipliers; pemmican and travel/packaged meals remain hand foods.
 
-Kitchenware is Stuff-aware. Primitive stone/adobe/wood paths, smithy-era metals, machining-era metals/plastics, and trade/quest-only self-cleaning glitterworld cookware use material and craftsmanship to derive cleanliness, speed, comfort, durability, and culinary modifiers. Optional adapters are detected for Processor Framework, Expanded Materials, ABS polymer, Dubs Bad Hygiene, Gastronomy, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, and Vanilla Nutrient Paste Expanded. Their individual `Auto` setting can be changed to `Off` when troubleshooting.
+Kitchenware is Stuff-aware. Primitive stone/adobe/wood paths, smithy-era metals, machining-era metals/plastics, and trade/quest-only self-cleaning glitterworld cookware use material and craftsmanship to derive cleanliness, speed, comfort, durability, and culinary modifiers. Optional adapters are detected for Processor Framework, Expanded Materials, ABS polymer, Dubs Bad Hygiene, Gastronomy, Hospitality, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, and Vanilla Nutrient Paste Expanded. Their individual `Auto` setting can be changed to `Off` when troubleshooting.
 
 Active cooking, dining, service, and assistant jobs safely restart after loading a save. RimWorld persists the exact physical ware; Immersive Chefs returns any session-carried items and retries the interrupted job so process-local coordination state cannot duplicate or strand them.
 
@@ -212,6 +212,17 @@ Use the cutlery-free colonist scene to verify the opposite humanlike behavior. I
   -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
   -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
+Use the Hospitality guest scene to verify colony-first and personal-inventory fallback behavior. It creates two arrived guests in separate rooms, gives both personal cutlery, exposes golden colony cutlery only to the first, arms their native ingest jobs, and pauses. Unpause with Space; after eating, the first guest should return the golden setting dirty while retaining clean personal cutlery, and the second should retain its now-dirty personal setting in the Gear inventory:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-hospitality-guest-dining `
+  -InteractiveHoldSeconds 150 `
+  -AdditionalModIds 'brrainz.harmony','orion.hospitality','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.','[ImmersiveChefs] Hospitality adapter active'
 ```
 
 Use the patient-feeding scene to compare three real `FeedPatient` jobs side by side: a nurse with cutlery and a cold plated meal, a conscious patient without cutlery, and an unconscious patient without cutlery. The first nurse should collect the cutlery and visibly reheat before feeding; only the conscious no-cutlery patient should receive `Ate without cutlery`; both no-cutlery feedings should create one native dirt event at the patient cell:

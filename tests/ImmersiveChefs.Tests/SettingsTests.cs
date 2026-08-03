@@ -21,6 +21,7 @@ public sealed class SettingsTests
             Assert.That(settings.MaximumAssistants, Is.EqualTo(4));
             Assert.That(settings.CulinaryQualityEnabled, Is.True);
             Assert.That(settings.MealTemperatureEnabled, Is.True);
+            Assert.That(settings.Hospitality, Is.EqualTo(OptionalIntegrationMode.Auto));
         });
 
         settings.EmergencyHungerThreshold = 1f;

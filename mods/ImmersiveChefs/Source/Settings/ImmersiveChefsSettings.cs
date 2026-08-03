@@ -56,6 +56,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
     public OptionalIntegrationMode AbsPolymer = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode DubsBadHygiene = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode Gastronomy = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode Hospitality = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode VarietyMatters = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode VanillaFoodVarietyExpanded = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode VanillaExpandedFramework = OptionalIntegrationMode.Auto;
@@ -95,6 +96,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
         Scribe_Values.Look(ref AbsPolymer, "absPolymer", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref DubsBadHygiene, "dubsBadHygiene", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref Gastronomy, "gastronomy", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref Hospitality, "hospitality", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref VarietyMatters, "varietyMatters", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref VanillaFoodVarietyExpanded, "vanillaFoodVarietyExpanded", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref VanillaExpandedFramework, "vanillaExpandedFramework", OptionalIntegrationMode.Auto);
