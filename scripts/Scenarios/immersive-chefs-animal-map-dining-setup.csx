@@ -1,6 +1,6 @@
 new System.Func<string>(() =>
 {
-    const string scenarioName = "Forkless wild map diner";
+    const string scenarioName = "Animal map diner";
     var map = Find.CurrentMap;
     if (map == null)
     {

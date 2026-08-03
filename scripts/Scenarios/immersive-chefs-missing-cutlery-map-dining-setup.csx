@@ -1,6 +1,6 @@
 new System.Func<string>(() =>
 {
-    const string scenarioName = "Forkless colonist diner";
+    const string scenarioName = "Cutlery-free colonist diner";
     var stage = "resolve map";
     try
     {

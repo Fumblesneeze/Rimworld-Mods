@@ -1,6 +1,6 @@
 new System.Func<string>(() =>
 {
-    const string scenarioName = "Forkless colonist diner";
+    const string scenarioName = "Cutlery-free colonist diner";
     var pawn = Find.CurrentMap.mapPawns.AllPawnsSpawned
         .Single(candidate => string.Equals(candidate.LabelShort, scenarioName, System.StringComparison.Ordinal));
     pawn.jobs.EndCurrentJob(Verse.AI.JobCondition.InterruptForced, false);
