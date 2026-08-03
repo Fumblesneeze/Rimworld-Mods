@@ -113,6 +113,11 @@ internal static class PlateEatingSpeedPatch
 {
     private static void Prefix(Pawn chewer, ref float durationMultiplier, TargetIndex ingestibleInd)
     {
+        if (!DiningPawnPolicy.AppliesPlateEatingSpeed(chewer.RaceProps.Humanlike))
+        {
+            return;
+        }
+
         var meal = chewer.CurJob?.GetTarget(ingestibleInd).Thing;
         var plate = (meal as ThingWithComps)?.GetComp<CompEmbeddedWare>()?.PeekPlateThing();
         if (plate is null)

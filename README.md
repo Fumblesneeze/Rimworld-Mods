@@ -190,6 +190,17 @@ Use the equivalent animal-exclusion scene to observe a Labrador retriever eat an
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the regular-map animal scene to observe the same exclusion through RimWorld's ordinary map ingest job. A selected factionless wild raccoon starts hungry inside a small sealed fixture beside the plated meal and loose silverware; after unpausing, the meal should disappear, the clean embedded plate should appear at the eating location, and the silverware should not move:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-animal-map-dining `
+  -InteractiveHoldSeconds 120 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell

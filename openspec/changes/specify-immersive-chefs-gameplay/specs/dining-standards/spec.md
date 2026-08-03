@@ -11,6 +11,11 @@ For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or ownin
 - **WHEN** a non-humanlike animal ingests a covered meal at any temperature or culinary quality
 - **THEN** Immersive Chefs applies no ware acquisition, dining memory/thought, or custom poisoning behavior, and any embedded plate is recovered unused without changing sanitation
 
+#### Scenario: Map animal ignores nearby silverware
+
+- **WHEN** a non-humanlike animal on a regular map chooses and eats a covered plated meal while eligible silverware is reachable beside it
+- **THEN** the animal follows RimWorld's ordinary ingest job without reserving, collecting, carrying, dirtying, or moving the silverware; the exact embedded plate is recovered clean at the eating location
+
 #### Scenario: Colonist collects silverware
 
 - **WHEN** a colonist chooses an eligible plated meal and reachable clean silverware exists

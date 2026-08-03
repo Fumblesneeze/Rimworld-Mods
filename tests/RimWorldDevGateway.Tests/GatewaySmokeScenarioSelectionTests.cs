@@ -139,6 +139,40 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Animal_map_scenario_source_shape_spawns_only_the_meal_and_loose_silverware_before_native_ingestion()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var setup = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-animal-map-dining-setup.csx"));
+        var arm = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-animal-map-dining-arm.csx"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(setup, Does.Contain("DefDatabase<PawnKindDef>.GetNamed(\"Raccoon\")"));
+            Assert.That(setup, Does.Contain("ThingDefOf.Wall"));
+            Assert.That(setup, Does.Contain("candidate.Standable(map)"));
+            Assert.That(setup, Does.Not.Contain("Faction.OfPlayer"));
+            Assert.That(setup, Does.Contain("GenSpawn.Spawn(animal"));
+            Assert.That(setup, Does.Contain("GenSpawn.Spawn(meal"));
+            Assert.That(setup, Does.Contain("GenSpawn.Spawn(silverware"));
+            Assert.That(setup, Does.Contain("TryEmbedPlate(plate)"));
+            Assert.That(setup, Does.Not.Contain("GenSpawn.Spawn(plate"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(meal"));
+            Assert.That(setup, Does.Not.Contain("?? throw"));
+            Assert.That(setup, Does.Not.Contain(" is null"));
+            Assert.That(setup, Does.Not.Contain(".First(cell =>"));
+            Assert.That(
+                arm,
+                Does.Contain("animal.jobs.EndCurrentJob(Verse.AI.JobCondition.InterruptForced, false)"));
+            Assert.That(arm, Does.Contain("animal.needs.food.CurLevel = 0.01f"));
+            Assert.That(arm, Does.Contain("Find.TickManager.Pause()"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

@@ -418,6 +418,168 @@ public static class FinalizedImmersiveChefsIntegrationTests
         }
     }
 
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void MapAnimalsDoNotReserveUseOrDirtyTableware()
+    {
+        var map = Find.CurrentMap;
+        var animal = PawnGenerator.GeneratePawn(
+            DefDatabase<PawnKindDef>.GetNamed("Raccoon"),
+            null);
+        var animalCell = CellFinder.RandomClosewalkCellNear(map.Center, map, 12);
+        var mealCell = animalCell;
+        var silverwareCell = new IntVec3(animalCell.x + 1, 0, animalCell.z);
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Plasteel);
+        var silverware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+            ThingDefOf.Steel);
+        var settings = ImmersiveChefsMod.Settings;
+        var originalCulinaryQualityEnabled = settings.CulinaryQualityEnabled;
+        var originalMealTemperatureEnabled = settings.MealTemperatureEnabled;
+        var originalFoodPoisoningEffectScale = settings.FoodPoisoningEffectScale;
+        var originalMaximumCustomPoisonChance = settings.MaximumCustomPoisonChance;
+
+        try
+        {
+            settings.CulinaryQualityEnabled = true;
+            settings.MealTemperatureEnabled = true;
+            settings.FoodPoisoningEffectScale = 3f;
+            settings.MaximumCustomPoisonChance = 1f;
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
+            {
+                new CulinaryServingRecord(
+                    0,
+                    -20f,
+                    ContaminationSources.DirtyCookware |
+                    ContaminationSources.DirtyPlate |
+                    ContaminationSources.DirtySilverware,
+                    20,
+                    Find.TickManager.TicksGame)
+            });
+            AccessTools.Field(typeof(CompFoodPoisonable), "poisonPct")
+                .SetValue(meal.GetComp<CompFoodPoisonable>(), 0f);
+            IntegrationAssert.True(
+                meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
+                "The map animal exclusion fixture must start with an exact embedded plate.");
+
+            GenSpawn.Spawn(animal, animalCell, map);
+            GenSpawn.Spawn(meal, mealCell, map);
+            GenSpawn.Spawn(silverware, silverwareCell, map);
+            animal.needs.food.CurLevel = 0.01f;
+            var originalSilverwarePosition = silverware.Position;
+            var ingestJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+            var silverwareWasReserved = false;
+
+            animal.jobs.StartJob(ingestJob, JobCondition.InterruptForced);
+            var chewMethod = AccessTools.Method(typeof(Toils_Ingest), nameof(Toils_Ingest.ChewIngestible));
+            var chewOwners = Harmony.GetPatchInfo(chewMethod)?.Owners
+                .Count(owner => owner == ImmersiveChefsMod.PackageId) ?? 0;
+            IntegrationAssert.Equal(
+                1,
+                chewOwners,
+                "Animal map ingestion must run with exactly one Immersive Chefs chew-speed patch owner.");
+            var plateSpeed = plate.GetComp<CompKitchenwareStats>().CurrentStats.CookingSpeedFactor;
+            IntegrationAssert.True(
+                Math.Abs(plateSpeed - 1f) > 0.1f,
+                "The animal chew-speed fixture must use a plate with a distinguishable non-native factor.");
+            var platedChew = Toils_Ingest.ChewIngestible(
+                animal,
+                1f,
+                TargetIndex.A,
+                TargetIndex.None);
+            var embedded = meal.GetComp<CompEmbeddedWare>();
+            var releasedPlate = embedded.ReleasePlateThing();
+            IntegrationAssert.True(
+                ReferenceEquals(plate, releasedPlate),
+                "The chew-speed fixture must temporarily release the exact embedded plate.");
+            var unplatedChew = Toils_Ingest.ChewIngestible(
+                animal,
+                1f,
+                TargetIndex.A,
+                TargetIndex.None);
+            IntegrationAssert.True(
+                embedded.TryEmbedPlate(plate),
+                "The chew-speed fixture must restore its exact plate before native ingestion.");
+            IntegrationAssert.Equal(
+                unplatedChew.defaultDuration,
+                platedChew.defaultDuration,
+                "A non-humanlike animal's native chew duration must ignore a distinguishable plate speed factor.");
+            for (var tick = 0; tick < 5000 && !meal.Destroyed; tick++)
+            {
+                animal.jobs.JobTrackerTick();
+                silverwareWasReserved |= map.reservationManager.IsReserved(silverware);
+            }
+
+            IntegrationAssert.True(
+                meal.Destroyed,
+                "A real animal JobDriver_Ingest must complete within the bounded fixture ticks.");
+            IntegrationAssert.True(
+                DiningSessionRegistry.SilverwareFor(ingestJob) is null,
+                "The real animal map-ingest job must not select nearby silverware.");
+            IntegrationAssert.True(
+                DiningSessionRegistry.PlateFor(ingestJob) is null,
+                "The real animal map-ingest job must not create a service-ware pickup session.");
+            IntegrationAssert.True(
+                !silverwareWasReserved,
+                "The real animal map-ingest job must never reserve nearby silverware.");
+
+            IntegrationAssert.True(
+                plate.Spawned && ReferenceEquals(plate.Map, map) && plate.Position == animal.Position,
+                "Animal map ingestion must recover the exact embedded plate at the eating location.");
+            IntegrationAssert.Equal(
+                WashProvenance.Safe,
+                plate.GetComp<CompSanitation>().WashProvenance,
+                "The recovered animal plate must remain clean with unchanged safe provenance.");
+            IntegrationAssert.True(
+                !plate.GetComp<CompSanitation>().IsDirty,
+                "The recovered animal plate must retain its clean sanitation flag.");
+            IntegrationAssert.True(
+                silverware.Spawned && ReferenceEquals(silverware.Map, map) &&
+                silverware.Position == originalSilverwarePosition,
+                "Nearby map silverware must remain spawned at its original cell.");
+            IntegrationAssert.Equal(
+                WashProvenance.Safe,
+                silverware.GetComp<CompSanitation>().WashProvenance,
+                "Nearby map silverware must remain clean and untouched.");
+            IntegrationAssert.True(
+                !silverware.GetComp<CompSanitation>().IsDirty,
+                "Nearby map silverware must retain its clean sanitation flag.");
+            IntegrationAssert.True(
+                animal.health.hediffSet.GetFirstHediffOfDef(HediffDefOf.FoodPoisoning) is null,
+                "Animal map ingestion must not apply Immersive Chefs' custom food-poisoning risk.");
+        }
+        finally
+        {
+            settings.CulinaryQualityEnabled = originalCulinaryQualityEnabled;
+            settings.MealTemperatureEnabled = originalMealTemperatureEnabled;
+            settings.FoodPoisoningEffectScale = originalFoodPoisoningEffectScale;
+            settings.MaximumCustomPoisonChance = originalMaximumCustomPoisonChance;
+            if (!meal.Destroyed)
+            {
+                meal.Destroy(DestroyMode.Vanish);
+            }
+
+            if (!plate.Destroyed)
+            {
+                plate.Destroy(DestroyMode.Vanish);
+            }
+
+            if (!silverware.Destroyed)
+            {
+                silverware.Destroy(DestroyMode.Vanish);
+            }
+
+            if (!animal.Destroyed)
+            {
+                animal.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void SanitationStorageFiltersAreFinalizedAgainstKitchenware()
     {
@@ -648,7 +810,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
             typeof(Thing),
             nameof(Thing.Ingested),
             new[] { typeof(Pawn), typeof(float) });
-        foreach (var method in new[] { cooking, ingest, ingestOutcome })
+        var chew = AccessTools.Method(typeof(Toils_Ingest), nameof(Toils_Ingest.ChewIngestible));
+        foreach (var method in new[] { cooking, ingest, ingestOutcome, chew })
         {
             var owners = Harmony.GetPatchInfo(method)?.Owners
                 .Where(owner => owner == ImmersiveChefsMod.PackageId)

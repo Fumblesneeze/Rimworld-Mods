@@ -3,6 +3,9 @@ namespace ImmersiveChefs;
 public static class DiningPawnPolicy
 {
     public static bool AppliesDiningConsequences(bool humanlike) => humanlike;
+
+    public static bool AppliesPlateEatingSpeed(bool humanlike) =>
+        AppliesDiningConsequences(humanlike);
 }
 
 public readonly struct CaravanWareCandidate<T>

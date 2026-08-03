@@ -71,6 +71,10 @@ The host SHALL also accept an explicit named scenario descriptor from `scripts/S
 - **WHEN** the exact mod list includes `fumblesneeze.immersivechefs` and the caller selects `immersive-chefs-animal-caravan-dining`
 - **THEN** the host creates a caravan with a fully fed Plants-0 human escort, a starving Labrador retriever, an intentionally cold, poor, contaminated plated meal, and loose silverware; captures the native Items scene without a separate plate row; and pauses so native animal ingestion can be observed returning the unused plate while leaving silverware untouched and without competing caravan forage
 
+#### Scenario: Map animal exclusion setup is selected
+- **WHEN** the exact mod list includes `fumblesneeze.immersivechefs` and the caller selects `immersive-chefs-animal-map-dining`
+- **THEN** the host places a hungry factionless wild raccoon beside an intentionally cold, poor, contaminated plated meal and reachable loose silverware in a sealed fixture on the current map; captures the ready scene without a separate plate; and pauses so the animal's native ingest job can be observed returning the clean plate at the eating location without reserving, collecting, dirtying, or moving the silverware and without colonist hauling or competing animal food selection
+
 ### Requirement: Declarative quickstart spawn setup
 The built-in `quickstart.spawn` automation SHALL accept a version-one descriptor with required `version: 1`, optional `center: { x, z }`, optional `clearRadius`, and optional `buildings`, `items`, `pawns`, `research`, and `gameConditions` arrays. Building entries SHALL accept `defName`, optional `stuff`, `count`, `quality`, `offset: { x, z }`, and `powerOn`; item entries SHALL use the same shape without `powerOn`; pawn entries SHALL accept `kindDefName`, `count`, and `offset`; research SHALL accept either a Def-name string or `{ defName }`; and game-condition entries SHALL accept `defName` and `durationTicks`.
 

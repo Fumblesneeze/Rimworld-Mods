@@ -12,6 +12,12 @@ public sealed class CaravanDiningPolicyTests
     }
 
     [Test]
+    public void Animals_never_receive_plate_eating_speed()
+    {
+        Assert.That(DiningPawnPolicy.AppliesPlateEatingSpeed(humanlike: false), Is.False);
+    }
+
+    [Test]
     public void Caravan_selection_prefers_best_clean_ware_before_dirty_ware()
     {
         var dirtyExcellent = new CaravanWareCandidate<string>("dirty", isDirty: true, serviceScore: 100f);

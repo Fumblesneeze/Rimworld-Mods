@@ -174,3 +174,4 @@
 - [x] 24.6 Resolve the final re-review by making a missing final Player log fatal, clearing generated pawn inventory for repeatable scenes, naming source-shape tests honestly, rerunning the full Gateway matrix, and repeating the native before/action/after observation with clean exact-PID cleanup.
 - [x] 24.7 Add and observe the explicit animal caravan exclusion scenario: meal and untouched silverware before, returned plate and untouched silverware after native ingestion, with loaded integration evidence for exact identity, unchanged sanitation, and no custom poisoning.
 - [x] 24.8 Wait for a playable quicktest map before invoking main-thread Def export or later verification, preventing startup contention from timing out the export queue.
+- [x] 24.9 Add and observe an explicit regular-map animal exclusion scenario: native animal ingestion consumes the plated meal, returns the clean embedded plate at the eating location, and leaves adjacent silverware untouched.
