@@ -630,6 +630,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
 
             GenSpawn.Spawn(pawn, diningCell, map);
             GenSpawn.Spawn(meal, diningCell, map);
+            pawn.drafter.Drafted = true;
             pawn.needs.food.CurLevel = 0.01f;
             var dirtBefore = map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
                 .Cast<Filth>()
