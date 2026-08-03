@@ -93,8 +93,9 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
                     return;
                 }
 
+                var captured = DiningSessionRegistry.CapturePlate(ingester, plate);
                 (plate as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
-                if (!DiningSessionRegistry.CapturePlate(ingester, plate))
+                if (!captured)
                 {
                     PlacePlate(plate, ingester.PositionHeld, ingester.MapHeld);
                 }

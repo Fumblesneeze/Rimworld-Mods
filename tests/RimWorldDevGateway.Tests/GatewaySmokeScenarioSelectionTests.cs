@@ -207,6 +207,58 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Independent_child_dining_scenario_is_explicit_and_arms_a_native_ingest_job()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptor = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-independent-child-dining.json"));
+        var setup = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-independent-child-dining-setup.csx"));
+        var arm = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-independent-child-dining-arm.csx"));
+        var integrationSource = File.ReadAllText(Path.Combine(
+            FindSourceRepositoryRoot(),
+            "tests",
+            "ImmersiveChefs.InGame.IntegrationTests",
+            "FinalizedImmersiveChefsIntegrationTests.cs"));
+        var childTestStart = integrationSource.IndexOf(
+            "public static void ActiveBiotechIndependentChildCompletesOrdinaryDiningWorkflow()",
+            StringComparison.Ordinal);
+        var childTestEnd = integrationSource.IndexOf(
+            "public static void CompletedMapDiningWithoutCutleryCreatesOneDirtEvent()",
+            childTestStart,
+            StringComparison.Ordinal);
+        Assert.That(childTestStart, Is.GreaterThanOrEqualTo(0));
+        Assert.That(childTestEnd, Is.GreaterThan(childTestStart));
+        var childTest = integrationSource.Substring(childTestStart, childTestEnd - childTestStart);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("\"ludeon.rimworld.biotech\""));
+            Assert.That(descriptor, Does.Contain("\"kind\": \"csharp\""));
+            Assert.That(setup, Does.Contain("DevelopmentalStage.Child"));
+            Assert.That(setup, Does.Contain("GetNamed(\"MealLavish\")"));
+            Assert.That(setup, Does.Contain("TryEmbedPlate(plate)"));
+            Assert.That(setup, Does.Contain("GenSpawn.Spawn(cutlery"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(child)"));
+            Assert.That(arm, Does.Contain("child.Position.x + 4"));
+            Assert.That(arm, Does.Contain("expectedMealCell.GetThingList(map)"));
+            Assert.That(arm, Does.Not.Contain("ThingsOfDef"));
+            Assert.That(arm, Does.Contain("JobMaker.MakeJob(JobDefOf.Ingest"));
+            Assert.That(arm, Does.Contain("child.jobs.StartJob"));
+            Assert.That(arm, Does.Contain("Find.TickManager.Pause()"));
+            Assert.That(arm, Does.Not.Contain("Find.TickManager.TogglePaused()"));
+            Assert.That(childTest, Does.Contain("TryGetMainTreeThinkNode<JobGiver_GetFood>"));
+            Assert.That(childTest, Does.Contain("DevelopmentalStage.Baby"));
+            Assert.That(childTest, Does.Contain("toddler.thinker.MainThinkNodeRoot.TryIssueJobPackage"));
+            Assert.That(childTest, Does.Not.Contain("DoSingleTick"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

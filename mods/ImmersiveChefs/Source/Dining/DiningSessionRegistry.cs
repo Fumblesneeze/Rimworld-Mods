@@ -102,6 +102,7 @@ internal sealed class DiningSession : IThingHolder
 
     internal void CapturePlate(Thing plate)
     {
+        PlateServiceSnapshot ??= KitchenwareRuntime.Describe(plate);
         if (caravan is not null && plate.holdingOwner is null)
         {
             Plate = plate;

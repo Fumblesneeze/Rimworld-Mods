@@ -225,6 +225,18 @@ Use the Hospitality guest scene to verify colony-first and personal-inventory fa
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.','[ImmersiveChefs] Hospitality adapter active'
 ```
 
+Use the Biotech child scene to verify the independent-eating boundary. It creates a real eight-year-old child with one plated lavish meal and one clean golden cutlery setting, arms the exact fixture meal's native ingest job, and pauses. Unpause with Space and choose a native speed; afterward the meal should be gone, both exact service items should be visibly dirty, and the child's Needs panel should show `Legendary cooking`, `Steaming hot meal`, and `Proper place setting`. The loaded integration test also asks the full vanilla think trees to prove that the child receives `JobGiver_GetFood` while a two-year-old toddler does not receive an ordinary ingest job:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -RunIntegrationTests -VisibleWindow `
+  -Scenario immersive-chefs-independent-child-dining `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'ludeon.rimworld.biotech','brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedIntegrationTests 'fumblesneeze.immersivechefs|PlayableMapLoaded|ImmersiveChefs.InGame.IntegrationTests.FinalizedImmersiveChefsIntegrationTests.ActiveBiotechIndependentChildCompletesOrdinaryDiningWorkflow' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Use the patient-feeding scene to compare three real `FeedPatient` jobs side by side: a nurse with cutlery and a cold plated meal, a conscious patient without cutlery, and an unconscious patient without cutlery. The first nurse should collect the cutlery and visibly reheat before feeding; only the conscious no-cutlery patient should receive `Ate without cutlery`; both no-cutlery feedings should create one native dirt event at the patient cell:
 
 ```powershell

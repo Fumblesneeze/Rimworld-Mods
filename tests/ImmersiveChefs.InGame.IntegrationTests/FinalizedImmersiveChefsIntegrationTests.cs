@@ -593,6 +593,223 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void ActiveBiotechIndependentChildCompletesOrdinaryDiningWorkflow()
+    {
+        var biotechActive = LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(mod.PackageId, "ludeon.rimworld.biotech", StringComparison.OrdinalIgnoreCase));
+        if (!biotechActive)
+        {
+            return;
+        }
+
+        var map = Find.CurrentMap;
+        var fixtureCells = map.AllCells
+            .Where(cell => cell.Standable(map) &&
+                           cell.GetEdifice(map) is null &&
+                           cell.GetThingList(map).Count == 0)
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .Take(2)
+            .ToList();
+        IntegrationAssert.Equal(2, fixtureCells.Count, "The loaded child fixture needs two clear map cells.");
+        var fixtureCell = fixtureCells[0];
+        var child = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false,
+            fixedBiologicalAge: 8f,
+            fixedChronologicalAge: 8f,
+            developmentalStages: DevelopmentalStage.Child,
+            forceNoGear: true));
+        var toddler = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false,
+            fixedBiologicalAge: 2f,
+            fixedChronologicalAge: 2f,
+            developmentalStages: DevelopmentalStage.Baby,
+            forceNoGear: true));
+        var meal = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("MealLavish"));
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Gold);
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Gold);
+        var settings = ImmersiveChefsMod.Settings;
+        var originalWareRequirementMode = settings.WareRequirementMode;
+        var originalCulinaryQualityEnabled = settings.CulinaryQualityEnabled;
+        var originalMealTemperatureEnabled = settings.MealTemperatureEnabled;
+        var preexistingFoods = map.listerThings.AllThings
+            .Where(thing => thing.Spawned && thing.def.IsNutritionGivingIngestible)
+            .Select(thing => new { Thing = thing, Forbidden = thing.IsForbidden(Faction.OfPlayer) })
+            .ToList();
+        var preexistingCutlery = map.listerThings.AllThings
+            .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product ==
+                            KitchenwareProduct.Cutlery)
+            .Select(thing => new { Thing = thing, Forbidden = thing.IsForbidden(Faction.OfPlayer) })
+            .ToList();
+
+        try
+        {
+            settings.WareRequirementMode = WareRequirementMode.Prefer;
+            settings.CulinaryQualityEnabled = true;
+            settings.MealTemperatureEnabled = true;
+            foreach (var existing in preexistingFoods)
+            {
+                existing.Thing.SetForbidden(true, warnOnFail: false);
+            }
+
+            foreach (var existing in preexistingCutlery)
+            {
+                existing.Thing.SetForbidden(true, warnOnFail: false);
+            }
+
+            child.Name = new NameSingle("Loaded Independent Child Diner");
+            toddler.Name = new NameSingle("Loaded Toddler Requiring Feeding");
+            child.inventory.innerContainer.ClearAndDestroyContents();
+            toddler.inventory.innerContainer.ClearAndDestroyContents();
+            IntegrationAssert.Equal(
+                DevelopmentalStage.Child,
+                child.DevelopmentalStage,
+                "Biotech must generate a real child rather than an adult with a child label.");
+            IntegrationAssert.True(
+                child.RaceProps.Humanlike && child.needs?.food is not null && child.jobs is not null,
+                "The real child pawn must expose the ordinary self-feeding trackers.");
+            IntegrationAssert.Equal(
+                DevelopmentalStage.Baby,
+                toddler.DevelopmentalStage,
+                "Biotech must generate a real toddler-age baby rather than a self-feeding child.");
+            var childFood = child.needs!.food!;
+            var childJobs = child.jobs!;
+
+            plate.GetComp<CompQuality>().SetQuality(QualityCategory.Excellent, ArtGenerationContext.Colony);
+            cutlery.GetComp<CompQuality>().SetQuality(QualityCategory.Excellent, ArtGenerationContext.Colony);
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
+            {
+                new CulinaryServingRecord(
+                    95,
+                    70f,
+                    ContaminationSources.None,
+                    0,
+                    Find.TickManager.TicksGame)
+            });
+            IntegrationAssert.True(
+                meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
+                "The child's lavish meal must begin with its exact clean plate embedded.");
+
+            GenSpawn.Spawn(child, fixtureCell, map);
+            GenSpawn.Spawn(toddler, fixtureCells[1], map);
+            GenSpawn.Spawn(meal, fixtureCell, map);
+            GenSpawn.Spawn(cutlery, fixtureCell, map);
+            childFood.CurLevelPercentage = 0.15f;
+            toddler.needs!.food!.CurLevelPercentage = 0.15f;
+            var mealId = meal.ThingID;
+            var plateId = plate.ThingID;
+            var cutleryId = cutlery.ThingID;
+
+            var childFoodGiver = child.thinker.TryGetMainTreeThinkNode<JobGiver_GetFood>();
+            IntegrationAssert.NotNull(
+                childFoodGiver,
+                "A real Biotech child must inherit the vanilla humanlike self-feeding job giver.");
+            var childFoodResult = child.thinker.MainThinkNodeRoot.TryIssueJobPackage(child, default);
+            IntegrationAssert.True(
+                childFoodResult.IsValid && childFoodResult.Job.def == JobDefOf.Ingest &&
+                childFoodResult.SourceNode is JobGiver_GetFood &&
+                ReferenceEquals(childFoodResult.Job.GetTarget(TargetIndex.A).Thing, meal),
+                "The child's full vanilla think tree must choose the exact plated fixture meal through JobGiver_GetFood.");
+            IntegrationAssert.True(
+                toddler.thinker.TryGetMainTreeThinkNode<JobGiver_GetFood>() is null,
+                "A toddler-age baby must keep Biotech's assisted-feeding think tree without self-feeding jobs.");
+            var toddlerThinkResult = toddler.thinker.MainThinkNodeRoot.TryIssueJobPackage(toddler, default);
+            IntegrationAssert.True(
+                !toddlerThinkResult.IsValid || toddlerThinkResult.Job.def != JobDefOf.Ingest,
+                "Biotech's toddler think tree must not issue an ordinary self-feeding ingest job.");
+
+            var ingestJob = childFoodResult.Job;
+            childJobs.StartJob(
+                ingestJob,
+                JobCondition.InterruptForced,
+                childFoodResult.SourceNode,
+                thinkTree: child.thinker.MainThinkTree);
+            IntegrationAssert.Equal(
+                JobDefOf.Ingest,
+                child.CurJobDef,
+                "Vanilla must accept an ordinary ingest job for the independent child.");
+            IntegrationAssert.True(
+                ReferenceEquals(DiningSessionRegistry.CutleryFor(ingestJob), cutlery),
+                "Starting the real ingest job must reserve the exact clean fixture cutlery.");
+            DiningSessionRegistry.Pickup(child);
+            IntegrationAssert.True(
+                ReferenceEquals(cutlery.holdingOwner, child.inventory.innerContainer),
+                "The child dining session must acquire the exact clean cutlery before eating.");
+
+            meal.Ingested(child, 0.9f);
+
+            IntegrationAssert.True(meal.Destroyed, "The actual RimWorld ingestion boundary must consume the meal.");
+            IntegrationAssert.Equal(mealId, meal.ThingID, "The native job must consume the exact fixture meal.");
+            IntegrationAssert.True(
+                plate.Spawned && plate.ThingID == plateId && ReferenceEquals(plate.Map, map),
+                "The exact embedded plate must return to the map after the child eats.");
+            IntegrationAssert.True(
+                cutlery.Spawned && cutlery.ThingID == cutleryId && ReferenceEquals(cutlery.Map, map),
+                "The exact acquired cutlery must return to the map after the child eats.");
+            IntegrationAssert.True(
+                plate.GetComp<CompSanitation>().IsDirty && cutlery.GetComp<CompSanitation>().IsDirty,
+                "The child's returned plate and cutlery must both become dirty through actual dining.");
+
+            var diningThought = DefDatabase<ThoughtDef>.GetNamed("ImmersiveChefs_DiningExperience");
+            var culinaryThought = DefDatabase<ThoughtDef>.GetNamed("ImmersiveChefs_CulinaryQuality");
+            var temperatureThought = DefDatabase<ThoughtDef>.GetNamed("ImmersiveChefs_MealTemperature");
+            IntegrationAssert.Equal(
+                0,
+                child.needs.mood.thoughts.memories.GetFirstMemoryOfDef(diningThought)?.CurStageIndex ?? -1,
+                "The child must receive the same proper-place-setting memory as an adult.");
+            IntegrationAssert.Equal(
+                6,
+                child.needs.mood.thoughts.memories.GetFirstMemoryOfDef(culinaryThought)?.CurStageIndex ?? -1,
+                "The child must receive the serving's legendary culinary-quality memory.");
+            IntegrationAssert.Equal(
+                0,
+                child.needs.mood.thoughts.memories.GetFirstMemoryOfDef(temperatureThought)?.CurStageIndex ?? -1,
+                "The child must receive the steaming-hot meal memory.");
+        }
+        finally
+        {
+            settings.WareRequirementMode = originalWareRequirementMode;
+            settings.CulinaryQualityEnabled = originalCulinaryQualityEnabled;
+            settings.MealTemperatureEnabled = originalMealTemperatureEnabled;
+            foreach (var existing in preexistingFoods)
+            {
+                if (!existing.Thing.Destroyed)
+                {
+                    existing.Thing.SetForbidden(existing.Forbidden, warnOnFail: false);
+                }
+            }
+
+            foreach (var existing in preexistingCutlery)
+            {
+                if (!existing.Thing.Destroyed)
+                {
+                    existing.Thing.SetForbidden(existing.Forbidden, warnOnFail: false);
+                }
+            }
+
+            foreach (var thing in new Thing[] { meal, plate, cutlery, child, toddler })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void CompletedMapDiningWithoutCutleryCreatesOneDirtEvent()
     {
         var map = Find.CurrentMap;
