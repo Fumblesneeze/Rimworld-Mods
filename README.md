@@ -201,6 +201,17 @@ Use the regular-map animal scene to observe the same exclusion through RimWorld'
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the forkless colonist scene to verify the opposite humanlike behavior. It selects a colonist with a plated Simple meal and no silverware in a sealed concrete room. Unpause with the game's native Space control: the meal should disappear, the returned plate and one dirt event should become visible at the eating location, and the selected pawn's Needs panel should report `Ate without silverware`:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-forkless-map `
+  -InteractiveHoldSeconds 120 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell
