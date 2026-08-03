@@ -112,6 +112,8 @@ new System.Func<string>(() =>
     }
     catch (System.Exception error)
     {
-        return "SETUP_ERROR|" + stage + "|" + error.GetType().Name + "|" + error.Message;
+        throw new System.InvalidOperationException(
+            stage + ": " + error.GetType().Name + ": " + error.Message,
+            error);
     }
 })()
