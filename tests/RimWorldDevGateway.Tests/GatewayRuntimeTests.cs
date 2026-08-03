@@ -85,6 +85,7 @@ public sealed class GatewayRuntimeTests
             Assert.That(completed.Attempted, Is.True);
             Assert.That(completed.IsTerminal, Is.True);
             Assert.That(completed.RetainsOwnership, Is.False);
+            Assert.That(completed.RecoveredAfterRetainedFailure, Is.True);
             Assert.That(attempts, Is.EqualTo(3));
         });
     }

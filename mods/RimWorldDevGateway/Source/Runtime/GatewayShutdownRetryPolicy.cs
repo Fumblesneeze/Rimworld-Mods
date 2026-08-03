@@ -1,5 +1,15 @@
 namespace RimWorldDevGateway;
 
+internal static class GatewayShutdownLogMessages
+{
+    internal const string RetryRetained =
+        "[RimWorldDevGateway] Runtime shutdown cleanup remains retryable after the fast retry window; " +
+        "ownership is retained and later attempts are throttled.";
+
+    internal const string RetryRecovered =
+        "[RimWorldDevGateway] Runtime shutdown cleanup recovered during a retained throttled retry.";
+}
+
 internal static class GatewayShutdownRetryPolicy
 {
     internal static readonly TimeSpan RetryWindow = TimeSpan.FromSeconds(1);
@@ -74,7 +84,9 @@ internal sealed class GatewayShutdownLifecycle
         {
             cleanup();
             terminal = true;
-            return GatewayShutdownAttempt.Terminal(attempted: true);
+            return GatewayShutdownAttempt.Terminal(
+                attempted: true,
+                recoveredAfterRetainedFailure: retainedFailureReported);
         }
         catch (Exception exception)
         {
@@ -111,12 +123,14 @@ internal sealed class GatewayShutdownAttempt
         bool attempted,
         bool isTerminal,
         bool retainsOwnership,
-        Exception? reportableFailure)
+        Exception? reportableFailure,
+        bool recoveredAfterRetainedFailure)
     {
         Attempted = attempted;
         IsTerminal = isTerminal;
         RetainsOwnership = retainsOwnership;
         ReportableFailure = reportableFailure;
+        RecoveredAfterRetainedFailure = recoveredAfterRetainedFailure;
     }
 
     internal bool Attempted { get; }
@@ -127,13 +141,26 @@ internal sealed class GatewayShutdownAttempt
 
     internal Exception? ReportableFailure { get; }
 
+    internal bool RecoveredAfterRetainedFailure { get; }
+
     internal static GatewayShutdownAttempt Terminal(
         bool attempted,
-        Exception? reportableFailure = null) =>
-        new(attempted, isTerminal: true, retainsOwnership: false, reportableFailure);
+        Exception? reportableFailure = null,
+        bool recoveredAfterRetainedFailure = false) =>
+        new(
+            attempted,
+            isTerminal: true,
+            retainsOwnership: false,
+            reportableFailure,
+            recoveredAfterRetainedFailure);
 
     internal static GatewayShutdownAttempt Retained(
         bool attempted,
         Exception? reportableFailure) =>
-        new(attempted, isTerminal: false, retainsOwnership: true, reportableFailure);
+        new(
+            attempted,
+            isTerminal: false,
+            retainsOwnership: true,
+            reportableFailure,
+            recoveredAfterRetainedFailure: false);
 }

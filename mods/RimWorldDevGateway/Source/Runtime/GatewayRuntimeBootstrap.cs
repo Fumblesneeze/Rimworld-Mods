@@ -361,15 +361,17 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             }
             else
             {
-                Log.Warning(
-                    "[RimWorldDevGateway] Runtime shutdown cleanup remains retryable; " +
-                    "ownership is retained and later attempts are throttled: " +
-                    attempt.ReportableFailure);
+                Log.Warning(GatewayShutdownLogMessages.RetryRetained);
             }
         }
 
         if (attempt.IsTerminal)
         {
+            if (attempt.RecoveredAfterRetainedFailure)
+            {
+                Log.Warning(GatewayShutdownLogMessages.RetryRecovered);
+            }
+
             integrationTests = null;
             runtime = null;
             return true;

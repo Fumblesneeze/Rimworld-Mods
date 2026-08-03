@@ -30,6 +30,25 @@ public sealed class GatewaySmokeLogValidationTests
         });
     }
 
+    [Test]
+    public void Delayed_shutdown_recovery_markers_do_not_poison_the_final_runtime_log_scan()
+    {
+        var log = string.Join(
+            Environment.NewLine,
+            GatewayShutdownLogMessages.RetryRetained,
+            GatewayShutdownLogMessages.RetryRecovered);
+        using var fixture = Fixture.Create(log);
+
+        var run = fixture.Invoke();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("0"));
+            Assert.That(log, Does.Not.Contain("Exception:"));
+        });
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly string root;
