@@ -89,4 +89,4 @@
   - [x] 9.8a Update every affected OpenSpec contract and design note to use cutlery consistently.
   - [x] 9.8b TDD RED/GREEN: Make tests require the cutlery API and finalized Defs before renaming production code, then pass focused and full matrices with no tracked obsolete-term reference.
   - [ ] 9.8c IN-GAME: Observe the renamed cutlery item and missing-cutlery thought through ordinary player-visible UI and native dining behavior.
-  - [ ] 9.8d REVIEW: Independently review the terminology slice for incomplete schema/API renames, accidental material changes, compatibility leakage, and truthful evidence; resolve findings and rerun affected verification.
+  - [x] 9.8d REVIEW: Independently review the terminology slice for incomplete schema/API renames, accidental material changes, compatibility leakage, and truthful evidence; resolve findings and rerun affected verification.
