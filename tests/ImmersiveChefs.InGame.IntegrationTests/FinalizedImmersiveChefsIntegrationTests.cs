@@ -132,6 +132,33 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedGlitterworldCookwareIsTradeOnlyAndSelfCleaning()
+    {
+        var glitterworld = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_GlitterworldCookware");
+        var extension = glitterworld.GetModExtension<KitchenwareExtension>();
+
+        IntegrationAssert.Equal(
+            Tradeability.Buyable,
+            glitterworld.tradeability,
+            "Glitterworld cookware must be eligible for trader stock.");
+        IntegrationAssert.True(
+            glitterworld.generateCommonality > 0f,
+            "Glitterworld cookware must remain eligible for generated trader and quest stock.");
+        IntegrationAssert.Equal(
+            TechLevel.Spacer,
+            glitterworld.techLevel,
+            "Glitterworld cookware must retain its imported spacer-tech identity.");
+        IntegrationAssert.NotNull(extension, "Glitterworld cookware must finalize its kitchenware extension.");
+        IntegrationAssert.True(
+            extension!.fixedMaterialKind == KitchenMaterialKind.Glitterworld && extension.selfCleaning,
+            "Glitterworld cookware must keep its fixed exceptional material profile and self-cleaning behavior.");
+        IntegrationAssert.True(
+            !DefDatabase<RecipeDef>.AllDefsListForReading.Any(recipe =>
+                recipe.products?.Any(product => product.thingDef == glitterworld) == true),
+            "No finalized recipe may manufacture glitterworld cookware.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void OptionalMasonryRecipeMatchesTheRealLoadedModSet()
     {
         var masonryLoaded = LoadedModManager.RunningModsListForReading.Any(mod =>

@@ -203,6 +203,17 @@ Use the chef's-knife scene to watch a real machining bill consume exactly 30 ste
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the glitterworld-trade scene to verify that exceptional self-cleaning cookware is acquired rather than manufactured. The scenario builds a powered orbital trade fixture, places colony silver under its beacon, and gives an exotic-goods trader one Good-or-better set without granting it to the colony. Complete the purchase through RimWorld's native trade dialog, advance time for the drop-pod delivery, and inspect the delivered set:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-glitterworld-trade `
+  -InteractiveHoldSeconds 300 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus cutlery (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
 
 ```powershell

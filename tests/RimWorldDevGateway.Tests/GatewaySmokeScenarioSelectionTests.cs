@@ -398,6 +398,51 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Glitterworld_trade_scenario_seeds_trader_stock_without_granting_colony_ownership()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-glitterworld-trade.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-glitterworld-trade-setup.csx");
+        var stockPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-glitterworld-trade-stock.csx");
+        var armPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-glitterworld-trade-arm.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(stockPath), Is.True);
+            Assert.That(File.Exists(armPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var stock = File.ReadAllText(stockPath);
+        var arm = File.ReadAllText(armPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-glitterworld-trade"));
+            Assert.That(setup, Does.Contain("OrbitalTradeBeacon"));
+            Assert.That(stock, Does.Contain("new TradeShip"));
+            Assert.That(stock, Does.Contain("Orbital_Exotic"));
+            Assert.That(stock, Does.Contain("ImmersiveChefs_GlitterworldCookware"));
+            Assert.That(stock, Does.Contain("GetDirectlyHeldThings"));
+            Assert.That(stock, Does.Contain("passingShipManager.AddShip"));
+            Assert.That(stock, Does.Not.Contain("GenSpawn.Spawn(glitterworld"));
+            Assert.That(arm, Does.Contain("TryOpenComms"));
+            Assert.That(arm, Does.Not.Contain("TradeAction.PlayerBuys"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));
