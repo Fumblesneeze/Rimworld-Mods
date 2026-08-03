@@ -61,6 +61,40 @@ public sealed class KitchenwareRecipeDefContractTests
             Is.EqualTo("ImmersiveChefs.IngredientValueGetter_Units"));
     }
 
+    [Test]
+    public void Chefs_knife_is_a_belt_apparel_without_mutable_sanitation()
+    {
+        var document = XDocument.Load(Path.Combine(
+            FindRepositoryRoot(),
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "Kitchenware.xml"));
+        var knife = document.Root?.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_ChefsKnife");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)knife?.Element("thingClass"), Is.EqualTo("Apparel"));
+            Assert.That(
+                knife?.Element("apparel")?.Element("bodyPartGroups")?.Elements("li")
+                    .Select(element => element.Value),
+                Does.Contain("Waist"));
+            Assert.That(
+                knife?.Element("apparel")?.Element("layers")?.Elements("li")
+                    .Select(element => element.Value),
+                Does.Contain("Belt"));
+            Assert.That(
+                knife?.Element("comps")?.Elements("li")
+                    .Any(element =>
+                        (string?)element.Attribute("Class") ==
+                        "ImmersiveChefs.CompProperties_Sanitation"),
+                Is.False);
+        });
+    }
+
     private static string? RequiredWorkType(XDocument document, string defName)
     {
         var recipe = document.Root?.Elements("RecipeDef")

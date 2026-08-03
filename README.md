@@ -192,6 +192,17 @@ Use the larger route matrix to exercise wooden plates and cutlery, fixed-adobe p
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the chef's-knife scene to watch a real machining bill consume exactly 30 steel. The pawn begins with an ordinary steel weapon as a control. After fabrication, select the pawn, right-click the produced set, and use the native `Force equip` apparel action; RimWorld 1.6 displays belt/utility apparel in the Gear tab's `Equipment` group while leaving the weapon equipped:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-chefs-knife `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus cutlery (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
 
 ```powershell

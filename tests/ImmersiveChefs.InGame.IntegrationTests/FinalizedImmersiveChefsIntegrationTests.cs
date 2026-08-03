@@ -97,6 +97,41 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedChefsKnifeIsBeltApparelWithoutSanitationState()
+    {
+        var knife = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_ChefsKnife");
+        var recipe = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeChefsKnife");
+
+        IntegrationAssert.Equal(
+            typeof(Apparel),
+            knife.thingClass,
+            "The chef's knife set must instantiate as apparel rather than weapon equipment.");
+        IntegrationAssert.True(knife.IsApparel, "The finalized chef's knife Def must be classified as apparel.");
+        IntegrationAssert.Equal(
+            "None",
+            knife.equipmentType.ToString(),
+            "The finalized chef's knife Def must not declare a weapon equipment type.");
+        IntegrationAssert.NotNull(knife.apparel, "The chef's knife set must finalize apparel properties.");
+        IntegrationAssert.True(
+            knife.apparel!.bodyPartGroups.Any(group => group.defName == "Waist") &&
+            knife.apparel.layers.Any(layer => layer.defName == "Belt"),
+            "The chef's knife set must occupy the waist belt layer.");
+        IntegrationAssert.True(
+            knife.comps.All(properties => properties.compClass != typeof(CompSanitation)),
+            "A personal chef's knife must not acquire mutable dish-sanitation state.");
+        IntegrationAssert.True(
+            knife.comps.All(properties => properties.compClass != typeof(CompEquippable)),
+            "A personal chef's knife must not finalize an equippable weapon component.");
+        IntegrationAssert.Equal(
+            30f,
+            recipe.ingredients[0].GetBaseCount(),
+            "The finalized machining recipe must consume thirty units of one eligible metal.");
+        IntegrationAssert.True(
+            recipe.recipeUsers.Any(user => user.defName == "TableMachining"),
+            "The chef's knife recipe must remain on the machining table.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void OptionalMasonryRecipeMatchesTheRealLoadedModSet()
     {
         var masonryLoaded = LoadedModManager.RunningModsListForReading.Any(mod =>

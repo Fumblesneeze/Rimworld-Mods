@@ -149,6 +149,8 @@ Chef's knife sets SHALL be wearable equipment on RimWorld's belt/utility slot, S
 
 Chef's knives SHALL carry and display their inherent material cleanliness stat but SHALL not carry the reusable-ware clean/dirty sanitation component, become dirty through cooking or preparation, or participate in the dirty-dish washing lifecycle in this planned scope.
 
+In RimWorld 1.6, the native Gear tab groups belt/utility apparel under the visible `Equipment` heading and its apparel float-menu action is localized as `Force equip`. This presentation SHALL be accepted as belt apparel only when the finalized Def remains `Apparel`, declares no weapon equipment type or `CompEquippable`, and the pawn's existing weapon remains equipped.
+
 #### Scenario: A cook wears a chef's knife set
 - **WHEN** a pawn wearing a Good-quality steel chef's knife performs cooking or ingredient preparation
 - **THEN** that same knife set supplies its visible cooking modifiers, remains equipped after the job, and occupies the belt/utility slot rather than the weapon slot

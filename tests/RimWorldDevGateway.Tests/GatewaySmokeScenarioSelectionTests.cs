@@ -355,6 +355,49 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Chefs_knife_scenario_fabricates_without_synthetically_equipping_the_product()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-chefs-knife.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-chefs-knife-setup.csx");
+        var armPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-chefs-knife-arm.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(armPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var arm = File.ReadAllText(armPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-chefs-knife"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_MakeChefsKnife"));
+            Assert.That(setup, Does.Contain("TableMachining"));
+            Assert.That(setup, Does.Contain("CompPowerBattery"));
+            Assert.That(setup, Does.Contain("new Bill_Production"));
+            Assert.That(setup, Does.Contain("MeleeWeapon_Knife"));
+            Assert.That(setup, Does.Not.Contain("ImmersiveChefs_ChefsKnife"));
+            Assert.That(setup, Does.Not.Contain("Wear("));
+            Assert.That(arm, Does.Contain("WorkGiver_DoBill"));
+            Assert.That(arm, Does.Contain("JobOnThing"));
+            Assert.That(arm, Does.Contain("StartJob"));
+            Assert.That(arm, Does.Contain("Find.TickManager.Pause()"));
+            Assert.That(arm, Does.Not.Contain("GenRecipe.MakeRecipeProducts"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-chefs-knife",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-chefs-knife-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-chefs-knife-ready.png"
+    },
+    {
+      "id": "arm",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-chefs-knife-arm.csx"
+    }
+  ]
+}
