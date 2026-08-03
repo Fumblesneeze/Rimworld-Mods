@@ -214,6 +214,17 @@ Use the glitterworld-trade scene to verify that exceptional self-cleaning cookwa
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the cooking-ware-selection scene to compare clean-first selection with urgent dirty fallback. Two sealed kitchens each contain a real Fueled stove and one pawn-restricted Simple-meal bill. The first offers deliberately inferior clean steel ware beside superior dirty golden ware; the second offers only dirty steel ware. A third sealed, starving pawn registers demand through vanilla's patched food-seeking boundary. Unpause and choose a native speed: both cooks should finish, but the golden controls must remain untouched while the used cookware moves to its stove and each produced meal contains one bound plate:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-cooking-ware-selection `
+  -InteractiveHoldSeconds 300 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus cutlery (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
 
 ```powershell

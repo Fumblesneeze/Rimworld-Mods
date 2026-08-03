@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-cooking-ware-selection",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-cooking-ware-selection-setup.csx"
+    },
+    {
+      "id": "stock",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-cooking-ware-selection-stock.csx"
+    },
+    {
+      "id": "urgency",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-cooking-ware-selection-urgency.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-cooking-ware-selection-ready.png"
+    },
+    {
+      "id": "arm",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-cooking-ware-selection-arm.csx"
+    }
+  ]
+}
