@@ -19,6 +19,7 @@
   - [x] 2.6d Observe an exotic orbital trader own a Good-or-better glitterworld cookware set, use the native trade dialog to spend colony silver, and confirm that only native acceptance and orbital delivery create the colony-owned item; compare its ordinary inspector-visible self-cleaning, cleanliness, comfort, speed, and culinary modifier profile, and assert the finalized Def remains trade-only.
   - [x] 2.6e Observe a native Simple-meal bill prefer deliberately inferior clean cookware and a clean plate over superior dirty controls, then observe an isolated second bill use its only dirty ware after a sealed starving pawn reaches the patched vanilla no-food boundary; require both ordinary jobs to create plated meals without synthetic recipe completion.
   - [x] 2.6f Observe matched native Simple, Fine, and Lavish one-shot bills finish in that order under the exact 0.75x/2x/3x table; in settled finalized-Def matrices, require one Harmony owner, unchanged survival/pemmican recipes, absence of invented mod Defs, and unchanged unclassified Vanilla Cooking Expanded recipes when its real dependency chain is active.
+  - [x] 2.6g Observe vanilla food-choice and ingestion jobs consume exact Pemmican and packaged-survival-meal fixtures while four adjacent clean plate/cutlery controls remain visibly clean and unmoved and neither sealed concrete room gains dirt or a returned dish; require finalized excluded-food Defs to omit embedded ware and culinary/temperature state.
 
 ## 3. mods/ImmersiveChefs - Sanitation and dishwashing
 

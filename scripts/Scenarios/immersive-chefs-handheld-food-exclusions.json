@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-handheld-food-exclusions",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-handheld-food-exclusions-setup.csx"
+    },
+    {
+      "id": "arm",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-handheld-food-exclusions-arm.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-handheld-food-exclusions-ready.png"
+    }
+  ]
+}

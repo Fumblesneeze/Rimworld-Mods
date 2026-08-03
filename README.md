@@ -314,6 +314,17 @@ Use the patient-feeding scene to compare three real `FeedPatient` jobs side by s
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the handheld-food exclusion scene to verify that Pemmican and packaged survival meals stay outside the serving-ware workflow. It builds two sealed rooms with one hungry colonist and one exact food fixture each, plus clean plate and cutlery controls. The arm step asks vanilla `JobGiver_GetFood` for each exact native ingest job and pauses. Resume at a native speed; Pemmican should decrease, the survival meal should disappear, and all four controls should remain clean without dirt or a returned dish:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-handheld-food-exclusions `
+  -InteractiveHoldSeconds 120 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell

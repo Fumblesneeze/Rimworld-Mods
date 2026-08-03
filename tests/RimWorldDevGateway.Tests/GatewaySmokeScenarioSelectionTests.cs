@@ -539,6 +539,48 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Handheld_food_scenario_uses_vanilla_food_choice_and_ingest_jobs()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-handheld-food-exclusions.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-handheld-food-exclusions-setup.csx");
+        var armPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-handheld-food-exclusions-arm.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(armPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var arm = File.ReadAllText(armPath);
+        var scenarioSource = setup + arm;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-handheld-food-exclusions"));
+            Assert.That(setup, Does.Contain("ThingDefOf.Pemmican"));
+            Assert.That(setup, Does.Contain("ThingDefOf.MealSurvivalPack"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Plate"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Cutlery"));
+            Assert.That(arm, Does.Contain("JobGiver_GetFood"));
+            Assert.That(arm, Does.Contain("TryGiveJob"));
+            Assert.That(arm, Does.Contain("JobDefOf.Ingest"));
+            Assert.That(arm, Does.Contain("ReferenceEquals(job.targetA.Thing, expectedFood)"));
+            Assert.That(scenarioSource, Does.Not.Contain(".Ingested("));
+            Assert.That(scenarioSource, Does.Not.Contain("TryEmbedPlate"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

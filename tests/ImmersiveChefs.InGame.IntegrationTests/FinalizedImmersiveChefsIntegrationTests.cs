@@ -205,12 +205,18 @@ public static class FinalizedImmersiveChefsIntegrationTests
         IntegrationAssert.True(
             MealCoveragePolicy.IsCovered(ThingDefOf.MealSimple),
             "A normal finalized meal must keep Immersive Chefs state while travelling.");
-        IntegrationAssert.True(
-            !MealCoveragePolicy.IsCovered(ThingDefOf.Pemmican),
-            "Pemmican must remain a hand-eaten travel-food exclusion.");
-        IntegrationAssert.True(
-            !MealCoveragePolicy.IsCovered(ThingDefOf.MealSurvivalPack),
-            "Packaged survival meals must remain a hand-eaten travel-food exclusion.");
+        foreach (var excludedFood in new[] { ThingDefOf.Pemmican, ThingDefOf.MealSurvivalPack })
+        {
+            IntegrationAssert.True(
+                !MealCoveragePolicy.IsCovered(excludedFood),
+                $"{excludedFood.defName} must remain a hand-eaten travel-food exclusion.");
+            IntegrationAssert.True(
+                excludedFood.comps.All(comp => comp.compClass != typeof(CompEmbeddedWare)),
+                $"{excludedFood.defName} must not receive embedded serving ware.");
+            IntegrationAssert.True(
+                excludedFood.comps.All(comp => comp.compClass != typeof(CompCulinaryState)),
+                $"{excludedFood.defName} must not receive culinary state or temperature handling.");
+        }
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
