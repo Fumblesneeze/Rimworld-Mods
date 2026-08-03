@@ -2250,6 +2250,41 @@ public static class GatewaySmokeNativeWindowMethods
     }
 }
 
+function Complete-GatewaySmokeWindowObservation {
+    param(
+        [Parameter(Mandatory)][psobject]$Observation
+    )
+
+    if ($null -eq $Observation.PSObject.Properties['MatchesExpectedWindowStyle']) {
+        throw 'The window observation does not report MatchesExpectedWindowStyle.'
+    }
+
+    $warning = $null
+    if (-not [bool]$Observation.MatchesExpectedWindowStyle) {
+        $warning =
+            "RimWorld PID $($Observation.ProcessId) no longer matches requested window style " +
+            "'$($Observation.ExpectedWindowStyle)'; the user may have changed the window after launch. " +
+            'This observation is diagnostic and the healthy run will continue.'
+    }
+
+    $Observation | Add-Member -NotePropertyName StyleMismatchIsFatal -NotePropertyValue $false -Force
+    $Observation | Add-Member -NotePropertyName Warning -NotePropertyValue $warning -Force
+    return $Observation
+}
+
+function Save-GatewaySmokeWindowObservation {
+    param(
+        [Parameter(Mandatory)][psobject]$Observation,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $completed = Complete-GatewaySmokeWindowObservation -Observation $Observation
+    $completed |
+        ConvertTo-Json -Depth 4 |
+        Set-Content -LiteralPath $Path -Encoding UTF8
+    return $completed
+}
+
 function Invoke-GatewaySmokeBoundedProcess {
     param(
         [Parameter(Mandatory)][string]$ExecutablePath,
@@ -4318,15 +4353,11 @@ try {
         -ExpectedProcessId $launchedProcess.Id `
         -ExpectedProcessStartUtc $launchedProcessStartUtc
 
-    $windowLaunchObservation = Get-GatewaySmokeWindowObservation `
-        -Process $launchedProcess `
-        -ExpectedWindowStyle $launchWindowStyle
-    $windowLaunchObservation |
-        ConvertTo-Json -Depth 4 |
-        Set-Content -LiteralPath $windowLaunchObservationPath -Encoding UTF8
-    if (-not [bool]$windowLaunchObservation.MatchesExpectedWindowStyle) {
-        throw "RimWorld PID $($launchedProcess.Id) did not start with expected window style '$launchWindowStyle'. See $windowLaunchObservationPath"
-    }
+    $windowLaunchObservation = Save-GatewaySmokeWindowObservation `
+        -Observation (Get-GatewaySmokeWindowObservation `
+            -Process $launchedProcess `
+            -ExpectedWindowStyle $launchWindowStyle) `
+        -Path $windowLaunchObservationPath
 
     $baseUrl = [string]$manifest.baseUrl
     $unauthorized = Invoke-TrackedGatewayRequest `

@@ -126,6 +126,30 @@ public sealed class GatewaySmokeBackgroundLaunchTests
     }
 
     [Test]
+    public void Later_window_style_mismatch_is_diagnostic_when_the_user_changes_the_window()
+    {
+        var script =
+            "$ErrorActionPreference = 'Stop'\n" +
+            "$WarningPreference = 'Stop'\n" +
+            LoadFunction("Complete-GatewaySmokeWindowObservation") +
+            LoadFunction("Save-GatewaySmokeWindowObservation") +
+            "$observation = [pscustomobject]@{ ProcessId = 42; ExpectedWindowStyle = 'Minimized'; IsWindowVisible = $true; IsMinimized = $false; MatchesExpectedWindowStyle = $false }\n" +
+            "$path = Join-Path $PSScriptRoot 'window-launch-observation.json'\n" +
+            "$result = Save-GatewaySmokeWindowObservation -Observation $observation -Path $path\n" +
+            "$persisted = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json\n" +
+            "Write-Output ([string]$result.StyleMismatchIsFatal + '|' + [string]$persisted.StyleMismatchIsFatal + '|' + $persisted.Warning)\n";
+
+        var result = RunPowerShellScript(script);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.ExitCode, Is.Zero, result.StandardError);
+            Assert.That(result.StandardOutput, Does.StartWith("False|False|"));
+            Assert.That(result.StandardOutput, Does.Contain("may have changed the window after launch"));
+        });
+    }
+
+    [Test]
     public void Dry_run_exposes_matching_normal_preferences_hashes_without_mutation()
     {
         var artifactRoot = Path.Combine(

@@ -133,7 +133,7 @@ Inspect a dry run first:
   -DryRun -Output json
 ```
 
-Gateway launches write an isolated `SavedData\Config\Prefs.xml` with `runInBackground=True` and `volumeMusic=0`, then start RimWorld minimized by default, so semantic/API-driven verification can continue without music or taking over the desktop. Add `-VisibleWindow` only when a person, computer-use tool, or desktop input check needs the game window; `-Scenario gateway-regression` selects a visible window automatically because it owns the FlaUI/raw-input checks. Dry-run and completed results report `Prefs`, `RunInBackground`, `MusicVolume`, and the requested `LaunchWindowStyle`; real runs also retain an exact-PID native window-state observation and fail on a mismatch. The launcher hashes the user's normal `Prefs.xml` before and after and fails if it changed.
+Gateway launches write an isolated `SavedData\Config\Prefs.xml` with `runInBackground=True` and `volumeMusic=0`, then start RimWorld minimized by default, so semantic/API-driven verification can continue without music or taking over the desktop. Add `-VisibleWindow` only when a person, computer-use tool, or desktop input check needs the game window; `-Scenario gateway-regression` selects a visible window automatically because it owns the FlaUI/raw-input checks. Dry-run and completed results report `Prefs`, `RunInBackground`, `MusicVolume`, and the requested `LaunchWindowStyle`; real runs also retain an exact-PID native window-state observation. That later observation is diagnostic: restoring or maximizing the window does not terminate a healthy run. The launcher hashes the user's normal `Prefs.xml` before and after and fails if it changed.
 
 Run the product-only startup smoke without the gateway:
 
