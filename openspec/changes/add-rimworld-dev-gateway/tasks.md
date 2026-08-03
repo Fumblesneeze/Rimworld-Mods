@@ -175,3 +175,11 @@
 - [x] 24.7 Add and observe the explicit animal caravan exclusion scenario: meal and untouched cutlery before, returned plate and untouched cutlery after native ingestion, with loaded integration evidence for exact identity, unchanged sanitation, and no custom poisoning.
 - [x] 24.8 Wait for a playable quicktest map before invoking main-thread Def export or later verification, preventing startup contention from timing out the export queue.
 - [x] 24.9 Add and observe an explicit regular-map animal exclusion scenario: native animal ingestion consumes the plated meal, returns the clean embedded plate at the eating location, and leaves adjacent cutlery untouched.
+
+## 25. mods/RimWorldDevGateway — Screen-local input and speed observability
+
+- [x] 25.1 SPEC/AUDIT: Confirm the existing process-scoped click, drag, key/chord/text, and `GET/POST /api/v1/game-state` speed-control routes; specify the rendered client coordinate space and UI-state speed projection rather than introducing duplicate endpoints.
+- [ ] 25.2 TDD RED/GREEN: Make the UI-state contract require nullable pause/native speed and positive rendered-client dimensions with a top-left origin; retain main-menu null safety and the existing bounded snapshot fields.
+- [ ] 25.3 REGRESSION: Prove the existing screen-local mouse and keyboard routes still validate PID/HWND/bounds, serialize input, and return exact event ledgers; run the full Gateway matrix and strict OpenSpec validation.
+- [ ] 25.4 REVIEW: Independently review the UI-state/input slice for coordinate-space truth, main-thread safety, stale state, contract drift, and unnecessary endpoint duplication; resolve findings and rerun affected verification.
+- [ ] 25.5 IN-GAME: In one isolated playable run, read rendered-client dimensions, use Gateway keyboard input to change pause state, use Gateway screen-local click input on a visible native control, and observe the resulting pause/speed and UI change through Gateway UI state plus retained rendered screenshots.

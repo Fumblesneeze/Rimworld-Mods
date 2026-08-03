@@ -15,13 +15,17 @@ State outside this deliberately narrow contract MAY be inspected through the unr
 - **THEN** the result reports the current tick and the map's stable-in-run handle, biome, width, and height without returning live Verse objects
 
 ### Requirement: Structured UI-state snapshot
-`GET /api/v1/ui-state` SHALL return a main-thread version-one snapshot with exactly the stable baseline fields `programState`, `rootType`, `selection`, and `windows`. `selection` SHALL contain at most 256 entries with `Handle` and `Label`; `windows` SHALL contain at most 128 entries with `Handle`, `Type`, and `Modal`. The snapshot SHALL NOT walk or recursively serialize live Verse/Unity object graphs.
+`GET /api/v1/ui-state` SHALL return a main-thread snapshot with exactly the stable fields `programState`, `rootType`, nullable `paused`, nullable native `speed`, nullable `clientArea`, `selection`, and `windows`. While a game exists, `paused` SHALL report the effective native pause state and `speed` SHALL be one of `Paused`, `Normal`, `Fast`, `Superfast`, or `Ultrafast`; both SHALL be null at roots without a game. A present `clientArea` SHALL contain the positive rendered-client `Width` and `Height` plus `CoordinateOrigin: TopLeft`, matching the coordinate space accepted by the screen-local input endpoints. `selection` SHALL contain at most 256 entries with `Handle` and `Label`; `windows` SHALL contain at most 128 entries with `Handle`, `Type`, and `Modal`. The snapshot SHALL NOT walk or recursively serialize live Verse/Unity object graphs.
 
-Map/view state, client geometry, pause/speed, semantic-action discovery, and richer selected-object details are not part of the version-one UI-state schema. Callers SHALL use `GET /api/v1/actions` for action discovery and MAY use raw C# or a named automation for additional inspection; promoting such data into this DTO requires a later OpenSpec/API contract change.
+Map/view state, semantic-action discovery, and richer selected-object details remain outside the UI-state schema. Callers SHALL use `GET /api/v1/actions` for action discovery and `GET/POST /api/v1/game-state` for the complete game-control snapshot and mutation contract.
 
 #### Scenario: Inspect an open inspect pane
 - **WHEN** a pawn or building is selected and an authenticated caller requests UI state
-- **THEN** the result identifies the selection by stable-in-run handle and label and reports the bounded window stack without promising inspect-pane internals
+- **THEN** the result identifies the selection by stable-in-run handle and label, reports the bounded window stack, and includes the current pause/speed and rendered-client coordinate bounds without promising inspect-pane internals
+
+#### Scenario: Observe a speed mutation through UI state
+- **WHEN** an authenticated caller changes speed through `POST /api/v1/game-state` and then requests UI state after the mutation completes
+- **THEN** UI state reports the same resulting native speed and effective pause state as the game-state mutation's `After` snapshot
 
 #### Scenario: UI state contains a cyclic game graph
 - **WHEN** a selected object references a map, faction, and other cyclic Verse objects

@@ -6,6 +6,8 @@
 
 God mode SHALL be enabled only while developer mode is enabled. A request MAY enable both together; a request that enables god mode while developer mode remains disabled SHALL fail before mutation. Disabling developer mode SHALL also disable god mode. Speed SHALL use `Paused`, `Normal`, `Fast`, `Superfast`, or `Ultrafast`; setting a non-paused speed SHALL unpause and setting `Paused` SHALL pause.
 
+The current effective pause state and native speed SHALL also be projected into `GET /api/v1/ui-state` so an input-oriented caller can observe a Space-key or speed-control result without raw code execution. `GET/POST /api/v1/game-state` remains the authoritative expanded control endpoint.
+
 #### Scenario: Read and toggle development controls
 - **WHEN** an authenticated caller gets game state and then posts `devMode: true` and `godMode: true`
 - **THEN** both calls execute on the main thread and the mutation reports the exact before and after values

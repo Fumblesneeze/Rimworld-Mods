@@ -2,11 +2,15 @@
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: Process-scoped click input
-`POST /api/v1/input/click` SHALL accept a mouse button and client-pixel position, validate that the current target window belongs to the running RimWorld PID and that the point lies within its current client bounds, and inject exactly one down/up click pair or return a capability/focus/bounds error.
+`POST /api/v1/input/click` SHALL accept a mouse button and screen-local client-pixel position whose origin is the top-left of the rendered RimWorld client, validate that the current target window belongs to the running RimWorld PID and that the point lies within its current client bounds, and inject exactly one down/up click pair or return a capability/focus/bounds error. `GET /api/v1/ui-state` SHALL expose the corresponding current rendered-client width, height, and coordinate origin so callers do not infer coordinates from a scaled desktop capture.
 
 #### Scenario: Click a visible RimWorld control
 - **WHEN** the RimWorld window is available and an authenticated caller clicks a point within its client bounds
 - **THEN** the input is targeted to that RimWorld process and the result records the resolved screen/client coordinates and button events
+
+#### Scenario: Resolve coordinates from the rendered client
+- **WHEN** an authenticated caller reads UI state before clicking or dragging
+- **THEN** the returned client-area dimensions use the same top-left client-pixel coordinate space accepted by the input endpoints
 
 #### Scenario: Window target changed
 - **WHEN** the recorded window handle no longer belongs to the RimWorld PID at injection time
@@ -28,7 +32,7 @@
 - **THEN** the native input worker performs the bounded waits while Unity's main thread remains available to update and render the game
 
 ### Requirement: Key, chord, and text input
-`POST /api/v1/input/keys` SHALL accept bounded key sequences, modifier chords, and text, validate each requested key, target only the RimWorld process, release injected modifiers after success or failure, and return the resolved event ledger.
+`POST /api/v1/input/keys` SHALL accept a bounded single key press, modifier chord, or text value, validate each requested key, target only the RimWorld process, release injected keys and modifiers after success or failure, and return the resolved event ledger.
 
 #### Scenario: Press a RimWorld key binding
 - **WHEN** an authenticated caller sends a valid space-key request while a colony is running
