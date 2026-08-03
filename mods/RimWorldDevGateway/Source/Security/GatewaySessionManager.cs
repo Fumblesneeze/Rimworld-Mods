@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
 using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway;
@@ -69,6 +70,8 @@ public sealed class GatewaySessionLease : IDisposable
 public sealed class GatewaySessionManager
 {
     private const string ApiVersion = "1";
+    private const int AtomicReplaceAttempts = 8;
+    private const int AtomicReplaceRetryDelayMilliseconds = 25;
     private readonly object sync = new();
     private readonly string saveDataRoot;
     private readonly Func<byte[]> tokenFactory;
@@ -519,7 +522,7 @@ public sealed class GatewaySessionManager
             File.WriteAllText(temporaryPath, GatewayContractJson.Write(value), new System.Text.UTF8Encoding(false));
             if (File.Exists(path))
             {
-                File.Replace(temporaryPath, path, null, ignoreMetadataErrors: true);
+                ReplaceAtomic(temporaryPath, path);
             }
             else
             {
@@ -531,6 +534,25 @@ public sealed class GatewaySessionManager
             if (File.Exists(temporaryPath))
             {
                 File.Delete(temporaryPath);
+            }
+        }
+    }
+
+    private static void ReplaceAtomic(string temporaryPath, string destinationPath)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                File.Replace(temporaryPath, destinationPath, null, ignoreMetadataErrors: true);
+                return;
+            }
+            catch (IOException) when (
+                attempt < AtomicReplaceAttempts &&
+                File.Exists(temporaryPath) &&
+                File.Exists(destinationPath))
+            {
+                Thread.Sleep(AtomicReplaceRetryDelayMilliseconds);
             }
         }
     }

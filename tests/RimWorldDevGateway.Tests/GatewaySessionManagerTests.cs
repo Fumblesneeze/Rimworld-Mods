@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading.Tasks;
 using RimWorldDevGateway.Contracts;
 using NUnit.Framework;
 
@@ -62,6 +63,60 @@ public sealed class GatewaySessionManagerTests
         }
         finally
         {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Stop_retries_a_transient_lock_while_replacing_the_owned_run_tombstone()
+    {
+        var root = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "gateway-transient-tombstone-lock-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        GatewaySessionLease? lease = null;
+        FileStream? runLock = null;
+        Task? release = null;
+        try
+        {
+            var now = new DateTimeOffset(2026, 8, 3, 8, 30, 0, TimeSpan.Zero);
+            var manager = new GatewaySessionManager(
+                root,
+                () => Enumerable.Repeat((byte)7, 32).ToArray(),
+                () => now,
+                () => "run-transient-lock");
+            lease = manager.Prepare(4321, now.AddMinutes(-1), "1.6", "1.0");
+            lease.Publish(40123);
+            var runPath = Path.Combine(
+                root,
+                "DevGateway",
+                "Sessions",
+                "run-transient-lock",
+                "session.json");
+            runLock = new FileStream(runPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            release = Task.Run(async () =>
+            {
+                await Task.Delay(75);
+                runLock.Dispose();
+                runLock = null;
+            });
+
+            lease.Stop();
+            release.GetAwaiter().GetResult();
+
+            var tombstone = GatewayContractJson.ReadFile<GatewaySessionManifest>(runPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(lease.IsStopped, Is.True);
+                Assert.That(tombstone.State, Is.EqualTo("stopped"));
+                Assert.That(tombstone.Token, Is.Null.Or.Empty);
+            });
+        }
+        finally
+        {
+            release?.GetAwaiter().GetResult();
+            runLock?.Dispose();
+            lease?.Stop();
             Directory.Delete(root, recursive: true);
         }
     }
