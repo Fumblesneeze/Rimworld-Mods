@@ -308,6 +308,53 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Kitchenware_route_matrix_scenario_uses_loaded_adobe_and_native_fabrication_jobs()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-route-matrix.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-route-matrix-setup.csx");
+        var armPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-route-matrix-arm.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(armPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var arm = File.ReadAllText(armPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("argon.expandedmaterials.masonry"));
+            Assert.That(descriptor, Does.Contain("oskarpotocki.vanillafactionsexpanded.core"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_MakeSoftPlates"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_MakeSoftCutlery"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_MakeAdobePlates"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_MakeMedievalCookware"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_SmithPlates"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_SmithCutlery"));
+            Assert.That(setup, Does.Contain("EM_AdobeBricks"));
+            Assert.That(setup, Does.Contain("FueledSmithy"));
+            Assert.That(setup, Does.Contain("CompRefuelable"));
+            Assert.That(setup, Does.Contain("new Bill_Production"));
+            Assert.That(arm, Does.Contain("WorkGiver_DoBill"));
+            Assert.That(arm, Does.Contain("JobOnThing"));
+            Assert.That(arm, Does.Contain("StartJob"));
+            Assert.That(arm, Does.Contain("Find.TickManager.Pause()"));
+            Assert.That(arm, Does.Not.Contain("GenRecipe.MakeRecipeProducts"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

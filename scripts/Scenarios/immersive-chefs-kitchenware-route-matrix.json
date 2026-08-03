@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-kitchenware-route-matrix",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "argon.corelib",
+    "oskarpotocki.vanillafactionsexpanded.core",
+    "argon.expandedmaterials.masonry",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-kitchenware-route-matrix-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-kitchenware-route-matrix-ready.png"
+    },
+    {
+      "id": "arm",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-kitchenware-route-matrix-arm.csx"
+    }
+  ]
+}

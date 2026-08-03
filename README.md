@@ -181,6 +181,17 @@ Use the kitchenware-fabrication scene to exercise two real one-shot bills side b
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the larger route matrix to exercise wooden plates and cutlery, fixed-adobe plates from the real Expanded Materials - Masonry Def, and silver cookware, plates, and cutlery at fueled smithies. It creates six real one-shot bills with exact ingredient stacks and pauses after vanilla accepts each `DoBill` job; unpause with Space and select a native speed to watch the work complete:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-kitchenware-route-matrix `
+  -InteractiveHoldSeconds 240 `
+  -AdditionalModIds 'brrainz.harmony','argon.corelib','oskarpotocki.vanillafactionsexpanded.core','argon.expandedmaterials.masonry','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus cutlery (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
 
 ```powershell

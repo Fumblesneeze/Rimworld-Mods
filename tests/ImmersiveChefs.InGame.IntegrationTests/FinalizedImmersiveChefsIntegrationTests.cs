@@ -61,6 +61,71 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedKitchenwareRecipesUseExactUnitCostsAndMatchingWorkTypes()
+    {
+        var primitive = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePrimitiveCookware");
+        var medieval = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeMedievalCookware");
+        var modern = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeModernCookware");
+
+        IntegrationAssert.NotNull(
+            medieval.IngredientValueGetter,
+            "The finalized medieval cookware recipe must instantiate its ingredient-value getter.");
+        IntegrationAssert.Equal(
+            typeof(IngredientValueGetter_Units),
+            medieval.IngredientValueGetter!.GetType(),
+            "Finalized kitchenware recipes must count resource units rather than vanilla Stuff volume.");
+        IntegrationAssert.Equal(
+            50f,
+            medieval.ingredients[0].GetBaseCount(),
+            "The finalized medieval cookware recipe must retain its fifty-unit material cost.");
+        IntegrationAssert.Equal(
+            1f,
+            medieval.IngredientValueGetter.ValuePerUnitOf(ThingDefOf.Silver),
+            "Small-volume silver must contribute one whole recipe unit per item.");
+        IntegrationAssert.Equal(
+            WorkTypeDefOf.Crafting,
+            primitive.requiredGiverWorkType,
+            "Crafting-spot kitchenware must use the Crafting work giver.");
+        IntegrationAssert.Equal(
+            WorkTypeDefOf.Smithing,
+            medieval.requiredGiverWorkType,
+            "Smithy kitchenware must use the Smithing work giver.");
+        IntegrationAssert.Equal(
+            WorkTypeDefOf.Smithing,
+            modern.requiredGiverWorkType,
+            "Machining kitchenware must use the Smithing work giver.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void OptionalMasonryRecipeMatchesTheRealLoadedModSet()
+    {
+        var masonryLoaded = LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(
+                mod.PackageId,
+                "argon.expandedmaterials.masonry",
+                StringComparison.OrdinalIgnoreCase));
+        var adobeRecipe = DefDatabase<RecipeDef>.GetNamedSilentFail("ImmersiveChefs_MakeAdobePlates");
+
+        if (!masonryLoaded)
+        {
+            IntegrationAssert.Null(
+                adobeRecipe,
+                "The fixed adobe recipe must not exist when Expanded Materials - Masonry is absent.");
+            return;
+        }
+
+        var adobeBricks = DefDatabase<ThingDef>.GetNamedSilentFail("EM_AdobeBricks");
+        IntegrationAssert.NotNull(adobeRecipe, "The loaded masonry patch must add the adobe plate recipe.");
+        IntegrationAssert.NotNull(adobeBricks, "The real masonry mod must provide EM_AdobeBricks.");
+        IntegrationAssert.Null(
+            adobeBricks!.stuffProps,
+            "EM_AdobeBricks must remain a fixed ingredient rather than being misrepresented as Stuff.");
+        IntegrationAssert.True(
+            adobeRecipe!.recipeUsers.Any(user => user.defName == "CraftingSpot"),
+            "The active adobe recipe must be available at the crafting spot.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedMealsContainRuntimeStateWithoutReplacingIngredients()
     {
         var meal = DefDatabase<ThingDef>.GetNamed("MealSimple");

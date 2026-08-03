@@ -5,6 +5,7 @@
     <workSpeedStat>GeneralLaborSpeed</workSpeedStat>
     <workSkill>Crafting</workSkill>
     <requiredGiverWorkType>Crafting</requiredGiverWorkType>
+    <ingredientValueGetterClass>ImmersiveChefs.IngredientValueGetter_Units</ingredientValueGetterClass>
     <effectWorking>Smith</effectWorking>
     <soundWorking>Recipe_Smith</soundWorking>
     <productHasIngredientStuff>true</productHasIngredientStuff>
