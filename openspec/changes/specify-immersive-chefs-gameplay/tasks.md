@@ -85,8 +85,8 @@
 - [ ] 9.7 REVIEW: Review only this incremental diff for correctness, Harmony compatibility, state conservation, test honesty, and KISS; resolve findings and rerun the affected and full matrices.
   - [x] 9.7a Complete the focused caravan review, resolve result-aware commit, transactional contamination, lifecycle rollback, animal exclusion, exact-holder conservation, and pre-registration findings, then rerun affected and full tests.
   - [x] 9.7b Complete the focused cutlery-free map-dining review, restore the shared map's exact pre-test dirt state, and rerun focused, full, loaded-game, and observed-behavior verification.
-- [ ] 9.8 PRERELEASE TERMINOLOGY (`fumblesneeze.immersivechefs`): Rename the former table-utensil gameplay concept to cutlery, including public DefNames, settings/policies, thoughts, filters, runtime identifiers, integration contracts, scenarios, labels, and documentation; do not retain obsolete aliases before release.
+- [x] 9.8 PRERELEASE TERMINOLOGY (`fumblesneeze.immersivechefs`): Rename the former table-utensil gameplay concept to cutlery, including public DefNames, settings/policies, thoughts, filters, runtime identifiers, integration contracts, scenarios, labels, and documentation; do not retain obsolete aliases before release.
   - [x] 9.8a Update every affected OpenSpec contract and design note to use cutlery consistently.
   - [x] 9.8b TDD RED/GREEN: Make tests require the cutlery API and finalized Defs before renaming production code, then pass focused and full matrices with no tracked obsolete-term reference.
-  - [ ] 9.8c IN-GAME: Observe the renamed cutlery item and missing-cutlery thought through ordinary player-visible UI and native dining behavior.
+  - [x] 9.8c IN-GAME: Observe the renamed cutlery item and missing-cutlery thought through ordinary player-visible UI and native dining behavior.
   - [x] 9.8d REVIEW: Independently review the terminology slice for incomplete schema/API renames, accidental material changes, compatibility leakage, and truthful evidence; resolve findings and rerun affected verification.
