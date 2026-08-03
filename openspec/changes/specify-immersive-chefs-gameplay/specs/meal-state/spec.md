@@ -90,20 +90,20 @@ At ingestion the mod SHALL begin with the compatible base-game poisoning probabi
 | Frozen temperature | `+8` |
 | Dirty cookware used to cook the serving | `+15` |
 | Dirty plate | `+15` |
-| Dirty silverware | `+10` |
+| Dirty cutlery | `+10` |
 | Wild-water-washed cookware | `+5` |
 | Wild-water-washed plate | `+4` |
-| Wild-water-washed silverware | `+3` |
+| Wild-water-washed cutlery | `+3` |
 | Plate service score | `(50 - normalized service score) * 0.03` |
-| Silverware service score | `(50 - normalized service score) * 0.03` |
+| Cutlery service score | `(50 - normalized service score) * 0.03` |
 | Microwave reheating | `MicrowaveExtraPoisonChance` for each completed reheat |
 
-The normalized plate or silverware service score SHALL be `clamp(0.75 * craftsmanship score + 0.25 * material-cleanliness score, 0, 100)`, using the kitchenware system's normalized values; an absent item contributes no service-score delta. The sum of custom deltas SHALL be multiplied by `FoodPoisoningEffectScale`, the final probability SHALL be clamped from zero through `MaximumCustomPoisonChance`, and the mod MUST NOT lower a compatible base probability that already exceeds that configured cap. Dirty cookware contamination SHALL remain on the serving record even after the cookware itself is dropped. A pawn eating a serving involving any dirty cookware, plate, or silverware SHALL additionally receive one non-stacking `Ate with dirty kitchenware` thought at mood `-6` for one in-game day.
+The normalized plate or cutlery service score SHALL be `clamp(0.75 * craftsmanship score + 0.25 * material-cleanliness score, 0, 100)`, using the kitchenware system's normalized values; an absent item contributes no service-score delta. The sum of custom deltas SHALL be multiplied by `FoodPoisoningEffectScale`, the final probability SHALL be clamped from zero through `MaximumCustomPoisonChance`, and the mod MUST NOT lower a compatible base probability that already exceeds that configured cap. Dirty cookware contamination SHALL remain on the serving record even after the cookware itself is dropped. A pawn eating a serving involving any dirty cookware, plate, or cutlery SHALL additionally receive one non-stacking `Ate with dirty kitchenware` thought at mood `-6` for one in-game day.
 
 Wild-water provenance SHALL be evaluated independently from dirty state, SHALL be preserved in cookware contamination snapshots and embedded plate bindings, and SHALL use the same deltas whether the wash occurred at map water terrain or through caravan travel abstraction. The general `FoodPoisoningEffectScale` and `MaximumCustomPoisonChance` SHALL apply to these deltas. Safely washing an item before use SHALL remove its wild-water delta.
 
 #### Scenario: Dirty full place setting is dramatically riskier
-- **WHEN** a pawn eats a serving cooked with dirty cookware from a dirty plate using dirty silverware at default settings
+- **WHEN** a pawn eats a serving cooked with dirty cookware from a dirty plate using dirty cutlery at default settings
 - **THEN** the custom risk includes `+40` percentage points from dirty-state sources before other deltas and the configured cap
 - **THEN** the pawn receives one dirty-kitchenware thought rather than one thought per dirty item
 
@@ -116,7 +116,7 @@ Wild-water provenance SHALL be evaluated independently from dirty state, SHALL b
 - **THEN** the final probability is limited to `MaximumCustomPoisonChance`
 
 #### Scenario: Wild-water place setting adds bounded risk
-- **WHEN** a pawn eats a warm, otherwise clean serving cooked without dirty cookware from a wild-water-washed plate using wild-water-washed silverware
+- **WHEN** a pawn eats a warm, otherwise clean serving cooked without dirty cookware from a wild-water-washed plate using wild-water-washed cutlery
 - **THEN** the custom risk includes `+7` percentage points from wash provenance before scaling and the configured cap
 
 ### Requirement: Pawns reheat eligible cold meals in a microwave

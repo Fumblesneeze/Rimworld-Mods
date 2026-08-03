@@ -3,7 +3,7 @@
 **Mod scope:** Immersive Chefs (`fumblesneeze.immersivechefs`) at `mods/ImmersiveChefs`.
 
 ### Requirement: Plated meal recipes reserve reusable cookware and one plate per serving
-Every covered cooking job SHALL reserve one reachable cookware set and one reachable plate for each meal portion produced, selected as eligible under the ware-precedence matrix below, in addition to the recipe's food ingredients. Clean ware SHALL remain the first choice. The cookware SHALL be a reusable tool and MUST NOT be consumed by the recipe. Each plate SHALL become attached meal metadata rather than an extra loose output. Silverware SHALL be acquired by the diner or restaurant service workflow and MUST NOT be a cooking ingredient. A chef's knife SHALL be optional wearable equipment and MUST NOT be reserved as a bill ingredient.
+Every covered cooking job SHALL reserve one reachable cookware set and one reachable plate for each meal portion produced, selected as eligible under the ware-precedence matrix below, in addition to the recipe's food ingredients. Clean ware SHALL remain the first choice. The cookware SHALL be a reusable tool and MUST NOT be consumed by the recipe. Each plate SHALL become attached meal metadata rather than an extra loose output. Cutlery SHALL be acquired by the diner or restaurant service workflow and MUST NOT be a cooking ingredient. A chef's knife SHALL be optional wearable equipment and MUST NOT be reserved as a bill ingredient.
 
 Reservations SHALL respect pawn reachability, forbidden state, storage and bill ingredient filters, competing reservations, Stuff and quality restrictions, and the current ware-requirement setting.
 
@@ -94,11 +94,11 @@ Classification SHALL be data-driven through an Immersive Chefs DefModExtension o
 - **THEN** Immersive Chefs does not guess a tier or apply a complexity multiplier to that recipe
 
 ### Requirement: Handheld and non-meal foods are excluded
-Pemmican, packaged survival meals, and registered travel foods SHALL be treated as handheld food and SHALL require no cookware, plate, silverware, culinary-quality metadata, temperature handling, or dish return. Raw foods, beverages, drugs, and baby food SHALL likewise remain outside the covered meal workflow. Compatibility patches SHALL be able to mark modded foods or recipes as handheld/excluded through a DefModExtension.
+Pemmican, packaged survival meals, and registered travel foods SHALL be treated as handheld food and SHALL require no cookware, plate, cutlery, culinary-quality metadata, temperature handling, or dish return. Raw foods, beverages, drugs, and baby food SHALL likewise remain outside the covered meal workflow. Compatibility patches SHALL be able to mark modded foods or recipes as handheld/excluded through a DefModExtension.
 
 #### Scenario: Eat pemmican on a caravan
 - **WHEN** a pawn obtains and eats pemmican
-- **THEN** no kitchenware is reserved, no missing-silverware thought is added, and no dirty dish is produced
+- **THEN** no kitchenware is reserved, no missing-cutlery thought is added, and no dirty dish is produced
 
 #### Scenario: Eat a registered packaged food from another mod
 - **WHEN** a compatibility patch marks a modded travel meal as handheld
@@ -129,13 +129,13 @@ Before an ordinary pawn selects an imported unplated meal, a reachable enabled w
 - **THEN** the emergency rule permits eating it unplated and records the missing-ware dining consequence rather than blocking ingestion
 
 ### Requirement: Nutrient paste meals use plates but paste preparation does not
-A normal nutrient paste meal request SHALL make the pawn carry one eligible plate to the dispenser, SHALL attach that exact plate to the dispensed meal, and SHALL leave silverware acquisition to the later eating workflow. Clean plates SHALL be preferred and Strict emergency fallback SHALL apply when a pawn is at or below the configured hunger threshold.
+A normal nutrient paste meal request SHALL make the pawn carry one eligible plate to the dispenser, SHALL attach that exact plate to the dispensed meal, and SHALL leave cutlery acquisition to the later eating workflow. Clean plates SHALL be preferred and Strict emergency fallback SHALL apply when a pawn is at or below the configured hunger threshold.
 
-The dispenser SHALL also expose a distinct on-demand prepared-food operation. That operation SHALL consume hopper contents and produce a paste-derived prepared ingredient rather than an edible plated meal; it SHALL require neither plate nor silverware, hide exact source ingredients from its public label and ordinary inspection, retain broad dietary and ideology-relevant source flags, carry the configured low preparation quality default of 20, and contribute zero ingredient-origin food-poisoning chance. A finished cooked meal using that ingredient SHALL still combine it with other ingredients and SHALL still receive skill, kitchenware, sanitation, temperature, and non-paste risk effects.
+The dispenser SHALL also expose a distinct on-demand prepared-food operation. That operation SHALL consume hopper contents and produce a paste-derived prepared ingredient rather than an edible plated meal; it SHALL require neither plate nor cutlery, hide exact source ingredients from its public label and ordinary inspection, retain broad dietary and ideology-relevant source flags, carry the configured low preparation quality default of 20, and contribute zero ingredient-origin food-poisoning chance. A finished cooked meal using that ingredient SHALL still combine it with other ingredients and SHALL still receive skill, kitchenware, sanitation, temperature, and non-paste risk effects.
 
 #### Scenario: Dispense a nutrient paste meal
 - **WHEN** a non-emergency pawn operates a nutrient paste dispenser in Strict mode with a clean plate
-- **THEN** exactly one plate is transferred into the resulting paste meal and no silverware is consumed at the dispenser
+- **THEN** exactly one plate is transferred into the resulting paste meal and no cutlery is consumed at the dispenser
 
 #### Scenario: Dispense paste-derived prepared food for cooking
 - **WHEN** a cook requests prepared food from a stocked nutrient paste dispenser

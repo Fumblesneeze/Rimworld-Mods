@@ -18,7 +18,7 @@ Harmony (`brrainz.harmony`) SHALL be the only required third-party mod. Every op
 
 ### Requirement: Expanded Materials metals extend stuff-aware recipes
 
-When `Argon.ExpandedMaterials.Metals` is active, cookware, metal plates, silverware, and chef's knives SHALL accept appropriate enabled Stuff including `EM_Iron`, `EM_MildSteel`, `EM_TemperedSteel`, `EM_Lead`, `EM_Bronze`, `EM_Copper`, `EM_StainlessSteel`, and `EM_Titanium`. The mod SHALL derive or explicitly map sanitation, speed, comfort, craftsmanship, and culinary effects without inventing a brass Def that is not present.
+When `Argon.ExpandedMaterials.Metals` is active, cookware, metal plates, cutlery, and chef's knives SHALL accept appropriate enabled Stuff including `EM_Iron`, `EM_MildSteel`, `EM_TemperedSteel`, `EM_Lead`, `EM_Bronze`, `EM_Copper`, `EM_StainlessSteel`, and `EM_Titanium`. The mod SHALL derive or explicitly map sanitation, speed, comfort, craftsmanship, and culinary effects without inventing a brass Def that is not present.
 
 #### Scenario: Stainless cookware is crafted
 
@@ -50,7 +50,7 @@ When `Dubwise.DubsBadHygiene` is active and its adapter validates, a reachable o
 
 ### Requirement: Restaurant integration owns active service jobs
 
-When `Orion.Gastronomy` and its required `Orion.CashRegister` dependency are active, the adapter SHALL extend waiter/server jobs for silverware delivery, cold-meal reheating, and immediate dish clearing without replacing Gastronomy order ownership. When either shape validation or the integration setting fails, vanilla Immersive Chefs eater/cleaner jobs SHALL remain available.
+When `Orion.Gastronomy` and its required `Orion.CashRegister` dependency are active, the adapter SHALL extend waiter/server jobs for cutlery delivery, cold-meal reheating, and immediate dish clearing without replacing Gastronomy order ownership. When either shape validation or the integration setting fails, vanilla Immersive Chefs eater/cleaner jobs SHALL remain available.
 
 #### Scenario: Gastronomy is downloaded but inactive
 
@@ -59,14 +59,14 @@ When `Orion.Gastronomy` and its required `Orion.CashRegister` dependency are act
 
 ### Requirement: Hospitality guests preserve host and inventory ownership
 
-When `Orion.Hospitality` is active and the locally supported `Hospitality.Utilities.GuestUtility.IsArrivedGuest` shape validates, Immersive Chefs SHALL recognize arrived guests without a compile-time Hospitality reference. Eligible guests SHALL use colony silverware first and personal inventory silverware only as fallback, while Hospitality retains visitor ownership, allowed-area, shopping, food-source, lord, and departure behavior. If validation fails, only the Hospitality adapter SHALL disable itself and ordinary non-Hospitality guest behavior SHALL remain available.
+When `Orion.Hospitality` is active and the locally supported `Hospitality.Utilities.GuestUtility.IsArrivedGuest` shape validates, Immersive Chefs SHALL recognize arrived guests without a compile-time Hospitality reference. Eligible guests SHALL use colony cutlery first and personal inventory cutlery only as fallback, while Hospitality retains visitor ownership, allowed-area, shopping, food-source, lord, and departure behavior. If validation fails, only the Hospitality adapter SHALL disable itself and ordinary non-Hospitality guest behavior SHALL remain available.
 
 #### Scenario: Hospitality is downloaded but inactive
 - **WHEN** Hospitality Continued files exist locally but `Orion.Hospitality` is absent from the active mod list
 - **THEN** Immersive Chefs installs no Hospitality reflection or Harmony integration
 
 #### Scenario: Arrived guest eats with colony service
-- **WHEN** the validated Hospitality adapter identifies an arrived guest and reachable colony silverware exists
+- **WHEN** the validated Hospitality adapter identifies an arrived guest and reachable colony cutlery exists
 - **THEN** the guest uses that setting without changing Hospitality's guest status, allowed area, or departure ownership
 
 #### Scenario: Hospitality changes its guest utility shape

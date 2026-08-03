@@ -3,10 +3,10 @@
 **Owning mod:** Immersive Chefs (`fumblesneeze.immersivechefs`) at `mods/ImmersiveChefs`.
 
 ### Requirement: Persistent sanitation state
-Every reusable cookware set, plate, and silverware set SHALL carry a serialized sanitation state of clean or dirty plus the provenance of its last completed wash: safe fixture/appliance, wild water, or none. The state and provenance SHALL survive saving, loading, hauling, storage, caravan transfer, and placement inside an item container without being reset. Chef's knives SHALL use only their intrinsic material-cleanliness stat and SHALL not receive this mutable sanitation component in the planned scope.
+Every reusable cookware set, plate, and cutlery set SHALL carry a serialized sanitation state of clean or dirty plus the provenance of its last completed wash: safe fixture/appliance, wild water, or none. The state and provenance SHALL survive saving, loading, hauling, storage, caravan transfer, and placement inside an item container without being reset. Chef's knives SHALL use only their intrinsic material-cleanliness stat and SHALL not receive this mutable sanitation component in the planned scope.
 
 #### Scenario: Dirty ware survives a save cycle
-- **WHEN** a dirty plate, cookware set, or silverware set is saved and the game is loaded again
+- **WHEN** a dirty plate, cookware set, or cutlery set is saved and the game is loaded again
 - **THEN** the restored item remains dirty with the same Stuff, craftsmanship quality, and stack count
 
 #### Scenario: Sanitation state constrains stacking
@@ -69,11 +69,11 @@ Once a cook performs at least one active cooking work tick for a meal, the reser
 ### Requirement: Plates are conserved through dining, expiry, and terminal destruction
 One exact bound plate per serving SHALL be released as dirty when that serving is ingested or ceases to be an edible meal through rotting or expiration. Expiry/rot SHALL always recover the plate regardless of its flammability. On any other terminal meal destruction, each remaining plate binding SHALL be resolved independently. If the terminal `DamageInfo` is fire damage and that plate's effective `Flammability` stat resolved from its recorded Def and Stuff is greater than zero, that plate SHALL be destroyed; otherwise the exact plate SHALL survive and be released dirty. The implementation MUST NOT hard-code material names or assume that every metal is nonflammable.
 
-For a spawned meal, a surviving plate SHALL appear at or adjacent to the meal's final position. For a meal in a holder, recovery SHALL first return the plate to that holder when it can accept the item and otherwise place it at the nearest valid map cell under normal holder-ejection rules. No recovery path may create a replacement plate after its binding has already been released or fire-destroyed. A silverware set used for an eating job SHALL be released as dirty when the job ends after eating has begun, while silverware reserved for an eating job that never begins SHALL retain its prior sanitation state.
+For a spawned meal, a surviving plate SHALL appear at or adjacent to the meal's final position. For a meal in a holder, recovery SHALL first return the plate to that holder when it can accept the item and otherwise place it at the nearest valid map cell under normal holder-ejection rules. No recovery path may create a replacement plate after its binding has already been released or fire-destroyed. A cutlery set used for an eating job SHALL be released as dirty when the job ends after eating has begun, while cutlery reserved for an eating job that never begins SHALL retain its prior sanitation state.
 
 #### Scenario: Pawn finishes a plated meal
-- **WHEN** a pawn ingests one serving and used silverware
-- **THEN** exactly one bound plate and one silverware set are released as dirty near the diner or to the responsible service job
+- **WHEN** a pawn ingests one serving and used cutlery
+- **THEN** exactly one bound plate and one cutlery set are released as dirty near the diner or to the responsible service job
 
 #### Scenario: Plated meals rot in storage
 - **WHEN** a stack of plated meals becomes rotten or expires
@@ -92,8 +92,8 @@ For a spawned meal, a surviving plate SHALL appear at or adjacent to the meal's 
 - **THEN** the exact plate survives and is released dirty at the recoverable holder or map position
 
 #### Scenario: Eating is cancelled before ingestion starts
-- **WHEN** a pawn reserved clean silverware but cancels the eating job before beginning to eat
-- **THEN** the silverware reservation is released and the silverware remains clean
+- **WHEN** a pawn reserved clean cutlery but cancels the eating job before beginning to eat
+- **THEN** the cutlery reservation is released and the cutlery remains clean
 
 ### Requirement: Doing dishes is Cleaning work
 Immersive Chefs SHALL add a `Doing dishes` work giver governed by the vanilla Cleaning work type. Eligible cleaners SHALL reserve dirty ware and its destination atomically. With `PreferDishwashers` enabled, they SHALL prefer hauling it to an available dishwasher and use hand washing only when no eligible dishwasher has load capacity or can be reached. With that setting disabled, the work giver MAY select either an eligible dishwasher or valid hand-washing source through ordinary priority, reachability, and reservation rules. Ordinary hauling logic MAY deliver dirty ware to dishwasher input storage, but SHALL NOT divert ware away from an already selected eligible dishwasher merely to enable hand washing.
@@ -143,7 +143,7 @@ A completed wash at a recognized supplied fixture or dishwasher SHALL mark ware 
 
 ### Requirement: Players can separate clean and dirty ware in storage
 
-Immersive Chefs SHALL add mutually exclusive `Clean kitchenware` and `Dirty kitchenware` special storage filters covering reusable cookware, plates, and silverware. Existing stockpiles SHALL continue to accept both states when neither filter is deliberately excluded. Normal use, plate recovery, and interrupted jobs SHALL NOT automatically forbid dirty ware; player forbiddance SHALL remain authoritative for selection, hauling, and cleaning. When sanitation or wash provenance changes, the item SHALL notify normal storage logic so it can be hauled from a dirty-only stockpile to an eligible clean stockpile or vice versa without changing ownership.
+Immersive Chefs SHALL add mutually exclusive `Clean kitchenware` and `Dirty kitchenware` special storage filters covering reusable cookware, plates, and cutlery. Existing stockpiles SHALL continue to accept both states when neither filter is deliberately excluded. Normal use, plate recovery, and interrupted jobs SHALL NOT automatically forbid dirty ware; player forbiddance SHALL remain authoritative for selection, hauling, and cleaning. When sanitation or wash provenance changes, the item SHALL notify normal storage logic so it can be hauled from a dirty-only stockpile to an eligible clean stockpile or vice versa without changing ownership.
 
 #### Scenario: Player creates a dirty-dish stockpile
 - **WHEN** a stockpile allows `Dirty kitchenware` and excludes `Clean kitchenware`
@@ -160,7 +160,7 @@ Immersive Chefs SHALL add mutually exclusive `Clean kitchenware` and `Dirty kitc
 ### Requirement: Identity-preserving dishwashers
 Immersive Chefs SHALL provide a dishwasher with a base capacity of 16 plate-equivalents and an industrial dishwasher with a base capacity of 64 plate-equivalents before applying `DishwasherCapacityScale`. A wash cycle SHALL preserve each input item's Def, Stuff, craftsmanship quality, hit points, stack count, and other components while changing only sanitation-related state, and clean output SHALL be available for hauling when the cycle completes.
 
-For capacity accounting, the default load SHALL count a plate as 1 plate-equivalent, a cookware set as 4, a silverware set as 0.25, and any future washable item by a Def-configurable value. A cycle SHALL capture its exact input identities, work duration, load-scaled resource demand, and progress when it starts. With the validated Dubs adapter active, admission SHALL atomically verify and debit exactly one positive Def-configured water charge scaled to that captured load. Insufficient supplied water SHALL prevent the cycle from starting and expose that reason. A paused/resumed cycle MUST NOT debit water again, and explicit cancellation, deconstruction, or terminal destruction SHALL NOT refund the already admitted charge.
+For capacity accounting, the default load SHALL count a plate as 1 plate-equivalent, a cookware set as 4, a cutlery set as 0.25, and any future washable item by a Def-configurable value. A cycle SHALL capture its exact input identities, work duration, load-scaled resource demand, and progress when it starts. With the validated Dubs adapter active, admission SHALL atomically verify and debit exactly one positive Def-configured water charge scaled to that captured load. Insufficient supplied water SHALL prevent the cycle from starting and expose that reason. A paused/resumed cycle MUST NOT debit water again, and explicit cancellation, deconstruction, or terminal destruction SHALL NOT refund the already admitted charge.
 
 Temporary loss of power, supplied water, or operability through breakdown SHALL pause captured cycle state without cleaning or ejecting items; restoration or repair SHALL automatically resume it. Explicit cancellation, deconstruction, or terminal destruction SHALL end the cycle and eject every recoverable original input dirty under normal holder rules. When the Dubs package is active in `Auto` mode but its required plumbing shape fails validation, both dishwashers SHALL be ineligible rather than silently washing without water; one actionable integration warning SHALL remain, and recognized non-Dubs hand-washing fallbacks SHALL still be eligible.
 
@@ -207,7 +207,7 @@ When the supported Processor Framework is active and its expected shape validate
 - **THEN** the local identity-preserving cycle supplies the same capacity, interruption, sanitation, and output behavior without a missing dependency
 
 ### Requirement: Kitchen appliance research is explicit
-Immersive Chefs SHALL add `ImmersiveChefs_Dishwashing` with vanilla `Electricity` as its prerequisite and the domestic dishwasher as its unlock. It SHALL add `ImmersiveChefs_ProfessionalKitchens` with `ImmersiveChefs_Dishwashing` and vanilla `Machining` as prerequisites; it SHALL unlock the industrial dishwasher plus the prep, sauce, meat, vegetable, and pastry stations. The microwave SHALL require vanilla `Electricity` directly. Ordinary plates, silverware, cookware, and chef's knives SHALL have no Immersive Chefs research prerequisite and SHALL instead use their specified workstation gates.
+Immersive Chefs SHALL add `ImmersiveChefs_Dishwashing` with vanilla `Electricity` as its prerequisite and the domestic dishwasher as its unlock. It SHALL add `ImmersiveChefs_ProfessionalKitchens` with `ImmersiveChefs_Dishwashing` and vanilla `Machining` as prerequisites; it SHALL unlock the industrial dishwasher plus the prep, sauce, meat, vegetable, and pastry stations. The microwave SHALL require vanilla `Electricity` directly. Ordinary plates, cutlery, cookware, and chef's knives SHALL have no Immersive Chefs research prerequisite and SHALL instead use their specified workstation gates.
 
 #### Scenario: Electricity unlocks domestic sanitation progression
 - **WHEN** a colony completes vanilla `Electricity` but not `ImmersiveChefs_Dishwashing`
@@ -219,7 +219,7 @@ Immersive Chefs SHALL add `ImmersiveChefs_Dishwashing` with vanilla `Electricity
 - **THEN** the industrial dishwasher and all five prep/support stations become buildable together
 
 ### Requirement: Kitchenware shortages produce bounded actionable alerts
-The map SHALL expose two aggregated player alerts rather than per-pawn or per-tick messages. `Missing kitchenware` SHALL appear when an active non-excluded bill, plating workflow, paste request, or ordinary dining workflow cannot reserve required clean cookware, plates, or silverware under the configured ware rules. Its explanation SHALL group affected targets and distinguish genuinely absent, dirty-only, forbidden, unreachable, and reserved supply. `Dirty tableware backlog` SHALL appear after a stable one-hour in-game grace period when dirty cookware, plates, or silverware is blocking normal workflows or has no viable washing path; ware inside an eligible accepting or actively progressing dishwasher SHALL not by itself trigger the backlog.
+The map SHALL expose two aggregated player alerts rather than per-pawn or per-tick messages. `Missing kitchenware` SHALL appear when an active non-excluded bill, plating workflow, paste request, or ordinary dining workflow cannot reserve required clean cookware, plates, or cutlery under the configured ware rules. Its explanation SHALL group affected targets and distinguish genuinely absent, dirty-only, forbidden, unreachable, and reserved supply. `Dirty tableware backlog` SHALL appear after a stable one-hour in-game grace period when dirty cookware, plates, or cutlery is blocking normal workflows or has no viable washing path; ware inside an eligible accepting or actively progressing dishwasher SHALL not by itself trigger the backlog.
 
 Both alerts SHALL aggregate by map and cause, update without repeated letters/messages, support click-through or target cycling to the affected bill giver, diner/service target, dirty stack, or blocked washing appliance, and clear automatically when eligible clean supply or a viable cleaning path recovers. They SHALL be suppressed for excluded handheld/travel foods, animal feeding, deliberate emergency-unplated results, and every workflow while `WareRequirementMode=Off`. A dishwasher paused for missing power, supplied water, or repair is a blocked path and MAY trigger the backlog after the grace period.
 
@@ -240,11 +240,11 @@ Both alerts SHALL aggregate by map and cause, update without repeated letters/me
 - **THEN** neither kitchenware alert is raised for that workflow
 
 ### Requirement: Gastronomy service clearing
-When Gastronomy integration is active, waiters and servers SHALL collect the required silverware with a meal and SHALL claim and haul the resulting dirty plate and silverware promptly after the dining job finishes. Reservations and service claims SHALL be released when dining or clearing is cancelled so ordinary cleaners can recover the ware.
+When Gastronomy integration is active, waiters and servers SHALL collect the required cutlery with a meal and SHALL claim and haul the resulting dirty plate and cutlery promptly after the dining job finishes. Reservations and service claims SHALL be released when dining or clearing is cancelled so ordinary cleaners can recover the ware.
 
 #### Scenario: Waiter completes table service
-- **WHEN** a waiter serves a plated meal with silverware and the guest finishes eating
-- **THEN** a Gastronomy clearing job claims the dirty plate and silverware before ordinary low-priority hauling
+- **WHEN** a waiter serves a plated meal with cutlery and the guest finishes eating
+- **THEN** a Gastronomy clearing job claims the dirty plate and cutlery before ordinary low-priority hauling
 
 #### Scenario: Waiter cannot clear the table
 - **WHEN** a waiter-held clearing job is cancelled or becomes unreachable
