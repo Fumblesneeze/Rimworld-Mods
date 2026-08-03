@@ -809,15 +809,14 @@ internal static class DiningSessionRegistry
 
     internal static void Cleanup(Pawn pawn, Job? job)
     {
-        if (job is not null &&
-            ActiveIngestions.TryGetValue(pawn, out var active) &&
-            ReferenceEquals(active.Job, job) &&
-            !active.Lifecycle.ShouldCancelDiningSessionOnJobCleanup)
+        if (job is null || !Sessions.TryGetValue(job, out var session))
         {
             return;
         }
 
-        if (job is null || !Sessions.TryGetValue(job, out var session))
+        if (ActiveIngestions.TryGetValue(session.Pawn, out var active) &&
+            ReferenceEquals(active.Job, job) &&
+            !active.Lifecycle.ShouldCancelDiningSessionOnJobCleanup)
         {
             return;
         }

@@ -793,8 +793,44 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
                 ThingDefOf.Steel);
             cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
-            GenSpawn.Spawn(cutlery, patient.Position, map);
+            var interruptedCutleryCell = map.AllCells
+                .Where(cell => cell.Standable(map) &&
+                               cell.GetEdifice(map) is null &&
+                               cell.DistanceToSquared(feeder.Position) >= 9)
+                .OrderBy(cell => cell.DistanceToSquared(feeder.Position))
+                .First();
+            GenSpawn.Spawn(cutlery, interruptedCutleryCell, map);
             createdThings.Add(cutlery);
+
+            var interruptedMeal = CreatePatientMeal(out var interruptedPlate);
+            createdThings.Add(interruptedMeal);
+            createdThings.Add(interruptedPlate);
+            GenSpawn.Spawn(interruptedMeal, patient.Position, map);
+            var interruptedJob = JobMaker.MakeJob(JobDefOf.FeedPatient, interruptedMeal, patient);
+            interruptedJob.count = 1;
+            interruptedJob.SetTarget(TargetIndex.C, feeder);
+            feeder.jobs.StartJob(interruptedJob, JobCondition.InterruptForced);
+            feeder.jobs.JobTrackerTick();
+
+            IntegrationAssert.True(
+                ReferenceEquals(interruptedJob.GetTarget(TargetIndex.C).Thing, feeder),
+                "Starting tableware pickup must not borrow FeedPatient's native food-holder target C.");
+            IntegrationAssert.True(
+                cutlery.Spawned && !feeder.inventory.innerContainer.Contains(cutlery),
+                "The interruption fixture must stop while the feeder is pathing to reserved cutlery.");
+            feeder.jobs.EndCurrentJob(JobCondition.InterruptForced, startNewJob: false);
+            IntegrationAssert.True(
+                cutlery.Spawned && cutlery.Position == interruptedCutleryCell,
+                "Interrupted patient feeding must leave unused cutlery at its map position.");
+            IntegrationAssert.True(
+                !cutlery.GetComp<CompSanitation>().IsDirty,
+                "Interrupted patient feeding must leave unused cutlery clean.");
+            IntegrationAssert.True(
+                !map.reservationManager.IsReserved(cutlery),
+                "Interrupted patient feeding must release the cutlery reservation.");
+            interruptedMeal.Destroy(DestroyMode.Vanish);
+            cutlery.DeSpawn(DestroyMode.Vanish);
+            GenSpawn.Spawn(cutlery, patient.Position, map);
 
             var servedMeal = CreatePatientMeal(out var servedPlate);
             createdThings.Add(servedMeal);
@@ -974,6 +1010,88 @@ public static class FinalizedImmersiveChefsIntegrationTests
         map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
             .Cast<Filth>()
             .Sum(filth => filth.thickness);
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void FeederCleanupDuringAssistedIngestionPreservesThePatientLifecycle()
+    {
+        var map = Find.CurrentMap;
+        var fixtureCell = map.AllCells
+            .Where(cell => cell.Standable(map) && cell.GetEdifice(map) is null)
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .First();
+        var feeder = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var patient = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var meal = CreatePatientMeal(out var plate);
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        var settings = ImmersiveChefsMod.Settings;
+        var originalWareRequirementMode = settings.WareRequirementMode;
+        var preexistingCutlery = map.listerThings.AllThings
+            .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product ==
+                            KitchenwareProduct.Cutlery)
+            .Select(thing => new { Thing = thing, Forbidden = thing.IsForbidden(Faction.OfPlayer) })
+            .ToList();
+
+        try
+        {
+            settings.WareRequirementMode = WareRequirementMode.Prefer;
+            foreach (var existing in preexistingCutlery)
+            {
+                existing.Thing.SetForbidden(true, warnOnFail: false);
+            }
+
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            GenSpawn.Spawn(feeder, fixtureCell, map);
+            GenSpawn.Spawn(patient, fixtureCell, map);
+            GenSpawn.Spawn(meal, fixtureCell, map);
+            GenSpawn.Spawn(cutlery, fixtureCell, map);
+            var job = JobMaker.MakeJob(JobDefOf.FeedPatient, meal, patient);
+            IntegrationAssert.True(
+                DiningSessionRegistry.TryAttachAssisted(feeder, patient, job, meal),
+                "The regression fixture must attach the assisted dining session.");
+            var session = DiningSessionRegistry.Current(patient);
+            IntegrationAssert.NotNull(session, "The patient must own the attached dining session.");
+            IntegrationAssert.True(
+                ReferenceEquals(session!.Cutlery, cutlery),
+                "The regression fixture must reserve its exact cutlery.");
+            session.PickupCutlery();
+            DiningSessionRegistry.BeginIngestion(patient);
+
+            DiningSessionRegistry.Cleanup(feeder, job);
+
+            IntegrationAssert.True(
+                ReferenceEquals(DiningSessionRegistry.Current(patient), session),
+                "Feeder cleanup during Thing.Ingested must not cancel the patient's active lifecycle.");
+            IntegrationAssert.True(
+                feeder.inventory.innerContainer.Contains(cutlery),
+                "Nested feeder cleanup must not prematurely return the patient's in-use cutlery.");
+            DiningSessionRegistry.Complete(patient);
+            IntegrationAssert.True(
+                cutlery.Spawned && cutlery.GetComp<CompSanitation>().IsDirty,
+                "Patient completion after nested cleanup must still dirty and return the exact cutlery.");
+        }
+        finally
+        {
+            settings.WareRequirementMode = originalWareRequirementMode;
+            feeder.ClearAllReservations(releaseDestinationsOnlyIfObsolete: false);
+            foreach (var existing in preexistingCutlery)
+            {
+                if (!existing.Thing.Destroyed)
+                {
+                    existing.Thing.SetForbidden(existing.Forbidden, warnOnFail: false);
+                }
+            }
+
+            foreach (var thing in new Thing[] { meal, plate, cutlery, patient, feeder })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void SanitationStorageFiltersAreFinalizedAgainstKitchenware()

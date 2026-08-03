@@ -144,16 +144,10 @@ internal static class IngestCutleryToilsPatch
         IEnumerable<Toil> original)
     {
         var pawn = driver.GetActor();
-        var originalTargetC = pawn.CurJob?.GetTarget(TargetIndex.C) ?? LocalTargetInfo.Invalid;
         if (pawn.CurJob is { } plateJob && DiningSessionRegistry.HasPlatePickup(plateJob) &&
             DiningSessionRegistry.PlateFor(plateJob) is { } plate)
         {
-            yield return new Toil
-            {
-                initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, plate),
-                defaultCompleteMode = ToilCompleteMode.Instant
-            };
-            yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.Touch);
+            yield return GotoCapturedThing(plate, PathEndMode.Touch);
             yield return new Toil
             {
                 initAction = () =>
@@ -172,12 +166,7 @@ internal static class IngestCutleryToilsPatch
         if (pawn.CurJob is { } job && DiningSessionRegistry.HasPickup(job) &&
             DiningSessionRegistry.CutleryFor(job) is { } cutlery)
         {
-            yield return new Toil
-            {
-                initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, cutlery),
-                defaultCompleteMode = ToilCompleteMode.Instant
-            };
-            yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.Touch);
+            yield return GotoCapturedThing(cutlery, PathEndMode.Touch);
             yield return new Toil
             {
                 initAction = () => DiningSessionRegistry.Pickup(pawn),
@@ -187,11 +176,6 @@ internal static class IngestCutleryToilsPatch
 
         if (pawn.CurJob is { } microwaveJob && DiningSessionRegistry.MicrowaveFor(microwaveJob) is { } microwave)
         {
-            yield return new Toil
-            {
-                initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, microwave.parent),
-                defaultCompleteMode = ToilCompleteMode.Instant
-            };
             yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.Touch);
             yield return Toils_Haul.StartCarryThing(
                 TargetIndex.A,
@@ -200,9 +184,8 @@ internal static class IngestCutleryToilsPatch
                 failIfStackCountLessThanJobCount: false,
                 reserve: false,
                 canTakeFromInventory: true);
-            yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.InteractionCell);
-            yield return Toils_General.Wait(microwave.HeatingTicks, TargetIndex.C)
-                .WithProgressBarToilDelay(TargetIndex.C);
+            yield return GotoCapturedThing(microwave.parent, PathEndMode.InteractionCell);
+            yield return Toils_General.Wait(microwave.HeatingTicks);
             yield return new Toil
             {
                 initAction = () =>
@@ -218,19 +201,19 @@ internal static class IngestCutleryToilsPatch
             yield return Toils_Haul.DropCarriedThing();
         }
 
-        if (pawn.CurJob is { } restoreJob)
-        {
-            yield return new Toil
-            {
-                initAction = () => restoreJob.SetTarget(TargetIndex.C, originalTargetC),
-                defaultCompleteMode = ToilCompleteMode.Instant
-            };
-        }
-
         foreach (var toil in original)
         {
             yield return toil;
         }
+    }
+
+    private static Toil GotoCapturedThing(Thing target, PathEndMode pathEndMode)
+    {
+        var toil = ToilMaker.MakeToil("ImmersiveChefs_GotoReservedWare");
+        toil.initAction = () => toil.actor.pather.StartPath(target, pathEndMode);
+        toil.defaultCompleteMode = ToilCompleteMode.PatherArrival;
+        toil.AddFailCondition(() => target.DestroyedOrNull() || !target.Spawned);
+        return toil;
     }
 }
 
