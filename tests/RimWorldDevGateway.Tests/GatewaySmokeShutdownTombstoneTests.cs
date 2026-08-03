@@ -73,7 +73,7 @@ public sealed class GatewaySmokeShutdownTombstoneTests
             ApiVersion = "1",
             RunId = "test-run",
             State = state,
-            BaseUrl = state == "active" ? "http://127.0.0.1:40123/api/v1" : null,
+            BaseUrl = "http://127.0.0.1:40123/api/v1",
             Token = token,
             ProcessId = 1234,
             ProcessStartUtc = "2026-08-03T09:00:00.0000000+00:00",
