@@ -73,6 +73,30 @@ When `Orion.Hospitality` is active and the locally supported `Hospitality.Utilit
 - **WHEN** `Orion.Hospitality` is active but the expected arrived-guest method is absent or incompatible
 - **THEN** one actionable warning disables only Hospitality-specific recognition and Immersive Chefs continues its base dining behavior
 
+### Requirement: Common Sense assigns opportunistic post-dining cleanup
+
+When `avilmask.CommonSense` is active and the locally supported `CommonSense` assembly shape with public static `CommonSense.CommonSense.Settings` validates, Immersive Chefs SHALL extend completed map dining with one opportunistic cleanup handoff. After self-eating, the diner SHALL claim the exact dirty plate and cutlery released by that serving; after `FeedPatient`, the nurse SHALL claim them instead of the patient. The responsible pawn SHALL prefer hauling the ware to a reachable, reservable, accepting dishwasher and SHALL otherwise use the ordinary Immersive Chefs hand-washing source order. This handoff SHALL start only after eating or feeding has committed, SHALL preserve exact Thing identity and sanitation state, and SHALL NOT delay ingestion, duplicate a Gastronomy-owned clearing job, apply on caravans, retain reservations when no path is viable, or retry indefinitely. If the package is absent, disabled, or shape-incompatible, ordinary Immersive Chefs cleaning remains available and only this adapter is disabled.
+
+#### Scenario: Diner brings used service ware to a dishwasher
+
+- **WHEN** a self-diner completes an eligible meal with Common Sense active and the exact resulting dirty plate and cutlery can enter an accepting dishwasher
+- **THEN** that diner claims both items after eating and hauls them to the dishwasher before considering a hand-washing source
+
+#### Scenario: Nurse clears after assisted feeding
+
+- **WHEN** a nurse completes `FeedPatient` and the serving releases a dirty plate and used cutlery
+- **THEN** the nurse, not the patient, claims that exact ware and follows the same dishwasher-first cleaning order
+
+#### Scenario: Common Sense cleanup has no viable route
+
+- **WHEN** every dishwasher and hand-washing source is unavailable, forbidden, full, reserved, disconnected, or unreachable
+- **THEN** dining remains complete, the responsible pawn releases every cleanup reservation, and the dirty ware remains eligible for ordinary cleaning without an immediate retry loop
+
+#### Scenario: Common Sense changes its supported shape
+
+- **WHEN** `avilmask.CommonSense` is active but the expected public settings surface is absent or incompatible
+- **THEN** one actionable warning disables only opportunistic post-dining cleanup and ordinary Immersive Chefs sanitation continues
+
 ### Requirement: Variety integrations preserve provenance components
 
 With `Evyatar108.VarietyMattersImprovedRedux`, `VanillaExpanded.VanillaFoodVarietyExpanded`, or other compatible food-variety mods active, Immersive Chefs SHALL preserve `CompIngredients` and unknown ThingComps through preparation, cooking, plating, stacking, reheating, and spoilage. Variety calculations SHALL continue to observe the original ingredient data unless a specified paste-preparation rule intentionally hides exact sources.
