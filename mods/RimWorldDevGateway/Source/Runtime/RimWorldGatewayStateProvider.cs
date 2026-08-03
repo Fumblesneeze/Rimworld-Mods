@@ -12,11 +12,42 @@ public interface IGatewaySnapshotSource
 
     long? Tick { get; }
 
+    bool? Paused { get; }
+
+    GatewayGameSpeed? Speed { get; }
+
+    GatewayClientAreaSnapshot? ClientArea { get; }
+
     GatewayMapSnapshot? Map { get; }
 
     IReadOnlyList<GatewayWindowSnapshot> Windows { get; }
 
     IReadOnlyList<GatewaySelectionSnapshot> Selection { get; }
+}
+
+public sealed class GatewayClientAreaSnapshot
+{
+    public GatewayClientAreaSnapshot(int width, int height)
+    {
+        if (width <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(width));
+        }
+
+        if (height <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(height));
+        }
+
+        Width = width;
+        Height = height;
+    }
+
+    public int Width { get; }
+
+    public int Height { get; }
+
+    public string CoordinateOrigin => "TopLeft";
 }
 
 public sealed class GatewayMapSnapshot
@@ -103,9 +134,12 @@ public sealed class RimWorldGatewayStateProvider : IGatewayStateProvider
     {
         return new SortedDictionary<string, object?>
         {
+            ["clientArea"] = source.ClientArea,
+            ["paused"] = source.Paused,
             ["programState"] = source.ProgramState,
             ["rootType"] = source.RootType,
             ["selection"] = source.Selection,
+            ["speed"] = source.Speed,
             ["windows"] = source.Windows
         };
     }
@@ -121,6 +155,31 @@ public sealed class VerseGatewaySnapshotSource : IGatewaySnapshotSource
     public string RootType => Current.Root?.GetType().Name ?? string.Empty;
 
     public long? Tick => Current.Game?.tickManager?.TicksGame;
+
+    public bool? Paused => Current.Game?.tickManager?.Paused;
+
+    public GatewayGameSpeed? Speed
+    {
+        get
+        {
+            var tickManager = Current.Game?.tickManager;
+            return tickManager is null
+                ? null
+                : FromVerseSpeed(tickManager.CurTimeSpeed);
+        }
+    }
+
+    public GatewayClientAreaSnapshot? ClientArea
+    {
+        get
+        {
+            var width = UnityEngine.Screen.width;
+            var height = UnityEngine.Screen.height;
+            return width > 0 && height > 0
+                ? new GatewayClientAreaSnapshot(width, height)
+                : null;
+        }
+    }
 
     public GatewayMapSnapshot? Map
     {
@@ -201,4 +260,14 @@ public sealed class VerseGatewaySnapshotSource : IGatewaySnapshotSource
             return snapshots;
         }
     }
+
+    private static GatewayGameSpeed FromVerseSpeed(TimeSpeed speed) => speed switch
+    {
+        TimeSpeed.Paused => GatewayGameSpeed.Paused,
+        TimeSpeed.Normal => GatewayGameSpeed.Normal,
+        TimeSpeed.Fast => GatewayGameSpeed.Fast,
+        TimeSpeed.Superfast => GatewayGameSpeed.Superfast,
+        TimeSpeed.Ultrafast => GatewayGameSpeed.Ultrafast,
+        _ => throw new ArgumentOutOfRangeException(nameof(speed))
+    };
 }

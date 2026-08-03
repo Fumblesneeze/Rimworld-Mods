@@ -88,7 +88,7 @@ All routes are below the manifest's `/api/v1` `baseUrl`.
 | Route | Companion command | Purpose |
 | --- | --- | --- |
 | `GET /status` | `status` | Process/program/root, optional map/tick, pending dispatches, and danger flags |
-| `GET /ui-state` | `ui-state` | Bounded window and selection snapshot |
+| `GET /ui-state` | `ui-state` | Pause/speed, rendered-client bounds, and bounded window/selection snapshot |
 | `GET /game-state` | direct HTTP | Developer/god mode, time, nullable map/camera, and bounded selection snapshot |
 | `POST /game-state` | direct HTTP | Atomically set developer/god mode, pause, and native speed |
 | `POST /camera` | direct HTTP | Set an absolute current-map center and/or native root size |
@@ -97,7 +97,7 @@ All routes are below the manifest's `/api/v1` `baseUrl`.
 | `POST /selection` | direct HTTP | Atomic replace/add/remove/toggle/clear selection |
 | `GET /logs?after=N&limit=N` | `logs --after N --limit N` | Cursor-based structured Unity/RimWorld logs |
 | `POST /screenshots` | `screenshot --file PATH` | End-of-frame PNG capture |
-| `POST /input/click` | `click --x N --y N [--button left|right|middle]` | Process-scoped client-coordinate click |
+| `POST /input/click` | `click --x N --y N [--button left|right|middle]` | Process-scoped screen-local client-coordinate click |
 | `POST /input/drag` | `drag --start-x N --start-y N --end-x N --end-y N` | Process-scoped interpolated drag |
 | `POST /input/keys` | `keys (--key K\|--text TEXT) [--modifiers Ctrl,Shift]` | Chord or Unicode text input |
 | `GET /actions` | direct HTTP | Discover semantic actions, schemas, and availability |
@@ -120,7 +120,7 @@ All routes are below the manifest's `/api/v1` `baseUrl`.
 
 Routed JSON API envelopes use version 1 and report the request ID, `ok`, duration, and either `result` or a stable error. Every response also carries `X-Request-Id`, including authentication and transport-limit errors. A caller-provided ID must be 1–64 letters, digits, `-`, `_`, `.`, or `:`; otherwise the server generates one.
 
-The version-one status result remains intentionally narrow: `developerOnly`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. A non-null map has `Handle`, `Biome`, `Width`, and `Height`. The UI-state result contains `programState`, `rootType`, up to 256 selection entries (`Handle`, `Label`), and up to 128 window entries (`Handle`, `Type`, `Modal`). Richer developer controls live in the dedicated `/game-state`, `/camera`, `/things`, and `/selection` contracts; they do not silently widen `/status` or `/ui-state`. Versions come from the session manifest, and action schemas and availability come from their discovery routes.
+The version-one status result remains intentionally narrow: `developerOnly`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. A non-null map has `Handle`, `Biome`, `Width`, and `Height`. The UI-state result contains `programState`, `rootType`, nullable effective `paused`, nullable native `speed`, nullable rendered `clientArea`, up to 256 selection entries (`Handle`, `Label`), and up to 128 window entries (`Handle`, `Type`, `Modal`). `clientArea` reports positive `Width`/`Height` and `CoordinateOrigin: TopLeft`; this is the exact client-pixel coordinate space accepted by `/input/click` and `/input/drag`, independent of desktop screenshot scaling. Richer developer controls live in the dedicated `/game-state`, `/camera`, `/things`, and `/selection` contracts. Versions come from the session manifest, and action schemas and availability come from their discovery routes.
 
 Use the raw C# endpoint or a named automation when a verification needs state outside those stable DTOs. That escape hatch does not promote the returned data into the API contract; adding a new stable snapshot field requires an OpenSpec/API change.
 
@@ -138,7 +138,7 @@ Useful client examples:
 & $gatewayClient keys --key Escape --manifest $manifest --pid $pidExpected -o json
 ```
 
-Initial semantic actions are `game.pause` (optional boolean `paused`, omitted to toggle), `game.speed` (`paused`, `normal`, `fast`, `superfast`, or `ultrafast`), `window.accept`, `window.cancel`, and `debug.tool.cancel`. The last action is available only while a native `DebugTool` pointer action is active and clears that exact native tool instead of cancelling an unrelated window. Discovery is authoritative: an action may be present but unavailable at the current menu/window/game state. Prefer semantic actions to raw input. Raw input is Windows-only, revalidates the RimWorld PID/window/client bounds, and can optionally skip activation with `--no-activate`.
+Initial semantic actions are `game.pause` (optional boolean `paused`, omitted to toggle), `game.speed` (`paused`, `normal`, `fast`, `superfast`, or `ultrafast`), `window.accept`, `window.cancel`, and `debug.tool.cancel`. The last action is available only while a native `DebugTool` pointer action is active and clears that exact native tool instead of cancelling an unrelated window. Discovery is authoritative: an action may be present but unavailable at the current menu/window/game state. Prefer `GET/POST /game-state` for deterministic pause/speed control and use raw keyboard input when the native keybinding itself is the behavior under test. Raw input is Windows-only, revalidates the RimWorld PID/window/client bounds, and can optionally skip activation with `--no-activate`.
 
 All raw click, drag, chord, and text injection runs on HTTP workers through one serialized input lane, not Unity's main thread. A click cannot interleave with an active drag, and request/server cancellation interrupts timed drag waits while retaining the lane through best-effort mouse/key release. This lets RimWorld process injected events without a long gesture freezing the game; live Verse and Unity state operations still go through the bounded dispatcher.
 

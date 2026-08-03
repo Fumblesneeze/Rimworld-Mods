@@ -17,6 +17,8 @@ public sealed class GatewayStateProviderTests
         {
             Assert.That(source.Tick, Is.Null);
             Assert.That(source.Map, Is.Null);
+            Assert.That(source.Paused, Is.Null);
+            Assert.That(source.Speed, Is.Null);
             Assert.That(source.Selection, Is.Empty);
         });
     }
@@ -56,6 +58,9 @@ public sealed class GatewayStateProviderTests
         {
             ProgramState = "Entry",
             RootType = "Root_Entry",
+            Paused = true,
+            Speed = GatewayGameSpeed.Fast,
+            ClientArea = new GatewayClientAreaSnapshot(2560, 1440),
             Windows = new[] { new GatewayWindowSnapshot("window-3", "Page_ModsConfig", true) },
             Selection = new[] { new GatewaySelectionSnapshot("thing-5", "Cookware") }
         };
@@ -69,6 +74,11 @@ public sealed class GatewayStateProviderTests
             Assert.That(json, Does.Contain("\"Page_ModsConfig\""));
             Assert.That(json, Does.Contain("\"thing-5\""));
             Assert.That(json, Does.Contain("\"Cookware\""));
+            Assert.That(json, Does.Contain("\"paused\":true"));
+            Assert.That(json, Does.Contain("\"speed\":\"Fast\""));
+            Assert.That(json, Does.Contain("\"Width\":2560"));
+            Assert.That(json, Does.Contain("\"Height\":1440"));
+            Assert.That(json, Does.Contain("\"CoordinateOrigin\":\"TopLeft\""));
             Assert.That(json, Does.Not.Contain(nameof(StubSnapshotSource)));
         });
     }
@@ -82,6 +92,12 @@ public sealed class GatewayStateProviderTests
         public long? Tick { get; set; }
 
         public GatewayMapSnapshot? Map { get; set; }
+
+        public bool? Paused { get; set; }
+
+        public GatewayGameSpeed? Speed { get; set; }
+
+        public GatewayClientAreaSnapshot? ClientArea { get; set; }
 
         public IReadOnlyList<GatewayWindowSnapshot> Windows { get; set; } = new GatewayWindowSnapshot[0];
 
