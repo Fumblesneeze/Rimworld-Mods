@@ -12,7 +12,7 @@ new System.Func<string>(() =>
     pawn.inventory.innerContainer.ClearAndDestroyContents();
 
     var diningCell = IntVec3.Invalid;
-    foreach (var cell in GenRadial.RadialCellsAround(map.Center, 30f, true))
+    foreach (var cell in map.AllCells.OrderBy(candidate => candidate.DistanceToSquared(map.Center)))
     {
         var valid = FilthMaker.CanMakeFilth(cell, map, ThingDefOf.Filth_Dirt);
         foreach (var candidate in CellRect.CenteredOn(cell, 4).Cells)
