@@ -14,14 +14,13 @@ new System.Func<string>(() =>
     var diningCell = IntVec3.Invalid;
     foreach (var cell in GenRadial.RadialCellsAround(map.Center, 30f, true))
     {
-        var valid = true;
+        var valid = FilthMaker.CanMakeFilth(cell, map, ThingDefOf.Filth_Dirt);
         foreach (var candidate in CellRect.CenteredOn(cell, 4).Cells)
         {
             if (!candidate.InBounds(map) ||
                 !candidate.Standable(map) ||
                 candidate.GetEdifice(map) != null ||
-                candidate.GetFirstPawn(map) != null ||
-                !FilthMaker.CanMakeFilth(candidate, map, ThingDefOf.Filth_Dirt))
+                candidate.GetFirstPawn(map) != null)
             {
                 valid = false;
                 break;
