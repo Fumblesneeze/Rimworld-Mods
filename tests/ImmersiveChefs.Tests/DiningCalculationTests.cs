@@ -12,16 +12,16 @@ public sealed class DiningCalculationTests
             baseChance: 0.02f,
             qualityScore: 50,
             thermalBand: ThermalBand.Warm,
-            contamination: ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate | ContaminationSources.DirtySilverware,
+            contamination: ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate | ContaminationSources.DirtyCutlery,
             plateServiceScore: null,
-            silverwareServiceScore: null,
+            cutleryServiceScore: null,
             microwaveReheatCount: 0,
             microwaveExtraPercentagePoints: 0.5f,
             effectScale: 1f,
             maximumChance: 0.50f));
         var capped = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
             0.02f, 0, ThermalBand.Frozen,
-            ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate | ContaminationSources.DirtySilverware,
+            ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate | ContaminationSources.DirtyCutlery,
             0, 0, 3, 5f, 3f, 0.50f));
         var highCompatibleBase = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
             0.72f, 100, ThermalBand.Warm, ContaminationSources.None,
@@ -44,20 +44,20 @@ public sealed class DiningCalculationTests
             Assert.That(DiningOutcomeCalculator.TemperatureMoodOffset(ThermalBand.Frozen), Is.EqualTo(-6));
             Assert.That(DiningOutcomeCalculator.ServiceScore(80, 60), Is.EqualTo(75f));
             Assert.That(DiningOutcomeCalculator.HasDirtyWare(
-                ContaminationSources.DirtyPlate | ContaminationSources.DirtySilverware), Is.True);
+                ContaminationSources.DirtyPlate | ContaminationSources.DirtyCutlery), Is.True);
         });
     }
 
     [Test]
-    public void Wild_water_plate_and_silverware_add_the_specified_bounded_risk()
+    public void Wild_water_plate_and_cutlery_add_the_specified_bounded_risk()
     {
         var chance = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
             baseChance: 0.02f,
             qualityScore: 50,
             thermalBand: ThermalBand.Warm,
-            contamination: ContaminationSources.WildWaterPlate | ContaminationSources.WildWaterSilverware,
+            contamination: ContaminationSources.WildWaterPlate | ContaminationSources.WildWaterCutlery,
             plateServiceScore: null,
-            silverwareServiceScore: null,
+            cutleryServiceScore: null,
             microwaveReheatCount: 0,
             microwaveExtraPercentagePoints: 0.5f,
             effectScale: 1f,
@@ -78,8 +78,8 @@ public sealed class DiningCalculationTests
                 SanitationContamination.ForPlate(isDirty: false, WashProvenance.WildWater),
                 Is.EqualTo(ContaminationSources.WildWaterPlate));
             Assert.That(
-                SanitationContamination.ForSilverware(isDirty: true, WashProvenance.Safe),
-                Is.EqualTo(ContaminationSources.DirtySilverware));
+                SanitationContamination.ForCutlery(isDirty: true, WashProvenance.Safe),
+                Is.EqualTo(ContaminationSources.DirtyCutlery));
         });
     }
 }

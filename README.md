@@ -11,7 +11,7 @@ Immersive Chefs does not reference or ship the gateway. Harmony is its only requ
 
 ## Current gameplay
 
-Immersive Chefs adds cookware sets, plates, stackable silverware, belt-slot chef's knives, preparation and specialist stations, hand dishwashing, two dishwasher sizes, a microwave, meal temperature/quality, and colony/Royalty dining expectations. Covered meal recipes reserve cookware and plates, diners collect place settings, and used ware returns dirty for the Cleaning work type. Simple/Fine/Lavish recipes use separate configurable work multipliers; pemmican and travel/packaged meals remain hand foods.
+Immersive Chefs adds cookware sets, plates, stackable cutlery, belt-slot chef's knives, preparation and specialist stations, hand dishwashing, two dishwasher sizes, a microwave, meal temperature/quality, and colony/Royalty dining expectations. Covered meal recipes reserve cookware and plates, diners collect place settings, and used ware returns dirty for the Cleaning work type. Simple/Fine/Lavish recipes use separate configurable work multipliers; pemmican and travel/packaged meals remain hand foods.
 
 Kitchenware is Stuff-aware. Primitive stone/adobe/wood paths, smithy-era metals, machining-era metals/plastics, and trade/quest-only self-cleaning glitterworld cookware use material and craftsmanship to derive cleanliness, speed, comfort, durability, and culinary modifiers. Optional adapters are detected for Processor Framework, Expanded Materials, ABS polymer, Dubs Bad Hygiene, Gastronomy, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, and Vanilla Nutrient Paste Expanded. Their individual `Auto` setting can be changed to `Off` when troubleshooting.
 
@@ -168,7 +168,7 @@ Run the comprehensive Gateway surface regression explicitly when that is what yo
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -Scenario gateway-regression -TimeoutSeconds 300
 ```
 
-Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus silverware (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
+Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus cutlery (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
 
 ```powershell
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
@@ -179,7 +179,7 @@ Start directly at the reusable Immersive Chefs caravan-dining scene, with the ca
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
-Use the equivalent animal-exclusion scene to observe a Labrador retriever eat an intentionally cold, poor, contaminated plated meal without collecting the visible silverware. Its fully fed human escort has no Plants skill, preventing caravan forage from masking which food the animal consumes:
+Use the equivalent animal-exclusion scene to observe a Labrador retriever eat an intentionally cold, poor, contaminated plated meal without collecting the visible cutlery. Its fully fed human escort has no Plants skill, preventing caravan forage from masking which food the animal consumes:
 
 ```powershell
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
@@ -190,7 +190,7 @@ Use the equivalent animal-exclusion scene to observe a Labrador retriever eat an
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
-Use the regular-map animal scene to observe the same exclusion through RimWorld's ordinary map ingest job. A selected factionless wild raccoon starts hungry inside a small sealed fixture beside the plated meal and loose silverware; after unpausing, the meal should disappear, the clean embedded plate should appear at the eating location, and the silverware should not move:
+Use the regular-map animal scene to observe the same exclusion through RimWorld's ordinary map ingest job. A selected factionless wild raccoon starts hungry inside a small sealed fixture beside the plated meal and loose cutlery; after unpausing, the meal should disappear, the clean embedded plate should appear at the eating location, and the cutlery should not move:
 
 ```powershell
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
@@ -201,11 +201,11 @@ Use the regular-map animal scene to observe the same exclusion through RimWorld'
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
-Use the forkless colonist scene to verify the opposite humanlike behavior. It selects a colonist with a plated Simple meal and no silverware in a sealed concrete room. Unpause with the game's native Space control: the meal should disappear, the returned plate and one dirt event should become visible at the eating location, and the selected pawn's Needs panel should report `Ate without silverware`:
+Use the cutlery-free colonist scene to verify the opposite humanlike behavior. It selects a colonist with a plated Simple meal and no cutlery in a sealed concrete room. Unpause with the game's native Space control: the meal should disappear, the returned plate and one dirt event should become visible at the eating location, and the selected pawn's Needs panel should report `Ate without cutlery`:
 
 ```powershell
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
-  -Scenario immersive-chefs-forkless-map `
+  -Scenario immersive-chefs-cutlery-free-map `
   -InteractiveHoldSeconds 120 `
   -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
   -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `

@@ -29,12 +29,12 @@ public sealed class KitchenMaterialClassifierTests
 
     [TestCase("BlocksGranite", KitchenwareProduct.Cookware, FabricationTier.PrimitiveStone)]
     [TestCase("WoodLog", KitchenwareProduct.Plate, FabricationTier.Soft)]
-    [TestCase("EM_Lead", KitchenwareProduct.Silverware, FabricationTier.Soft)]
+    [TestCase("EM_Lead", KitchenwareProduct.Cutlery, FabricationTier.Soft)]
     [TestCase("EM_Bronze", KitchenwareProduct.Cookware, FabricationTier.Intermediate)]
     [TestCase("Silver", KitchenwareProduct.Plate, FabricationTier.Intermediate)]
     [TestCase("Steel", KitchenwareProduct.Cookware, FabricationTier.Modern)]
     [TestCase("EM_StainlessSteel", KitchenwareProduct.Plate, FabricationTier.Modern)]
-    [TestCase("ABSPolymer", KitchenwareProduct.Silverware, FabricationTier.Modern)]
+    [TestCase("ABSPolymer", KitchenwareProduct.Cutlery, FabricationTier.Modern)]
     public void Known_materials_receive_product_aware_fabrication_tiers(
         string defName,
         KitchenwareProduct product,

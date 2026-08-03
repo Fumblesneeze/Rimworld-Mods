@@ -16,12 +16,12 @@ public static class SanitationContamination
             ContaminationSources.DirtyPlate,
             ContaminationSources.WildWaterPlate);
 
-    public static ContaminationSources ForSilverware(bool isDirty, WashProvenance provenance) =>
+    public static ContaminationSources ForCutlery(bool isDirty, WashProvenance provenance) =>
         For(
             isDirty,
             provenance,
-            ContaminationSources.DirtySilverware,
-            ContaminationSources.WildWaterSilverware);
+            ContaminationSources.DirtyCutlery,
+            ContaminationSources.WildWaterCutlery);
 
     private static ContaminationSources For(
         bool isDirty,

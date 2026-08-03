@@ -14,18 +14,18 @@ new System.Func<string>(() =>
     var plate = (ThingWithComps)ThingMaker.MakeThing(
         DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
         ThingDefOf.Steel);
-    var silverware = (ThingWithComps)ThingMaker.MakeThing(
-        DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+    var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+        DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
         ThingDefOf.Steel);
     plate.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
-    silverware.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
+    cutlery.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
     if (!meal.GetComp<ImmersiveChefs.CompEmbeddedWare>().TryEmbedPlate(plate))
     {
         throw new System.InvalidOperationException("Could not embed the scenario plate in its meal.");
     }
 
     if (!pawn.inventory.innerContainer.TryAdd(meal, false) ||
-        !pawn.inventory.innerContainer.TryAdd(silverware, false))
+        !pawn.inventory.innerContainer.TryAdd(cutlery, false))
     {
         throw new System.InvalidOperationException("Could not populate the caravan dining scenario inventory.");
     }
@@ -42,5 +42,5 @@ new System.Func<string>(() =>
         pawn.ThingID,
         meal.ThingID,
         plate.ThingID,
-        silverware.ThingID);
+        cutlery.ThingID);
 })()

@@ -6,11 +6,11 @@ public enum ContaminationSources
     None = 0,
     DirtyCookware = 1,
     DirtyPlate = 2,
-    DirtySilverware = 4,
+    DirtyCutlery = 4,
     EmergencyUnplated = 8,
     WildWaterCookware = 16,
     WildWaterPlate = 32,
-    WildWaterSilverware = 64
+    WildWaterCutlery = 64
 }
 
 public readonly struct CulinaryServingSnapshot

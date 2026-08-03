@@ -99,8 +99,8 @@
   </ThingDef>
 
   <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
-    <defName>ImmersiveChefs_Silverware</defName>
-    <label>silverware setting</label>
+    <defName>ImmersiveChefs_Cutlery</defName>
+    <label>cutlery setting</label>
     <description>A reusable fork, spoon and knife setting for one diner. Its material and craftsmanship affect dining comfort and sanitation.</description>
     <graphicData>
       <texPath>Things/Item/Resource/Gold</texPath>
@@ -120,7 +120,7 @@
     </statBases>
     <modExtensions>
       <li Class="ImmersiveChefs.KitchenwareExtension">
-        <product>Silverware</product>
+        <product>Cutlery</product>
         <plateEquivalent>0.25</plateEquivalent>
       </li>
     </modExtensions>

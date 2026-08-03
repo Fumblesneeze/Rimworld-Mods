@@ -80,11 +80,11 @@ internal static class GastronomyAdapter
 
         var emergency = patron.needs?.food?.CurLevelPercentage <=
                         ImmersiveChefsMod.Settings.EmergencyHungerThreshold;
-        var silverware = ImmersiveChefsMod.Settings.WareRequirementMode == WareRequirementMode.Off
+        var cutlery = ImmersiveChefsMod.Settings.WareRequirementMode == WareRequirementMode.Off
             ? null
-            : DiningSessionRegistry.SelectWare(server, job, KitchenwareProduct.Silverware, emergency);
+            : DiningSessionRegistry.SelectWare(server, job, KitchenwareProduct.Cutlery, emergency);
         var microwave = DiningSessionRegistry.FindMicrowave(server, meal);
-        Services.Add(job, new GastronomyServiceContext(patron, meal, silverware, microwave));
+        Services.Add(job, new GastronomyServiceContext(patron, meal, cutlery, microwave));
     }
 
     private static void ServeToilsPostfix(JobDriver __instance, ref IEnumerable<Toil> __result)
@@ -99,27 +99,27 @@ internal static class GastronomyAdapter
     {
         private readonly Pawn patron;
         private readonly Thing meal;
-        private readonly Thing? selectedSilverware;
+        private readonly Thing? selectedCutlery;
         private readonly Thing? microwave;
-        private Thing? carriedSilverware;
+        private Thing? carriedCutlery;
         private bool delivered;
 
-        internal GastronomyServiceContext(Pawn patron, Thing meal, Thing? selectedSilverware, Thing? microwave)
+        internal GastronomyServiceContext(Pawn patron, Thing meal, Thing? selectedCutlery, Thing? microwave)
         {
             this.patron = patron;
             this.meal = meal;
-            this.selectedSilverware = selectedSilverware;
+            this.selectedCutlery = selectedCutlery;
             this.microwave = microwave;
         }
 
         internal IEnumerable<Toil> Wrap(Pawn server, Job job, IEnumerable<Toil> original)
         {
             var originalDiningTarget = job.GetTarget(TargetIndex.C);
-            if (selectedSilverware is not null)
+            if (selectedCutlery is not null)
             {
-                yield return Instant(() => job.SetTarget(TargetIndex.C, selectedSilverware));
+                yield return Instant(() => job.SetTarget(TargetIndex.C, selectedCutlery));
                 yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.Touch);
-                yield return Instant(() => PickupSilverware(server));
+                yield return Instant(() => PickupCutlery(server));
             }
 
             if (microwave?.TryGetComp<CompMicrowave>() is { } microwaveComp)
@@ -146,7 +146,7 @@ internal static class GastronomyAdapter
                 yield return Toils_Haul.DropCarriedThing();
             }
 
-            if (selectedSilverware is not null || microwave is not null)
+            if (selectedCutlery is not null || microwave is not null)
             {
                 yield return Instant(() => job.SetTarget(TargetIndex.C, originalDiningTarget));
             }
@@ -156,34 +156,34 @@ internal static class GastronomyAdapter
                 yield return toil;
             }
 
-            yield return Instant(() => DeliverSilverware(server, job));
+            yield return Instant(() => DeliverCutlery(server, job));
         }
 
         internal void Cancel(Pawn server)
         {
-            if (delivered || carriedSilverware is null || server.MapHeld is not { } map)
+            if (delivered || carriedCutlery is null || server.MapHeld is not { } map)
             {
                 return;
             }
 
-            if (carriedSilverware.holdingOwner is { } owner)
+            if (carriedCutlery.holdingOwner is { } owner)
             {
-                owner.TryDrop(carriedSilverware, server.PositionHeld, map, ThingPlaceMode.Near, out _);
+                owner.TryDrop(carriedCutlery, server.PositionHeld, map, ThingPlaceMode.Near, out _);
             }
 
-            carriedSilverware = null;
+            carriedCutlery = null;
         }
 
-        private void PickupSilverware(Pawn server)
+        private void PickupCutlery(Pawn server)
         {
-            if (selectedSilverware is null || selectedSilverware.Destroyed || carriedSilverware is not null)
+            if (selectedCutlery is null || selectedCutlery.Destroyed || carriedCutlery is not null)
             {
                 return;
             }
 
-            var picked = selectedSilverware.stackCount > 1
-                ? selectedSilverware.SplitOff(1)
-                : selectedSilverware;
+            var picked = selectedCutlery.stackCount > 1
+                ? selectedCutlery.SplitOff(1)
+                : selectedCutlery;
             if (picked.Spawned)
             {
                 picked.DeSpawn(DestroyMode.Vanish);
@@ -191,7 +191,7 @@ internal static class GastronomyAdapter
 
             if (server.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
             {
-                carriedSilverware = picked;
+                carriedCutlery = picked;
             }
             else if (server.MapHeld is { } map)
             {
@@ -199,17 +199,17 @@ internal static class GastronomyAdapter
             }
         }
 
-        private void DeliverSilverware(Pawn server, Job serviceJob)
+        private void DeliverCutlery(Pawn server, Job serviceJob)
         {
             Thing? deliveredWare = null;
-            if (carriedSilverware is not null && patron.inventory is not null &&
-                carriedSilverware.holdingOwner is { } source &&
-                source.TryTransferToContainer(carriedSilverware, patron.inventory.innerContainer, 1) > 0)
+            if (carriedCutlery is not null && patron.inventory is not null &&
+                carriedCutlery.holdingOwner is { } source &&
+                source.TryTransferToContainer(carriedCutlery, patron.inventory.innerContainer, 1) > 0)
             {
-                deliveredWare = carriedSilverware;
+                deliveredWare = carriedCutlery;
             }
 
-            carriedSilverware = null;
+            carriedCutlery = null;
             delivered = true;
             if (patron.CurJob is { } diningJob)
             {
@@ -272,7 +272,7 @@ internal sealed class MapComponent_GastronomyDishClearing : MapComponent
             var dirty = map.listerThings.AllThings
                 .Where(thing => (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true)
                 .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product is
-                    KitchenwareProduct.Plate or KitchenwareProduct.Silverware)
+                    KitchenwareProduct.Plate or KitchenwareProduct.Cutlery)
                 .Where(thing => thing.Position.DistanceToSquared(request.Origin) <= 25)
                 .OrderBy(thing => thing.Position.DistanceToSquared(request.Server.Position))
                 .FirstOrDefault();

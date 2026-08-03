@@ -8,7 +8,7 @@ public sealed class Alert_MissingKitchenware : Alert
     public override string GetLabel() => "Missing clean kitchenware";
 
     public override TaggedString GetExplanation() =>
-        "A player colony has cooks and plated meals enabled but lacks at least one clean cookware set, plate, or silverware setting. Craft more kitchenware or clean the highlighted dirty items.";
+        "A player colony has cooks and plated meals enabled but lacks at least one clean cookware set, plate, or cutlery setting. Craft more kitchenware or clean the highlighted dirty items.";
 
     public override AlertReport GetReport()
     {
@@ -30,7 +30,7 @@ public sealed class Alert_MissingKitchenware : Alert
             {
                 KitchenwareProduct.Cookware,
                 KitchenwareProduct.Plate,
-                KitchenwareProduct.Silverware
+                KitchenwareProduct.Cutlery
             }.Any(product => !ware.Any(thing => Product(thing) == product && IsClean(thing)));
             if (!missing)
             {
@@ -80,7 +80,7 @@ public sealed class Alert_DirtyKitchenwareBacklog : Alert
     public override string GetLabel() => "Dirty dishes need washing";
 
     public override TaggedString GetExplanation() =>
-        "There is an accumulated backlog of dirty cookware, plates, or silverware. Enable Cleaning work, provide an accessible water source, or build a powered dishwasher.";
+        "There is an accumulated backlog of dirty cookware, plates, or cutlery. Enable Cleaning work, provide an accessible water source, or build a powered dishwasher.";
 
     public override AlertReport GetReport()
     {

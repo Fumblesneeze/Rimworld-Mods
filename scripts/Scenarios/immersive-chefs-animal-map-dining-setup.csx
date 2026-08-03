@@ -59,17 +59,17 @@ new System.Func<string>(() =>
     }
 
     var mealCell = new IntVec3(animalCell.x + 1, 0, animalCell.z);
-    var silverwareCell = new IntVec3(animalCell.x - 1, 0, animalCell.z);
+    var cutleryCell = new IntVec3(animalCell.x - 1, 0, animalCell.z);
 
     var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
     var plate = (ThingWithComps)ThingMaker.MakeThing(
         DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
         ThingDefOf.Steel);
-    var silverware = (ThingWithComps)ThingMaker.MakeThing(
-        DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+    var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+        DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
         ThingDefOf.Steel);
     plate.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
-    silverware.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
+    cutlery.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
     meal.GetComp<ImmersiveChefs.CompCulinaryState>().ReplaceServings(new[]
     {
         new ImmersiveChefs.CulinaryServingRecord(
@@ -77,7 +77,7 @@ new System.Func<string>(() =>
             -20f,
             ImmersiveChefs.ContaminationSources.DirtyCookware |
             ImmersiveChefs.ContaminationSources.DirtyPlate |
-            ImmersiveChefs.ContaminationSources.DirtySilverware,
+            ImmersiveChefs.ContaminationSources.DirtyCutlery,
             20,
             Find.TickManager.TicksGame)
     });
@@ -88,7 +88,7 @@ new System.Func<string>(() =>
 
     GenSpawn.Spawn(animal, animalCell, map);
     GenSpawn.Spawn(meal, mealCell, map);
-    GenSpawn.Spawn(silverware, silverwareCell, map);
+    GenSpawn.Spawn(cutlery, cutleryCell, map);
     animal.needs.food.CurLevelPercentage = 0.50f;
     Find.CameraDriver.JumpToCurrentMapLoc(meal.Position);
     Find.CameraDriver.SetRootSize(12f);
@@ -100,5 +100,5 @@ new System.Func<string>(() =>
         animal.ThingID,
         meal.ThingID,
         plate.ThingID,
-        silverware.ThingID);
+        cutlery.ThingID);
 })()

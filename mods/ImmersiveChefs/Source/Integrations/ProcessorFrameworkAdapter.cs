@@ -311,7 +311,7 @@ internal static class ProcessorFrameworkAdapter
     private static bool IsReusableWareDef(ThingDef def)
     {
         return def.GetModExtension<KitchenwareExtension>()?.product is
-            KitchenwareProduct.Cookware or KitchenwareProduct.Plate or KitchenwareProduct.Silverware;
+            KitchenwareProduct.Cookware or KitchenwareProduct.Plate or KitchenwareProduct.Cutlery;
     }
 
     private static bool IsDirtyWare(Thing thing)

@@ -13,13 +13,13 @@ public sealed class DiningDirtPolicyTests
     [TestCase(true, true, WareRequirementMode.Prefer, false, true, false, false)]
     [TestCase(true, true, WareRequirementMode.Prefer, true, false, false, false)]
     [TestCase(true, true, WareRequirementMode.Prefer, true, true, true, false)]
-    public void CreationRequiresACompletedEligibleMapMealWithoutSilverware(
+    public void CreationRequiresACompletedEligibleMapMealWithoutCutlery(
         bool coveredMeal,
         bool humanlikeDiner,
         WareRequirementMode requirementMode,
         bool ingestionCompleted,
         bool mapAvailable,
-        bool hasSilverware,
+        bool hasCutlery,
         bool expected)
     {
         var actual = DiningDirtPolicy.ShouldCreate(
@@ -28,7 +28,7 @@ public sealed class DiningDirtPolicyTests
             requirementMode,
             ingestionCompleted,
             mapAvailable,
-            hasSilverware);
+            hasCutlery);
 
         Assert.That(actual, Is.EqualTo(expected));
     }

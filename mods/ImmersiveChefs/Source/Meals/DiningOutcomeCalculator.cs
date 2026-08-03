@@ -8,7 +8,7 @@ public readonly struct DiningRiskInputs
         ThermalBand thermalBand,
         ContaminationSources contamination,
         float? plateServiceScore,
-        float? silverwareServiceScore,
+        float? cutleryServiceScore,
         int microwaveReheatCount,
         float microwaveExtraPercentagePoints,
         float effectScale,
@@ -19,7 +19,7 @@ public readonly struct DiningRiskInputs
         ThermalBand = thermalBand;
         Contamination = contamination;
         PlateServiceScore = plateServiceScore;
-        SilverwareServiceScore = silverwareServiceScore;
+        CutleryServiceScore = cutleryServiceScore;
         MicrowaveReheatCount = microwaveReheatCount;
         MicrowaveExtraPercentagePoints = microwaveExtraPercentagePoints;
         EffectScale = effectScale;
@@ -31,7 +31,7 @@ public readonly struct DiningRiskInputs
     public ThermalBand ThermalBand { get; }
     public ContaminationSources Contamination { get; }
     public float? PlateServiceScore { get; }
-    public float? SilverwareServiceScore { get; }
+    public float? CutleryServiceScore { get; }
     public int MicrowaveReheatCount { get; }
     public float MicrowaveExtraPercentagePoints { get; }
     public float EffectScale { get; }
@@ -43,7 +43,7 @@ public static class DiningOutcomeCalculator
     private const ContaminationSources DirtyWare =
         ContaminationSources.DirtyCookware |
         ContaminationSources.DirtyPlate |
-        ContaminationSources.DirtySilverware;
+        ContaminationSources.DirtyCutlery;
 
     public static float FinalPoisonChance(DiningRiskInputs inputs)
     {
@@ -63,12 +63,12 @@ public static class DiningOutcomeCalculator
         };
         percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtyCookware) ? 15f : 0f;
         percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtyPlate) ? 15f : 0f;
-        percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtySilverware) ? 10f : 0f;
+        percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtyCutlery) ? 10f : 0f;
         percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterCookware) ? 5f : 0f;
         percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterPlate) ? 4f : 0f;
-        percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterSilverware) ? 3f : 0f;
+        percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterCutlery) ? 3f : 0f;
         percentagePoints += ServiceDelta(inputs.PlateServiceScore);
-        percentagePoints += ServiceDelta(inputs.SilverwareServiceScore);
+        percentagePoints += ServiceDelta(inputs.CutleryServiceScore);
         percentagePoints += Math.Max(0, inputs.MicrowaveReheatCount) *
                             Math.Max(0f, inputs.MicrowaveExtraPercentagePoints);
 

@@ -87,14 +87,14 @@
   </RecipeDef>
 
   <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
-    <defName>ImmersiveChefs_MakeSoftSilverware</defName>
-    <label>make soft silverware x4</label>
-    <description>Make four silverware settings from wood or another registered soft material.</description>
-    <jobString>Making silverware.</jobString>
+    <defName>ImmersiveChefs_MakeSoftCutlery</defName>
+    <label>make soft cutlery x4</label>
+    <description>Make four cutlery settings from wood or another registered soft material.</description>
+    <jobString>Making cutlery.</jobString>
     <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
-    <products><ImmersiveChefs_Silverware>4</ImmersiveChefs_Silverware></products>
+    <products><ImmersiveChefs_Cutlery>4</ImmersiveChefs_Cutlery></products>
     <recipeUsers><li>CraftingSpot</li></recipeUsers>
-    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Silverware</product><fabricationTier>Soft</fabricationTier></li></modExtensions>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cutlery</product><fabricationTier>Soft</fabricationTier></li></modExtensions>
   </RecipeDef>
 
   <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
@@ -109,14 +109,14 @@
   </RecipeDef>
 
   <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
-    <defName>ImmersiveChefs_SmithSilverware</defName>
-    <label>smith metal silverware x4</label>
-    <description>Smith four silverware settings from an intermediate metal.</description>
-    <jobString>Smithing silverware.</jobString>
+    <defName>ImmersiveChefs_SmithCutlery</defName>
+    <label>smith metal cutlery x4</label>
+    <description>Smith four cutlery settings from an intermediate metal.</description>
+    <jobString>Smithing cutlery.</jobString>
     <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
-    <products><ImmersiveChefs_Silverware>4</ImmersiveChefs_Silverware></products>
+    <products><ImmersiveChefs_Cutlery>4</ImmersiveChefs_Cutlery></products>
     <recipeUsers><li>FueledSmithy</li><li>ElectricSmithy</li></recipeUsers>
-    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Silverware</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cutlery</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
   </RecipeDef>
 
   <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
@@ -133,15 +133,15 @@
   </RecipeDef>
 
   <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
-    <defName>ImmersiveChefs_MachineSilverware</defName>
-    <label>machine silverware x4</label>
-    <description>Machine four silverware settings from any eligible metal or registered plastic.</description>
-    <jobString>Machining silverware.</jobString>
+    <defName>ImmersiveChefs_MachineCutlery</defName>
+    <label>machine cutlery x4</label>
+    <description>Machine four cutlery settings from any eligible metal or registered plastic.</description>
+    <jobString>Machining cutlery.</jobString>
     <effectWorking>Cook</effectWorking>
     <soundWorking>Recipe_Machining</soundWorking>
     <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
-    <products><ImmersiveChefs_Silverware>4</ImmersiveChefs_Silverware></products>
+    <products><ImmersiveChefs_Cutlery>4</ImmersiveChefs_Cutlery></products>
     <recipeUsers><li>TableMachining</li></recipeUsers>
-    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Silverware</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cutlery</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
   </RecipeDef>
 </Defs>

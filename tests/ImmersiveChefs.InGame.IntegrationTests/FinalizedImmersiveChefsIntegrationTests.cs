@@ -31,7 +31,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
     {
         var expectedThings = new[]
         {
-            "ImmersiveChefs_Cookware", "ImmersiveChefs_Plate", "ImmersiveChefs_Silverware",
+            "ImmersiveChefs_Cookware", "ImmersiveChefs_Plate", "ImmersiveChefs_Cutlery",
             "ImmersiveChefs_ChefsKnife", "ImmersiveChefs_Dishwasher",
             "ImmersiveChefs_IndustrialDishwasher", "ImmersiveChefs_PreparedFood",
             "ImmersiveChefs_PrepStation", "ImmersiveChefs_SauceStation",
@@ -99,16 +99,16 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var plate = (ThingWithComps)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
             ThingDefOf.Steel);
-        var silverware = (ThingWithComps)ThingMaker.MakeThing(
-            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
             ThingDefOf.Steel);
         var originalPlateId = plate.ThingID;
-        var originalSilverwareId = silverware.ThingID;
+        var originalCutleryId = cutlery.ThingID;
 
         try
         {
             plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
-            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
             var thermalStartTick = Math.Max(
                 0,
                 Find.TickManager.TicksGame - ThermalCalculator.TicksPerHour);
@@ -128,8 +128,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 pawn.inventory.innerContainer.TryAdd(plate, canMergeWithExistingStacks: false),
                 "The travel fixture must put its plate in the caravan inventory.");
             IntegrationAssert.True(
-                pawn.inventory.innerContainer.TryAdd(silverware, canMergeWithExistingStacks: false),
-                "The travel fixture must put its silverware in the caravan inventory.");
+                pawn.inventory.innerContainer.TryAdd(cutlery, canMergeWithExistingStacks: false),
+                "The travel fixture must put its cutlery in the caravan inventory.");
 
             var tileAmbient = GenTemperature.GetTemperatureAtTile(caravan.Tile);
             var expectedTemperature = ThermalCalculator.TemperatureAfter(
@@ -151,21 +151,21 @@ public static class FinalizedImmersiveChefsIntegrationTests
             caravan.RecacheInventory();
 
             var returnedPlate = caravan.AllThings.SingleOrDefault(thing => thing.ThingID == originalPlateId);
-            var returnedSilverware = caravan.AllThings.SingleOrDefault(thing => thing.ThingID == originalSilverwareId);
+            var returnedCutlery = caravan.AllThings.SingleOrDefault(thing => thing.ThingID == originalCutleryId);
             IntegrationAssert.True(
                 ReferenceEquals(plate, returnedPlate),
                 "Caravan dining must return the exact selected plate Thing without replacement or duplication.");
             IntegrationAssert.True(
-                ReferenceEquals(silverware, returnedSilverware),
-                "Caravan dining must return the exact selected silverware Thing without replacement or duplication.");
+                ReferenceEquals(cutlery, returnedCutlery),
+                "Caravan dining must return the exact selected cutlery Thing without replacement or duplication.");
             IntegrationAssert.Equal(
                 WashProvenance.WildWater,
                 plate.GetComp<CompSanitation>().WashProvenance,
                 "Travel-washed plates must retain the wild-water risk marker.");
             IntegrationAssert.Equal(
                 WashProvenance.WildWater,
-                silverware.GetComp<CompSanitation>().WashProvenance,
-                "Travel-washed silverware must retain the wild-water risk marker.");
+                cutlery.GetComp<CompSanitation>().WashProvenance,
+                "Travel-washed cutlery must retain the wild-water risk marker.");
         }
         finally
         {
@@ -194,14 +194,14 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var plate = (ThingWithComps)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
             ThingDefOf.Steel);
-        var silverware = (ThingWithComps)ThingMaker.MakeThing(
-            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
             ThingDefOf.Steel);
 
         try
         {
             plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
-            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
             IntegrationAssert.True(
                 meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
                 "The fixture must begin with its exact plate contained by the meal.");
@@ -209,8 +209,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 pawn.inventory.innerContainer.TryAdd(meal, canMergeWithExistingStacks: false),
                 "The fixture must put its plated meal in caravan inventory.");
             IntegrationAssert.True(
-                pawn.inventory.innerContainer.TryAdd(silverware, canMergeWithExistingStacks: false),
-                "The fixture must put its silverware in caravan inventory.");
+                pawn.inventory.innerContainer.TryAdd(cutlery, canMergeWithExistingStacks: false),
+                "The fixture must put its cutlery in caravan inventory.");
             IntegrationAssert.True(
                 !pawn.inventory.innerContainer.Contains(plate),
                 "An embedded plate must not be a direct loose caravan inventory item before eating.");
@@ -222,8 +222,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 caravan.AllThings.Any(thing => ReferenceEquals(thing, plate)),
                 "Eating must move the exact plate out of the consumed meal and into caravan inventory.");
             IntegrationAssert.True(
-                caravan.AllThings.Any(thing => ReferenceEquals(thing, silverware)),
-                "Eating must return the exact selected silverware to caravan inventory.");
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, cutlery)),
+                "Eating must return the exact selected cutlery to caravan inventory.");
             IntegrationAssert.Equal(
                 WashProvenance.WildWater,
                 plate.GetComp<CompSanitation>().WashProvenance,
@@ -256,14 +256,14 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var plate = (ThingWithComps)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
             ThingDefOf.Steel);
-        var silverware = (ThingWithComps)ThingMaker.MakeThing(
-            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
             ThingDefOf.Steel);
 
         try
         {
             plate.GetComp<CompSanitation>().MarkClean(WashProvenance.WildWater);
-            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
             meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
             {
                 new CulinaryServingRecord(
@@ -275,7 +275,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
             });
             pawn.inventory.innerContainer.TryAdd(meal, canMergeWithExistingStacks: false);
             pawn.inventory.innerContainer.TryAdd(plate, canMergeWithExistingStacks: false);
-            pawn.inventory.innerContainer.TryAdd(silverware, canMergeWithExistingStacks: false);
+            pawn.inventory.innerContainer.TryAdd(cutlery, canMergeWithExistingStacks: false);
 
             DiningSessionRegistry.TryAttachTravel(pawn, meal);
             IntegrationAssert.True(
@@ -292,8 +292,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 caravan.AllThings.Any(thing => ReferenceEquals(thing, plate)),
                 "A cancelled travel attempt must return the exact unused plate.");
             IntegrationAssert.True(
-                caravan.AllThings.Any(thing => ReferenceEquals(thing, silverware)),
-                "A cancelled travel attempt must return the exact unused silverware.");
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, cutlery)),
+                "A cancelled travel attempt must return the exact unused cutlery.");
             IntegrationAssert.Equal(
                 ContaminationSources.DirtyCookware,
                 meal.GetComp<CompCulinaryState>().PeekCurrentServing()!.Contamination,
@@ -307,8 +307,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 "Cancellation must preserve the unused plate's prior wild-water provenance.");
             IntegrationAssert.Equal(
                 WashProvenance.Safe,
-                silverware.GetComp<CompSanitation>().WashProvenance,
-                "Cancellation must not claim that the unused silverware was washed in wild water.");
+                cutlery.GetComp<CompSanitation>().WashProvenance,
+                "Cancellation must not claim that the unused cutlery was washed in wild water.");
         }
         finally
         {
@@ -337,8 +337,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var plate = (ThingWithComps)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
             ThingDefOf.Steel);
-        var silverware = (ThingWithComps)ThingMaker.MakeThing(
-            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
             ThingDefOf.Steel);
         var settings = ImmersiveChefsMod.Settings;
         var originalCulinaryQualityEnabled = settings.CulinaryQualityEnabled;
@@ -355,7 +355,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
             settings.MaximumCustomPoisonChance = 1f;
             settings.MicrowaveExtraPoisonChance = 5f;
             plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
-            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
             meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
             {
                 new CulinaryServingRecord(
@@ -363,10 +363,10 @@ public static class FinalizedImmersiveChefsIntegrationTests
                     -20f,
                     ContaminationSources.DirtyCookware |
                     ContaminationSources.DirtyPlate |
-                    ContaminationSources.DirtySilverware |
+                    ContaminationSources.DirtyCutlery |
                     ContaminationSources.WildWaterCookware |
                     ContaminationSources.WildWaterPlate |
-                    ContaminationSources.WildWaterSilverware,
+                    ContaminationSources.WildWaterCutlery,
                     20,
                     Find.TickManager.TicksGame)
             });
@@ -376,7 +376,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
                 "The animal exclusion fixture must start with a plated meal.");
             animal.inventory.innerContainer.TryAdd(meal, canMergeWithExistingStacks: false);
-            animal.inventory.innerContainer.TryAdd(silverware, canMergeWithExistingStacks: false);
+            animal.inventory.innerContainer.TryAdd(cutlery, canMergeWithExistingStacks: false);
 
             meal.Ingested(animal, 0.9f);
             caravan.RecacheInventory();
@@ -385,16 +385,16 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 caravan.AllThings.Any(thing => ReferenceEquals(thing, plate)),
                 "An animal eating a meal must return its exact unused plate to caravan inventory.");
             IntegrationAssert.True(
-                caravan.AllThings.Any(thing => ReferenceEquals(thing, silverware)),
-                "Animal ingestion must not select or consume caravan silverware.");
+                caravan.AllThings.Any(thing => ReferenceEquals(thing, cutlery)),
+                "Animal ingestion must not select or consume caravan cutlery.");
             IntegrationAssert.Equal(
                 WashProvenance.Safe,
                 plate.GetComp<CompSanitation>().WashProvenance,
                 "An animal-excluded plate must retain its original wash provenance.");
             IntegrationAssert.Equal(
                 WashProvenance.Safe,
-                silverware.GetComp<CompSanitation>().WashProvenance,
-                "Animal-excluded silverware must retain its original wash provenance.");
+                cutlery.GetComp<CompSanitation>().WashProvenance,
+                "Animal-excluded cutlery must retain its original wash provenance.");
             IntegrationAssert.True(
                 animal.health.hediffSet.GetFirstHediffOfDef(HediffDefOf.FoodPoisoning) is null,
                 "Animal ingestion must not apply Immersive Chefs' custom food-poisoning risk.");
@@ -427,13 +427,13 @@ public static class FinalizedImmersiveChefsIntegrationTests
             null);
         var animalCell = CellFinder.RandomClosewalkCellNear(map.Center, map, 12);
         var mealCell = animalCell;
-        var silverwareCell = new IntVec3(animalCell.x + 1, 0, animalCell.z);
+        var cutleryCell = new IntVec3(animalCell.x + 1, 0, animalCell.z);
         var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
         var plate = (ThingWithComps)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
             ThingDefOf.Plasteel);
-        var silverware = (ThingWithComps)ThingMaker.MakeThing(
-            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
             ThingDefOf.Steel);
         var settings = ImmersiveChefsMod.Settings;
         var originalCulinaryQualityEnabled = settings.CulinaryQualityEnabled;
@@ -448,7 +448,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
             settings.FoodPoisoningEffectScale = 3f;
             settings.MaximumCustomPoisonChance = 1f;
             plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
-            silverware.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
             meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
             {
                 new CulinaryServingRecord(
@@ -456,7 +456,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
                     -20f,
                     ContaminationSources.DirtyCookware |
                     ContaminationSources.DirtyPlate |
-                    ContaminationSources.DirtySilverware,
+                    ContaminationSources.DirtyCutlery,
                     20,
                     Find.TickManager.TicksGame)
             });
@@ -468,11 +468,11 @@ public static class FinalizedImmersiveChefsIntegrationTests
 
             GenSpawn.Spawn(animal, animalCell, map);
             GenSpawn.Spawn(meal, mealCell, map);
-            GenSpawn.Spawn(silverware, silverwareCell, map);
+            GenSpawn.Spawn(cutlery, cutleryCell, map);
             animal.needs.food.CurLevel = 0.01f;
-            var originalSilverwarePosition = silverware.Position;
+            var originalCutleryPosition = cutlery.Position;
             var ingestJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
-            var silverwareWasReserved = false;
+            var cutleryWasReserved = false;
 
             animal.jobs.StartJob(ingestJob, JobCondition.InterruptForced);
             var chewMethod = AccessTools.Method(typeof(Toils_Ingest), nameof(Toils_Ingest.ChewIngestible));
@@ -511,21 +511,21 @@ public static class FinalizedImmersiveChefsIntegrationTests
             for (var tick = 0; tick < 5000 && !meal.Destroyed; tick++)
             {
                 animal.jobs.JobTrackerTick();
-                silverwareWasReserved |= map.reservationManager.IsReserved(silverware);
+                cutleryWasReserved |= map.reservationManager.IsReserved(cutlery);
             }
 
             IntegrationAssert.True(
                 meal.Destroyed,
                 "A real animal JobDriver_Ingest must complete within the bounded fixture ticks.");
             IntegrationAssert.True(
-                DiningSessionRegistry.SilverwareFor(ingestJob) is null,
-                "The real animal map-ingest job must not select nearby silverware.");
+                DiningSessionRegistry.CutleryFor(ingestJob) is null,
+                "The real animal map-ingest job must not select nearby cutlery.");
             IntegrationAssert.True(
                 DiningSessionRegistry.PlateFor(ingestJob) is null,
                 "The real animal map-ingest job must not create a service-ware pickup session.");
             IntegrationAssert.True(
-                !silverwareWasReserved,
-                "The real animal map-ingest job must never reserve nearby silverware.");
+                !cutleryWasReserved,
+                "The real animal map-ingest job must never reserve nearby cutlery.");
 
             IntegrationAssert.True(
                 plate.Spawned && ReferenceEquals(plate.Map, map) && plate.Position == animal.Position,
@@ -538,16 +538,16 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 !plate.GetComp<CompSanitation>().IsDirty,
                 "The recovered animal plate must retain its clean sanitation flag.");
             IntegrationAssert.True(
-                silverware.Spawned && ReferenceEquals(silverware.Map, map) &&
-                silverware.Position == originalSilverwarePosition,
-                "Nearby map silverware must remain spawned at its original cell.");
+                cutlery.Spawned && ReferenceEquals(cutlery.Map, map) &&
+                cutlery.Position == originalCutleryPosition,
+                "Nearby map cutlery must remain spawned at its original cell.");
             IntegrationAssert.Equal(
                 WashProvenance.Safe,
-                silverware.GetComp<CompSanitation>().WashProvenance,
-                "Nearby map silverware must remain clean and untouched.");
+                cutlery.GetComp<CompSanitation>().WashProvenance,
+                "Nearby map cutlery must remain clean and untouched.");
             IntegrationAssert.True(
-                !silverware.GetComp<CompSanitation>().IsDirty,
-                "Nearby map silverware must retain its clean sanitation flag.");
+                !cutlery.GetComp<CompSanitation>().IsDirty,
+                "Nearby map cutlery must retain its clean sanitation flag.");
             IntegrationAssert.True(
                 animal.health.hediffSet.GetFirstHediffOfDef(HediffDefOf.FoodPoisoning) is null,
                 "Animal map ingestion must not apply Immersive Chefs' custom food-poisoning risk.");
@@ -568,9 +568,9 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 plate.Destroy(DestroyMode.Vanish);
             }
 
-            if (!silverware.Destroyed)
+            if (!cutlery.Destroyed)
             {
-                silverware.Destroy(DestroyMode.Vanish);
+                cutlery.Destroy(DestroyMode.Vanish);
             }
 
             if (!animal.Destroyed)
@@ -581,7 +581,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
-    public static void CompletedMapDiningWithoutSilverwareCreatesOneDirtEvent()
+    public static void CompletedMapDiningWithoutCutleryCreatesOneDirtEvent()
     {
         var map = Find.CurrentMap;
         var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
@@ -597,9 +597,9 @@ public static class FinalizedImmersiveChefsIntegrationTests
             ThingDefOf.Steel);
         var settings = ImmersiveChefsMod.Settings;
         var originalWareRequirementMode = settings.WareRequirementMode;
-        var preexistingSilverware = map.listerThings.AllThings
+        var preexistingCutlery = map.listerThings.AllThings
             .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product ==
-                            KitchenwareProduct.Silverware)
+                            KitchenwareProduct.Cutlery)
             .Select(thing => new { Thing = thing, Forbidden = thing.IsForbidden(Faction.OfPlayer) })
             .ToList();
         var preexistingDirt = map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
@@ -609,7 +609,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
         try
         {
             settings.WareRequirementMode = WareRequirementMode.Prefer;
-            foreach (var existing in preexistingSilverware)
+            foreach (var existing in preexistingCutlery)
             {
                 existing.Thing.SetForbidden(true, warnOnFail: false);
             }
@@ -626,7 +626,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
             });
             IntegrationAssert.True(
                 meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
-                "The missing-silverware fixture must start with an exact embedded plate.");
+                "The missing-cutlery fixture must start with an exact embedded plate.");
 
             GenSpawn.Spawn(pawn, diningCell, map);
             GenSpawn.Spawn(meal, diningCell, map);
@@ -652,7 +652,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
             IntegrationAssert.Equal(
                 dirtBefore + 1,
                 dirtAfter,
-                "Completed eligible map dining without silverware must add exactly one dirt thickness.");
+                "Completed eligible map dining without cutlery must add exactly one dirt thickness.");
             IntegrationAssert.True(
                 pawn.Position.GetThingList(map).Any(thing => thing.def == ThingDefOf.Filth_Dirt),
                 "The native dirt event must occur at the diner's actual final eating location.");
@@ -663,12 +663,12 @@ public static class FinalizedImmersiveChefsIntegrationTests
             IntegrationAssert.Equal(
                 1,
                 memory!.CurStageIndex,
-                "A plated meal without silverware must select the missing-silverware thought stage.");
+                "A plated meal without cutlery must select the missing-cutlery thought stage.");
         }
         finally
         {
             settings.WareRequirementMode = originalWareRequirementMode;
-            foreach (var existing in preexistingSilverware)
+            foreach (var existing in preexistingCutlery)
             {
                 if (!existing.Thing.Destroyed)
                 {

@@ -20,11 +20,11 @@ internal sealed class DiningSession : IThingHolder
     internal DiningSession(
         Pawn pawn,
         Job job,
-        Thing? silverware,
+        Thing? cutlery,
         Thing? reservedPlate,
         Thing? microwave,
         Pawn? servingPawn = null)
-        : this(pawn, job, null, silverware, reservedPlate, microwave, servingPawn)
+        : this(pawn, job, null, cutlery, reservedPlate, microwave, servingPawn)
     {
     }
 
@@ -37,7 +37,7 @@ internal sealed class DiningSession : IThingHolder
         Pawn pawn,
         Job? job,
         Caravan? caravan,
-        Thing? silverware,
+        Thing? cutlery,
         Thing? reservedPlate,
         Thing? microwave,
         Pawn? servingPawn)
@@ -46,7 +46,7 @@ internal sealed class DiningSession : IThingHolder
         Job = job;
         this.caravan = caravan;
         travelWare = new ThingOwner<Thing>(this, oneStackOnly: false, LookMode.Deep);
-        SetSilverware(silverware);
+        SetCutlery(cutlery);
         Microwave = microwave;
         ReservedPlate = reservedPlate;
         ServingPawn = servingPawn;
@@ -54,13 +54,13 @@ internal sealed class DiningSession : IThingHolder
 
     internal Pawn Pawn { get; }
     internal Job? Job { get; }
-    internal Thing? Silverware { get; private set; }
-    internal Thing? CarriedSilverware { get; private set; }
+    internal Thing? Cutlery { get; private set; }
+    internal Thing? CarriedCutlery { get; private set; }
     internal Thing? ReservedPlate { get; }
     internal Thing? CarriedPlate { get; private set; }
-    internal bool SilverwareWasDirty { get; private set; }
-    internal bool SilverwareWasWildWaterWashed { get; private set; }
-    internal float? SilverwareServiceScore { get; private set; }
+    internal bool CutleryWasDirty { get; private set; }
+    internal bool CutleryWasWildWaterWashed { get; private set; }
+    internal float? CutleryServiceScore { get; private set; }
     internal Thing? Plate { get; private set; }
     internal ServiceWareSnapshot? PlateServiceSnapshot { get; private set; }
     internal ContaminationSources TravelPlateContamination { get; private set; }
@@ -81,14 +81,14 @@ internal sealed class DiningSession : IThingHolder
         Plate = plate;
     }
 
-    internal void AcquireTravelSilverware(Thing? silverware)
+    internal void AcquireTravelCutlery(Thing? cutlery)
     {
         if (caravan is null)
         {
             throw new InvalidOperationException("Only caravan dining sessions can acquire travel ware.");
         }
 
-        SetSilverware(TakeOneForTravel(silverware));
+        SetCutlery(TakeOneForTravel(cutlery));
     }
 
     internal void TrackTravelPlate(CompEmbeddedWare embedded, Thing plate, bool imported)
@@ -105,14 +105,14 @@ internal sealed class DiningSession : IThingHolder
             travelPlateWashProvenance);
     }
 
-    internal void PickupSilverware()
+    internal void PickupCutlery()
     {
-        if (Silverware is null || Silverware.Destroyed || CarriedSilverware is not null)
+        if (Cutlery is null || Cutlery.Destroyed || CarriedCutlery is not null)
         {
             return;
         }
 
-        var picked = Silverware.stackCount > 1 ? Silverware.SplitOff(1) : Silverware;
+        var picked = Cutlery.stackCount > 1 ? Cutlery.SplitOff(1) : Cutlery;
         if (picked.Spawned)
         {
             picked.DeSpawn(DestroyMode.Vanish);
@@ -120,7 +120,7 @@ internal sealed class DiningSession : IThingHolder
 
         if (Pawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
         {
-            CarriedSilverware = picked;
+            CarriedCutlery = picked;
         }
         else if (Pawn.MapHeld is { } map)
         {
@@ -151,9 +151,9 @@ internal sealed class DiningSession : IThingHolder
         }
     }
 
-    internal void AcceptServedSilverware(Thing silverware)
+    internal void AcceptServedCutlery(Thing cutlery)
     {
-        CarriedSilverware = silverware;
+        CarriedCutlery = cutlery;
     }
 
     internal void BindPastePlate(Thing meal)
@@ -217,7 +217,7 @@ internal sealed class DiningSession : IThingHolder
                 requirementMode: ImmersiveChefsMod.Settings.WareRequirementMode,
                 ingestionCompleted: true,
                 mapAvailable: Pawn.MapHeld is not null,
-                hasSilverware: CarriedSilverware is not null) &&
+                hasCutlery: CarriedCutlery is not null) &&
             Pawn.MapHeld is { } diningMap)
         {
             FilthMaker.TryMakeFilth(clearingOrigin, diningMap, ThingDefOf.Filth_Dirt, count: 1);
@@ -239,9 +239,9 @@ internal sealed class DiningSession : IThingHolder
             Plate = null;
         }
 
-        if (CarriedSilverware is not null)
+        if (CarriedCutlery is not null)
         {
-            (CarriedSilverware as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
+            (CarriedCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
             DropCarried();
         }
 
@@ -274,13 +274,13 @@ internal sealed class DiningSession : IThingHolder
 
     IThingHolder? IThingHolder.ParentHolder => caravan;
 
-    private void SetSilverware(Thing? silverware)
+    private void SetCutlery(Thing? cutlery)
     {
-        Silverware = silverware;
-        var sanitation = (silverware as ThingWithComps)?.GetComp<CompSanitation>();
-        SilverwareWasDirty = sanitation?.IsDirty == true;
-        SilverwareWasWildWaterWashed = sanitation?.WashedInWildWater == true;
-        SilverwareServiceScore = silverware is null ? null : KitchenwareRuntime.ServiceScore(silverware);
+        Cutlery = cutlery;
+        var sanitation = (cutlery as ThingWithComps)?.GetComp<CompSanitation>();
+        CutleryWasDirty = sanitation?.IsDirty == true;
+        CutleryWasWildWaterWashed = sanitation?.WashedInWildWater == true;
+        CutleryServiceScore = cutlery is null ? null : KitchenwareRuntime.ServiceScore(cutlery);
     }
 
     private Thing? TakeOneForTravel(Thing? ware)
@@ -343,7 +343,7 @@ internal sealed class DiningSession : IThingHolder
         }
 
         Plate = null;
-        CarriedSilverware = null;
+        CarriedCutlery = null;
         caravan.RecacheInventory();
     }
 
@@ -399,26 +399,26 @@ internal sealed class DiningSession : IThingHolder
 
     private void DropCarried()
     {
-        if (CarriedSilverware is null || Pawn.MapHeld is not { } map)
+        if (CarriedCutlery is null || Pawn.MapHeld is not { } map)
         {
             return;
         }
 
-        if (CarriedSilverware.holdingOwner is { } owner)
+        if (CarriedCutlery.holdingOwner is { } owner)
         {
             owner.TryDrop(
-                CarriedSilverware,
+                CarriedCutlery,
                 Pawn.PositionHeld,
                 map,
                 ThingPlaceMode.Near,
                 out _);
         }
-        else if (!CarriedSilverware.Spawned)
+        else if (!CarriedCutlery.Spawned)
         {
-            GenPlace.TryPlaceThing(CarriedSilverware, Pawn.PositionHeld, map, ThingPlaceMode.Near);
+            GenPlace.TryPlaceThing(CarriedCutlery, Pawn.PositionHeld, map, ThingPlaceMode.Near);
         }
 
-        CarriedSilverware = null;
+        CarriedCutlery = null;
     }
 }
 
@@ -476,7 +476,7 @@ internal static class DiningSessionRegistry
             }
 
             var candidates = pawn.Map.listerThings.AllThings
-                .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == KitchenwareProduct.Silverware)
+                .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == KitchenwareProduct.Cutlery)
                 .Where(thing => !thing.IsForbidden(pawn) && pawn.CanReach(thing, PathEndMode.Touch, Danger.Some))
                 .Where(thing => pawn.CanReserve(thing, 1, 1))
                 .Select(thing => new
@@ -527,7 +527,7 @@ internal static class DiningSessionRegistry
         }
 
         Thing? plate = null;
-        Thing? silverware = null;
+        Thing? cutlery = null;
         var settings = ImmersiveChefsMod.Settings;
         if (settings.WareRequirementMode != WareRequirementMode.Off)
         {
@@ -541,9 +541,9 @@ internal static class DiningSessionRegistry
                     settings.WareRequirementMode);
             }
 
-            silverware = SelectTravelWare(
+            cutlery = SelectTravelWare(
                 caravan,
-                KitchenwareProduct.Silverware,
+                KitchenwareProduct.Cutlery,
                 emergency,
                 WareRequirementMode.Prefer);
         }
@@ -552,7 +552,7 @@ internal static class DiningSessionRegistry
         PawnSessions.Add(pawn, session);
         try
         {
-            session.AcquireTravelSilverware(silverware);
+            session.AcquireTravelCutlery(cutlery);
             if (meal.GetComp<CompEmbeddedWare>() is { } embedded)
             {
                 if (embedded.PeekPlateThing() is { } existingPlate)
@@ -591,7 +591,7 @@ internal static class DiningSessionRegistry
         Pawn patron,
         Job diningJob,
         Thing meal,
-        Thing? silverware,
+        Thing? cutlery,
         Pawn server)
     {
         if (!MealCoveragePolicy.IsCovered(meal.def) || Sessions.TryGetValue(diningJob, out _))
@@ -599,10 +599,10 @@ internal static class DiningSessionRegistry
             return;
         }
 
-        var session = new DiningSession(patron, diningJob, silverware, null, null, server);
-        if (silverware is not null)
+        var session = new DiningSession(patron, diningJob, cutlery, null, null, server);
+        if (cutlery is not null)
         {
-            session.AcceptServedSilverware(silverware);
+            session.AcceptServedCutlery(cutlery);
         }
 
         Sessions.Add(diningJob, session);
@@ -611,13 +611,13 @@ internal static class DiningSessionRegistry
     }
 
     internal static bool HasPickup(Job job) =>
-        Sessions.TryGetValue(job, out var session) && session.Silverware is not null;
+        Sessions.TryGetValue(job, out var session) && session.Cutlery is not null;
 
     internal static bool HasPlatePickup(Job job) =>
         Sessions.TryGetValue(job, out var session) && session.ReservedPlate is not null;
 
-    internal static Thing? SilverwareFor(Job job) =>
-        Sessions.TryGetValue(job, out var session) ? session.Silverware : null;
+    internal static Thing? CutleryFor(Job job) =>
+        Sessions.TryGetValue(job, out var session) ? session.Cutlery : null;
 
     internal static Thing? PlateFor(Job job) =>
         Sessions.TryGetValue(job, out var session) ? session.ReservedPlate : null;
@@ -631,7 +631,7 @@ internal static class DiningSessionRegistry
     {
         if (pawn.CurJob is { } job && Sessions.TryGetValue(job, out var session))
         {
-            session.PickupSilverware();
+            session.PickupCutlery();
         }
     }
 

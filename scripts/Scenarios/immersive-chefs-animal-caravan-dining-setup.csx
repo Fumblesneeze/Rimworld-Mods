@@ -19,11 +19,11 @@ new System.Func<string>(() =>
     var plate = (ThingWithComps)ThingMaker.MakeThing(
         DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
         ThingDefOf.Steel);
-    var silverware = (ThingWithComps)ThingMaker.MakeThing(
-        DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Silverware"),
+    var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+        DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
         ThingDefOf.Steel);
     plate.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
-    silverware.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
+    cutlery.GetComp<ImmersiveChefs.CompSanitation>().MarkClean(ImmersiveChefs.WashProvenance.Safe);
     meal.GetComp<ImmersiveChefs.CompCulinaryState>().ReplaceServings(new[]
     {
         new ImmersiveChefs.CulinaryServingRecord(
@@ -31,7 +31,7 @@ new System.Func<string>(() =>
             -20f,
             ImmersiveChefs.ContaminationSources.DirtyCookware |
             ImmersiveChefs.ContaminationSources.DirtyPlate |
-            ImmersiveChefs.ContaminationSources.DirtySilverware,
+            ImmersiveChefs.ContaminationSources.DirtyCutlery,
             20,
             Find.TickManager.TicksGame)
     });
@@ -41,7 +41,7 @@ new System.Func<string>(() =>
     }
 
     if (!animal.inventory.innerContainer.TryAdd(meal, false) ||
-        !animal.inventory.innerContainer.TryAdd(silverware, false))
+        !animal.inventory.innerContainer.TryAdd(cutlery, false))
     {
         throw new System.InvalidOperationException("Could not populate the animal caravan dining inventory.");
     }
@@ -60,5 +60,5 @@ new System.Func<string>(() =>
         animal.ThingID,
         meal.ThingID,
         plate.ThingID,
-        silverware.ThingID);
+        cutlery.ThingID);
 })()

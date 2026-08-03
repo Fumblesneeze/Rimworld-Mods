@@ -60,9 +60,9 @@ internal static class DiningIngestionOutcomePatch
         {
             if (__state.Serving is { } serving)
             {
-                serving.AddContamination(SanitationContamination.ForSilverware(
-                    dining?.SilverwareWasDirty == true,
-                    dining?.SilverwareWasWildWaterWashed == true
+                serving.AddContamination(SanitationContamination.ForCutlery(
+                    dining?.CutleryWasDirty == true,
+                    dining?.CutleryWasWildWaterWashed == true
                         ? WashProvenance.WildWater
                         : WashProvenance.Safe));
 
@@ -132,14 +132,14 @@ internal static class PlateEatingSpeedPatch
 }
 
 [HarmonyPatch(typeof(JobDriver_Ingest), "MakeNewToils")]
-internal static class IngestSilverwareToilsPatch
+internal static class IngestCutleryToilsPatch
 {
     private static void Postfix(JobDriver_Ingest __instance, ref IEnumerable<Toil> __result)
     {
-        __result = AddSilverwarePickup(__instance, __result);
+        __result = AddCutleryPickup(__instance, __result);
     }
 
-    private static IEnumerable<Toil> AddSilverwarePickup(
+    private static IEnumerable<Toil> AddCutleryPickup(
         JobDriver_Ingest driver,
         IEnumerable<Toil> original)
     {
@@ -170,11 +170,11 @@ internal static class IngestSilverwareToilsPatch
         }
 
         if (pawn.CurJob is { } job && DiningSessionRegistry.HasPickup(job) &&
-            DiningSessionRegistry.SilverwareFor(job) is { } silverware)
+            DiningSessionRegistry.CutleryFor(job) is { } cutlery)
         {
             yield return new Toil
             {
-                initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, silverware),
+                initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, cutlery),
                 defaultCompleteMode = ToilCompleteMode.Instant
             };
             yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.Touch);
@@ -280,9 +280,9 @@ internal static class UnifiedFoodPoisoningPatch
 
         var dining = DiningSessionRegistry.Current(ingester);
         var contamination = record.Contamination;
-        contamination |= SanitationContamination.ForSilverware(
-            dining?.SilverwareWasDirty == true,
-            dining?.SilverwareWasWildWaterWashed == true
+        contamination |= SanitationContamination.ForCutlery(
+            dining?.CutleryWasDirty == true,
+            dining?.CutleryWasWildWaterWashed == true
                 ? WashProvenance.WildWater
                 : WashProvenance.Safe);
 
@@ -305,7 +305,7 @@ internal static class UnifiedFoodPoisoningPatch
             servicePlate is { } plate
                 ? KitchenwareRuntime.ServiceScore(plate)
                 : null,
-            dining?.SilverwareServiceScore,
+            dining?.CutleryServiceScore,
             record.MicrowaveReheatCount,
             settings.MicrowaveExtraPoisonChance,
             settings.FoodPoisoningEffectScale,

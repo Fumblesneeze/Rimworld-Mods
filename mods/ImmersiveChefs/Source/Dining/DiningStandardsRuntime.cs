@@ -37,18 +37,18 @@ internal static class DiningStandardsRuntime
         }
 
         var plate = dining?.PlateServiceSnapshot ?? KitchenwareRuntime.Describe(dining?.Plate);
-        var silverware = KitchenwareRuntime.Describe(dining?.Silverware);
+        var cutlery = KitchenwareRuntime.Describe(dining?.Cutlery);
         // Every covered serving is expected to carry its actual embedded plate. This also
         // catches meals imported from an older save or produced by another mod, which have
         // no EmergencyUnplated marker but are still visibly unplated at the table.
         var missingPlate = plate is null;
-        var missingSilverware = silverware is null;
+        var missingCutlery = cutlery is null;
         if (DiningOutcomeCalculator.HasDirtyWare(serving.Contamination))
         {
             return 4;
         }
 
-        if (missingPlate && missingSilverware)
+        if (missingPlate && missingCutlery)
         {
             return 3;
         }
@@ -58,20 +58,20 @@ internal static class DiningStandardsRuntime
             return 2;
         }
 
-        if (missingSilverware)
+        if (missingCutlery)
         {
             return 1;
         }
 
         var requirement = EffectiveRequirement(pawn);
-        if (requirement is null || plate is null || silverware is null)
+        if (requirement is null || plate is null || cutlery is null)
         {
             return 0;
         }
 
         var missesMaterial = !MeetsMaterial(plate.Value, requirement.Value.Material) ||
-                             !MeetsMaterial(silverware.Value, requirement.Value.Material);
-        var comfort = Math.Max(0f, Math.Min(1f, (plate.Value.Comfort + silverware.Value.Comfort) / 2f));
+                             !MeetsMaterial(cutlery.Value, requirement.Value.Material);
+        var comfort = Math.Max(0f, Math.Min(1f, (plate.Value.Comfort + cutlery.Value.Comfort) / 2f));
         var missesComfort = comfort < requirement.Value.MinimumComfort;
         var complexity = MealComplexityRuntime.Classify(mealDef);
         var missesComplexity = complexity.HasValue && complexity.Value < requirement.Value.Complexity;

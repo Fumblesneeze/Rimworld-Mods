@@ -4,7 +4,7 @@ public enum KitchenwareProduct
 {
     Cookware,
     Plate,
-    Silverware,
+    Cutlery,
     ChefsKnife
 }
 
@@ -48,7 +48,7 @@ public static class KitchenMaterialFabricationPolicy
         KitchenMaterialClassification classification)
     {
         if (recipeTier == FabricationTier.Modern &&
-            product is KitchenwareProduct.Plate or KitchenwareProduct.Silverware)
+            product is KitchenwareProduct.Plate or KitchenwareProduct.Cutlery)
         {
             return classification.Kind is not (
                 KitchenMaterialKind.PrimitiveStone or
@@ -186,7 +186,7 @@ public sealed class KitchenMaterialClassifier
 
         if (WoodDefs.Contains(material.DefName) || (material.IsWoody && !material.IsMetallic && !material.IsStony))
         {
-            return product is KitchenwareProduct.Plate or KitchenwareProduct.Silverware
+            return product is KitchenwareProduct.Plate or KitchenwareProduct.Cutlery
                 ? new KitchenMaterialClassification(KitchenMaterialKind.Wood, FabricationTier.Soft)
                 : null;
         }
@@ -204,7 +204,7 @@ public sealed class KitchenMaterialClassifier
 
         if (kind is KitchenMaterialKind.Plastic or KitchenMaterialKind.Ceramic)
         {
-            if (product is not (KitchenwareProduct.Plate or KitchenwareProduct.Silverware))
+            if (product is not (KitchenwareProduct.Plate or KitchenwareProduct.Cutlery))
             {
                 return null;
             }
@@ -213,7 +213,7 @@ public sealed class KitchenMaterialClassifier
         }
 
         if (kind == KitchenMaterialKind.Lead &&
-            product is KitchenwareProduct.Plate or KitchenwareProduct.Silverware)
+            product is KitchenwareProduct.Plate or KitchenwareProduct.Cutlery)
         {
             return new KitchenMaterialClassification(kind, FabricationTier.Soft);
         }

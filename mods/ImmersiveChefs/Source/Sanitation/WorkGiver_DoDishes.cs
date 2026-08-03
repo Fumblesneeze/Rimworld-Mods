@@ -51,7 +51,7 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
     private static bool IsDirtyWare(Thing thing)
     {
         return thing.def.GetModExtension<KitchenwareExtension>()?.product is
-                   KitchenwareProduct.Cookware or KitchenwareProduct.Plate or KitchenwareProduct.Silverware &&
+                   KitchenwareProduct.Cookware or KitchenwareProduct.Plate or KitchenwareProduct.Cutlery &&
                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true;
     }
 

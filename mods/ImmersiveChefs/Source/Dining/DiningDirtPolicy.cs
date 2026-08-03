@@ -8,11 +8,11 @@ internal static class DiningDirtPolicy
         WareRequirementMode requirementMode,
         bool ingestionCompleted,
         bool mapAvailable,
-        bool hasSilverware) =>
+        bool hasCutlery) =>
         coveredMeal &&
         humanlikeDiner &&
         requirementMode != WareRequirementMode.Off &&
         ingestionCompleted &&
         mapAvailable &&
-        !hasSilverware;
+        !hasCutlery;
 }

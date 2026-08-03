@@ -15,7 +15,7 @@ public static class KitchenwareStoragePolicy
 
     internal static bool IsReusableKitchenware(ThingDef def) =>
         def.GetModExtension<KitchenwareExtension>()?.product is
-            KitchenwareProduct.Cookware or KitchenwareProduct.Plate or KitchenwareProduct.Silverware;
+            KitchenwareProduct.Cookware or KitchenwareProduct.Plate or KitchenwareProduct.Cutlery;
 }
 
 public sealed class SpecialThingFilterWorker_CleanKitchenware : SpecialThingFilterWorker

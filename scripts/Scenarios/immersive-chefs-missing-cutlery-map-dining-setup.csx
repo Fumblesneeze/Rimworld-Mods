@@ -7,7 +7,7 @@ new System.Func<string>(() =>
     var map = Find.CurrentMap;
     if (map == null)
     {
-        throw new System.InvalidOperationException("The missing-silverware scenario requires a playable map.");
+        throw new System.InvalidOperationException("The missing-cutlery scenario requires a playable map.");
     }
 
     stage = "generate pawn";
@@ -41,7 +41,7 @@ new System.Func<string>(() =>
 
     if (!diningCell.IsValid)
     {
-        throw new System.InvalidOperationException("Could not find a dirt-accepting room for the missing-silverware fixture.");
+        throw new System.InvalidOperationException("Could not find a dirt-accepting room for the missing-cutlery fixture.");
     }
 
     stage = "clear and wall fixture";
@@ -89,7 +89,7 @@ new System.Func<string>(() =>
     });
     if (!meal.GetComp<ImmersiveChefs.CompEmbeddedWare>().TryEmbedPlate(plate))
     {
-        throw new System.InvalidOperationException("Could not embed the missing-silverware scenario plate.");
+        throw new System.InvalidOperationException("Could not embed the missing-cutlery scenario plate.");
     }
 
     stage = "spawn fixture";

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "name": "immersive-chefs-forkless-map",
+  "name": "immersive-chefs-cutlery-free-map",
   "requiredPackageIds": [
     "brrainz.harmony",
     "fumblesneeze.immersivechefs"
@@ -9,17 +9,17 @@
     {
       "id": "setup",
       "kind": "csharp",
-      "sourceFile": "immersive-chefs-missing-silverware-map-dining-setup.csx"
+      "sourceFile": "immersive-chefs-missing-cutlery-map-dining-setup.csx"
     },
     {
       "id": "ready",
       "kind": "screenshot",
-      "fileName": "scenario-missing-silverware-map-dining-ready.png"
+      "fileName": "scenario-missing-cutlery-map-dining-ready.png"
     },
     {
       "id": "arm",
       "kind": "csharp",
-      "sourceFile": "immersive-chefs-missing-silverware-map-dining-arm.csx"
+      "sourceFile": "immersive-chefs-missing-cutlery-map-dining-arm.csx"
     }
   ]
 }

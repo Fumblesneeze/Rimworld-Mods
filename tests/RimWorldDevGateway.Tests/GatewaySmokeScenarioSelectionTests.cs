@@ -134,13 +134,13 @@ public sealed class GatewaySmokeScenarioSelectionTests
             Assert.That(source, Does.Contain("escort.skills.GetSkill(SkillDefOf.Plants).Level = 0"));
             Assert.That(source, Does.Contain("innerContainer.ClearAndDestroyContents()"));
             Assert.That(source, Does.Contain("TryEmbedPlate(plate)"));
-            Assert.That(source, Does.Contain("innerContainer.TryAdd(silverware"));
+            Assert.That(source, Does.Contain("innerContainer.TryAdd(cutlery"));
             Assert.That(source, Does.Not.Contain("innerContainer.TryAdd(plate"));
         });
     }
 
     [Test]
-    public void Animal_map_scenario_source_shape_spawns_only_the_meal_and_loose_silverware_before_native_ingestion()
+    public void Animal_map_scenario_source_shape_spawns_only_the_meal_and_loose_cutlery_before_native_ingestion()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
         var setup = File.ReadAllText(Path.Combine(
@@ -158,7 +158,7 @@ public sealed class GatewaySmokeScenarioSelectionTests
             Assert.That(setup, Does.Not.Contain("Faction.OfPlayer"));
             Assert.That(setup, Does.Contain("GenSpawn.Spawn(animal"));
             Assert.That(setup, Does.Contain("GenSpawn.Spawn(meal"));
-            Assert.That(setup, Does.Contain("GenSpawn.Spawn(silverware"));
+            Assert.That(setup, Does.Contain("GenSpawn.Spawn(cutlery"));
             Assert.That(setup, Does.Contain("TryEmbedPlate(plate)"));
             Assert.That(setup, Does.Not.Contain("GenSpawn.Spawn(plate"));
             Assert.That(setup, Does.Contain("Find.Selector.Select(meal"));
