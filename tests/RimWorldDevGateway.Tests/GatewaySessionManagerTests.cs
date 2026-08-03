@@ -1,5 +1,4 @@
 using System.IO;
-using System.Threading.Tasks;
 using RimWorldDevGateway.Contracts;
 using NUnit.Framework;
 
@@ -68,7 +67,7 @@ public sealed class GatewaySessionManagerTests
     }
 
     [Test]
-    public void Stop_retries_a_transient_lock_while_replacing_the_owned_run_tombstone()
+    public void Stop_classifies_a_locked_run_tombstone_and_retains_it_for_a_later_retry()
     {
         var root = Path.Combine(
             TestContext.CurrentContext.WorkDirectory,
@@ -76,7 +75,6 @@ public sealed class GatewaySessionManagerTests
         Directory.CreateDirectory(root);
         GatewaySessionLease? lease = null;
         FileStream? runLock = null;
-        Task? release = null;
         try
         {
             var now = new DateTimeOffset(2026, 8, 3, 8, 30, 0, TimeSpan.Zero);
@@ -86,7 +84,8 @@ public sealed class GatewaySessionManagerTests
                 () => now,
                 () => "run-transient-lock");
             lease = manager.Prepare(4321, now.AddMinutes(-1), "1.6", "1.0");
-            lease.Publish(40123);
+            var active = lease.Publish(40123);
+            var currentPath = Path.Combine(root, "DevGateway", "current.json");
             var runPath = Path.Combine(
                 root,
                 "DevGateway",
@@ -94,15 +93,22 @@ public sealed class GatewaySessionManagerTests
                 "run-transient-lock",
                 "session.json");
             runLock = new FileStream(runPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            release = Task.Run(async () =>
+
+            var transient = Assert.Throws<GatewayTransientSessionCleanupException>(() => lease.Stop());
+            var retained = GatewayContractJson.ReadFile<GatewaySessionManifest>(runPath);
+            Assert.Multiple(() =>
             {
-                await Task.Delay(75);
-                runLock.Dispose();
-                runLock = null;
+                Assert.That(transient!.InnerException, Is.TypeOf<IOException>());
+                Assert.That(lease.IsStopped, Is.False);
+                Assert.That(File.Exists(currentPath), Is.False);
+                Assert.That(retained.State, Is.EqualTo("active"));
+                Assert.That(retained.Token, Is.EqualTo(active.Token));
+                Assert.That(Directory.GetFiles(Path.GetDirectoryName(runPath)!, "*.tmp"), Is.Empty);
             });
 
+            runLock.Dispose();
+            runLock = null;
             lease.Stop();
-            release.GetAwaiter().GetResult();
 
             var tombstone = GatewayContractJson.ReadFile<GatewaySessionManifest>(runPath);
             Assert.Multiple(() =>
@@ -114,11 +120,30 @@ public sealed class GatewaySessionManagerTests
         }
         finally
         {
-            release?.GetAwaiter().GetResult();
             runLock?.Dispose();
             lease?.Stop();
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    [Test]
+    public void Transient_cleanup_classification_is_limited_to_windows_sharing_and_lock_violations()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                GatewaySessionManager.IsTransientSharingViolation(
+                    new HResultIOException(unchecked((int)0x80070020))),
+                Is.True);
+            Assert.That(
+                GatewaySessionManager.IsTransientSharingViolation(
+                    new HResultIOException(unchecked((int)0x80070021))),
+                Is.True);
+            Assert.That(
+                GatewaySessionManager.IsTransientSharingViolation(
+                    new HResultIOException(unchecked((int)0x80070070))),
+                Is.False);
+        });
     }
 
     [Test]
@@ -274,8 +299,8 @@ public sealed class GatewaySessionManagerTests
 
             Assert.That(
                 () => firstLease.Stop(),
-                Throws.TypeOf<IOException>()
-                    .With.Message.Contains("could not be cleaned up"));
+                Throws.TypeOf<GatewayTransientSessionCleanupException>()
+                    .With.Message.Contains("transient file lock"));
             Assert.Multiple(() =>
             {
                 Assert.That(firstLease.IsStopped, Is.False);
@@ -304,6 +329,14 @@ public sealed class GatewaySessionManagerTests
             replacementLease?.Stop();
             firstLease?.Stop();
             Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private sealed class HResultIOException : IOException
+    {
+        internal HResultIOException(int hresult)
+        {
+            HResult = hresult;
         }
     }
 }

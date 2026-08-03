@@ -84,6 +84,46 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Wait-GatewayStoppedTombstone {
+    param(
+        [Parameter(Mandatory)]
+        [string]$LiveManifestPath,
+
+        [Parameter(Mandatory)]
+        [string]$TombstonePath,
+
+        [ValidateRange(1, 60000)]
+        [int]$TimeoutMilliseconds = 15000
+    )
+
+    $deadline = [datetime]::UtcNow.AddMilliseconds($TimeoutMilliseconds)
+    do {
+        if (-not (Test-Path -LiteralPath $LiveManifestPath -PathType Leaf) -and
+            (Test-Path -LiteralPath $TombstonePath -PathType Leaf)) {
+            try {
+                $candidate = Get-Content -LiteralPath $TombstonePath -Raw | ConvertFrom-Json
+                $hasToken = $candidate.PSObject.Properties.Name -contains 'token' -and
+                    -not [string]::IsNullOrEmpty([string]$candidate.token)
+                if ([string]$candidate.state -eq 'stopped' -and -not $hasToken) {
+                    return $candidate
+                }
+            }
+            catch {
+                # The atomic replace may still be in progress. Poll until the same bounded deadline.
+            }
+        }
+
+        Start-Sleep -Milliseconds 25
+    }
+    while ([datetime]::UtcNow -lt $deadline)
+
+    if (Test-Path -LiteralPath $LiveManifestPath -PathType Leaf) {
+        throw 'Controlled shutdown did not remove the live gateway manifest.'
+    }
+
+    throw "Controlled shutdown did not leave a readable credential-free stopped tombstone at $TombstonePath"
+}
+
 $knownExpansionIds = @(
     'ludeon.rimworld.royalty',
     'ludeon.rimworld.ideology',
@@ -5824,23 +5864,13 @@ try {
         throw "Controlled gateway shutdown failed with HTTP $([int]$shutdownResponse.StatusCode). See $shutdownPath"
     }
 
-    $shutdownDeadline = [datetime]::UtcNow.AddSeconds(15)
-    while ((Test-Path -LiteralPath $manifestPath -PathType Leaf) -and [datetime]::UtcNow -lt $shutdownDeadline) {
-        Start-Sleep -Milliseconds 250
-    }
-
-    if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
-        throw 'Controlled shutdown did not remove the live gateway manifest.'
-    }
-
     $tombstonePath = Join-Path $savedDataPath "DevGateway\Sessions\$($manifest.runId)\session.json"
     $gatewayRequestJournalPath = Join-Path $savedDataPath "DevGateway\Sessions\$($manifest.runId)\requests.jsonl"
     $gatewayLastRequestPath = Join-Path $savedDataPath "DevGateway\Sessions\$($manifest.runId)\last-request.json"
-    $tombstone = Get-Content -LiteralPath $tombstonePath -Raw | ConvertFrom-Json
-    if ($tombstone.state -ne 'stopped' -or
-        ($tombstone.PSObject.Properties.Name -contains 'token' -and -not [string]::IsNullOrEmpty([string]$tombstone.token))) {
-        throw "Controlled shutdown did not leave a credential-free stopped tombstone at $tombstonePath"
-    }
+    $tombstone = Wait-GatewayStoppedTombstone `
+        -LiveManifestPath $manifestPath `
+        -TombstonePath $tombstonePath `
+        -TimeoutMilliseconds 15000
 
     $result = [pscustomobject]@{
         Status = 'passed'

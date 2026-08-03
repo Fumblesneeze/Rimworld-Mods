@@ -209,7 +209,9 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
     private GatewayRuntime? runtime;
     private GatewayIntegrationTestCoordinator? integrationTests;
     private int stopping;
+    private int shutdownInitialized;
     private int shutdownRequestedFrame = -1;
+    private DateTimeOffset? shutdownRetryDeadlineUtc;
 
     private void OnGUI()
     {
@@ -291,8 +293,10 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
 
         if (Time.frameCount > shutdownRequestedFrame)
         {
-            Shutdown();
-            UnityEngine.Object.Destroy(gameObject);
+            if (TryShutdown(allowRetry: true))
+            {
+                UnityEngine.Object.Destroy(gameObject);
+            }
         }
     }
 
@@ -312,42 +316,61 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
 
     private void OnApplicationQuitting()
     {
-        Shutdown();
+        TryShutdown(allowRetry: false);
     }
 
     private void OnApplicationQuit()
     {
-        Shutdown();
+        TryShutdown(allowRetry: false);
     }
 
     private void OnDestroy()
     {
-        Shutdown();
+        TryShutdown(allowRetry: false);
         GatewayRuntimeBootstrap.NotifyDestroyed(this);
     }
 
-    private void Shutdown()
+    private bool TryShutdown(bool allowRetry)
     {
         if (Interlocked.Exchange(ref stopping, 1) != 0)
         {
-            return;
+            return runtime is null;
         }
 
-        Application.quitting -= OnApplicationQuitting;
-        StopAllCoroutines();
+        if (Interlocked.Exchange(ref shutdownInitialized, 1) == 0)
+        {
+            Application.quitting -= OnApplicationQuitting;
+            StopAllCoroutines();
+        }
+
         try
         {
-            integrationTests?.Dispose();
             runtime?.Stop();
+            integrationTests?.Dispose();
+            integrationTests = null;
+            runtime = null;
+            return true;
         }
         catch (Exception exception)
         {
+            var nowUtc = DateTimeOffset.UtcNow;
+            if (allowRetry)
+            {
+                shutdownRetryDeadlineUtc ??= nowUtc.Add(GatewayShutdownRetryPolicy.RetryWindow);
+                if (GatewayShutdownRetryPolicy.ShouldRetry(
+                        exception,
+                        nowUtc,
+                        shutdownRetryDeadlineUtc.Value))
+                {
+                    Volatile.Write(ref stopping, 0);
+                    return false;
+                }
+            }
+
             Log.Error("[RimWorldDevGateway] Runtime shutdown encountered cleanup failures: " + exception);
-        }
-        finally
-        {
             integrationTests = null;
             runtime = null;
+            return true;
         }
     }
 }

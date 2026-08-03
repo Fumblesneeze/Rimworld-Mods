@@ -9,6 +9,35 @@ namespace RimWorldDevGateway.Tests;
 public sealed class GatewayRuntimeTests
 {
     [Test]
+    public void Host_shutdown_retry_policy_is_bounded_and_limited_to_transient_session_locks()
+    {
+        var now = new DateTimeOffset(2026, 8, 3, 9, 0, 0, TimeSpan.Zero);
+        var deadline = now.AddSeconds(1);
+        var transient = new AggregateException(
+            new InvalidOperationException(
+                "outer",
+                new GatewayTransientSessionCleanupException(
+                    "locked",
+                    new IOException("sharing violation"))));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                GatewayShutdownRetryPolicy.ShouldRetry(transient, now, deadline),
+                Is.True);
+            Assert.That(
+                GatewayShutdownRetryPolicy.ShouldRetry(transient, deadline, deadline),
+                Is.False);
+            Assert.That(
+                GatewayShutdownRetryPolicy.ShouldRetry(
+                    new IOException("disk full"),
+                    now,
+                    deadline),
+                Is.False);
+        });
+    }
+
+    [Test]
     public void Start_binds_before_publishing_and_is_idempotent()
     {
         var root = NewRoot();

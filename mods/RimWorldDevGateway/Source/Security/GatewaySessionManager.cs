@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
-using System.Threading;
 using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway;
@@ -67,11 +66,17 @@ public sealed class GatewaySessionLease : IDisposable
     }
 }
 
+internal sealed class GatewayTransientSessionCleanupException : IOException
+{
+    internal GatewayTransientSessionCleanupException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
+
 public sealed class GatewaySessionManager
 {
     private const string ApiVersion = "1";
-    private const int AtomicReplaceAttempts = 8;
-    private const int AtomicReplaceRetryDelayMilliseconds = 25;
     private readonly object sync = new();
     private readonly string saveDataRoot;
     private readonly Func<byte[]> tokenFactory;
@@ -283,6 +288,13 @@ public sealed class GatewaySessionManager
 
         if (throwOnFailure)
         {
+            if (IsTransientSharingViolation(failure))
+            {
+                throw new GatewayTransientSessionCleanupException(
+                    "The gateway session cleanup was blocked by a transient file lock.",
+                    failure);
+            }
+
             throw new IOException("The gateway session could not be cleaned up completely.", failure);
         }
     }
@@ -522,7 +534,7 @@ public sealed class GatewaySessionManager
             File.WriteAllText(temporaryPath, GatewayContractJson.Write(value), new System.Text.UTF8Encoding(false));
             if (File.Exists(path))
             {
-                ReplaceAtomic(temporaryPath, path);
+                File.Replace(temporaryPath, path, null, ignoreMetadataErrors: true);
             }
             else
             {
@@ -538,22 +550,20 @@ public sealed class GatewaySessionManager
         }
     }
 
-    private static void ReplaceAtomic(string temporaryPath, string destinationPath)
+    internal static bool IsTransientSharingViolation(Exception exception)
     {
-        for (var attempt = 1; ; attempt++)
+        for (Exception? current = exception; current is not null; current = current.InnerException)
         {
-            try
+            if (current is IOException ioException)
             {
-                File.Replace(temporaryPath, destinationPath, null, ignoreMetadataErrors: true);
-                return;
-            }
-            catch (IOException) when (
-                attempt < AtomicReplaceAttempts &&
-                File.Exists(temporaryPath) &&
-                File.Exists(destinationPath))
-            {
-                Thread.Sleep(AtomicReplaceRetryDelayMilliseconds);
+                var nativeError = ioException.HResult & 0xFFFF;
+                if (nativeError is 32 or 33)
+                {
+                    return true;
+                }
             }
         }
+
+        return false;
     }
 }
