@@ -494,6 +494,51 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Recipe_complexity_scenario_uses_exact_vanilla_recipes_and_native_bill_jobs()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-recipe-complexity.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-recipe-complexity-setup.csx");
+        var stockPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-recipe-complexity-stock.csx");
+        var armPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-recipe-complexity-arm.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(stockPath), Is.True);
+            Assert.That(File.Exists(armPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var stock = File.ReadAllText(stockPath);
+        var arm = File.ReadAllText(armPath);
+        var scenarioSource = setup + stock + arm;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-recipe-complexity"));
+            Assert.That(setup, Does.Contain("CookMealSimple"));
+            Assert.That(setup, Does.Contain("CookMealFine"));
+            Assert.That(setup, Does.Contain("CookMealLavish"));
+            Assert.That(stock, Does.Contain("CompSanitation"));
+            Assert.That(arm, Does.Contain("WorkGiver_DoBill"));
+            Assert.That(arm, Does.Contain("JobOnThing"));
+            Assert.That(scenarioSource, Does.Not.Contain("MakeRecipeProducts"));
+            Assert.That(scenarioSource, Does.Not.Contain("ThingMaker.MakeThing(ThingDefOf.Meal"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

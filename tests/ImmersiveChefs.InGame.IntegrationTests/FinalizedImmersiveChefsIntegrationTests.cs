@@ -213,6 +213,79 @@ public static class FinalizedImmersiveChefsIntegrationTests
             "Packaged survival meals must remain a hand-eaten travel-food exclusion.");
     }
 
+    [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedRecipeWorkUsesOnlyTheExactComplexityTable()
+    {
+        var workAmountMethod = AccessTools.Method(typeof(RecipeDef), nameof(RecipeDef.WorkAmountForStuff));
+        var ownedPostfixes = Harmony.GetPatchInfo(workAmountMethod)?.Postfixes
+            .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0;
+        IntegrationAssert.Equal(
+            1,
+            ownedPostfixes,
+            "Recipe work amount must have exactly one Immersive Chefs Harmony postfix.");
+
+        foreach (var defName in new[] { "CookMealSimple", "CookMealSimpleBulk" })
+        {
+            AssertWorkMultiplier(defName, 0.75f);
+        }
+
+        foreach (var defName in new[]
+                 {
+                     "CookMealFine", "CookMealFine_Veg", "CookMealFine_Meat",
+                     "CookMealFineBulk", "CookMealFineBulk_Meat", "CookMealFineBulk_Veg"
+                 })
+        {
+            AssertWorkMultiplier(defName, 2f);
+        }
+
+        foreach (var defName in new[]
+                 {
+                     "CookMealLavish", "CookMealLavish_Meat", "CookMealLavish_Veg",
+                     "CookMealLavishBulk", "CookMealLavishBulk_Veg", "CookMealLavishBulk_Meat"
+                 })
+        {
+            AssertWorkMultiplier(defName, 3f);
+        }
+
+        AssertWorkMultiplier("CookMealSurvival", 1f);
+        AssertWorkMultiplier("Make_Pemmican", 1f);
+
+        var vanillaCookingExpandedLoaded = LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(mod.PackageId, "vanillaexpanded.vcooke", StringComparison.OrdinalIgnoreCase));
+        var unclassifiedBake = DefDatabase<RecipeDef>.GetNamedSilentFail("VCE_CookBakeSimple");
+        if (vanillaCookingExpandedLoaded)
+        {
+            IntegrationAssert.NotNull(
+                unclassifiedBake,
+                "The active Vanilla Cooking Expanded matrix must finalize its simple-bake recipe.");
+            AssertWorkMultiplier("VCE_CookBakeSimple", 1f);
+        }
+        else
+        {
+            IntegrationAssert.Null(
+                unclassifiedBake,
+                "The base matrix must not invent a Vanilla Cooking Expanded recipe.");
+        }
+    }
+
+    private static void AssertWorkMultiplier(string defName, float expectedMultiplier)
+    {
+        var recipe = DefDatabase<RecipeDef>.GetNamed(defName);
+        var actualMultiplier = RecipeWorkRuntime.MultiplierFor(recipe);
+        IntegrationAssert.True(
+            Math.Abs(actualMultiplier - expectedMultiplier) < 0.0001f,
+            $"{defName} must retain the exact {expectedMultiplier:0.##}x complexity multiplier.");
+        var baseWorkAmount = recipe.workAmount >= 0f
+            ? recipe.workAmount
+            : recipe.products[0].thingDef.GetStatValueAbstract(StatDefOf.WorkToMake, null);
+        var actualWorkAmount = recipe.WorkAmountForStuff(null);
+        var expectedWorkAmount = baseWorkAmount * expectedMultiplier;
+        IntegrationAssert.True(
+            Math.Abs(actualWorkAmount - expectedWorkAmount) < 0.01f,
+            $"{defName} must expose its Harmony-adjusted finalized work amount; " +
+            $"expected {expectedWorkAmount:0.##} from base {baseWorkAmount:0.##}, actual {actualWorkAmount:0.##}.");
+    }
+
     [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void CaravanIngestionReturnsTheExactWareWashedInWildWater()
     {

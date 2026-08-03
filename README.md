@@ -225,6 +225,17 @@ Use the cooking-ware-selection scene to compare clean-first selection with urgen
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the recipe-complexity scene to compare the exact initial vanilla timing table. It creates three sealed, otherwise matched fueled-stove kitchens, assigns `CookMealSimple`, `CookMealFine`, and `CookMealLavish` through real one-shot bills, asks finalized `WorkGiver_DoBill` for all three native jobs, and pauses before work begins. Unpause at Normal speed: the Simple meal should visibly finish first, the Fine meal second, and the Lavish meal last:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-recipe-complexity `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus cutlery (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
 
 ```powershell

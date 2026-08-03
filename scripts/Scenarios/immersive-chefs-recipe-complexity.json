@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-recipe-complexity",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-recipe-complexity-setup.csx"
+    },
+    {
+      "id": "stock",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-recipe-complexity-stock.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-recipe-complexity-ready.png"
+    },
+    {
+      "id": "arm",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-recipe-complexity-arm.csx"
+    }
+  ]
+}
