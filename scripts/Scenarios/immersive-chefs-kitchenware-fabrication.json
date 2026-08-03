@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-kitchenware-fabrication",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-kitchenware-fabrication-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-kitchenware-fabrication-ready.png"
+    },
+    {
+      "id": "arm",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-kitchenware-fabrication-arm.csx"
+    }
+  ]
+}

@@ -259,6 +259,55 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Kitchenware_fabrication_scenario_uses_real_bills_jobs_and_power()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptor = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-fabrication.json"));
+        var setup = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-fabrication-setup.csx"));
+        var arm = File.ReadAllText(Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-fabrication-arm.csx"));
+        var primitiveWorkerBlock = setup.Substring(
+            setup.IndexOf("Pawn primitiveCrafter", StringComparison.Ordinal),
+            setup.IndexOf("Pawn modernCrafter", StringComparison.Ordinal) -
+            setup.IndexOf("Pawn primitiveCrafter", StringComparison.Ordinal));
+        var modernWorkerBlock = setup.Substring(
+            setup.IndexOf("Pawn modernCrafter", StringComparison.Ordinal),
+            setup.IndexOf("if (primitiveCrafter == null", StringComparison.Ordinal) -
+            setup.IndexOf("Pawn modernCrafter", StringComparison.Ordinal));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("\"immersive-chefs-kitchenware-fabrication\""));
+            Assert.That(descriptor, Does.Contain("\"kind\": \"csharp\""));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_MakePrimitiveCookware"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_MakeModernCookware"));
+            Assert.That(setup, Does.Contain("BlocksGranite"));
+            Assert.That(setup, Does.Contain("ThingDefOf.Steel"));
+            Assert.That(setup, Does.Contain("new Bill_Production"));
+            Assert.That(setup, Does.Contain("BillStoreModeDefOf.DropOnFloor"));
+            Assert.That(setup, Does.Contain("CompPowerBattery"));
+            Assert.That(setup, Does.Contain("UpdatePowerNetsAndConnections_First"));
+            Assert.That(setup, Does.Contain("WorkTypeDefOf.Smithing"));
+            Assert.That(
+                primitiveWorkerBlock,
+                Does.Contain("WorkTypeIsDisabled(WorkTypeDefOf.Crafting)"));
+            Assert.That(
+                modernWorkerBlock,
+                Does.Contain("WorkTypeIsDisabled(WorkTypeDefOf.Smithing)"));
+            Assert.That(arm, Does.Contain("WorkGiver_DoBill"));
+            Assert.That(arm, Does.Contain("JobOnThing"));
+            Assert.That(arm, Does.Contain("StartJob"));
+            Assert.That(arm, Does.Contain("Find.TickManager.Pause()"));
+            Assert.That(arm, Does.Not.Contain("Find.TickManager.TogglePaused()"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

@@ -170,6 +170,17 @@ Run the comprehensive Gateway surface regression explicitly when that is what yo
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -Scenario gateway-regression -TimeoutSeconds 300
 ```
 
+Use the kitchenware-fabrication scene to exercise two real one-shot bills side by side: primitive granite cookware at a crafting spot and modern steel cookware at a powered machining table. The generated workers are restricted to their bill, both native `DoBill` jobs are armed while paused, and no product is synthesized. Unpause with Space and choose a native speed; afterward exactly one Stuff-colored cookware set should lie at each station, with the granite inspector showing the deliberately inferior primitive profile and the steel inspector showing the modern profile:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-kitchenware-fabrication `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Start directly at the reusable Immersive Chefs caravan-dining scene, with the caravan selected, its native Items tab showing a plated meal plus cutlery (the plate is embedded and therefore not yet a separate inventory row), the pawn hungry, and the game paused:
 
 ```powershell

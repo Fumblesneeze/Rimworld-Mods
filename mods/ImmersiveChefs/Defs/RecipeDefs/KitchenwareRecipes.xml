@@ -15,6 +15,10 @@
     </fixedIngredientFilter>
   </RecipeDef>
 
+  <RecipeDef Name="ImmersiveChefs_SmithingKitchenwareRecipeBase" ParentName="ImmersiveChefs_KitchenwareRecipeBase" Abstract="True">
+    <requiredGiverWorkType>Smithing</requiredGiverWorkType>
+  </RecipeDef>
+
   <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
     <defName>ImmersiveChefs_MakePrimitiveCookware</defName>
     <label>make primitive stone cookware</label>
@@ -29,7 +33,7 @@
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cookware</product><fabricationTier>PrimitiveStone</fabricationTier></li></modExtensions>
   </RecipeDef>
 
-  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+  <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_MakeMedievalCookware</defName>
     <label>smith medieval cookware</label>
     <description>Smith one complete cookware set from an intermediate metal, with wood for handles and utensils.</description>
@@ -44,7 +48,7 @@
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cookware</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
   </RecipeDef>
 
-  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+  <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_MakeModernCookware</defName>
     <label>machine modern cookware</label>
     <description>Machine one complete cookware set from a modern metal, with wood for handles and utensils.</description>
@@ -61,7 +65,7 @@
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cookware</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
   </RecipeDef>
 
-  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+  <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_MakeChefsKnife</defName>
     <label>make chef's knife set</label>
     <description>Machine one personal chef's knife set from metal.</description>
@@ -97,7 +101,7 @@
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cutlery</product><fabricationTier>Soft</fabricationTier></li></modExtensions>
   </RecipeDef>
 
-  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+  <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_SmithPlates</defName>
     <label>smith metal plates x4</label>
     <description>Smith four plates from an intermediate metal.</description>
@@ -108,7 +112,7 @@
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
   </RecipeDef>
 
-  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+  <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_SmithCutlery</defName>
     <label>smith metal cutlery x4</label>
     <description>Smith four cutlery settings from an intermediate metal.</description>
@@ -119,7 +123,7 @@
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cutlery</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
   </RecipeDef>
 
-  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+  <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_MachinePlates</defName>
     <label>machine plates x4</label>
     <description>Machine four plates from any eligible metal or registered plastic.</description>
@@ -132,7 +136,7 @@
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
   </RecipeDef>
 
-  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+  <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_MachineCutlery</defName>
     <label>machine cutlery x4</label>
     <description>Machine four cutlery settings from any eligible metal or registered plastic.</description>

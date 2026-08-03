@@ -13,6 +13,7 @@
 - [x] 2.4 TDD GREEN: Implement ware-aware cooking and nutrient-paste job/recipe hooks without changing excluded food behavior.
 - [x] 2.5 REFACTOR: Isolate recipe classification and reservation seams so food mods can extend them without replacing core methods.
 - [ ] 2.6 IN-GAME: Verify primitive stone, soft, smithy, machining, adobe, and glitterworld acquisition paths; ceramic/porcelain absence; Stuff retention/color; belt equip without mutable knife sanitation; clean preference; emergency fallback; exact vanilla complexity; unchanged unclassified mod recipes; excluded foods; and supported nutrient-paste paths.
+  - [x] 2.6a Observe native bills produce one Stuff-retaining granite cookware set at `CraftingSpot` and one steel cookware set at a powered `TableMachining`, then compare their ordinary inspector-visible quality, cleanliness, comfort, speed, and culinary modifiers.
 
 ## 3. mods/ImmersiveChefs - Sanitation and dishwashing
 
