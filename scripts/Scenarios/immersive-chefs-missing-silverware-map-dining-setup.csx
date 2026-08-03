@@ -1,16 +1,21 @@
 new System.Func<string>(() =>
 {
     const string scenarioName = "Forkless colonist diner";
+    var stage = "resolve map";
+    try
+    {
     var map = Find.CurrentMap;
     if (map == null)
     {
         throw new System.InvalidOperationException("The missing-silverware scenario requires a playable map.");
     }
 
+    stage = "generate pawn";
     var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
     pawn.Name = new NameSingle(scenarioName);
     pawn.inventory.innerContainer.ClearAndDestroyContents();
 
+    stage = "find fixture cell";
     var diningCell = IntVec3.Invalid;
     foreach (var cell in map.AllCells.OrderBy(candidate => candidate.DistanceToSquared(map.Center)))
     {
@@ -39,6 +44,7 @@ new System.Func<string>(() =>
         throw new System.InvalidOperationException("Could not find a dirt-accepting room for the missing-silverware fixture.");
     }
 
+    stage = "clear and wall fixture";
     var room = CellRect.CenteredOn(diningCell, 4);
     foreach (var cell in room.Cells)
     {
@@ -58,6 +64,7 @@ new System.Func<string>(() =>
         }
     }
 
+    stage = "create plated meal";
     var mealCell = new IntVec3(diningCell.x + 1, 0, diningCell.z);
     var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
     var plate = (ThingWithComps)ThingMaker.MakeThing(
@@ -78,13 +85,16 @@ new System.Func<string>(() =>
         throw new System.InvalidOperationException("Could not embed the missing-silverware scenario plate.");
     }
 
+    stage = "spawn fixture";
     GenSpawn.Spawn(pawn, diningCell, map);
     GenSpawn.Spawn(meal, mealCell, map);
     pawn.needs.food.CurLevelPercentage = 0.50f;
+    stage = "frame fixture";
     Find.CameraDriver.JumpToCurrentMapLoc(diningCell);
     Find.CameraDriver.SetRootSize(12f);
     Find.Selector.ClearSelection();
     Find.Selector.Select(pawn);
+    stage = "format result";
     return string.Format(
         System.Globalization.CultureInfo.InvariantCulture,
         "{0}|{1}|{2}|{3}",
@@ -92,4 +102,11 @@ new System.Func<string>(() =>
         meal.ThingID,
         plate.ThingID,
         diningCell);
+    }
+    catch (System.Exception error)
+    {
+        throw new System.InvalidOperationException(
+            stage + ": " + error.GetType().Name + ": " + error.Message,
+            error);
+    }
 })()
