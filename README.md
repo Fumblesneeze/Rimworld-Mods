@@ -133,6 +133,8 @@ Inspect a dry run first:
   -DryRun -Output json
 ```
 
+Gateway launches write an isolated `SavedData\Config\Prefs.xml` with `runInBackground=True` and `volumeMusic=0`, then start RimWorld minimized by default, so semantic/API-driven verification can continue without music or taking over the desktop. Add `-VisibleWindow` only when a person, computer-use tool, or desktop input check needs the game window; `-Scenario gateway-regression` selects a visible window automatically because it owns the FlaUI/raw-input checks. Dry-run and completed results report `Prefs`, `RunInBackground`, `MusicVolume`, and the requested `LaunchWindowStyle`; real runs also retain an exact-PID native window-state observation and fail on a mismatch. The launcher hashes the user's normal `Prefs.xml` before and after and fails if it changed.
+
 Run the product-only startup smoke without the gateway:
 
 ```powershell
@@ -215,7 +217,7 @@ Use the cutlery-free colonist scene to verify the opposite humanlike behavior. I
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell
-.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -InteractiveHoldSeconds 900 `
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow -InteractiveHoldSeconds 900 `
   -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
   -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'

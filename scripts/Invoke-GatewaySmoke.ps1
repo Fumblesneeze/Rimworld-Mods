@@ -4,7 +4,8 @@ Proves the packaged RimWorld Dev Gateway inside an isolated RimWorld process.
 
 .DESCRIPTION
 Builds and deploys only the developer gateway, writes an isolated Core-plus-gateway ModsConfig,
-launches one exact RimWorld PID, discovers its session manifest, exercises authenticated EmbedIO
+forces runInBackground and mutes music in isolated preferences, launches one exact RimWorld PID minimized by default,
+discovers its session manifest, exercises authenticated EmbedIO
 status/UI/log routes and the in-process raw C# REPL, rejects an unauthenticated call, and verifies
 that the normal ModsConfig hash did not change. With -Quicktest it waits for a playable map without
 running setup mutations. -Scenario gateway-regression explicitly runs the idempotent quickstart,
@@ -12,6 +13,8 @@ semantic-control, FlaUI, and raw-input regression; another named scenario loads 
 scripts/Scenarios. With -RunIntegrationTests
 it builds/stages startup-gated tests, verifies the selected lifecycle, and retains finalized-Def and
 test-result artifacts; -IntegrationFailureProbe is the Gateway fixture's expected-failure map run.
+Pass -VisibleWindow only when desktop UI or computer-use interaction is required; the explicit
+gateway-regression scenario selects a normal visible window automatically.
 Exit codes: 0 success,
 1 verification/runtime failure, 2 for a path or semantic input rejected after parameter binding.
 PowerShell rejects invalid ValidateRange or ValidateSet values before the script runs and reports
@@ -36,6 +39,9 @@ its own nonzero parameter-binding exit (normally 1).
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -InteractiveHoldSeconds 900
 
 .EXAMPLE
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow -InteractiveHoldSeconds 900
+
+.EXAMPLE
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -Scenario gateway-regression -TimeoutSeconds 300
 
 .EXAMPLE
@@ -56,6 +62,8 @@ param(
     [string[]]$ExpectedIntegrationTests = @(),
 
     [switch]$RequireRawClick,
+
+    [switch]$VisibleWindow,
 
     [string]$ArtifactsPath,
 
@@ -303,6 +311,7 @@ function Set-GatewaySmokeCompletionMetadata {
     param(
         [Parameter(Mandatory)][object]$Result,
         [AllowNull()][object]$NormalConfigHashAfter,
+        [AllowNull()][object]$NormalPrefsHashAfter,
         [Parameter(Mandatory)][bool]$IntegrationTestStageCleaned,
         [Parameter(Mandatory)][bool]$CredentialsSanitized,
         [Parameter(Mandatory)][string]$CredentialCleanup,
@@ -313,9 +322,13 @@ function Set-GatewaySmokeCompletionMetadata {
     if ($null -ne $NormalConfigHashAfter -and $NormalConfigHashAfter -isnot [string]) {
         throw 'NormalConfigHashAfter must be null or a string.'
     }
+    if ($null -ne $NormalPrefsHashAfter -and $NormalPrefsHashAfter -isnot [string]) {
+        throw 'NormalPrefsHashAfter must be null or a string.'
+    }
 
     $metadata = [ordered]@{
         NormalConfigHashAfter = $NormalConfigHashAfter
+        NormalPrefsHashAfter = $NormalPrefsHashAfter
         IntegrationTestStageCleaned = $IntegrationTestStageCleaned
         CredentialsSanitized = $CredentialsSanitized
         CredentialCleanup = $CredentialCleanup
@@ -834,6 +847,7 @@ function Invoke-GatewaySmokeBestEffortCleanupAction {
 function Get-GatewaySmokeOptionalHashSafely {
     param(
         [Parameter(Mandatory)][string]$Path,
+        [string]$DisplayName = 'Normal RimWorld ModsConfig.xml',
         [Parameter(Mandatory)][System.Collections.IList]$Failures
     )
 
@@ -847,12 +861,31 @@ function Get-GatewaySmokeOptionalHashSafely {
         Add-GatewaySmokeFailure `
             -Failures $Failures `
             -Category 'primary' `
-            -Message "Normal RimWorld ModsConfig.xml hash read failed: $($_.Exception.Message)"
+            -Message "$DisplayName hash read failed: $($_.Exception.Message)"
         return [pscustomobject]@{
             Succeeded = $false
             Hash = $null
         }
     }
+}
+
+function Assert-GatewaySmokeUnchangedHash {
+    param(
+        [Parameter(Mandatory)][string]$DisplayName,
+        [AllowNull()][object]$BeforeHash,
+        [Parameter(Mandatory)][object]$ReadResult,
+        [Parameter(Mandatory)][System.Collections.IList]$Failures
+    )
+
+    $afterHash = $ReadResult.Hash
+    if ([bool]$ReadResult.Succeeded -and $BeforeHash -ne $afterHash) {
+        Add-GatewaySmokeFailure `
+            -Failures $Failures `
+            -Category 'primary' `
+            -Message "$DisplayName changed during isolated verification. Before=$BeforeHash After=$afterHash"
+    }
+
+    return $afterHash
 }
 
 function Get-GatewayRuntimeLogErrors {
@@ -2130,6 +2163,90 @@ function Write-MinimalModsConfig {
     }
     finally {
         $writer.Dispose()
+    }
+}
+
+function Write-MinimalPrefs {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $settings = [System.Xml.XmlWriterSettings]::new()
+    $settings.Indent = $true
+    $settings.Encoding = [System.Text.UTF8Encoding]::new($false)
+    $writer = [System.Xml.XmlWriter]::Create($Path, $settings)
+    try {
+        $writer.WriteStartDocument()
+        $writer.WriteStartElement('PrefsData')
+        $writer.WriteElementString('volumeMusic', '0')
+        $writer.WriteElementString('runInBackground', 'True')
+        $writer.WriteEndElement()
+        $writer.WriteEndDocument()
+    }
+    finally {
+        $writer.Dispose()
+    }
+}
+
+function Start-GatewayRimWorldProcess {
+    param(
+        [Parameter(Mandatory)][string]$ExecutablePath,
+        [Parameter(Mandatory)][string[]]$LaunchArguments,
+        [Parameter(Mandatory)][ValidateSet('Minimized', 'Normal')][string]$WindowStyle
+    )
+
+    return Start-Process `
+        -FilePath $ExecutablePath `
+        -ArgumentList $LaunchArguments `
+        -WindowStyle $WindowStyle `
+        -PassThru
+}
+
+function Get-GatewaySmokeWindowObservation {
+    param(
+        [Parameter(Mandatory)][System.Diagnostics.Process]$Process,
+        [Parameter(Mandatory)][ValidateSet('Minimized', 'Normal')][string]$ExpectedWindowStyle
+    )
+
+    if ($null -eq ('GatewaySmokeNativeWindowMethods' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+
+public static class GatewaySmokeNativeWindowMethods
+{
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+}
+'@
+    }
+
+    $Process.Refresh()
+    if ($Process.HasExited -or $Process.MainWindowHandle -eq [IntPtr]::Zero) {
+        throw "RimWorld PID $($Process.Id) has no live main window to observe."
+    }
+
+    $windowHandle = $Process.MainWindowHandle
+    $isMinimized = [GatewaySmokeNativeWindowMethods]::IsIconic($windowHandle)
+    $isVisible = [GatewaySmokeNativeWindowMethods]::IsWindowVisible($windowHandle)
+    $matchesExpectedStyle = if ($ExpectedWindowStyle -ceq 'Minimized') {
+        $isMinimized
+    }
+    else {
+        $isVisible -and -not $isMinimized
+    }
+
+    return [pscustomobject]@{
+        ProcessId = $Process.Id
+        MainWindowHandle = ('0x{0:X}' -f $windowHandle.ToInt64())
+        ExpectedWindowStyle = $ExpectedWindowStyle
+        IsWindowVisible = $isVisible
+        IsMinimized = $isMinimized
+        MatchesExpectedWindowStyle = $matchesExpectedStyle
+        ObservedUtc = [datetime]::UtcNow.ToString('O', [Globalization.CultureInfo]::InvariantCulture)
     }
 }
 
@@ -3772,6 +3889,7 @@ $runDirectory = Join-Path $artifactRoot $runId
 $savedDataPath = Join-Path $runDirectory 'SavedData'
 $configDirectory = Join-Path $savedDataPath 'Config'
 $modsConfigPath = Join-Path $configDirectory 'ModsConfig.xml'
+$prefsPath = Join-Path $configDirectory 'Prefs.xml'
 $playerLogPath = Join-Path $runDirectory 'Player.log'
 $screenshotPath = Join-Path $runDirectory 'main-menu.png'
 $flaUiEvidencePath = Join-Path $runDirectory 'flaui-evidence.json'
@@ -3844,6 +3962,7 @@ $interactionFinalPath = Join-Path $runDirectory 'interaction-final.json'
 $planCleanupPath = Join-Path $runDirectory 'interaction-plan-cleanup.json'
 $scenarioResultPath = Join-Path $runDirectory 'scenario.json'
 $interactiveHoldPath = Join-Path $runDirectory 'interactive-hold.json'
+$windowLaunchObservationPath = Join-Path $runDirectory 'window-launch-observation.json'
 $shutdownPath = Join-Path $runDirectory 'shutdown.json'
 $hostRequestJournalPath = Join-Path $runDirectory 'last-host-request.json'
 $failureDiagnosticsPath = Join-Path $runDirectory 'failure-diagnostics.json'
@@ -3858,9 +3977,15 @@ $script:hostRequestJournalPath = $hostRequestJournalPath
 $script:lastHostRequestRecord = $null
 $null = New-Item -Path $configDirectory -ItemType Directory -Force
 Write-MinimalModsConfig -Path $modsConfigPath -Version $rimWorldVersion
+Write-MinimalPrefs -Path $prefsPath
+$launchVisible = [bool]$VisibleWindow -or $runGatewayRegressionScenario
+$launchWindowStyle = if ($launchVisible) { 'Normal' } else { 'Minimized' }
 
-$normalModsConfigPath = Join-Path $env:USERPROFILE 'AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\ModsConfig.xml'
+$normalConfigDirectory = Join-Path $env:USERPROFILE 'AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config'
+$normalModsConfigPath = Join-Path $normalConfigDirectory 'ModsConfig.xml'
+$normalPrefsPath = Join-Path $normalConfigDirectory 'Prefs.xml'
 $normalConfigHashBefore = Get-OptionalFileHash -Path $normalModsConfigPath
+$normalPrefsHashBefore = Get-OptionalFileHash -Path $normalPrefsPath
 $launchArguments = @(
     "-savedatafolder=`"$savedDataPath`"",
     '-logFile',
@@ -3892,6 +4017,14 @@ if ($DryRun) {
         RequireRawClick = [bool]$RequireRawClick
         InteractiveHoldSeconds = [int]$InteractiveHoldSeconds
         ModsConfig = $modsConfigPath
+        Prefs = $prefsPath
+        RunInBackground = $true
+        MusicVolume = 0
+        LaunchWindowStyle = $launchWindowStyle
+        VisibleWindow = $launchVisible
+        VisibleWindowRequested = [bool]$VisibleWindow
+        WindowLaunchObservation = $null
+        WindowLaunchObservationPath = $windowLaunchObservationPath
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
         Screenshot = $screenshotPath
@@ -3907,6 +4040,8 @@ if ($DryRun) {
         LaunchArguments = $launchArguments
         NormalConfigHashBefore = $normalConfigHashBefore
         NormalConfigHashAfter = Get-OptionalFileHash -Path $normalModsConfigPath
+        NormalPrefsHashBefore = $normalPrefsHashBefore
+        NormalPrefsHashAfter = Get-OptionalFileHash -Path $normalPrefsPath
     })
     exit 0
 }
@@ -3934,6 +4069,7 @@ $failureMessage = $null
 $failureRecords = [System.Collections.Generic.List[object]]::new()
 $result = $null
 $manifest = $null
+$windowLaunchObservation = $null
 $launchedProcessStartUtc = $null
 $processCleanup = $null
 $credentialCleanup = $null
@@ -4151,7 +4287,10 @@ try {
         throw 'Deployed Gateway assembly evidence is incomplete.'
     }
 
-    $launchedProcess = Start-Process -FilePath $rimWorldExecutable -ArgumentList $launchArguments -PassThru
+    $launchedProcess = Start-GatewayRimWorldProcess `
+        -ExecutablePath $rimWorldExecutable `
+        -LaunchArguments $launchArguments `
+        -WindowStyle $launchWindowStyle
     $launchedProcessStartUtc = [datetimeoffset]::new(
         $launchedProcess.StartTime.ToUniversalTime(),
         [timespan]::Zero)
@@ -4178,6 +4317,16 @@ try {
         -SavedDataPath $savedDataPath `
         -ExpectedProcessId $launchedProcess.Id `
         -ExpectedProcessStartUtc $launchedProcessStartUtc
+
+    $windowLaunchObservation = Get-GatewaySmokeWindowObservation `
+        -Process $launchedProcess `
+        -ExpectedWindowStyle $launchWindowStyle
+    $windowLaunchObservation |
+        ConvertTo-Json -Depth 4 |
+        Set-Content -LiteralPath $windowLaunchObservationPath -Encoding UTF8
+    if (-not [bool]$windowLaunchObservation.MatchesExpectedWindowStyle) {
+        throw "RimWorld PID $($launchedProcess.Id) did not start with expected window style '$launchWindowStyle'. See $windowLaunchObservationPath"
+    }
 
     $baseUrl = [string]$manifest.baseUrl
     $unauthorized = Invoke-TrackedGatewayRequest `
@@ -5892,6 +6041,14 @@ try {
         FlaUiWindowCount = $flaUiDesktopEvidence.WindowCount
         FlaUiEvidence = if ($runGatewayRegressionScenario) { $flaUiEvidencePath } else { $null }
         ModsConfig = $modsConfigPath
+        Prefs = $prefsPath
+        RunInBackground = $true
+        MusicVolume = 0
+        LaunchWindowStyle = $launchWindowStyle
+        VisibleWindow = $launchVisible
+        VisibleWindowRequested = [bool]$VisibleWindow
+        WindowLaunchObservation = $windowLaunchObservation
+        WindowLaunchObservationPath = $windowLaunchObservationPath
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
         StatusResponse = $statusPath
@@ -5985,6 +6142,8 @@ try {
         RequiredAssemblyEvidence = @($requiredAssemblyEvidence)
         NormalConfigHashBefore = $normalConfigHashBefore
         NormalConfigHashAfter = $null
+        NormalPrefsHashBefore = $normalPrefsHashBefore
+        NormalPrefsHashAfter = $null
     }
 }
 catch {
@@ -6272,14 +6431,21 @@ catch {
 $normalConfigHashRead = Get-GatewaySmokeOptionalHashSafely `
     -Path $normalModsConfigPath `
     -Failures $failureRecords
-$normalConfigHashAfter = $normalConfigHashRead.Hash
-if ([bool]$normalConfigHashRead.Succeeded -and
-    $normalConfigHashBefore -ne $normalConfigHashAfter) {
-    Add-GatewaySmokeFailure `
-        -Failures $failureRecords `
-        -Category 'primary' `
-        -Message "Normal RimWorld ModsConfig.xml changed during isolated verification. Before=$normalConfigHashBefore After=$normalConfigHashAfter"
-}
+$normalConfigHashAfter = Assert-GatewaySmokeUnchangedHash `
+    -DisplayName 'Normal RimWorld ModsConfig.xml' `
+    -BeforeHash $normalConfigHashBefore `
+    -ReadResult $normalConfigHashRead `
+    -Failures $failureRecords
+
+$normalPrefsHashRead = Get-GatewaySmokeOptionalHashSafely `
+    -Path $normalPrefsPath `
+    -DisplayName 'Normal RimWorld Prefs.xml' `
+    -Failures $failureRecords
+$normalPrefsHashAfter = Assert-GatewaySmokeUnchangedHash `
+    -DisplayName 'Normal RimWorld Prefs.xml' `
+    -BeforeHash $normalPrefsHashBefore `
+    -ReadResult $normalPrefsHashRead `
+    -Failures $failureRecords
 
 $cleanupStatus = $null
 try {
@@ -6328,6 +6494,7 @@ if ($failureRecords.Count -ne 0) {
 $result = Set-GatewaySmokeCompletionMetadata `
     -Result $result `
     -NormalConfigHashAfter $normalConfigHashAfter `
+    -NormalPrefsHashAfter $normalPrefsHashAfter `
     -IntegrationTestStageCleaned $integrationTestsStageCleaned `
     -CredentialsSanitized $credentialsSanitized `
     -CredentialCleanup $credentialCleanupPath `

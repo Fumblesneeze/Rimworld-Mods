@@ -125,3 +125,14 @@ Automated launch SHALL use an isolated save-data folder and isolated `ModsConfig
 #### Scenario: Isolated quickstart completes
 - **WHEN** the normal RimWorld configuration has a known hash and a quickstart run succeeds or fails
 - **THEN** the normal configuration retains the same hash and the evidence identifies the isolated configuration used
+
+### Requirement: Unobtrusive background launch
+The Gateway host launcher SHALL write an isolated `Prefs.xml` that sets RimWorld's `runInBackground` preference to `True` and `volumeMusic` to `0`, and SHALL start the owned game process minimized by default. It SHALL hash the user's normal `Prefs.xml` before and after every dry or real run, report both hashes, and fail a real run if that file changed. The dry-run and completed-run results SHALL identify the isolated preference file, music volume, and effective requested launch window style. A real run SHALL additionally query the exact owned PID's native main-window state before desktop automation, retain that observation, and fail when it does not match the requested style. A caller MAY explicitly request a normal visible window when desktop UI or computer-use interaction is required, and the `gateway-regression` scenario SHALL select that visible style automatically because it owns FlaUI and raw-input probes.
+
+#### Scenario: Quiet product verification continues in the background
+- **WHEN** the caller starts a default, quicktest, or product-specific Gateway run without requesting desktop UI interaction
+- **THEN** the isolated preference enables background execution with music muted, the exact owned RimWorld window is natively observed as minimized, the Gateway remains available for semantic control and observation, and the user's normal preferences retain their original hash
+
+#### Scenario: Desktop interaction requires a visible window
+- **WHEN** the caller requests a visible window or selects `gateway-regression`
+- **THEN** the owned RimWorld process starts with a normal visible window while retaining the isolated background-execution preference

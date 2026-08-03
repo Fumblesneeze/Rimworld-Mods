@@ -185,3 +185,10 @@
 - [x] 25.5 IN-GAME: In one isolated playable run, read rendered-client dimensions, use Gateway keyboard input to change pause state, use Gateway screen-local click input on a visible native control, and observe the resulting pause/speed and UI change through Gateway UI state plus retained rendered screenshots.
 - [x] 25.6 TDD RED/GREEN: Reproduce a transient Windows lock on the owned run manifest during stopped-tombstone replacement, retry for a short bounded interval, and retain fail-closed retryable ownership for a persistent lock.
 - [x] 25.7 REGRESSION/REVIEW: Run focused and full Gateway tests, independently review the shutdown hardening, and repeat the rejected current-build cutlery-item observation through a clean exact-PID shutdown.
+
+## 26. mods/RimWorldDevGateway — Unobtrusive background launch
+
+- [x] 26.1 TDD RED/GREEN: prove every isolated Gateway launch writes `Prefs.xml` with `runInBackground=True` and `volumeMusic=0`, and selects a minimized window by default.
+- [x] 26.2 TDD RED/GREEN: add an explicit visible-window override and automatically select it for the desktop-owning `gateway-regression` scenario.
+- [x] 26.3 REGRESSION/REVIEW: document the launch contract, run the full Gateway suite and strict OpenSpec validation, and resolve an independent review.
+- [x] 26.4 IN-GAME: on the reviewed build, start fresh isolated runs and natively observe the exact owned window minimized by default, normal with explicit `-VisibleWindow`, and normal through automatic `gateway-regression` selection; prove the Gateway remains responsive while the minimized RimWorld process advances under the isolated background preference, then open native Options and visibly observe the Music slider at zero.
