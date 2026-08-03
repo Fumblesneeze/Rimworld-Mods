@@ -425,7 +425,19 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var animal = PawnGenerator.GeneratePawn(
             DefDatabase<PawnKindDef>.GetNamed("Raccoon"),
             null);
-        var animalCell = CellFinder.RandomClosewalkCellNear(map.Center, map, 12);
+        var animalCell = map.AllCells
+            .Where(cell => cell.Standable(map) &&
+                           cell.GetEdifice(map) is null &&
+                           cell.GetThingList(map).Count == 0)
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .First(cell =>
+            {
+                var adjacent = new IntVec3(cell.x + 1, 0, cell.z);
+                return adjacent.x < map.Size.x &&
+                       adjacent.Standable(map) &&
+                       adjacent.GetEdifice(map) is null &&
+                       adjacent.GetThingList(map).Count == 0;
+            });
         var mealCell = animalCell;
         var cutleryCell = new IntVec3(animalCell.x + 1, 0, animalCell.z);
         var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
@@ -709,6 +721,260 @@ public static class FinalizedImmersiveChefsIntegrationTests
         }
     }
 
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void NativePatientFeedingUsesCutleryAndAssignsConsequencesToThePatient()
+    {
+        var map = Find.CurrentMap;
+        var bedCell = map.AllCells
+            .Where(cell => GenAdj.OccupiedRect(cell, Rot4.North, ThingDefOf.Bed.size)
+                .Cells.All(occupied => occupied.x >= 0 && occupied.z >= 0 &&
+                                       occupied.x < map.Size.x && occupied.z < map.Size.z &&
+                                       occupied.Standable(map) &&
+                                       occupied.GetEdifice(map) is null) &&
+                           FilthMaker.CanMakeFilth(
+                               BedUtility.GetSleepingSlotPos(0, cell, Rot4.North, ThingDefOf.Bed.size),
+                               map,
+                               ThingDefOf.Filth_Dirt))
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .First();
+        var bed = (Building_Bed)ThingMaker.MakeThing(ThingDefOf.Bed, ThingDefOf.WoodLog);
+        bed.SetFactionDirect(Faction.OfPlayer);
+        GenSpawn.Spawn(bed, bedCell, map, Rot4.North);
+        bed.Medical = true;
+
+        var patient = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var feeder = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var patientStart = bed.GetSleepingSlotPos(0);
+        var feederStart = patientStart;
+        GenSpawn.Spawn(patient, patientStart, map);
+        GenSpawn.Spawn(feeder, feederStart, map);
+
+        var injuryPart = patient.health.hediffSet.GetNotMissingParts()
+            .First(part => part.def == BodyPartDefOf.Torso);
+        var injury = HediffMaker.MakeHediff(HediffDefOf.Cut, patient, injuryPart);
+        injury.Severity = 0.1f;
+        patient.health.AddHediff(injury);
+        IntegrationAssert.True(
+            HealthAIUtility.ShouldSeekMedicalRest(patient),
+            "The conscious assisted-feeding fixture must genuinely require medical rest.");
+        var layDown = JobMaker.MakeJob(JobDefOf.LayDown, bed);
+        layDown.restUntilHealed = true;
+        patient.jobs.StartJob(layDown, JobCondition.InterruptForced);
+        for (var tick = 0; tick < 2000 && !patient.InBed(); tick++)
+        {
+            patient.jobs.JobTrackerTick();
+        }
+
+        IntegrationAssert.True(patient.InBed(), "The native patient must actually occupy the medical bed.");
+        IntegrationAssert.True(patient.Awake(), "The first assisted-feeding pass must use a conscious patient.");
+
+        var settings = ImmersiveChefsMod.Settings;
+        var originalWareRequirementMode = settings.WareRequirementMode;
+        var preexistingCutlery = map.listerThings.AllThings
+            .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product ==
+                            KitchenwareProduct.Cutlery)
+            .Select(thing => new { Thing = thing, Forbidden = thing.IsForbidden(Faction.OfPlayer) })
+            .ToList();
+        var preexistingDirt = map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
+            .Cast<Filth>()
+            .ToDictionary(filth => filth, filth => filth.thickness);
+        var createdThings = new System.Collections.Generic.List<Thing> { bed, patient, feeder };
+        var diningThought = DefDatabase<ThoughtDef>.GetNamed("ImmersiveChefs_DiningExperience");
+
+        try
+        {
+            settings.WareRequirementMode = WareRequirementMode.Prefer;
+            foreach (var existing in preexistingCutlery)
+            {
+                existing.Thing.SetForbidden(true, warnOnFail: false);
+            }
+
+            var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+                DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+                ThingDefOf.Steel);
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            GenSpawn.Spawn(cutlery, patient.Position, map);
+            createdThings.Add(cutlery);
+
+            var servedMeal = CreatePatientMeal(out var servedPlate);
+            createdThings.Add(servedMeal);
+            createdThings.Add(servedPlate);
+            GenSpawn.Spawn(servedMeal, patient.Position, map);
+            patient.needs.food.CurLevel = 0.01f;
+            var dirtBeforeServed = DirtThickness(map);
+            var carriedCutlery = RunNativeFeed(feeder, patient, servedMeal, cutlery);
+
+            IntegrationAssert.True(
+                carriedCutlery,
+                "The native feeder must carry the exact reserved cutlery in their inventory before feeding.");
+            IntegrationAssert.True(
+                cutlery.Spawned && cutlery.Position.DistanceToSquared(patient.Position) <= 4,
+                "Completed assisted feeding must drop the exact cutlery beside the patient, not the feeder.");
+            IntegrationAssert.True(
+                cutlery.GetComp<CompSanitation>().IsDirty,
+                "The cutlery used by the native feeder must become dirty after the patient eats.");
+            IntegrationAssert.Equal(
+                dirtBeforeServed,
+                DirtThickness(map),
+                "Feeding with cutlery must not create the missing-cutlery dirt event.");
+            IntegrationAssert.True(
+                feeder.needs.mood.thoughts.memories.GetFirstMemoryOfDef(diningThought) is null,
+                "The feeder must never receive the patient's dining memory.");
+
+            cutlery.Destroy(DestroyMode.Vanish);
+            servedPlate.Destroy(DestroyMode.Vanish);
+            patient.needs.mood.thoughts.memories.RemoveMemoriesOfDef(diningThought);
+
+            var consciousMeal = CreatePatientMeal(out var consciousPlate);
+            createdThings.Add(consciousMeal);
+            createdThings.Add(consciousPlate);
+            GenSpawn.Spawn(consciousMeal, patient.Position, map);
+            patient.needs.food.CurLevel = 0.01f;
+            var dirtBeforeConscious = DirtThickness(map);
+            RunNativeFeed(feeder, patient, consciousMeal, expectedCutlery: null);
+
+            IntegrationAssert.Equal(
+                dirtBeforeConscious + 1,
+                DirtThickness(map),
+                "A completed conscious feed without cutlery must create one vanilla dirt thickness.");
+            var consciousMemory = patient.needs.mood.thoughts.memories.GetFirstMemoryOfDef(diningThought);
+            IntegrationAssert.NotNull(consciousMemory, "The conscious patient must own the dining memory.");
+            IntegrationAssert.Equal(
+                1,
+                consciousMemory!.CurStageIndex,
+                "A conscious plated patient fed without cutlery must receive the missing-cutlery stage.");
+            IntegrationAssert.True(
+                feeder.needs.mood.thoughts.memories.GetFirstMemoryOfDef(diningThought) is null,
+                "The conscious patient's feeder must not receive a missing-cutlery memory.");
+
+            consciousPlate.Destroy(DestroyMode.Vanish);
+            patient.needs.mood.thoughts.memories.RemoveMemoriesOfDef(diningThought);
+            var anesthetic = patient.health.AddHediff(HediffDefOf.Anesthetic);
+            IntegrationAssert.True(!patient.Awake(), "The final assisted-feeding pass must use an unconscious patient.");
+            IntegrationAssert.True(
+                !patient.health.capacities.CanBeAwake,
+                "The unconscious fixture must be medically incapable of consciousness, not merely asleep.");
+            IntegrationAssert.True(patient.InBed(), "The unconscious patient must remain in the native medical bed.");
+
+            var unconsciousMeal = CreatePatientMeal(out var unconsciousPlate);
+            createdThings.Add(unconsciousMeal);
+            createdThings.Add(unconsciousPlate);
+            GenSpawn.Spawn(unconsciousMeal, patient.Position, map);
+            patient.needs.food.CurLevel = 0.01f;
+            var dirtBeforeUnconscious = DirtThickness(map);
+            RunNativeFeed(feeder, patient, unconsciousMeal, expectedCutlery: null);
+
+            IntegrationAssert.Equal(
+                dirtBeforeUnconscious + 1,
+                DirtThickness(map),
+                "An unconscious patient fed without cutlery must still create the physical dirt event.");
+            IntegrationAssert.True(
+                patient.needs.mood.thoughts.memories.GetFirstMemoryOfDef(diningThought) is null,
+                "An unconscious patient must not receive the missing-cutlery dining memory.");
+            IntegrationAssert.True(
+                feeder.needs.mood.thoughts.memories.GetFirstMemoryOfDef(diningThought) is null,
+                "The unconscious patient's feeder must not receive the dining memory either.");
+            patient.health.RemoveHediff(anesthetic);
+        }
+        finally
+        {
+            settings.WareRequirementMode = originalWareRequirementMode;
+            foreach (var existing in preexistingCutlery)
+            {
+                if (!existing.Thing.Destroyed)
+                {
+                    existing.Thing.SetForbidden(existing.Forbidden, warnOnFail: false);
+                }
+            }
+
+            foreach (var filth in map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
+                         .Cast<Filth>()
+                         .ToList())
+            {
+                if (!preexistingDirt.TryGetValue(filth, out var originalThickness))
+                {
+                    filth.Destroy(DestroyMode.Vanish);
+                    continue;
+                }
+
+                while (!filth.Destroyed && filth.thickness > originalThickness)
+                {
+                    filth.ThinFilth();
+                }
+            }
+
+            foreach (var thing in createdThings.AsEnumerable().Reverse())
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    private static ThingWithComps CreatePatientMeal(out ThingWithComps plate)
+    {
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+        meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
+        {
+            new CulinaryServingRecord(
+                50,
+                35f,
+                ContaminationSources.None,
+                0,
+                Find.TickManager.TicksGame)
+        });
+        IntegrationAssert.True(
+            meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
+            "Every patient-feeding fixture meal must start with its exact clean embedded plate.");
+        return meal;
+    }
+
+    private static bool RunNativeFeed(
+        Pawn feeder,
+        Pawn patient,
+        Thing meal,
+        Thing? expectedCutlery)
+    {
+        var job = JobMaker.MakeJob(JobDefOf.FeedPatient, meal, patient);
+        job.count = 1;
+        var carriedCutlery = false;
+        feeder.jobs.StartJob(job, JobCondition.InterruptForced);
+        var session = DiningSessionRegistry.Current(patient);
+        IntegrationAssert.NotNull(
+            session,
+            "Starting the real FeedPatient job must attach a dining session to the patient.");
+        IntegrationAssert.True(
+            session!.IsAssisted && ReferenceEquals(session.CarrierPawn, feeder),
+            "The patient must own the dining outcome while the feeder owns tableware transport.");
+        IntegrationAssert.True(
+            ReferenceEquals(expectedCutlery, session.Cutlery),
+            expectedCutlery is null
+                ? "A no-cutlery patient feed must not retain tableware from an earlier feed."
+                : "The assisted dining session must reserve the exact expected cutlery.");
+        for (var tick = 0; tick < 6000 && !meal.Destroyed; tick++)
+        {
+            feeder.jobs.JobTrackerTick();
+            carriedCutlery |= expectedCutlery is not null &&
+                               feeder.inventory.innerContainer.Contains(expectedCutlery);
+        }
+
+        IntegrationAssert.True(
+            meal.Destroyed,
+            "The real JobDriver_FoodFeedPatient must complete within the bounded fixture ticks.");
+        return carriedCutlery;
+    }
+
+    private static int DirtThickness(Map map) =>
+        map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
+            .Cast<Filth>()
+            .Sum(filth => filth.thickness);
+
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void SanitationStorageFiltersAreFinalizedAgainstKitchenware()
     {
@@ -940,7 +1206,11 @@ public static class FinalizedImmersiveChefsIntegrationTests
             nameof(Thing.Ingested),
             new[] { typeof(Pawn), typeof(float) });
         var chew = AccessTools.Method(typeof(Toils_Ingest), nameof(Toils_Ingest.ChewIngestible));
-        foreach (var method in new[] { cooking, ingest, ingestOutcome, chew })
+        var feedReservations = AccessTools.Method(
+            typeof(JobDriver_FoodFeedPatient),
+            nameof(JobDriver_FoodFeedPatient.TryMakePreToilReservations));
+        var feedToils = AccessTools.Method(typeof(JobDriver_FoodFeedPatient), "MakeNewToils");
+        foreach (var method in new[] { cooking, ingest, ingestOutcome, chew, feedReservations, feedToils })
         {
             var owners = Harmony.GetPatchInfo(method)?.Owners
                 .Where(owner => owner == ImmersiveChefsMod.PackageId)

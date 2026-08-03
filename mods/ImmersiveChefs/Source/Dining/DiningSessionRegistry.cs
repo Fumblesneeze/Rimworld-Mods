@@ -23,13 +23,14 @@ internal sealed class DiningSession : IThingHolder
         Thing? cutlery,
         Thing? reservedPlate,
         Thing? microwave,
-        Pawn? servingPawn = null)
-        : this(pawn, job, null, cutlery, reservedPlate, microwave, servingPawn)
+        Pawn? servingPawn = null,
+        Pawn? carrierPawn = null)
+        : this(pawn, job, null, cutlery, reservedPlate, microwave, servingPawn, carrierPawn)
     {
     }
 
     internal DiningSession(Pawn pawn, Caravan caravan)
-        : this(pawn, null, caravan, null, null, null, null)
+        : this(pawn, null, caravan, null, null, null, null, null)
     {
     }
 
@@ -40,9 +41,11 @@ internal sealed class DiningSession : IThingHolder
         Thing? cutlery,
         Thing? reservedPlate,
         Thing? microwave,
-        Pawn? servingPawn)
+        Pawn? servingPawn,
+        Pawn? carrierPawn)
     {
         Pawn = pawn;
+        CarrierPawn = carrierPawn ?? pawn;
         Job = job;
         this.caravan = caravan;
         travelWare = new ThingOwner<Thing>(this, oneStackOnly: false, LookMode.Deep);
@@ -53,6 +56,8 @@ internal sealed class DiningSession : IThingHolder
     }
 
     internal Pawn Pawn { get; }
+    internal Pawn CarrierPawn { get; }
+    internal bool IsAssisted => !ReferenceEquals(Pawn, CarrierPawn);
     internal Job? Job { get; }
     internal Thing? Cutlery { get; private set; }
     internal Thing? CarriedCutlery { get; private set; }
@@ -118,13 +123,13 @@ internal sealed class DiningSession : IThingHolder
             picked.DeSpawn(DestroyMode.Vanish);
         }
 
-        if (Pawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
+        if (CarrierPawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
         {
             CarriedCutlery = picked;
         }
-        else if (Pawn.MapHeld is { } map)
+        else if (CarrierPawn.MapHeld is { } map)
         {
-            GenPlace.TryPlaceThing(picked, Pawn.PositionHeld, map, ThingPlaceMode.Near);
+            GenPlace.TryPlaceThing(picked, CarrierPawn.PositionHeld, map, ThingPlaceMode.Near);
         }
     }
 
@@ -141,13 +146,13 @@ internal sealed class DiningSession : IThingHolder
             picked.DeSpawn(DestroyMode.Vanish);
         }
 
-        if (Pawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
+        if (CarrierPawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
         {
             CarriedPlate = picked;
         }
-        else if (Pawn.MapHeld is { } map)
+        else if (CarrierPawn.MapHeld is { } map)
         {
-            GenPlace.TryPlaceThing(picked, Pawn.PositionHeld, map, ThingPlaceMode.Near);
+            GenPlace.TryPlaceThing(picked, CarrierPawn.PositionHeld, map, ThingPlaceMode.Near);
         }
     }
 
@@ -223,7 +228,7 @@ internal sealed class DiningSession : IThingHolder
             FilthMaker.TryMakeFilth(clearingOrigin, diningMap, ThingDefOf.Filth_Dirt, count: 1);
         }
 
-        DropPlate();
+        DropPlate(Pawn);
         if (Plate is { } embeddedPlate && Pawn.MapHeld is { } plateMap)
         {
             (embeddedPlate as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
@@ -242,7 +247,7 @@ internal sealed class DiningSession : IThingHolder
         if (CarriedCutlery is not null)
         {
             (CarriedCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
-            DropCarried();
+            DropCarried(Pawn);
         }
 
         if (ServingPawn is { } server && Pawn.MapHeld is { } map)
@@ -261,8 +266,8 @@ internal sealed class DiningSession : IThingHolder
             return;
         }
 
-        DropPlate();
-        DropCarried();
+        DropPlate(CarrierPawn);
+        DropCarried(CarrierPawn);
     }
 
     public ThingOwner GetDirectlyHeldThings() => travelWare;
@@ -378,28 +383,28 @@ internal sealed class DiningSession : IThingHolder
         }
     }
 
-    private void DropPlate()
+    private void DropPlate(Pawn dropPawn)
     {
-        if (CarriedPlate is null || Pawn.MapHeld is not { } map)
+        if (CarriedPlate is null || dropPawn.MapHeld is not { } map)
         {
             return;
         }
 
         if (CarriedPlate.holdingOwner is { } owner)
         {
-            owner.TryDrop(CarriedPlate, Pawn.PositionHeld, map, ThingPlaceMode.Near, out _);
+            owner.TryDrop(CarriedPlate, dropPawn.PositionHeld, map, ThingPlaceMode.Near, out _);
         }
         else if (!CarriedPlate.Spawned)
         {
-            GenPlace.TryPlaceThing(CarriedPlate, Pawn.PositionHeld, map, ThingPlaceMode.Near);
+            GenPlace.TryPlaceThing(CarriedPlate, dropPawn.PositionHeld, map, ThingPlaceMode.Near);
         }
 
         CarriedPlate = null;
     }
 
-    private void DropCarried()
+    private void DropCarried(Pawn dropPawn)
     {
-        if (CarriedCutlery is null || Pawn.MapHeld is not { } map)
+        if (CarriedCutlery is null || dropPawn.MapHeld is not { } map)
         {
             return;
         }
@@ -408,14 +413,14 @@ internal sealed class DiningSession : IThingHolder
         {
             owner.TryDrop(
                 CarriedCutlery,
-                Pawn.PositionHeld,
+                dropPawn.PositionHeld,
                 map,
                 ThingPlaceMode.Near,
                 out _);
         }
         else if (!CarriedCutlery.Spawned)
         {
-            GenPlace.TryPlaceThing(CarriedCutlery, Pawn.PositionHeld, map, ThingPlaceMode.Near);
+            GenPlace.TryPlaceThing(CarriedCutlery, dropPawn.PositionHeld, map, ThingPlaceMode.Near);
         }
 
         CarriedCutlery = null;
@@ -508,6 +513,60 @@ internal static class DiningSessionRegistry
         Sessions.Add(job, session);
         PawnSessions.Remove(pawn);
         PawnSessions.Add(pawn, session);
+        return true;
+    }
+
+    internal static bool TryAttachAssisted(Pawn feeder, Pawn patient, Job job, Thing foodSource)
+    {
+        var pasteDispenser = foodSource is Building_NutrientPasteDispenser;
+        if ((!MealCoveragePolicy.IsCovered(foodSource.def) && !pasteDispenser) ||
+            !DiningPawnPolicy.AppliesDiningConsequences(patient.RaceProps.Humanlike) ||
+            Sessions.TryGetValue(job, out _))
+        {
+            return true;
+        }
+
+        Thing? cutlery = null;
+        Thing? plate = null;
+        var settings = ImmersiveChefsMod.Settings;
+        if (settings.WareRequirementMode != WareRequirementMode.Off)
+        {
+            var emergency = patient.needs?.food?.CurLevelPercentage <= settings.EmergencyHungerThreshold;
+            var needsPlate = pasteDispenser ||
+                             (foodSource as ThingWithComps)?.GetComp<CompEmbeddedWare>()?.PeekOne() is null;
+            if (needsPlate)
+            {
+                plate = SelectWare(
+                    feeder,
+                    job,
+                    KitchenwareProduct.Plate,
+                    emergency,
+                    settings.WareRequirementMode);
+                if (plate is null && settings.WareRequirementMode == WareRequirementMode.Strict && !emergency)
+                {
+                    return false;
+                }
+            }
+
+            cutlery = SelectWare(
+                feeder,
+                job,
+                KitchenwareProduct.Cutlery,
+                emergency,
+                WareRequirementMode.Prefer);
+        }
+
+        var microwave = pasteDispenser ? null : FindMicrowave(feeder, foodSource);
+        var session = new DiningSession(
+            patient,
+            job,
+            cutlery,
+            plate,
+            microwave,
+            carrierPawn: feeder);
+        Sessions.Add(job, session);
+        PawnSessions.Remove(patient);
+        PawnSessions.Add(patient, session);
         return true;
     }
 
@@ -765,9 +824,9 @@ internal static class DiningSessionRegistry
 
         session.Cancel();
         Sessions.Remove(job);
-        if (PawnSessions.TryGetValue(pawn, out var pawnSession) && ReferenceEquals(pawnSession, session))
+        if (PawnSessions.TryGetValue(session.Pawn, out var pawnSession) && ReferenceEquals(pawnSession, session))
         {
-            PawnSessions.Remove(pawn);
+            PawnSessions.Remove(session.Pawn);
         }
     }
 

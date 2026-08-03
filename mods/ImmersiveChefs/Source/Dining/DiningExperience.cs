@@ -35,8 +35,15 @@ internal static class DiningExperience
                 (int)ThermalCalculator.BandFor(serving.TemperatureCelsius));
         }
 
-        var diningStage = DiningStandardsRuntime.DiningThoughtStage(pawn, mealDef, serving, dining);
-        ReplaceMemory(memories, "ImmersiveChefs_DiningExperience", diningStage);
+        if (AssistedDiningPolicy.ShouldRecordDiningMemory(
+                dining?.IsAssisted == true,
+                pawn.health.capacities.CanBeAwake,
+                settings.WareRequirementMode,
+                dining?.CarriedCutlery is not null))
+        {
+            var diningStage = DiningStandardsRuntime.DiningThoughtStage(pawn, mealDef, serving, dining);
+            ReplaceMemory(memories, "ImmersiveChefs_DiningExperience", diningStage);
+        }
     }
 
     private static int QualityStage(int qualityScore)

@@ -139,8 +139,8 @@ internal static class IngestCutleryToilsPatch
         __result = AddCutleryPickup(__instance, __result);
     }
 
-    private static IEnumerable<Toil> AddCutleryPickup(
-        JobDriver_Ingest driver,
+    internal static IEnumerable<Toil> AddCutleryPickup(
+        JobDriver driver,
         IEnumerable<Toil> original)
     {
         var pawn = driver.GetActor();
@@ -231,6 +231,36 @@ internal static class IngestCutleryToilsPatch
         {
             yield return toil;
         }
+    }
+}
+
+[HarmonyPatch(typeof(JobDriver_FoodFeedPatient), nameof(JobDriver_FoodFeedPatient.TryMakePreToilReservations))]
+internal static class FeedPatientReservationPatch
+{
+    private static void Postfix(JobDriver_FoodFeedPatient __instance, ref bool __result)
+    {
+        if (!__result)
+        {
+            return;
+        }
+
+        var feeder = __instance.GetActor();
+        var job = feeder.CurJob;
+        var patient = job?.GetTarget(TargetIndex.B).Pawn;
+        var foodSource = job?.GetTarget(TargetIndex.A).Thing;
+        if (job is not null && patient is not null && foodSource is not null)
+        {
+            __result = DiningSessionRegistry.TryAttachAssisted(feeder, patient, job, foodSource);
+        }
+    }
+}
+
+[HarmonyPatch(typeof(JobDriver_FoodFeedPatient), "MakeNewToils")]
+internal static class FeedPatientCutleryToilsPatch
+{
+    private static void Postfix(JobDriver_FoodFeedPatient __instance, ref IEnumerable<Toil> __result)
+    {
+        __result = IngestCutleryToilsPatch.AddCutleryPickup(__instance, __result);
     }
 }
 
