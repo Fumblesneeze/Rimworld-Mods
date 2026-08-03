@@ -796,6 +796,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
             var interruptedCutleryCell = map.AllCells
                 .Where(cell => cell.Standable(map) &&
                                cell.GetEdifice(map) is null &&
+                               feeder.CanReach(cell, PathEndMode.Touch, Danger.Some) &&
                                cell.DistanceToSquared(feeder.Position) >= 9)
                 .OrderBy(cell => cell.DistanceToSquared(feeder.Position))
                 .First();
@@ -810,11 +811,23 @@ public static class FinalizedImmersiveChefsIntegrationTests
             interruptedJob.count = 1;
             interruptedJob.SetTarget(TargetIndex.C, feeder);
             feeder.jobs.StartJob(interruptedJob, JobCondition.InterruptForced);
+            var interruptedSession = DiningSessionRegistry.Current(patient);
+            IntegrationAssert.True(
+                ReferenceEquals(interruptedSession?.Cutlery, cutlery),
+                "The interruption fixture must select the exact reachable cutlery.");
+            IntegrationAssert.True(
+                map.reservationManager.ReservedBy(cutlery, feeder, interruptedJob),
+                "The interruption fixture must reserve the selected cutlery for the native FeedPatient job.");
             feeder.jobs.JobTrackerTick();
 
             IntegrationAssert.True(
                 ReferenceEquals(interruptedJob.GetTarget(TargetIndex.C).Thing, feeder),
                 "Starting tableware pickup must not borrow FeedPatient's native food-holder target C.");
+            IntegrationAssert.True(
+                ReferenceEquals(feeder.CurJob, interruptedJob) &&
+                feeder.pather.Moving &&
+                ReferenceEquals(feeder.pather.Destination.Thing, cutlery),
+                "The interruption fixture must have an active native path to the selected cutlery.");
             IntegrationAssert.True(
                 cutlery.Spawned && !feeder.inventory.innerContainer.Contains(cutlery),
                 "The interruption fixture must stop while the feeder is pathing to reserved cutlery.");
@@ -831,6 +844,114 @@ public static class FinalizedImmersiveChefsIntegrationTests
             interruptedMeal.Destroy(DestroyMode.Vanish);
             cutlery.DeSpawn(DestroyMode.Vanish);
             GenSpawn.Spawn(cutlery, patient.Position, map);
+
+            var microwaveCell = map.AllCells
+                .Select(cell => new
+                {
+                    Cell = cell,
+                    Interaction = new IntVec3(cell.x, cell.y, cell.z - 1)
+                })
+                .Where(candidate => candidate.Cell.Standable(map) &&
+                                    candidate.Cell.GetEdifice(map) is null &&
+                                    candidate.Interaction.x >= 0 &&
+                                    candidate.Interaction.z >= 0 &&
+                                    candidate.Interaction.x < map.Size.x &&
+                                    candidate.Interaction.z < map.Size.z &&
+                                    candidate.Interaction.Standable(map) &&
+                                    candidate.Interaction.GetEdifice(map) is null &&
+                                    feeder.CanReach(
+                                        candidate.Interaction,
+                                        PathEndMode.OnCell,
+                                        Danger.Some))
+                .OrderBy(candidate => candidate.Cell.DistanceToSquared(patient.Position))
+                .First()
+                .Cell;
+            var microwave = ThingMaker.MakeThing(
+                DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Microwave"));
+            GenSpawn.Spawn(microwave, microwaveCell, map, Rot4.North);
+            microwave.TryGetComp<CompPowerTrader>().PowerOn = true;
+            createdThings.Add(microwave);
+
+            var microwaveMeal = CreatePatientMeal(out var microwavePlate);
+            microwaveMeal.GetComp<CompCulinaryState>().ReplaceServings(new[]
+            {
+                new CulinaryServingRecord(
+                    50,
+                    -5f,
+                    ContaminationSources.None,
+                    0,
+                    Find.TickManager.TicksGame)
+            });
+            createdThings.Add(microwaveMeal);
+            createdThings.Add(microwavePlate);
+            GenSpawn.Spawn(microwaveMeal, patient.Position, map);
+            settings.WareRequirementMode = WareRequirementMode.Off;
+            var microwaveJob = JobMaker.MakeJob(JobDefOf.FeedPatient, microwaveMeal, patient);
+            microwaveJob.count = 1;
+            microwaveJob.SetTarget(TargetIndex.C, feeder);
+            feeder.jobs.StartJob(microwaveJob, JobCondition.InterruptForced);
+            var microwaveSession = DiningSessionRegistry.Current(patient);
+            IntegrationAssert.True(
+                ReferenceEquals(microwaveSession?.Microwave, microwave),
+                "The cold assisted meal must select the real powered microwave.");
+
+            var microwaveDriver = feeder.jobs.curDriver;
+            var microwaveToils = microwaveDriver is null
+                ? null
+                : Traverse.Create(microwaveDriver)
+                    .Field("toils")
+                    .GetValue<System.Collections.Generic.List<Toil>>();
+            var heatingToils = microwaveToils?
+                .Where(toil => toil.defaultCompleteMode == ToilCompleteMode.Delay &&
+                               toil.defaultDuration == microwave.TryGetComp<CompMicrowave>().HeatingTicks)
+                .ToList() ?? new System.Collections.Generic.List<Toil>();
+            IntegrationAssert.Equal(
+                1,
+                heatingToils.Count,
+                "The real patched FeedPatient driver must contain exactly one captured-microwave heating toil.");
+            var heatingToil = heatingToils[0];
+            IntegrationAssert.True(
+                ReferenceEquals(microwaveJob.GetTarget(TargetIndex.C).Thing, feeder),
+                "Microwave routing must not borrow FeedPatient's native target C.");
+            IntegrationAssert.True(
+                heatingToil.handlingFacing && heatingToil.tickAction is not null,
+                "Microwave heating must visibly keep the feeder facing the captured appliance.");
+            IntegrationAssert.True(
+                heatingToil.finishActions?.Count > 0,
+                "Microwave heating must retain a visible progress effect with cleanup.");
+
+            microwaveDriver!.JumpToToil(heatingToil);
+            IntegrationAssert.Equal(
+                microwaveToils!.IndexOf(heatingToil),
+                microwaveDriver.CurToilIndex,
+                "The real FeedPatient driver must enter the captured-microwave heating toil.");
+            microwaveDriver.DriverTick();
+
+            var closure = heatingToil.tickAction!.Target;
+            var effecterField = closure?.GetType()
+                .GetFields(
+                    System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.Public |
+                    System.Reflection.BindingFlags.NonPublic)
+                .SingleOrDefault(field => typeof(Effecter).IsAssignableFrom(field.FieldType));
+            var progressEffecter = effecterField?.GetValue(closure) as Effecter;
+            var progressBar = progressEffecter?.children.OfType<SubEffecter_ProgressBar>().SingleOrDefault();
+            IntegrationAssert.True(
+                progressBar?.mote is { Spawned: true },
+                "Active microwave heating must spawn a visible progress mote on the captured appliance.");
+
+            var facingCell = feeder.Rotation.FacingCell;
+            var microwaveDeltaX = microwave.Position.x - feeder.Position.x;
+            var microwaveDeltaZ = microwave.Position.z - feeder.Position.z;
+            IntegrationAssert.True(
+                facingCell.x * microwaveDeltaX + facingCell.z * microwaveDeltaZ > 0,
+                "Active microwave heating must face the feeder toward the captured appliance.");
+
+            feeder.jobs.EndCurrentJob(JobCondition.InterruptForced, startNewJob: false);
+            IntegrationAssert.True(
+                progressBar!.mote.DestroyedOrNull(),
+                "Interrupting active microwave heating must clean up its progress mote.");
+            settings.WareRequirementMode = WareRequirementMode.Prefer;
 
             var servedMeal = CreatePatientMeal(out var servedPlate);
             createdThings.Add(servedMeal);

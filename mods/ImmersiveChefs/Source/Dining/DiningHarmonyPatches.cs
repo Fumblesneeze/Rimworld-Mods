@@ -185,7 +185,7 @@ internal static class IngestCutleryToilsPatch
                 reserve: false,
                 canTakeFromInventory: true);
             yield return GotoCapturedThing(microwave.parent, PathEndMode.InteractionCell);
-            yield return Toils_General.Wait(microwave.HeatingTicks);
+            yield return WaitAtCapturedThing(microwave.parent, microwave.HeatingTicks);
             yield return new Toil
             {
                 initAction = () =>
@@ -212,6 +212,43 @@ internal static class IngestCutleryToilsPatch
         var toil = ToilMaker.MakeToil("ImmersiveChefs_GotoReservedWare");
         toil.initAction = () => toil.actor.pather.StartPath(target, pathEndMode);
         toil.defaultCompleteMode = ToilCompleteMode.PatherArrival;
+        toil.AddFailCondition(() => target.DestroyedOrNull() || !target.Spawned);
+        return toil;
+    }
+
+    private static Toil WaitAtCapturedThing(Thing target, int duration)
+    {
+        var toil = Toils_General.Wait(duration);
+        var originalTickAction = toil.tickAction;
+        Effecter? progressEffecter = null;
+
+        toil.debugName = "ImmersiveChefs_HeatAtCapturedMicrowave";
+        toil.handlingFacing = true;
+        toil.tickAction = () =>
+        {
+            originalTickAction?.Invoke();
+
+            var actor = toil.actor;
+            actor.rotationTracker.FaceTarget(target);
+            if (actor.Faction != Faction.OfPlayer)
+            {
+                return;
+            }
+
+            progressEffecter ??= EffecterDefOf.ProgressBar.Spawn();
+            progressEffecter.EffectTick(target, TargetInfo.Invalid);
+            if (progressEffecter.children[0] is SubEffecter_ProgressBar progressBar)
+            {
+                var progress = 1f - (float)actor.jobs.curDriver.ticksLeftThisToil / duration;
+                progressBar.mote.progress = Math.Max(0f, Math.Min(1f, progress));
+                progressBar.mote.offsetZ = -0.5f;
+            }
+        };
+        toil.AddFinishAction(() =>
+        {
+            progressEffecter?.Cleanup();
+            progressEffecter = null;
+        });
         toil.AddFailCondition(() => target.DestroyedOrNull() || !target.Spawned);
         return toil;
     }
