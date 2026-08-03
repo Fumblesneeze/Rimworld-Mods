@@ -580,6 +580,115 @@ public static class FinalizedImmersiveChefsIntegrationTests
         }
     }
 
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CompletedMapDiningWithoutSilverwareCreatesOneDirtEvent()
+    {
+        var map = Find.CurrentMap;
+        var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var diningCell = map.AllCells
+            .Where(cell => cell.Standable(map) &&
+                           cell.GetEdifice(map) is null &&
+                           cell.GetThingList(map).All(thing => thing.def != ThingDefOf.Filth_Dirt))
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .First(cell => FilthMaker.CanMakeFilth(cell, map, ThingDefOf.Filth_Dirt));
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var settings = ImmersiveChefsMod.Settings;
+        var originalWareRequirementMode = settings.WareRequirementMode;
+        var preexistingSilverware = map.listerThings.AllThings
+            .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product ==
+                            KitchenwareProduct.Silverware)
+            .Select(thing => new { Thing = thing, Forbidden = thing.IsForbidden(Faction.OfPlayer) })
+            .ToList();
+
+        try
+        {
+            settings.WareRequirementMode = WareRequirementMode.Prefer;
+            foreach (var existing in preexistingSilverware)
+            {
+                existing.Thing.SetForbidden(true, warnOnFail: false);
+            }
+
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            meal.GetComp<CompCulinaryState>().ReplaceServings(new[]
+            {
+                new CulinaryServingRecord(
+                    50,
+                    35f,
+                    ContaminationSources.None,
+                    0,
+                    Find.TickManager.TicksGame)
+            });
+            IntegrationAssert.True(
+                meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
+                "The missing-silverware fixture must start with an exact embedded plate.");
+
+            GenSpawn.Spawn(pawn, diningCell, map);
+            GenSpawn.Spawn(meal, diningCell, map);
+            pawn.needs.food.CurLevel = 0.01f;
+            var dirtBefore = map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
+                .Cast<Filth>()
+                .Sum(filth => filth.thickness);
+            var ingestJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+            pawn.jobs.StartJob(ingestJob, JobCondition.InterruptForced);
+
+            for (var tick = 0; tick < 5000 && !meal.Destroyed; tick++)
+            {
+                pawn.jobs.JobTrackerTick();
+            }
+
+            IntegrationAssert.True(
+                meal.Destroyed,
+                "A real colonist JobDriver_Ingest must complete within the bounded fixture ticks.");
+            var dirtAfter = map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
+                .Cast<Filth>()
+                .Sum(filth => filth.thickness);
+            IntegrationAssert.Equal(
+                dirtBefore + 1,
+                dirtAfter,
+                "Completed eligible map dining without silverware must add exactly one dirt thickness.");
+            IntegrationAssert.True(
+                pawn.Position.GetThingList(map).Any(thing => thing.def == ThingDefOf.Filth_Dirt),
+                "The native dirt event must occur at the diner's actual final eating location.");
+
+            var diningThought = DefDatabase<ThoughtDef>.GetNamed("ImmersiveChefs_DiningExperience");
+            var memory = pawn.needs.mood.thoughts.memories.GetFirstMemoryOfDef(diningThought);
+            IntegrationAssert.NotNull(memory, "The diner must receive the combined dining thought.");
+            IntegrationAssert.Equal(
+                1,
+                memory!.CurStageIndex,
+                "A plated meal without silverware must select the missing-silverware thought stage.");
+        }
+        finally
+        {
+            settings.WareRequirementMode = originalWareRequirementMode;
+            foreach (var existing in preexistingSilverware)
+            {
+                if (!existing.Thing.Destroyed)
+                {
+                    existing.Thing.SetForbidden(existing.Forbidden, warnOnFail: false);
+                }
+            }
+
+            if (!meal.Destroyed)
+            {
+                meal.Destroy(DestroyMode.Vanish);
+            }
+
+            if (!plate.Destroyed)
+            {
+                plate.Destroy(DestroyMode.Vanish);
+            }
+
+            if (!pawn.Destroyed)
+            {
+                pawn.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void SanitationStorageFiltersAreFinalizedAgainstKitchenware()
     {

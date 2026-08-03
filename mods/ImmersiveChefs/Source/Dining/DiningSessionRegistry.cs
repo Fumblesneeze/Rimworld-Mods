@@ -211,6 +211,18 @@ internal sealed class DiningSession : IThingHolder
         }
 
         var clearingOrigin = Pawn.PositionHeld;
+        if (DiningDirtPolicy.ShouldCreate(
+                coveredMeal: true,
+                humanlikeDiner: DiningPawnPolicy.AppliesDiningConsequences(Pawn.RaceProps.Humanlike),
+                requirementMode: ImmersiveChefsMod.Settings.WareRequirementMode,
+                ingestionCompleted: true,
+                mapAvailable: Pawn.MapHeld is not null,
+                hasSilverware: CarriedSilverware is not null) &&
+            Pawn.MapHeld is { } diningMap)
+        {
+            FilthMaker.TryMakeFilth(clearingOrigin, diningMap, ThingDefOf.Filth_Dirt, count: 1);
+        }
+
         DropPlate();
         if (Plate is { } embeddedPlate && Pawn.MapHeld is { } plateMap)
         {
