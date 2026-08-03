@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "name": "immersive-chefs-missing-silverware-map-dining",
+  "name": "immersive-chefs-forkless-map",
   "requiredPackageIds": [
     "brrainz.harmony",
     "fumblesneeze.immersivechefs"
