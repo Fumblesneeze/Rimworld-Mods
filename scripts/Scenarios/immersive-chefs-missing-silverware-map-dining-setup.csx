@@ -17,9 +17,9 @@ new System.Func<string>(() =>
 
     stage = "find fixture cell";
     var diningCell = IntVec3.Invalid;
-    foreach (var cell in map.AllCells.OrderBy(candidate => candidate.DistanceToSquared(map.Center)))
+    foreach (var cell in GenRadial.RadialCellsAround(map.Center, 30f, true))
     {
-        var valid = FilthMaker.CanMakeFilth(cell, map, ThingDefOf.Filth_Dirt);
+        var valid = true;
         foreach (var candidate in CellRect.CenteredOn(cell, 4).Cells)
         {
             if (!candidate.InBounds(map) ||
@@ -57,11 +57,18 @@ new System.Func<string>(() =>
             thing.Destroy(DestroyMode.Vanish);
         }
 
+        map.terrainGrid.SetTerrain(cell, TerrainDefOf.Concrete);
+
         if (cell.x == room.minX || cell.x == room.maxX ||
             cell.z == room.minZ || cell.z == room.maxZ)
         {
             GenSpawn.Spawn(ThingMaker.MakeThing(ThingDefOf.Wall, ThingDefOf.Steel), cell, map);
         }
+    }
+
+    if (!FilthMaker.CanMakeFilth(diningCell, map, ThingDefOf.Filth_Dirt))
+    {
+        throw new System.InvalidOperationException("The concrete dining cell does not accept vanilla dirt.");
     }
 
     stage = "create plated meal";
