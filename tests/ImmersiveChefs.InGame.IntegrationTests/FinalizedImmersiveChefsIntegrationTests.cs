@@ -602,6 +602,9 @@ public static class FinalizedImmersiveChefsIntegrationTests
                             KitchenwareProduct.Silverware)
             .Select(thing => new { Thing = thing, Forbidden = thing.IsForbidden(Faction.OfPlayer) })
             .ToList();
+        var preexistingDirt = map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
+            .Cast<Filth>()
+            .ToDictionary(filth => filth, filth => filth.thickness);
 
         try
         {
@@ -669,6 +672,22 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 if (!existing.Thing.Destroyed)
                 {
                     existing.Thing.SetForbidden(existing.Forbidden, warnOnFail: false);
+                }
+            }
+
+            foreach (var filth in map.listerThings.ThingsOfDef(ThingDefOf.Filth_Dirt)
+                         .Cast<Filth>()
+                         .ToList())
+            {
+                if (!preexistingDirt.TryGetValue(filth, out var originalThickness))
+                {
+                    filth.Destroy(DestroyMode.Vanish);
+                    continue;
+                }
+
+                while (!filth.Destroyed && filth.thickness > originalThickness)
+                {
+                    filth.ThinFilth();
                 }
             }
 
