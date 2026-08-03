@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-storage-dishwashing",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-storage-dishwashing-setup.csx"
+    },
+    {
+      "id": "render",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-storage-dishwashing-render.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-storage-dishwashing-ready.png"
+    }
+  ]
+}

@@ -79,6 +79,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
         return thing is ThingWithComps withComps &&
                withComps.GetComp<CompSanitation>()?.IsDirty == true &&
+               parent.TryGetComp<CompPowerTrader>()?.PowerOn != false &&
                progressTicks == 0 && !waterDebitedForCycle &&
                CountCanAccept(thing) > 0;
     }

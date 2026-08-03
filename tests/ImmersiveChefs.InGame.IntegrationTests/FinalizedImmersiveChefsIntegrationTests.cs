@@ -1239,6 +1239,168 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void UnpoweredDishwasherRejectsDirtyWareAtAdmission()
+    {
+        var map = Find.CurrentMap;
+        var createdThings = new System.Collections.Generic.List<Thing>();
+        var dishwasher = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Dishwasher"));
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var battery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("Battery"));
+        var previousPreference = ImmersiveChefsMod.Settings.PreferDishwashers;
+
+        try
+        {
+            var sanitation = plate.GetComp<CompSanitation>();
+            var power = dishwasher.GetComp<CompPowerTrader>();
+            var dishwasherComp = dishwasher.GetComp<CompDishwasher>();
+            IntegrationAssert.NotNull(sanitation, "The finalized plate must expose sanitation state.");
+            IntegrationAssert.NotNull(power, "The finalized dishwasher must expose its required power comp.");
+            IntegrationAssert.NotNull(dishwasherComp, "The finalized dishwasher must expose its local cycle comp.");
+            sanitation.MarkDirty();
+
+            var fixtureCenter = map.AllCells
+                .Where(cell => IsEmptyFixtureArea(map, cell, 4))
+                .OrderBy(cell => cell.DistanceToSquared(map.Center))
+                .First();
+            var conduitDef = DefDatabase<ThingDef>.GetNamed("PowerConduit");
+            for (var x = fixtureCenter.x - 3; x <= fixtureCenter.x + 3; x++)
+            {
+                var conduit = ThingMaker.MakeThing(conduitDef);
+                conduit.SetFactionDirect(Faction.OfPlayer);
+                GenSpawn.Spawn(conduit, new IntVec3(x, 0, fixtureCenter.z + 2), map);
+                createdThings.Add(conduit);
+            }
+
+            dishwasher.SetFactionDirect(Faction.OfPlayer);
+            GenSpawn.Spawn(
+                dishwasher,
+                new IntVec3(fixtureCenter.x - 2, 0, fixtureCenter.z + 2),
+                map,
+                Rot4.North);
+            createdThings.Add(dishwasher);
+            battery.SetFactionDirect(Faction.OfPlayer);
+            GenSpawn.Spawn(
+                battery,
+                new IntVec3(fixtureCenter.x + 2, 0, fixtureCenter.z + 2),
+                map,
+                Rot4.North);
+            createdThings.Add(battery);
+            GenSpawn.Spawn(plate, new IntVec3(fixtureCenter.x, 0, fixtureCenter.z - 2), map);
+            createdThings.Add(plate);
+            plate.SetForbidden(true, warnOnFail: false);
+            var pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+                PawnKindDefOf.Colonist,
+                Faction.OfPlayer,
+                forceGenerateNewPawn: true,
+                canGeneratePawnRelations: false));
+            pawn.Name = new NameSingle("Dishwasher Test Worker");
+            pawn.inventory.innerContainer.ClearAndDestroyContents();
+            GenSpawn.Spawn(pawn, fixtureCenter, map);
+            pawn.drafter.Drafted = true;
+            createdThings.Add(pawn);
+            var batteryComp = battery.GetComp<CompPowerBattery>();
+            var flick = dishwasher.GetComp<CompFlickable>();
+            IntegrationAssert.NotNull(batteryComp, "The real power fixture must expose battery storage.");
+            IntegrationAssert.NotNull(flick, "The finalized dishwasher must expose its native power switch.");
+            batteryComp.SetStoredEnergyPct(1f);
+            map.powerNetManager.UpdatePowerNetsAndConnections_First();
+            IntegrationAssert.NotNull(
+                power.PowerNet,
+                "The spawned dishwasher must attach to a real RimWorld power net.");
+            IntegrationAssert.True(
+                ReferenceEquals(power.PowerNet, batteryComp.PowerNet),
+                "The spawned dishwasher and charged battery must share the same RimWorld power net.");
+            for (var tick = 0; tick <= 200 && !power.PowerOn; tick++)
+            {
+                Find.TickManager.DoSingleTick();
+            }
+            IntegrationAssert.True(
+                power.PowerOn,
+                string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "The charged connected battery must power the dishwasher through RimWorld's real power net " +
+                    "(switch={0}, stored={1}, powerComps={2}, batteries={3}, activeSource={4}, output={5}).",
+                    flick.SwitchIsOn,
+                    batteryComp.StoredEnergy,
+                    power.PowerNet.powerComps.Count,
+                    power.PowerNet.batteryComps.Count,
+                    power.PowerNet.HasActivePowerSource,
+                    power.PowerOutput));
+
+            flick.DoFlick();
+            IntegrationAssert.True(
+                !flick.SwitchIsOn && !power.PowerOn,
+                "Using the native switch must leave the connected dishwasher genuinely unpowered.");
+            IntegrationAssert.True(
+                !dishwasherComp.CanAccept(plate),
+                "An unpowered dishwasher must be ineligible for admission and Doing dishes selection.");
+
+            ImmersiveChefsMod.Settings.PreferDishwashers = true;
+            var foundUnpowered = WorkGiver_DoDishes.TryFindDestination(pawn, plate, out var unpowered);
+            IntegrationAssert.True(
+                !foundUnpowered || !ReferenceEquals(unpowered.Target.Thing, dishwasher),
+                "Doing dishes must exclude the unpowered dishwasher from destination selection.");
+
+            flick.DoFlick();
+            for (var tick = 0; tick <= 200 && !power.PowerOn; tick++)
+            {
+                Find.TickManager.DoSingleTick();
+            }
+            IntegrationAssert.True(
+                flick.SwitchIsOn && power.PowerOn,
+                "Using the native switch must restore power from the unchanged connected battery.");
+            plate.SetForbidden(false, warnOnFail: false);
+            IntegrationAssert.True(
+                dishwasherComp.CanAccept(plate),
+                "The same powered dishwasher must accept the dirty plate when otherwise operational.");
+            IntegrationAssert.True(
+                WorkGiver_DoDishes.TryFindDestination(pawn, plate, out var powered) &&
+                ReferenceEquals(powered.Target.Thing, dishwasher),
+                "Doing dishes must select the same reachable dishwasher once power is restored.");
+            var job = new WorkGiver_DoDishes().JobOnThing(pawn, plate);
+            IntegrationAssert.True(
+                job is not null && ReferenceEquals(job.GetTarget(TargetIndex.B).Thing, dishwasher),
+                "The native work giver job must persist the exact powered dishwasher destination.");
+        }
+        finally
+        {
+            ImmersiveChefsMod.Settings.PreferDishwashers = previousPreference;
+            for (var index = createdThings.Count - 1; index >= 0; index--)
+            {
+                if (!createdThings[index].Destroyed)
+                {
+                    createdThings[index].Destroy(DestroyMode.Vanish);
+                }
+            }
+            map.powerNetManager.UpdatePowerNetsAndConnections_First();
+        }
+    }
+
+    private static bool IsEmptyFixtureArea(Map map, IntVec3 center, int radius)
+    {
+        for (var x = center.x - radius; x <= center.x + radius; x++)
+        {
+            for (var z = center.z - radius; z <= center.z + radius; z++)
+            {
+                var cell = new IntVec3(x, 0, z);
+                if (x < 0 || z < 0 || x >= map.Size.x || z >= map.Size.z ||
+                    !cell.Standable(map) ||
+                    cell.GetThingList(map).Count != 0 ||
+                    map.zoneManager.ZoneAt(cell) is not null)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void EmbeddedMealOwnsAndReleasesTheExactPlateThing()
     {
         var meal = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("MealSimple"));
