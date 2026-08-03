@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-patient-feeding",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-patient-feeding-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-patient-feeding-ready.png"
+    },
+    {
+      "id": "arm-cutlery",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-patient-feeding-arm-cutlery.csx"
+    },
+    {
+      "id": "arm-conscious",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-patient-feeding-arm-conscious.csx"
+    },
+    {
+      "id": "arm-unconscious",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-patient-feeding-arm-unconscious.csx"
+    }
+  ]
+}

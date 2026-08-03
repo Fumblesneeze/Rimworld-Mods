@@ -214,6 +214,17 @@ Use the cutlery-free colonist scene to verify the opposite humanlike behavior. I
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the patient-feeding scene to compare three real `FeedPatient` jobs side by side: a nurse with cutlery and a cold plated meal, a conscious patient without cutlery, and an unconscious patient without cutlery. The first nurse should collect the cutlery and visibly reheat before feeding; only the conscious no-cutlery patient should receive `Ate without cutlery`; both no-cutlery feedings should create one native dirt event at the patient cell:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-patient-feeding `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell
