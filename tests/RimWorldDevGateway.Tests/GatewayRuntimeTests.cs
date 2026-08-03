@@ -38,6 +38,58 @@ public sealed class GatewayRuntimeTests
     }
 
     [Test]
+    public void Host_shutdown_lifecycle_retains_ownership_after_the_fast_window_and_completes_later()
+    {
+        var now = new DateTimeOffset(2026, 8, 3, 9, 0, 0, TimeSpan.Zero);
+        var attempts = 0;
+        var lifecycle = new GatewayShutdownLifecycle();
+        void Cleanup()
+        {
+            attempts++;
+            if (attempts < 3)
+            {
+                throw new AggregateException(
+                    new GatewayTransientSessionCleanupException(
+                        "locked",
+                        new IOException("sharing violation")));
+            }
+        }
+
+        var fastFailure = lifecycle.TryShutdown(Cleanup, allowRetry: true, now);
+        var persistentFailure = lifecycle.TryShutdown(
+            Cleanup,
+            allowRetry: true,
+            now.Add(GatewayShutdownRetryPolicy.RetryWindow));
+        var throttled = lifecycle.TryShutdown(
+            Cleanup,
+            allowRetry: true,
+            now.Add(GatewayShutdownRetryPolicy.RetryWindow).AddMilliseconds(500));
+        var completed = lifecycle.TryShutdown(
+            Cleanup,
+            allowRetry: true,
+            now.Add(GatewayShutdownRetryPolicy.RetryWindow).Add(
+                GatewayShutdownRetryPolicy.PersistentRetryInterval));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fastFailure.Attempted, Is.True);
+            Assert.That(fastFailure.IsTerminal, Is.False);
+            Assert.That(fastFailure.RetainsOwnership, Is.True);
+            Assert.That(fastFailure.ReportableFailure, Is.Null);
+            Assert.That(persistentFailure.Attempted, Is.True);
+            Assert.That(persistentFailure.IsTerminal, Is.False);
+            Assert.That(persistentFailure.RetainsOwnership, Is.True);
+            Assert.That(persistentFailure.ReportableFailure, Is.Not.Null);
+            Assert.That(throttled.Attempted, Is.False);
+            Assert.That(throttled.RetainsOwnership, Is.True);
+            Assert.That(completed.Attempted, Is.True);
+            Assert.That(completed.IsTerminal, Is.True);
+            Assert.That(completed.RetainsOwnership, Is.False);
+            Assert.That(attempts, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
     public void Start_binds_before_publishing_and_is_idempotent()
     {
         var root = NewRoot();

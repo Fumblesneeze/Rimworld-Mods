@@ -208,10 +208,10 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
 {
     private GatewayRuntime? runtime;
     private GatewayIntegrationTestCoordinator? integrationTests;
+    private readonly GatewayShutdownLifecycle shutdownLifecycle = new();
     private int stopping;
     private int shutdownInitialized;
     private int shutdownRequestedFrame = -1;
-    private DateTimeOffset? shutdownRetryDeadlineUtc;
 
     private void OnGUI()
     {
@@ -343,35 +343,40 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             StopAllCoroutines();
         }
 
-        try
-        {
-            runtime?.Stop();
-            integrationTests?.Dispose();
-            integrationTests = null;
-            runtime = null;
-            return true;
-        }
-        catch (Exception exception)
-        {
-            var nowUtc = DateTimeOffset.UtcNow;
-            if (allowRetry)
+        var attempt = shutdownLifecycle.TryShutdown(
+            () =>
             {
-                shutdownRetryDeadlineUtc ??= nowUtc.Add(GatewayShutdownRetryPolicy.RetryWindow);
-                if (GatewayShutdownRetryPolicy.ShouldRetry(
-                        exception,
-                        nowUtc,
-                        shutdownRetryDeadlineUtc.Value))
-                {
-                    Volatile.Write(ref stopping, 0);
-                    return false;
-                }
+                runtime?.Stop();
+                integrationTests?.Dispose();
+            },
+            allowRetry,
+            DateTimeOffset.UtcNow);
+        if (attempt.ReportableFailure is not null)
+        {
+            if (attempt.IsTerminal)
+            {
+                Log.Error(
+                    "[RimWorldDevGateway] Runtime shutdown encountered cleanup failures: " +
+                    attempt.ReportableFailure);
             }
+            else
+            {
+                Log.Warning(
+                    "[RimWorldDevGateway] Runtime shutdown cleanup remains retryable; " +
+                    "ownership is retained and later attempts are throttled: " +
+                    attempt.ReportableFailure);
+            }
+        }
 
-            Log.Error("[RimWorldDevGateway] Runtime shutdown encountered cleanup failures: " + exception);
+        if (attempt.IsTerminal)
+        {
             integrationTests = null;
             runtime = null;
             return true;
         }
+
+        Volatile.Write(ref stopping, 0);
+        return false;
     }
 }
 

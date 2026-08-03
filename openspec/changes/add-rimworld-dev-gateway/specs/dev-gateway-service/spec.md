@@ -121,7 +121,7 @@ The authenticated `POST /api/v1/server/shutdown` route and RimWorld process tear
 
 #### Scenario: Tombstone replacement is briefly blocked
 - **WHEN** the owned run manifest has a transient Windows sharing violation while shutdown atomically replaces it with the stopped tombstone
-- **THEN** the session manager retries that exact owned replacement for a short bounded interval, completes without a runtime cleanup exception when the lock clears, and still fails closed with retryable ownership when the lock persists
+- **THEN** the session manager classifies the exact sharing/lock failure and retains ownership; the Unity host retries once per rendered frame for a short bounded interval without sleeping, then keeps ownership while throttling later attempts; cleanup completes without an error when the lock clears, and a persistent lock cannot permit an overlapping restart
 
 #### Scenario: Cleanup fails before ownership is released
 - **WHEN** listener join or current-locator removal fails during shutdown
