@@ -2203,7 +2203,7 @@ function Start-GatewayRimWorldProcess {
 function Get-GatewaySmokeWindowObservation {
     param(
         [Parameter(Mandatory)][System.Diagnostics.Process]$Process,
-        [Parameter(Mandatory)][ValidateSet('Minimized', 'Normal')][string]$ExpectedWindowStyle
+        [Parameter(Mandatory)][ValidateSet('Minimized', 'Normal')][string]$RequestedWindowStyle
     )
 
     if ($null -eq ('GatewaySmokeNativeWindowMethods' -as [type])) {
@@ -2232,44 +2232,14 @@ public static class GatewaySmokeNativeWindowMethods
     $windowHandle = $Process.MainWindowHandle
     $isMinimized = [GatewaySmokeNativeWindowMethods]::IsIconic($windowHandle)
     $isVisible = [GatewaySmokeNativeWindowMethods]::IsWindowVisible($windowHandle)
-    $matchesExpectedStyle = if ($ExpectedWindowStyle -ceq 'Minimized') {
-        $isMinimized
-    }
-    else {
-        $isVisible -and -not $isMinimized
-    }
-
     return [pscustomobject]@{
         ProcessId = $Process.Id
         MainWindowHandle = ('0x{0:X}' -f $windowHandle.ToInt64())
-        ExpectedWindowStyle = $ExpectedWindowStyle
+        RequestedWindowStyle = $RequestedWindowStyle
         IsWindowVisible = $isVisible
         IsMinimized = $isMinimized
-        MatchesExpectedWindowStyle = $matchesExpectedStyle
         ObservedUtc = [datetime]::UtcNow.ToString('O', [Globalization.CultureInfo]::InvariantCulture)
     }
-}
-
-function Complete-GatewaySmokeWindowObservation {
-    param(
-        [Parameter(Mandatory)][psobject]$Observation
-    )
-
-    if ($null -eq $Observation.PSObject.Properties['MatchesExpectedWindowStyle']) {
-        throw 'The window observation does not report MatchesExpectedWindowStyle.'
-    }
-
-    $warning = $null
-    if (-not [bool]$Observation.MatchesExpectedWindowStyle) {
-        $warning =
-            "RimWorld PID $($Observation.ProcessId) no longer matches requested window style " +
-            "'$($Observation.ExpectedWindowStyle)'; the user may have changed the window after launch. " +
-            'This observation is diagnostic and the healthy run will continue.'
-    }
-
-    $Observation | Add-Member -NotePropertyName StyleMismatchIsFatal -NotePropertyValue $false -Force
-    $Observation | Add-Member -NotePropertyName Warning -NotePropertyValue $warning -Force
-    return $Observation
 }
 
 function Save-GatewaySmokeWindowObservation {
@@ -2278,11 +2248,10 @@ function Save-GatewaySmokeWindowObservation {
         [Parameter(Mandatory)][string]$Path
     )
 
-    $completed = Complete-GatewaySmokeWindowObservation -Observation $Observation
-    $completed |
+    $Observation |
         ConvertTo-Json -Depth 4 |
         Set-Content -LiteralPath $Path -Encoding UTF8
-    return $completed
+    return $Observation
 }
 
 function Invoke-GatewaySmokeBoundedProcess {
@@ -4356,7 +4325,7 @@ try {
     $windowLaunchObservation = Save-GatewaySmokeWindowObservation `
         -Observation (Get-GatewaySmokeWindowObservation `
             -Process $launchedProcess `
-            -ExpectedWindowStyle $launchWindowStyle) `
+            -RequestedWindowStyle $launchWindowStyle) `
         -Path $windowLaunchObservationPath
 
     $baseUrl = [string]$manifest.baseUrl

@@ -126,26 +126,25 @@ public sealed class GatewaySmokeBackgroundLaunchTests
     }
 
     [Test]
-    public void Later_window_style_mismatch_is_diagnostic_when_the_user_changes_the_window()
+    public void Later_window_state_is_observed_without_classifying_user_changes()
     {
         var script =
             "$ErrorActionPreference = 'Stop'\n" +
             "$WarningPreference = 'Stop'\n" +
-            LoadFunction("Complete-GatewaySmokeWindowObservation") +
             LoadFunction("Save-GatewaySmokeWindowObservation") +
-            "$observation = [pscustomobject]@{ ProcessId = 42; ExpectedWindowStyle = 'Minimized'; IsWindowVisible = $true; IsMinimized = $false; MatchesExpectedWindowStyle = $false }\n" +
+            "$observation = [pscustomobject]@{ ProcessId = 42; RequestedWindowStyle = 'Minimized'; IsWindowVisible = $true; IsMinimized = $false }\n" +
             "$path = Join-Path $PSScriptRoot 'window-launch-observation.json'\n" +
             "$result = Save-GatewaySmokeWindowObservation -Observation $observation -Path $path\n" +
             "$persisted = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json\n" +
-            "Write-Output ([string]$result.StyleMismatchIsFatal + '|' + [string]$persisted.StyleMismatchIsFatal + '|' + $persisted.Warning)\n";
+            "$classified = ($null -ne $persisted.PSObject.Properties['MatchesExpectedWindowStyle']) -or ($null -ne $persisted.PSObject.Properties['Warning']) -or ($null -ne $persisted.PSObject.Properties['StyleMismatchIsFatal'])\n" +
+            "Write-Output ([string]$classified + '|' + [string]$persisted.IsMinimized + '|' + $persisted.RequestedWindowStyle)\n";
 
         var result = RunPowerShellScript(script);
 
         Assert.Multiple(() =>
         {
             Assert.That(result.ExitCode, Is.Zero, result.StandardError);
-            Assert.That(result.StandardOutput, Does.StartWith("False|False|"));
-            Assert.That(result.StandardOutput, Does.Contain("may have changed the window after launch"));
+            Assert.That(result.StandardOutput.Trim(), Is.EqualTo("False|False|Minimized"));
         });
     }
 
