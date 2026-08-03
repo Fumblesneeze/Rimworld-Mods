@@ -193,3 +193,4 @@
 - [x] 26.3 REGRESSION/REVIEW: document the launch contract, run the full Gateway suite and strict OpenSpec validation, and resolve an independent review.
 - [x] 26.4 IN-GAME: on the reviewed build, start fresh isolated runs and natively observe the exact owned window minimized by default, normal with explicit `-VisibleWindow`, and normal through automatic `gateway-regression` selection; prove the Gateway remains responsive while the minimized RimWorld process advances under the isolated background preference, then open native Options and visibly observe the Music slider at zero.
 - [x] 26.5 TDD/LAUNCH: Treat the exact-PID window-state snapshot as informational only after launch; do not compare, classify, warn on, or enforce a user restore or maximize.
+- [x] 26.6 TDD/PERSISTENCE: Reproduce a destination snapshot held by a temporary Windows reader and retry its atomic replacement on the background persistence task without surfacing a false in-game failure.

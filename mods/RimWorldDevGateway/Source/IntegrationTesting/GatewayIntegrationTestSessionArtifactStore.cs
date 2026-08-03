@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RimWorldDevGateway;
@@ -8,6 +10,7 @@ namespace RimWorldDevGateway;
 public sealed class GatewayIntegrationTestSessionArtifactStore : IGatewayIntegrationTestSessionArtifactStore
 {
     private static readonly char[] AllowedRunIdPunctuation = { '-', '_' };
+    private static readonly TimeSpan AtomicReplaceRetryWindow = TimeSpan.FromSeconds(1);
     private readonly object sync = new();
     private readonly string saveDataFolder;
     private GatewayIntegrationTestSnapshot? committedSnapshot;
@@ -170,20 +173,43 @@ public sealed class GatewayIntegrationTestSessionArtifactStore : IGatewayIntegra
                 stream.Flush(flushToDisk: true);
             }
 
-            if (File.Exists(path))
-            {
-                File.Replace(temporaryPath, path, null, ignoreMetadataErrors: true);
-            }
-            else
-            {
-                File.Move(temporaryPath, path);
-            }
+            CommitTemporaryFile(temporaryPath, path);
         }
         finally
         {
             if (File.Exists(temporaryPath))
             {
                 File.Delete(temporaryPath);
+            }
+        }
+    }
+
+    private static void CommitTemporaryFile(string temporaryPath, string path)
+    {
+        var retryTimer = Stopwatch.StartNew();
+        var delayMilliseconds = 5;
+        while (true)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Replace(temporaryPath, path, null, ignoreMetadataErrors: true);
+                }
+                else
+                {
+                    File.Move(temporaryPath, path);
+                }
+
+                return;
+            }
+            catch (IOException) when (
+                File.Exists(temporaryPath) && retryTimer.Elapsed < AtomicReplaceRetryWindow)
+            {
+                // This method runs only on the persistence Task. A brief external reader must not
+                // surface a false integration-test failure or ever sleep Unity's update thread.
+                Thread.Sleep(delayMilliseconds);
+                delayMilliseconds = Math.Min(delayMilliseconds * 2, 50);
             }
         }
     }

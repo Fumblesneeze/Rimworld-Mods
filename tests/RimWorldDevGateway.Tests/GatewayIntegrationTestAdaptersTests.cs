@@ -366,6 +366,94 @@ public sealed class GatewayIntegrationTestAdaptersTests
     }
 
     [Test]
+    public void Session_artifact_store_retries_a_transient_destination_reader_before_failing()
+    {
+        using var directory = new TemporaryDirectory();
+        var store = new GatewayIntegrationTestSessionArtifactStore(directory.Path);
+        var disabledRunner = new GatewayIntegrationTestRunner(
+            enabled: false,
+            new ThrowingAssemblyCatalog(),
+            store,
+            new NeverReady());
+        var attachment = store.BeginAttachSession("run-transient-reader", disabledRunner.Snapshot);
+        Assert.That(SpinWait.SpinUntil(() => attachment.IsCompleted, TimeSpan.FromSeconds(10)), Is.True);
+        Assert.That(attachment.GetOutcome().Succeeded, Is.True);
+
+        var artifactPath = Path.Combine(
+            directory.Path,
+            "DevGateway",
+            "Sessions",
+            "run-transient-reader",
+            "integration-tests.json");
+        var reader = new FileStream(
+            artifactPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read);
+        var releaseReader = new Thread(() =>
+        {
+            Thread.Sleep(100);
+            reader.Dispose();
+        });
+        releaseReader.Start();
+
+        var persistence = store.BeginPersist(disabledRunner.Snapshot);
+        Assert.That(SpinWait.SpinUntil(() => persistence.IsCompleted, TimeSpan.FromSeconds(10)), Is.True);
+        releaseReader.Join(TimeSpan.FromSeconds(10));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(persistence.GetOutcome().Succeeded, Is.True);
+            Assert.That(File.Exists(artifactPath), Is.True);
+            Assert.That(
+                Directory.GetFiles(Path.GetDirectoryName(artifactPath)!, "*.tmp"),
+                Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Session_artifact_store_bounds_a_persistent_reader_and_keeps_the_prior_commit()
+    {
+        using var directory = new TemporaryDirectory();
+        var store = new GatewayIntegrationTestSessionArtifactStore(directory.Path);
+        var initial = new GatewayIntegrationTestSnapshot(enabled: false, discoveryState: "initial");
+        var candidate = new GatewayIntegrationTestSnapshot(enabled: false, discoveryState: "candidate");
+        var attachment = store.BeginAttachSession("run-persistent-reader", initial);
+        Assert.That(SpinWait.SpinUntil(() => attachment.IsCompleted, TimeSpan.FromSeconds(10)), Is.True);
+        Assert.That(attachment.GetOutcome().Succeeded, Is.True);
+
+        var artifactPath = Path.Combine(
+            directory.Path,
+            "DevGateway",
+            "Sessions",
+            "run-persistent-reader",
+            "integration-tests.json");
+        using (new FileStream(
+                   artifactPath,
+                   FileMode.Open,
+                   FileAccess.Read,
+                   FileShare.Read))
+        {
+            var persistence = store.BeginPersist(candidate);
+            Assert.That(SpinWait.SpinUntil(() => persistence.IsCompleted, TimeSpan.FromSeconds(5)), Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(persistence.GetOutcome().Succeeded, Is.False);
+                Assert.That(store.CommittedSnapshot, Is.SameAs(initial));
+            });
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.ReadAllText(artifactPath), Does.Contain("\"DiscoveryState\":\"initial\""));
+            Assert.That(File.ReadAllText(artifactPath), Does.Not.Contain("candidate"));
+            Assert.That(
+                Directory.GetFiles(Path.GetDirectoryName(artifactPath)!, "*.tmp"),
+                Is.Empty);
+        });
+    }
+
+    [Test]
     public void Session_artifact_attachment_is_not_committed_when_the_initial_snapshot_cannot_be_written()
     {
         using var directory = new TemporaryDirectory();
