@@ -119,6 +119,10 @@ The authenticated `POST /api/v1/server/shutdown` route and RimWorld process tear
 - **WHEN** a caller invokes the shutdown route with the current bearer token
 - **THEN** the gateway acknowledges the request, closes the listener, removes `DevGateway/current.json`, and removes the bearer token from the run record
 
+#### Scenario: Tombstone replacement is briefly blocked
+- **WHEN** the owned run manifest has a transient Windows sharing violation while shutdown atomically replaces it with the stopped tombstone
+- **THEN** the session manager retries that exact owned replacement for a short bounded interval, completes without a runtime cleanup exception when the lock clears, and still fails closed with retryable ownership when the lock persists
+
 #### Scenario: Cleanup fails before ownership is released
 - **WHEN** listener join or current-locator removal fails during shutdown
 - **THEN** the runtime retains the exact owned resource and session claim, rejects a new start, and permits a later stop attempt to finish cleanup without losing the original handle
