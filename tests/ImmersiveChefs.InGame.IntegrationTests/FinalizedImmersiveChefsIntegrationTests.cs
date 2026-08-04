@@ -271,6 +271,32 @@ public static class FinalizedImmersiveChefsIntegrationTests
             "The industrial dishwasher must materialize the restart-only scale into its finalized Def.");
     }
 
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void PreparedFoodWorkGiverTargetsOnlyThePrepStation()
+    {
+        var workGiver = DefDatabase<WorkGiverDef>.GetNamedSilentFail(
+            "ImmersiveChefs_PrepareIngredients");
+        IntegrationAssert.NotNull(
+            workGiver,
+            "The dedicated prepared-food WorkGiverDef must finalize.");
+        IntegrationAssert.Equal(
+            typeof(WorkGiver_DoBill),
+            workGiver!.giverClass,
+            "Prepared ingredients must use RimWorld's native bill workgiver.");
+        IntegrationAssert.Equal(
+            DefDatabase<WorkTypeDef>.GetNamed("Cooking"),
+            workGiver.workType,
+            "Prepared-food bills must remain governed by Cooking work.");
+        IntegrationAssert.Equal(
+            1,
+            workGiver.fixedBillGiverDefs?.Count ?? 0,
+            "Prepared-food work must scan exactly one explicit bill-giver Def.");
+        IntegrationAssert.Equal(
+            "ImmersiveChefs_PrepStation",
+            workGiver.fixedBillGiverDefs![0].defName,
+            "Prepared-food work must target only the ingredient prep station.");
+    }
+
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedTravelFoodsUseTheCoverageContract()
     {

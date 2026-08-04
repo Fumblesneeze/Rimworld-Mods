@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-prepared-food-workflow",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-prepared-food-workflow-setup.csx"
+    },
+    {
+      "id": "stock",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-prepared-food-workflow-stock.csx"
+    },
+    {
+      "id": "activate",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-prepared-food-workflow-activate.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-prepared-food-workflow-ready.png"
+    }
+  ]
+}

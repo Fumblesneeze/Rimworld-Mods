@@ -600,6 +600,59 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Prepared_food_workflow_scenario_leaves_preparation_and_cooking_to_native_work()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-prepared-food-workflow.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-prepared-food-workflow-setup.csx");
+        var stockPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-prepared-food-workflow-stock.csx");
+        var activatePath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-prepared-food-workflow-activate.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(stockPath), Is.True);
+            Assert.That(File.Exists(activatePath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var stock = File.ReadAllText(stockPath);
+        var activate = File.ReadAllText(activatePath);
+        var scenarioSource = setup + stock + activate;
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-prepared-food-workflow"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("Prep Chef"));
+            Assert.That(setup, Does.Contain("Prepared Cook"));
+            Assert.That(setup, Does.Contain("Raw Cook"));
+            Assert.That(stock, Does.Contain("ImmersiveChefs_PrepareIngredients"));
+            Assert.That(stock, Does.Contain("CookMealSimple"));
+            Assert.That(stock, Does.Contain("SetPawnRestriction"));
+            Assert.That(stock, Does.Contain("RepeatCount"));
+            Assert.That(activate, Does.Contain("prepChef.drafter.Drafted = false"));
+            Assert.That(scenarioSource, Does.Not.Contain("StartJob"));
+            Assert.That(scenarioSource, Does.Not.Contain("TryTakeOrderedJob"));
+            Assert.That(scenarioSource, Does.Not.Contain("EndCurrentJob"));
+            Assert.That(scenarioSource, Does.Not.Contain("MakeRecipeProducts"));
+            Assert.That(scenarioSource, Does.Not.Contain("ApplyProducts"));
+            Assert.That(scenarioSource, Does.Not.Contain("NotifyWorkTick"));
+            Assert.That(scenarioSource, Does.Not.Contain("RotProgress"));
+            Assert.That(scenarioSource, Does.Not.Contain("DoSingleTick"));
+        });
+    }
+
+    [Test]
     public void Handheld_food_scenario_uses_vanilla_food_choice_and_ingest_jobs()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");

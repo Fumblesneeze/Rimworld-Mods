@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <WorkGiverDef>
+    <defName>ImmersiveChefs_PrepareIngredients</defName>
+    <label>prepare ingredients</label>
+    <giverClass>WorkGiver_DoBill</giverClass>
+    <workType>Cooking</workType>
+    <verb>prepare ingredients at</verb>
+    <gerund>preparing ingredients at</gerund>
+    <priorityInType>99</priorityInType>
+    <scanThings>true</scanThings>
+    <fixedBillGiverDefs><li>ImmersiveChefs_PrepStation</li></fixedBillGiverDefs>
+    <requiredCapacities><li>Manipulation</li></requiredCapacities>
+  </WorkGiverDef>
+</Defs>

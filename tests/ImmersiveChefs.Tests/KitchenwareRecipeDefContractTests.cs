@@ -123,6 +123,37 @@ public sealed class KitchenwareRecipeDefContractTests
         });
     }
 
+    [Test]
+    public void Prep_station_has_a_dedicated_cooking_bill_workgiver()
+    {
+        var root = FindRepositoryRoot();
+        var workGivers = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "WorkGiverDefs",
+            "PreparedFoodWorkGiver.xml"));
+        var workGiver = workGivers.Root?.Elements("WorkGiverDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_PrepareIngredients");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)workGiver?.Element("giverClass"), Is.EqualTo("WorkGiver_DoBill"));
+            Assert.That((string?)workGiver?.Element("workType"), Is.EqualTo("Cooking"));
+            Assert.That((string?)workGiver?.Element("scanThings"), Is.EqualTo("true"));
+            Assert.That(
+                workGiver?.Element("fixedBillGiverDefs")?.Elements("li")
+                    .Select(element => element.Value),
+                Is.EqualTo(new[] { "ImmersiveChefs_PrepStation" }));
+            Assert.That(
+                workGiver?.Element("requiredCapacities")?.Elements("li")
+                    .Select(element => element.Value),
+                Does.Contain("Manipulation"));
+        });
+    }
+
     private static string? RequiredWorkType(XDocument document, string defName)
     {
         var recipe = document.Root?.Elements("RecipeDef")
