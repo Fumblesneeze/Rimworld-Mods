@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
@@ -447,6 +448,112 @@ public static class FinalizedImmersiveChefsIntegrationTests
         finally
         {
             pawn.Destroy(DestroyMode.Vanish);
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void PreparedFoodRoundTripsThroughTheRealScribePipeline()
+    {
+        var preparedDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_PreparedFood");
+        var original = (ThingWithComps)ThingMaker.MakeThing(preparedDef);
+        original.stackCount = 7;
+        var originalPrepared = original.GetComp<CompPreparedFood>();
+        var originalRottable = original.GetComp<CompRottable>();
+        IntegrationAssert.NotNull(originalPrepared, "The finalized prepared-food Def must expose provenance.");
+        IntegrationAssert.NotNull(originalRottable, "The finalized prepared-food Def must expose rot state.");
+        originalPrepared!.Initialize(new PreparedFoodState(
+            new[]
+            {
+                new IngredientContribution("RawRice", 0.035f, 4, 72),
+                new IngredientContribution("Meat_Human", 0.015f, 2, 31)
+            },
+            preparationQuality: 83,
+            preparerThingId: "Thing_Preparer4242",
+            dietaryFlags: DietaryFlags.Plant | DietaryFlags.Animal | DietaryFlags.HumanMeat,
+            exactSourcesHidden: true,
+            ingredientPoisonChance: 0.0375f));
+        originalRottable!.RotProgress = 1234.5f;
+
+        var path = Path.Combine(
+            GenFilePaths.TempFolderPath,
+            "immersive-chefs-prepared-food-roundtrip-" + Guid.NewGuid().ToString("N") + ".xml");
+        Thing? loaded = null;
+        try
+        {
+            Thing originalForScribe = original;
+            try
+            {
+                Scribe.saver.InitSaving(path, "preparedFoodRoundTrip");
+                Scribe_Deep.Look(ref originalForScribe, "thing");
+                Scribe.saver.FinalizeSaving();
+            }
+            catch
+            {
+                Scribe.saver.ForceStop();
+                throw;
+            }
+
+            try
+            {
+                Scribe.loader.InitLoading(path);
+                Scribe_Deep.Look(ref loaded, "thing");
+                Scribe.loader.FinalizeLoading();
+            }
+            catch
+            {
+                Scribe.loader.ForceStop();
+                throw;
+            }
+
+            var loadedWithComps = loaded as ThingWithComps;
+            var loadedPrepared = loadedWithComps?.GetComp<CompPreparedFood>();
+            var loadedRottable = loadedWithComps?.GetComp<CompRottable>();
+            IntegrationAssert.NotNull(loadedWithComps, "Scribe must reconstruct a real prepared-food Thing.");
+            IntegrationAssert.Equal(7, loadedWithComps!.stackCount, "Scribe must preserve the prepared stack count.");
+            IntegrationAssert.NotNull(loadedPrepared, "Scribe must reconstruct the prepared-food component.");
+            IntegrationAssert.NotNull(loadedRottable, "Scribe must reconstruct the rot component.");
+            IntegrationAssert.Equal(83, loadedPrepared!.PreparationQuality);
+            IntegrationAssert.Equal("Thing_Preparer4242", loadedPrepared.PreparerThingId);
+            IntegrationAssert.Equal(
+                DietaryFlags.Plant | DietaryFlags.Animal | DietaryFlags.HumanMeat,
+                loadedPrepared.DietaryFlags);
+            IntegrationAssert.True(loadedPrepared.ExactSourcesHidden);
+            IntegrationAssert.True(Math.Abs(loadedPrepared.IngredientPoisonChance - 0.0375f) < 0.0001f);
+            IntegrationAssert.True(Math.Abs(loadedPrepared.NutritionPerItem - 0.05f) < 0.0001f);
+            IntegrationAssert.Equal(2, loadedPrepared.Contributions.Count);
+            IntegrationAssert.True(
+                loadedPrepared.Contributions.Any(value =>
+                    value.DefName == "RawRice" &&
+                    Math.Abs(value.Nutrition - 0.035f) < 0.0001f &&
+                    value.SourceCount == 4 &&
+                    value.CraftsmanshipScore == 72));
+            IntegrationAssert.True(
+                loadedPrepared.Contributions.Any(value =>
+                    value.DefName == "Meat_Human" &&
+                    Math.Abs(value.Nutrition - 0.015f) < 0.0001f &&
+                    value.SourceCount == 2 &&
+                    value.CraftsmanshipScore == 31));
+            IntegrationAssert.True(Math.Abs(loadedRottable!.RotProgress - 1234.5f) < 0.01f);
+            IntegrationAssert.True(
+                loadedPrepared.CompInspectStringExtra().Contains("Source: nutrient paste"),
+                "The reconstructed hidden-source stack must remain opaque in ordinary inspection.");
+        }
+        finally
+        {
+            if (!original.Destroyed)
+            {
+                original.Destroy(DestroyMode.Vanish);
+            }
+
+            if (loaded is not null && !loaded.Destroyed)
+            {
+                loaded.Destroy(DestroyMode.Vanish);
+            }
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
         }
     }
 

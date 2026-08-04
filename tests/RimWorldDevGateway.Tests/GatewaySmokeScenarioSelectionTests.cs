@@ -653,6 +653,40 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Prepared_food_save_load_scenario_only_arranges_the_persistent_fixture()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-prepared-food-save-load.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-prepared-food-save-load-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-prepared-food-save-load"));
+            Assert.That(descriptor, Does.Contain("\"id\": \"pre\""));
+            Assert.That(setup, Does.Contain("Prepared Save Reload"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_PreparedFood"));
+            Assert.That(setup, Does.Contain("Preparation quality"));
+            Assert.That(setup, Does.Contain("RotProgress"));
+            Assert.That(setup, Does.Not.Contain("GameDataSaveLoader"));
+            Assert.That(setup, Does.Not.Contain("SaveGame"));
+            Assert.That(setup, Does.Not.Contain("LoadGame"));
+            Assert.That(setup, Does.Not.Contain("Scribe"));
+        });
+    }
+
+    [Test]
     public void Hidden_provenance_scenario_uses_native_bill_and_food_selection_boundaries()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
