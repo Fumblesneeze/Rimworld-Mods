@@ -14,4 +14,15 @@
     <ProjectReference Include="..\..\tools\RimWorldDevGateway.Client\RimWorldDevGateway.Client.csproj" />
     <PackageReference Update="NUnit3TestAdapter" Version="6.2.0" PrivateAssets="all" />
   </ItemGroup>
+
+  <ItemGroup>
+    <EndToEndCatalogFixtureProject Include="..\Fixtures\EndToEndHost.ValidFixtures\EndToEndHost.ValidFixtures.csproj" />
+  </ItemGroup>
+
+  <Target Name="BuildEndToEndCatalogFixture" BeforeTargets="Build">
+    <MSBuild
+      Projects="@(EndToEndCatalogFixtureProject)"
+      Targets="Restore;Build"
+      Properties="Configuration=$(Configuration)" />
+  </Target>
 </Project>
