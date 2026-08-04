@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-dubs-processor-dishwasher",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "syrchalis.processor.framework",
+    "Dubwise.DubsBadHygiene",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "processor-fixture",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-processor-dishwasher-setup.csx"
+    },
+    {
+      "id": "dubs-plumbing",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-dubs-processor-dishwasher-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-dubs-processor-dishwasher-ready.png"
+    }
+  ]
+}

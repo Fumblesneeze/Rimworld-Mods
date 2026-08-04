@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-processor-dishwasher",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "syrchalis.processor.framework",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-processor-dishwasher-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-processor-dishwasher-ready.png"
+    }
+  ]
+}

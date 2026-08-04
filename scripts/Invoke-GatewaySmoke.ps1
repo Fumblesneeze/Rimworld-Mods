@@ -211,6 +211,34 @@ function Resolve-GatewaySmokeScenario {
     }
 }
 
+function New-GatewayScenarioRequestId {
+    param(
+        [Parameter(Mandatory)][string]$ScenarioName,
+        [Parameter(Mandatory)][string]$StepId
+    )
+
+    $candidate = "gateway-scenario-$ScenarioName-$StepId"
+    if ($candidate.Length -le 64 -and $candidate -cmatch '^[A-Za-z0-9._:-]+$') {
+        return $candidate
+    }
+    if ($candidate -cnotmatch '^[A-Za-z0-9._:-]+$') {
+        throw "Gateway scenario correlation input is invalid: '$candidate'"
+    }
+
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($candidate))
+    }
+    finally {
+        $sha256.Dispose()
+    }
+
+    $digest = [System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant().Substring(0, 12)
+    $prefix = $candidate.Substring(0, [Math]::Min(51, $candidate.Length)).TrimEnd(
+        [char[]]@('-', '_', '.', ':'))
+    return "$prefix-$digest"
+}
+
 function Assert-GatewayScenarioRequiredPackages {
     param(
         [Parameter(Mandatory)][object]$ScenarioPlan,
@@ -5834,6 +5862,9 @@ try {
             if ($stepId -cnotmatch '^[a-z0-9][a-z0-9._-]{0,63}$') {
                 throw "Gateway scenario '$($scenarioPlan.Name)' has invalid step id '$stepId'."
             }
+            $scenarioRequestId = New-GatewayScenarioRequestId `
+                -ScenarioName ([string]$scenarioPlan.Name) `
+                -StepId $stepId
 
             $kind = [string]$step.kind
             switch ($kind) {
@@ -5848,7 +5879,7 @@ try {
                     $stepResponse = Invoke-GatewayTextPost `
                         -Uri "$baseUrl/executions/csharp" `
                         -Token $manifest.token `
-                        -RequestId "gateway-scenario-$($scenarioPlan.Name)-$stepId" `
+                        -RequestId $scenarioRequestId `
                         -Source (Get-Content -LiteralPath $sourcePath -Raw)
                     $stepResponse.Content | Set-Content -LiteralPath $stepArtifactPath -Encoding UTF8
                     $stepEnvelope = $stepResponse.Content | ConvertFrom-Json -ErrorAction Stop
@@ -5874,7 +5905,7 @@ try {
                     Save-GatewayScreenshot `
                         -BaseUrl $baseUrl `
                         -Token $manifest.token `
-                        -RequestId "gateway-scenario-$($scenarioPlan.Name)-$stepId" `
+                        -RequestId $scenarioRequestId `
                         -ArtifactPath $stepArtifactPath
                     $scenarioStepResults.Add([pscustomobject]@{
                         Id = $stepId

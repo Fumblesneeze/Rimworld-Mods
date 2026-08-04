@@ -1159,6 +1159,86 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Scenario_request_ids_are_deterministically_bounded_for_descriptive_names()
+    {
+        var script =
+            "$ErrorActionPreference = 'Stop'\n" +
+            LoadFunction("New-GatewayScenarioRequestId") +
+            "$first = New-GatewayScenarioRequestId -ScenarioName 'immersive-chefs-dubs-processor-dishwasher' -StepId 'processor-fixture'\n" +
+            "$repeat = New-GatewayScenarioRequestId -ScenarioName 'immersive-chefs-dubs-processor-dishwasher' -StepId 'processor-fixture'\n" +
+            "$other = New-GatewayScenarioRequestId -ScenarioName 'immersive-chefs-dubs-processor-dishwasher' -StepId 'dubs-plumbing'\n" +
+            "Write-Output ($first + '|' + $repeat + '|' + $other)\n";
+
+        var result = RunPowerShellScript(script);
+        var values = result.StandardOutput.Trim().Split('|');
+
+        Assert.That(result.ExitCode, Is.Zero, result.StandardError);
+        Assert.That(values, Has.Length.EqualTo(3));
+        if (values.Length != 3)
+        {
+            return;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(values[0], Has.Length.InRange(1, 64));
+            Assert.That(values[0], Does.Match("^[A-Za-z0-9._:-]+$"));
+            Assert.That(values[0], Is.EqualTo(values[1]));
+            Assert.That(values[0], Is.Not.EqualTo(values[2]));
+        });
+    }
+
+    [Test]
+    public void Dubs_processor_dishwasher_scenario_uses_real_plumbing_and_leaves_the_cycle_to_player_time()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-dubs-processor-dishwasher.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-dubs-processor-dishwasher-setup.csx");
+        var baseSetupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-processor-dishwasher-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(baseSetupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var combinedSetup = setup + File.ReadAllText(baseSetupPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("syrchalis.processor.framework"));
+            Assert.That(descriptor, Does.Contain("Dubwise.DubsBadHygiene"));
+            Assert.That(descriptor, Does.Contain("fumblesneeze.immersivechefs"));
+            Assert.That(setup, Does.Contain("WaterTowerS"));
+            Assert.That(setup, Does.Contain("sewagePipeHidden"));
+            Assert.That(setup, Does.Contain("towerCell.x + 2"));
+            Assert.That(setup, Does.Contain("dishwasher.Position.x - 1"));
+            Assert.That(setup, Does.Contain("WaterStorage"));
+            Assert.That(setup, Does.Contain("10f"));
+            Assert.That(combinedSetup, Does.Contain("ImmersiveChefs_Cookware"));
+            Assert.That(combinedSetup, Does.Contain("ImmersiveChefs_Plate"));
+            Assert.That(combinedSetup, Does.Contain("ImmersiveChefs_Cutlery"));
+            Assert.That(combinedSetup, Does.Contain("WorkTypeDefOf.Hauling"));
+            Assert.That(
+                combinedSetup,
+                Does.Contain("ThingDefOf.Wall"),
+                "The passive fixture must isolate its native haulers from unrelated colony hauling and hand-washing work.");
+            Assert.That(combinedSetup, Does.Not.Contain("StartJob"));
+            Assert.That(combinedSetup, Does.Not.Contain("TryTakeOrderedJob"));
+            Assert.That(combinedSetup, Does.Not.Contain("TryConsumeCycleWater"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));
