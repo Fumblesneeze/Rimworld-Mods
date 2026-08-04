@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-processor-dishwasher-interruption",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "syrchalis.processor.framework",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "processor-fixture",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-processor-dishwasher-setup.csx"
+    },
+    {
+      "id": "switch-worker",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-processor-dishwasher-interruption-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-processor-dishwasher-interruption-ready.png"
+    }
+  ]
+}

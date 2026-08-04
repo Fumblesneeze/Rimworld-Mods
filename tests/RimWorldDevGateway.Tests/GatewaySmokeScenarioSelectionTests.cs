@@ -1239,6 +1239,46 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Processor_interruption_scenario_is_passive_and_provides_a_basic_worker()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-processor-dishwasher-interruption.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-processor-dishwasher-interruption-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        if (!File.Exists(descriptorPath) || !File.Exists(setupPath))
+        {
+            return;
+        }
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-processor-dishwasher-setup.csx"));
+            Assert.That(descriptor, Does.Contain("syrchalis.processor.framework"));
+            Assert.That(descriptor, Does.Contain("fumblesneeze.immersivechefs"));
+            Assert.That(setup, Does.Contain("GetNamed(\"BasicWorker\")"));
+            Assert.That(setup, Does.Contain("Dishwasher Switch Worker"));
+            Assert.That(setup, Does.Not.Contain("DoFlick"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+            Assert.That(setup, Does.Not.Contain("TryTakeOrderedJob"));
+            Assert.That(setup, Does.Not.Contain("EjectAllDirty"));
+            Assert.That(setup, Does.Not.Contain("Find.TickManager.DoSingleTick"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

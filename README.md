@@ -296,6 +296,17 @@ Use the Processor Framework dishwasher scene to exercise its real fill work give
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.','[ImmersiveChefs] Processor Framework adapter active; reusable dish identity is preserved.'
 ```
 
+Use the interruption variant to verify the player-facing pause, resume, and cancellation paths. It adds one Basic-only switch worker but still starts no job or cycle. After native hauling begins the wash, use the dishwasher's `Designate toggle power` gizmo and let that pawn flick it off; progress must remain unchanged while time advances. Toggle it back on, verify progress resumes from the same percentage, then use `Eject dishes` and inspect the returned exact items: all three must still be dirty and retain their original damage.
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-processor-dishwasher-interruption `
+  -InteractiveHoldSeconds 300 `
+  -AdditionalModIds 'brrainz.harmony','syrchalis.processor.framework','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.','[ImmersiveChefs] Processor Framework adapter active; reusable dish identity is preserved.'
+```
+
 Add Dubs Bad Hygiene with the matching scenario to use a real connected water tower holding exactly 10.0 L. During the complete loading window the tower must remain at 10.0 L; once the 5.25-equivalent batch starts washing it should read 9.5 L, remain there through completion, and all three exact ware items should return clean:
 
 ```powershell
