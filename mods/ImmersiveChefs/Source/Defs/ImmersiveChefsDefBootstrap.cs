@@ -67,6 +67,14 @@ internal static class ImmersiveChefsDefBootstrap
             OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.DubsBadHygiene, dubsReason);
         }
 
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.VanillaNutrientPasteExpanded) &&
+            !VanillaNutrientPasteExpandedAdapter.TryInitialize(out var vnpeReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(
+                OptionalIntegration.VanillaNutrientPasteExpanded,
+                vnpeReason);
+        }
+
         if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.ProcessorFramework) &&
             !ProcessorFrameworkAdapter.TryInitialize(ImmersiveChefsMod.HarmonyInstance, out var reason))
         {

@@ -661,6 +661,48 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Vnpe_prepared_paste_scenario_uses_the_real_pipe_tap_and_leaves_dispensing_to_player_input()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-vnpe-prepared-paste.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-vnpe-prepared-paste-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-vnpe-prepared-paste"));
+            Assert.That(descriptor, Does.Contain("oskarpotocki.vanillafactionsexpanded.core"));
+            Assert.That(descriptor, Does.Contain("vanillaexpanded.vnutriente"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("VNPE_NutrientPasteTap"));
+            Assert.That(setup, Does.Contain("VNPE_NutrientPasteVat"));
+            Assert.That(setup, Does.Contain("VNPE_NutrientPastePipe"));
+            Assert.That(setup, Does.Contain("PipeSystem.CompResourceStorage"));
+            Assert.That(setup, Does.Contain("AmountStored"));
+            Assert.That(setup, Does.Contain("Find.CameraDriver.SetRootPosAndSize"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(worker)"));
+            Assert.That(setup, Does.Not.Contain("TryDispenseFood"));
+            Assert.That(setup, Does.Not.Contain("TryDispenseFoodOverride"));
+            Assert.That(setup, Does.Not.Contain("ImmersiveChefs_PreparedFood"));
+            Assert.That(setup, Does.Not.Contain("ImmersiveChefs_DispensePreparedPaste"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+            Assert.That(setup, Does.Not.Contain("TryTakeOrderedJob"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

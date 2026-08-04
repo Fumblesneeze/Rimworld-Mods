@@ -2120,6 +2120,140 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void ActiveVanillaNutrientPasteExpandedUsesItsExactPipeBackedTap()
+    {
+        var activeIds = LoadedModManager.RunningModsListForReading
+            .Select(mod => mod.PackageId)
+            .ToList();
+        var vnpeActive = activeIds.Any(id =>
+            string.Equals(id, "vanillaexpanded.vnutriente", StringComparison.OrdinalIgnoreCase));
+        if (!vnpeActive)
+        {
+            return;
+        }
+
+        var phase = "active package and setting validation";
+        try
+        {
+            IntegrationAssert.True(
+                activeIds.Any(id => string.Equals(
+                    id,
+                    "oskarpotocki.vanillafactionsexpanded.core",
+                    StringComparison.OrdinalIgnoreCase)),
+                "The supported VNPE matrix must load Vanilla Expanded Framework first.");
+            IntegrationAssert.True(
+                ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.VanillaNutrientPasteExpanded),
+                "The exact active VNPE+VEF matrix must enable its Auto integration setting.");
+            IntegrationAssert.True(
+                VanillaNutrientPasteExpandedAdapter.Enabled,
+                "The finalized-Def bootstrap must validate and enable the VNPE adapter.");
+
+            phase = "finalized tap Def and runtime type validation";
+            var tapDef = DefDatabase<ThingDef>.GetNamed("VNPE_NutrientPasteTap");
+            var tapType = AccessTools.TypeByName("VNPE.Building_NutrientPasteTap");
+            var pipePropertiesType = AccessTools.TypeByName("PipeSystem.CompProperties_Resource");
+            IntegrationAssert.NotNull(tapType, "Active VNPE must expose its exact nutrient-paste tap type.");
+            IntegrationAssert.NotNull(pipePropertiesType, "Active VEF must expose the exact pipe resource component.");
+            IntegrationAssert.Equal(
+                "VNPE",
+                tapType!.Assembly.GetName().Name,
+                "The supported nutrient-paste tap type must come from VNPE.dll.");
+            IntegrationAssert.Equal(
+                typeof(Building_NutrientPasteDispenser),
+                tapType.BaseType,
+                "The validated VNPE tap must directly subclass the vanilla dispenser.");
+            IntegrationAssert.Equal(
+                tapType,
+                tapDef.thingClass,
+                "The finalized VNPE tap Def must retain the validated runtime type.");
+            IntegrationAssert.NotNull(
+                tapDef.comps,
+                "The finalized VNPE tap Def must retain its component list.");
+            IntegrationAssert.Equal(
+                1,
+                tapDef.comps!.Count(properties => pipePropertiesType!.IsInstanceOfType(properties)),
+                "The finalized VNPE tap must retain exactly one pipe-resource component.");
+
+            phase = "finalized exact dispenser classification";
+            var vanillaDef = DefDatabase<ThingDef>.GetNamed("NutrientPasteDispenser");
+            IntegrationAssert.True(
+                VanillaNutrientPasteExpandedAdapter.Controls(tapDef, tapType),
+                "The exact finalized VNPE tap must be owned by the guarded adapter.");
+            IntegrationAssert.True(
+                PasteDispenserAdapter.Supports(tapDef, tapType),
+                "Prepared-paste dispensing must accept the exact finalized VNPE tap.");
+            IntegrationAssert.True(
+                PasteDispenserAdapter.Supports(vanillaDef, vanillaDef.thingClass),
+                "The base vanilla dispenser must remain supported in the VNPE matrix.");
+
+            phase = "live setting opt-out validation";
+            var originalVnpeMode = ImmersiveChefsMod.Settings.VanillaNutrientPasteExpanded;
+            try
+            {
+                ImmersiveChefsMod.Settings.VanillaNutrientPasteExpanded = OptionalIntegrationMode.Off;
+                IntegrationAssert.False(
+                    VanillaNutrientPasteExpandedAdapter.Controls(tapDef, tapType),
+                    "Turning the VNPE integration off must immediately release the native tap.");
+                IntegrationAssert.False(
+                    PasteDispenserAdapter.Supports(tapDef, tapType),
+                    "Prepared-paste dispensing must immediately reject the VNPE tap while its setting is off.");
+                IntegrationAssert.True(
+                    PasteDispenserAdapter.Supports(vanillaDef, vanillaDef.thingClass),
+                    "Turning VNPE support off must not disable the base vanilla dispenser.");
+            }
+            finally
+            {
+                ImmersiveChefsMod.Settings.VanillaNutrientPasteExpanded = originalVnpeMode;
+            }
+
+            phase = "native Harmony patch metadata validation";
+            var canDispense = AccessTools.PropertyGetter(
+                typeof(Building_NutrientPasteDispenser),
+                nameof(Building_NutrientPasteDispenser.CanDispenseNow));
+            var tryDispense = AccessTools.Method(
+                typeof(Building_NutrientPasteDispenser),
+                nameof(Building_NutrientPasteDispenser.TryDispenseFood));
+            IntegrationAssert.NotNull(
+                canDispense,
+                "The vanilla dispenser CanDispenseNow getter must exist in the active game.");
+            IntegrationAssert.NotNull(
+                tryDispense,
+                "The vanilla dispenser TryDispenseFood method must exist in the active game.");
+            var canDispensePatches = Harmony.GetPatchInfo(canDispense!);
+            var tryDispensePatches = Harmony.GetPatchInfo(tryDispense!);
+            IntegrationAssert.NotNull(
+                canDispensePatches,
+                "The active VNPE matrix must patch the vanilla CanDispenseNow getter.");
+            IntegrationAssert.NotNull(
+                tryDispensePatches,
+                "The active VNPE and Immersive Chefs matrix must patch TryDispenseFood.");
+            IntegrationAssert.True(
+                canDispensePatches!.Prefixes.Any(patch =>
+                    patch.PatchMethod?.DeclaringType?.FullName ==
+                    "VNPE.Building_NutrientPasteDispenser_CanDispenseNow") == true,
+                "VNPE's native CanDispenseNow pipe-network prefix must remain installed.");
+            IntegrationAssert.True(
+                tryDispensePatches!.Prefixes.Any(patch =>
+                    patch.PatchMethod?.DeclaringType?.FullName ==
+                    "VNPE.Building_NutrientPasteDispenser_TryDispenseFood") == true,
+                "VNPE's native TryDispenseFood pipe-network prefix must remain installed.");
+            IntegrationAssert.Equal(
+                1,
+                tryDispensePatches.Owners.Count(owner => owner == ImmersiveChefsMod.PackageId),
+                "Plate attachment must retain one Immersive Chefs postfix on the shared native dispense method.");
+        }
+        catch (IntegrationTestAssertionException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            IntegrationAssert.Fail(
+                $"The active VNPE contract threw {exception.GetType().FullName} during {phase}.");
+        }
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void ActiveGastronomyInstallsOneGuardedWaiterBridge()
     {
         var activeIds = LoadedModManager.RunningModsListForReading

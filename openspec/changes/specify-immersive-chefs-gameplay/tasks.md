@@ -41,6 +41,7 @@
 - [x] 4.5 REFACTOR: Keep preparation transformations independent from meal recipe ownership and variety calculations.
 - [ ] 4.6 IN-GAME: Verify preparation bills, fast rot, cooking acceleration, paste output, inspect strings, dietary restrictions, and save/load.
   - [x] 4.6a Through the native right-click float menu, observe one selected pawn operate a real powered vanilla dispenser/hopper without plate or cutlery, consume feedstock, and create a prepared-ingredient stack whose ordinary inspector shows quality 20, hidden source `nutrient paste`, and nutrition per unit 0.05 rather than a finished paste meal.
+  - [x] 4.6b With exact Harmony, Vanilla Expanded Framework, and Vanilla Nutrient Paste Expanded packages loaded, observe the same player order on the real pipe-backed tap, the connected vat fall from 12 to 11 meals, and the resulting prepared stack expose quality 20, hidden nutrient-paste source, and 0.05 nutrition per unit.
 
 ## 5. mods/ImmersiveChefs - Cooperative cooking
 

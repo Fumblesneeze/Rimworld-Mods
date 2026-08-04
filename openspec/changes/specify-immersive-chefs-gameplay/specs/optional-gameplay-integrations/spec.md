@@ -108,12 +108,22 @@ With `Evyatar108.VarietyMattersImprovedRedux`, `VanillaExpanded.VanillaFoodVarie
 
 ### Requirement: Nutrient-paste adapters preserve dispenser ownership
 
-When `VanillaExpanded.VNutrientE` and `OskarPotocki.VanillaFactionsExpanded.Core` are active, the adapter SHALL add plate acquisition and supported prepared-paste output without replacing their dispenser networks or optional ingredient behavior. The base-game dispenser SHALL behave correctly when neither package is active.
+When `VanillaExpanded.VNutrientE` and `OskarPotocki.VanillaFactionsExpanded.Core` are active, the adapter SHALL add plate acquisition and supported prepared-paste output without replacing their dispenser networks or optional ingredient behavior. Support SHALL be limited to finalized Def `VNPE_NutrientPasteTap`, runtime type `VNPE.Building_NutrientPasteTap` from assembly `VNPE`, its direct `RimWorld.Building_NutrientPasteDispenser` base, and exactly one `PipeSystem.CompProperties_Resource`. The product assembly MUST NOT reference VNPE or PipeSystem directly, MUST NOT accept unrelated method-name lookalikes, and SHALL invoke the shared vanilla dispenser methods so VNPE's own Harmony prefixes retain pipe-network ownership. A disabled integration setting or a guarded native invocation failure SHALL reject only the VNPE tap. The base-game dispenser SHALL behave correctly when neither package is active or VNPE support is disabled.
 
 #### Scenario: Vanilla dispenser remains supported
 
 - **WHEN** no nutrient-paste overhaul package is active and a pawn has a clean plate
 - **THEN** the vanilla dispenser produces a plated nutrient paste meal using the Immersive Chefs lifecycle
+
+#### Scenario: Native VNPE tap dispenses prepared paste
+
+- **WHEN** a player orders prepared cooking paste from the exact powered VNPE tap connected to a filled native vat
+- **THEN** VNPE consumes one unit from its pipe network and Immersive Chefs creates paste-derived prepared ingredients through the ordinary pawn job
+
+#### Scenario: VNPE-shaped lookalike is present
+
+- **WHEN** a Def, runtime type, assembly, base type, or pipe component differs from the supported finalized identity
+- **THEN** the guarded adapter rejects it without reflective fallback or disabling the base vanilla dispenser
 
 ### Requirement: Processor use is preferred and identity preserving
 
@@ -131,7 +141,7 @@ When `syrchalis.processor.framework` is active and its expected local shape vali
 
 ### Requirement: Integration settings are explicit
 
-Each supported optional integration SHALL expose an `Auto` or `Off` setting, defaulting to `Auto`, and changes SHALL take effect after restart because they alter patches, generated Defs, or classification caches.
+Each supported optional integration SHALL expose an `Auto` or `Off` setting, defaulting to `Auto`. Switching to `Off` MAY fail closed immediately when an adapter can safely stop classifying new work without removing patches or generated Defs; all remaining changes, including enabling an adapter that was not initialized at startup, SHALL take effect after restart because they alter patches, generated Defs, or classification caches.
 
 #### Scenario: Player disables an installed integration
 

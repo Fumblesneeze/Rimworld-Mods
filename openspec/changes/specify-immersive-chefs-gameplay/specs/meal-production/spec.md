@@ -146,7 +146,7 @@ The dispenser SHALL also expose a distinct on-demand prepared-food operation. Th
 - **THEN** the final meal can exceed the paste ingredient's low preparation quality through the normal skill and kitchen contribution calculation while preserving applicable dietary restrictions and other poisoning risks
 
 ### Requirement: Nutrient paste integrations remain optional
-Vanilla nutrient paste behavior SHALL work without Vanilla Nutrient Paste Expanded. When `vanillaexpanded.vnutriente` is active, compatibility SHALL classify its equivalent dispensers and outputs through package-gated XML or reflection-isolated adapters, SHALL preserve its own hopper and network behavior, and MUST NOT make its assembly a build or load dependency.
+Vanilla nutrient paste behavior SHALL work without Vanilla Nutrient Paste Expanded. When `vanillaexpanded.vnutriente` is active with its required Vanilla Expanded Framework package, compatibility SHALL classify the exact finalized native tap identity through a package- and setting-gated reflection-isolated adapter, SHALL preserve VNPE's own pipe-network behavior by using the shared dispenser methods, and MUST NOT make VNPE or PipeSystem a build or load dependency.
 
 #### Scenario: Vanilla Nutrient Paste Expanded is absent
 - **WHEN** Immersive Chefs loads with only vanilla nutrient paste buildings
@@ -155,6 +155,10 @@ Vanilla nutrient paste behavior SHALL work without Vanilla Nutrient Paste Expand
 #### Scenario: Vanilla Nutrient Paste Expanded is active
 - **WHEN** its supported dispenser produces an equivalent paste meal or prepared ingredient
 - **THEN** the same plate and preparation contracts apply while the supplying mod retains control of its network behavior
+
+#### Scenario: Vanilla Nutrient Paste Expanded is disabled
+- **WHEN** the optional integration policy is Off while the base dispenser and native VNPE tap both exist
+- **THEN** the native tap is excluded from Immersive Chefs preparation while the exact base-game dispenser remains supported
 
 ### Requirement: Production settings declare when a restart is required
 Changes to ware-requirement modes, recipe classification, recipe inclusion, or work multipliers that are materialized into Defs SHALL be labeled as requiring a game restart and SHALL take effect only after Def databases are rebuilt. Runtime selection preferences and the emergency hunger threshold MAY apply immediately when they do not mutate Defs.

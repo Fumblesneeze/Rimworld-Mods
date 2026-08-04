@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-vnpe-prepared-paste",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "oskarpotocki.vanillafactionsexpanded.core",
+    "vanillaexpanded.vnutriente",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-vnpe-prepared-paste-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-vnpe-prepared-paste-ready.png"
+    }
+  ]
+}

@@ -347,6 +347,17 @@ Use the prepared-paste scene to verify the separate player-ordered ingredient ou
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the VNPE variant to exercise the installed mod's real pipe-backed tap and vat. The explicit setup connects and powers the native network and starts it at 12 stored meals, but does not order or dispense anything. Right-click the tap, choose `Dispense prepared cooking paste`, and resume at Normal speed. The prepared stack should expose the same paste metadata while the vat falls to 11:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-vnpe-prepared-paste `
+  -InteractiveHoldSeconds 300 `
+  -AdditionalModIds 'brrainz.harmony','oskarpotocki.vanillafactionsexpanded.core','vanillaexpanded.vnutriente','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Vanilla Nutrient Paste Expanded adapter active'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell
