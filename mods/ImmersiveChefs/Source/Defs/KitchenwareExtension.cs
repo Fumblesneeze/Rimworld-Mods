@@ -21,3 +21,8 @@ public sealed class KitchenwareRecipeExtension : DefModExtension
     public KitchenwareProduct product;
     public FabricationTier fabricationTier;
 }
+
+public sealed class KitchenwareAlertStationExtension : DefModExtension
+{
+    public bool enabled = true;
+}

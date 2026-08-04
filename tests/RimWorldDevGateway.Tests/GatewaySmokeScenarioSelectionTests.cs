@@ -1331,6 +1331,54 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Kitchenware_alert_scenario_arranges_an_active_stove_and_silent_controls_without_driving_them()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-alerts.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-alerts-setup.csx");
+        var framePath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-kitchenware-alerts-frame.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(framePath), Is.True);
+        });
+
+        if (!File.Exists(descriptorPath) || !File.Exists(setupPath) || !File.Exists(framePath))
+        {
+            return;
+        }
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath) + File.ReadAllText(framePath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("fumblesneeze.immersivechefs"));
+            Assert.That(setup, Does.Contain("FueledStove"));
+            Assert.That(setup, Does.Contain("Campfire"));
+            Assert.That(setup, Does.Contain("RawBerries"));
+            Assert.That(setup, Does.Contain("CookMealSimple"));
+            Assert.That(setup, Does.Contain("BillStack.AddBill"));
+            Assert.That(setup, Does.Contain("MarkDirty"));
+            Assert.That(setup, Does.Contain("SetForbidden(true"));
+            Assert.That(setup, Does.Contain("Find.TickManager.Pause"));
+            Assert.That(setup, Does.Not.Contain("SetForbidden(false"));
+            Assert.That(setup, Does.Not.Contain("WaterShallow"));
+            Assert.That(setup, Does.Not.Contain("DoSingleTick"));
+            Assert.That(setup, Does.Not.Contain("GetReport"));
+            Assert.That(setup, Does.Not.Contain("TakeOrderedJob"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

@@ -2388,6 +2388,205 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void KitchenwareAlertOnlyReportsAbsentWareForRunnableOwnedKitchenBills()
+    {
+        var map = Find.CurrentMap;
+        var cells = new System.Collections.Generic.List<IntVec3>();
+        foreach (var cell in map.AllCells.OrderBy(cell => cell.DistanceToSquared(map.Center)))
+        {
+            if (!CellRect.CenteredOn(cell, 2).Cells.All(candidate =>
+                    candidate.x >= 0 && candidate.z >= 0 &&
+                    candidate.x < map.Size.x && candidate.z < map.Size.z &&
+                    candidate.Standable(map) &&
+                    candidate.GetThingList(map).Count == 0 &&
+                    map.zoneManager.ZoneAt(candidate) is null) ||
+                cells.Any(existing => existing.DistanceToSquared(cell) < 100f))
+            {
+                continue;
+            }
+
+            cells.Add(cell);
+            if (cells.Count == 5)
+            {
+                break;
+            }
+        }
+
+        IntegrationAssert.Equal(5, cells.Count, "The quickstart map must provide five isolated alert-fixture areas.");
+        var previousMode = ImmersiveChefsMod.Settings.WareRequirementMode;
+        var created = new System.Collections.Generic.List<Thing>();
+        var draftedStates = new System.Collections.Generic.Dictionary<Pawn, bool>();
+
+        try
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = WareRequirementMode.Strict;
+            var cookwareDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware");
+            var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+            IntegrationAssert.Equal(
+                0,
+                map.listerThings.AllThings.Count(thing =>
+                    thing.def.GetModExtension<KitchenwareExtension>()?.product is
+                        KitchenwareProduct.Cookware or KitchenwareProduct.Plate),
+                "The isolated quickstart must start without cookware or plates for the absence proof.");
+
+            var cooking = DefDatabase<WorkTypeDef>.GetNamed("Cooking");
+            Pawn? worker = null;
+            for (var attempt = 0; attempt < 64 && worker is null; attempt++)
+            {
+                var candidate = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+                    PawnKindDefOf.Colonist,
+                    Faction.OfPlayer,
+                    forceGenerateNewPawn: true,
+                    canGeneratePawnRelations: false));
+                if (candidate.WorkTypeIsDisabled(cooking))
+                {
+                    candidate.Destroy(DestroyMode.Vanish);
+                    continue;
+                }
+
+                worker = candidate;
+            }
+
+            IntegrationAssert.NotNull(worker, "The alert fixture must generate a Cooking-capable colonist.");
+            worker!.workSettings.EnableAndInitialize();
+            worker.workSettings.SetPriority(cooking, 1);
+            GenSpawn.Spawn(worker, cells[0], map);
+            created.Add(worker);
+
+            var meal = ThingMaker.MakeThing(ThingDefOf.MealSimple);
+            var berries = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("RawBerries"));
+            var campfireDef = DefDatabase<ThingDef>.GetNamed("Campfire");
+            var campfire = ThingMaker.MakeThing(
+                campfireDef,
+                campfireDef.MadeFromStuff ? ThingDefOf.Steel : null);
+            campfire.SetFactionDirect(Faction.OfPlayer);
+            GenSpawn.Spawn(meal, cells[1], map);
+            GenSpawn.Spawn(berries, cells[1] + IntVec3.East, map);
+            GenSpawn.Spawn(campfire, cells[2], map, Rot4.North);
+            campfire.TryGetComp<CompRefuelable>()?.Refuel(999f);
+            var campfireBill = new Bill_Production(DefDatabase<RecipeDef>.GetNamed("CookMealSimple"))
+            {
+                repeatMode = BillRepeatModeDefOf.RepeatCount,
+                repeatCount = 1
+            };
+            ((IBillGiver)campfire).BillStack.AddBill(campfireBill);
+            created.Add(meal);
+            created.Add(berries);
+            created.Add(campfire);
+
+            var alert = new Alert_MissingKitchenware();
+            IntegrationAssert.True(
+                !alert.GetReport().AnyCulpritValid,
+                "Loose meals, raw berries, and a campfire bill must not advertise missing kitchenware.");
+            IntegrationAssert.True(
+                campfireDef.GetModExtension<KitchenwareAlertStationExtension>() is null,
+                "The finalized Campfire Def must not opt into kitchenware alerts.");
+
+            var stoveDef = DefDatabase<ThingDef>.GetNamed("FueledStove");
+            IntegrationAssert.True(
+                stoveDef.GetModExtension<KitchenwareAlertStationExtension>()?.enabled == true,
+                "The finalized fueled-stove Def must opt into kitchenware alerts.");
+            var stove = ThingMaker.MakeThing(
+                stoveDef,
+                stoveDef.MadeFromStuff ? ThingDefOf.Steel : null);
+            stove.SetFactionDirect(Faction.OfPlayer);
+            GenSpawn.Spawn(stove, cells[3], map, Rot4.North);
+            created.Add(stove);
+            var stoveBill = new Bill_Production(DefDatabase<RecipeDef>.GetNamed("CookMealSimple"))
+            {
+                repeatMode = BillRepeatModeDefOf.RepeatCount,
+                repeatCount = 1
+            };
+            ((IBillGiver)stove).BillStack.AddBill(stoveBill);
+
+            IntegrationAssert.True(
+                !alert.GetReport().AnyCulpritValid,
+                "An unpowered or unfueled kitchen must not create a secondary kitchenware alert.");
+            stove.TryGetComp<CompRefuelable>()?.Refuel(999f);
+            IntegrationAssert.True(
+                alert.GetReport().AnyCulpritValid,
+                "A runnable strict bill on an owned fueled stove must report physically absent cookware and plates.");
+
+            foreach (var cook in map.mapPawns.FreeColonistsSpawned.Where(pawn =>
+                         pawn.workSettings?.WorkIsActive(cooking) == true &&
+                         !pawn.Downed &&
+                         !pawn.InMentalState))
+            {
+                draftedStates[cook] = cook.Drafted;
+                cook.drafter.Drafted = true;
+            }
+
+            IntegrationAssert.True(
+                !alert.GetReport().AnyCulpritValid,
+                "Drafting every eligible cook must suppress the alert during combat.");
+            foreach (var pair in draftedStates)
+            {
+                pair.Key.drafter.Drafted = pair.Value;
+            }
+            draftedStates.Clear();
+            IntegrationAssert.True(
+                alert.GetReport().AnyCulpritValid,
+                "Returning an eligible cook to ordinary work must restore the relevant absence alert.");
+
+            var cookware = (ThingWithComps)ThingMaker.MakeThing(cookwareDef, ThingDefOf.Steel);
+            cookware.GetComp<CompSanitation>().MarkDirty();
+            GenSpawn.Spawn(cookware, cells[4], map);
+            cookware.SetForbidden(true, warnOnFail: false);
+            created.Add(cookware);
+            var oneMissingExplanation = alert.GetExplanation().Resolve();
+            IntegrationAssert.True(
+                alert.GetReport().AnyCulpritValid &&
+                oneMissingExplanation.IndexOf("plates", StringComparison.OrdinalIgnoreCase) >= 0,
+                "Dirty forbidden cookware must count as existing while a physically absent plate remains alert-worthy.");
+
+            var plate = (ThingWithComps)ThingMaker.MakeThing(plateDef, ThingDefOf.Steel);
+            plate.GetComp<CompSanitation>().MarkDirty();
+            IntegrationAssert.True(
+                worker.inventory.innerContainer.TryAdd(plate, canMergeWithExistingStacks: false),
+                "The fixture must place the dirty plate in a real map-held pawn inventory.");
+            created.Add(plate);
+            IntegrationAssert.True(
+                !alert.GetReport().AnyCulpritValid,
+                "Dirty forbidden cookware and a dirty inventory-held plate must suppress an inventory-level absence alert.");
+
+            cookware.Destroy(DestroyMode.Vanish);
+            plate.Destroy(DestroyMode.Vanish);
+            stoveBill.suspended = true;
+            IntegrationAssert.True(
+                !alert.GetReport().AnyCulpritValid,
+                "A suspended bill must not request inventory alerts.");
+            stoveBill.suspended = false;
+            IntegrationAssert.True(
+                alert.GetReport().AnyCulpritValid,
+                "Resuming the runnable bill with no physical ware must restore the alert.");
+
+            ImmersiveChefsMod.Settings.WareRequirementMode = WareRequirementMode.Prefer;
+            IntegrationAssert.True(
+                !alert.GetReport().AnyCulpritValid,
+                "Prefer mode must not raise an alert for ware that the recipe does not strictly require.");
+        }
+        finally
+        {
+            foreach (var pair in draftedStates)
+            {
+                if (!pair.Key.Destroyed)
+                {
+                    pair.Key.drafter.Drafted = pair.Value;
+                }
+            }
+
+            ImmersiveChefsMod.Settings.WareRequirementMode = previousMode;
+            foreach (var thing in created.AsEnumerable().Reverse())
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void RealStorageFiltersAndStackingTrackSpawnedSanitationTransitions()
     {
         var map = Find.CurrentMap;

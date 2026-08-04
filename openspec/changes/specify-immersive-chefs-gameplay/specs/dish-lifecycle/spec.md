@@ -223,26 +223,27 @@ Immersive Chefs SHALL add `ImmersiveChefs_Dishwashing` with vanilla `Electricity
 - **WHEN** `ImmersiveChefs_Dishwashing` and vanilla `Machining` are complete and the colony finishes `ImmersiveChefs_ProfessionalKitchens`
 - **THEN** the industrial dishwasher and all five prep/support stations become buildable together
 
-### Requirement: Kitchenware shortages produce bounded actionable alerts
-The map SHALL expose two aggregated player alerts rather than per-pawn or per-tick messages. `Missing kitchenware` SHALL appear when an active non-excluded bill, plating workflow, paste request, or ordinary dining workflow cannot reserve required clean cookware, plates, or cutlery under the configured ware rules. Its explanation SHALL group affected targets and distinguish genuinely absent, dirty-only, forbidden, unreachable, and reserved supply. `Dirty tableware backlog` SHALL appear after a stable one-hour in-game grace period when dirty cookware, plates, or cutlery is blocking normal workflows or has no viable washing path; ware inside an eligible accepting or actively progressing dishwasher SHALL not by itself trigger the backlog.
+### Requirement: Missing kitchenware produces one intent-aware alert
+The map SHALL expose one aggregated `Missing kitchenware` alert rather than per-pawn or per-tick messages. The alert SHALL appear only in `WareRequirementMode=Strict` when all of the following are true on a player-home map: a player-owned operational cooking workstation explicitly opts into the alert contract; that workstation has an unsuspended covered-meal bill which is still runnable under its repeat/target-count rules; at least one spawned colonist has Cooking work active and is neither drafted, downed, nor in a mental state; and the map physically contains zero cookware sets or zero plates. The alert SHALL identify the absent product types, aggregate and cycle through the affected cooking workstations, update without letters or message spam, and clear when physical supply appears or the triggering intent stops.
 
-Both alerts SHALL aggregate by map and cause, update without repeated letters/messages, support click-through or target cycling to the affected bill giver, diner/service target, dirty stack, or blocked washing appliance, and clear automatically when eligible clean supply or a viable cleaning path recovers. They SHALL be suppressed for excluded handheld/travel foods, animal feeding, deliberate emergency-unplated results, and every workflow while `WareRequirementMode=Off`. A dishwasher paused for missing power, supplied water, or repair is a blocked path and MAY trigger the backlog after the grace period.
+Physical presence, not immediate usability or cleanliness, SHALL suppress this inventory-level alert. Dirty, forbidden, reserved, and temporarily unreachable ware SHALL count as existing, including ware retained in a map-held inventory, meal, or appliance container. A lack of clean supply SHALL remain ordinary bill/job feedback and MUST NOT create a global alert. Dirty-dish accumulation, a missing washing path, a loose or imported meal, ordinary dining, raw food, paste demand, an excluded food, and cutlery demand MUST NOT create this alert. The base fueled and electric stoves SHALL opt in. The base campfire and unknown or modded grills SHALL remain opted out unless a compatibility patch deliberately marks the station as a kitchenware-requiring workstation. Suspended/completed bills, unavailable stations, `Prefer`/`Off` modes, and maps whose potentially capable cooks are all drafted or otherwise ineligible SHALL remain silent.
 
-#### Scenario: A cooking bill has no clean plate supply
-- **WHEN** a covered active bill in Strict mode can reach no eligible clean plates
-- **THEN** `Missing kitchenware` identifies that bill and reports whether plates are absent, dirty-only, forbidden, unreachable, or reserved
+#### Scenario: A strict stove bill has no kitchenware at all
+- **WHEN** an owned fueled or electric stove is operational, has an unsuspended covered bill that should still run, has an eligible active cook, and its map physically contains no cookware or plates
+- **THEN** `Missing kitchenware` identifies the absent types and cycles through the affected stove bill giver
 
-#### Scenario: Dirty dishes have no washing path
-- **WHEN** dirty tableware remains for one in-game hour and every dishwasher and hand-washing source is ineligible
-- **THEN** `Dirty tableware backlog` appears, drills down to the dirty ware or blocked source, and does not emit repeated message spam
+#### Scenario: Only dirty forbidden ware exists
+- **WHEN** the same map has dirty cookware and plates which are forbidden, reserved, or temporarily unreachable
+- **THEN** no missing-kitchenware alert appears because the colony is not physically missing those products
+- **THEN** the cooking and cleaning jobs communicate their own immediate blockers without a second global dirty-backlog alert
 
-#### Scenario: The shortage is resolved
-- **WHEN** eligible clean ware becomes reservable or a viable washing path begins accepting the backlog
-- **THEN** the corresponding alert clears automatically
+#### Scenario: The colony is not presently trying to use a proper kitchen
+- **WHEN** colonists merely eat berries or loose meals, a campfire or grill has a cooking bill, the proper-stove bill is suspended or complete, its station is unavailable, every active cook is drafted, or ware mode is `Prefer` or `Off`
+- **THEN** no missing-kitchenware alert appears
 
-#### Scenario: Tableware simulation is disabled
-- **WHEN** `WareRequirementMode=Off` or the only relevant food is explicitly excluded
-- **THEN** neither kitchenware alert is raised for that workflow
+#### Scenario: A compatibility kitchen opts in
+- **WHEN** a compatible mod marks one of its proper cooking workstations with the alert-station extension and a covered strict bill meets the normal trigger conditions
+- **THEN** that workstation participates without Immersive Chefs classifying every unknown grill as a kitchen
 
 ### Requirement: Gastronomy service clearing
 When Gastronomy integration is active, waiters and servers SHALL collect the required cutlery with a meal and SHALL claim and haul the resulting dirty plate and cutlery promptly after the dining job finishes. Reservations and service claims SHALL be released when dining or clearing is cancelled so ordinary cleaners can recover the ware.

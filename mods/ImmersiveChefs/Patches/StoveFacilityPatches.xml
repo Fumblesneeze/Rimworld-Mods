@@ -1,16 +1,26 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Patch>
-  <Operation Class="PatchOperationAdd">
-    <xpath>Defs/ThingDef[defName="ElectricStove" or defName="FueledStove"]/comps</xpath>
-    <value>
-      <li Class="CompProperties_AffectedByFacilities">
-        <linkableFacilities>
-          <li>ImmersiveChefs_SauceStation</li>
-          <li>ImmersiveChefs_MeatStation</li>
-          <li>ImmersiveChefs_VegetableStation</li>
-          <li>ImmersiveChefs_PastryStation</li>
-        </linkableFacilities>
+  <Operation Class="PatchOperationSequence">
+    <operations>
+      <li Class="PatchOperationAdd">
+        <xpath>Defs/ThingDef[defName="ElectricStove" or defName="FueledStove"]/comps</xpath>
+        <value>
+          <li Class="CompProperties_AffectedByFacilities">
+            <linkableFacilities>
+              <li>ImmersiveChefs_SauceStation</li>
+              <li>ImmersiveChefs_MeatStation</li>
+              <li>ImmersiveChefs_VegetableStation</li>
+              <li>ImmersiveChefs_PastryStation</li>
+            </linkableFacilities>
+          </li>
+        </value>
       </li>
-    </value>
+      <li Class="PatchOperationAddModExtension">
+        <xpath>Defs/ThingDef[defName="ElectricStove" or defName="FueledStove"]</xpath>
+        <value>
+          <li Class="ImmersiveChefs.KitchenwareAlertStationExtension" />
+        </value>
+      </li>
+    </operations>
   </Operation>
 </Patch>

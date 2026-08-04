@@ -486,6 +486,18 @@ Use the terminal plate-conservation scene to verify expiry and fire without assu
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the kitchenware-alert scene to verify the deliberately narrow, intent-aware alert. It creates an operational fueled stove with a runnable simple-meal bill, an undrafted active cook, dirty forbidden cookware and plate supply, plus a campfire bill and raw berries as silent controls. It pauses without querying the alert, ticking the game, or assigning a job. The dirty ware physically exists, so `Missing kitchenware` must initially be absent. With dev mode enabled, use the selected items' native destroy actions to remove both products; the alert must then appear and cycle to the fueled stove, never the campfire or berries. Drafting the only active cook must suppress the alert during combat, undrafting must restore it, and natively spawning either missing product must remove only that product from the explanation until both exist:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -RunIntegrationTests `
+  -Scenario immersive-chefs-kitchenware-alerts `
+  -InteractiveHoldSeconds 300 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedIntegrationTests 'fumblesneeze.immersivechefs|PlayableMapLoaded|ImmersiveChefs.InGame.IntegrationTests.FinalizedImmersiveChefsIntegrationTests.KitchenwareAlertOnlyReportsAbsentWareForRunnableOwnedKitchenBills' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell
