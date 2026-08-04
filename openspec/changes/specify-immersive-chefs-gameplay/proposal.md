@@ -6,6 +6,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 
 - Specify stuff-aware cookware, plates, cutlery, and belt-worn chef's knives with cleanliness, comfort, speed, craftsmanship, culinary-quality effects, workstation progression, primitive stone cookware, and trade-only self-cleaning glitterworld cookware.
 - Specify ware reservation, consumption, dirty-state lifecycle, fire-aware plate conservation, hand washing, Processor-backed automatic dishwashers, power/water interruption behavior, preferential hauling to connected appliances, and actionable supply alerts.
+- Specify origin-safe legacy/external meals, cheap embedded plates for generated visitor/raider inventories and trader stock, and increasing plate-material requirements for Simple, Fine, and Lavish meals.
 - Specify prepared ingredients, nutrient-paste preparation, rapidly perishable provenance, and preparation-quality effects.
 - Specify manned linked kitchen stations whose assistants contribute only while the lead cook is actively cooking.
 - Specify culinary quality, temperature, reheating, poisoning risk, dining thoughts, expectations, and Royalty standards.

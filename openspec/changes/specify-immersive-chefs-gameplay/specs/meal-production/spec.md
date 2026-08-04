@@ -51,6 +51,25 @@ The ware selector SHALL always rank clean cookware and plates ahead of dirty equ
 - **WHEN** an ordinary covered cooking job searches for cookware
 - **THEN** it reserves the clean cookware even when the dirty cookware has a higher material or crafting quality
 
+### Requirement: Meal complexity sets the minimum plate material
+Plate eligibility SHALL use an explicit minimum material tier independently from crafting quality and sanitation. A `Simple` recipe or covered meal SHALL accept any registered plate material, including wood, adobe, and stone. An `Advanced`/Fine recipe or meal SHALL accept metal, registered plastic, or registered ceramic/porcelain and SHALL reject wood, adobe, and stone. An `Elaborate`/Lavish recipe or meal SHALL accept only silver, gold, or registered ceramic/porcelain. An unclassified covered mod recipe or meal SHALL default to the Simple plate tier unless compatibility XML explicitly supplies a minimum plate tier. Clean-first and dirty-fallback rules SHALL operate only within the eligible material set; an emergency MAY produce an explicitly unplated serving but MUST NOT silently downgrade to an ineligible plate material.
+
+#### Scenario: Simple meal uses a wooden plate
+- **WHEN** a Simple meal bill can reserve a clean wooden plate
+- **THEN** that plate is eligible and may be embedded in the produced serving
+
+#### Scenario: Fine meal sees only wood and steel plates
+- **WHEN** an Advanced/Fine bill can reserve clean wood and steel plates
+- **THEN** it rejects the wooden plate and uses the steel plate
+
+#### Scenario: Lavish meal requires luxury service
+- **WHEN** an Elaborate/Lavish bill can see steel, plasteel, silver, gold, and registered ceramic plates
+- **THEN** only the silver, gold, and registered ceramic plates are eligible
+
+#### Scenario: Unclassified mod meal has no compatibility tier
+- **WHEN** a covered mod recipe has no explicit complexity or minimum-plate extension
+- **THEN** it retains its original work amount and uses the Simple plate-material tier without a translated-label heuristic
+
 ### Requirement: Cookware becomes dirty only after cooking actually begins
 A reserved cookware set SHALL remain clean while ingredients are merely being hauled or while the cook has not completed a cooking work tick. Once the lead cook performs cooking work, the set SHALL be dirtied exactly once for that job and SHALL be dropped or placed at the bill giver when the job completes or is interrupted. The dish lifecycle SHALL recover and route that exact item rather than spawn a replacement. Fixed glitterworld cookware is the sole exception: after active cooking it self-cleans and releases as the same clean item without a washing job.
 
@@ -111,14 +130,31 @@ The production workflow SHALL preserve vanilla `CompIngredients` information and
 - **WHEN** a covered Variety Matters or Vanilla Food Variety Expanded recipe completes
 - **THEN** the output retains all ingredient identities while also retaining its exact plate count and Immersive Chefs metadata
 
-### Requirement: Imported and externally spawned meals can be plated without recooking
-Covered meals that enter a map without an attached plate, including trade goods, quest rewards, drop-pod contents, scenario starts, and outputs from unpatched mod recipes, SHALL enter a dedicated `Plate meals` work queue at a valid kitchen work surface. The job SHALL be governed by Cooking work, or by the owning server workflow when Gastronomy is active, and SHALL attempt to reserve and attach one eligible plate per portion under the same ware-precedence matrix. It SHALL preserve the meal's ingredients, nutrition, age, temperature, and existing quality, and SHALL not rerun cooking or award cooking experience.
+### Requirement: Imported and externally spawned meals preserve honest plate origin
+Covered meals loaded from a save created before Immersive Chefs was active, or created without a plate by debug actions, scenario code, quest/drop contents, or unpatched mod code, SHALL remain explicitly unplated. If no real plate binding exists, ingestion, expiry, destruction, stack operations, and recovery MUST NOT return, duplicate, or invent a plate. Such meals that enter a map SHALL be safe to inspect, stack when otherwise compatible, haul, save/load, eat, or route through the dedicated `Plate meals` work queue without a null-reference or assumed-plate failure.
 
-Before an ordinary pawn selects an imported unplated meal, a reachable enabled worker SHALL receive one plating opportunity. In ordinary `Strict` mode the meal SHALL remain outside normal dining selection while clean/allowed ware is unavailable and the missing-kitchenware alert identifies the blocked plating surface; the emergency rule SHALL release it visibly unplated when a pawn reaches the hunger threshold. In `Prefer` mode a failed plating opportunity SHALL permit visibly unplated ordinary dining with the missing-ware consequence. In `Off` mode no plating job SHALL be created and the meal SHALL be ware-exempt. Diners SHALL continue to rank otherwise equivalent plated meals ahead of unplated meals.
+The `Plate meals` job SHALL run at a valid kitchen work surface under Cooking work, or the owning server workflow when Gastronomy is active, and SHALL attempt to reserve and attach one eligible plate per portion under the same sanitation precedence and complexity-material rules. It SHALL preserve the meal's ingredients, nutrition, age, temperature, existing quality, and external ThingComps, and SHALL not rerun cooking or award Cooking experience.
 
-#### Scenario: A trader delivers an unplated meal stack
-- **WHEN** a clean plate supply and valid plating surface are available
-- **THEN** a Cooking or Gastronomy-owned plating job attaches the corresponding number of plates before the meals enter ordinary dining circulation without changing their food data
+Covered non-handheld meals generated under an Immersive Chefs-controlled origin as a raider's or visitor's personal inventory, an orbital/caravan trader's stock, or settlement trade stock SHALL instead receive one real clean embedded plate per serving at generation. The plate SHALL be `Poor` quality and SHALL use the lowest-market-value currently registered material that satisfies that meal's minimum plate tier. The binding SHALL transfer with the meal through inventory, capture, trade, hauling, and save/load; buying a meal transfers that exact plate rather than generating another. Pemmican, packaged/travel meals, raw food, drugs, drinks, and baby food remain excluded and receive no plate.
+
+Before an ordinary pawn selects an imported unplated meal, a reachable enabled worker SHALL receive one plating opportunity. In ordinary `Strict` mode the meal SHALL remain outside normal dining selection while clean/allowed ware is unavailable and the plating job SHALL expose its ordinary immediate blocker without creating a global missing-kitchenware alert; the emergency rule SHALL release it visibly unplated when a pawn reaches the hunger threshold. In `Prefer` mode a failed plating opportunity SHALL permit visibly unplated ordinary dining with the missing-ware consequence. In `Off` mode no plating job SHALL be created and the meal SHALL be ware-exempt. Diners SHALL continue to rank otherwise equivalent plated meals ahead of unplated meals.
+
+#### Scenario: An old save contains an unplated meal
+- **WHEN** a covered meal was already spawned before Immersive Chefs was added and its serialized data contains no plate binding
+- **THEN** loading and eating or expiring it returns no plate and causes no error
+- **THEN** a later completed plating job returns only the exact plate it actually attached
+
+#### Scenario: Debug or mod code spawns a meal directly
+- **WHEN** external code creates and spawns a covered meal without using an origin-aware generator
+- **THEN** the meal is safely marked unplated and may enter the ordinary plating queue without fabricating a plate
+
+#### Scenario: A raider or visitor carries a meal
+- **WHEN** pawn inventory generation gives a raider or visitor a covered non-handheld meal
+- **THEN** that meal contains a real clean Poor-quality plate using the cheapest registered material eligible for its complexity
+
+#### Scenario: A player buys a meal from a trader or settlement
+- **WHEN** covered meal stock is generated and then transferred through the native trade workflow
+- **THEN** the purchased meal retains its exact generated plate and the transfer creates no second plate
 
 #### Scenario: Prefer mode cannot plate an imported meal
 - **WHEN** one plating opportunity finds no eligible plate for an imported meal in `Prefer` mode

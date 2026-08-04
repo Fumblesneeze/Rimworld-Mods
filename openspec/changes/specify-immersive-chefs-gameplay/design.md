@@ -37,9 +37,13 @@ Use DefModExtensions and configured Def-name/category lists for meal coverage, c
 
 The initial complexity table is deliberately exact: vanilla Simple recipe Defs map to `Simple`, Fine recipe Defs map to the internal `Advanced` tier, and Lavish recipe Defs map to `Elaborate`. Unclassified mod recipes keep their original work amount until compatibility XML explicitly classifies them; there is no label, preferability, ingredient-count, or translated-text heuristic. Complexity classification is separate from meal coverage, so a compatible modded meal may still preserve ware and provenance without receiving a guessed work multiplier. Pemmican, packaged/travel survival meals, raw food, drinks, drugs, and baby food are excluded. Vanilla Cooking Expanded classification is deferred to a later compatibility change.
 
+The same explicit classification also controls minimum plate material without changing the work-multiplier rule: Simple accepts every registered plate material; Advanced/Fine requires metal, registered plastic, or registered ceramic/porcelain; Elaborate/Lavish requires silver, gold, or registered ceramic/porcelain. An unclassified covered meal defaults to the Simple plate tier unless compatibility XML declares otherwise. Material eligibility is not inferred from translated labels.
+
 ### 3. Culinary work uses reservations and emergency degradation
 
 Cooking jobs reserve the required cookware and clean plates before ingredients, then reserve the lead stove. Clean ware is preferred. Under an urgent recipe or when a pawn's food need crosses the configured emergency threshold, the system can use dirty ware or produce an unplated meal, with explicit risk and thought consequences; it MUST never create an infinite job loop or allow avoidable starvation.
+
+Meal origin is explicit. A meal loaded from an older save, created by debug action, or spawned by unpatched mod code has no plate unless a real plate binding was serialized or later attached by the plating workflow; recovery never fabricates one. In contrast, covered meals generated as raider/visitor personal inventory or trader/settlement trade stock receive one real clean Poor-quality embedded plate per serving, selected as the least-market-value material that satisfies the meal's minimum tier. Transferring or buying the meal transfers that exact plate and ownership state.
 
 Cookware becomes dirty only after at least one actual cooking tick. Plates remain embedded per serving until ingestion, rot-to-nonmeal transformation, or explicit recovery. Cutlery is acquired by the eater or Gastronomy server and becomes dirty after eating.
 
