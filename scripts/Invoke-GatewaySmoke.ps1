@@ -2200,60 +2200,6 @@ function Start-GatewayRimWorldProcess {
         -PassThru
 }
 
-function Get-GatewaySmokeWindowObservation {
-    param(
-        [Parameter(Mandatory)][System.Diagnostics.Process]$Process,
-        [Parameter(Mandatory)][ValidateSet('Minimized', 'Normal')][string]$RequestedWindowStyle
-    )
-
-    if ($null -eq ('GatewaySmokeNativeWindowMethods' -as [type])) {
-        Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-
-public static class GatewaySmokeNativeWindowMethods
-{
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsIconic(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsWindowVisible(IntPtr hWnd);
-}
-'@
-    }
-
-    $Process.Refresh()
-    if ($Process.HasExited -or $Process.MainWindowHandle -eq [IntPtr]::Zero) {
-        throw "RimWorld PID $($Process.Id) has no live main window to observe."
-    }
-
-    $windowHandle = $Process.MainWindowHandle
-    $isMinimized = [GatewaySmokeNativeWindowMethods]::IsIconic($windowHandle)
-    $isVisible = [GatewaySmokeNativeWindowMethods]::IsWindowVisible($windowHandle)
-    return [pscustomobject]@{
-        ProcessId = $Process.Id
-        MainWindowHandle = ('0x{0:X}' -f $windowHandle.ToInt64())
-        RequestedWindowStyle = $RequestedWindowStyle
-        IsWindowVisible = $isVisible
-        IsMinimized = $isMinimized
-        ObservedUtc = [datetime]::UtcNow.ToString('O', [Globalization.CultureInfo]::InvariantCulture)
-    }
-}
-
-function Save-GatewaySmokeWindowObservation {
-    param(
-        [Parameter(Mandatory)][psobject]$Observation,
-        [Parameter(Mandatory)][string]$Path
-    )
-
-    $Observation |
-        ConvertTo-Json -Depth 4 |
-        Set-Content -LiteralPath $Path -Encoding UTF8
-    return $Observation
-}
-
 function Invoke-GatewaySmokeBoundedProcess {
     param(
         [Parameter(Mandatory)][string]$ExecutablePath,
@@ -3966,7 +3912,6 @@ $interactionFinalPath = Join-Path $runDirectory 'interaction-final.json'
 $planCleanupPath = Join-Path $runDirectory 'interaction-plan-cleanup.json'
 $scenarioResultPath = Join-Path $runDirectory 'scenario.json'
 $interactiveHoldPath = Join-Path $runDirectory 'interactive-hold.json'
-$windowLaunchObservationPath = Join-Path $runDirectory 'window-launch-observation.json'
 $shutdownPath = Join-Path $runDirectory 'shutdown.json'
 $hostRequestJournalPath = Join-Path $runDirectory 'last-host-request.json'
 $failureDiagnosticsPath = Join-Path $runDirectory 'failure-diagnostics.json'
@@ -4027,8 +3972,6 @@ if ($DryRun) {
         LaunchWindowStyle = $launchWindowStyle
         VisibleWindow = $launchVisible
         VisibleWindowRequested = [bool]$VisibleWindow
-        WindowLaunchObservation = $null
-        WindowLaunchObservationPath = $windowLaunchObservationPath
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
         Screenshot = $screenshotPath
@@ -4073,7 +4016,6 @@ $failureMessage = $null
 $failureRecords = [System.Collections.Generic.List[object]]::new()
 $result = $null
 $manifest = $null
-$windowLaunchObservation = $null
 $launchedProcessStartUtc = $null
 $processCleanup = $null
 $credentialCleanup = $null
@@ -4321,12 +4263,6 @@ try {
         -SavedDataPath $savedDataPath `
         -ExpectedProcessId $launchedProcess.Id `
         -ExpectedProcessStartUtc $launchedProcessStartUtc
-
-    $windowLaunchObservation = Save-GatewaySmokeWindowObservation `
-        -Observation (Get-GatewaySmokeWindowObservation `
-            -Process $launchedProcess `
-            -RequestedWindowStyle $launchWindowStyle) `
-        -Path $windowLaunchObservationPath
 
     $baseUrl = [string]$manifest.baseUrl
     $unauthorized = Invoke-TrackedGatewayRequest `
@@ -6047,8 +5983,6 @@ try {
         LaunchWindowStyle = $launchWindowStyle
         VisibleWindow = $launchVisible
         VisibleWindowRequested = [bool]$VisibleWindow
-        WindowLaunchObservation = $windowLaunchObservation
-        WindowLaunchObservationPath = $windowLaunchObservationPath
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
         StatusResponse = $statusPath

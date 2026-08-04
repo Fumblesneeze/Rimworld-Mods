@@ -126,26 +126,15 @@ public sealed class GatewaySmokeBackgroundLaunchTests
     }
 
     [Test]
-    public void Later_window_state_is_observed_without_classifying_user_changes()
+    public void Launcher_does_not_monitor_window_state_after_process_start()
     {
-        var script =
-            "$ErrorActionPreference = 'Stop'\n" +
-            "$WarningPreference = 'Stop'\n" +
-            LoadFunction("Save-GatewaySmokeWindowObservation") +
-            "$observation = [pscustomobject]@{ ProcessId = 42; RequestedWindowStyle = 'Minimized'; IsWindowVisible = $true; IsMinimized = $false }\n" +
-            "$path = Join-Path $PSScriptRoot 'window-launch-observation.json'\n" +
-            "$result = Save-GatewaySmokeWindowObservation -Observation $observation -Path $path\n" +
-            "$persisted = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json\n" +
-            "$classified = ($null -ne $persisted.PSObject.Properties['MatchesExpectedWindowStyle']) -or ($null -ne $persisted.PSObject.Properties['Warning']) -or ($null -ne $persisted.PSObject.Properties['StyleMismatchIsFatal'])\n" +
-            "Write-Output ([string]$classified + '|' + [string]$persisted.IsMinimized + '|' + $persisted.RequestedWindowStyle)\n";
+        var smokePath = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Invoke-GatewaySmoke.ps1");
+        var script = File.ReadAllText(smokePath);
 
-        var result = RunPowerShellScript(script);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.ExitCode, Is.Zero, result.StandardError);
-            Assert.That(result.StandardOutput.Trim(), Is.EqualTo("False|False|Minimized"));
-        });
+        Assert.That(script, Does.Not.Contain("Get-GatewaySmokeWindowObservation"));
+        Assert.That(script, Does.Not.Contain("Save-GatewaySmokeWindowObservation"));
+        Assert.That(script, Does.Not.Contain("window-launch-observation.json"));
+        Assert.That(script, Does.Not.Contain("IsIconic"));
     }
 
     [Test]
