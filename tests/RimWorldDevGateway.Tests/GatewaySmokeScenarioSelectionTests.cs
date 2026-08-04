@@ -730,6 +730,61 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Meal_cooling_holders_scenario_only_arranges_real_ambient_refrigerated_and_frozen_contexts()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-meal-cooling-holders.json");
+        var setupFileNames = new[]
+        {
+            "immersive-chefs-meal-cooling-holders-prepare.csx",
+            "immersive-chefs-meal-cooling-holders-meals.csx",
+            "immersive-chefs-meal-cooling-holders-build.csx",
+            "immersive-chefs-meal-cooling-holders-frame.csx"
+        };
+        var setupPaths = setupFileNames
+            .Select(fileName => Path.Combine(scenarioDirectory, fileName))
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(setupPaths.All(File.Exists), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = string.Join("\n", setupPaths.Select(File.ReadAllText));
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-meal-cooling-holders"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            foreach (var setupFileName in setupFileNames)
+            {
+                Assert.That(descriptor, Does.Contain(setupFileName));
+            }
+            Assert.That(setup, Does.Contain("Ambient Cooling Control"));
+            Assert.That(setup, Does.Contain("Refrigerated Cooling Control"));
+            Assert.That(setup, Does.Contain("Frozen Cooling Control"));
+            Assert.That(setup, Does.Contain("ThingDefOf.Cooler"));
+            Assert.That(setup, Does.Contain("ThingDefOf.Heater"));
+            Assert.That(setup, Does.Contain("CompTempControl"));
+            Assert.That(setup, Does.Contain("PowerNet"));
+            Assert.That(setup, Does.Contain("RoofDefOf.RoofConstructed"));
+            Assert.That(setup, Does.Contain("PsychologicallyOutdoors"));
+            Assert.That(setup, Does.Contain("new ImmersiveChefs.CulinaryServingRecord(70, 70f"));
+            Assert.That(setup, Does.Contain("Find.CameraDriver.SetRootPosAndSize"));
+            Assert.That(setup, Does.Not.Contain("AdvanceTemperature"));
+            Assert.That(setup, Does.Not.Contain("PeekCurrentServing"));
+            Assert.That(setup, Does.Not.Contain("DoSingleTick"));
+            Assert.That(setup, Does.Not.Contain("Find.TickManager.CurTimeSpeed"));
+            Assert.That(setup, Does.Not.Contain("room.Temperature ="));
+            Assert.That(setup, Does.Contain("AppDomain.CurrentDomain.SetData"));
+            Assert.That(setup, Does.Contain("AppDomain.CurrentDomain.GetData"));
+        });
+    }
+
+    [Test]
     public void Hidden_provenance_scenario_uses_native_bill_and_food_selection_boundaries()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");

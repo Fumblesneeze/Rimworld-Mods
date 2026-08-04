@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-meal-cooling-holders",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "prep",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-meal-cooling-holders-prepare.csx"
+    },
+    {
+      "id": "meals",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-meal-cooling-holders-meals.csx"
+    },
+    {
+      "id": "build",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-meal-cooling-holders-build.csx"
+    },
+    {
+      "id": "frame",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-meal-cooling-holders-frame.csx"
+    },
+    {
+      "id": "pre",
+      "kind": "screenshot",
+      "fileName": "scenario-meal-cooling-holders-ready.png"
+    }
+  ]
+}

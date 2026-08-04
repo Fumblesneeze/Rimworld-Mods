@@ -65,6 +65,7 @@
 - [x] 6.5 REFACTOR: Cache lazy thermal calculations and expose bounded modifier hooks rather than patching per-tick Thing updates.
 - [ ] 6.6 IN-GAME: Verify inspect gauges, cooling across holders, mood/poison outcomes, microwave jobs, stack splits, save/load, and restaurant delivery.
   - [x] 6.6a Observe an ordinary self-feeding job take an initially frozen Masterwork-80 plated meal and clean cutlery to a real powered microwave, visibly cross into the Excellent band under the configured five-point loss, serve the meal steaming hot, and return the exact plate and cutlery dirty. The scenario may only arrange a paused drafted pawn and fixtures; undrafting and advancing time are player actions.
+  - [x] 6.6b Observe three identical plated 70 °C meals progress for the same player-controlled interval inside real powered 21 °C ambient, 5 °C refrigerated, and -10 °C frozen holder rooms; their native inspectors must visibly diverge into Warm, RoomTemperature, and Frozen bands without scenario-driven ticks or direct thermal mutation.
 
 ## 7. mods/ImmersiveChefs - Dining standards and optional integrations
 
