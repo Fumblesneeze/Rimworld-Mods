@@ -291,6 +291,17 @@ Use the Common Sense cleanup scene to verify the optional post-dining handoff. I
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.','[ImmersiveChefs] Common Sense adapter active'
 ```
 
+Use the Common Sense no-route scene to verify safe release when cleanup is initially impossible. It creates one selected diner with an exact plated meal and cutlery inside a sealed dry room; the only dishwasher is powered but switched off. Choose the native `Consume simple meal` action and let it finish. The returned plate and cutlery should remain freely selectable and visibly dirty. Select the dishwasher, use its native power-toggle designation, and resume; ordinary Basic/Cleaning work should switch it on, collect both exact items, and return them clean after the cycle. The scenario never starts an ingest, flick, or cleaning job:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-common-sense-no-route `
+  -InteractiveHoldSeconds 300 `
+  -AdditionalModIds 'brrainz.harmony','avilmask.commonsense','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.','[ImmersiveChefs] Common Sense adapter active'
+```
+
 Use the Hospitality guest scene to verify colony-first and personal-inventory fallback behavior. It creates two arrived guests in separate rooms, gives both personal cutlery, exposes golden colony cutlery only to the first, arms their native ingest jobs, and pauses. Unpause with Space; after eating, the first guest should return the golden setting dirty while retaining clean personal cutlery, and the second should retain its now-dirty personal setting in the Gear inventory:
 
 ```powershell

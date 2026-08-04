@@ -746,6 +746,45 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Common_sense_no_route_scenario_requires_player_to_restore_a_route_before_ordinary_cleaning()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-common-sense-no-route.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-common-sense-no-route-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-common-sense-no-route"));
+            Assert.That(descriptor, Does.Contain("avilmask.commonsense"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("Common Sense No Route Diner"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Dishwasher"));
+            Assert.That(setup, Does.Contain("SwitchIsOn = false"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Cutlery"));
+            Assert.That(setup, Does.Contain("TryEmbedPlate"));
+            Assert.That(setup, Does.Contain("WorkTypeDefOf.Cleaning"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(diner)"));
+            Assert.That(setup, Does.Not.Contain("JobDefOf.Ingest"));
+            Assert.That(setup, Does.Not.Contain("ImmersiveChefs_DoDishes"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+            Assert.That(setup, Does.Not.Contain("TryTakeOrderedJob"));
+        });
+    }
+
+    [Test]
     public void Imported_meal_plating_scenario_leaves_the_native_cooking_job_to_player_time_control()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
