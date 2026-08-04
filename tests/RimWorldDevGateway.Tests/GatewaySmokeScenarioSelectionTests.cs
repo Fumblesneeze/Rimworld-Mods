@@ -687,6 +687,49 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Microwave_reheating_scenario_leaves_food_choice_heating_and_ingestion_to_player_actions()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-microwave-reheating.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-microwave-reheating-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-microwave-reheating"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("Microwave Diner"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Microwave"));
+            Assert.That(setup, Does.Contain("CompCulinaryState"));
+            Assert.That(setup, Does.Contain("80,"));
+            Assert.That(setup, Does.Contain("-5f"));
+            Assert.That(setup, Does.Contain("TryEmbedPlate"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Cutlery"));
+            Assert.That(setup, Does.Contain("PowerNet"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(meal)"));
+            Assert.That(setup, Does.Contain("Find.CameraDriver.SetRootPosAndSize"));
+            Assert.That(setup, Does.Contain("diner.drafter.Drafted = true"));
+            Assert.That(setup, Does.Not.Contain("JobDefOf.Ingest"));
+            Assert.That(setup, Does.Not.Contain("JobGiver_GetFood"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+            Assert.That(setup, Does.Not.Contain("TryTakeOrderedJob"));
+            Assert.That(setup, Does.Not.Contain("TryReheat"));
+            Assert.That(setup, Does.Not.Contain("ReheatCurrentServing"));
+        });
+    }
+
+    [Test]
     public void Hidden_provenance_scenario_uses_native_bill_and_food_selection_boundaries()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");

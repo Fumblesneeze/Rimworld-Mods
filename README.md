@@ -336,6 +336,17 @@ Use the patient-feeding scene to compare three real `FeedPatient` jobs side by s
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the microwave-reheating scene for the ordinary self-feeding path. It pauses with a hungry drafted colonist, an exact frozen Masterwork-80 plated meal, clean cutlery, and a microwave on a charged battery power net. Select the colonist, invoke the native Undraft gizmo, and resume at Normal speed. The pawn should carry the meal to the microwave; after eating, the Needs panel should show `Excellent cooking` and `Steaming hot meal`, making the configured five-point quality loss visible as a Masterwork-to-Excellent band change and confirming the 60 °C result, while the exact returned plate and cutlery should both inspect as dirty:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-microwave-reheating `
+  -InteractiveHoldSeconds 120 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Use the handheld-food exclusion scene to verify that Pemmican and packaged survival meals stay outside the serving-ware workflow. It builds two sealed rooms with one hungry colonist and one exact food fixture each, plus clean plate and cutlery controls. The arm step asks vanilla `JobGiver_GetFood` for each exact native ingest job and pauses. Resume at a native speed; Pemmican should decrease, the survival meal should disappear, and all four controls should remain clean without dirt or a returned dish:
 
 ```powershell
