@@ -97,5 +97,6 @@ internal static class CookingJobCleanupPatch
         KitchenAssistanceRegistry.Cleanup(pawn, pawn.CurJob);
         DiningSessionRegistry.Cleanup(pawn, pawn.CurJob);
         GastronomyAdapter.Cleanup(pawn, pawn.CurJob);
+        CommonSenseAdapter.Cleanup(pawn.CurJob);
     }
 }

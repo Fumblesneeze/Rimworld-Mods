@@ -28,6 +28,28 @@ public sealed class IntegrationCatalogTests
     }
 
     [Test]
+    public void Detect_marks_the_loaded_common_sense_package_active()
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { "avilmask.commonsense" });
+
+        Assert.That(snapshot.IsActive(OptionalIntegration.CommonSense), Is.True);
+    }
+
+    [Test]
+    public void Disabled_common_sense_setting_prevents_activation_when_loaded()
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { "avilmask.commonsense" });
+        var settings = new ImmersiveChefsSettings
+        {
+            CommonSense = OptionalIntegrationMode.Off
+        };
+
+        Assert.That(
+            OptionalIntegrationPolicy.IsEnabled(OptionalIntegration.CommonSense, snapshot, settings),
+            Is.False);
+    }
+
+    [Test]
     public void Disabled_hospitality_setting_prevents_activation_when_loaded()
     {
         var snapshot = IntegrationCatalog.Detect(new[] { "orion.hospitality" });
@@ -48,7 +70,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(12));
+            Assert.That(snapshot.States, Has.Count.EqualTo(13));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }

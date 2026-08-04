@@ -2120,6 +2120,68 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void ActiveCommonSenseUsesItsExactPublicCleaningShape()
+    {
+        var commonSenseLoaded = LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(mod.PackageId, "avilmask.commonsense", StringComparison.OrdinalIgnoreCase));
+        if (!commonSenseLoaded)
+        {
+            IntegrationAssert.True(
+                ImmersiveChefsMod.Integrations?.IsActive(OptionalIntegration.CommonSense) == false,
+                "An absent Common Sense package must remain inactive.");
+            IntegrationAssert.True(
+                !CommonSenseAdapter.Enabled,
+                "The Common Sense adapter must not bind when its package is absent.");
+            return;
+        }
+
+        IntegrationAssert.True(
+            ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.CommonSense),
+            "The default Auto setting must enable an active Common Sense package.");
+        IntegrationAssert.True(
+            CommonSenseAdapter.Enabled,
+            "The supported Common Sense matrix must bind the post-dining adapter.");
+
+        var settingsType = AccessTools.TypeByName("CommonSense.Settings");
+        var utilityType = AccessTools.TypeByName("CommonSense.Utility");
+        IntegrationAssert.NotNull(settingsType, "Common Sense must expose public CommonSense.Settings.");
+        IntegrationAssert.NotNull(utilityType, "Common Sense must expose public static CommonSense.Utility.");
+        IntegrationAssert.Equal(
+            "CommonSense",
+            settingsType!.Assembly.GetName().Name,
+            "The settings surface must come from the exact CommonSense assembly identity.");
+        IntegrationAssert.Equal(
+            settingsType.Assembly,
+            utilityType!.Assembly,
+            "The validated settings and cleaning utility must come from the same Common Sense assembly.");
+
+        var ingestSetting = settingsType.GetField(
+            "adv_cleaning_ingest",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+        IntegrationAssert.NotNull(
+            ingestSetting,
+            "The supported Common Sense shape must retain its public static ingestion-cleaning setting.");
+        IntegrationAssert.Equal(
+            typeof(bool),
+            ingestSetting!.FieldType,
+            "Common Sense adv_cleaning_ingest must remain a Boolean setting.");
+
+        var incapableMethod = utilityType.GetMethod(
+            "IncapableOfCleaning",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+            binder: null,
+            types: new[] { typeof(Pawn) },
+            modifiers: null);
+        IntegrationAssert.NotNull(
+            incapableMethod,
+            "The supported Common Sense shape must retain public static bool IncapableOfCleaning(Pawn).");
+        IntegrationAssert.Equal(
+            typeof(bool),
+            incapableMethod!.ReturnType,
+            "Common Sense cleaning capability must remain a Boolean predicate.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void ActiveVanillaNutrientPasteExpandedUsesItsExactPipeBackedTap()
     {
         var activeIds = LoadedModManager.RunningModsListForReading

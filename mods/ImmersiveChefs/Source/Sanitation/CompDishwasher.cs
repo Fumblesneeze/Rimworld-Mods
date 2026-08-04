@@ -12,6 +12,7 @@ public sealed class CompProperties_Dishwasher : CompProperties
 
     public float basePlateCapacity = 16f;
     public int baseCycleTicks = 2500;
+    public int baseLoadingTicks = 500;
     public bool requiresDubsWater = true;
     public float waterPerPlateEquivalent = 0.1f;
 }
@@ -26,11 +27,30 @@ public static class DishwasherCapacityPolicy
     }
 }
 
+public static class DishwasherCyclePolicy
+{
+    public static bool CanAcceptAdditionalWare(int progressTicks, bool waterDebitedForCycle)
+    {
+        return progressTicks == 0 && !waterDebitedForCycle;
+    }
+
+    public static int ResetLoadingWindow(int baseLoadingTicks)
+    {
+        return Math.Max(0, baseLoadingTicks);
+    }
+
+    public static int AdvanceLoadingWindow(int remainingTicks, int elapsedTicks)
+    {
+        return Math.Max(0, remainingTicks - Math.Max(0, elapsedTicks));
+    }
+}
+
 public sealed class CompDishwasher : ThingComp, IThingHolder
 {
     private ThingOwner<Thing>? contents;
     private int progressTicks;
     private int capturedCycleTicks;
+    private int loadingTicksRemaining;
     private bool waterDebitedForCycle;
     private float capturedWaterCharge;
     private string pauseReason = string.Empty;
@@ -80,7 +100,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         return thing is ThingWithComps withComps &&
                withComps.GetComp<CompSanitation>()?.IsDirty == true &&
                parent.TryGetComp<CompPowerTrader>()?.PowerOn != false &&
-               progressTicks == 0 && !waterDebitedForCycle &&
+               DishwasherCyclePolicy.CanAcceptAdditionalWare(progressTicks, waterDebitedForCycle) &&
                CountCanAccept(thing) > 0;
     }
 
@@ -111,10 +131,15 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             carried,
             Contents,
             count);
-        if (transferred > 0 && capturedCycleTicks <= 0)
+        if (transferred > 0)
         {
-            capturedCycleTicks = Math.Max(1, (int)Math.Round(
-                Props.baseCycleTicks * ImmersiveChefsMod.Settings.DishwashingWorkScale));
+            if (capturedCycleTicks <= 0)
+            {
+                capturedCycleTicks = Math.Max(1, (int)Math.Round(
+                    Props.baseCycleTicks * ImmersiveChefsMod.Settings.DishwashingWorkScale));
+            }
+
+            loadingTicksRemaining = DishwasherCyclePolicy.ResetLoadingWindow(Props.baseLoadingTicks);
         }
 
         return transferred > 0;
@@ -135,8 +160,18 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         {
             progressTicks = 0;
             capturedCycleTicks = 0;
+            loadingTicksRemaining = 0;
             waterDebitedForCycle = false;
             capturedWaterCharge = 0f;
+            pauseReason = string.Empty;
+            return;
+        }
+
+        if (loadingTicksRemaining > 0)
+        {
+            loadingTicksRemaining = DishwasherCyclePolicy.AdvanceLoadingWindow(
+                loadingTicksRemaining,
+                250);
             pauseReason = string.Empty;
             return;
         }
@@ -167,6 +202,8 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
     {
         var status = !Contents.Any
             ? "idle"
+            : loadingTicksRemaining > 0
+                ? "loading"
             : string.IsNullOrEmpty(pauseReason)
                 ? $"washing ({Math.Min(100, (int)(100f * progressTicks / Math.Max(1, capturedCycleTicks)))}%)"
                 : $"paused: {pauseReason}";
@@ -194,6 +231,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         Scribe_Deep.Look(ref contents, "contents", this);
         Scribe_Values.Look(ref progressTicks, "progressTicks", 0);
         Scribe_Values.Look(ref capturedCycleTicks, "capturedCycleTicks", 0);
+        Scribe_Values.Look(ref loadingTicksRemaining, "loadingTicksRemaining", 0);
         Scribe_Values.Look(ref waterDebitedForCycle, "waterDebitedForCycle", false);
         Scribe_Values.Look(ref capturedWaterCharge, "capturedWaterCharge", 0f);
         Scribe_Values.Look(ref pauseReason, "pauseReason", string.Empty);
@@ -263,6 +301,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         Contents.TryDropAll(dropPosition, map, ThingPlaceMode.Near);
         progressTicks = 0;
         capturedCycleTicks = 0;
+        loadingTicksRemaining = 0;
         waterDebitedForCycle = false;
         capturedWaterCharge = 0f;
         pauseReason = string.Empty;

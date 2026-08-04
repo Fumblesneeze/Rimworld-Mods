@@ -19,4 +19,29 @@ public sealed class DishwasherCapacityTests
             DishwasherCapacityPolicy.CountAccepted(capacity, used, perItem, stackCount),
             Is.EqualTo(expected));
     }
+
+    [TestCase(0, false, true)]
+    [TestCase(250, false, false)]
+    [TestCase(0, true, false)]
+    public void Additional_ware_can_join_only_before_cleaning_or_water_debit_starts(
+        int progressTicks,
+        bool waterDebited,
+        bool expected)
+    {
+        Assert.That(
+            DishwasherCyclePolicy.CanAcceptAdditionalWare(progressTicks, waterDebited),
+            Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void Every_admission_reopens_one_bounded_loading_window()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(DishwasherCyclePolicy.ResetLoadingWindow(500), Is.EqualTo(500));
+            Assert.That(DishwasherCyclePolicy.AdvanceLoadingWindow(500, 250), Is.EqualTo(250));
+            Assert.That(DishwasherCyclePolicy.AdvanceLoadingWindow(250, 250), Is.Zero);
+            Assert.That(DishwasherCyclePolicy.AdvanceLoadingWindow(0, 250), Is.Zero);
+        });
+    }
 }

@@ -25,6 +25,7 @@
     <RimWorldLoadAfter Include="Mlie.SimplySublimeABSPolymer" />
     <RimWorldLoadAfter Include="Dubwise.DubsBadHygiene" />
     <RimWorldLoadAfter Include="Orion.Gastronomy" />
+    <RimWorldLoadAfter Include="avilmask.CommonSense" />
     <RimWorldLoadAfter Include="Orion.Hospitality" />
     <RimWorldLoadAfter Include="Evyatar108.VarietyMattersImprovedRedux" />
     <RimWorldLoadAfter Include="VanillaExpanded.VanillaFoodVarietyExpanded" />

@@ -209,6 +209,12 @@ internal static class IngestCutleryToilsPatch
         {
             yield return toil;
         }
+
+        yield return new Toil
+        {
+            initAction = () => CommonSenseAdapter.TryQueueCommittedHandoff(pawn, driver.job),
+            defaultCompleteMode = ToilCompleteMode.Instant
+        };
     }
 
     private static Toil GotoCapturedThing(Thing target, PathEndMode pathEndMode)

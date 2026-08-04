@@ -79,6 +79,7 @@ internal sealed class ImmersiveChefsSettingsUi
         Cycle(listing, "ABS Polymer", ref settings.AbsPolymer);
         Cycle(listing, "Dubs Bad Hygiene", ref settings.DubsBadHygiene);
         Cycle(listing, "Gastronomy", ref settings.Gastronomy);
+        Cycle(listing, "Common Sense", ref settings.CommonSense);
         Cycle(listing, "Hospitality", ref settings.Hospitality);
         Cycle(listing, "Variety Matters", ref settings.VarietyMatters);
         Cycle(listing, "Vanilla Food Variety Expanded", ref settings.VanillaFoodVarietyExpanded);

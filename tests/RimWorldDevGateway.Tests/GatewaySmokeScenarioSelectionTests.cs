@@ -703,6 +703,48 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Common_sense_cleanup_scenario_builds_both_dining_preconditions_and_leaves_outcomes_to_player_input()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-common-sense-cleanup.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-common-sense-cleanup-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-common-sense-cleanup"));
+            Assert.That(descriptor, Does.Contain("avilmask.commonsense"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("Common Sense Diner"));
+            Assert.That(setup, Does.Contain("Common Sense Nurse"));
+            Assert.That(setup, Does.Contain("Common Sense Patient"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Dishwasher"));
+            Assert.That(setup, Does.Contain("TryEmbedPlate"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Cutlery"));
+            Assert.That(setup, Does.Contain("Find.CameraDriver.SetRootPosAndSize"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(diner)"));
+            Assert.That(setup, Does.Contain("worker.workSettings.SetPriority(workType, 0)"));
+            Assert.That(setup, Does.Contain("nurse.workSettings.SetPriority(WorkTypeDefOf.Doctor, 1)"));
+            Assert.That(setup, Does.Contain("nurse.drafter.Drafted = true"));
+            Assert.That(setup, Does.Not.Contain("JobDefOf.Ingest"));
+            Assert.That(setup, Does.Not.Contain("JobDefOf.FeedPatient"));
+            Assert.That(setup, Does.Not.Contain("TryTakeOrderedJob"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

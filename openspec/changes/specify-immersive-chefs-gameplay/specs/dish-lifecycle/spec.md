@@ -160,13 +160,18 @@ Immersive Chefs SHALL add mutually exclusive `Clean kitchenware` and `Dirty kitc
 ### Requirement: Identity-preserving dishwashers
 Immersive Chefs SHALL provide a dishwasher with a base capacity of 16 plate-equivalents and an industrial dishwasher with a base capacity of 64 plate-equivalents before applying `DishwasherCapacityScale`. A wash cycle SHALL preserve each input item's Def, Stuff, craftsmanship quality, hit points, stack count, and other components while changing only sanitation-related state, and clean output SHALL be available for hauling when the cycle completes.
 
-For capacity accounting, the default load SHALL count a plate as 1 plate-equivalent, a cookware set as 4, a cutlery set as 0.25, and any future washable item by a Def-configurable value. A cycle SHALL capture its exact input identities, work duration, load-scaled resource demand, and progress when it starts. With the validated Dubs adapter active, admission SHALL atomically verify and debit exactly one positive Def-configured water charge scaled to that captured load. Insufficient supplied water SHALL prevent the cycle from starting and expose that reason. A paused/resumed cycle MUST NOT debit water again, and explicit cancellation, deconstruction, or terminal destruction SHALL NOT refund the already admitted charge.
+For capacity accounting, the default load SHALL count a plate as 1 plate-equivalent, a cookware set as 4, a cutlery set as 0.25, and any future washable item by a Def-configurable value. The first admitted item SHALL open a Def-configured, save-persistent loading phase during which more dirty ware can join while capacity remains; every successful admission SHALL reset that phase, cleaning progress SHALL remain zero, and the inspector SHALL identify the loading state. When the loading phase closes, the cycle SHALL capture its exact input identities, work duration, load-scaled resource demand, and progress. With the validated Dubs adapter active, cycle start SHALL atomically verify and debit exactly one positive Def-configured water charge scaled to the final captured load. Insufficient supplied water SHALL retain the admitted dirty batch without starting the cycle and SHALL expose that reason. A paused/resumed cycle MUST NOT debit water again, and explicit cancellation, deconstruction, or terminal destruction SHALL NOT refund the already admitted charge.
 
 Temporary loss of power, supplied water, or operability through breakdown SHALL pause captured cycle state without cleaning or ejecting items; restoration or repair SHALL automatically resume it. Explicit cancellation, deconstruction, or terminal destruction SHALL end the cycle and eject every recoverable original input dirty under normal holder rules. When the Dubs package is active in `Auto` mode but its required plumbing shape fails validation, both dishwashers SHALL be ineligible rather than silently washing without water; one actionable integration warning SHALL remain, and recognized non-Dubs hand-washing fallbacks SHALL still be eligible.
 
 #### Scenario: Standard dishwasher reaches capacity
 - **WHEN** `DishwasherCapacityScale` is `1.0` and a standard dishwasher contains ware totaling 16 plate-equivalents
 - **THEN** it accepts no additional load until enough capacity is freed
+
+#### Scenario: One place setting forms one batch
+- **WHEN** a dirty plate enters an idle dishwasher and its matching dirty cutlery arrives during the loading phase
+- **THEN** both exact items are admitted before cleaning progress or the Dubs water debit begins
+- **THEN** the final cycle load and any water charge include both items
 
 #### Scenario: Industrial cycle completes
 - **WHEN** `DishwasherCapacityScale` is `1.0` and an industrial dishwasher completes a cycle containing mixed-Stuff, mixed-quality ware within its 64 plate-equivalent capacity

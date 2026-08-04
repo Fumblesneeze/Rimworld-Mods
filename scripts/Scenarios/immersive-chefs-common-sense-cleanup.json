@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-common-sense-cleanup",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "avilmask.commonsense",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-common-sense-cleanup-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-common-sense-cleanup-ready.png"
+    }
+  ]
+}

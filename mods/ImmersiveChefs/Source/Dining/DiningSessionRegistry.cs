@@ -281,38 +281,43 @@ internal sealed class DiningSession : IThingHolder
         }
 
         DropPlate(Pawn);
+        Thing? dirtyPlate = null;
         if (Plate is { } embeddedPlate && Pawn.MapHeld is { } plateMap)
         {
             (embeddedPlate as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
-            if (embeddedPlate.holdingOwner is { } owner)
-            {
-                owner.TryDrop(embeddedPlate, clearingOrigin, plateMap, ThingPlaceMode.Near, out _);
-            }
-            else if (!embeddedPlate.Spawned)
-            {
-                GenPlace.TryPlaceThing(embeddedPlate, clearingOrigin, plateMap, ThingPlaceMode.Near);
-            }
+            dirtyPlate = DropAt(embeddedPlate, clearingOrigin, plateMap);
 
             Plate = null;
         }
 
+        Thing? dirtyCutlery = null;
         if (CarriedCutlery is not null)
         {
-            (CarriedCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
+            var usedCutlery = CarriedCutlery;
+            (usedCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
             if (cutleryFromPersonalInventory &&
-                ReferenceEquals(CarriedCutlery.holdingOwner, CarrierPawn.inventory?.innerContainer))
+                ReferenceEquals(usedCutlery.holdingOwner, CarrierPawn.inventory?.innerContainer))
             {
                 CarriedCutlery = null;
             }
             else
             {
-                DropCarried(Pawn);
+                dirtyCutlery = DropCarried(Pawn);
             }
         }
 
         if (ServingPawn is { } server && Pawn.MapHeld is { } map)
         {
             map.GetComponent<MapComponent_GastronomyDishClearing>()?.Schedule(server, clearingOrigin);
+        }
+        else
+        {
+            CommonSenseAdapter.ScheduleCommittedHandoff(
+                CarrierPawn,
+                Job,
+                dirtyPlate,
+                dirtyCutlery,
+                gastronomyOwned: false);
         }
     }
 
@@ -450,47 +455,47 @@ internal sealed class DiningSession : IThingHolder
         }
     }
 
-    private void DropPlate(Pawn dropPawn)
+    private Thing? DropPlate(Pawn dropPawn)
     {
         if (CarriedPlate is null || dropPawn.MapHeld is not { } map)
         {
-            return;
+            return null;
         }
 
-        if (CarriedPlate.holdingOwner is { } owner)
-        {
-            owner.TryDrop(CarriedPlate, dropPawn.PositionHeld, map, ThingPlaceMode.Near, out _);
-        }
-        else if (!CarriedPlate.Spawned)
-        {
-            GenPlace.TryPlaceThing(CarriedPlate, dropPawn.PositionHeld, map, ThingPlaceMode.Near);
-        }
-
+        var dropped = DropAt(CarriedPlate, dropPawn.PositionHeld, map);
         CarriedPlate = null;
+        return dropped;
     }
 
-    private void DropCarried(Pawn dropPawn)
+    private Thing? DropCarried(Pawn dropPawn)
     {
         if (CarriedCutlery is null || dropPawn.MapHeld is not { } map)
         {
-            return;
+            return null;
         }
 
-        if (CarriedCutlery.holdingOwner is { } owner)
-        {
-            owner.TryDrop(
-                CarriedCutlery,
-                dropPawn.PositionHeld,
-                map,
-                ThingPlaceMode.Near,
-                out _);
-        }
-        else if (!CarriedCutlery.Spawned)
-        {
-            GenPlace.TryPlaceThing(CarriedCutlery, dropPawn.PositionHeld, map, ThingPlaceMode.Near);
-        }
-
+        var dropped = DropAt(CarriedCutlery, dropPawn.PositionHeld, map);
         CarriedCutlery = null;
+        return dropped;
+    }
+
+    private static Thing? DropAt(Thing thing, IntVec3 position, Map map)
+    {
+        if (thing.holdingOwner is { } owner)
+        {
+            return owner.TryDrop(thing, position, map, ThingPlaceMode.Near, out var dropped)
+                ? dropped
+                : null;
+        }
+
+        if (thing.Spawned)
+        {
+            return thing;
+        }
+
+        return GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near, out var placed)
+            ? placed
+            : null;
     }
 }
 
