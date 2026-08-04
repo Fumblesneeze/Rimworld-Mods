@@ -20,6 +20,7 @@
   - [x] 2.6e Observe a native Simple-meal bill prefer deliberately inferior clean cookware and a clean plate over superior dirty controls, then observe an isolated second bill use its only dirty ware after a sealed starving pawn reaches the patched vanilla no-food boundary; require both ordinary jobs to create plated meals without synthetic recipe completion.
   - [x] 2.6f Observe matched native Simple, Fine, and Lavish one-shot bills finish in that order under the exact 0.75x/2x/3x table; in settled finalized-Def matrices, require one Harmony owner, unchanged survival/pemmican recipes, absence of invented mod Defs, and unchanged unclassified Vanilla Cooking Expanded recipes when its real dependency chain is active.
   - [x] 2.6g Observe vanilla food-choice and ingestion jobs consume exact Pemmican and packaged-survival-meal fixtures while four adjacent clean plate/cutlery controls remain visibly clean and unmoved and neither sealed concrete room gains dirt or a returned dish; require finalized excluded-food Defs to omit embedded ware and culinary/temperature state.
+  - [x] 2.6h Observe a real powered vanilla dispenser/hopper native `Ingest` job acquire exact clean plate/cutlery, visibly carry the freshly dispensed paste meal, then return the same exact ware dirty after the meal disappears.
 
 ## 3. mods/ImmersiveChefs - Sanitation and dishwashing
 

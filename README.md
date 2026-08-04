@@ -325,6 +325,17 @@ Use the handheld-food exclusion scene to verify that Pemmican and packaged survi
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the nutrient-paste dining scene to verify the ordinary vanilla dispenser path. It creates a real powered dispenser, hopper, and forbidden rice feedstock beside one hungry colonist plus exact clean steel plate and cutlery controls. The arm step asks vanilla `JobGiver_GetFood` for the exact dispenser-targeted `Ingest` job and pauses. Resume at a native speed; the pawn should visibly carry and consume the freshly dispensed paste meal, then the meal should disappear and the same plate and cutlery should return dirty:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-nutrient-paste-dining `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell

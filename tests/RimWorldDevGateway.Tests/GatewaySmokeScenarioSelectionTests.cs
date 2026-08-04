@@ -581,6 +581,49 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Nutrient_paste_dining_scenario_uses_the_vanilla_dispenser_ingest_path()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-nutrient-paste-dining.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-nutrient-paste-dining-setup.csx");
+        var armPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-nutrient-paste-dining-arm.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(armPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var arm = File.ReadAllText(armPath);
+        var scenarioSource = setup + arm;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-nutrient-paste-dining"));
+            Assert.That(setup, Does.Contain("NutrientPasteDispenser"));
+            Assert.That(setup, Does.Contain("ThingDefOf.Hopper"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Plate"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Cutlery"));
+            Assert.That(arm, Does.Contain("JobGiver_GetFood"));
+            Assert.That(arm, Does.Contain("TryGiveJob"));
+            Assert.That(arm, Does.Contain("JobDefOf.Ingest"));
+            Assert.That(arm, Does.Contain("ReferenceEquals(job.targetA.Thing, dispenser)"));
+            Assert.That(scenarioSource, Does.Not.Contain("TryDispenseFood"));
+            Assert.That(scenarioSource, Does.Not.Contain(".Ingested("));
+            Assert.That(scenarioSource, Does.Not.Contain("BindPastePlate"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));
