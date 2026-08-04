@@ -358,6 +358,17 @@ Use the meal-cooling-holders scene to compare ordinary ambient, refrigerated, an
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the meal-serving-stack scene to observe a native one-serving split without synthetic component calls. It creates a paused stack whose ordered culinary records are Awful 20, Good 50, and Masterwork 80, with three embedded plates, three clean cutlery units, and one starving drafted diner. The initial selected inspector must show `Simple meal x3`, `Bound plates: 3`, and `Masterwork (80)`. Select the diner, invoke the native Undraft gizmo, and resume game time. After one ordinary ingestion, pause and reselect the same meal handle; it must visibly show `Simple meal x2`, `Bound plates: 2`, and `Good (50)`:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-meal-serving-stack `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Use the handheld-food exclusion scene to verify that Pemmican and packaged survival meals stay outside the serving-ware workflow. It builds two sealed rooms with one hungry colonist and one exact food fixture each, plus clean plate and cutlery controls. The arm step asks vanilla `JobGiver_GetFood` for each exact native ingest job and pauses. Resume at a native speed; Pemmican should decrease, the survival meal should disappear, and all four controls should remain clean without dirt or a returned dish:
 
 ```powershell

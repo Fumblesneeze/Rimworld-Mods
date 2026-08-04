@@ -66,6 +66,7 @@
 - [ ] 6.6 IN-GAME: Verify inspect gauges, cooling across holders, mood/poison outcomes, microwave jobs, stack splits, save/load, and restaurant delivery.
   - [x] 6.6a Observe an ordinary self-feeding job take an initially frozen Masterwork-80 plated meal and clean cutlery to a real powered microwave, visibly cross into the Excellent band under the configured five-point loss, serve the meal steaming hot, and return the exact plate and cutlery dirty. The scenario may only arrange a paused drafted pawn and fixtures; undrafting and advancing time are player actions.
   - [x] 6.6b Observe three identical plated 70 °C meals progress for the same player-controlled interval inside real powered 21 °C ambient, 5 °C refrigerated, and -10 °C frozen holder rooms; their native inspectors must visibly diverge into Warm, RoomTemperature, and Frozen bands without scenario-driven ticks or direct thermal mutation.
+  - [x] 6.6c Observe one native ingestion split the current Masterwork-80 serving and one bound plate from a three-serving stack; the same original map handle must visibly change from count/plates/quality `3/3/80` to `2/2/50`, without scenario calls to split, consume, or pawn-job APIs.
 
 ## 7. mods/ImmersiveChefs - Dining standards and optional integrations
 

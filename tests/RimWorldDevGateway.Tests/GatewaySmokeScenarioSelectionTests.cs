@@ -785,6 +785,48 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Meal_serving_stack_scenario_leaves_the_exact_native_split_and_ingestion_to_player_action()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-meal-serving-stack.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-meal-serving-stack-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-meal-serving-stack"));
+            Assert.That(descriptor, Does.Contain("immersive-chefs-meal-serving-stack-setup.csx"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("meal.stackCount = 3"));
+            Assert.That(setup, Does.Contain("new ImmersiveChefs.CulinaryServingRecord(20, 70f"));
+            Assert.That(setup, Does.Contain("new ImmersiveChefs.CulinaryServingRecord(50, 70f"));
+            Assert.That(setup, Does.Contain("new ImmersiveChefs.CulinaryServingRecord(80, 70f"));
+            Assert.That(setup, Does.Contain("plate.stackCount = 3"));
+            Assert.That(setup, Does.Contain("cutlery.stackCount = 3"));
+            Assert.That(setup, Does.Contain("diner.drafter.Drafted = true"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(meal)"));
+            Assert.That(setup, Does.Not.Contain("SplitOff"));
+            Assert.That(setup, Does.Not.Contain("ConsumeOne"));
+            Assert.That(setup, Does.Not.Contain("PostIngested"));
+            Assert.That(setup, Does.Not.Contain("JobDefOf.Ingest"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+            Assert.That(setup, Does.Not.Contain("TryTakeOrderedJob"));
+            Assert.That(setup, Does.Not.Contain("DoSingleTick"));
+        });
+    }
+
+    [Test]
     public void Hidden_provenance_scenario_uses_native_bill_and_food_selection_boundaries()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
