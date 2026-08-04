@@ -327,6 +327,25 @@ public static class FinalizedImmersiveChefsIntegrationTests
             ingredientPoisonChance: 0f));
 
         var recipe = DefDatabase<RecipeDef>.GetNamed("CookMealSimple");
+        var ordinaryPrepared = ThingMaker.MakeThing(preparedDef);
+        var ordinaryPreparedComp = (ordinaryPrepared as ThingWithComps)?.GetComp<CompPreparedFood>();
+        IntegrationAssert.NotNull(
+            ordinaryPreparedComp,
+            "The ordinary prepared-food fixture must expose provenance.");
+        ordinaryPreparedComp!.Initialize(new PreparedFoodState(
+            new[] { new IngredientContribution(riceDef.defName, 0.05f, 1) },
+            preparationQuality: 50,
+            preparerThingId: null,
+            DietaryFlags.Plant | DietaryFlags.VegetarianCompatible,
+            exactSourcesHidden: false,
+            ingredientPoisonChance: 0f));
+        var preparedOnlyBill = new Bill_Production(recipe);
+        preparedOnlyBill.ingredientFilter.SetDisallowAll();
+        preparedOnlyBill.ingredientFilter.SetAllow(preparedDef, true);
+        IntegrationAssert.True(
+            preparedOnlyBill.IsFixedOrAllowedIngredient(ordinaryPrepared),
+            "A bill restricted to visible prepared food must not also require every visible raw source Def.");
+
         var bill = new Bill_Production(recipe);
         bill.ingredientFilter.SetAllow(preparedDef, true);
         bill.ingredientFilter.SetAllow(riceDef, true);

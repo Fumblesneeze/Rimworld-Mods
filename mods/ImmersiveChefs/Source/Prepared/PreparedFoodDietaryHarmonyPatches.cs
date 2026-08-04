@@ -10,7 +10,7 @@ internal static class PreparedFoodBillIngredientPatch
     private static void Postfix(Bill __instance, Thing __0, ref bool __result)
     {
         if (!__result ||
-            (__0 as ThingWithComps)?.GetComp<CompPreparedFood>() is not { } prepared)
+            (__0 as ThingWithComps)?.GetComp<CompPreparedFood>() is not { ExactSourcesHidden: true } prepared)
         {
             return;
         }
