@@ -246,6 +246,31 @@ public static class FinalizedImmersiveChefsIntegrationTests
             "Immersive Chefs must install the finalized plated-meal tie breaker.");
     }
 
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void DishwasherCapacitiesAreMaterializedAtDefFinalization()
+    {
+        var expectedScale = ImmersiveChefsMod.Settings.DishwasherCapacityScale;
+        var domestic = ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher.comps?
+            .OfType<CompProperties_Dishwasher>()
+            .SingleOrDefault();
+        var industrial = ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher.comps?
+            .OfType<CompProperties_Dishwasher>()
+            .SingleOrDefault();
+
+        IntegrationAssert.NotNull(
+            domestic,
+            "The domestic dishwasher must retain its finalized capacity properties.");
+        IntegrationAssert.NotNull(
+            industrial,
+            "The industrial dishwasher must retain its finalized capacity properties.");
+        IntegrationAssert.True(
+            Math.Abs(domestic!.basePlateCapacity - (16f * expectedScale)) < 0.001f,
+            "The domestic dishwasher must materialize the restart-only scale into its finalized Def.");
+        IntegrationAssert.True(
+            Math.Abs(industrial!.basePlateCapacity - (64f * expectedScale)) < 0.001f,
+            "The industrial dishwasher must materialize the restart-only scale into its finalized Def.");
+    }
+
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedTravelFoodsUseTheCoverageContract()
     {

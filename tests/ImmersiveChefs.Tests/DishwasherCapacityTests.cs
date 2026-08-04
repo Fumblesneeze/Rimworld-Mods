@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.IO;
 
 namespace ImmersiveChefs.Tests;
 
@@ -43,5 +44,65 @@ public sealed class DishwasherCapacityTests
             Assert.That(DishwasherCyclePolicy.AdvanceLoadingWindow(250, 250), Is.Zero);
             Assert.That(DishwasherCyclePolicy.AdvanceLoadingWindow(0, 250), Is.Zero);
         });
+    }
+
+    [Test]
+    public void Restart_capacity_scale_is_materialized_once_for_local_and_processor_paths()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(DishwasherCapacityPolicy.ScaleForRestart(16f, 0.5f), Is.EqualTo(8f));
+            Assert.That(DishwasherCapacityPolicy.ScaleForRestart(16f, 2.5f), Is.EqualTo(40f));
+            Assert.That(DishwasherCapacityPolicy.ScaleForRestart(64f, 4f), Is.EqualTo(256f));
+        });
+
+        var root = FindRepositoryRoot();
+        var dishwasher = File.ReadAllText(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Source",
+            "Sanitation",
+            "CompDishwasher.cs"));
+        var bootstrap = File.ReadAllText(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Source",
+            "Defs",
+            "ImmersiveChefsDefBootstrap.cs"));
+        var processor = File.ReadAllText(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Source",
+            "Integrations",
+            "ProcessorFrameworkAdapter.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dishwasher,
+                Does.Contain("public float Capacity => Props.basePlateCapacity;"));
+            Assert.That(dishwasher,
+                Does.Not.Contain("Settings.DishwasherCapacityScale"));
+            Assert.That(bootstrap,
+                Does.Contain("ApplyDishwasherCapacityScale"));
+            Assert.That(processor,
+                Does.Contain("CompProperties_Dishwasher"));
+            Assert.That(processor,
+                Does.Not.Contain("capacity * ImmersiveChefsMod.Settings.DishwasherCapacityScale"));
+        });
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
+        while (current is not null && !File.Exists(Path.Combine(current.FullName, "ImmersiveChefs.sln")))
+        {
+            current = current.Parent;
+        }
+
+        return current?.FullName ?? throw new DirectoryNotFoundException(
+            "Could not locate repository root from the test directory.");
     }
 }

@@ -47,10 +47,31 @@ internal static class ImmersiveChefsDefBootstrap
 
         AddMealComponents();
         EnablePreparedIngredients();
+        ApplyDishwasherCapacityScale();
 
         PreparedFoodRuntime.Initialize(ImmersiveChefsMod.Settings.PreparedRotMultiplier);
         RecipeWorkRuntime.Initialize(ImmersiveChefsMod.Settings);
         InitializeOptionalAdapters();
+    }
+
+    private static void ApplyDishwasherCapacityScale()
+    {
+        foreach (var dishwasher in new[]
+                 {
+                     ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher,
+                     ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher
+                 })
+        {
+            var properties = dishwasher.comps?
+                .OfType<CompProperties_Dishwasher>()
+                .FirstOrDefault();
+            if (properties is not null)
+            {
+                properties.basePlateCapacity = DishwasherCapacityPolicy.ScaleForRestart(
+                    properties.basePlateCapacity,
+                    ImmersiveChefsMod.Settings.DishwasherCapacityScale);
+            }
+        }
     }
 
     private static void InitializeOptionalAdapters()

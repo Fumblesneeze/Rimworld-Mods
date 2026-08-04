@@ -19,6 +19,12 @@ public sealed class CompProperties_Dishwasher : CompProperties
 
 public static class DishwasherCapacityPolicy
 {
+    public static float ScaleForRestart(float baseCapacity, float scale)
+    {
+        var boundedScale = Math.Max(0.5f, Math.Min(4f, scale));
+        return Math.Max(0.01f, baseCapacity) * boundedScale;
+    }
+
     public static int CountAccepted(float capacity, float used, float perItem, int stackCount)
     {
         var boundedPerItem = Math.Max(0.01f, perItem);
@@ -58,7 +64,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     private ThingOwner<Thing> Contents => contents ??= new ThingOwner<Thing>(this, LookMode.Deep);
 
-    public float Capacity => Props.basePlateCapacity * ImmersiveChefsMod.Settings.DishwasherCapacityScale;
+    public float Capacity => Props.basePlateCapacity;
 
     public float UsedCapacity => Contents.InnerListForReading.Sum(PlateEquivalents);
 

@@ -44,12 +44,10 @@ internal static class ProcessorFrameworkAdapter
             AddProcessor(
                 ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher,
                 "ImmersiveChefs_DomesticDishwashing",
-                16,
                 2500);
             AddProcessor(
                 ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher,
                 "ImmersiveChefs_IndustrialDishwashing",
-                64,
                 1800);
             InstallPatches(harmony);
             RecacheFramework();
@@ -111,7 +109,7 @@ internal static class ProcessorFrameworkAdapter
         return true;
     }
 
-    private static void AddProcessor(ThingDef buildingDef, string processDefName, int capacity, int cycleTicks)
+    private static void AddProcessor(ThingDef buildingDef, string processDefName, int cycleTicks)
     {
         if (buildingDef.comps?.Any(properties => processorPropertiesType!.IsInstanceOfType(properties)) == true)
         {
@@ -143,8 +141,12 @@ internal static class ProcessorFrameworkAdapter
 
         var properties = (CompProperties)(Activator.CreateInstance(processorPropertiesType!)
                          ?? throw new InvalidOperationException("Processor properties could not be created."));
+        var dishwasherProperties = buildingDef.comps?
+            .OfType<CompProperties_Dishwasher>()
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException("Dishwasher capacity properties were not finalized.");
         SetField(properties, "capacity", Math.Max(1, (int)Math.Round(
-            capacity * ImmersiveChefsMod.Settings.DishwasherCapacityScale)));
+            dishwasherProperties.basePlateCapacity)));
         SetField(properties, "independentProcesses", true);
         SetField(properties, "parallelProcesses", true);
         SetField(properties, "dropIngredients", true);
