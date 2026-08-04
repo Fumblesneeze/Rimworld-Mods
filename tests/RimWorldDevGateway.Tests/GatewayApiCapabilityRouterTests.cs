@@ -783,9 +783,16 @@ public sealed class GatewayApiCapabilityRouterTests
 
         public bool RestoreWindow(IntPtr window) => true;
 
-        public bool SetForegroundWindow(IntPtr window) => true;
+        public IDisposable? TryAcquireForegroundWindow(IntPtr window) => new NoopDisposable();
 
         public IntPtr GetForegroundWindow() => new(42);
+
+        private sealed class NoopDisposable : IDisposable
+        {
+            public void Dispose()
+            {
+            }
+        }
 
         public bool TryGetClientRect(IntPtr window, out GatewayNativeRect rectangle)
         {

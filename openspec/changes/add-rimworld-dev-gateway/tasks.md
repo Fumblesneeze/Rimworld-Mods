@@ -185,6 +185,7 @@
 - [x] 25.5 IN-GAME: In one isolated playable run, read rendered-client dimensions, use Gateway keyboard input to change pause state, use Gateway screen-local click input on a visible native control, and observe the resulting pause/speed and UI change through Gateway UI state plus retained rendered screenshots.
 - [x] 25.6 TDD RED/GREEN: Reproduce a transient Windows lock on the owned run manifest during stopped-tombstone replacement, retry for a short bounded interval, and retain fail-closed retryable ownership for a persistent lock.
 - [x] 25.7 REGRESSION/REVIEW: Run focused and full Gateway tests, independently review the shutdown hardening, and repeat the rejected current-build cutlery-item observation through a clean exact-PID shutdown.
+- [x] 25.8 TDD/IN-GAME: Keep a Windows foreground input-queue lease through each serialized operation, retry one pre-button transient click focus loss, fail closed afterward, and observe a real RimWorld right-click float menu plus selection changes through screen-local Gateway clicks.
 
 ## 26. mods/RimWorldDevGateway — Unobtrusive background launch
 

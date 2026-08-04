@@ -31,6 +31,78 @@ public sealed class GatewayWindowsInputTests
     }
 
     [Test]
+    public void Click_uses_bounded_focus_recovery_when_another_window_is_foreground()
+    {
+        var platform = FakePlatform.Ready();
+        platform.ForegroundWindow = new IntPtr(99);
+        var input = new GatewayWindowsInput(platform, processId: 77);
+
+        var result = input.Click(new GatewayClientPoint(20, 30), GatewayMouseButton.Left);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Operation, Is.EqualTo("click"));
+            Assert.That(platform.ActivationAttempts, Is.EqualTo(1));
+            Assert.That(platform.RestoreAttempts, Is.Zero);
+            Assert.That(platform.ActivationReleases, Is.EqualTo(1));
+            Assert.That(platform.ForegroundWindow, Is.EqualTo(new IntPtr(42)));
+            Assert.That(platform.Injected,
+                Is.EqualTo(new[] { "move:120,230", "mouse:Left:down", "mouse:Left:up" }));
+        });
+    }
+
+    [Test]
+    public void Click_fails_closed_without_input_when_bounded_focus_recovery_cannot_focus_the_target()
+    {
+        var platform = FakePlatform.Ready();
+        platform.ForegroundWindow = new IntPtr(99);
+        platform.ActivationSucceeds = false;
+        var input = new GatewayWindowsInput(platform, processId: 77);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                () => input.Click(new GatewayClientPoint(20, 30), GatewayMouseButton.Left),
+                Throws.TypeOf<GatewayInputException>()
+                    .With.Property(nameof(GatewayInputException.Code)).EqualTo("focus_lost"));
+            Assert.That(platform.ActivationAttempts, Is.EqualTo(2));
+            Assert.That(platform.Injected, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Click_retries_one_transient_focus_loss_before_the_button_pair()
+    {
+        var platform = FakePlatform.Ready();
+        platform.LoseFocusAfterInjectionCount = 1;
+        platform.LoseFocusOnlyOnce = true;
+        var input = new GatewayWindowsInput(platform, processId: 77);
+
+        var result = input.Click(new GatewayClientPoint(20, 30), GatewayMouseButton.Left);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(platform.ActivationAttempts, Is.EqualTo(1));
+            Assert.That(platform.ActivationReleases, Is.EqualTo(1));
+            Assert.That(platform.Injected, Is.EqualTo(new[]
+            {
+                "move:120,230",
+                "move:120,230",
+                "mouse:Left:down",
+                "mouse:Left:up"
+            }));
+            Assert.That(result.Events.Select(entry => entry.Kind), Is.EqualTo(new[]
+            {
+                "mouse_move",
+                "focus_reacquire",
+                "mouse_move",
+                "mouse_left_down",
+                "mouse_left_up"
+            }));
+        });
+    }
+
+    [Test]
     public void Drag_interpolates_bounded_steps_and_releases_after_focus_loss()
     {
         var platform = FakePlatform.Ready();
@@ -322,11 +394,15 @@ public sealed class GatewayWindowsInputTests
 
         public bool Minimized { get; set; }
 
+        public bool ActivationSucceeds { get; set; } = true;
+
         public GatewayNativeRect ClientRect { get; set; }
 
         public List<string> Injected { get; } = new();
 
         public int LoseFocusAfterInjectionCount { get; set; } = int.MaxValue;
+
+        public bool LoseFocusOnlyOnce { get; set; }
 
         public int ReplaceMainWindowAfterInjectionCount { get; set; } = int.MaxValue;
 
@@ -335,6 +411,12 @@ public sealed class GatewayWindowsInputTests
         public int OwnerReads { get; private set; }
 
         public int ForegroundReads { get; private set; }
+
+        public int ActivationAttempts { get; private set; }
+
+        public int ActivationReleases { get; private set; }
+
+        public int RestoreAttempts { get; private set; }
 
         public bool BlockDelay { get; set; }
 
@@ -369,14 +451,21 @@ public sealed class GatewayWindowsInputTests
 
         public bool RestoreWindow(IntPtr window)
         {
+            RestoreAttempts++;
             Minimized = false;
             return true;
         }
 
-        public bool SetForegroundWindow(IntPtr window)
+        public IDisposable? TryAcquireForegroundWindow(IntPtr window)
         {
+            ActivationAttempts++;
+            if (!ActivationSucceeds)
+            {
+                return null;
+            }
+
             ForegroundWindow = window;
-            return true;
+            return new CallbackDisposable(() => ActivationReleases++);
         }
 
         public IntPtr GetForegroundWindow()
@@ -448,11 +537,37 @@ public sealed class GatewayWindowsInputTests
             if (Injected.Count(entry => !entry.StartsWith("delay:", StringComparison.Ordinal)) >= LoseFocusAfterInjectionCount)
             {
                 ForegroundWindow = new IntPtr(99);
+                if (LoseFocusOnlyOnce)
+                {
+                    LoseFocusAfterInjectionCount = int.MaxValue;
+                }
             }
 
             if (Injected.Count(entry => !entry.StartsWith("delay:", StringComparison.Ordinal)) >= ReplaceMainWindowAfterInjectionCount)
             {
                 MainWindow = new IntPtr(100);
+            }
+        }
+
+        private sealed class CallbackDisposable : IDisposable
+        {
+            private readonly Action callback;
+            private bool disposed;
+
+            internal CallbackDisposable(Action callback)
+            {
+                this.callback = callback;
+            }
+
+            public void Dispose()
+            {
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                callback();
             }
         }
     }

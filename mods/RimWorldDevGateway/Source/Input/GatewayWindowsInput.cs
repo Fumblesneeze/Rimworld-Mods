@@ -133,7 +133,7 @@ public interface IGatewayWindowsInputPlatform
 
     bool RestoreWindow(IntPtr window);
 
-    bool SetForegroundWindow(IntPtr window);
+    IDisposable? TryAcquireForegroundWindow(IntPtr window);
 
     IntPtr GetForegroundWindow();
 
@@ -196,29 +196,40 @@ public sealed class GatewayWindowsInput
         bool activate,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var target = AcquireTarget(activate);
         var events = new List<GatewayInputEvent>();
-        cancellationToken.ThrowIfCancellationRequested();
-        var screen = Move(target, point, events);
-        var down = false;
-        try
+        for (var attempt = 0; attempt < 2; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            SendButton(target, button, true, point, screen, events);
-            down = true;
-            cancellationToken.ThrowIfCancellationRequested();
-            SendButton(target, button, false, point, screen, events);
-            down = false;
-            return new GatewayInputResult("click", target, events);
-        }
-        finally
-        {
-            if (down)
+            var down = false;
+            try
             {
-                TryEmergencyMouseUp(button);
+                using var targetLease = AcquireTarget(activate);
+                var target = targetLease.Window;
+                cancellationToken.ThrowIfCancellationRequested();
+                var screen = Move(target, point, events);
+                cancellationToken.ThrowIfCancellationRequested();
+                SendButton(target, button, true, point, screen, events);
+                down = true;
+                cancellationToken.ThrowIfCancellationRequested();
+                SendButton(target, button, false, point, screen, events);
+                down = false;
+                return new GatewayInputResult("click", target, events);
+            }
+            catch (GatewayInputException exception) when (
+                exception.Code == "focus_lost" && activate && !down && attempt == 0)
+            {
+                events.Add(new GatewayInputEvent("focus_reacquire"));
+            }
+            finally
+            {
+                if (down)
+                {
+                    TryEmergencyMouseUp(button);
+                }
             }
         }
+
+        throw Error("focus_lost", "The RimWorld window could not retain foreground focus for a click.");
     }
 
     public GatewayInputResult Drag(
@@ -252,7 +263,8 @@ public sealed class GatewayWindowsInput
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        var target = AcquireTarget(activate);
+        using var targetLease = AcquireTarget(activate);
+        var target = targetLease.Window;
         ResolveScreenPoint(target, start);
         ResolveScreenPoint(target, end);
         var events = new List<GatewayInputEvent>();
@@ -349,7 +361,8 @@ public sealed class GatewayWindowsInput
 
         var primary = ResolveKey(key);
         cancellationToken.ThrowIfCancellationRequested();
-        var target = AcquireTarget(activate);
+        using var targetLease = AcquireTarget(activate);
+        var target = targetLease.Window;
         var events = new List<GatewayInputEvent>();
         var pressedModifiers = new List<KeyValuePair<string, ushort>>();
         var primaryDown = false;
@@ -420,7 +433,8 @@ public sealed class GatewayWindowsInput
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        var target = AcquireTarget(activate);
+        using var targetLease = AcquireTarget(activate);
+        var target = targetLease.Window;
         var events = new List<GatewayInputEvent>();
         foreach (var character in text)
         {
@@ -463,7 +477,7 @@ public sealed class GatewayWindowsInput
         }
     }
 
-    private IntPtr AcquireTarget(bool activate)
+    private WindowInputLease AcquireTarget(bool activate)
     {
         EnsureSupported();
         var target = platform.GetMainWindowHandle(processId);
@@ -478,14 +492,46 @@ public sealed class GatewayWindowsInput
             throw Error("focus_lost", "The RimWorld window could not be restored.");
         }
 
-        if (platform.GetForegroundWindow() != target &&
-            (!activate || !platform.SetForegroundWindow(target)))
+        IDisposable? foregroundLease = null;
+        if (platform.GetForegroundWindow() != target)
         {
-            throw Error("focus_lost", "The RimWorld window could not be focused.");
+            if (!activate ||
+                (foregroundLease = platform.TryAcquireForegroundWindow(target)) is null ||
+                platform.GetForegroundWindow() != target)
+            {
+                foregroundLease?.Dispose();
+                throw Error("focus_lost", "The RimWorld window could not be focused.");
+            }
         }
 
-        ValidateStep(target);
-        return target;
+        try
+        {
+            ValidateStep(target);
+            return new WindowInputLease(target, foregroundLease);
+        }
+        catch
+        {
+            foregroundLease?.Dispose();
+            throw;
+        }
+    }
+
+    private sealed class WindowInputLease : IDisposable
+    {
+        private readonly IDisposable? foregroundLease;
+
+        internal WindowInputLease(IntPtr window, IDisposable? foregroundLease)
+        {
+            Window = window;
+            this.foregroundLease = foregroundLease;
+        }
+
+        internal IntPtr Window { get; }
+
+        public void Dispose()
+        {
+            foregroundLease?.Dispose();
+        }
     }
 
     private GatewayClientPoint Move(
@@ -763,7 +809,124 @@ internal sealed class GatewayWin32InputPlatform : IGatewayWindowsInputPlatform
         return !NativeMethods.IsIconic(window);
     }
 
-    public bool SetForegroundWindow(IntPtr window) => NativeMethods.SetForegroundWindow(window);
+    public IDisposable? TryAcquireForegroundWindow(IntPtr window)
+    {
+        if (window == IntPtr.Zero || !NativeMethods.IsWindow(window))
+        {
+            return null;
+        }
+
+        var foreground = NativeMethods.GetForegroundWindow();
+        if (foreground == window)
+        {
+            return NoopDisposable.Instance;
+        }
+
+        var currentThread = NativeMethods.GetCurrentThreadId();
+        var targetThread = NativeMethods.GetWindowThreadProcessId(window, out _);
+        var foregroundThread = foreground == IntPtr.Zero
+            ? 0U
+            : NativeMethods.GetWindowThreadProcessId(foreground, out _);
+        var attachedForeground = false;
+        var attachedTarget = false;
+        var handedOff = false;
+        try
+        {
+            if (foregroundThread != 0 && foregroundThread != currentThread)
+            {
+                attachedForeground = NativeMethods.AttachThreadInput(currentThread, foregroundThread, true);
+            }
+
+            if (targetThread != 0 && targetThread != currentThread && targetThread != foregroundThread)
+            {
+                attachedTarget = NativeMethods.AttachThreadInput(currentThread, targetThread, true);
+            }
+
+            NativeMethods.BringWindowToTop(window);
+            NativeMethods.SetForegroundWindow(window);
+            NativeMethods.SetActiveWindow(window);
+            NativeMethods.SetFocus(window);
+            if (NativeMethods.GetForegroundWindow() != window)
+            {
+                return null;
+            }
+
+            handedOff = true;
+            return new InputQueueLease(
+                currentThread,
+                foregroundThread,
+                targetThread,
+                attachedForeground,
+                attachedTarget);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+        finally
+        {
+            if (!handedOff && attachedTarget)
+            {
+                NativeMethods.AttachThreadInput(currentThread, targetThread, false);
+            }
+
+            if (!handedOff && attachedForeground)
+            {
+                NativeMethods.AttachThreadInput(currentThread, foregroundThread, false);
+            }
+        }
+    }
+
+    private sealed class InputQueueLease : IDisposable
+    {
+        private readonly uint currentThread;
+        private readonly uint foregroundThread;
+        private readonly uint targetThread;
+        private readonly bool attachedForeground;
+        private readonly bool attachedTarget;
+        private int disposed;
+
+        internal InputQueueLease(
+            uint currentThread,
+            uint foregroundThread,
+            uint targetThread,
+            bool attachedForeground,
+            bool attachedTarget)
+        {
+            this.currentThread = currentThread;
+            this.foregroundThread = foregroundThread;
+            this.targetThread = targetThread;
+            this.attachedForeground = attachedForeground;
+            this.attachedTarget = attachedTarget;
+        }
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref disposed, 1) != 0)
+            {
+                return;
+            }
+
+            if (attachedTarget)
+            {
+                NativeMethods.AttachThreadInput(currentThread, targetThread, false);
+            }
+
+            if (attachedForeground)
+            {
+                NativeMethods.AttachThreadInput(currentThread, foregroundThread, false);
+            }
+        }
+    }
+
+    private sealed class NoopDisposable : IDisposable
+    {
+        internal static readonly NoopDisposable Instance = new();
+
+        public void Dispose()
+        {
+        }
+    }
 
     public IntPtr GetForegroundWindow() => NativeMethods.GetForegroundWindow();
 
@@ -970,6 +1133,13 @@ internal sealed class GatewayWin32InputPlatform : IGatewayWindowsInputPlatform
         [DllImport("user32.dll", SetLastError = true)]
         public static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
 
+        [DllImport("kernel32.dll")]
+        public static extern uint GetCurrentThreadId();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool AttachThreadInput(uint attachThread, uint attachToThread, bool attach);
+
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsIconic(IntPtr window);
@@ -981,6 +1151,16 @@ internal sealed class GatewayWin32InputPlatform : IGatewayWindowsInputPlatform
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetForegroundWindow(IntPtr window);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool BringWindowToTop(IntPtr window);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetActiveWindow(IntPtr window);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetFocus(IntPtr window);
 
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();

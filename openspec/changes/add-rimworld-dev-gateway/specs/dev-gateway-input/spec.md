@@ -2,7 +2,7 @@
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: Process-scoped click input
-`POST /api/v1/input/click` SHALL accept a mouse button and screen-local client-pixel position whose origin is the top-left of the rendered RimWorld client, validate that the current target window belongs to the running RimWorld PID and that the point lies within its current client bounds, and inject exactly one down/up click pair or return a capability/focus/bounds error. `GET /api/v1/ui-state` SHALL expose the corresponding current rendered-client width, height, and coordinate origin so callers do not infer coordinates from a scaled desktop capture.
+`POST /api/v1/input/click` SHALL accept a mouse button and screen-local client-pixel position whose origin is the top-left of the rendered RimWorld client, validate that the current target window belongs to the running RimWorld PID and that the point lies within its current client bounds, and inject exactly one down/up click pair or return a capability/focus/bounds error. Foreground activation from a Gateway HTTP worker SHALL keep any temporary Windows input-queue attachment alive through the complete serialized click and detach it in cleanup. A click MAY retry one transient `focus_lost` before mouse-down; it SHALL record that reacquisition, SHALL NOT inject more than one button pair, and SHALL NOT retry after mouse-down. `GET /api/v1/ui-state` SHALL expose the corresponding current rendered-client width, height, and coordinate origin so callers do not infer coordinates from a scaled desktop capture.
 
 #### Scenario: Click a visible RimWorld control
 - **WHEN** the RimWorld window is available and an authenticated caller clicks a point within its client bounds
@@ -15,6 +15,10 @@
 #### Scenario: Window target changed
 - **WHEN** the recorded window handle no longer belongs to the RimWorld PID at injection time
 - **THEN** the gateway returns `target_window_mismatch` and injects no input
+
+#### Scenario: Foreground transition is transient
+- **WHEN** Windows releases the exact RimWorld foreground window after movement but before mouse-down on the first click attempt
+- **THEN** the gateway reacquires the same PID-owned window once, records `focus_reacquire`, and injects one click pair or fails closed without a pair
 
 ### Requirement: Bounded drag input
 `POST /api/v1/input/drag` SHALL accept in-bounds start and end client coordinates, mouse button, bounded duration, and bounded interpolation steps; revalidate target ownership and focus during the gesture; and release any pressed button if focus or ownership is lost. Its timed interpolation loop SHALL run outside Unity's main-thread dispatcher so waiting between native input events does not freeze the game or prevent it from consuming those events.
