@@ -113,11 +113,11 @@ The gateway SHALL publish and enforce finite limits for headers, request bodies,
 - **THEN** the gateway returns a retryable `gateway_busy` error instead of growing the queue
 
 ### Requirement: Controlled shutdown and cleanup
-The authenticated `POST /api/v1/server/shutdown` route and RimWorld process teardown SHALL stop accepting requests, cancel work that has not started, complete bounded response cleanup, dispose the listener, erase live credentials, and leave a credential-free stopped-session record. If listener join, locator removal, tombstone creation, or another owned cleanup step fails, the runtime SHALL remain in a retryable stopping state, retain the corresponding transport/session ownership and active claim, reject an overlapping restart, and finalize the stopped state only after a later cleanup attempt succeeds.
+The authenticated `POST /api/v1/server/shutdown` route and RimWorld process teardown SHALL stop accepting requests, cancel work that has not started, complete bounded response cleanup, dispose the listener, erase live credentials, and leave a credential-free stopped-session record. The route SHALL write and flush its `202 Accepted` response before it requests runtime teardown; listener cancellation SHALL NOT race and abort an already accepted shutdown response. If listener join, locator removal, tombstone creation, or another owned cleanup step fails, the runtime SHALL remain in a retryable stopping state, retain the corresponding transport/session ownership and active claim, reject an overlapping restart, and finalize the stopped state only after a later cleanup attempt succeeds.
 
 #### Scenario: Authenticated shutdown
 - **WHEN** a caller invokes the shutdown route with the current bearer token
-- **THEN** the gateway acknowledges the request, closes the listener, removes `DevGateway/current.json`, and removes the bearer token from the run record
+- **THEN** the gateway delivers the complete correlated `202 Accepted` acknowledgement before closing the listener, removes `DevGateway/current.json`, and removes the bearer token from the run record
 
 #### Scenario: Tombstone replacement is briefly blocked
 - **WHEN** the owned run manifest has a transient Windows sharing violation while shutdown atomically replaces it with the stopped tombstone

@@ -587,13 +587,12 @@ public sealed class GatewayApiRouter
                     throw new GatewayCapabilityException(
                         "shutdown_unavailable",
                         "Controlled gateway shutdown is not configured.");
-                requestShutdown();
                 return Success(
                     requestId,
                     new SortedDictionary<string, object?> { ["shutdownRequested"] = true },
                     stopwatch,
                     202,
-                    "Accepted");
+                    "Accepted").WithTransportCompletion(requestShutdown);
             }
 
             return Error(404, "Not Found", requestId, "route_not_found", "No gateway route matches the request.", stopwatch);

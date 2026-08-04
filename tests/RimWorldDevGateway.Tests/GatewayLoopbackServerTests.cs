@@ -53,7 +53,9 @@ public sealed class GatewayLoopbackServerTests
             durationMilliseconds: 7,
             retryable: true);
         var json = Encoding.UTF8.GetString(error.Body);
-        var oversized = new GatewayHttpResponse(200, "OK", "text/plain", new byte[1025]);
+        var transportCompletions = 0;
+        var oversized = new GatewayHttpResponse(200, "OK", "text/plain", new byte[1025])
+            .WithTransportCompletion(() => transportCompletions++);
         var bounded = GatewayTransportResponsePolicy.EnforceLimit(
             oversized,
             maximumResponseBytes: 1024,
@@ -72,7 +74,12 @@ public sealed class GatewayLoopbackServerTests
             Assert.That(bounded.StatusCode, Is.EqualTo(500));
             Assert.That(boundedJson, Does.Contain("response_too_large"));
             Assert.That(boundedJson, Does.Contain("\"requestId\":\"bounded-test\""));
+            Assert.That(transportCompletions, Is.Zero);
         });
+
+        bounded.NotifyTransportCompleted();
+        bounded.NotifyTransportCompleted();
+        Assert.That(transportCompletions, Is.EqualTo(1));
     }
 
     [Test]

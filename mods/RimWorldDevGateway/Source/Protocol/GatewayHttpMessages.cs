@@ -54,12 +54,25 @@ public sealed class GatewayHttpRequest
 
 public sealed class GatewayHttpResponse
 {
+    private Action? transportCompleted;
+
     public GatewayHttpResponse(int statusCode, string reasonPhrase, string contentType, byte[] body)
+        : this(statusCode, reasonPhrase, contentType, body, transportCompleted: null)
+    {
+    }
+
+    private GatewayHttpResponse(
+        int statusCode,
+        string reasonPhrase,
+        string contentType,
+        byte[] body,
+        Action? transportCompleted)
     {
         StatusCode = statusCode;
         ReasonPhrase = reasonPhrase ?? throw new ArgumentNullException(nameof(reasonPhrase));
         ContentType = contentType ?? throw new ArgumentNullException(nameof(contentType));
         Body = body ?? throw new ArgumentNullException(nameof(body));
+        this.transportCompleted = transportCompleted;
     }
 
     public int StatusCode { get; }
@@ -69,6 +82,32 @@ public sealed class GatewayHttpResponse
     public string ContentType { get; }
 
     public byte[] Body { get; }
+
+    internal GatewayHttpResponse WithTransportCompletion(Action completion)
+    {
+        if (completion is null)
+        {
+            throw new ArgumentNullException(nameof(completion));
+        }
+
+        return new GatewayHttpResponse(StatusCode, ReasonPhrase, ContentType, Body, completion);
+    }
+
+    internal GatewayHttpResponse TransferTransportCompletionTo(GatewayHttpResponse replacement)
+    {
+        if (replacement is null)
+        {
+            throw new ArgumentNullException(nameof(replacement));
+        }
+
+        replacement.transportCompleted = Interlocked.Exchange(ref transportCompleted, null);
+        return replacement;
+    }
+
+    internal void NotifyTransportCompleted()
+    {
+        Interlocked.Exchange(ref transportCompleted, null)?.Invoke();
+    }
 
     public static GatewayHttpResponse Empty(int statusCode, string reasonPhrase) =>
         new(statusCode, reasonPhrase, "application/json; charset=utf-8", Array.Empty<byte>());

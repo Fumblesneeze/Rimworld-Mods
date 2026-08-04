@@ -112,15 +112,19 @@ internal static class GatewayTransportResponsePolicy
             throw new ArgumentOutOfRangeException(nameof(maximumResponseBytes));
         }
 
-        return response.Body.Length <= maximumResponseBytes
-            ? response
-            : Error(
-                500,
-                "Internal Server Error",
-                requestId,
-                "response_too_large",
-                $"The response exceeded the {maximumResponseBytes}-byte transport limit.",
-                durationMilliseconds);
+        if (response.Body.Length <= maximumResponseBytes)
+        {
+            return response;
+        }
+
+        var bounded = Error(
+            500,
+            "Internal Server Error",
+            requestId,
+            "response_too_large",
+            $"The response exceeded the {maximumResponseBytes}-byte transport limit.",
+            durationMilliseconds);
+        return response.TransferTransportCompletionTo(bounded);
     }
 
     private static string Bound(string value, int maximumCharacters) =>

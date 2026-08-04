@@ -10,6 +10,35 @@ namespace RimWorldDevGateway.Tests;
 public sealed class GatewayApiRouterTests
 {
     [Test]
+    public void Shutdown_is_requested_once_only_after_the_accepted_response_is_written()
+    {
+        var shutdownRequests = 0;
+        var router = new GatewayApiRouter(
+            new GatewayDispatcher(capacity: 4),
+            new StubStateProvider(),
+            new GatewayLogBuffer(capacity: 16),
+            new GatewayApiServices(requestShutdown: () => shutdownRequests++));
+        var request = Parse(
+            "POST /api/v1/server/shutdown HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
+
+        var response = router.Handle(request, "shutdown-after-write");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(202));
+            Assert.That(shutdownRequests, Is.Zero);
+            Assert.That(
+                Encoding.UTF8.GetString(response.Body),
+                Does.Contain("\"shutdownRequested\":true"));
+        });
+
+        response.NotifyTransportCompleted();
+        response.NotifyTransportCompleted();
+
+        Assert.That(shutdownRequests, Is.EqualTo(1));
+    }
+
+    [Test]
     public void Status_is_captured_on_the_dispatcher_and_wrapped_in_a_correlated_envelope()
     {
         var dispatcher = new GatewayDispatcher(capacity: 4);

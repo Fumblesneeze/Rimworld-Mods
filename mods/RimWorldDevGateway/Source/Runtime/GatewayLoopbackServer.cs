@@ -383,6 +383,7 @@ public sealed class GatewayLoopbackServer : IGatewayTransport, IGatewayTransport
             stopwatch.ElapsedMilliseconds);
         await WriteResponseAsync(context, response, requestId).ConfigureAwait(false);
         context.SetHandled();
+        response.NotifyTransportCompleted();
         }
     }
 
@@ -524,6 +525,10 @@ public sealed class GatewayLoopbackServer : IGatewayTransport, IGatewayTransport
                 .WriteAsync(response.Body, 0, response.Body.Length, context.CancellationToken)
                 .ConfigureAwait(false);
         }
+
+        await context.Response.OutputStream
+            .FlushAsync(context.CancellationToken)
+            .ConfigureAwait(false);
 
     }
 
