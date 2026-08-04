@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>RimWorldDevGateway.EndToEndHost.Tests</RootNamespace>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\tools\RimWorldDevGateway.EndToEndHost\RimWorldDevGateway.EndToEndHost.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EndToEndHostFixtureProject Include="..\Fixtures\EndToEndHost.ValidFixtures\EndToEndHost.ValidFixtures.csproj" />
+    <EndToEndHostFixtureProject Include="..\Fixtures\EndToEndHost.InvalidFixtures\EndToEndHost.InvalidFixtures.csproj" />
+    <EndToEndHostFixtureProject Include="..\Fixtures\EndToEndHost.LookalikeFixtures\EndToEndHost.LookalikeFixtures.csproj" />
+  </ItemGroup>
+
+  <Target Name="BuildEndToEndHostFixtures" BeforeTargets="Build">
+    <MSBuild
+      Projects="@(EndToEndHostFixtureProject)"
+      Targets="Restore;Build"
+      Properties="Configuration=$(Configuration)"
+      BuildInParallel="true" />
+  </Target>
+</Project>

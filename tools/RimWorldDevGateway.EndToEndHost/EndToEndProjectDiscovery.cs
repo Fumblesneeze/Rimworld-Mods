@@ -1,0 +1,105 @@
+using System.Xml.Linq;
+
+namespace RimWorldDevGateway.EndToEndHost;
+
+public static class EndToEndProjectDiscovery
+{
+    private static readonly HashSet<string> IgnoredDirectories = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".git",
+        ".vs",
+        "artifacts",
+        "bin",
+        "obj",
+        "TestResults"
+    };
+
+    public static IReadOnlyList<EndToEndProjectRecord> Discover(string repositoryRoot)
+    {
+        if (string.IsNullOrWhiteSpace(repositoryRoot))
+        {
+            throw new ArgumentException("A repository root is required.", nameof(repositoryRoot));
+        }
+
+        var root = Path.GetFullPath(repositoryRoot);
+        if (!Directory.Exists(root))
+        {
+            throw new EndToEndDiscoveryException($"E2E discovery root does not exist: {root}");
+        }
+
+        var projectPaths = EnumerateProjectPaths(root);
+        var records = new List<EndToEndProjectRecord>();
+        foreach (var projectPath in projectPaths)
+        {
+            var document = XDocument.Load(projectPath, LoadOptions.None);
+            var optIns = Values(document, "RimWorldEndToEndTest").ToArray();
+            if (optIns.Length == 0 || !optIns.Any(value => StringComparer.OrdinalIgnoreCase.Equals(value, "true")))
+            {
+                continue;
+            }
+
+            if (optIns.Length != 1 || !StringComparer.OrdinalIgnoreCase.Equals(optIns[0], "true"))
+            {
+                throw new EndToEndDiscoveryException(
+                    $"Marked project must declare exactly one literal RimWorldEndToEndTest=true: {projectPath}");
+            }
+
+            var owners = Values(document, "RimWorldEndToEndTestOwnerPackageId").ToArray();
+            if (owners.Length != 1 || string.IsNullOrWhiteSpace(owners[0]))
+            {
+                throw new EndToEndDiscoveryException(
+                    $"Marked project must declare exactly one RimWorldEndToEndTestOwnerPackageId: {projectPath}");
+            }
+
+            var assemblyNames = Values(document, "AssemblyName").ToArray();
+            var targetFrameworks = Values(document, "TargetFramework").ToArray();
+            if (targetFrameworks.Length != 1 || string.IsNullOrWhiteSpace(targetFrameworks[0]))
+            {
+                throw new EndToEndDiscoveryException(
+                    $"Marked project must declare exactly one TargetFramework: {projectPath}");
+            }
+
+            records.Add(new EndToEndProjectRecord(
+                projectPath,
+                owners[0].Trim().ToLowerInvariant(),
+                assemblyNames.Length == 1 && !string.IsNullOrWhiteSpace(assemblyNames[0])
+                    ? assemblyNames[0].Trim()
+                    : Path.GetFileNameWithoutExtension(projectPath),
+                targetFrameworks[0].Trim()));
+        }
+
+        return new System.Collections.ObjectModel.ReadOnlyCollection<EndToEndProjectRecord>(
+            records.OrderBy(record => record.ProjectPath, StringComparer.OrdinalIgnoreCase).ToArray());
+    }
+
+    private static IReadOnlyList<string> EnumerateProjectPaths(string root)
+    {
+        var projects = new List<string>();
+        var pending = new Stack<string>();
+        pending.Push(root);
+        while (pending.Count > 0)
+        {
+            var directory = pending.Pop();
+            projects.AddRange(Directory.EnumerateFiles(directory, "*.csproj", SearchOption.TopDirectoryOnly));
+            foreach (var child in Directory.EnumerateDirectories(directory, "*", SearchOption.TopDirectoryOnly))
+            {
+                var info = new DirectoryInfo(child);
+                if (IgnoredDirectories.Contains(info.Name) ||
+                    (info.Attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    continue;
+                }
+
+                pending.Push(child);
+            }
+        }
+
+        projects.Sort(StringComparer.OrdinalIgnoreCase);
+        return projects;
+    }
+
+    private static IEnumerable<string> Values(XDocument document, string localName) =>
+        document.Descendants()
+            .Where(element => StringComparer.Ordinal.Equals(element.Name.LocalName, localName))
+            .Select(element => element.Value.Trim());
+}
