@@ -141,6 +141,19 @@ internal sealed class CookingSession
         var qualityScore = CalculateQuality(ingredients);
         var currentTick = Find.TickManager?.TicksGame ?? 0;
         var records = new List<CulinaryServingRecord>();
+        var hiddenPrepared = ingredients
+            .OfType<ThingWithComps>()
+            .Select(ingredient => ingredient.GetComp<CompPreparedFood>())
+            .Where(prepared => prepared?.ExactSourcesHidden == true)
+            .Cast<CompPreparedFood>()
+            .ToList();
+        var hiddenSourceDefNames = hiddenPrepared
+            .SelectMany(prepared => prepared.Contributions)
+            .Select(contribution => contribution.DefName)
+            .ToList();
+        var hiddenDietaryFlags = hiddenPrepared.Aggregate(
+            DietaryFlags.None,
+            (flags, prepared) => flags | prepared.DietaryFlags);
 
         for (var index = 0; index < product.stackCount; index++)
         {
@@ -170,7 +183,9 @@ internal sealed class CookingSession
                 70f,
                 contamination,
                 microwaveReheatCount: 0,
-                lastThermalTick: currentTick));
+                lastThermalTick: currentTick,
+                hiddenSourceDefNames,
+                hiddenDietaryFlags));
         }
 
         culinaryState?.ReplaceServings(records);
@@ -200,15 +215,17 @@ internal sealed class CookingSession
         foreach (var ingredient in ingredients)
         {
             var prepared = (ingredient as ThingWithComps)?.GetComp<CompPreparedFood>();
-            if (prepared is null || prepared.ExactSourcesHidden)
+            if (prepared is null)
             {
                 continue;
             }
 
             compIngredients.ingredients.Remove(ingredient.def);
-            foreach (var contribution in prepared.Contributions)
+            foreach (var sourceDefName in PreparedFoodDietaryPolicy.VisibleSourceDefNames(
+                         prepared.Contributions.Select(contribution => contribution.DefName),
+                         prepared.ExactSourcesHidden))
             {
-                if (DefDatabase<ThingDef>.GetNamedSilentFail(contribution.DefName) is { } sourceDef)
+                if (DefDatabase<ThingDef>.GetNamedSilentFail(sourceDefName) is { } sourceDef)
                 {
                     compIngredients.RegisterIngredient(sourceDef);
                 }

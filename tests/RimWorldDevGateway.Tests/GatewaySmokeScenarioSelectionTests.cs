@@ -653,6 +653,57 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Hidden_provenance_scenario_uses_native_bill_and_food_selection_boundaries()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-hidden-provenance.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-hidden-provenance-setup.csx");
+        var stockPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-hidden-provenance-stock.csx");
+        var activatePath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-hidden-provenance-activate.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(stockPath), Is.True);
+            Assert.That(File.Exists(activatePath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var stock = File.ReadAllText(stockPath);
+        var activate = File.ReadAllText(activatePath);
+        var scenarioSource = setup + stock + activate;
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-hidden-provenance"));
+            Assert.That(setup, Does.Contain("Hidden Bill Cook"));
+            Assert.That(setup, Does.Contain("Hidden Policy Diner"));
+            Assert.That(stock, Does.Contain("CookMealSimple"));
+            Assert.That(stock, Does.Contain("Meat_Human"));
+            Assert.That(stock, Does.Contain("RawRice"));
+            Assert.That(stock, Does.Contain("SetPawnRestriction"));
+            Assert.That(stock, Does.Contain("CurrentFoodPolicy"));
+            Assert.That(stock, Does.Contain("exactSourcesHidden: true"));
+            Assert.That(activate, Does.Contain("Hidden Bill Cook"));
+            Assert.That(activate, Does.Contain("Hidden Policy Diner"));
+            Assert.That(scenarioSource, Does.Not.Contain("StartJob"));
+            Assert.That(scenarioSource, Does.Not.Contain("TryTakeOrderedJob"));
+            Assert.That(scenarioSource, Does.Not.Contain("JobGiver_GetFood"));
+            Assert.That(scenarioSource, Does.Not.Contain("MakeRecipeProducts"));
+            Assert.That(scenarioSource, Does.Not.Contain("FoodUtility.TryFindBestFoodSourceFor"));
+        });
+    }
+
+    [Test]
     public void Handheld_food_scenario_uses_vanilla_food_choice_and_ingest_jobs()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");

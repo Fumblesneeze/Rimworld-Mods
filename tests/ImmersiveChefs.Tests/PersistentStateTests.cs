@@ -104,7 +104,9 @@ public sealed class PersistentStateTests
             temperatureCelsius: 4.5f,
             contamination: ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate,
             microwaveReheatCount: 2,
-            lastThermalTick: 123456);
+            lastThermalTick: 123456,
+            hiddenSourceDefNames: new[] { "RawRice", "Meat_Human", "RawRice" },
+            hiddenDietaryFlags: DietaryFlags.Plant | DietaryFlags.HumanMeat);
 
         var restored = CulinaryServingRecord.Restore(serving.Capture());
 
@@ -116,6 +118,9 @@ public sealed class PersistentStateTests
                 Is.EqualTo(ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate));
             Assert.That(restored.MicrowaveReheatCount, Is.EqualTo(2));
             Assert.That(restored.LastThermalTick, Is.EqualTo(123456));
+            Assert.That(restored.HiddenSourceDefNames, Is.EqualTo(new[] { "Meat_Human", "RawRice" }));
+            Assert.That(restored.HiddenDietaryFlags,
+                Is.EqualTo(DietaryFlags.Plant | DietaryFlags.HumanMeat));
         });
     }
 
@@ -173,7 +178,14 @@ public sealed class PersistentStateTests
             .SetValue(meal, new List<ThingComp> { culinary });
         culinary.ReplaceServings(new[]
         {
-            new CulinaryServingRecord(82, 62f, ContaminationSources.None, 0, 100)
+            new CulinaryServingRecord(
+                82,
+                62f,
+                ContaminationSources.None,
+                0,
+                100,
+                new[] { "Meat_Human" },
+                DietaryFlags.HumanMeat)
         });
 
         culinary.PostSplitOff(meal);
@@ -183,6 +195,8 @@ public sealed class PersistentStateTests
             Assert.That(culinary.Servings, Has.Count.EqualTo(1));
             Assert.That(culinary.Servings[0].QualityScore, Is.EqualTo(82));
             Assert.That(culinary.Servings[0].TemperatureCelsius, Is.EqualTo(62f));
+            Assert.That(culinary.Servings[0].HiddenSourceDefNames, Is.EqualTo(new[] { "Meat_Human" }));
+            Assert.That(culinary.Servings[0].HiddenDietaryFlags, Is.EqualTo(DietaryFlags.HumanMeat));
         });
     }
 

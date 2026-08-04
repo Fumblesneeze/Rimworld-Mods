@@ -297,6 +297,140 @@ public static class FinalizedImmersiveChefsIntegrationTests
             "Prepared-food work must target only the ingredient prep station.");
     }
 
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void PreparedFoodBillsEvaluateEveryHiddenSourceWithoutChangingOrdinaryFilters()
+    {
+        var ingredientBoundary = AccessTools.Method(
+            typeof(Bill),
+            nameof(Bill.IsFixedOrAllowedIngredient),
+            new[] { typeof(Thing) });
+        IntegrationAssert.True(
+            Harmony.GetPatchInfo(ingredientBoundary)?.Owners.Contains(ImmersiveChefsMod.PackageId) == true,
+            "The loaded mod must own the prepared-food bill ingredient boundary.");
+
+        var preparedDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_PreparedFood");
+        var riceDef = DefDatabase<ThingDef>.GetNamed("RawRice");
+        var humanMeatDef = DefDatabase<ThingDef>.GetNamed("Meat_Human");
+        var prepared = ThingMaker.MakeThing(preparedDef);
+        var preparedComp = (prepared as ThingWithComps)?.GetComp<CompPreparedFood>();
+        IntegrationAssert.NotNull(preparedComp, "The finalized prepared-food Def must expose provenance.");
+        preparedComp!.Initialize(new PreparedFoodState(
+            new[]
+            {
+                new IngredientContribution(riceDef.defName, 0.025f, 1),
+                new IngredientContribution(humanMeatDef.defName, 0.025f, 1)
+            },
+            preparationQuality: 50,
+            preparerThingId: null,
+            DietaryFlags.Plant | DietaryFlags.HumanMeat,
+            exactSourcesHidden: true,
+            ingredientPoisonChance: 0f));
+
+        var recipe = DefDatabase<RecipeDef>.GetNamed("CookMealSimple");
+        var bill = new Bill_Production(recipe);
+        bill.ingredientFilter.SetAllow(preparedDef, true);
+        bill.ingredientFilter.SetAllow(riceDef, true);
+        bill.ingredientFilter.SetAllow(humanMeatDef, false);
+
+        var ordinaryFilter = new ThingFilter();
+        ordinaryFilter.SetAllow(preparedDef, true);
+        IntegrationAssert.True(
+            ordinaryFilter.Allows(prepared),
+            "Prepared provenance must not alter ordinary stockpile-style ThingFilter evaluation.");
+        IntegrationAssert.True(
+            !bill.IsFixedOrAllowedIngredient(prepared),
+            "One hidden disallowed source must reject the whole prepared stack from the bill.");
+
+        bill.ingredientFilter.SetAllow(humanMeatDef, true);
+        IntegrationAssert.True(
+            bill.IsFixedOrAllowedIngredient(prepared),
+            "The same prepared stack must become eligible when every hidden source is allowed.");
+
+        var meal = ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var mealIngredients = (meal as ThingWithComps)?.GetComp<CompIngredients>();
+        var culinary = (meal as ThingWithComps)?.GetComp<CompCulinaryState>();
+        IntegrationAssert.NotNull(mealIngredients, "A finalized covered meal must expose vanilla ingredients.");
+        IntegrationAssert.NotNull(culinary, "A finalized covered meal must expose culinary serving state.");
+        culinary!.ReplaceServings(new[]
+        {
+            new CulinaryServingRecord(
+                50,
+                40f,
+                ContaminationSources.None,
+                0,
+                0,
+                new[] { riceDef.defName, humanMeatDef.defName },
+                DietaryFlags.Plant | DietaryFlags.HumanMeat)
+        });
+
+        var foodPolicy = new FoodPolicy(9001, "Immersive Chefs integration policy");
+        foodPolicy.filter.SetAllow(meal.def, true);
+        foodPolicy.filter.SetAllow(riceDef, true);
+        foodPolicy.filter.SetAllow(humanMeatDef, false);
+        IntegrationAssert.True(
+            !foodPolicy.Allows(meal),
+            "A finished hidden-source meal must remain forbidden when one source is forbidden.");
+        IntegrationAssert.True(
+            !mealIngredients!.ingredients.Contains(humanMeatDef),
+            "Food-policy evaluation must not reveal hidden source Defs through CompIngredients.");
+
+        foodPolicy.filter.SetAllow(humanMeatDef, true);
+        IntegrationAssert.True(
+            foodPolicy.Allows(meal),
+            "A finished hidden-source meal must become allowed when every source is allowed.");
+
+        var thoughtBoundary = AccessTools.Method(
+            typeof(FoodUtility),
+            nameof(FoodUtility.ThoughtsFromIngesting),
+            new[] { typeof(Pawn), typeof(Thing), typeof(ThingDef) });
+        IntegrationAssert.True(
+            Harmony.GetPatchInfo(thoughtBoundary)?.Owners.Contains(ImmersiveChefsMod.PackageId) == true,
+            "The loaded mod must own the ingestion-thought provenance scope.");
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void HiddenPreparedSourcesDriveVanillaIngredientThoughtsAndRemainHiddenAfterward()
+    {
+        var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+        var meal = ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var humanMeatDef = DefDatabase<ThingDef>.GetNamed("Meat_Human");
+        var mealIngredients = (meal as ThingWithComps)?.GetComp<CompIngredients>();
+        var culinary = (meal as ThingWithComps)?.GetComp<CompCulinaryState>();
+        IntegrationAssert.NotNull(mealIngredients, "The thought fixture meal must expose vanilla ingredients.");
+        IntegrationAssert.NotNull(culinary, "The thought fixture meal must expose culinary state.");
+        culinary!.ReplaceServings(new[]
+        {
+            new CulinaryServingRecord(
+                50,
+                40f,
+                ContaminationSources.None,
+                0,
+                0,
+                new[] { humanMeatDef.defName },
+                DietaryFlags.HumanMeat)
+        });
+        var ingredientThought = DefDatabase<ThoughtDef>.GetNamed("AteHumanlikeMeatAsIngredient");
+        IntegrationAssert.True(
+            !mealIngredients!.ingredients.Contains(humanMeatDef),
+            "The hidden source must not be present before thought evaluation.");
+
+        try
+        {
+            var thoughts = FoodUtility.ThoughtsFromIngesting(pawn, meal, meal.def);
+
+            IntegrationAssert.True(
+                thoughts.Any(thought => thought.thought == ingredientThought),
+                "Vanilla thought evaluation must observe the hidden human-meat source.");
+            IntegrationAssert.True(
+                !mealIngredients.ingredients.Contains(humanMeatDef),
+                "The hidden source must be removed immediately after thought evaluation.");
+        }
+        finally
+        {
+            pawn.Destroy(DestroyMode.Vanish);
+        }
+    }
+
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedTravelFoodsUseTheCoverageContract()
     {

@@ -45,6 +45,7 @@
 - [ ] 4.6 IN-GAME: Verify preparation bills, fast rot, cooking acceleration, paste output, inspect strings, dietary restrictions, and save/load.
   - [x] 4.6a Through the native right-click float menu, observe one selected pawn operate a real powered vanilla dispenser/hopper without plate or cutlery, consume feedstock, and create a prepared-ingredient stack whose ordinary inspector shows quality 20, hidden source `nutrient paste`, and nutrition per unit 0.05 rather than a finished paste meal.
   - [x] 4.6b With exact Harmony, Vanilla Expanded Framework, and Vanilla Nutrient Paste Expanded packages loaded, observe the same player order on the real pipe-backed tap, the connected vat fall from 12 to 11 meals, and the resulting prepared stack expose quality 20, hidden nutrient-paste source, and 0.05 nutrition per unit.
+  - [x] 4.6c In an exact Core/Harmony/Immersive Chefs/Gateway run, observe native bill and food-policy selection each skip a closer paste-derived stack containing forbidden hidden human meat, consume a farther allowed hidden-rice stack, and retain only the public nutrient-paste provenance in ordinary inspection; independently prove vanilla ingredient thoughts evaluate the hidden source and immediately restore the displayed ingredient list.
 
 ## 5. mods/ImmersiveChefs - Cooperative cooking
 

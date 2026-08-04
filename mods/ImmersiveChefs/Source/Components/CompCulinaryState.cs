@@ -54,6 +54,12 @@ public sealed class CompCulinaryState : ThingComp
         return servings[index].ToRecord();
     }
 
+    internal CulinaryServingRecord? PeekCurrentServingWithoutThermalUpdate()
+    {
+        EnsureServingCount();
+        return servings.Count == 0 ? null : servings[^1].ToRecord();
+    }
+
     public bool ReheatCurrentServing(float targetTemperature, int qualityLoss, int currentTick)
     {
         EnsureServingCount();
@@ -211,6 +217,8 @@ public sealed class CompCulinaryState : ThingComp
         private int contamination;
         private int microwaveReheatCount;
         private int lastThermalTick;
+        private List<string> hiddenSourceDefNames = new();
+        private int hiddenDietaryFlags;
 
         public void ExposeData()
         {
@@ -220,6 +228,9 @@ public sealed class CompCulinaryState : ThingComp
             Scribe_Values.Look(ref contamination, "contamination", 0);
             Scribe_Values.Look(ref microwaveReheatCount, "microwaveReheatCount", 0);
             Scribe_Values.Look(ref lastThermalTick, "lastThermalTick", 0);
+            Scribe_Collections.Look(ref hiddenSourceDefNames, "hiddenSourceDefNames", LookMode.Value);
+            hiddenSourceDefNames ??= new List<string>();
+            Scribe_Values.Look(ref hiddenDietaryFlags, "hiddenDietaryFlags", 0);
         }
 
         public CulinaryServingRecord ToRecord() => new(
@@ -227,7 +238,9 @@ public sealed class CompCulinaryState : ThingComp
             temperatureCelsius,
             (ContaminationSources)contamination,
             microwaveReheatCount,
-            lastThermalTick);
+            lastThermalTick,
+            hiddenSourceDefNames,
+            (DietaryFlags)hiddenDietaryFlags);
 
         public CulinaryServingData Copy() => From(ToRecord());
 
@@ -241,7 +254,9 @@ public sealed class CompCulinaryState : ThingComp
                 temperatureCelsius = snapshot.TemperatureCelsius,
                 contamination = (int)snapshot.Contamination,
                 microwaveReheatCount = snapshot.MicrowaveReheatCount,
-                lastThermalTick = snapshot.LastThermalTick
+                lastThermalTick = snapshot.LastThermalTick,
+                hiddenSourceDefNames = snapshot.HiddenSourceDefNames.ToList(),
+                hiddenDietaryFlags = (int)snapshot.HiddenDietaryFlags
             };
         }
     }

@@ -392,6 +392,17 @@ Use the imported-meal plating scene to verify trade, quest, drop-pod, scenario, 
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the hidden-provenance scene to verify paste-derived ingredient eligibility and food restrictions without exposing hopper contents. It creates two paused sealed rooms. In each room the closer left stack contains hidden human meat and the farther right stack contains hidden rice; the native cooking bill and diner policy allow rice but reject human meat. Resume through a native speed and confirm both right stacks are consumed while both closer left stacks remain:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-hidden-provenance `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell

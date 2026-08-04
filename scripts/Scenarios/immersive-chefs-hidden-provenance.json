@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-hidden-provenance",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-hidden-provenance-setup.csx"
+    },
+    {
+      "id": "stock",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-hidden-provenance-stock.csx"
+    },
+    {
+      "id": "activate",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-hidden-provenance-activate.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-hidden-provenance-ready.png"
+    }
+  ]
+}

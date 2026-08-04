@@ -40,10 +40,9 @@ public sealed class JobDriver_DispensePreparedPaste : JobDriver
         var nutrition = Math.Max(0.05f, pasteMeal.GetStatValue(StatDefOf.Nutrition));
         prepared.stackCount = Math.Max(1, GenMath.RoundRandom(nutrition / 0.05f));
         (prepared as ThingWithComps)?.GetComp<CompPreparedFood>()?.Initialize(new PreparedFoodState(
-            new[]
-            {
-                new IngredientContribution("NutrientPaste", 0.05f, 1, 50)
-            },
+            PreparedFoodDietaryPolicy.CreatePasteContributions(
+                sourceDefs.Select(def => def.defName),
+                totalNutrition: 0.05f),
             ImmersiveChefsMod.Settings.PastePreparationQuality,
             preparerThingId: null,
             DietaryClassification.ForDefs(sourceDefs),

@@ -21,7 +21,9 @@ public readonly struct CulinaryServingSnapshot
         float temperatureCelsius,
         ContaminationSources contamination,
         int microwaveReheatCount,
-        int lastThermalTick)
+        int lastThermalTick,
+        IEnumerable<string>? hiddenSourceDefNames = null,
+        DietaryFlags hiddenDietaryFlags = DietaryFlags.None)
     {
         SchemaVersion = schemaVersion;
         QualityScore = qualityScore;
@@ -29,6 +31,8 @@ public readonly struct CulinaryServingSnapshot
         Contamination = contamination;
         MicrowaveReheatCount = microwaveReheatCount;
         LastThermalTick = lastThermalTick;
+        HiddenSourceDefNames = CulinaryServingRecord.NormalizeHiddenSources(hiddenSourceDefNames);
+        HiddenDietaryFlags = hiddenDietaryFlags;
     }
 
     public int SchemaVersion { get; }
@@ -37,24 +41,30 @@ public readonly struct CulinaryServingSnapshot
     public ContaminationSources Contamination { get; }
     public int MicrowaveReheatCount { get; }
     public int LastThermalTick { get; }
+    public IReadOnlyList<string> HiddenSourceDefNames { get; }
+    public DietaryFlags HiddenDietaryFlags { get; }
 }
 
 public sealed class CulinaryServingRecord
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     public CulinaryServingRecord(
         int qualityScore,
         float temperatureCelsius,
         ContaminationSources contamination,
         int microwaveReheatCount,
-        int lastThermalTick)
+        int lastThermalTick,
+        IEnumerable<string>? hiddenSourceDefNames = null,
+        DietaryFlags hiddenDietaryFlags = DietaryFlags.None)
     {
         QualityScore = Math.Max(0, Math.Min(100, qualityScore));
         TemperatureCelsius = temperatureCelsius;
         Contamination = contamination;
         MicrowaveReheatCount = Math.Max(0, microwaveReheatCount);
         LastThermalTick = Math.Max(0, lastThermalTick);
+        HiddenSourceDefNames = NormalizeHiddenSources(hiddenSourceDefNames);
+        HiddenDietaryFlags = hiddenDietaryFlags;
     }
 
     public int QualityScore { get; private set; }
@@ -62,6 +72,8 @@ public sealed class CulinaryServingRecord
     public ContaminationSources Contamination { get; private set; }
     public int MicrowaveReheatCount { get; private set; }
     public int LastThermalTick { get; private set; }
+    public IReadOnlyList<string> HiddenSourceDefNames { get; }
+    public DietaryFlags HiddenDietaryFlags { get; }
 
     public CulinaryServingSnapshot Capture()
     {
@@ -71,7 +83,9 @@ public sealed class CulinaryServingRecord
             TemperatureCelsius,
             Contamination,
             MicrowaveReheatCount,
-            LastThermalTick);
+            LastThermalTick,
+            HiddenSourceDefNames,
+            HiddenDietaryFlags);
     }
 
     public static CulinaryServingRecord Restore(CulinaryServingSnapshot snapshot)
@@ -81,7 +95,9 @@ public sealed class CulinaryServingRecord
             snapshot.TemperatureCelsius,
             snapshot.Contamination,
             snapshot.MicrowaveReheatCount,
-            snapshot.LastThermalTick);
+            snapshot.LastThermalTick,
+            snapshot.HiddenSourceDefNames,
+            snapshot.HiddenDietaryFlags);
     }
 
     public void Reheat(float targetTemperature, int qualityLoss, int currentTick)
@@ -111,5 +127,15 @@ public sealed class CulinaryServingRecord
         }
 
         LastThermalTick = boundedTick;
+    }
+
+    internal static IReadOnlyList<string> NormalizeHiddenSources(IEnumerable<string>? sourceDefNames)
+    {
+        return (sourceDefNames ?? Enumerable.Empty<string>())
+            .Where(source => !string.IsNullOrWhiteSpace(source))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(source => source, StringComparer.OrdinalIgnoreCase)
+            .ToList()
+            .AsReadOnly();
     }
 }

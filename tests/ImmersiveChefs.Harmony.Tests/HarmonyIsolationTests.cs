@@ -171,6 +171,58 @@ public sealed class HarmonyIsolationTests
             Throws.Nothing);
     }
 
+    [Test]
+    public void Prepared_food_bill_policy_patch_binds_to_the_real_ingredient_boundary()
+    {
+        var productAssembly = typeof(ImmersiveChefsMod).Assembly;
+        var policyPatch = productAssembly
+            .GetType("ImmersiveChefs.PreparedFoodBillIngredientPatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var ingredientBoundary = AccessTools.Method(
+            typeof(RimWorld.Bill),
+            "IsFixedOrAllowedIngredient",
+            new[] { typeof(Verse.Thing) });
+
+        Assert.That(ingredientBoundary, Is.Not.Null);
+        Assert.That(
+            () =>
+            {
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.prepared-food-bill-policy",
+                           ingredientBoundary!,
+                           policyPatch))
+                {
+                }
+            },
+            Throws.Nothing);
+    }
+
+    [Test]
+    public void Prepared_food_policy_patch_binds_to_the_real_thing_boundary()
+    {
+        var productAssembly = typeof(ImmersiveChefsMod).Assembly;
+        var policyPatch = productAssembly
+            .GetType("ImmersiveChefs.PreparedFoodPolicyPatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var foodPolicyBoundary = AccessTools.Method(
+            typeof(RimWorld.FoodPolicy),
+            nameof(RimWorld.FoodPolicy.Allows),
+            new[] { typeof(Verse.Thing) });
+
+        Assert.That(foodPolicyBoundary, Is.Not.Null);
+        Assert.That(
+            () =>
+            {
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.prepared-food-policy",
+                           foodPolicyBoundary!,
+                           policyPatch))
+                {
+                }
+            },
+            Throws.Nothing);
+    }
+
     private static string ComputeSha256(string path)
     {
         using var stream = File.OpenRead(path);
