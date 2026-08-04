@@ -19,10 +19,20 @@ internal static class ProcessorFrameworkAdapter
     private static Type? activeProcessType;
     private static FieldInfo? processorInnerContainer;
     private static FieldInfo? processorActiveProcesses;
+    private static FieldInfo? processorEnabledProcesses;
     private static FieldInfo? activeProcessIngredients;
     private static FieldInfo? activeProcessProcessor;
+    private static FieldInfo? processIngredientFilter;
+    private static FieldInfo? processorEmptyNow;
     private static PropertyInfo? activeProcessComplete;
+    private static PropertyInfo? activeProcessPercent;
     private static MethodInfo? spaceLeftFor;
+    private static MethodInfo? graphicChange;
+    private static MethodInfo? enableAllProcesses;
+    private static MethodInfo? findIngredient;
+    private static MethodInfo? resolveProcessReferences;
+    private static MethodInfo? addProcessDef;
+    private static MethodInfo? recacheAll;
 
     internal static bool Enabled { get; private set; }
 
@@ -87,19 +97,69 @@ internal static class ProcessorFrameworkAdapter
 
         processorInnerContainer = AccessTools.Field(processorType, "innerContainer");
         processorActiveProcesses = AccessTools.Field(processorType, "activeProcesses");
+        processorEnabledProcesses = AccessTools.Field(processorType, "enabledProcesses");
         activeProcessIngredients = AccessTools.Field(activeProcessType, "ingredientThings");
         activeProcessProcessor = AccessTools.Field(activeProcessType, "processor");
+        processIngredientFilter = AccessTools.Field(processDefType, "ingredientFilter");
+        processorEmptyNow = AccessTools.Field(processorType, "emptyNow");
         activeProcessComplete = AccessTools.Property(activeProcessType, "Complete");
+        activeProcessPercent = AccessTools.Property(activeProcessType, "ActiveProcessPercent");
         spaceLeftFor = AccessTools.Method(processorType, "SpaceLeftFor");
+        graphicChange = AccessTools.Method(processorType, "GraphicChange");
+        enableAllProcesses = AccessTools.Method(processorType, "EnableAllProcesses");
+        var workGiverType = AccessTools.TypeByName("ProcessorFramework.WorkGiver_FillProcessor");
+        findIngredient = workGiverType is null ? null : AccessTools.Method(workGiverType, "FindIngredient");
+        resolveProcessReferences = AccessTools.Method(processDefType, "ResolveReferences");
+        recacheAll = AccessTools.Method(
+            AccessTools.TypeByName("ProcessorFramework.ProcessorFramework_Utility"),
+            "RecacheAll");
+        addProcessDef = typeof(DefDatabase<>).MakeGenericType(processDefType)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .SingleOrDefault(method => method.Name == "Add" && method.GetParameters().Length == 1 &&
+                                       method.GetParameters()[0].ParameterType == processDefType);
         var requiredMethods = new[]
         {
+            AccessTools.Method(processorType, "Initialize"),
             AccessTools.Method(processorType, "AddIngredient"),
             AccessTools.Method(processorType, "TakeOutProduct"),
+            AccessTools.Method(processorType, "DoTicks"),
             AccessTools.Method(activeProcessType, "CalcSpeedFactor")
         };
+        var requiredProcessFields = new[]
+        {
+            "defName",
+            "label",
+            "thingDef",
+            "processDays",
+            "capacityFactor",
+            "efficiency",
+            "usesTemperature",
+            "unpoweredFactor",
+            "unfueledFactor",
+            "destroyChance",
+            "ingredientFilter"
+        };
+        var requiredProcessorPropertyFields = new[]
+        {
+            "capacity",
+            "independentProcesses",
+            "parallelProcesses",
+            "dropIngredients",
+            "showProductIcon",
+            "colorCoded",
+            "processes"
+        };
         if (processorInnerContainer is null || processorActiveProcesses is null ||
+            processorEnabledProcesses is null ||
             activeProcessIngredients is null || activeProcessProcessor is null ||
-            activeProcessComplete is null || spaceLeftFor is null || requiredMethods.Any(method => method is null))
+            processIngredientFilter is null || processorEmptyNow is null ||
+            activeProcessComplete is null || activeProcessPercent is null ||
+            spaceLeftFor is null || graphicChange is null || enableAllProcesses is null ||
+            findIngredient is null || resolveProcessReferences is null || addProcessDef is null ||
+            recacheAll is null || requiredMethods.Any(method => method is null) ||
+            requiredProcessFields.Any(fieldName => AccessTools.Field(processDefType, fieldName) is null) ||
+            requiredProcessorPropertyFields.Any(fieldName =>
+                AccessTools.Field(processorPropertiesType, fieldName) is null))
         {
             reason = "the installed Processor Framework process lifecycle no longer matches the validated 1.6 shape";
             return false;
@@ -116,28 +176,22 @@ internal static class ProcessorFrameworkAdapter
             return;
         }
 
-        var process = Activator.CreateInstance(processDefType!)
-                      ?? throw new InvalidOperationException("Processor process Def could not be created.");
-        SetField(process, "defName", processDefName);
-        SetField(process, "label", "wash reusable kitchenware");
-        SetField(process, "thingDef", DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"));
-        SetField(process, "processDays", Math.Max(1, cycleTicks) * ImmersiveChefsMod.Settings.DishwashingWorkScale / 60000f);
-        SetField(process, "capacityFactor", 1f);
-        SetField(process, "efficiency", 1f);
-        SetField(process, "usesTemperature", false);
-        SetField(process, "unpoweredFactor", 0f);
-        SetField(process, "unfueledFactor", 0f);
-        SetField(process, "destroyChance", 0f);
-
-        var filter = new ThingFilter();
-        foreach (var ware in DefDatabase<ThingDef>.AllDefsListForReading.Where(IsReusableWareDef))
+        var processList = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(processDefType!))!;
+        foreach (var ware in DefDatabase<ThingDef>.AllDefsListForReading
+                     .Where(IsReusableWareDef)
+                     .OrderBy(def => def.defName, StringComparer.Ordinal))
         {
-            filter.SetAllow(ware, true);
+            var process = CreateProcess(
+                $"{processDefName}_{ware.defName}",
+                ware,
+                cycleTicks);
+            processList.Add(process);
         }
 
-        SetField(process, "ingredientFilter", filter);
-        AddDef(process);
-        AccessTools.Method(processDefType!, "ResolveReferences")!.Invoke(process, null);
+        if (processList.Count == 0)
+        {
+            throw new InvalidOperationException("No reusable kitchenware Defs were available for Processor Framework.");
+        }
 
         var properties = (CompProperties)(Activator.CreateInstance(processorPropertiesType!)
                          ?? throw new InvalidOperationException("Processor properties could not be created."));
@@ -152,8 +206,6 @@ internal static class ProcessorFrameworkAdapter
         SetField(properties, "dropIngredients", true);
         SetField(properties, "showProductIcon", true);
         SetField(properties, "colorCoded", false);
-        var processList = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(processDefType!))!;
-        processList.Add(process);
         SetField(properties, "processes", processList);
         properties.ResolveReferences(buildingDef);
         buildingDef.drawerType = DrawerType.MapMeshAndRealTime;
@@ -161,41 +213,63 @@ internal static class ProcessorFrameworkAdapter
         buildingDef.comps.Add(properties);
     }
 
+    private static object CreateProcess(string defName, ThingDef ware, int cycleTicks)
+    {
+        var process = Activator.CreateInstance(processDefType!)
+                      ?? throw new InvalidOperationException("Processor process Def could not be created.");
+        SetField(process, "defName", defName);
+        SetField(process, "label", $"wash {ware.label}");
+        SetField(process, "thingDef", ware);
+        SetField(process, "processDays",
+            Math.Max(1, cycleTicks) * ImmersiveChefsMod.Settings.DishwashingWorkScale / 60000f);
+        SetField(process, "capacityFactor", DishwasherCapacityPolicy.ProcessorCapacityFactor(
+            ware.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f));
+        SetField(process, "efficiency", 1f);
+        SetField(process, "usesTemperature", false);
+        SetField(process, "unpoweredFactor", 0f);
+        SetField(process, "unfueledFactor", 0f);
+        SetField(process, "destroyChance", 0f);
+
+        var filter = new ThingFilter();
+        filter.SetAllow(ware, true);
+        SetField(process, "ingredientFilter", filter);
+        AddDef(process);
+        resolveProcessReferences!.Invoke(process, null);
+        return process;
+    }
+
     private static void AddDef(object process)
     {
-        var database = typeof(DefDatabase<>).MakeGenericType(processDefType!);
-        var add = database.GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .Single(method => method.Name == "Add" && method.GetParameters().Length == 1 &&
-                              method.GetParameters()[0].ParameterType == processDefType);
-        add.Invoke(null, new[] { process });
+        addProcessDef!.Invoke(null, new[] { process });
     }
 
     private static void InstallPatches(Harmony harmony)
     {
         harmony.Patch(
+            AccessTools.Method(processorType!, "Initialize"),
+            postfix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(ProcessorInitializePostfix)));
+        harmony.Patch(
             AccessTools.Method(processorType!, "AddIngredient"),
-            prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(AddIngredientPrefix)));
+            prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(AddIngredientPrefix)),
+            postfix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(AddIngredientPostfix)));
         harmony.Patch(
             AccessTools.Method(processorType!, "TakeOutProduct"),
             prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(TakeOutProductPrefix)));
         harmony.Patch(
+            AccessTools.Method(processorType!, "DoTicks"),
+            prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(ProcessorDoTicksPrefix)));
+        harmony.Patch(
             AccessTools.Method(activeProcessType!, "CalcSpeedFactor"),
             postfix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(CalcSpeedFactorPostfix)));
 
-        var workGiverType = AccessTools.TypeByName("ProcessorFramework.WorkGiver_FillProcessor");
-        var findIngredient = workGiverType is null ? null : AccessTools.Method(workGiverType, "FindIngredient");
-        if (findIngredient is null)
-        {
-            throw new MissingMethodException("ProcessorFramework.WorkGiver_FillProcessor.FindIngredient");
-        }
-
         harmony.Patch(
-            findIngredient,
+            findIngredient!,
             postfix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(FindIngredientPostfix)));
     }
 
-    private static bool AddIngredientPrefix(object __instance, Thing __0, object __1)
+    private static bool AddIngredientPrefix(object __instance, Thing __0, ref int __state)
     {
+        __state = -1;
         var parent = ParentOfProcessor(__instance);
         if (parent is null || !IsDishwasher(parent))
         {
@@ -207,16 +281,41 @@ internal static class ProcessorFrameworkAdapter
             return false;
         }
 
-        if (!UsesDubsWater())
+        var dishwasher = parent.GetComp<CompDishwasher>();
+        var before = ProcessorInputCount(__instance);
+        if (dishwasher is null || !dishwasher.CanAcceptProcessorWare(before > 0))
         {
-            return true;
+            return false;
         }
 
-        var accepted = Math.Min(
-            __0.stackCount,
-            Math.Max(0, Convert.ToInt32(spaceLeftFor!.Invoke(__instance, new[] { __1, 1f }))));
-        var water = accepted * WaterPerPlateEquivalent(parent, __0);
-        return accepted > 0 && DubsWaterAdapter.TryConsumeCycleWater(parent, water, out _);
+        __state = before;
+        return true;
+    }
+
+    private static void ProcessorInitializePostfix(object __instance)
+    {
+        var parent = ParentOfProcessor(__instance);
+        if (parent is not null && IsDishwasher(parent))
+        {
+            enableAllProcesses!.Invoke(__instance, null);
+        }
+    }
+
+    private static void AddIngredientPostfix(object __instance, int __state)
+    {
+        if (__state < 0)
+        {
+            return;
+        }
+
+        var parent = ParentOfProcessor(__instance);
+        var after = ProcessorInputCount(__instance);
+        if (parent is null || after <= __state)
+        {
+            return;
+        }
+
+        parent.GetComp<CompDishwasher>()?.NotifyProcessorAdmission(startedNewBatch: __state == 0);
     }
 
     private static bool TakeOutProductPrefix(object __instance, object __0, ref Thing? __result)
@@ -249,7 +348,8 @@ internal static class ProcessorFrameworkAdapter
             owner?.Remove(thing);
         }
 
-        (processorActiveProcesses!.GetValue(__instance) as IList)?.Remove(__0);
+        var processes = processorActiveProcesses!.GetValue(__instance) as IList;
+        processes?.Remove(__0);
         __result = originals[0];
         for (var index = 1; index < originals.Count; index++)
         {
@@ -259,22 +359,30 @@ internal static class ProcessorFrameworkAdapter
             }
         }
 
+        if (processes?.Count == 0)
+        {
+            FinalizeEmptyProcessor(__instance, parent);
+        }
+
         return false;
     }
 
     private static void CalcSpeedFactorPostfix(object __instance, ref float __result)
     {
-        if (!UsesDubsWater())
-        {
-            return;
-        }
-
         var processor = activeProcessProcessor!.GetValue(__instance);
         var parent = processor is null ? null : ParentOfProcessor(processor);
-        if (parent is not null && IsDishwasher(parent) && !DubsWaterAdapter.IsConnected(parent))
+        if (parent is not null && IsDishwasher(parent) &&
+            parent.GetComp<CompDishwasher>()?.ProcessorCycleCanProgress() != true)
         {
             __result = 0f;
         }
+    }
+
+    private static bool ProcessorDoTicksPrefix(object __instance)
+    {
+        var parent = ParentOfProcessor(__instance);
+        return parent is null || !IsDishwasher(parent) ||
+               parent.GetComp<CompDishwasher>()?.ProcessorCycleCanProgress() == true;
     }
 
     private static void FindIngredientPostfix(Pawn __0, object __1, ref Thing? __result)
@@ -285,7 +393,8 @@ internal static class ProcessorFrameworkAdapter
             return;
         }
 
-        if (UsesDubsWater() && !DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f))
+        var dishwasher = parent.GetComp<CompDishwasher>();
+        if (dishwasher is null || !dishwasher.CanAcceptProcessorWare(HasContents(parent)))
         {
             __result = null;
             return;
@@ -293,10 +402,123 @@ internal static class ProcessorFrameworkAdapter
 
         __result = __0.Map.listerThings.AllThings
             .Where(IsDirtyWare)
+            .Where(thing => ProcessorHasSpaceFor(__1, thing.def))
             .Where(thing => !thing.IsForbidden(__0) &&
                             __0.CanReserveAndReach(thing, Verse.AI.PathEndMode.Touch, Danger.Some))
             .OrderBy(thing => thing.Position.DistanceToSquared(parent.Position))
             .FirstOrDefault();
+    }
+
+    internal static bool HasContents(Thing thing)
+    {
+        var processor = ProcessorOf(thing);
+        return processor is not null && ProcessorInputCount(processor) > 0;
+    }
+
+    internal static float UsedPlateEquivalentCapacity(Thing thing)
+    {
+        var processor = ProcessorOf(thing);
+        if (processor is null)
+        {
+            return 0f;
+        }
+
+        return ActiveProcesses(processor)
+            .Cast<object>()
+            .SelectMany(ProcessIngredients)
+            .Sum(ware => PlateEquivalentsPerItem(ware) * ware.stackCount);
+    }
+
+    internal static float ProgressPercent(Thing thing)
+    {
+        var processor = ProcessorOf(thing);
+        var progress = processor is null
+            ? new List<float>()
+            : ActiveProcesses(processor)
+                .Cast<object>()
+                .Select(process => Convert.ToSingle(activeProcessPercent!.GetValue(process)))
+                .ToList();
+        return progress.Count == 0 ? 0f : 100f * progress.Min();
+    }
+
+    internal static bool EjectAllDirty(Thing thing)
+    {
+        var processor = ProcessorOf(thing);
+        if (processor is null || thing.Map is not { } map)
+        {
+            return false;
+        }
+
+        var originals = ActiveProcesses(processor)
+            .Cast<object>()
+            .SelectMany(ProcessIngredients)
+            .Distinct()
+            .ToList();
+        if (originals.Count == 0)
+        {
+            return false;
+        }
+
+        var owner = processorInnerContainer!.GetValue(processor) as ThingOwner;
+        foreach (var original in originals)
+        {
+            owner?.Remove(original);
+            GenPlace.TryPlaceThing(original, thing.InteractionCell, map, ThingPlaceMode.Near);
+        }
+
+        ActiveProcesses(processor).Clear();
+        FinalizeEmptyProcessor(processor, (ThingWithComps)thing);
+        return true;
+    }
+
+    private static object? ProcessorOf(Thing thing)
+    {
+        return thing is ThingWithComps withComps
+            ? withComps.AllComps.FirstOrDefault(comp => processorType?.IsInstanceOfType(comp) == true)
+            : null;
+    }
+
+    private static IList ActiveProcesses(object processor)
+    {
+        return processorActiveProcesses!.GetValue(processor) as IList
+               ?? throw new InvalidOperationException("Processor active-process collection is unavailable.");
+    }
+
+    private static IEnumerable<Thing> ProcessIngredients(object process)
+    {
+        return (activeProcessIngredients!.GetValue(process) as IEnumerable)?
+                   .Cast<object>()
+                   .OfType<Thing>()
+               ?? Enumerable.Empty<Thing>();
+    }
+
+    private static int ProcessorInputCount(object processor)
+    {
+        return ActiveProcesses(processor)
+            .Cast<object>()
+            .SelectMany(ProcessIngredients)
+            .Sum(thing => thing.stackCount);
+    }
+
+    private static bool ProcessorHasSpaceFor(object processor, ThingDef ingredient)
+    {
+        if (processor is not ThingComp comp)
+        {
+            return false;
+        }
+
+        var enabled = processorEnabledProcesses!.GetValue(processor) as IDictionary;
+        var process = enabled?.Keys.Cast<object>().FirstOrDefault(candidate =>
+            (processIngredientFilter!.GetValue(candidate) as ThingFilter)?.Allows(ingredient) == true);
+        return process is not null &&
+               Convert.ToInt32(spaceLeftFor!.Invoke(processor, new[] { process, 1f })) > 0;
+    }
+
+    private static void FinalizeEmptyProcessor(object processor, ThingWithComps parent)
+    {
+        processorEmptyNow!.SetValue(processor, false);
+        graphicChange!.Invoke(processor, new object[] { true });
+        parent.GetComp<CompDishwasher>()?.NotifyProcessorEmptied();
     }
 
     private static ThingWithComps? ParentOfProcessor(object processor)
@@ -322,24 +544,13 @@ internal static class ProcessorFrameworkAdapter
                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true;
     }
 
-    private static bool UsesDubsWater()
-    {
-        return ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene);
-    }
-
-    private static float WaterPerPlateEquivalent(Thing appliance, Thing ware)
-    {
-        var local = (appliance as ThingWithComps)?.GetComp<CompDishwasher>();
-        var perEquivalent = local?.WaterPerPlateEquivalent ?? 0.1f;
-        var equivalent = ware.def.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f;
-        return Math.Max(0.001f, perEquivalent * Math.Max(0.01f, equivalent));
-    }
+    private static float PlateEquivalentsPerItem(Thing ware) =>
+        DishwasherCapacityPolicy.ProcessorCapacityFactor(
+            ware.def.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f);
 
     private static void RecacheFramework()
     {
-        AccessTools.Method(
-            AccessTools.TypeByName("ProcessorFramework.ProcessorFramework_Utility"),
-            "RecacheAll")?.Invoke(null, null);
+        recacheAll!.Invoke(null, null);
     }
 
     private static void SetField(object target, string fieldName, object? value)

@@ -2038,6 +2038,15 @@ public static class FinalizedImmersiveChefsIntegrationTests
             var sanitation = plate.GetComp<CompSanitation>();
             var power = dishwasher.GetComp<CompPowerTrader>();
             var dishwasherComp = dishwasher.GetComp<CompDishwasher>();
+            var processorType = AccessTools.TypeByName("ProcessorFramework.CompProcessor");
+            var processorControlled = processorType is not null &&
+                                      dishwasher.AllComps.Any(comp => processorType.IsInstanceOfType(comp));
+            var processorWorkGiverType = processorControlled
+                ? AccessTools.TypeByName("ProcessorFramework.WorkGiver_FillProcessor")
+                : null;
+            var processorWorkGiver = processorWorkGiverType is null
+                ? null
+                : Activator.CreateInstance(processorWorkGiverType);
             IntegrationAssert.NotNull(sanitation, "The finalized plate must expose sanitation state.");
             IntegrationAssert.NotNull(power, "The finalized dishwasher must expose its required power comp.");
             IntegrationAssert.NotNull(dishwasherComp, "The finalized dishwasher must expose its local cycle comp.");
@@ -2121,11 +2130,35 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 "An unpowered dishwasher must be ineligible for admission and Doing dishes selection.");
 
             ImmersiveChefsMod.Settings.PreferDishwashers = true;
+            plate.SetForbidden(false, warnOnFail: false);
             var foundUnpowered = WorkGiver_DoDishes.TryFindDestination(pawn, plate, out var unpowered);
             IntegrationAssert.True(
                 !foundUnpowered || !ReferenceEquals(unpowered.Target.Thing, dishwasher),
                 "Doing dishes must exclude the unpowered dishwasher from destination selection.");
+            if (processorControlled)
+            {
+                IntegrationAssert.NotNull(
+                    processorWorkGiver,
+                    "The active Processor Framework path must expose its fill work giver.");
+                var processor = dishwasher.AllComps.Single(comp => processorType!.IsInstanceOfType(comp));
+                var findIngredient = AccessTools.Method(processorWorkGiverType, "FindIngredient");
+                var unpoweredIngredient = (Thing?)findIngredient!.Invoke(
+                    processorWorkGiver,
+                    new object[] { pawn, processor });
+                IntegrationAssert.Null(
+                    unpoweredIngredient,
+                    "Processor Framework must not select dirty ware for an unpowered dishwasher.");
+                var processorHasUnpoweredJob = (bool)AccessTools.Method(
+                    processorWorkGiverType,
+                    "HasJobOnThing")!.Invoke(
+                    processorWorkGiver,
+                    new object[] { pawn, dishwasher, false });
+                IntegrationAssert.False(
+                    processorHasUnpoweredJob,
+                    "Processor Framework must not admit dirty ware while the dishwasher is unpowered.");
+            }
 
+            plate.SetForbidden(true, warnOnFail: false);
             flick.DoFlick();
             for (var tick = 0; tick <= 200 && !power.PowerOn; tick++)
             {
@@ -2135,17 +2168,70 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 flick.SwitchIsOn && power.PowerOn,
                 "Using the native switch must restore power from the unchanged connected battery.");
             plate.SetForbidden(false, warnOnFail: false);
-            IntegrationAssert.True(
-                dishwasherComp.CanAccept(plate),
-                "The same powered dishwasher must accept the dirty plate when otherwise operational.");
-            IntegrationAssert.True(
-                WorkGiver_DoDishes.TryFindDestination(pawn, plate, out var powered) &&
-                ReferenceEquals(powered.Target.Thing, dishwasher),
-                "Doing dishes must select the same reachable dishwasher once power is restored.");
-            var job = new WorkGiver_DoDishes().JobOnThing(pawn, plate);
-            IntegrationAssert.True(
-                job is not null && ReferenceEquals(job.GetTarget(TargetIndex.B).Thing, dishwasher),
-                "The native work giver job must persist the exact powered dishwasher destination.");
+            if (processorControlled)
+            {
+                IntegrationAssert.False(
+                    dishwasherComp.CanAccept(plate),
+                    "The local admission path must remain disabled while Processor Framework owns the appliance.");
+                var processor = dishwasher.AllComps.Single(comp => processorType!.IsInstanceOfType(comp));
+                var poweredIngredient = (Thing?)AccessTools.Method(
+                    processorWorkGiverType,
+                    "FindIngredient")!.Invoke(
+                    processorWorkGiver,
+                    new object[] { pawn, processor });
+                var enabled = (System.Collections.IDictionary)AccessTools.Field(
+                    processorType,
+                    "enabledProcesses")!.GetValue(processor);
+                var processDiagnostics = string.Join(
+                    ",",
+                    enabled.Keys.Cast<object>().Select(process =>
+                    {
+                        var allows = (AccessTools.Field(process.GetType(), "ingredientFilter")!
+                            .GetValue(process) as ThingFilter)?.Allows(plate.def) == true;
+                        var space = AccessTools.Method(processorType, "SpaceLeftFor")!.Invoke(
+                            processor,
+                            new object[] { process, 1f });
+                        return $"{((Def)process).defName}:allows={allows}:space={space}";
+                    }));
+                IntegrationAssert.True(
+                    ReferenceEquals(poweredIngredient, plate),
+                    $"The powered Processor dishwasher must select the exact dirty plate " +
+                    $"(dirty={sanitation.IsDirty}, forbidden={plate.IsForbidden(pawn)}, " +
+                    $"reachable={pawn.CanReach(plate, PathEndMode.Touch, Danger.Some)}, " +
+                    $"reservable={pawn.CanReserve(plate)}, processes={processDiagnostics}).");
+                var processorHasPoweredJob = (bool)AccessTools.Method(
+                    processorWorkGiverType,
+                    "HasJobOnThing")!.Invoke(
+                    processorWorkGiver,
+                    new object[] { pawn, dishwasher, false });
+                IntegrationAssert.True(
+                    processorHasPoweredJob,
+                    "The same powered dishwasher must accept dirty ware through Processor Framework.");
+                var processorJob = (Job?)AccessTools.Method(
+                    processorWorkGiverType,
+                    "JobOnThing")!.Invoke(
+                    processorWorkGiver,
+                    new object[] { pawn, dishwasher, false });
+                IntegrationAssert.True(
+                    processorJob is not null &&
+                    ReferenceEquals(processorJob.GetTarget(TargetIndex.A).Thing, dishwasher) &&
+                    ReferenceEquals(processorJob.GetTarget(TargetIndex.B).Thing, plate),
+                    "The Processor job must persist the exact powered dishwasher and dirty ware targets.");
+            }
+            else
+            {
+                IntegrationAssert.True(
+                    dishwasherComp.CanAccept(plate),
+                    "The same powered dishwasher must accept the dirty plate when otherwise operational.");
+                IntegrationAssert.True(
+                    WorkGiver_DoDishes.TryFindDestination(pawn, plate, out var powered) &&
+                    ReferenceEquals(powered.Target.Thing, dishwasher),
+                    "Doing dishes must select the same reachable dishwasher once power is restored.");
+                var job = new WorkGiver_DoDishes().JobOnThing(pawn, plate);
+                IntegrationAssert.True(
+                    job is not null && ReferenceEquals(job.GetTarget(TargetIndex.B).Thing, dishwasher),
+                    "The native work giver job must persist the exact powered dishwasher destination.");
+            }
         }
         finally
         {
@@ -2435,6 +2521,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
                  })
         {
             var def = DefDatabase<ThingDef>.GetNamed(defName);
+            var processorProperties = def.comps.Single(comp =>
+                processorType!.IsAssignableFrom(comp.compClass));
             IntegrationAssert.Equal(
                 1,
                 def.comps.Count(comp => processorType!.IsAssignableFrom(comp.compClass)),
@@ -2443,12 +2531,86 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 DrawerType.MapMeshAndRealTime,
                 def.drawerType,
                 $"{defName} must render Processor Framework progress.");
+
+            var processes = (AccessTools.Field(processorProperties.GetType(), "processes")?
+                                 .GetValue(processorProperties) as System.Collections.IEnumerable)?
+                .Cast<object>()
+                .ToList();
+            IntegrationAssert.NotNull(processes, $"{defName} must expose its Processor process list.");
+            foreach (var ware in DefDatabase<ThingDef>.AllDefsListForReading.Where(candidate =>
+                         candidate.GetModExtension<KitchenwareExtension>()?.product is
+                             KitchenwareProduct.Cookware or KitchenwareProduct.Plate or KitchenwareProduct.Cutlery))
+            {
+                var matches = processes!.Where(process =>
+                        (AccessTools.Field(process.GetType(), "ingredientFilter")?.GetValue(process) as ThingFilter)?
+                        .Allows(ware) == true)
+                    .ToList();
+                IntegrationAssert.Equal(
+                    1,
+                    matches.Count,
+                    $"{defName} must expose exactly one process for {ware.defName}.");
+                var actualFactor = Convert.ToSingle(
+                    AccessTools.Field(matches[0].GetType(), "capacityFactor")!.GetValue(matches[0]));
+                var expectedFactor = DishwasherCapacityPolicy.ProcessorCapacityFactor(
+                    ware.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f);
+                IntegrationAssert.True(
+                    Math.Abs(actualFactor - expectedFactor) < 0.0001f,
+                    $"{defName}/{ware.defName} must consume {expectedFactor} plate-equivalents, got {actualFactor}.");
+            }
+
         }
 
+        var initialize = AccessTools.Method(processorType, "Initialize");
+        var addIngredient = AccessTools.Method(processorType, "AddIngredient");
         var takeOut = AccessTools.Method(processorType, "TakeOutProduct");
+        var addIngredientPatches = Harmony.GetPatchInfo(addIngredient);
         var owners = Harmony.GetPatchInfo(takeOut)?.Owners
             .Count(owner => owner == ImmersiveChefsMod.PackageId) ?? 0;
+        IntegrationAssert.Equal(1, addIngredientPatches?.Prefixes
+            .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
+            "Processor admission must have one Immersive Chefs batch-gating prefix.");
+        IntegrationAssert.Equal(1, addIngredientPatches?.Postfixes
+            .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
+            "Processor admission must have one Immersive Chefs persistence postfix.");
+        IntegrationAssert.Equal(1, Harmony.GetPatchInfo(initialize)?.Postfixes
+            .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
+            "New dishwashers must have one Immersive Chefs process-enablement postfix.");
         IntegrationAssert.Equal(1, owners, "Processor completion must have one Immersive Chefs identity bridge.");
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void ActiveProcessorFrameworkEnablesEveryDishwasherWareProcess()
+    {
+        var processorType = AccessTools.TypeByName("ProcessorFramework.CompProcessor");
+        if (processorType is null)
+        {
+            return;
+        }
+
+        foreach (var defName in new[]
+                 {
+                     "ImmersiveChefs_Dishwasher",
+                     "ImmersiveChefs_IndustrialDishwasher"
+                 })
+        {
+            var instance = (ThingWithComps)ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed(defName));
+            var processor = instance.AllComps.Single(comp => processorType.IsInstanceOfType(comp));
+            var enabledProcesses = AccessTools.Field(processorType, "enabledProcesses")?
+                .GetValue(processor) as System.Collections.IDictionary;
+            var processProperties = processor.props;
+            var processes = (AccessTools.Field(processProperties.GetType(), "processes")?
+                                 .GetValue(processProperties) as System.Collections.IEnumerable)?
+                .Cast<object>()
+                .ToList();
+            IntegrationAssert.NotNull(processes, $"A new {defName} must expose its Processor processes.");
+            IntegrationAssert.NotNull(
+                enabledProcesses,
+                $"A new {defName} must expose its enabled Processor filters.");
+            IntegrationAssert.Equal(
+                processes!.Count,
+                enabledProcesses!.Count,
+                $"A new {defName} must enable every ware process independently of Processor Framework's global first-only default.");
+        }
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]

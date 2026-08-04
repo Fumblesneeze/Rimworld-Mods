@@ -285,6 +285,28 @@ Use the cutlery-free colonist scene to verify the opposite humanlike behavior. I
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the Processor Framework dishwasher scene to exercise its real fill work giver without Dubs. The passive sealed fixture contains one powered domestic dishwasher, three hauling-only pawns, and exact dirty cookware, plate, and cutlery stacks totaling 5.25 plate-equivalents. Resume at Normal speed: the ordinary inspector should remain at zero washing progress while all three native hauling jobs join the loading batch, then advance and return those same items clean:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-processor-dishwasher `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','syrchalis.processor.framework','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.','[ImmersiveChefs] Processor Framework adapter active; reusable dish identity is preserved.'
+```
+
+Add Dubs Bad Hygiene with the matching scenario to use a real connected water tower holding exactly 10.0 L. During the complete loading window the tower must remain at 10.0 L; once the 5.25-equivalent batch starts washing it should read 9.5 L, remain there through completion, and all three exact ware items should return clean:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
+  -Scenario immersive-chefs-dubs-processor-dishwasher `
+  -InteractiveHoldSeconds 240 `
+  -AdditionalModIds 'brrainz.harmony','syrchalis.processor.framework','Dubwise.DubsBadHygiene','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.','[ImmersiveChefs] Processor Framework adapter active; reusable dish identity is preserved.','[ImmersiveChefs] Dubs Bad Hygiene adapter active; dishwashers require supplied plumbing.'
+```
+
 Use the Common Sense cleanup scene to verify the optional post-dining handoff. It creates a selected self-diner, a drafted Doctor-capable nurse, a conscious hungry patient in a medical bed, two plated meals with cutlery, and a powered dishwasher. Right-click the diner's meal and choose the native `Consume simple meal` action. After that place setting reaches the dishwasher, select and undraft the nurse, right-click the patient, and choose `Prioritize feeding`. The dishwasher's ordinary inspector should reach 2.5 place settings—two plates plus two cutlery units—without any scenario-injected ingest, feed, or cleanup job:
 
 ```powershell

@@ -187,7 +187,7 @@ Temporary loss of power, supplied water, or operability through breakdown SHALL 
 - **THEN** the cycle pauses without consuming completion output or losing progress
 - **THEN** restoring a supplied connection automatically resumes the same cycle without a second water debit
 
-#### Scenario: Dubs water is insufficient at admission
+#### Scenario: Dubs water is insufficient when the loading batch closes
 - **WHEN** the validated Dubs adapter cannot atomically debit the cycle's captured load-scaled water charge
 - **THEN** the dishwasher does not start, retains the dirty inputs for retry or hauling, and exposes insufficient supplied water as the reason
 
