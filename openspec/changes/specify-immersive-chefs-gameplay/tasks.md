@@ -36,6 +36,7 @@
 - [x] 3.5 REFACTOR: Bound source searches and expose stable adapter interfaces for Dubs Bad Hygiene and Gastronomy clearing.
 - [ ] 3.6 IN-GAME: Verify powered/plumbed connection and consumption rules, automatic pause/resume from unchanged progress, cancellation recovery, source fallback order, 16/64-unit capacity, dirty stacks, terminal plate conservation/fire loss, research locks, alert drill-down/clearing, same-build save/load, and supported integration paths.
   - [x] 3.6a Observe a Processor-backed dishwasher make progress through ordinary native hauling and game time, use its native power gizmo plus ordinary Basic work to pause at unchanged progress and resume the same captured batch, then use the native `Eject dishes` gizmo to cancel and visibly recover every exact input still dirty without a replacement.
+  - [x] 3.6b Observe an expired meal always return its exact plate dirty, real fire destroy an effectively flammable bound plate, and real fire return an effectively nonflammable bound plate dirty; retain exact Thing identities and use no material-name assumptions.
 
 ## 4. mods/ImmersiveChefs - Prepared food
 

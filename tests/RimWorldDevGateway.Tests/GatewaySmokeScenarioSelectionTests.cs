@@ -1279,6 +1279,58 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Terminal_plate_scenario_is_passive_and_exposes_rot_and_fire_targets()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-terminal-plate-conservation.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-terminal-plate-conservation-setup.csx");
+        var createPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-terminal-plate-conservation-create.csx");
+        var framePath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-terminal-plate-conservation-frame.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(createPath), Is.True);
+            Assert.That(File.Exists(framePath), Is.True);
+        });
+
+        if (!File.Exists(descriptorPath) || !File.Exists(setupPath) ||
+            !File.Exists(createPath) || !File.Exists(framePath))
+        {
+            return;
+        }
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath) +
+                    File.ReadAllText(createPath) +
+                    File.ReadAllText(framePath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("fumblesneeze.immersivechefs"));
+            Assert.That(setup, Does.Contain("RotProgress"));
+            Assert.That(setup, Does.Contain("GenStuff.AllowedStuffsFor"));
+            Assert.That(setup, Does.Contain("GetStatValueAbstract(StatDefOf.Flammability"));
+            Assert.That(setup, Does.Contain("TryEmbedPlate"));
+            Assert.That(setup, Does.Not.Contain("expiringMeal.Destroy("));
+            Assert.That(setup, Does.Not.Contain("flammableFireMeal.Destroy("));
+            Assert.That(setup, Does.Not.Contain("nonflammableFireMeal.Destroy("));
+            Assert.That(setup, Does.Not.Contain("TakeDamage"));
+            Assert.That(setup, Does.Not.Contain("TryStartFireIn"));
+            Assert.That(setup, Does.Not.Contain("DoSingleTick"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

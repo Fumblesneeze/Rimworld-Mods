@@ -156,7 +156,8 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
         foreach (var plate in EmbeddedPlates.InnerListForReading.ToList())
         {
             EmbeddedPlates.Remove(plate);
-            if (causedByFire && plate.FlammableNow)
+            var effectiveFlammability = plate.GetStatValue(StatDefOf.Flammability);
+            if (EmbeddedPlateDestructionPolicy.ShouldDestroy(causedByFire, effectiveFlammability))
             {
                 plate.Destroy(DestroyMode.KillFinalize);
                 continue;

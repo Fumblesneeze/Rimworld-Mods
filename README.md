@@ -474,6 +474,18 @@ Use the hidden-provenance scene to verify paste-derived ingredient eligibility a
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the terminal plate-conservation scene to verify expiry and fire without assuming a material name. It dynamically chooses one allowed plate Stuff with positive finalized `Flammability` and one with zero finalized `Flammability`, creates three isolated plated meals, and pauses without destroying or burning a target. Resume game time to let the selected meal rot, then use RimWorld's native `T: Attach Fire` developer action on each 1-HP control. Expiry must return the exact first plate dirty; fire must consume the positive-flammability plate and return the exact zero-flammability plate dirty:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -RunIntegrationTests `
+  -Scenario immersive-chefs-terminal-plate-conservation `
+  -InteractiveHoldSeconds 300 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedIntegrationTests 'fumblesneeze.immersivechefs|PlayableMapLoaded|ImmersiveChefs.InGame.IntegrationTests.FinalizedImmersiveChefsIntegrationTests.TerminalMealDestructionUsesEffectivePlateFlammabilityAndConservesIdentity' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell

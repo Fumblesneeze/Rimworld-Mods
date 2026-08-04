@@ -2295,6 +2295,99 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void TerminalMealDestructionUsesEffectivePlateFlammabilityAndConservesIdentity()
+    {
+        var map = Find.CurrentMap;
+        var cells = map.AllCells
+            .Where(cell =>
+                cell.Standable(map) &&
+                cell.GetThingList(map).Count == 0 &&
+                map.zoneManager.ZoneAt(cell) is null)
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .Take(3)
+            .ToList();
+        IntegrationAssert.Equal(3, cells.Count, "The quickstart map must provide three terminal-meal cells.");
+
+        var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+        var allowedStuffs = GenStuff.AllowedStuffsFor(plateDef).ToList();
+        var flammableStuff = allowedStuffs.FirstOrDefault(stuff =>
+            plateDef.GetStatValueAbstract(StatDefOf.Flammability, stuff) > 0f);
+        var nonflammableStuff = allowedStuffs.FirstOrDefault(stuff =>
+            plateDef.GetStatValueAbstract(StatDefOf.Flammability, stuff) <= 0f);
+        IntegrationAssert.NotNull(
+            flammableStuff,
+            "The finalized plate Def must allow a Stuff with positive effective Flammability.");
+        IntegrationAssert.NotNull(
+            nonflammableStuff,
+            "The finalized plate Def must allow a Stuff with zero effective Flammability.");
+        var created = new System.Collections.Generic.List<Thing>();
+        var makeMeal = new Func<IntVec3, ThingDef, (ThingWithComps Meal, ThingWithComps Plate)>((cell, stuff) =>
+        {
+            var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+            var plate = (ThingWithComps)ThingMaker.MakeThing(plateDef, stuff);
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            IntegrationAssert.True(
+                meal.GetComp<CompEmbeddedWare>().TryEmbedPlate(plate),
+                "A terminal fixture meal must accept its exact plate.");
+            GenSpawn.Spawn(meal, cell, map);
+            created.Add(meal);
+            created.Add(plate);
+            return (meal, plate);
+        });
+
+        try
+        {
+            var expired = makeMeal(cells[0], flammableStuff!);
+            var flammable = makeMeal(cells[1], flammableStuff!);
+            var nonflammable = makeMeal(cells[2], nonflammableStuff!);
+            var expiredPlateId = expired.Plate.ThingID;
+            var nonflammablePlateId = nonflammable.Plate.ThingID;
+
+            expired.Meal.Destroy(DestroyMode.KillFinalize);
+            IntegrationAssert.True(
+                !expired.Plate.Destroyed && expired.Plate.Spawned && expired.Plate.Map == map,
+                "Non-fire terminal destruction must return a flammable plate to the map.");
+            IntegrationAssert.Equal(
+                expiredPlateId,
+                expired.Plate.ThingID,
+                "Non-fire terminal destruction must conserve the exact plate identity.");
+            IntegrationAssert.True(
+                expired.Plate.GetComp<CompSanitation>().IsDirty,
+                "A plate recovered from an expired meal must be dirty.");
+
+            flammable.Meal.HitPoints = 1;
+            flammable.Meal.TakeDamage(new DamageInfo(DamageDefOf.Flame, 100f));
+            IntegrationAssert.True(
+                flammable.Meal.Destroyed && flammable.Plate.Destroyed,
+                "Fire must destroy a plate with positive effective Flammability.");
+
+            nonflammable.Meal.HitPoints = 1;
+            nonflammable.Meal.TakeDamage(new DamageInfo(DamageDefOf.Flame, 100f));
+            IntegrationAssert.True(nonflammable.Meal.Destroyed, "Fire must terminally destroy the fixture meal.");
+            IntegrationAssert.True(
+                !nonflammable.Plate.Destroyed && nonflammable.Plate.Spawned && nonflammable.Plate.Map == map,
+                "Fire must return an effectively nonflammable plate to the map.");
+            IntegrationAssert.Equal(
+                nonflammablePlateId,
+                nonflammable.Plate.ThingID,
+                "Fire recovery must conserve the exact nonflammable plate identity.");
+            IntegrationAssert.True(
+                nonflammable.Plate.GetComp<CompSanitation>().IsDirty,
+                "A nonflammable plate recovered from fire must be dirty.");
+        }
+        finally
+        {
+            for (var index = created.Count - 1; index >= 0; index--)
+            {
+                if (!created[index].Destroyed)
+                {
+                    created[index].Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void RealStorageFiltersAndStackingTrackSpawnedSanitationTransitions()
     {
         var map = Find.CurrentMap;

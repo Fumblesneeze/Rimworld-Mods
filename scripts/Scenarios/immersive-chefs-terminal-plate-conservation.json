@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-terminal-plate-conservation",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "prepare-bays",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-terminal-plate-conservation-setup.csx"
+    },
+    {
+      "id": "create-meals",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-terminal-plate-conservation-create.csx"
+    },
+    {
+      "id": "frame-targets",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-terminal-plate-conservation-frame.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-terminal-plate-conservation-ready.png"
+    }
+  ]
+}
