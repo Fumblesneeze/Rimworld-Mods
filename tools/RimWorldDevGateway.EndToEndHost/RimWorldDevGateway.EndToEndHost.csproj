@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.Contracts\RimWorldDevGateway.Contracts.csproj" />
+  </ItemGroup>
 </Project>

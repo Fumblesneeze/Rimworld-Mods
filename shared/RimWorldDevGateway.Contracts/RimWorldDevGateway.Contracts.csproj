@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net480</TargetFramework>
+    <TargetFrameworks>net480;net8.0</TargetFrameworks>
     <AssemblyName>RimWorldDevGateway.Contracts</AssemblyName>
     <RootNamespace>RimWorldDevGateway.Contracts</RootNamespace>
     <LangVersion>latest</LangVersion>

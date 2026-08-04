@@ -23,6 +23,8 @@ public sealed class EndToEndMetadataDiscoveryTests
     {
         var metadata = EndToEndAssemblyMetadataReader.Read(FixtureAssembly("EndToEndHost.ValidFixtures"));
         var declaration = metadata.Declarations.Single(item => item.Id == "alpha.base-a");
+        var contractReference = metadata.AssemblyReferences.Single(
+            reference => reference.Name == "RimWorldDevGateway.EndToEndTesting");
 
         Assert.Multiple(() =>
         {
@@ -30,6 +32,8 @@ public sealed class EndToEndMetadataDiscoveryTests
             Assert.That(metadata.AssemblyIdentity, Does.StartWith("EndToEndHost.ValidFixtures, Version="));
             Assert.That(metadata.AssemblyCulture, Is.EqualTo("neutral"));
             Assert.That(metadata.AssemblyPublicKey, Is.EqualTo("null"));
+            Assert.That(contractReference.Identity, Does.StartWith("RimWorldDevGateway.EndToEndTesting, Version="));
+            Assert.That(contractReference.Culture, Is.EqualTo("neutral"));
             Assert.That(metadata.ModuleVersionId, Is.Not.EqualTo(Guid.Empty));
             Assert.That(metadata.Sha256, Has.Length.EqualTo(64));
             Assert.That(declaration.TypeName, Is.EqualTo("EndToEndHost.ValidFixtures.ExplosiveStaticConstructorTest"));

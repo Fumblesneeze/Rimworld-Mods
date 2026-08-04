@@ -38,6 +38,9 @@ packages/
 mods/*/About/About.xml
 **/Defs/DefsSchema.xsd
 **/DevIntegrationTests/
+**/DevEndToEndTests/
+**/.DevEndToEndTests.stage.*/
+**/.DevEndToEndTests.backup.*/
 .rimworld-integration-test-stage.owner
 .rimworld-integration-test-transaction.json
 SavedData/

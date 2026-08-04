@@ -63,6 +63,7 @@ public sealed class EndToEndAssemblyMetadata
         Guid moduleVersionId,
         long length,
         string sha256,
+        IEnumerable<EndToEndAssemblyReference> assemblyReferences,
         IEnumerable<EndToEndMetadataDeclaration> declarations)
     {
         AssemblyPath = assemblyPath;
@@ -75,6 +76,7 @@ public sealed class EndToEndAssemblyMetadata
         ModuleVersionId = moduleVersionId;
         Length = length;
         Sha256 = sha256;
+        AssemblyReferences = new ReadOnlyCollection<EndToEndAssemblyReference>(assemblyReferences.ToArray());
         Declarations = new ReadOnlyCollection<EndToEndMetadataDeclaration>(declarations.ToArray());
     }
 
@@ -96,7 +98,40 @@ public sealed class EndToEndAssemblyMetadata
 
     public string Sha256 { get; }
 
+    public IReadOnlyList<EndToEndAssemblyReference> AssemblyReferences { get; }
+
     public IReadOnlyList<EndToEndMetadataDeclaration> Declarations { get; }
+}
+
+public sealed class EndToEndAssemblyReference
+{
+    public EndToEndAssemblyReference(
+        string name,
+        string version,
+        string culture,
+        string keyKind,
+        string publicKeyOrToken)
+    {
+        Name = name;
+        Version = version;
+        Culture = culture;
+        KeyKind = keyKind;
+        PublicKeyOrToken = publicKeyOrToken;
+        Identity =
+            $"{name}, Version={version}, Culture={culture}, {keyKind}={publicKeyOrToken}";
+    }
+
+    public string Name { get; }
+
+    public string Version { get; }
+
+    public string Culture { get; }
+
+    public string KeyKind { get; }
+
+    public string PublicKeyOrToken { get; }
+
+    public string Identity { get; }
 }
 
 public sealed class EndToEndAssemblyCandidate
@@ -142,6 +177,7 @@ public sealed class EndToEndDiscoveredTest
         ModuleVersionId = candidate.Metadata.ModuleVersionId;
         AssemblyLength = candidate.Metadata.Length;
         AssemblySha256 = candidate.Metadata.Sha256;
+        AssemblyReferences = candidate.Metadata.AssemblyReferences;
     }
 
     public string Id { get; }
@@ -173,6 +209,8 @@ public sealed class EndToEndDiscoveredTest
     public long AssemblyLength { get; }
 
     public string AssemblySha256 { get; }
+
+    public IReadOnlyList<EndToEndAssemblyReference> AssemblyReferences { get; }
 }
 
 public sealed class EndToEndTestGroup
@@ -203,7 +241,7 @@ public sealed class EndToEndDiscoveryResult
 
 public sealed class EndToEndProjectRecord
 {
-    internal EndToEndProjectRecord(string projectPath, string ownerPackageId, string assemblyName, string targetFramework)
+    public EndToEndProjectRecord(string projectPath, string ownerPackageId, string assemblyName, string targetFramework)
     {
         ProjectPath = projectPath;
         OwnerPackageId = ownerPackageId;

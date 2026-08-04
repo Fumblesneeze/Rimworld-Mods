@@ -3,7 +3,7 @@
 - [x] 1.1 TDD RED: Add failing host-safe contract tests for attributed concrete test types, stable IDs, complete ordered package sets, non-Gateway owner membership, implicit Gateway-owned self-tests, Gateway exclusion, deadlines, iterator signatures, assertion failures, and invalid declarations.
 - [x] 1.2 TDD GREEN: Implement `RimWorldDevGateway.EndToEndTesting` with attributes, interfaces, typed steps, context/assertion contracts, result states, and no Unity/RimWorld dependency.
 - [x] 1.3 TDD RED: Add failing metadata-discovery tests for marked project discovery, compiled attribute extraction without execution, exact grouping, duplicates, package resolution, owner/output drift, zero selection, and deterministic ordering.
-- [ ] 1.4 TDD GREEN: Implement the build/metadata descriptor/staging tool and atomic marker-owned `DevEndToEndTests` publication plan.
+- [x] 1.4 TDD GREEN: Implement the build/metadata descriptor/staging tool and atomic marker-owned `DevEndToEndTests` publication plan.
 
 ## 2. mods/RimWorldDevGateway — TDD runtime loading and execution
 

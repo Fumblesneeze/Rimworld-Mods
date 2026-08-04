@@ -54,6 +54,11 @@ public static class EndToEndAssemblyMetadataReader
         var assemblyPublicKey = publicKeyBytes.Length == 0
             ? "null"
             : Convert.ToHexString(publicKeyBytes).ToLowerInvariant();
+        var assemblyReferences = reader.AssemblyReferences
+            .Select(handle => ReadAssemblyReference(reader, handle))
+            .OrderBy(reference => reference.Name, StringComparer.Ordinal)
+            .ThenBy(reference => reference.Version, StringComparer.Ordinal)
+            .ToArray();
         var declarations = new List<EndToEndMetadataDeclaration>();
         foreach (var typeHandle in reader.TypeDefinitions)
         {
@@ -82,7 +87,29 @@ public static class EndToEndAssemblyMetadataReader
             reader.GetGuid(moduleDefinition.Mvid),
             assemblyBytes.LongLength,
             hash,
+            assemblyReferences,
             declarations);
+    }
+
+    private static EndToEndAssemblyReference ReadAssemblyReference(
+        MetadataReader reader,
+        AssemblyReferenceHandle handle)
+    {
+        var reference = reader.GetAssemblyReference(handle);
+        var culture = reference.Culture.IsNil ? "neutral" : reader.GetString(reference.Culture);
+        var keyBytes = reference.PublicKeyOrToken.IsNil
+            ? Array.Empty<byte>()
+            : reader.GetBlobBytes(reference.PublicKeyOrToken);
+        var keyKind = (reference.Flags & AssemblyFlags.PublicKey) != 0
+            ? "PublicKey"
+            : "PublicKeyToken";
+        var key = keyBytes.Length == 0 ? "null" : Convert.ToHexString(keyBytes).ToLowerInvariant();
+        return new EndToEndAssemblyReference(
+            reader.GetString(reference.Name),
+            reference.Version.ToString(),
+            culture,
+            keyKind,
+            key);
     }
 
     private static EndToEndMetadataDeclaration DecodeDeclaration(
