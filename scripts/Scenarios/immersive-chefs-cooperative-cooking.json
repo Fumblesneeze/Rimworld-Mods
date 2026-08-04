@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-cooperative-cooking",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-cooperative-cooking-setup.csx"
+    },
+    {
+      "id": "stock",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-cooperative-cooking-stock.csx"
+    },
+    {
+      "id": "link",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-cooperative-cooking-link.csx"
+    },
+    {
+      "id": "activate",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-cooperative-cooking-activate.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-cooperative-cooking-ready.png"
+    }
+  ]
+}

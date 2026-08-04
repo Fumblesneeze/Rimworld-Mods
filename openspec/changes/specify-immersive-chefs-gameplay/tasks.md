@@ -51,7 +51,7 @@
 - [x] 5.1 TDD RED: Add failing state-machine tests for early assistant requests, applicable linked stations, exclusive claims, simultaneous-work accrual, skill weighting, caps, and cancellation.
 - [x] 5.2 TDD GREEN: Implement `Professional Kitchens`-gated sauce, meat, vegetable, and pastry station Defs plus bounded lead/assistant work coordination.
 - [x] 5.3 REFACTOR: Move assistant assignment, contribution snapshots, cooldowns, and station applicability behind small interfaces.
-- [ ] 5.4 IN-GAME: Verify assistants depart during lead hauling, contribute only during overlapping cooking ticks, release claims, respect priorities, and affect speed/quality.
+- [x] 5.4 IN-GAME: Verify assistants depart during lead hauling, contribute only during overlapping cooking ticks, release claims, respect priorities, and affect speed/quality.
 
 ## 6. mods/ImmersiveChefs - Meal quality, temperature, and reheating
 

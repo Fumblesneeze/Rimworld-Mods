@@ -10,17 +10,17 @@ internal sealed class KitchenAssistanceRequest
     internal KitchenAssistanceRequest(Pawn lead, Job leadJob, Thing billGiver)
     {
         Lead = lead;
-        LeadJob = leadJob;
+        LeadJobIdentity = new StableJobIdentity(leadJob);
         BillGiver = billGiver;
     }
 
     internal Pawn Lead { get; }
-    internal Job LeadJob { get; }
+    private StableJobIdentity LeadJobIdentity { get; }
     internal Thing BillGiver { get; }
     internal Dictionary<Pawn, Thing> Claims { get; } = new();
     internal Dictionary<Pawn, AssistantWorkGate> WorkGates { get; } = new();
 
-    internal bool IsActive => !Lead.Destroyed && Lead.CurJob == LeadJob &&
+    internal bool IsActive => !Lead.Destroyed && LeadJobIdentity.Matches(Lead.CurJob) &&
                               !BillGiver.Destroyed && BillGiver.Spawned;
 }
 

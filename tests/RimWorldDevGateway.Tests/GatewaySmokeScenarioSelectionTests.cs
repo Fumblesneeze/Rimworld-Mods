@@ -540,6 +540,66 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Cooperative_cooking_scenario_leaves_lead_and_assistant_jobs_to_the_native_scheduler()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-cooperative-cooking.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-cooperative-cooking-setup.csx");
+        var stockPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-cooperative-cooking-stock.csx");
+        var linkPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-cooperative-cooking-link.csx");
+        var activatePath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-cooperative-cooking-activate.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+            Assert.That(File.Exists(stockPath), Is.True);
+            Assert.That(File.Exists(linkPath), Is.True);
+            Assert.That(File.Exists(activatePath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        var stock = File.ReadAllText(stockPath);
+        var link = File.ReadAllText(linkPath);
+        var activate = File.ReadAllText(activatePath);
+        var scenarioSource = setup + stock + link + activate;
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-cooperative-cooking"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("Assisted Lead"));
+            Assert.That(setup, Does.Contain("Assisted Specialist"));
+            Assert.That(setup, Does.Contain("Control Lead"));
+            Assert.That(link, Does.Contain("ImmersiveChefs_SauceStation"));
+            Assert.That(activate, Does.Contain("LinkedFacilitiesListForReading.Contains"));
+            Assert.That(activate, Does.Contain("foreach (var candidateStove"));
+            Assert.That(
+                activate,
+                Does.Not.Contain("FirstOrDefault(thing => thing.TryGetComp<CompAffectedByFacilities>()?"));
+            Assert.That(stock, Does.Contain("CookMealSimple"));
+            Assert.That(stock, Does.Contain("SetPawnRestriction"));
+            Assert.That(setup, Does.Contain("SetPriority(cookingWorkType, 1)"));
+            Assert.That(scenarioSource, Does.Not.Contain("StartJob"));
+            Assert.That(scenarioSource, Does.Not.Contain("TryTakeOrderedJob"));
+            Assert.That(scenarioSource, Does.Not.Contain("EndCurrentJob"));
+            Assert.That(scenarioSource, Does.Not.Contain("Log.Message("));
+            Assert.That(scenarioSource, Does.Not.Contain("NotifyWorkTick"));
+            Assert.That(scenarioSource, Does.Not.Contain("MakeRecipeProducts"));
+        });
+    }
+
+    [Test]
     public void Handheld_food_scenario_uses_vanilla_food_choice_and_ingest_jobs()
     {
         var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
