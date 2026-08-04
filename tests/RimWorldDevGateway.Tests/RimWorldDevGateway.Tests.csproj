@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\mods\RimWorldDevGateway\RimWorldDevGateway.csproj" />
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.IntegrationTesting\RimWorldDevGateway.IntegrationTesting.csproj" />
     <ProjectReference Include="..\..\tools\RimWorldDevGateway.Client\RimWorldDevGateway.Client.csproj" />
     <PackageReference Update="NUnit3TestAdapter" Version="6.2.0" PrivateAssets="all" />
