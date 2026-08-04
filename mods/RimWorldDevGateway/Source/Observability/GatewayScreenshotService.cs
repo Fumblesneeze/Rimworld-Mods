@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway;
 
@@ -10,6 +11,11 @@ public interface IGatewayScreenshotBackend
     byte[] EncodePng(object resource);
 
     void Destroy(object resource);
+}
+
+public interface IGatewayTargetedScreenshotBackend
+{
+    object Capture(GatewayScreenshotRequest request);
 }
 
 public sealed class GatewayScreenshotException : Exception
@@ -56,7 +62,20 @@ public sealed class GatewayScreenshotService
         TimeSpan timeout,
         CancellationToken cancellationToken = default)
     {
-        return CaptureOperation(requestId, timeout, cancellationToken).Completion;
+        return CaptureOperation(
+            requestId,
+            new GatewayScreenshotRequest(),
+            timeout,
+            cancellationToken).Completion;
+    }
+
+    public Task<byte[]> CaptureAsync(
+        string requestId,
+        GatewayScreenshotRequest request,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default)
+    {
+        return CaptureOperation(requestId, request, timeout, cancellationToken).Completion;
     }
 
     public GatewayDispatchOperation<byte[]> CaptureOperation(
@@ -64,6 +83,34 @@ public sealed class GatewayScreenshotService
         TimeSpan timeout,
         CancellationToken cancellationToken = default)
     {
+        return CaptureOperation(
+            requestId,
+            new GatewayScreenshotRequest(),
+            timeout,
+            cancellationToken);
+    }
+
+    public GatewayDispatchOperation<byte[]> CaptureOperation(
+        string requestId,
+        GatewayScreenshotRequest request,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        GatewayScreenshotRequest normalizedRequest;
+        try
+        {
+            normalizedRequest = Normalize(request);
+        }
+        catch (GatewayScreenshotException exception)
+        {
+            return new GatewayDispatchOperation<byte[]>(Task.FromException<byte[]>(exception));
+        }
+
         var captureLease = new object();
         if (Interlocked.CompareExchange(ref captureInFlight, captureLease, null) is not null)
         {
@@ -79,7 +126,7 @@ public sealed class GatewayScreenshotService
                 requestId,
                 "screenshot.capture",
                 timeout,
-                Capture,
+                cancellation => Capture(normalizedRequest, cancellation),
                 DispatchPhase.EndOfFrame,
                 cancellationToken);
             capture.OnCancelledBeforeStart(() => ReleaseCapacity(captureLease));
@@ -107,11 +154,18 @@ public sealed class GatewayScreenshotService
         Interlocked.CompareExchange(ref captureInFlight, null, captureLease);
     }
 
-    private byte[] Capture(CancellationToken cancellationToken)
+    private byte[] Capture(GatewayScreenshotRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var resource = backend.Capture();
+            cancellationToken.ThrowIfCancellationRequested();
+            var resource = request.ThingHandles.Count == 0
+                ? backend.Capture()
+                : backend is IGatewayTargetedScreenshotBackend targeted
+                    ? targeted.Capture(request)
+                    : throw new GatewayScreenshotException(
+                        "targeted_capture_unavailable",
+                        "The screenshot backend does not support Thing-bounded captures.");
             try
             {
                 var png = backend.EncodePng(resource);
@@ -135,6 +189,52 @@ public sealed class GatewayScreenshotService
                 exception);
         }
     }
+
+    private static GatewayScreenshotRequest Normalize(GatewayScreenshotRequest request)
+    {
+        var suppliedHandles = request.ThingHandles ?? throw InvalidRequest(
+            "thingHandles must be an array when supplied.");
+        if (suppliedHandles.Count == 0)
+        {
+            if (request.PaddingPixels.HasValue)
+            {
+                throw InvalidRequest("paddingPixels requires at least one thing handle.");
+            }
+
+            return new GatewayScreenshotRequest();
+        }
+
+        if (request.PaddingPixels < 0)
+        {
+            throw InvalidRequest("paddingPixels must be non-negative.");
+        }
+
+        var distinct = new List<string>(suppliedHandles.Count);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var handle in suppliedHandles)
+        {
+            if (string.IsNullOrWhiteSpace(handle) ||
+                handle.Length > GatewayThingController.MaximumHandleLength)
+            {
+                throw InvalidRequest(
+                    $"Every thing handle must contain 1 through {GatewayThingController.MaximumHandleLength} characters.");
+            }
+
+            if (seen.Add(handle))
+            {
+                distinct.Add(handle);
+            }
+        }
+
+        return new GatewayScreenshotRequest
+        {
+            ThingHandles = distinct,
+            PaddingPixels = request.PaddingPixels ?? 32
+        };
+    }
+
+    private static GatewayScreenshotException InvalidRequest(string message) =>
+        new("invalid_screenshot_request", message);
 
     private void ValidatePng(byte[]? png)
     {

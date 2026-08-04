@@ -39,6 +39,22 @@ public sealed class GatewayDefExportApiRequest
 }
 
 [DataContract]
+public sealed class GatewayScreenshotRequest
+{
+    [DataMember(Name = "thingHandles", Order = 1)]
+    public List<string> ThingHandles { get; set; } = new();
+
+    [DataMember(Name = "paddingPixels", Order = 2, EmitDefaultValue = false)]
+    public int? PaddingPixels { get; set; }
+
+    [OnDeserializing]
+    private void ApplyDefaults(StreamingContext context)
+    {
+        ThingHandles = new List<string>();
+    }
+}
+
+[DataContract]
 public sealed class GatewayGameStateMutationRequest
 {
     [DataMember(Name = "devMode", Order = 1, EmitDefaultValue = false)]

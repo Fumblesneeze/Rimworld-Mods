@@ -1,10 +1,70 @@
 using NUnit.Framework;
+using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway.Tests;
 
 [TestFixture]
 public sealed class GatewayScreenshotServiceTests
 {
+    [Test]
+    public void Target_handles_and_padding_are_forwarded_to_one_end_of_frame_capture()
+    {
+        var dispatcher = new GatewayDispatcher(capacity: 4);
+        var backend = new RecordingScreenshotBackend(ValidPng());
+        var service = new GatewayScreenshotService(dispatcher, backend, maximumPngBytes: 1024);
+        var request = new GatewayScreenshotRequest
+        {
+            ThingHandles = new List<string> { "Pawn_42", "Building_9" },
+            PaddingPixels = 24
+        };
+
+        var capture = service.CaptureAsync(
+            "screenshot-targets",
+            request,
+            TimeSpan.FromSeconds(5));
+
+        Assert.That(dispatcher.Drain(DispatchPhase.EndOfFrame), Is.EqualTo(1));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(capture.GetAwaiter().GetResult(), Is.EqualTo(ValidPng()));
+            Assert.That(backend.Request, Is.Not.SameAs(request));
+            Assert.That(backend.Request!.ThingHandles, Is.EqualTo(request.ThingHandles));
+            Assert.That(backend.Request.PaddingPixels, Is.EqualTo(request.PaddingPixels));
+            Assert.That(backend.CaptureCount, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Negative_target_padding_is_rejected_before_end_of_frame_admission()
+    {
+        var dispatcher = new GatewayDispatcher(capacity: 4);
+        var backend = new RecordingScreenshotBackend(ValidPng());
+        var service = new GatewayScreenshotService(dispatcher, backend, maximumPngBytes: 1024);
+        var request = new GatewayScreenshotRequest
+        {
+            ThingHandles = new List<string> { "Pawn_42" },
+            PaddingPixels = -1
+        };
+
+        var capture = service.CaptureAsync(
+            "screenshot-negative-padding",
+            request,
+            TimeSpan.FromSeconds(5));
+
+        Assert.That(capture.IsCompleted, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                () => capture.GetAwaiter().GetResult(),
+                Throws.TypeOf<GatewayScreenshotException>()
+                    .With.Property(nameof(GatewayScreenshotException.Code))
+                    .EqualTo("invalid_screenshot_request"));
+            Assert.That(dispatcher.PendingCount, Is.Zero);
+            Assert.That(backend.CaptureCount, Is.Zero);
+        });
+    }
+
     [Test]
     public void Capture_is_queued_until_end_of_frame_and_releases_the_temporary_resource()
     {
@@ -132,7 +192,7 @@ public sealed class GatewayScreenshotServiceTests
     private static byte[] ValidPng() =>
         new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
 
-    private sealed class RecordingScreenshotBackend : IGatewayScreenshotBackend
+    private sealed class RecordingScreenshotBackend : IGatewayScreenshotBackend, IGatewayTargetedScreenshotBackend
     {
         private readonly byte[] png;
 
@@ -149,10 +209,18 @@ public sealed class GatewayScreenshotServiceTests
 
         public Exception? EncodeException { get; set; }
 
+        public GatewayScreenshotRequest? Request { get; private set; }
+
         public object Capture()
         {
             CaptureCount++;
             return new object();
+        }
+
+        public object Capture(GatewayScreenshotRequest request)
+        {
+            Request = request;
+            return Capture();
         }
 
         public byte[] EncodePng(object resource)

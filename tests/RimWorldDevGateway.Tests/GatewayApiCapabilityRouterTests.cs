@@ -225,6 +225,71 @@ public sealed class GatewayApiCapabilityRouterTests
     }
 
     [Test]
+    public void Screenshot_endpoint_deserializes_exact_target_handles_and_padding()
+    {
+        var dispatcher = new GatewayDispatcher();
+        var png = new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+        var backend = new ScreenshotBackend(png);
+        var screenshot = new GatewayScreenshotService(dispatcher, backend, maximumPngBytes: 1024);
+        var router = new GatewayApiRouter(
+            dispatcher,
+            new StubStateProvider(),
+            new GatewayLogBuffer(),
+            new GatewayApiServices(screenshotService: screenshot),
+            responseTimeout: TimeSpan.FromSeconds(2));
+
+        var responseTask = Task.Run(() => router.Handle(
+            Post(
+                "/api/v1/screenshots",
+                "{\"thingHandles\":[\"Pawn_42\",\"Building_9\"],\"paddingPixels\":24}"),
+            "screenshot-target-route"));
+        Assert.That(SpinWait.SpinUntil(() => dispatcher.PendingCount == 1, 1000), Is.True);
+        dispatcher.Drain(DispatchPhase.EndOfFrame);
+        var response = responseTask.GetAwaiter().GetResult();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(200));
+            Assert.That(backend.Request, Is.Not.Null);
+            Assert.That(backend.Request!.ThingHandles, Is.EqualTo(new[] { "Pawn_42", "Building_9" }));
+            Assert.That(backend.Request.PaddingPixels, Is.EqualTo(24));
+        });
+    }
+
+    [Test]
+    public void Screenshot_endpoint_rejects_invalid_target_padding_as_a_client_error_without_dispatch()
+    {
+        var dispatcher = new GatewayDispatcher();
+        var png = new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+        var backend = new ScreenshotBackend(png);
+        var router = new GatewayApiRouter(
+            dispatcher,
+            new StubStateProvider(),
+            new GatewayLogBuffer(),
+            new GatewayApiServices(
+                screenshotService: new GatewayScreenshotService(
+                    dispatcher,
+                    backend,
+                    maximumPngBytes: 1024)),
+            responseTimeout: TimeSpan.FromSeconds(2));
+
+        var response = router.Handle(
+            Post(
+                "/api/v1/screenshots",
+                "{\"thingHandles\":[\"Pawn_42\"],\"paddingPixels\":-1}"),
+            "screenshot-invalid-padding");
+        var body = Encoding.UTF8.GetString(response.Body);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(400));
+            Assert.That(body, Does.Contain("\"code\":\"invalid_screenshot_request\""));
+            Assert.That(dispatcher.PendingCount, Is.Zero);
+            Assert.That(backend.CaptureCount, Is.Zero);
+        });
+    }
+
+    [Test]
     public void Semantic_mutation_queued_past_http_deadline_is_cancelled_before_start()
     {
         var dispatcher = new GatewayDispatcher();
@@ -640,7 +705,7 @@ public sealed class GatewayApiCapabilityRouterTests
         public object CaptureUiState() => new { };
     }
 
-    private sealed class ScreenshotBackend : IGatewayScreenshotBackend
+    private sealed class ScreenshotBackend : IGatewayScreenshotBackend, IGatewayTargetedScreenshotBackend
     {
         private readonly byte[] png;
         private readonly bool blockCapture;
@@ -652,6 +717,8 @@ public sealed class GatewayApiCapabilityRouterTests
         }
 
         public int CaptureCount { get; private set; }
+
+        public GatewayScreenshotRequest? Request { get; private set; }
 
         public ManualResetEventSlim CaptureStarted { get; } = new(false);
 
@@ -667,6 +734,12 @@ public sealed class GatewayApiCapabilityRouterTests
             }
 
             return new object();
+        }
+
+        public object Capture(GatewayScreenshotRequest request)
+        {
+            Request = request;
+            return Capture();
         }
 
         public byte[] EncodePng(object resource) => png;

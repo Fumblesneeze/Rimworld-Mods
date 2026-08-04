@@ -60,11 +60,27 @@ Every gateway request and main-thread operation SHALL carry one request ID throu
 - **THEN** request diagnostics remain available through `GET /api/v1/logs` without mutating the developer-log collection, throwing a collection-modified GUI exception, or preventing later main-thread operations from starting
 
 ### Requirement: End-of-frame screenshots
-`POST /api/v1/screenshots` SHALL capture the current RimWorld client at end-of-frame on the main thread, encode a valid PNG, return capture dimensions and request metadata, and release temporary Unity resources. The endpoint SHALL enforce bounded concurrent captures, dimensions, response size, and timeout.
+`POST /api/v1/screenshots` SHALL capture the current RimWorld client at end-of-frame on the main thread, encode a valid PNG, return the intrinsic PNG dimensions plus the transport's correlated request ID, and release every temporary Unity resource. An empty JSON object SHALL retain the version-one full-frame behavior.
+
+The optional `thingHandles` array SHALL identify one or more exact stable-in-run handles for spawned Things or Pawns on the current map. When it is present, the gateway SHALL resolve every distinct handle against one main-thread snapshot, project every target's complete occupied-cell footprint into the captured texture's pixel coordinate space, take their union, apply an optional non-negative `paddingPixels` value (default `32`), clamp the result to the captured texture, and return only that rectangular crop. Projection SHALL use the actual rendered texture dimensions and Unity's bottom-left pixel origin internally; the resulting PNG SHALL remain an ordinary top-left-viewed image for consumers. The gateway SHALL reject a malformed handle, stale/non-map target, unavailable camera, or target wholly outside the captured frame without returning a misleading partial crop.
+
+Targeted capture SHALL reuse the endpoint's existing authenticated request-body, response-size, concurrency, and timeout bounds rather than introducing a smaller screenshot-specific handle-count or PNG-size ceiling. It SHALL perform at most one current-map Thing enumeration and one full-frame capture per accepted request, and SHALL destroy the full-frame texture even when target projection, crop allocation, pixel copy, or encoding fails.
 
 #### Scenario: Capture a playable scene
 - **WHEN** an authenticated caller requests a screenshot while a map is rendered
 - **THEN** the response provides a decodable PNG for that frame with matching width, height, and request ID metadata
+
+#### Scenario: Crop around multiple visible Things
+- **WHEN** an authenticated caller supplies exact handles for a visible pawn and building plus `paddingPixels: 24`
+- **THEN** the response is a PNG cropped to the clamped 24-pixel-padded union of both projected occupied footprints, and both requested targets are visible in the result
+
+#### Scenario: One requested target is stale or off-screen
+- **WHEN** any handle in a targeted screenshot request no longer identifies a spawned current-map Thing or its complete projected footprint is outside the captured frame
+- **THEN** the gateway returns a stable validation error and does not silently return a crop for only the remaining targets
+
+#### Scenario: Targeted crop fails after full-frame capture
+- **WHEN** the gateway captures the full frame but projection, allocation, pixel copying, or PNG encoding throws
+- **THEN** the endpoint reports a correlated stable capture error and releases every full-frame and crop texture it allocated
 
 #### Scenario: Capture capacity is exhausted
 - **WHEN** a screenshot request arrives while the configured capture concurrency is occupied

@@ -70,6 +70,39 @@ public sealed class GatewayClientCliTests
     }
 
     [Test]
+    public void Screenshot_with_targets_posts_the_typed_crop_request_and_saves_the_png()
+    {
+        var fixture = new CliFixture();
+        var png = new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+        fixture.Transport.Response = new GatewayClientHttpResponse(200, "image/png", png);
+
+        var exitCode = fixture.App.Run(
+            new[]
+            {
+                "screenshot",
+                "--file", "crop.png",
+                "--things", "Pawn_42,Building_9",
+                "--padding", "24",
+                "-o", "json"
+            },
+            fixture.Output,
+            fixture.Error);
+
+        var posted = GatewayContractJson.Read<GatewayScreenshotRequest>(
+            Encoding.UTF8.GetString(fixture.Transport.Request!.Body));
+        Assert.Multiple(() =>
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(fixture.Transport.Request.Method, Is.EqualTo("POST"));
+            Assert.That(fixture.Transport.Request.Uri.AbsolutePath, Is.EqualTo("/api/v1/screenshots"));
+            Assert.That(posted.ThingHandles, Is.EqualTo(new[] { "Pawn_42", "Building_9" }));
+            Assert.That(posted.PaddingPixels, Is.EqualTo(24));
+            Assert.That(fixture.Files.BinaryFiles["crop.png"], Is.EqualTo(png));
+            Assert.That(fixture.Error.ToString(), Is.Empty);
+        });
+    }
+
+    [Test]
     public void Execute_source_compiles_before_upload_and_posts_the_compiled_assembly_contract()
     {
         var fixture = new CliFixture();

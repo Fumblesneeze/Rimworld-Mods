@@ -117,9 +117,14 @@ Focused test environments are separate on purpose:
 
 # Gateway host tests
 .\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway -Configuration Release
+
+# Deterministic Gateway metadata and PNG snapshots
+.\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway.Snapshots -Configuration Release
 ```
 
 `Invoke-Tests.ps1` rejects zero-test/all-ignored runs. A real loaded mod, XML `PatchOperation`, Core/Workshop Def database, `DefOf`, or complete patch set belongs in a fresh RimWorld process with the exact ordered mod list; see [TestingEnvironments.md](docs/TestingEnvironments.md).
+
+Gateway snapshots use a separate `net48` NUnit 4 project with current Verify and Verify.ImageMagick packages. The existing Zlepper projects remain on NUnit 3 because moving their assertion surface to NUnit 4 creates incompatible delegate overloads. Approved deterministic `.verified.*` baselines are committed; transient `.received.*` files are ignored. Live RimWorld frames remain scenario evidence unless a test deliberately controls or masks every dynamic pixel.
 
 ## Validate an isolated RimWorld run
 

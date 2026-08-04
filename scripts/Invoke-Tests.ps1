@@ -31,7 +31,7 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'RimWorldDevGateway')]
+    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'RimWorldDevGateway', 'RimWorldDevGateway.Snapshots')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
@@ -126,6 +126,11 @@ try {
             Name = 'RimWorldDevGateway'
             Group = 'RimWorldDevGateway'
             Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Tests\RimWorldDevGateway.Tests.csproj'
+        }
+        [pscustomobject]@{
+            Name = 'RimWorldDevGateway.Snapshots'
+            Group = 'RimWorldDevGateway'
+            Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Snapshots.Tests\RimWorldDevGateway.Snapshots.Tests.csproj'
         }
     )
     $selectedSuites = if ($Suite -eq 'All') {

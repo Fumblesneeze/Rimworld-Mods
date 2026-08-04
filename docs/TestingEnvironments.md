@@ -13,6 +13,7 @@ That distinction determines which test environment to use.
 | One Immersive Chefs Harmony patch | Use the process-isolated `ImmersiveChefs.Harmony` suite; patch one explicit target with a unique owner and unpatch in cleanup | Patch method/signature behavior under the exact installed Harmony DLL |
 | Lookup of a small known Def | Construct a minimal `Def` subclass and register it with `DefDatabaseScope<T>` in the process-isolated `ImmersiveChefs.Defs` suite | Code interacting with `DefDatabase<T>` and the fixture's declared fields |
 | Source XML shape/XPath | Parse the source file with standard XML APIs | Repository XML structure only; no inheritance, cross-references, or PatchOperations |
+| Deterministic Gateway crop metadata or generated image | Use the separate `RimWorldDevGateway.Snapshots` NUnit 4 project with Verify and Verify.ImageMagick | Stable host-side projection/image output; not a live Unity rendering assertion |
 | Installed optional assembly shape | Use a dedicated process/project with an explicit path, hash/MVID, and reflection contract | Type/member compatibility only; not a loaded mod |
 | Real `ThingDef`, `RecipeDef`, `DefOf`, XML inheritance, cross-references, or conditional patches | Load the exact mod list in isolated RimWorld and inspect the real post-load database as supporting evidence | RimWorld's actual loader result |
 | Repeatable finalized Def/XML/full-Harmony assertions across selected mod lists | Use an opted-in `*.IntegrationTests.dll` staged outside `Assemblies`, then start the Dev Gateway with its integration-test flag | Once-per-process assertions at a real game lifecycle point; still not player-behavior acceptance |
@@ -30,6 +31,8 @@ That distinction determines which test environment to use.
 .\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs.Unit -Configuration Release
 .\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs.Harmony -Configuration Release
 .\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs.Defs -Configuration Release
+.\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway -Configuration Release
+.\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway.Snapshots -Configuration Release
 ```
 
 The suites are:
@@ -37,6 +40,8 @@ The suites are:
 - `ImmersiveChefs.Unit`: ordinary tests. An assembly-level setup proves `LoadedModManager.RunningModsListForReading` is empty, `0Harmony` is not loaded, and a representative Def database is empty before any test fixture runs; assembly teardown repeats the assertions as a leak guard.
 - `ImmersiveChefs.Harmony`: references the exact installed Workshop `0Harmony.dll`, currently assembly version `2.4.1.0`, and owns failure-safe explicit patch cleanup. It compares the configured source DLL with the runtime copy and the wrapper retains name/version/MVID/SHA-256 in `ImmersiveChefs.Harmony.dependencies.json`. Override its location with `-HarmonyAssemblyPath` when the configured Workshop layout differs.
 - `ImmersiveChefs.Defs`: owns host-side Def database mutation. Its fixture is non-parallel, requires the matching generic database to be empty, takes exclusive ownership of that whole database for the scope, and clears the whole database in cleanup. Tests must register every intended entry through the scope and must not add unrelated entries while it is active. It refuses pre-populated state without touching name or short-hash lookups.
+- `RimWorldDevGateway`: ordinary Gateway host tests using the repository's existing NUnit 3/Zlepper environment.
+- `RimWorldDevGateway.Snapshots`: a separate `net48` NUnit 4 host project using current Verify and Verify.ImageMagick packages. Its deterministic PNG comparison uses a 0.001 tolerance to avoid rejecting a visually identical re-encoded image. Approved `.verified.*` files are source; `.received.*` files are ignored. Do not approve uncontrolled live RimWorld frames as golden images.
 
 Do not move patch or DefDatabase tests into the ordinary suite. NUnit fixtures in one assembly share an AppDomain and RimWorld/Harmony static state; `[NonParallelizable]` prevents concurrency but does not create a clean runtime.
 

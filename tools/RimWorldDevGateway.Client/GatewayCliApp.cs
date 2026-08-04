@@ -155,9 +155,44 @@ public sealed class GatewayCliApp
 
     private void RunScreenshot(GlobalOptions globals, string[] tail, TextWriter output)
     {
-        var options = CommandOptions.Parse("screenshot", tail, Array.Empty<string>(), new[] { "file" }, 0, 0);
+        var options = CommandOptions.Parse(
+            "screenshot",
+            tail,
+            Array.Empty<string>(),
+            new[] { "file", "things", "padding" },
+            0,
+            0);
         var path = options.Required("file");
-        var response = Send(LoadSession(globals), "POST", "/screenshots", "{}");
+        var thingsText = options.Value("things");
+        var paddingText = options.Value("padding");
+        if (thingsText is null && paddingText is not null)
+        {
+            throw new GatewayCliUsageException("--padding requires --things HANDLE[,HANDLE...].");
+        }
+
+        var body = "{}";
+        if (thingsText is not null)
+        {
+            var handles = thingsText
+                .Split(',')
+                .Select(handle => handle.Trim())
+                .ToArray();
+            if (handles.Length == 0 || handles.Any(string.IsNullOrWhiteSpace))
+            {
+                throw new GatewayCliUsageException(
+                    "--things must contain one or more comma-separated exact Thing handles.");
+            }
+
+            body = GatewayContractJson.Write(new GatewayScreenshotRequest
+            {
+                ThingHandles = handles.ToList(),
+                PaddingPixels = paddingText is null
+                    ? null
+                    : options.Int("padding", 32, 0, int.MaxValue)
+            });
+        }
+
+        var response = Send(LoadSession(globals), "POST", "/screenshots", body);
         files.WriteAllBytes(path, response.Body);
         WriteValue(
             new Dictionary<string, object?>
@@ -428,7 +463,7 @@ public sealed class GatewayCliApp
         output.WriteLine("  discover                         Validate and show the live session (token is redacted)");
         output.WriteLine("  status | ui-state                Read game or UI state");
         output.WriteLine("  logs [--after N] [--limit N]     Read structured logs");
-        output.WriteLine("  screenshot --file PATH           Capture PNG evidence");
+        output.WriteLine("  screenshot --file PATH [--things HANDLE[,HANDLE...]] [--padding PIXELS]");
         output.WriteLine("  click --x N --y N [--button B]   Send a process-scoped click");
         output.WriteLine("  drag --start-x N --start-y N --end-x N --end-y N");
         output.WriteLine("  keys (--key K|--text TEXT) [--modifiers Ctrl,Shift]");
@@ -445,6 +480,7 @@ public sealed class GatewayCliApp
         output.WriteLine();
         output.WriteLine("Examples:");
         output.WriteLine("  RimWorldDevGateway.Client status --pid 1234 -o json");
+        output.WriteLine("  RimWorldDevGateway.Client screenshot --file crop.png --things Pawn_42,Building_9 --padding 24");
         output.WriteLine("  RimWorldDevGateway.Client execute-source inspect.cs --managed F:\\...\\Managed --contract RimWorldDevGateway.Contracts.dll --entry-type Inspect.Entry");
     }
 

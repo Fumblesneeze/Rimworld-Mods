@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RimWorldDevGateway.Contract
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RimWorldDevGateway.IntegrationTesting", "shared\RimWorldDevGateway.IntegrationTesting\RimWorldDevGateway.IntegrationTesting.csproj", "{A75A9A76-4E72-46C7-BE55-05F599E2E4C1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RimWorldDevGateway.Snapshots.Tests", "tests\RimWorldDevGateway.Snapshots.Tests\RimWorldDevGateway.Snapshots.Tests.csproj", "{4409B3DE-39C1-4D7F-A24D-8508F4655BEF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +88,10 @@ Global
 		{A75A9A76-4E72-46C7-BE55-05F599E2E4C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A75A9A76-4E72-46C7-BE55-05F599E2E4C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A75A9A76-4E72-46C7-BE55-05F599E2E4C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4409B3DE-39C1-4D7F-A24D-8508F4655BEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4409B3DE-39C1-4D7F-A24D-8508F4655BEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4409B3DE-39C1-4D7F-A24D-8508F4655BEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4409B3DE-39C1-4D7F-A24D-8508F4655BEF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{EBEF05F9-B027-44DA-8D85-CD4C6D3CBFF9} = {414D1254-A15A-4024-85AC-4424837ABA2D}
@@ -99,5 +105,6 @@ Global
 		{1CBB22B0-8427-4498-8557-D6E5F23EEBA3} = {6E7CE74C-18E0-4FDF-B8FD-14CD493A4568}
 		{E97FD006-1C85-4215-A9BF-C6EB446045A7} = {18E1D5C4-0E54-485D-A886-E196438C325E}
 		{A75A9A76-4E72-46C7-BE55-05F599E2E4C1} = {18E1D5C4-0E54-485D-A886-E196438C325E}
+		{4409B3DE-39C1-4D7F-A24D-8508F4655BEF} = {57C1353C-978D-44F2-995F-A95307B3701E}
 	EndGlobalSection
 EndGlobal

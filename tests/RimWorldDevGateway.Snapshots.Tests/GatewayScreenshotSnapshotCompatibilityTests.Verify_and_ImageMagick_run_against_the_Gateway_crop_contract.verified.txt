@@ -1,0 +1,15 @@
+﻿{
+  Runtime: .NET Framework 4.8 host snapshot test,
+  Crop: {
+    X: 26,
+    Y: 16,
+    Width: 249,
+    Height: 199
+  },
+  Image: {
+    Width: 249,
+    Height: 199,
+    Format: Png
+  },
+  ImageMagickComparerThreshold: 0.001
+}

@@ -196,3 +196,11 @@
 - [x] 26.5 TDD/LAUNCH: Perform no exact-PID window-state probe after launch; do not compare, classify, warn on, or enforce a user restore or maximize.
 - [x] 26.6 TDD/PERSISTENCE: Reproduce a destination snapshot held by a temporary Windows reader and retry its atomic replacement on the background persistence task without surfacing a false in-game failure.
 - [x] 26.7 TDD/IN-GAME: Defer the shutdown request until the correlated `202 Accepted` body is written, flushed, and marked handled; preserve the one-shot completion through response bounding and verify the real Unity/Mono listener delivers the response before teardown.
+
+## 27. mods/RimWorldDevGateway — Object-bounded screenshots and host snapshots
+
+- [x] 27.1 SPEC/TDD RED: define unchanged full-frame behavior plus atomic current-map handle resolution, projected occupied-footprint union, padding, clamping, error, and resource-lifetime semantics; retain a focused failing public-interface test.
+- [x] 27.2 GREEN: implement optional object-bounded capture in the end-of-frame screenshot path and add companion-client `--things`/`--padding` support without adding Unity/runtime test dependencies.
+- [x] 27.3 VERIFY TRIAL: exercise current `Verify.NUnit` and `Verify.ImageMagick` against a deterministic PNG fixture; isolate them in a separate `net48` snapshot project if the existing Zlepper/NUnit major is incompatible, and retain the packages and approved snapshot only if the result is stable and ordinary tests remain non-interactive.
+- [x] 27.4 REVIEW/REGRESSION: review projection origin, full-frame compatibility, atomic stale/off-screen failure, overflow/resource cleanup, and CLI contract; run focused and full Gateway suites, Release/package inspection, and strict OpenSpec validation.
+- [x] 27.5 IN-GAME: on the exact reviewed Gateway build, use native-visible spawned or existing Things/Pawns, request one crop containing at least two exact handles, decode and inspect the PNG, and prove both requested targets are visible while unrelated frame area is excluded; retain request, target, screenshot, log, and exact-PID cleanup evidence.

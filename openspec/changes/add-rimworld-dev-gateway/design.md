@@ -44,7 +44,7 @@ All public routes are rooted at `/api/v1`; an unsupported `/api/vN` returns a st
 | `GET /api/v1/status` | Process ID, program/root state, optional map/tick, pending dispatcher count, and danger flags |
 | `GET /api/v1/ui-state` | Bounded program/root, pause/speed, rendered-client coordinate bounds, selected-handle/label, and window-handle/type/modal snapshot |
 | `GET /api/v1/logs?after=<sequence>&limit=<n>` | Count- and byte-bounded cursor page of structured logs |
-| `POST /api/v1/screenshots` | End-of-frame PNG capture with dimensions and capture metadata |
+| `POST /api/v1/screenshots` | End-of-frame full PNG capture, or an optional padded union crop around exact current-map Thing/Pawn handles |
 | `POST /api/v1/input/click` | Client-coordinate click against this RimWorld process |
 | `POST /api/v1/input/drag` | Timed client-coordinate drag against this RimWorld process |
 | `POST /api/v1/input/keys` | Key, chord, or text input against this RimWorld process |
@@ -105,7 +105,7 @@ Versions, pause/speed, view/input geometry, action descriptors, upload counts, a
 
 The gateway subscribes to Unity log callbacks and captures gateway/RimWorld messages into a 2,000-entry sequence-numbered ring buffer. Each entry includes sequence, UTC time, severity, a bounded message and optional stack trace, thread identity, and request ID when emitted during a gateway operation. Reads clamp to 500 entries and a 3 MiB serialized `Entries` budget. `HistoryEvicted` reports a cursor gap; `PageTruncated` separately reports that more matching retained entries remain beyond the active count or byte bound. A caller resumes a truncated read after the final returned entry sequence, not the ring-wide newest cursor.
 
-Screenshot capture is queued for end-of-frame, encodes PNG, and returns bytes with request/capture metadata headers. A JSON metadata/result form may return a manifest path instead when explicitly requested, but base64 image data is not placed in normal status responses. Captures enforce size and timeout limits and destroy temporary textures.
+Screenshot capture is queued for end-of-frame, encodes PNG, and returns bytes with the transport's correlated request ID; dimensions remain intrinsic to the PNG. `{}` preserves full-frame capture. An optional targeted request supplies exact current-map Thing/Pawn handles and non-negative pixel padding. On the Unity thread the backend enumerates the current map once, resolves every distinct handle before allocating a crop, projects the four corners of each complete occupied-cell footprint through the active map camera into the captured texture's bottom-left pixel coordinates, unions the projected rectangles, applies default 32-pixel padding, and clamps to the texture. Any stale, malformed, or wholly off-screen target fails the complete request so evidence never implies that an omitted target was observed. The captured full-frame texture is always released; a separately allocated crop texture is returned to the common encoder/resource-release path. Targeted capture reuses the endpoint's existing request-body, response, concurrency, and timeout bounds rather than introducing a second low screenshot limit. A JSON metadata/result form may return a manifest path instead when explicitly requested, but base64 image data is not placed in normal status responses.
 
 ### 5. Raw input is process-scoped; semantic actions are preferred for known controls
 

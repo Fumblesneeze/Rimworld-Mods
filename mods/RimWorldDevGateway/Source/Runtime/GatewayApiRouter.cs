@@ -412,10 +412,12 @@ public sealed class GatewayApiRouter
             if (request.Method == "POST" && request.Path == "/api/v1/screenshots")
             {
                 var screenshot = Require(services.ScreenshotService, "screenshot_unavailable");
+                var payload = DeserializeBody<GatewayScreenshotRequest>(request);
                 using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(
                     request.CancellationToken);
                 var capture = screenshot.CaptureOperation(
                     requestId,
+                    payload,
                     responseTimeout,
                     timeoutCancellation.Token);
                 var timeoutResponse = WaitForOperation(
@@ -610,8 +612,21 @@ public sealed class GatewayApiRouter
         }
         catch (GatewayScreenshotException exception)
         {
-            var status = exception.Code == "capture_busy" ? 409 : 500;
-            return Error(status, status == 409 ? "Conflict" : "Internal Server Error", requestId, exception.Code, exception.Message, stopwatch);
+            var status = exception.Code switch
+            {
+                "invalid_screenshot_request" => 400,
+                "screenshot_target_not_found" => 404,
+                "capture_busy" or "screenshot_camera_unavailable" or "screenshot_target_not_visible" => 409,
+                _ => 500
+            };
+            var reason = status switch
+            {
+                400 => "Bad Request",
+                404 => "Not Found",
+                409 => "Conflict",
+                _ => "Internal Server Error"
+            };
+            return Error(status, reason, requestId, exception.Code, exception.Message, stopwatch);
         }
         catch (GatewayInputException exception)
         {
