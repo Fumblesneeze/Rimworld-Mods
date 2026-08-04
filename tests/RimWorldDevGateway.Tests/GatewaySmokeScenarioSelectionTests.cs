@@ -745,6 +745,43 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Imported_meal_plating_scenario_leaves_the_native_cooking_job_to_player_time_control()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-imported-meal-plating.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-imported-meal-plating-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-imported-meal-plating"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("Imported Meal Plating Cook"));
+            Assert.That(setup, Does.Contain("ThingDefOf.MealSimple"));
+            Assert.That(setup, Does.Contain("ImmersiveChefs_Plate"));
+            Assert.That(setup, Does.Contain("FueledStove"));
+            Assert.That(setup, Does.Contain("SetPriority(cookingWorkType, 1)"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(meal)"));
+            Assert.That(setup, Does.Not.Contain("WorkGiver_PlateMeals"));
+            Assert.That(setup, Does.Not.Contain("ImmersiveChefs_PlateMeals"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+            Assert.That(setup, Does.Not.Contain("TryTakeOrderedJob"));
+            Assert.That(setup, Does.Not.Contain("TryEmbedPlate"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));

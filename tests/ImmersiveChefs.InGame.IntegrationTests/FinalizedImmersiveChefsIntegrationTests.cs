@@ -199,6 +199,53 @@ public static class FinalizedImmersiveChefsIntegrationTests
             "MealSimple must retain vanilla CompIngredients for variety compatibility.");
     }
 
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void ImportedMealPlatingQueueAndDiningGateAreFinalized()
+    {
+        var job = DefDatabase<JobDef>.GetNamedSilentFail("ImmersiveChefs_PlateMeals");
+        var workGiver = DefDatabase<WorkGiverDef>.GetNamedSilentFail("ImmersiveChefs_PlateMeals");
+        IntegrationAssert.NotNull(job, "The dedicated imported-meal plating JobDef must finalize.");
+        IntegrationAssert.NotNull(workGiver, "The dedicated imported-meal plating WorkGiverDef must finalize.");
+        IntegrationAssert.Equal(
+            typeof(JobDriver_PlateMeals),
+            job!.driverClass,
+            "The plating JobDef must use the native plating driver.");
+        IntegrationAssert.Equal(
+            DefDatabase<WorkTypeDef>.GetNamed("Cooking"),
+            workGiver!.workType,
+            "Imported-meal plating must be governed by Cooking work.");
+        IntegrationAssert.Equal(
+            typeof(WorkGiver_PlateMeals),
+            workGiver.giverClass,
+            "The finalized WorkGiver must scan for imported unplated meals.");
+
+        var diningBoundary = AccessTools.Method(
+            typeof(RimWorld.FoodUtility),
+            "IsFoodSourceOnMapSociallyProper",
+            new[] { typeof(Thing), typeof(Pawn), typeof(Pawn), typeof(bool) });
+        IntegrationAssert.NotNull(
+            diningBoundary,
+            "The vanilla food-selection boundary must exist for the plating gate.");
+        IntegrationAssert.True(
+            Harmony.GetPatchInfo(diningBoundary!)?.Postfixes.Any(patch =>
+                patch.owner == ImmersiveChefsMod.PackageId &&
+                patch.PatchMethod?.DeclaringType?.Name == "ImportedMealDiningGatePatch") == true,
+            "Immersive Chefs must patch the finalized normal-dining selection boundary.");
+
+        var optimalityBoundary = AccessTools.Method(
+            typeof(RimWorld.FoodUtility),
+            "FoodOptimality",
+            new[] { typeof(Pawn), typeof(Thing), typeof(ThingDef), typeof(float), typeof(bool) });
+        IntegrationAssert.NotNull(
+            optimalityBoundary,
+            "The vanilla food-optimality boundary must exist for plated-meal precedence.");
+        IntegrationAssert.True(
+            Harmony.GetPatchInfo(optimalityBoundary!)?.Postfixes.Any(patch =>
+                patch.owner == ImmersiveChefsMod.PackageId &&
+                patch.PatchMethod?.DeclaringType?.Name == "PlatedMealFoodOptimalityPatch") == true,
+            "Immersive Chefs must install the finalized plated-meal tie breaker.");
+    }
+
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedTravelFoodsUseTheCoverageContract()
     {

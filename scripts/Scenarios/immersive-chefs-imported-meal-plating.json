@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "name": "immersive-chefs-imported-meal-plating",
+  "requiredPackageIds": [
+    "brrainz.harmony",
+    "fumblesneeze.immersivechefs"
+  ],
+  "steps": [
+    {
+      "id": "setup",
+      "kind": "csharp",
+      "sourceFile": "immersive-chefs-imported-meal-plating-setup.csx"
+    },
+    {
+      "id": "ready",
+      "kind": "screenshot",
+      "fileName": "scenario-imported-meal-plating-ready.png"
+    }
+  ]
+}

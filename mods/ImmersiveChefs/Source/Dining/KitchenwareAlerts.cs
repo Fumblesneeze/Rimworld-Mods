@@ -8,7 +8,7 @@ public sealed class Alert_MissingKitchenware : Alert
     public override string GetLabel() => "Missing clean kitchenware";
 
     public override TaggedString GetExplanation() =>
-        "A player colony has cooks and plated meals enabled but lacks at least one clean cookware set, plate, or cutlery setting. Craft more kitchenware or clean the highlighted dirty items.";
+        "A player colony has cooks and plated meals enabled but lacks at least one clean cookware set, plate, or cutlery setting, or has imported meals without an operational plating surface. Craft or clean the highlighted kitchenware and provide a reachable powered or fueled stove for the highlighted unplated meals.";
 
     public override AlertReport GetReport()
     {
@@ -32,15 +32,30 @@ public sealed class Alert_MissingKitchenware : Alert
                 KitchenwareProduct.Plate,
                 KitchenwareProduct.Cutlery
             }.Any(product => !ware.Any(thing => Product(thing) == product && IsClean(thing)));
-            if (!missing)
+            var blockedMeals = map.listerThings.AllThings
+                .Where(ImportedMealPlatingRuntime.NeedsPlating)
+                .Take(64)
+                .ToList();
+            var missingSurface = blockedMeals.Count > 0 &&
+                                 !ImportedMealPlatingRuntime.HasPotentialPlatingSurface(map);
+            if (!missing && !missingSurface)
             {
                 continue;
             }
 
-            culprits.AddRange(ware.Where(thing => !IsClean(thing)));
-            if (culprits.Count == 0)
+            if (missingSurface)
             {
-                culprits.AddRange(map.mapPawns.FreeColonistsSpawned.Take(1));
+                culprits.AddRange(blockedMeals);
+            }
+
+            if (missing)
+            {
+                var dirtyWare = ware.Where(thing => !IsClean(thing)).ToList();
+                culprits.AddRange(dirtyWare);
+                if (dirtyWare.Count == 0 && !missingSurface)
+                {
+                    culprits.AddRange(map.mapPawns.FreeColonistsSpawned.Take(1));
+                }
             }
         }
 

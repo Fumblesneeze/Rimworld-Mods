@@ -95,6 +95,34 @@ public sealed class KitchenwareRecipeDefContractTests
         });
     }
 
+    [Test]
+    public void Imported_meals_have_a_dedicated_cooking_work_queue_and_dining_gate()
+    {
+        var root = FindRepositoryRoot();
+        var jobs = XDocument.Load(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Defs", "JobDefs", "PlatingJobs.xml"));
+        var workGivers = XDocument.Load(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Defs", "WorkGiverDefs", "PlatingWorkGivers.xml"));
+        var source = File.ReadAllText(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Source", "Production", "ImportedMealPlating.cs"));
+
+        var job = jobs.Root?.Elements("JobDef")
+            .Single(element => (string?)element.Element("defName") == "ImmersiveChefs_PlateMeals");
+        var workGiver = workGivers.Root?.Elements("WorkGiverDef")
+            .Single(element => (string?)element.Element("defName") == "ImmersiveChefs_PlateMeals");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)job?.Element("driverClass"),
+                Is.EqualTo("ImmersiveChefs.JobDriver_PlateMeals"));
+            Assert.That((string?)workGiver?.Element("giverClass"),
+                Is.EqualTo("ImmersiveChefs.WorkGiver_PlateMeals"));
+            Assert.That((string?)workGiver?.Element("workType"), Is.EqualTo("Cooking"));
+            Assert.That(source, Does.Contain("IsFoodSourceOnMapSociallyProper"));
+            Assert.That(source, Does.Contain("RecordFailedPlatingOpportunity"));
+        });
+    }
+
     private static string? RequiredWorkType(XDocument document, string defName)
     {
         var recipe = document.Root?.Elements("RecipeDef")

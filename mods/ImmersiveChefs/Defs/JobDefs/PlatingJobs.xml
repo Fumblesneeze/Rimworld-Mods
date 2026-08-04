@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <JobDef>
+    <defName>ImmersiveChefs_PlateMeals</defName>
+    <driverClass>ImmersiveChefs.JobDriver_PlateMeals</driverClass>
+    <reportString>Plating meals.</reportString>
+    <casualInterruptible>true</casualInterruptible>
+  </JobDef>
+</Defs>

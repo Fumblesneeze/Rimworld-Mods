@@ -369,6 +369,18 @@ Use the VNPE variant to exercise the installed mod's real pipe-backed tap and va
   -ExpectedLogMarkers '[ImmersiveChefs] Vanilla Nutrient Paste Expanded adapter active'
 ```
 
+Use the imported-meal plating scene to verify trade, quest, drop-pod, scenario, or mod-created covered meals without recooking them. The passive setup creates an unplated three-meal stack with Rice provenance, quality 73, temperature/rot state, three clean plates, a fueled stove, and one Cooking-only pawn, then pauses without calling the plating workgiver or starting a job. Resume game time; the native work scheduler should move the stack to the stove and its ordinary inspector should change from `Service ware: unplated` to `Bound plates: 3` while the existing food data remains:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -RunIntegrationTests -VisibleWindow `
+  -Scenario immersive-chefs-imported-meal-plating `
+  -InteractiveHoldSeconds 180 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedIntegrationTests 'fumblesneeze.immersivechefs|PlayableMapLoaded|ImmersiveChefs.InGame.IntegrationTests.FinalizedImmersiveChefsIntegrationTests.ImportedMealPlatingQueueAndDiningGateAreFinalized' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell

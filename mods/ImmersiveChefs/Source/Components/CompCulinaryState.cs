@@ -84,6 +84,19 @@ public sealed class CompCulinaryState : ThingComp
         servings[index] = CulinaryServingData.From(record);
     }
 
+    internal void AddContaminationToServing(int index, ContaminationSources contamination)
+    {
+        EnsureServingCount();
+        if (index < 0 || index >= servings.Count)
+        {
+            return;
+        }
+
+        var record = servings[index].ToRecord();
+        record.AddContamination(contamination);
+        servings[index] = CulinaryServingData.From(record);
+    }
+
     public void EnsureServingCount()
     {
         while (servings.Count < parent.stackCount)

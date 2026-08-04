@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <WorkGiverDef>
+    <defName>ImmersiveChefs_PlateMeals</defName>
+    <label>plate meals</label>
+    <giverClass>ImmersiveChefs.WorkGiver_PlateMeals</giverClass>
+    <workType>Cooking</workType>
+    <verb>plate</verb>
+    <gerund>plating meals</gerund>
+    <priorityInType>95</priorityInType>
+    <scanThings>true</scanThings>
+    <scanCells>false</scanCells>
+    <requiredCapacities><li>Manipulation</li></requiredCapacities>
+  </WorkGiverDef>
+</Defs>

@@ -130,6 +130,47 @@ public sealed class HarmonyIsolationTests
         Assert.That(attempts, Is.EqualTo(2));
     }
 
+    [Test]
+    public void Imported_meal_food_selection_patches_bind_to_the_real_rimworld_signatures()
+    {
+        var productAssembly = typeof(ImmersiveChefsMod).Assembly;
+        var diningPatch = productAssembly
+            .GetType("ImmersiveChefs.ImportedMealDiningGatePatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var optimalityPatch = productAssembly
+            .GetType("ImmersiveChefs.PlatedMealFoodOptimalityPatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var diningBoundary = AccessTools.Method(
+            typeof(RimWorld.FoodUtility),
+            "IsFoodSourceOnMapSociallyProper",
+            new[] { typeof(Verse.Thing), typeof(Verse.Pawn), typeof(Verse.Pawn), typeof(bool) });
+        var optimalityBoundary = AccessTools.Method(
+            typeof(RimWorld.FoodUtility),
+            "FoodOptimality",
+            new[] { typeof(Verse.Pawn), typeof(Verse.Thing), typeof(Verse.ThingDef), typeof(float), typeof(bool) });
+
+        Assert.That(diningBoundary, Is.Not.Null);
+        Assert.That(optimalityBoundary, Is.Not.Null);
+        Assert.That(
+            () =>
+            {
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.imported-dining-gate",
+                           diningBoundary!,
+                           diningPatch))
+                {
+                }
+
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.plated-optimality",
+                           optimalityBoundary!,
+                           optimalityPatch))
+                {
+                }
+            },
+            Throws.Nothing);
+    }
+
     private static string ComputeSha256(string path)
     {
         using var stream = File.OpenRead(path);

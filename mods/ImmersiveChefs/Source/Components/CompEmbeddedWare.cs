@@ -16,12 +16,15 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
 {
     private ThingOwner<Thing>? embeddedPlates;
     private int lastFireDamageTick = -1;
+    private bool platingOpportunityFailed;
     private readonly IngestionLifecycleState ingestionLifecycle = new();
 
     private ThingOwner<Thing> EmbeddedPlates =>
         embeddedPlates ??= new ThingOwner<Thing>(this, oneStackOnly: false, LookMode.Deep);
 
     public int EmbeddedPlateCount => EmbeddedPlates.InnerListForReading.Sum(plate => plate.stackCount);
+
+    public bool PlatingOpportunityFailed => platingOpportunityFailed;
 
     public IReadOnlyList<PlateBinding> Bindings => EmbeddedPlates.InnerListForReading
         .SelectMany(plate => Enumerable.Repeat(Snapshot(plate), plate.stackCount))
@@ -35,13 +38,20 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
             return false;
         }
 
+        bool embedded;
         if (plate.holdingOwner is { } sourceOwner)
         {
-            return sourceOwner.TryTransferToContainer(
+            embedded = sourceOwner.TryTransferToContainer(
                 plate,
                 EmbeddedPlates,
                 1,
                 canMergeWithExistingStacks: false) == 1;
+            if (embedded && EmbeddedPlateCount >= parent.stackCount)
+            {
+                platingOpportunityFailed = false;
+            }
+
+            return embedded;
         }
 
         var single = plate.stackCount > 1 ? plate.SplitOff(1) : plate;
@@ -50,7 +60,18 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
             single.DeSpawn(DestroyMode.Vanish);
         }
 
-        return EmbeddedPlates.TryAdd(single, canMergeWithExistingStacks: false);
+        embedded = EmbeddedPlates.TryAdd(single, canMergeWithExistingStacks: false);
+        if (embedded && EmbeddedPlateCount >= parent.stackCount)
+        {
+            platingOpportunityFailed = false;
+        }
+
+        return embedded;
+    }
+
+    public void RecordFailedPlatingOpportunity()
+    {
+        platingOpportunityFailed = true;
     }
 
     public Thing? ReleasePlateThing()
@@ -159,13 +180,22 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
             return;
         }
 
+        target.platingOpportunityFailed = platingOpportunityFailed;
         TransferTo(target, Math.Min(piece.stackCount, EmbeddedPlateCount));
     }
 
     public override void PreAbsorbStack(Thing otherStack, int count)
     {
         var source = (otherStack as ThingWithComps)?.GetComp<CompEmbeddedWare>();
+        platingOpportunityFailed |= source?.platingOpportunityFailed == true;
         source?.TransferTo(this, Math.Min(count, source.EmbeddedPlateCount));
+    }
+
+    public override bool AllowStackWith(Thing other)
+    {
+        var otherComp = (other as ThingWithComps)?.GetComp<CompEmbeddedWare>();
+        return otherComp is not null &&
+               platingOpportunityFailed == otherComp.platingOpportunityFailed;
     }
 
     public override string CompInspectStringExtra() =>
@@ -175,6 +205,7 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
     {
         Scribe_Deep.Look(ref embeddedPlates, "embeddedPlates", this);
         Scribe_Values.Look(ref lastFireDamageTick, "lastFireDamageTick", -1);
+        Scribe_Values.Look(ref platingOpportunityFailed, "platingOpportunityFailed", false);
         embeddedPlates ??= new ThingOwner<Thing>(this, oneStackOnly: false, LookMode.Deep);
     }
 
