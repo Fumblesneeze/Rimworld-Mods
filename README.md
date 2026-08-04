@@ -336,6 +336,17 @@ Use the nutrient-paste dining scene to verify the ordinary vanilla dispenser pat
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
+Use the prepared-paste scene to verify the separate player-ordered ingredient output. It creates and closely frames a real powered dispenser/hopper fixture with one selected operator and no plate or cutlery. The scenario deliberately does not start a job: right-click the dispenser, choose `Dispense prepared cooking paste`, then resume at Normal speed. The resulting prepared-ingredient stack should visibly report preparation quality 20, source `nutrient paste`, and nutrition per unit 0.05 rather than becoming an edible nutrient-paste meal:
+
+```powershell
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
+  -Scenario immersive-chefs-prepared-paste-dispensing `
+  -InteractiveHoldSeconds 300 `
+  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
+  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+```
+
 Keep an otherwise unmodified isolated game open for hands-on behavior checks:
 
 ```powershell

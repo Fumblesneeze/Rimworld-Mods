@@ -624,6 +624,43 @@ public sealed class GatewaySmokeScenarioSelectionTests
         });
     }
 
+    [Test]
+    public void Prepared_paste_scenario_leaves_the_dispense_order_to_native_player_input()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var descriptorPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-prepared-paste-dispensing.json");
+        var setupPath = Path.Combine(
+            scenarioDirectory,
+            "immersive-chefs-prepared-paste-dispensing-setup.csx");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(descriptorPath), Is.True);
+            Assert.That(File.Exists(setupPath), Is.True);
+        });
+
+        var descriptor = File.ReadAllText(descriptorPath);
+        var setup = File.ReadAllText(setupPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("immersive-chefs-prepared-paste-dispensing"));
+            Assert.That(descriptor, Does.Not.Contain("-arm.csx"));
+            Assert.That(setup, Does.Contain("NutrientPasteDispenser"));
+            Assert.That(setup, Does.Contain("ThingDefOf.Hopper"));
+            Assert.That(setup, Does.Contain("map.fogGrid.Unfog(cell)"));
+            Assert.That(setup, Does.Contain("Find.CameraDriver.SetRootPosAndSize"));
+            Assert.That(setup, Does.Contain("Find.Selector.Select(worker)"));
+            Assert.That(setup, Does.Not.Contain("TryDispenseFood"));
+            Assert.That(setup, Does.Not.Contain("ImmersiveChefs_PreparedFood"));
+            Assert.That(setup, Does.Not.Contain("ImmersiveChefs_DispensePreparedPaste"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+            Assert.That(setup, Does.Not.Contain("TryTakeOrderedJob"));
+        });
+    }
+
     private static InvocationResult InvokeScenarioResolver(string? descriptorJson = null)
     {
         var root = Path.Combine(Path.GetTempPath(), "GatewaySmokeScenarioSelectionTests", Guid.NewGuid().ToString("N"));
