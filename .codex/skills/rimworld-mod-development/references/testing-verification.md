@@ -29,6 +29,20 @@ Without the exact `-devGatewayRunIntegrationTests` startup flag, the Gateway mus
 
 Use `POST /api/v1/defs/export` to retain a bounded deterministic JSON view of finalized Defs for patch authoring. Treat it as runtime diagnostic data, not canonical source XML: private/finalized fields, repeated references, truncation markers, and projection warnings are possible. Request exact Def types/names/package IDs plus only the exact top-level `fieldNames` needed (for example `label`, `statBases`, and `modExtensions`), and follow `NextCursor` until `Truncated` is false. A byte-bounded page can contain fewer items than `pageSize`; that continuation is expected, not an export failure. Retain source warnings, missing-field warnings, the exact ordered mod list, and the response alongside the XML-patch integration assertion.
 
+## Grouped multi-frame E2E tests
+
+Use a separately marked E2E project for a workflow that needs ordinary game frames, native actions, pawn jobs, waits, and player-visible observations. Set `RimWorldEndToEndTest=true` and one `RimWorldEndToEndTestOwnerPackageId`; keep the assembly outside product `Assemblies` and NUnit/VSTest. Each attributed test declares its globally stable ID, owner, complete ordered non-Gateway package set, and deadlines.
+
+```powershell
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -DryRun -Output json
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -TimeoutSeconds 300 -Output table
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -GroupId <stable-group-id> -Output json
+```
+
+The runner discovers downloaded package IDs, deploys repo-owned products before marker-owned staging, appends Gateway last, launches one fresh isolated process per exact group, and runs same-group tests sequentially. Its runtime reset removes every destroyable disposable Thing/Pawn plus zones, designations, selection, interactions, and test windows; permanent non-destroyable map features remain environment. A failed reset taints the process and skips later tests. The host persists aggregate JSON/JUnit and screenshots, shuts down the exact PID, sanitizes credentials, and cleans only its exact lease in `finally`.
+
+Prefer action → wait → observation steps that exercise the same native path a player uses. Direct arrangement may create preconditions but must not create the claimed result. After a reviewed run, inspect the exact native screenshots yourself and describe the visible causal result. Endpoint state, logs, and synthetic assertions do not independently satisfy acceptance.
+
 ## Package checks
 
 Build Release against `DefaultRimWorldPath` and inspect `artifacts/Mods/<package-id>/1.6`. Confirm:

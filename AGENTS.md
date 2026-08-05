@@ -104,6 +104,10 @@ dotnet build .\ImmersiveChefs.sln -c Release
 openspec validate --all --strict --no-interactive
 .\scripts\Invoke-RimWorldSmoke.ps1 -DryRun -Output json
 .\scripts\Invoke-GatewaySmoke.ps1 -DryRun -Output json
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -DryRun -Output json
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -GroupId ludeon.rimworld -Output json
 ```
+
+Use the grouped E2E runner for repeatable multi-frame player workflows. Each attributed test declares its complete exact non-Gateway package order; the runner appends Gateway last, deploys before staging, starts one fresh isolated process per group, executes same-group tests sequentially, persists screenshots/results, and cleans its exact lease. Do not manually pre-stage E2E bundles for routine verification. A green group is supporting evidence until the acting agent personally inspects its exact-run screenshots and confirms the native action caused the visible outcome.
 
 Normal builds must remain repository-local. Deploy into only the exact local package-ID folder and only for an intentional isolated run; never deploy into Workshop content. Inspect `README.md`, `docs/Development.md`, and `docs/Gateway.md` for current commands, API details, and evidence conventions. Durable run evidence and its TDD ledger remain local under ignored artifact/report paths and must be regenerated for the revision under test.

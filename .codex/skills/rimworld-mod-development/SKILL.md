@@ -59,14 +59,17 @@ Run verification in this order:
 3. Release package build and assembly/About/XML inspection.
 4. Independent repo-local `code-review` pass, accepted fixes, then regression and package reruns.
 5. Startup-gated in-game integration tests when the claim depends on finalized Defs, PatchOperations, the real mod list, or complete Harmony application; build and stage only opted-in test projects, then retain the Gateway's lifecycle results.
-6. Final isolated Core-plus-target-mod game start using the reviewed build.
-7. Actual player action, driven through the native UI/game-command/job path with authenticated Dev Gateway control when useful.
-8. Personal observation of the resulting player-visible behavior through the live view or exact-run before/action/after screenshots; use exact-PID FlaUI when the gateway cannot expose the needed control or view.
-9. Evidence retention and OpenSpec task-state update.
+6. Grouped E2E tests for repeatable multi-frame player workflows: run `scripts/Invoke-RimWorldEndToEndTests.ps1 -DryRun` first, then the selected exact groups. Do not manually pre-stage routine E2E bundles.
+7. Final isolated Core-plus-target-mod game start using the reviewed build.
+8. Actual player action, driven through the native UI/game-command/job path with authenticated Dev Gateway control when useful.
+9. Personal observation of the resulting player-visible behavior through the live view or exact-run before/action/after screenshots; use exact-PID FlaUI when the gateway cannot expose the needed control or view.
+10. Evidence retention and OpenSpec task-state update.
 
 TDD, build success, review, logs, loaded Defs/patches, API responses, and raw-C# state checks are supporting gates, not gameplay acceptance. Do not accept a behavior until the acting agent exercises the real player workflow and observes its in-game result. If a review fix or later edit can affect runtime behavior, repeat the final live run on that revision.
 
 Keep in-game test assemblies out of ordinary packages and `Assemblies/`. Mark their project with `RimWorldInGameIntegrationTest=true`, declare `RimWorldIntegrationTestOwnerPackageId`, and stage with `scripts/Build-InGameIntegrationTests.ps1`. For product evidence, start the isolated Gateway smoke with `-RunIntegrationTests`, the complete `-AdditionalModIds`, the owning `-AdditionalModProjectPaths`, and at least one exact `-ExpectedIntegrationTests` entry. A Core-plus-Gateway run proves only the Gateway; it cannot prove a product mod's XML or Harmony patches. Never invoke a compiler from inside RimWorld. Use `[IntegrationTest(RunAt.MainMenuLoaded)]` for finalized Def/XML/Harmony assertions and `PlayableMapLoaded` only when a real map is necessary. A passing integration assertion remains diagnostic evidence, not player-behavior acceptance.
+
+Keep multi-frame E2E tests in separately marked `RimWorldEndToEndTest=true` projects with one `RimWorldEndToEndTestOwnerPackageId`. Declare the complete exact active package order on every attributed test, excluding Gateway; the host appends it last. Use typed native actions/waits/observations and let the grouped runner deploy before atomic staging, start one process per group, reset destroyable disposable map state between tests, aggregate results, and clean the lease. Inspect the exact-run screenshots personally before accepting behavior; a passing E2E endpoint alone is insufficient.
 
 Never edit the user's normal `ModsConfig.xml` for automation. Use `-savedatafolder`, retain the evidence directory and logs, close only the launched PID, and verify the normal configuration hash is unchanged.
 

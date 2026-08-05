@@ -12,6 +12,7 @@ The transport graph is pinned to EmbedIO 3.5.2, `Unosquare.Swan.Lite` 3.1.0, and
 
 - `RimWorldDevGateway.dll`
 - `RimWorldDevGateway.Contracts.dll`
+- `RimWorldDevGateway.EndToEndTesting.dll`
 - `RimWorldDevGateway.IntegrationTesting.dll`
 - `EmbedIO.dll`
 - `Mono.CSharp.dll`
@@ -108,6 +109,7 @@ All routes are below the manifest's `/api/v1` `baseUrl`.
 | `POST /automations/{name}/runs` | `run NAME [--arguments JSON]` | Run synchronously and return a terminal automation run; `automations run` is an alias |
 | `POST /defs/export` | direct HTTP | Bounded deterministic JSON snapshots from finalized live Def databases |
 | `GET /integration-tests` | direct HTTP | Startup-gated in-game integration-test state and immutable results |
+| `GET /end-to-end-tests` | direct HTTP | Startup-gated multi-frame E2E discovery, current step, durable terminal results, and screenshot artifacts |
 | `POST /dev-tools/actions/query` | direct HTTP | Discover bounded native debug-action leaves |
 | `POST /dev-tools/actions/{handle}/invoke` | direct HTTP | Invoke an immediate action or activate its native pointer tool |
 | `POST /dev-tools/spawn` | direct HTTP | Idempotent direct alias for the preflighted `quickstart.spawn` engine |
@@ -442,6 +444,26 @@ One background persistence lane serializes and atomically writes the token-free 
 Exception output is intentionally conservative. The runner never calls arbitrary `ToString`, `Message`, or `StackTrace`; only exact trusted assertion and standard wrapper types can contribute separately bounded message/stack components, and untrusted exceptions receive a fixed suppression marker. Components are truncated before credential redaction and diagnostic concatenation. A fresh isolated RimWorld PID is the only supported reset because test assemblies, Def databases, Harmony owners, a stuck discovery worker, and engine statics cannot be reliably unloaded, cancelled, or restored.
 
 These tests are appropriate for final Def/PatchOperation assertions and `Harmony.GetPatchInfo` checks under selected mod combinations. They are diagnostic integration evidence. Passing them does not accept a player-visible feature: the separate native player action and personally observed before/action/after workflow in `AGENTS.md` still applies.
+
+## Startup-gated multi-frame E2E tests
+
+The E2E tier codifies repeatable player workflows that cannot finish in one lifecycle method. Marked test projects remain outside product packages and ordinary NUnit/VSTest registration, reference `RimWorldDevGateway.EndToEndTesting`, and declare one owner package. Each `[RimWorldEndToEndTest]` type provides a stable ID, its complete ordered non-Gateway active package list, per-test frame/tick/wall-clock deadlines, `Arrange`, and an iterator of typed action/wait/observation steps.
+
+Use the grouped host runner:
+
+```powershell
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -DryRun -Output json
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -TimeoutSeconds 300 -Output table
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -GroupId ludeon.rimworld -Output json
+```
+
+The runner discovers installed package IDs from Core/DLC/local/Workshop metadata, passes large inventories through a temporary UTF-8 package-ID file, builds and deploys every repo-owned test owner before staging, and atomically publishes marker-owned bundles under each owner's `1.6\DevEndToEndTests`. It appends Gateway last, starts one fresh minimized isolated process per exact group, and runs same-group tests sequentially. The game never builds tests. `-devGatewayRunEndToEndTests` is the only discovery gate; without it the Gateway does not enumerate or load E2E bundles.
+
+At runtime, discovery verifies the owner, complete real active order, assembly identity/hash, attribute metadata, and host manifest before byte-loading the test assembly. The execution state machine persists each admitted transition before invoking the next action. Native steps reuse Gateway time, selection, camera, gizmo, float-menu, screen-local input, and end-of-frame screenshot services. `GET /end-to-end-tests` returns retryable pending until the initial token-free snapshot is durable, then exposes discovery, the current test/step, and terminal results. Screenshots are persisted in the same session directory and referenced by the corresponding observation step.
+
+Before and after every test, the process pauses and removes all destroyable spawned Things/Pawns, zones, designations, selection, active interactions, and test-opened windows. Permanent non-destroyable map features such as quicktest steam geysers remain environment. Cleanup restores control/camera state and verifies the disposable baseline; an unverifiable reset taints the process and skips later tests. The host continues with later independent mod groups, writes aggregate JSON/JUnit, shuts down the exact PID, sanitizes credentials, and removes only the exact leased test stage in `finally`.
+
+E2E state and assertions remain supporting automation. Acceptance still requires the acting agent to inspect the exact run's native screenshots and confirm that the recorded player action caused the visible outcome; logs or a green endpoint alone are insufficient.
 
 ## Automations and quickstart
 

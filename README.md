@@ -136,6 +136,7 @@ Inspect a dry run first:
 .\scripts\Build-InGameIntegrationTests.ps1 `
   -ActivePackageIds @('ludeon.rimworld','fumblesneeze.rimworlddevgateway') `
   -DryRun -Output json
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -DryRun -Output json
 ```
 
 Gateway launches write an isolated `SavedData\Config\Prefs.xml` with `runInBackground=True` and `volumeMusic=0`, then start RimWorld minimized by default, so semantic/API-driven verification can continue without music or taking over the desktop. Add `-VisibleWindow` only when a person, computer-use tool, or desktop input check needs the game window; `-Scenario gateway-regression` selects a visible window automatically because it owns the FlaUI/raw-input checks. Dry-run and completed results report `Prefs`, `RunInBackground`, `MusicVolume`, and the requested `LaunchWindowStyle`. After process start the launcher does not inspect or enforce window state: the user remains free to restore or maximize the window without affecting the run. The launcher hashes the user's normal `Prefs.xml` before and after and fails if it changed.
@@ -151,6 +152,24 @@ Run the gateway and its staged in-game tests:
 ```powershell
 .\scripts\Invoke-GatewaySmoke.ps1 -RunIntegrationTests -TimeoutSeconds 180
 ```
+
+Run dynamically loaded, multi-frame E2E workflows grouped by their exact declared mod lists:
+
+```powershell
+# Discover/build tests and print every planned exact-mod launch without touching the game install.
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -DryRun -Output json
+
+# Run every resolvable group, one fresh minimized RimWorld process per group.
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -TimeoutSeconds 300 -Output table
+
+# Run one stable group ID.
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 `
+  -GroupId ludeon.rimworld `
+  -TimeoutSeconds 300 `
+  -Output json
+```
+
+The runner discovers downloaded package IDs from the game, local mods, DLC data, and Workshop folders; transports large inventories through a temporary UTF-8 package-ID file; deploys repo-owned product mods before publishing marker-owned test bundles; and always removes its exact leased stage. Each group gets an isolated save-data/config directory, aggregate JSON, JUnit, durable endpoint state, and step screenshots below `artifacts\EndToEndRuns\Grouped`. E2E assemblies stay outside product `Assemblies` and ordinary NUnit/VSTest runs. A passing result proves the codified workflow, but the acting agent must still inspect that run's native before/action/after screenshots before accepting game behavior.
 
 Run the Immersive Chefs XML/integration matrix with both loaded mods:
 
