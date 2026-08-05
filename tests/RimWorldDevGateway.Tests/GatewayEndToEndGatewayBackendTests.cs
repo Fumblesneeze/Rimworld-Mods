@@ -225,6 +225,7 @@ public sealed class GatewayEndToEndGatewayBackendTests
             new GatewayCameraController(camera),
             new GatewayGizmoRegistry(gizmos),
             new PassingFloatMenus(),
+            new PassingTradeDialogs(),
             new GatewayWindowsInput(),
             new GatewayScreenshotService(
                 dispatcher ?? new GatewayDispatcher(),
@@ -369,6 +370,12 @@ public sealed class GatewayEndToEndGatewayBackendTests
     private sealed class PassingFloatMenus : IGatewayEndToEndFloatMenuActions
     {
         public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step) =>
+            GatewayEndToEndStepOutcome.Pass();
+    }
+
+    private sealed class PassingTradeDialogs : IGatewayEndToEndTradeDialogActions
+    {
+        public GatewayEndToEndStepOutcome Apply(TradeDialogActionStep step) =>
             GatewayEndToEndStepOutcome.Pass();
     }
 

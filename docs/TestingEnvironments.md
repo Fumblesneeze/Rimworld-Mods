@@ -70,7 +70,7 @@ Use `[IntegrationTest(RunAt.MainMenuLoaded)]` for finalized Def values, PatchOpe
 
 ## Dynamically loaded E2E assemblies
 
-Use E2E tests for repeatable workflows that span multiple Unity frames: ordinary pawn jobs, native gizmos or float menus, time progression, selection/camera behavior, ingestion, hauling, construction, and their player-visible results. E2E projects set `RimWorldEndToEndTest=true`, declare one `RimWorldEndToEndTestOwnerPackageId`, reference only the shared E2E contract plus required game assemblies, and remain outside product packages and ordinary NUnit/VSTest registration.
+Use E2E tests for repeatable workflows that span multiple Unity frames: ordinary pawn jobs, native gizmos or float menus, typed trade-dialog transfer/acceptance, time progression, selection/camera behavior, ingestion, hauling, construction, and their player-visible results. Prefer a typed semantic action for a known native control that can be resolved exactly; `TradeDialogActionStep` keeps orbital/settlement trade minimized by resolving the exact physical Thing's `Tradeable`, using RimWorld's native count setter/refresh, and invoking the exact native Accept callback. Keep process-scoped Win32 input for unknown UI, map pointer tools, drags, keys, and text because that route explicitly requires a visible foreground window. E2E projects set `RimWorldEndToEndTest=true`, declare one `RimWorldEndToEndTestOwnerPackageId`, reference only the shared E2E contract plus required game assemblies, and remain outside product packages and ordinary NUnit/VSTest registration.
 
 ```powershell
 .\scripts\Invoke-RimWorldEndToEndTests.ps1 -DryRun -Output json

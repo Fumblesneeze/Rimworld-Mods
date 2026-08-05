@@ -24,6 +24,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
                 EndToEndGizmoInteraction.Invoke,
                 "stable-gizmo"),
             new FloatMenuActionStep("float", "pawn_1", "thing_1", "stable-option"),
+            TradeDialogActionStep.AdjustTransfer("trade", "meal_1", -1),
             ProcessInputActionStep.Click(
                 "click",
                 new EndToEndScreenPoint(10, 20),
@@ -37,11 +38,11 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "camera", "gizmo", "float", "input", "screenshot"
+                "time", "selection", "camera", "gizmo", "float", "trade", "input", "screenshot"
             }));
-            Assert.That(operations.Take(5).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[5], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[6], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations.Take(6).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[6], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[7], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -87,6 +88,9 @@ public sealed class GatewayEndToEndNativeStepDriverTests
 
         public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step, IEndToEndContext context) =>
             Record("float");
+
+        public GatewayEndToEndStepOutcome Apply(TradeDialogActionStep step, IEndToEndContext context) =>
+            Record("trade");
 
         public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)
         {

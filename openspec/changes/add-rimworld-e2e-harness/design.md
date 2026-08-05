@@ -41,6 +41,7 @@ Initial typed steps cover:
 
 - exact native gizmo invocation from Thing owners and/or architect category Def names, plus exact float-menu order invocation;
 - process-scoped click, drag, chord, key, and text input when no semantic path exists;
+- exact native trade-dialog transfer and acceptance actions that can run without restoring the minimized game window;
 - pause and native speed control;
 - thing selection and camera framing;
 - predicate waits with test-declared frame, game-tick, and wall-clock deadlines;
@@ -48,6 +49,8 @@ Initial typed steps cover:
 - named observable checkpoints and bounded assertion details.
 
 Product-owned test assemblies discover current right-click options through a host-safe `IEndToEndFloatMenuCatalog` context service. The returned metadata contains only visible label, disabled state, and a callback-sensitive stable identity. The test then submits that identity through `FloatMenuActionStep`; Gateway re-queries immediately and invokes the one exact native callback. This avoids a product-test dependency on Gateway internals and avoids retaining Unity/RimWorld delegates across frames.
+
+`TradeDialogActionStep` is a narrow semantic adapter for the native trade window. Adjustment re-resolves the exact current `Tradeable` by physical Thing ID, uses the native count setter and dialog refresh, and acceptance invokes the exact compiler-generated callback owned by `Dialog_Trade`; version-shape drift fails instead of approximating the deal. This is deliberately separate from `ProcessInputActionStep`: known trade semantics remain minimized and deterministic, while map pointer tools, drags, keys, text, and unknown surfaces retain foreground Win32 input. Observable waits and screenshots still prove that the real trade deal and delivery occurred.
 
 Tests may inspect Verse state inside predicates and assertions, but a direct mutation cannot be registered as the player action or observable result. Each test result records which steps were `arrange`, `act`, `wait`, and `observe`. This makes dishonest fixtures reviewable without attempting to sandbox test code.
 

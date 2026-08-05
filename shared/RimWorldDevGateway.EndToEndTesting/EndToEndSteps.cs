@@ -317,6 +317,53 @@ public sealed class ProcessInputActionStep : EndToEndStep
     }
 }
 
+public enum EndToEndTradeDialogAction
+{
+    AdjustTransfer = 0,
+    Accept = 1
+}
+
+public sealed class TradeDialogActionStep : EndToEndStep
+{
+    private TradeDialogActionStep(
+        string name,
+        EndToEndTradeDialogAction action,
+        string? thingRuntimeId,
+        int countDelta)
+        : base(name, EndToEndStepKind.Act)
+    {
+        Action = action;
+        ThingRuntimeId = thingRuntimeId;
+        CountDelta = countDelta;
+    }
+
+    public EndToEndTradeDialogAction Action { get; }
+
+    public string? ThingRuntimeId { get; }
+
+    public int CountDelta { get; }
+
+    public static TradeDialogActionStep AdjustTransfer(
+        string name,
+        string thingRuntimeId,
+        int countDelta)
+    {
+        if (countDelta == 0 || countDelta is < -10_000 or > 10_000)
+        {
+            throw new ArgumentOutOfRangeException(nameof(countDelta));
+        }
+
+        return new TradeDialogActionStep(
+            name,
+            EndToEndTradeDialogAction.AdjustTransfer,
+            StepValues.Required(thingRuntimeId, nameof(thingRuntimeId)),
+            countDelta);
+    }
+
+    public static TradeDialogActionStep Accept(string name) =>
+        new(name, EndToEndTradeDialogAction.Accept, null, 0);
+}
+
 public sealed class WaitUntilStep : EndToEndStep
 {
     public WaitUntilStep(string name, Func<IEndToEndContext, bool> predicate, EndToEndDeadline deadline)

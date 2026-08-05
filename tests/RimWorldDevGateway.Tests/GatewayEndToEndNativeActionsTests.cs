@@ -421,6 +421,9 @@ public sealed class GatewayEndToEndNativeActionsTests
             return GatewayEndToEndStepOutcome.Pass();
         }
 
+        public GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step) =>
+            GatewayEndToEndStepOutcome.Pass();
+
         public IGatewayEndToEndStepOperation BeginInput(
             ProcessInputActionStep step,
             IEndToEndContext context)

@@ -201,6 +201,8 @@ public static class GatewayRuntimeBootstrap
                 if (endToEndTests.Snapshot.Enabled)
                 {
                     var floatMenus = new VerseGatewayEndToEndFloatMenuActions();
+                    var tradeDialogs = new GatewayEndToEndTradeDialogActions(
+                        new VerseGatewayEndToEndTradeDialogOperations());
                     var gizmoCatalog = new GatewayEndToEndGizmoCatalog(gizmos);
                     var clock = new VerseGatewayEndToEndClock();
                     var isolation = new GatewayEndToEndTestIsolation(
@@ -238,6 +240,7 @@ public static class GatewayRuntimeBootstrap
                                         camera,
                                         gizmos,
                                         floatMenus,
+                                        tradeDialogs,
                                         windowsInput,
                                         screenshots,
                                         artifactDirectory))),

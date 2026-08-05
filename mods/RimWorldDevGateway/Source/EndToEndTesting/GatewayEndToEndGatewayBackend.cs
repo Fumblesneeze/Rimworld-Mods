@@ -25,6 +25,7 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
     private readonly GatewayCameraController camera;
     private readonly GatewayGizmoRegistry gizmos;
     private readonly IGatewayEndToEndFloatMenuActions floatMenus;
+    private readonly IGatewayEndToEndTradeDialogActions tradeDialogs;
     private readonly GatewayWindowsInput input;
     private readonly GatewayScreenshotService screenshots;
     private readonly string artifactDirectory;
@@ -35,6 +36,7 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
         GatewayCameraController camera,
         GatewayGizmoRegistry gizmos,
         IGatewayEndToEndFloatMenuActions floatMenus,
+        IGatewayEndToEndTradeDialogActions tradeDialogs,
         GatewayWindowsInput input,
         GatewayScreenshotService screenshots,
         string artifactDirectory)
@@ -44,6 +46,7 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
         this.camera = camera ?? throw new ArgumentNullException(nameof(camera));
         this.gizmos = gizmos ?? throw new ArgumentNullException(nameof(gizmos));
         this.floatMenus = floatMenus ?? throw new ArgumentNullException(nameof(floatMenus));
+        this.tradeDialogs = tradeDialogs ?? throw new ArgumentNullException(nameof(tradeDialogs));
         this.input = input ?? throw new ArgumentNullException(nameof(input));
         this.screenshots = screenshots ?? throw new ArgumentNullException(nameof(screenshots));
         if (string.IsNullOrWhiteSpace(artifactDirectory))
@@ -122,6 +125,9 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
     public GatewayEndToEndStepOutcome ApplyFloatMenu(
         FloatMenuActionStep step,
         IEndToEndContext context) => floatMenus.Apply(step);
+
+    public GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step) =>
+        tradeDialogs.Apply(step);
 
     public IGatewayEndToEndStepOperation BeginInput(
         ProcessInputActionStep step,

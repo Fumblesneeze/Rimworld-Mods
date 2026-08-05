@@ -75,6 +75,11 @@ public sealed class EndToEndTestingContractTests
             new TimeControlActionStep("run", paused: false, speed: EndToEndGameSpeed.Superfast),
             new SelectionActionStep("select-meal", new[] { "thing:meal:7" }, additive: false),
             new CameraActionStep("frame-meal", new[] { "thing:meal:7" }, paddingPixels: 24),
+            TradeDialogActionStep.AdjustTransfer(
+                "buy-one-meal",
+                "MealFine42",
+                countDelta: -1),
+            TradeDialogActionStep.Accept("accept-trade"),
             ProcessInputActionStep.Click("click-gizmo", new EndToEndScreenPoint(100, 200), EndToEndMouseButton.Left),
             ProcessInputActionStep.Drag(
                 "drag-zone",
@@ -96,12 +101,24 @@ public sealed class EndToEndTestingContractTests
             EndToEndStepKind.Act,
             EndToEndStepKind.Act,
             EndToEndStepKind.Act,
+            EndToEndStepKind.Act,
+            EndToEndStepKind.Act,
             EndToEndStepKind.Wait,
             EndToEndStepKind.Observe,
             EndToEndStepKind.Observe,
             EndToEndStepKind.Observe
         }));
-        Assert.That(((WaitUntilStep)steps[7]).Deadline, Is.SameAs(waitDeadline));
+        Assert.That(((WaitUntilStep)steps[9]).Deadline, Is.SameAs(waitDeadline));
+        Assert.Multiple(() =>
+        {
+            var adjust = (TradeDialogActionStep)steps[5];
+            Assert.That(adjust.Action, Is.EqualTo(EndToEndTradeDialogAction.AdjustTransfer));
+            Assert.That(adjust.ThingRuntimeId, Is.EqualTo("MealFine42"));
+            Assert.That(adjust.CountDelta, Is.EqualTo(-1));
+            var accept = (TradeDialogActionStep)steps[6];
+            Assert.That(accept.Action, Is.EqualTo(EndToEndTradeDialogAction.Accept));
+            Assert.That(accept.ThingRuntimeId, Is.Null);
+        });
     }
 
     [Test]
@@ -122,6 +139,16 @@ public sealed class EndToEndTestingContractTests
             Assert.That(step.TargetRuntimeIds, Is.Empty);
             Assert.That(step.ArchitectCategoryDefNames, Is.EqualTo(new[] { "Zone" }));
         });
+    }
+
+    [TestCase(0)]
+    [TestCase(-10_001)]
+    [TestCase(10_001)]
+    public void Trade_adjustment_rejects_zero_or_unbounded_deltas(int countDelta)
+    {
+        Assert.That(
+            () => TradeDialogActionStep.AdjustTransfer("trade", "MealFine42", countDelta),
+            Throws.TypeOf<ArgumentOutOfRangeException>());
     }
 
     [Test]
