@@ -193,6 +193,72 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
         Assert.That(machine.PersistencePending, Is.False);
     }
 
+    [Test]
+    public void Arrange_waits_for_player_control_before_capturing_the_isolation_baseline()
+    {
+        var clock = new FakeClock();
+        var isolation = new RecordingIsolation { IsReady = false };
+        var machine = Machine(
+            clock,
+            new RecordingDriver(),
+            isolation,
+            Descriptor<PassingTest>("wait-for-player-control"));
+
+        machine.Advance();
+        machine.ConfirmPersisted(machine.Snapshot);
+        for (var frame = 0; frame < 3; frame++)
+        {
+            clock.NextFrame();
+            machine.Advance();
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("arranging"));
+            Assert.That(isolation.PrepareCount, Is.Zero);
+            Assert.That(PassingTest.ArrangeCount, Is.Zero);
+            Assert.That(machine.Snapshot.ProcessTainted, Is.False);
+        });
+
+        isolation.IsReady = true;
+        clock.NextFrame();
+        machine.Advance();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(isolation.PrepareCount, Is.EqualTo(1));
+            Assert.That(PassingTest.ArrangeCount, Is.EqualTo(1));
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("running"));
+        });
+    }
+
+    [Test]
+    public void Player_control_readiness_wait_is_bounded_by_the_test_deadline()
+    {
+        var clock = new FakeClock();
+        var isolation = new RecordingIsolation { IsReady = false };
+        var machine = Machine(
+            clock,
+            new RecordingDriver(),
+            isolation,
+            Descriptor<PassingTest>("player-control-timeout"));
+
+        machine.Advance();
+        machine.ConfirmPersisted(machine.Snapshot);
+        clock.NextFrame(gameTicks: 0, wallClock: TimeSpan.FromSeconds(31));
+        machine.Advance();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("infrastructure_failed"));
+            Assert.That(machine.Snapshot.CurrentTest.Failure!.Code,
+                Is.EqualTo("player_control_not_ready"));
+            Assert.That(machine.Snapshot.CurrentTest.CleanupState, Is.EqualTo("not_run"));
+            Assert.That(machine.Snapshot.ProcessTainted, Is.True);
+            Assert.That(isolation.PrepareCount, Is.Zero);
+        });
+    }
+
     private static GatewayEndToEndExecutionStateMachine Machine(
         FakeClock clock,
         RecordingDriver driver,
@@ -288,6 +354,8 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
 
     private sealed class RecordingIsolation : IGatewayEndToEndTestIsolation
     {
+        public bool IsReady { get; set; } = true;
+
         public bool CleanupIsTrustworthy { get; set; } = true;
 
         public int PrepareCount { get; private set; }
@@ -382,4 +450,5 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
 
         public static void Reset() => ArrangeCount = 0;
     }
+
 }

@@ -46,6 +46,25 @@ public sealed class GatewayIntegrationTestExceptionFormatterTests
         });
     }
 
+    [Test]
+    public void Gateway_owned_game_control_failure_retains_redacted_actionable_message()
+    {
+        const string credential = "SESSION-CREDENTIAL-DO-NOT-RETAIN";
+        var exception = new GatewayGameControlException(
+            "game_state_rejected",
+            "RimWorld rejected the requested state for " + credential + ".");
+
+        var details = GatewayIntegrationTestExceptionFormatter.Format(exception, credential);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(details.Type, Is.EqualTo(typeof(GatewayGameControlException).FullName));
+            Assert.That(details.Message, Is.EqualTo(
+                "RimWorld rejected the requested state for [REDACTED]."));
+            Assert.That(details.Message, Does.Not.Contain(credential));
+        });
+    }
+
     private static IntegrationTestAssertionException CaptureAssertion(string message)
     {
         try

@@ -163,6 +163,29 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
 
     private void ArrangeCurrentTest()
     {
+        if (!isolation.IsReady)
+        {
+            if (TestDeadlineExceeded())
+            {
+                processTainted = true;
+                current!.Status = "infrastructure_failed";
+                current.CleanupState = "not_run";
+                current.Failure = new GatewayEndToEndExecutionFailureSnapshot(
+                    "infrastructure",
+                    "player_control_not_ready",
+                    "RimWorld did not grant player control before the E2E test deadline.",
+                    null);
+                current.CompletedFrame = clock.FrameCount;
+                current.CompletedGameTick = clock.GameTick;
+                current.CompletedUtc = clock.UtcNow;
+                completed.Add(current);
+                phase = ExecutionPhase.AfterTest;
+                Publish("running");
+            }
+
+            return;
+        }
+
         try
         {
             context = contextFactory() ??

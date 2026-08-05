@@ -17,6 +17,7 @@
 - [x] 2.8 TDD/E2E: Reproduce the countertop fixture's map-wide synchronous search blocking Unity long enough for Windows to restore/ghost the minimized process, replace it with a bounded deterministic candidate search, and prove the exact group remains minimized without weakening later user window control.
 - [x] 2.9 TDD RED/GREEN: Add a host-safe exact-world-object settlement-trade step and a fail-closed RimWorld adapter that invokes the enabled native caravan visit trade command without translated selectors or desktop input.
 - [x] 2.10 E2E/IN-GAME: Open native settlement trade from a real player caravan, purchase upstream-generated plated meal stock through typed dialog actions, and observe the exact physical plate transfer once while the process remains minimized.
+- [x] 2.11 TDD/E2E: Wait for native player control before destructive isolation, bound the readiness wait, retain token-safe exact Gateway control exceptions, reject a non-preemptible generic callback step, and prove a quickstart cooking workflow no longer races the pause request.
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 

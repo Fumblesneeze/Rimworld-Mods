@@ -37,6 +37,8 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         this.gizmos = gizmos ?? throw new ArgumentNullException(nameof(gizmos));
     }
 
+    public bool IsReady => Current.Game?.PlayerHasControl == true;
+
     public GatewayEndToEndIsolationBaseline CaptureBaseline()
     {
         var map = RequireMap();
@@ -51,12 +53,13 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
 
     public void Pause()
     {
-        gameControl.Mutate(new GatewayGameStateMutationRequest
-        {
-            Paused = true,
-            Speed = GatewayGameSpeed.Paused.ToString()
-        });
+        gameControl.Mutate(CreatePauseRequest());
     }
+
+    internal static GatewayGameStateMutationRequest CreatePauseRequest() => new()
+    {
+        Paused = true
+    };
 
     public void ResetTransientState()
     {

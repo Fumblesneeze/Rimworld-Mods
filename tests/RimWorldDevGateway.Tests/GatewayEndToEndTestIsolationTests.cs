@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using RimWorldDevGateway.Contracts;
 using Verse;
 using System.Runtime.Serialization;
 
@@ -44,6 +45,19 @@ public sealed class GatewayEndToEndTestIsolationTests
         {
             Assert.That(VerseGatewayEndToEndIsolationOperations.IsDisposable(permanent), Is.False);
             Assert.That(VerseGatewayEndToEndIsolationOperations.IsDisposable(disposable), Is.True);
+        });
+    }
+
+    [Test]
+    public void Isolation_pause_uses_pause_semantics_without_the_player_control_speed_setter()
+    {
+        GatewayGameStateMutationRequest request =
+            VerseGatewayEndToEndIsolationOperations.CreatePauseRequest();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(request.Paused, Is.True);
+            Assert.That(request.Speed, Is.Null);
         });
     }
 
@@ -130,6 +144,8 @@ public sealed class GatewayEndToEndTestIsolationTests
 
     private sealed class RecordingIsolationOperations : IGatewayEndToEndIsolationOperations
     {
+        public bool IsReady => true;
+
         public GatewayEndToEndIsolationBaseline Baseline { get; } = new(new object());
 
         public List<string> Calls { get; } = new();

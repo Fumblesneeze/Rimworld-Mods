@@ -89,6 +89,7 @@ internal static class GatewayIntegrationTestExceptionFormatter
         return type == typeof(IntegrationTestAssertionException) ||
                type == typeof(EndToEndAssertionException) ||
                type == typeof(EndToEndContractException) ||
+               type == typeof(GatewayGameControlException) ||
                type == typeof(InvalidOperationException) ||
                type == typeof(ArgumentException) ||
                type == typeof(ArgumentNullException) ||

@@ -84,6 +84,8 @@ public sealed class GatewayEndToEndExecutionFactoryTests
 
     private sealed class PassingIsolation : IGatewayEndToEndTestIsolation
     {
+        public bool IsReady => true;
+
         public void Prepare(IEndToEndContext context) { }
         public bool Cleanup(IEndToEndContext context) => true;
     }

@@ -37,6 +37,8 @@ An explicit source manifest was considered, but it would duplicate method identi
 
 `Arrange` runs once on the Unity main thread against an already reset playable map and may directly create disposable preconditions. `Execute` returns an `IEnumerator<EndToEndStep>`. The Gateway advances at most one ready transition per frame, allowing a step to wait across rendered frames and game ticks without blocking Unity.
 
+An existing quickstart `Map` is not sufficient readiness: `TickManager.Pause` follows RimWorld's player-control guard and can legitimately reject during the brief generated-game handoff. The state machine therefore waits for `Game.PlayerHasControl` before capturing the isolation baseline, retries on later frames, and fails with a bounded infrastructure result if the test deadline expires. Iterator-side fixture maintenance may adjust fixed-cost test-only preconditions immediately after a persisted wait boundary, but it cannot substitute for a native action or visible observation. A generic synchronous callback step was rejected because a blocked delegate cannot be preempted from Unity's main thread; the host watchdog remains the outer defense for faulty test code.
+
 Initial typed steps cover:
 
 - exact native gizmo invocation from Thing owners and/or architect category Def names, plus exact float-menu order invocation;

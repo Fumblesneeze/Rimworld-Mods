@@ -137,6 +137,22 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Shared_steps_do_not_publish_an_unbounded_synchronous_delegate_action()
+    {
+        var unsafeProperties = typeof(EndToEndStep).Assembly
+            .GetTypes()
+            .Where(type => !type.IsAbstract && typeof(EndToEndStep).IsAssignableFrom(type))
+            .SelectMany(type => type.GetProperties())
+            .Where(property => typeof(Delegate).IsAssignableFrom(property.PropertyType))
+            .Where(property => property.DeclaringType?.Name.IndexOf("Action", StringComparison.Ordinal) >= 0)
+            .Select(property => property.DeclaringType!.FullName + "." + property.Name)
+            .ToArray();
+
+        Assert.That(unsafeProperties, Is.Empty,
+            "Typed action steps must not expose arbitrary synchronous delegates on Unity's main thread.");
+    }
+
+    [Test]
     public void Settlement_trade_can_require_one_exact_native_failure()
     {
         var step = new SettlementTradeActionStep(

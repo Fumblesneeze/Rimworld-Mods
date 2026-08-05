@@ -115,6 +115,8 @@ For a playable-map gateway scenario, prefer this reversible order:
 
 Never invoke a fuzzy debug/gizmo match merely to make a smoke pass. Require the expected path, runtime kind, availability, and cardinality; retain discovery evidence and fail safely when the installed RimWorld/mod version differs. Treat `stale_*`, `unsupported_*`, and `pointerRequired` as useful contract results, not reasons to guess another callback.
 
+Before destructive E2E isolation, wait for native `Game.PlayerHasControl`; a quickstart map may exist while RimWorld still rejects pause commands. Keep that readiness wait bounded by the test deadline. Do not add a generic synchronous callback step: Unity's main thread cannot preempt a blocking delegate. Keep iterator-side fixture maintenance fixed-cost and bounded, place it after a persisted step boundary, and never count it as the real action or visible observation used for acceptance.
+
 For optional compatibility, cover at minimum:
 
 - external package absent: owning mod loads and core behavior remains usable;

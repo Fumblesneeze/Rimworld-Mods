@@ -10,6 +10,8 @@ public sealed class GatewayEndToEndIsolationBaseline
 
 public interface IGatewayEndToEndIsolationOperations
 {
+    bool IsReady { get; }
+
     GatewayEndToEndIsolationBaseline CaptureBaseline();
 
     void Pause();
@@ -28,6 +30,8 @@ public sealed class GatewayEndToEndTestIsolation : IGatewayEndToEndTestIsolation
 
     public GatewayEndToEndTestIsolation(IGatewayEndToEndIsolationOperations operations) =>
         this.operations = operations ?? throw new ArgumentNullException(nameof(operations));
+
+    public bool IsReady => operations.IsReady;
 
     public void Prepare(RimWorldDevGateway.EndToEndTesting.IEndToEndContext context)
     {

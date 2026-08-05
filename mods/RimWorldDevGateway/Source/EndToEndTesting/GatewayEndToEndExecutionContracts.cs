@@ -84,6 +84,8 @@ public sealed class GatewayEndToEndCompletedStepOperation : IGatewayEndToEndStep
 
 public interface IGatewayEndToEndTestIsolation
 {
+    bool IsReady { get; }
+
     void Prepare(IEndToEndContext context);
 
     bool Cleanup(IEndToEndContext context);
