@@ -118,9 +118,9 @@
   - [ ] 7.6c In the Fast/Meals-on-Wheels/Prioritize group, observe deliberate fast work amounts, perishable-over-preserved selection, borrowed or shuttle meal transfer with the plate still embedded, ordinary cutlery acquisition, and exact plate return only after eating.
   - [ ] 7.6d In the Replimat/Dubs/Common-Sense group, observe a pawn bring the exact plate before terminal dispensing, preserve native network/feedstock and no-poison behavior, then deliver the returned dirty setting through dishwasher-first cleanup; observe animal and survival-batch exclusions.
   - [ ] 7.6e In the Meal-Printer/Hospitality/Gastronomy group, observe a printed Simple/Fine meal bind the brought plate, a waiter serve and clear the exact setting, a guest retain ownership rules, and a NutriBar remain hand-eaten.
-  - [ ] 7.6f In the RimCuisine/No-Vanilla-Meals group, reach main menu/map without removed-Def failures, cook registered surviving pottage/extravagant meals, exercise a valid pizza spawn/trade path, and observe vanilla-product bulk recipes, cans, hardtack, preservation, drinks, drugs, ingredients, and snacks remain absent or outside Immersive Chefs as appropriate.
+  - [x] 7.6f In the RimCuisine/No-Vanilla-Meals group, reach main menu/map without removed-Def failures, cook registered surviving pottage/extravagant meals, exercise a valid pizza spawn/trade path, and observe vanilla-product bulk recipes, cans, hardtack, preservation, drinks, drugs, ingredients, and snacks remain absent or outside Immersive Chefs as appropriate.
     - [x] 7.6f.1 Cook thin pottage and extravagant meals through native RimCuisine bills with exact serving-count plate tiers, culinary state, lower-tier rejection, and dirty returned cookware visible in the ordinary UI.
-    - [ ] 7.6f.2 Trade an upstream-generated pizza and inspect the retained excluded RimCuisine products/recipes in the same exact grouped process.
+    - [x] 7.6f.2 Trade an upstream-generated pizza and inspect the retained excluded RimCuisine products/recipes in the same exact grouped process.
   - [ ] 7.6g In the RimFridge/Thermodynamics group, store, retrieve, heat, and eat a plated meal while Thermodynamics alone owns temperature/microwave behavior and exact culinary, plate, cutlery, and sanitation state survive once.
 
 ## 8. mods/ImmersiveChefs - Release verification

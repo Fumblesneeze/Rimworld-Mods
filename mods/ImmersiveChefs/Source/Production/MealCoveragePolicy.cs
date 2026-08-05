@@ -25,7 +25,10 @@ public static class MealCoveragePolicy
     public static bool IsCovered(ThingDef? thingDef)
     {
         if (thingDef?.ingestible is null || BuiltInExclusions.Contains(thingDef.defName) ||
-            thingDef.GetModExtension<MealCoverageExtension>()?.excluded == true)
+            thingDef.GetModExtension<MealCoverageExtension>()?.excluded == true ||
+            RimCuisineMealExclusionCatalog.IsExcluded(
+                thingDef.modContentPack?.PackageId,
+                thingDef.defName))
         {
             return false;
         }

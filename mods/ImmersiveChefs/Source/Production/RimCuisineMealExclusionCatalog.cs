@@ -1,0 +1,39 @@
+namespace ImmersiveChefs;
+
+public static class RimCuisineMealExclusionCatalog
+{
+    private static readonly IReadOnlyDictionary<string, HashSet<string>> ExcludedByPackage =
+        new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            [MealClassificationCatalog.RimCuisineCorePackageId] = new(
+                new[]
+                {
+                    "RC2_Hardtack",
+                    "RC2_MealCandy",
+                    "RC2_MealPastry",
+                    "RC2_MealCrustyPeanuts"
+                },
+                StringComparer.OrdinalIgnoreCase),
+            [MealClassificationCatalog.RimCuisineMealsPackageId] = new(
+                new[]
+                {
+                    "RC2_CannedMeal",
+                    "RC2_CannedMeat",
+                    "RC2_CannedFruit",
+                    "RC2_CannedVegetables",
+                    "RC2_MealIceCream",
+                    "RC2_MealChocolateIceCream",
+                    "RC2_MealCrisps",
+                    "RC2_MealCupcake"
+                },
+                StringComparer.OrdinalIgnoreCase)
+        };
+
+    public static bool IsExcluded(string? packageId, string? defName)
+    {
+        return !string.IsNullOrWhiteSpace(packageId) &&
+               !string.IsNullOrWhiteSpace(defName) &&
+               ExcludedByPackage.TryGetValue(packageId, out var excluded) &&
+               excluded.Contains(defName);
+    }
+}
