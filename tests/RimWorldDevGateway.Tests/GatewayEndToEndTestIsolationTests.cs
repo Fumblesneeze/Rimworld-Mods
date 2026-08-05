@@ -1,10 +1,34 @@
 using NUnit.Framework;
+using Verse;
+using System.Runtime.Serialization;
 
 namespace RimWorldDevGateway.Tests;
 
 [TestFixture]
 public sealed class GatewayEndToEndTestIsolationTests
 {
+    [Test]
+    public void Permanent_map_features_are_baseline_environment_not_disposable_test_state()
+    {
+        var permanent = UninitializedThing(destroyable: false);
+        var disposable = UninitializedThing(destroyable: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(VerseGatewayEndToEndIsolationOperations.IsDisposable(permanent), Is.False);
+            Assert.That(VerseGatewayEndToEndIsolationOperations.IsDisposable(disposable), Is.True);
+        });
+    }
+
+    private static Thing UninitializedThing(bool destroyable)
+    {
+        var def = (ThingDef)FormatterServices.GetUninitializedObject(typeof(ThingDef));
+        def.destroyable = destroyable;
+        var thing = (Thing)FormatterServices.GetUninitializedObject(typeof(Thing));
+        thing.def = def;
+        return thing;
+    }
+
     [Test]
     public void Prepare_captures_baseline_then_pauses_resets_and_proves_empty()
     {

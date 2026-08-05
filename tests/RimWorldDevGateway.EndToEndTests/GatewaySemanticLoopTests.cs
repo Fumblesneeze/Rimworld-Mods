@@ -63,8 +63,9 @@ public sealed class SecondSemanticLoopTest : IRimWorldEndToEndTest
         var map = Current.Game.CurrentMap;
         EndToEndAssert.Equal(
             0,
-            map.listerThings.AllThings.Count(thing => thing.Spawned && !thing.Destroyed),
-            "verified sequential empty-map baseline");
+            map.listerThings.AllThings.Count(thing =>
+                thing.Spawned && !thing.Destroyed && thing.def.destroyable),
+            "verified sequential empty disposable-map baseline");
         var thing = ThingMaker.MakeThing(ThingDefOf.Steel);
         GenSpawn.Spawn(thing, map.Center, map);
         thingId = thing.ThingID;

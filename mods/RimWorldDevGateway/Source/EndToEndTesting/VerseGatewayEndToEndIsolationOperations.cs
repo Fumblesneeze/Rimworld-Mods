@@ -63,7 +63,7 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         {
             var spawned = map.listerThings.AllThings
                 .ToArray()
-                .Where(thing => thing.Spawned && !thing.Destroyed && thing.Map == map)
+                .Where(thing => IsDisposable(thing) && thing.Spawned && !thing.Destroyed && thing.Map == map)
                 .ToArray();
             if (spawned.Length == 0)
             {
@@ -88,13 +88,16 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         }
 
         return !map.listerThings.AllThings.Any(thing =>
-                   thing.Spawned && !thing.Destroyed && thing.Map == map) &&
+                   IsDisposable(thing) && thing.Spawned && !thing.Destroyed && thing.Map == map) &&
                map.designationManager.AllDesignations.Count == 0 &&
                map.zoneManager.AllZones.Count == 0 &&
                Find.Selector.SelectedObjectsListForReading.Count == 0 &&
                gizmos.CurrentInteraction is null &&
                Find.WindowStack.Windows.All(state.Windows.Contains);
     }
+
+    internal static bool IsDisposable(Thing thing) =>
+        thing is not null && thing.def is not null && thing.def.destroyable;
 
     public bool RestoreBaseline(GatewayEndToEndIsolationBaseline baseline)
     {
