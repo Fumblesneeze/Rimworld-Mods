@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using RimWorldDevGateway.IntegrationTesting;
+using RimWorldDevGateway.EndToEndTesting;
 
 namespace RimWorldDevGateway;
 
@@ -86,6 +87,8 @@ internal static class GatewayIntegrationTestExceptionFormatter
     {
         var type = exception.GetType();
         return type == typeof(IntegrationTestAssertionException) ||
+               type == typeof(EndToEndAssertionException) ||
+               type == typeof(EndToEndContractException) ||
                type == typeof(InvalidOperationException) ||
                type == typeof(ArgumentException) ||
                type == typeof(ArgumentNullException) ||
