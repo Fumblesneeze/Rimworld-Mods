@@ -30,6 +30,14 @@ public static class MealCoveragePolicy
             return false;
         }
 
+        // Def-removal mods can leave static ThingDefOf fields and RecipeDef product references
+        // pointing at objects that no longer belong to the finalized database. Those objects are
+        // metadata remnants, not spawnable meal definitions.
+        if (!ReferenceEquals(DefDatabase<ThingDef>.GetNamedSilentFail(thingDef.defName), thingDef))
+        {
+            return false;
+        }
+
         var foodType = thingDef.ingestible.foodType;
         return (foodType & FoodTypeFlags.Meal) != 0 &&
                (foodType & (FoodTypeFlags.Fluid | FoodTypeFlags.Liquor)) == 0;

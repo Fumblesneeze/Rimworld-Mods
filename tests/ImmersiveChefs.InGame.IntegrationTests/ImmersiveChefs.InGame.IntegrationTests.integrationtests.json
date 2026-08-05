@@ -8,6 +8,7 @@
     "fumblesneeze.rimworlddevgateway"
   ],
   "forbiddenPackageIds": [
-    "Mlie.DThermodynamicsHotMeals"
+    "Mlie.DThermodynamicsHotMeals",
+    "Mlie.NoVanillaMeals"
   ]
 }

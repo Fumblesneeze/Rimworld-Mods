@@ -1,0 +1,17 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.NoVanillaMeals.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "ludeon.rimworld",
+    "brrainz.harmony",
+    "syrchalis.processor.framework",
+    "Mlie.RC2.Core",
+    "Mlie.RC2.MaME",
+    "Mlie.RC2.BaBE",
+    "Mlie.RC2.SaSE",
+    "Mlie.NoVanillaMeals",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

@@ -169,6 +169,47 @@ public sealed class RecipeClassificationTests
         Assert.That(classifier.ClassifyRecipe(recipeDefName), Is.EqualTo(expected));
     }
 
+    [Test]
+    public void No_vanilla_meals_removes_vanilla_recipe_and_product_classifications()
+    {
+        var classifier = MealClassificationCatalog.Create(new[] { "Mlie.NoVanillaMeals" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(classifier.ClassifyRecipe("CookMealSimple"), Is.Null);
+            Assert.That(classifier.ClassifyRecipe("CookMealFineBulk"), Is.Null);
+            Assert.That(classifier.ClassifyRecipe("CookMealLavish"), Is.Null);
+            Assert.That(classifier.ClassifyMeal("MealSimple"), Is.Null);
+            Assert.That(classifier.ClassifyMeal("MealFine_Meat"), Is.Null);
+            Assert.That(classifier.ClassifyMeal("MealLavish_Veg"), Is.Null);
+        });
+    }
+
+    [Test]
+    public void RimCuisine_custom_meals_survive_No_vanilla_meals_without_stale_bulk_recipes()
+    {
+        var classifier = MealClassificationCatalog.Create(new[]
+        {
+            "SYRCHALIS.PROCESSOR.FRAMEWORK",
+            "MLIE.RC2.CORE",
+            "MLIE.RC2.MAME",
+            "MLIE.NOVANILLAMEALS"
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(classifier.ClassifyRecipe("CookThinPottage"), Is.EqualTo(MealComplexity.Simple));
+            Assert.That(classifier.ClassifyMeal("RC2_ThinPottage"), Is.EqualTo(MealComplexity.Simple));
+            Assert.That(classifier.ClassifyRecipe("RC2_CookThickPottage"), Is.EqualTo(MealComplexity.Advanced));
+            Assert.That(classifier.ClassifyRecipe("RC2_CookRubaboo"), Is.EqualTo(MealComplexity.Simple));
+            Assert.That(classifier.ClassifyRecipe("RC2_CookExtravagantMeal"), Is.EqualTo(MealComplexity.Elaborate));
+            Assert.That(classifier.ClassifyMeal("RC2_ExtravagantMeal"), Is.EqualTo(MealComplexity.Elaborate));
+            Assert.That(classifier.ClassifyMeal("RC2_Pizza"), Is.EqualTo(MealComplexity.Elaborate));
+            Assert.That(classifier.ClassifyRecipe("RC2_CookFineMealBulk"), Is.Null);
+            Assert.That(classifier.ClassifyRecipe("RC2_CookLavishMealBulk"), Is.Null);
+        });
+    }
+
     private static string[] RequiredPackages(string packageId)
     {
         return packageId switch

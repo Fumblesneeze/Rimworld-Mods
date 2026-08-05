@@ -32,6 +32,11 @@
     <RimWorldLoadAfter Include="OskarPotocki.VanillaFactionsExpanded.Core" />
     <RimWorldLoadAfter Include="VanillaExpanded.VNutrientE" />
     <RimWorldLoadAfter Include="Mlie.DThermodynamicsHotMeals" />
+    <RimWorldLoadAfter Include="Mlie.RC2.Core" />
+    <RimWorldLoadAfter Include="Mlie.RC2.MaME" />
+    <RimWorldLoadAfter Include="Mlie.RC2.BaBE" />
+    <RimWorldLoadAfter Include="Mlie.RC2.SaSE" />
+    <RimWorldLoadAfter Include="Mlie.NoVanillaMeals" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />

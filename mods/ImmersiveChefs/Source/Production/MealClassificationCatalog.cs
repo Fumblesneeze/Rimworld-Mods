@@ -17,6 +17,7 @@ public sealed class MealClassificationCatalog
     public const string FastMealsPackageId = "Argon.CheapMeals";
     public const string RimCuisineCorePackageId = "Mlie.RC2.Core";
     public const string RimCuisineMealsPackageId = "Mlie.RC2.MaME";
+    public const string NoVanillaMealsPackageId = "Mlie.NoVanillaMeals";
     public const string VanillaExpandedFrameworkPackageId =
         "OskarPotocki.VanillaFactionsExpanded.Core";
     public const string VanillaFishingExpandedPackageId = "VanillaExpanded.VCEF";
@@ -41,9 +42,13 @@ public sealed class MealClassificationCatalog
         }
 
         var catalog = new MealClassificationCatalog();
-        catalog.AddVanilla();
-
         var packages = new HashSet<string>(loadedPackageIds, StringComparer.OrdinalIgnoreCase);
+        var noVanillaMeals = packages.Contains(NoVanillaMealsPackageId);
+        if (!noVanillaMeals)
+        {
+            catalog.AddVanilla();
+        }
+
         var vanillaExpandedFramework = packages.Contains(VanillaExpandedFrameworkPackageId);
         var vanillaCookingExpanded = vanillaExpandedFramework &&
                                      packages.Contains(VanillaCookingExpandedPackageId);
@@ -92,7 +97,7 @@ public sealed class MealClassificationCatalog
 
         if (rimCuisineCore && packages.Contains(RimCuisineMealsPackageId))
         {
-            catalog.AddRimCuisineMeals();
+            catalog.AddRimCuisineMeals(includeVanillaBulkRecipes: !noVanillaMeals);
         }
 
         return catalog;
@@ -315,23 +320,29 @@ public sealed class MealClassificationCatalog
             new[] { "RC2_ThickPottage" });
     }
 
-    private void AddRimCuisineMeals()
+    private void AddRimCuisineMeals(bool includeVanillaBulkRecipes)
     {
         Add(
             MealComplexity.Simple,
             new[] { "RC2_CookRubaboo" },
             new[] { "RC2_Rubaboo" });
-        Add(
-            MealComplexity.Advanced,
-            new[] { "RC2_CookFineMealBulk" },
-            Array.Empty<string>());
+        if (includeVanillaBulkRecipes)
+        {
+            Add(
+                MealComplexity.Advanced,
+                new[] { "RC2_CookFineMealBulk" },
+                Array.Empty<string>());
+        }
+
         Add(
             MealComplexity.Elaborate,
-            new[]
-            {
-                "RC2_CookLavishMealBulk", "RC2_CookExtravagantMeal",
-                "RC2_CookExtravagantMealBulk"
-            },
+            includeVanillaBulkRecipes
+                ? new[]
+                {
+                    "RC2_CookLavishMealBulk", "RC2_CookExtravagantMeal",
+                    "RC2_CookExtravagantMealBulk"
+                }
+                : new[] { "RC2_CookExtravagantMeal", "RC2_CookExtravagantMealBulk" },
             new[] { "RC2_Pizza", "RC2_ExtravagantMeal" });
     }
 
