@@ -85,6 +85,29 @@ public interface IGatewayEndToEndTestIsolation
     bool Cleanup(IEndToEndContext context);
 }
 
+public interface IGatewayEndToEndExecutionMachine
+{
+    GatewayEndToEndExecutionSnapshot Snapshot { get; }
+
+    bool PersistencePending { get; }
+
+    void ConfirmPersisted(GatewayEndToEndExecutionSnapshot exactSnapshot);
+
+    void Advance();
+}
+
+public interface IGatewayEndToEndExecutionFactory
+{
+    IGatewayEndToEndExecutionMachine Create(
+        IReadOnlyList<GatewayEndToEndRuntimeTestDescriptor> tests,
+        string? sessionCredential);
+}
+
+public interface IGatewayEndToEndExecutionReadiness
+{
+    bool IsPlayableMapReady();
+}
+
 public sealed class GatewayEndToEndTestContext : IEndToEndContext
 {
     private readonly Func<long> frameCount;

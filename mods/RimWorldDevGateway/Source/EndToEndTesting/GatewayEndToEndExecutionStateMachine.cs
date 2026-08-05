@@ -3,7 +3,7 @@ using RimWorldDevGateway.EndToEndTesting;
 
 namespace RimWorldDevGateway;
 
-public sealed class GatewayEndToEndExecutionStateMachine
+public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecutionMachine
 {
     private readonly GatewayEndToEndRuntimeTestDescriptor[] descriptors;
     private readonly IGatewayEndToEndClock clock;

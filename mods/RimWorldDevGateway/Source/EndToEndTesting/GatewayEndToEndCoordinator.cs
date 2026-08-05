@@ -5,10 +5,13 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
     private readonly IGatewayEndToEndManifestSource? source;
     private readonly IGatewayEndToEndInspectionOperationFactory? inspectionFactory;
     private readonly IGatewayEndToEndSessionArtifactStore? artifactStore;
+    private readonly IGatewayEndToEndExecutionReadiness? executionReadiness;
+    private readonly IGatewayEndToEndExecutionFactory? executionFactory;
     private readonly Action<string, Exception?>? diagnostics;
     private readonly List<string> activePackageIds = new();
     private readonly List<GatewayEndToEndBundleSnapshot> bundles = new();
     private readonly List<GatewayEndToEndTestSnapshot> tests = new();
+    private readonly List<GatewayEndToEndRuntimeTestDescriptor> runtimeTests = new();
     private readonly List<GatewayEndToEndFailureSnapshot> failures = new();
     private readonly GatewayEndToEndSnapshot disabledSnapshot = new(false, "disabled");
     private GatewayEndToEndSnapshot snapshot;
@@ -18,12 +21,16 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
     private GatewayEndToEndManifestCandidate? inspectionCandidate;
     private IGatewayEndToEndPersistenceOperation? persistence;
     private GatewayEndToEndSnapshot? persistenceCandidate;
+    private GatewayEndToEndExecutionSnapshot? pendingExecutionPersistence;
     private string? pendingRunId;
     private bool persistenceIsAttachment;
     private bool discoveryComplete;
     private bool activePackageListTrustworthy = true;
     private bool activePackageFailureReported;
     private bool disposed;
+    private bool executionUnavailable;
+    private string discoveryState = "awaiting_session";
+    private IGatewayEndToEndExecutionMachine? execution;
     private string? sessionCredential;
     private readonly HashSet<string> reportedOperations = new(StringComparer.Ordinal);
 
@@ -38,12 +45,20 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         IGatewayEndToEndBundleInspector inspector,
         IGatewayEndToEndInspectionOperationFactory inspectionFactory,
         IGatewayEndToEndSessionArtifactStore artifactStore,
+        IGatewayEndToEndExecutionReadiness? executionReadiness,
+        IGatewayEndToEndExecutionFactory? executionFactory,
         Action<string, Exception?>? diagnostics)
     {
         this.source = source ?? throw new ArgumentNullException(nameof(source));
         _ = inspector ?? throw new ArgumentNullException(nameof(inspector));
         this.inspectionFactory = inspectionFactory ?? throw new ArgumentNullException(nameof(inspectionFactory));
         this.artifactStore = artifactStore ?? throw new ArgumentNullException(nameof(artifactStore));
+        this.executionReadiness = executionReadiness;
+        this.executionFactory = executionFactory;
+        if ((executionReadiness is null) != (executionFactory is null))
+        {
+            throw new ArgumentException("E2E execution readiness and factory must be supplied together.");
+        }
         this.diagnostics = diagnostics;
         snapshot = new GatewayEndToEndSnapshot(true, "awaiting_session");
     }
@@ -83,7 +98,9 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             inspector,
             new GatewayEndToEndTaskInspectionOperationFactory(inspector),
             new GatewayEndToEndSessionArtifactStore(saveDataFolder),
-            diagnostics);
+            executionReadiness: null,
+            executionFactory: null,
+            diagnostics: diagnostics);
     }
 
     internal static GatewayEndToEndCoordinator CreateEnabledWithStore(
@@ -91,8 +108,17 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         IGatewayEndToEndBundleInspector inspector,
         IGatewayEndToEndInspectionOperationFactory inspectionFactory,
         IGatewayEndToEndSessionArtifactStore artifactStore,
+        IGatewayEndToEndExecutionReadiness? executionReadiness = null,
+        IGatewayEndToEndExecutionFactory? executionFactory = null,
         Action<string, Exception?>? diagnostics = null) =>
-        new(source, inspector, inspectionFactory, artifactStore, diagnostics);
+        new(
+            source,
+            inspector,
+            inspectionFactory,
+            artifactStore,
+            executionReadiness,
+            executionFactory,
+            diagnostics);
 
     public void AttachSession(string runId, string? bearerToken = null)
     {
@@ -135,6 +161,7 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
 
         if (discoveryComplete)
         {
+            AdvanceExecution();
             return;
         }
 
@@ -378,6 +405,7 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
                 }
 
                 tests.Add(new GatewayEndToEndTestSnapshot(descriptor));
+                runtimeTests.Add(descriptor);
             }
         }
         else
@@ -458,13 +486,100 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         StartPersistence(snapshot, attach: false);
     }
 
-    private GatewayEndToEndSnapshot BuildSnapshot(string state) => new(
-        true,
-        state,
-        activePackageIds,
-        bundles,
-        tests,
-        failures);
+    private GatewayEndToEndSnapshot BuildSnapshot(string state)
+    {
+        discoveryState = state;
+        return new GatewayEndToEndSnapshot(
+            true,
+            state,
+            activePackageIds,
+            bundles,
+            tests,
+            failures,
+            execution?.Snapshot);
+    }
+
+    private void AdvanceExecution()
+    {
+        if (executionUnavailable || executionFactory is null || executionReadiness is null || runtimeTests.Count == 0)
+        {
+            return;
+        }
+
+        if (execution is null)
+        {
+            bool ready;
+            try
+            {
+                ready = executionReadiness.IsPlayableMapReady();
+            }
+            catch (Exception exception)
+            {
+                FailExecutionInfrastructure(
+                    "execution_readiness_failed",
+                    "E2E playable-map readiness could not be observed; arbitrary exception text was suppressed.",
+                    exception);
+                return;
+            }
+
+            if (!ready)
+            {
+                return;
+            }
+
+            try
+            {
+                execution = executionFactory.Create(
+                    runtimeTests.OrderBy(test => test.Id, StringComparer.Ordinal).ToArray(),
+                    sessionCredential) ??
+                    throw new InvalidOperationException("The E2E execution factory returned null.");
+            }
+            catch (Exception exception)
+            {
+                FailExecutionInfrastructure(
+                    "execution_creation_failed",
+                    "The E2E execution state machine could not be created; arbitrary exception text was suppressed.",
+                    exception);
+                return;
+            }
+
+            snapshot = BuildSnapshot(discoveryState);
+            StartPersistence(snapshot, attach: false);
+            return;
+        }
+
+        if (execution.Snapshot.IsTerminal)
+        {
+            return;
+        }
+
+        try
+        {
+            execution.Advance();
+            if (execution.PersistencePending)
+            {
+                pendingExecutionPersistence = execution.Snapshot;
+                snapshot = BuildSnapshot(discoveryState);
+                StartPersistence(snapshot, attach: false);
+            }
+        }
+        catch (Exception exception)
+        {
+            FailExecutionInfrastructure(
+                "execution_advance_failed",
+                "The E2E execution state machine failed while advancing; arbitrary exception text was suppressed.",
+                exception);
+        }
+    }
+
+    private void FailExecutionInfrastructure(string code, string message, Exception exception)
+    {
+        executionUnavailable = true;
+        failures.Add(new GatewayEndToEndFailureSnapshot(code, message));
+        Report(code, exception);
+        snapshot = BuildSnapshot(discoveryState);
+        StartPersistence(snapshot, attach: false);
+    }
 
     private void StartPersistence(GatewayEndToEndSnapshot candidate, bool attach)
     {
@@ -520,6 +635,27 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         if (persistenceIsAttachment)
         {
             pendingRunId = null;
+        }
+
+        if (pendingExecutionPersistence is not null)
+        {
+            try
+            {
+                execution!.ConfirmPersisted(pendingExecutionPersistence);
+            }
+            catch (Exception exception)
+            {
+                executionUnavailable = true;
+                pendingExecutionPersistence = null;
+                persistenceCandidate = null;
+                FailExecutionInfrastructure(
+                    "execution_persistence_confirmation_failed",
+                    "The E2E state machine rejected its exact durable snapshot; arbitrary exception text was suppressed.",
+                    exception);
+                return;
+            }
+
+            pendingExecutionPersistence = null;
         }
 
         persistenceCandidate = null;

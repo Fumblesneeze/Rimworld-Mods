@@ -246,6 +246,73 @@ public sealed class GatewayEndToEndDiscoveryCoordinatorTests
         });
     }
 
+    [Test]
+    public void Execution_waits_for_a_playable_map_and_each_machine_snapshot_commit()
+    {
+        var cursor = new RecordingCursor(new[]
+        {
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage("ludeon.rimworld"),
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage("alpha.mod"),
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage(EndToEndTestContract.GatewayPackageId),
+            GatewayEndToEndManifestDiscoveryStep.Candidate(
+                new GatewayEndToEndManifestCandidate("alpha.mod", TestManifestPath())),
+            GatewayEndToEndManifestDiscoveryStep.Complete()
+        });
+        var inspector = new RecordingInspector(LoadedInspection());
+        var store = new ImmediateStore();
+        var readiness = new ControlledReadiness();
+        var execution = new RecordingExecutionMachine();
+        var factory = new RecordingExecutionFactory(execution);
+        using var coordinator = GatewayEndToEndCoordinator.CreateEnabledWithStore(
+            new RecordingSource(cursor),
+            inspector,
+            new ImmediateInspectionFactory(inspector),
+            store,
+            readiness,
+            factory);
+
+        coordinator.AttachSession("execution-run", "session-credential");
+        for (var tick = 0;
+             tick < 32 && coordinator.PublishedSnapshot?.DiscoveryState != "completed";
+             tick++)
+        {
+            coordinator.Tick();
+        }
+
+        coordinator.Tick();
+        Assert.Multiple(() =>
+        {
+            Assert.That(factory.CreateCount, Is.Zero);
+            Assert.That(execution.AdvanceCount, Is.Zero);
+        });
+
+        readiness.Ready = true;
+        coordinator.Tick();
+        Assert.Multiple(() =>
+        {
+            Assert.That(factory.CreateCount, Is.EqualTo(1));
+            Assert.That(factory.LastCredential, Is.EqualTo("session-credential"));
+            Assert.That(execution.AdvanceCount, Is.Zero);
+        });
+
+        coordinator.Tick();
+        coordinator.Tick();
+        Assert.Multiple(() =>
+        {
+            Assert.That(execution.AdvanceCount, Is.EqualTo(1));
+            Assert.That(execution.ConfirmCount, Is.Zero);
+            Assert.That(coordinator.Snapshot.Execution!.GroupState, Is.EqualTo("running"));
+        });
+
+        coordinator.Tick();
+        Assert.Multiple(() =>
+        {
+            Assert.That(execution.ConfirmCount, Is.EqualTo(1));
+            Assert.That(execution.LastConfirmed, Is.SameAs(execution.Snapshot));
+            Assert.That(coordinator.PublishedSnapshot!.Execution!.GroupState, Is.EqualTo("running"));
+        });
+    }
+
     private static GatewayEndToEndBundleInspectionResult LoadedInspection()
     {
         var descriptor = new GatewayEndToEndRuntimeTestDescriptor(
@@ -522,5 +589,61 @@ public sealed class GatewayEndToEndDiscoveryCoordinatorTests
         public bool IsCompleted => true;
 
         public GatewayEndToEndPersistenceOutcome GetOutcome() => outcome;
+    }
+
+    private sealed class ControlledReadiness : IGatewayEndToEndExecutionReadiness
+    {
+        public bool Ready { get; set; }
+
+        public bool IsPlayableMapReady() => Ready;
+    }
+
+    private sealed class RecordingExecutionFactory : IGatewayEndToEndExecutionFactory
+    {
+        private readonly IGatewayEndToEndExecutionMachine machine;
+
+        public RecordingExecutionFactory(IGatewayEndToEndExecutionMachine machine) => this.machine = machine;
+
+        public int CreateCount { get; private set; }
+
+        public string? LastCredential { get; private set; }
+
+        public IGatewayEndToEndExecutionMachine Create(
+            IReadOnlyList<GatewayEndToEndRuntimeTestDescriptor> tests,
+            string? sessionCredential)
+        {
+            CreateCount++;
+            LastCredential = sessionCredential;
+            Assert.That(tests.Select(test => test.Id), Is.EqualTo(new[] { "alpha.e2e" }));
+            return machine;
+        }
+    }
+
+    private sealed class RecordingExecutionMachine : IGatewayEndToEndExecutionMachine
+    {
+        public GatewayEndToEndExecutionSnapshot Snapshot { get; private set; } = new("pending");
+
+        public bool PersistencePending { get; private set; }
+
+        public int AdvanceCount { get; private set; }
+
+        public int ConfirmCount { get; private set; }
+
+        public GatewayEndToEndExecutionSnapshot? LastConfirmed { get; private set; }
+
+        public void Advance()
+        {
+            AdvanceCount++;
+            Snapshot = new GatewayEndToEndExecutionSnapshot("running");
+            PersistencePending = true;
+        }
+
+        public void ConfirmPersisted(GatewayEndToEndExecutionSnapshot exactSnapshot)
+        {
+            Assert.That(exactSnapshot, Is.SameAs(Snapshot));
+            ConfirmCount++;
+            LastConfirmed = exactSnapshot;
+            PersistencePending = false;
+        }
     }
 }

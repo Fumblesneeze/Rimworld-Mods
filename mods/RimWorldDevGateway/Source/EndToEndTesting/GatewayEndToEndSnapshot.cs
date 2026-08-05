@@ -10,7 +10,8 @@ public sealed class GatewayEndToEndSnapshot
         IEnumerable<string>? activePackageIds = null,
         IEnumerable<GatewayEndToEndBundleSnapshot>? bundles = null,
         IEnumerable<GatewayEndToEndTestSnapshot>? tests = null,
-        IEnumerable<GatewayEndToEndFailureSnapshot>? failures = null)
+        IEnumerable<GatewayEndToEndFailureSnapshot>? failures = null,
+        GatewayEndToEndExecutionSnapshot? execution = null)
     {
         Enabled = enabled;
         DiscoveryState = string.IsNullOrWhiteSpace(discoveryState)
@@ -22,6 +23,7 @@ public sealed class GatewayEndToEndSnapshot
         Tests = ReadOnly((tests ?? Array.Empty<GatewayEndToEndTestSnapshot>())
             .OrderBy(test => test.Id, StringComparer.Ordinal));
         Failures = ReadOnly(failures ?? Array.Empty<GatewayEndToEndFailureSnapshot>());
+        Execution = execution;
     }
 
     public bool Enabled { get; }
@@ -35,6 +37,8 @@ public sealed class GatewayEndToEndSnapshot
     public IReadOnlyList<GatewayEndToEndTestSnapshot> Tests { get; }
 
     public IReadOnlyList<GatewayEndToEndFailureSnapshot> Failures { get; }
+
+    public GatewayEndToEndExecutionSnapshot? Execution { get; }
 
     private static IReadOnlyList<T> ReadOnly<T>(IEnumerable<T> values) =>
         new ReadOnlyCollection<T>(values.ToArray());
