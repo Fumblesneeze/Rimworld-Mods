@@ -354,7 +354,9 @@ internal static class UnifiedFoodPoisoningPatch
             plateSanitation?.WashProvenance ?? WashProvenance.None);
 
         var settings = ImmersiveChefsMod.Settings;
-        var band = settings.MealTemperatureEnabled
+        var ownsTemperature = TemperatureOwnership.ImmersiveChefsFeaturesActive &&
+                              settings.MealTemperatureEnabled;
+        var band = ownsTemperature
             ? ThermalCalculator.BandFor(record.TemperatureCelsius)
             : ThermalBand.RoomTemperature;
         PoisonPercent(__instance) = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
@@ -366,7 +368,7 @@ internal static class UnifiedFoodPoisoningPatch
                 ? KitchenwareRuntime.ServiceScore(plate)
                 : null,
             dining?.CutleryServiceScore,
-            record.MicrowaveReheatCount,
+            ownsTemperature ? record.MicrowaveReheatCount : 0,
             settings.MicrowaveExtraPoisonChance,
             settings.FoodPoisoningEffectScale,
             settings.MaximumCustomPoisonChance));

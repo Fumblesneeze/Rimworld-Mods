@@ -62,6 +62,11 @@ public sealed class CompCulinaryState : ThingComp
 
     public bool ReheatCurrentServing(float targetTemperature, int qualityLoss, int currentTick)
     {
+        if (!TemperatureOwnership.ImmersiveChefsFeaturesActive)
+        {
+            return false;
+        }
+
         EnsureServingCount();
         if (servings.Count == 0)
         {
@@ -107,8 +112,9 @@ public sealed class CompCulinaryState : ThingComp
     {
         while (servings.Count < parent.stackCount)
         {
-            var ambient = parent.AmbientTemperature;
-            var tick = Find.TickManager?.TicksGame ?? 0;
+            var ownsTemperature = TemperatureOwnership.ImmersiveChefsFeaturesActive;
+            var ambient = ownsTemperature ? parent.AmbientTemperature : 21f;
+            var tick = ownsTemperature ? Find.TickManager?.TicksGame ?? 0 : 0;
             servings.Add(CulinaryServingData.From(new CulinaryServingRecord(
                 40, ambient, ContaminationSources.None, 0, tick)));
         }
@@ -174,7 +180,8 @@ public sealed class CompCulinaryState : ThingComp
             lines.Add($"Culinary quality: {CulinaryQualityCalculator.LabelFor(record.QualityScore)} ({record.QualityScore})");
         }
 
-        if (ImmersiveChefsMod.Settings.MealTemperatureEnabled)
+        if (TemperatureOwnership.ImmersiveChefsFeaturesActive &&
+            ImmersiveChefsMod.Settings.MealTemperatureEnabled)
         {
             lines.Add($"Meal temperature: {ThermalCalculator.BandFor(record.TemperatureCelsius)} ({record.TemperatureCelsius:0.#} °C)");
         }
@@ -196,7 +203,10 @@ public sealed class CompCulinaryState : ThingComp
 
     private void AdvanceServing(int index)
     {
-        if (!ImmersiveChefsMod.Settings.MealTemperatureEnabled || index < 0 || index >= servings.Count)
+        if (!TemperatureOwnership.ImmersiveChefsFeaturesActive ||
+            !ImmersiveChefsMod.Settings.MealTemperatureEnabled ||
+            index < 0 ||
+            index >= servings.Count)
         {
             return;
         }

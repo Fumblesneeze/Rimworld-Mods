@@ -42,7 +42,10 @@ internal static class GastronomyAdapter
                 postfix: new HarmonyMethod(typeof(GastronomyAdapter), nameof(ServeToilsPostfix)));
             Enabled = true;
             reason = string.Empty;
-            Log.Message("[ImmersiveChefs] Gastronomy adapter active; waiters own tableware and reheating service.");
+            var serviceDescription = TemperatureOwnership.ImmersiveChefsFeaturesActive
+                ? "tableware and fallback reheating service"
+                : "tableware service; Thermodynamics owns meal heating";
+            Log.Message($"[ImmersiveChefs] Gastronomy adapter active; waiters own {serviceDescription}.");
             return true;
         }
         catch (Exception exception)

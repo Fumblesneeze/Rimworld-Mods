@@ -60,15 +60,22 @@ internal sealed class ImmersiveChefsSettingsUi
             $"Food poisoning effect: {settings.FoodPoisoningEffectScale:0.00}x", settings.FoodPoisoningEffectScale, 0f, 3f, 0.05f, null);
         settings.MaximumCustomPoisonChance = listing.SliderLabeled(
             $"Maximum custom poison chance: {settings.MaximumCustomPoisonChance:P0}", settings.MaximumCustomPoisonChance, 0.05f, 1f, 0.01f, null);
-        listing.CheckboxLabeled("Meal temperature", ref settings.MealTemperatureEnabled);
-        settings.ThermalHalfLifeHours = listing.SliderLabeled(
-            $"Thermal half-life: {settings.ThermalHalfLifeHours:0.00} h", settings.ThermalHalfLifeHours, 0.25f, 12f, 0.25f, null);
-        settings.AutoMicrowaveBelow = listing.SliderLabeled(
-            $"Automatically microwave below: {settings.AutoMicrowaveBelow:0} °C", settings.AutoMicrowaveBelow, -10f, 30f, 1f, null);
-        settings.MicrowaveQualityLoss = (int)listing.SliderLabeled(
-            $"Microwave quality loss: {settings.MicrowaveQualityLoss}", settings.MicrowaveQualityLoss, 0f, 20f, 1f, null);
-        settings.MicrowaveExtraPoisonChance = listing.SliderLabeled(
-            $"Microwave poison chance: {settings.MicrowaveExtraPoisonChance:0.0} pp", settings.MicrowaveExtraPoisonChance, 0f, 5f, 0.1f, null);
+        if (TemperatureOwnership.ImmersiveChefsFeaturesActive)
+        {
+            listing.CheckboxLabeled("Meal temperature", ref settings.MealTemperatureEnabled);
+            settings.ThermalHalfLifeHours = listing.SliderLabeled(
+                $"Thermal half-life: {settings.ThermalHalfLifeHours:0.00} h", settings.ThermalHalfLifeHours, 0.25f, 12f, 0.25f, null);
+            settings.AutoMicrowaveBelow = listing.SliderLabeled(
+                $"Automatically microwave below: {settings.AutoMicrowaveBelow:0} °C", settings.AutoMicrowaveBelow, -10f, 30f, 1f, null);
+            settings.MicrowaveQualityLoss = (int)listing.SliderLabeled(
+                $"Microwave quality loss: {settings.MicrowaveQualityLoss}", settings.MicrowaveQualityLoss, 0f, 20f, 1f, null);
+            settings.MicrowaveExtraPoisonChance = listing.SliderLabeled(
+                $"Microwave poison chance: {settings.MicrowaveExtraPoisonChance:0.0} pp", settings.MicrowaveExtraPoisonChance, 0f, 5f, 0.1f, null);
+        }
+        else
+        {
+            listing.Label("Meal temperature and microwave: provided by Thermodynamics - Hot Meals");
+        }
         listing.CheckboxLabeled("Colony dining standards", ref settings.ColonyDiningStandards);
         listing.CheckboxLabeled("Royalty dining standards", ref settings.RoyaltyDiningStandards);
 

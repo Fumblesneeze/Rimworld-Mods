@@ -909,7 +909,8 @@ internal static class DiningSessionRegistry
 
     internal static Thing? FindMicrowave(Pawn pawn, Thing meal)
     {
-        if (!ImmersiveChefsMod.Settings.MealTemperatureEnabled ||
+        if (!TemperatureOwnership.ImmersiveChefsFeaturesActive ||
+            !ImmersiveChefsMod.Settings.MealTemperatureEnabled ||
             (meal as ThingWithComps)?.GetComp<CompCulinaryState>()?.PeekCurrentServing() is not { } serving ||
             serving.TemperatureCelsius >= ImmersiveChefsMod.Settings.AutoMicrowaveBelow)
         {

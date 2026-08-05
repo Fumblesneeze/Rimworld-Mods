@@ -24,7 +24,9 @@ public sealed class CompMicrowave : ThingComp
 
     public bool TryReheat(Thing meal)
     {
-        if (!Operational || meal is not ThingWithComps withComps ||
+        if (!TemperatureOwnership.ImmersiveChefsFeaturesActive ||
+            !Operational ||
+            meal is not ThingWithComps withComps ||
             !MealCoveragePolicy.IsCovered(meal.def))
         {
             return false;

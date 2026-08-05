@@ -27,7 +27,7 @@ internal static class DiningExperience
             ReplaceMemory(memories, "ImmersiveChefs_CulinaryQuality", QualityStage(serving.QualityScore));
         }
 
-        if (settings.MealTemperatureEnabled)
+        if (TemperatureOwnership.ImmersiveChefsFeaturesActive && settings.MealTemperatureEnabled)
         {
             ReplaceMemory(
                 memories,

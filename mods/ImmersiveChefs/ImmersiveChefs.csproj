@@ -31,9 +31,19 @@
     <RimWorldLoadAfter Include="VanillaExpanded.VanillaFoodVarietyExpanded" />
     <RimWorldLoadAfter Include="OskarPotocki.VanillaFactionsExpanded.Core" />
     <RimWorldLoadAfter Include="VanillaExpanded.VNutrientE" />
+    <RimWorldLoadAfter Include="Mlie.DThermodynamicsHotMeals" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+
+  <Target Name="RemoveLegacyConditionalMicrowaveLayout" BeforeTargets="Build;CopyMod">
+    <Delete Files="$(ModSpecificOutputfolder)\LoadFolders.xml" />
+    <RemoveDir Directories="$(OutputVersionFolder)\FallbackTemperature" />
+    <Delete Files="$(RimWorldModPackageFolder)\LoadFolders.xml" />
+    <RemoveDir Directories="$(RimWorldModPackageFolder)\1.6\FallbackTemperature" />
+    <Delete Files="$(OutputVersionFolder)\Defs\ThingDefs\Microwave.xml" />
+    <Delete Files="$(RimWorldModPackageFolder)\1.6\Defs\ThingDefs\Microwave.xml" />
+  </Target>
 
   <!-- ModSdk 0.0.9's optional XSD generator cannot traverse RimWorld 1.6's
        recursive Def graph. XML is instead validated by the staged Def host and

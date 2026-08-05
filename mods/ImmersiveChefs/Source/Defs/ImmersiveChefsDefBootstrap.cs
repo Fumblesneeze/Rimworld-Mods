@@ -26,6 +26,7 @@ internal static class ImmersiveChefsDefBootstrap
         }
 
         applied = true;
+        TemperatureOwnership.ValidateActiveProviderShape();
         OptionalMaterialAdapter.ValidateAndConfigure();
         var classifier = OptionalMaterialAdapter.CreateClassifier();
         foreach (var recipe in DefDatabase<RecipeDef>.AllDefsListForReading)

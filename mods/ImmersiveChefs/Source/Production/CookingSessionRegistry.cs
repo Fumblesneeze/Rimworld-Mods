@@ -178,12 +178,13 @@ internal sealed class CookingSession
                 contamination |= ContaminationSources.EmergencyUnplated;
             }
 
+            var ownsTemperature = TemperatureOwnership.ImmersiveChefsFeaturesActive;
             records.Add(new CulinaryServingRecord(
                 qualityScore,
-                70f,
+                ownsTemperature ? 70f : 21f,
                 contamination,
                 microwaveReheatCount: 0,
-                lastThermalTick: currentTick,
+                lastThermalTick: ownsTemperature ? currentTick : 0,
                 hiddenSourceDefNames,
                 hiddenDietaryFlags));
         }
