@@ -350,6 +350,34 @@ public sealed class GatewayApiRouter
                         maximumUtf8Bytes: GatewayIntegrationTestSnapshot.MaximumSerializedUtf8Bytes));
             }
 
+            if (request.Method == "GET" && request.Path == "/api/v1/end-to-end-tests")
+            {
+                var capture = Require(
+                    services.EndToEndTestSnapshot,
+                    "end_to_end_test_status_unavailable");
+                var capturedSnapshot = capture();
+                if (capturedSnapshot is null)
+                {
+                    return Error(
+                        503,
+                        "Service Unavailable",
+                        requestId,
+                        "end_to_end_test_status_pending",
+                        "End-to-end test status is pending its initial durable session commit.",
+                        stopwatch,
+                        retryable: true);
+                }
+
+                return Success(
+                    requestId,
+                    capturedSnapshot,
+                    stopwatch,
+                    jsonLimits: new GatewayJsonLimits(
+                        maximumDepth: 16,
+                        maximumNodes: int.MaxValue,
+                        maximumUtf8Bytes: GatewayLoopbackServer.MaximumResponseBytes));
+            }
+
             if (request.Method == "POST" && request.Path == "/api/v1/defs/export")
             {
                 var exporter = Require(services.DefExporter, "def_export_unavailable");

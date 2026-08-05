@@ -139,6 +139,13 @@ public interface IGatewayEndToEndAssemblyLoader
     Assembly Load(byte[] assemblyBytes);
 }
 
+public interface IGatewayEndToEndBundleInspector
+{
+    GatewayEndToEndBundleInspectionResult Inspect(
+        GatewayEndToEndManifestCandidate candidate,
+        IReadOnlyList<string> activePackageIds);
+}
+
 public sealed class GatewayEndToEndAssemblyByteLoader : IGatewayEndToEndAssemblyLoader
 {
     public Assembly Load(byte[] assemblyBytes)

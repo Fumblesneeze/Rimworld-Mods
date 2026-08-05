@@ -7,7 +7,7 @@ using RimWorldDevGateway.EndToEndTesting;
 
 namespace RimWorldDevGateway;
 
-public sealed class GatewayEndToEndBundleCatalog
+public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspector
 {
     private const string ManifestSuffix = ".e2etests.json";
     private readonly IGatewayEndToEndAssemblyLoader assemblyLoader;

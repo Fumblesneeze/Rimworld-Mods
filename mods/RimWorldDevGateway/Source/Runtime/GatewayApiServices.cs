@@ -26,6 +26,7 @@ public sealed class GatewayApiServices
         GatewayAutomationRegistry? automations = null,
         GatewayDefExporter? defExporter = null,
         Func<GatewayIntegrationTestSnapshot?>? integrationTestSnapshot = null,
+        Func<GatewayEndToEndSnapshot?>? endToEndTestSnapshot = null,
         Action? requestShutdown = null)
     {
         AssemblyExecutor = assemblyExecutor;
@@ -41,6 +42,7 @@ public sealed class GatewayApiServices
         Automations = automations;
         DefExporter = defExporter;
         IntegrationTestSnapshot = integrationTestSnapshot;
+        EndToEndTestSnapshot = endToEndTestSnapshot;
         RequestShutdown = requestShutdown;
     }
 
@@ -69,6 +71,8 @@ public sealed class GatewayApiServices
     public GatewayDefExporter? DefExporter { get; }
 
     public Func<GatewayIntegrationTestSnapshot?>? IntegrationTestSnapshot { get; }
+
+    public Func<GatewayEndToEndSnapshot?>? EndToEndTestSnapshot { get; }
 
     public Action? RequestShutdown { get; }
 }

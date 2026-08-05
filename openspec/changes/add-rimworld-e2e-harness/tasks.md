@@ -7,8 +7,8 @@
 
 ## 2. mods/RimWorldDevGateway — TDD runtime loading and execution
 
-- [ ] 2.1 TDD RED: Add failing runtime tests for disabled-by-default discovery, startup-flag gating, active-mod-only bundle validation, assembly identity/hash/attribute matching, exact package-set filtering, and isolated load/reflection failures.
-- [ ] 2.2 TDD GREEN: Implement dynamic bundle discovery/loading and durable `GET /api/v1/end-to-end-tests` discovery state without loading mismatched or unrequested assemblies.
+- [x] 2.1 TDD RED: Add failing runtime tests for disabled-by-default discovery, startup-flag gating, active-mod-only bundle validation, assembly identity/hash/attribute matching, exact package-set filtering, and isolated load/reflection failures.
+- [x] 2.2 TDD GREEN: Implement dynamic bundle discovery/loading and durable `GET /api/v1/end-to-end-tests` discovery state without loading mismatched or unrequested assemblies.
 - [ ] 2.3 TDD RED: Add failing state-machine tests for Arrange, one-ready-transition-per-frame iterator execution, action/wait/observe step ordering, predicate/deadline behavior, assertion/exception isolation, incremental persistence, and process-abort synthesis.
 - [ ] 2.4 TDD GREEN: Implement the multi-frame E2E coordinator, typed native gizmo/float-menu/time/selection/camera/input actions, screenshots/checkpoints, durable results, and bounded diagnostics.
 

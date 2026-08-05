@@ -70,6 +70,7 @@ public static class GatewayRuntimeBootstrap
     {
         GameObject? gameObject = null;
         GatewayIntegrationTestCoordinator? integrationTests = null;
+        GatewayEndToEndCoordinator? endToEndTests = null;
         try
         {
             GatewayTransportFactory factory;
@@ -84,10 +85,10 @@ public static class GatewayRuntimeBootstrap
                     "No gateway transport factory was configured before deferred startup.");
             }
 
-            var runIntegrationTests = GenCommandLine.CommandLineArgPassed(
-                "devGatewayRunIntegrationTests");
+            var featureSelection = GatewayStartupFeatureSelection.Capture(
+                GenCommandLine.CommandLineArgPassed);
             integrationTests = GatewayIntegrationTestCoordinator.Create(
-                runIntegrationTests,
+                featureSelection.RunIntegrationTests,
                 () => GatewayIntegrationTestCoordinator.CreateEnabled(
                     GenFilePaths.SaveDataFolderPath,
                     new GatewayIntegrationTestManifestCatalog(
@@ -96,6 +97,14 @@ public static class GatewayRuntimeBootstrap
                         new VerseGatewayIntegrationTestLifecycleProbe()),
                     (operation, exception) => Log.Error(
                         "[RimWorldDevGateway] Integration-test " + operation +
+                        " failed: " + exception)));
+            endToEndTests = GatewayEndToEndCoordinator.Create(
+                featureSelection.RunEndToEndTests,
+                () => GatewayEndToEndCoordinator.CreateEnabled(
+                    GenFilePaths.SaveDataFolderPath,
+                    new VerseGatewayEndToEndManifestSource(),
+                    (operation, exception) => Log.Error(
+                        "[RimWorldDevGateway] End-to-end test " + operation +
                         " failed: " + exception)));
 
             gameObject = new GameObject("[RimWorldDevGateway] Runtime")
@@ -109,17 +118,21 @@ public static class GatewayRuntimeBootstrap
                 host = createdHost;
             }
 
-            var runtime = CreateDefaultRuntime(content, factory, integrationTests);
-            createdHost.Initialize(runtime, integrationTests);
+            var runtime = CreateDefaultRuntime(content, factory, integrationTests, endToEndTests);
+            createdHost.Initialize(runtime, integrationTests, endToEndTests);
             integrationTests = null;
+            endToEndTests = null;
             Log.Warning(
                 $"[RimWorldDevGateway] API active on authenticated IPv4 loopback port {runtime.Port}; " +
                 "unrestricted execution is enabled; in-game integration tests are " +
-                (runIntegrationTests ? "enabled." : "disabled."));
+                (featureSelection.RunIntegrationTests ? "enabled; " : "disabled; ") +
+                "end-to-end tests are " +
+                (featureSelection.RunEndToEndTests ? "enabled." : "disabled."));
         }
         catch (Exception exception)
         {
             integrationTests?.Dispose();
+            endToEndTests?.Dispose();
             if (gameObject is not null)
             {
                 UnityEngine.Object.Destroy(gameObject);
@@ -138,7 +151,8 @@ public static class GatewayRuntimeBootstrap
     private static GatewayRuntime CreateDefaultRuntime(
         ModContentPack content,
         GatewayTransportFactory factory,
-        GatewayIntegrationTestCoordinator integrationTests)
+        GatewayIntegrationTestCoordinator integrationTests,
+        GatewayEndToEndCoordinator endToEndTests)
     {
         using var process = Process.GetCurrentProcess();
         var processStartUtc = new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero);
@@ -199,6 +213,7 @@ public static class GatewayRuntimeBootstrap
                         defExporter: new GatewayDefExporter(
                             new VerseGatewayDefSource(logBuffer)),
                         integrationTestSnapshot: () => integrationTests.PublishedSnapshot,
+                        endToEndTestSnapshot: () => endToEndTests.PublishedSnapshot,
                         requestShutdown: requestShutdown));
             });
     }
@@ -208,6 +223,7 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
 {
     private GatewayRuntime? runtime;
     private GatewayIntegrationTestCoordinator? integrationTests;
+    private GatewayEndToEndCoordinator? endToEndTests;
     private readonly GatewayShutdownLifecycle shutdownLifecycle = new();
     private int stopping;
     private int shutdownInitialized;
@@ -234,11 +250,21 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
                         "; map " + (playableMap?.State ?? "pending");
             GUI.Box(new Rect(8f, 42f, 620f, 30f), state);
         }
+
+        var endToEndSnapshot = endToEndTests?.Snapshot;
+        if (endToEndSnapshot?.Enabled == true)
+        {
+            var state = "E2E TESTS — discovery " + endToEndSnapshot.DiscoveryState +
+                        "; admitted " + endToEndSnapshot.Tests.Count +
+                        "; failures " + endToEndSnapshot.Failures.Count;
+            GUI.Box(new Rect(8f, 76f, 620f, 30f), state);
+        }
     }
 
     internal void Initialize(
         GatewayRuntime value,
-        GatewayIntegrationTestCoordinator integrationTestCoordinator)
+        GatewayIntegrationTestCoordinator integrationTestCoordinator,
+        GatewayEndToEndCoordinator endToEndTestCoordinator)
     {
         if (value is null)
         {
@@ -255,12 +281,19 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             throw new ArgumentNullException(nameof(integrationTestCoordinator));
         }
 
+        if (endToEndTestCoordinator is null)
+        {
+            throw new ArgumentNullException(nameof(endToEndTestCoordinator));
+        }
+
         runtime = value;
         integrationTests = integrationTestCoordinator;
+        endToEndTests = endToEndTestCoordinator;
         useGUILayout = false;
         Application.quitting += OnApplicationQuitting;
         var manifest = runtime.Start();
         integrationTests.AttachSession(manifest.RunId, manifest.Token);
+        endToEndTests.AttachSession(manifest.RunId, manifest.Token);
         StartCoroutine(DrainEndOfFrame());
     }
 
@@ -278,6 +311,10 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             if (!active.IsShutdownRequested)
             {
                 integrationTests?.Tick();
+            }
+            if (!active.IsShutdownRequested)
+            {
+                endToEndTests?.Tick();
             }
             if (!active.IsShutdownRequested)
             {
@@ -348,6 +385,7 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             {
                 runtime?.Stop();
                 integrationTests?.Dispose();
+                endToEndTests?.Dispose();
             },
             allowRetry,
             DateTimeOffset.UtcNow);
@@ -373,6 +411,7 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             }
 
             integrationTests = null;
+            endToEndTests = null;
             runtime = null;
             return true;
         }
