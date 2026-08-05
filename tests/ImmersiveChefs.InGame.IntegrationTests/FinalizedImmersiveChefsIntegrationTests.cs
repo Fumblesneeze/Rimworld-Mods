@@ -886,22 +886,237 @@ public static class FinalizedImmersiveChefsIntegrationTests
         AssertWorkMultiplier("CookMealSurvival", 1f);
         AssertWorkMultiplier("Make_Pemmican", 1f);
 
-        var vanillaCookingExpandedLoaded = LoadedModManager.RunningModsListForReading.Any(mod =>
-            string.Equals(mod.PackageId, "vanillaexpanded.vcooke", StringComparison.OrdinalIgnoreCase));
-        var unclassifiedBake = DefDatabase<RecipeDef>.GetNamedSilentFail("VCE_CookBakeSimple");
+        var vanillaCookingExpandedLoaded = IsPackageActive(
+            MealClassificationCatalog.VanillaCookingExpandedPackageId);
+        var simpleBake = DefDatabase<RecipeDef>.GetNamedSilentFail("VCE_CookBakeSimple");
         if (vanillaCookingExpandedLoaded)
         {
             IntegrationAssert.NotNull(
-                unclassifiedBake,
+                simpleBake,
                 "The active Vanilla Cooking Expanded matrix must finalize its simple-bake recipe.");
-            AssertWorkMultiplier("VCE_CookBakeSimple", 1f);
+            AssertWorkMultiplier("VCE_CookBakeSimple", 0.75f);
         }
         else
         {
             IntegrationAssert.Null(
-                unclassifiedBake,
+                simpleBake,
                 "The base matrix must not invent a Vanilla Cooking Expanded recipe.");
         }
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedOptionalMealRegistriesMatchTheExactLoadedDefs()
+    {
+        if (IsPackageActive(MealClassificationCatalog.VanillaCookingExpandedPackageId))
+        {
+            AssertMealRegistry(
+                MealComplexity.Simple,
+                new[]
+                {
+                    "VCE_CookBakeSimple", "VCE_CookBakeSimpleBulk",
+                    "VCE_CookGrillSimple", "VCE_CookGrillSimpleBulk", "VCE_CookSoupSimple"
+                },
+                new[]
+                {
+                    "VCE_SimpleBake", "VCE_SimpleGrill", "VCE_RuinedSimpleGrill",
+                    "VCE_CookedSoupSimple"
+                });
+            AssertMealRegistry(
+                MealComplexity.Advanced,
+                new[]
+                {
+                    "VCE_CookBakeFine", "VCE_CookBakeFineBulk",
+                    "VCE_CookGrillFine", "VCE_CookGrillFineBulk", "VCE_CookSoupFine"
+                },
+                new[]
+                {
+                    "VCE_FineBake", "VCE_FineGrill", "VCE_RuinedFineGrill",
+                    "VCE_CookedSoupFine"
+                });
+            AssertMealRegistry(
+                MealComplexity.Elaborate,
+                new[]
+                {
+                    "VCE_CookBakeLavish", "VCE_CookBakeLavishBulk", "VCE_CookBakeGourmet",
+                    "VCE_CookGrillLavish", "VCE_CookGrillLavishhBulk", "VCE_CookGrillGourmet",
+                    "VCE_CookMealGourmet", "VCE_CookSoupLavish", "VCE_CookSoupGourmet"
+                },
+                new[]
+                {
+                    "VCE_LavishBake", "VCE_GourmetBake", "VCE_LavishGrill", "VCE_GourmetGrill",
+                    "VCE_RuinedLavishGrill", "VCE_RuinedGourmetGrill", "VCE_MealGourmet",
+                    "VCE_CookedSoupLavish", "VCE_CookedSoupGourmet"
+                });
+        }
+
+        if (IsPackageActive(MealClassificationCatalog.VanillaCookingExpandedHautePackageId))
+        {
+            AssertMealRegistry(
+                MealComplexity.Elaborate,
+                new[] { "VCE_CookMealHaute" },
+                new[] { "VCE_MealHaute" });
+        }
+
+        if (IsPackageActive(MealClassificationCatalog.VanillaCookingExpandedStewsPackageId))
+        {
+            AssertMealRegistry(
+                MealComplexity.Simple,
+                new[] { "VCE_CookStewSimple" },
+                new[] { "VCE_CookedStewSimple" });
+            AssertMealRegistry(
+                MealComplexity.Advanced,
+                new[] { "VCE_CookStewFine" },
+                new[] { "VCE_CookedStewFine" });
+            AssertMealRegistry(
+                MealComplexity.Elaborate,
+                new[] { "VCE_CookStewLavish" },
+                new[] { "VCE_CookedStewLavish" });
+        }
+
+        if (IsPackageActive(MealClassificationCatalog.VanillaCookingExpandedSushiPackageId))
+        {
+            AssertMealRegistry(
+                MealComplexity.Simple,
+                new[]
+                {
+                    "VCE_CookChirashizushiSimple", "VCE_CookChirashizushiSimpleBulk",
+                    "VCE_CookNorimakiSimple", "VCE_CookNorimakiSimpleBulk"
+                },
+                new[] { "VCE_Chirashizushi", "VCE_Norimaki" });
+            AssertMealRegistry(
+                MealComplexity.Advanced,
+                new[]
+                {
+                    "VCE_CookUramakiFine", "VCE_CookUramakiFineBulk",
+                    "VCE_CookNigiriFine", "VCE_CookNigiriFineBulk"
+                },
+                new[] { "VCE_Uramaki", "VCE_Nigiri" });
+            AssertMealRegistry(
+                MealComplexity.Elaborate,
+                new[]
+                {
+                    "VCE_CookTemakiLavish", "VCE_CookTemakiLavishBulk",
+                    "VCE_CookFutomakiLavish", "VCE_CookFutomakiLavishBulk",
+                    "VCE_CookGunkanmakiGourmet", "VCE_CookOshizushiiGourmet"
+                },
+                new[] { "VCE_Temaki", "VCE_Futomaki", "VCE_Gunkanmaki", "VCE_Oshizushi" });
+        }
+
+        if (IsPackageActive(MealClassificationCatalog.FriedMealsPackageId))
+        {
+            AssertMealRegistry(
+                MealComplexity.Simple,
+                new[] { "CookFritterSimple", "CookFritterSimpleBulk" },
+                new[] { "ucp_SimpleFritter" });
+            AssertMealRegistry(
+                MealComplexity.Advanced,
+                new[] { "CookFritterFine", "CookFritterFineBulk" },
+                new[] { "ucp_FineFritter" });
+            AssertMealRegistry(
+                MealComplexity.Elaborate,
+                new[] { "CookFritterLavish", "CookFritterLavishBulk" },
+                new[] { "ucp_LavishFritter" });
+            if (IsPackageActive(MealClassificationCatalog.VanillaCookingExpandedPackageId))
+            {
+                AssertMealRegistry(
+                    MealComplexity.Elaborate,
+                    new[] { "VCE_CookFritterGourmet" },
+                    new[] { "ucp_GourmetFritter" });
+            }
+        }
+
+        if (IsPackageActive(MealClassificationCatalog.FastMealsPackageId))
+        {
+            AssertFastMealRegistry(
+                MealComplexity.Simple,
+                new[] { "CM_CookFastMeal", "CM_CookFastMealBulk" },
+                new[] { "CM_SimpleFastMeal" });
+            AssertFastMealRegistry(
+                MealComplexity.Advanced,
+                new[]
+                {
+                    "CM_CookFastMealDeluxe", "CM_CookFastMealDeluxe_Meat",
+                    "CM_CookFastMealDeluxe_Veg", "CM_CookFastMealDeluxeBulk",
+                    "CM_CookFastMealDeluxeBulk_Meat", "CM_CookFastMealDeluxeBulk_Veg"
+                },
+                new[] { "CM_DeluxeFastMeal", "CM_DeluxeFastMeal_Meat", "CM_DeluxeFastMeal_Veg" });
+        }
+
+        if (IsPackageActive(MealClassificationCatalog.RimCuisineCorePackageId))
+        {
+            AssertMealRegistry(
+                MealComplexity.Simple,
+                new[] { "CookThinPottage" },
+                new[] { "RC2_ThinPottage" });
+            AssertMealRegistry(
+                MealComplexity.Advanced,
+                new[] { "RC2_CookThickPottage" },
+                new[] { "RC2_ThickPottage" });
+        }
+
+        if (IsPackageActive(MealClassificationCatalog.RimCuisineMealsPackageId))
+        {
+            AssertMealRegistry(
+                MealComplexity.Simple,
+                new[] { "RC2_CookRubaboo" },
+                new[] { "RC2_Rubaboo" });
+            AssertMealRegistry(
+                MealComplexity.Advanced,
+                new[] { "RC2_CookFineMealBulk" },
+                Array.Empty<string>());
+            AssertMealRegistry(
+                MealComplexity.Elaborate,
+                new[]
+                {
+                    "RC2_CookLavishMealBulk", "RC2_CookExtravagantMeal",
+                    "RC2_CookExtravagantMealBulk"
+                },
+                new[] { "RC2_Pizza", "RC2_ExtravagantMeal" });
+        }
+    }
+
+    private static void AssertMealRegistry(
+        MealComplexity expected,
+        IEnumerable<string> recipeDefNames,
+        IEnumerable<string> mealDefNames)
+    {
+        foreach (var recipeDefName in recipeDefNames)
+        {
+            var recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(recipeDefName);
+            IntegrationAssert.NotNull(recipe, $"The active package must finalize recipe {recipeDefName}.");
+            IntegrationAssert.Equal(
+                expected,
+                MealClassificationRuntime.ClassifyRecipe(recipe)!.Value,
+                $"{recipeDefName} must use its explicit compatibility tier.");
+        }
+
+        foreach (var mealDefName in mealDefNames)
+        {
+            var meal = DefDatabase<ThingDef>.GetNamedSilentFail(mealDefName);
+            IntegrationAssert.NotNull(meal, $"The active package must finalize meal {mealDefName}.");
+            IntegrationAssert.Equal(
+                expected,
+                MealComplexityRuntime.Classify(meal)!.Value,
+                $"{mealDefName} must use its explicit compatibility tier.");
+        }
+    }
+
+    private static void AssertFastMealRegistry(
+        MealComplexity expected,
+        IEnumerable<string> recipeDefNames,
+        IEnumerable<string> mealDefNames)
+    {
+        AssertMealRegistry(expected, recipeDefNames, mealDefNames);
+        foreach (var recipeDefName in recipeDefNames)
+        {
+            AssertWorkMultiplier(recipeDefName, 1f);
+        }
+    }
+
+    private static bool IsPackageActive(string packageId)
+    {
+        return LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(mod.PackageId, packageId, StringComparison.OrdinalIgnoreCase));
     }
 
     private static void AssertWorkMultiplier(string defName, float expectedMultiplier)

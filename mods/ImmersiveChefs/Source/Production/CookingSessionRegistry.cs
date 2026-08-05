@@ -392,8 +392,6 @@ internal sealed class CookingSession
 internal static class CookingSessionRegistry
 {
     private static readonly ConditionalWeakTable<Job, CookingSession> Sessions = new();
-    private static readonly RecipeClassificationCatalog RecipeClassifications =
-        RecipeClassificationCatalog.CreateVanilla();
 
     internal static bool TryAttach(Pawn pawn, Job job, Thing billGiver, out string? missingReason)
     {
@@ -417,8 +415,7 @@ internal static class CookingSessionRegistry
         var emergency = UrgentProductionRequestRegistry.HasActive(pawn.Map);
         var cookware = FindPortions(pawn, job, KitchenwareProduct.Cookware, 1, emergency, out var cookwareUse);
         var requiredPlates = MealCoveragePolicy.ServingCount(job.RecipeDef!);
-        var plateComplexity = job.RecipeDef!.GetModExtension<MealCoverageExtension>()?.complexity ??
-                              RecipeClassifications.Classify(job.RecipeDef.defName);
+        var plateComplexity = MealClassificationRuntime.ClassifyRecipe(job.RecipeDef);
         var plates = FindPortions(
             pawn,
             job,

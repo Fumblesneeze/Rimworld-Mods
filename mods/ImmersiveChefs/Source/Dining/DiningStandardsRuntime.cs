@@ -153,17 +153,6 @@ internal static class MealComplexityRuntime
 {
     internal static MealComplexity? Classify(ThingDef mealDef)
     {
-        if (mealDef.GetModExtension<MealCoverageExtension>()?.complexity is { } extension)
-        {
-            return extension;
-        }
-
-        return mealDef.defName switch
-        {
-            "MealSimple" => MealComplexity.Simple,
-            "MealFine" or "MealFine_Meat" or "MealFine_Veg" => MealComplexity.Advanced,
-            "MealLavish" or "MealLavish_Meat" or "MealLavish_Veg" => MealComplexity.Elaborate,
-            _ => null
-        };
+        return MealClassificationRuntime.ClassifyMeal(mealDef);
     }
 }

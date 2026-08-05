@@ -10,12 +10,12 @@ public static class RecipeWorkRuntime
     public static void Initialize(ImmersiveChefsSettings settings)
     {
         Multipliers.Clear();
-        var catalog = RecipeClassificationCatalog.CreateVanilla();
+        MealClassificationRuntime.Initialize(
+            ImmersiveChefsMod.Integrations?.LoadedPackageIds ?? Array.Empty<string>());
         foreach (var recipe in DefDatabase<RecipeDef>.AllDefsListForReading)
         {
-            var explicitComplexity = recipe.GetModExtension<MealCoverageExtension>()?.complexity;
-            var complexity = explicitComplexity ?? catalog.Classify(recipe.defName);
-            if (!complexity.HasValue)
+            var complexity = MealClassificationRuntime.ClassifyRecipe(recipe);
+            if (!complexity.HasValue || MealClassificationRuntime.PreservesOriginalWorkAmount(recipe))
             {
                 continue;
             }
