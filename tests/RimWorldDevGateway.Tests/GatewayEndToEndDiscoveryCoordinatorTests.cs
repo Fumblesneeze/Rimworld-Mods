@@ -610,7 +610,8 @@ public sealed class GatewayEndToEndDiscoveryCoordinatorTests
 
         public IGatewayEndToEndExecutionMachine Create(
             IReadOnlyList<GatewayEndToEndRuntimeTestDescriptor> tests,
-            string? sessionCredential)
+            string? sessionCredential,
+            string artifactDirectory)
         {
             CreateCount++;
             LastCredential = sessionCredential;

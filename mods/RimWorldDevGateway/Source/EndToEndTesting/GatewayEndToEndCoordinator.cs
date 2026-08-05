@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace RimWorldDevGateway;
 
 public sealed class GatewayEndToEndCoordinator : IDisposable
@@ -531,7 +533,9 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             {
                 execution = executionFactory.Create(
                     runtimeTests.OrderBy(test => test.Id, StringComparer.Ordinal).ToArray(),
-                    sessionCredential) ??
+                    sessionCredential,
+                    Path.GetDirectoryName(artifactStore!.ArtifactPath!) ??
+                    throw new InvalidOperationException("The E2E artifact has no session directory.")) ??
                     throw new InvalidOperationException("The E2E execution factory returned null.");
             }
             catch (Exception exception)

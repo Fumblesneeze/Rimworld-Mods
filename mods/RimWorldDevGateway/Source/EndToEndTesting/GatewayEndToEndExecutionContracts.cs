@@ -76,6 +76,10 @@ public sealed class GatewayEndToEndCompletedStepOperation : IGatewayEndToEndStep
 
     public static GatewayEndToEndCompletedStepOperation Failed(string code, string message) =>
         new(GatewayEndToEndStepOutcome.Fail(code, message));
+
+    public static GatewayEndToEndCompletedStepOperation FromOutcome(
+        GatewayEndToEndStepOutcome outcome) =>
+        new(outcome ?? throw new ArgumentNullException(nameof(outcome)));
 }
 
 public interface IGatewayEndToEndTestIsolation
@@ -100,7 +104,8 @@ public interface IGatewayEndToEndExecutionFactory
 {
     IGatewayEndToEndExecutionMachine Create(
         IReadOnlyList<GatewayEndToEndRuntimeTestDescriptor> tests,
-        string? sessionCredential);
+        string? sessionCredential,
+        string artifactDirectory);
 }
 
 public interface IGatewayEndToEndExecutionReadiness
