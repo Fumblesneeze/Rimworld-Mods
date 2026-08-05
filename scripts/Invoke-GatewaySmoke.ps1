@@ -299,6 +299,415 @@ function Test-GatewayPackageId {
         $Value -cmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$'
 }
 
+function Get-GatewaySmokeWorkshopModCandidates {
+    param(
+        [Parameter(Mandatory)][string]$WorkshopPath,
+        [Parameter(Mandatory)][string[]]$PackageIds,
+        [Parameter(Mandatory)][string]$Version
+    )
+
+    $resolvedWorkshopPath = [System.IO.Path]::GetFullPath($WorkshopPath)
+    if (-not (Test-Path -LiteralPath $resolvedWorkshopPath -PathType Container)) {
+        throw "Workshop path does not exist: $resolvedWorkshopPath"
+    }
+    if ($Version -cnotmatch '^\d+\.\d+$') {
+        throw "Workshop candidate RimWorld version is invalid: $Version"
+    }
+
+    $targetPackages = [System.Collections.Generic.Dictionary[string, string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($packageId in @($PackageIds)) {
+        if ([string]::IsNullOrWhiteSpace($packageId)) {
+            throw 'Workshop candidate package IDs must not contain empty values.'
+        }
+        if ($targetPackages.ContainsKey($packageId)) {
+            throw "Workshop candidate package ID was supplied more than once: $packageId"
+        }
+        $targetPackages.Add($packageId, $packageId)
+    }
+
+    $candidates = [System.Collections.Generic.List[object]]::new()
+    foreach ($itemDirectory in @(Get-ChildItem -LiteralPath $resolvedWorkshopPath -Directory -Force |
+            Sort-Object Name)) {
+        $aboutPath = Join-Path $itemDirectory.FullName 'About\About.xml'
+        if (-not (Test-Path -LiteralPath $aboutPath -PathType Leaf)) {
+            continue
+        }
+
+        try {
+            [xml]$about = Get-Content -LiteralPath $aboutPath -Raw -ErrorAction Stop
+        }
+        catch {
+            throw "Workshop item '$($itemDirectory.Name)' has an unreadable About.xml: $($_.Exception.Message)"
+        }
+        $packageNode = $about.SelectSingleNode(
+            "/*[local-name()='ModMetaData']/*[local-name()='packageId']")
+        if ($null -eq $packageNode) {
+            continue
+        }
+        $declaredPackageId = $packageNode.InnerText.Trim()
+        if (-not $targetPackages.ContainsKey($declaredPackageId)) {
+            continue
+        }
+        $packageId = $targetPackages[$declaredPackageId]
+
+        $supportedVersions = @($about.SelectNodes(
+            "/*[local-name()='ModMetaData']/*[local-name()='supportedVersions']/*[local-name()='li']") |
+            ForEach-Object { $_.InnerText.Trim() } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        $supportsVersion = @($supportedVersions | Where-Object {
+                [string]::Equals($_, $Version, [System.StringComparison]::OrdinalIgnoreCase)
+            }).Count -ne 0
+        $candidates.Add([pscustomobject]@{
+            PackageId = $packageId
+            WorkshopItemId = $itemDirectory.Name
+            SourcePath = $itemDirectory.FullName
+            AboutPath = $aboutPath
+            SupportedVersions = @($supportedVersions)
+            SupportsVersion = $supportsVersion
+        })
+    }
+
+    return $candidates.ToArray()
+}
+
+function Resolve-GatewaySmokeWorkshopOverridePlans {
+    param(
+        [Parameter(Mandatory)][string]$WorkshopPath,
+        [Parameter(Mandatory)][string]$ModsRoot,
+        [Parameter(Mandatory)][string[]]$PackageIds,
+        [Parameter(Mandatory)][string]$Version,
+        [Parameter(Mandatory)][string]$RunId
+    )
+
+    $resolvedWorkshopPath = [System.IO.Path]::GetFullPath($WorkshopPath)
+    $resolvedModsRoot = [System.IO.Path]::GetFullPath($ModsRoot)
+    if (-not (Test-Path -LiteralPath $resolvedWorkshopPath -PathType Container)) {
+        throw "Workshop path does not exist: $resolvedWorkshopPath"
+    }
+    if (-not (Test-Path -LiteralPath $resolvedModsRoot -PathType Container)) {
+        throw "RimWorld Mods path does not exist: $resolvedModsRoot"
+    }
+    if ($Version -cnotmatch '^\d+\.\d+$') {
+        throw "Workshop override RimWorld version is invalid: $Version"
+    }
+    if ([string]::IsNullOrWhiteSpace($RunId) -or
+        $RunId.Length -gt 80 -or
+        $RunId -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
+        throw "Workshop override run ID is invalid: $RunId"
+    }
+
+    $seenPackageIds = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    $plans = [System.Collections.Generic.List[object]]::new()
+    foreach ($packageId in @($PackageIds)) {
+        if ([string]::IsNullOrWhiteSpace($packageId)) {
+            throw 'Workshop override package IDs must not contain empty values.'
+        }
+        if (-not $seenPackageIds.Add($packageId)) {
+            throw "Workshop override package ID was supplied more than once: $packageId"
+        }
+
+    }
+    $allCandidates = @(Get-GatewaySmokeWorkshopModCandidates `
+        -WorkshopPath $resolvedWorkshopPath `
+        -PackageIds $PackageIds `
+        -Version $Version)
+
+    foreach ($packageId in @($PackageIds)) {
+        $candidates = @($allCandidates | Where-Object {
+                [string]::Equals(
+                    [string]$_.PackageId,
+                    $packageId,
+                    [System.StringComparison]::OrdinalIgnoreCase)
+            })
+        if ($candidates.Count -le 1) {
+            continue
+        }
+
+        $compatibleCandidates = @($candidates | Where-Object { [bool]$_.SupportsVersion })
+        if ($compatibleCandidates.Count -eq 0) {
+            $candidateIds = @($candidates | ForEach-Object { [string]$_.WorkshopItemId }) -join ', '
+            throw "Package '$packageId' has multiple Workshop copies, but none support RimWorld $Version (items: $candidateIds)."
+        }
+        if ($compatibleCandidates.Count -gt 1) {
+            $candidateIds = @($compatibleCandidates |
+                ForEach-Object { [string]$_.WorkshopItemId }) -join ', '
+            throw "Package '$packageId' has multiple Workshop copies support RimWorld $Version (items: $candidateIds); refusing an arbitrary selection."
+        }
+
+        $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $packageBytes = [System.Text.Encoding]::UTF8.GetBytes($packageId.ToLowerInvariant())
+            $packageHash = [System.BitConverter]::ToString(
+                $hashAlgorithm.ComputeHash($packageBytes)).Replace('-', '').Substring(0, 12).ToLowerInvariant()
+        }
+        finally {
+            $hashAlgorithm.Dispose()
+        }
+        $localName = ".gateway-workshop-$RunId-$packageHash"
+        $localPath = Join-Path $resolvedModsRoot $localName
+        $selected = $compatibleCandidates[0]
+        $plans.Add([pscustomobject]@{
+            Contract = 'RimWorldDevGateway/WorkshopOverride/v1'
+            RunId = $RunId
+            PackageId = $packageId
+            Version = $Version
+            WorkshopItemId = [string]$selected.WorkshopItemId
+            SourcePath = [System.IO.Path]::GetFullPath([string]$selected.SourcePath)
+            LocalPath = $localPath
+            MarkerPath = "$localPath.ownership.json"
+            CandidateCount = $candidates.Count
+        })
+    }
+
+    return $plans.ToArray()
+}
+
+function Assert-GatewaySmokeWorkshopOverridePath {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$ModsRoot,
+        [Parameter(Mandatory)][AllowEmptyString()][string]$ExpectedSuffix
+    )
+
+    $resolvedPath = [System.IO.Path]::GetFullPath($Path)
+    $resolvedModsRoot = [System.IO.Path]::GetFullPath($ModsRoot).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar)
+    $parent = [System.IO.DirectoryInfo]::new($resolvedPath).Parent
+    if ($null -eq $parent -or
+        -not [string]::Equals(
+            $parent.FullName.TrimEnd(
+                [System.IO.Path]::DirectorySeparatorChar,
+                [System.IO.Path]::AltDirectorySeparatorChar),
+            $resolvedModsRoot,
+            [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Workshop override path must be a direct child of the RimWorld Mods directory: $resolvedPath"
+    }
+    $name = [System.IO.Path]::GetFileName($resolvedPath)
+    if (-not $name.StartsWith('.gateway-workshop-', [System.StringComparison]::Ordinal) -or
+        -not $name.EndsWith($ExpectedSuffix, [System.StringComparison]::Ordinal)) {
+        throw "Workshop override path does not match the owned naming contract: $resolvedPath"
+    }
+
+    return $resolvedPath
+}
+
+function Publish-GatewaySmokeWorkshopOverride {
+    param(
+        [Parameter(Mandatory)][object]$Plan,
+        [Parameter(Mandatory)][string]$WorkshopPath,
+        [Parameter(Mandatory)][string]$ModsRoot
+    )
+
+    $resolvedWorkshopPath = [System.IO.Path]::GetFullPath($WorkshopPath).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar)
+    $sourcePath = [System.IO.Path]::GetFullPath([string]$Plan.SourcePath)
+    $sourceParent = [System.IO.DirectoryInfo]::new($sourcePath).Parent
+    if ($null -eq $sourceParent -or
+        -not [string]::Equals(
+            $sourceParent.FullName.TrimEnd(
+                [System.IO.Path]::DirectorySeparatorChar,
+                [System.IO.Path]::AltDirectorySeparatorChar),
+            $resolvedWorkshopPath,
+            [System.StringComparison]::OrdinalIgnoreCase) -or
+        -not (Test-Path -LiteralPath $sourcePath -PathType Container)) {
+        throw "Workshop override source is not an existing direct Workshop child: $sourcePath"
+    }
+    $localPath = Assert-GatewaySmokeWorkshopOverridePath `
+        -Path ([string]$Plan.LocalPath) `
+        -ModsRoot $ModsRoot `
+        -ExpectedSuffix ''
+    $markerPath = Assert-GatewaySmokeWorkshopOverridePath `
+        -Path ([string]$Plan.MarkerPath) `
+        -ModsRoot $ModsRoot `
+        -ExpectedSuffix '.ownership.json'
+    if (Test-Path -LiteralPath $localPath) {
+        throw "Workshop override local path already exists: $localPath"
+    }
+    if (Test-Path -LiteralPath $markerPath) {
+        throw "Workshop override ownership marker already exists: $markerPath"
+    }
+
+    $markerTemporaryPath = "$markerPath.tmp"
+    try {
+        Copy-Item `
+            -LiteralPath $sourcePath `
+            -Destination $localPath `
+            -Recurse `
+            -Force `
+            -ErrorAction Stop
+        $copyItem = Get-Item -LiteralPath $localPath -Force -ErrorAction Stop
+        if (-not $copyItem.PSIsContainer -or
+            ($copyItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Workshop override publication did not create a physical local mod copy: $localPath"
+        }
+        $copiedAboutPath = Join-Path $localPath 'About\About.xml'
+        if (-not (Test-Path -LiteralPath $copiedAboutPath -PathType Leaf)) {
+            throw "Workshop override publication omitted About.xml: $localPath"
+        }
+
+        $nonce = [guid]::NewGuid().ToString('N')
+        $contentMarkerPath = Join-Path $localPath '.gateway-workshop-ownership.json'
+        $marker = [ordered]@{
+            contract = [string]$Plan.Contract
+            runId = [string]$Plan.RunId
+            nonce = $nonce
+            packageId = [string]$Plan.PackageId
+            version = [string]$Plan.Version
+            workshopItemId = [string]$Plan.WorkshopItemId
+            sourcePath = $sourcePath
+            localPath = $localPath
+            contentMarkerPath = $contentMarkerPath
+            createdUtc = [datetime]::UtcNow.ToString(
+                'O',
+                [Globalization.CultureInfo]::InvariantCulture)
+        }
+        $markerJson = $marker | ConvertTo-Json -Depth 5
+        $markerJson |
+            Set-Content -LiteralPath $contentMarkerPath -Encoding UTF8 -ErrorAction Stop
+        $markerJson |
+            Set-Content -LiteralPath $markerTemporaryPath -Encoding UTF8 -ErrorAction Stop
+        Move-Item -LiteralPath $markerTemporaryPath -Destination $markerPath -ErrorAction Stop
+
+        return [pscustomobject]@{
+            Contract = [string]$Plan.Contract
+            RunId = [string]$Plan.RunId
+            PackageId = [string]$Plan.PackageId
+            Version = [string]$Plan.Version
+            WorkshopItemId = [string]$Plan.WorkshopItemId
+            SourcePath = $sourcePath
+            LocalPath = $localPath
+            MarkerPath = $markerPath
+            ContentMarkerPath = $contentMarkerPath
+            Nonce = $nonce
+        }
+    }
+    catch {
+        if (Test-Path -LiteralPath $markerTemporaryPath -PathType Leaf) {
+            Remove-Item -LiteralPath $markerTemporaryPath -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $localPath) {
+            $partialCopy = Get-Item -LiteralPath $localPath -Force -ErrorAction SilentlyContinue
+            if ($null -ne $partialCopy -and
+                $partialCopy.PSIsContainer -and
+                ($partialCopy.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -eq 0) {
+                [System.IO.Directory]::Delete($localPath, $true)
+            }
+        }
+        throw
+    }
+}
+
+function Remove-GatewaySmokeWorkshopOverride {
+    param(
+        [Parameter(Mandatory)][object]$Record,
+        [Parameter(Mandatory)][string]$WorkshopPath,
+        [Parameter(Mandatory)][string]$ModsRoot
+    )
+
+    $resolvedWorkshopPath = [System.IO.Path]::GetFullPath($WorkshopPath).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar)
+    $sourcePath = [System.IO.Path]::GetFullPath([string]$Record.SourcePath)
+    $sourceParent = [System.IO.DirectoryInfo]::new($sourcePath).Parent
+    if ($null -eq $sourceParent -or
+        -not [string]::Equals(
+            $sourceParent.FullName.TrimEnd(
+                [System.IO.Path]::DirectorySeparatorChar,
+                [System.IO.Path]::AltDirectorySeparatorChar),
+            $resolvedWorkshopPath,
+            [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Workshop override cleanup source is outside the Workshop root: $sourcePath"
+    }
+    $localPath = Assert-GatewaySmokeWorkshopOverridePath `
+        -Path ([string]$Record.LocalPath) `
+        -ModsRoot $ModsRoot `
+        -ExpectedSuffix ''
+    $markerPath = Assert-GatewaySmokeWorkshopOverridePath `
+        -Path ([string]$Record.MarkerPath) `
+        -ModsRoot $ModsRoot `
+        -ExpectedSuffix '.ownership.json'
+    $contentMarkerPath = Join-Path $localPath '.gateway-workshop-ownership.json'
+    if (-not [string]::Equals(
+            [System.IO.Path]::GetFullPath([string]$Record.ContentMarkerPath),
+            $contentMarkerPath,
+            [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Workshop override content marker path does not match its owned local copy: $localPath"
+    }
+    $localExists = Test-Path -LiteralPath $localPath
+    $markerExists = Test-Path -LiteralPath $markerPath -PathType Leaf
+    if (-not $localExists -and -not $markerExists) {
+        return
+    }
+    if (-not $markerExists) {
+        throw "Workshop override local copy has no adjacent ownership marker and will not be removed: $localPath"
+    }
+
+    $marker = Get-Content -LiteralPath $markerPath -Raw -ErrorAction Stop | ConvertFrom-Json
+    $expectedContract = 'RimWorldDevGateway/WorkshopOverride/v1'
+    if ([string]$marker.contract -cne $expectedContract -or
+        [string]$Record.Contract -cne $expectedContract -or
+        [string]$marker.runId -cne [string]$Record.RunId -or
+        [string]$marker.nonce -cne [string]$Record.Nonce -or
+        -not [string]::Equals(
+            [string]$marker.packageId,
+            [string]$Record.PackageId,
+            [System.StringComparison]::OrdinalIgnoreCase) -or
+        -not [string]::Equals(
+            [System.IO.Path]::GetFullPath([string]$marker.sourcePath),
+            $sourcePath,
+            [System.StringComparison]::OrdinalIgnoreCase) -or
+        -not [string]::Equals(
+            [System.IO.Path]::GetFullPath([string]$marker.localPath),
+            $localPath,
+            [System.StringComparison]::OrdinalIgnoreCase) -or
+        -not [string]::Equals(
+            [System.IO.Path]::GetFullPath([string]$marker.contentMarkerPath),
+            $contentMarkerPath,
+            [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Workshop override ownership marker does not match the cleanup record: $markerPath"
+    }
+
+    if ($localExists) {
+        if (-not (Test-Path -LiteralPath $contentMarkerPath -PathType Leaf)) {
+            throw "Workshop override local copy has no content ownership marker and will not be removed: $localPath"
+        }
+        $contentMarker = Get-Content -LiteralPath $contentMarkerPath -Raw -ErrorAction Stop |
+            ConvertFrom-Json
+        if ([string]$contentMarker.contract -cne $expectedContract -or
+            [string]$contentMarker.runId -cne [string]$Record.RunId -or
+            [string]$contentMarker.nonce -cne [string]$Record.Nonce -or
+            -not [string]::Equals(
+                [string]$contentMarker.packageId,
+                [string]$Record.PackageId,
+                [System.StringComparison]::OrdinalIgnoreCase) -or
+            -not [string]::Equals(
+                [System.IO.Path]::GetFullPath([string]$contentMarker.sourcePath),
+                $sourcePath,
+                [System.StringComparison]::OrdinalIgnoreCase) -or
+            -not [string]::Equals(
+                [System.IO.Path]::GetFullPath([string]$contentMarker.localPath),
+                $localPath,
+                [System.StringComparison]::OrdinalIgnoreCase) -or
+            -not [string]::Equals(
+                [System.IO.Path]::GetFullPath([string]$contentMarker.contentMarkerPath),
+                $contentMarkerPath,
+                [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Workshop override content ownership marker does not match the cleanup record: $contentMarkerPath"
+        }
+        $copyItem = Get-Item -LiteralPath $localPath -Force -ErrorAction Stop
+        if (-not $copyItem.PSIsContainer -or
+            ($copyItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Workshop override cleanup refused a linked or non-directory local copy: $localPath"
+        }
+        [System.IO.Directory]::Delete($localPath, $true)
+    }
+    Remove-Item -LiteralPath $markerPath -Force -ErrorAction Stop
+}
+
 function Add-GatewaySmokeFailure {
     param(
         [Parameter(Mandatory)][System.Collections.IList]$Failures,
@@ -332,6 +741,7 @@ function New-GatewaySmokeCleanupStatus {
         [Parameter(Mandatory)][string]$ProcessStatus,
         [Parameter(Mandatory)][string]$CredentialStatus,
         [Parameter(Mandatory)][string]$StageStatus,
+        [string]$WorkshopOverrideStatus = 'not-required',
         [Parameter(Mandatory)][System.Collections.IList]$Failures
     )
 
@@ -343,6 +753,7 @@ function New-GatewaySmokeCleanupStatus {
         Process = [pscustomobject]@{ Status = $ProcessStatus }
         Credentials = [pscustomobject]@{ Status = $CredentialStatus }
         IntegrationTestStage = [pscustomobject]@{ Status = $StageStatus }
+        WorkshopOverrides = [pscustomobject]@{ Status = $WorkshopOverrideStatus }
         Failures = @($Failures)
     }
 }
@@ -3841,6 +4252,7 @@ $rimWorldVersion = (Get-Content -LiteralPath $versionPath -Raw).Trim()
 if (-not $rimWorldVersion.StartsWith('1.6.', [StringComparison]::Ordinal)) {
     Exit-InvalidInput "RimWorld Dev Gateway supports RimWorld 1.6; installed version is '$rimWorldVersion'."
 }
+$rimWorldMajorVersion = '1.6'
 
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $validatedAdditionalModProjects = [System.Collections.Generic.List[object]]::new()
@@ -3987,6 +4399,8 @@ $failureDiagnosticsPath = Join-Path $runDirectory 'failure-diagnostics.json'
 $processCleanupPath = Join-Path $runDirectory 'process-cleanup.json'
 $credentialCleanupPath = Join-Path $runDirectory 'credential-cleanup.json'
 $integrationStageCleanupPath = Join-Path $runDirectory 'integration-test-stage-cleanup.json'
+$workshopOverridesPath = Join-Path $runDirectory 'workshop-overrides.json'
+$workshopOverrideCleanupPath = Join-Path $runDirectory 'workshop-override-cleanup.json'
 $cleanupStatusPath = Join-Path $runDirectory 'cleanup-status.json'
 $evidenceSummaryPath = Join-Path $runDirectory 'evidence-summary.json'
 $hangDumpPath = Join-Path $runDirectory 'RimWorldWin64-hang.dmp'
@@ -4022,6 +4436,18 @@ if ($IntegrationFailureProbe) {
     $launchArguments += '-devGatewayForceIntegrationTestFailure'
 }
 
+try {
+    $workshopOverridePlans = @(Resolve-GatewaySmokeWorkshopOverridePlans `
+        -WorkshopPath $resolvedWorkshopPath `
+        -ModsRoot (Join-Path $resolvedRimWorldPath 'Mods') `
+        -PackageIds $activeModIds `
+        -Version $rimWorldMajorVersion `
+        -RunId $runId)
+}
+catch {
+    Exit-InvalidInput $_.Exception.Message
+}
+
 if ($DryRun) {
     Write-Result ([pscustomobject]@{
         Status = 'dry-run'
@@ -4044,6 +4470,14 @@ if ($DryRun) {
         LaunchWindowStyle = $launchWindowStyle
         VisibleWindow = $launchVisible
         VisibleWindowRequested = [bool]$VisibleWindow
+        WorkshopOverrides = @($workshopOverridePlans | ForEach-Object {
+            [pscustomobject]@{
+                PackageId = [string]$_.PackageId
+                WorkshopItemId = [string]$_.WorkshopItemId
+                SourcePath = [string]$_.SourcePath
+                LocalPath = [string]$_.LocalPath
+            }
+        })
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
         Screenshot = $screenshotPath
@@ -4102,9 +4536,16 @@ $integrationTestAssemblyRecords = [System.Collections.Generic.List[object]]::new
 $requiredAssemblies = @()
 $requiredAssemblyEvidence = @()
 $productPackageEvidence = [System.Collections.Generic.List[object]]::new()
+$workshopOverrideRecords = [System.Collections.Generic.List[object]]::new()
 $processCleanupStatus = 'not-started'
 $credentialCleanupStatus = 'not-started'
 $integrationStageCleanupStatus = if ($RunIntegrationTests) { 'not-staged' } else { 'not-requested' }
+$workshopOverrideCleanupStatus = if ($workshopOverridePlans.Count -eq 0) {
+    'not-required'
+}
+else {
+    'not-published'
+}
 
 try {
     if ($SkipBuildDeploy) {
@@ -4313,6 +4754,28 @@ try {
     if ($requiredAssemblyEvidence.Count -ne $requiredAssemblies.Count) {
         throw 'Deployed Gateway assembly evidence is incomplete.'
     }
+
+    foreach ($workshopOverridePlan in $workshopOverridePlans) {
+        $workshopOverrideRecord = Publish-GatewaySmokeWorkshopOverride `
+            -Plan $workshopOverridePlan `
+            -WorkshopPath $resolvedWorkshopPath `
+            -ModsRoot (Join-Path $resolvedRimWorldPath 'Mods')
+        $workshopOverrideRecords.Add($workshopOverrideRecord)
+    }
+    if ($workshopOverrideRecords.Count -ne $workshopOverridePlans.Count) {
+        throw 'Workshop override publication did not produce one ownership record per plan.'
+    }
+    if ($workshopOverrideRecords.Count -ne 0) {
+        $workshopOverrideCleanupStatus = 'published'
+    }
+    [pscustomobject]@{
+        Contract = 'RimWorldDevGateway/WorkshopOverride/v1'
+        RunId = $runId
+        Version = $rimWorldMajorVersion
+        Status = if ($workshopOverrideRecords.Count -eq 0) { 'not-required' } else { 'published' }
+        Overrides = @($workshopOverrideRecords)
+    } | ConvertTo-Json -Depth 8 |
+        Set-Content -LiteralPath $workshopOverridesPath -Encoding UTF8
 
     $launchedProcess = Start-GatewayRimWorldProcess `
         -ExecutablePath $rimWorldExecutable `
@@ -6408,6 +6871,66 @@ finally {
             -Message "Process-cleanup status persistence failed: $($_.Exception.Message)"
     }
 
+    $workshopOverrideCleanupDetails = [System.Collections.Generic.List[object]]::new()
+    if ($workshopOverrideRecords.Count -ne 0) {
+        if ($null -eq $launchedProcess -or $processConfirmedExited) {
+            $workshopOverrideCleanupStatus = 'completed'
+            for ($overrideIndex = $workshopOverrideRecords.Count - 1;
+                $overrideIndex -ge 0;
+                $overrideIndex--) {
+                $overrideRecord = $workshopOverrideRecords[$overrideIndex]
+                try {
+                    Remove-GatewaySmokeWorkshopOverride `
+                        -Record $overrideRecord `
+                        -WorkshopPath $resolvedWorkshopPath `
+                        -ModsRoot (Join-Path $resolvedRimWorldPath 'Mods')
+                    $workshopOverrideCleanupDetails.Add([pscustomobject]@{
+                        PackageId = [string]$overrideRecord.PackageId
+                        WorkshopItemId = [string]$overrideRecord.WorkshopItemId
+                        LocalPath = [string]$overrideRecord.LocalPath
+                        Status = 'removed'
+                    })
+                }
+                catch {
+                    $workshopOverrideCleanupStatus = 'failed'
+                    $workshopOverrideCleanupDetails.Add([pscustomobject]@{
+                        PackageId = [string]$overrideRecord.PackageId
+                        WorkshopItemId = [string]$overrideRecord.WorkshopItemId
+                        LocalPath = [string]$overrideRecord.LocalPath
+                        Status = 'failed'
+                        Error = $_.Exception.Message
+                    })
+                    Add-GatewaySmokeFailure `
+                        -Failures $failureRecords `
+                        -Category 'workshop-override-cleanup' `
+                        -Message "Workshop override cleanup failed: $($_.Exception.Message)"
+                }
+            }
+        }
+        else {
+            $workshopOverrideCleanupStatus = 'blocked-process-alive'
+            Add-GatewaySmokeFailure `
+                -Failures $failureRecords `
+                -Category 'workshop-override-cleanup' `
+                -Message "Workshop overrides were retained because owned RimWorld PID $($launchedProcess.Id) was not confirmed dead."
+        }
+    }
+    try {
+        [pscustomobject]@{
+            Status = $workshopOverrideCleanupStatus
+            Planned = $workshopOverridePlans.Count
+            Published = $workshopOverrideRecords.Count
+            Overrides = @($workshopOverrideCleanupDetails)
+        } | ConvertTo-Json -Depth 8 |
+            Set-Content -LiteralPath $workshopOverrideCleanupPath -Encoding UTF8
+    }
+    catch {
+        Add-GatewaySmokeFailure `
+            -Failures $failureRecords `
+            -Category 'workshop-override-cleanup' `
+            -Message "Workshop override cleanup status persistence failed: $($_.Exception.Message)"
+    }
+
     $credentialCleanupArtifact = [pscustomobject]@{
         Status = 'not-started'
         Result = $null
@@ -6569,6 +7092,7 @@ try {
         -ProcessStatus $processCleanupStatus `
         -CredentialStatus $credentialCleanupStatus `
         -StageStatus $integrationStageCleanupStatus `
+        -WorkshopOverrideStatus $workshopOverrideCleanupStatus `
         -Failures $failureRecords
 }
 catch {
@@ -6584,6 +7108,7 @@ catch {
         Process = [pscustomobject]@{ Status = $processCleanupStatus }
         Credentials = [pscustomobject]@{ Status = $credentialCleanupStatus }
         IntegrationTestStage = [pscustomobject]@{ Status = $integrationStageCleanupStatus }
+        WorkshopOverrides = [pscustomobject]@{ Status = $workshopOverrideCleanupStatus }
         Failures = @($failureRecords)
     }
 }
@@ -6620,6 +7145,16 @@ $result | Add-Member `
     -MemberType NoteProperty `
     -Name 'EvidenceSummary' `
     -Value $evidenceSummaryPath `
+    -Force
+$result | Add-Member `
+    -MemberType NoteProperty `
+    -Name 'WorkshopOverrides' `
+    -Value $workshopOverridesPath `
+    -Force
+$result | Add-Member `
+    -MemberType NoteProperty `
+    -Name 'WorkshopOverrideCleanup' `
+    -Value $workshopOverrideCleanupPath `
     -Force
 try {
     $summaryBearerToken = if ($null -ne $manifest) { [string]$manifest.token } else { '' }

@@ -107,6 +107,27 @@ public sealed class GatewayIntegrationTestAdaptersTests
         });
     }
 
+    [Test]
+    public void Active_mod_scan_failure_is_isolated_even_when_its_synthetic_identity_is_not_a_windows_path()
+    {
+        var candidate = GatewayIntegrationTestManifestCandidate.Failed(
+            "linked.mod",
+            "<manifest-scan-failed>.integrationtests.json",
+            new InvalidOperationException("linked root was rejected"));
+        using var catalog = new GatewayIntegrationTestManifestCatalog(
+            new FixedManifestSource(new[] { "linked.mod" }, candidate));
+
+        var source = catalog.DiscoverActiveModAssemblies().Single();
+        var failure = Assert.Throws<GatewayIntegrationTestManifestException>(() => catalog.Load(source));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(source.OwningPackageId, Is.EqualTo("linked.mod"));
+            Assert.That(source.Identity, Does.Contain("manifest-scan-failed"));
+            Assert.That(failure!.Code, Is.EqualTo("active_mod_manifest_scan_failed"));
+        });
+    }
+
     [TestCase(",\"unexpected\":true")]
     [TestCase(",\"ownerPackageId\":\"alpha.mod\"")]
     public void Manifest_schema_rejects_unknown_and_duplicate_top_level_properties(string additionalJson)

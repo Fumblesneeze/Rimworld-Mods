@@ -669,7 +669,10 @@ public sealed class GatewayIntegrationTestManifestCatalog : IGatewayIntegrationT
         IReadOnlyList<string> activePackageIds,
         ISet<string> activePackages)
     {
-        var identity = candidate.ContainingPackageId + "/" + Path.GetFileName(candidate.ManifestPath);
+        var manifestIdentity = candidate.DiscoveryFailure is null
+            ? Path.GetFileName(candidate.ManifestPath)
+            : candidate.ManifestPath;
+        var identity = candidate.ContainingPackageId + "/" + manifestIdentity;
         var assemblySource = new GatewayIntegrationTestAssemblySource(
             candidate.ContainingPackageId,
             identity);

@@ -143,6 +143,8 @@ Inspect a dry run first:
 
 Gateway launches write an isolated `SavedData\Config\Prefs.xml` with `runInBackground=True` and `volumeMusic=0`, then start RimWorld minimized by default, so semantic/API-driven verification can continue without music or taking over the desktop. Add `-VisibleWindow` only when a person, computer-use tool, or desktop input check needs the game window; `-Scenario gateway-regression` selects a visible window automatically because it owns the FlaUI/raw-input checks. Dry-run and completed results report `Prefs`, `RunInBackground`, `MusicVolume`, and the requested `LaunchWindowStyle`. After process start the launcher does not inspect or enforce window state: the user remains free to restore or maximize the window without affecting the run. The launcher hashes the user's normal `Prefs.xml` before and after and fails if it changed.
 
+If an explicitly active package ID exists in multiple Workshop items, Gateway smoke refuses RimWorld's arbitrary duplicate selection. Dry-run reports the sole copy that declares the current major version; a real run places a marker-owned physical copy beneath local `Mods` before launch and removes only that copy after the exact process exits. Zero or multiple current-version candidates fail before launch, and Workshop content remains read-only. Publication and cleanup evidence is retained as `workshop-overrides.json` and `workshop-override-cleanup.json`.
+
 Run the product-only startup smoke without the gateway:
 
 ```powershell

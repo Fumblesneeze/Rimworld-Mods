@@ -205,3 +205,10 @@
 - [x] 27.3 VERIFY TRIAL: exercise current `Verify.NUnit` and `Verify.ImageMagick` against a deterministic PNG fixture; isolate them in a separate `net48` snapshot project if the existing Zlepper/NUnit major is incompatible, and retain the packages and approved snapshot only if the result is stable and ordinary tests remain non-interactive.
 - [x] 27.4 REVIEW/REGRESSION: review projection origin, full-frame compatibility, atomic stale/off-screen failure, overflow/resource cleanup, and CLI contract; run focused and full Gateway suites, Release/package inspection, and strict OpenSpec validation.
 - [x] 27.5 IN-GAME: on the exact reviewed Gateway build, use native-visible spawned or existing Things/Pawns, request one crop containing at least two exact handles, decode and inspect the PNG, and prove both requested targets are visible while unrelated frame area is excluded; retain request, target, screenshot, log, and exact-PID cleanup evidence.
+
+## 28. mods/RimWorldDevGateway — Duplicate Workshop package isolation
+
+- [x] 28.1 TDD: reproduce a legacy/current duplicate package, reject multiple current candidates, and prove owned publication/cleanup cannot modify the Workshop source.
+- [x] 28.2 GREEN: select the sole current-version candidate, publish a temporary physical local-mod copy before process start, retain ownership evidence, and clean it only after exact-process exit.
+- [x] 28.3 ROBUSTNESS: isolate an active-mod integration-manifest scan failure even when its synthetic diagnostic identity is not a valid Windows path.
+- [x] 28.4 IN-GAME: load the installed duplicate Processor Framework through its selected RimWorld 1.6 Workshop item in an exact Processor Framework/RimCuisine/Immersive Chefs/Gateway process; execute the staged product integration suite and verify adapter activation plus complete owned-copy/process/stage/credential cleanup.

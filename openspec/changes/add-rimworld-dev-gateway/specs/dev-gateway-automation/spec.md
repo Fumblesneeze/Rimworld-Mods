@@ -50,6 +50,17 @@ The host smoke command SHALL be able to launch RimWorld with an isolated save-da
 - **WHEN** the launched process exits, logs a mod error, or exceeds the readiness deadline before a playable map exists
 - **THEN** the host fails with the PID, gateway/log evidence, isolated configuration, and reason and does not alter the user's normal mod configuration
 
+### Requirement: Deterministic duplicate Workshop package resolution
+When an explicitly requested active package ID occurs in more than one immediate Steam Workshop item, the isolated launcher SHALL NOT leave RimWorld to select an arbitrary copy. It SHALL inspect each matching `About/About.xml` read-only and proceed only when exactly one copy declares support for the current RimWorld major version. Before process start it SHALL publish that selected item as a marker-owned temporary physical copy directly beneath RimWorld's local `Mods` directory, so RimWorld's local-mod precedence is deterministic without weakening the Gateway's integration-test prohibition on reparse-point traversal. Dry-run SHALL report the selected Workshop item, source, and planned local path without publishing it. The launcher SHALL retain the publication and cleanup evidence, remove only its exact owned copy and marker after the exact game process is confirmed stopped, and leave the Workshop source unchanged. If no unique current-version candidate exists, or ownership/cleanup validation fails, the launcher SHALL fail closed rather than selecting, replacing, or recursively deleting an unowned path.
+
+#### Scenario: One current and one legacy copy are installed
+- **WHEN** an active package ID resolves to multiple Workshop items and exactly one declares the running RimWorld major version
+- **THEN** dry-run identifies that exact item, the real run loads it through an owned local physical copy, and shutdown removes only that copy and its marker after the exact process exits
+
+#### Scenario: Duplicate current copies are ambiguous
+- **WHEN** two or more matching Workshop items declare the running RimWorld major version, or none does
+- **THEN** the launcher rejects the configuration before process start and reports all relevant Workshop item IDs without modifying Workshop content
+
 ### Requirement: Explicit quicktest scenario boundary
 Launching with `-Quicktest` and no scenario SHALL wait for a playable isolated map without running scenario mutations or the Gateway surface-regression battery. It SHALL still run a harmless raw-C# health probe that proves Mono.CSharp evaluation, live Unity/Gateway/EmbedIO access, and the actual ordered loaded-mod list. In particular, the default quicktest SHALL NOT spawn temporary things or pawns, change selection, invoke debug actions or gizmos, apply designators, move or zoom the camera, toggle developer/god mode through the REPL, connect FlaUI, or inject raw input. The former comprehensive surface exercise SHALL run only when the caller explicitly selects the reserved `gateway-regression` scenario.
 
