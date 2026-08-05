@@ -164,7 +164,7 @@ Run dynamically loaded, multi-frame E2E workflows grouped by their exact declare
 
 # Run one stable group ID.
 .\scripts\Invoke-RimWorldEndToEndTests.ps1 `
-  -GroupId ludeon.rimworld `
+  -GroupId 'ludeon.rimworld|brrainz.harmony|fumblesneeze.immersivechefs' `
   -TimeoutSeconds 300 `
   -Output json
 ```

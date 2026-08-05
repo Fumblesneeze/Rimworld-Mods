@@ -26,6 +26,7 @@
   - [x] 2.6h Observe a real powered vanilla dispenser/hopper native `Ingest` job acquire exact clean plate/cutlery, visibly carry the freshly dispensed paste meal, then return the same exact ware dirty after the meal disappears.
   - [x] 2.6i From a passive scenario containing only an imported unplated Simple-meal stack, clean plate supply, fueled stove, and Cooking-only pawn, resume native game time and observe the ordinary work scheduler move the unchanged meal to the stove and change its inspector from `Service ware: unplated` to `Bound plates: 3` while retaining Rice provenance and culinary quality 73; require the loaded WorkGiver/JobDef and both food-selection Harmony patches to finalize in the same exact run.
   - [ ] 2.6j E2E/IN-GAME: Load a same-schema legacy-style unplated meal and natively eat/expire it without a returned plate; consume debug/mod-spawned unplated meals without error; observe raider/visitor inventory and native trader/settlement purchases retain exactly one generated plate; and prove Simple accepts wood/stone, Fine rejects them for metal-or-higher, and Lavish accepts only silver/gold/registered ceramic.
+    - [x] 2.6j.1 E2E: Dynamically load the product-owned exact-group test, invoke the native Consume order on a debug/mod-spawned unplated Simple meal, observe its real ingest toil and disappearance, and retain personally inspected before/in-progress/after frames proving no plate or cutlery was fabricated.
 
 ## 3. mods/ImmersiveChefs - Sanitation and dishwashing
 
