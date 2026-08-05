@@ -267,9 +267,10 @@ public sealed class GatewayEndToEndDiscoveryCoordinatorTests
             new RecordingSource(cursor),
             inspector,
             new ImmediateInspectionFactory(inspector),
-            store,
-            readiness,
-            factory);
+            store);
+        coordinator.ConfigureExecution(readiness, factory);
+        Assert.Throws<InvalidOperationException>(() =>
+            coordinator.ConfigureExecution(readiness, factory));
 
         coordinator.AttachSession("execution-run", "session-credential");
         for (var tick = 0;

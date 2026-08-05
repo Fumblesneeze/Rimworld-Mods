@@ -7,8 +7,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
     private readonly IGatewayEndToEndManifestSource? source;
     private readonly IGatewayEndToEndInspectionOperationFactory? inspectionFactory;
     private readonly IGatewayEndToEndSessionArtifactStore? artifactStore;
-    private readonly IGatewayEndToEndExecutionReadiness? executionReadiness;
-    private readonly IGatewayEndToEndExecutionFactory? executionFactory;
+    private IGatewayEndToEndExecutionReadiness? executionReadiness;
+    private IGatewayEndToEndExecutionFactory? executionFactory;
     private readonly Action<string, Exception?>? diagnostics;
     private readonly List<string> activePackageIds = new();
     private readonly List<GatewayEndToEndBundleSnapshot> bundles = new();
@@ -103,6 +103,41 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             executionReadiness: null,
             executionFactory: null,
             diagnostics: diagnostics);
+    }
+
+    public void ConfigureExecution(
+        IGatewayEndToEndExecutionReadiness readiness,
+        IGatewayEndToEndExecutionFactory factory)
+    {
+        ThrowIfDisposed();
+        if (readiness is null)
+        {
+            throw new ArgumentNullException(nameof(readiness));
+        }
+
+        if (factory is null)
+        {
+            throw new ArgumentNullException(nameof(factory));
+        }
+
+        if (source is null)
+        {
+            throw new InvalidOperationException("A disabled E2E coordinator cannot execute tests.");
+        }
+
+        if (executionReadiness is not null || executionFactory is not null)
+        {
+            throw new InvalidOperationException("E2E execution has already been configured.");
+        }
+
+        if (pendingRunId is not null || artifactStore?.IsAttached == true)
+        {
+            throw new InvalidOperationException(
+                "E2E execution must be configured before the coordinator attaches to a session.");
+        }
+
+        executionReadiness = readiness;
+        executionFactory = factory;
     }
 
     internal static GatewayEndToEndCoordinator CreateEnabledWithStore(

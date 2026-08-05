@@ -182,6 +182,64 @@ public static class GatewayRuntimeBootstrap
             {
                 var automations = new GatewayAutomationRegistry(diagnostics: logBuffer);
                 GatewayQuickstartAutomation.Register(automations);
+                var screenshots = new GatewayScreenshotService(
+                    activeDispatcher,
+                    new UnityGatewayScreenshotBackend(),
+                    maximumPngBytes: 64 * 1024 * 1024);
+                var windowsInput = new GatewayWindowsInput();
+                var gameControl = new GatewayGameControlController(
+                    new VerseGatewayGameControlOperations());
+                var camera = new GatewayCameraController(
+                    new VerseGatewayCameraOperations());
+                var things = new GatewayThingController(
+                    new VerseGatewayThingOperations(logBuffer),
+                    logBuffer);
+                var gizmos = new GatewayGizmoRegistry(
+                    new VerseGatewayGizmoSource(logBuffer));
+
+                if (endToEndTests.Snapshot.Enabled)
+                {
+                    var floatMenus = new VerseGatewayEndToEndFloatMenuActions();
+                    var clock = new VerseGatewayEndToEndClock();
+                    var isolation = new GatewayEndToEndTestIsolation(
+                        new VerseGatewayEndToEndIsolationOperations(
+                            gameControl,
+                            camera,
+                            gizmos));
+                    var contextServices = new Dictionary<Type, object>
+                    {
+                        [typeof(GatewayGameControlController)] = gameControl,
+                        [typeof(GatewayCameraController)] = camera,
+                        [typeof(GatewayThingController)] = things,
+                        [typeof(GatewayGizmoRegistry)] = gizmos,
+                        [typeof(GatewayScreenshotService)] = screenshots,
+                        [typeof(GatewayWindowsInput)] = windowsInput,
+                        [typeof(IGatewayEndToEndFloatMenuActions)] = floatMenus
+                    };
+                    endToEndTests.ConfigureExecution(
+                        new VerseGatewayEndToEndExecutionReadiness(),
+                        new GatewayEndToEndExecutionFactory(
+                            clock,
+                            () => new GatewayEndToEndTestContext(
+                                () => clock.FrameCount,
+                                () => clock.GameTick,
+                                serviceType => contextServices.TryGetValue(serviceType, out var service)
+                                    ? service
+                                    : null),
+                            artifactDirectory => new GatewayEndToEndNativeStepDriver(
+                                new GatewayEndToEndNativeActions(
+                                    new GatewayEndToEndGatewayBackend(
+                                        gameControl,
+                                        things,
+                                        camera,
+                                        gizmos,
+                                        floatMenus,
+                                        windowsInput,
+                                        screenshots,
+                                        artifactDirectory))),
+                            isolation));
+                }
+
                 return new GatewayApiRouter(
                     activeDispatcher,
                     stateProvider,
@@ -189,26 +247,18 @@ public static class GatewayRuntimeBootstrap
                     new GatewayApiServices(
                         assemblyExecutor: new GatewayAssemblyExecutor(16 * 1024 * 1024),
                         csharpEvaluator: new GatewayCSharpEvaluator(),
-                        screenshotService: new GatewayScreenshotService(
-                            activeDispatcher,
-                            new UnityGatewayScreenshotBackend(),
-                            maximumPngBytes: 64 * 1024 * 1024),
-                        windowsInput: new GatewayWindowsInput(),
+                        screenshotService: screenshots,
+                        windowsInput: windowsInput,
                         semanticActions: new GatewaySemanticActionRegistry(
                             activeDispatcher,
                             new VerseGatewaySemanticActionOperations(),
                             diagnostics: logBuffer),
-                        gameControl: new GatewayGameControlController(
-                            new VerseGatewayGameControlOperations()),
-                        camera: new GatewayCameraController(
-                            new VerseGatewayCameraOperations()),
-                        things: new GatewayThingController(
-                            new VerseGatewayThingOperations(logBuffer),
-                            logBuffer),
+                        gameControl: gameControl,
+                        camera: camera,
+                        things: things,
                         debugActions: new GatewayDebugActionRegistry(
                             new VerseGatewayDebugActionSource()),
-                        gizmos: new GatewayGizmoRegistry(
-                            new VerseGatewayGizmoSource(logBuffer)),
+                        gizmos: gizmos,
                         automations: automations,
                         defExporter: new GatewayDefExporter(
                             new VerseGatewayDefSource(logBuffer)),
