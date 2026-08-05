@@ -128,7 +128,8 @@ public sealed class GizmoActionStep : EndToEndStep
         string? stableGizmoId = null,
         EndToEndMapCell? startCell = null,
         EndToEndMapCell? endCell = null,
-        IEnumerable<string>? architectCategoryDefNames = null)
+        IEnumerable<string>? architectCategoryDefNames = null,
+        bool expectRejected = false)
         : base(name, EndToEndStepKind.Act)
     {
         TargetRuntimeIds = StepValues.CopyIds(targetRuntimeIds, nameof(targetRuntimeIds));
@@ -147,6 +148,7 @@ public sealed class GizmoActionStep : EndToEndStep
         StableGizmoId = string.IsNullOrWhiteSpace(stableGizmoId) ? null : stableGizmoId!.Trim();
         StartCell = startCell;
         EndCell = endCell;
+        ExpectRejected = expectRejected;
     }
 
     public IReadOnlyList<string> TargetRuntimeIds { get; }
@@ -162,6 +164,8 @@ public sealed class GizmoActionStep : EndToEndStep
     public EndToEndMapCell? StartCell { get; }
 
     public EndToEndMapCell? EndCell { get; }
+
+    public bool ExpectRejected { get; }
 
     private static string Required(string value, string parameterName) => StepValues.Required(value, parameterName);
 }

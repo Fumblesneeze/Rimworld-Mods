@@ -209,6 +209,15 @@ public sealed class GatewayEndToEndNativeActions : IGatewayEndToEndNativeActions
             var input = CreateInteractionInput(step, invocation.Interaction);
             var result = backend.ApplyGizmo(interactionHandle, input);
             completed = result.Completed;
+            if (step.ExpectRejected)
+            {
+                return !result.Completed && result.Accepted.Count == 0 && result.Rejected.Count > 0
+                    ? GatewayEndToEndStepOutcome.Pass()
+                    : Fail(
+                        "gizmo_target_not_rejected",
+                        "The semantic gizmo target was expected to be rejected by native preflight.");
+            }
+
             return completed
                 ? GatewayEndToEndStepOutcome.Pass()
                 : Fail("gizmo_not_completed", "The semantic gizmo interaction did not complete.");

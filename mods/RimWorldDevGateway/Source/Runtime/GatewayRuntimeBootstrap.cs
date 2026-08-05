@@ -201,6 +201,7 @@ public static class GatewayRuntimeBootstrap
                 if (endToEndTests.Snapshot.Enabled)
                 {
                     var floatMenus = new VerseGatewayEndToEndFloatMenuActions();
+                    var gizmoCatalog = new GatewayEndToEndGizmoCatalog(gizmos);
                     var clock = new VerseGatewayEndToEndClock();
                     var isolation = new GatewayEndToEndTestIsolation(
                         new VerseGatewayEndToEndIsolationOperations(
@@ -216,7 +217,8 @@ public static class GatewayRuntimeBootstrap
                         [typeof(GatewayScreenshotService)] = screenshots,
                         [typeof(GatewayWindowsInput)] = windowsInput,
                         [typeof(IGatewayEndToEndFloatMenuActions)] = floatMenus,
-                        [typeof(IEndToEndFloatMenuCatalog)] = floatMenus
+                        [typeof(IEndToEndFloatMenuCatalog)] = floatMenus,
+                        [typeof(IEndToEndGizmoCatalog)] = gizmoCatalog
                     };
                     endToEndTests.ConfigureExecution(
                         new VerseGatewayEndToEndExecutionReadiness(),

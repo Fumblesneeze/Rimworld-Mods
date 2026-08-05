@@ -195,6 +195,71 @@ public sealed class GatewayEndToEndNativeActionsTests
     }
 
     [Test]
+    public void Expected_native_placement_rejection_passes_and_cancels_the_interaction()
+    {
+        var backend = new RecordingBackend { RejectNextInteraction = true };
+        backend.Gizmos.Add(Gizmo(
+            "place",
+            "place",
+            "Designator_Build",
+            GatewayGizmoInteractionKind.Placement,
+            GatewayInteractionInputKind.Cell));
+
+        var outcome = new GatewayEndToEndNativeActions(backend).Apply(
+            new GizmoActionStep(
+                "reject",
+                Array.Empty<string>(),
+                "Designator_Build",
+                EndToEndGizmoInteraction.Place,
+                stableGizmoId: "place",
+                startCell: new EndToEndMapCell(5, 6),
+                architectCategoryDefNames: new[] { "Production" },
+                expectRejected: true),
+            Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(backend.AppliedInputs, Has.Count.EqualTo(1));
+            Assert.That(backend.CancelledInteraction, Is.EqualTo("interaction-place"));
+        });
+    }
+
+    [Test]
+    public void Gizmo_catalog_projects_exact_buildable_def_identity()
+    {
+        var descriptor = new GatewayGizmoDescriptor(
+            "h1",
+            "revision",
+            new GatewayGizmoCandidateSnapshot(
+                "stable-microwave",
+                GatewayGizmoSource.Architect,
+                Array.Empty<string>(),
+                "RimWorld.Designator_Build",
+                "Microwave",
+                string.Empty,
+                0,
+                false,
+                null,
+                null,
+                0,
+                GatewayGizmoInteractionKind.Placement,
+                null,
+                new[] { GatewayInteractionInputKind.Cell },
+                "ImmersiveChefs_Microwave"));
+
+        var projected = GatewayEndToEndGizmoCatalog.Project(new[] { descriptor }).Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(projected.StableId, Is.EqualTo("stable-microwave"));
+            Assert.That(projected.RuntimeType, Is.EqualTo("RimWorld.Designator_Build"));
+            Assert.That(projected.BuildableDefName, Is.EqualTo("ImmersiveChefs_Microwave"));
+            Assert.That(projected.Interaction, Is.EqualTo(EndToEndGizmoInteraction.Place));
+        });
+    }
+
+    [Test]
     public void Input_screenshot_and_float_menu_delegate_to_the_durable_backend_operations()
     {
         var backend = new RecordingBackend();
@@ -270,6 +335,10 @@ public sealed class GatewayEndToEndNativeActionsTests
 
         public FloatMenuActionStep? FloatMenuStep { get; private set; }
 
+        public bool RejectNextInteraction { get; set; }
+
+        public string? CancelledInteraction { get; private set; }
+
         public IGatewayEndToEndStepOperation InputOperation { get; } =
             GatewayEndToEndCompletedStepOperation.Passed();
 
@@ -321,6 +390,17 @@ public sealed class GatewayEndToEndNativeActionsTests
             GatewayInteractionInput input)
         {
             AppliedInputs.Add(input);
+            if (RejectNextInteraction)
+            {
+                RejectNextInteraction = false;
+                var target = GatewayInteractionTarget.ForCell(input.Cells.Single());
+                return new GatewayInteractionApplyResult(
+                    interactionHandle,
+                    Array.Empty<GatewayInteractionTarget>(),
+                    new[] { new GatewayRejectedInteractionTarget(target, "Requires a countertop.") },
+                    completed: false);
+            }
+
             return new GatewayInteractionApplyResult(
                 interactionHandle,
                 Array.Empty<GatewayInteractionTarget>(),
@@ -330,6 +410,7 @@ public sealed class GatewayEndToEndNativeActionsTests
 
         public void CancelGizmo(string interactionHandle)
         {
+            CancelledInteraction = interactionHandle;
         }
 
         public GatewayEndToEndStepOutcome ApplyFloatMenu(

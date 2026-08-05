@@ -50,6 +50,56 @@ public interface IEndToEndFloatMenuCatalog
     IReadOnlyList<EndToEndFloatMenuOption> Query(string actorRuntimeId, string targetRuntimeId);
 }
 
+public interface IEndToEndGizmoCatalog
+{
+    IReadOnlyList<EndToEndGizmoOption> Query(
+        IReadOnlyList<string> targetRuntimeIds,
+        IReadOnlyList<string> architectCategoryDefNames);
+}
+
+public sealed class EndToEndGizmoOption
+{
+    public EndToEndGizmoOption(
+        string stableId,
+        string runtimeType,
+        string label,
+        bool disabled,
+        EndToEndGizmoInteraction? interaction,
+        string? buildableDefName)
+    {
+        StableId = Required(stableId, nameof(stableId));
+        RuntimeType = Required(runtimeType, nameof(runtimeType));
+        Label = Required(label, nameof(label));
+        Disabled = disabled;
+        Interaction = interaction;
+        BuildableDefName = string.IsNullOrWhiteSpace(buildableDefName)
+            ? null
+            : buildableDefName!.Trim();
+    }
+
+    public string StableId { get; }
+
+    public string RuntimeType { get; }
+
+    public string Label { get; }
+
+    public bool Disabled { get; }
+
+    public EndToEndGizmoInteraction? Interaction { get; }
+
+    public string? BuildableDefName { get; }
+
+    private static string Required(string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("A non-empty value is required.", parameterName);
+        }
+
+        return value.Trim();
+    }
+}
+
 public sealed class EndToEndFloatMenuOption
 {
     public EndToEndFloatMenuOption(string stableId, string label, bool disabled)

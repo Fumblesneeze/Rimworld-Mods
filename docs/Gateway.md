@@ -254,6 +254,8 @@ Gizmo discovery uses either the current selection or explicit current-map ThingI
 }
 ```
 
+Architect build descriptors also expose `BuildableDefName`, so automation can select a build command by the finalized Def identity instead of a localized label or category ordinal. Non-build gizmos return `null` for that field.
+
 Use `ownerScope: "explicitOwners"` with `ownerHandles` for explicit owners. The limits are 256 owners, 64 exact `DesignationCategoryDef` names, and 1,000 returned descriptors. Descriptors contain revision, source, owners, runtime type, bounded label/description, disabled state/reason, hotkey, group key, observed toggle state, interaction kind, and accepted inputs. A handle fingerprints the current map, owners, source, ordered list, and native identity. Invocation re-enumerates the list, so a map/selection/owner/order change returns `stale_gizmo_handle` instead of pressing a neighboring command.
 
 `Immediate` and `Toggle` invocations complete directly; toggles report observable before/after state. `Target`, `Placement`, and `Drag` create the one active semantic interaction and return its handle, source handle, accepted input shapes, map handle, owners, and revision. Inspect it with `GET /interactions/current`, then submit exactly one matching shape:
@@ -468,6 +470,8 @@ Before and after every test, the process pauses and removes all destroyable spaw
 E2E state and assertions remain supporting automation. Acceptance still requires the acting agent to inspect the exact run's native screenshots and confirm that the recorded player action caused the visible outcome; logs or a green endpoint alone are insufficient.
 
 Each E2E screenshot is captured at end-of-frame and persisted before its step passes. A transient Unity capture failure, invalid encoded frame, capture timeout, or concurrent-capture lease race receives one fresh end-of-frame retry; deterministic target/request failures and artifact-persistence failures remain terminal so missing evidence is never reported as success.
+
+E2E assemblies can query `IEndToEndGizmoCatalog` for stable gizmo identities, runtime types, native interaction kinds, and structured buildable Def names. A `GizmoActionStep` may set `expectRejected: true`; it passes only when native preflight rejects every supplied target, applies nothing, and the Gateway cancels the still-open semantic interaction. This makes invalid placement rules observable without turning an expected player-facing refusal into an infrastructure failure.
 
 ## Automations and quickstart
 

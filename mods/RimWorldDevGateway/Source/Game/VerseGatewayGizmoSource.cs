@@ -372,7 +372,8 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
                     gizmo is Command_Toggle toggle && toggle.isActive is not null
                         ? toggle.isActive()
                         : null,
-                    InputsFor(gizmo, kind));
+                    InputsFor(gizmo, kind),
+                    (gizmo as Designator_Build)?.PlacingDef?.defName);
             }
             catch (Exception exception)
             {

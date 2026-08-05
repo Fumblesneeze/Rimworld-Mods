@@ -125,6 +125,21 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Gizmo_step_can_declare_that_native_preflight_must_reject_the_target()
+    {
+        var step = new GizmoActionStep(
+            "reject-floor-microwave",
+            Array.Empty<string>(),
+            "RimWorld.Designator_Build",
+            EndToEndGizmoInteraction.Place,
+            startCell: new EndToEndMapCell(10, 20),
+            architectCategoryDefNames: new[] { "Production" },
+            expectRejected: true);
+
+        Assert.That(step.ExpectRejected, Is.True);
+    }
+
+    [Test]
     public void Assertion_and_context_helpers_produce_owned_failures_and_cleanup()
     {
         var context = new FakeContext();

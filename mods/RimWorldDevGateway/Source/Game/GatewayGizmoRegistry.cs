@@ -163,7 +163,8 @@ public sealed class GatewayGizmoCandidateSnapshot
         int groupKey,
         GatewayGizmoInteractionKind interactionKind,
         bool? toggleState,
-        IReadOnlyList<GatewayInteractionInputKind> acceptedInputs)
+        IReadOnlyList<GatewayInteractionInputKind> acceptedInputs,
+        string? buildableDefName = null)
     {
         Identity = identity ?? throw new ArgumentNullException(nameof(identity));
         Source = source;
@@ -179,6 +180,7 @@ public sealed class GatewayGizmoCandidateSnapshot
         InteractionKind = interactionKind;
         ToggleState = toggleState;
         AcceptedInputs = acceptedInputs ?? throw new ArgumentNullException(nameof(acceptedInputs));
+        BuildableDefName = string.IsNullOrWhiteSpace(buildableDefName) ? null : buildableDefName;
     }
 
     public string Identity { get; }
@@ -208,6 +210,8 @@ public sealed class GatewayGizmoCandidateSnapshot
     public bool? ToggleState { get; }
 
     public IReadOnlyList<GatewayInteractionInputKind> AcceptedInputs { get; }
+
+    public string? BuildableDefName { get; }
 }
 
 public interface IGatewayGizmoCandidate
@@ -251,6 +255,7 @@ public sealed class GatewayGizmoDescriptor
         InteractionKind = snapshot.InteractionKind;
         ToggleState = snapshot.ToggleState;
         AcceptedInputs = snapshot.AcceptedInputs;
+        BuildableDefName = snapshot.BuildableDefName;
     }
 
     public string Handle { get; }
@@ -284,6 +289,8 @@ public sealed class GatewayGizmoDescriptor
     public bool? ToggleState { get; }
 
     public IReadOnlyList<GatewayInteractionInputKind> AcceptedInputs { get; }
+
+    public string? BuildableDefName { get; }
 }
 
 public sealed class GatewayGizmoQueryResult
@@ -1082,6 +1089,7 @@ public sealed class GatewayGizmoRegistry
             Append(text, capture.HotKey ?? string.Empty);
             Append(text, capture.GroupKey.ToString(CultureInfo.InvariantCulture));
             Append(text, capture.InteractionKind.ToString());
+            Append(text, capture.BuildableDefName ?? string.Empty);
             foreach (var acceptedInput in capture.AcceptedInputs)
             {
                 Append(text, acceptedInput.ToString());
