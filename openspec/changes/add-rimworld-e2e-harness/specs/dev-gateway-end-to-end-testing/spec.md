@@ -54,7 +54,7 @@ The E2E contract SHALL separate main-thread fixture arrangement from an iterator
 - **THEN** the result cannot satisfy the player-workflow acceptance classification even if its state assertion passes
 
 ### Requirement: The map is empty and verified between tests
-Before the first test and in guaranteed cleanup after every test, the runner SHALL pause the game and remove all spawned map Things and Pawns, jobs, zones, designations, selections, active interactions, test-opened windows, and registered scenario-owned world objects. It SHALL restore developer/god mode, speed, camera, and pressed input to the process baseline and verify the disposable map is empty before arranging the next test. Tests SHALL be able to register additional cleanup actions for mod-specific global state.
+Before the first test and in guaranteed cleanup after every test, the runner SHALL pause the game and remove all destroyable spawned map Things and Pawns, jobs, zones, designations, selections, active interactions, test-opened windows, and registered scenario-owned world objects. Permanent non-destroyable map features such as steam geysers are part of the map environment, MUST NOT be destroyed, and MUST be excluded from the disposable-state emptiness check. The runner SHALL restore developer/god mode, speed, camera, and pressed input to the process baseline and verify the disposable map is empty before arranging the next test. Tests SHALL be able to register additional cleanup actions for mod-specific global state.
 
 #### Scenario: A test fails after spawning fixtures
 - **WHEN** an assertion throws while pawns, buildings, items, filth, zones, or jobs remain
@@ -63,6 +63,10 @@ Before the first test and in guaranteed cleanup after every test, the runner SHA
 #### Scenario: Reset cannot prove isolation
 - **WHEN** cleanup throws or any tracked/spawned fixture, interaction, or pressed input remains
 - **THEN** the current test records an infrastructure failure, the process is tainted, and later tests in that group are skipped rather than run against contaminated state
+
+#### Scenario: A quicktest map contains a permanent feature
+- **WHEN** the generated map contains a non-destroyable steam geyser or equivalent permanent map Thing
+- **THEN** reset preserves that feature while still removing and verifying the absence of every destroyable disposable fixture
 
 ### Requirement: Failures are isolated and diagnostically complete
 An assertion, test exception, unsupported native action, stale handle, or ordinary test timeout SHALL fail only the current test when map reset remains trustworthy. Each failure SHALL retain the current step, bounded causal exception, live job/target and selection checkpoint when available, final screenshot, log cursor page, and cleanup result. A test failure MUST NOT be converted into a process success merely because later cleanup passed.
