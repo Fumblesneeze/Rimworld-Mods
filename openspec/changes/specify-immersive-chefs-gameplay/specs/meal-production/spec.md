@@ -85,8 +85,8 @@ A reserved cookware set SHALL remain clean while ingredients are merely being ha
 - **WHEN** at least one cooking work tick occurs with glitterworld cookware before completion or interruption
 - **THEN** the same cookware is released clean under its self-cleaning material contract
 
-### Requirement: Vanilla meal complexity uses an exact initial table
-Immersive Chefs SHALL retain the internal `Simple`, `Advanced`, and `Elaborate` complexity names and multiply a classified recipe's original work amount by configurable defaults of 0.75, 2.0, and 3.0 respectively. The supported setting ranges SHALL be 0.25-2.0 for Simple, 1.0-5.0 for Advanced, and 1.0-8.0 for Elaborate. For the initial change, only these vanilla recipe Defs receive a built-in classification:
+### Requirement: Meal complexity uses exact data-driven tables
+Immersive Chefs SHALL retain the internal `Simple`, `Advanced`, and `Elaborate` complexity names and multiply a classified recipe's original work amount by configurable defaults of 0.75, 2.0, and 3.0 respectively. The supported setting ranges SHALL be 0.25-2.0 for Simple, 1.0-5.0 for Advanced, and 1.0-8.0 for Elaborate. These vanilla recipe Defs receive the built-in base classification:
 
 | Internal tier | Vanilla meaning | Recipe Defs |
 | --- | --- | --- |
@@ -94,7 +94,7 @@ Immersive Chefs SHALL retain the internal `Simple`, `Advanced`, and `Elaborate` 
 | `Advanced` | Fine meal | `CookMealFine`, `CookMealFine_Veg`, `CookMealFine_Meat`, `CookMealFineBulk`, `CookMealFineBulk_Meat`, `CookMealFineBulk_Veg` |
 | `Elaborate` | Lavish meal | `CookMealLavish`, `CookMealLavish_Meat`, `CookMealLavish_Veg`, `CookMealLavishBulk`, `CookMealLavishBulk_Veg`, `CookMealLavishBulk_Meat` |
 
-Classification SHALL be data-driven through an Immersive Chefs DefModExtension or compatibility XML so a later compatibility change can classify or exclude another recipe without compiled references. An unclassified recipe SHALL retain its original work amount: Immersive Chefs MUST NOT infer complexity from its label, preferability, ingredient structure, work amount, or serving count. Explicit classification SHALL always win. Vanilla Cooking Expanded recipe classification is deferred to a later compatibility change, while its unclassified meals MAY still participate in otherwise supported ware and provenance behavior.
+Classification SHALL be data-driven through an Immersive Chefs DefModExtension or package-gated compatibility XML so supported food ecosystems can classify or exclude exact recipes without compiled references. The `optional-gameplay-integrations` contract owns those installed package registries and any explicit fast-work exemption. An unclassified recipe SHALL retain its original work amount: Immersive Chefs MUST NOT infer complexity from its label, preferability, ingredient structure, work amount, serving count, `FoodType`, or inheritance alone. Explicit classification SHALL always win, while an unclassified compatible meal MAY still preserve existing ware and provenance without receiving a guessed work multiplier or fabricated plate.
 
 #### Scenario: Compare vanilla meal work amounts
 - **WHEN** the default settings are active and otherwise equal Simple, Fine, and Lavish meal recipes have original work amount `W`
@@ -108,9 +108,9 @@ Classification SHALL be data-driven through an Immersive Chefs DefModExtension o
 - **WHEN** a covered custom recipe has no Immersive Chefs complexity extension
 - **THEN** its work amount remains unchanged in every game language while its compatible ware and provenance behavior can still operate
 
-#### Scenario: Vanilla Cooking Expanded is active before its compatibility change
-- **WHEN** `VanillaExpanded.VCookE` is active and one of its recipes has no explicit Immersive Chefs complexity extension
-- **THEN** Immersive Chefs does not guess a tier or apply a complexity multiplier to that recipe
+#### Scenario: Vanilla Cooking Expanded registry is active
+- **WHEN** `VanillaExpanded.VCookE` is active and one of its exact full-meal recipes is present in the package-gated compatibility registry
+- **THEN** Immersive Chefs applies its declared Simple, Advanced, or Elaborate behavior without classifying unrelated VCE products
 
 ### Requirement: Handheld and non-meal foods are excluded
 Pemmican, packaged survival meals, and registered travel foods SHALL be treated as handheld food and SHALL require no cookware, plate, cutlery, culinary-quality metadata, Immersive Chefs temperature handling, or dish return. Raw foods, beverages, drugs, and baby food SHALL likewise remain outside the covered meal workflow. Compatibility patches SHALL be able to mark modded foods or recipes as handheld/excluded through a DefModExtension.

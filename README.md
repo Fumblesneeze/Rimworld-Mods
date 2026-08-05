@@ -15,9 +15,11 @@ Immersive Chefs adds cookware sets, plates, stackable cutlery, belt-slot chef's 
 
 Kitchenware is Stuff-aware. Primitive stone/adobe/wood paths, smithy-era metals, machining-era metals/plastics, and trade/quest-only self-cleaning glitterworld cookware use material and craftsmanship to derive cleanliness, speed, comfort, durability, and culinary modifiers. Optional adapters are detected for Processor Framework, Expanded Materials, ABS polymer, Dubs Bad Hygiene, Gastronomy, Common Sense, Hospitality, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, and Vanilla Nutrient Paste Expanded. Their individual `Auto` setting can be changed to `Off` when troubleshooting.
 
+The current OpenSpec also defines the pending exact-package compatibility work for Adaptive Meal Bill, Meals on Wheels, Replimat Meals, the Vanilla Cooking Expanded family, Fried/Fast Meals, Food Texture Variety, Prioritize Meals over Preserved Foods, RimCuisine 2, Meal Printer, RimFridge, Overcooked Meals, and No Vanilla Meals. These integrations are not considered implemented until their guarded tests and native observable E2E matrix pass.
+
 Active cooking, dining, service, and assistant jobs safely restart after loading a save. RimWorld persists the exact physical ware; Immersive Chefs returns any session-carried items and retries the interrupted job so process-local coordination state cannot duplicate or strand them.
 
-This is still pre-release. Current-schema saves are supported, but migration from older development builds and uninstall cleanup are not. Ceramic/porcelain content, Vanilla Cooking Expanded complexity classification, food preservation, and food waste are deliberately deferred.
+This is still pre-release. Current-schema saves are supported, but migration from older development builds and uninstall cleanup are not. Ceramic/porcelain content, food preservation, and food waste are deliberately deferred.
 
 ## Install the toolchain
 
