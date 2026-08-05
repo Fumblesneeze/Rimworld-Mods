@@ -14,7 +14,7 @@ public interface IGatewayEndToEndNativeActions
 
     GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step, IEndToEndContext context);
 
-    GatewayEndToEndStepOutcome Apply(ProcessInputActionStep step, IEndToEndContext context);
+    IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context);
 
     IGatewayEndToEndStepOperation Begin(ScreenshotStep step, IEndToEndContext context);
 }
@@ -45,7 +45,9 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
             CameraActionStep camera => Complete(actions.Apply(camera, context)),
             GizmoActionStep gizmo => Complete(actions.Apply(gizmo, context)),
             FloatMenuActionStep floatMenu => Complete(actions.Apply(floatMenu, context)),
-            ProcessInputActionStep input => Complete(actions.Apply(input, context)),
+            ProcessInputActionStep input =>
+                actions.Begin(input, context)
+                ?? throw new InvalidOperationException("The input adapter returned no operation."),
             ScreenshotStep screenshot =>
                 actions.Begin(screenshot, context)
                 ?? throw new InvalidOperationException("The screenshot adapter returned no operation."),

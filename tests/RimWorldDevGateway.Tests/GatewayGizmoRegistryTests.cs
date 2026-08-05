@@ -18,6 +18,7 @@ public sealed class GatewayGizmoRegistryTests
             Assert.That(first.Items, Has.Count.EqualTo(1));
             Assert.That(first.Items[0].Handle, Is.EqualTo(second.Items[0].Handle));
             Assert.That(first.Items[0].Revision, Is.EqualTo(first.Revision));
+            Assert.That(first.Items[0].Identity, Is.EqualTo("power"));
             Assert.That(first.Items[0].OwnerHandles, Is.EqualTo(new[] { "Thing_SolarGenerator1" }));
             Assert.That(first.Items[0].InteractionKind, Is.EqualTo(GatewayGizmoInteractionKind.Toggle));
             Assert.That(first.Items[0].ToggleState, Is.False);

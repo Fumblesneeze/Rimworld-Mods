@@ -105,6 +105,26 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Gizmo_step_accepts_an_exact_architect_category_without_a_thing_owner()
+    {
+        var step = new GizmoActionStep(
+            "draw-growing-zone",
+            Array.Empty<string>(),
+            "Designator_ZoneAdd_Growing",
+            EndToEndGizmoInteraction.Drag,
+            stableGizmoId: "Zone_Growing",
+            startCell: new EndToEndMapCell(1, 2),
+            endCell: new EndToEndMapCell(3, 4),
+            architectCategoryDefNames: new[] { "Zone" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(step.TargetRuntimeIds, Is.Empty);
+            Assert.That(step.ArchitectCategoryDefNames, Is.EqualTo(new[] { "Zone" }));
+        });
+    }
+
+    [Test]
     public void Assertion_and_context_helpers_produce_owned_failures_and_cleanup()
     {
         var context = new FakeContext();

@@ -39,7 +39,7 @@ An explicit source manifest was considered, but it would duplicate method identi
 
 Initial typed steps cover:
 
-- exact native gizmo and float-menu order invocation;
+- exact native gizmo invocation from Thing owners and/or architect category Def names, plus exact float-menu order invocation;
 - process-scoped click, drag, chord, key, and text input when no semantic path exists;
 - pause and native speed control;
 - thing selection and camera framing;

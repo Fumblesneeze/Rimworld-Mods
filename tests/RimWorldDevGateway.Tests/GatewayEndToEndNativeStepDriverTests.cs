@@ -39,7 +39,8 @@ public sealed class GatewayEndToEndNativeStepDriverTests
             {
                 "time", "selection", "camera", "gizmo", "float", "input", "screenshot"
             }));
-            Assert.That(operations.Take(6).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations.Take(5).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[5], Is.SameAs(actions.InputOperation));
             Assert.That(operations[6], Is.SameAs(actions.ScreenshotOperation));
         });
     }
@@ -69,6 +70,9 @@ public sealed class GatewayEndToEndNativeStepDriverTests
             GatewayEndToEndCompletedStepOperation.Passed(
                 new Dictionary<string, string> { ["screenshot"] = "evidence.png" });
 
+        public IGatewayEndToEndStepOperation InputOperation { get; } =
+            GatewayEndToEndCompletedStepOperation.Passed();
+
         public GatewayEndToEndStepOutcome Apply(TimeControlActionStep step, IEndToEndContext context) =>
             Record("time");
 
@@ -84,8 +88,11 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step, IEndToEndContext context) =>
             Record("float");
 
-        public GatewayEndToEndStepOutcome Apply(ProcessInputActionStep step, IEndToEndContext context) =>
-            Record("input");
+        public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)
+        {
+            Calls.Add("input");
+            return InputOperation;
+        }
 
         public IGatewayEndToEndStepOperation Begin(ScreenshotStep step, IEndToEndContext context)
         {

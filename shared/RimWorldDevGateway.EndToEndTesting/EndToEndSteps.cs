@@ -127,10 +127,21 @@ public sealed class GizmoActionStep : EndToEndStep
         EndToEndGizmoInteraction interaction,
         string? stableGizmoId = null,
         EndToEndMapCell? startCell = null,
-        EndToEndMapCell? endCell = null)
+        EndToEndMapCell? endCell = null,
+        IEnumerable<string>? architectCategoryDefNames = null)
         : base(name, EndToEndStepKind.Act)
     {
-        TargetRuntimeIds = CopyRequiredIds(targetRuntimeIds, nameof(targetRuntimeIds));
+        TargetRuntimeIds = StepValues.CopyIds(targetRuntimeIds, nameof(targetRuntimeIds));
+        ArchitectCategoryDefNames = StepValues.CopyIds(
+            architectCategoryDefNames ?? Array.Empty<string>(),
+            nameof(architectCategoryDefNames));
+        if (TargetRuntimeIds.Count == 0 && ArchitectCategoryDefNames.Count == 0)
+        {
+            throw new ArgumentException(
+                "At least one target runtime ID or architect category Def name is required.",
+                nameof(targetRuntimeIds));
+        }
+
         GizmoType = Required(gizmoType, nameof(gizmoType));
         Interaction = interaction;
         StableGizmoId = string.IsNullOrWhiteSpace(stableGizmoId) ? null : stableGizmoId!.Trim();
@@ -139,6 +150,8 @@ public sealed class GizmoActionStep : EndToEndStep
     }
 
     public IReadOnlyList<string> TargetRuntimeIds { get; }
+
+    public IReadOnlyList<string> ArchitectCategoryDefNames { get; }
 
     public string GizmoType { get; }
 
@@ -149,17 +162,6 @@ public sealed class GizmoActionStep : EndToEndStep
     public EndToEndMapCell? StartCell { get; }
 
     public EndToEndMapCell? EndCell { get; }
-
-    private static IReadOnlyList<string> CopyRequiredIds(IEnumerable<string> values, string parameterName)
-    {
-        var copy = StepValues.CopyIds(values, parameterName);
-        if (copy.Count == 0)
-        {
-            throw new ArgumentException("At least one target runtime ID is required.", parameterName);
-        }
-
-        return copy;
-    }
 
     private static string Required(string value, string parameterName) => StepValues.Required(value, parameterName);
 }

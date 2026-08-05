@@ -42,7 +42,7 @@ The Gateway SHALL discover, validate, byte-load, and execute marker-owned E2E bu
 - **THEN** the runtime rejects that bundle without executing any of its tests
 
 ### Requirement: E2E tests execute as bounded multi-frame workflows
-The E2E contract SHALL separate main-thread fixture arrangement from an iterator of typed `act`, `wait`, and `observe` steps. The Gateway SHALL advance the iterator without blocking frame rendering, SHALL execute Unity/Verse access only on the main thread, and SHALL enforce test-declared frame, game-tick, and wall-clock deadlines plus a host watchdog. Supported action steps SHALL include native gizmos, exact float-menu orders, pause/speed, selection, camera, and process-scoped input; supported observation steps SHALL include predicate assertions, full or object-bounded screenshots, and named checkpoints.
+The E2E contract SHALL separate main-thread fixture arrangement from an iterator of typed `act`, `wait`, and `observe` steps. The Gateway SHALL advance the iterator without blocking frame rendering, SHALL execute Unity/Verse access only on the main thread, and SHALL enforce test-declared frame, game-tick, and wall-clock deadlines plus a host watchdog. Supported action steps SHALL include native gizmos selected from exact Thing owners and/or exact architect category Def names, exact float-menu orders, pause/speed, selection, camera, and process-scoped input; supported observation steps SHALL include predicate assertions, full or object-bounded screenshots, and named checkpoints.
 
 #### Scenario: A pawn must finish a real job
 - **WHEN** arrangement creates a drafted pawn and fixtures, an action step invokes the native Undraft command, and a wait step watches the ordinary job outcome

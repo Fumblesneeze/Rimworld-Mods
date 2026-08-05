@@ -237,6 +237,7 @@ public sealed class GatewayGizmoDescriptor
     {
         Handle = handle;
         Revision = revision;
+        Identity = snapshot.Identity;
         Source = snapshot.Source;
         OwnerHandles = snapshot.OwnerHandles;
         RuntimeType = snapshot.RuntimeType;
@@ -255,6 +256,8 @@ public sealed class GatewayGizmoDescriptor
     public string Handle { get; }
 
     public string Revision { get; }
+
+    public string Identity { get; }
 
     public GatewayGizmoSource Source { get; }
 
