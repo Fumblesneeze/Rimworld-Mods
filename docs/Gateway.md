@@ -467,6 +467,8 @@ Before and after every test, the process pauses and removes all destroyable spaw
 
 E2E state and assertions remain supporting automation. Acceptance still requires the acting agent to inspect the exact run's native screenshots and confirm that the recorded player action caused the visible outcome; logs or a green endpoint alone are insufficient.
 
+Each E2E screenshot is captured at end-of-frame and persisted before its step passes. A transient Unity capture failure, invalid encoded frame, capture timeout, or concurrent-capture lease race receives one fresh end-of-frame retry; deterministic target/request failures and artifact-persistence failures remain terminal so missing evidence is never reported as success.
+
 ## Automations and quickstart
 
 Use discovery rather than assuming an automation is available:

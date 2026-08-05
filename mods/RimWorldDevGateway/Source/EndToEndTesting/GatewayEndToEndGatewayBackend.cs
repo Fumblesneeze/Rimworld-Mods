@@ -150,20 +150,44 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
             ThingHandles = step.TargetRuntimeIds.ToList(),
             PaddingPixels = step.TargetRuntimeIds.Count == 0 ? null : step.PaddingPixels
         };
-        var capture = screenshots.CaptureOperation(
-            "e2e-" + fileName,
-            request,
-            TimeSpan.FromSeconds(30));
-        var persistence = capture.Completion.ContinueWith(
-            completed => PersistScreenshot(completed.GetAwaiter().GetResult(), filePath, fileName),
-            CancellationToken.None,
-            TaskContinuationOptions.None,
-            TaskScheduler.Default);
+        var persistence = CaptureAndPersistScreenshot(request, filePath, fileName);
         return new GatewayEndToEndTaskStepOperation(
             persistence,
             "screenshot_failed",
             "The E2E screenshot could not be captured and persisted.");
     }
+
+    private async Task<GatewayEndToEndStepOutcome> CaptureAndPersistScreenshot(
+        GatewayScreenshotRequest request,
+        string filePath,
+        string fileName)
+    {
+        byte[] png;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                var capture = screenshots.CaptureOperation(
+                    "e2e-" + fileName + "-attempt-" + attempt,
+                    request,
+                    TimeSpan.FromSeconds(30));
+                png = await capture.Completion.ConfigureAwait(false);
+                break;
+            }
+            catch (Exception exception) when (
+                attempt == 1 && IsTransientScreenshotFailure(exception))
+            {
+                await Task.Yield();
+            }
+        }
+
+        return PersistScreenshot(png, filePath, fileName);
+    }
+
+    private static bool IsTransientScreenshotFailure(Exception exception) =>
+        exception is TimeoutException ||
+        exception is GatewayScreenshotException screenshot &&
+        screenshot.Code is "capture_busy" or "capture_failed" or "invalid_png";
 
     private GatewayEndToEndStepOutcome PersistScreenshot(
         byte[] png,

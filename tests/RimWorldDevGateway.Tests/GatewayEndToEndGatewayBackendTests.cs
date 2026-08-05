@@ -102,6 +102,61 @@ public sealed class GatewayEndToEndGatewayBackendTests
     }
 
     [Test]
+    public void Screenshot_operation_retries_one_transient_capture_on_a_fresh_end_of_frame()
+    {
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            "gateway-e2e-backend-retry-" + Guid.NewGuid().ToString("N"));
+        var dispatcher = new GatewayDispatcher();
+        var png = new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+        var screenshots = new TransientScreenshotBackend(png);
+        try
+        {
+            var backend = CreateBackend(
+                new RecordingGameOperations(),
+                new RecordingThingOperations(),
+                new RecordingCameraOperations(),
+                new RecordingGizmoSource(),
+                directory,
+                dispatcher,
+                screenshots);
+
+            var operation = backend.BeginScreenshot(
+                new ScreenshotStep("retry evidence", Array.Empty<string>(), 0),
+                new GatewayEndToEndTestContext(() => 0, () => 0, _ => null));
+            Assert.That(
+                SpinWait.SpinUntil(
+                    () =>
+                    {
+                        dispatcher.Drain(DispatchPhase.EndOfFrame);
+                        return operation.IsCompleted;
+                    },
+                    TimeSpan.FromSeconds(5)),
+                Is.True);
+            var outcome = operation.GetOutcome();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    outcome.Passed,
+                    Is.True,
+                    $"{outcome.FailureCode}: {outcome.FailureMessage}");
+                Assert.That(screenshots.CaptureCount, Is.EqualTo(2));
+                Assert.That(
+                    File.ReadAllBytes(Path.Combine(directory, outcome.Artifacts["screenshot"])),
+                    Is.EqualTo(png));
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Test]
     public void Float_menu_catalog_projects_native_options_to_shared_stable_metadata()
     {
         var consume = CreateHostSafeFloatMenuOption("Consume simple meal", () => { });
@@ -191,6 +246,35 @@ public sealed class GatewayEndToEndGatewayBackendTests
         public void SetGodMode(bool enabled) => GodMode = enabled;
         public void SetPaused(bool paused) => Speed = paused ? GatewayGameSpeed.Paused : GatewayGameSpeed.Normal;
         public void SetSpeed(GatewayGameSpeed speed) => Speed = speed;
+    }
+
+    private sealed class TransientScreenshotBackend : IGatewayScreenshotBackend
+    {
+        private readonly byte[] png;
+
+        public TransientScreenshotBackend(byte[] png)
+        {
+            this.png = png;
+        }
+
+        public int CaptureCount { get; private set; }
+
+        public object Capture()
+        {
+            CaptureCount++;
+            if (CaptureCount == 1)
+            {
+                throw new InvalidOperationException("Transient Unity capture failure.");
+            }
+
+            return new object();
+        }
+
+        public byte[] EncodePng(object resource) => png;
+
+        public void Destroy(object resource)
+        {
+        }
     }
 
     private sealed class RecordingThingOperations : IGatewayThingOperations
