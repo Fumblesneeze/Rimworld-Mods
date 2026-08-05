@@ -4,7 +4,7 @@ Proves the packaged RimWorld Dev Gateway inside an isolated RimWorld process.
 
 .DESCRIPTION
 Builds and deploys only the developer gateway, writes an isolated Core-plus-gateway ModsConfig,
-forces runInBackground and mutes music in isolated preferences, launches one exact RimWorld PID minimized by default,
+forces windowed 1600x900 background rendering with music muted in isolated preferences, launches one exact RimWorld PID minimized by default,
 discovers its session manifest, exercises authenticated EmbedIO
 status/UI/log routes and the in-process raw C# REPL, rejects an unauthenticated call, and verifies
 that the normal ModsConfig hash did not change. With -Quicktest it waits for a playable map without
@@ -2645,7 +2645,11 @@ function Write-MinimalModsConfig {
 }
 
 function Write-MinimalPrefs {
-    param([Parameter(Mandatory)][string]$Path)
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][ValidateRange(640, 7680)][int]$RenderWidth,
+        [Parameter(Mandatory)][ValidateRange(480, 4320)][int]$RenderHeight
+    )
 
     $settings = [System.Xml.XmlWriterSettings]::new()
     $settings.Indent = $true
@@ -2656,6 +2660,13 @@ function Write-MinimalPrefs {
         $writer.WriteStartElement('PrefsData')
         $writer.WriteElementString('volumeMusic', '0')
         $writer.WriteElementString('runInBackground', 'True')
+        $writer.WriteElementString(
+            'screenWidth',
+            $RenderWidth.ToString([Globalization.CultureInfo]::InvariantCulture))
+        $writer.WriteElementString(
+            'screenHeight',
+            $RenderHeight.ToString([Globalization.CultureInfo]::InvariantCulture))
+        $writer.WriteElementString('fullscreen', 'False')
         $writer.WriteEndElement()
         $writer.WriteEndDocument()
     }
@@ -4409,9 +4420,19 @@ $script:hostRequestJournalPath = $hostRequestJournalPath
 $script:lastHostRequestRecord = $null
 $null = New-Item -Path $configDirectory -ItemType Directory -Force
 Write-MinimalModsConfig -Path $modsConfigPath -Version $rimWorldVersion
-Write-MinimalPrefs -Path $prefsPath
+$renderWidth = 1600
+$renderHeight = 900
+Write-MinimalPrefs `
+    -Path $prefsPath `
+    -RenderWidth $renderWidth `
+    -RenderHeight $renderHeight
 $launchVisible = [bool]$VisibleWindow -or $runGatewayRegressionScenario
 $launchWindowStyle = if ($launchVisible) { 'Normal' } else { 'Minimized' }
+$unityWindowArguments = @(
+    '-screen-fullscreen', '0',
+    '-screen-width', $renderWidth.ToString([Globalization.CultureInfo]::InvariantCulture),
+    '-screen-height', $renderHeight.ToString([Globalization.CultureInfo]::InvariantCulture)
+)
 
 $normalConfigDirectory = Join-Path $env:USERPROFILE 'AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config'
 $normalModsConfigPath = Join-Path $normalConfigDirectory 'ModsConfig.xml'
@@ -4422,7 +4443,7 @@ $launchArguments = @(
     "-savedatafolder=`"$savedDataPath`"",
     '-logFile',
     "`"$playerLogPath`""
-)
+) + $unityWindowArguments
 if ($Quicktest) {
     $launchArguments += '-quicktest'
 }
@@ -4467,6 +4488,10 @@ if ($DryRun) {
         Prefs = $prefsPath
         RunInBackground = $true
         MusicVolume = 0
+        RenderWidth = $renderWidth
+        RenderHeight = $renderHeight
+        Fullscreen = $false
+        UnityWindowArguments = $unityWindowArguments
         LaunchWindowStyle = $launchWindowStyle
         VisibleWindow = $launchVisible
         VisibleWindowRequested = [bool]$VisibleWindow
@@ -6620,6 +6645,10 @@ try {
         Prefs = $prefsPath
         RunInBackground = $true
         MusicVolume = 0
+        RenderWidth = $renderWidth
+        RenderHeight = $renderHeight
+        Fullscreen = $false
+        UnityWindowArguments = $unityWindowArguments
         LaunchWindowStyle = $launchWindowStyle
         VisibleWindow = $launchVisible
         VisibleWindowRequested = [bool]$VisibleWindow

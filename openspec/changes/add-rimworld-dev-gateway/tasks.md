@@ -197,6 +197,8 @@
 - [x] 26.5 TDD/LAUNCH: Perform no exact-PID window-state probe after launch; do not compare, classify, warn on, or enforce a user restore or maximize.
 - [x] 26.6 TDD/PERSISTENCE: Reproduce a destination snapshot held by a temporary Windows reader and retry its atomic replacement on the background persistence task without surfacing a false in-game failure.
 - [x] 26.7 TDD/IN-GAME: Defer the shutdown request until the correlated `202 Accepted` body is written, flushed, and marked handled; preserve the one-shot completion through response bounding and verify the real Unity/Mono listener delivers the response before teardown.
+- [x] 26.8 TDD RED/GREEN: Reproduce Unity creating a foreground full-desktop window before the minimized style takes effect, then supply matching explicit windowed Prefs and Unity startup arguments without introducing post-start window-state enforcement.
+- [x] 26.9 IN-GAME: Run the exact orbital-trade E2E group from a minimized launch, retain an exact-PID native window timeline from process creation through trade acceptance, and verify no foreground full-desktop normal/maximized state occurs while the native trade behavior remains visible in in-process screenshots.
 
 ## 27. mods/RimWorldDevGateway — Object-bounded screenshots and host snapshots
 

@@ -32,6 +32,12 @@ public sealed class GatewaySmokeBackgroundLaunchTests
             {
                 Assert.That(result.StandardOutput, Does.Contain("\"RunInBackground\":true"));
                 Assert.That(result.StandardOutput, Does.Contain("\"MusicVolume\":0"));
+                Assert.That(result.StandardOutput, Does.Contain("\"RenderWidth\":1600"));
+                Assert.That(result.StandardOutput, Does.Contain("\"RenderHeight\":900"));
+                Assert.That(result.StandardOutput, Does.Contain("\"Fullscreen\":false"));
+                Assert.That(
+                    result.StandardOutput,
+                    Does.Contain("\"UnityWindowArguments\":[\"-screen-fullscreen\",\"0\",\"-screen-width\",\"1600\",\"-screen-height\",\"900\"]"));
                 Assert.That(result.StandardOutput, Does.Contain("\"LaunchWindowStyle\":\"Minimized\""));
                 Assert.That(result.StandardOutput, Does.Contain("\"Prefs\":"));
                 Assert.That(prefsPaths, Has.Exactly(1).Items);
@@ -45,6 +51,15 @@ public sealed class GatewaySmokeBackgroundLaunchTests
             Assert.That(
                 preferences.SelectSingleNode("/PrefsData/volumeMusic")?.InnerText,
                 Is.EqualTo("0"));
+            Assert.That(
+                preferences.SelectSingleNode("/PrefsData/screenWidth")?.InnerText,
+                Is.EqualTo("1600"));
+            Assert.That(
+                preferences.SelectSingleNode("/PrefsData/screenHeight")?.InnerText,
+                Is.EqualTo("900"));
+            Assert.That(
+                preferences.SelectSingleNode("/PrefsData/fullscreen")?.InnerText,
+                Is.EqualTo("False"));
         }
         finally
         {
