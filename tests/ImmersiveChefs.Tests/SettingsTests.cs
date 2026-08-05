@@ -23,6 +23,8 @@ public sealed class SettingsTests
             Assert.That(settings.MealTemperatureEnabled, Is.True);
             Assert.That(settings.Hospitality, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.CommonSense, Is.EqualTo(OptionalIntegrationMode.Auto));
+            Assert.That(settings.AdaptiveMealBill, Is.EqualTo(OptionalIntegrationMode.Auto));
+            Assert.That(settings.OvercookedMeals, Is.EqualTo(OptionalIntegrationMode.Auto));
         });
 
         settings.EmergencyHungerThreshold = 1f;

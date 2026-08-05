@@ -35,6 +35,30 @@ public sealed class IntegrationCatalogTests
         Assert.That(snapshot.IsActive(OptionalIntegration.CommonSense), Is.True);
     }
 
+    [TestCase("rabiosus.AdaptiveMealBill", OptionalIntegration.AdaptiveMealBill)]
+    [TestCase("binchcannon.overcookedmeals", OptionalIntegration.OvercookedMeals)]
+    public void Detect_marks_exact_final_product_integrations_active(
+        string packageId,
+        OptionalIntegration integration)
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { packageId });
+
+        Assert.That(snapshot.IsActive(integration), Is.True);
+    }
+
+    [TestCase("rabiosus.AdaptiveMealBill.lookalike")]
+    [TestCase("binchcannon.overcookedmeals.compat")]
+    public void Detect_ignores_lookalike_final_product_packages(string packageId)
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { packageId });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(snapshot.IsActive(OptionalIntegration.AdaptiveMealBill), Is.False);
+            Assert.That(snapshot.IsActive(OptionalIntegration.OvercookedMeals), Is.False);
+        });
+    }
+
     [Test]
     public void Disabled_common_sense_setting_prevents_activation_when_loaded()
     {
@@ -63,6 +87,29 @@ public sealed class IntegrationCatalogTests
             Is.False);
     }
 
+    [TestCase(OptionalIntegration.AdaptiveMealBill)]
+    [TestCase(OptionalIntegration.OvercookedMeals)]
+    public void Disabled_final_product_setting_prevents_activation_when_loaded(
+        OptionalIntegration integration)
+    {
+        var snapshot = IntegrationCatalog.Detect(new[]
+        {
+            "rabiosus.AdaptiveMealBill",
+            "binchcannon.overcookedmeals"
+        });
+        var settings = new ImmersiveChefsSettings
+        {
+            AdaptiveMealBill = integration == OptionalIntegration.AdaptiveMealBill
+                ? OptionalIntegrationMode.Off
+                : OptionalIntegrationMode.Auto,
+            OvercookedMeals = integration == OptionalIntegration.OvercookedMeals
+                ? OptionalIntegrationMode.Off
+                : OptionalIntegrationMode.Auto
+        };
+
+        Assert.That(OptionalIntegrationPolicy.IsEnabled(integration, snapshot, settings), Is.False);
+    }
+
     [TestCaseSource(nameof(UnknownOrEmptyPackageSets))]
     public void Detect_returns_a_complete_inactive_snapshot_for_unknown_or_empty_packages(string[] packageIds)
     {
@@ -70,7 +117,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(13));
+            Assert.That(snapshot.States, Has.Count.EqualTo(15));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }

@@ -16,7 +16,9 @@ public enum OptionalIntegration
     VarietyMatters,
     VanillaFoodVarietyExpanded,
     VanillaExpandedFramework,
-    VanillaNutrientPasteExpanded
+    VanillaNutrientPasteExpanded,
+    AdaptiveMealBill,
+    OvercookedMeals
 }
 
 public sealed class IntegrationSnapshot
@@ -65,7 +67,9 @@ public static class IntegrationCatalog
             [OptionalIntegration.VarietyMatters] = "evyatar108.varietymattersimprovedredux",
             [OptionalIntegration.VanillaFoodVarietyExpanded] = "vanillaexpanded.vanillafoodvarietyexpanded",
             [OptionalIntegration.VanillaExpandedFramework] = "oskarpotocki.vanillafactionsexpanded.core",
-            [OptionalIntegration.VanillaNutrientPasteExpanded] = "vanillaexpanded.vnutriente"
+            [OptionalIntegration.VanillaNutrientPasteExpanded] = "vanillaexpanded.vnutriente",
+            [OptionalIntegration.AdaptiveMealBill] = "rabiosus.AdaptiveMealBill",
+            [OptionalIntegration.OvercookedMeals] = "binchcannon.overcookedmeals"
         };
 
     public static IntegrationSnapshot Detect(IEnumerable<string> loadedPackageIds)
@@ -139,6 +143,8 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.VanillaFoodVarietyExpanded => settings.VanillaFoodVarietyExpanded,
             OptionalIntegration.VanillaExpandedFramework => settings.VanillaExpandedFramework,
             OptionalIntegration.VanillaNutrientPasteExpanded => settings.VanillaNutrientPasteExpanded,
+            OptionalIntegration.AdaptiveMealBill => settings.AdaptiveMealBill,
+            OptionalIntegration.OvercookedMeals => settings.OvercookedMeals,
             _ => OptionalIntegrationMode.Auto
         };
     }

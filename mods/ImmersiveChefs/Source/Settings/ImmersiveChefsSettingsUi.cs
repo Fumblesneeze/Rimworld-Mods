@@ -92,6 +92,8 @@ internal sealed class ImmersiveChefsSettingsUi
         Cycle(listing, "Vanilla Food Variety Expanded", ref settings.VanillaFoodVarietyExpanded);
         Cycle(listing, "Vanilla Expanded Framework", ref settings.VanillaExpandedFramework);
         Cycle(listing, "Vanilla Nutrient Paste Expanded", ref settings.VanillaNutrientPasteExpanded);
+        Cycle(listing, "Adaptive Meal Bill", ref settings.AdaptiveMealBill);
+        Cycle(listing, "Overcooked Meals", ref settings.OvercookedMeals);
 
         listing.End();
         Widgets.EndScrollView();

@@ -10,7 +10,9 @@ internal static class WorkGiverDoBillWarePatch
 {
     private static void Postfix(Pawn pawn, Thing thing, ref Job? __result)
     {
-        if (__result is null || !MealCoveragePolicy.IsCovered(__result.RecipeDef))
+        if (__result is null ||
+            (!MealCoveragePolicy.IsCovered(__result.RecipeDef) &&
+             !AdaptiveMealBillAdapter.Controls(__result.RecipeDef)))
         {
             return;
         }
@@ -82,6 +84,7 @@ internal static class GenRecipeKitchenwarePatch
     {
         __result = CookingSessionRegistry.ApplyProducts(
             PreparedFoodRuntime.ApplyProducts(__result, recipeDef, worker, ingredients),
+            recipeDef,
             worker,
             ingredients);
     }

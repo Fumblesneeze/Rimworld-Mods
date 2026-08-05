@@ -45,6 +45,7 @@ internal sealed class CookingSession
     internal CookingSession(
         Pawn pawn,
         Job job,
+        RecipeDef reservationRecipe,
         Thing billGiver,
         ReservedWarePortion? cookware,
         IReadOnlyList<ReservedWarePortion> plates,
@@ -53,6 +54,7 @@ internal sealed class CookingSession
     {
         Pawn = pawn;
         Job = job;
+        ReservationRecipe = reservationRecipe;
         BillGiver = billGiver;
         Cookware = cookware;
         Plates = plates;
@@ -65,6 +67,7 @@ internal sealed class CookingSession
 
     internal Pawn Pawn { get; }
     internal Job Job { get; }
+    internal RecipeDef ReservationRecipe { get; }
     internal Thing BillGiver { get; }
     internal ReservedWarePortion? Cookware { get; }
     internal IReadOnlyList<ReservedWarePortion> Plates { get; }
@@ -74,6 +77,7 @@ internal sealed class CookingSession
     internal bool ProductsCompleted { get; private set; }
     internal float PreparedWorkFactor { get; }
     internal AssistantContributionAccumulator AssistantContribution { get; } = new();
+    private FinalProductLedger<Thing> FinalizedProducts { get; } = new();
 
     internal float NotifyWorkTick()
     {
@@ -128,9 +132,15 @@ internal sealed class CookingSession
         }
     }
 
-    internal void ApplyToProduct(Thing product, IReadOnlyList<Thing> ingredients)
+    internal void ApplyToProduct(
+        Thing product,
+        RecipeDef finalRecipe,
+        IReadOnlyList<Thing> ingredients)
     {
-        if (!MealCoveragePolicy.IsCovered(product.def))
+        if (!MealCoveragePolicy.IsCovered(product.def) ||
+            (AdaptiveMealBillAdapter.Controls(Job.RecipeDef) &&
+             !ReferenceEquals(finalRecipe, ReservationRecipe)) ||
+            !FinalizedProducts.TryBegin(product))
         {
             return;
         }
@@ -139,6 +149,10 @@ internal sealed class CookingSession
         var culinaryState = (product as ThingWithComps)?.GetComp<CompCulinaryState>();
         RestorePreparedIngredientProvenance(product, ingredients);
         var qualityScore = CalculateQuality(ingredients);
+        if (OvercookedMealsAdapter.IsFinalSurvivor(product))
+        {
+            qualityScore = OvercookedMealQualityPolicy.Apply(qualityScore);
+        }
         var currentTick = Find.TickManager?.TicksGame ?? 0;
         var records = new List<CulinaryServingRecord>();
         var hiddenPrepared = ingredients
@@ -396,7 +410,13 @@ internal static class CookingSessionRegistry
     internal static bool TryAttach(Pawn pawn, Job job, Thing billGiver, out string? missingReason)
     {
         missingReason = null;
-        if (!MealCoveragePolicy.IsCovered(job.RecipeDef))
+        if (!AdaptiveMealBillAdapter.TryResolveConcreteRecipe(job, out var reservationRecipe))
+        {
+            missingReason = "adaptive concrete recipe";
+            return false;
+        }
+
+        if (!MealCoveragePolicy.IsCovered(reservationRecipe))
         {
             return true;
         }
@@ -405,7 +425,8 @@ internal static class CookingSessionRegistry
         if (settings.WareRequirementMode == WareRequirementMode.Off)
         {
             Sessions.Add(job, new CookingSession(
-                pawn, job, billGiver, null, Array.Empty<ReservedWarePortion>(), false, true));
+                pawn, job, reservationRecipe!, billGiver, null,
+                Array.Empty<ReservedWarePortion>(), false, true));
             KitchenAssistanceRegistry.Open(pawn, job, billGiver);
             return true;
         }
@@ -414,8 +435,8 @@ internal static class CookingSessionRegistry
         // consumer emergency incorrectly makes an unrelated colonist's bill use dirty ware.
         var emergency = UrgentProductionRequestRegistry.HasActive(pawn.Map);
         var cookware = FindPortions(pawn, job, KitchenwareProduct.Cookware, 1, emergency, out var cookwareUse);
-        var requiredPlates = MealCoveragePolicy.ServingCount(job.RecipeDef!);
-        var plateComplexity = MealClassificationRuntime.ClassifyRecipe(job.RecipeDef);
+        var requiredPlates = MealCoveragePolicy.ServingCount(reservationRecipe!);
+        var plateComplexity = MealClassificationRuntime.ClassifyRecipe(reservationRecipe);
         var plates = FindPortions(
             pawn,
             job,
@@ -440,7 +461,7 @@ internal static class CookingSessionRegistry
         var emergencyMissing = emergency &&
                                (selectedCookware is null || plates.Sum(portion => portion.Count) < requiredPlates);
         Sessions.Add(job, new CookingSession(
-            pawn, job, billGiver, selectedCookware, plates, emergencyMissing, false));
+            pawn, job, reservationRecipe!, billGiver, selectedCookware, plates, emergencyMissing, false));
         KitchenAssistanceRegistry.Open(pawn, job, billGiver);
         return true;
     }
@@ -513,6 +534,7 @@ internal static class CookingSessionRegistry
 
     internal static IEnumerable<Thing> ApplyProducts(
         IEnumerable<Thing> products,
+        RecipeDef finalRecipe,
         Pawn worker,
         IReadOnlyList<Thing> ingredients)
     {
@@ -528,7 +550,7 @@ internal static class CookingSessionRegistry
 
         foreach (var product in products)
         {
-            session.ApplyToProduct(product, ingredients);
+            session.ApplyToProduct(product, finalRecipe, ingredients);
             yield return product;
         }
 

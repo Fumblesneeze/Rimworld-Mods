@@ -62,6 +62,8 @@ public sealed class ImmersiveChefsSettings : ModSettings
     public OptionalIntegrationMode VanillaFoodVarietyExpanded = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode VanillaExpandedFramework = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode VanillaNutrientPasteExpanded = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode AdaptiveMealBill = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode OvercookedMeals = OptionalIntegrationMode.Auto;
 
     public override void ExposeData()
     {
@@ -103,6 +105,8 @@ public sealed class ImmersiveChefsSettings : ModSettings
         Scribe_Values.Look(ref VanillaFoodVarietyExpanded, "vanillaFoodVarietyExpanded", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref VanillaExpandedFramework, "vanillaExpandedFramework", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref VanillaNutrientPasteExpanded, "vanillaNutrientPasteExpanded", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref AdaptiveMealBill, "adaptiveMealBill", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref OvercookedMeals, "overcookedMeals", OptionalIntegrationMode.Auto);
         ClampToAllowedRanges();
     }
 
