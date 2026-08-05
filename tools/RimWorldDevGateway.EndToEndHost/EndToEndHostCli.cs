@@ -316,8 +316,12 @@ public static class EndToEndHostCli
         public Option<string[]> PackageIds { get; } = new("--package-id")
         {
             Description = "Resolvable package ID. Repeat for every package used by selected groups.",
-            Required = true,
             AllowMultipleArgumentsPerToken = true
+        };
+
+        public Option<string> PackageIdFile { get; } = new("--package-id-file")
+        {
+            Description = "UTF-8 file containing one resolvable package ID per nonblank line."
         };
 
         public Option<string> Configuration { get; } = new("--configuration")
@@ -342,6 +346,7 @@ public static class EndToEndHostCli
             command.Options.Add(ModsRoot);
             command.Options.Add(RimWorldVersion);
             command.Options.Add(PackageIds);
+            command.Options.Add(PackageIdFile);
             command.Options.Add(Configuration);
             command.Options.Add(BuildTimeoutSeconds);
             command.Options.Add(Output);
@@ -355,14 +360,20 @@ public static class EndToEndHostCli
                 throw new ArgumentException("Build timeout must be between 10 and 900 seconds.");
             }
 
+            var packageIdFile = result.GetValue(PackageIdFile);
+            var filePackageIds = string.IsNullOrWhiteSpace(packageIdFile)
+                ? Array.Empty<string>()
+                : File.ReadLines(RequiredExistingFile(packageIdFile, "package ID file")).ToArray();
             var packageIds = (result.GetValue(PackageIds) ?? Array.Empty<string>())
+                .Concat(filePackageIds)
                 .Select(value => value?.Trim().ToLowerInvariant() ?? string.Empty)
                 .Where(value => value.Length > 0)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             if (packageIds.Length == 0)
             {
-                throw new ArgumentException("At least one --package-id is required.");
+                throw new ArgumentException(
+                    "At least one --package-id or a non-empty --package-id-file is required.");
             }
 
             return new CommonInputs(

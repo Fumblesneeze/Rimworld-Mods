@@ -62,4 +62,30 @@ public sealed class EndToEndHostCliTests
             Assert.That(output.ToString(), Is.Empty);
         });
     }
+
+    [Test]
+    public void Missing_package_id_file_is_invalid_usage_without_a_stack_trace()
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var missing = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "packages.txt");
+
+        var exitCode = EndToEndHostCli.Invoke(new[]
+        {
+            "plan",
+            "--repository-root", TestContext.CurrentContext.WorkDirectory,
+            "--mods-root", TestContext.CurrentContext.WorkDirectory,
+            "--rimworld-version", "1.6",
+            "--package-id-file", missing,
+            "--output", "json"
+        }, output, error);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exitCode, Is.EqualTo(2));
+            Assert.That(error.ToString(), Does.Contain("package ID file").And.Contain("does not exist"));
+            Assert.That(error.ToString(), Does.Not.Contain(" at "));
+            Assert.That(output.ToString(), Is.Empty);
+        });
+    }
 }
