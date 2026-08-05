@@ -31,9 +31,13 @@ public static class RimCuisineMealExclusionCatalog
 
     public static bool IsExcluded(string? packageId, string? defName)
     {
-        return !string.IsNullOrWhiteSpace(packageId) &&
-               !string.IsNullOrWhiteSpace(defName) &&
-               ExcludedByPackage.TryGetValue(packageId, out var excluded) &&
+        if (packageId is null || packageId.Trim().Length == 0 ||
+            defName is null || defName.Trim().Length == 0)
+        {
+            return false;
+        }
+
+        return ExcludedByPackage.TryGetValue(packageId, out var excluded) &&
                excluded.Contains(defName);
     }
 }
