@@ -137,3 +137,12 @@
   - [x] 9.8b TDD RED/GREEN: Make tests require the cutlery API and finalized Defs before renaming production code, then pass focused and full matrices with no tracked obsolete-term reference.
   - [x] 9.8c IN-GAME: Observe the renamed cutlery item and missing-cutlery thought through ordinary player-visible UI and native dining behavior.
   - [x] 9.8d REVIEW: Independently review the terminology slice for incomplete schema/API renames, accidental material changes, compatibility leakage, and truthful evidence; resolve findings and rerun affected verification.
+
+## 10. mods/ImmersiveChefs - Custom visual assets
+
+- [x] 10.1 SPEC: Define candidate generation, alpha/readability/style selection, Stuff coloring, release-package exclusion of rejected candidates, and live visual acceptance for every custom item and building.
+- [ ] 10.2 ASSET: Inventory every player-visible custom ThingDef that still reuses a vanilla texture; generate at least two distinct candidates for each cookware, plate, cutlery, chef's-knife, prepared-food, appliance, dishwasher, prep-station, and assistant-station concept.
+- [ ] 10.3 SELECT: Remove candidate chroma backgrounds without halos, compare every candidate at its final intended draw size against a retained live RimWorld map context, record the reason for each selection, and keep rejected candidate files outside the release package.
+- [ ] 10.4 TDD/PACKAGE: Add failing then passing Def/package tests that require selected custom texture paths, valid PNG alpha/corners/dimensions, complete directional sets where `Graphic_Multi` remains in use, and no missing or rejected candidate asset in the built mod.
+- [ ] 10.5 IN-GAME: On the reviewed build, render every selected item/building through its real Def beside representative vanilla content; inspect all Stuff-aware portable wares in wood, stone, steel, silver, and gold where eligible; verify silhouettes, material tint, stacking, rotation/direction, scale, selection brackets, and inspector/UI readability through retained screenshots.
+- [ ] 10.6 REVIEW: Independently review visual consistency, semantic recognizability, alpha edges, Stuff tinting, directional coverage, packaging, attribution/provenance notes, and screenshot honesty; resolve findings and rerun the visual catalog.

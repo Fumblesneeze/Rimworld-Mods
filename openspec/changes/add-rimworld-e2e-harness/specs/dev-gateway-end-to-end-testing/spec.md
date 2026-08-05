@@ -118,3 +118,7 @@ Manual Gateway scenarios SHALL be migrated into product-owned E2E tests by playe
 #### Scenario: A future agent changes a pawn job patch
 - **WHEN** the change can be exercised through a bounded playable-map workflow
 - **THEN** the workflow requires focused host coverage, a matching E2E regression, reviewed-build E2E execution, and personal inspection of retained behavior evidence
+
+#### Scenario: RimWorld or a supported third-party mod updates
+- **WHEN** a game or mod update may have changed internal methods, Defs, jobs, UI actions, or Harmony targets without an obvious load error
+- **THEN** the documented maintenance workflow runs the relevant exact E2E groups in quick succession and uses their aggregate plus personally inspected behavior evidence to locate regressions

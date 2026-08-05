@@ -150,7 +150,7 @@ Before an ordinary pawn selects an imported unplated meal, a reachable enabled w
 
 #### Scenario: A raider or visitor carries a meal
 - **WHEN** pawn inventory generation gives a raider or visitor a covered non-handheld meal
-- **THEN** that meal contains a real clean Poor-quality plate using the cheapest registered material eligible for its complexity
+- **THEN** that meal contains a real clean Poor-quality plate using the least-luxurious admissible service class and then the cheapest registered material within that class
 
 #### Scenario: A player buys a meal from a trader or settlement
 - **WHEN** covered meal stock is generated and then transferred through the native trade workflow

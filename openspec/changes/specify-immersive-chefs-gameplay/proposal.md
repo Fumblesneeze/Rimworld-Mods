@@ -14,6 +14,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - Specify optional integrations for locally installed material, hygiene, restaurant, Common Sense, variety, and nutrient-paste mods without making them hard dependencies.
 - Specify player-facing settings and safe emergency fallbacks so the simulation cannot deadlock or starve pawns.
 - Specify `Dishwashing` and `Professional Kitchens` research while leaving ordinary tableware progression to the crafting spot, smithies, and machining table.
+- Replace every player-visible placeholder texture with selected custom art, require multiple candidates per asset, compare candidates at game scale against RimWorld's live visual context, and ship only the selected alpha-clean result.
 - Record food preservation/canning and food waste as future extension points; neither is in this change's implementation scope.
 - Defer ceramic/porcelain content and recipe classification for Vanilla Cooking Expanded to later compatibility changes.
 - This change is the gameplay contract governing the implementation and its remaining in-game acceptance work.
@@ -30,6 +31,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - `meal-state`: Meal culinary quality, temperature, poisoning modifiers, thoughts, refrigeration, and microwave reheating.
 - `dining-standards`: Cutlery acquisition, expectations, Royalty requirements, comfort, and unmet-standard thoughts.
 - `optional-gameplay-integrations`: Package-ID-gated compatibility behavior for the supported local mod ecosystem.
+- `visual-assets`: Candidate generation, style/readability selection, Stuff-compatible color treatment, package wiring, and in-game visual acceptance for custom items and buildings.
 
 ### Modified Capabilities
 
