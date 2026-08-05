@@ -42,6 +42,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'RimWorldEndToEndRunner.Support.psm1') -Force
 
 function Exit-InvalidInput {
     param([Parameter(Mandatory)][string]$Message)
@@ -288,49 +289,6 @@ function Get-SafeGroupDirectoryName {
     return '{0:D3}-{1}' -f $Index, $safe
 }
 
-function Write-JUnitReport {
-    param(
-        [Parameter(Mandatory)][string]$Path,
-        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$GroupResults
-    )
-
-    $settings = [System.Xml.XmlWriterSettings]::new()
-    $settings.Indent = $true
-    $settings.Encoding = [System.Text.UTF8Encoding]::new($false)
-    $writer = [System.Xml.XmlWriter]::Create($Path, $settings)
-    try {
-        $failures = @($GroupResults | Where-Object { [string]$_.Status -ne 'passed' }).Count
-        $writer.WriteStartDocument()
-        $writer.WriteStartElement('testsuite')
-        $writer.WriteAttributeString('name', 'RimWorld E2E exact mod groups')
-        $writer.WriteAttributeString('tests', [string]$GroupResults.Count)
-        $writer.WriteAttributeString('failures', [string]$failures)
-        foreach ($groupResult in $GroupResults) {
-            $writer.WriteStartElement('testcase')
-            $writer.WriteAttributeString('classname', 'RimWorld.EndToEnd.ModGroup')
-            $writer.WriteAttributeString('name', [string]$groupResult.GroupId)
-            if ([string]$groupResult.Status -ne 'passed') {
-                $writer.WriteStartElement('failure')
-                $writer.WriteAttributeString('message', [string]$groupResult.Message)
-                $failureDetail = if (Test-Path -LiteralPath ([string]$groupResult.StandardError) -PathType Leaf) {
-                    Get-Content -LiteralPath ([string]$groupResult.StandardError) -Raw
-                }
-                else {
-                    [string]$groupResult.Message
-                }
-                $writer.WriteString($failureDetail)
-                $writer.WriteEndElement()
-            }
-            $writer.WriteEndElement()
-        }
-        $writer.WriteEndElement()
-        $writer.WriteEndDocument()
-    }
-    finally {
-        $writer.Dispose()
-    }
-}
-
 if (-not (Test-Path -LiteralPath $RimWorldPath -PathType Container)) {
     Exit-InvalidInput "RimWorld path does not exist: $RimWorldPath"
 }
@@ -404,18 +362,32 @@ foreach ($group in $selectedGroups) {
     $additionalIds = @($group.activePackageIds | Where-Object {
         [string]$_ -ine 'ludeon.rimworld' -and [string]$_ -ine 'fumblesneeze.rimworlddevgateway'
     })
+    $plannedGroupDirectory = Join-Path $artifactRoot (
+        Get-SafeGroupDirectoryName -GroupId ([string]$group.groupId) -Index $planIndex)
+    $plannedAdditionalIdsFile = if ($additionalIds.Count -gt 0) {
+        Join-Path $plannedGroupDirectory 'additional-mod-ids.txt'
+    }
+    else {
+        $null
+    }
+    $plannedCommand = @(
+        'pwsh', '-NoProfile', '-NonInteractive', '-File', $smokeScript,
+        '-Quicktest', '-RunEndToEndTests', '-SkipBuildDeploy',
+        '-TimeoutSeconds', [string]$TimeoutSeconds,
+        '-Output', 'json'
+    )
+    if ($null -ne $plannedAdditionalIdsFile) {
+        $plannedCommand += @('-AdditionalModIdsFile', $plannedAdditionalIdsFile)
+    }
+
     $launchPlans.Add([pscustomobject]@{
         GroupId = [string]$group.groupId
         ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
         Tests = @($group.tests)
         AdditionalModIds = $additionalIds
-        ArtifactsPath = Join-Path $artifactRoot (Get-SafeGroupDirectoryName -GroupId ([string]$group.groupId) -Index $planIndex)
-        Command = @(
-            'pwsh', '-NoProfile', '-NonInteractive', '-File', $smokeScript,
-            '-Quicktest', '-RunEndToEndTests', '-SkipBuildDeploy',
-            '-TimeoutSeconds', [string]$TimeoutSeconds,
-            '-Output', 'json'
-        ) + @($additionalIds | ForEach-Object { @('-AdditionalModIds', [string]$_) })
+        AdditionalModIdsFile = $plannedAdditionalIdsFile
+        ArtifactsPath = $plannedGroupDirectory
+        Command = $plannedCommand
     })
 }
 
@@ -500,12 +472,13 @@ try {
         $groupDirectory = Join-Path $runDirectory (
             Get-SafeGroupDirectoryName -GroupId ([string]$group.groupId) -Index $groupIndex)
         $null = New-Item -Path $groupDirectory -ItemType Directory -Force
-        $groupArtifactRoot = Join-Path $groupDirectory 'smoke'
+        $groupArtifactRoot = Join-Path $runDirectory ('smoke-{0:D3}' -f $groupIndex)
         $stdoutPath = Join-Path $groupDirectory 'stdout.json'
         $stderrPath = Join-Path $groupDirectory 'stderr.txt'
         $additionalIds = @($group.activePackageIds | Where-Object {
             [string]$_ -ine 'ludeon.rimworld' -and [string]$_ -ine 'fumblesneeze.rimworlddevgateway'
         })
+        $additionalModIdsPath = Join-Path $groupDirectory 'additional-mod-ids.txt'
         $smokeArguments = [System.Collections.Generic.List[string]]::new()
         foreach ($argument in @(
             '-NoProfile', '-NonInteractive', '-File', $smokeScript,
@@ -515,9 +488,13 @@ try {
             '-Output', 'json')) {
             $smokeArguments.Add($argument)
         }
-        foreach ($additionalId in $additionalIds) {
-            $smokeArguments.Add('-AdditionalModIds')
-            $smokeArguments.Add([string]$additionalId)
+        if ($additionalIds.Count -gt 0) {
+            [System.IO.File]::WriteAllLines(
+                $additionalModIdsPath,
+                $additionalIds,
+                [System.Text.UTF8Encoding]::new($false))
+            $smokeArguments.Add('-AdditionalModIdsFile')
+            $smokeArguments.Add($additionalModIdsPath)
         }
 
         try {
@@ -635,7 +612,7 @@ $aggregate = [pscustomobject]@{
 }
 $aggregate | ConvertTo-Json -Depth 16 |
     Set-Content -LiteralPath $aggregatePath -Encoding UTF8
-Write-JUnitReport -Path $junitPath -GroupResults @($groupResults)
+Write-RimWorldEndToEndJUnitReport -Path $junitPath -GroupResults @($groupResults)
 
 if (-not $passed) {
     [Console]::Error.WriteLine(

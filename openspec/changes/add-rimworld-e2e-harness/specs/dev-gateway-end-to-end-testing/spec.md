@@ -30,6 +30,12 @@ The host runner SHALL discover all selected E2E tests before launch, group them 
 - **WHEN** the actual loaded package set is missing, adds, or reorders any declared package
 - **THEN** the Gateway loads no mismatched E2E test and the group fails before test arrangement
 
+#### Scenario: A group has several additional mods and a long descriptive identity
+- **WHEN** the host launches the exact group through a child PowerShell process
+- **THEN** it passes the ordered additional package IDs through one UTF-8 file rather than repeating an array parameter on the command line
+- **THEN** the runtime save-data branch uses a short group-independent name while the descriptive report retains the complete group identity
+- **THEN** XML-invalid terminal control characters are replaced in JUnit projection without rewriting the retained stderr artifact
+
 ### Requirement: E2E loading is explicit and dynamic
 The Gateway SHALL discover, validate, byte-load, and execute marker-owned E2E bundles below active mods only when the exact E2E startup flag is present. RimWorld SHALL never build test source. Bundle publication and cleanup SHALL be atomic and limited to exact owned staging directories, and every loaded assembly SHALL match the host-retained identity, hash, owner, and metadata-derived test list.
 

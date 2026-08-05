@@ -31,6 +31,18 @@ public sealed class GatewaySmokePackageIdCliTests
         });
     }
 
+    [Test]
+    public void Additional_package_id_file_uses_the_same_case_insensitive_validation()
+    {
+        var run = InvokeFromFile(new[] { "Example.Mod", "example.mod" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(2));
+            Assert.That(run.StandardError, Does.Contain("Duplicate active mod package ID"));
+        });
+    }
+
     private static InvocationResult Invoke(string[] additionalIds)
     {
         var repositoryRoot = FindSourceRepositoryRoot();
@@ -67,6 +79,54 @@ public sealed class GatewaySmokePackageIdCliTests
             {
                 process.Kill();
                 throw new TimeoutException("Gateway smoke package-ID probe timed out.");
+            }
+
+            Task.WaitAll(output, error);
+            return new InvocationResult(process.ExitCode, output.Result, error.Result);
+        }
+        finally
+        {
+            Directory.Delete(temporaryRoot, recursive: true);
+        }
+    }
+
+    private static InvocationResult InvokeFromFile(string[] additionalIds)
+    {
+        var repositoryRoot = FindSourceRepositoryRoot();
+        var smokePath = Path.Combine(repositoryRoot, "scripts", "Invoke-GatewaySmoke.ps1");
+        var temporaryRoot = Path.Combine(Path.GetTempPath(), "GatewaySmokePackageIdCliTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryRoot);
+        try
+        {
+            var packageFile = Path.Combine(temporaryRoot, "additional-mod-ids.txt");
+            File.WriteAllLines(packageFile, additionalIds, new UTF8Encoding(false));
+            var invocationPath = Path.Combine(temporaryRoot, "invoke.ps1");
+            var invocation =
+                "$parameters = @{" + Environment.NewLine +
+                $"  RimWorldPath = {PowerShellLiteral(Path.Combine(temporaryRoot, "missing-game"))}" + Environment.NewLine +
+                $"  SteamModContentFolder = {PowerShellLiteral(Path.Combine(temporaryRoot, "missing-workshop"))}" + Environment.NewLine +
+                $"  AdditionalModIdsFile = {PowerShellLiteral(packageFile)}" + Environment.NewLine +
+                "  DryRun = $true" + Environment.NewLine +
+                "}" + Environment.NewLine +
+                $"& {PowerShellLiteral(smokePath)} @parameters" + Environment.NewLine +
+                "exit $LASTEXITCODE" + Environment.NewLine;
+            File.WriteAllText(invocationPath, invocation, new UTF8Encoding(false));
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "pwsh.exe",
+                Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{invocationPath}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start pwsh.");
+            var output = process.StandardOutput.ReadToEndAsync();
+            var error = process.StandardError.ReadToEndAsync();
+            if (!process.WaitForExit(30000))
+            {
+                process.Kill();
+                throw new TimeoutException("Gateway smoke package-ID file probe timed out.");
             }
 
             Task.WaitAll(output, error);

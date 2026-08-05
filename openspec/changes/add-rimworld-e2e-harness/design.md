@@ -57,6 +57,8 @@ Tests may inspect Verse state inside predicates and assertions, but a direct mut
 
 The host command discovers and builds every marked E2E project, groups tests by the ordinal package sequence, and launches groups in deterministic sequence. Each process uses `-quicktest`, an isolated `-savedatafolder`, the exact group plus Gateway last, and a new explicit E2E startup flag. The Gateway discovers only staged bundles owned by active mods and executes only tests whose declared sequence equals the real active sequence after removing Gateway.
 
+Cross-process PowerShell array binding is not used for a group's additional package IDs. The host writes the exact ordered values as one UTF-8 line per ID and passes a single file parameter to the child smoke launcher. Runtime save data lives under a short `smoke-NNN` branch independent of the descriptive group ID so Mono's Windows file APIs can still create atomic session filenames; the full group ID remains in aggregate and JUnit metadata. Raw child stderr is retained unchanged, while the JUnit writer replaces only characters that XML 1.0 cannot represent.
+
 Within a process tests run by stable test ID. A failed assertion or test exception fails that test but does not prevent the reset and later tests. A failed or unverifiable reset taints the process, skips the remaining group as infrastructure failures, and makes the host launch result fail. A hung test is bounded by its declared deadlines plus a host watchdog; process termination remains the final cancellation boundary for arbitrary test code.
 
 ### 4. Every test gets a destructive disposable-map reset

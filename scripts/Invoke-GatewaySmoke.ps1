@@ -61,6 +61,8 @@ param(
 
     [string[]]$AdditionalModIds = @(),
 
+    [string]$AdditionalModIdsFile,
+
     [string[]]$AdditionalModProjectPaths = @(),
 
     [string[]]$ExpectedLogMarkers = @(),
@@ -2088,6 +2090,30 @@ function Assert-IntegrationTestBundleMatchesPlan {
 
     if ($plannedIdentities.Count -ne 0) {
         throw 'In-game integration-test staged result does not match its pre-registered dry-run plan.'
+    }
+}
+
+if (-not [string]::IsNullOrWhiteSpace($AdditionalModIdsFile)) {
+    if ($AdditionalModIds.Count -ne 0) {
+        Exit-InvalidInput 'AdditionalModIds and AdditionalModIdsFile cannot be supplied together.'
+    }
+
+    try {
+        $resolvedAdditionalModIdsFile = [System.IO.Path]::GetFullPath($AdditionalModIdsFile)
+        if (-not (Test-Path -LiteralPath $resolvedAdditionalModIdsFile -PathType Leaf)) {
+            Exit-InvalidInput "Additional mod ID file does not exist: $resolvedAdditionalModIdsFile"
+        }
+
+        $strictUtf8 = [System.Text.UTF8Encoding]::new($false, $true)
+        $AdditionalModIds = @([System.IO.File]::ReadAllLines($resolvedAdditionalModIdsFile, $strictUtf8))
+    }
+    catch {
+        Exit-InvalidInput "Could not read additional mod ID file: $($_.Exception.Message)"
+    }
+
+    if ($AdditionalModIds.Count -eq 0 -or
+        @($AdditionalModIds | Where-Object { [string]::IsNullOrWhiteSpace($_) }).Count -ne 0) {
+        Exit-InvalidInput 'Additional mod ID file must contain one non-empty package ID per line.'
     }
 }
 
