@@ -9,16 +9,23 @@
             <defName>ImmersiveChefs_Microwave</defName>
             <label>microwave</label>
             <description>A compact powered appliance that reheats one cold plated meal before eating. Reheating restores temperature at a small cost to culinary quality and safety.</description>
-            <thingClass>Building</thingClass>
-            <graphicData><texPath>Things/Building/Production/TableStoveElectric</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(1,1)</drawSize></graphicData>
+            <thingClass>ImmersiveChefs.Building_Microwave</thingClass>
+            <graphicData><texPath>Things/Building/Microwave/Microwave</texPath><graphicClass>Graphic_Single</graphicClass><drawSize>(0.82,0.82)</drawSize></graphicData>
             <size>(1,1)</size>
             <drawerType>MapMeshOnly</drawerType>
-            <altitudeLayer>Building</altitudeLayer>
+            <tickerType>Rare</tickerType>
+            <altitudeLayer>BuildingOnTop</altitudeLayer>
+            <blocksAltitudes><li>BuildingOnTop</li></blocksAltitudes>
             <passability>PassThroughOnly</passability>
-            <fillPercent>0.5</fillPercent>
+            <fillPercent>0.25</fillPercent>
             <useHitPoints>true</useHitPoints>
+            <rotatable>true</rotatable>
+            <clearBuildingArea>false</clearBuildingArea>
+            <minifiedDef>MinifiedThing</minifiedDef>
             <hasInteractionCell>true</hasInteractionCell>
             <interactionCellOffset>(0,0,-1)</interactionCellOffset>
+            <building><isEdifice>false</isEdifice></building>
+            <placeWorkers><li>ImmersiveChefs.PlaceWorker_MicrowaveCountertop</li></placeWorkers>
             <designationCategory>Production</designationCategory>
             <researchPrerequisites><li>Electricity</li></researchPrerequisites>
             <costList><Steel>35</Steel><ComponentIndustrial>2</ComponentIndustrial></costList>

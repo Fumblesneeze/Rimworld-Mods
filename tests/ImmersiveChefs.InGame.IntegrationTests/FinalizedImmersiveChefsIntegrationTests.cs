@@ -63,6 +63,136 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FallbackMicrowaveFinalizesAsCountertopAppliance()
+    {
+        var microwave = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Microwave");
+
+        IntegrationAssert.Equal(
+            typeof(Building_Microwave),
+            microwave.thingClass,
+            "The fallback microwave must use its support-aware building class.");
+        IntegrationAssert.Equal(
+            AltitudeLayer.BuildingOnTop,
+            microwave.altitudeLayer,
+            "The fallback microwave must render on top of its supporting surface.");
+        IntegrationAssert.True(
+            microwave.building is { isEdifice: false } && !microwave.clearBuildingArea,
+            "The fallback microwave must remain a non-edifice that does not clear its support.");
+        IntegrationAssert.True(
+            microwave.blocksAltitudes.Contains(AltitudeLayer.BuildingOnTop),
+            "The fallback microwave must only reserve the countertop altitude layer.");
+        IntegrationAssert.Equal(
+            ThingDefOf.MinifiedThing,
+            microwave.minifiedDef,
+            "The fallback microwave must remain recoverable as a minified appliance.");
+        IntegrationAssert.Equal(
+            TickerType.Rare,
+            microwave.tickerType,
+            "The fallback microwave must periodically validate its support.");
+        IntegrationAssert.True(
+            microwave.placeWorkers?.Any(worker => worker == typeof(PlaceWorker_MicrowaveCountertop)) == true,
+            "The finalized Def must retain the capability-based countertop placement worker.");
+        IntegrationAssert.Equal(
+            "Things/Building/Microwave/Microwave",
+            microwave.graphicData.texPath,
+            "The fallback microwave must use the reviewed custom countertop sprite.");
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CountertopMicrowaveAcceptsRealSurfacesAndRecoversAfterSupportLoss()
+    {
+        var map = Find.CurrentMap;
+        var microwaveDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Microwave");
+        var table = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("Table1x2c"), ThingDefOf.Steel);
+        var workbench = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("TableMachining"));
+        var shelf = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("Shelf"), ThingDefOf.Steel);
+        var microwave = ThingMaker.MakeThing(microwaveDef);
+        MinifiedThing? recovered = null;
+
+        var clearCandidates = map.AllCells
+            .Where(cell => CellRect.CenteredOn(cell, 4).Cells.All(candidate =>
+                candidate.InBounds(map) && candidate.Standable(map) &&
+                candidate.GetThingList(map).Count == 0))
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .ToArray();
+        var separatedFixtureCells = new List<IntVec3>();
+        foreach (var candidate in clearCandidates)
+        {
+            if (separatedFixtureCells.All(existing => existing.DistanceToSquared(candidate) > 100))
+            {
+                separatedFixtureCells.Add(candidate);
+            }
+
+            if (separatedFixtureCells.Count == 3)
+            {
+                break;
+            }
+        }
+
+        var fixtureCells = separatedFixtureCells.ToArray();
+        IntegrationAssert.Equal(3, fixtureCells.Length, "The map must provide three clear countertop fixture areas.");
+
+        try
+        {
+            GenSpawn.Spawn(table, fixtureCells[0], map, Rot4.North);
+            GenSpawn.Spawn(workbench, fixtureCells[1], map, Rot4.North);
+            GenSpawn.Spawn(shelf, fixtureCells[2], map, Rot4.North);
+
+            var worker = new PlaceWorker_MicrowaveCountertop();
+            bool AcceptedAt(Thing support) => new[] { Rot4.North, Rot4.East, Rot4.South, Rot4.West }
+                .Any(rotation =>
+                worker.AllowsPlacing(microwaveDef, support.Position, rotation, map).Accepted);
+
+            IntegrationAssert.True(
+                AcceptedAt(table),
+                "A completed finalized dining table must accept at least one non-obstructing microwave rotation.");
+            IntegrationAssert.True(
+                AcceptedAt(workbench),
+                "A completed finalized workbench must accept at least one non-obstructing microwave rotation.");
+            IntegrationAssert.True(
+                !AcceptedAt(shelf),
+                "A finalized storage shelf must be rejected despite exposing an item surface.");
+            IntegrationAssert.True(
+                !worker.AllowsPlacing(
+                    microwaveDef,
+                    fixtureCells[0] + new IntVec3(0, 0, 3),
+                    Rot4.North,
+                    map).Accepted,
+                "An ordinary floor cell must not accept a countertop microwave.");
+
+            GenSpawn.Spawn(microwave, table.Position, map, Rot4.East);
+            IntegrationAssert.True(
+                MicrowaveSupportRuntime.FindAt(microwave.Position, map, microwave) == table,
+                "The spawned fallback microwave must recognize its exact finalized table support.");
+            table.Destroy(DestroyMode.Vanish);
+            ((Building_Microwave)microwave).TickRare();
+
+            var recoveredMatches = map.listerThings.AllThings
+                .OfType<MinifiedThing>()
+                .Where(candidate => ReferenceEquals(candidate.InnerThing, microwave))
+                .ToArray();
+            IntegrationAssert.Equal(
+                1,
+                recoveredMatches.Length,
+                "Support loss must leave exactly one recoverable minified microwave.");
+            recovered = recoveredMatches[0];
+            IntegrationAssert.True(
+                !microwave.Spawned && recovered.Position.DistanceToSquared(fixtureCells[0]) <= 16,
+                "The unsupported appliance must stop floating and remain at or near its former countertop.");
+        }
+        finally
+        {
+            foreach (var thing in new[] { recovered as Thing, microwave, table, workbench, shelf })
+            {
+                if (thing is not null && !thing.Destroyed && thing.holdingOwner is null)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedKitchenwareRecipesUseExactUnitCostsAndMatchingWorkTypes()
     {
         var primitive = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePrimitiveCookware");
