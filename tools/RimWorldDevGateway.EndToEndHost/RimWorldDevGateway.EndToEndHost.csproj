@@ -1,14 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>RimWorldDevGateway.EndToEndHost</AssemblyName>
     <RootNamespace>RimWorldDevGateway.EndToEndHost</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.Contracts\RimWorldDevGateway.Contracts.csproj" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0" />
   </ItemGroup>
 </Project>
