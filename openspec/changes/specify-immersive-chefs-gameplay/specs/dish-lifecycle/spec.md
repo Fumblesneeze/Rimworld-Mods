@@ -212,11 +212,11 @@ When the supported Processor Framework is active and its expected shape validate
 - **THEN** the local identity-preserving cycle supplies the same capacity, interruption, sanitation, and output behavior without a missing dependency
 
 ### Requirement: Kitchen appliance research is explicit
-Immersive Chefs SHALL add `ImmersiveChefs_Dishwashing` with vanilla `Electricity` as its prerequisite and the domestic dishwasher as its unlock. It SHALL add `ImmersiveChefs_ProfessionalKitchens` with `ImmersiveChefs_Dishwashing` and vanilla `Machining` as prerequisites; it SHALL unlock the industrial dishwasher plus the prep, sauce, meat, vegetable, and pastry stations. The microwave SHALL require vanilla `Electricity` directly. Ordinary plates, cutlery, cookware, and chef's knives SHALL have no Immersive Chefs research prerequisite and SHALL instead use their specified workstation gates.
+Immersive Chefs SHALL add `ImmersiveChefs_Dishwashing` with vanilla `Electricity` as its prerequisite and the domestic dishwasher as its unlock. It SHALL add `ImmersiveChefs_ProfessionalKitchens` with `ImmersiveChefs_Dishwashing` and vanilla `Machining` as prerequisites; it SHALL unlock the industrial dishwasher plus the prep, sauce, meat, vegetable, and pastry stations. When Thermodynamics - Hot Meals is absent, the Immersive Chefs fallback microwave SHALL require vanilla `Electricity` directly. When exact package `Mlie.DThermodynamicsHotMeals` is active, Immersive Chefs SHALL add no microwave Def, research unlock, or designation and SHALL leave Thermodynamics' own progression untouched. Ordinary plates, cutlery, cookware, and chef's knives SHALL have no Immersive Chefs research prerequisite and SHALL instead use their specified workstation gates.
 
 #### Scenario: Electricity unlocks domestic sanitation progression
 - **WHEN** a colony completes vanilla `Electricity` but not `ImmersiveChefs_Dishwashing`
-- **THEN** it can build a microwave but cannot yet build either dishwasher
+- **THEN** without Thermodynamics it can build the Immersive Chefs fallback microwave but cannot yet build either dishwasher
 - **THEN** completing `ImmersiveChefs_Dishwashing` unlocks the domestic dishwasher
 
 #### Scenario: Professional Kitchens unlocks the complete station set

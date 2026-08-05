@@ -3,7 +3,13 @@
 **Owning mod:** Immersive Chefs (`fumblesneeze.immersivechefs`) at `mods/ImmersiveChefs`.
 
 ### Requirement: Every custom Thing uses selected custom art
-Every player-visible Immersive Chefs item and building SHALL resolve to a custom texture owned by this mod rather than a vanilla resource, weapon, worktable, stove, or laboratory placeholder. This includes ordinary and glitterworld cookware, plates including the fixed adobe path, cutlery, the chef's knife set, prepared ingredients, domestic and industrial dishwashers, the microwave, ingredient prep station, and sauce, meat, vegetable, and pastry stations. Reuse of one selected base plate silhouette for Stuff-colored and fixed-adobe variants is allowed when their real material/color treatment remains visibly distinct.
+Every player-visible Immersive Chefs item and building SHALL resolve to a custom texture owned by this mod rather than a vanilla resource, weapon, worktable, stove, or laboratory placeholder. This includes ordinary and glitterworld cookware, plates including the fixed adobe path, cutlery, the chef's knife set, prepared ingredients, domestic and industrial dishwashers, ingredient prep station, sauce, meat, vegetable, and pastry stations, plus the fallback microwave only while its Def is active. Reuse of one selected base plate silhouette for Stuff-colored and fixed-adobe variants is allowed when their real material/color treatment remains visibly distinct.
+
+When its fallback Def is active, the microwave artwork SHALL depict only a compact countertop appliance with no cabinet, legs, pedestal, full-height base, or baked counter surface. Its draw size and transparent padding SHALL visibly sit on a real table/workbench cell at `BuildingOnTop` without swallowing the support sprite, appearing to float, or obscuring adjacent workbench details and interaction cues. When `Mlie.DThermodynamicsHotMeals` is active, the Immersive Chefs microwave Def and texture load folder SHALL not load and Thermodynamics' own `DMicrowave` art remains untouched.
+
+#### Scenario: Countertop microwave is rendered on two supports
+- **WHEN** the real Immersive Chefs fallback microwave Def is rendered on one dining-table cell and one production-workbench cell
+- **THEN** it reads as the same compact appliance resting on each existing surface, with the underlying table/workbench still plainly visible and selectable
 
 #### Scenario: The release package is built
 - **WHEN** the finalized Defs and package contents are inspected

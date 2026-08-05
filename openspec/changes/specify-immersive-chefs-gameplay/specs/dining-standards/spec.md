@@ -61,7 +61,7 @@ An eligible map guest SHALL search reachable, allowed colony cutlery before cutl
 
 ### Requirement: Independent children and assisted patients follow diner-aware rules
 
-A child SHALL enter the ordinary plate, cutlery, temperature, quality, and dining-standard workflow as soon as vanilla permits that pawn to choose and eat food independently. Baby food, milk, and other non-self-feeding toddler workflows SHALL remain excluded. When one pawn feeds an eligible meal to another pawn, including a patient, the feeder SHALL acquire and carry the cutlery, but ware comfort, cleanliness, poisoning, and dining memories SHALL be evaluated for the fed pawn. If no permitted cutlery exists, the missing-cutlery memory SHALL be added to the fed pawn only when that pawn is conscious; the feeder SHALL NOT receive it on the patient's behalf.
+A child SHALL enter the ordinary plate, cutlery, quality, dining-standard, and active temperature-provider workflow as soon as vanilla permits that pawn to choose and eat food independently. Baby food, milk, and other non-self-feeding toddler workflows SHALL remain excluded. When one pawn feeds an eligible meal to another pawn, including a patient, the feeder SHALL acquire and carry the cutlery, but ware comfort, cleanliness, poisoning, and dining memories SHALL be evaluated for the fed pawn. If no permitted cutlery exists, the missing-cutlery memory SHALL be added to the fed pawn only when that pawn is conscious; the feeder SHALL NOT receive it on the patient's behalf.
 
 On a spawned map, an eligible self-eating or assisted-feeding event completed without cutlery SHALL create one bounded instance of ordinary vanilla dirt at the actual eating location. It SHALL not create dirt for excluded food, aborted jobs, `WareRequirementMode=Off`, or a world-holder ingestion event with no map.
 
@@ -82,7 +82,7 @@ On a spawned map, an eligible self-eating or assisted-feeding event completed wi
 
 ### Requirement: Caravan dining conserves reusable service ware
 
-An eligible meal eaten from a caravan SHALL retain the same temperature, culinary state, plate, cutlery, and dining effects as its map equivalent. The serving SHALL cool toward the current caravan tile's outdoor temperature while held by the caravan. The diner SHALL use the serving's exact embedded plate or, when an imported serving is unplated, SHALL select and attach one loose caravan plate under the clean-first fallback policy before ingestion. Cutlery SHALL be selected from the caravan inventory under the same policy. If an unplated serving has no permitted loose plate, ingestion SHALL remain non-blocking and record the missing-plate consequence. After ingestion, the exact used plate and any selected cutlery SHALL be returned to caravan inventory without replacement or duplication. Pemmican, packaged survival meals, registered travel foods, raw food, drinks, drugs, baby food, and animal feeding SHALL remain excluded.
+An eligible meal eaten from a caravan SHALL retain the same culinary state, plate, cutlery, dining effects, and active-provider temperature state as its map equivalent. While Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, the serving SHALL cool toward the current caravan tile's outdoor temperature while held by the caravan. When Thermodynamics is active, Immersive Chefs SHALL neither cool the serving nor interpret Thermodynamics' state. The diner SHALL use the serving's exact embedded plate or, when an imported serving is unplated, SHALL select and attach one loose caravan plate under the clean-first fallback policy before ingestion. Cutlery SHALL be selected from the caravan inventory under the same policy. If an unplated serving has no permitted loose plate, ingestion SHALL remain non-blocking and record the missing-plate consequence. After ingestion, the exact used plate and any selected cutlery SHALL be returned to caravan inventory without replacement or duplication. Pemmican, packaged survival meals, registered travel foods, raw food, drinks, drugs, baby food, and animal feeding SHALL remain excluded.
 
 The caravan journey SHALL abstract routine washing after each eligible dining event: returned ware becomes clean with wild-water wash provenance. It remains usable, but the next applicable poisoning calculation SHALL include the same wild-water provenance risk as ware washed at a water-terrain fallback on a map.
 
@@ -93,6 +93,7 @@ The caravan journey SHALL abstract routine washing after each eligible dining ev
 
 #### Scenario: Caravan meal becomes cold
 
+- **GIVEN** Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature
 - **WHEN** an eligible meal remains in a caravan on a cold world tile long enough to cross a thermal boundary
 - **THEN** its inspect state and eventual ingestion use the colder current serving temperature
 
@@ -181,7 +182,7 @@ The mod SHALL provide live toggles for colony and Royalty dining standards, both
 
 ### Requirement: Gastronomy delegates service ware handling
 
-When the supported Gastronomy integration is active, waiters and servers SHALL bring reserved cutlery with meals, reheat qualifying cold meals before delivery, and prioritize clearing dirty plates and cutlery after dining. Eaters SHALL retain the normal fallback when no eligible server owns the order.
+When the supported Gastronomy integration is active, waiters and servers SHALL bring reserved cutlery with meals and prioritize clearing dirty plates and cutlery after dining. While Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, they SHALL also reheat qualifying cold meals before delivery. With Thermodynamics active, Immersive Chefs SHALL add no service-time heating behavior. Eaters SHALL retain the normal fallback when no eligible server owns the order.
 
 #### Scenario: Waiter serves a complete setting
 

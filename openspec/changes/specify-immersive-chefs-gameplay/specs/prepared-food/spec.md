@@ -92,7 +92,7 @@ Paste-derived prepared food SHALL retain machine-readable aggregate flags for hu
 - **THEN** the prepared paste retains a vegetarian-compatible aggregate classification
 
 ### Requirement: Prepared paste itself is poisoning-safe
-Dispensing prepared paste SHALL add no food-poisoning chance, matching nutrient paste's machine-safe preparation. Later cooking SHALL still evaluate poisoning risk from the cook, other ingredients, dirty ware, temperature, microwave use, and the completed meal's quality; the fixed paste preparation quality SHALL be only one input and SHALL NOT cap the quality a skilled cook can achieve with additional ingredients.
+Dispensing prepared paste SHALL add no food-poisoning chance, matching nutrient paste's machine-safe preparation. Later cooking SHALL still evaluate poisoning risk from the cook, other ingredients, dirty ware, the completed meal's quality, and temperature or microwave use only while the Immersive Chefs fallback temperature provider is active; Thermodynamics - Hot Meals remains the sole owner of its thermal consequences when installed. The fixed paste preparation quality SHALL be only one input and SHALL NOT cap the quality a skilled cook can achieve with additional ingredients.
 
 #### Scenario: Prepared paste is dispensed
 - **WHEN** an operational dispenser creates prepared paste from valid feedstock
