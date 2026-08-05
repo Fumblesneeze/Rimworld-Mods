@@ -3,9 +3,25 @@ using Verse;
 
 namespace RimWorldDevGateway;
 
+internal enum GatewayEndToEndMapResetPhase
+{
+    Roofs,
+    Designations,
+    Zones,
+    Things
+}
+
 public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIsolationOperations
 {
     private const int MaximumThingRemovalPasses = 8;
+    internal static readonly IReadOnlyList<GatewayEndToEndMapResetPhase> ResetPhaseOrder =
+        new[]
+        {
+            GatewayEndToEndMapResetPhase.Roofs,
+            GatewayEndToEndMapResetPhase.Designations,
+            GatewayEndToEndMapResetPhase.Zones,
+            GatewayEndToEndMapResetPhase.Things
+        };
     private readonly GatewayGameControlController gameControl;
     private readonly GatewayCameraController camera;
     private readonly GatewayGizmoRegistry gizmos;
@@ -49,16 +65,57 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         Find.Selector.ClearSelection();
         RemoveTestWindows();
 
+        foreach (var phase in ResetPhaseOrder)
+        {
+            switch (phase)
+            {
+                case GatewayEndToEndMapResetPhase.Roofs:
+                    RemoveRoofs(map);
+                    break;
+                case GatewayEndToEndMapResetPhase.Designations:
+                    RemoveDesignations(map);
+                    break;
+                case GatewayEndToEndMapResetPhase.Zones:
+                    RemoveZones(map);
+                    break;
+                case GatewayEndToEndMapResetPhase.Things:
+                    RemoveThings(map);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(phase));
+            }
+        }
+    }
+
+    private static void RemoveRoofs(Map map)
+    {
+        foreach (var cell in map.AllCells)
+        {
+            if (ShouldRemoveRoof(map.roofGrid.RoofAt(cell)))
+            {
+                map.roofGrid.SetRoof(cell, null);
+            }
+        }
+    }
+
+    private static void RemoveDesignations(Map map)
+    {
         foreach (var designation in map.designationManager.AllDesignations.ToArray())
         {
             designation.Delete();
         }
+    }
 
+    private static void RemoveZones(Map map)
+    {
         foreach (var zone in map.zoneManager.AllZones.ToArray())
         {
             zone.Delete();
         }
+    }
 
+    private static void RemoveThings(Map map)
+    {
         for (var pass = 0; pass < MaximumThingRemovalPasses; pass++)
         {
             var spawned = map.listerThings.AllThings
@@ -89,6 +146,7 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
 
         return !map.listerThings.AllThings.Any(thing =>
                    IsDisposable(thing) && thing.Spawned && !thing.Destroyed && thing.Map == map) &&
+               !map.AllCells.Any(cell => ShouldRemoveRoof(map.roofGrid.RoofAt(cell))) &&
                map.designationManager.AllDesignations.Count == 0 &&
                map.zoneManager.AllZones.Count == 0 &&
                Find.Selector.SelectedObjectsListForReading.Count == 0 &&
@@ -98,6 +156,8 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
 
     internal static bool IsDisposable(Thing thing) =>
         thing is not null && thing.def is not null && thing.def.destroyable;
+
+    internal static bool ShouldRemoveRoof(RoofDef? roof) => roof is not null;
 
     public bool RestoreBaseline(GatewayEndToEndIsolationBaseline baseline)
     {

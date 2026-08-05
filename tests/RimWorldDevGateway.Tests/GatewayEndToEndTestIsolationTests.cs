@@ -8,6 +8,33 @@ namespace RimWorldDevGateway.Tests;
 public sealed class GatewayEndToEndTestIsolationTests
 {
     [Test]
+    public void Map_reset_removes_every_roof_before_clearing_any_map_content()
+    {
+        Assert.That(
+            VerseGatewayEndToEndIsolationOperations.ResetPhaseOrder,
+            Is.EqualTo(new[]
+            {
+                GatewayEndToEndMapResetPhase.Roofs,
+                GatewayEndToEndMapResetPhase.Designations,
+                GatewayEndToEndMapResetPhase.Zones,
+                GatewayEndToEndMapResetPhase.Things
+            }));
+    }
+
+    [Test]
+    public void Roof_reset_policy_includes_constructed_and_overhead_mountain_roofs()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(VerseGatewayEndToEndIsolationOperations.ShouldRemoveRoof(null), Is.False);
+            Assert.That(
+                VerseGatewayEndToEndIsolationOperations.ShouldRemoveRoof(
+                    (RoofDef)FormatterServices.GetUninitializedObject(typeof(RoofDef))),
+                Is.True);
+        });
+    }
+
+    [Test]
     public void Permanent_map_features_are_baseline_environment_not_disposable_test_state()
     {
         var permanent = UninitializedThing(destroyable: false);

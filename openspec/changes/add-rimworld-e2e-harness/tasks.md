@@ -16,6 +16,7 @@
 
 - [ ] 3.1 TDD RED: Add failing reset-plan tests for spawned Things/Pawns, jobs, zones, designations, interactions, windows, selection, world-fixture ledgers, input release, camera/control restoration, cleanup callbacks, and post-reset verification.
 - [x] 3.2 TDD GREEN: Implement pre/post-test disposable-map reset and process tainting so ordinary test failures continue only after a verified empty baseline.
+- [x] 3.2a TDD RED/GREEN: Remove constructed roofs and overhead mountain before any map content, include roofs in empty-baseline verification, and prove the exact sequential group has no roof-collapse or leaked-death evidence.
 - [x] 3.3 REFACTOR: Keep test orchestration, native action adapters, reset ownership, persistence, and HTTP projection behind narrow modules shared with existing Gateway services rather than duplicate implementations.
 
 ## 4. host runner — CLI TDD and orchestration

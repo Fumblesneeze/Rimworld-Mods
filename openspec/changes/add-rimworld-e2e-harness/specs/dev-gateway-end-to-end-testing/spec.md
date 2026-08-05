@@ -67,7 +67,12 @@ The shared host-safe contract SHALL expose a read-only native float-menu catalog
 - **THEN** a stale, disabled, missing, or ambiguous option fails closed without assigning a synthetic ingestion job
 
 ### Requirement: The map is empty and verified between tests
-Before the first test and in guaranteed cleanup after every test, the runner SHALL pause the game and remove all destroyable spawned map Things and Pawns, jobs, zones, designations, selections, active interactions, test-opened windows, and registered scenario-owned world objects. Permanent non-destroyable map features such as steam geysers are part of the map environment, MUST NOT be destroyed, and MUST be excluded from the disposable-state emptiness check. The runner SHALL restore developer/god mode, speed, camera, and pressed input to the process baseline and verify the disposable map is empty before arranging the next test. Tests SHALL be able to register additional cleanup actions for mod-specific global state.
+Before the first test and in guaranteed cleanup after every test, the runner SHALL pause the game and remove every roof cell, including constructed roofs and overhead mountain, before it destroys any map content. It SHALL then remove all destroyable spawned map Things and Pawns, jobs, zones, designations, selections, active interactions, test-opened windows, and registered scenario-owned world objects. Permanent non-destroyable map features such as steam geysers are part of the map environment, MUST NOT be destroyed, and MUST be excluded from the disposable-state emptiness check. The runner SHALL restore developer/god mode, speed, camera, and pressed input to the process baseline and verify both that no roof remains and that the disposable map is empty before arranging the next test. Tests SHALL be able to register additional cleanup actions for mod-specific global state.
+
+#### Scenario: A generated map contains unsupported natural and constructed roofs
+- **WHEN** the runner prepares or cleans a test on a map containing constructed roofs or overhead mountain
+- **THEN** every roof is removed before any wall, support, pawn, item, or other map Thing is destroyed
+- **THEN** no roof-collapse damage, alert, or leaked death contaminates the next test
 
 #### Scenario: A test fails after spawning fixtures
 - **WHEN** an assertion throws while pawns, buildings, items, filth, zones, or jobs remain
