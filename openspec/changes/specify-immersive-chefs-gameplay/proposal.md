@@ -31,7 +31,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - `meal-state`: Meal culinary quality, temperature, poisoning modifiers, thoughts, refrigeration, and microwave reheating.
 - `dining-standards`: Cutlery acquisition, expectations, Royalty requirements, comfort, and unmet-standard thoughts.
 - `optional-gameplay-integrations`: Package-ID-gated compatibility behavior for the supported local mod ecosystem.
-- `visual-assets`: Candidate generation, style/readability selection, Stuff-compatible color treatment, package wiring, and in-game visual acceptance for custom items and buildings.
+- `visual-assets`: Candidate generation, style/readability selection, Stuff-compatible masks, package wiring, optional Vanilla Textures Expanded - Variations families, and in-game visual acceptance for custom items and buildings.
 
 ### Modified Capabilities
 

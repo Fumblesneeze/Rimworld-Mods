@@ -25,12 +25,43 @@ Selected textures SHALL be PNGs with alpha, transparent corners, no chroma fring
 - **WHEN** alpha inspection finds opaque corners, key-color residue, clipped geometry, or a halo at final scale
 - **THEN** that candidate is corrected and revalidated or rejected before Def wiring
 
-### Requirement: Stuff-aware art preserves material identity
-Stuffable cookware, plates, cutlery, and chef's knives SHALL use neutral value separation and a Stuff-compatible shader so RimWorld can color them from their actual material. Fixed-material assets MAY use a deliberate base color. The selected artwork SHALL remain legible and materially distinct for every eligible representative Core material: wood, stone, steel, silver, and gold, with optional registered materials checked in their exact active-mod groups.
+### Requirement: Stuff-aware art preserves material identity with explicit masks
+Stuffable cookware, plates, cutlery, and chef's knives SHALL use neutral value separation, a Stuff-compatible shader, and a matching mask texture for every selected diffuse path so RimWorld can color material-bearing surfaces from the Thing's actual Stuff while preserving outlines, highlights, handles, and other deliberately non-Stuff accents. Directional textures SHALL have matching directional masks. Fixed-material assets MAY use a deliberate base color and MAY omit a Stuff mask. The selected artwork SHALL remain legible and materially distinct for every eligible representative Core material: wood, stone, steel, silver, and gold, with optional registered materials checked in their exact active-mod groups.
 
 #### Scenario: One plate is rendered from several materials
 - **WHEN** wooden, granite, steel, silver, and gold versions use the selected plate texture where each is eligible
 - **THEN** their live map sprites retain the same semantic plate silhouette while visibly reflecting their actual Stuff colors without muddy highlights or disappearing outlines
+
+#### Scenario: A masked cookware set contains permanent handles
+- **WHEN** the same masked cookware texture is rendered once from granite and once from steel
+- **THEN** the pot, pan, and lid surfaces take their respective Stuff colors while the abstracted wooden handles and dark readable outlines remain deliberate non-Stuff accents
+
+### Requirement: Vanilla Textures Expanded - Variations is an absent-safe cosmetic integration
+The optional texture-variation integration SHALL key to exact package ID `VanillaExpanded.VTEXVariations` and SHALL load after that package and `OskarPotocki.VanillaFactionsExpanded.Core` without making either a required dependency. With the inspected compatible RimWorld 1.6 shape active, supported Immersive Chefs appliances and stations SHALL use the real `VEF.Buildings.CompProperties_RandomBuildingGraphic` contract for randomized/player-cyclable building families. Because that upstream contract is building-only, portable cookware, plates, cutlery, and chef's knives SHALL instead use a reflection-free Immersive Chefs selector activated by the same exact package gate. The portable selector SHALL choose only cosmetic variants compatible with product kind, Stuff material class, and sanitation state; it MUST NOT alter gameplay stats, identity, stack admission, save semantics, or cleaning ownership.
+
+The active integration SHALL provide visibly appropriate wood and registered-stone families for each eligible portable product rather than presenting those materials as merely brown or gray metal. Ordinary metal/plastic art SHALL remain a sensible fallback for unclassified materials. A dirty state SHALL be visibly distinguishable through a bounded dirt overlay or dirty texture family when one exists, while clean and dirty renderings preserve the actual Stuff tint through their masks. Cosmetic choices SHALL remain stable across an ordinary save/load and SHALL not fabricate sanitation state.
+
+Immersive Chefs SHALL expose `TextureVariationIntegration` as `Auto` or `Off`, defaulting to `Auto`, and `ShowDirtyWareTextures` as a boolean defaulting to `true`. Changing either setting SHALL require restart because it changes finalized graphic ownership or cached graphics. `Off` SHALL retain the same complete masked base artwork and SHALL add no VEF comp, portable selector, or dirt variant even when the optional packages remain active.
+
+#### Scenario: The optional package is absent
+- **WHEN** Core, Harmony, and Immersive Chefs load without VTEX Variations or Vanilla Expanded Framework
+- **THEN** every item and building resolves its complete base custom texture, no optional type is referenced by a finalized Def, and no texture or XML error is logged
+
+#### Scenario: The player disables cosmetic variation
+- **WHEN** VTEX Variations is installed but `TextureVariationIntegration` is `Off` after restart
+- **THEN** every Thing uses its complete base artwork and Immersive Chefs installs no upstream building variation comp or portable variation selector
+
+#### Scenario: Material and sanitation variants are active
+- **WHEN** VTEX Variations and its compatible VEF dependency load with wooden and granite plates, wooden cutlery, granite cookware, and matched clean/dirty ware
+- **THEN** each portable Thing uses the appropriate wood or stone family, dirty ware has a visible but readable dirt treatment, every diffuse has a valid Stuff mask, and the underlying Stuff color and sanitation state remain unchanged
+
+#### Scenario: A player cycles a supported kitchen building
+- **WHEN** the player invokes the upstream graphic-cycle gizmo on an Immersive Chefs appliance or station and then saves and reloads
+- **THEN** the real VEF component changes among only the declared complete building variants and preserves the selected graphic through the upstream save contract
+
+#### Scenario: The optional API shape changes
+- **WHEN** the package ID is active but the inspected `VEF.Buildings.CompProperties_RandomBuildingGraphic` shape is unavailable or incompatible
+- **THEN** Immersive Chefs logs one actionable compatibility warning, disables only cosmetic variation, and continues rendering every Thing with its base fallback
 
 ### Requirement: Final art is accepted through live game rendering
 Static source inspection and local thumbnails are supporting evidence only. The reviewed built package SHALL be loaded in a fresh isolated RimWorld process, every selected asset SHALL be rendered through its real finalized Def beside representative vanilla content, and the acting agent SHALL personally inspect retained screenshots. The visual catalog SHALL cover map rendering, selection brackets, stack overlays for stackable items, item scale, building footprint/rotation, and ordinary inspector or build-menu presentation where applicable.

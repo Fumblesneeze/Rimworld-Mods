@@ -99,12 +99,34 @@ When `avilmask.CommonSense` is active and the locally supported `CommonSense` as
 
 ### Requirement: Variety integrations preserve provenance components
 
-With `Evyatar108.VarietyMattersImprovedRedux`, `VanillaExpanded.VanillaFoodVarietyExpanded`, or other compatible food-variety mods active, Immersive Chefs SHALL preserve `CompIngredients` and unknown ThingComps through preparation, cooking, plating, stacking, reheating, and spoilage. Variety calculations SHALL continue to observe the original ingredient data unless a specified paste-preparation rule intentionally hides exact sources.
+With `Evyatar108.VarietyMattersImprovedRedux`, `VanillaExpanded.VanillaFoodVarietyExpanded`, `Thekiborg.DMTR`, `Goat.Food.Texture.Variety`, `Goat.Food.Texture.Variety.Core`, or other compatible food-variety mods active, Immersive Chefs SHALL preserve `CompIngredients` and unknown ThingComps through preparation, cooking, plating, stacking, reheating, and spoilage. Variety calculations and ingredient-driven graphics SHALL continue to observe the original ingredient data unless a specified paste-preparation rule intentionally hides exact sources.
 
 #### Scenario: Modded meal retains ingredient history
 
 - **WHEN** a Vanilla Food Variety Expanded recipe produces a plated meal
 - **THEN** its ingredient component and Immersive Chefs culinary components coexist after save/load and reheating
+
+### Requirement: Dynamic Meal Texture Replacer retains ingredient-graphic ownership
+
+When exact package `Thekiborg.DMTR` is active, Immersive Chefs SHALL load after it and SHALL preserve the finalized RimWorld 1.6 DMTR surfaces on covered meals: `DynamicMealTextureReplacer.Graphic_IngredientsVariant`, `DynamicMealTextureReplacer.ModExtension_DynamicMealTextureReplacer`, its atlas dimensions/mappings, attachment fallback, and vanilla `CompIngredients` input. Plate attachment and recovery, culinary quality, temperature change, sanitation, stacking, reheating, trading, caravan transfer, and save/load MUST NOT replace the DMTR graphic class, remove its extension, flatten its atlas result, or mutate ingredient provenance merely to select an Immersive Chefs texture.
+
+Food Texture Variety package `Goat.Food.Texture.Variety` with core `Goat.Food.Texture.Variety.Core` SHALL retain equivalent graphic ownership over its own variety-meal Defs. If more than one upstream texture mod changes a shared meal Def, Immersive Chefs SHALL preserve the final graphic resolved by those mods' load order and SHALL NOT install a competing meal-graphic owner. The actual embedded plate remains governed by Immersive Chefs even when an upstream meal graphic contains a decorative serving-dish image; consuming, expiring, destroying, or transferring that meal SHALL conserve the real bound plate rather than infer one from pixels.
+
+#### Scenario: DMTR meal is cooked and reheated
+- **WHEN** a covered vanilla meal is cooked from mapped ingredients with DMTR active, receives an embedded physical plate, cools, and is reheated
+- **THEN** DMTR continues to render the ingredient-appropriate atlas region while the same plate binding and Immersive Chefs culinary/temperature components survive unchanged except for the specified reheating effects
+
+#### Scenario: Unplated imported meal has an ingredient texture
+- **WHEN** debug or third-party code spawns a DMTR-rendered meal with `CompIngredients` but no serialized plate binding
+- **THEN** the meal renders from its ingredients, remains honestly unplated, and returns no plate after ingestion or expiry
+
+#### Scenario: Prepared paste hides exact ingredients
+- **WHEN** a meal is cooked from prepared paste whose exact source provenance is intentionally hidden
+- **THEN** DMTR or another ingredient texture selector sees only the permitted exposed ingredient data or its fallback and does not reveal hidden feedstock through the rendered atlas choice
+
+#### Scenario: DMTR and Food Texture Variety are both active
+- **WHEN** a DMTR-patched vanilla meal and a Food Texture Variety-owned meal Def coexist in one exact active-mod group
+- **THEN** each retains its upstream graphic class and ingredient behavior while both participate in the same Immersive Chefs plate, temperature, culinary-quality, and sanitation lifecycle
 
 ### Requirement: Nutrient-paste adapters preserve dispenser ownership
 
@@ -141,7 +163,7 @@ When `syrchalis.processor.framework` is active and its expected local shape vali
 
 ### Requirement: Integration settings are explicit
 
-Each supported optional integration SHALL expose an `Auto` or `Off` setting, defaulting to `Auto`. Switching to `Off` MAY fail closed immediately when an adapter can safely stop classifying new work without removing patches or generated Defs; all remaining changes, including enabling an adapter that was not initialized at startup, SHALL take effect after restart because they alter patches, generated Defs, or classification caches.
+Each supported optional integration that contributes Immersive Chefs Defs, patches, graphic owners, or runtime adapters SHALL expose an `Auto` or `Off` setting, defaulting to `Auto`. A passive compatibility guarantee that only preserves an upstream Def/graphic/component unchanged, such as DMTR ownership, SHALL NOT add a meaningless toggle. Switching a contributing integration to `Off` MAY fail closed immediately when an adapter can safely stop classifying new work without removing patches or generated Defs; all remaining changes, including enabling an adapter that was not initialized at startup, SHALL take effect after restart because they alter patches, generated Defs, graphic caches, or classification caches.
 
 #### Scenario: Player disables an installed integration
 
