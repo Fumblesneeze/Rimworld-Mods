@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net480</TargetFramework>
+    <AssemblyName>ImmersiveChefs.NoVanillaMealsOnly.InGame.IntegrationTests</AssemblyName>
+    <RootNamespace>ImmersiveChefs.NoVanillaMealsOnly.InGame.IntegrationTests</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RimWorldInGameIntegrationTest>true</RimWorldInGameIntegrationTest>
+    <RimWorldIntegrationTestOwnerPackageId>fumblesneeze.immersivechefs</RimWorldIntegrationTestOwnerPackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\mods\ImmersiveChefs\ImmersiveChefs.csproj" />
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.IntegrationTesting\RimWorldDevGateway.IntegrationTesting.csproj" />
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ImmersiveChefs.NoVanillaMealsOnly.InGame.IntegrationTests.integrationtests.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
