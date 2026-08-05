@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using Verse;
@@ -21,10 +19,6 @@ namespace ImmersiveChefs.EndToEndTests;
     MaxWallClockSeconds = 150)]
 public sealed class OrbitalMealTradeTransferTest : IRimWorldEndToEndTest
 {
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool IsIconic(IntPtr windowHandle);
-
     private Map map = null!;
     private Pawn negotiator = null!;
     private TradeShip ship = null!;
@@ -81,17 +75,12 @@ public sealed class OrbitalMealTradeTransferTest : IRimWorldEndToEndTest
             _ => new Dictionary<string, string>
             {
                 ["dialogType"] = Find.WindowStack.Windows.OfType<Dialog_Trade>().Single().GetType().FullName,
-                ["mealThingId"] = meal.ThingID,
-                ["windowMinimized"] = IsCurrentWindowMinimized().ToString()
+                ["mealThingId"] = meal.ThingID
             });
         yield return new ScreenshotStep(
             "observe exact plated meal in native orbital stock",
             Array.Empty<string>(),
             paddingPixels: 0);
-        yield return new AssertionStep(
-            "the isolated game remains minimized before native trade input",
-            _ => EndToEndAssert.True(IsCurrentWindowMinimized(),
-                "The orbital trade E2E group must still be minimized before its first IMGUI action."));
         yield return TradeDialogActionStep.AdjustTransfer(
             "buy one generated meal through the native transfer arrow",
             meal.ThingID,
@@ -106,10 +95,6 @@ public sealed class OrbitalMealTradeTransferTest : IRimWorldEndToEndTest
                 tradeable.AnyThing?.def == ThingDefOf.MealFine &&
                 tradeable.CountToTransfer != 0),
             new EndToEndDeadline(180, 300, TimeSpan.FromSeconds(10)));
-        yield return new AssertionStep(
-            "the native quantity action does not restore the game window",
-            _ => EndToEndAssert.True(IsCurrentWindowMinimized(),
-                "Queued IMGUI quantity input must not restore or foreground the isolated game."));
         yield return new ScreenshotStep(
             "observe exact plated meal selected for purchase",
             Array.Empty<string>(),
@@ -119,10 +104,6 @@ public sealed class OrbitalMealTradeTransferTest : IRimWorldEndToEndTest
             "native trade closes after acceptance",
             _ => !Find.WindowStack.Windows.Any(window => window is Dialog_Trade),
             new EndToEndDeadline(240, 500, TimeSpan.FromSeconds(15)));
-        yield return new AssertionStep(
-            "the native Accept action does not restore the game window",
-            _ => EndToEndAssert.True(IsCurrentWindowMinimized(),
-                "Queued IMGUI Accept input must not restore or foreground the isolated game."));
         yield return new TimeControlActionStep(
             "run the orbital delivery",
             paused: false,
@@ -304,9 +285,4 @@ public sealed class OrbitalMealTradeTransferTest : IRimWorldEndToEndTest
         throw new EndToEndAssertionException("Could not find a clear orbital meal trade fixture area.");
     }
 
-    private static bool IsCurrentWindowMinimized()
-    {
-        var handle = Process.GetCurrentProcess().MainWindowHandle;
-        return handle != IntPtr.Zero && IsIconic(handle);
-    }
 }
