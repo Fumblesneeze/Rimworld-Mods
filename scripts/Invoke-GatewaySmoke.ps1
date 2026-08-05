@@ -13,6 +13,9 @@ semantic-control, FlaUI, and raw-input regression; another named scenario loads 
 scripts/Scenarios. With -RunIntegrationTests
 it builds/stages startup-gated tests, verifies the selected lifecycle, and retains finalized-Def and
 test-result artifacts; -IntegrationFailureProbe is the Gateway fixture's expected-failure map run.
+With -RunEndToEndTests it executes pre-staged semantic E2E bundles on a quicktest map and waits for
+their durable terminal result. -SkipBuildDeploy is intended for the E2E group runner, which must
+deploy product assemblies before publishing test bundles.
 Pass -VisibleWindow only when desktop UI or computer-use interaction is required; the explicit
 gateway-regression scenario selects a normal visible window automatically.
 Exit codes: 0 success,
@@ -34,6 +37,9 @@ its own nonzero parameter-binding exit (normally 1).
 
 .EXAMPLE
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -RunIntegrationTests -IntegrationFailureProbe -TimeoutSeconds 300
+
+.EXAMPLE
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -RunEndToEndTests -SkipBuildDeploy -TimeoutSeconds 300
 
 .EXAMPLE
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -InteractiveHoldSeconds 900
@@ -78,6 +84,10 @@ param(
     [string]$Scenario,
 
     [switch]$RunIntegrationTests,
+
+    [switch]$RunEndToEndTests,
+
+    [switch]$SkipBuildDeploy,
 
     [switch]$IntegrationFailureProbe,
 
@@ -2151,6 +2161,9 @@ if ($IntegrationFailureProbe -and (-not $RunIntegrationTests -or -not $Quicktest
 if ($validatedExpectedIntegrationTests.Count -gt 0 -and -not $RunIntegrationTests) {
     Exit-InvalidInput '-ExpectedIntegrationTests requires -RunIntegrationTests.'
 }
+if ($RunEndToEndTests -and -not $Quicktest) {
+    Exit-InvalidInput '-RunEndToEndTests requires -Quicktest.'
+}
 
 function Get-OptionalFileHash {
     param([string]$Path)
@@ -3879,6 +3892,8 @@ $statusPath = Join-Path $runDirectory 'status.json'
 $defExportPath = Join-Path $runDirectory 'def-export.json'
 $integrationTestsPath = Join-Path $runDirectory 'integration-tests.json'
 $integrationTestsPendingPath = Join-Path $runDirectory 'integration-tests-pending.json'
+$endToEndTestsPath = Join-Path $runDirectory 'end-to-end-tests.json'
+$endToEndTestsPendingPath = Join-Path $runDirectory 'end-to-end-tests-pending.json'
 $uiStatePath = Join-Path $runDirectory 'ui-state.json'
 $logsPath = Join-Path $runDirectory 'logs.json'
 $postQuickstartStatusPath = Join-Path $runDirectory 'post-quickstart-status.json'
@@ -3974,6 +3989,9 @@ if ($Quicktest) {
 if ($RunIntegrationTests) {
     $launchArguments += '-devGatewayRunIntegrationTests'
 }
+if ($RunEndToEndTests) {
+    $launchArguments += '-devGatewayRunEndToEndTests'
+}
 if ($IntegrationFailureProbe) {
     $launchArguments += '-devGatewayForceIntegrationTestFailure'
 }
@@ -4010,6 +4028,8 @@ if ($DryRun) {
         ScenarioDescriptor = if ($null -ne $scenarioPlan.Descriptor) { [string]$scenarioPlan.DescriptorPath } else { $null }
         RunsGatewayRegressionScenario = $runGatewayRegressionScenario
         RunIntegrationTests = [bool]$RunIntegrationTests
+        RunEndToEndTests = [bool]$RunEndToEndTests
+        SkipBuildDeploy = [bool]$SkipBuildDeploy
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
         QuickstartDescriptor = if ($runGatewayRegressionScenario) { $resolvedQuickstartDescriptorPath } else { $null }
         LaunchArguments = $launchArguments
@@ -4061,47 +4081,53 @@ $credentialCleanupStatus = 'not-started'
 $integrationStageCleanupStatus = if ($RunIntegrationTests) { 'not-staged' } else { 'not-requested' }
 
 try {
-    foreach ($additionalModProject in $validatedAdditionalModProjects) {
-        $productBuildLogPath = Join-Path `
-            $runDirectory `
-            ("product-build-$($additionalModProject.PackageId).log")
-        $productBuildArguments = @(
-            'build', [string]$additionalModProject.ProjectPath,
+    if ($SkipBuildDeploy) {
+        'Build/deploy skipped explicitly; the caller owns deployment before test-bundle staging.' |
+            Set-Content -LiteralPath $buildLogPath -Encoding UTF8
+    }
+    else {
+        foreach ($additionalModProject in $validatedAdditionalModProjects) {
+            $productBuildLogPath = Join-Path `
+                $runDirectory `
+                ("product-build-$($additionalModProject.PackageId).log")
+            $productBuildArguments = @(
+                'build', [string]$additionalModProject.ProjectPath,
+                '--configuration', 'Release',
+                '--nologo',
+                '-p:DeployToGame=true',
+                "-p:RimWorldPath=$resolvedRimWorldPath",
+                "-p:RimWorldManagedPath=$managedPath",
+                "-p:SteamModContentFolder=$resolvedWorkshopPath"
+            )
+            $productBuildOutput = @(& dotnet @productBuildArguments 2>&1)
+            $productBuildExitCode = $LASTEXITCODE
+            $productBuildOutput | Set-Content -LiteralPath $productBuildLogPath -Encoding UTF8
+            if ($productBuildExitCode -ne 0) {
+                throw "Additional product mod '$($additionalModProject.PackageId)' build/deploy failed with exit $productBuildExitCode. See $productBuildLogPath"
+            }
+
+            $productPackageEvidence.Add(
+                (Get-GatewaySmokeProductPackageEvidence `
+                    -Project $additionalModProject `
+                    -RimWorldPath $resolvedRimWorldPath `
+                    -BuildLogPath $productBuildLogPath))
+        }
+
+        $projectPath = Join-Path $repositoryRoot 'mods\RimWorldDevGateway\RimWorldDevGateway.csproj'
+        $buildArguments = @(
+            'build', $projectPath,
             '--configuration', 'Release',
-            '--nologo',
             '-p:DeployToGame=true',
             "-p:RimWorldPath=$resolvedRimWorldPath",
             "-p:RimWorldManagedPath=$managedPath",
             "-p:SteamModContentFolder=$resolvedWorkshopPath"
         )
-        $productBuildOutput = @(& dotnet @productBuildArguments 2>&1)
-        $productBuildExitCode = $LASTEXITCODE
-        $productBuildOutput | Set-Content -LiteralPath $productBuildLogPath -Encoding UTF8
-        if ($productBuildExitCode -ne 0) {
-            throw "Additional product mod '$($additionalModProject.PackageId)' build/deploy failed with exit $productBuildExitCode. See $productBuildLogPath"
+        $buildOutput = @(& dotnet @buildArguments 2>&1)
+        $buildExitCode = $LASTEXITCODE
+        $buildOutput | Set-Content -LiteralPath $buildLogPath -Encoding UTF8
+        if ($buildExitCode -ne 0) {
+            throw "Gateway build/deploy failed with exit $buildExitCode. See $buildLogPath"
         }
-
-        $productPackageEvidence.Add(
-            (Get-GatewaySmokeProductPackageEvidence `
-                -Project $additionalModProject `
-                -RimWorldPath $resolvedRimWorldPath `
-                -BuildLogPath $productBuildLogPath))
-    }
-
-    $projectPath = Join-Path $repositoryRoot 'mods\RimWorldDevGateway\RimWorldDevGateway.csproj'
-    $buildArguments = @(
-        'build', $projectPath,
-        '--configuration', 'Release',
-        '-p:DeployToGame=true',
-        "-p:RimWorldPath=$resolvedRimWorldPath",
-        "-p:RimWorldManagedPath=$managedPath",
-        "-p:SteamModContentFolder=$resolvedWorkshopPath"
-    )
-    $buildOutput = @(& dotnet @buildArguments 2>&1)
-    $buildExitCode = $LASTEXITCODE
-    $buildOutput | Set-Content -LiteralPath $buildLogPath -Encoding UTF8
-    if ($buildExitCode -ne 0) {
-        throw "Gateway build/deploy failed with exit $buildExitCode. See $buildLogPath"
     }
 
     if ($RunIntegrationTests) {
@@ -4248,6 +4274,7 @@ try {
     $requiredAssemblies = @(
         'RimWorldDevGateway.dll',
         'RimWorldDevGateway.Contracts.dll',
+        'RimWorldDevGateway.EndToEndTesting.dll',
         'RimWorldDevGateway.IntegrationTesting.dll',
         'EmbedIO.dll',
         'Mono.CSharp.dll',
@@ -4338,6 +4365,99 @@ try {
 
         if ([string]$status.result.programState -ne 'Playing' -or $null -eq $status.result.map) {
             throw "Timed out after $TimeoutSeconds seconds waiting for a playable quicktest map before main-thread verification. See $playerLogPath"
+        }
+    }
+
+    $endToEndTestsEnvelope = $null
+    $endToEndTestsPersistedPath = $null
+    if ($RunEndToEndTests) {
+        $endToEndDeadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
+        $endToEndAttempt = 0
+        do {
+            $endToEndAttempt++
+            $endToEndResponse = Invoke-GatewayGet `
+                -Uri "$baseUrl/end-to-end-tests" `
+                -Token $manifest.token `
+                -RequestId "gateway-smoke-end-to-end-tests-$endToEndAttempt"
+            $endToEndContent = [string]$endToEndResponse.Content
+            try {
+                $endToEndTestsEnvelope = $endToEndContent | ConvertFrom-Json -ErrorAction Stop
+            }
+            catch {
+                $endToEndContent | Set-Content -LiteralPath $endToEndTestsPath -Encoding UTF8
+                throw "E2E status returned invalid JSON with HTTP $([int]$endToEndResponse.StatusCode). See $endToEndTestsPath"
+            }
+
+            if ([int]$endToEndResponse.StatusCode -eq 503 -and
+                $null -ne $endToEndTestsEnvelope.error -and
+                [bool]$endToEndTestsEnvelope.error.retryable) {
+                $endToEndContent | Set-Content -LiteralPath $endToEndTestsPendingPath -Encoding UTF8
+                $launchedProcess.Refresh()
+                if ($launchedProcess.HasExited) {
+                    throw "RimWorld exited while E2E status was pending. See $playerLogPath"
+                }
+
+                Start-Sleep -Milliseconds 250
+                continue
+            }
+
+            $endToEndContent | Set-Content -LiteralPath $endToEndTestsPath -Encoding UTF8
+            if ([int]$endToEndResponse.StatusCode -ne 200 -or -not [bool]$endToEndTestsEnvelope.ok) {
+                throw "E2E status failed with HTTP $([int]$endToEndResponse.StatusCode). See $endToEndTestsPath"
+            }
+
+            if ($null -ne $endToEndTestsEnvelope.result.Execution -and
+                [bool]$endToEndTestsEnvelope.result.Execution.IsTerminal) {
+                break
+            }
+
+            $launchedProcess.Refresh()
+            if ($launchedProcess.HasExited) {
+                throw "RimWorld exited while E2E tests were running. See $playerLogPath"
+            }
+
+            Start-Sleep -Milliseconds 250
+        }
+        while ([datetime]::UtcNow -lt $endToEndDeadline)
+
+        if ($null -eq $endToEndTestsEnvelope -or
+            -not [bool]$endToEndTestsEnvelope.ok -or
+            $null -eq $endToEndTestsEnvelope.result.Execution -or
+            -not [bool]$endToEndTestsEnvelope.result.Execution.IsTerminal) {
+            throw "E2E tests did not reach a durable terminal result within $TimeoutSeconds seconds. See $endToEndTestsPath and $endToEndTestsPendingPath"
+        }
+
+        $endToEndSnapshot = $endToEndTestsEnvelope.result
+        $endToEndResults = @($endToEndSnapshot.Execution.Results)
+        $failedEndToEndResults = @($endToEndResults | Where-Object {
+            [string]$_.Status -ne 'passed' -or [string]$_.CleanupState -ne 'passed'
+        })
+        if (-not [bool]$endToEndSnapshot.Enabled -or
+            [string]$endToEndSnapshot.DiscoveryState -ne 'completed' -or
+            @($endToEndSnapshot.Failures).Count -ne 0 -or
+            @($endToEndSnapshot.Tests).Count -eq 0 -or
+            $endToEndResults.Count -ne @($endToEndSnapshot.Tests).Count -or
+            [string]$endToEndSnapshot.Execution.GroupState -ne 'completed' -or
+            [bool]$endToEndSnapshot.Execution.ProcessTainted -or
+            $failedEndToEndResults.Count -ne 0) {
+            throw "E2E tests did not complete with every admitted test passed and cleaned. See $endToEndTestsPath"
+        }
+
+        $endToEndTestsPersistedPath = Join-Path `
+            $savedDataPath `
+            "DevGateway\Sessions\$($manifest.runId)\end-to-end-tests.json"
+        if (-not (Test-Path -LiteralPath $endToEndTestsPersistedPath -PathType Leaf)) {
+            throw "Durable E2E artifact is missing: $endToEndTestsPersistedPath"
+        }
+        $persistedEndToEndContent = Get-Content -LiteralPath $endToEndTestsPersistedPath -Raw
+        if ($persistedEndToEndContent.Contains([string]$manifest.token)) {
+            throw 'The bearer token leaked into the persisted E2E artifact.'
+        }
+        $persistedEndToEnd = $persistedEndToEndContent | ConvertFrom-Json -ErrorAction Stop
+        if ($null -eq $persistedEndToEnd.Execution -or
+            -not [bool]$persistedEndToEnd.Execution.IsTerminal -or
+            [string]$persistedEndToEnd.Execution.GroupState -ne 'completed') {
+            throw "Persisted E2E artifact is not the terminal passing snapshot. See $endToEndTestsPersistedPath"
         }
     }
 
@@ -6022,6 +6142,11 @@ try {
         IntegrationTestsPendingResponse = if ($RunIntegrationTests) { $integrationTestsPendingPath } else { $null }
         IntegrationTestsPersisted = $integrationTestsPersistedPath
         RunIntegrationTests = [bool]$RunIntegrationTests
+        EndToEndTestsResponse = if ($RunEndToEndTests) { $endToEndTestsPath } else { $null }
+        EndToEndTestsPendingResponse = if ($RunEndToEndTests) { $endToEndTestsPendingPath } else { $null }
+        EndToEndTestsPersisted = $endToEndTestsPersistedPath
+        RunEndToEndTests = [bool]$RunEndToEndTests
+        SkipBuildDeploy = [bool]$SkipBuildDeploy
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
         UiStateResponse = $uiStatePath
         LogsResponse = $logsPath
