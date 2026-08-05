@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HarmonyLib;
@@ -294,6 +295,98 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 patch.owner == ImmersiveChefsMod.PackageId &&
                 patch.PatchMethod?.DeclaringType?.Name == "PlatedMealFoodOptimalityPatch") == true,
             "Immersive Chefs must install the finalized plated-meal tie breaker.");
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void GeneratedMealOriginsArePatchedAndPlateOnlyExplicitOrigins()
+    {
+        var pawnBoundary = AccessTools.Method(
+            typeof(PawnInventoryGenerator),
+            nameof(PawnInventoryGenerator.GenerateInventoryFor),
+            new[] { typeof(Pawn), typeof(PawnGenerationRequest) });
+        var traderBoundary = AccessTools.Method(
+            typeof(ThingSetMaker_TraderStock),
+            "Generate",
+            new[] { typeof(ThingSetMakerParams), typeof(List<Thing>) });
+        IntegrationAssert.NotNull(
+            pawnBoundary,
+            "The finalized pawn-inventory generation boundary must exist.");
+        IntegrationAssert.NotNull(
+            traderBoundary,
+            "The finalized trader-stock generation boundary must exist.");
+        IntegrationAssert.True(
+            Harmony.GetPatchInfo(pawnBoundary!)?.Postfixes.Any(patch =>
+                patch.owner == ImmersiveChefsMod.PackageId &&
+                patch.PatchMethod?.DeclaringType?.Name ==
+                "GeneratedPawnInventoryMealPlatingPatch") == true,
+            "Immersive Chefs must own the external-pawn inventory generation postfix.");
+        IntegrationAssert.True(
+            Harmony.GetPatchInfo(traderBoundary!)?.Postfixes.Any(patch =>
+                patch.owner == ImmersiveChefsMod.PackageId &&
+                patch.PatchMethod?.DeclaringType?.Name ==
+                "GeneratedTraderStockMealPlatingPatch") == true,
+            "Immersive Chefs must own the trader-stock generation postfix.");
+
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealFine);
+        meal.stackCount = 2;
+        try
+        {
+            var embedded = meal.GetComp<CompEmbeddedWare>();
+            IntegrationAssert.NotNull(
+                embedded,
+                "A covered generated meal must expose physical plate bindings.");
+            IntegrationAssert.Equal(
+                0,
+                GeneratedMealPlatingRuntime.EnsurePlated(
+                    meal,
+                    GeneratedMealOrigin.GenericOrUnknown),
+                "Generic/debug/mod origin must preserve honest plate absence.");
+            IntegrationAssert.Equal(
+                0,
+                embedded!.EmbeddedPlateCount,
+                "A generic generated meal must remain visibly unplated.");
+            IntegrationAssert.Equal(
+                2,
+                GeneratedMealPlatingRuntime.EnsurePlated(
+                    meal,
+                    GeneratedMealOrigin.TradeStock),
+                "An explicit trade origin must attach one real plate per serving.");
+            IntegrationAssert.Equal(
+                0,
+                GeneratedMealPlatingRuntime.EnsurePlated(
+                    meal,
+                    GeneratedMealOrigin.TradeStock),
+                "Repeated origin handling must not duplicate existing plates.");
+            IntegrationAssert.Equal(
+                2,
+                embedded.EmbeddedPlateCount,
+                "The generated stack must retain exactly one plate per serving.");
+            foreach (var binding in embedded.Bindings)
+            {
+                IntegrationAssert.True(
+                    binding.Quality == (int)QualityCategory.Poor,
+                    "Every generated origin plate must have Poor craftsmanship quality.");
+                IntegrationAssert.True(
+                    !binding.IsDirty,
+                    "Every generated origin plate must begin clean.");
+            }
+
+            IntegrationAssert.True(
+                PlateMaterialEligibilityRuntime.Allows(
+                    embedded.PeekPlateThing()!,
+                    MealComplexity.Advanced),
+                "A generated Fine-meal plate must satisfy the finalized material tier.");
+            IntegrationAssert.True(
+                embedded.Bindings.All(binding => binding.StuffDefName == "Steel"),
+                "With the exact Core-only material set, cheap Fine-meal origin plates must use steel rather than precious metal.");
+        }
+        finally
+        {
+            if (!meal.Destroyed)
+            {
+                meal.Destroy(DestroyMode.Vanish);
+            }
+        }
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]

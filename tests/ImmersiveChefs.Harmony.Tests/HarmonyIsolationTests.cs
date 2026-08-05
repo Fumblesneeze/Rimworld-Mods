@@ -172,6 +172,50 @@ public sealed class HarmonyIsolationTests
     }
 
     [Test]
+    public void Generated_meal_plating_patches_bind_to_inventory_and_trader_stock_boundaries()
+    {
+        var productAssembly = typeof(ImmersiveChefsMod).Assembly;
+        var pawnPostfix = productAssembly
+            .GetType("ImmersiveChefs.GeneratedPawnInventoryMealPlatingPatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var traderPostfix = productAssembly
+            .GetType("ImmersiveChefs.GeneratedTraderStockMealPlatingPatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var pawnBoundary = AccessTools.Method(
+            typeof(RimWorld.PawnInventoryGenerator),
+            nameof(RimWorld.PawnInventoryGenerator.GenerateInventoryFor),
+            new[] { typeof(Verse.Pawn), typeof(Verse.PawnGenerationRequest) });
+        var traderBoundary = AccessTools.Method(
+            typeof(RimWorld.ThingSetMaker_TraderStock),
+            "Generate",
+            new[] { typeof(RimWorld.ThingSetMakerParams), typeof(List<Verse.Thing>) });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pawnBoundary, Is.Not.Null);
+            Assert.That(traderBoundary, Is.Not.Null);
+        });
+        Assert.That(
+            () =>
+            {
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.generated-pawn-meals",
+                           pawnBoundary!,
+                           pawnPostfix))
+                {
+                }
+
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.generated-trader-meals",
+                           traderBoundary!,
+                           traderPostfix))
+                {
+                }
+            },
+            Throws.Nothing);
+    }
+
+    [Test]
     public void Prepared_food_bill_policy_patch_binds_to_the_real_ingredient_boundary()
     {
         var productAssembly = typeof(ImmersiveChefsMod).Assembly;
