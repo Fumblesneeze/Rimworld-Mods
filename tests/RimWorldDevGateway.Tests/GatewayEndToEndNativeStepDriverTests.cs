@@ -24,6 +24,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
                 EndToEndGizmoInteraction.Invoke,
                 "stable-gizmo"),
             new FloatMenuActionStep("float", "pawn_1", "thing_1", "stable-option"),
+            new SettlementTradeActionStep("settlement-trade", 41, 42),
             TradeDialogActionStep.AdjustTransfer("trade", "meal_1", -1),
             ProcessInputActionStep.Click(
                 "click",
@@ -38,11 +39,11 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "camera", "gizmo", "float", "trade", "input", "screenshot"
+                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "trade", "input", "screenshot"
             }));
-            Assert.That(operations.Take(6).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[6], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[7], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations.Take(7).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[7], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[8], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -88,6 +89,9 @@ public sealed class GatewayEndToEndNativeStepDriverTests
 
         public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step, IEndToEndContext context) =>
             Record("float");
+
+        public GatewayEndToEndStepOutcome Apply(SettlementTradeActionStep step, IEndToEndContext context) =>
+            Record("settlement-trade");
 
         public GatewayEndToEndStepOutcome Apply(TradeDialogActionStep step, IEndToEndContext context) =>
             Record("trade");

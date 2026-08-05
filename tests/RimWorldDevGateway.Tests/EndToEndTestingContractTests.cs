@@ -72,6 +72,7 @@ public sealed class EndToEndTestingContractTests
         {
             new GizmoActionStep("undraft", new[] { "pawn:42" }, "Command_Toggle", EndToEndGizmoInteraction.Invoke),
             new FloatMenuActionStep("eat-meal", "pawn:42", "thing:meal:7", "Consume"),
+            new SettlementTradeActionStep("open-settlement-trade", settlementWorldObjectId: 41, caravanWorldObjectId: 42),
             new TimeControlActionStep("run", paused: false, speed: EndToEndGameSpeed.Superfast),
             new SelectionActionStep("select-meal", new[] { "thing:meal:7" }, additive: false),
             new CameraActionStep("frame-meal", new[] { "thing:meal:7" }, paddingPixels: 24),
@@ -103,22 +104,56 @@ public sealed class EndToEndTestingContractTests
             EndToEndStepKind.Act,
             EndToEndStepKind.Act,
             EndToEndStepKind.Act,
+            EndToEndStepKind.Act,
             EndToEndStepKind.Wait,
             EndToEndStepKind.Observe,
             EndToEndStepKind.Observe,
             EndToEndStepKind.Observe
         }));
-        Assert.That(((WaitUntilStep)steps[9]).Deadline, Is.SameAs(waitDeadline));
+        Assert.That(((WaitUntilStep)steps[10]).Deadline, Is.SameAs(waitDeadline));
         Assert.Multiple(() =>
         {
-            var adjust = (TradeDialogActionStep)steps[5];
+            var settlementTrade = (SettlementTradeActionStep)steps[2];
+            Assert.That(settlementTrade.SettlementWorldObjectId, Is.EqualTo(41));
+            Assert.That(settlementTrade.CaravanWorldObjectId, Is.EqualTo(42));
+            var adjust = (TradeDialogActionStep)steps[6];
             Assert.That(adjust.Action, Is.EqualTo(EndToEndTradeDialogAction.AdjustTransfer));
             Assert.That(adjust.ThingRuntimeId, Is.EqualTo("MealFine42"));
             Assert.That(adjust.CountDelta, Is.EqualTo(-1));
-            var accept = (TradeDialogActionStep)steps[6];
+            var accept = (TradeDialogActionStep)steps[7];
             Assert.That(accept.Action, Is.EqualTo(EndToEndTradeDialogAction.Accept));
             Assert.That(accept.ThingRuntimeId, Is.Null);
         });
+    }
+
+    [TestCase(0, 2)]
+    [TestCase(1, 0)]
+    [TestCase(-1, 2)]
+    public void Settlement_trade_rejects_invalid_world_object_ids(int settlementId, int caravanId)
+    {
+        Assert.That(
+            () => new SettlementTradeActionStep("trade", settlementId, caravanId),
+            Throws.TypeOf<ArgumentOutOfRangeException>());
+    }
+
+    [Test]
+    public void Settlement_trade_can_require_one_exact_native_failure()
+    {
+        var step = new SettlementTradeActionStep(
+            "reject the wrong settlement",
+            settlementWorldObjectId: 41,
+            caravanWorldObjectId: 42,
+            expectedFailureCode: "settlement_trade_target_mismatch");
+
+        Assert.That(step.ExpectedFailureCode, Is.EqualTo("settlement_trade_target_mismatch"));
+    }
+
+    [Test]
+    public void Settlement_trade_rejects_a_blank_expected_failure_code()
+    {
+        Assert.That(
+            () => new SettlementTradeActionStep("trade", 41, 42, expectedFailureCode: " "),
+            Throws.TypeOf<ArgumentException>());
     }
 
     [Test]

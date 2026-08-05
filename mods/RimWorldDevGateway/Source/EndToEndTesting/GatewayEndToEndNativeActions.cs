@@ -78,6 +78,8 @@ public interface IGatewayEndToEndActionBackend
         FloatMenuActionStep step,
         IEndToEndContext context);
 
+    GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step);
+
     GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step);
 
     IGatewayEndToEndStepOperation BeginInput(
@@ -238,6 +240,15 @@ public sealed class GatewayEndToEndNativeActions : IGatewayEndToEndNativeActions
         Require(step, context);
         return backend.ApplyFloatMenu(step, context) ??
                throw new InvalidOperationException("The float-menu backend returned no outcome.");
+    }
+
+    public GatewayEndToEndStepOutcome Apply(
+        SettlementTradeActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend.ApplySettlementTrade(step) ??
+               throw new InvalidOperationException("The settlement-trade backend returned no outcome.");
     }
 
     public GatewayEndToEndStepOutcome Apply(

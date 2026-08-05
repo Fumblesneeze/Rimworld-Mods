@@ -260,26 +260,30 @@ public sealed class GatewayEndToEndNativeActionsTests
     }
 
     [Test]
-    public void Input_screenshot_and_float_menu_delegate_to_the_durable_backend_operations()
+    public void Input_screenshot_float_menu_and_settlement_trade_delegate_to_the_durable_backend_operations()
     {
         var backend = new RecordingBackend();
         var actions = new GatewayEndToEndNativeActions(backend);
         var input = ProcessInputActionStep.Key("key", "Space");
         var screenshot = new ScreenshotStep("shot", new[] { "pawn_1" }, 8);
         var menu = new FloatMenuActionStep("eat", "pawn_1", "meal_1", "consume");
+        var settlementTrade = new SettlementTradeActionStep("trade", 41, 42);
 
         var inputOperation = actions.Begin(input, Context());
         var screenshotOperation = actions.Begin(screenshot, Context());
         var menuOutcome = actions.Apply(menu, Context());
+        var settlementTradeOutcome = actions.Apply(settlementTrade, Context());
 
         Assert.Multiple(() =>
         {
             Assert.That(inputOperation, Is.SameAs(backend.InputOperation));
             Assert.That(screenshotOperation, Is.SameAs(backend.ScreenshotOperation));
             Assert.That(menuOutcome.Passed, Is.True);
+            Assert.That(settlementTradeOutcome.Passed, Is.True);
             Assert.That(backend.InputStep, Is.SameAs(input));
             Assert.That(backend.ScreenshotStep, Is.SameAs(screenshot));
             Assert.That(backend.FloatMenuStep, Is.SameAs(menu));
+            Assert.That(backend.SettlementTradeStep, Is.SameAs(settlementTrade));
         });
     }
 
@@ -334,6 +338,8 @@ public sealed class GatewayEndToEndNativeActionsTests
         public ScreenshotStep? ScreenshotStep { get; private set; }
 
         public FloatMenuActionStep? FloatMenuStep { get; private set; }
+
+        public SettlementTradeActionStep? SettlementTradeStep { get; private set; }
 
         public bool RejectNextInteraction { get; set; }
 
@@ -423,6 +429,12 @@ public sealed class GatewayEndToEndNativeActionsTests
 
         public GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step) =>
             GatewayEndToEndStepOutcome.Pass();
+
+        public GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step)
+        {
+            SettlementTradeStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
 
         public IGatewayEndToEndStepOperation BeginInput(
             ProcessInputActionStep step,

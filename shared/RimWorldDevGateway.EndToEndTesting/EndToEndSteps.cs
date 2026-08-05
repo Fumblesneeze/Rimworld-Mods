@@ -187,6 +187,39 @@ public sealed class FloatMenuActionStep : EndToEndStep
     public string StableOptionId { get; }
 }
 
+public sealed class SettlementTradeActionStep : EndToEndStep
+{
+    public SettlementTradeActionStep(
+        string name,
+        int settlementWorldObjectId,
+        int caravanWorldObjectId,
+        string? expectedFailureCode = null)
+        : base(name, EndToEndStepKind.Act)
+    {
+        if (settlementWorldObjectId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(settlementWorldObjectId));
+        }
+
+        if (caravanWorldObjectId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(caravanWorldObjectId));
+        }
+
+        SettlementWorldObjectId = settlementWorldObjectId;
+        CaravanWorldObjectId = caravanWorldObjectId;
+        ExpectedFailureCode = expectedFailureCode is null
+            ? null
+            : StepValues.Required(expectedFailureCode, nameof(expectedFailureCode));
+    }
+
+    public int SettlementWorldObjectId { get; }
+
+    public int CaravanWorldObjectId { get; }
+
+    public string? ExpectedFailureCode { get; }
+}
+
 public sealed class TimeControlActionStep : EndToEndStep
 {
     public TimeControlActionStep(string name, bool paused, EndToEndGameSpeed speed)

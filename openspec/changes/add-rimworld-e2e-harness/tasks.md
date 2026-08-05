@@ -15,6 +15,8 @@
 - [x] 2.6 TDD GREEN: Implement the typed trade-dialog adapter and migrate native trade E2E actions to it so minimized runs do not restore, focus, or maximize RimWorld.
 - [x] 2.7 IN-GAME: Rerun the native orbital trade workflow from a minimized launch, observe the transfer and Accept actions take effect, inspect the delivered plate, and retain evidence that the exact owned process stayed minimized throughout both actions.
 - [x] 2.8 TDD/E2E: Reproduce the countertop fixture's map-wide synchronous search blocking Unity long enough for Windows to restore/ghost the minimized process, replace it with a bounded deterministic candidate search, and prove the exact group remains minimized without weakening later user window control.
+- [x] 2.9 TDD RED/GREEN: Add a host-safe exact-world-object settlement-trade step and a fail-closed RimWorld adapter that invokes the enabled native caravan visit trade command without translated selectors or desktop input.
+- [x] 2.10 E2E/IN-GAME: Open native settlement trade from a real player caravan, purchase upstream-generated plated meal stock through typed dialog actions, and observe the exact physical plate transfer once while the process remains minimized.
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 

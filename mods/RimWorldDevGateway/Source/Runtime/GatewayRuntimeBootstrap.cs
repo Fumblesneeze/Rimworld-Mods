@@ -203,6 +203,8 @@ public static class GatewayRuntimeBootstrap
                     var floatMenus = new VerseGatewayEndToEndFloatMenuActions();
                     var tradeDialogs = new GatewayEndToEndTradeDialogActions(
                         new VerseGatewayEndToEndTradeDialogOperations());
+                    var settlementTrade = new GatewayEndToEndSettlementTradeActions(
+                        new VerseGatewayEndToEndSettlementTradeOperations());
                     var gizmoCatalog = new GatewayEndToEndGizmoCatalog(gizmos);
                     var clock = new VerseGatewayEndToEndClock();
                     var isolation = new GatewayEndToEndTestIsolation(
@@ -240,6 +242,7 @@ public static class GatewayRuntimeBootstrap
                                         camera,
                                         gizmos,
                                         floatMenus,
+                                        settlementTrade,
                                         tradeDialogs,
                                         windowsInput,
                                         screenshots,

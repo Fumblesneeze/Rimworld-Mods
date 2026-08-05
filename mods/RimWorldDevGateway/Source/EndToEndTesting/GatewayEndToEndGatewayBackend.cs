@@ -25,6 +25,7 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
     private readonly GatewayCameraController camera;
     private readonly GatewayGizmoRegistry gizmos;
     private readonly IGatewayEndToEndFloatMenuActions floatMenus;
+    private readonly IGatewayEndToEndSettlementTradeActions settlementTrade;
     private readonly IGatewayEndToEndTradeDialogActions tradeDialogs;
     private readonly GatewayWindowsInput input;
     private readonly GatewayScreenshotService screenshots;
@@ -36,6 +37,7 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
         GatewayCameraController camera,
         GatewayGizmoRegistry gizmos,
         IGatewayEndToEndFloatMenuActions floatMenus,
+        IGatewayEndToEndSettlementTradeActions settlementTrade,
         IGatewayEndToEndTradeDialogActions tradeDialogs,
         GatewayWindowsInput input,
         GatewayScreenshotService screenshots,
@@ -46,6 +48,7 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
         this.camera = camera ?? throw new ArgumentNullException(nameof(camera));
         this.gizmos = gizmos ?? throw new ArgumentNullException(nameof(gizmos));
         this.floatMenus = floatMenus ?? throw new ArgumentNullException(nameof(floatMenus));
+        this.settlementTrade = settlementTrade ?? throw new ArgumentNullException(nameof(settlementTrade));
         this.tradeDialogs = tradeDialogs ?? throw new ArgumentNullException(nameof(tradeDialogs));
         this.input = input ?? throw new ArgumentNullException(nameof(input));
         this.screenshots = screenshots ?? throw new ArgumentNullException(nameof(screenshots));
@@ -125,6 +128,9 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
     public GatewayEndToEndStepOutcome ApplyFloatMenu(
         FloatMenuActionStep step,
         IEndToEndContext context) => floatMenus.Apply(step);
+
+    public GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step) =>
+        settlementTrade.Apply(step);
 
     public GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step) =>
         tradeDialogs.Apply(step);

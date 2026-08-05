@@ -32,9 +32,9 @@
     - [x] 2.6j.1 Observe native ingestion of a same-schema legacy/debug-style unplated meal destroy the meal without fabricating plate or cutlery, and retain exact absent-binding evidence.
     - [x] 2.6j.2 Generate visitor and raider inventory plus trader stock through their native generation boundaries, then observe native ingestion return each exact clean Poor plate dirty; under Core, Simple selects granite while Fine selects ordinary steel rather than cheaper-unit Silver.
     - [x] 2.6j.3 Observe ordinary Cooking work embed wood or granite in Simple meals, reject both for Fine in favor of steel, and reject steel for Lavish in favor of silver.
-    - [ ] 2.6j.4 Buy generated meal stock through native caravan/orbital trade and settlement trade workflows and observe the exact embedded plate transfer without duplication.
+    - [x] 2.6j.4 Buy generated meal stock through native caravan/orbital trade and settlement trade workflows and observe the exact embedded plate transfer without duplication.
       - [x] 2.6j.4a E2E/IN-GAME: Generate one Fine meal through the native trader-stock boundary, buy it through exact typed native quantity/Accept actions in RimWorld's orbital trade dialog while the game stays minimized, and observe the delivered selected meal retain the original physical plate exactly once.
-      - [ ] 2.6j.4b E2E/IN-GAME: Repeat the exact-plate purchase proof through a native settlement trade workflow.
+      - [x] 2.6j.4b E2E/IN-GAME: Repeat the exact-plate purchase proof through a native settlement trade workflow.
     - [x] 2.6j.1 E2E: Dynamically load the product-owned exact-group test, invoke the native Consume order on a debug/mod-spawned unplated Simple meal, observe its real ingest toil and disappearance, and retain personally inspected before/in-progress/after frames proving no plate or cutlery was fabricated.
     - [x] 2.6j.2 E2E/IN-GAME: Dynamically load the product-owned exact-group test, run ordinary Cooking work in four sealed kitchens, personally inspect stocked/in-progress/finished frames, and retain exact embedded-Stuff checkpoints proving Simple wood/granite, Fine steel while wood/granite remain rejected, and Lavish silver while steel remains rejected.
 
