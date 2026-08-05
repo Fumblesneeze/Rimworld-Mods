@@ -543,7 +543,10 @@ internal static class DiningSessionRegistry
                     job,
                     KitchenwareProduct.Plate,
                     emergency,
-                    ImmersiveChefsMod.Settings.WareRequirementMode);
+                    ImmersiveChefsMod.Settings.WareRequirementMode,
+                    plateComplexity: pasteDispenser
+                        ? MealComplexity.Simple
+                        : MealComplexityRuntime.Classify(meal.def));
                 if (plate is null &&
                     ImmersiveChefsMod.Settings.WareRequirementMode == WareRequirementMode.Strict &&
                     !emergency)
@@ -604,7 +607,10 @@ internal static class DiningSessionRegistry
                     job,
                     KitchenwareProduct.Plate,
                     emergency,
-                    settings.WareRequirementMode);
+                    settings.WareRequirementMode,
+                    plateComplexity: pasteDispenser
+                        ? MealComplexity.Simple
+                        : MealComplexityRuntime.Classify(foodSource.def));
                 if (plate is null && settings.WareRequirementMode == WareRequirementMode.Strict && !emergency)
                 {
                     return false;
@@ -661,7 +667,8 @@ internal static class DiningSessionRegistry
                     caravan,
                     KitchenwareProduct.Plate,
                     emergency,
-                    settings.WareRequirementMode);
+                    settings.WareRequirementMode,
+                    MealComplexityRuntime.Classify(meal.def));
             }
 
             cutlery = SelectTravelWare(
@@ -923,10 +930,13 @@ internal static class DiningSessionRegistry
         KitchenwareProduct product,
         bool emergency,
         WareRequirementMode mode = WareRequirementMode.Prefer,
-        bool allowPersonalInventory = false)
+        bool allowPersonalInventory = false,
+        MealComplexity? plateComplexity = null)
     {
         var colonyCandidates = pawn.Map.listerThings.AllThings
             .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
+            .Where(thing => product != KitchenwareProduct.Plate ||
+                            PlateMaterialEligibilityRuntime.Allows(thing, plateComplexity))
             .Where(thing => !thing.IsForbidden(pawn) && pawn.CanReach(thing, PathEndMode.Touch, Danger.Some))
             .Where(thing => pawn.CanReserve(thing, 1, 1))
             .Select(thing => new ServiceWareCandidate<Thing>(
@@ -939,6 +949,8 @@ internal static class DiningSessionRegistry
             ? pawn.inventory.innerContainer.InnerListForReading
                 .Where(thing => !thing.Destroyed && thing.stackCount > 0)
                 .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
+                .Where(thing => product != KitchenwareProduct.Plate ||
+                                PlateMaterialEligibilityRuntime.Allows(thing, plateComplexity))
                 .Select(thing => new ServiceWareCandidate<Thing>(
                     thing,
                     (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,
@@ -980,11 +992,14 @@ internal static class DiningSessionRegistry
         Caravan caravan,
         KitchenwareProduct product,
         bool emergency,
-        WareRequirementMode mode)
+        WareRequirementMode mode,
+        MealComplexity? plateComplexity = null)
     {
         var candidates = caravan.AllThings
             .Where(thing => !thing.Destroyed && thing.stackCount > 0)
             .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
+            .Where(thing => product != KitchenwareProduct.Plate ||
+                            PlateMaterialEligibilityRuntime.Allows(thing, plateComplexity))
             .Select(thing => new ServiceWareCandidate<Thing>(
                 thing,
                 (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,

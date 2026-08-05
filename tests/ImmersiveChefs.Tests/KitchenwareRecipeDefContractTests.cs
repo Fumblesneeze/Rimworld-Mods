@@ -39,6 +39,7 @@ public sealed class KitchenwareRecipeDefContractTests
         var expected = new[]
         {
             ("ImmersiveChefs_MakePrimitiveCookware", "Crafting"),
+            ("ImmersiveChefs_MakePrimitivePlates", "Crafting"),
             ("ImmersiveChefs_MakeMedievalCookware", "Smithing"),
             ("ImmersiveChefs_MakeModernCookware", "Smithing"),
             ("ImmersiveChefs_MakeChefsKnife", "Smithing"),
@@ -59,6 +60,49 @@ public sealed class KitchenwareRecipeDefContractTests
                     (string?)element.Attribute("Name") == "ImmersiveChefs_KitchenwareRecipeBase")
                 .Element("ingredientValueGetterClass"),
             Is.EqualTo("ImmersiveChefs.IngredientValueGetter_Units"));
+    }
+
+    [Test]
+    public void Stone_block_plates_are_a_distinct_primitive_crafting_path()
+    {
+        var root = FindRepositoryRoot();
+        var things = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "Kitchenware.xml"));
+        var recipes = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "RecipeDefs",
+            "KitchenwareRecipes.xml"));
+        var plate = things.Root?.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_Plate");
+        var primitiveRecipe = recipes.Root?.Elements("RecipeDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_MakePrimitivePlates");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                plate?.Element("stuffCategories")?.Elements("li").Select(element => element.Value),
+                Does.Contain("Stony"));
+            Assert.That(
+                (string?)primitiveRecipe?.Element("products")?.Element("ImmersiveChefs_Plate"),
+                Is.EqualTo("4"));
+            Assert.That(
+                primitiveRecipe?.Element("recipeUsers")?.Elements("li").Select(element => element.Value),
+                Is.EqualTo(new[] { "CraftingSpot" }));
+            Assert.That(
+                (string?)primitiveRecipe?.Element("modExtensions")?.Elements("li").Single()
+                    .Element("fabricationTier"),
+                Is.EqualTo("PrimitiveStone"));
+        });
     }
 
     [Test]
@@ -120,6 +164,27 @@ public sealed class KitchenwareRecipeDefContractTests
             Assert.That((string?)workGiver?.Element("workType"), Is.EqualTo("Cooking"));
             Assert.That(source, Does.Contain("IsFoodSourceOnMapSociallyProper"));
             Assert.That(source, Does.Contain("RecordFailedPlatingOpportunity"));
+        });
+    }
+
+    [Test]
+    public void Every_plate_acquisition_path_applies_meal_complexity_eligibility()
+    {
+        var root = FindRepositoryRoot();
+        var cooking = File.ReadAllText(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Source", "Production", "CookingSessionRegistry.cs"));
+        var imported = File.ReadAllText(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Source", "Production", "ImportedMealPlating.cs"));
+        var dining = File.ReadAllText(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Source", "Dining", "DiningSessionRegistry.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(cooking, Does.Contain("PlateMaterialEligibilityRuntime.Allows"));
+            Assert.That(imported, Does.Contain("PlateMaterialEligibilityRuntime.Allows"));
+            Assert.That(dining, Does.Contain("PlateMaterialEligibilityRuntime.Allows"));
+            Assert.That(dining, Does.Contain("MealComplexityRuntime.Classify(meal.def)"));
+            Assert.That(dining, Does.Contain("MealComplexityRuntime.Classify(foodSource.def)"));
         });
     }
 

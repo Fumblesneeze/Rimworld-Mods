@@ -179,7 +179,7 @@ public sealed class KitchenMaterialClassifier
 
         if (PrimitiveStoneDefs.Contains(material.DefName))
         {
-            return product == KitchenwareProduct.Cookware
+            return product is KitchenwareProduct.Cookware or KitchenwareProduct.Plate
                 ? new KitchenMaterialClassification(KitchenMaterialKind.PrimitiveStone, FabricationTier.PrimitiveStone)
                 : null;
         }

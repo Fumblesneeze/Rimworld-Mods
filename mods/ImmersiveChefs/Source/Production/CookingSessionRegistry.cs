@@ -391,6 +391,8 @@ internal sealed class CookingSession
 internal static class CookingSessionRegistry
 {
     private static readonly ConditionalWeakTable<Job, CookingSession> Sessions = new();
+    private static readonly RecipeClassificationCatalog RecipeClassifications =
+        RecipeClassificationCatalog.CreateVanilla();
 
     internal static bool TryAttach(Pawn pawn, Job job, Thing billGiver, out string? missingReason)
     {
@@ -414,7 +416,16 @@ internal static class CookingSessionRegistry
         var emergency = UrgentProductionRequestRegistry.HasActive(pawn.Map);
         var cookware = FindPortions(pawn, job, KitchenwareProduct.Cookware, 1, emergency, out var cookwareUse);
         var requiredPlates = MealCoveragePolicy.ServingCount(job.RecipeDef!);
-        var plates = FindPortions(pawn, job, KitchenwareProduct.Plate, requiredPlates, emergency, out var plateUse);
+        var plateComplexity = job.RecipeDef!.GetModExtension<MealCoverageExtension>()?.complexity ??
+                              RecipeClassifications.Classify(job.RecipeDef.defName);
+        var plates = FindPortions(
+            pawn,
+            job,
+            KitchenwareProduct.Plate,
+            requiredPlates,
+            emergency,
+            out var plateUse,
+            plateComplexity);
         var cookwareAllowed = cookwareUse.Admission == WareAdmission.Allowed;
         var platesAllowed = plateUse.Admission == WareAdmission.Allowed;
         if (!cookwareAllowed || !platesAllowed)
@@ -544,10 +555,13 @@ internal static class CookingSessionRegistry
         KitchenwareProduct product,
         int requiredCount,
         bool emergency,
-        out WareSelectionResult selection)
+        out WareSelectionResult selection,
+        MealComplexity? plateComplexity = null)
     {
         var candidates = pawn.Map.listerThings.AllThings
             .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
+            .Where(thing => product != KitchenwareProduct.Plate ||
+                            PlateMaterialEligibilityRuntime.Allows(thing, plateComplexity))
             .Where(thing => !thing.IsForbidden(pawn) && pawn.CanReach(thing, PathEndMode.Touch, Danger.Some))
             .Where(thing => pawn.CanReserve(thing, 1, Math.Min(requiredCount, thing.stackCount)))
             .Select(thing => new

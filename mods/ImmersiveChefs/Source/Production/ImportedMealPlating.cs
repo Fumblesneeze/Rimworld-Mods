@@ -73,10 +73,12 @@ public sealed class WorkGiver_PlateMeals : WorkGiver_Scanner
     {
         plate = null!;
         count = 0;
+        var complexity = MealComplexityRuntime.Classify(meal.def);
         var candidates = pawn.Map.listerThings.AllThings
             .Where(candidate =>
-                candidate.def.GetModExtension<KitchenwareExtension>()?.product ==
-                KitchenwareProduct.Plate)
+                 candidate.def.GetModExtension<KitchenwareExtension>()?.product ==
+                 KitchenwareProduct.Plate)
+            .Where(candidate => PlateMaterialEligibilityRuntime.Allows(candidate, complexity))
             .Where(candidate => !candidate.IsForbidden(pawn) &&
                                 pawn.CanReach(candidate, PathEndMode.Touch, Danger.Some) &&
                                 pawn.CanReserve(candidate, 1, 1))

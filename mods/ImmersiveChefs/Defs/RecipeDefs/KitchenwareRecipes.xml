@@ -34,6 +34,17 @@
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cookware</product><fabricationTier>PrimitiveStone</fabricationTier></li></modExtensions>
   </RecipeDef>
 
+  <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
+    <defName>ImmersiveChefs_MakePrimitivePlates</defName>
+    <label>make primitive stone plates x4</label>
+    <description>Make four crude plates from stone blocks.</description>
+    <jobString>Making primitive stone plates.</jobString>
+    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>24</count></li></ingredients>
+    <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
+    <recipeUsers><li>CraftingSpot</li></recipeUsers>
+    <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>PrimitiveStone</fabricationTier></li></modExtensions>
+  </RecipeDef>
+
   <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_MakeMedievalCookware</defName>
     <label>smith medieval cookware</label>

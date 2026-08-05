@@ -98,6 +98,55 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedPlateMaterialsRespectMealComplexityTiers()
+    {
+        var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+        var primitiveRecipe = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePrimitivePlates");
+        var granite = DefDatabase<ThingDef>.GetNamed("BlocksGranite");
+        var classifier = OptionalMaterialAdapter.CreateClassifier();
+        KitchenMaterialKind Classify(ThingDef stuff)
+        {
+            var categories = stuff.stuffProps?.categories;
+            var classification = classifier.Classify(
+                new KitchenMaterialDescriptor(
+                    stuff.defName,
+                    categories?.Any(category => category.defName == "Metallic") == true,
+                    categories?.Any(category => category.defName == "Woody") == true,
+                    categories?.Any(category => category.defName == "Stony") == true),
+                KitchenwareProduct.Plate);
+            IntegrationAssert.NotNull(
+                classification,
+                $"Finalized Stuff {stuff.defName} must classify as a supported plate material.");
+            return classification!.Kind;
+        }
+
+        IntegrationAssert.True(
+            plateDef.stuffCategories?.Any(category => category.defName == "Stony") == true,
+            "The finalized plate Def must accept actual stone-block Stuff.");
+        IntegrationAssert.True(
+            primitiveRecipe.recipeUsers?.Any(user => user.defName == "CraftingSpot") == true,
+            "Primitive stone plates must be available at a finalized crafting spot.");
+        IntegrationAssert.True(
+            primitiveRecipe.ingredients is { Count: > 0 } &&
+            primitiveRecipe.ingredients[0].filter.Allows(granite),
+            "Primitive stone plates must accept finalized granite blocks.");
+        IntegrationAssert.True(
+            PlateMaterialEligibilityPolicy.Allows(MealComplexity.Simple, Classify(granite)) &&
+            PlateMaterialEligibilityPolicy.Allows(MealComplexity.Simple, Classify(ThingDefOf.WoodLog)),
+            "Simple meals must accept finalized granite and wood plate Stuff.");
+        IntegrationAssert.True(
+            !PlateMaterialEligibilityPolicy.Allows(MealComplexity.Advanced, Classify(granite)) &&
+            !PlateMaterialEligibilityPolicy.Allows(MealComplexity.Advanced, Classify(ThingDefOf.WoodLog)) &&
+            PlateMaterialEligibilityPolicy.Allows(MealComplexity.Advanced, Classify(ThingDefOf.Steel)),
+            "Fine meals must reject primitive/wood Stuff and accept finalized metal Stuff.");
+        IntegrationAssert.True(
+            !PlateMaterialEligibilityPolicy.Allows(MealComplexity.Elaborate, Classify(ThingDefOf.Steel)) &&
+            PlateMaterialEligibilityPolicy.Allows(MealComplexity.Elaborate, Classify(ThingDefOf.Silver)) &&
+            PlateMaterialEligibilityPolicy.Allows(MealComplexity.Elaborate, Classify(ThingDefOf.Gold)),
+            "Lavish meals must reject ordinary steel and accept finalized silver or gold Stuff.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedChefsKnifeIsBeltApparelWithoutSanitationState()
     {
         var knife = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_ChefsKnife");

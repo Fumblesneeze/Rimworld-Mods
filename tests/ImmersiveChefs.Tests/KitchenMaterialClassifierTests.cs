@@ -28,6 +28,7 @@ public sealed class KitchenMaterialClassifierTests
     }
 
     [TestCase("BlocksGranite", KitchenwareProduct.Cookware, FabricationTier.PrimitiveStone)]
+    [TestCase("BlocksGranite", KitchenwareProduct.Plate, FabricationTier.PrimitiveStone)]
     [TestCase("WoodLog", KitchenwareProduct.Plate, FabricationTier.Soft)]
     [TestCase("EM_Lead", KitchenwareProduct.Cutlery, FabricationTier.Soft)]
     [TestCase("EM_Bronze", KitchenwareProduct.Cookware, FabricationTier.Intermediate)]
