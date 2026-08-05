@@ -232,7 +232,12 @@ public sealed class PlateMaterialTierTest : IRimWorldEndToEndTest
         var cooking = DefDatabase<WorkTypeDef>.GetNamed("Cooking");
         for (var attempt = 0; attempt < 64; attempt++)
         {
-            var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+            var pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+                PawnKindDefOf.Colonist,
+                Faction.OfPlayer,
+                forceGenerateNewPawn: true,
+                canGeneratePawnRelations: false,
+                forceNoGear: true));
             if (!pawn.WorkTypeIsDisabled(cooking))
             {
                 return pawn;

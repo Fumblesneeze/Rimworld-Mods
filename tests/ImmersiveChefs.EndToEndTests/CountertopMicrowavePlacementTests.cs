@@ -282,23 +282,44 @@ public sealed class CountertopMicrowavePlacementTest : IRimWorldEndToEndTest
     private static IntVec3[] FindSeparatedClearCells(Map map, int count)
     {
         var result = new List<IntVec3>();
-        foreach (var cell in map.AllCells.OrderBy(cell => cell.DistanceToSquared(map.Center)))
+        for (var x = -72; x <= 72; x += 18)
         {
-            if (!CellRect.CenteredOn(cell, 4).Cells.All(candidate =>
-                    candidate.InBounds(map) && candidate.Standable(map) &&
-                    candidate.GetThingList(map).Count == 0) ||
-                result.Any(existing => existing.DistanceToSquared(cell) <= 100))
+            for (var z = -72; z <= 72; z += 18)
             {
-                continue;
-            }
+                var cell = map.Center + new IntVec3(x, 0, z);
+                if (result.Any(existing => existing.DistanceToSquared(cell) <= 100) ||
+                    !SquareIsClear(map, cell, 4))
+                {
+                    continue;
+                }
 
-            result.Add(cell);
-            if (result.Count == count)
-            {
-                return result.ToArray();
+                result.Add(cell);
+                if (result.Count == count)
+                {
+                    return result.ToArray();
+                }
             }
         }
 
         throw new EndToEndAssertionException($"Could not find {count} separated countertop fixture areas.");
+    }
+
+    private static bool SquareIsClear(Map map, IntVec3 center, int radius)
+    {
+        for (var x = -radius; x <= radius; x++)
+        {
+            for (var z = -radius; z <= radius; z++)
+            {
+                var cell = center + new IntVec3(x, 0, z);
+                if (!cell.InBounds(map) ||
+                    !cell.Standable(map) ||
+                    cell.GetThingList(map).Count != 0)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

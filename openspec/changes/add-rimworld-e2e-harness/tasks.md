@@ -14,6 +14,7 @@
 - [x] 2.5 TDD RED: Add failing contract/adapter tests for exact-Thing native trade adjustment, native Accept callback dispatch, invalid/ambiguous/out-of-range failures, and separation from the foreground Windows-input backend.
 - [x] 2.6 TDD GREEN: Implement the typed trade-dialog adapter and migrate native trade E2E actions to it so minimized runs do not restore, focus, or maximize RimWorld.
 - [x] 2.7 IN-GAME: Rerun the native orbital trade workflow from a minimized launch, observe the transfer and Accept actions take effect, inspect the delivered plate, and retain evidence that the exact owned process stayed minimized throughout both actions.
+- [x] 2.8 TDD/E2E: Reproduce the countertop fixture's map-wide synchronous search blocking Unity long enough for Windows to restore/ghost the minimized process, replace it with a bounded deterministic candidate search, and prove the exact group remains minimized without weakening later user window control.
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 
