@@ -47,6 +47,8 @@ Initial typed steps cover:
 - end-of-frame full or object-bounded screenshots;
 - named observable checkpoints and bounded assertion details.
 
+Product-owned test assemblies discover current right-click options through a host-safe `IEndToEndFloatMenuCatalog` context service. The returned metadata contains only visible label, disabled state, and a callback-sensitive stable identity. The test then submits that identity through `FloatMenuActionStep`; Gateway re-queries immediately and invokes the one exact native callback. This avoids a product-test dependency on Gateway internals and avoids retaining Unity/RimWorld delegates across frames.
+
 Tests may inspect Verse state inside predicates and assertions, but a direct mutation cannot be registered as the player action or observable result. Each test result records which steps were `arrange`, `act`, `wait`, and `observe`. This makes dishonest fixtures reviewable without attempting to sandbox test code.
 
 `Task`/`async void` test methods were rejected because Unity Mono continuations and process shutdown are difficult to own deterministically. A synchronous one-shot method was rejected because it would either block the main thread or directly tick the result into existence.

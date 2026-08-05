@@ -241,41 +241,26 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
         };
 }
 
-public sealed class VerseGatewayEndToEndFloatMenuActions : IGatewayEndToEndFloatMenuActions
+public sealed class VerseGatewayEndToEndFloatMenuActions :
+    IGatewayEndToEndFloatMenuActions,
+    IEndToEndFloatMenuCatalog
 {
     private static readonly FieldInfo? ActionField = typeof(FloatMenuOption).GetField(
         "action",
-        BindingFlags.Instance | BindingFlags.NonPublic);
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
     public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step)
     {
-        var map = Current.Game?.CurrentMap;
-        if (map is null)
+        if (!TryGetOptions(
+                step.ActorRuntimeId,
+                step.TargetRuntimeId,
+                out var options,
+                out var failureCode,
+                out var failureMessage))
         {
-            return GatewayEndToEndStepOutcome.Fail(
-                "map_unavailable",
-                "A playable map is required for a float-menu action.");
+            return GatewayEndToEndStepOutcome.Fail(failureCode, failureMessage);
         }
 
-        var actor = ResolveThing(map, step.ActorRuntimeId) as Pawn;
-        if (actor is null)
-        {
-            return GatewayEndToEndStepOutcome.Fail(
-                "float_menu_actor_invalid",
-                "The float-menu actor is not a current-map pawn.");
-        }
-
-        var target = ResolveThing(map, step.TargetRuntimeId);
-        if (target is null)
-        {
-            return GatewayEndToEndStepOutcome.Fail(
-                "float_menu_target_missing",
-                "The float-menu target is not present on the current map.");
-        }
-
-        var pawns = new List<Pawn> { actor };
-        var position = target.Position.ToVector3Shifted();
-        var options = FloatMenuMakerMap.GetOptions(pawns, position, out _);
         var matches = options
             .Where(option => string.Equals(StableIdentity(option), step.StableOptionId, StringComparison.Ordinal))
             .ToArray();
@@ -302,6 +287,37 @@ public sealed class VerseGatewayEndToEndFloatMenuActions : IGatewayEndToEndFloat
 
         matches[0].Chosen(colonistOrdering: true, floatMenu: null);
         return GatewayEndToEndStepOutcome.Pass();
+    }
+
+    public IReadOnlyList<EndToEndFloatMenuOption> Query(string actorRuntimeId, string targetRuntimeId)
+    {
+        if (!TryGetOptions(
+                actorRuntimeId,
+                targetRuntimeId,
+                out var options,
+                out _,
+                out var failureMessage))
+        {
+            throw new EndToEndContractException(failureMessage);
+        }
+
+        return ProjectOptions(options);
+    }
+
+    public static IReadOnlyList<EndToEndFloatMenuOption> ProjectOptions(
+        IEnumerable<FloatMenuOption> options)
+    {
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        return options
+            .Select(option => new EndToEndFloatMenuOption(
+                StableIdentity(option),
+                option.Label,
+                option.Disabled))
+            .ToArray();
     }
 
     public static string StableIdentity(FloatMenuOption option)
@@ -334,5 +350,46 @@ public sealed class VerseGatewayEndToEndFloatMenuActions : IGatewayEndToEndFloat
             .FirstOrDefault(thing =>
                 string.Equals(thing.ThingID, runtimeId, StringComparison.Ordinal) ||
                 string.Equals(thing.GetUniqueLoadID(), runtimeId, StringComparison.Ordinal));
+    }
+
+    private static bool TryGetOptions(
+        string actorRuntimeId,
+        string targetRuntimeId,
+        out IReadOnlyList<FloatMenuOption> options,
+        out string failureCode,
+        out string failureMessage)
+    {
+        options = Array.Empty<FloatMenuOption>();
+        var map = Current.Game?.CurrentMap;
+        if (map is null)
+        {
+            failureCode = "map_unavailable";
+            failureMessage = "A playable map is required for a float-menu action.";
+            return false;
+        }
+
+        var actor = ResolveThing(map, actorRuntimeId) as Pawn;
+        if (actor is null)
+        {
+            failureCode = "float_menu_actor_invalid";
+            failureMessage = "The float-menu actor is not a current-map pawn.";
+            return false;
+        }
+
+        var target = ResolveThing(map, targetRuntimeId);
+        if (target is null)
+        {
+            failureCode = "float_menu_target_missing";
+            failureMessage = "The float-menu target is not present on the current map.";
+            return false;
+        }
+
+        options = FloatMenuMakerMap.GetOptions(
+            new List<Pawn> { actor },
+            target.Position.ToVector3Shifted(),
+            out _);
+        failureCode = string.Empty;
+        failureMessage = string.Empty;
+        return true;
     }
 }

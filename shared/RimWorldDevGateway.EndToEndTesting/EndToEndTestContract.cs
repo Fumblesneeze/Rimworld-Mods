@@ -45,6 +45,37 @@ public interface IEndToEndContext
     void DeferCleanup(Action cleanupAction);
 }
 
+public interface IEndToEndFloatMenuCatalog
+{
+    IReadOnlyList<EndToEndFloatMenuOption> Query(string actorRuntimeId, string targetRuntimeId);
+}
+
+public sealed class EndToEndFloatMenuOption
+{
+    public EndToEndFloatMenuOption(string stableId, string label, bool disabled)
+    {
+        StableId = Required(stableId, nameof(stableId));
+        Label = Required(label, nameof(label));
+        Disabled = disabled;
+    }
+
+    public string StableId { get; }
+
+    public string Label { get; }
+
+    public bool Disabled { get; }
+
+    private static string Required(string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("A non-empty value is required.", parameterName);
+        }
+
+        return value.Trim();
+    }
+}
+
 public static class EndToEndContextExtensions
 {
     public static T GetRequiredService<T>(this IEndToEndContext context)

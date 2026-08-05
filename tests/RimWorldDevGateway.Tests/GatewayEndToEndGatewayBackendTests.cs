@@ -1,7 +1,10 @@
 using NUnit.Framework;
 using RimWorldDevGateway.EndToEndTesting;
 using System.IO;
+using System.Reflection;
+using System.Runtime.Serialization;
 using System.Threading;
+using Verse;
 
 namespace RimWorldDevGateway.Tests;
 
@@ -96,6 +99,61 @@ public sealed class GatewayEndToEndGatewayBackendTests
                 Directory.Delete(directory, recursive: true);
             }
         }
+    }
+
+    [Test]
+    public void Float_menu_catalog_projects_native_options_to_shared_stable_metadata()
+    {
+        var consume = CreateHostSafeFloatMenuOption("Consume simple meal", () => { });
+        var forbidden = CreateHostSafeFloatMenuOption("Cannot consume: forbidden", null);
+
+        var projected = VerseGatewayEndToEndFloatMenuActions.ProjectOptions(new[]
+        {
+            consume,
+            forbidden
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(projected.Select(option => option.Label), Is.EqualTo(new[]
+            {
+                "Consume simple meal",
+                "Cannot consume: forbidden"
+            }));
+            Assert.That(projected.Select(option => option.Disabled), Is.EqualTo(new[] { false, true }));
+            Assert.That(projected[0].StableId, Is.EqualTo(VerseGatewayEndToEndFloatMenuActions.StableIdentity(consume)));
+            Assert.That(projected[1].StableId, Is.EqualTo(VerseGatewayEndToEndFloatMenuActions.StableIdentity(forbidden)));
+        });
+    }
+
+    [Test]
+    public void Float_menu_stable_identity_distinguishes_callbacks_behind_the_same_visible_label()
+    {
+        var first = CreateHostSafeFloatMenuOption("Consume meal", FirstFloatMenuAction);
+        var second = CreateHostSafeFloatMenuOption("Consume meal", SecondFloatMenuAction);
+
+        Assert.That(
+            VerseGatewayEndToEndFloatMenuActions.StableIdentity(first),
+            Is.Not.EqualTo(VerseGatewayEndToEndFloatMenuActions.StableIdentity(second)));
+    }
+
+    private static FloatMenuOption CreateHostSafeFloatMenuOption(string label, Action? action)
+    {
+        var option = (FloatMenuOption)FormatterServices.GetUninitializedObject(typeof(FloatMenuOption));
+        const BindingFlags fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        typeof(FloatMenuOption).GetField("labelInt", fields)!
+            .SetValue(option, label);
+        typeof(FloatMenuOption).GetField("action", fields)!
+            .SetValue(option, action);
+        return option;
+    }
+
+    private static void FirstFloatMenuAction()
+    {
+    }
+
+    private static void SecondFloatMenuAction()
+    {
     }
 
     private static GatewayEndToEndGatewayBackend CreateBackend(

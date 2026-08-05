@@ -82,6 +82,8 @@ Every attributed test declares the complete ordered active package sequence excl
 
 The runner discovers installed/DLC/Workshop package IDs, writes aggregate JSON and JUnit, and retains each group's durable endpoint state and screenshots. API success or a green state assertion alone is not acceptance: the acting agent must inspect the exact-run native screenshots and verify the player action visibly caused the claimed result. Use in-game integration tests for settled loader assertions and E2E tests for multi-frame player behavior; do not make one assembly serve both roles.
 
+For native right-click actions, resolve `IEndToEndFloatMenuCatalog` from the E2E context, query the current actor/target options, require one enabled visible-label match, and submit that option's returned stable identity through `FloatMenuActionStep`. The catalog is discovery only: invoking the step still runs RimWorld's real callback and preserves its normal job/order boundary.
+
 ## Are test Defs mocked or loaded?
 
 Neither description fits every tier:

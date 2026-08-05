@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using RimWorld;
+using RimWorldDevGateway.EndToEndTesting;
 using UnityEngine;
 using Verse;
 
@@ -214,7 +215,8 @@ public static class GatewayRuntimeBootstrap
                         [typeof(GatewayGizmoRegistry)] = gizmos,
                         [typeof(GatewayScreenshotService)] = screenshots,
                         [typeof(GatewayWindowsInput)] = windowsInput,
-                        [typeof(IGatewayEndToEndFloatMenuActions)] = floatMenus
+                        [typeof(IGatewayEndToEndFloatMenuActions)] = floatMenus,
+                        [typeof(IEndToEndFloatMenuCatalog)] = floatMenus
                     };
                     endToEndTests.ConfigureExecution(
                         new VerseGatewayEndToEndExecutionReadiness(),

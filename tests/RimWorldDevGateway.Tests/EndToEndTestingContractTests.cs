@@ -143,6 +143,36 @@ public sealed class EndToEndTestingContractTests
         });
     }
 
+    [Test]
+    public void Float_menu_catalog_metadata_is_host_safe_and_preserves_the_visible_label()
+    {
+        var option = new EndToEndFloatMenuOption(
+            "  float-0123456789abcdef  ",
+            "Consume simple meal",
+            disabled: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(option.StableId, Is.EqualTo("float-0123456789abcdef"));
+            Assert.That(option.Label, Is.EqualTo("Consume simple meal"));
+            Assert.That(option.Disabled, Is.False);
+            Assert.That(typeof(IEndToEndFloatMenuCatalog).Assembly, Is.EqualTo(typeof(IRimWorldEndToEndTest).Assembly));
+        });
+    }
+
+    [TestCase("", "Consume simple meal", "stableId")]
+    [TestCase("float-0123456789abcdef", "", "label")]
+    public void Float_menu_catalog_metadata_rejects_missing_identity_or_label(
+        string stableId,
+        string label,
+        string expectedParameter)
+    {
+        var error = Assert.Throws<ArgumentException>(
+            () => new EndToEndFloatMenuOption(stableId, label, disabled: false));
+
+        Assert.That(error!.ParamName, Is.EqualTo(expectedParameter));
+    }
+
     [TestCase(EndToEndTestStatus.Pending, false)]
     [TestCase(EndToEndTestStatus.Arranging, false)]
     [TestCase(EndToEndTestStatus.Running, false)]

@@ -44,6 +44,8 @@ The Gateway SHALL discover, validate, byte-load, and execute marker-owned E2E bu
 ### Requirement: E2E tests execute as bounded multi-frame workflows
 The E2E contract SHALL separate main-thread fixture arrangement from an iterator of typed `act`, `wait`, and `observe` steps. The Gateway SHALL advance the iterator without blocking frame rendering, SHALL execute Unity/Verse access only on the main thread, and SHALL enforce test-declared frame, game-tick, and wall-clock deadlines plus a host watchdog. Supported action steps SHALL include native gizmos selected from exact Thing owners and/or exact architect category Def names, exact float-menu orders, pause/speed, selection, camera, and process-scoped input; supported observation steps SHALL include predicate assertions, full or object-bounded screenshots, and named checkpoints.
 
+The shared host-safe contract SHALL expose a read-only native float-menu catalog service through the E2E context. A query SHALL return each current actor/target option's visible label, disabled state, and callback-sensitive stable identity without exposing or retaining its RimWorld callback. Tests SHALL invoke the chosen result only through the typed float-menu action step, and the Gateway SHALL re-query and require exactly one enabled stable-identity match before running the native callback.
+
 #### Scenario: A pawn must finish a real job
 - **WHEN** arrangement creates a drafted pawn and fixtures, an action step invokes the native Undraft command, and a wait step watches the ordinary job outcome
 - **THEN** rendered frames and game ticks continue while the pawn's normal scheduler and job driver run
@@ -52,6 +54,11 @@ The E2E contract SHALL separate main-thread fixture arrangement from an iterator
 #### Scenario: Test code attempts no player action
 - **WHEN** a fixture directly constructs the claimed end state but records no native action between its before and after observations
 - **THEN** the result cannot satisfy the player-workflow acceptance classification even if its state assertion passes
+
+#### Scenario: A test discovers a native ingestion option
+- **WHEN** a dynamically loaded product test queries the current pawn and meal through the shared float-menu catalog
+- **THEN** it can select one unambiguous enabled visible option and submit the returned stable identity without referencing Gateway implementation assemblies
+- **THEN** a stale, disabled, missing, or ambiguous option fails closed without assigning a synthetic ingestion job
 
 ### Requirement: The map is empty and verified between tests
 Before the first test and in guaranteed cleanup after every test, the runner SHALL pause the game and remove all destroyable spawned map Things and Pawns, jobs, zones, designations, selections, active interactions, test-opened windows, and registered scenario-owned world objects. Permanent non-destroyable map features such as steam geysers are part of the map environment, MUST NOT be destroyed, and MUST be excluded from the disposable-state emptiness check. The runner SHALL restore developer/god mode, speed, camera, and pressed input to the process baseline and verify the disposable map is empty before arranging the next test. Tests SHALL be able to register additional cleanup actions for mod-specific global state.
