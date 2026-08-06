@@ -1,10 +1,50 @@
 using NUnit.Framework;
+using Verse;
 
 namespace ImmersiveChefs.Tests;
 
 [TestFixture]
 public sealed class PortableTextureVariationPolicyTests
 {
+    [TestCase("Base", "ImmersiveChefs/Things/Item/Plate/Plate")]
+    [TestCase("BaseDirty", "ImmersiveChefs/Things/Item/Plate/Plate_Dirty")]
+    [TestCase("Wood", "ImmersiveChefs/Things/Item/Plate/Plate_Wood")]
+    [TestCase("WoodDirty", "ImmersiveChefs/Things/Item/Plate/Plate_WoodDirty")]
+    [TestCase("Stone", "ImmersiveChefs/Things/Item/Plate/Plate_Stone")]
+    [TestCase("StoneDirty", "ImmersiveChefs/Things/Item/Plate/Plate_StoneDirty")]
+    public void Families_resolve_to_bounded_sibling_texture_paths(
+        string family,
+        string expected)
+    {
+        Assert.That(
+            PortableTextureVariationPaths.Resolve(
+                "ImmersiveChefs/Things/Item/Plate/Plate",
+                (PortableTextureFamily)Enum.Parse(typeof(PortableTextureFamily), family)),
+            Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void Runtime_selector_is_a_public_single_graphic_with_thing_aware_material_overrides()
+    {
+        var type = typeof(Graphic_PortableKitchenwareVariation);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(type.IsPublic, Is.True);
+            Assert.That(type.IsSealed, Is.True);
+            Assert.That(type.BaseType, Is.EqualTo(typeof(Graphic_Single)));
+            Assert.That(
+                type.GetMethod(nameof(Graphic.MatAt))?.DeclaringType,
+                Is.EqualTo(type));
+            Assert.That(
+                type.GetMethod(nameof(Graphic.MatSingleFor))?.DeclaringType,
+                Is.EqualTo(type));
+            Assert.That(
+                type.GetMethod(nameof(Graphic.GetColoredVersion))?.DeclaringType,
+                Is.EqualTo(type));
+        });
+    }
+
     [TestCase(KitchenwareProduct.Plate, KitchenMaterialKind.Wood, false, "Wood")]
     [TestCase(KitchenwareProduct.Cutlery, KitchenMaterialKind.Wood, false, "Wood")]
     [TestCase(KitchenwareProduct.Plate, KitchenMaterialKind.PrimitiveStone, false, "Stone")]
