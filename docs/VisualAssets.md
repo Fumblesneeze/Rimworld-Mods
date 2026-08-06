@@ -102,3 +102,13 @@ green chroma. The selected 512×256 fixed-color sprite has an exact 2:1 canvas a
 `Graphic_Single`/`Cutout` for native rotation. Bright blue induction and display pixels were
 replaced with unlit graphite controls so the unconditional sprite remains truthful while off,
 unpowered, or broken.
+
+## Meat station
+
+Selected: candidate A, generated 2026-08-06. Its broad red-brown butcher block, hanging cleaver and
+knives, tenderizer, mechanical scale, and closed insulated bin remain recognizable at 2×1 map scale
+without depicting meat, blood, active machinery, or powered lights in every state. Candidate B was
+rejected because its tall rear panel and more frontal view made it read less naturally as a
+rotatable RimWorld worktable. Both prompts requested a clean state-neutral professional meat-prep
+station on pure green chroma. The selected 512×256 fixed-color sprite has an exact 2:1 canvas and
+uses `Graphic_Single`/`Cutout` for native rotation.

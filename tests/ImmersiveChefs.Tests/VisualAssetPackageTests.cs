@@ -28,6 +28,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/KitchenStation/PrepStation";
     private const string SauceStationTexturePath =
         "ImmersiveChefs/Things/Building/KitchenStation/SauceStation";
+    private const string MeatStationTexturePath =
+        "ImmersiveChefs/Things/Building/KitchenStation/MeatStation";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -342,6 +344,38 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, SauceStationTexturePath + ".png")), Is.True);
+        });
+
+        AssertTransparentSprite(diffusePath);
+        AssertCanvasAspect(diffusePath, widthUnits: 2, heightUnits: 1);
+        AssertNoBrightBlueEmission(diffusePath);
+    }
+
+    [Test]
+    public void Meat_station_uses_owned_rotatable_single_sprite_art()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "AssistantStations.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_MeatStation");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, MeatStationTexturePath + ".png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(MeatStationTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, MeatStationTexturePath + ".png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);
