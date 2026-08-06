@@ -42,7 +42,7 @@
   </ThingDef>
   <ThingDef ParentName="ImmersiveChefs_AssistantStationBase">
     <defName>ImmersiveChefs_PastryStation</defName><label>pastry station</label><description>A linked specialist station for dough, pastry and dessert preparation.</description>
-    <graphicData><texPath>Things/Building/Production/TableTailorHand</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(2,1)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Building/KitchenStation/PastryStation</texPath><graphicClass>Graphic_Single</graphicClass><shaderType>Cutout</shaderType><drawSize>(2,1)</drawSize></graphicData>
     <modExtensions><li Class="ImmersiveChefs.KitchenAssistantStationExtension"><stationRole>pastry</stationRole></li></modExtensions>
   </ThingDef>
 </Defs>

@@ -32,6 +32,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/KitchenStation/MeatStation";
     private const string VegetableStationTexturePath =
         "ImmersiveChefs/Things/Building/KitchenStation/VegetableStation";
+    private const string PastryStationTexturePath =
+        "ImmersiveChefs/Things/Building/KitchenStation/PastryStation";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -406,6 +408,41 @@ public sealed class VisualAssetPackageTests
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(VegetableStationTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(packagedPath), Is.True);
+        });
+
+        AssertPackagedTextureMatchesSource(diffusePath, packagedPath);
+        AssertTransparentSprite(diffusePath);
+        AssertCanvasAspect(diffusePath, widthUnits: 2, heightUnits: 1);
+        AssertNoVividGreenChroma(diffusePath);
+        AssertNoBrightBlueEmission(diffusePath);
+    }
+
+    [Test]
+    public void Pastry_station_uses_owned_rotatable_single_sprite_art()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "AssistantStations.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_PastryStation");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, PastryStationTexturePath + ".png");
+        var packagedPath = PackagedTextureFile(root, PastryStationTexturePath + ".png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(PastryStationTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));

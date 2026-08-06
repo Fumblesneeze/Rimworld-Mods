@@ -123,3 +123,13 @@ more frontal at final scale. Both prompts requested distinct clean, dry, idle ve
 equipment on pure green chroma. The selected 512×256 fixed-color sprite has an exact 2:1 canvas,
 fills 480×240 visible pixels to match the sibling 2-cell stations, retains zero vivid-green key
 pixels, and uses `Graphic_Single`/`Cutout` for native rotation.
+
+## Pastry station
+
+Selected: candidate B, generated 2026-08-06. Its idle cream stand mixer with empty bowl, broad pale
+rolling slab, wooden rolling pin, unlit mechanical scale, nested empty trays, pastry brush, and
+closed drawers remain identifiable at 2×1 map scale without permanently depicting dough, flour,
+pastries, or powered activity. Candidate A was rejected because its dominant hand-cranked sheeter
+risked reading as a pasta-only workstation at final scale. Both prompts requested clean, empty,
+state-neutral bakery equipment on pure green chroma. The selected 512×256 fixed-color sprite fills
+480×240 visible pixels and uses `Graphic_Single`/`Cutout` for native rotation.
