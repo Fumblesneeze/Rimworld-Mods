@@ -465,6 +465,14 @@ At runtime, discovery verifies the owner, complete real active order, assembly i
 
 `IncidentActionStep` is the host-safe semantic path for a real native incident. It resolves one exact loaded `IncidentDef`, optionally one exact loaded faction by its unmodified load ID, builds forced current-map storyteller parameters, and invokes that Def's real `IncidentWorker.TryExecute`. It does not enqueue a guessed incident, expose a generic test callback, or use desktop input; missing, ambiguous, rejected, or throwing state fails closed with bounded diagnostics.
 
+`ArchitectCategoryActionStep` is the host-safe semantic path for retained build-menu evidence. It
+accepts one exact category Def name and open/close intent, validates exactly one cached native tab,
+then uses RimWorld's Architect main-button, inspected category-click, and current-tab escape paths.
+It requires player control, exact category cardinality, the requested category selection, and the
+post-action open/closed state. Missing or drifted shapes fail closed. The action never restores,
+focuses, resizes, maximizes, or sends desktop input, so a minimized E2E run can capture the real
+Architect menu without taking over the workstation.
+
 The E2E state machine waits for `Game.PlayerHasControl` before capturing the destructive isolation baseline because RimWorld's native pause command rejects during the brief quickstart handoff. The wait uses the test deadline and fails as `player_control_not_ready` without cleaning an uncaptured baseline. The shared contract deliberately omits a generic synchronous callback action because Unity cannot preempt a blocking main-thread delegate; fixed-cost iterator-side fixture maintenance belongs after a persisted step boundary and is never player-action evidence.
 
 Dynamically loaded tests can request `IEndToEndFloatMenuCatalog` from `IEndToEndContext`. `Query(actorRuntimeId, targetRuntimeId)` returns the current native options as shared-contract metadata containing the visible label, disabled state, and a callback-sensitive stable identity. Select one unambiguous enabled option from that metadata, then pass its stable identity to `FloatMenuActionStep`; do not reproduce Gateway hashes, retain RimWorld callbacks, or assign the resulting job directly.

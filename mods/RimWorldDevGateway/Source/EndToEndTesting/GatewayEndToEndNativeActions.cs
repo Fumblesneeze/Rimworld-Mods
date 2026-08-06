@@ -102,9 +102,15 @@ internal interface IGatewayEndToEndDialogConfirmationBackend
     GatewayEndToEndStepOutcome ApplyDialogConfirmation(DialogConfirmationActionStep step);
 }
 
+internal interface IGatewayEndToEndArchitectCategoryBackend
+{
+    GatewayEndToEndStepOutcome ApplyArchitectCategory(ArchitectCategoryActionStep step);
+}
+
 public sealed class GatewayEndToEndNativeActions :
     IGatewayEndToEndNativeActions,
-    IGatewayEndToEndDialogConfirmationNativeActions
+    IGatewayEndToEndDialogConfirmationNativeActions,
+    IGatewayEndToEndArchitectCategoryNativeActions
 {
     private readonly IGatewayEndToEndActionBackend backend;
 
@@ -293,6 +299,19 @@ public sealed class GatewayEndToEndNativeActions :
             : Fail(
                 "unsupported_e2e_step",
                 "The configured E2E backend does not support dialog confirmation.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndArchitectCategoryNativeActions.Apply(
+        ArchitectCategoryActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndArchitectCategoryBackend architectBackend
+            ? architectBackend.ApplyArchitectCategory(step) ??
+              throw new InvalidOperationException("The Architect-category backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support Architect-category actions.");
     }
 
     public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)

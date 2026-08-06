@@ -21,6 +21,7 @@
 - [x] 2.12 TDD/E2E: Add a host-safe exact-IncidentDef action with optional exact faction load ID, invoke the real native incident worker with forced current-map parameters, fail closed on missing or rejected shapes, and prove a native trader-caravan arrival reaches the loaded compatibility postfix and visible map/letter outcome.
 - [x] 2.13 TDD: Project the already-captured native toggle state and exact hotkey Def name through the host-safe E2E gizmo catalog while preserving the original public constructor for prebuilt bundle compatibility.
 - [x] 2.14 TDD/E2E: Add a host-safe exact-window confirmation step with a private fail-closed adapter registry, preserve the existing public native-action/backend interfaces, and confirm Replimat's native survival-batch dialog in a minimized run without exposing callback fields to test bundles.
+- [x] 2.15 TDD/E2E: Add a host-safe exact Architect-category open/close step behind optional internal adapter interfaces, use the native main-button/category-click/escape paths without foreground input, and visibly prove the Production build menu in a minimized product catalog.
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 

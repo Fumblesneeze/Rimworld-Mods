@@ -107,6 +107,19 @@ and marker-owned stage cleanup. Do not replay either completed catalog during un
 work; select only a current stable ID, except for deliberate regression maintenance or release
 preparation.
 
+The focused base building-art acceptance is
+`artifacts/EndToEndRuns/Grouped/20260806T201719254Z`. It admitted only
+`immersive-chefs.base-building-visual-catalog` in the exact Core/Harmony/Immersive group, launched
+RimWorld minimized, and retained 16 frames. The catalog rendered every concrete building Def in all
+four rotations beside native production and dining references, selected each building through the
+ordinary inspector, and showed the fallback microwave on both a real steel dining table and a real
+machining table. A typed fail-closed semantic action opened the actual native Production Architect
+category without foreground input; the retained menu visibly exposes all eight Immersive Chefs
+labels and icons, then closes through RimWorld's native escape path. The acting agent inspected all
+16 frames, and the run completed process, credential, configuration, fixture, and marker-owned
+stage cleanup. During feature work, rerun only this stable ID when changing the base building or
+Architect-menu slice.
+
 The accepted RimCuisine replacement-Def integration run is `artifacts\GatewaySmoke\20260805T145248752Z`. Its exact process loaded Core, Harmony, the selected RimWorld 1.6 Processor Framework Workshop item, all four RimCuisine 2 modules, No Vanilla Meals, Immersive Chefs, and Gateway. The exact compatibility assembly observed all ten official meal ThingDefs absent, every surviving vanilla-product recipe unclassified with its initialization-time multiplier at `1`, and the surviving pottage, rubaboo, pizza, and extravagant-meal Defs finalized with their intended ware/culinary components and tiers. This is finalized-loader evidence; native cooking and trade remain separate E2E acceptance work.
 
 The no-replacement inverse uses two lifecycle-correct processes with exact Core/Harmony/No-Vanilla/Immersive/Gateway order: `artifacts\GatewaySmoke\20260805T150502834Z` proves the settled main-menu registry contains no fallback meal, and `artifacts\GatewaySmoke\20260805T150931026Z` reaches a playable map and proves a Cooking-capable colonist can reach an operational fueled stove whose retained disabled `CookMealSimple` metadata creates neither a covered cooking path nor a missing-kitchenware alert. Main-menu and quicktest lifecycles are intentionally separate because `-quicktest` bypasses the main-menu trigger.

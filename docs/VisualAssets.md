@@ -202,3 +202,8 @@ and after a native RimWorld save/load at their real Def draw sizes. The same rou
 preserved the concrete wood/stone/metal and clean/dirty portable textures on the same Stuff-bearing
 Things without changing sanitation state. Rejected source candidates and comparison montages remain
 under ignored `artifacts/VisualAssets/BuildingVariations`.
+
+The exact base-package building catalog separately rendered all eight concrete building Defs in
+their four rotations beside native production/dining references. Its retained frames show readable
+selection brackets, footprints, inspectors, Production-menu icons and labels, and the appliance-only
+fallback microwave visibly sharing cells with both a real dining table and a real machining table.

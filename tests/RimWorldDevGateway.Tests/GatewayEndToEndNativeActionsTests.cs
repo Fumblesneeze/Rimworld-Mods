@@ -335,6 +335,23 @@ public sealed class GatewayEndToEndNativeActionsTests
         });
     }
 
+    [Test]
+    public void Architect_category_action_uses_only_the_optional_semantic_backend()
+    {
+        var backend = new RecordingBackend();
+        var step = new ArchitectCategoryActionStep("open production", "Production", open: true);
+
+        var outcome = ((IGatewayEndToEndArchitectCategoryNativeActions)
+                new GatewayEndToEndNativeActions(backend))
+            .Apply(step, Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(backend.ArchitectStep, Is.SameAs(step));
+        });
+    }
+
     private static GatewayEndToEndTestContext Context() => new(() => 0, () => 0, _ => null);
 
     private static GatewayGizmoDescriptor Gizmo(
@@ -364,7 +381,8 @@ public sealed class GatewayEndToEndNativeActionsTests
 
     private sealed class RecordingBackend :
         IGatewayEndToEndActionBackend,
-        IGatewayEndToEndDialogConfirmationBackend
+        IGatewayEndToEndDialogConfirmationBackend,
+        IGatewayEndToEndArchitectCategoryBackend
     {
         public GatewayEndToEndCameraViewport Viewport { get; set; } =
             new("map_1", 200, 200, 1000, 500, 8f, 60f);
@@ -398,6 +416,8 @@ public sealed class GatewayEndToEndNativeActionsTests
         public IncidentActionStep? IncidentStep { get; private set; }
 
         public DialogConfirmationActionStep? DialogStep { get; private set; }
+
+        public ArchitectCategoryActionStep? ArchitectStep { get; private set; }
 
         public bool RejectNextInteraction { get; set; }
 
@@ -494,6 +514,12 @@ public sealed class GatewayEndToEndNativeActionsTests
         public GatewayEndToEndStepOutcome ApplyDialogConfirmation(DialogConfirmationActionStep step)
         {
             DialogStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
+
+        public GatewayEndToEndStepOutcome ApplyArchitectCategory(ArchitectCategoryActionStep step)
+        {
+            ArchitectStep = step;
             return GatewayEndToEndStepOutcome.Pass();
         }
 

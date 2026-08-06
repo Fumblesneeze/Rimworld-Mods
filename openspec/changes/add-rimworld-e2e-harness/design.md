@@ -43,6 +43,8 @@ Initial typed steps cover:
 
 - exact native gizmo invocation from Thing owners and/or architect category Def names, plus exact float-menu order invocation;
 - process-scoped click, drag, chord, key, and text input when no semantic path exists;
+- an exact native Architect-category action that opens/closes the main tab and selects one loaded
+  `DesignationCategoryDef` without restoring or foregrounding the process;
 - exact native trade-dialog transfer and acceptance actions that can run without restoring the minimized game window;
 - exact allowlisted optional-mod dialog confirmations that retain private assembly/type/callback shapes in the Gateway rather than accepting reflection details from test bundles;
 - pause and native speed control;
@@ -56,6 +58,14 @@ Product-owned test assemblies discover current right-click options through a hos
 `TradeDialogActionStep` is a narrow semantic adapter for the native trade window. Adjustment re-resolves the exact current `Tradeable` by physical Thing ID, uses the native count setter and dialog refresh, and acceptance invokes the exact compiler-generated callback owned by `Dialog_Trade`; version-shape drift fails instead of approximating the deal. This is deliberately separate from `ProcessInputActionStep`: known trade semantics remain minimized and deterministic, while map pointer tools, drags, keys, text, and unknown surfaces retain foreground Win32 input. Observable waits and screenshots still prove that the real trade deal and delivery occurred.
 
 `DialogConfirmationActionStep` is likewise semantic but deliberately narrower than a generic reflection action. The shared bundle can name only the expected exact open-window runtime type. Gateway-owned registration pins the optional assembly identity and private callback/argument shape, requires one matching current window and a void callback, then reproduces the inspected close-before-confirm order. Unknown types and member drift fail closed without falling back to Win32 input. This keeps optional UI workflows minimized while preserving the contract's ban on test-supplied synchronous callbacks.
+
+`ArchitectCategoryActionStep` is a narrow semantic adapter for build-menu evidence. The Gateway
+uses RimWorld's native main-button activation/escape paths, resolves one exact loaded category, and
+invokes the inspected category-click method against that tab's own cached category object. It fails
+closed if player control, the category, tab activation, cached-tab cardinality, or the current
+RimWorld method shape has drifted. It never uses desktop input, focus, restore, resize, or maximize.
+The action opens UI only; a later screenshot and exact architect-designator catalog assertion prove
+the player-visible menu contains the intended buildables.
 
 Tests may inspect Verse state inside predicates and assertions, but a direct mutation cannot be registered as the player action or observable result. Each test result records which steps were `arrange`, `act`, `wait`, and `observe`. This makes dishonest fixtures reviewable without attempting to sandbox test code.
 

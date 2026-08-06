@@ -32,6 +32,11 @@ internal interface IGatewayEndToEndDialogConfirmationNativeActions
     GatewayEndToEndStepOutcome Apply(DialogConfirmationActionStep step, IEndToEndContext context);
 }
 
+internal interface IGatewayEndToEndArchitectCategoryNativeActions
+{
+    GatewayEndToEndStepOutcome Apply(ArchitectCategoryActionStep step, IEndToEndContext context);
+}
+
 public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
 {
     private readonly IGatewayEndToEndNativeActions actions;
@@ -67,6 +72,12 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
                     : GatewayEndToEndCompletedStepOperation.Failed(
                         "unsupported_e2e_step",
                         "The native E2E adapter does not support dialog confirmation."),
+            ArchitectCategoryActionStep architectCategory => actions is
+                IGatewayEndToEndArchitectCategoryNativeActions architectActions
+                    ? Complete(architectActions.Apply(architectCategory, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support Architect-category actions."),
             SaveLoadActionStep saveLoad =>
                 actions.Begin(saveLoad, context)
                 ?? throw new InvalidOperationException("The save/load adapter returned no operation."),

@@ -284,6 +284,20 @@ public sealed class SelectionActionStep : EndToEndStep
     public bool Additive { get; }
 }
 
+public sealed class ArchitectCategoryActionStep : EndToEndStep
+{
+    public ArchitectCategoryActionStep(string name, string categoryDefName, bool open)
+        : base(name, EndToEndStepKind.Act)
+    {
+        CategoryDefName = StepValues.Required(categoryDefName, nameof(categoryDefName));
+        Open = open;
+    }
+
+    public string CategoryDefName { get; }
+
+    public bool Open { get; }
+}
+
 public sealed class CameraActionStep : EndToEndStep
 {
     public CameraActionStep(string name, IEnumerable<string> targetRuntimeIds, int paddingPixels)

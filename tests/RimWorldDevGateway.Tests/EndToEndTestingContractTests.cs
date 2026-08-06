@@ -229,6 +229,24 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Architect_category_action_declares_only_an_exact_category_and_open_state()
+    {
+        var open = new ArchitectCategoryActionStep("open production", "Production", open: true);
+        var close = new ArchitectCategoryActionStep("close production", "Production", open: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(open.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(open.CategoryDefName, Is.EqualTo("Production"));
+            Assert.That(open.Open, Is.True);
+            Assert.That(close.Open, Is.False);
+            Assert.That(
+                () => new ArchitectCategoryActionStep("open", " ", open: true),
+                Throws.TypeOf<ArgumentException>());
+        });
+    }
+
+    [Test]
     public void Shared_steps_do_not_publish_an_unbounded_synchronous_delegate_action()
     {
         var unsafeProperties = typeof(EndToEndStep).Assembly

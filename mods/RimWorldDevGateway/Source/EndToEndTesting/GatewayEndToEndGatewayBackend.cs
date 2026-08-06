@@ -19,7 +19,8 @@ public interface IGatewayEndToEndFloatMenuActions
 
 public sealed class GatewayEndToEndGatewayBackend :
     IGatewayEndToEndActionBackend,
-    IGatewayEndToEndDialogConfirmationBackend
+    IGatewayEndToEndDialogConfirmationBackend,
+    IGatewayEndToEndArchitectCategoryBackend
 {
     private static int nextScreenshotId;
     private readonly GatewayGameControlController gameControl;
@@ -201,6 +202,12 @@ public sealed class GatewayEndToEndGatewayBackend :
     GatewayEndToEndStepOutcome IGatewayEndToEndDialogConfirmationBackend.ApplyDialogConfirmation(
         DialogConfirmationActionStep step) =>
             VerseGatewayEndToEndDialogConfirmationActions.Apply(step);
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndArchitectCategoryBackend.ApplyArchitectCategory(
+        ArchitectCategoryActionStep step) =>
+        VerseGatewayEndToEndArchitectCategoryActions.Apply(
+            step,
+            new VerseGatewayEndToEndArchitectCategoryRuntime());
 
     public IGatewayEndToEndStepOperation BeginInput(
         ProcessInputActionStep step,
