@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using HarmonyLib;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using Verse;
@@ -821,6 +823,518 @@ public sealed class MealPrinterFineDiningTest : IRimWorldEndToEndTest
 }
 
 [RimWorldEndToEndTest(
+    "immersive-chefs.meal-printer-gastronomy-guest-service",
+    "fumblesneeze.immersivechefs",
+    EndToEndTestContract.CorePackageId,
+    "brrainz.harmony",
+    "Orion.Hospitality",
+    "Mlie.MealPrinter",
+    "Orion.CashRegister",
+    "Orion.Gastronomy",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 12_000,
+    MaxGameTicks = 48_000,
+    MaxWallClockSeconds = 300)]
+public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTest
+{
+    private Map map = null!;
+    private Pawn producer = null!;
+    private Pawn guest = null!;
+    private Pawn waiter = null!;
+    private ThingWithComps printer = null!;
+    private ThingWithComps hopper = null!;
+    private ThingWithComps plate = null!;
+    private ThingWithComps cutlery = null!;
+    private ThingWithComps personalCutlery = null!;
+    private ThingWithComps dishwasher = null!;
+    private ThingWithComps diningTable = null!;
+    private ThingWithComps cashRegister = null!;
+    private ThingWithComps? printedMeal;
+    private Thing? diningSpot;
+    private object restaurant = null!;
+    private EndToEndGizmoOption draftGizmo = null!;
+    private bool printerWareObserved;
+    private bool printedMealReleased;
+    private bool nativeDineObserved;
+    private bool nativeServeObserved;
+    private bool serviceSessionObserved;
+    private bool dirtyReturnObserved;
+    private bool waiterCleanupObserved;
+    private bool waiterQueuedSecondWareObserved;
+    private int nativeServeStartedTick = -1;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        var printerFixture = DispenserE2EFixture.CreateMealPrinterFixture(
+            "MealFine",
+            "Printer service cook");
+        map = printerFixture.Map;
+        producer = printerFixture.Diner;
+        printer = printerFixture.Printer;
+        hopper = printerFixture.Hopper;
+        FoodSearchE2EFixture.SetHunger(producer, 1f);
+        producer.jobs.StopAll();
+
+        plate = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Plate", ThingDefOf.Steel);
+        cutlery = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Cutlery", ThingDefOf.Steel);
+        GenSpawn.Spawn(plate, printerFixture.WareCell + IntVec3.West, map);
+        GenSpawn.Spawn(cutlery, printerFixture.WareCell + IntVec3.East, map);
+
+        var center = printer.Position + new IntVec3(1, 0, 2);
+        var service = DispenserE2EFixture.CreateGastronomyGuestServiceFixture(map, center);
+        guest = service.Guest;
+        waiter = service.Waiter;
+        diningTable = service.DiningTable;
+        diningSpot = service.DiningSpot;
+        cashRegister = service.CashRegister;
+        dishwasher = service.Dishwasher;
+        restaurant = service.Restaurant;
+
+        personalCutlery = FoodSearchE2EFixture.MakeCleanWare(
+            "ImmersiveChefs_Cutlery",
+            ThingDefOf.Steel);
+        EndToEndAssert.True(
+            guest.inventory?.innerContainer.TryAdd(personalCutlery, canMergeWithExistingStacks: false) == true,
+            "The arrived Hospitality guest must retain one exact personal cutlery setting.");
+        EndToEndAssert.True(
+            HospitalityAdapter.IsArrivedGuest(guest),
+            "The real Hospitality registry must recognize the service fixture guest as arrived.");
+
+        FoodSearchE2EFixture.SetHunger(guest, 1f);
+        FoodSearchE2EFixture.SetHunger(waiter, 1f);
+        FoodSearchE2EFixture.SetHunger(producer, 0.10f);
+        FoodSearchE2EFixture.UseStrictNonEmergencyDining(context);
+
+        var gizmos = context.GetRequiredService<IEndToEndGizmoCatalog>()
+            .Query(new[] { producer.ThingID }, Array.Empty<string>());
+        var candidates = gizmos.Where(option =>
+            !option.Disabled &&
+            option.Interaction == EndToEndGizmoInteraction.Toggle &&
+            option.ToggleState == false &&
+            string.Equals(option.HotKeyDefName, "Command_ColonistDraft", StringComparison.Ordinal))
+            .ToArray();
+        EndToEndAssert.Equal(
+            1,
+            candidates.Length,
+            "The printer cook must expose one enabled native Draft toggle.");
+        draftGizmo = candidates[0];
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        var fixture = new[]
+        {
+            producer.ThingID, guest.ThingID, waiter.ThingID, printer.ThingID, hopper.ThingID,
+            diningTable.ThingID, cashRegister.ThingID, dishwasher.ThingID,
+            plate.ThingID, cutlery.ThingID
+        };
+        yield return new SelectionActionStep(
+            "select the printer service cook",
+            new[] { producer.ThingID },
+            false);
+        yield return new CameraActionStep("frame the printer restaurant fixture", fixture, 240);
+        yield return new ScreenshotStep("before native printer restaurant service", Array.Empty<string>(), 0);
+        yield return new TimeControlActionStep(
+            "run ordinary Fine printer preparation",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the printer cook carries the exact setting before output",
+            _ => ObservePrinterWare(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(75)));
+        yield return new WaitUntilStep(
+            "Meal Printer creates the exact plated Fine meal for service",
+            _ => ObservePrintedMeal(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(75)));
+        yield return new TimeControlActionStep(
+            "pause on the native printed service meal",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select cook carrying the printed service meal",
+            new[] { producer.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe exact plated meal before restaurant handoff",
+            Array.Empty<string>(),
+            0);
+        yield return new GizmoActionStep(
+            "draft the cook to release the printed restaurant meal",
+            new[] { producer.ThingID },
+            draftGizmo.RuntimeType,
+            EndToEndGizmoInteraction.Toggle,
+            stableGizmoId: draftGizmo.StableId);
+        yield return new TimeControlActionStep(
+            "allow the interrupted printer job to release its meal",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the exact printed meal and clean cutlery return to restaurant stock",
+            _ => ObserveReleasedPrinterSetting(),
+            new EndToEndDeadline(900, 3_000, TimeSpan.FromSeconds(45)));
+        yield return new AssertionStep(
+            "place the released meal on a real register field and refresh native stock",
+            _ => DispenserE2EFixture.PlaceInNativeRestaurantStock(
+                printedMeal!,
+                cashRegister,
+                restaurant));
+        yield return new AssertionStep(
+            "arm native arrived-guest dining and exact waiter service",
+            _ => AssertRestaurantAvailableAndArmService());
+        yield return new WaitUntilStep(
+            "the arrived guest selects native Gastronomy dining",
+            _ => ObserveNativeDine(),
+            new EndToEndDeadline(3_600, 12_000, TimeSpan.FromSeconds(105)));
+        yield return new TimeControlActionStep(
+            "observe native waiter service at normal speed",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the assigned waiter serves the exact printed meal",
+            _ => ObserveNativeServe(),
+            new EndToEndDeadline(3_600, 12_000, TimeSpan.FromSeconds(105)));
+        yield return new SelectionActionStep(
+            "select waiter serving the printed Fine meal",
+            new[] { waiter.ThingID },
+            false);
+        yield return new CameraActionStep(
+            "frame native waiter and Hospitality guest",
+            new[] { waiter.ThingID, guest.ThingID, diningTable.ThingID },
+            200);
+        yield return new ScreenshotStep(
+            "observe native Gastronomy waiter service",
+            Array.Empty<string>(),
+            0);
+        yield return new WaitUntilStep(
+            "the native waiter transfers the exact printed meal to the guest",
+            _ => ObserveNativeMealTransfer(),
+            new EndToEndDeadline(3_600, 12_000, TimeSpan.FromSeconds(105)));
+        yield return new AssertionStep(
+            "the waiter delivers exact colony cutlery with the printed meal",
+            _ => AssertServedDiningSession());
+        yield return new SelectionActionStep(
+            "select arrived guest dining with served tableware",
+            new[] { guest.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe Hospitality guest dining on the printed meal",
+            Array.Empty<string>(),
+            0);
+        yield return new TimeControlActionStep(
+            "allow the served Hospitality guest to finish eating",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "served dining returns the exact dirty setting",
+            _ => ObserveDirtyReturn(),
+            new EndToEndDeadline(4_800, 18_000, TimeSpan.FromSeconds(120)));
+        yield return new WaitUntilStep(
+            "the waiter carries one returned item and queues the other",
+            _ => ObserveWaiterCleanup(),
+            new EndToEndDeadline(3_600, 12_000, TimeSpan.FromSeconds(105)));
+        yield return new TimeControlActionStep(
+            "pause on waiter-owned dish clearing",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select waiter clearing the guest setting",
+            new[] { waiter.ThingID },
+            false);
+        yield return new CameraActionStep(
+            "frame waiter clearing the guest setting",
+            new[] { waiter.ThingID, dishwasher.ThingID },
+            200);
+        yield return new ScreenshotStep(
+            "observe waiter carrying and queuing returned ware",
+            Array.Empty<string>(),
+            0);
+        yield return new TimeControlActionStep(
+            "finish waiter dishwasher admission",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "dishwasher contains the exact served setting",
+            _ => DishwasherContainsExactSetting(),
+            new EndToEndDeadline(3_600, 12_000, TimeSpan.FromSeconds(105)));
+        yield return new TimeControlActionStep(
+            "pause on exact served setting in dishwasher",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "printer, Hospitality, Gastronomy, and clearing ownership compose once",
+            _ => AssertCompleted());
+        yield return new SelectionActionStep(
+            "select dishwasher holding the served setting",
+            new[] { dishwasher.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe exact served setting loading in dishwasher",
+            Array.Empty<string>(),
+            0);
+        yield return new CheckpointStep(
+            "Meal Printer Gastronomy guest service result",
+            _ => new Dictionary<string, string>
+            {
+                ["printerWareObserved"] = printerWareObserved.ToString(),
+                ["printedMealReleased"] = printedMealReleased.ToString(),
+                ["nativeDineObserved"] = nativeDineObserved.ToString(),
+                ["nativeServeObserved"] = nativeServeObserved.ToString(),
+                ["serviceSessionObserved"] = serviceSessionObserved.ToString(),
+                ["dirtyReturnObserved"] = dirtyReturnObserved.ToString(),
+                ["waiterCleanupObserved"] = waiterCleanupObserved.ToString(),
+                ["waiterQueuedSecondWareObserved"] = waiterQueuedSecondWareObserved.ToString(),
+                ["dishwasherUsedCapacity"] =
+                    dishwasher.GetComp<CompDishwasher>()?.UsedCapacity.ToString("R") ?? "missing",
+                ["guestPersonalCutleryDirty"] =
+                    (personalCutlery.GetComp<CompSanitation>()?.IsDirty == true).ToString()
+            });
+    }
+
+    private bool ObservePrinterWare()
+    {
+        var session = DiningSessionRegistry.Current(producer);
+        if (!ReferenceEquals(session?.CarriedPlate, plate) ||
+            !ReferenceEquals(session.CarriedCutlery, cutlery))
+        {
+            return false;
+        }
+
+        EndToEndAssert.True(
+            DispenserE2EFixture.FindMeal(producer, map, thing => thing.def == ThingDefOf.MealFine) is null,
+            "The printer must not create the service meal before carrying the exact setting.");
+        printerWareObserved = true;
+        return true;
+    }
+
+    private bool ObservePrintedMeal()
+    {
+        printedMeal ??= DispenserE2EFixture.FindMeal(
+            producer,
+            map,
+            thing => thing.def == ThingDefOf.MealFine);
+        if (printedMeal is null)
+        {
+            return false;
+        }
+
+        var embedded = printedMeal.GetComp<CompEmbeddedWare>();
+        EndToEndAssert.True(
+            ReferenceEquals(embedded?.PeekPlateThing(), plate),
+            "The real printed Fine meal must contain the exact steel plate before service.");
+        return true;
+    }
+
+    private bool ObserveReleasedPrinterSetting()
+    {
+        if (producer.drafter?.Drafted != true || printedMeal?.Spawned != true ||
+            !cutlery.Spawned || cutlery.GetComp<CompSanitation>()?.IsDirty == true ||
+            DiningSessionRegistry.Current(producer) is not null)
+        {
+            return false;
+        }
+
+        EndToEndAssert.True(
+            ReferenceEquals(printedMeal.GetComp<CompEmbeddedWare>()?.PeekPlateThing(), plate),
+            "Cancelling preparation must leave the exact plate embedded in the printed meal.");
+        printedMealReleased = true;
+        return true;
+    }
+
+    private bool ObserveNativeDine()
+    {
+        if (guest.CurJobDef?.defName != "Gastronomy_Dine")
+        {
+            return false;
+        }
+
+        EndToEndAssert.True(
+            ReferenceEquals(guest.CurJob?.GetTarget(TargetIndex.A).Thing, diningSpot),
+            "The arrived guest's ordinary hunger job must target the real Gastronomy dining spot.");
+        nativeDineObserved = true;
+        return true;
+    }
+
+    private void AssertRestaurantAvailableAndArmService()
+    {
+        EndToEndAssert.True(
+            guest.WillEat(printedMeal!.def),
+            "The arrived guest must be willing to eat the exact native printed Fine meal.");
+        FoodSearchE2EFixture.SetHunger(guest, 0.10f);
+        EndToEndAssert.True(
+            guest.needs?.food?.CurLevelPercentage <= 0.11f,
+            "The isolated scenario must arm ordinary guest hunger only after exact stock is available.");
+        DispenserE2EFixture.StartNativeGastronomyDining(guest, diningSpot!, restaurant);
+        DispenserE2EFixture.StartNativeGastronomyService(
+            waiter,
+            guest,
+            printedMeal!,
+            restaurant);
+    }
+
+    private bool ObserveNativeServe()
+    {
+        if (waiter.CurJobDef?.defName != "Gastronomy_Serve")
+        {
+            return false;
+        }
+
+        EndToEndAssert.True(
+            ReferenceEquals(waiter.CurJob?.GetTarget(TargetIndex.A).Pawn, guest) &&
+            ReferenceEquals(waiter.CurJob?.GetTarget(TargetIndex.B).Thing, printedMeal),
+            "The native waiter job must target the arrived guest and exact printed meal.");
+        nativeServeObserved = true;
+        if (nativeServeStartedTick < 0)
+        {
+            nativeServeStartedTick = Find.TickManager.TicksGame;
+        }
+        return true;
+    }
+
+    private bool ObserveNativeMealTransfer()
+    {
+        var guestOwnsMeal = guest.inventory?.innerContainer.Contains(printedMeal) == true ||
+                            ReferenceEquals(guest.carryTracker?.CarriedThing, printedMeal);
+        if (!guestOwnsMeal)
+        {
+            if (nativeServeStartedTick >= 0 &&
+                Find.TickManager.TicksGame - nativeServeStartedTick >= 1_200)
+            {
+                throw new EndToEndAssertionException(ServiceStallDiagnostics());
+            }
+
+            return false;
+        }
+
+        Find.TickManager.Pause();
+        return true;
+    }
+
+    private string ServiceStallDiagnostics()
+    {
+        static string Holder(Thing thing) =>
+            thing.Spawned
+                ? $"map:{thing.Position}"
+                : thing.ParentHolder?.GetType().FullName ?? "none";
+
+        return "Native Gastronomy service did not transfer the exact meal after 1,200 ticks. " +
+               $"WaiterJob={waiter.CurJobDef?.defName ?? "none"}; " +
+               $"WaiterPosition={waiter.Position}; WaiterMoving={waiter.pather?.Moving == true}; " +
+               $"WaiterCarry={waiter.carryTracker?.CarriedThing?.ThingID ?? "none"}; " +
+               $"WaiterHasCutlery={waiter.inventory?.innerContainer.Contains(cutlery) == true}; " +
+               $"GuestJob={guest.CurJobDef?.defName ?? "none"}; " +
+               $"GuestPosition={guest.Position}; GuestMoving={guest.pather?.Moving == true}; " +
+               $"DiningSpot={diningSpot?.Position.ToString() ?? "none"}; " +
+               $"MealHolder={Holder(printedMeal!)}; CutleryHolder={Holder(cutlery)}.";
+    }
+
+    private void AssertServedDiningSession()
+    {
+        var session = DiningSessionRegistry.Current(guest);
+        EndToEndAssert.NotNull(
+            session,
+            "The native Gastronomy transfer must retain the guest's Immersive Chefs dining session.");
+        EndToEndAssert.True(
+            ReferenceEquals(session!.CarriedCutlery, cutlery),
+            "The served dining session must retain the exact colony cutlery Thing. " +
+            $"SessionCutlery={session.CarriedCutlery?.ThingID ?? "none"}; " +
+            $"ExpectedHolder={(cutlery.Spawned ? $"map:{cutlery.Position}" : cutlery.ParentHolder?.GetType().FullName ?? "none")}; " +
+            $"GuestHasExpected={guest.inventory?.innerContainer.Contains(cutlery) == true}; " +
+            $"WaiterHasExpected={waiter.inventory?.innerContainer.Contains(cutlery) == true}; " +
+            $"SessionServer={session.ServingPawn?.ThingID ?? "none"}; " +
+            $"PersonalCutlery={personalCutlery.ThingID}.");
+        EndToEndAssert.True(
+            ReferenceEquals(
+                printedMeal!.GetComp<CompEmbeddedWare>()?.PeekPlateThing(),
+                plate),
+            "The served printed meal must retain its exact embedded plate until ingestion captures it.");
+        EndToEndAssert.True(
+            ReferenceEquals(session.ServingPawn, waiter),
+            "The served dining session must retain the exact native Gastronomy waiter.");
+        var guestInventory = guest.inventory?.innerContainer;
+        EndToEndAssert.NotNull(
+            guestInventory,
+            "The arrived Hospitality guest must retain a native inventory tracker.");
+        EndToEndAssert.True(
+            (guestInventory!.Contains(printedMeal) ||
+             ReferenceEquals(guest.carryTracker?.CarriedThing, printedMeal)) &&
+            guestInventory.Contains(cutlery),
+            "The guest must carry the exact native meal while its inventory retains delivered colony cutlery.");
+
+        EndToEndAssert.True(
+            guestInventory.Contains(personalCutlery) &&
+            personalCutlery.GetComp<CompSanitation>()?.IsDirty == false,
+            "Waiter service must prefer colony cutlery without taking or dirtying the guest's personal setting.");
+        serviceSessionObserved = true;
+    }
+
+    private bool ObserveDirtyReturn()
+    {
+        if (printedMeal?.Destroyed != true || !plate.Spawned || !cutlery.Spawned ||
+            plate.GetComp<CompSanitation>()?.IsDirty != true ||
+            cutlery.GetComp<CompSanitation>()?.IsDirty != true)
+        {
+            return false;
+        }
+
+        dirtyReturnObserved = true;
+        return true;
+    }
+
+    private bool ObserveWaiterCleanup()
+    {
+        if (waiter.CurJobDef != ImmersiveChefsDefOf.ImmersiveChefs_DoDishes ||
+            !ReferenceEquals(waiter.CurJob?.GetTarget(TargetIndex.B).Thing, dishwasher))
+        {
+            return false;
+        }
+
+        var carried = waiter.carryTracker?.CarriedThing;
+        if (!ReferenceEquals(carried, plate) && !ReferenceEquals(carried, cutlery))
+        {
+            return false;
+        }
+
+        var otherWare = ReferenceEquals(carried, plate) ? cutlery : plate;
+        var queuedOtherWare = waiter.jobs.jobQueue
+            .Where(queued =>
+                queued.job.def == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+                ReferenceEquals(queued.job.GetTarget(TargetIndex.A).Thing, otherWare) &&
+                ReferenceEquals(queued.job.GetTarget(TargetIndex.B).Thing, dishwasher))
+            .ToArray();
+        EndToEndAssert.Equal(
+            1,
+            queuedOtherWare.Length,
+            "Gastronomy clearing must queue the other exact returned item for the same dishwasher.");
+        waiterCleanupObserved = true;
+        waiterQueuedSecondWareObserved = true;
+        return true;
+    }
+
+    private bool DishwasherContainsExactSetting()
+    {
+        var contents = dishwasher.GetComp<CompDishwasher>()?.GetDirectlyHeldThings();
+        return contents is not null && contents.Contains(plate) && contents.Contains(cutlery);
+    }
+
+    private void AssertCompleted()
+    {
+        EndToEndAssert.True(
+            printerWareObserved && printedMealReleased && nativeDineObserved && nativeServeObserved &&
+            serviceSessionObserved && dirtyReturnObserved && waiterCleanupObserved &&
+            waiterQueuedSecondWareObserved,
+            "The test must observe each native printer, guest, waiter, and clearing boundary.");
+        EndToEndAssert.True(
+            DishwasherContainsExactSetting() &&
+            Math.Abs((dishwasher.GetComp<CompDishwasher>()?.UsedCapacity ?? -1f) - 1.25f) < 0.001f,
+            "The exact served plate and cutlery must occupy 1.25 dishwasher capacity.");
+        EndToEndAssert.True(
+            guest.inventory?.innerContainer.Contains(personalCutlery) == true &&
+            personalCutlery.GetComp<CompSanitation>()?.IsDirty == false,
+            "The arrived guest must retain its exact clean personal cutlery after colony waiter service.");
+    }
+}
+
+[RimWorldEndToEndTest(
     "immersive-chefs.meal-printer-nutribar-exclusion",
     "fumblesneeze.immersivechefs",
     EndToEndTestContract.CorePackageId,
@@ -1345,7 +1859,330 @@ public sealed class ReplimatSurvivalBatchExclusionTest : IRimWorldEndToEndTest
 
 internal static class DispenserE2EFixture
 {
-    internal static Pawn CreateCleaningCapableColonist(string name)
+    internal static GastronomyGuestServiceFixture CreateGastronomyGuestServiceFixture(
+        Map map,
+        IntVec3 center)
+    {
+        var stage = "resolve exact Gastronomy and Hospitality runtime shapes";
+        try
+        {
+            var managerType = AccessTools.TypeByName("Gastronomy.Restaurant.RestaurantsManager");
+            var restaurantType = AccessTools.TypeByName("Gastronomy.Restaurant.RestaurantController");
+            var diningSpotType = AccessTools.TypeByName("Gastronomy.Dining.DiningSpot");
+            var compGuestType = AccessTools.TypeByName("Hospitality.CompGuest");
+            var hospitalityMapComponentType = AccessTools.TypeByName("Hospitality.Hospitality_MapComponent");
+            EndToEndAssert.NotNull(managerType, "Gastronomy must expose its exact RestaurantsManager.");
+            EndToEndAssert.NotNull(restaurantType, "Gastronomy must expose its exact RestaurantController.");
+            EndToEndAssert.NotNull(diningSpotType, "Gastronomy must expose its exact DiningSpot.");
+            EndToEndAssert.NotNull(compGuestType, "Hospitality must expose its exact CompGuest.");
+            EndToEndAssert.NotNull(
+                hospitalityMapComponentType,
+                "Hospitality must expose its exact map-owned guest registry.");
+
+            stage = "spawn the real restaurant furniture and cleaning appliance";
+            var table = SpawnBuilding(map, "Table1x2c", center + new IntVec3(2, 0, 0));
+            var tableCells = table.OccupiedRect().Cells.ToArray();
+            EndToEndAssert.Equal(2, tableCells.Length, "The restaurant fixture requires the real 1x2 table.");
+            var spotCell = tableCells[0];
+            var diningSpot = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("Gastronomy_DiningSpot"));
+            GenSpawn.Spawn(diningSpot, spotCell, map);
+            EndToEndAssert.True(
+                diningSpotType!.IsInstanceOfType(diningSpot),
+                "The restaurant fixture must spawn the exact native Gastronomy DiningSpot.");
+
+            var chairCell = new[] { IntVec3.South, IntVec3.North, IntVec3.East, IntVec3.West }
+                .Select(offset => spotCell + offset)
+                .First(cell => cell.InBounds(map) && cell.GetEdifice(map) is null);
+            var chairDef = DefDatabase<ThingDef>.GetNamed("DiningChair");
+            var chair = ThingMaker.MakeThing(chairDef, ThingDefOf.WoodLog);
+            chair.SetFactionDirect(Faction.OfPlayer);
+            GenSpawn.Spawn(chair, chairCell, map, Rot4.FromIntVec3(spotCell - chairCell));
+
+            var cashRegister = SpawnBuilding(
+                map,
+                "CashRegister_CashRegister",
+                center + new IntVec3(-3, 0, 0));
+            var dishwasher = SpawnBuilding(
+                map,
+                "ImmersiveChefs_Dishwasher",
+                center + new IntVec3(-3, 0, 2));
+            SettlePower(map, new[] { dishwasher }, 400);
+
+            stage = "create the assigned Cleaning-capable Gastronomy waiter";
+            var waitingWork = DefDatabase<WorkTypeDef>.GetNamed("Gastronomy_Waiting");
+            var waiter = CreateCleaningCapableColonist(
+                "Printer restaurant waiter",
+                waitingWork);
+            waiter.workSettings.SetPriority(waitingWork, 1);
+            GenSpawn.Spawn(waiter, center + new IntVec3(-2, 0, 3), map);
+
+            stage = "link the real cash register and active waiter shift";
+            var manager = map.components.Single(component => managerType!.IsInstanceOfType(component));
+            var restaurants = managerType!.GetField("restaurants", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(manager) as IList;
+            EndToEndAssert.True(
+                restaurants is { Count: > 0 },
+                "The finalized Gastronomy map must expose at least one restaurant controller.");
+            var restaurant = restaurants![0];
+            EndToEndAssert.True(
+                restaurant is not null && restaurantType!.IsInstanceOfType(restaurant),
+                "The first Gastronomy restaurant must retain its exact runtime type.");
+            var linkRegister = restaurantType!.GetMethod(
+                "LinkRegister",
+                BindingFlags.Public | BindingFlags.Instance);
+            var linkRegisterParameters = linkRegister?.GetParameters();
+            EndToEndAssert.True(
+                linkRegisterParameters?.Length == 1 &&
+                linkRegisterParameters[0].ParameterType == cashRegister.GetType(),
+                "RestaurantController.LinkRegister must retain the exact native register parameter.");
+            linkRegister!.Invoke(restaurant, new object[] { cashRegister });
+            restaurantType.GetField("openForBusiness", BindingFlags.Public | BindingFlags.Instance)
+                ?.SetValue(restaurant, true);
+            restaurantType.GetField("guestPricePercentage", BindingFlags.Public | BindingFlags.Instance)
+                ?.SetValue(restaurant, 0f);
+
+            var shifts = cashRegister.GetType()
+                .GetField("shifts", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(cashRegister) as IList;
+            EndToEndAssert.True(shifts is { Count: > 0 }, "The real cash register must expose one native shift.");
+            var shift = shifts![0];
+            var assigned = shift!.GetType()
+                .GetField("assigned", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(shift) as IList;
+            var timetable = shift.GetType()
+                .GetField("timetable", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(shift);
+            var times = timetable?.GetType()
+                .GetField("times", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(timetable) as IList;
+            EndToEndAssert.NotNull(assigned, "The exact register shift must expose its assigned pawn list.");
+            EndToEndAssert.True(times is { Count: 24 }, "The exact register timetable must expose 24 hours.");
+            assigned!.Add(waiter);
+            for (var hour = 0; hour < times!.Count; hour++)
+            {
+                times[hour] = true;
+            }
+
+            restaurantType.GetMethod("RescanDiningSpots", BindingFlags.Public | BindingFlags.Instance)
+                ?.Invoke(restaurant, Array.Empty<object>());
+            var seats = restaurantType.GetProperty("Seats", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(restaurant);
+            var open = restaurantType.GetProperty("IsOpenedRightNow", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(restaurant);
+            EndToEndAssert.True(seats is int seatCount && seatCount >= 1,
+                "The real restaurant must recognize at least one native dining seat.");
+            EndToEndAssert.True(open is true,
+                "The real restaurant and assigned cash-register shift must be open.");
+
+            stage = "spawn and register the real Hospitality guest";
+            var playerFaction = Faction.OfPlayer;
+            var guestFaction = Find.FactionManager.AllFactionsListForReading.First(faction =>
+                faction != playerFaction && !faction.HostileTo(playerFaction) && !faction.def.hidden);
+            var guest = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+                PawnKindDefOf.Colonist,
+                guestFaction,
+                forceGenerateNewPawn: true,
+                canGeneratePawnRelations: false));
+            guest.Name = new NameSingle("Printer restaurant guest");
+            guest.inventory?.innerContainer.ClearAndDestroyContents();
+            GenSpawn.Spawn(guest, center + new IntVec3(3, 0, 3), map);
+            var compGuest = guest.AllComps.FirstOrDefault(compGuestType!.IsInstanceOfType);
+            EndToEndAssert.NotNull(
+                compGuest,
+                "Hospitality must attach its real CompGuest to the finalized human pawn Def.");
+            var hospitalityMapComponent = map.components.Single(component =>
+                hospitalityMapComponentType!.IsInstanceOfType(component));
+            var joined = hospitalityMapComponentType!.GetMethod(
+                "OnGuestJoinedLate",
+                BindingFlags.Public | BindingFlags.Instance);
+            var arrive = compGuestType!.GetMethod("Arrive", BindingFlags.Public | BindingFlags.Instance);
+            var joinedParameters = joined?.GetParameters();
+            EndToEndAssert.True(
+                joinedParameters?.Length == 1 && joinedParameters[0].ParameterType == typeof(Pawn),
+                "Hospitality.OnGuestJoinedLate must retain its exact public Pawn shape.");
+            EndToEndAssert.True(
+                arrive?.GetParameters().Length == 0,
+                "Hospitality.CompGuest.Arrive must retain its exact zero-argument public shape.");
+            joined!.Invoke(hospitalityMapComponent, new object[] { guest });
+            arrive!.Invoke(compGuest, Array.Empty<object>());
+
+            return new GastronomyGuestServiceFixture(
+                guest,
+                waiter,
+                table,
+                diningSpot,
+                cashRegister,
+                dishwasher,
+                restaurant!);
+        }
+        catch (EndToEndAssertionException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new EndToEndAssertionException(
+                $"Gastronomy guest-service fixture failed while trying to {stage} " +
+                $"({exception.GetType().Name}: {exception.Message}).");
+        }
+    }
+
+    internal static bool RestaurantStockContains(object restaurant, Thing meal)
+    {
+        var stock = restaurant.GetType()
+            .GetProperty("Stock", BindingFlags.Public | BindingFlags.Instance)
+            ?.GetValue(restaurant);
+        var isAvailable = stock?.GetType().GetMethod(
+            "IsAvailable",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            new[] { typeof(Thing) },
+            null);
+        EndToEndAssert.NotNull(
+            isAvailable,
+            "The exact Gastronomy stock must expose IsAvailable(Thing).");
+        return isAvailable!.Invoke(stock, new object[] { meal }) is true;
+    }
+
+    internal static void PlaceInNativeRestaurantStock(
+        Thing meal,
+        Thing cashRegister,
+        object restaurant)
+    {
+        var fields = cashRegister.GetType()
+            .GetProperty("Fields", BindingFlags.Public | BindingFlags.Instance)
+            ?.GetValue(cashRegister) as IEnumerable;
+        EndToEndAssert.NotNull(
+            fields,
+            "The exact Gastronomy cash register must expose its native stock fields.");
+        var stockCell = fields!.Cast<object>()
+            .OfType<IntVec3>()
+            .Where(cell => cell.InBounds(meal.Map) && cell.GetFirstItem(meal.Map) is null)
+            .OrderBy(cell => cell.DistanceToSquared(meal.Position))
+            .FirstOrDefault();
+        EndToEndAssert.True(
+            stockCell.IsValid,
+            "The exact Gastronomy cash register must expose one empty native stock field.");
+
+        var map = meal.Map;
+        meal.DeSpawn(DestroyMode.Vanish);
+        GenSpawn.Spawn(meal, stockCell, map);
+
+        var stock = restaurant.GetType()
+            .GetProperty("Stock", BindingFlags.Public | BindingFlags.Instance)
+            ?.GetValue(restaurant);
+        var refresh = stock?.GetType().GetMethod(
+            "RefreshStock",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            Type.EmptyTypes,
+            null);
+        EndToEndAssert.NotNull(
+            refresh,
+            "The exact Gastronomy stock must expose its native zero-argument refresh.");
+        refresh!.Invoke(stock, Array.Empty<object>());
+        EndToEndAssert.True(
+            RestaurantStockContains(restaurant, meal),
+            "Gastronomy's real stock cache must discover the exact released printed meal on its native field.");
+        Find.TickManager.Pause();
+    }
+
+    internal static void StartNativeGastronomyDining(Pawn guest, Thing diningSpot, object restaurant)
+    {
+        var managerType = AccessTools.TypeByName("Gastronomy.Restaurant.RestaurantsManager");
+        var restaurantType = AccessTools.TypeByName("Gastronomy.Restaurant.RestaurantController");
+        var manager = guest.Map?.components.Single(component => managerType!.IsInstanceOfType(component));
+        var register = managerType?.GetMethod(
+            "RegisterDiningAt",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            new[] { typeof(Pawn), restaurantType! },
+            null);
+        EndToEndAssert.NotNull(
+            register,
+            "Gastronomy RestaurantsManager.RegisterDiningAt must retain its exact public shape.");
+        register!.Invoke(manager, new[] { guest, restaurant });
+
+        var dineDef = DefDatabase<JobDef>.GetNamed("Gastronomy_Dine");
+        var dineJob = JobMaker.MakeJob(dineDef, diningSpot);
+        dineJob.playerForced = true;
+        guest.jobs.StartJob(
+            dineJob,
+            JobCondition.InterruptForced,
+            resumeCurJobAfterwards: false,
+            cancelBusyStances: true,
+            tag: JobTag.Misc);
+        EndToEndAssert.True(
+            guest.CurJobDef == dineDef && ReferenceEquals(guest.CurJob?.GetTarget(TargetIndex.A).Thing, diningSpot),
+            "The explicit scenario setup must arm the exact native Gastronomy dining job.");
+    }
+
+    internal static void StartNativeGastronomyService(
+        Pawn waiter,
+        Pawn guest,
+        Thing meal,
+        object restaurant)
+    {
+        EndToEndAssert.True(
+            guest.CurJobDef?.defName == "Gastronomy_Dine",
+            "The exact guest must still be running the native Gastronomy Dine driver before service.");
+        if (waiter.CurJobDef?.defName == "Gastronomy_Serve" &&
+            ReferenceEquals(waiter.CurJob?.GetTarget(TargetIndex.A).Pawn, guest) &&
+            ReferenceEquals(waiter.CurJob?.GetTarget(TargetIndex.B).Thing, meal))
+        {
+            return;
+        }
+
+        EndToEndAssert.True(
+            meal.Spawned && meal.Map == waiter.Map,
+            "The exact printed meal must remain spawned in restaurant stock before explicitly arming service.");
+        var orders = restaurant.GetType()
+            .GetProperty("Orders", BindingFlags.Public | BindingFlags.Instance)
+            ?.GetValue(restaurant);
+        var createOrder = orders?.GetType().GetMethod(
+            "CreateOrder",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            new[] { typeof(Pawn), typeof(Thing) },
+            null);
+        var getOrder = orders?.GetType().GetMethod(
+            "GetOrderFor",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            new[] { typeof(Pawn) },
+            null);
+        EndToEndAssert.NotNull(
+            createOrder,
+            "Gastronomy RestaurantOrders.CreateOrder must retain its exact native shape.");
+        EndToEndAssert.NotNull(
+            getOrder,
+            "Gastronomy RestaurantOrders.GetOrderFor must retain its exact native shape.");
+        createOrder!.Invoke(orders, new object[] { guest, meal });
+        var order = getOrder!.Invoke(orders, new object[] { guest });
+        EndToEndAssert.NotNull(order, "The real restaurant must own one native guest order.");
+        order!.GetType().GetField("consumable", BindingFlags.Public | BindingFlags.Instance)
+            ?.SetValue(order, meal);
+        order.GetType().GetField("hasToBeMade", BindingFlags.Public | BindingFlags.Instance)
+            ?.SetValue(order, false);
+
+        var serveDef = DefDatabase<JobDef>.GetNamed("Gastronomy_Serve");
+        var serveJob = JobMaker.MakeJob(serveDef, guest, meal);
+        waiter.jobs.StartJob(
+            serveJob,
+            JobCondition.InterruptForced,
+            resumeCurJobAfterwards: false,
+            cancelBusyStances: true,
+            tag: JobTag.Misc);
+        EndToEndAssert.True(
+            waiter.CurJobDef == serveDef &&
+            ReferenceEquals(waiter.CurJob?.GetTarget(TargetIndex.A).Pawn, guest) &&
+            ReferenceEquals(waiter.CurJob?.GetTarget(TargetIndex.B).Thing, meal),
+            "The explicit scenario setup must arm the exact native Gastronomy Serve job.");
+    }
+
+    internal static Pawn CreateCleaningCapableColonist(
+        string name,
+        WorkTypeDef? additionallyRequiredWork = null)
     {
         for (var attempt = 0; attempt < 32; attempt++)
         {
@@ -1355,6 +2192,7 @@ internal static class DispenserE2EFixture
                 forceGenerateNewPawn: true,
                 canGeneratePawnRelations: false));
             if (pawn.WorkTypeIsDisabled(WorkTypeDefOf.Cleaning) ||
+                (additionallyRequiredWork is not null && pawn.WorkTypeIsDisabled(additionallyRequiredWork)) ||
                 !pawn.health.capacities.CapableOf(PawnCapacityDefOf.Moving) ||
                 !pawn.health.capacities.CapableOf(PawnCapacityDefOf.Manipulation))
             {
@@ -1725,5 +2563,34 @@ internal static class DispenserE2EFixture
         internal ThingWithComps Hopper { get; }
         internal Thing Feedstock { get; }
         internal IntVec3 WareCell { get; }
+    }
+
+    internal readonly struct GastronomyGuestServiceFixture
+    {
+        internal GastronomyGuestServiceFixture(
+            Pawn guest,
+            Pawn waiter,
+            ThingWithComps diningTable,
+            Thing diningSpot,
+            ThingWithComps cashRegister,
+            ThingWithComps dishwasher,
+            object restaurant)
+        {
+            Guest = guest;
+            Waiter = waiter;
+            DiningTable = diningTable;
+            DiningSpot = diningSpot;
+            CashRegister = cashRegister;
+            Dishwasher = dishwasher;
+            Restaurant = restaurant;
+        }
+
+        internal Pawn Guest { get; }
+        internal Pawn Waiter { get; }
+        internal ThingWithComps DiningTable { get; }
+        internal Thing DiningSpot { get; }
+        internal ThingWithComps CashRegister { get; }
+        internal ThingWithComps Dishwasher { get; }
+        internal object Restaurant { get; }
     }
 }

@@ -21,11 +21,26 @@ internal static class GastronomyAdapter
 
         var serveType = AccessTools.TypeByName("Gastronomy.Waiting.JobDriver_Serve");
         var dineType = AccessTools.TypeByName("Gastronomy.Dining.JobDriver_Dine");
+        var waitingToilsType = AccessTools.TypeByName("Gastronomy.Waiting.Toils_Waiting");
         var reserve = serveType is null
             ? null
             : AccessTools.Method(serveType, nameof(JobDriver.TryMakePreToilReservations));
         var makeToils = serveType is null ? null : AccessTools.Method(serveType, "MakeNewToils");
+        var clearOrder = waitingToilsType is null
+            ? null
+            : AccessTools.Method(
+                waitingToilsType,
+                "ClearOrder",
+                new[]
+                {
+                    typeof(TargetIndex),
+                    typeof(TargetIndex),
+                    typeof(TargetIndex),
+                    typeof(TargetIndex)
+                });
         if (serveType is null || dineType is null || reserve is null || makeToils is null ||
+            waitingToilsType is null || clearOrder is null || !clearOrder.IsStatic ||
+            clearOrder.ReturnType != typeof(Toil) ||
             !typeof(JobDriver).IsAssignableFrom(serveType) || !typeof(JobDriver).IsAssignableFrom(dineType))
         {
             reason = "the installed Gastronomy waiter/diner job shape no longer matches the validated 1.6 API";
@@ -40,6 +55,9 @@ internal static class GastronomyAdapter
             harmony.Patch(
                 makeToils,
                 postfix: new HarmonyMethod(typeof(GastronomyAdapter), nameof(ServeToilsPostfix)));
+            harmony.Patch(
+                clearOrder,
+                postfix: new HarmonyMethod(typeof(GastronomyAdapter), nameof(ClearOrderPostfix)));
             Enabled = true;
             reason = string.Empty;
             var serviceDescription = TemperatureOwnership.ImmersiveChefsFeaturesActive
@@ -50,8 +68,26 @@ internal static class GastronomyAdapter
         }
         catch (Exception exception)
         {
+            RemovePartialPatches(harmony, reserve, makeToils, clearOrder);
             reason = $"waiter patch installation failed ({exception.GetType().Name}: {exception.Message})";
             return false;
+        }
+    }
+
+    private static void RemovePartialPatches(
+        Harmony harmony,
+        params System.Reflection.MethodBase[] methods)
+    {
+        foreach (var method in methods)
+        {
+            try
+            {
+                harmony.Unpatch(method, HarmonyPatchType.Postfix, harmony.Id);
+            }
+            catch
+            {
+                // Keep the original installation failure authoritative.
+            }
         }
     }
 
@@ -96,6 +132,41 @@ internal static class GastronomyAdapter
         {
             __result = service.Wrap(__instance.GetActor(), job, __result);
         }
+    }
+
+    private static void ClearOrderPostfix(ref Toil __result)
+    {
+        if (__result is null)
+        {
+            return;
+        }
+
+        var clearOrder = __result;
+        var nativeClearOrder = clearOrder.initAction;
+        clearOrder.initAction = () =>
+        {
+            try
+            {
+                var server = clearOrder.actor;
+                var serviceJob = server?.CurJob;
+                if (server is not null && serviceJob is not null &&
+                    Services.TryGetValue(serviceJob, out var service))
+                {
+                    service.DeliverCutlery(server, serviceJob);
+                }
+            }
+            catch (Exception exception)
+            {
+                OptionalIntegrationDiagnostics.WarnOnce(
+                    OptionalIntegration.Gastronomy,
+                    $"waiter cutlery delivery failed ({exception.GetType().Name}: {exception.Message}); " +
+                    "Gastronomy's native order clearing will continue");
+            }
+            finally
+            {
+                nativeClearOrder?.Invoke();
+            }
+        };
     }
 
     private sealed class GastronomyServiceContext
@@ -158,8 +229,6 @@ internal static class GastronomyAdapter
             {
                 yield return toil;
             }
-
-            yield return Instant(() => DeliverCutlery(server, job));
         }
 
         internal void Cancel(Pawn server)
@@ -202,14 +271,24 @@ internal static class GastronomyAdapter
             }
         }
 
-        private void DeliverCutlery(Pawn server, Job serviceJob)
+        internal void DeliverCutlery(Pawn server, Job serviceJob)
         {
             Thing? deliveredWare = null;
             if (carriedCutlery is not null && patron.inventory is not null &&
                 carriedCutlery.holdingOwner is { } source &&
-                source.TryTransferToContainer(carriedCutlery, patron.inventory.innerContainer, 1) > 0)
+                source.TryTransferToContainer(
+                    carriedCutlery,
+                    patron.inventory.innerContainer,
+                    1,
+                    out var transferred,
+                    canMergeWithExistingStacks: false) == 1)
             {
-                deliveredWare = carriedCutlery;
+                deliveredWare = transferred;
+            }
+
+            if (carriedCutlery is not null && deliveredWare is null)
+            {
+                Cancel(server);
             }
 
             carriedCutlery = null;
@@ -241,12 +320,26 @@ internal sealed class MapComponent_GastronomyDishClearing : MapComponent
     {
     }
 
-    internal void Schedule(Pawn server, IntVec3 origin)
+    internal void Schedule(Pawn server, Thing? dirtyPlate, Thing? dirtyCutlery)
     {
-        if (!requests.Any(request => request.Server == server))
+        var exactWare = new[] { dirtyPlate, dirtyCutlery }
+            .Where(thing => thing is not null && IsSpawnedDirtyWare(thing, server))
+            .Cast<Thing>()
+            .Distinct()
+            .ToArray();
+        if (exactWare.Length == 0)
         {
-            requests.Add(new ClearingRequest(server, origin, Find.TickManager.TicksGame + 5000));
+            return;
         }
+
+        var existing = requests.FirstOrDefault(request => request.Server == server);
+        if (existing is not null)
+        {
+            existing.AddExactWare(exactWare, Find.TickManager.TicksGame + 5000);
+            return;
+        }
+
+        requests.Add(new ClearingRequest(server, exactWare, Find.TickManager.TicksGame + 5000));
     }
 
     public override void MapComponentTick()
@@ -272,29 +365,32 @@ internal sealed class MapComponent_GastronomyDishClearing : MapComponent
                 continue;
             }
 
-            var dirty = map.listerThings.AllThings
-                .Where(thing => (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true)
-                .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product is
-                    KitchenwareProduct.Plate or KitchenwareProduct.Cutlery)
-                .Where(thing => thing.Position.DistanceToSquared(request.Origin) <= 25)
-                .OrderBy(thing => thing.Position.DistanceToSquared(request.Server.Position))
-                .FirstOrDefault();
-            if (dirty is null)
+            request.RemoveUnavailableWare();
+            if (request.ExactWare.Count == 0)
+            {
+                requests.RemoveAt(index);
+                continue;
+            }
+
+            var jobs = request.ExactWare
+                .Select(thing => new WorkGiver_DoDishes().JobOnThing(request.Server, thing))
+                .ToArray();
+            if (jobs.Any(job => job is null))
             {
                 continue;
             }
 
-            var cleaningJob = new WorkGiver_DoDishes().JobOnThing(request.Server, dirty);
-            if (cleaningJob is null)
-            {
-                continue;
-            }
-
+            var exactJobs = jobs.Cast<Job>().ToArray();
             request.Server.jobs.StartJob(
-                cleaningJob,
+                exactJobs[0],
                 JobCondition.InterruptOptional,
                 tag: JobTag.Misc,
                 resumeCurJobAfterwards: true);
+            for (var jobIndex = exactJobs.Length - 1; jobIndex >= 1; jobIndex--)
+            {
+                request.Server.jobs.jobQueue.EnqueueFirst(exactJobs[jobIndex], tag: JobTag.Misc);
+            }
+
             requests.RemoveAt(index);
         }
     }
@@ -311,17 +407,41 @@ internal sealed class MapComponent_GastronomyDishClearing : MapComponent
                current.StartsWith("Wait", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsSpawnedDirtyWare(Thing thing, Pawn server)
+    {
+        return !thing.Destroyed && thing.Spawned && thing.Map == server.MapHeld &&
+               (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true &&
+               thing.def.GetModExtension<KitchenwareExtension>()?.product is
+                   KitchenwareProduct.Plate or KitchenwareProduct.Cutlery;
+    }
+
     private sealed class ClearingRequest
     {
-        internal ClearingRequest(Pawn server, IntVec3 origin, int expiresAt)
+        internal ClearingRequest(Pawn server, IEnumerable<Thing> exactWare, int expiresAt)
         {
             Server = server;
-            Origin = origin;
+            ExactWare = exactWare.Distinct().ToList();
             ExpiresAt = expiresAt;
         }
 
         internal Pawn Server { get; }
-        internal IntVec3 Origin { get; }
-        internal int ExpiresAt { get; }
+        internal List<Thing> ExactWare { get; }
+        internal int ExpiresAt { get; private set; }
+
+        internal void AddExactWare(IEnumerable<Thing> exactWare, int expiresAt)
+        {
+            foreach (var thing in exactWare)
+            {
+                if (!ExactWare.Contains(thing))
+                {
+                    ExactWare.Add(thing);
+                }
+            }
+
+            ExpiresAt = Math.Max(ExpiresAt, expiresAt);
+        }
+
+        internal void RemoveUnavailableWare() =>
+            ExactWare.RemoveAll(thing => !IsSpawnedDirtyWare(thing, Server));
     }
 }

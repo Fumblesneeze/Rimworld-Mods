@@ -111,6 +111,38 @@ public static class MealPrinterModsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void NativeGastronomyClearOrderDeliversCutleryBeforeFreeServiceCanEnd()
+    {
+        var waitingToils = AccessTools.TypeByName("Gastronomy.Waiting.Toils_Waiting");
+        IntegrationAssert.NotNull(
+            waitingToils,
+            "The exact Gastronomy waiting-toil type must exist in the active printer-service group.");
+        var clearOrder = AccessTools.Method(
+            waitingToils,
+            "ClearOrder",
+            new[]
+            {
+                typeof(TargetIndex),
+                typeof(TargetIndex),
+                typeof(TargetIndex),
+                typeof(TargetIndex)
+            });
+        IntegrationAssert.Equal(
+            typeof(Toil),
+            clearOrder?.ReturnType,
+            "Gastronomy's exact four-target ClearOrder factory must retain its Toil return shape.");
+        IntegrationAssert.True(
+            clearOrder!.IsStatic,
+            "Gastronomy's exact ClearOrder factory must remain static.");
+        IntegrationAssert.Equal(
+            1,
+            Harmony.GetPatchInfo(clearOrder)?.Postfixes.Count(patch =>
+                patch.owner == ImmersiveChefsMod.PackageId &&
+                patch.PatchMethod?.DeclaringType == typeof(GastronomyAdapter)) ?? 0,
+            "Immersive Chefs must attach exactly one pre-clear cutlery-delivery bridge.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedPrinterOutputsPreserveVanillaOwnershipAndNutriBarExclusion()
     {
         var printer = DefDatabase<ThingDef>.GetNamed("MealPrinter");

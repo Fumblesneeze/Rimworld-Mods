@@ -22,7 +22,7 @@ internal sealed class DiningSession : IThingHolder
     private bool travelPlateImported;
     private bool travelPlateWasDirty;
     private WashProvenance travelPlateWashProvenance;
-    private readonly bool cutleryFromPersonalInventory;
+    private bool cutleryFromPersonalInventory;
 
     internal DiningSession(
         Pawn pawn,
@@ -103,7 +103,7 @@ internal sealed class DiningSession : IThingHolder
     internal ServiceWareSnapshot? PlateServiceSnapshot { get; private set; }
     internal ContaminationSources TravelPlateContamination { get; private set; }
     internal Thing? Microwave { get; }
-    internal Pawn? ServingPawn { get; }
+    internal Pawn? ServingPawn { get; private set; }
     internal ThingDef? RequestedMealDef { get; }
 
     internal void CapturePlate(Thing plate)
@@ -219,6 +219,25 @@ internal sealed class DiningSession : IThingHolder
         CarriedCutlery = cutlery;
     }
 
+    internal void AcceptWaiterService(Thing? deliveredCutlery, Pawn server)
+    {
+        ServingPawn = server;
+        if (deliveredCutlery is null || ReferenceEquals(CarriedCutlery, deliveredCutlery))
+        {
+            return;
+        }
+
+        if (CarriedCutlery is not null && !cutleryFromPersonalInventory &&
+            CarrierPawn.MapHeld is { } map && CarriedCutlery.holdingOwner is { } owner)
+        {
+            owner.TryDrop(CarriedCutlery, CarrierPawn.PositionHeld, map, ThingPlaceMode.Near, out _);
+        }
+
+        cutleryFromPersonalInventory = false;
+        SetCutlery(deliveredCutlery);
+        CarriedCutlery = deliveredCutlery;
+    }
+
     internal void BindPastePlate(Thing meal)
     {
         BindCarriedPlate(meal, initializePasteServing: true);
@@ -314,7 +333,10 @@ internal sealed class DiningSession : IThingHolder
 
         if (ServingPawn is { } server && Pawn.MapHeld is { } map)
         {
-            map.GetComponent<MapComponent_GastronomyDishClearing>()?.Schedule(server, clearingOrigin);
+            map.GetComponent<MapComponent_GastronomyDishClearing>()?.Schedule(
+                server,
+                dirtyPlate,
+                dirtyCutlery);
         }
         else
         {
@@ -790,8 +812,14 @@ internal static class DiningSessionRegistry
         Thing? cutlery,
         Pawn server)
     {
-        if (!MealCoveragePolicy.IsCovered(meal.def) || Sessions.TryGetValue(diningJob, out _))
+        if (!MealCoveragePolicy.IsCovered(meal.def))
         {
+            return;
+        }
+
+        if (Sessions.TryGetValue(diningJob, out var existing))
+        {
+            existing.AcceptWaiterService(cutlery, server);
             return;
         }
 

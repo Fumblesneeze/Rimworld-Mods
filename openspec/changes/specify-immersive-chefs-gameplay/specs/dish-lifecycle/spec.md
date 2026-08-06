@@ -246,11 +246,11 @@ Physical presence, not immediate usability or cleanliness, SHALL suppress this i
 - **THEN** that workstation participates without Immersive Chefs classifying every unknown grill as a kitchen
 
 ### Requirement: Gastronomy service clearing
-When Gastronomy integration is active, waiters and servers SHALL collect the required cutlery with a meal and SHALL claim and haul the resulting dirty plate and cutlery promptly after the dining job finishes. Reservations and service claims SHALL be released when dining or clearing is cancelled so ordinary cleaners can recover the ware.
+When Gastronomy integration is active, waiters and servers SHALL collect the required cutlery with a meal and SHALL retain the exact resulting plate and cutlery identities for clearing after the dining job finishes. If both items remain eligible, the waiter SHALL start one `Doing dishes` job and queue the other exact item, preferring one accepting dishwasher for both; it SHALL NOT substitute unrelated nearby dirty ware. Reservations and service claims SHALL be released when dining or clearing is cancelled so ordinary cleaners can recover the ware.
 
 #### Scenario: Waiter completes table service
 - **WHEN** a waiter serves a plated meal with cutlery and the guest finishes eating
-- **THEN** a Gastronomy clearing job claims the dirty plate and cutlery before ordinary low-priority hauling
+- **THEN** Gastronomy clearing claims both exact dirty items before ordinary low-priority hauling and queues both to the same accepting dishwasher when one is available
 
 #### Scenario: Waiter cannot clear the table
 - **WHEN** a waiter-held clearing job is cancelled or becomes unreachable

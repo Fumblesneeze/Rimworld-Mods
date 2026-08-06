@@ -79,12 +79,17 @@ When `Dubwise.DubsBadHygiene` is active and its adapter validates, a reachable o
 
 ### Requirement: Restaurant integration owns active service jobs
 
-When `Orion.Gastronomy` and its required `Orion.CashRegister` dependency are active, the adapter SHALL extend waiter/server jobs for cutlery delivery and immediate dish clearing without replacing Gastronomy order ownership. It SHALL additionally add cold-meal reheating only while Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature. When either shape validation or the integration setting fails, vanilla Immersive Chefs eater/cleaner jobs SHALL remain available.
+When `Orion.Gastronomy` and its required `Orion.CashRegister` dependency are active, the adapter SHALL validate the installed waiter/diner job drivers and the static four-`TargetIndex` `Gastronomy.Waiting.Toils_Waiting.ClearOrder(...) -> Toil` factory before extending waiter/server jobs. It SHALL deliver cutlery before that native clear-order init action can end a free-service job, then always allow the native action to run. It SHALL retain Gastronomy order ownership, add immediate exact-item dish clearing, and add cold-meal reheating only while Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature. When either shape validation or the integration setting fails, vanilla Immersive Chefs eater/cleaner jobs SHALL remain available.
 
 #### Scenario: Gastronomy is downloaded but inactive
 
 - **WHEN** Gastronomy files exist locally but its package ID is not in the active mod list
 - **THEN** no Gastronomy adapter patch is installed
+
+#### Scenario: Free restaurant service ends during native order clearing
+
+- **WHEN** a waiter reaches Gastronomy's native clear-order toil for an order that charges no silver
+- **THEN** the distinct colony cutlery is attached to the diner before native clearing may end the waiter job, and native clearing still executes even if the optional delivery bridge fails
 
 ### Requirement: Hospitality guests preserve host and inventory ownership
 
@@ -247,6 +252,11 @@ When `Mlie.MealPrinter` is active, vanilla meal Defs remain finalized, and the e
 
 - **WHEN** a pawn brings a Fine-admissible plate and the configured printer successfully creates its native Fine meal
 - **THEN** that exact plate is embedded once while printer feedstock/configuration remain upstream-owned
+
+#### Scenario: Printed meal is served to an arrived guest
+
+- **WHEN** the exact Meal Printer, Hospitality, Cash Register, and Gastronomy package group serves a printed plated meal through a native waiter order
+- **THEN** the waiter delivers distinct colony cutlery, the guest's personal fallback remains clean, and both exact used colony items enter the Gastronomy-owned dishwasher-first clearing path
 
 #### Scenario: Pawn takes a NutriBar
 

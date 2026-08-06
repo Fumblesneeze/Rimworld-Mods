@@ -182,9 +182,14 @@ The mod SHALL provide live toggles for colony and Royalty dining standards, both
 
 ### Requirement: Gastronomy delegates service ware handling
 
-When the supported Gastronomy integration is active, waiters and servers SHALL bring reserved cutlery with meals and prioritize clearing dirty plates and cutlery after dining. While Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, they SHALL also reheat qualifying cold meals before delivery. With Thermodynamics active, Immersive Chefs SHALL add no service-time heating behavior. Eaters SHALL retain the normal fallback when no eligible server owns the order.
+When the supported Gastronomy integration is active, waiters and servers SHALL bring reserved cutlery with meals and prioritize clearing dirty plates and cutlery after dining. Waiter delivery SHALL preserve the delivered physical Thing as a distinct non-merging inventory item. If the diner already opened a session using personal-inventory cutlery as a fallback, the waiter-delivered colony setting SHALL replace that session's active cutlery while the personal setting remains owned by the diner, separate, and clean. While Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, waiters SHALL also reheat qualifying cold meals before delivery. With Thermodynamics active, Immersive Chefs SHALL add no service-time heating behavior. Eaters SHALL retain the normal fallback when no eligible server owns the order.
 
 #### Scenario: Waiter serves a complete setting
 
 - **WHEN** a Gastronomy waiter owns an eligible dining order with reachable clean cutlery
 - **THEN** the waiter delivers the meal and cutlery and later exposes the dirty service ware to the clearing workflow
+
+#### Scenario: Waiter supersedes a guest's personal fallback
+
+- **WHEN** an arrived Hospitality guest has already selected personal cutlery and the owning Gastronomy waiter delivers a reachable colony setting
+- **THEN** the dining session uses the distinct colony cutlery without merging into, taking, or dirtying the guest's personal setting
