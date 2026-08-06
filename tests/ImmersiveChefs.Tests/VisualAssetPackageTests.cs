@@ -26,6 +26,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher";
     private const string PrepStationTexturePath =
         "ImmersiveChefs/Things/Building/KitchenStation/PrepStation";
+    private const string SauceStationTexturePath =
+        "ImmersiveChefs/Things/Building/KitchenStation/SauceStation";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -315,6 +317,38 @@ public sealed class VisualAssetPackageTests
         }
     }
 
+    [Test]
+    public void Sauce_station_uses_owned_rotatable_single_sprite_art()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "AssistantStations.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_SauceStation");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, SauceStationTexturePath + ".png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(SauceStationTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, SauceStationTexturePath + ".png")), Is.True);
+        });
+
+        AssertTransparentSprite(diffusePath);
+        AssertCanvasAspect(diffusePath, widthUnits: 2, heightUnits: 1);
+        AssertNoBrightBlueEmission(diffusePath);
+    }
+
     private static string TextureFile(string root, string texturePath)
     {
         return Path.Combine(
@@ -434,6 +468,50 @@ public sealed class VisualAssetPackageTests
             Assert.That(diffuse.GetPixel(diffuse.Width - 1, diffuse.Height - 1).A, Is.EqualTo(0));
             Assert.That(visiblePixels, Is.GreaterThan(100));
         });
+    }
+
+    private static void AssertCanvasAspect(string diffusePath, int widthUnits, int heightUnits)
+    {
+        if (!File.Exists(diffusePath))
+        {
+            return;
+        }
+
+        using var bitmap = new Bitmap(diffusePath);
+        Assert.That(
+            bitmap.Width * heightUnits,
+            Is.EqualTo(bitmap.Height * widthUnits),
+            "The texture canvas must match its draw mesh without Unity stretching it.");
+    }
+
+    private static void AssertNoBrightBlueEmission(string diffusePath)
+    {
+        if (!File.Exists(diffusePath))
+        {
+            return;
+        }
+
+        using var bitmap = new Bitmap(diffusePath);
+        var brightBluePixels = 0;
+        for (var y = 0; y < bitmap.Height; y++)
+        {
+            for (var x = 0; x < bitmap.Width; x++)
+            {
+                var pixel = bitmap.GetPixel(x, y);
+                if (pixel.A > 0 &&
+                    pixel.B >= 100 &&
+                    pixel.B > pixel.R * 1.25 &&
+                    pixel.B > pixel.G * 1.05)
+                {
+                    brightBluePixels++;
+                }
+            }
+        }
+
+        Assert.That(
+            brightBluePixels,
+            Is.Zero,
+            "Unconditional base art must not look powered while the building is off or broken.");
     }
 
     private static string FindRepositoryRoot()

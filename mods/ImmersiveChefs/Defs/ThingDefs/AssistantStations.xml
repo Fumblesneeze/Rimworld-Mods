@@ -27,7 +27,7 @@
 
   <ThingDef ParentName="ImmersiveChefs_AssistantStationBase">
     <defName>ImmersiveChefs_SauceStation</defName><label>sauce station</label><description>A linked specialist station for sauces, seasoning and finishing work.</description>
-    <graphicData><texPath>Things/Building/Production/TableDrugLab</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(2,1)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Building/KitchenStation/SauceStation</texPath><graphicClass>Graphic_Single</graphicClass><shaderType>Cutout</shaderType><drawSize>(2,1)</drawSize></graphicData>
     <modExtensions><li Class="ImmersiveChefs.KitchenAssistantStationExtension"><stationRole>sauce</stationRole></li></modExtensions>
   </ThingDef>
   <ThingDef ParentName="ImmersiveChefs_AssistantStationBase">

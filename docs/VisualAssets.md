@@ -91,3 +91,14 @@ claiming ingredients are permanently stored. Candidate A was rejected because it
 would falsely depict food in every state. Both prompts requested a professional 3-cell worktable on
 pure green chroma. The selected 768×384 fixed-color sprite is reframed to the Def's 3.5×1.5 draw
 ratio and uses `Graphic_Single`/`Cutout` for native rotation.
+
+## Sauce station
+
+Selected: candidate A, generated 2026-08-06. Two empty small pans, an empty whisk bowl, closed
+condiment bottles, induction pads, and controls remain identifiable at 2×1 map scale without
+claiming active cooking. Candidate B was rejected because its central appliance became ambiguous
+after final resizing. Both prompts requested state-neutral sauce and finishing equipment on pure
+green chroma. The selected 512×256 fixed-color sprite has an exact 2:1 canvas and uses
+`Graphic_Single`/`Cutout` for native rotation. Bright blue induction and display pixels were
+replaced with unlit graphite controls so the unconditional sprite remains truthful while off,
+unpowered, or broken.
