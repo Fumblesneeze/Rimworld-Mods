@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release RimWorld Mods"
+  short_description: "Build, verify, and publish RimWorld releases"
+  default_prompt: "Use $release-rimworld-mods to prepare and verify a multi-version RimWorld mod release."

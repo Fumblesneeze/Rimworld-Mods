@@ -67,6 +67,8 @@ docs/TddEvidence.md
 .codex/skills/*
 !.codex/skills/rimworld-mod-development/
 !.codex/skills/rimworld-mod-development/**
+!.codex/skills/release-rimworld-mods/
+!.codex/skills/release-rimworld-mods/**
 .codex/cache/
 .codex/tmp/
 .codex/state/

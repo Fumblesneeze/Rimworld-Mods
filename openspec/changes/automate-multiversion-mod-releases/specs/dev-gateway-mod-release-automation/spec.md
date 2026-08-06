@@ -3,11 +3,15 @@
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: Release manifests are explicit and repository-owned
-The repository SHALL define one reviewable release manifest per publishable mod. It SHALL declare the package ID, Steam Workshop item identity, supported RimWorld targets, exact Steam build/depot/manifest inputs, per-target package mapping, presentation sources, and required verification profiles. A release command MUST reject undeclared targets, duplicate package IDs, missing publication identity, and manifest/source disagreement before downloading, building, launching, or publishing.
+The repository SHALL define one reviewable release manifest per publishable mod. It SHALL declare the package ID, Steam Workshop item identity, supported RimWorld targets, exact Steam build/depot/manifest inputs directly or by committed target ID, per-target package mapping, presentation sources, and required verification profiles. Each uploaded RimWorld compatibility folder SHALL map to exactly one exact compile target; additional exact builds MAY be regression-only and reuse that folder's compiled product. A release command MUST reject undeclared targets, duplicate package IDs or compatibility folders, missing publication identity, and manifest/source disagreement before downloading, building, launching, or publishing.
 
 #### Scenario: Undeclared target is rejected without side effects
 - **WHEN** an operator requests a RimWorld version absent from the selected mod's release manifest
 - **THEN** the release command fails before it downloads game content, builds a package, launches RimWorld, or changes a Workshop item
+
+#### Scenario: Two compile targets collide on one package folder
+- **WHEN** a release manifest maps two exact compile targets to the same RimWorld compatibility folder
+- **THEN** validation rejects the ambiguous payload before either target is built
 
 ### Requirement: Proprietary game inputs are exact, cached, and uncommitted
 The release tooling SHALL acquire the exact declared RimWorld Steam content needed for compilation, verify it against Steam manifest metadata plus local file hashes, and project only the required managed assemblies into an ignored content-addressed cache. It MUST NOT commit, redistribute in a product package, or silently substitute locally installed or newer game assemblies for a declared target.
