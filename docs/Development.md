@@ -26,7 +26,7 @@ Use the applicable change ID in place of `add-rimworld-dev-gateway`. Update a ta
 
 ## Red, green, regression
 
-Run a focused test first, then the owning suite, then the repository wrapper:
+During ordinary feature work, run the exact focused test or exact active-mod group for the current slice. Run an owning suite only when the change affects shared behavior within that suite. Reserve the repository wrapper and complete compatibility/E2E matrices for explicit release preparation or deliberate maintenance/regression work:
 
 ```powershell
 .\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway -Configuration Release -TestFilter "FullyQualifiedName~GatewayApiRouterTests"
@@ -135,6 +135,6 @@ python C:\Users\<you>\.codex\skills\.system\skill-creator\scripts\quick_validate
 2. Read the relevant repository-local skill reference: Harmony/compatibility for C# patches, XML/Defs for assets and conditional patches, and testing/verification before making compatibility claims.
 3. Add the smallest failing test, capture the intended red result, implement the vertical slice, and keep refactors green.
 4. Keep optional integrations behind package-ID/Def resolution and a narrow adapter. Product mods must never reference or depend on the Dev Gateway.
-5. Run the focused test, owning suite, all-suite wrapper, Release build, and package inspection; then run an independent code review, apply accepted fixes, and rerun regressions and packaging.
+5. Run the focused test or exact active-mod group plus the affected Release build/package inspection; then run an independent code review, apply accepted fixes, and rerun only affected verification. Run owning/full suites and complete matrices only at an explicit regression or release checkpoint.
 6. Run final in-game acceptance on the reviewed build: perform the player action, personally observe the player-visible result, and retain before/action/after evidence from the exact process.
 7. Mark only OpenSpec tasks backed by that complete evidence.

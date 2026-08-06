@@ -44,7 +44,7 @@ For each requirement:
 1. Identify a user-observable rule and its owning mod.
 2. Add the smallest focused failing test and run it to capture the intended RED.
 3. Add the minimum production/XML behavior to make that test GREEN.
-4. Run the focused test again, then the owning mod's full suite.
+4. Run the focused test again. Run the owning suite only when the slice changes shared behavior across that suite; reserve broad regression for an explicit maintenance or release checkpoint.
 5. Refactor only while green. Prefer deeper domain modules over scattered Harmony patches.
 6. Update only OpenSpec task boxes whose acceptance evidence now exists.
 
@@ -54,10 +54,10 @@ Use stable Def names and package IDs in tests. Put volatile RimWorld/Unity acces
 
 Run verification in this order:
 
-1. Focused tests for the changed slice.
-2. Repository test wrapper with a nonzero discovered-test assertion.
+1. Focused tests or the exact active-mod group for the changed slice, with a nonzero executed-test assertion.
+2. The owning suite only when shared behavior was affected; the guarded repository wrapper and complete compatibility/E2E matrices only for explicit maintenance, regression, or release preparation.
 3. Release package build and assembly/About/XML inspection.
-4. Independent repo-local `code-review` pass, accepted fixes, then regression and package reruns.
+4. Independent repo-local `code-review` pass, accepted fixes, then rerun affected focused verification and package checks.
 5. Startup-gated in-game integration tests when the claim depends on finalized Defs, PatchOperations, the real mod list, or complete Harmony application; build and stage only opted-in test projects, then retain the Gateway's lifecycle results.
 6. Grouped E2E tests for repeatable multi-frame player workflows: run `scripts/Invoke-RimWorldEndToEndTests.ps1 -DryRun` first, then the selected exact groups. Do not manually pre-stage routine E2E bundles.
 7. Final isolated Core-plus-target-mod game start using the reviewed build.
