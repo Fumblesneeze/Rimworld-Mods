@@ -25,10 +25,14 @@ public sealed class CountertopMicrowavePlacementTest : IRimWorldEndToEndTest
     private Building table = null!;
     private Building workbench = null!;
     private Building shelf = null!;
+    private Building bed = null!;
+    private Thing blueprint = null!;
     private Pawn builder = null!;
     private IntVec3 tableTarget;
     private IntVec3 workbenchTarget;
     private IntVec3 shelfTarget;
+    private IntVec3 bedTarget;
+    private IntVec3 blueprintTarget;
     private IntVec3 floorTarget;
     private EndToEndGizmoOption buildMicrowave = null!;
     private EndToEndGizmoOption deconstruct = null!;
@@ -73,7 +77,7 @@ public sealed class CountertopMicrowavePlacementTest : IRimWorldEndToEndTest
             });
         }
 
-        var fixtureCells = FindSeparatedClearCells(map, 4);
+        var fixtureCells = FindSeparatedClearCells(map, 6);
         table = (Building)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("Table1x2c"),
             ThingDefOf.Steel);
@@ -81,15 +85,29 @@ public sealed class CountertopMicrowavePlacementTest : IRimWorldEndToEndTest
         shelf = (Building)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("Shelf"),
             ThingDefOf.Steel);
+        bed = (Building)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("Bed"),
+            ThingDefOf.Steel);
         supports.Add(table);
         supports.Add(workbench);
         supports.Add(shelf);
+        supports.Add(bed);
         GenSpawn.Spawn(table, fixtureCells[0], map, Rot4.North);
         GenSpawn.Spawn(workbench, fixtureCells[1], map, Rot4.North);
         GenSpawn.Spawn(shelf, fixtureCells[2], map, Rot4.North);
+        GenSpawn.Spawn(bed, fixtureCells[3], map, Rot4.North);
         table.SetFaction(Faction.OfPlayer);
         workbench.SetFaction(Faction.OfPlayer);
         shelf.SetFaction(Faction.OfPlayer);
+        bed.SetFaction(Faction.OfPlayer);
+        blueprint = GenConstruct.PlaceBlueprintForBuild(
+            DefDatabase<ThingDef>.GetNamed("Table1x2c"),
+            fixtureCells[4],
+            map,
+            Rot4.North,
+            Faction.OfPlayer,
+            ThingDefOf.Steel);
+        supports.Add(blueprint);
 
         builder = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
         builder.Name = new NameSingle("Countertop Appliance Builder");
@@ -109,7 +127,9 @@ public sealed class CountertopMicrowavePlacementTest : IRimWorldEndToEndTest
         tableTarget = SouthernmostCell(table.OccupiedRect());
         workbenchTarget = SouthernmostCell(workbench.OccupiedRect(), preferWest: true);
         shelfTarget = shelf.Position;
-        floorTarget = fixtureCells[3];
+        bedTarget = bed.Position;
+        blueprintTarget = blueprint.Position;
+        floorTarget = fixtureCells[5];
 
         buildMicrowave = SingleEnabled(
             catalog.Query(Array.Empty<string>(), new[] { "Production" })
@@ -159,20 +179,57 @@ public sealed class CountertopMicrowavePlacementTest : IRimWorldEndToEndTest
             new EndToEndDeadline(300, 500, TimeSpan.FromSeconds(20)));
 
         yield return BuildStep("reject microwave on storage shelf", shelfTarget, expectRejected: true);
+        yield return BuildStep("reject microwave on bed", bedTarget, expectRejected: true);
+        yield return BuildStep("reject microwave on unfinished blueprint", blueprintTarget, expectRejected: true);
         yield return BuildStep("reject microwave on bare floor", floorTarget, expectRejected: true);
         yield return new AssertionStep(
             "native placement preserves usable supports and creates no rejected appliance",
             _ =>
             {
-                EndToEndAssert.True(table.Spawned && workbench.Spawned && shelf.Spawned,
+                EndToEndAssert.True(table.Spawned && workbench.Spawned && shelf.Spawned && bed.Spawned && blueprint.Spawned,
                     "Countertop placement must not replace or destroy its supports.");
                 EndToEndAssert.Equal(2, SpawnedMicrowaves().Count,
                     "Only the two accepted native placements may create microwaves.");
                 EndToEndAssert.True(MicrowaveAt(shelfTarget) is null,
                     "The rejected shelf target must remain microwave-free.");
+                EndToEndAssert.True(MicrowaveAt(bedTarget) is null,
+                    "The rejected bed target must remain microwave-free.");
+                EndToEndAssert.True(MicrowaveAt(blueprintTarget) is null,
+                    "The rejected blueprint target must remain microwave-free.");
                 EndToEndAssert.True(MicrowaveAt(floorTarget) is null,
                     "The rejected floor target must remain microwave-free.");
+                EndToEndAssert.True(
+                    ReferenceEquals(
+                        table,
+                        MicrowaveSupportRuntime.FindAt(tableTarget, map, tableMicrowave)),
+                    "The table microwave must retain the exact live table support.");
+                EndToEndAssert.True(
+                    ReferenceEquals(
+                        workbench,
+                        MicrowaveSupportRuntime.FindAt(workbenchTarget, map, workbenchMicrowave)),
+                    "The workbench microwave must retain the exact live workbench support.");
+                EndToEndAssert.True(
+                    workbench.InteractionCell.InBounds(map) &&
+                    workbench.InteractionCell.Standable(map) &&
+                    MicrowaveAt(workbench.InteractionCell) is null,
+                    "The countertop appliance must leave the machining table's interaction cell usable.");
             });
+        yield return new SelectionActionStep(
+            "select dining table beneath accepted microwave",
+            new[] { table.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "dining table remains selectable beneath countertop appliance",
+            new[] { table.ThingID, tableMicrowave!.ThingID },
+            paddingPixels: 120);
+        yield return new SelectionActionStep(
+            "select machining table beneath accepted microwave",
+            new[] { workbench.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "machining table remains selectable beneath countertop appliance",
+            new[] { workbench.ThingID, workbenchMicrowave!.ThingID },
+            paddingPixels: 120);
         yield return new SelectionActionStep(
             "select accepted countertop microwaves",
             new[] { tableMicrowave!.ThingID, workbenchMicrowave!.ThingID },

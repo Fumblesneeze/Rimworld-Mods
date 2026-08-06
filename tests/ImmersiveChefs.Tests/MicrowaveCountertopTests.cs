@@ -8,6 +8,56 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class MicrowaveCountertopTests
 {
+    [Test]
+    public void Recovery_search_is_complete_unique_and_nearest_first()
+    {
+        var origin = new CountertopCell(2, 1);
+
+        var cells = MicrowaveRecoveryPolicy.OrderedCells(origin, width: 9, height: 7).ToArray();
+
+        Assert.That(cells, Has.Length.EqualTo(63));
+        Assert.That(cells.Distinct().ToArray(), Has.Length.EqualTo(63));
+        Assert.That(cells[0], Is.EqualTo(origin));
+        Assert.That(cells, Does.Contain(new CountertopCell(8, 6)),
+            "Recovery must search beyond the old four-cell local radius.");
+        Assert.That(
+            cells.Zip(cells.Skip(1), (left, right) =>
+                DistanceSquared(origin, left) <= DistanceSquared(origin, right)),
+            Is.All.True,
+            "Recovery candidates must be ordered from nearest to farthest.");
+    }
+
+    [TestCase(true, false, true, false, true, true)]
+    [TestCase(true, false, true, false, false, false)]
+    [TestCase(false, false, true, false, true, false)]
+    [TestCase(true, true, true, false, true, false)]
+    [TestCase(true, false, false, false, true, false)]
+    [TestCase(true, false, true, true, true, false)]
+    public void Operational_policy_requires_spawn_power_integrity_and_live_support(
+        bool spawned,
+        bool forbidden,
+        bool powered,
+        bool brokenDown,
+        bool supported,
+        bool expected)
+    {
+        Assert.That(
+            MicrowaveOperationalPolicy.Allows(
+                spawned,
+                forbidden,
+                powered,
+                brokenDown,
+                supported),
+            Is.EqualTo(expected));
+    }
+
+    private static int DistanceSquared(CountertopCell origin, CountertopCell candidate)
+    {
+        var x = candidate.X - origin.X;
+        var z = candidate.Z - origin.Z;
+        return (x * x) + (z * z);
+    }
+
     [TestCase(true, true, (int)CountertopSurfaceKind.Eat, false, true)]
     [TestCase(true, true, (int)CountertopSurfaceKind.Item, false, true)]
     [TestCase(false, true, (int)CountertopSurfaceKind.Eat, false, false)]

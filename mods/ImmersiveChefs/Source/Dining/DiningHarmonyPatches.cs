@@ -188,8 +188,14 @@ internal static class IngestCutleryToilsPatch
                 failIfStackCountLessThanJobCount: false,
                 reserve: false,
                 canTakeFromInventory: true);
-            yield return GotoCapturedThing(microwave.parent, PathEndMode.InteractionCell);
-            yield return WaitAtCapturedThing(microwave.parent, microwave.HeatingTicks);
+            yield return GotoCapturedThing(
+                microwave.parent,
+                PathEndMode.InteractionCell,
+                () => !microwave.Operational);
+            yield return WaitAtCapturedThing(
+                microwave.parent,
+                microwave.HeatingTicks,
+                () => !microwave.Operational);
             yield return new Toil
             {
                 initAction = () =>
@@ -217,16 +223,25 @@ internal static class IngestCutleryToilsPatch
         };
     }
 
-    private static Toil GotoCapturedThing(Thing target, PathEndMode pathEndMode)
+    private static Toil GotoCapturedThing(
+        Thing target,
+        PathEndMode pathEndMode,
+        Func<bool>? additionalFailCondition = null)
     {
         var toil = ToilMaker.MakeToil("ImmersiveChefs_GotoReservedWare");
         toil.initAction = () => toil.actor.pather.StartPath(target, pathEndMode);
         toil.defaultCompleteMode = ToilCompleteMode.PatherArrival;
-        toil.AddFailCondition(() => target.DestroyedOrNull() || !target.Spawned);
+        toil.AddFailCondition(() =>
+            target.DestroyedOrNull() ||
+            !target.Spawned ||
+            additionalFailCondition?.Invoke() == true);
         return toil;
     }
 
-    private static Toil WaitAtCapturedThing(Thing target, int duration)
+    private static Toil WaitAtCapturedThing(
+        Thing target,
+        int duration,
+        Func<bool>? additionalFailCondition = null)
     {
         var toil = Toils_General.Wait(duration);
         var originalTickAction = toil.tickAction;
@@ -259,7 +274,10 @@ internal static class IngestCutleryToilsPatch
             progressEffecter?.Cleanup();
             progressEffecter = null;
         });
-        toil.AddFailCondition(() => target.DestroyedOrNull() || !target.Spawned);
+        toil.AddFailCondition(() =>
+            target.DestroyedOrNull() ||
+            !target.Spawned ||
+            additionalFailCondition?.Invoke() == true);
         return toil;
     }
 }

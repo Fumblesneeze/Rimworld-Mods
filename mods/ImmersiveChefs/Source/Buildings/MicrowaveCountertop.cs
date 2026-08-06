@@ -69,6 +69,53 @@ internal static class MicrowaveSupportPolicy
         (!supportInteractionCell.HasValue || !supportInteractionCell.Value.Equals(interactionCell));
 }
 
+internal static class MicrowaveOperationalPolicy
+{
+    internal static bool Allows(
+        bool spawned,
+        bool forbidden,
+        bool powered,
+        bool brokenDown,
+        bool supported) =>
+        spawned &&
+        !forbidden &&
+        powered &&
+        !brokenDown &&
+        supported;
+}
+
+internal static class MicrowaveRecoveryPolicy
+{
+    internal static IEnumerable<CountertopCell> OrderedCells(
+        CountertopCell origin,
+        int width,
+        int height)
+    {
+        if (width <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(width));
+        }
+
+        if (height <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(height));
+        }
+
+        return Enumerable.Range(0, width)
+            .SelectMany(x => Enumerable.Range(0, height).Select(z => new CountertopCell(x, z)))
+            .OrderBy(cell => DistanceSquared(origin, cell))
+            .ThenBy(cell => cell.Z)
+            .ThenBy(cell => cell.X);
+    }
+
+    private static int DistanceSquared(CountertopCell origin, CountertopCell candidate)
+    {
+        var x = candidate.X - origin.X;
+        var z = candidate.Z - origin.Z;
+        return (x * x) + (z * z);
+    }
+}
+
 internal static class MicrowaveSupportRuntime
 {
     internal static Building? FindAt(IntVec3 cell, Map map, Thing? thingToIgnore = null)
@@ -170,9 +217,9 @@ public sealed class Building_Microwave : Building
         }
 
         if (!GenPlace.TryPlaceThing(minified, position, map, ThingPlaceMode.Near, squareRadius: 4) &&
-            !GenPlace.TryPlaceThing(minified, position, map, ThingPlaceMode.Direct))
+            !TryPlaceAtNearestStandableCell(minified, position, map))
         {
-            Log.Error("[ImmersiveChefs] Countertop microwave was minified after support loss but could not be recovered on-map.");
+            Log.Error("[ImmersiveChefs] Countertop microwave was minified after support loss but no standable map cell accepted it.");
             return;
         }
 
@@ -180,5 +227,27 @@ public sealed class Building_Microwave : Building
         {
             Find.Selector.Select(minified, playSound: false, forceDesignatorDeselect: false);
         }
+    }
+
+    private static bool TryPlaceAtNearestStandableCell(
+        MinifiedThing minified,
+        IntVec3 origin,
+        Map map)
+    {
+        var orderedCells = MicrowaveRecoveryPolicy.OrderedCells(
+            new CountertopCell(origin.x, origin.z),
+            map.Size.x,
+            map.Size.z);
+        foreach (var candidate in orderedCells)
+        {
+            var cell = new IntVec3(candidate.X, 0, candidate.Z);
+            if (cell.Standable(map) &&
+                GenPlace.TryPlaceThing(minified, cell, map, ThingPlaceMode.Direct))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
