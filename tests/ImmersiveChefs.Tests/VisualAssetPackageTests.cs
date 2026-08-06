@@ -18,6 +18,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Item/Kitchenware/ChefsKnife/ChefsKnife";
     private const string GlitterCookwareTexturePath =
         "ImmersiveChefs/Things/Item/Kitchenware/GlitterCookware/GlitterCookware";
+    private const string PreparedFoodTexturePath =
+        "ImmersiveChefs/Things/Item/Food/PreparedIngredients/PreparedIngredients";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -175,6 +177,35 @@ public sealed class VisualAssetPackageTests
             Assert.That(graphicData.Element("color"), Is.Null, "Fixed glitter art must retain its authored color.");
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, GlitterCookwareTexturePath + ".png")), Is.True);
+        });
+
+        AssertTransparentSprite(diffusePath);
+    }
+
+    [Test]
+    public void Prepared_ingredients_use_owned_fixed_color_single_sprite_art()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "PreparedFoodAndStation.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_PreparedFood");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, PreparedFoodTexturePath + ".png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(PreparedFoodTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, PreparedFoodTexturePath + ".png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);

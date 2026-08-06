@@ -6,9 +6,9 @@
     <description>Chopped, trimmed and portioned ingredients ready for final cooking. Inspection preserves their nutrition, origin and preparation quality.</description>
     <thingClass>ThingWithComps</thingClass>
     <graphicData>
-      <texPath>Things/Item/Resource/PlantFoodRaw/AgaveFruit</texPath>
+      <texPath>ImmersiveChefs/Things/Item/Food/PreparedIngredients/PreparedIngredients</texPath>
       <graphicClass>Graphic_Single</graphicClass>
-      <shaderType>CutoutComplex</shaderType>
+      <shaderType>Cutout</shaderType>
     </graphicData>
     <stackLimit>75</stackLimit>
     <statBases>

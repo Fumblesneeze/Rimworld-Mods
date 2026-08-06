@@ -54,3 +54,12 @@ because its separated pot, pan, lids, and spoon read as four loose map objects. 
 for fixed-color self-cleaning cookware on pure green chroma. The selected 256 px sprite uses the
 ordinary `Cutout` shader without a Stuff mask or global Def tint, preserving the authored alloy and
 status-light colors.
+
+## Prepared ingredients
+
+Selected: candidate B, generated 2026-08-06. Its compartment tray and partly folded lid read as
+stored mise en place while the orange, green, pale, and red portions remain visibly varied at 64 px.
+Candidate A was rejected because its parchment layout risked reading as a finished platter. Both
+prompts requested clearly raw, chopped mixed ingredients on pure green chroma. The selected 256 px
+fixed-color sprite uses `Cutout`; edge-only despill removes chroma without muting the legitimate
+opaque green vegetables.
