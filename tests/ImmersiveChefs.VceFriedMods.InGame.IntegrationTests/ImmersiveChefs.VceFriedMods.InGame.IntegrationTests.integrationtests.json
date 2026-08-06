@@ -1,0 +1,21 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.VceFriedMods.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "ludeon.rimworld",
+    "brrainz.harmony",
+    "OskarPotocki.VanillaFactionsExpanded.Core",
+    "VanillaExpanded.VCookE",
+    "VanillaExpanded.VCookEBakery",
+    "VanillaExpanded.VCookEHaute",
+    "VanillaExpanded.VCookEStews",
+    "VanillaExpanded.VCEF",
+    "VanillaExpanded.VCookESushi",
+    "ucp.friedmeals",
+    "rabiosus.AdaptiveMealBill",
+    "binchcannon.overcookedmeals",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

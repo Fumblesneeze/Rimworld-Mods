@@ -158,6 +158,215 @@ public sealed class RecipeClassificationTests
         });
     }
 
+    [Test]
+    public void Validated_registry_disables_only_the_changed_addon_shape()
+    {
+        var result = MealClassificationCatalog.CreateValidated(
+            new[]
+            {
+                MealClassificationCatalog.VanillaExpandedFrameworkPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedHautePackageId,
+                MealClassificationCatalog.FriedMealsPackageId
+            },
+            recipeDefName => recipeDefName != "VCE_CookMealHaute",
+            _ => true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Failures, Has.Count.EqualTo(1));
+            Assert.That(result.Failures[0].PackageId,
+                Is.EqualTo(MealClassificationCatalog.VanillaCookingExpandedHautePackageId));
+            Assert.That(result.Failures[0].MissingRecipeDefNames,
+                Is.EqualTo(new[] { "VCE_CookMealHaute" }));
+            Assert.That(result.Failures[0].MissingMealDefNames, Is.Empty);
+            Assert.That(result.Catalog.ClassifyRecipe("VCE_CookMealHaute"), Is.Null);
+            Assert.That(result.Catalog.ClassifyRecipe("VCE_CookBakeSimple"),
+                Is.EqualTo(MealComplexity.Simple));
+            Assert.That(result.Catalog.ClassifyRecipe("CookFritterFine"),
+                Is.EqualTo(MealComplexity.Advanced));
+        });
+    }
+
+    [Test]
+    public void Changed_vce_base_suppresses_dependent_entries_without_disabling_fried_meals()
+    {
+        var result = MealClassificationCatalog.CreateValidated(
+            new[]
+            {
+                MealClassificationCatalog.VanillaExpandedFrameworkPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedHautePackageId,
+                MealClassificationCatalog.FriedMealsPackageId
+            },
+            recipeDefName => recipeDefName != "VCE_CookBakeSimple",
+            _ => true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Failures.Select(failure => failure.PackageId),
+                Is.EqualTo(new[] { MealClassificationCatalog.VanillaCookingExpandedPackageId }));
+            Assert.That(result.Catalog.ClassifyRecipe("VCE_CookBakeSimple"), Is.Null);
+            Assert.That(result.Catalog.ClassifyRecipe("VCE_CookMealHaute"), Is.Null);
+            Assert.That(result.Catalog.ClassifyRecipe("CookFritterSimple"),
+                Is.EqualTo(MealComplexity.Simple));
+            Assert.That(result.Catalog.ClassifyRecipe("VCE_CookFritterGourmet"), Is.Null);
+        });
+    }
+
+    [Test]
+    public void Changed_registry_is_removed_from_active_meal_coverage_before_components_are_added()
+    {
+        MealClassificationRuntime.Initialize(
+            new[]
+            {
+                MealClassificationCatalog.VanillaExpandedFrameworkPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedHautePackageId,
+                MealClassificationCatalog.FriedMealsPackageId
+            },
+            recipeDefName => recipeDefName != "VCE_CookBakeSimple",
+            _ => true,
+            _ => { });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                MealClassificationRuntime.IsMealRegisteredForActivePackage(
+                    MealClassificationCatalog.VanillaCookingExpandedPackageId,
+                    "VCE_FineBake"),
+                Is.False,
+                "A failed VCE base registry must not leave a partial ware lifecycle active.");
+            Assert.That(
+                MealClassificationRuntime.IsMealRegisteredForActivePackage(
+                    MealClassificationCatalog.VanillaCookingExpandedHautePackageId,
+                    "VCE_MealHaute"),
+                Is.False,
+                "A dependent add-on must not remain active without its validated VCE base.");
+            Assert.That(
+                MealClassificationRuntime.IsMealRegisteredForActivePackage(
+                    MealClassificationCatalog.FriedMealsPackageId,
+                    "ucp_FineFritter"),
+                Is.True,
+                "An independently valid Fried registry must remain active.");
+            Assert.That(
+                MealClassificationRuntime.IsMealRegisteredForActivePackage(
+                    MealClassificationCatalog.FriedMealsPackageId,
+                    "ucp_GourmetFritter"),
+                Is.False,
+                "The VCE-dependent Fried Gourmet entry must fail closed with VCE base.");
+        });
+    }
+
+    [Test]
+    public void Bakery_is_an_explicit_exclusion_only_package()
+    {
+        var result = MealClassificationCatalog.CreateValidated(
+            new[]
+            {
+                MealClassificationCatalog.VanillaExpandedFrameworkPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedBakeryPackageId
+            },
+            _ => true,
+            _ => true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Failures, Is.Empty);
+            Assert.That(result.Catalog.ClassifyRecipe("VCE_CookCakeBatter"), Is.Null);
+            Assert.That(result.Catalog.ClassifyMeal("VCE_NormalCakeBatter"), Is.Null);
+            Assert.That(result.Catalog.ClassifyMeal("VCE_GourmetConfection"), Is.Null);
+            Assert.That(result.Catalog.ClassifyRecipe("VCE_CookDessertGourmet"), Is.Null);
+            Assert.That(result.Catalog.ClassifyMeal("VCE_GourmetDessert"), Is.Null);
+        });
+    }
+
+    [Test]
+    public void Runtime_uses_the_validated_catalog_and_reports_one_package_attributed_warning()
+    {
+        var warnings = new List<string>();
+
+        MealClassificationRuntime.Initialize(
+            new[]
+            {
+                MealClassificationCatalog.VanillaExpandedFrameworkPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedHautePackageId,
+                MealClassificationCatalog.FriedMealsPackageId
+            },
+            recipeDefName => recipeDefName != "VCE_CookMealHaute",
+            _ => true,
+            warnings.Add);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(MealClassificationRuntime.ValidationFailures, Has.Count.EqualTo(1));
+            Assert.That(MealClassificationRuntime.ValidationFailures[0].PackageId,
+                Is.EqualTo(MealClassificationCatalog.VanillaCookingExpandedHautePackageId));
+            Assert.That(warnings, Is.EqualTo(new[]
+            {
+                "[ImmersiveChefs] Disabled meal registry for VanillaExpanded.VCookEHaute because its finalized Def shape changed. Missing RecipeDefs: VCE_CookMealHaute. Missing ThingDefs: none."
+            }));
+        });
+    }
+
+    [Test]
+    public void Explicit_recipe_complexity_does_not_require_a_direct_meal_product()
+    {
+        MealClassificationRuntime.Initialize(
+            new[]
+            {
+                MealClassificationCatalog.VanillaExpandedFrameworkPackageId,
+                MealClassificationCatalog.VanillaCookingExpandedPackageId
+            },
+            _ => true,
+            _ => true,
+            _ => { });
+        var twoStageSoupPreparation = new Verse.RecipeDef
+        {
+            defName = "VCE_CookSoupSimple"
+        };
+
+        Assert.That(
+            MealClassificationRuntime.ClassifyRecipe(twoStageSoupPreparation),
+            Is.EqualTo(MealComplexity.Simple));
+    }
+
+    [Test]
+    public void Explicit_registry_packages_cover_only_their_registered_final_meals()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                MealClassificationCatalog.OwnsExplicitMealRegistry(
+                    MealClassificationCatalog.VanillaCookingExpandedPackageId),
+                Is.True);
+            Assert.That(
+                MealClassificationCatalog.IsMealRegisteredForPackage(
+                    MealClassificationCatalog.VanillaCookingExpandedPackageId,
+                    "VCE_CookedSoupSimple"),
+                Is.True);
+            Assert.That(
+                MealClassificationCatalog.IsMealRegisteredForPackage(
+                    MealClassificationCatalog.VanillaCookingExpandedPackageId,
+                    "VCE_CannedMeat"),
+                Is.False);
+            Assert.That(
+                MealClassificationCatalog.OwnsExplicitMealRegistry(
+                    MealClassificationCatalog.VanillaCookingExpandedBakeryPackageId),
+                Is.True);
+            Assert.That(
+                MealClassificationCatalog.IsMealRegisteredForPackage(
+                    MealClassificationCatalog.VanillaCookingExpandedBakeryPackageId,
+                    "VCE_GourmetConfection"),
+                Is.False);
+            Assert.That(
+                MealClassificationCatalog.OwnsExplicitMealRegistry("Some.Other.Mod"),
+                Is.False);
+        });
+    }
+
     [TestCase("RC2_CookFineMealBulk", MealComplexity.Advanced)]
     [TestCase("RC2_CookLavishMealBulk", MealComplexity.Elaborate)]
     public void RimCuisine_vanilla_bulk_replacements_receive_explicit_service_tiers(

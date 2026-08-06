@@ -13,6 +13,14 @@ namespace ImmersiveChefs.EndToEndTests;
     "fumblesneeze.immersivechefs",
     EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    "OskarPotocki.VanillaFactionsExpanded.Core",
+    "VanillaExpanded.VCookE",
+    "VanillaExpanded.VCookEBakery",
+    "VanillaExpanded.VCookEHaute",
+    "VanillaExpanded.VCookEStews",
+    "VanillaExpanded.VCEF",
+    "VanillaExpanded.VCookESushi",
+    "ucp.friedmeals",
     "rabiosus.AdaptiveMealBill",
     "binchcannon.overcookedmeals",
     "fumblesneeze.immersivechefs",
@@ -214,6 +222,7 @@ public sealed class AdaptiveOvercookedCompatibilityTest : IRimWorldEndToEndTest
                 ["attempts"] = attempts.ToString(),
                 ["adaptiveJobObserved"] = nativeAdaptiveJobObserved.ToString(),
                 ["wrapperRecipe"] = adaptiveRecipe.defName,
+                ["selectedConcreteRecipe"] = concreteRecipe.defName,
                 ["concreteIngredient"] = ingredientDef.defName,
                 ["survivor"] = finalProduct!.def.defName,
                 ["survivorThingId"] = finalProduct.ThingID,
@@ -277,6 +286,15 @@ public sealed class AdaptiveOvercookedCompatibilityTest : IRimWorldEndToEndTest
         {
             return false;
         }
+
+        if (!AdaptiveMealBillAdapter.TryResolveConcreteRecipe(cook.CurJob, out var selectedRecipe) ||
+            selectedRecipe is null ||
+            !MealCoveragePolicy.IsCovered(selectedRecipe))
+        {
+            return false;
+        }
+
+        concreteRecipe = selectedRecipe;
 
         var workLeft = driver.workLeft;
         return cook.Position == stove.InteractionCell &&

@@ -33,6 +33,15 @@ public static class MealCoveragePolicy
             return false;
         }
 
+        var owningPackageId = thingDef.modContentPack?.PackageId;
+        if (MealClassificationCatalog.OwnsExplicitMealRegistry(owningPackageId) &&
+            !MealClassificationRuntime.IsMealRegisteredForActivePackage(
+                owningPackageId,
+                thingDef.defName))
+        {
+            return false;
+        }
+
         // Def-removal mods can leave static ThingDefOf fields and RecipeDef product references
         // pointing at objects that no longer belong to the finalized database. Those objects are
         // metadata remnants, not spawnable meal definitions.

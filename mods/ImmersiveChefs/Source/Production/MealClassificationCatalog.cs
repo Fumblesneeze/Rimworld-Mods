@@ -7,9 +7,44 @@ public enum MealComplexity
     Elaborate
 }
 
+public sealed class MealClassificationShapeFailure
+{
+    internal MealClassificationShapeFailure(
+        string packageId,
+        IEnumerable<string> missingRecipeDefNames,
+        IEnumerable<string> missingMealDefNames)
+    {
+        PackageId = packageId;
+        MissingRecipeDefNames = Array.AsReadOnly(missingRecipeDefNames.ToArray());
+        MissingMealDefNames = Array.AsReadOnly(missingMealDefNames.ToArray());
+    }
+
+    public string PackageId { get; }
+
+    public IReadOnlyList<string> MissingRecipeDefNames { get; }
+
+    public IReadOnlyList<string> MissingMealDefNames { get; }
+}
+
+public sealed class MealClassificationCatalogValidationResult
+{
+    internal MealClassificationCatalogValidationResult(
+        MealClassificationCatalog catalog,
+        IEnumerable<MealClassificationShapeFailure> failures)
+    {
+        Catalog = catalog;
+        Failures = Array.AsReadOnly(failures.ToArray());
+    }
+
+    public MealClassificationCatalog Catalog { get; }
+
+    public IReadOnlyList<MealClassificationShapeFailure> Failures { get; }
+}
+
 public sealed class MealClassificationCatalog
 {
     public const string VanillaCookingExpandedPackageId = "VanillaExpanded.VCookE";
+    public const string VanillaCookingExpandedBakeryPackageId = "VanillaExpanded.VCookEBakery";
     public const string VanillaCookingExpandedHautePackageId = "VanillaExpanded.VCookEHaute";
     public const string VanillaCookingExpandedStewsPackageId = "VanillaExpanded.VCookEStews";
     public const string VanillaCookingExpandedSushiPackageId = "VanillaExpanded.VCookESushi";
@@ -23,12 +58,20 @@ public sealed class MealClassificationCatalog
     public const string VanillaFishingExpandedPackageId = "VanillaExpanded.VCEF";
     public const string ProcessorFrameworkPackageId = "syrchalis.processor.framework";
 
+    private static readonly Lazy<MealClassificationCatalog> CompleteOptionalCatalog =
+        new(CreateCompleteOptionalCatalog);
+
     private readonly Dictionary<string, MealComplexity> recipes =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MealComplexity> meals =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> preserveOriginalWork =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, HashSet<string>> packageRecipes =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, HashSet<string>> packageMeals =
+        new(StringComparer.OrdinalIgnoreCase);
+    private string? recordingPackageId;
 
     private MealClassificationCatalog()
     {
@@ -57,50 +100,136 @@ public sealed class MealClassificationCatalog
 
         if (vanillaCookingExpanded)
         {
-            catalog.AddVanillaCookingExpanded();
+            catalog.AddPackage(VanillaCookingExpandedPackageId, catalog.AddVanillaCookingExpanded);
+        }
+
+        if (vanillaCookingExpanded && packages.Contains(VanillaCookingExpandedBakeryPackageId))
+        {
+            catalog.AddPackage(VanillaCookingExpandedBakeryPackageId, static () => { });
         }
 
         if (vanillaCookingExpanded && packages.Contains(VanillaCookingExpandedHautePackageId))
         {
-            catalog.Add(
-                MealComplexity.Elaborate,
-                new[] { "VCE_CookMealHaute" },
-                new[] { "VCE_MealHaute" });
+            catalog.AddPackage(
+                VanillaCookingExpandedHautePackageId,
+                () => catalog.Add(
+                    MealComplexity.Elaborate,
+                    new[] { "VCE_CookMealHaute" },
+                    new[] { "VCE_MealHaute" }));
         }
 
         if (vanillaCookingExpanded && packages.Contains(VanillaCookingExpandedStewsPackageId))
         {
-            catalog.AddVanillaCookingExpandedStews();
+            catalog.AddPackage(
+                VanillaCookingExpandedStewsPackageId,
+                catalog.AddVanillaCookingExpandedStews);
         }
 
         if (vanillaCookingExpanded &&
             packages.Contains(VanillaFishingExpandedPackageId) &&
             packages.Contains(VanillaCookingExpandedSushiPackageId))
         {
-            catalog.AddVanillaCookingExpandedSushi();
+            catalog.AddPackage(
+                VanillaCookingExpandedSushiPackageId,
+                catalog.AddVanillaCookingExpandedSushi);
         }
 
         if (vanillaExpandedFramework && packages.Contains(FriedMealsPackageId))
         {
-            catalog.AddFriedMeals(vanillaCookingExpanded);
+            catalog.AddPackage(
+                FriedMealsPackageId,
+                () => catalog.AddFriedMeals(vanillaCookingExpanded));
         }
 
         if (packages.Contains(FastMealsPackageId))
         {
-            catalog.AddFastMeals();
+            catalog.AddPackage(FastMealsPackageId, catalog.AddFastMeals);
         }
 
         if (rimCuisineCore)
         {
-            catalog.AddRimCuisineCore();
+            catalog.AddPackage(RimCuisineCorePackageId, catalog.AddRimCuisineCore);
         }
 
         if (rimCuisineCore && packages.Contains(RimCuisineMealsPackageId))
         {
-            catalog.AddRimCuisineMeals(includeVanillaBulkRecipes: !noVanillaMeals);
+            catalog.AddPackage(
+                RimCuisineMealsPackageId,
+                () => catalog.AddRimCuisineMeals(includeVanillaBulkRecipes: !noVanillaMeals));
         }
 
         return catalog;
+    }
+
+    public static MealClassificationCatalogValidationResult CreateValidated(
+        IEnumerable<string> loadedPackageIds,
+        Func<string, bool> recipeDefExists,
+        Func<string, bool> mealDefExists)
+    {
+        if (loadedPackageIds is null)
+        {
+            throw new ArgumentNullException(nameof(loadedPackageIds));
+        }
+
+        if (recipeDefExists is null)
+        {
+            throw new ArgumentNullException(nameof(recipeDefExists));
+        }
+
+        if (mealDefExists is null)
+        {
+            throw new ArgumentNullException(nameof(mealDefExists));
+        }
+
+        var loaded = loadedPackageIds.ToArray();
+        var optimistic = Create(loaded);
+        var effective = new HashSet<string>(loaded, StringComparer.OrdinalIgnoreCase);
+        var failures = new List<MealClassificationShapeFailure>();
+        foreach (var packageId in optimistic.packageRecipes.Keys
+                     .Union(optimistic.packageMeals.Keys, StringComparer.OrdinalIgnoreCase)
+                     .OrderBy(value => value, StringComparer.OrdinalIgnoreCase))
+        {
+            var missingRecipes = optimistic.packageRecipes[packageId]
+                .Where(recipeDefName => !recipeDefExists(recipeDefName))
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
+            var missingMeals = optimistic.packageMeals[packageId]
+                .Where(mealDefName => !mealDefExists(mealDefName))
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
+            if (missingRecipes.Length == 0 && missingMeals.Length == 0)
+            {
+                continue;
+            }
+
+            effective.Remove(packageId);
+            failures.Add(new MealClassificationShapeFailure(
+                packageId,
+                missingRecipes,
+                missingMeals));
+        }
+
+        return new MealClassificationCatalogValidationResult(Create(effective), failures);
+    }
+
+    public static bool OwnsExplicitMealRegistry(string? packageId)
+    {
+        return packageId is not null &&
+               CompleteOptionalCatalog.Value.packageMeals.ContainsKey(packageId);
+    }
+
+    public static bool IsMealRegisteredForPackage(string? packageId, string? mealDefName)
+    {
+        return packageId is not null && mealDefName is not null &&
+               CompleteOptionalCatalog.Value.packageMeals.TryGetValue(packageId, out var mealsForPackage) &&
+               mealsForPackage.Contains(mealDefName);
+    }
+
+    internal bool ContainsRegisteredMeal(string? packageId, string? mealDefName)
+    {
+        return packageId is not null && mealDefName is not null &&
+               packageMeals.TryGetValue(packageId, out var mealsForPackage) &&
+               mealsForPackage.Contains(mealDefName);
     }
 
     public MealComplexity? ClassifyRecipe(string recipeDefName)
@@ -175,6 +304,25 @@ public sealed class MealClassificationCatalog
                 "CookMealLavishBulk", "CookMealLavishBulk_Veg", "CookMealLavishBulk_Meat"
             },
             new[] { "MealLavish", "MealLavish_Meat", "MealLavish_Veg" });
+    }
+
+    private static MealClassificationCatalog CreateCompleteOptionalCatalog()
+    {
+        return Create(new[]
+        {
+            VanillaExpandedFrameworkPackageId,
+            VanillaCookingExpandedPackageId,
+            VanillaCookingExpandedBakeryPackageId,
+            VanillaCookingExpandedHautePackageId,
+            VanillaCookingExpandedStewsPackageId,
+            VanillaFishingExpandedPackageId,
+            VanillaCookingExpandedSushiPackageId,
+            FriedMealsPackageId,
+            FastMealsPackageId,
+            ProcessorFrameworkPackageId,
+            RimCuisineCorePackageId,
+            RimCuisineMealsPackageId
+        });
     }
 
     private void AddVanillaCookingExpanded()
@@ -354,11 +502,37 @@ public sealed class MealClassificationCatalog
         foreach (var recipeDefName in recipeDefNames)
         {
             recipes[recipeDefName] = complexity;
+            if (recordingPackageId is not null)
+            {
+                packageRecipes[recordingPackageId].Add(recipeDefName);
+            }
         }
 
         foreach (var mealDefName in mealDefNames)
         {
             meals[mealDefName] = complexity;
+            if (recordingPackageId is not null)
+            {
+                packageMeals[recordingPackageId].Add(mealDefName);
+            }
+        }
+    }
+
+    private void AddPackage(string packageId, Action add)
+    {
+        if (!packageRecipes.ContainsKey(packageId))
+            packageRecipes.Add(packageId, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+        if (!packageMeals.ContainsKey(packageId))
+            packageMeals.Add(packageId, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+        var previous = recordingPackageId;
+        recordingPackageId = packageId;
+        try
+        {
+            add();
+        }
+        finally
+        {
+            recordingPackageId = previous;
         }
     }
 }

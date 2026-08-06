@@ -46,12 +46,14 @@ internal static class ImmersiveChefsDefBootstrap
             }
         }
 
+        // Validate package-attributed meal registries before any finalized Def is mutated. A
+        // changed optional-mod shape must fail closed for both timing and the ware lifecycle.
+        RecipeWorkRuntime.Initialize(ImmersiveChefsMod.Settings);
         AddMealComponents();
         EnablePreparedIngredients();
         ApplyDishwasherCapacityScale();
 
         PreparedFoodRuntime.Initialize(ImmersiveChefsMod.Settings.PreparedRotMultiplier);
-        RecipeWorkRuntime.Initialize(ImmersiveChefsMod.Settings);
         InitializeOptionalAdapters();
     }
 
