@@ -149,9 +149,10 @@ public sealed class MicrowaveCountertopTests
             "mods",
             "ImmersiveChefs",
             "Textures",
+            "ImmersiveChefs",
             "Things",
             "Building",
-            "Microwave",
+            "Appliance",
             "Microwave.png");
 
         Assert.Multiple(() =>
@@ -170,10 +171,13 @@ public sealed class MicrowaveCountertopTests
                 Does.Contain("ImmersiveChefs.PlaceWorker_MicrowaveCountertop"));
             Assert.That(
                 (string?)def.Element("graphicData")?.Element("texPath"),
-                Is.EqualTo("Things/Building/Microwave/Microwave"));
+                Is.EqualTo("ImmersiveChefs/Things/Building/Appliance/Microwave"));
             Assert.That(
                 (string?)def.Element("graphicData")?.Element("graphicClass"),
                 Is.EqualTo("Graphic_Single"));
+            Assert.That(
+                (string?)def.Element("graphicData")?.Element("shaderType"),
+                Is.EqualTo("Cutout"));
             Assert.That(File.Exists(texturePath), Is.True);
         });
 

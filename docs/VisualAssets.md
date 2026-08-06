@@ -133,3 +133,14 @@ pastries, or powered activity. Candidate A was rejected because its dominant han
 risked reading as a pasta-only workstation at final scale. Both prompts requested clean, empty,
 state-neutral bakery equipment on pure green chroma. The selected 512×256 fixed-color sprite fills
 480×240 visible pixels and uses `Graphic_Single`/`Cutout` for native rotation.
+
+## Fallback countertop microwave
+
+Selected: new candidate B, generated 2026-08-06. Its rounded off-white enamel shell, dark closed
+door, fixed handle, top/side vents, and unlit push controls read as one compact appliance in a steep
+map view without including any counter, cabinet, shelf, pedestal, legs, or supporting furniture.
+The former candidate 0 was rejected because its frontal presentation and cyan controls permanently
+looked powered; new candidate A was rejected because its broad front and oversized top remained
+flatter and less map-like. Both new prompts requested appliance-only art on pure green chroma. The
+selected fixed-color 512×512 `Graphic_Single`/`Cutout` sprite has 346×320 visible bounds; on the
+Def's 0.82×0.82 mesh it occupies roughly 0.55×0.51 cells so the real table/workbench remains visible.

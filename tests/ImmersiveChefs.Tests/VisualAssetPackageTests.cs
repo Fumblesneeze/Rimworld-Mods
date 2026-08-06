@@ -34,6 +34,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/KitchenStation/VegetableStation";
     private const string PastryStationTexturePath =
         "ImmersiveChefs/Things/Building/KitchenStation/PastryStation";
+    private const string MicrowaveTexturePath =
+        "ImmersiveChefs/Things/Building/Appliance/Microwave";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -457,6 +459,54 @@ public sealed class VisualAssetPackageTests
         AssertNoBrightBlueEmission(diffusePath);
     }
 
+    [Test]
+    public void Fallback_microwave_uses_compact_owned_countertop_art()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Patches",
+            "Compatibility",
+            "ThermodynamicsHotMeals.xml"));
+        var def = document.Descendants("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_Microwave");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, MicrowaveTexturePath + ".png");
+        var packagedPath = PackagedTextureFile(root, MicrowaveTexturePath + ".png");
+        var obsoleteSourcePath = TextureFile(root, "Things/Building/Microwave/Microwave.png");
+        var obsoletePackagedPath = PackagedTextureFile(root, "Things/Building/Microwave/Microwave.png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(MicrowaveTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(0.82,0.82)"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(packagedPath), Is.True);
+            Assert.That(File.Exists(obsoleteSourcePath), Is.False);
+            Assert.That(
+                File.Exists(obsoletePackagedPath),
+                Is.False,
+                "Rejected microwave art must not survive incremental package staging.");
+        });
+
+        AssertPackagedTextureMatchesSource(diffusePath, packagedPath);
+        AssertTransparentSprite(diffusePath);
+        AssertCanvasAspect(diffusePath, widthUnits: 1, heightUnits: 1);
+        AssertVisibleBounds(
+            diffusePath,
+            minimumWidth: 280,
+            maximumWidth: 430,
+            minimumHeight: 180,
+            maximumHeight: 340);
+        AssertNoVividGreenChroma(diffusePath);
+        AssertNoBrightBlueEmission(diffusePath);
+    }
+
     private static string TextureFile(string root, string texturePath)
     {
         return Path.Combine(
@@ -663,6 +713,48 @@ public sealed class VisualAssetPackageTests
             File.ReadAllBytes(packagedPath),
             Is.EqualTo(File.ReadAllBytes(sourcePath)),
             "The staged texture must be the exact reviewed source asset.");
+    }
+
+    private static void AssertVisibleBounds(
+        string diffusePath,
+        int minimumWidth,
+        int maximumWidth,
+        int minimumHeight,
+        int maximumHeight)
+    {
+        if (!File.Exists(diffusePath))
+        {
+            return;
+        }
+
+        using var bitmap = new Bitmap(diffusePath);
+        var minimumX = bitmap.Width;
+        var minimumY = bitmap.Height;
+        var maximumX = -1;
+        var maximumY = -1;
+        for (var y = 0; y < bitmap.Height; y++)
+        {
+            for (var x = 0; x < bitmap.Width; x++)
+            {
+                if (bitmap.GetPixel(x, y).A == 0)
+                {
+                    continue;
+                }
+
+                minimumX = Math.Min(minimumX, x);
+                minimumY = Math.Min(minimumY, y);
+                maximumX = Math.Max(maximumX, x);
+                maximumY = Math.Max(maximumY, y);
+            }
+        }
+
+        var visibleWidth = maximumX >= minimumX ? maximumX - minimumX + 1 : 0;
+        var visibleHeight = maximumY >= minimumY ? maximumY - minimumY + 1 : 0;
+        Assert.Multiple(() =>
+        {
+            Assert.That(visibleWidth, Is.InRange(minimumWidth, maximumWidth));
+            Assert.That(visibleHeight, Is.InRange(minimumHeight, maximumHeight));
+        });
     }
 
     private static string FindRepositoryRoot()

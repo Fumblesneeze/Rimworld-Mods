@@ -10,7 +10,7 @@
             <label>microwave</label>
             <description>A compact powered appliance that reheats one cold plated meal before eating. Reheating restores temperature at a small cost to culinary quality and safety.</description>
             <thingClass>ImmersiveChefs.Building_Microwave</thingClass>
-            <graphicData><texPath>Things/Building/Microwave/Microwave</texPath><graphicClass>Graphic_Single</graphicClass><drawSize>(0.82,0.82)</drawSize></graphicData>
+            <graphicData><texPath>ImmersiveChefs/Things/Building/Appliance/Microwave</texPath><graphicClass>Graphic_Single</graphicClass><shaderType>Cutout</shaderType><drawSize>(0.82,0.82)</drawSize></graphicData>
             <size>(1,1)</size>
             <drawerType>MapMeshOnly</drawerType>
             <tickerType>Rare</tickerType>

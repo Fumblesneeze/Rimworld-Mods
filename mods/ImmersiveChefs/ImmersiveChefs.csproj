@@ -61,6 +61,8 @@
     <RemoveDir Directories="$(RimWorldModPackageFolder)\1.6\FallbackTemperature" />
     <Delete Files="$(OutputVersionFolder)\Defs\ThingDefs\Microwave.xml" />
     <Delete Files="$(RimWorldModPackageFolder)\1.6\Defs\ThingDefs\Microwave.xml" />
+    <Delete Files="$(OutputVersionFolder)\Textures\Things\Building\Microwave\Microwave.png" />
+    <Delete Files="$(RimWorldModPackageFolder)\1.6\Textures\Things\Building\Microwave\Microwave.png" />
   </Target>
 
   <!-- ModSdk 0.0.9's optional XSD generator cannot traverse RimWorld 1.6's
