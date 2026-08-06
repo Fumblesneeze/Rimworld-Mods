@@ -67,6 +67,12 @@ public static class MealPrinterModsIntegrationTests
             null,
             Type.EmptyTypes,
             null);
+        var configuredMeal = printerType.GetMethod(
+            "GetMealThing",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            Type.EmptyTypes,
+            null);
         var prefix = prefixType!.GetMethod(
             "Prefix",
             BindingFlags.NonPublic | BindingFlags.Static,
@@ -83,6 +89,10 @@ public static class MealPrinterModsIntegrationTests
             nameof(Toils_Ingest.TakeMealFromDispenser),
             new[] { typeof(TargetIndex), typeof(Pawn) });
         IntegrationAssert.NotNull(dispense, "The exact zero-argument native printer method must exist.");
+        IntegrationAssert.Equal(
+            typeof(ThingDef),
+            configuredMeal?.ReturnType,
+            "The native printer output getter must retain its zero-argument ThingDef shape.");
         IntegrationAssert.NotNull(prefix, "The exact native Meal Printer toil prefix must exist.");
         IntegrationAssert.NotNull(takeMeal, "RimWorld's dispenser ingestion boundary must exist.");
 

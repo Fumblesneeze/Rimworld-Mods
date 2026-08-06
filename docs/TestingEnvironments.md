@@ -90,6 +90,8 @@ Every attributed test declares the complete ordered active package sequence excl
 
 The runner discovers installed/DLC/Workshop package IDs, writes aggregate JSON and JUnit, and retains each group's durable endpoint state and screenshots. API success or a green state assertion alone is not acceptance: the acting agent must inspect the exact-run native screenshots and verify the player action visibly caused the claimed result. Use in-game integration tests for settled loader assertions and E2E tests for multi-frame player behavior; do not make one assembly serve both roles.
 
+The accepted current-binary dispenser examples are `artifacts/EndToEndRuns/Grouped/20260806T044257064Z` for Replimat and `artifacts/EndToEndRuns/Grouped/20260806T044417918Z` for Meal Printer. The acting agent inspected the retained native frames: they show ordinary Ramen/Fine-meal carry and ingestion, exact dirty returned steel ware, and a NutriBar leaving clean golden decoys untouched. Their matching loaded-main-menu shape/owner evidence is `artifacts/GatewaySmoke/20260806T044058758Z` and `artifacts/GatewaySmoke/20260806T044157403Z`.
+
 For native right-click actions, resolve `IEndToEndFloatMenuCatalog` from the E2E context, query the current actor/target options, require one enabled visible-label match, and submit that option's returned stable identity through `FloatMenuActionStep`. The catalog is discovery only: invoking the step still runs RimWorld's real callback and preserves its normal job/order boundary.
 
 ## Are test Defs mocked or loaded?

@@ -55,8 +55,10 @@ public static class ReplimatModsIntegrationTests
     public static void NativeDispenserOwnerAndImmersivePostfixComposeExactlyOnce()
     {
         var terminalType = AccessTools.TypeByName(ReplimatCompatibility.TerminalTypeName);
+        var utilityType = AccessTools.TypeByName(ReplimatCompatibility.UtilityTypeName);
         var prefixType = AccessTools.TypeByName(ReplimatCompatibility.ToilPrefixTypeName);
         IntegrationAssert.NotNull(terminalType, "The exact Replimat terminal type must exist.");
+        IntegrationAssert.NotNull(utilityType, "The exact Replimat meal-selection utility must exist.");
         IntegrationAssert.NotNull(prefixType, "The exact Replimat dispenser-toil patch type must exist.");
 
         var dispense = terminalType!.GetMethod(
@@ -64,6 +66,12 @@ public static class ReplimatModsIntegrationTests
             BindingFlags.Public | BindingFlags.Instance,
             null,
             new[] { typeof(Pawn), typeof(Pawn), typeof(ThingDef), typeof(int) },
+            null);
+        var pickMeal = utilityType!.GetMethod(
+            "PickMeal",
+            BindingFlags.Public | BindingFlags.Static,
+            null,
+            new[] { typeof(Pawn), typeof(Pawn) },
             null);
         var prefix = prefixType!.GetMethod(
             "Prefix",
@@ -81,6 +89,10 @@ public static class ReplimatModsIntegrationTests
             nameof(Toils_Ingest.TakeMealFromDispenser),
             new[] { typeof(TargetIndex), typeof(Pawn) });
         IntegrationAssert.NotNull(dispense, "The exact four-argument native Replimat dispense method must exist.");
+        IntegrationAssert.Equal(
+            typeof(ThingDef),
+            pickMeal?.ReturnType,
+            "The exact native Replimat meal picker must retain its two-pawn ThingDef shape.");
         IntegrationAssert.NotNull(prefix, "The exact native Replimat toil prefix must exist.");
         IntegrationAssert.NotNull(takeMeal, "RimWorld's dispenser ingestion boundary must exist.");
 
@@ -90,6 +102,12 @@ public static class ReplimatModsIntegrationTests
                 patch.owner == ReplimatCompatibility.UpstreamPatchOwner &&
                 patch.PatchMethod == prefix) ?? 0,
             "Replimat must remain the sole owner of its validated native dispenser toil prefix.");
+        IntegrationAssert.Equal(
+            1,
+            Harmony.GetPatchInfo(dispense!)?.Prefixes.Count(patch =>
+                patch.owner == ImmersiveChefsMod.PackageId &&
+                patch.PatchMethod?.DeclaringType == typeof(ReplimatAdapter)) ?? 0,
+            "Immersive Chefs must pin exactly one native Replimat selection before dispensing.");
         IntegrationAssert.Equal(
             1,
             Harmony.GetPatchInfo(dispense!)?.Postfixes.Count(patch =>

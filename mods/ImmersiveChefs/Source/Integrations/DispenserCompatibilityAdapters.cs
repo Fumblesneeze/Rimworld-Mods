@@ -43,13 +43,36 @@ internal static class DispenserMealBindingPolicy
     }
 }
 
+internal static class DispenserMealResolutionPolicy
+{
+    internal static bool Failed(bool sourceRecognized, bool resolutionSucceeded)
+    {
+        return sourceRecognized && !resolutionSucceeded;
+    }
+}
+
 internal static class ReplimatCompatibility
 {
     internal const string AssemblyName = "Replimat";
     internal const string AssemblyVersion = "1.0.0.0";
     internal const string TerminalTypeName = "Replimat.Building_ReplimatTerminal";
+    internal const string UtilityTypeName = "Replimat.ReplimatUtility";
     internal const string ToilPrefixTypeName = "Replimat.Harmony_Toils_Ingest_TakeMealFromDispenser";
     internal const string UpstreamPatchOwner = "com.Replimat.patches";
+
+    internal static bool HasSupportedMealResolver(
+        string? utilityTypeName,
+        bool sharesTerminalAssembly,
+        IEnumerable<string> parameterTypeNames,
+        bool returnsThingDef)
+    {
+        return utilityTypeName == UtilityTypeName &&
+               sharesTerminalAssembly &&
+               parameterTypeNames.SequenceEqual(
+                   new[] { "Verse.Pawn", "Verse.Pawn" },
+                   StringComparer.Ordinal) &&
+               returnsThingDef;
+    }
 
     internal static bool IsSupported(
         string? assemblyName,
@@ -92,6 +115,18 @@ internal static class MealPrinterCompatibility
     internal const string ToilPrefixTypeName =
         "MealPrinter.HarmonyPatches.Toils_Ingest_TakeMealFromDispenser";
     internal const string UpstreamPatchOwner = "MealPrinter";
+
+    internal static bool HasSupportedMealResolver(
+        string? methodName,
+        bool sharesPrinterType,
+        int parameterCount,
+        bool returnsThingDef)
+    {
+        return methodName == "GetMealThing" &&
+               sharesPrinterType &&
+               parameterCount == 0 &&
+               returnsThingDef;
+    }
 
     internal static bool HasSupportedStartupType(
         string? startupTypeName,
@@ -203,6 +238,9 @@ internal static class DispenserMealBindingRuntime
 
 internal static class ReplimatAdapter
 {
+    private static Type? supportedTerminalType;
+    private static MethodInfo? nativeMealResolver;
+
     internal static bool Enabled { get; private set; }
 
     internal static bool TryInitialize(Harmony harmony, out string reason)
@@ -213,7 +251,7 @@ internal static class ReplimatAdapter
         }
         catch (Exception exception)
         {
-            Disable();
+            Reset();
             reason = $"Replimat shape validation failed ({exception.GetType().Name}: {exception.Message})";
             return false;
         }
@@ -228,6 +266,7 @@ internal static class ReplimatAdapter
         }
 
         var terminalType = AccessTools.TypeByName(ReplimatCompatibility.TerminalTypeName);
+        var utilityType = AccessTools.TypeByName(ReplimatCompatibility.UtilityTypeName);
         var prefixType = AccessTools.TypeByName(ReplimatCompatibility.ToilPrefixTypeName);
         var assembly = terminalType?.Assembly;
         var method = terminalType?.GetMethod(
@@ -235,6 +274,12 @@ internal static class ReplimatAdapter
             BindingFlags.Public | BindingFlags.Instance,
             binder: null,
             types: new[] { typeof(Pawn), typeof(Pawn), typeof(ThingDef), typeof(int) },
+            modifiers: null);
+        var mealResolver = utilityType?.GetMethod(
+            "PickMeal",
+            BindingFlags.Public | BindingFlags.Static,
+            binder: null,
+            types: new[] { typeof(Pawn), typeof(Pawn) },
             modifiers: null);
         var prefix = ResolveToilPrefix(prefixType);
         var upstreamTarget = AccessTools.Method(
@@ -271,14 +316,22 @@ internal static class ReplimatAdapter
             terminalDefShape
                 ? terminalDefs.Select(def => def!.defName)
                 : Array.Empty<string>(),
-            mealRegistryValidated);
-        if (!supported || method is null)
+            mealRegistryValidated) &&
+            ReplimatCompatibility.HasSupportedMealResolver(
+                utilityType?.FullName,
+                utilityType?.Assembly == assembly,
+                mealResolver?.GetParameters()
+                    .Select(parameter => parameter.ParameterType.FullName ?? string.Empty) ??
+                Array.Empty<string>(),
+                mealResolver?.ReturnType == typeof(ThingDef));
+        if (!supported || method is null || mealResolver is null)
         {
             reason =
                 "the installed Replimat shape differs from the validated 1.6 contract " +
                 $"(assembly={assembly?.GetName().Name ?? "missing"}; " +
                 $"version={assembly?.GetName().Version?.ToString() ?? "missing"}; " +
                 $"terminal={terminalType?.FullName ?? "missing"}; method={method?.Name ?? "missing"}; " +
+                $"resolver={utilityType?.FullName ?? "missing"}.{mealResolver?.Name ?? "missing"}; " +
                 $"prefix={prefixType?.FullName ?? "missing"}; owner={patchOwner ?? "missing"}; " +
                 $"terminalDefs={terminalDefShape}; mealRegistry={mealRegistryValidated})";
             return false;
@@ -286,11 +339,53 @@ internal static class ReplimatAdapter
 
         harmony.Patch(
             method,
+            prefix: new HarmonyMethod(typeof(ReplimatAdapter), nameof(Prefix)),
             postfix: new HarmonyMethod(typeof(ReplimatAdapter), nameof(Postfix)));
+        supportedTerminalType = terminalType;
+        nativeMealResolver = mealResolver;
         Enabled = true;
         reason = string.Empty;
         Log.Message("[ImmersiveChefs] Replimat adapter active; exact carried plates bind after native network dispensing.");
         return true;
+    }
+
+    internal static bool AppliesTo(Thing foodSource)
+    {
+        return supportedTerminalType is not null && foodSource.GetType() == supportedTerminalType;
+    }
+
+    internal static bool TryResolveMealDef(
+        Thing foodSource,
+        Pawn eater,
+        Pawn getter,
+        out ThingDef? mealDef)
+    {
+        mealDef = null;
+        if (!Enabled || !AppliesTo(foodSource) || nativeMealResolver is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            mealDef = nativeMealResolver.Invoke(null, new object[] { eater, getter }) as ThingDef;
+            return mealDef is not null;
+        }
+        catch (Exception exception)
+        {
+            DisableAfterInvocationFailure(exception);
+            return false;
+        }
+    }
+
+    private static void Prefix(Pawn eater, Pawn getter, ref ThingDef? specifiedMeal)
+    {
+        if (!Enabled || specifiedMeal is not null)
+        {
+            return;
+        }
+
+        specifiedMeal = DiningSessionRegistry.RequestedMealDefFor(getter);
     }
 
     private static void Postfix(
@@ -319,15 +414,19 @@ internal static class ReplimatAdapter
 
     private static void DisableAfterInvocationFailure(Exception exception)
     {
-        Disable();
+        Enabled = false;
+        nativeMealResolver = null;
         OptionalIntegrationDiagnostics.WarnOnce(
             OptionalIntegration.Replimat,
-            $"post-dispense plate binding failed ({exception.GetType().Name}: {exception.Message})");
+            $"native meal resolution or post-dispense plate binding failed " +
+            $"({exception.GetType().Name}: {exception.Message})");
     }
 
-    private static void Disable()
+    private static void Reset()
     {
         Enabled = false;
+        supportedTerminalType = null;
+        nativeMealResolver = null;
     }
 
     private static MethodInfo? ResolveToilPrefix(Type? prefixType)
@@ -361,6 +460,9 @@ internal static class ReplimatAdapter
 
 internal static class MealPrinterAdapter
 {
+    private static Type? supportedPrinterType;
+    private static MethodInfo? nativeMealResolver;
+
     internal static bool Enabled { get; private set; }
 
     internal static bool TryInitialize(Harmony harmony, out string reason)
@@ -371,7 +473,7 @@ internal static class MealPrinterAdapter
         }
         catch (Exception exception)
         {
-            Enabled = false;
+            Reset();
             reason = $"Meal Printer shape validation failed ({exception.GetType().Name}: {exception.Message})";
             return false;
         }
@@ -391,6 +493,12 @@ internal static class MealPrinterAdapter
         var assembly = printerType?.Assembly;
         var method = printerType?.GetMethod(
             "TryDispenseFood",
+            BindingFlags.Public | BindingFlags.Instance,
+            binder: null,
+            types: Type.EmptyTypes,
+            modifiers: null);
+        var mealResolver = printerType?.GetMethod(
+            "GetMealThing",
             BindingFlags.Public | BindingFlags.Instance,
             binder: null,
             types: Type.EmptyTypes,
@@ -428,6 +536,11 @@ internal static class MealPrinterAdapter
             startupType?.CustomAttributes.Any(attribute =>
                 attribute.AttributeType == typeof(StaticConstructorOnStartup)) == true,
             startupType?.Assembly == assembly);
+        var mealResolverSupported = MealPrinterCompatibility.HasSupportedMealResolver(
+            mealResolver?.Name,
+            mealResolver?.DeclaringType == printerType,
+            mealResolver?.GetParameters().Length ?? -1,
+            mealResolver?.ReturnType == typeof(ThingDef));
         var passiveShapeSupported = MealPrinterCompatibility.HasSupportedPassiveShape(
             assembly?.GetName().Name,
             assembly?.GetName().Version?.ToString(),
@@ -441,7 +554,7 @@ internal static class MealPrinterAdapter
             defOwnerShape ? printerDef?.defName : null,
             defOwnerShape ? nutriBarDef?.defName : null,
             vanillaMealDefsPresent);
-        if (passiveShapeSupported && startupTypeSupported && startupType is not null)
+        if (passiveShapeSupported && startupTypeSupported && mealResolverSupported && startupType is not null)
         {
             // RimWorld does not guarantee startup-constructor order across mods. Only after
             // validating the exact passive assembly/type/method/Def shape do we let the
@@ -457,7 +570,7 @@ internal static class MealPrinterAdapter
             ? null
             : Harmony.GetPatchInfo(upstreamTarget)?.Prefixes
                 .SingleOrDefault(patch => patch.PatchMethod == prefix)?.owner;
-        var supported = startupTypeSupported && MealPrinterCompatibility.IsSupported(
+        var supported = startupTypeSupported && mealResolverSupported && MealPrinterCompatibility.IsSupported(
             assembly?.GetName().Name,
             assembly?.GetName().Version?.ToString(),
             printerType?.FullName,
@@ -471,7 +584,7 @@ internal static class MealPrinterAdapter
             defOwnerShape ? printerDef?.defName : null,
             defOwnerShape ? nutriBarDef?.defName : null,
             vanillaMealDefsPresent);
-        if (!supported || method is null)
+        if (!supported || method is null || mealResolver is null)
         {
             reason =
                 "the installed Meal Printer shape differs from the validated 1.6 contract " +
@@ -479,6 +592,7 @@ internal static class MealPrinterAdapter
                 $"version={assembly?.GetName().Version?.ToString() ?? "missing"}; " +
                 $"printer={printerType?.FullName ?? "missing"}; method={method?.Name ?? "missing"}; " +
                 $"startup={startupType?.FullName ?? "missing"}; startupShape={startupTypeSupported}; " +
+                $"resolver={mealResolver?.Name ?? "missing"}; resolverShape={mealResolverSupported}; " +
                 $"prefix={prefixType?.FullName ?? "missing"}; owner={patchOwner ?? "missing"}; " +
                 $"defs={defOwnerShape}; vanillaMeals={vanillaMealDefsPresent})";
             return false;
@@ -487,10 +601,40 @@ internal static class MealPrinterAdapter
         harmony.Patch(
             method,
             postfix: new HarmonyMethod(typeof(MealPrinterAdapter), nameof(Postfix)));
+        supportedPrinterType = printerType;
+        nativeMealResolver = mealResolver;
         Enabled = true;
         reason = string.Empty;
         Log.Message("[ImmersiveChefs] Meal Printer adapter active; exact carried plates bind after native hopper dispensing.");
         return true;
+    }
+
+    internal static bool AppliesTo(Thing foodSource)
+    {
+        return supportedPrinterType is not null && foodSource.GetType() == supportedPrinterType;
+    }
+
+    internal static bool TryResolveMealDef(Thing foodSource, out ThingDef? mealDef)
+    {
+        mealDef = null;
+        if (!Enabled || !AppliesTo(foodSource) || nativeMealResolver is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            mealDef = nativeMealResolver.Invoke(foodSource, Array.Empty<object>()) as ThingDef;
+            return mealDef is not null;
+        }
+        catch (Exception exception)
+        {
+            DisableAfterRuntimeFailure();
+            OptionalIntegrationDiagnostics.WarnOnce(
+                OptionalIntegration.MealPrinter,
+                $"configured meal resolution failed ({exception.GetType().Name}: {exception.Message})");
+            return false;
+        }
     }
 
     private static void Postfix(object __instance, Thing? __result)
@@ -510,10 +654,23 @@ internal static class MealPrinterAdapter
         }
         catch (Exception exception)
         {
-            Enabled = false;
+            DisableAfterRuntimeFailure();
             OptionalIntegrationDiagnostics.WarnOnce(
                 OptionalIntegration.MealPrinter,
                 $"post-dispense plate binding failed ({exception.GetType().Name}: {exception.Message})");
         }
+    }
+
+    private static void DisableAfterRuntimeFailure()
+    {
+        Enabled = false;
+        nativeMealResolver = null;
+    }
+
+    private static void Reset()
+    {
+        Enabled = false;
+        supportedPrinterType = null;
+        nativeMealResolver = null;
     }
 }

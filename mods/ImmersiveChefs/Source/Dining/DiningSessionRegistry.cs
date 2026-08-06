@@ -32,7 +32,8 @@ internal sealed class DiningSession : IThingHolder
         Thing? microwave,
         DiningCutlerySource cutlerySource,
         Pawn? servingPawn = null,
-        Pawn? carrierPawn = null)
+        Pawn? carrierPawn = null,
+        ThingDef? requestedMealDef = null)
         : this(
             pawn,
             job,
@@ -42,7 +43,8 @@ internal sealed class DiningSession : IThingHolder
             microwave,
             cutlerySource,
             servingPawn,
-            carrierPawn)
+            carrierPawn,
+            requestedMealDef)
     {
     }
 
@@ -55,6 +57,7 @@ internal sealed class DiningSession : IThingHolder
             null,
             null,
             DiningCutlerySource.Colony,
+            null,
             null,
             null)
     {
@@ -69,7 +72,8 @@ internal sealed class DiningSession : IThingHolder
         Thing? microwave,
         DiningCutlerySource cutlerySource,
         Pawn? servingPawn,
-        Pawn? carrierPawn)
+        Pawn? carrierPawn,
+        ThingDef? requestedMealDef)
     {
         Pawn = pawn;
         CarrierPawn = carrierPawn ?? pawn;
@@ -81,6 +85,7 @@ internal sealed class DiningSession : IThingHolder
         Microwave = microwave;
         ReservedPlate = reservedPlate;
         ServingPawn = servingPawn;
+        RequestedMealDef = requestedMealDef;
     }
 
     internal Pawn Pawn { get; }
@@ -99,6 +104,7 @@ internal sealed class DiningSession : IThingHolder
     internal ContaminationSources TravelPlateContamination { get; private set; }
     internal Thing? Microwave { get; }
     internal Pawn? ServingPawn { get; }
+    internal ThingDef? RequestedMealDef { get; }
 
     internal void CapturePlate(Thing plate)
     {
@@ -519,12 +525,35 @@ internal static class DiningSessionRegistry
         internal IngestionLifecycleState Lifecycle { get; } = new();
     }
 
+    private readonly struct DiningMealResolution
+    {
+        internal DiningMealResolution(ThingDef? mealDef, bool failed)
+        {
+            MealDef = mealDef;
+            Failed = failed;
+        }
+
+        internal ThingDef? MealDef { get; }
+        internal bool Failed { get; }
+    }
+
     internal static bool TryAttach(Pawn pawn, Job job, Thing meal)
     {
+        if (!DiningPawnPolicy.AppliesDiningConsequences(pawn.RaceProps.Humanlike) ||
+            Sessions.TryGetValue(job, out _))
+        {
+            return true;
+        }
+
         var pasteDispenser = meal is Building_NutrientPasteDispenser;
-        var diningMealDef = ResolveDiningMealDef(meal, pasteDispenser);
-        if (diningMealDef is null || !MealCoveragePolicy.IsCovered(diningMealDef) ||
-            !DiningPawnPolicy.AppliesDiningConsequences(pawn.RaceProps.Humanlike) || Sessions.TryGetValue(job, out _))
+        var resolution = ResolveDiningMealDef(meal, pasteDispenser, pawn, pawn);
+        if (resolution.Failed)
+        {
+            return false;
+        }
+
+        var diningMealDef = resolution.MealDef;
+        if (diningMealDef is null || !MealCoveragePolicy.IsCovered(diningMealDef))
         {
             return true;
         }
@@ -574,7 +603,8 @@ internal static class DiningSessionRegistry
             selected,
             plate,
             microwave,
-            cutlerySource);
+            cutlerySource,
+            requestedMealDef: diningMealDef);
         Sessions.Add(job, session);
         PawnSessions.Remove(pawn);
         PawnSessions.Add(pawn, session);
@@ -583,11 +613,21 @@ internal static class DiningSessionRegistry
 
     internal static bool TryAttachAssisted(Pawn feeder, Pawn patient, Job job, Thing foodSource)
     {
-        var pasteDispenser = foodSource is Building_NutrientPasteDispenser;
-        var diningMealDef = ResolveDiningMealDef(foodSource, pasteDispenser);
-        if (diningMealDef is null || !MealCoveragePolicy.IsCovered(diningMealDef) ||
-            !DiningPawnPolicy.AppliesDiningConsequences(patient.RaceProps.Humanlike) ||
+        if (!DiningPawnPolicy.AppliesDiningConsequences(patient.RaceProps.Humanlike) ||
             Sessions.TryGetValue(job, out _))
+        {
+            return true;
+        }
+
+        var pasteDispenser = foodSource is Building_NutrientPasteDispenser;
+        var resolution = ResolveDiningMealDef(foodSource, pasteDispenser, patient, feeder);
+        if (resolution.Failed)
+        {
+            return false;
+        }
+
+        var diningMealDef = resolution.MealDef;
+        if (diningMealDef is null || !MealCoveragePolicy.IsCovered(diningMealDef))
         {
             return true;
         }
@@ -631,18 +671,39 @@ internal static class DiningSessionRegistry
             plate,
             microwave,
             DiningCutlerySource.Colony,
-            carrierPawn: feeder);
+            carrierPawn: feeder,
+            requestedMealDef: diningMealDef);
         Sessions.Add(job, session);
         PawnSessions.Remove(patient);
         PawnSessions.Add(patient, session);
         return true;
     }
 
-    private static ThingDef? ResolveDiningMealDef(Thing foodSource, bool pasteDispenser)
+    private static DiningMealResolution ResolveDiningMealDef(
+        Thing foodSource,
+        bool pasteDispenser,
+        Pawn eater,
+        Pawn getter)
     {
-        return pasteDispenser
-            ? FoodUtility.GetFinalIngestibleDef(foodSource, false)
-            : foodSource.def;
+        if (pasteDispenser && ReplimatAdapter.AppliesTo(foodSource))
+        {
+            var resolved = ReplimatAdapter.TryResolveMealDef(foodSource, eater, getter, out var replimatMeal);
+            return new DiningMealResolution(
+                replimatMeal,
+                DispenserMealResolutionPolicy.Failed(sourceRecognized: true, resolved));
+        }
+
+        if (pasteDispenser && MealPrinterAdapter.AppliesTo(foodSource))
+        {
+            var resolved = MealPrinterAdapter.TryResolveMealDef(foodSource, out var printedMeal);
+            return new DiningMealResolution(
+                printedMeal,
+                DispenserMealResolutionPolicy.Failed(sourceRecognized: true, resolved));
+        }
+
+        return new DiningMealResolution(
+            pasteDispenser ? FoodUtility.GetFinalIngestibleDef(foodSource, false) : foodSource.def,
+            failed: false);
     }
 
     internal static void TryAttachTravel(Pawn pawn, ThingWithComps meal)
@@ -825,6 +886,11 @@ internal static class DiningSessionRegistry
         }
 
         return pawn.CurJob is { } job && Sessions.TryGetValue(job, out var session) ? session : null;
+    }
+
+    internal static ThingDef? RequestedMealDefFor(Pawn pawn)
+    {
+        return Current(pawn)?.RequestedMealDef;
     }
 
     internal static void BeginIngestion(Pawn pawn)

@@ -5,6 +5,40 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class DispenserCompatibilityAdapterTests
 {
+    [TestCase(false, false, false)]
+    [TestCase(true, true, false)]
+    [TestCase(true, false, true)]
+    public void Recognized_optional_dispenser_remains_fail_closed_after_resolver_failure(
+        bool sourceRecognized,
+        bool resolutionSucceeded,
+        bool expected)
+    {
+        Assert.That(
+            DispenserMealResolutionPolicy.Failed(sourceRecognized, resolutionSucceeded),
+            Is.EqualTo(expected));
+    }
+
+    [TestCase("Replimat.ReplimatUtility", true, new[] { "Verse.Pawn", "Verse.Pawn" }, true, true)]
+    [TestCase("Changed.Utility", true, new[] { "Verse.Pawn", "Verse.Pawn" }, true, false)]
+    [TestCase("Replimat.ReplimatUtility", false, new[] { "Verse.Pawn", "Verse.Pawn" }, true, false)]
+    [TestCase("Replimat.ReplimatUtility", true, new[] { "Verse.Pawn" }, true, false)]
+    [TestCase("Replimat.ReplimatUtility", true, new[] { "Verse.Pawn", "Verse.Pawn" }, false, false)]
+    public void Only_exact_replimat_native_meal_picker_shape_can_pin_the_reserved_tier(
+        string utilityTypeName,
+        bool sharesTerminalAssembly,
+        string[] parameterTypeNames,
+        bool returnsThingDef,
+        bool expected)
+    {
+        Assert.That(
+            ReplimatCompatibility.HasSupportedMealResolver(
+                utilityTypeName,
+                sharesTerminalAssembly,
+                parameterTypeNames,
+                returnsThingDef),
+            Is.EqualTo(expected));
+    }
+
     [Test]
     public void Exact_replimat_16_shape_is_supported()
     {
@@ -120,6 +154,27 @@ public sealed class DispenserCompatibilityAdapterTests
                 startupTypeName,
                 hasStartupAttribute,
                 sharesPrinterAssembly),
+            Is.EqualTo(expected));
+    }
+
+    [TestCase("GetMealThing", true, 0, true, true)]
+    [TestCase("ChangedMealGetter", true, 0, true, false)]
+    [TestCase("GetMealThing", false, 0, true, false)]
+    [TestCase("GetMealThing", true, 1, true, false)]
+    [TestCase("GetMealThing", true, 0, false, false)]
+    public void Only_exact_meal_printer_native_output_getter_can_drive_dining_requirements(
+        string methodName,
+        bool sharesPrinterType,
+        int parameterCount,
+        bool returnsThingDef,
+        bool expected)
+    {
+        Assert.That(
+            MealPrinterCompatibility.HasSupportedMealResolver(
+                methodName,
+                sharesPrinterType,
+                parameterCount,
+                returnsThingDef),
             Is.EqualTo(expected));
     }
 
