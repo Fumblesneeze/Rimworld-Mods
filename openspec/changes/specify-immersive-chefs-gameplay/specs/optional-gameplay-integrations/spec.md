@@ -172,6 +172,16 @@ When `sumghai.Replimat` and `sumghai.ReplimatMeals` are active and the exact pub
 - **WHEN** the native terminal rejects the requested product after ware was reserved
 - **THEN** no meal or plate is fabricated and the original clean plate becomes ordinarily available again
 
+#### Scenario: A Replimat animal feeder serves an animal
+
+- **WHEN** a Replimat animal feeder creates its native loose feed and an animal eats that feed through an ordinary ingest job
+- **THEN** no plate, cutlery, dining session, culinary state, tableware thought, or Immersive Chefs food-poisoning consequence is introduced and any nearby clean ware remains untouched
+
+#### Scenario: A player batches Replimat survival meals
+
+- **WHEN** the player uses the terminal's native batch-survival-meal command and confirms one packaged survival meal through its native dialog
+- **THEN** Replimat consumes its own feedstock and creates the ordinary hand-eaten survival meal without embedded ware, culinary state, or changes to nearby clean ware
+
 ### Requirement: Vanilla Cooking Expanded and Fried Meals use an explicit full-meal registry
 
 With the matching exact packages active, Vanilla Cooking Expanded base, Bakery, Haute Cuisine, Stews, Sushi, and Fried Meals SHALL be classified by explicit recipe/product Def registries finalized from their RimWorld 1.6 content. Supported Simple meals SHALL use `Simple`; Fine meals SHALL use `Advanced`; Lavish and Gourmet meals SHALL use `Elaborate`. Fried Meals SHALL classify its Simple and Fine fritters accordingly and SHALL classify Lavish fritters plus `VCE_CookFritterGourmet` as `Elaborate`. The registry SHALL exclude preservation/canning, condiments, raw or processed ingredients, cheeses, snacks, desserts that are not full meals, and drinks unless a separate explicit entry later brings one into scope. Upstream recipe workers, graphics, ingredient comps, research, and workstations SHALL remain authoritative.

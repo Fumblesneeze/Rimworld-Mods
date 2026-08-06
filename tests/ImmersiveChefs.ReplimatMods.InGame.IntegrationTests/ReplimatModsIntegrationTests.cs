@@ -157,4 +157,160 @@ public static class ReplimatModsIntegrationTests
                 defName + " must receive exactly one culinary lifecycle.");
         }
     }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void AnimalFeederAndSurvivalBatchRemainNativeHandheldExclusions()
+    {
+        var terminalType = AccessTools.TypeByName(ReplimatCompatibility.TerminalTypeName);
+        var feederType = AccessTools.TypeByName("Replimat.Building_ReplimatAnimalFeeder");
+        IntegrationAssert.NotNull(terminalType, "The exact Replimat terminal type must exist.");
+        IntegrationAssert.NotNull(feederType, "The exact Replimat animal-feeder type must exist.");
+        IntegrationAssert.Equal(
+            terminalType!.Assembly,
+            feederType!.Assembly,
+            "The animal feeder must retain ownership in the validated Replimat assembly.");
+
+        var feederDef = DefDatabase<ThingDef>.GetNamed("ReplimatAnimalFeeder");
+        IntegrationAssert.Equal(
+            "sumghai.replimat",
+            feederDef.modContentPack?.PackageId.ToLowerInvariant(),
+            "The animal feeder Def must remain owned by Replimat.");
+        IntegrationAssert.Equal(
+            feederType,
+            feederDef.thingClass,
+            "The animal feeder Def must retain its separate native building class.");
+
+        var animalFeedDefs = feederDef.building.fixedStorageSettings.filter.AllowedThingDefs
+            .OrderBy(def => def.defName, StringComparer.Ordinal)
+            .ToArray();
+        IntegrationAssert.Equal(
+            "Hay|Kibble|Replimat_Synthmeat",
+            string.Join("|", animalFeedDefs.Select(def => def.defName)),
+            "The inspected feeder must retain only its three native loose animal-feed products.");
+        foreach (var animalFeedDef in animalFeedDefs)
+        {
+            IntegrationAssert.True(
+                !MealCoveragePolicy.IsCovered(animalFeedDef),
+                animalFeedDef.defName + " must remain outside the plated-meal workflow.");
+            IntegrationAssert.Equal(
+                0,
+                animalFeedDef.comps.Count(properties => properties.compClass == typeof(CompEmbeddedWare)),
+                animalFeedDef.defName + " must not receive embedded tableware.");
+            IntegrationAssert.Equal(
+                0,
+                animalFeedDef.comps.Count(properties => properties.compClass == typeof(CompCulinaryState)),
+                animalFeedDef.defName + " must not receive culinary or temperature state.");
+        }
+
+        var feederTick = feederType.GetMethod(
+            "Tick",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            Type.EmptyTypes,
+            null);
+        var toggleAnimalFeed = feederType.GetMethod(
+            "ToggleAnimalFeedDef",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            Type.EmptyTypes,
+            null);
+        IntegrationAssert.NotNull(feederTick, "The native animal-feeder Tick boundary must exist.");
+        IntegrationAssert.NotNull(toggleAnimalFeed, "The native animal-feed selector must exist.");
+        IntegrationAssert.Equal(
+            0,
+            CountImmersiveChefsPatches(feederTick!),
+            "Immersive Chefs must not patch native animal-feed production.");
+        IntegrationAssert.Equal(
+            0,
+            CountImmersiveChefsPatches(toggleAnimalFeed!),
+            "Immersive Chefs must not patch the native animal-feed selector.");
+
+        var beginSurvivalBatch = terminalType.GetMethod(
+            "TryBatchMakingSurvivalMeals",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            Type.EmptyTypes,
+            null);
+        var confirmSurvivalBatch = terminalType.GetMethod(
+            "ConfirmAction",
+            BindingFlags.Public | BindingFlags.Instance,
+            null,
+            new[] { typeof(int), typeof(ThingDef), typeof(float) },
+            null);
+        IntegrationAssert.NotNull(
+            beginSurvivalBatch,
+            "The separate native survival-batch gizmo boundary must exist.");
+        IntegrationAssert.NotNull(
+            confirmSurvivalBatch,
+            "The separate native survival-batch confirmation boundary must exist.");
+        IntegrationAssert.Equal(
+            0,
+            CountImmersiveChefsPatches(beginSurvivalBatch!),
+            "Immersive Chefs must not patch survival-batch dialog creation.");
+        IntegrationAssert.Equal(
+            0,
+            CountImmersiveChefsPatches(confirmSurvivalBatch!),
+            "Immersive Chefs must not patch survival-batch production.");
+
+        var survivalDialogType = AccessTools.TypeByName("Replimat.Dialog_BatchMakeSurvivalMeals");
+        IntegrationAssert.NotNull(
+            survivalDialogType,
+            "The native survival-batch dialog type must exist.");
+        IntegrationAssert.Equal(
+            terminalType.Assembly,
+            survivalDialogType!.Assembly,
+            "The survival-batch dialog must retain the validated Replimat assembly identity.");
+        IntegrationAssert.Equal(
+            typeof(Action<int, ThingDef>),
+            survivalDialogType.GetField(
+                "confirmAction",
+                BindingFlags.NonPublic | BindingFlags.Instance)?.FieldType,
+            "The native dialog must retain its exact two-argument confirmation callback.");
+        IntegrationAssert.Equal(
+            typeof(int),
+            survivalDialogType.GetField(
+                "curValue",
+                BindingFlags.NonPublic | BindingFlags.Instance)?.FieldType,
+            "The native dialog must retain its exact batch-count field.");
+        IntegrationAssert.Equal(
+            typeof(ThingDef),
+            survivalDialogType.GetField(
+                "selectedSurvivalMealType",
+                BindingFlags.Public | BindingFlags.Instance)?.FieldType,
+            "The native dialog must retain its exact selected-product field.");
+
+        var survivalMeal = DefDatabase<ThingDef>.GetNamed("MealSurvivalPack");
+        IntegrationAssert.Equal(
+            "ludeon.rimworld",
+            survivalMeal.modContentPack?.PackageId.ToLowerInvariant(),
+            "The packaged survival meal must remain owned by Core.");
+        IntegrationAssert.True(
+            !MealCoveragePolicy.IsCovered(survivalMeal),
+            "The packaged survival meal must remain a handheld exclusion.");
+        IntegrationAssert.Equal(
+            0,
+            survivalMeal.comps.Count(properties => properties.compClass == typeof(CompEmbeddedWare)),
+            "The packaged survival meal must not receive embedded tableware.");
+        IntegrationAssert.Equal(
+            0,
+            survivalMeal.comps.Count(properties => properties.compClass == typeof(CompCulinaryState)),
+            "The packaged survival meal must not receive culinary or temperature state.");
+    }
+
+    private static int CountImmersiveChefsPatches(MethodBase method)
+    {
+        var patchInfo = Harmony.GetPatchInfo(method);
+        if (patchInfo is null)
+        {
+            return 0;
+        }
+
+        return patchInfo.Prefixes.Count(IsImmersiveChefsPatch) +
+               patchInfo.Postfixes.Count(IsImmersiveChefsPatch) +
+               patchInfo.Transpilers.Count(IsImmersiveChefsPatch) +
+               patchInfo.Finalizers.Count(IsImmersiveChefsPatch);
+    }
+
+    private static bool IsImmersiveChefsPatch(Patch patch) =>
+        patch.owner == ImmersiveChefsMod.PackageId;
 }

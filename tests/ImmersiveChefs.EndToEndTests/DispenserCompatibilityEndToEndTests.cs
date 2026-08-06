@@ -820,6 +820,403 @@ public sealed class MealPrinterNutriBarExclusionTest : IRimWorldEndToEndTest
     }
 }
 
+[RimWorldEndToEndTest(
+    "immersive-chefs.replimat-animal-feeder-exclusion",
+    "fumblesneeze.immersivechefs",
+    EndToEndTestContract.CorePackageId,
+    "brrainz.harmony",
+    "sumghai.Replimat",
+    "sumghai.ReplimatMeals",
+    "Dubwise.DubsBadHygiene",
+    "avilmask.CommonSense",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 5_400,
+    MaxGameTicks = 18_000,
+    MaxWallClockSeconds = 180)]
+public sealed class ReplimatAnimalFeederExclusionTest : IRimWorldEndToEndTest
+{
+    private Map map = null!;
+    private Pawn animal = null!;
+    private ThingWithComps feeder = null!;
+    private ThingWithComps tank = null!;
+    private ThingWithComps computer = null!;
+    private ThingWithComps plate = null!;
+    private ThingWithComps cutlery = null!;
+    private Thing? replicatedFeed;
+    private int feedCountBeforeEating;
+    private float hungerBeforeEating;
+    private bool nativeIngestJobObserved;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        map = Current.Game.CurrentMap;
+        var center = FoodSearchE2EFixture.FindRoomCenter(map);
+        FoodSearchE2EFixture.BuildSealedRoom(map, center);
+        DispenserE2EFixture.SpawnConduitGrid(map, center, 8, 7);
+        DispenserE2EFixture.SpawnPowerSources(map, center + new IntVec3(-7, 0, 4), 14);
+
+        feeder = DispenserE2EFixture.SpawnBuilding(map, "ReplimatAnimalFeeder", center);
+        tank = DispenserE2EFixture.SpawnBuilding(map, "ReplimatFeedTank", center + new IntVec3(3, 0, 1));
+        computer = DispenserE2EFixture.SpawnBuilding(map, "ReplimatComputer", center + new IntVec3(-3, 0, 1));
+        DispenserE2EFixture.SetReplimatFeedstockPercent(tank, 0.5f);
+        DispenserE2EFixture.SettlePower(map, new[] { feeder, tank, computer }, 600);
+        EndToEndAssert.True(
+            DispenserE2EFixture.ReadBooleanProperty(computer, "Working"),
+            "The native Replimat computer must recognize the powered animal-feeder network.");
+
+        animal = PawnGenerator.GeneratePawn(
+            DefDatabase<PawnKindDef>.GetNamed("Raccoon"),
+            Faction.OfPlayer);
+        animal.Name = new NameSingle("Replimat animal diner");
+        animal.inventory?.innerContainer.ClearAndDestroyContents();
+        animal.jobs.StopAll();
+        GenSpawn.Spawn(animal, center + new IntVec3(0, 0, -3), map);
+        FoodSearchE2EFixture.SetHunger(animal, 0.05f);
+
+        plate = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Plate", ThingDefOf.Steel);
+        cutlery = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Cutlery", ThingDefOf.Steel);
+        GenSpawn.Spawn(plate, center + new IntVec3(-2, 0, -2), map);
+        GenSpawn.Spawn(cutlery, center + new IntVec3(2, 0, -2), map);
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        var fixture = new[]
+        {
+            animal.ThingID, feeder.ThingID, tank.ThingID, computer.ThingID,
+            plate.ThingID, cutlery.ThingID
+        };
+        yield return new SelectionActionStep("select the native animal feeder", new[] { feeder.ThingID }, false);
+        yield return new CameraActionStep("frame the animal feeder fixture", fixture, 220);
+        yield return new TimeControlActionStep(
+            "run native animal-feed replication",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the native feeder produces loose kibble",
+            _ => ObserveReplicatedFeed(),
+            new EndToEndDeadline(1_800, 5_000, TimeSpan.FromSeconds(60)));
+        yield return new TimeControlActionStep(
+            "pause on native loose animal feed",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select replicated loose animal feed",
+            new[] { replicatedFeed!.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe the native feeder's loose kibble",
+            Array.Empty<string>(),
+            0);
+        yield return new TimeControlActionStep(
+            "let the animal choose food normally",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the animal starts the native ingest job",
+            _ => ObserveAnimalIngestJob(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(80)));
+        yield return new TimeControlActionStep(
+            "pause on ordinary animal ingestion",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the animal eating replicated feed",
+            new[] { animal.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe the animal eating without tableware",
+            Array.Empty<string>(),
+            0);
+        yield return new TimeControlActionStep(
+            "finish ordinary animal ingestion",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "the animal consumes replicated feed",
+            _ => FeedWasConsumed(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(80)));
+        yield return new TimeControlActionStep(
+            "pause after animal feeding",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "animal feeding remains outside dining service",
+            _ => AssertExcluded());
+        yield return new SelectionActionStep(
+            "select untouched animal-feeder plate",
+            new[] { plate.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe untouched clean plate after animal feeding",
+            Array.Empty<string>(),
+            0);
+        yield return new SelectionActionStep(
+            "select untouched animal-feeder cutlery",
+            new[] { cutlery.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe untouched clean cutlery after animal feeding",
+            Array.Empty<string>(),
+            0);
+        yield return new CheckpointStep(
+            "Replimat animal-feeder exclusion result",
+            _ => new Dictionary<string, string>
+            {
+                ["animalThingId"] = animal.ThingID,
+                ["feedThingId"] = replicatedFeed?.ThingID ?? "missing",
+                ["feedDef"] = replicatedFeed?.def.defName ?? "missing",
+                ["feedCountBeforeEating"] = feedCountBeforeEating.ToString(),
+                ["feedCountAfterEating"] = replicatedFeed?.Destroyed == true
+                    ? "destroyed"
+                    : replicatedFeed?.stackCount.ToString() ?? "missing",
+                ["nativeIngestJobObserved"] = nativeIngestJobObserved.ToString(),
+                ["plateClean"] = (plate.GetComp<CompSanitation>()?.IsDirty == false).ToString(),
+                ["cutleryClean"] = (cutlery.GetComp<CompSanitation>()?.IsDirty == false).ToString(),
+                ["foodPoisoning"] = animal.health.hediffSet.HasHediff(HediffDefOf.FoodPoisoning).ToString()
+            });
+    }
+
+    private bool ObserveReplicatedFeed()
+    {
+        replicatedFeed ??= feeder.Position.GetThingList(map)
+            .FirstOrDefault(thing => thing.def == ThingDefOf.Kibble);
+        if (replicatedFeed is null)
+        {
+            return false;
+        }
+
+        EndToEndAssert.True(
+            replicatedFeed is not ThingWithComps feedWithComps ||
+            feedWithComps.GetComp<CompEmbeddedWare>() is null,
+            "Native loose animal feed must not acquire embedded tableware.");
+        EndToEndAssert.True(
+            replicatedFeed is not ThingWithComps culinaryFeed ||
+            culinaryFeed.GetComp<CompCulinaryState>() is null,
+            "Native loose animal feed must not acquire culinary or temperature state.");
+        feedCountBeforeEating = replicatedFeed.stackCount;
+        hungerBeforeEating = animal.needs.food.CurLevelPercentage;
+        return true;
+    }
+
+    private bool ObserveAnimalIngestJob()
+    {
+        if (animal.CurJobDef != JobDefOf.Ingest || replicatedFeed is null)
+        {
+            return false;
+        }
+
+        EndToEndAssert.True(
+            ReferenceEquals(animal.CurJob?.GetTarget(TargetIndex.A).Thing, replicatedFeed),
+            "The ordinary animal ingest job must target the feeder's exact loose kibble stack.");
+        EndToEndAssert.True(
+            DiningSessionRegistry.Current(animal) is null,
+            "Animal feeding must not create a plate or cutlery dining session.");
+        EndToEndAssert.True(
+            plate.Spawned && cutlery.Spawned,
+            "The nearby clean tableware controls must remain on the map when animal ingestion starts.");
+        nativeIngestJobObserved = true;
+        return true;
+    }
+
+    private bool FeedWasConsumed() =>
+        replicatedFeed is not null &&
+        (replicatedFeed.Destroyed || replicatedFeed.stackCount < feedCountBeforeEating) &&
+        animal.needs.food.CurLevelPercentage > hungerBeforeEating;
+
+    private void AssertExcluded()
+    {
+        EndToEndAssert.True(nativeIngestJobObserved, "The test must observe the native animal ingest job.");
+        EndToEndAssert.True(FeedWasConsumed(), "The animal must consume part of the replicated feed stack.");
+        EndToEndAssert.True(DiningSessionRegistry.Current(animal) is null,
+            "No animal dining session may survive ingestion.");
+        EndToEndAssert.True(animal.needs.mood is null,
+            "The animal must not receive a dining-memory need.");
+        EndToEndAssert.True(!animal.health.hediffSet.HasHediff(HediffDefOf.FoodPoisoning),
+            "Immersive Chefs must not apply food poisoning to native animal feeding.");
+        EndToEndAssert.True(plate.Spawned && plate.GetComp<CompSanitation>()?.IsDirty == false,
+            "Animal feeding must leave the nearby plate clean and untouched.");
+        EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()?.IsDirty == false,
+            "Animal feeding must leave the nearby cutlery clean and untouched.");
+    }
+}
+
+[RimWorldEndToEndTest(
+    "immersive-chefs.replimat-survival-batch-exclusion",
+    "fumblesneeze.immersivechefs",
+    EndToEndTestContract.CorePackageId,
+    "brrainz.harmony",
+    "sumghai.Replimat",
+    "sumghai.ReplimatMeals",
+    "Dubwise.DubsBadHygiene",
+    "avilmask.CommonSense",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 3_600,
+    MaxGameTicks = 12_000,
+    MaxWallClockSeconds = 150)]
+public sealed class ReplimatSurvivalBatchExclusionTest : IRimWorldEndToEndTest
+{
+    private Map map = null!;
+    private ThingWithComps terminal = null!;
+    private ThingWithComps tank = null!;
+    private ThingWithComps computer = null!;
+    private ThingWithComps plate = null!;
+    private ThingWithComps cutlery = null!;
+    private EndToEndGizmoOption batchGizmo = null!;
+    private ThingWithComps? survivalMeal;
+    private float feedstockBefore;
+    private float feedstockAfter;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        map = Current.Game.CurrentMap;
+        var center = FoodSearchE2EFixture.FindRoomCenter(map);
+        FoodSearchE2EFixture.BuildSealedRoom(map, center);
+        DispenserE2EFixture.SpawnConduitGrid(map, center, 8, 7);
+        DispenserE2EFixture.SpawnPowerSources(map, center + new IntVec3(-7, 0, 4), 14);
+
+        terminal = DispenserE2EFixture.SpawnBuilding(map, "ReplimatTerminal", center);
+        tank = DispenserE2EFixture.SpawnBuilding(map, "ReplimatFeedTank", center + new IntVec3(3, 0, 1));
+        computer = DispenserE2EFixture.SpawnBuilding(map, "ReplimatComputer", center + new IntVec3(-3, 0, 1));
+        DispenserE2EFixture.SetReplimatFeedstockPercent(tank, 0.5f);
+        DispenserE2EFixture.SettlePower(map, new[] { terminal, tank, computer }, 600);
+        EndToEndAssert.True(
+            DispenserE2EFixture.ReadBooleanProperty(terminal, "CanDispenseNow"),
+            "The native Replimat terminal must be available before opening its survival-batch dialog.");
+        feedstockBefore = DispenserE2EFixture.ReadSingleProperty(tank, "StoredFeedstock");
+
+        plate = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Plate", ThingDefOf.Gold);
+        cutlery = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Cutlery", ThingDefOf.Gold);
+        GenSpawn.Spawn(plate, center + new IntVec3(-2, 0, -2), map);
+        GenSpawn.Spawn(cutlery, center + new IntVec3(2, 0, -2), map);
+
+        var gizmos = context.GetRequiredService<IEndToEndGizmoCatalog>()
+            .Query(new[] { terminal.ThingID }, Array.Empty<string>());
+        var candidates = gizmos.Where(option =>
+            !option.Disabled &&
+            option.Interaction == EndToEndGizmoInteraction.Invoke &&
+            string.Equals(option.Label, "Batch survival meals", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        EndToEndAssert.Equal(
+            1,
+            candidates.Length,
+            "The powered native Replimat terminal must expose one enabled Batch survival meals command.");
+        batchGizmo = candidates[0];
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        var fixture = new[]
+        {
+            terminal.ThingID, tank.ThingID, computer.ThingID, plate.ThingID, cutlery.ThingID
+        };
+        yield return new SelectionActionStep("select the native Replimat terminal", new[] { terminal.ThingID }, false);
+        yield return new CameraActionStep("frame the survival-batch fixture", fixture, 220);
+        yield return new ScreenshotStep(
+            "observe the native terminal before survival batching",
+            Array.Empty<string>(),
+            0);
+        yield return new GizmoActionStep(
+            "open the native survival-batch dialog",
+            new[] { terminal.ThingID },
+            batchGizmo.RuntimeType,
+            EndToEndGizmoInteraction.Invoke,
+            stableGizmoId: batchGizmo.StableId);
+        yield return new ScreenshotStep(
+            "observe the native Replimat survival-batch dialog",
+            Array.Empty<string>(),
+            0);
+        yield return new DialogConfirmationActionStep(
+            "confirm one packaged survival meal through the open dialog",
+            "Replimat.Dialog_BatchMakeSurvivalMeals");
+        yield return new WaitUntilStep(
+            "native survival batching creates one packaged meal",
+            _ => ObserveSurvivalMeal(),
+            new EndToEndDeadline(900, 3_000, TimeSpan.FromSeconds(45)));
+        yield return new TimeControlActionStep(
+            "pause on the native survival-batch result",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "survival batching remains outside dining service",
+            _ => AssertExcluded());
+        yield return new SelectionActionStep(
+            "select the native packaged survival meal",
+            new[] { survivalMeal!.ThingID },
+            false);
+        yield return new CameraActionStep(
+            "frame the packaged survival meal and untouched setting",
+            new[] { survivalMeal!.ThingID, terminal.ThingID, plate.ThingID, cutlery.ThingID },
+            220);
+        yield return new ScreenshotStep(
+            "observe unplated packaged survival meal and untouched tableware",
+            Array.Empty<string>(),
+            0);
+        yield return new SelectionActionStep(
+            "select untouched survival-batch plate",
+            new[] { plate.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe untouched clean plate after survival batching",
+            Array.Empty<string>(),
+            0);
+        yield return new SelectionActionStep(
+            "select untouched survival-batch cutlery",
+            new[] { cutlery.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe untouched clean cutlery after survival batching",
+            Array.Empty<string>(),
+            0);
+        yield return new CheckpointStep(
+            "Replimat survival-batch exclusion result",
+            _ => new Dictionary<string, string>
+            {
+                ["mealThingId"] = survivalMeal?.ThingID ?? "missing",
+                ["mealDef"] = survivalMeal?.def.defName ?? "missing",
+                ["mealStackCount"] = survivalMeal?.stackCount.ToString() ?? "missing",
+                ["feedstockBefore"] = feedstockBefore.ToString("R"),
+                ["feedstockAfter"] = feedstockAfter.ToString("R"),
+                ["plateClean"] = (plate.GetComp<CompSanitation>()?.IsDirty == false).ToString(),
+                ["cutleryClean"] = (cutlery.GetComp<CompSanitation>()?.IsDirty == false).ToString()
+            });
+    }
+
+    private bool ObserveSurvivalMeal()
+    {
+        survivalMeal ??= terminal.InteractionCell.GetThingList(map)
+            .OfType<ThingWithComps>()
+            .SingleOrDefault(thing =>
+                thing.def == ThingDefOf.MealSurvivalPack &&
+                thing.Spawned &&
+                !thing.Destroyed);
+        if (survivalMeal is null)
+        {
+            return false;
+        }
+
+        feedstockAfter = DispenserE2EFixture.ReadSingleProperty(tank, "StoredFeedstock");
+        return true;
+    }
+
+    private void AssertExcluded()
+    {
+        EndToEndAssert.NotNull(survivalMeal, "The native batch dialog must create a packaged survival meal.");
+        EndToEndAssert.Equal(1, survivalMeal!.stackCount,
+            "The default native batch-dialog confirmation must create exactly one meal.");
+        EndToEndAssert.True(survivalMeal.GetComp<CompEmbeddedWare>() is null,
+            "The packaged survival meal must remain unplated.");
+        EndToEndAssert.True(survivalMeal.GetComp<CompCulinaryState>() is null,
+            "The packaged survival meal must remain outside culinary and temperature state.");
+        EndToEndAssert.True(feedstockAfter < feedstockBefore,
+            "Only native Replimat survival batching may consume its network feedstock.");
+        EndToEndAssert.True(plate.Spawned && plate.GetComp<CompSanitation>()?.IsDirty == false,
+            "Survival batching must leave the nearby plate clean and untouched.");
+        EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()?.IsDirty == false,
+            "Survival batching must leave the nearby cutlery clean and untouched.");
+    }
+}
+
 internal static class DispenserE2EFixture
 {
     internal static MealPrinterFixture CreateMealPrinterFixture(string mealDefName, string pawnName)
