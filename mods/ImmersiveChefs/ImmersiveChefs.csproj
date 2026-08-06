@@ -36,6 +36,7 @@
     <RimWorldLoadAfter Include="Goat.Food.Texture.Variety.VEStew" />
     <RimWorldLoadAfter Include="Goat.Food.Texture.Variety.VESushi" />
     <RimWorldLoadAfter Include="OskarPotocki.VanillaFactionsExpanded.Core" />
+    <RimWorldLoadAfter Include="VanillaExpanded.VTEXVariations" />
     <RimWorldLoadAfter Include="VanillaExpanded.VNutrientE" />
     <RimWorldLoadAfter Include="rabiosus.AdaptiveMealBill" />
     <RimWorldLoadAfter Include="binchcannon.overcookedmeals" />

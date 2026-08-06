@@ -103,6 +103,57 @@ public sealed class IntegrationCatalogTests
             Is.False);
     }
 
+    [Test]
+    public void Texture_variations_require_the_exact_package_vef_and_auto_setting()
+    {
+        var complete = IntegrationCatalog.Detect(new[]
+        {
+            "VanillaExpanded.VTEXVariations",
+            "OskarPotocki.VanillaFactionsExpanded.Core"
+        });
+        var withoutVef = IntegrationCatalog.Detect(new[]
+        {
+            "VanillaExpanded.VTEXVariations"
+        });
+        var disabled = new ImmersiveChefsSettings
+        {
+            TextureVariationIntegration = OptionalIntegrationMode.Off
+        };
+        var vefDisabled = new ImmersiveChefsSettings
+        {
+            VanillaExpandedFramework = OptionalIntegrationMode.Off
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(complete.IsActive(OptionalIntegration.TextureVariations), Is.True);
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.TextureVariations,
+                    complete,
+                    new ImmersiveChefsSettings()),
+                Is.True);
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.TextureVariations,
+                    withoutVef,
+                    new ImmersiveChefsSettings()),
+                Is.False);
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.TextureVariations,
+                    complete,
+                    disabled),
+                Is.False);
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.TextureVariations,
+                    complete,
+                    vefDisabled),
+                Is.False);
+        });
+    }
+
     [TestCase(OptionalIntegration.AdaptiveMealBill)]
     [TestCase(OptionalIntegration.OvercookedMeals)]
     [TestCase(OptionalIntegration.MealsOnWheels)]
@@ -160,7 +211,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(20));
+            Assert.That(snapshot.States, Has.Count.EqualTo(21));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }

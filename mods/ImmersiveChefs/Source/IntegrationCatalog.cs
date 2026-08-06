@@ -23,7 +23,8 @@ public enum OptionalIntegration
     PrioritizeMeals,
     Replimat,
     MealPrinter,
-    FoodTextureVariety
+    FoodTextureVariety,
+    TextureVariations
 }
 
 public sealed class IntegrationSnapshot
@@ -79,7 +80,8 @@ public static class IntegrationCatalog
             [OptionalIntegration.PrioritizeMeals] = "seekiworksmod.no10",
             [OptionalIntegration.Replimat] = "sumghai.Replimat",
             [OptionalIntegration.MealPrinter] = "Mlie.MealPrinter",
-            [OptionalIntegration.FoodTextureVariety] = "Goat.Food.Texture.Variety"
+            [OptionalIntegration.FoodTextureVariety] = "Goat.Food.Texture.Variety",
+            [OptionalIntegration.TextureVariations] = "VanillaExpanded.VTEXVariations"
         };
 
     public static IntegrationSnapshot Detect(IEnumerable<string> loadedPackageIds)
@@ -134,6 +136,9 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.Replimat => snapshot.ContainsPackage("sumghai.ReplimatMeals"),
             OptionalIntegration.FoodTextureVariety =>
                 snapshot.ContainsPackage("Goat.Food.Texture.Variety.Core"),
+            OptionalIntegration.TextureVariations =>
+                snapshot.IsActive(OptionalIntegration.VanillaExpandedFramework) &&
+                settings.VanillaExpandedFramework != OptionalIntegrationMode.Off,
             _ => true
         };
     }
@@ -163,6 +168,7 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.Replimat => settings.Replimat,
             OptionalIntegration.MealPrinter => settings.MealPrinter,
             OptionalIntegration.FoodTextureVariety => settings.FoodTextureVariety,
+            OptionalIntegration.TextureVariations => settings.TextureVariationIntegration,
             _ => OptionalIntegrationMode.Auto
         };
     }
