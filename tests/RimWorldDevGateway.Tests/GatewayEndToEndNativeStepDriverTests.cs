@@ -27,6 +27,9 @@ public sealed class GatewayEndToEndNativeStepDriverTests
             new SettlementTradeActionStep("settlement-trade", 41, 42),
             new IncidentActionStep("incident", "TraderCaravanArrival", 17),
             TradeDialogActionStep.AdjustTransfer("trade", "meal_1", -1),
+            new DialogConfirmationActionStep(
+                "dialog",
+                "Example.Dialog"),
             ProcessInputActionStep.Click(
                 "click",
                 new EndToEndScreenPoint(10, 20),
@@ -40,11 +43,11 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "input", "screenshot"
+                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "dialog", "input", "screenshot"
             }));
-            Assert.That(operations.Take(8).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[8], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[9], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations.Take(9).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[9], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[10], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -65,7 +68,9 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         });
     }
 
-    private sealed class RecordingNativeActions : IGatewayEndToEndNativeActions
+    private sealed class RecordingNativeActions :
+        IGatewayEndToEndNativeActions,
+        IGatewayEndToEndDialogConfirmationNativeActions
     {
         public List<string> Calls { get; } = new();
 
@@ -99,6 +104,10 @@ public sealed class GatewayEndToEndNativeStepDriverTests
 
         public GatewayEndToEndStepOutcome Apply(TradeDialogActionStep step, IEndToEndContext context) =>
             Record("trade");
+
+        public GatewayEndToEndStepOutcome Apply(
+            DialogConfirmationActionStep step,
+            IEndToEndContext context) => Record("dialog");
 
         public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)
         {

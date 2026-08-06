@@ -414,6 +414,21 @@ public sealed class TradeDialogActionStep : EndToEndStep
         new(name, EndToEndTradeDialogAction.Accept, null, 0);
 }
 
+public sealed class DialogConfirmationActionStep : EndToEndStep
+{
+    public DialogConfirmationActionStep(
+        string name,
+        string expectedWindowTypeName)
+        : base(name, EndToEndStepKind.Act)
+    {
+        ExpectedWindowTypeName = StepValues.Required(
+            expectedWindowTypeName,
+            nameof(expectedWindowTypeName));
+    }
+
+    public string ExpectedWindowTypeName { get; }
+}
+
 public sealed class WaitUntilStep : EndToEndStep
 {
     public WaitUntilStep(string name, Func<IEndToEndContext, bool> predicate, EndToEndDeadline deadline)

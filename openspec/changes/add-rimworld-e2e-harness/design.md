@@ -44,6 +44,7 @@ Initial typed steps cover:
 - exact native gizmo invocation from Thing owners and/or architect category Def names, plus exact float-menu order invocation;
 - process-scoped click, drag, chord, key, and text input when no semantic path exists;
 - exact native trade-dialog transfer and acceptance actions that can run without restoring the minimized game window;
+- exact allowlisted optional-mod dialog confirmations that retain private assembly/type/callback shapes in the Gateway rather than accepting reflection details from test bundles;
 - pause and native speed control;
 - thing selection and camera framing;
 - predicate waits with test-declared frame, game-tick, and wall-clock deadlines;
@@ -53,6 +54,8 @@ Initial typed steps cover:
 Product-owned test assemblies discover current right-click options through a host-safe `IEndToEndFloatMenuCatalog` context service. The returned metadata contains only visible label, disabled state, and a callback-sensitive stable identity. The test then submits that identity through `FloatMenuActionStep`; Gateway re-queries immediately and invokes the one exact native callback. This avoids a product-test dependency on Gateway internals and avoids retaining Unity/RimWorld delegates across frames.
 
 `TradeDialogActionStep` is a narrow semantic adapter for the native trade window. Adjustment re-resolves the exact current `Tradeable` by physical Thing ID, uses the native count setter and dialog refresh, and acceptance invokes the exact compiler-generated callback owned by `Dialog_Trade`; version-shape drift fails instead of approximating the deal. This is deliberately separate from `ProcessInputActionStep`: known trade semantics remain minimized and deterministic, while map pointer tools, drags, keys, text, and unknown surfaces retain foreground Win32 input. Observable waits and screenshots still prove that the real trade deal and delivery occurred.
+
+`DialogConfirmationActionStep` is likewise semantic but deliberately narrower than a generic reflection action. The shared bundle can name only the expected exact open-window runtime type. Gateway-owned registration pins the optional assembly identity and private callback/argument shape, requires one matching current window and a void callback, then reproduces the inspected close-before-confirm order. Unknown types and member drift fail closed without falling back to Win32 input. This keeps optional UI workflows minimized while preserving the contract's ban on test-supplied synchronous callbacks.
 
 Tests may inspect Verse state inside predicates and assertions, but a direct mutation cannot be registered as the player action or observable result. Each test result records which steps were `arrange`, `act`, `wait`, and `observe`. This makes dishonest fixtures reviewable without attempting to sandbox test code.
 

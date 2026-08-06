@@ -291,7 +291,7 @@ public sealed class GatewayEndToEndNativeActionsTests
     }
 
     [Test]
-    public void Input_screenshot_float_menu_settlement_trade_and_incident_delegate_to_the_durable_backend_operations()
+    public void Input_screenshot_float_menu_trade_incident_and_dialog_delegate_to_the_durable_backend_operations()
     {
         var backend = new RecordingBackend();
         var actions = new GatewayEndToEndNativeActions(backend);
@@ -300,12 +300,17 @@ public sealed class GatewayEndToEndNativeActionsTests
         var menu = new FloatMenuActionStep("eat", "pawn_1", "meal_1", "consume");
         var settlementTrade = new SettlementTradeActionStep("trade", 41, 42);
         var incident = new IncidentActionStep("incident", "TraderCaravanArrival", 17);
+        var dialog = new DialogConfirmationActionStep(
+            "confirm",
+            "Example.Dialog");
 
         var inputOperation = actions.Begin(input, Context());
         var screenshotOperation = actions.Begin(screenshot, Context());
         var menuOutcome = actions.Apply(menu, Context());
         var settlementTradeOutcome = actions.Apply(settlementTrade, Context());
         var incidentOutcome = actions.Apply(incident, Context());
+        var dialogOutcome = ((IGatewayEndToEndDialogConfirmationNativeActions)actions)
+            .Apply(dialog, Context());
 
         Assert.Multiple(() =>
         {
@@ -314,11 +319,13 @@ public sealed class GatewayEndToEndNativeActionsTests
             Assert.That(menuOutcome.Passed, Is.True);
             Assert.That(settlementTradeOutcome.Passed, Is.True);
             Assert.That(incidentOutcome.Passed, Is.True);
+            Assert.That(dialogOutcome.Passed, Is.True);
             Assert.That(backend.InputStep, Is.SameAs(input));
             Assert.That(backend.ScreenshotStep, Is.SameAs(screenshot));
             Assert.That(backend.FloatMenuStep, Is.SameAs(menu));
             Assert.That(backend.SettlementTradeStep, Is.SameAs(settlementTrade));
             Assert.That(backend.IncidentStep, Is.SameAs(incident));
+            Assert.That(backend.DialogStep, Is.SameAs(dialog));
         });
     }
 
@@ -349,7 +356,9 @@ public sealed class GatewayEndToEndNativeActionsTests
                 null,
                 acceptedInputs));
 
-    private sealed class RecordingBackend : IGatewayEndToEndActionBackend
+    private sealed class RecordingBackend :
+        IGatewayEndToEndActionBackend,
+        IGatewayEndToEndDialogConfirmationBackend
     {
         public GatewayEndToEndCameraViewport Viewport { get; set; } =
             new("map_1", 200, 200, 1000, 500, 8f, 60f);
@@ -377,6 +386,8 @@ public sealed class GatewayEndToEndNativeActionsTests
         public SettlementTradeActionStep? SettlementTradeStep { get; private set; }
 
         public IncidentActionStep? IncidentStep { get; private set; }
+
+        public DialogConfirmationActionStep? DialogStep { get; private set; }
 
         public bool RejectNextInteraction { get; set; }
 
@@ -466,6 +477,12 @@ public sealed class GatewayEndToEndNativeActionsTests
 
         public GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step) =>
             GatewayEndToEndStepOutcome.Pass();
+
+        public GatewayEndToEndStepOutcome ApplyDialogConfirmation(DialogConfirmationActionStep step)
+        {
+            DialogStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
 
         public GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step)
         {

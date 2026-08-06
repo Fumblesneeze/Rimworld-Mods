@@ -17,7 +17,9 @@ public interface IGatewayEndToEndFloatMenuActions
     GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step);
 }
 
-public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBackend
+public sealed class GatewayEndToEndGatewayBackend :
+    IGatewayEndToEndActionBackend,
+    IGatewayEndToEndDialogConfirmationBackend
 {
     private static int nextScreenshotId;
     private readonly GatewayGameControlController gameControl;
@@ -195,6 +197,10 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
 
     public GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step) =>
         tradeDialogs.Apply(step);
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndDialogConfirmationBackend.ApplyDialogConfirmation(
+        DialogConfirmationActionStep step) =>
+            VerseGatewayEndToEndDialogConfirmationActions.Apply(step);
 
     public IGatewayEndToEndStepOperation BeginInput(
         ProcessInputActionStep step,

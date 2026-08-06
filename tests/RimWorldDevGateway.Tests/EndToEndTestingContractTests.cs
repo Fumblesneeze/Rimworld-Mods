@@ -156,6 +156,23 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Dialog_confirmation_declares_only_the_exact_supported_window_type()
+    {
+        var step = new DialogConfirmationActionStep(
+            "confirm survival batch",
+            "Replimat.Dialog_BatchMakeSurvivalMeals");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(step.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(step.ExpectedWindowTypeName, Is.EqualTo("Replimat.Dialog_BatchMakeSurvivalMeals"));
+            Assert.That(
+                () => new DialogConfirmationActionStep("confirm", " "),
+                Throws.TypeOf<ArgumentException>());
+        });
+    }
+
+    [Test]
     public void Shared_steps_do_not_publish_an_unbounded_synchronous_delegate_action()
     {
         var unsafeProperties = typeof(EndToEndStep).Assembly

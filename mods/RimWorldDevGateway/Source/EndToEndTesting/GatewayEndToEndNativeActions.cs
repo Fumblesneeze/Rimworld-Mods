@@ -93,7 +93,14 @@ public interface IGatewayEndToEndActionBackend
         IEndToEndContext context);
 }
 
-public sealed class GatewayEndToEndNativeActions : IGatewayEndToEndNativeActions
+internal interface IGatewayEndToEndDialogConfirmationBackend
+{
+    GatewayEndToEndStepOutcome ApplyDialogConfirmation(DialogConfirmationActionStep step);
+}
+
+public sealed class GatewayEndToEndNativeActions :
+    IGatewayEndToEndNativeActions,
+    IGatewayEndToEndDialogConfirmationNativeActions
 {
     private readonly IGatewayEndToEndActionBackend backend;
 
@@ -269,6 +276,19 @@ public sealed class GatewayEndToEndNativeActions : IGatewayEndToEndNativeActions
         Require(step, context);
         return backend.ApplyTradeDialog(step) ??
                throw new InvalidOperationException("The trade-dialog backend returned no outcome.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndDialogConfirmationNativeActions.Apply(
+        DialogConfirmationActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndDialogConfirmationBackend dialogBackend
+            ? dialogBackend.ApplyDialogConfirmation(step) ??
+              throw new InvalidOperationException("The dialog-confirmation backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support dialog confirmation.");
     }
 
     public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)

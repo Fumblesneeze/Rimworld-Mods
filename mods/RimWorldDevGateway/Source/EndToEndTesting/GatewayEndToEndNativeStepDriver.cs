@@ -25,6 +25,11 @@ public interface IGatewayEndToEndNativeActions
     IGatewayEndToEndStepOperation Begin(ScreenshotStep step, IEndToEndContext context);
 }
 
+internal interface IGatewayEndToEndDialogConfirmationNativeActions
+{
+    GatewayEndToEndStepOutcome Apply(DialogConfirmationActionStep step, IEndToEndContext context);
+}
+
 public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
 {
     private readonly IGatewayEndToEndNativeActions actions;
@@ -54,6 +59,12 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
             SettlementTradeActionStep settlementTrade => Complete(actions.Apply(settlementTrade, context)),
             IncidentActionStep incident => Complete(actions.Apply(incident, context)),
             TradeDialogActionStep tradeDialog => Complete(actions.Apply(tradeDialog, context)),
+            DialogConfirmationActionStep dialogConfirmation => actions is
+                IGatewayEndToEndDialogConfirmationNativeActions dialogActions
+                    ? Complete(dialogActions.Apply(dialogConfirmation, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support dialog confirmation."),
             ProcessInputActionStep input =>
                 actions.Begin(input, context)
                 ?? throw new InvalidOperationException("The input adapter returned no operation."),
