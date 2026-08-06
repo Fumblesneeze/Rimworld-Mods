@@ -20,6 +20,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Item/Kitchenware/GlitterCookware/GlitterCookware";
     private const string PreparedFoodTexturePath =
         "ImmersiveChefs/Things/Item/Food/PreparedIngredients/PreparedIngredients";
+    private const string DishwasherTexturePath =
+        "ImmersiveChefs/Things/Building/Dishwasher/Dishwasher";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -206,6 +208,36 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, PreparedFoodTexturePath + ".png")), Is.True);
+        });
+
+        AssertTransparentSprite(diffusePath);
+    }
+
+    [Test]
+    public void Domestic_dishwasher_uses_owned_rotatable_single_sprite_art()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "KitchenBuildings.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_Dishwasher");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, DishwasherTexturePath + ".png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(DishwasherTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, DishwasherTexturePath + ".png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);

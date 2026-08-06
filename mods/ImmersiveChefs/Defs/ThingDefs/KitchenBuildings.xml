@@ -29,7 +29,7 @@
     <defName>ImmersiveChefs_Dishwasher</defName>
     <label>dishwasher</label>
     <description>A domestic powered dishwasher. It preserves the identity, material, quality and durability of up to 16 place settings while a cycle pauses safely through power loss.</description>
-    <graphicData><texPath>Things/Building/Production/TableTailorElectric</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(2,1)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Building/Dishwasher/Dishwasher</texPath><graphicClass>Graphic_Single</graphicClass><shaderType>Cutout</shaderType><drawSize>(2,1)</drawSize></graphicData>
     <size>(2,1)</size>
     <costList><Steel>90</Steel><ComponentIndustrial>3</ComponentIndustrial></costList>
     <researchPrerequisites><li>ImmersiveChefs_Dishwashing</li></researchPrerequisites>

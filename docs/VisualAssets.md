@@ -63,3 +63,12 @@ Candidate A was rejected because its parchment layout risked reading as a finish
 prompts requested clearly raw, chopped mixed ingredients on pure green chroma. The selected 256 px
 fixed-color sprite uses `Cutout`; edge-only despill removes chroma without muting the legitimate
 opaque green vegetables.
+
+## Domestic dishwasher
+
+Selected: candidate B, generated 2026-08-06. Its steep map view, twin top-loading racks, visible
+plates, stainless shell, and near-edge controls remain legible across a 2×1 footprint. Candidate A
+was rejected because its frontal view would read like a UI icon pasted onto the map and rotate
+poorly. Both prompts requested a domestic powered dishwasher on pure green chroma. The selected
+512×256 fixed-color sprite uses `Graphic_Single`/`Cutout`; RimWorld rotates the one authored map-view
+sprite with the building rather than resolving a nonexistent directional collection.
