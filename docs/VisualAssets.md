@@ -72,3 +72,13 @@ was rejected because its frontal view would read like a UI icon pasted onto the 
 poorly. Both prompts requested a domestic powered dishwasher on pure green chroma. The selected
 512×256 fixed-color sprite uses `Graphic_Single`/`Cutout`; RimWorld rotates the one authored map-view
 sprite with the building rather than resolving a nonexistent directional collection.
+
+## Industrial dishwasher
+
+Selected: candidate A, generated 2026-08-06. Its enclosed central wash chamber, paired plate-rack
+lanes, top vents, and symmetric controls remain distinct at a 3×1 map scale and visually relate to
+the domestic machine. Candidate B was rejected because its flatter front view would rotate poorly.
+Both prompts requested high-throughput commercial equipment on pure green chroma. The selected
+768×256 fixed-color sprite uses `Graphic_Single`/`Cutout`. Baked steam was removed so idle,
+unpowered, and broken machines remain visually truthful; the visible machine was reframed to fill
+720 of 768 horizontal pixels and match its 3-cell collision footprint.

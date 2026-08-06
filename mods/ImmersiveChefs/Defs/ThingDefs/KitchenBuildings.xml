@@ -40,7 +40,7 @@
     <defName>ImmersiveChefs_IndustrialDishwasher</defName>
     <label>industrial dishwasher</label>
     <description>A high-throughput powered dishwasher with capacity for 64 place settings.</description>
-    <graphicData><texPath>Things/Building/Production/TableMachining</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(3,1)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher</texPath><graphicClass>Graphic_Single</graphicClass><shaderType>Cutout</shaderType><drawSize>(3,1)</drawSize></graphicData>
     <size>(3,1)</size>
     <costList><Steel>220</Steel><ComponentIndustrial>8</ComponentIndustrial></costList>
     <researchPrerequisites><li>ImmersiveChefs_ProfessionalKitchens</li></researchPrerequisites>
