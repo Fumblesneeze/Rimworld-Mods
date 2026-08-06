@@ -46,6 +46,30 @@ for a three-knife professional kitchen set on pure green chroma. The selected 25
 zero green-dominant fringe. `ChefsKnife_m.png` uses red only for the neutral blade and rivet regions;
 the dark leather roll and wooden handles remain fixed black-mask accents.
 
+## Portable material and sanitation variations
+
+The optional VTEX/VEF path owns eleven additional masked sprites while the default path keeps the
+four ordinary base graphics. Wood plate candidate A was selected over the darker candidate B
+because its broad grain and carved rim remain distinct after Stuff tinting at 64 px. Light granite
+plate candidate A was selected over the charcoal slate candidate B because it reads as stone rather
+than dark metal after tinting. Faceted stone cookware candidate A was selected over the smoother
+candidate B because the low-tech material remains unambiguous; its fixed wooden handles stay in the
+mask's black region. Dark walnut cutlery candidate B was selected over the chunkier candidate A for
+its clearer three-utensil silhouette.
+
+Two generated grime overlays were compared. Candidate A was retained because its rings, smears, and
+crumbs remain readable at item scale; candidate B became too sparse. The selected overlay is clipped
+to each exact item silhouette and despilled to muted brown so no green-screen pixels survive. Clean
+and dirty families have byte-distinct diffuse art, matching alpha, and sibling `_m` masks. Dirt is a
+visible state change for base cookware, plates, and cutlery and for the eligible wood or stone
+families. Chef's knives intentionally retain intrinsic cleanliness and therefore have no dirty
+family. Rejected candidates and processing comparisons remain under ignored
+`artifacts/VisualAssets/PortableVariations`.
+
+The portable selector is installed only by the exact VTEX/VEF package-and-shape gate. With either
+package absent, the setting Off, or the inspected VEF API incompatible, the Defs retain their normal
+`Graphic_Single` base artwork.
+
 ## Glitterworld cookware set
 
 Selected: candidate B, generated 2026-08-06. Its nested pearl-alloy pot, smart lids, clipped utensil,

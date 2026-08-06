@@ -38,6 +38,74 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/Appliance/Microwave";
 
     [Test]
+    public void Portable_texture_variation_families_are_complete_masked_and_chroma_free()
+    {
+        var root = FindRepositoryRoot();
+        var pairs = new[]
+        {
+            (CookwareTexturePath + "_Dirty", true),
+            (CookwareTexturePath + "_Stone", true),
+            (CookwareTexturePath + "_StoneDirty", true),
+            (PlateTexturePath + "_Dirty", false),
+            (PlateTexturePath + "_Wood", false),
+            (PlateTexturePath + "_WoodDirty", false),
+            (PlateTexturePath + "_Stone", false),
+            (PlateTexturePath + "_StoneDirty", false),
+            (CutleryTexturePath + "_Dirty", false),
+            (CutleryTexturePath + "_Wood", false),
+            (CutleryTexturePath + "_WoodDirty", false)
+        };
+
+        foreach (var (texturePath, requireFixedBlackRegion) in pairs)
+        {
+            var diffusePath = TextureFile(root, texturePath + ".png");
+            var maskPath = TextureFile(root, texturePath + "_m.png");
+            var packagedDiffuse = PackagedTextureFile(root, texturePath + ".png");
+            var packagedMask = PackagedTextureFile(root, texturePath + "_m.png");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.Exists(diffusePath), Is.True, texturePath + " diffuse");
+                Assert.That(File.Exists(maskPath), Is.True, texturePath + " mask");
+                Assert.That(File.Exists(packagedDiffuse), Is.True, texturePath + " packaged diffuse");
+                Assert.That(File.Exists(packagedMask), Is.True, texturePath + " packaged mask");
+            });
+            AssertPackagedTextureMatchesSource(diffusePath, packagedDiffuse);
+            AssertPackagedTextureMatchesSource(maskPath, packagedMask);
+            AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion);
+            AssertNoVividGreenChroma(diffusePath);
+        }
+
+        AssertSpritesDiffer(
+            TextureFile(root, PlateTexturePath + ".png"),
+            TextureFile(root, PlateTexturePath + "_Wood.png"));
+        AssertSpritesDiffer(
+            TextureFile(root, PlateTexturePath + ".png"),
+            TextureFile(root, PlateTexturePath + "_Stone.png"));
+        AssertSpritesDiffer(
+            TextureFile(root, CookwareTexturePath + ".png"),
+            TextureFile(root, CookwareTexturePath + "_Stone.png"));
+        AssertSpritesDiffer(
+            TextureFile(root, CutleryTexturePath + ".png"),
+            TextureFile(root, CutleryTexturePath + "_Wood.png"));
+        foreach (var (clean, dirty) in new[]
+                 {
+                     (CookwareTexturePath, CookwareTexturePath + "_Dirty"),
+                     (CookwareTexturePath + "_Stone", CookwareTexturePath + "_StoneDirty"),
+                     (PlateTexturePath, PlateTexturePath + "_Dirty"),
+                     (PlateTexturePath + "_Wood", PlateTexturePath + "_WoodDirty"),
+                     (PlateTexturePath + "_Stone", PlateTexturePath + "_StoneDirty"),
+                     (CutleryTexturePath, CutleryTexturePath + "_Dirty"),
+                     (CutleryTexturePath + "_Wood", CutleryTexturePath + "_WoodDirty")
+                 })
+        {
+            AssertSpritesDiffer(
+                TextureFile(root, clean + ".png"),
+                TextureFile(root, dirty + ".png"));
+        }
+    }
+
+    [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
     {
         var root = FindRepositoryRoot();
@@ -713,6 +781,19 @@ public sealed class VisualAssetPackageTests
             File.ReadAllBytes(packagedPath),
             Is.EqualTo(File.ReadAllBytes(sourcePath)),
             "The staged texture must be the exact reviewed source asset.");
+    }
+
+    private static void AssertSpritesDiffer(string leftPath, string rightPath)
+    {
+        if (!File.Exists(leftPath) || !File.Exists(rightPath))
+        {
+            return;
+        }
+
+        Assert.That(
+            File.ReadAllBytes(rightPath),
+            Is.Not.EqualTo(File.ReadAllBytes(leftPath)),
+            "A selected variation must not duplicate its base sprite byte-for-byte.");
     }
 
     private static void AssertVisibleBounds(

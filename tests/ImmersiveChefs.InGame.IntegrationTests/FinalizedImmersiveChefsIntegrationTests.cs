@@ -29,6 +29,55 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void TextureVariationSelectorIsAbsentWithoutOptionalPackages()
+    {
+        var optionalPackages = new[]
+        {
+            "OskarPotocki.VanillaFactionsExpanded.Core",
+            "VanillaExpanded.VTEXVariations"
+        };
+        foreach (var packageId in optionalPackages)
+        {
+            IntegrationAssert.True(
+                !LoadedModManager.RunningModsListForReading.Any(mod => string.Equals(
+                    mod.PackageId,
+                    packageId,
+                    StringComparison.OrdinalIgnoreCase)),
+                packageId + " must be absent from the base texture-variation group.");
+        }
+
+        var expectedDefs = new[]
+        {
+            "ImmersiveChefs_Cookware",
+            "ImmersiveChefs_Plate",
+            "ImmersiveChefs_Cutlery",
+            "ImmersiveChefs_ChefsKnife"
+        };
+        foreach (var defName in expectedDefs)
+        {
+            var def = DefDatabase<ThingDef>.GetNamed(defName);
+            IntegrationAssert.Equal(
+                typeof(Graphic_Single),
+                def.graphicData.graphicClass,
+                defName + " must retain ordinary Graphic_Single when VTEX/VEF is absent.");
+        }
+
+        var selected = DefDatabase<ThingDef>.AllDefsListForReading
+            .Where(def =>
+                string.Equals(
+                    def.modContentPack?.PackageId,
+                    ImmersiveChefsMod.PackageId,
+                    StringComparison.OrdinalIgnoreCase) &&
+                def.graphicData?.graphicClass == typeof(Graphic_PortableKitchenwareVariation))
+            .Select(def => def.defName)
+            .ToArray();
+        IntegrationAssert.Equal(
+            0,
+            selected.Length,
+            "No finalized Immersive Chefs Def may retain the optional selector in the base group.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void GameplayDefsAreFinalizedAndResearchGated()
     {
         var expectedThings = new[]
@@ -93,7 +142,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
             microwave.placeWorkers?.Any(worker => worker == typeof(PlaceWorker_MicrowaveCountertop)) == true,
             "The finalized Def must retain the capability-based countertop placement worker.");
         IntegrationAssert.Equal(
-            "Things/Building/Microwave/Microwave",
+            "ImmersiveChefs/Things/Building/Appliance/Microwave",
             microwave.graphicData.texPath,
             "The fallback microwave must use the reviewed custom countertop sprite.");
     }

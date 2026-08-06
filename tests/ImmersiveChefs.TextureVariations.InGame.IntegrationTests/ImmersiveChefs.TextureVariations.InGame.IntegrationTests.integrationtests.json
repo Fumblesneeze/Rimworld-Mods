@@ -1,0 +1,13 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.TextureVariations.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "ludeon.rimworld",
+    "brrainz.harmony",
+    "OskarPotocki.VanillaFactionsExpanded.Core",
+    "VanillaExpanded.VTEXVariations",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

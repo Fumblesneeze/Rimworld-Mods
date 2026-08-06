@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <Operation Class="ImmersiveChefs.PatchOperationTextureVariations">
+    <match Class="PatchOperationSequence">
+      <operations>
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Cookware"]/graphicData/graphicClass</xpath>
+          <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
+        </li>
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Plate"]/graphicData/graphicClass</xpath>
+          <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
+        </li>
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Cutlery"]/graphicData/graphicClass</xpath>
+          <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
+        </li>
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_ChefsKnife"]/graphicData/graphicClass</xpath>
+          <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
+        </li>
+      </operations>
+    </match>
+  </Operation>
+</Patch>

@@ -19,7 +19,7 @@ internal static class PortableTextureVariationPolicy
         KitchenMaterialKind material,
         bool dirty)
     {
-        if (!integrationEnabled)
+        if (!integrationEnabled || product == KitchenwareProduct.ChefsKnife)
         {
             return PortableTextureFamily.Base;
         }

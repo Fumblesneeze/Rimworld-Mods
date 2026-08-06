@@ -98,7 +98,7 @@ public sealed class PortableTextureVariationPolicyTests
                     KitchenwareProduct.ChefsKnife,
                     KitchenMaterialKind.PrimitiveStone,
                     dirty: true),
-                Is.EqualTo(PortableTextureFamily.BaseDirty));
+                Is.EqualTo(PortableTextureFamily.Base));
         });
     }
 
