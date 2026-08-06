@@ -65,7 +65,8 @@
     <graphicData>
       <texPath>ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate</texPath>
       <graphicClass>Graphic_Single</graphicClass>
-      <shaderType>CutoutComplex</shaderType>
+      <!-- The full silhouette is Stuff. VTEX restores CutoutComplex for its material-family masks. -->
+      <shaderType>Cutout</shaderType>
       <drawSize>(0.65,0.65)</drawSize>
     </graphicData>
     <stackLimit>25</stackLimit>

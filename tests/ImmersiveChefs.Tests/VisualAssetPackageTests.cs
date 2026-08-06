@@ -174,7 +174,7 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
-    public void Plate_family_uses_owned_single_sprite_art_with_a_stuff_mask()
+    public void Plate_family_uses_full_surface_stuff_tint_and_packages_optional_variation_mask()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -190,22 +190,25 @@ public sealed class VisualAssetPackageTests
         var plateGraphic = defs["ImmersiveChefs_Plate"].Element("graphicData")!;
         var adobeGraphic = defs["ImmersiveChefs_AdobePlate"].Element("graphicData")!;
         var diffusePath = TextureFile(root, PlateTexturePath + ".png");
-        var maskPath = TextureFile(root, PlateTexturePath + "_m.png");
+        var optionalVariationMaskPath = TextureFile(root, PlateTexturePath + "_m.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)plateGraphic.Element("texPath"), Is.EqualTo(PlateTexturePath));
             Assert.That((string?)plateGraphic.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
-            Assert.That((string?)plateGraphic.Element("shaderType"), Is.EqualTo("CutoutComplex"));
+            Assert.That((string?)plateGraphic.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)adobeGraphic.Element("texPath"), Is.EqualTo(PlateTexturePath));
             Assert.That((string?)adobeGraphic.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
             Assert.That(File.Exists(diffusePath), Is.True);
-            Assert.That(File.Exists(maskPath), Is.True);
+            Assert.That(
+                File.Exists(optionalVariationMaskPath),
+                Is.True,
+                "The VTEX-gated CutoutComplex selector owns the packaged plate mask.");
             Assert.That(File.Exists(PackagedTextureFile(root, PlateTexturePath + ".png")), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, PlateTexturePath + "_m.png")), Is.True);
         });
 
-        AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion: false);
+        AssertTransparentMatchingPair(diffusePath, optionalVariationMaskPath, requireFixedBlackRegion: false);
     }
 
     [Test]

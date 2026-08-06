@@ -12,6 +12,10 @@
           <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
         </li>
         <li Class="PatchOperationReplace">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Plate"]/graphicData/shaderType</xpath>
+          <value><shaderType>CutoutComplex</shaderType></value>
+        </li>
+        <li Class="PatchOperationReplace">
           <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Cutlery"]/graphicData/graphicClass</xpath>
           <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
         </li>

@@ -91,6 +91,22 @@ credential, stage, and fixture cleanup. The acting agent inspected all five reta
 development, rerun only this stable ID when changing this slice; do not replay unrelated completed
 catalogs.
 
+The focused base portable-art acceptance is
+`artifacts/EndToEndRuns/Grouped/20260806T191943249Z`. It admitted only
+`immersive-chefs.base-portable-visual-catalog` in the exact Core/Harmony/Immersive group and retained
+17 frames. The catalog aligned every eligible custom wood, granite, steel, silver, and gold fixture
+above a selected native material reference, rendered all seven portable Defs, and exposed native
+clean/dirty inspectors plus stack counts and selection brackets. The acting agent inspected every
+frame and observed the distinct Stuff colors, fixed-art exceptions, and readable item-scale
+silhouettes. Because the base plate changed from masked secondary tint to full-surface Stuff tint,
+the only directly affected optional stable ID was rerun at
+`artifacts/EndToEndRuns/Grouped/20260806T192325293Z`; its five inspected frames prove the exact
+VEF/VTEX group still cycles its native building graphics and preserves portable material/sanitation
+graphics through native save/load. Both runs completed process, credential, configuration, fixture,
+and marker-owned stage cleanup. Do not replay either completed catalog during unrelated feature
+work; select only a current stable ID, except for deliberate regression maintenance or release
+preparation.
+
 The accepted RimCuisine replacement-Def integration run is `artifacts\GatewaySmoke\20260805T145248752Z`. Its exact process loaded Core, Harmony, the selected RimWorld 1.6 Processor Framework Workshop item, all four RimCuisine 2 modules, No Vanilla Meals, Immersive Chefs, and Gateway. The exact compatibility assembly observed all ten official meal ThingDefs absent, every surviving vanilla-product recipe unclassified with its initialization-time multiplier at `1`, and the surviving pottage, rubaboo, pizza, and extravagant-meal Defs finalized with their intended ware/culinary components and tiers. This is finalized-loader evidence; native cooking and trade remain separate E2E acceptance work.
 
 The no-replacement inverse uses two lifecycle-correct processes with exact Core/Harmony/No-Vanilla/Immersive/Gateway order: `artifacts\GatewaySmoke\20260805T150502834Z` proves the settled main-menu registry contains no fallback meal, and `artifacts\GatewaySmoke\20260805T150931026Z` reaches a playable map and proves a Cooking-capable colonist can reach an operational fueled stove whose retained disabled `CookMealSimple` metadata creates neither a covered cooking path nor a missing-kitchenware alert. Main-menu and quicktest lifecycles are intentionally separate because `-quicktest` bypasses the main-menu trigger.

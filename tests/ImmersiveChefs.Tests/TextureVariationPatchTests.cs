@@ -40,6 +40,11 @@ public sealed class TextureVariationPatchTests
             .Where(element =>
                 (string?)element.Attribute("Class") == "PatchOperationReplace")
             .ToList();
+        var graphicReplacements = replacements
+            .Where(element => ((string?)element.Element("xpath"))?.EndsWith(
+                "/graphicData/graphicClass",
+                StringComparison.Ordinal) == true)
+            .ToList();
         var expectedDefNames = new[]
         {
             "ImmersiveChefs_Cookware",
@@ -53,15 +58,22 @@ public sealed class TextureVariationPatchTests
             Assert.That(
                 (string?)operation.Attribute("Class"),
                 Is.EqualTo("ImmersiveChefs.PatchOperationTextureVariations"));
-            Assert.That(replacements, Has.Count.EqualTo(expectedDefNames.Length));
+            Assert.That(graphicReplacements, Has.Count.EqualTo(expectedDefNames.Length));
             foreach (var defName in expectedDefNames)
             {
-                var replacement = replacements.Single(element =>
+                var replacement = graphicReplacements.Single(element =>
                     ((string?)element.Element("xpath"))?.Contains(defName) == true);
                 Assert.That(
                     (string?)replacement.Element("value")?.Element("graphicClass"),
                     Is.EqualTo("ImmersiveChefs.Graphic_PortableKitchenwareVariation"));
             }
+            var plateShader = replacements.Single(element =>
+                ((string?)element.Element("xpath"))?.EndsWith(
+                    "ThingDef[defName=\"ImmersiveChefs_Plate\"]/graphicData/shaderType",
+                    StringComparison.Ordinal) == true);
+            Assert.That(
+                (string?)plateShader.Element("value")?.Element("shaderType"),
+                Is.EqualTo("CutoutComplex"));
         });
     }
 

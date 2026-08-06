@@ -25,8 +25,11 @@ Selected: candidate B, generated 2026-08-06. Its broad, subtly faceted rim remai
 because its smoother oval read as a generic dish at final scale. Both prompts requested a neutral
 gray, empty, shallow plate in high top-down view on pure green chroma, without food or cutlery. The
 selected 256 px diffuse has zero green-dominant fringe after matte cleanup. `Plate_m.png` masks the
-complete plate for primary Stuff tinting; the fixed adobe Def reuses the owned silhouette with its
-earth color.
+complete plate for the optional VTEX material-family selector; the fixed adobe Def reuses the owned
+silhouette with its earth color. In the base package the plate uses `Cutout`, so its whole visible
+surface receives RimWorld's Stuff color instead of being muted by a white secondary channel. The
+exact VTEX gate restores `CutoutComplex`, where the packaged mask and selected family sprite own the
+material treatment.
 
 ## Cutlery setting
 
@@ -69,6 +72,14 @@ family. Rejected candidates and processing comparisons remain under ignored
 The portable selector is installed only by the exact VTEX/VEF package-and-shape gate. With either
 package absent, the setting Off, or the inspected VEF API incompatible, the Defs retain their normal
 `Graphic_Single` base artwork.
+
+The exact base-package catalog renders all seven portable Defs and 33 real Things in columns above
+native Wood, Granite blocks, Steel, Silver, and Gold references. It covers every Def-eligible Stuff
+treatment, clean/dirty pairs, available stack overlays, native selection brackets, and selected-item
+inspectors. The retained frames show full-surface material tint on base plates, masked material tint
+on cookware and cutlery, readable adobe/glitterworld/prepared-food fixed art, and the three eligible
+chef's-knife materials. The directly affected VTEX catalog was then rerun and retained the material
+families and sanitation state across native save/load without missing textures.
 
 ## Glitterworld cookware set
 
