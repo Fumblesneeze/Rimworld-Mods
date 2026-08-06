@@ -24,6 +24,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/Dishwasher/Dishwasher";
     private const string IndustrialDishwasherTexturePath =
         "ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher";
+    private const string PrepStationTexturePath =
+        "ImmersiveChefs/Things/Building/KitchenStation/PrepStation";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -273,6 +275,44 @@ public sealed class VisualAssetPackageTests
         });
 
         AssertTransparentSprite(diffusePath);
+    }
+
+    [Test]
+    public void Ingredient_prep_station_uses_owned_rotatable_single_sprite_art()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "PreparedFoodAndStation.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_PrepStation");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, PrepStationTexturePath + ".png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(PrepStationTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(3.5,1.5)"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, PrepStationTexturePath + ".png")), Is.True);
+        });
+
+        AssertTransparentSprite(diffusePath);
+        if (File.Exists(diffusePath))
+        {
+            using var bitmap = new Bitmap(diffusePath);
+            Assert.That(
+                bitmap.Width * 15,
+                Is.EqualTo(bitmap.Height * 35),
+                "The texture canvas must match the 3.5:1.5 draw mesh without Unity stretching it.");
+        }
     }
 
     private static string TextureFile(string root, string texturePath)

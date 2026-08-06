@@ -39,7 +39,7 @@
     <label>ingredient prep station</label>
     <description>A professional worktable for washing, trimming, chopping and portioning ingredients before final cooking.</description>
     <thingClass>Building_WorkTable</thingClass>
-    <graphicData><texPath>Things/Building/Production/TableButcher</texPath><graphicClass>Graphic_Multi</graphicClass><drawSize>(3.5,1.5)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Building/KitchenStation/PrepStation</texPath><graphicClass>Graphic_Single</graphicClass><shaderType>Cutout</shaderType><drawSize>(3.5,1.5)</drawSize></graphicData>
     <size>(3,1)</size>
     <altitudeLayer>Building</altitudeLayer>
     <fillPercent>0.5</fillPercent>

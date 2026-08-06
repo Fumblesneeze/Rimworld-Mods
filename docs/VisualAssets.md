@@ -82,3 +82,12 @@ Both prompts requested high-throughput commercial equipment on pure green chroma
 768×256 fixed-color sprite uses `Graphic_Single`/`Cutout`. Baked steam was removed so idle,
 unpowered, and broken machines remain visually truthful; the visible machine was reframed to fill
 720 of 768 horizontal pixels and match its 3-cell collision footprint.
+
+## Ingredient prep station
+
+Selected: candidate B, generated 2026-08-06. Its empty rinse basin, broad cutting board, fixed knife
+rail, covered bins, and empty portioning pans communicate washing, chopping, and portioning without
+claiming ingredients are permanently stored. Candidate A was rejected because its prefilled bins
+would falsely depict food in every state. Both prompts requested a professional 3-cell worktable on
+pure green chroma. The selected 768×384 fixed-color sprite is reframed to the Def's 3.5×1.5 draw
+ratio and uses `Graphic_Single`/`Cutout` for native rotation.
