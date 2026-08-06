@@ -36,3 +36,12 @@ read as three unrelated loose Things at final scale. Both prompts requested exac
 utensils in neutral gray on pure green chroma. The selected 256 px diffuse has zero green-dominant
 fringe, and `Cutlery_m.png` masks the complete setting for wood, metal, silver, gold, and plastic
 Stuff tinting.
+
+## Chef's knife set
+
+Selected: candidate B, generated 2026-08-06. Its closed leather roll reads as one belt-ready kit at
+64 px while preserving three distinct culinary blade sizes. Candidate A was rejected because its
+open roll reads more like a work-surface display than worn personal equipment. Both prompts asked
+for a three-knife professional kitchen set on pure green chroma. The selected 256 px diffuse has
+zero green-dominant fringe. `ChefsKnife_m.png` uses red only for the neutral blade and rivet regions;
+the dark leather roll and wooden handles remain fixed black-mask accents.

@@ -164,7 +164,7 @@
     <description>A cook's personal set of chef's knives. It is worn on the utility belt and improves culinary work without replacing a weapon.</description>
     <thingClass>Apparel</thingClass>
     <graphicData>
-      <texPath>Things/Item/Equipment/WeaponMelee/Knife</texPath>
+      <texPath>ImmersiveChefs/Things/Item/Kitchenware/ChefsKnife/ChefsKnife</texPath>
       <graphicClass>Graphic_Single</graphicClass>
       <shaderType>CutoutComplex</shaderType>
       <drawSize>(0.8,0.8)</drawSize>

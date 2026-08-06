@@ -14,6 +14,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate";
     private const string CutleryTexturePath =
         "ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery";
+    private const string ChefsKnifeTexturePath =
+        "ImmersiveChefs/Things/Item/Kitchenware/ChefsKnife/ChefsKnife";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -112,6 +114,38 @@ public sealed class VisualAssetPackageTests
         });
 
         AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion: false);
+    }
+
+    [Test]
+    public void Chefs_knife_set_uses_owned_single_sprite_art_with_a_stuff_mask()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "Kitchenware.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_ChefsKnife");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, ChefsKnifeTexturePath + ".png");
+        var maskPath = TextureFile(root, ChefsKnifeTexturePath + "_m.png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(ChefsKnifeTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("CutoutComplex"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(maskPath), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, ChefsKnifeTexturePath + ".png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, ChefsKnifeTexturePath + "_m.png")), Is.True);
+        });
+
+        AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion: true);
     }
 
     private static string TextureFile(string root, string texturePath)
