@@ -42,6 +42,75 @@ public sealed class RecipeClassificationTests
         });
     }
 
+    [TestCase("FTV_CookMealSimple", "FTV_MealSimple", MealComplexity.Simple)]
+    [TestCase("FTV_CookMealSimpleBulk", "FTV_MealSimple", MealComplexity.Simple)]
+    [TestCase("FTV_CookMealFine", "FTV_MealFine", MealComplexity.Advanced)]
+    [TestCase("FTV_CookMealFineBulk", "FTV_MealFine", MealComplexity.Advanced)]
+    [TestCase("FTV_CookMealLavish", "FTV_MealLavish", MealComplexity.Elaborate)]
+    [TestCase("FTV_CookMealLavishBulk", "FTV_MealLavish", MealComplexity.Elaborate)]
+    public void Food_texture_variety_registers_its_exact_recipes_and_products(
+        string recipeDefName,
+        string productDefName,
+        MealComplexity expected)
+    {
+        var classifier = MealClassificationCatalog.Create(new[]
+        {
+            "GOAT.FOOD.TEXTURE.VARIETY.CORE",
+            "GOAT.FOOD.TEXTURE.VARIETY"
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(classifier.ClassifyRecipe(recipeDefName), Is.EqualTo(expected));
+            Assert.That(classifier.ClassifyMeal(productDefName), Is.EqualTo(expected));
+        });
+    }
+
+    [Test]
+    public void Food_texture_variety_registry_requires_core_and_main_packages_together()
+    {
+        var coreOnly = MealClassificationCatalog.Create(new[]
+        {
+            "Goat.Food.Texture.Variety.Core"
+        });
+        var mainOnly = MealClassificationCatalog.Create(new[]
+        {
+            "Goat.Food.Texture.Variety"
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(coreOnly.ClassifyRecipe("FTV_CookMealSimple"), Is.Null);
+            Assert.That(coreOnly.ClassifyMeal("FTV_MealSimple"), Is.Null);
+            Assert.That(mainOnly.ClassifyRecipe("FTV_CookMealSimple"), Is.Null);
+            Assert.That(mainOnly.ClassifyMeal("FTV_MealSimple"), Is.Null);
+        });
+    }
+
+    [Test]
+    public void Food_texture_variety_changed_shape_disables_its_whole_registry()
+    {
+        var validation = MealClassificationCatalog.CreateValidated(
+            new[]
+            {
+                "Goat.Food.Texture.Variety.Core",
+                "Goat.Food.Texture.Variety"
+            },
+            recipeDefName => recipeDefName != "FTV_CookMealFine",
+            _ => true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(validation.Failures, Has.Count.EqualTo(1));
+            Assert.That(
+                validation.Failures[0].PackageId,
+                Is.EqualTo("Goat.Food.Texture.Variety"));
+            Assert.That(validation.Catalog.ClassifyRecipe("FTV_CookMealSimple"), Is.Null);
+            Assert.That(validation.Catalog.ClassifyRecipe("FTV_CookMealFine"), Is.Null);
+            Assert.That(validation.Catalog.ClassifyMeal("FTV_MealLavish"), Is.Null);
+        });
+    }
+
     [TestCase("VanillaExpanded.VCookE", "VCE_CookBakeSimple", "VCE_SimpleBake", MealComplexity.Simple)]
     [TestCase("VanillaExpanded.VCookE", "VCE_CookGrillFineBulk", "VCE_FineGrill", MealComplexity.Advanced)]
     [TestCase("VanillaExpanded.VCookE", "VCE_CookSoupGourmet", "VCE_CookedSoupGourmet", MealComplexity.Elaborate)]

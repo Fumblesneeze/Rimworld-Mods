@@ -50,6 +50,8 @@ public sealed class MealClassificationCatalog
     public const string VanillaCookingExpandedSushiPackageId = "VanillaExpanded.VCookESushi";
     public const string FriedMealsPackageId = "ucp.friedmeals";
     public const string FastMealsPackageId = "Argon.CheapMeals";
+    public const string FoodTextureVarietyCorePackageId = "Goat.Food.Texture.Variety.Core";
+    public const string FoodTextureVarietyPackageId = "Goat.Food.Texture.Variety";
     public const string RimCuisineCorePackageId = "Mlie.RC2.Core";
     public const string RimCuisineMealsPackageId = "Mlie.RC2.MaME";
     public const string NoVanillaMealsPackageId = "Mlie.NoVanillaMeals";
@@ -185,6 +187,14 @@ public sealed class MealClassificationCatalog
         if (packages.Contains(FastMealsPackageId))
         {
             catalog.AddPackage(FastMealsPackageId, catalog.AddFastMeals);
+        }
+
+        if (packages.Contains(FoodTextureVarietyCorePackageId) &&
+            packages.Contains(FoodTextureVarietyPackageId))
+        {
+            catalog.AddPackage(
+                FoodTextureVarietyPackageId,
+                catalog.AddFoodTextureVariety);
         }
 
         if (rimCuisineCore)
@@ -365,6 +375,8 @@ public sealed class MealClassificationCatalog
             VanillaCookingExpandedSushiPackageId,
             FriedMealsPackageId,
             FastMealsPackageId,
+            FoodTextureVarietyCorePackageId,
+            FoodTextureVarietyPackageId,
             ProcessorFrameworkPackageId,
             RimCuisineCorePackageId,
             RimCuisineMealsPackageId,
@@ -502,6 +514,22 @@ public sealed class MealClassificationCatalog
             new[] { "CM_DeluxeFastMeal", "CM_DeluxeFastMeal_Meat", "CM_DeluxeFastMeal_Veg" });
         preserveOriginalWork.UnionWith(simpleRecipes);
         preserveOriginalWork.UnionWith(advancedRecipes);
+    }
+
+    private void AddFoodTextureVariety()
+    {
+        Add(
+            MealComplexity.Simple,
+            new[] { "FTV_CookMealSimple", "FTV_CookMealSimpleBulk" },
+            new[] { "FTV_MealSimple" });
+        Add(
+            MealComplexity.Advanced,
+            new[] { "FTV_CookMealFine", "FTV_CookMealFineBulk" },
+            new[] { "FTV_MealFine" });
+        Add(
+            MealComplexity.Elaborate,
+            new[] { "FTV_CookMealLavish", "FTV_CookMealLavishBulk" },
+            new[] { "FTV_MealLavish" });
     }
 
     private void AddRimCuisineCore()

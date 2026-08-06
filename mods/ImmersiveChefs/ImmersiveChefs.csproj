@@ -29,6 +29,12 @@
     <RimWorldLoadAfter Include="Orion.Hospitality" />
     <RimWorldLoadAfter Include="Evyatar108.VarietyMattersImprovedRedux" />
     <RimWorldLoadAfter Include="VanillaExpanded.VanillaFoodVarietyExpanded" />
+    <RimWorldLoadAfter Include="Thekiborg.DMTR" />
+    <RimWorldLoadAfter Include="Goat.Food.Texture.Variety.Core" />
+    <RimWorldLoadAfter Include="Goat.Food.Texture.Variety" />
+    <RimWorldLoadAfter Include="Goat.Food.Texture.Variety.VECooking" />
+    <RimWorldLoadAfter Include="Goat.Food.Texture.Variety.VEStew" />
+    <RimWorldLoadAfter Include="Goat.Food.Texture.Variety.VESushi" />
     <RimWorldLoadAfter Include="OskarPotocki.VanillaFactionsExpanded.Core" />
     <RimWorldLoadAfter Include="VanillaExpanded.VNutrientE" />
     <RimWorldLoadAfter Include="rabiosus.AdaptiveMealBill" />
