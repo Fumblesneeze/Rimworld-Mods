@@ -4029,6 +4029,46 @@ function Resolve-IntegrationTestPollResponse {
     }
 }
 
+function Resolve-GatewayStartupStatusPollResponse {
+    param([Parameter(Mandatory)][object]$Response)
+
+    $statusCode = [int]$Response.StatusCode
+    try {
+        $envelope = [string]$Response.Content | ConvertFrom-Json
+    }
+    catch {
+        throw "Authenticated status returned invalid JSON with HTTP $statusCode."
+    }
+
+    if ($statusCode -eq 200 -and
+        $envelope.PSObject.Properties.Name -ccontains 'ok' -and
+        $envelope.ok -is [bool] -and
+        [bool]$envelope.ok) {
+        return 'ready'
+    }
+
+    $retryableProperties = @()
+    if ($null -ne $envelope -and
+        $envelope.PSObject.Properties.Name -ccontains 'error' -and
+        $null -ne $envelope.error) {
+        $retryableProperties = @($envelope.error.PSObject.Properties |
+            Where-Object { [string]$_.Name -ceq 'retryable' })
+    }
+    $hasExactRetryable = $retryableProperties.Count -eq 1 -and
+        $retryableProperties[0].Value -is [bool] -and
+        [bool]$retryableProperties[0].Value
+    if ($statusCode -eq 504 -and
+        $envelope.PSObject.Properties.Name -ccontains 'error' -and
+        $null -ne $envelope.error -and
+        $envelope.error.PSObject.Properties.Name -ccontains 'code' -and
+        [string]$envelope.error.code -ceq 'timed_out_before_start' -and
+        $hasExactRetryable) {
+        return 'retry'
+    }
+
+    throw "Authenticated status failed with HTTP $statusCode."
+}
+
 function Assert-GatewaySuccess {
     param(
         [Parameter(Mandatory)]
@@ -4869,11 +4909,23 @@ try {
         throw "Unauthenticated status returned HTTP $([int]$unauthorized.StatusCode), expected 401."
     }
 
-    $statusResponse = Invoke-GatewayGet -Uri "$baseUrl/status" -Token $manifest.token -RequestId 'gateway-smoke-status'
-    $statusResponse.Content | Set-Content -LiteralPath $statusPath -Encoding UTF8
-    $status = $statusResponse.Content | ConvertFrom-Json
-    if ([int]$statusResponse.StatusCode -ne 200 -or -not $status.ok) {
-        throw "Authenticated status failed with HTTP $([int]$statusResponse.StatusCode). See $statusPath"
+    $status = $null
+    while ([datetime]::UtcNow -lt $deadline) {
+        $statusResponse = Invoke-GatewayGet `
+            -Uri "$baseUrl/status" `
+            -Token $manifest.token `
+            -RequestId 'gateway-smoke-status'
+        $statusResponse.Content | Set-Content -LiteralPath $statusPath -Encoding UTF8
+        $startupStatusResolution = Resolve-GatewayStartupStatusPollResponse -Response $statusResponse
+        if ($startupStatusResolution -ceq 'ready') {
+            $status = $statusResponse.Content | ConvertFrom-Json
+            break
+        }
+
+        Start-Sleep -Seconds 1
+    }
+    if ($null -eq $status) {
+        throw "Timed out after $TimeoutSeconds seconds waiting for authenticated gateway status. See $statusPath"
     }
 
     if (-not $status.result.developerOnly -or -not $status.result.unrestrictedExecutionEnabled) {
