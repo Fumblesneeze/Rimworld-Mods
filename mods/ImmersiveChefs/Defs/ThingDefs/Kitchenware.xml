@@ -35,8 +35,8 @@
     <label>cookware set</label>
     <description>One complete reusable kitchen set: a pot, pan, lids, handles and small utensils. Its material and craftsmanship affect cooking speed, cleanliness, comfort and culinary quality.</description>
     <graphicData>
-      <texPath>Things/Item/Resource/Steel</texPath>
-      <graphicClass>Graphic_StackCount</graphicClass>
+      <texPath>ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
       <shaderType>CutoutComplex</shaderType>
       <drawSize>(0.95,0.95)</drawSize>
     </graphicData>
