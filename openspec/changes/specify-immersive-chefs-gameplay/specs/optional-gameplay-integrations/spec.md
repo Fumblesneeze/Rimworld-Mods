@@ -172,6 +172,11 @@ When `sumghai.Replimat` and `sumghai.ReplimatMeals` are active and the exact pub
 - **WHEN** the native terminal rejects the requested product after ware was reserved
 - **THEN** no meal or plate is fabricated and the original clean plate becomes ordinarily available again
 
+#### Scenario: Common Sense clears a completed Replimat setting
+
+- **WHEN** a Cleaning-capable colonist completes native Replimat dining while Common Sense and a powered, supplied Dubs-connected dishwasher are active
+- **THEN** the same responsible pawn queues both exact dirty returned items, carries them through ordinary `Doing dishes` jobs, and admits the one plate plus one cutlery setting to that dishwasher as exactly 1.25 place-setting capacity before any hand-washing route
+
 #### Scenario: A Replimat animal feeder serves an animal
 
 - **WHEN** a Replimat animal feeder creates its native loose feed and an animal eats that feed through an ordinary ingest job

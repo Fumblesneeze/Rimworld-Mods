@@ -47,8 +47,9 @@ public static class ReplimatModsIntegrationTests
             "The complete Replimat Meals registry must validate before the adapter activates.");
         IntegrationAssert.True(
             ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene) &&
-            ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.CommonSense),
-            "The sanitation companions must remain active in the maintained group.");
+            ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.CommonSense) &&
+            CommonSenseAdapter.Enabled,
+            "The sanitation companions and validated Common Sense adapter must remain active in the maintained group.");
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]

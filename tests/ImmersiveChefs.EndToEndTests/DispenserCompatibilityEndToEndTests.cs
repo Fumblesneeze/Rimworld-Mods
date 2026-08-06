@@ -19,9 +19,9 @@ namespace ImmersiveChefs.EndToEndTests;
     "Dubwise.DubsBadHygiene",
     "avilmask.CommonSense",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 7_200,
-    MaxGameTicks = 24_000,
-    MaxWallClockSeconds = 210)]
+    MaxFrames = 10_800,
+    MaxGameTicks = 36_000,
+    MaxWallClockSeconds = 270)]
 public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
 {
     private Map map = null!;
@@ -29,6 +29,8 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
     private ThingWithComps terminal = null!;
     private ThingWithComps tank = null!;
     private ThingWithComps computer = null!;
+    private ThingWithComps dishwasher = null!;
+    private ThingWithComps waterTower = null!;
     private ThingWithComps plate = null!;
     private ThingWithComps cutlery = null!;
     private ThingWithComps? dispensedMeal;
@@ -37,6 +39,9 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
     private float feedstockAfterDispense;
     private bool nativeJobObserved;
     private bool wareCarriedBeforeOutput;
+    private bool dirtyReturnObserved;
+    private bool commonSenseCleanupJobObserved;
+    private bool commonSenseQueuedSecondWareObserved;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -50,7 +55,12 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
         tank = DispenserE2EFixture.SpawnBuilding(map, "ReplimatFeedTank", center);
         computer = DispenserE2EFixture.SpawnBuilding(map, "ReplimatComputer", center + new IntVec3(2, 0, 0));
         DispenserE2EFixture.SetReplimatFeedstockPercent(tank, 1f);
-        DispenserE2EFixture.SettlePower(map, new[] { terminal, tank, computer }, 600);
+        dishwasher = DispenserE2EFixture.SpawnBuilding(
+            map,
+            "ImmersiveChefs_Dishwasher",
+            center + new IntVec3(3, 0, 3));
+        waterTower = DispenserE2EFixture.SpawnDubsWaterSupply(map, dishwasher, 10f);
+        DispenserE2EFixture.SettlePower(map, new[] { terminal, tank, computer, dishwasher }, 600);
 
         EndToEndAssert.True(
             DispenserE2EFixture.ReadBooleanProperty(computer, "Working"),
@@ -60,8 +70,15 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
             "The native terminal must be available with a powered computer and stocked tank.");
         feedstockBefore = DispenserE2EFixture.ReadSingleProperty(tank, "StoredFeedstock");
         EndToEndAssert.True(feedstockBefore > 0f, "The native Replimat tank must begin with real feedstock.");
+        EndToEndAssert.True(
+            DubsWaterAdapter.IsOperationalFixture(dishwasher) &&
+            DubsWaterAdapter.CanSupplyCycleWater(dishwasher, 1f),
+            "The exact-group dishwasher must have native power and a supplied Dubs plumbing network.");
+        EndToEndAssert.True(
+            CommonSenseAdapter.Enabled,
+            "The exact-group Common Sense adapter must be active before dining begins.");
 
-        diner = FoodSearchE2EFixture.CreateColonist("Replimat diner");
+        diner = DispenserE2EFixture.CreateCleaningCapableColonist("Replimat diner");
         GenSpawn.Spawn(diner, center + new IntVec3(-2, 0, -3), map);
         FoodSearchE2EFixture.SetHunger(diner, 0.10f);
 
@@ -94,7 +111,7 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
         var fixture = new[]
         {
             diner.ThingID, terminal.ThingID, tank.ThingID, computer.ThingID,
-            plate.ThingID, cutlery.ThingID
+            dishwasher.ThingID, waterTower.ThingID, plate.ThingID, cutlery.ThingID
         };
         yield return new SelectionActionStep("select the native Replimat fixture", fixture, additive: false);
         yield return new CameraActionStep("frame the native Replimat fixture", fixture, paddingPixels: 220);
@@ -138,32 +155,63 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
         yield return new TimeControlActionStep(
             "complete native Replimat ingestion",
             paused: false,
-            EndToEndGameSpeed.Superfast);
+            EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
             "Replimat meal returns the same dirty setting",
-            _ => dispensedMeal?.Destroyed == true &&
-                 plate.Spawned && plate.GetComp<CompSanitation>()?.IsDirty == true &&
-                 cutlery.Spawned && cutlery.GetComp<CompSanitation>()?.IsDirty == true,
+            _ => ObserveDirtyReturn(),
             new EndToEndDeadline(3_600, 16_000, TimeSpan.FromSeconds(105)));
         yield return new TimeControlActionStep(
             "pause after Replimat dining",
             paused: true,
             EndToEndGameSpeed.Normal);
         yield return new AssertionStep("Replimat native lifecycle completes once", _ => AssertCompleted());
+        yield return new TimeControlActionStep(
+            "resume Common Sense returned-setting cleanup",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the diner carries exact returned Replimat ware to the dishwasher",
+            _ => ObserveCommonSenseCleanupJob(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(80)));
+        yield return new TimeControlActionStep(
+            "pause on ordinary Replimat dish hauling",
+            paused: true,
+            EndToEndGameSpeed.Normal);
         yield return new SelectionActionStep(
-            "select returned Replimat plate",
-            new[] { plate.ThingID },
+            "select the Replimat diner doing dishes",
+            new[] { diner.ThingID },
             additive: false);
         yield return new CameraActionStep(
-            "frame returned Replimat setting",
-            new[] { diner.ThingID, terminal.ThingID, plate.ThingID, cutlery.ThingID },
+            "frame Replimat dishwasher handoff",
+            new[] { diner.ThingID, dishwasher.ThingID },
             paddingPixels: 220);
-        yield return new ScreenshotStep("observe returned dirty Replimat plate", Array.Empty<string>(), 0);
+        yield return new ScreenshotStep(
+            "observe Common Sense hauling exact Replimat ware",
+            Array.Empty<string>(),
+            0);
+        yield return new TimeControlActionStep(
+            "finish Replimat dishwasher admission",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the dishwasher contains the exact returned Replimat setting",
+            _ => DishwasherContainsExactSetting(),
+            new EndToEndDeadline(3_600, 12_000, TimeSpan.FromSeconds(105)));
+        yield return new TimeControlActionStep(
+            "pause on exact Replimat setting in dishwasher",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "Common Sense hands the Replimat setting to the supplied dishwasher",
+            _ => AssertDishwasherHandoff());
         yield return new SelectionActionStep(
-            "select returned Replimat cutlery",
-            new[] { cutlery.ThingID },
+            "select dishwasher holding returned Replimat setting",
+            new[] { dishwasher.ThingID },
             additive: false);
-        yield return new ScreenshotStep("observe returned dirty Replimat cutlery", Array.Empty<string>(), 0);
+        yield return new ScreenshotStep(
+            "observe exact Replimat setting loading in dishwasher",
+            Array.Empty<string>(),
+            0);
         yield return new CheckpointStep(
             "Replimat native dining result",
             _ => new Dictionary<string, string>
@@ -175,6 +223,12 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
                 ["mealThingId"] = dispensedMeal?.ThingID ?? "missing",
                 ["plateThingId"] = plate.ThingID,
                 ["cutleryThingId"] = cutlery.ThingID,
+                ["dishwasherThingId"] = dishwasher.ThingID,
+                ["waterTowerThingId"] = waterTower.ThingID,
+                ["dirtyReturnObserved"] = dirtyReturnObserved.ToString(),
+                ["commonSenseCleanupJobObserved"] = commonSenseCleanupJobObserved.ToString(),
+                ["commonSenseQueuedSecondWareObserved"] = commonSenseQueuedSecondWareObserved.ToString(),
+                ["dishwasherUsedCapacity"] = dishwasher.GetComp<CompDishwasher>()?.UsedCapacity.ToString("R") ?? "missing",
                 ["feedstockBefore"] = feedstockBefore.ToString("R"),
                 ["feedstockAfterDispense"] = feedstockAfterDispense.ToString("R"),
                 ["foodPoisoning"] = diner.health.hediffSet.HasHediff(HediffDefOf.FoodPoisoning).ToString()
@@ -242,12 +296,84 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
             "The test must observe native job selection and pre-dispense ware carriage.");
         EndToEndAssert.NotNull(dispensedMeal, "The native terminal must produce a real meal Thing.");
         EndToEndAssert.True(dispensedMeal!.Destroyed, "The diner must consume the native Replimat meal.");
-        EndToEndAssert.True(plate.Spawned && plate.GetComp<CompSanitation>()?.IsDirty == true,
-            "The exact embedded Replimat plate must return dirty after ingestion.");
-        EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()?.IsDirty == true,
-            "The exact carried Replimat cutlery must return dirty after ingestion.");
+        EndToEndAssert.True(dirtyReturnObserved,
+            "The test must observe the exact Replimat plate and cutlery spawned dirty after ingestion.");
         EndToEndAssert.True(!diner.health.hediffSet.HasHediff(HediffDefOf.FoodPoisoning),
             "Native Replimat dining must retain its no-food-poisoning outcome.");
+    }
+
+    private bool ObserveDirtyReturn()
+    {
+        if (dispensedMeal?.Destroyed != true ||
+            !plate.Spawned || plate.GetComp<CompSanitation>()?.IsDirty != true ||
+            !cutlery.Spawned || cutlery.GetComp<CompSanitation>()?.IsDirty != true)
+        {
+            return false;
+        }
+
+        dirtyReturnObserved = true;
+        return true;
+    }
+
+    private bool ObserveCommonSenseCleanupJob()
+    {
+        if (diner.CurJobDef != ImmersiveChefsDefOf.ImmersiveChefs_DoDishes ||
+            !ReferenceEquals(diner.CurJob?.GetTarget(TargetIndex.B).Thing, dishwasher))
+        {
+            return false;
+        }
+
+        var carried = diner.carryTracker?.CarriedThing;
+        if (!ReferenceEquals(carried, plate) && !ReferenceEquals(carried, cutlery))
+        {
+            return false;
+        }
+
+        EndToEndAssert.True(
+            carried is ThingWithComps carriedWare && carriedWare.GetComp<CompSanitation>()?.IsDirty == true,
+            "Common Sense must carry one exact dirty returned Replimat item.");
+        var otherWare = ReferenceEquals(carried, plate) ? cutlery : plate;
+        var queuedOtherWare = diner.jobs.jobQueue
+            .Where(queued =>
+                queued.job.def == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+                ReferenceEquals(queued.job.GetTarget(TargetIndex.A).Thing, otherWare) &&
+                ReferenceEquals(queued.job.GetTarget(TargetIndex.B).Thing, dishwasher))
+            .ToArray();
+        EndToEndAssert.Equal(
+            1,
+            queuedOtherWare.Length,
+            "Common Sense must queue the other exact returned Replimat item for the same dishwasher.");
+        commonSenseCleanupJobObserved = true;
+        commonSenseQueuedSecondWareObserved = true;
+        return true;
+    }
+
+    private bool DishwasherContainsExactSetting()
+    {
+        var contents = dishwasher.GetComp<CompDishwasher>()?.GetDirectlyHeldThings();
+        return contents is not null && contents.Contains(plate) && contents.Contains(cutlery);
+    }
+
+    private void AssertDishwasherHandoff()
+    {
+        var dishwasherComp = dishwasher.GetComp<CompDishwasher>();
+        EndToEndAssert.True(commonSenseCleanupJobObserved,
+            "The test must observe an ordinary Common Sense dish-hauling job.");
+        EndToEndAssert.True(commonSenseQueuedSecondWareObserved,
+            "The test must distinguish the Common Sense two-item queue from ordinary one-at-a-time Cleaning work.");
+        EndToEndAssert.True(DishwasherContainsExactSetting(),
+            "The supplied dishwasher must hold the exact returned Replimat plate and cutlery.");
+        EndToEndAssert.True(
+            Math.Abs((dishwasherComp?.UsedCapacity ?? -1f) - 1.25f) < 0.001f,
+            "One plate and one cutlery setting must occupy exactly 1.25 dishwasher capacity.");
+        EndToEndAssert.True(
+            plate.GetComp<CompSanitation>()?.IsDirty == true &&
+            cutlery.GetComp<CompSanitation>()?.IsDirty == true,
+            "Both admitted Replimat items must still be visibly dirty during the loading window.");
+        EndToEndAssert.True(
+            DubsWaterAdapter.IsOperationalFixture(dishwasher) &&
+            DubsWaterAdapter.CanSupplyCycleWater(dishwasher, 1f),
+            "The dishwasher-first handoff must retain its supplied Dubs water route.");
     }
 
     private static bool IsReplimatMeal(Thing thing) =>
@@ -1219,6 +1345,118 @@ public sealed class ReplimatSurvivalBatchExclusionTest : IRimWorldEndToEndTest
 
 internal static class DispenserE2EFixture
 {
+    internal static Pawn CreateCleaningCapableColonist(string name)
+    {
+        for (var attempt = 0; attempt < 32; attempt++)
+        {
+            var pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+                PawnKindDefOf.Colonist,
+                Faction.OfPlayer,
+                forceGenerateNewPawn: true,
+                canGeneratePawnRelations: false));
+            if (pawn.WorkTypeIsDisabled(WorkTypeDefOf.Cleaning) ||
+                !pawn.health.capacities.CapableOf(PawnCapacityDefOf.Moving) ||
+                !pawn.health.capacities.CapableOf(PawnCapacityDefOf.Manipulation))
+            {
+                pawn.Destroy(DestroyMode.Vanish);
+                continue;
+            }
+
+            pawn.Name = new NameSingle(name);
+            pawn.inventory?.innerContainer.ClearAndDestroyContents();
+            pawn.workSettings.EnableAndInitialize();
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            {
+                if (!pawn.WorkTypeIsDisabled(workType))
+                {
+                    pawn.workSettings.SetPriority(workType, 0);
+                }
+            }
+
+            pawn.workSettings.SetPriority(WorkTypeDefOf.Cleaning, 1);
+            pawn.jobs.StopAll();
+            return pawn;
+        }
+
+        throw new EndToEndAssertionException(
+            "Could not generate a healthy Cleaning-capable colonist for the dispenser fixture.");
+    }
+
+    internal static ThingWithComps SpawnDubsWaterSupply(
+        Map map,
+        ThingWithComps appliance,
+        float storedWater)
+    {
+        var pipeDef = DefDatabase<ThingDef>.GetNamed("sewagePipeHidden");
+        var towerCell = appliance.Position + new IntVec3(-5, 0, -1);
+        for (var x = towerCell.x + 2; x <= appliance.Position.x - 1; x++)
+        {
+            var pipe = ThingMaker.MakeThing(pipeDef, ThingDefOf.Steel);
+            pipe.SetFactionDirect(Faction.OfPlayer);
+            GenSpawn.Spawn(pipe, new IntVec3(x, 0, appliance.Position.z), map);
+        }
+
+        var tower = SpawnBuilding(map, "WaterTowerS", towerCell);
+        var storage = tower.AllComps.SingleOrDefault(comp =>
+            string.Equals(
+                comp.GetType().FullName,
+                "DubsBadHygiene.CompWaterStorage",
+                StringComparison.Ordinal));
+        EndToEndAssert.NotNull(
+            storage,
+            "The exact Dubs water tower must expose one CompWaterStorage.");
+        var waterStorageField = storage!.GetType().GetField(
+            "WaterStorage",
+            BindingFlags.Public | BindingFlags.Instance);
+        EndToEndAssert.True(
+            waterStorageField?.FieldType == typeof(float),
+            "The installed Dubs CompWaterStorage.WaterStorage shape must remain public Single.");
+        waterStorageField!.SetValue(storage, storedWater);
+
+        var appliancePipe = appliance.AllComps.SingleOrDefault(comp =>
+            string.Equals(comp.GetType().FullName, "DubsBadHygiene.CompPipe", StringComparison.Ordinal));
+        var towerPipe = tower.AllComps.SingleOrDefault(comp =>
+            string.Equals(comp.GetType().FullName, "DubsBadHygiene.CompPipe", StringComparison.Ordinal));
+        EndToEndAssert.NotNull(
+            appliancePipe,
+            "The finalized Immersive Chefs dishwasher must expose one real Dubs CompPipe.");
+        EndToEndAssert.NotNull(
+            towerPipe,
+            "The real Dubs water tower must expose one CompPipe.");
+        var pipeNetProperty = appliancePipe!.GetType().GetProperty(
+            "pipeNet",
+            BindingFlags.Public | BindingFlags.Instance);
+        EndToEndAssert.NotNull(
+            pipeNetProperty,
+            "The installed Dubs CompPipe.pipeNet property must remain public.");
+
+        object? applianceNet = null;
+        object? towerNet = null;
+        for (var tick = 0; tick <= 60; tick++)
+        {
+            applianceNet = pipeNetProperty!.GetValue(appliancePipe);
+            towerNet = pipeNetProperty.GetValue(towerPipe);
+            if (applianceNet is not null && ReferenceEquals(applianceNet, towerNet))
+            {
+                break;
+            }
+
+            Find.TickManager.DoSingleTick();
+        }
+
+        EndToEndAssert.True(
+            applianceNet is not null && ReferenceEquals(applianceNet, towerNet),
+            "The dishwasher and water tower must join one exact Dubs plumbing network.");
+        var networkWaterProperty = applianceNet!.GetType().GetProperty(
+            "WaterStorage",
+            BindingFlags.Public | BindingFlags.Instance);
+        var connectedWater = networkWaterProperty?.GetValue(applianceNet);
+        EndToEndAssert.True(
+            connectedWater is float water && Math.Abs(water - storedWater) < 0.001f,
+            "The connected Dubs plumbing network must expose the exact initialized water supply.");
+        return tower;
+    }
+
     internal static MealPrinterFixture CreateMealPrinterFixture(string mealDefName, string pawnName)
     {
         var stage = "resolve current map";
