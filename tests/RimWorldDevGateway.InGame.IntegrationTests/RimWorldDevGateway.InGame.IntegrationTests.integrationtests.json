@@ -1,9 +1,9 @@
 {
   "ownerPackageId": "fumblesneeze.rimworlddevgateway",
   "assembly": "RimWorldDevGateway.InGame.IntegrationTests.dll",
-  "requiredPackageIds": [
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
     "ludeon.rimworld",
     "fumblesneeze.rimworlddevgateway"
-  ],
-  "forbiddenPackageIds": []
+  ]
 }

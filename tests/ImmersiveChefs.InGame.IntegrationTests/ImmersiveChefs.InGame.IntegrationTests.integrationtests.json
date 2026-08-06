@@ -1,14 +1,11 @@
 {
   "ownerPackageId": "fumblesneeze.immersivechefs",
   "assembly": "ImmersiveChefs.InGame.IntegrationTests.dll",
-  "requiredPackageIds": [
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
     "ludeon.rimworld",
     "brrainz.harmony",
     "fumblesneeze.immersivechefs",
     "fumblesneeze.rimworlddevgateway"
-  ],
-  "forbiddenPackageIds": [
-    "Mlie.DThermodynamicsHotMeals",
-    "Mlie.NoVanillaMeals"
   ]
 }
