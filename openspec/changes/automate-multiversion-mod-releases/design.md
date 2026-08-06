@@ -27,7 +27,9 @@ Research established the following constraints:
 - Reproduce a release from pinned source, exact Steam manifests, pinned tools, and repository-owned declarations.
 - Download only the managed files required for compilation while supporting complete exact-version installations for regression runs.
 - Compile each declared RimWorld target independently and merge only verified outputs into the generated RimWorld package layout.
+- Keep ordinary feature development current-first while deriving legacy C# symbols and XML projections only from each mod's declared compatibility metadata.
 - Generate and review Workshop copy and graphics independently from in-game About metadata.
+- Generate consistent required/optional mod disclosures, packaged required dependencies, and Steam required-item relationships from one declaration.
 - Update exactly one existing Workshop item through a guarded dry-run/confirm operation, then verify the remote result.
 - Preserve secret-free evidence that connects source, inputs, builds, player workflows, presentation, publication, and cleanup.
 
@@ -48,7 +50,7 @@ Add a global target catalog at `release/rimworld-targets.yaml` and a per-mod man
 
 The target catalog records a stable target ID, exact game version/build, RimWorld compatibility folder (for example `1.6`), app ID, platform/architecture, ordered base/DLC depot and manifest IDs, required compilation file selectors, expected `Version.txt`, and approved SHA-256 hashes. Branch names and external catalogs may discover candidates, but a release consumes only committed manifest IDs and approved content hashes.
 
-The per-mod manifest records package/project paths, existing Workshop item ID, publication language/title/tags/visibility, supported compile target IDs, optional additional regression target IDs, shared and target-specific package allowlists, verification profiles, presentation sources/templates, and upload policy. Each uploaded compatibility folder maps to exactly one compile target. Additional exact patch builds may be regression-only and exercise that folder's compiled product, but cannot create a second payload for the same folder. A JSON Schema (or equivalently strict typed validation) rejects unknown properties, duplicate compatibility folders, and package IDs that disagree with About/project metadata before side effects.
+The per-mod manifest records package/project paths, existing Workshop item ID, publication language/title/tags/visibility, one current development target, supported compile target IDs, optional additional regression target IDs, typed required/optional mod relationships, shared and target-specific package allowlists, exceptional C# compatibility-seam paths, XML legacy-override mappings, verification profiles, presentation sources/templates, and upload policy. Each uploaded compatibility folder maps to exactly one compile target. Additional exact patch builds may be regression-only and exercise that folder's compiled product, but cannot create a second payload for the same folder. A JSON Schema (or equivalently strict typed validation) rejects unknown properties, duplicate compatibility folders, an invalid development target, incomplete dependency identities, and package IDs that disagree with About/project metadata before side effects.
 
 This separates shared game-build identity from a mod's compatibility and publication claims. Putting depot details in every mod manifest would duplicate mutable security-sensitive input; deriving them from a local installation would make the release non-reproducible.
 
@@ -72,7 +74,7 @@ Hashing files in addition to pinning Steam manifests gives local corruption dete
 
 ### 4. Project compile inputs and isolate every target build
 
-For each compile target, materialize a short-lived projection containing the approved `Version.txt` and managed DLLs in the directory shape expected by `Zlepper.RimWorld.ModSdk`. Invoke MSBuild once per compatibility folder with explicit `RimWorldVersion` set to that folder (not the full patch/build string), plus explicit `RimWorldPath`, `RimWorldManagedPath`, output root, and intermediate root. Do not share `obj`, incremental state, or generated package output between target invocations.
+For each compile target, materialize a short-lived projection containing the approved `Version.txt`, managed DLLs, and generated target XML in the directory shape expected by `Zlepper.RimWorld.ModSdk`. Invoke MSBuild once per compatibility folder with explicit `RimWorldVersion` set to that folder (not the full patch/build string), exactly one derived RimWorld `DefineConstants` symbol such as `RIMWORLD1_6`, plus explicit `RimWorldPath`, `RimWorldManagedPath`, output root, and intermediate root. Do not share `obj`, incremental state, or generated package output between target invocations.
 
 The SDK produces that target's ignored `<RimWorldVersion>/Assemblies` and content. The release tool verifies assembly references and target evidence before merging generated target trees into a final staged package and generating one root About file whose supported-version list comes only from successful, verified compatibility folders. Multiple exact regression builds for one compatibility line run against this one compiled folder rather than producing colliding upload payloads.
 
@@ -92,7 +94,7 @@ The user's normal `ModsConfig.xml` is never selected. Its hash is recorded befor
 
 ### 7. Generate presentation from structured content and deterministic web templates
 
-Keep reusable templates under `release/templates/` and mod-owned presentation sources under `mods/<ModName>/Release/workshop/`. Structured YAML/JSON content names copy, source sprites, templates, ordering, and accessibility/asset metadata. A BBCode template produces `description.bbcode`; HTML/CSS templates produce the primary preview, text banners, and feature/mechanics cards through a pinned Playwright Chromium plus pinned repository-licensed fonts.
+Keep reusable templates under `release/templates/` and mod-owned presentation sources under `mods/<ModName>/Release/workshop/`. Structured YAML/JSON content names copy, source sprites, templates, ordering, and accessibility/asset metadata. The presentation model receives compatible versions and required/optional mod relationships from the release manifest rather than duplicating them in authored copy. A BBCode template produces `description.bbcode`, including explicit Required Mods and Optional Mods sections; HTML/CSS templates produce the primary preview, text banners, and feature/mechanics cards through a pinned Playwright Chromium plus pinned repository-licensed fonts.
 
 HTML/CSS is chosen over manually compositing pixels because it supports reusable layouts, typography, sprite placement, masks, and a local review page. The renderer disables network access, time/random input, animations, and device-dependent fonts; it uses a fixed browser/tool version, viewport, device scale, and OS runner. It checks declared text regions using measured scroll/client bounds and fails on overflow, missing sprites, unexpected network loads, nondeterministic rerendering, wrong dimensions, or file-size limits.
 
@@ -110,9 +112,9 @@ This question is deliberately not hidden inside the renderer because it affects 
 
 Launch a fresh isolated current supported RimWorld process with Core and the Dev Gateway only (plus the minimum publisher fixture if needed), and bind all discovery, HTTP calls, screenshots, diagnostics, and cleanup to its PID/start identity. The Gateway remains authenticated and loopback-only.
 
-The dry-run endpoint accepts a validated candidate receipt, queries the exact declared PublishedFileId and current account ownership/remote metadata, computes a bounded diff, and returns a short-lived nonce bound to the candidate, presentation, remote-item, and preflight hashes. It does not call `StartItemUpdate`.
+The dry-run endpoint accepts a validated candidate receipt, queries the exact declared PublishedFileId and current account ownership, remote metadata, and required-item graph, computes a bounded diff, and returns a short-lived nonce bound to the candidate, presentation, dependency graph, remote-item, and preflight hashes. It does not call `StartItemUpdate`, `AddDependency`, or `RemoveDependency`.
 
-Confirmation must present that nonce and the same hashes. The Gateway rejects ID zero/invalid and never calls `CreateItem`. On the Unity main thread it calls `StartItemUpdate`, verifies every SteamUGC setter result, sets update language/title/description/visibility/tags/content/primary and additional previews plus a metadata fingerprint, and calls `SubmitItemUpdate` with the authored change note. The HTTP request returns an accepted operation ID rather than blocking the Unity thread. Bounded status endpoints expose progress and terminal result while the Steam callback-owned operation remains unique and retry-safe.
+Confirmation must present that nonce and the same hashes. The Gateway rejects ID zero/invalid and never calls `CreateItem`. On the Unity main thread it calls `StartItemUpdate`, verifies every SteamUGC setter result, sets update language/title/description/visibility/tags/content/primary and additional previews plus a metadata fingerprint, and calls `SubmitItemUpdate` with the authored change note. It then reconciles the confirmed required-item edges with Steam's dependency operations, checking every asynchronous result; optional relationships are never submitted as dependencies. The HTTP request returns an accepted operation ID rather than blocking the Unity thread. Bounded status endpoints expose progress and terminal result while the Steam callback-owned operation remains unique and retry-safe.
 
 The state machine distinguishes pre-submit cancellation from post-submit uncertainty. After submission it keeps the stage lease until a terminal callback, checks both `EResult` and the legal-agreement flag, and refuses a second publication while an earlier callback may still arrive. Host polling timeouts do not destroy Gateway state or imply failure. No reusable Steam or Gateway credentials enter receipts.
 
@@ -120,9 +122,47 @@ Calling RimWorld's existing `Workshop.Upload` was rejected because it can create
 
 ### 10. Verify the remote outcome, not only the submit callback
 
-On success, query the item through SteamUGC and compare item identity, title, description, tags, metadata fingerprint, and preview inventory with the reviewed bundle. After CDN propagation, reacquire the user's own item into a separate ignored verification directory and compare its file manifest with the staged package. Record discrepancies as a failed verification even when `SubmitItemUpdate` returned success.
+On success, query the item through SteamUGC and compare item identity, title, description, tags, metadata fingerprint, preview inventory, and exact required-item graph with the reviewed bundle. Inspect the packaged `About/About.xml` to confirm supported versions and required package dependencies match the same manifest. After CDN propagation, reacquire the user's own item into a separate ignored verification directory and compare its file manifest with the staged package. Record discrepancies as a failed verification even when `SubmitItemUpdate` returned success.
 
 Implementation tests use a narrow fake SteamUGC adapter to exercise identities, stale nonces, setter failures, timeouts, late callbacks, and legal-agreement states. Final acceptance of publication requires explicit user authorization and a dedicated unlisted/private test Workshop item; it cannot use a production item or synthetic mutation. Every claimed target needs its native player-workflow acceptance, and at least one separate product-mod acceptance run must omit the Gateway entirely.
+
+### 11. Make the mod manifest authoritative for compatibility
+
+The mod manifest identifies one `developmentTarget` and an ordered set of supported compile targets. At project inception, Immersive Chefs declares only the current RimWorld 1.6 target. The release tool derives target folders, compile inputs, C# symbols, XML projections, `About/About.xml` supported versions, Workshop compatibility text/tags, and verification groups from that one declaration. Generated or authored outputs that name a version outside the manifest fail validation.
+
+When RimWorld 1.7 or later arrives, add and verify its exact target catalog entry, make it the mod's development target, and keep 1.6 in the supported set only if the mod will continue to test and ship it. Ordinary feature work builds and proves the current target first. Full older-version compilation and native workflow runs happen during the deliberate compatibility/release pass, matching the repository policy that the full matrix is not replayed for every feature slice. Any legacy fixes found there are separate focused TDD slices before the release candidate is rebuilt.
+
+This is preferred to discovering compatibility from source directives or existing output folders: metadata declares the promise, while builds and live runs prove it.
+
+### 12. Keep C# current by isolating legacy conditional seams
+
+Derive a valid preprocessor identifier from each compatibility folder: `1.6` becomes `RIMWORLD1_6`, `1.7` becomes `RIMWORLD1_7`, and so on. Every target invocation defines exactly its one RimWorld compatibility symbol. The normal local build resolves the manifest's development target and uses the same symbol rules as release builds.
+
+Core feature/domain code remains unconditional and follows the newest declared development target. Only a narrow engine-facing adapter, signature difference, or data-shape seam may use directives. Put those adapters under the owning project's neutral `Compatibility/RimWorld/` source area by default; when a declaration site cannot be moved safely, the mod manifest must allowlist that exact exceptional file with a rationale. Once 1.6 becomes legacy, a typical seam may select a `#if RIMWORLD1_6` implementation and use the current implementation otherwise; the feature calling that seam remains unchanged. Do not create per-version subfolders, surround whole features, duplicate source trees, or add speculative legacy branches before a real older compile/test failure demonstrates the divergence.
+
+Compiling each target against only its exact assemblies is the enforcement mechanism: an unguarded new API reference fails the older build, while a stale legacy branch fails its own target build. Static validation additionally rejects target invocations with zero or multiple `RIMWORLD<major>_<minor>` symbols.
+
+### 13. Generate legacy XML through parsed target projections
+
+Canonical Defs and Patches remain in their ordinary version-neutral mod source locations. Most targets copy this XML unchanged. If an older engine needs a changed element, class name, XPath, or value, the mod manifest maps that target to one or more ordered override files under a neutral `Release/compatibility/xml/` source directory; it never creates a `1.6/Defs`-style source tree.
+
+Use a small typed XML operation model over parsed XML rather than textual `#if` macros or string replacement. Each targeted operation names the canonical source file, an XPath selector, expected match cardinality, and a typed add/replace/remove action. Targeted operations are the default. If a real legacy engine divergence makes them less maintainable than a document replacement, permit an explicitly declared replacement file in the same neutral directory with a rationale and the same validation/provenance; this is an escape hatch, not a parallel version tree. The tool applies operations to an ignored target projection, preserves deterministic ordering/format policy, validates well-formedness and duplicate Def identities, and records source/operation/output hashes. A selector whose cardinality changes fails closed, making canonical-source drift visible.
+
+These build-time transforms are distinct from RimWorld `PatchOperation` files used at runtime for optional mods. The implementation slice should prove the typed operation set with real representative Def fixtures before expanding it; if it cannot express a necessary legacy difference safely, extend the typed model or use the reviewed document-replacement operation rather than falling back to raw textual preprocessing.
+
+### 14. Reconcile one dependency graph across RimWorld, presentation, and Steam
+
+The per-mod manifest contains a typed `dependencies` collection. Every entry has `kind` (`required` or `optional`), canonical package ID, display name, presentation note, and a Workshop PublishedFileId when Steam publication requires a link or dependency edge. Optional entries may also declare a load-order hint only when the owning compatibility design needs one; that hint never turns them into a hard dependency.
+
+The release tool projects this graph three ways:
+
+1. required entries become RimWorld `modDependencies` in generated `About/About.xml`;
+2. both classes become linked, explicitly separated Required Mods and Optional Mods sections in the Workshop description; and
+3. required entries only become Steam parent-child required-item relationships through `ISteamUGC.AddDependency`/`RemoveDependency`.
+
+The dry-run shows additions and removals in all three projections and binds the exact graph hash into confirmation. Because Steam dependency operations are asynchronous and separate from content submission, the workflow does not claim atomicity: a partial result remains unverified, preserves its candidate/remote snapshot, and retries only the unresolved confirmed edges after querying remote state. Remote verification must match the exact required graph; optional items appearing as Steam requirements are a failure.
+
+Maintaining separate hand-authored lists was rejected because required/optional drift could make the mod unloadable, mislead users, or cause Steam to install optional integrations as hard requirements.
 
 ## Risks / Trade-offs
 
@@ -134,19 +174,23 @@ Implementation tests use a narrow fake SteamUGC adapter to exercise identities, 
 - **[Workshop updates cannot be rolled back transactionally]** → Retain the previous remote metadata snapshot and last verified local candidate so an operator can explicitly republish it; never call that an automatic rollback.
 - **[Browser rendering differs across machines]** → Pin Chromium, fonts, viewport, scale, tool versions, and runner OS; compare a second render and record all provenance.
 - **[Build output accidentally crosses targets]** → Give every target unique intermediate/output roots and verify referenced game-input hashes before merge.
+- **[Version directives spread through feature code]** → Keep the development target unconditional, permit symbols only in narrow compatibility seams, and require an older-target compile failure or verified API divergence before adding a legacy branch.
+- **[Legacy XML transforms drift from canonical XML]** → Use parsed typed operations with expected selector cardinality, validate every generated target, and hash both inputs and outputs.
+- **[RimWorld, description, and Steam dependencies disagree]** → Derive all three from one typed manifest graph, include the graph in dry-run confirmation, and verify both packaged and remote projections.
+- **[Steam dependency reconciliation partially succeeds]** → Treat dependency edges as separately observable asynchronous operations, query remote state before retry, and leave the release unverified until the exact graph matches.
 - **[Full historical installations consume substantial disk]** → Separate compact compilation and full-run caches, use manifest-keyed reuse and explicit cache inventory/pruning, and never prune an active lease.
 - **[The release orchestrator becomes a second test framework]** → Invoke existing guarded build/E2E scripts and add only target resolution, contracts, and evidence plumbing.
 - **[A Gateway publisher weakens product isolation]** → Keep publisher code/package ownership in RimWorld Dev Gateway, validate product package exclusions, and perform at least one final product acceptance run without Gateway.
 
 ## Migration Plan
 
-1. Add schemas, the initial target catalog, and one non-production example manifest. Onboard historical target manifests interactively and approve their file hashes in a separate review.
+1. Add schemas, the initial target catalog, and one current-1.6 non-production example manifest containing development/supported targets plus explicit empty required/optional dependency collections. Onboard historical target manifests interactively and approve their file hashes in a separate review.
 2. Implement acquisition/cache contracts with fake-downloader tests, then an opt-in real Steam acquisition smoke test. No existing local installation path changes.
-3. Add clean target-isolated build and allowlisted merge phases; compare their package with the current single-version SDK output before making them the release path.
+3. Add clean target-isolated build, derived-symbol validation, parsed XML projection, and allowlisted merge phases; compare the current target's package with the existing single-version SDK output before making them the release path.
 4. Add exact-target parameters to isolated runners while retaining their current default. Exercise a current build first, then one accessible historical build.
-5. Add presentation compilation/validation and require human review of its local preview before any publication work.
+5. Add dependency-aware About generation and presentation compilation/validation, then require human review of required/optional sections and the local preview before any publication work.
 6. Complete the unlisted Workshop image-hosting experiment and resolve the hosting open question in the spec/design before enabling inline-image production publishing.
-7. Implement the Gateway adapter and state machine under host tests, then run dry-run against a dedicated unlisted test item. With explicit user authorization, perform and remotely verify a test update.
+7. Implement the Gateway adapter, content state machine, and required-item reconciliation under host tests, then run dry-run against a dedicated unlisted test item. With explicit user authorization, perform and remotely verify a test update and dependency graph.
 8. Document the operational commands and switch one mod to the new pipeline. The previous manual upload remains available until one complete release and verification receipt succeeds.
 
 Rollback of local tooling means selecting the previous committed release manifest/tool revision; all generated candidates and caches are external/ignored and can remain for diagnosis. Runner migration never changes the user's normal configuration: isolated `ModsConfig.xml` files are discarded with their savedata folder and the normal file's before/after hash must match. A Steam update has no transactional rollback; recovery is an explicit, reviewed republish of the previous verified candidate and metadata snapshot.
@@ -158,3 +202,4 @@ Rollback of local tooling means selecting the previous committed release manifes
 - Which exact historical 1.5/1.6 manifest set is both desired and still downloadable by the release account? Compatibility targets are not declared until this is answered and tested.
 - Should acquisition use a dedicated release Steam account or the operator's normal owning account, given Steam Guard and license constraints?
 - Which fixed Workshop visibility and tag set should the first production mod manifest declare for its unified item?
+- Which first real RimWorld engine XML divergence, if any, is complex enough to require extending the initial typed add/replace/remove operation set?
