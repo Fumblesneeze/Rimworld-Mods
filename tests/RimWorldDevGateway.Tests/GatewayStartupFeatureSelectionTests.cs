@@ -38,4 +38,27 @@ public sealed class GatewayStartupFeatureSelectionTests
             Assert.That(onlyEndToEnd.RunEndToEndTests, Is.True);
         });
     }
+
+    [Test]
+    public void End_to_end_test_selection_is_exact_sorted_and_restart_bound()
+    {
+        var selection = GatewayStartupFeatureSelection.Capture(
+            argument => argument == GatewayStartupFeatureSelection.EndToEndFlag,
+            argument => argument == GatewayStartupFeatureSelection.EndToEndTestIdsArgument
+                ? "beta.test,alpha.test"
+                : null);
+
+        Assert.That(selection.SelectedEndToEndTestIds,
+            Is.EqualTo(new[] { "alpha.test", "beta.test" }));
+    }
+
+    [Test]
+    public void End_to_end_test_selection_rejects_duplicate_ids()
+    {
+        Assert.Throws<ArgumentException>(() => GatewayStartupFeatureSelection.Capture(
+            argument => argument == GatewayStartupFeatureSelection.EndToEndFlag,
+            argument => argument == GatewayStartupFeatureSelection.EndToEndTestIdsArgument
+                ? "alpha.test,alpha.test"
+                : null));
+    }
 }

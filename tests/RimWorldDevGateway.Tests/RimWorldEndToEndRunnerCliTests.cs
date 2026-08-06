@@ -24,6 +24,8 @@ public sealed class RimWorldEndToEndRunnerCliTests
             Assert.That(source, Does.Contain("'-RunEndToEndTests'"));
             Assert.That(source, Does.Contain("'-SkipBuildDeploy'"));
             Assert.That(source, Does.Contain("'-AdditionalModIdsFile'"));
+            Assert.That(source, Does.Contain("[string[]]$TestId"));
+            Assert.That(source, Does.Contain("'-EndToEndTestIds'"));
             Assert.That(source, Does.Contain("[System.IO.File]::WriteAllLines"));
             Assert.That(source, Does.Contain("Join-Path $runDirectory ('smoke-{0:D3}' -f $groupIndex)"));
             Assert.That(source, Does.Contain("finally"));

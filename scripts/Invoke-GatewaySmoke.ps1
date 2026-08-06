@@ -89,6 +89,8 @@ param(
 
     [switch]$RunEndToEndTests,
 
+    [string]$EndToEndTestIds = '',
+
     [switch]$SkipBuildDeploy,
 
     [switch]$IntegrationFailureProbe,
@@ -2601,6 +2603,24 @@ if ($validatedExpectedIntegrationTests.Count -gt 0 -and -not $RunIntegrationTest
 if ($RunEndToEndTests -and -not $Quicktest) {
     Exit-InvalidInput '-RunEndToEndTests requires -Quicktest.'
 }
+$selectedEndToEndTestIds = @(if ([string]::IsNullOrWhiteSpace($EndToEndTestIds)) {
+}
+else {
+    $EndToEndTestIds.Split(',') | ForEach-Object { $_.Trim() }
+})
+foreach ($testId in $selectedEndToEndTestIds) {
+    if ([string]::IsNullOrWhiteSpace($testId) -or
+        $testId.Length -gt 160 -or
+        $testId -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
+        Exit-InvalidInput "Invalid selected E2E test ID: '$testId'"
+    }
+}
+if (@($selectedEndToEndTestIds | Select-Object -Unique).Count -ne $selectedEndToEndTestIds.Count) {
+    Exit-InvalidInput 'Selected E2E test IDs contain a duplicate.'
+}
+if ($selectedEndToEndTestIds.Count -gt 0 -and -not $RunEndToEndTests) {
+    Exit-InvalidInput '-EndToEndTestIds requires -RunEndToEndTests.'
+}
 
 function Get-OptionalFileHash {
     param([string]$Path)
@@ -4452,6 +4472,9 @@ if ($RunIntegrationTests) {
 }
 if ($RunEndToEndTests) {
     $launchArguments += '-devGatewayRunEndToEndTests'
+    if ($selectedEndToEndTestIds.Count -gt 0) {
+        $launchArguments += '-devGatewayEndToEndTestIds=' + ($selectedEndToEndTestIds -join ',')
+    }
 }
 if ($IntegrationFailureProbe) {
     $launchArguments += '-devGatewayForceIntegrationTestFailure'
@@ -4514,6 +4537,7 @@ if ($DryRun) {
         RunsGatewayRegressionScenario = $runGatewayRegressionScenario
         RunIntegrationTests = [bool]$RunIntegrationTests
         RunEndToEndTests = [bool]$RunEndToEndTests
+        SelectedEndToEndTestIds = $selectedEndToEndTestIds
         SkipBuildDeploy = [bool]$SkipBuildDeploy
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
         QuickstartDescriptor = if ($runGatewayRegressionScenario) { $resolvedQuickstartDescriptorPath } else { $null }
@@ -4920,8 +4944,9 @@ try {
                 throw "E2E status failed with HTTP $([int]$endToEndResponse.StatusCode). See $endToEndTestsPath"
             }
 
-            if ($null -ne $endToEndTestsEnvelope.result.Execution -and
-                [bool]$endToEndTestsEnvelope.result.Execution.IsTerminal) {
+            if ([string]$endToEndTestsEnvelope.result.DiscoveryState -eq 'completed_with_failures' -or
+                ($null -ne $endToEndTestsEnvelope.result.Execution -and
+                [bool]$endToEndTestsEnvelope.result.Execution.IsTerminal)) {
                 break
             }
 
@@ -4934,6 +4959,10 @@ try {
         }
         while ([datetime]::UtcNow -lt $endToEndDeadline)
 
+        if ($null -ne $endToEndTestsEnvelope -and
+            [string]$endToEndTestsEnvelope.result.DiscoveryState -eq 'completed_with_failures') {
+            throw "E2E discovery failed before execution. See $endToEndTestsPath"
+        }
         if ($null -eq $endToEndTestsEnvelope -or
             -not [bool]$endToEndTestsEnvelope.ok -or
             $null -eq $endToEndTestsEnvelope.result.Execution -or
@@ -4955,6 +4984,15 @@ try {
             [bool]$endToEndSnapshot.Execution.ProcessTainted -or
             $failedEndToEndResults.Count -ne 0) {
             throw "E2E tests did not complete with every admitted test passed and cleaned. See $endToEndTestsPath"
+        }
+        if ($selectedEndToEndTestIds.Count -gt 0) {
+            $admittedIds = @($endToEndSnapshot.Tests | ForEach-Object { [string]$_.Id } | Sort-Object)
+            $executedIds = @($endToEndResults | ForEach-Object { [string]$_.Id } | Sort-Object)
+            $expectedIds = @($selectedEndToEndTestIds | Sort-Object)
+            if (@(Compare-Object -CaseSensitive -ReferenceObject $expectedIds -DifferenceObject $admittedIds).Count -ne 0 -or
+                @(Compare-Object -CaseSensitive -ReferenceObject $expectedIds -DifferenceObject $executedIds).Count -ne 0) {
+                throw "E2E runtime selection did not admit and execute exactly the requested stable test IDs. See $endToEndTestsPath"
+            }
         }
 
         $endToEndTestsPersistedPath = Join-Path `
@@ -6664,6 +6702,7 @@ try {
         EndToEndTestsPendingResponse = if ($RunEndToEndTests) { $endToEndTestsPendingPath } else { $null }
         EndToEndTestsPersisted = $endToEndTestsPersistedPath
         RunEndToEndTests = [bool]$RunEndToEndTests
+        SelectedEndToEndTestIds = $selectedEndToEndTestIds
         SkipBuildDeploy = [bool]$SkipBuildDeploy
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
         UiStateResponse = $uiStatePath

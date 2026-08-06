@@ -87,7 +87,8 @@ public static class GatewayRuntimeBootstrap
             }
 
             var featureSelection = GatewayStartupFeatureSelection.Capture(
-                GenCommandLine.CommandLineArgPassed);
+                GenCommandLine.CommandLineArgPassed,
+                ReadCommandLineArgument);
             integrationTests = GatewayIntegrationTestCoordinator.Create(
                 featureSelection.RunIntegrationTests,
                 () => GatewayIntegrationTestCoordinator.CreateEnabled(
@@ -106,7 +107,8 @@ public static class GatewayRuntimeBootstrap
                     new VerseGatewayEndToEndManifestSource(),
                     (operation, exception) => Log.Error(
                         "[RimWorldDevGateway] End-to-end test " + operation +
-                        " failed: " + exception)));
+                        " failed: " + exception),
+                    featureSelection.SelectedEndToEndTestIds));
 
             gameObject = new GameObject("[RimWorldDevGateway] Runtime")
             {
@@ -148,6 +150,9 @@ public static class GatewayRuntimeBootstrap
             Log.Error("[RimWorldDevGateway] Runtime startup failed: " + exception);
         }
     }
+
+    private static string? ReadCommandLineArgument(string key) =>
+        GenCommandLine.TryGetCommandLineArg(key, out var value) ? value : null;
 
     private static GatewayRuntime CreateDefaultRuntime(
         ModContentPack content,

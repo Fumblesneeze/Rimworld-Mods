@@ -169,6 +169,84 @@ public sealed class GatewayEndToEndDiscoveryCoordinatorTests
     }
 
     [Test]
+    public void Missing_exact_test_selection_fails_closed_after_complete_discovery()
+    {
+        var cursor = new RecordingCursor(new[]
+        {
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage("ludeon.rimworld"),
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage("alpha.mod"),
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage(EndToEndTestContract.GatewayPackageId),
+            GatewayEndToEndManifestDiscoveryStep.Candidate(
+                new GatewayEndToEndManifestCandidate("alpha.mod", TestManifestPath())),
+            GatewayEndToEndManifestDiscoveryStep.Complete()
+        });
+        var inspector = new RecordingInspector(LoadedInspection());
+        using var coordinator = GatewayEndToEndCoordinator.CreateEnabledWithStore(
+            new RecordingSource(cursor),
+            inspector,
+            new ImmediateInspectionFactory(inspector),
+            new ImmediateStore(),
+            selectedTestIds: new[] { "missing.e2e" });
+
+        coordinator.AttachSession("selected-missing");
+        for (var tick = 0;
+             tick < 32 && coordinator.PublishedSnapshot?.DiscoveryState != "completed_with_failures";
+             tick++)
+        {
+            coordinator.Tick();
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(coordinator.PublishedSnapshot!.Tests, Is.Empty);
+            Assert.That(coordinator.PublishedSnapshot.Failures.Select(failure => failure.Code),
+                Is.EqualTo(new[] { "selected_test_not_found" }));
+        });
+    }
+
+    [Test]
+    public void Mixed_known_and_missing_selection_never_arranges_the_known_test()
+    {
+        var cursor = new RecordingCursor(new[]
+        {
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage("ludeon.rimworld"),
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage("alpha.mod"),
+            GatewayEndToEndManifestDiscoveryStep.ActivePackage(EndToEndTestContract.GatewayPackageId),
+            GatewayEndToEndManifestDiscoveryStep.Candidate(
+                new GatewayEndToEndManifestCandidate("alpha.mod", TestManifestPath())),
+            GatewayEndToEndManifestDiscoveryStep.Complete()
+        });
+        var inspector = new RecordingInspector(LoadedInspection());
+        var readiness = new ControlledReadiness { Ready = true };
+        var execution = new RecordingExecutionMachine();
+        var factory = new RecordingExecutionFactory(execution);
+        using var coordinator = GatewayEndToEndCoordinator.CreateEnabledWithStore(
+            new RecordingSource(cursor),
+            inspector,
+            new ImmediateInspectionFactory(inspector),
+            new ImmediateStore(),
+            selectedTestIds: new[] { "alpha.e2e", "missing.e2e" });
+        coordinator.ConfigureExecution(readiness, factory);
+
+        coordinator.AttachSession("mixed-selected-missing");
+        for (var tick = 0; tick < 64; tick++)
+        {
+            coordinator.Tick();
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(coordinator.PublishedSnapshot!.Tests.Select(test => test.Id),
+                Is.EqualTo(new[] { "alpha.e2e" }));
+            Assert.That(coordinator.PublishedSnapshot.Failures.Select(failure => failure.Code),
+                Is.EqualTo(new[] { "selected_test_not_found" }));
+            Assert.That(factory.CreateCount, Is.Zero,
+                "No selected test may be arranged after any exact selection failed admission.");
+            Assert.That(execution.AdvanceCount, Is.Zero);
+        });
+    }
+
+    [Test]
     public void Failed_persistence_retries_the_exact_snapshot_before_discovery_continues()
     {
         var cursor = new RecordingCursor(new[]

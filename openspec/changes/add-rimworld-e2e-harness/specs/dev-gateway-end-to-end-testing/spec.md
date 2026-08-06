@@ -21,6 +21,17 @@ The repository SHALL provide a separately packaged `RimWorldDevGateway.EndToEndT
 ### Requirement: The host launches one isolated process per exact mod group
 The host runner SHALL discover all selected E2E tests before launch, group them by ordinal package sequence, and start exactly one fresh isolated quickstart RimWorld process for each distinct group. The active list in that process SHALL equal the declared sequence followed by `fumblesneeze.rimworlddevgateway`; no downloaded-but-undeclared package may participate. Groups and tests SHALL execute in deterministic order and a process SHALL never be reused for another group.
 
+The runner SHALL accept one or more exact stable test-ID filters independently from its exact mod-group filter. It SHALL validate every requested ID against the complete discovery plan before mutation, launch only groups containing a selected test, and pass each group's exact selected IDs through a restart-bound Gateway startup selection. Runtime discovery SHALL still validate the complete staged bundle and active package order, but SHALL admit and execute only those exact IDs. An unknown, duplicated, invalid, mismatched, unadmitted, or additionally executed ID SHALL fail closed. A run without test-ID filters retains the complete-group behavior for deliberate regression and release verification.
+
+#### Scenario: One current scenario is selected from a mature group
+- **WHEN** the operator supplies the stable ID of one E2E test whose exact mod group contains several already-accepted tests
+- **THEN** the host launches that group once and the Gateway admits, executes, reports, and cleans exactly the selected test
+- **THEN** no other test in that group is arranged or executed
+
+#### Scenario: A requested test ID is not admitted
+- **WHEN** a selected stable ID is unknown at host planning or absent after runtime bundle and active-mod validation
+- **THEN** the run fails before test arrangement and never substitutes a same-group or similarly named test
+
 #### Scenario: Three tests share two mod combinations
 - **WHEN** two tests declare the same Core/Harmony/product sequence and a third also declares one optional mod
 - **THEN** the runner starts two processes

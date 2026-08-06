@@ -171,9 +171,15 @@ Run dynamically loaded, multi-frame E2E workflows grouped by their exact declare
   -GroupId 'ludeon.rimworld|brrainz.harmony|fumblesneeze.immersivechefs' `
   -TimeoutSeconds 300 `
   -Output json
+
+# During feature work, run only the stable test IDs currently being changed.
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 `
+  -TestId 'immersive-chefs.countertop-microwave-support-loss' `
+  -TimeoutSeconds 300 `
+  -Output json
 ```
 
-The runner discovers downloaded package IDs from the game, local mods, DLC data, and Workshop folders; transports both the large discovery inventory and each child process's exact additional-mod order through UTF-8 package-ID files; deploys repo-owned product mods before publishing marker-owned test bundles; and always removes its exact leased stage. Each group gets an isolated save-data/config directory, aggregate JSON, XML-safe JUnit, durable endpoint state, and step screenshots below `artifacts\EndToEndRuns\Grouped`. The short `smoke-NNN` runtime branch avoids Unity Mono's classic Windows path-length failure while the descriptive group report directory remains intact. E2E assemblies stay outside product `Assemblies` and ordinary NUnit/VSTest runs. A passing result proves the codified workflow, but the acting agent must still inspect that run's native before/action/after screenshots before accepting game behavior.
+The runner discovers downloaded package IDs from the game, local mods, DLC data, and Workshop folders; transports both the large discovery inventory and each child process's exact additional-mod order through UTF-8 package-ID files; deploys repo-owned product mods before publishing marker-owned test bundles; and always removes its exact leased stage. `-TestId` validates stable IDs against that plan and makes the in-game Gateway admit and execute only those exact tests. Use it for active feature slices; reserve unfiltered groups or all groups for explicit maintenance regression and release preparation. Each group gets an isolated save-data/config directory, aggregate JSON, XML-safe JUnit, durable endpoint state, and step screenshots below `artifacts\EndToEndRuns\Grouped`. The short `smoke-NNN` runtime branch avoids Unity Mono's classic Windows path-length failure while the descriptive group report directory remains intact. E2E assemblies stay outside product `Assemblies` and ordinary NUnit/VSTest runs. A passing result proves the codified workflow, but the acting agent must still inspect that run's native before/action/after screenshots before accepting game behavior.
 
 Run the Immersive Chefs XML/integration matrix with both loaded mods:
 

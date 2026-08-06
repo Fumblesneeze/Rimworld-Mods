@@ -67,6 +67,28 @@ foreach ($requiredArgument in @('-Quicktest', '-RunEndToEndTests', '-SkipBuildDe
     }
 }
 
+$focusedTestId = 'immersive-chefs.countertop-microwave-support-loss'
+$focusedRaw = & pwsh `
+    -NoProfile `
+    -NonInteractive `
+    -File $runner `
+    -DryRun `
+    -TestId $focusedTestId `
+    -Output json
+if ($LASTEXITCODE -ne 0) {
+    throw "Focused E2E runner dry run exited $LASTEXITCODE."
+}
+$focusedResult = $focusedRaw | ConvertFrom-Json -ErrorAction Stop
+$focusedGroups = @($focusedResult.Groups)
+if ($focusedGroups.Count -ne 1 -or
+    @($focusedGroups[0].Tests).Count -ne 1 -or
+    [string]$focusedGroups[0].Tests[0] -cne $focusedTestId) {
+    throw 'Focused E2E dry run did not select exactly the requested test.'
+}
+if (@($focusedGroups[0].Command) -cnotcontains '-EndToEndTestIds') {
+    throw 'Focused E2E dry-run command omitted its runtime test selection.'
+}
+
 $stageExistsAfter = Test-Path -LiteralPath $stagePath
 $processIdsAfter = @(Get-Process -Name RimWorldWin64 -ErrorAction SilentlyContinue |
     ForEach-Object { $_.Id })
@@ -83,5 +105,6 @@ if (@(Compare-Object -ReferenceObject $processIdsBefore -DifferenceObject $proce
     GroupCount = $groups.Count
     Tests = @($coreGroup.Tests)
     DependencyFirstGroupTests = @($dependencyFirstGroups[0].Tests)
+    FocusedTest = [string]$focusedGroups[0].Tests[0]
     MutatedGame = [bool]$result.MutatedGame
 } | ConvertTo-Json -Compress

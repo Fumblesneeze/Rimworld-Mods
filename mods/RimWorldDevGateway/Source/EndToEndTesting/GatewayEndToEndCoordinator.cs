@@ -14,6 +14,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
     private readonly List<GatewayEndToEndBundleSnapshot> bundles = new();
     private readonly List<GatewayEndToEndTestSnapshot> tests = new();
     private readonly List<GatewayEndToEndRuntimeTestDescriptor> runtimeTests = new();
+    private readonly HashSet<string> discoveredTestIds = new(StringComparer.Ordinal);
+    private readonly HashSet<string> selectedTestIds;
     private readonly List<GatewayEndToEndFailureSnapshot> failures = new();
     private readonly GatewayEndToEndSnapshot disabledSnapshot = new(false, "disabled");
     private GatewayEndToEndSnapshot snapshot;
@@ -49,7 +51,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         IGatewayEndToEndSessionArtifactStore artifactStore,
         IGatewayEndToEndExecutionReadiness? executionReadiness,
         IGatewayEndToEndExecutionFactory? executionFactory,
-        Action<string, Exception?>? diagnostics)
+        Action<string, Exception?>? diagnostics,
+        IReadOnlyCollection<string>? selectedTestIds)
     {
         this.source = source ?? throw new ArgumentNullException(nameof(source));
         _ = inspector ?? throw new ArgumentNullException(nameof(inspector));
@@ -62,6 +65,9 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             throw new ArgumentException("E2E execution readiness and factory must be supplied together.");
         }
         this.diagnostics = diagnostics;
+        this.selectedTestIds = new HashSet<string>(
+            selectedTestIds ?? Array.Empty<string>(),
+            StringComparer.Ordinal);
         snapshot = new GatewayEndToEndSnapshot(true, "awaiting_session");
     }
 
@@ -92,7 +98,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
     public static GatewayEndToEndCoordinator CreateEnabled(
         string saveDataFolder,
         IGatewayEndToEndManifestSource source,
-        Action<string, Exception?>? diagnostics = null)
+        Action<string, Exception?>? diagnostics = null,
+        IReadOnlyCollection<string>? selectedTestIds = null)
     {
         var inspector = new GatewayEndToEndBundleCatalog();
         return CreateEnabledWithStore(
@@ -102,7 +109,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             new GatewayEndToEndSessionArtifactStore(saveDataFolder),
             executionReadiness: null,
             executionFactory: null,
-            diagnostics: diagnostics);
+            diagnostics: diagnostics,
+            selectedTestIds: selectedTestIds);
     }
 
     public void ConfigureExecution(
@@ -147,7 +155,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         IGatewayEndToEndSessionArtifactStore artifactStore,
         IGatewayEndToEndExecutionReadiness? executionReadiness = null,
         IGatewayEndToEndExecutionFactory? executionFactory = null,
-        Action<string, Exception?>? diagnostics = null) =>
+        Action<string, Exception?>? diagnostics = null,
+        IReadOnlyCollection<string>? selectedTestIds = null) =>
         new(
             source,
             inspector,
@@ -155,7 +164,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             artifactStore,
             executionReadiness,
             executionFactory,
-            diagnostics);
+            diagnostics,
+            selectedTestIds);
 
     public void AttachSession(string runId, string? bearerToken = null)
     {
@@ -431,13 +441,18 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
                 result.Source.Tests.Count));
             foreach (var descriptor in result.Source.Tests)
             {
-                if (tests.Any(existing => StringComparer.Ordinal.Equals(existing.Id, descriptor.Id)))
+                if (!discoveredTestIds.Add(descriptor.Id))
                 {
                     failures.Add(new GatewayEndToEndFailureSnapshot(
                         "duplicate_test_id",
                         "Two admitted E2E bundles declare the same stable test ID.",
                         candidate.ContainingPackageId,
                         candidate.ManifestPath));
+                    continue;
+                }
+
+                if (selectedTestIds.Count > 0 && !selectedTestIds.Contains(descriptor.Id))
+                {
                     continue;
                 }
 
@@ -497,8 +512,20 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         }
 
         cursor = null;
+        foreach (var selectedTestId in selectedTestIds.OrderBy(id => id, StringComparer.Ordinal))
+        {
+            if (!discoveredTestIds.Contains(selectedTestId))
+            {
+                failures.Add(new GatewayEndToEndFailureSnapshot(
+                    "selected_test_not_found",
+                    "The exact selected E2E test ID was not admitted for the active mod order.",
+                    source: selectedTestId));
+            }
+        }
+
         if (tests.Count == 0 && !failures.Any(failure =>
-                StringComparer.Ordinal.Equals(failure.Code, "no_tests_admitted")))
+                StringComparer.Ordinal.Equals(failure.Code, "no_tests_admitted") ||
+                StringComparer.Ordinal.Equals(failure.Code, "selected_test_not_found")))
         {
             failures.Add(new GatewayEndToEndFailureSnapshot(
                 "no_tests_admitted",
@@ -538,7 +565,11 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
 
     private void AdvanceExecution()
     {
-        if (executionUnavailable || executionFactory is null || executionReadiness is null || runtimeTests.Count == 0)
+        if (executionUnavailable ||
+            failures.Count > 0 ||
+            executionFactory is null ||
+            executionReadiness is null ||
+            runtimeTests.Count == 0)
         {
             return;
         }

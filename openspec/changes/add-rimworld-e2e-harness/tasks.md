@@ -33,6 +33,7 @@
 
 - [x] 4.1 TDD RED: Add a real dry-run helper and failing CLI tests for discovery, group/test filters, one process per exact group, deterministic command plans, table/JSON output, JUnit/aggregate artifacts, exit codes 0/1/2, zero selection, failure continuation, and guaranteed cleanup.
 - [x] 4.2 TDD GREEN: Implement `scripts/Invoke-RimWorldEndToEndTests.ps1` by composing the existing exact-PID isolated launcher and E2E staging/polling contracts.
+- [x] 4.2a TDD/IN-GAME: Add exact stable `-TestId` selection from host planning through restart-bound Gateway admission/execution, reject missing or additional IDs, and prove one selected test runs alone inside a multi-test exact mod group.
 - [x] 4.3 BUILD: Add E2E projects to repository build/discovery without registering their methods with NUnit/VSTest; reject every E2E/Gateway reference from ordinary product packages and ignore generated stages/results.
 
 ## 5. tests/ImmersiveChefs.EndToEndTests — tracer and scenario migration

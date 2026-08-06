@@ -21,6 +21,9 @@ public sealed class GatewaySmokeEndToEndTests
             Assert.That(source, Does.Contain("[switch]$RunEndToEndTests"));
             Assert.That(source, Does.Contain("[switch]$SkipBuildDeploy"));
             Assert.That(source, Does.Contain("-devGatewayRunEndToEndTests"));
+            Assert.That(source, Does.Contain("-devGatewayEndToEndTestIds="));
+            Assert.That(source, Does.Contain("E2E runtime selection did not admit and execute exactly"));
+            Assert.That(source, Does.Contain("E2E discovery failed before execution"));
             Assert.That(source, Does.Contain("$baseUrl/end-to-end-tests"));
             Assert.That(source, Does.Contain("$endToEndTestsEnvelope.result.Execution.IsTerminal"));
             Assert.That(source, Does.Contain("[string]$_.Status -ne 'passed'"));
@@ -37,6 +40,18 @@ public sealed class GatewaySmokeEndToEndTests
         {
             Assert.That(run.ExitCode, Is.EqualTo(2));
             Assert.That(run.StandardError, Does.Contain("requires -Quicktest"));
+        });
+    }
+
+    [Test]
+    public void End_to_end_selection_rejects_invalid_stable_ids_before_path_validation()
+    {
+        var run = Invoke("-Quicktest -RunEndToEndTests -EndToEndTestIds 'valid.test,bad?id'");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(2));
+            Assert.That(run.StandardError, Does.Contain("Invalid selected E2E test ID"));
         });
     }
 

@@ -18,6 +18,9 @@ Exit codes: 0 all selected groups passed, 1 execution/infrastructure failure, 2 
 
 .EXAMPLE
 .\scripts\Invoke-RimWorldEndToEndTests.ps1 -GroupId ludeon.rimworld -Output table
+
+.EXAMPLE
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -TestId immersive-chefs.countertop-microwave-support-loss -Output table
 #>
 [CmdletBinding()]
 param(
@@ -28,6 +31,8 @@ param(
     [string[]]$AvailableModIds = @(),
 
     [string[]]$GroupId = @(),
+
+    [string[]]$TestId = @(),
 
     [string]$ArtifactsPath,
 
@@ -43,6 +48,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'RimWorldEndToEndRunner.Support.psm1') -Force
+$testIdFilters = @($TestId)
 
 function Exit-InvalidInput {
     param([Parameter(Mandatory)][string]$Message)
@@ -336,6 +342,16 @@ foreach ($packageId in $packageIds) {
         Exit-InvalidInput "Invalid available mod package ID: '$packageId'"
     }
 }
+foreach ($requestedTest in $testIdFilters) {
+    if ([string]::IsNullOrWhiteSpace($requestedTest) -or
+        $requestedTest.Length -gt 160 -or
+        $requestedTest -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
+        Exit-InvalidInput "Invalid E2E test ID: '$requestedTest'"
+    }
+}
+if (@($testIdFilters | Select-Object -Unique).Count -ne $testIdFilters.Count) {
+    Exit-InvalidInput 'The E2E test filter contains a duplicate test ID.'
+}
 
 $planInvocation = Invoke-HostTool `
     -Operation 'plan' `
@@ -349,16 +365,40 @@ if ($planInvocation.ExitCode -ne 0) {
     exit $(if ($planInvocation.ExitCode -eq 2) { 2 } else { 1 })
 }
 $plan = ConvertFrom-RequiredJson -Text $planInvocation.StandardOutput -Description 'E2E host plan'
-$selectedGroups = @($plan.groups | Where-Object {
+$candidateGroups = @($plan.groups | Where-Object {
     $GroupId.Count -eq 0 -or $GroupId -contains [string]$_.groupId
 })
-if ($selectedGroups.Count -eq 0) {
+if ($candidateGroups.Count -eq 0) {
     Exit-InvalidInput 'The E2E group filter selected zero groups.'
 }
 foreach ($requestedGroup in $GroupId) {
-    if (@($selectedGroups | Where-Object { [string]$_.groupId -ceq $requestedGroup }).Count -ne 1) {
+    if (@($candidateGroups | Where-Object { [string]$_.groupId -ceq $requestedGroup }).Count -ne 1) {
         Exit-InvalidInput "Unknown or duplicate E2E group ID: '$requestedGroup'"
     }
+}
+foreach ($requestedTest in $testIdFilters) {
+    $matches = @($plan.groups | Where-Object { @($_.tests) -ccontains $requestedTest })
+    if ($matches.Count -ne 1) {
+        Exit-InvalidInput "Unknown or duplicate E2E test ID: '$requestedTest'"
+    }
+}
+$selectedGroups = @(foreach ($group in $candidateGroups) {
+    $selectedTests = @(if ($testIdFilters.Count -eq 0) {
+        $group.tests
+    }
+    else {
+        $group.tests | Where-Object { $testIdFilters -ccontains [string]$_ }
+    })
+    if ($selectedTests.Count -gt 0) {
+        [pscustomobject]@{
+            groupId = [string]$group.groupId
+            activePackageIds = @($group.activePackageIds)
+            tests = $selectedTests
+        }
+    }
+})
+if ($selectedGroups.Count -eq 0) {
+    Exit-InvalidInput 'The combined E2E group and test filters selected zero tests.'
 }
 
 $launchPlans = [System.Collections.Generic.List[object]]::new()
@@ -382,6 +422,9 @@ foreach ($group in $selectedGroups) {
         '-TimeoutSeconds', [string]$TimeoutSeconds,
         '-Output', 'json'
     )
+    if ($testIdFilters.Count -gt 0) {
+        $plannedCommand += @('-EndToEndTestIds', (@($group.tests) -join ','))
+    }
     if ($null -ne $plannedAdditionalIdsFile) {
         $plannedCommand += @('-AdditionalModIdsFile', $plannedAdditionalIdsFile)
     }
@@ -493,6 +536,10 @@ try {
             '-ArtifactsPath', $groupArtifactRoot,
             '-Output', 'json')) {
             $smokeArguments.Add($argument)
+        }
+        if ($testIdFilters.Count -gt 0) {
+            $smokeArguments.Add('-EndToEndTestIds')
+            $smokeArguments.Add((@($group.tests) -join ','))
         }
         if ($additionalIds.Count -gt 0) {
             [System.IO.File]::WriteAllLines(
