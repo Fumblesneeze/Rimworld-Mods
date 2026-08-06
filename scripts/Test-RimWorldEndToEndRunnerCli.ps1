@@ -27,25 +27,40 @@ $raw = & pwsh `
     -NonInteractive `
     -File $runner `
     -DryRun `
-    -GroupId ludeon.rimworld `
     -Output json
 if ($LASTEXITCODE -ne 0) {
     throw "Grouped E2E runner dry run exited $LASTEXITCODE."
 }
 $result = $raw | ConvertFrom-Json -ErrorAction Stop
 $groups = @($result.Groups)
+$coreGroups = @($groups | Where-Object { [string]$_.GroupId -ceq 'ludeon.rimworld' })
 if ([string]$result.Status -cne 'dry-run' -or
     [bool]$result.MutatedGame -or
-    $groups.Count -ne 1 -or
-    [string]$groups[0].GroupId -cne 'ludeon.rimworld') {
+    $coreGroups.Count -ne 1) {
     throw 'Grouped E2E runner returned an invalid Core dry-run plan.'
 }
+$coreGroup = $coreGroups[0]
 foreach ($testId in $ExpectedTestIds) {
-    if (@($groups[0].Tests) -cnotcontains $testId) {
+    if (@($coreGroup.Tests) -cnotcontains $testId) {
         throw "Grouped E2E dry run omitted expected test '$testId'."
     }
 }
-$command = @($groups[0].Command)
+$dependencyFirstGroupId = 'ludeon.rimworld|brrainz.harmony|oskarpotocki.vanillafactionsexpanded.core|vanillaexpanded.vcooke|vanillaexpanded.vcookebakery|vanillaexpanded.vcookehaute|vanillaexpanded.vcookestews|vanillaexpanded.vcef|vanillaexpanded.vcookesushi|ucp.friedmeals|rabiosus.adaptivemealbill|binchcannon.overcookedmeals|fumblesneeze.immersivechefs'
+$dependencyFirstGroups = @($groups | Where-Object {
+    [string]$_.GroupId -ceq $dependencyFirstGroupId
+})
+if ($dependencyFirstGroups.Count -ne 1) {
+    throw 'Grouped E2E dry run did not resolve the dependency-first VCE/Fried About metadata.'
+}
+foreach ($testId in @(
+    'immersive-chefs.adaptive-overcooked-final-product',
+    'immersive-chefs.vce-fried-native-cooking')) {
+    if (@($dependencyFirstGroups[0].Tests) -cnotcontains $testId) {
+        throw "Dependency-first VCE/Fried group omitted expected test '$testId'."
+    }
+}
+
+$command = @($coreGroup.Command)
 foreach ($requiredArgument in @('-Quicktest', '-RunEndToEndTests', '-SkipBuildDeploy')) {
     if ($command -cnotcontains $requiredArgument) {
         throw "Grouped E2E dry-run command omitted '$requiredArgument'."
@@ -66,6 +81,7 @@ if (@(Compare-Object -ReferenceObject $processIdsBefore -DifferenceObject $proce
     Status = 'passed'
     AvailablePackageCount = [int]$result.AvailablePackageCount
     GroupCount = $groups.Count
-    Tests = @($groups[0].Tests)
+    Tests = @($coreGroup.Tests)
+    DependencyFirstGroupTests = @($dependencyFirstGroups[0].Tests)
     MutatedGame = [bool]$result.MutatedGame
 } | ConvertTo-Json -Compress

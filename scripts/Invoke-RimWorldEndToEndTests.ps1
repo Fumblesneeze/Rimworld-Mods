@@ -144,8 +144,14 @@ function Get-InstalledPackageIds {
         foreach ($aboutFile in @(Get-ChildItem -LiteralPath $root -Recurse -File -Filter 'About.xml' -ErrorAction SilentlyContinue)) {
             try {
                 [xml]$about = Get-Content -LiteralPath $aboutFile.FullName -Raw -ErrorAction Stop
-                $packageNode = $about.SelectSingleNode('//*[local-name()="packageId"]')
-                $packageId = if ($null -ne $packageNode) { [string]$packageNode.InnerText } else { '' }
+                $packageNodes = @($about.SelectNodes(
+                    '/*[local-name()="ModMetaData"]/*[local-name()="packageId"]'))
+                $packageId = if ($packageNodes.Count -eq 1) {
+                    [string]$packageNodes[0].InnerText
+                }
+                else {
+                    ''
+                }
                 if (Test-PackageId -Value $packageId.Trim()) {
                     $null = $ids.Add($packageId.Trim().ToLowerInvariant())
                 }
