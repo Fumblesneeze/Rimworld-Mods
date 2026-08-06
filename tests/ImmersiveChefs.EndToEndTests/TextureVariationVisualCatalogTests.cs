@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using RimWorld;
@@ -16,16 +17,26 @@ namespace ImmersiveChefs.EndToEndTests;
     "OskarPotocki.VanillaFactionsExpanded.Core",
     "VanillaExpanded.VTEXVariations",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 1_800,
-    MaxGameTicks = 2_000,
-    MaxWallClockSeconds = 90)]
+    MaxFrames = 4_800,
+    MaxGameTicks = 10_000,
+    MaxWallClockSeconds = 180)]
 public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
 {
+    private const string SaveName = "ImmersiveChefsE2E_TextureVariations";
     private readonly List<BuildingFixture> buildings = new();
-    private readonly List<Thing> portableWare = new();
+    private readonly List<PortableFixture> portableWare = new();
 
     public void Arrange(IEndToEndContext context)
     {
+        var savePath = GenFilePaths.FilePathForSavedGame(SaveName);
+        context.DeferCleanup(() =>
+        {
+            if (File.Exists(savePath))
+            {
+                File.Delete(savePath);
+            }
+        });
+
         var map = Current.Game.CurrentMap;
         var center = FindCatalogCenter(map);
         var catalog = context.GetRequiredService<IEndToEndGizmoCatalog>();
@@ -62,7 +73,7 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
-        var buildingIds = buildings.Select(fixture => fixture.Building.ThingID).ToArray();
+        var buildingIds = buildings.Select(fixture => fixture.ThingId).ToArray();
         yield return new SelectionActionStep(
             "select optional building graphics catalog",
             buildingIds,
@@ -106,12 +117,26 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
                         fixture.Building.def.defName + " must change to the opposite family member after its native VEF gizmo.");
                 }
             });
+
+        foreach (var fixture in buildings)
+        {
+            fixture.RestoreVariationFamily();
+        }
+        yield return new AssertionStep(
+            "restore every declared two-member VEF family before saving",
+            _ =>
+            {
+                foreach (var fixture in buildings)
+                {
+                    fixture.AssertVariationFamilyRestored();
+                }
+            });
         yield return new ScreenshotStep(
             "building graphics after native VEF changes",
             buildingIds,
             paddingPixels: 110);
 
-        var portableIds = portableWare.Select(thing => thing.ThingID).ToArray();
+        var portableIds = portableWare.Select(fixture => fixture.ThingId).ToArray();
         yield return new SelectionActionStep(
             "select portable material and sanitation catalog",
             portableIds,
@@ -122,6 +147,52 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
             paddingPixels: 140);
         yield return new ScreenshotStep(
             "portable clean dirty wood and stone graphics",
+            portableIds,
+            paddingPixels: 140);
+
+        yield return new SaveLoadActionStep(
+            "save and load the selected building and portable graphics through RimWorld",
+            SaveName);
+        yield return new WaitUntilStep(
+            "the same visual catalog is available after loading",
+            _ => TryRebindLoadedCatalog(),
+            new EndToEndDeadline(2_400, 10_000, TimeSpan.FromSeconds(120)));
+        yield return new AssertionStep(
+            "native VEF selections and portable cosmetic state survive loading",
+            _ =>
+            {
+                foreach (var fixture in buildings)
+                {
+                    fixture.AssertLoadedState();
+                }
+
+                foreach (var fixture in portableWare)
+                {
+                    fixture.AssertLoadedState();
+                }
+            });
+        yield return new SelectionActionStep(
+            "select the same optional buildings after loading",
+            buildingIds,
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the same optional buildings after loading",
+            buildingIds,
+            paddingPixels: 110);
+        yield return new ScreenshotStep(
+            "building graphics preserved by native VEF save loading",
+            buildingIds,
+            paddingPixels: 110);
+        yield return new SelectionActionStep(
+            "select the same portable material and sanitation catalog after loading",
+            portableIds,
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the same portable catalog after loading",
+            portableIds,
+            paddingPixels: 140);
+        yield return new ScreenshotStep(
+            "portable material and sanitation graphics preserved after loading",
             portableIds,
             paddingPixels: 140);
         yield return new CheckpointStep(
@@ -154,11 +225,12 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
             changeGraphic.Length,
             def.defName + " must expose exactly one enabled native VEF random-graphic gizmo.");
         var initialGraphicPath = building.Graphic.path;
-        var expectedGraphicPath = ConstrainNativeRandomToOpposite(context, building);
+        var variationFamily = ConstrainNativeRandomToOpposite(building);
+        context.DeferCleanup(variationFamily.Restore);
         buildings.Add(new BuildingFixture(
             building,
             initialGraphicPath,
-            expectedGraphicPath,
+            variationFamily,
             changeGraphic[0]));
     }
 
@@ -179,7 +251,7 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_ChefsKnife"),
             steel);
         GenSpawn.Spawn(knife, origin + new IntVec3(28, 0, 0), map);
-        portableWare.Add(knife);
+        portableWare.Add(new PortableFixture(knife));
     }
 
     private void AddPair(Map map, IntVec3 cell, string defName, ThingDef stuff)
@@ -190,8 +262,8 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
         dirty.TryGetComp<CompSanitation>()?.MarkDirty();
         GenSpawn.Spawn(clean, cell, map);
         GenSpawn.Spawn(dirty, cell + (IntVec3.East * 2), map);
-        portableWare.Add(clean);
-        portableWare.Add(dirty);
+        portableWare.Add(new PortableFixture(clean));
+        portableWare.Add(new PortableFixture(dirty));
     }
 
     private static IntVec3 FindCatalogCenter(Map map)
@@ -216,7 +288,36 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
                     !candidate.Fogged(map)));
     }
 
-    private static string ConstrainNativeRandomToOpposite(IEndToEndContext context, Building building)
+    private bool TryRebindLoadedCatalog()
+    {
+        var allThings = Current.Game?.CurrentMap?.listerThings?.AllThings;
+        if (allThings is null)
+        {
+            return false;
+        }
+
+        var byId = allThings.ToDictionary(thing => thing.ThingID, StringComparer.Ordinal);
+        if (buildings.Any(fixture =>
+                !byId.TryGetValue(fixture.ThingId, out var thing) || thing is not Building) ||
+            portableWare.Any(fixture => !byId.ContainsKey(fixture.ThingId)))
+        {
+            return false;
+        }
+
+        foreach (var fixture in buildings)
+        {
+            fixture.Rebind((Building)byId[fixture.ThingId]);
+        }
+
+        foreach (var fixture in portableWare)
+        {
+            fixture.Rebind(byId[fixture.ThingId]);
+        }
+
+        return true;
+    }
+
+    private static VariationFamilyLease ConstrainNativeRandomToOpposite(Building building)
     {
         var def = building.def;
         var properties = def.comps.Single(value =>
@@ -243,14 +344,12 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
         graphics.Add(originalGraphics[oppositeIndex]);
         names.Clear();
         names.Add(originalNames[oppositeIndex]);
-        context.DeferCleanup(() =>
-        {
-            graphics.Clear();
-            graphics.AddRange(originalGraphics);
-            names.Clear();
-            names.AddRange(originalNames);
-        });
-        return originalGraphics[oppositeIndex];
+        return new VariationFamilyLease(
+            graphics,
+            names,
+            originalGraphics,
+            originalNames,
+            originalGraphics[oppositeIndex]);
     }
 
     private sealed class BuildingFixture
@@ -258,21 +357,137 @@ public sealed class TextureVariationVisualCatalogTest : IRimWorldEndToEndTest
         internal BuildingFixture(
             Building building,
             string initialGraphicPath,
-            string expectedGraphicPath,
+            VariationFamilyLease variationFamily,
             EndToEndGizmoOption changeGraphic)
         {
             Building = building;
+            ThingId = building.ThingID;
             InitialGraphicPath = initialGraphicPath;
-            ExpectedGraphicPath = expectedGraphicPath;
+            VariationFamily = variationFamily;
             ChangeGraphic = changeGraphic;
         }
 
-        internal Building Building { get; }
+        internal Building Building { get; private set; }
+
+        internal string ThingId { get; }
 
         internal string InitialGraphicPath { get; }
 
-        internal string ExpectedGraphicPath { get; }
+        internal string ExpectedGraphicPath => VariationFamily.ExpectedGraphicPath;
 
         internal EndToEndGizmoOption ChangeGraphic { get; }
+
+        private VariationFamilyLease VariationFamily { get; }
+
+        internal void RestoreVariationFamily() => VariationFamily.Restore();
+
+        internal void AssertVariationFamilyRestored() => VariationFamily.AssertRestored();
+
+        internal void Rebind(Building building) => Building = building;
+
+        internal void AssertLoadedState()
+        {
+            EndToEndAssert.Equal(
+                ExpectedGraphicPath,
+                Building.Graphic.path,
+                Building.def.defName + " must retain the player-selected VEF graphic after loading.");
+            VariationFamily.AssertRestored();
+        }
+    }
+
+    private sealed class VariationFamilyLease
+    {
+        private readonly List<string> graphics;
+        private readonly List<string> names;
+        private readonly string[] originalGraphics;
+        private readonly string[] originalNames;
+        private bool restored;
+
+        internal VariationFamilyLease(
+            List<string> graphics,
+            List<string> names,
+            string[] originalGraphics,
+            string[] originalNames,
+            string expectedGraphicPath)
+        {
+            this.graphics = graphics;
+            this.names = names;
+            this.originalGraphics = originalGraphics;
+            this.originalNames = originalNames;
+            ExpectedGraphicPath = expectedGraphicPath;
+        }
+
+        internal string ExpectedGraphicPath { get; }
+
+        internal void Restore()
+        {
+            if (restored)
+            {
+                return;
+            }
+
+            graphics.Clear();
+            graphics.AddRange(originalGraphics);
+            names.Clear();
+            names.AddRange(originalNames);
+            restored = true;
+        }
+
+        internal void AssertRestored()
+        {
+            EndToEndAssert.Equal(
+                string.Join("|", originalGraphics),
+                string.Join("|", graphics),
+                "The exact two-member VEF graphics family must be restored before persistence.");
+            EndToEndAssert.Equal(
+                string.Join("|", originalNames),
+                string.Join("|", names),
+                "The exact two-member VEF player-name family must be restored before persistence.");
+        }
+    }
+
+    private sealed class PortableFixture
+    {
+        private readonly string expectedTextureName;
+        private readonly string expectedStuffDefName;
+        private readonly bool expectedDirty;
+
+        internal PortableFixture(Thing thing)
+        {
+            Thing = thing;
+            ThingId = thing.ThingID;
+            expectedTextureName = RenderedTextureName(thing);
+            expectedStuffDefName = thing.Stuff?.defName ?? string.Empty;
+            expectedDirty = thing.TryGetComp<CompSanitation>()?.IsDirty == true;
+        }
+
+        internal Thing Thing { get; private set; }
+
+        internal string ThingId { get; }
+
+        internal void Rebind(Thing thing) => Thing = thing;
+
+        internal void AssertLoadedState()
+        {
+            EndToEndAssert.Equal(
+                expectedTextureName,
+                RenderedTextureName(Thing),
+                Thing.def.defName + " must retain its material/sanitation cosmetic after loading.");
+            EndToEndAssert.Equal(
+                expectedStuffDefName,
+                Thing.Stuff?.defName ?? string.Empty,
+                Thing.def.defName + " must retain exact Stuff through the cosmetic save/load.");
+            EndToEndAssert.Equal(
+                expectedDirty,
+                Thing.TryGetComp<CompSanitation>()?.IsDirty == true,
+                Thing.def.defName + " must retain sanitation state through the cosmetic save/load.");
+        }
+
+        private static string RenderedTextureName(Thing thing)
+        {
+            return thing.Graphic.MatSingleFor(thing).mainTexture?.name ??
+                throw new EndToEndAssertionException(
+                    thing.def.defName + " must resolve one concrete rendered texture.");
+        }
     }
 }

@@ -79,13 +79,17 @@ microwave receives one two-member `CompProperties_RandomBuildingGraphic` family.
 portable finalized-Def runs are
 `artifacts/GatewaySmoke/texture-variation-base-green-20260806/20260806T165802541Z` and
 `artifacts/GatewaySmoke/texture-variation-vtex-20260806/20260806T165852388Z`. The current two-member
-building shape plus native action is covered by the focused exact-mod E2E run
-`artifacts/EndToEndRuns/Grouped/20260806T175646645Z`; it admitted only
+building shape plus native action and persistence is covered by the focused exact-mod E2E run
+`artifacts/EndToEndRuns/Grouped/20260806T181659772Z`; it admitted only
 `immersive-chefs.texture-variation-visual-catalog`, invoked every native VEF `Random Graphic`
-gizmo, observed every rendered path move to the opposite configured family member, retained the
-before/after and portable sanitation catalogs, and completed verified cleanup. The acting agent
-inspected all three retained frames. During development, rerun only this stable ID when changing
-this slice; do not replay unrelated completed catalogs.
+gizmo, observed every rendered path move to the opposite configured family member, restored each
+real two-member family, then used RimWorld's native save/load action. The same exact buildings
+retained their selected graphics, and the same portable Things retained their concrete rendered
+texture, Stuff, and sanitation state. The run retained five before/cycle/portable/reloaded frames,
+deleted its exact save, preserved both normal configuration hashes, and completed process,
+credential, stage, and fixture cleanup. The acting agent inspected all five retained frames. During
+development, rerun only this stable ID when changing this slice; do not replay unrelated completed
+catalogs.
 
 The accepted RimCuisine replacement-Def integration run is `artifacts\GatewaySmoke\20260805T145248752Z`. Its exact process loaded Core, Harmony, the selected RimWorld 1.6 Processor Framework Workshop item, all four RimCuisine 2 modules, No Vanilla Meals, Immersive Chefs, and Gateway. The exact compatibility assembly observed all ten official meal ThingDefs absent, every surviving vanilla-product recipe unclassified with its initialization-time multiplier at `1`, and the surviving pottage, rubaboo, pizza, and extravagant-meal Defs finalized with their intended ware/culinary components and tiers. This is finalized-loader evidence; native cooking and trade remain separate E2E acceptance work.
 

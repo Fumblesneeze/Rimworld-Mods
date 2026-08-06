@@ -186,6 +186,8 @@ that reduction without baking in food, steam, powered lights, water, or activity
 variant uses the standard sprite's exact canvas and occupied footprint, retains transparency, has
 no vivid chroma-key pixels or bright-blue powered cue, and uses the same fixed-color
 `Graphic_Single`/`Cutout` contract. The exact VTEX E2E catalog visibly exercised the native gizmo on
-all eight buildings and captured both family members at their real Def draw sizes. Rejected source
-candidates and comparison montages remain under ignored
-`artifacts/VisualAssets/BuildingVariations`.
+all eight buildings, restored the real two-member lists, and captured the selected graphics before
+and after a native RimWorld save/load at their real Def draw sizes. The same round trip visibly
+preserved the concrete wood/stone/metal and clean/dirty portable textures on the same Stuff-bearing
+Things without changing sanitation state. Rejected source candidates and comparison montages remain
+under ignored `artifacts/VisualAssets/BuildingVariations`.
