@@ -103,6 +103,7 @@ public sealed class GatewayEndToEndDialogConfirmationActionsTests
             "confirmAction",
             arguments);
 
+#pragma warning disable CS0414 // These exact private fields are intentionally consumed through reflection.
     private sealed class FakeConfirmationDialog
     {
         private readonly Action<int, string> confirmAction;
@@ -121,4 +122,5 @@ public sealed class GatewayEndToEndDialogConfirmationActionsTests
         public FakeResultDialog(Func<int, string> confirmAction) =>
             this.confirmAction = confirmAction;
     }
+#pragma warning restore CS0414
 }
