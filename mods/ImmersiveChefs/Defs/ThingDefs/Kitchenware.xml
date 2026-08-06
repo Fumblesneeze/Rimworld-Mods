@@ -63,8 +63,8 @@
     <label>plate</label>
     <description>A reusable plate for one meal portion. Its material and craftsmanship affect dining comfort, eating speed and sanitation.</description>
     <graphicData>
-      <texPath>Things/Item/Resource/Silver</texPath>
-      <graphicClass>Graphic_StackCount</graphicClass>
+      <texPath>ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
       <shaderType>CutoutComplex</shaderType>
       <drawSize>(0.65,0.65)</drawSize>
     </graphicData>
@@ -91,7 +91,7 @@
     <defName>ImmersiveChefs_AdobePlate</defName>
     <label>adobe plate</label>
     <description>A crude fixed-material plate formed from adobe bricks. It is porous, fragile and extremely difficult to keep sanitary.</description>
-    <graphicData><texPath>Things/Item/Resource/StoneBlocks</texPath><graphicClass>Graphic_StackCount</graphicClass><color>(0.62,0.43,0.25)</color><drawSize>(0.65,0.65)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate</texPath><graphicClass>Graphic_Single</graphicClass><color>(0.62,0.43,0.25)</color><drawSize>(0.65,0.65)</drawSize></graphicData>
     <stackLimit>25</stackLimit>
     <statBases><MaxHitPoints>45</MaxHitPoints><Flammability>0.35</Flammability><MarketValue>3</MarketValue><Mass>0.45</Mass></statBases>
     <modExtensions>

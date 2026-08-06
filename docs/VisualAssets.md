@@ -17,3 +17,13 @@ requested the same abstract set in a low, wide, mildly worn bundle. The selected
 despilled, trimmed, and reduced to 256 px; transparent pixels were normalized to black to avoid
 chroma leakage in renderers. `Cookware_m.png` marks the neutral cookware surfaces red for RimWorld's
 primary Stuff tint and leaves the brown handles unmasked.
+
+## Plate family
+
+Selected: candidate B, generated 2026-08-06. Its broad, subtly faceted rim remains recognizable at
+64 px and gives wood, stone, and metal tints useful silhouette character. Candidate A was rejected
+because its smoother oval read as a generic dish at final scale. Both prompts requested a neutral
+gray, empty, shallow plate in high top-down view on pure green chroma, without food or cutlery. The
+selected 256 px diffuse has zero green-dominant fringe after matte cleanup. `Plate_m.png` masks the
+complete plate for primary Stuff tinting; the fixed adobe Def reuses the owned silhouette with its
+earth color.
