@@ -27,3 +27,12 @@ gray, empty, shallow plate in high top-down view on pure green chroma, without f
 selected 256 px diffuse has zero green-dominant fringe after matte cleanup. `Plate_m.png` masks the
 complete plate for primary Stuff tinting; the fixed adobe Def reuses the owned silhouette with its
 earth color.
+
+## Cutlery setting
+
+Selected: candidate B, generated 2026-08-06. The crossed fork, spoon, and blunt table knife remain
+one compact, recognizable setting at 64 px. Candidate A was rejected because its parallel layout
+read as three unrelated loose Things at final scale. Both prompts requested exactly those three
+utensils in neutral gray on pure green chroma. The selected 256 px diffuse has zero green-dominant
+fringe, and `Cutlery_m.png` masks the complete setting for wood, metal, silver, gold, and plastic
+Stuff tinting.
