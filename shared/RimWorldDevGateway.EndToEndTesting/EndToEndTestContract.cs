@@ -66,6 +66,27 @@ public sealed class EndToEndGizmoOption
         bool disabled,
         EndToEndGizmoInteraction? interaction,
         string? buildableDefName)
+        : this(
+            stableId,
+            runtimeType,
+            label,
+            disabled,
+            interaction,
+            buildableDefName,
+            null,
+            null)
+    {
+    }
+
+    public EndToEndGizmoOption(
+        string stableId,
+        string runtimeType,
+        string label,
+        bool disabled,
+        EndToEndGizmoInteraction? interaction,
+        string? buildableDefName,
+        bool? toggleState,
+        string? hotKeyDefName)
     {
         StableId = Required(stableId, nameof(stableId));
         RuntimeType = Required(runtimeType, nameof(runtimeType));
@@ -75,6 +96,10 @@ public sealed class EndToEndGizmoOption
         BuildableDefName = string.IsNullOrWhiteSpace(buildableDefName)
             ? null
             : buildableDefName!.Trim();
+        ToggleState = toggleState;
+        HotKeyDefName = string.IsNullOrWhiteSpace(hotKeyDefName)
+            ? null
+            : hotKeyDefName!.Trim();
     }
 
     public string StableId { get; }
@@ -88,6 +113,10 @@ public sealed class EndToEndGizmoOption
     public EndToEndGizmoInteraction? Interaction { get; }
 
     public string? BuildableDefName { get; }
+
+    public bool? ToggleState { get; }
+
+    public string? HotKeyDefName { get; }
 
     private static string Required(string value, string parameterName)
     {

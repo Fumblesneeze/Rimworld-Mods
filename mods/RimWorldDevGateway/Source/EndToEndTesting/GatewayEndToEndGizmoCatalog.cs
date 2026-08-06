@@ -45,7 +45,9 @@ public sealed class GatewayEndToEndGizmoCatalog : IEndToEndGizmoCatalog
                 descriptor.Label,
                 descriptor.Disabled,
                 MapInteraction(descriptor.InteractionKind),
-                descriptor.BuildableDefName))
+                descriptor.BuildableDefName,
+                descriptor.ToggleState,
+                descriptor.HotKey))
             .ToArray();
     }
 

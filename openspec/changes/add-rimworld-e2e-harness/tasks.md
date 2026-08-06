@@ -19,6 +19,7 @@
 - [x] 2.10 E2E/IN-GAME: Open native settlement trade from a real player caravan, purchase upstream-generated plated meal stock through typed dialog actions, and observe the exact physical plate transfer once while the process remains minimized.
 - [x] 2.11 TDD/E2E: Wait for native player control before destructive isolation, bound the readiness wait, retain token-safe exact Gateway control exceptions, reject a non-preemptible generic callback step, and prove a quickstart cooking workflow no longer races the pause request.
 - [x] 2.12 TDD/E2E: Add a host-safe exact-IncidentDef action with optional exact faction load ID, invoke the real native incident worker with forced current-map parameters, fail closed on missing or rejected shapes, and prove a native trader-caravan arrival reaches the loaded compatibility postfix and visible map/letter outcome.
+- [x] 2.13 TDD: Project the already-captured native toggle state and exact hotkey Def name through the host-safe E2E gizmo catalog while preserving the original public constructor for prebuilt bundle compatibility.
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 

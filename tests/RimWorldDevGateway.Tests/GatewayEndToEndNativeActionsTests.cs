@@ -260,6 +260,37 @@ public sealed class GatewayEndToEndNativeActionsTests
     }
 
     [Test]
+    public void Gizmo_catalog_projects_native_toggle_state()
+    {
+        var descriptor = new GatewayGizmoDescriptor(
+            "h1",
+            "revision",
+            new GatewayGizmoCandidateSnapshot(
+                "stable-power-toggle",
+                GatewayGizmoSource.ExplicitOwner,
+                new[] { "terminal-1" },
+                "Verse.Command_Toggle",
+                "Power",
+                string.Empty,
+                0,
+                false,
+                null,
+                "Command_TogglePower",
+                0,
+                GatewayGizmoInteractionKind.Toggle,
+                true,
+                Array.Empty<GatewayInteractionInputKind>()));
+
+        var projected = GatewayEndToEndGizmoCatalog.Project(new[] { descriptor }).Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(projected.ToggleState, Is.True);
+            Assert.That(projected.HotKeyDefName, Is.EqualTo("Command_TogglePower"));
+        });
+    }
+
+    [Test]
     public void Input_screenshot_float_menu_settlement_trade_and_incident_delegate_to_the_durable_backend_operations()
     {
         var backend = new RecordingBackend();
