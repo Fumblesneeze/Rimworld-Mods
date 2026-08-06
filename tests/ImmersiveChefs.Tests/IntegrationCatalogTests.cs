@@ -41,6 +41,7 @@ public sealed class IntegrationCatalogTests
     [TestCase("seekiworksmod.no10", OptionalIntegration.PrioritizeMeals)]
     [TestCase("sumghai.Replimat", OptionalIntegration.Replimat)]
     [TestCase("Mlie.MealPrinter", OptionalIntegration.MealPrinter)]
+    [TestCase("Goat.Food.Texture.Variety", OptionalIntegration.FoodTextureVariety)]
     public void Detect_marks_exact_optional_compatibility_integrations_active(
         string packageId,
         OptionalIntegration integration)
@@ -56,6 +57,8 @@ public sealed class IntegrationCatalogTests
     [TestCase("seekiworksmod.no100")]
     [TestCase("sumghai.ReplimatMeals")]
     [TestCase("Mlie.MealPrinterPlus")]
+    [TestCase("Goat.Food.Texture.Variety.Core")]
+    [TestCase("Goat.Food.Texture.Variety.lookalike")]
     public void Detect_ignores_lookalike_optional_compatibility_packages(string packageId)
     {
         var snapshot = IntegrationCatalog.Detect(new[] { packageId });
@@ -68,6 +71,7 @@ public sealed class IntegrationCatalogTests
             Assert.That(snapshot.IsActive(OptionalIntegration.PrioritizeMeals), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.Replimat), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.MealPrinter), Is.False);
+            Assert.That(snapshot.IsActive(OptionalIntegration.FoodTextureVariety), Is.False);
         });
     }
 
@@ -105,6 +109,7 @@ public sealed class IntegrationCatalogTests
     [TestCase(OptionalIntegration.PrioritizeMeals)]
     [TestCase(OptionalIntegration.Replimat)]
     [TestCase(OptionalIntegration.MealPrinter)]
+    [TestCase(OptionalIntegration.FoodTextureVariety)]
     public void Disabled_optional_compatibility_setting_prevents_activation_when_loaded(
         OptionalIntegration integration)
     {
@@ -116,7 +121,9 @@ public sealed class IntegrationCatalogTests
             "seekiworksmod.no10",
             "sumghai.Replimat",
             "sumghai.ReplimatMeals",
-            "Mlie.MealPrinter"
+            "Mlie.MealPrinter",
+            "Goat.Food.Texture.Variety.Core",
+            "Goat.Food.Texture.Variety"
         });
         var settings = new ImmersiveChefsSettings
         {
@@ -137,6 +144,9 @@ public sealed class IntegrationCatalogTests
                 : OptionalIntegrationMode.Auto,
             MealPrinter = integration == OptionalIntegration.MealPrinter
                 ? OptionalIntegrationMode.Off
+                : OptionalIntegrationMode.Auto,
+            FoodTextureVariety = integration == OptionalIntegration.FoodTextureVariety
+                ? OptionalIntegrationMode.Off
                 : OptionalIntegrationMode.Auto
         };
 
@@ -150,7 +160,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(19));
+            Assert.That(snapshot.States, Has.Count.EqualTo(20));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }
@@ -268,6 +278,33 @@ public sealed class IntegrationCatalogTests
             Assert.That(
                 OptionalIntegrationPolicy.IsEnabled(
                     OptionalIntegration.Replimat,
+                    complete,
+                    new ImmersiveChefsSettings()),
+                Is.True);
+        });
+    }
+
+    [Test]
+    public void Food_texture_variety_adapter_requires_core_and_main_packages()
+    {
+        var mainOnly = IntegrationCatalog.Detect(new[] { "Goat.Food.Texture.Variety" });
+        var complete = IntegrationCatalog.Detect(new[]
+        {
+            "Goat.Food.Texture.Variety.Core",
+            "Goat.Food.Texture.Variety"
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.FoodTextureVariety,
+                    mainOnly,
+                    new ImmersiveChefsSettings()),
+                Is.False);
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.FoodTextureVariety,
                     complete,
                     new ImmersiveChefsSettings()),
                 Is.True);

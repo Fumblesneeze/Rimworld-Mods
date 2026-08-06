@@ -27,6 +27,7 @@ public sealed class SettingsTests
             Assert.That(settings.OvercookedMeals, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.MealsOnWheels, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.PrioritizeMeals, Is.EqualTo(OptionalIntegrationMode.Auto));
+            Assert.That(settings.FoodTextureVariety, Is.EqualTo(OptionalIntegrationMode.Auto));
         });
 
         settings.EmergencyHungerThreshold = 1f;

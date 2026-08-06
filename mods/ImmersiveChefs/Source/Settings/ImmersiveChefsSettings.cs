@@ -68,6 +68,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
     public OptionalIntegrationMode PrioritizeMeals = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode Replimat = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode MealPrinter = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode FoodTextureVariety = OptionalIntegrationMode.Auto;
 
     public override void ExposeData()
     {
@@ -115,6 +116,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
         Scribe_Values.Look(ref PrioritizeMeals, "prioritizeMeals", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref Replimat, "replimat", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref MealPrinter, "mealPrinter", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref FoodTextureVariety, "foodTextureVariety", OptionalIntegrationMode.Auto);
         ClampToAllowedRanges();
     }
 

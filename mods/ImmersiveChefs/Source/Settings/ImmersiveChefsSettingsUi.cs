@@ -98,6 +98,7 @@ internal sealed class ImmersiveChefsSettingsUi
         Cycle(listing, "Prioritize Meals over Preserved Foods", ref settings.PrioritizeMeals);
         Cycle(listing, "Replimat + Replimat Meals", ref settings.Replimat);
         Cycle(listing, "Meal Printer", ref settings.MealPrinter);
+        Cycle(listing, "Food Texture Variety", ref settings.FoodTextureVariety);
 
         listing.End();
         Widgets.EndScrollView();

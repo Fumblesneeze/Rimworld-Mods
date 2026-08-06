@@ -158,6 +158,16 @@ internal static class ImmersiveChefsDefBootstrap
         {
             OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.MealPrinter, mealPrinterReason);
         }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.FoodTextureVariety) &&
+            !FoodTextureVarietyAdapter.TryInitialize(
+                ImmersiveChefsMod.HarmonyInstance,
+                out var foodTextureVarietyReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(
+                OptionalIntegration.FoodTextureVariety,
+                foodTextureVarietyReason);
+        }
     }
 
     private static void EnablePreparedIngredients()
