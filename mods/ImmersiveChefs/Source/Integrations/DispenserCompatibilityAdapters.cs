@@ -49,6 +49,11 @@ internal static class DispenserMealResolutionPolicy
     {
         return sourceRecognized && !resolutionSucceeded;
     }
+
+    internal static bool ShouldRollback(bool diningSessionMatchesSource, bool resultCreated)
+    {
+        return diningSessionMatchesSource && !resultCreated;
+    }
 }
 
 internal static class ReplimatCompatibility
@@ -202,9 +207,21 @@ internal static class DispenserMealBindingRuntime
         Thing? result,
         DispenserMealSource source)
     {
-        if (getter is null || result is null ||
+        if (getter is null)
+        {
+            return;
+        }
+
+        var sessionMatchesSource = DiningSessionRegistry.MatchesCurrentSource(getter, dispenser);
+        if (DispenserMealResolutionPolicy.ShouldRollback(sessionMatchesSource, result is not null))
+        {
+            DiningSessionRegistry.RollbackFailedDispense(getter, dispenser);
+            return;
+        }
+
+        if (result is null ||
             !DiningPawnPolicy.AppliesDiningConsequences(getter.RaceProps.Humanlike) ||
-            getter.CurJob?.GetTarget(TargetIndex.A).Thing != dispenser ||
+            !sessionMatchesSource ||
             !DispenserMealBindingPolicy.ShouldBind(
                 source,
                 result.def.defName,

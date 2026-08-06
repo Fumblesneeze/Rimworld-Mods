@@ -109,6 +109,9 @@
 - [ ] 7.4i TDD/COMPATIBILITY: Implement Replimat/Replimat Meals and Meal Printer plate-before-dispense adapters with exact failure rollback, cutlery acquisition, Replimat poisoning/network ownership, Meal Printer feedstock ownership, and survival/NutriBar exclusions.
   - [x] 7.4i.1 Resolve the exact native product before ware reservation through Replimat's validated `PickMeal`/`specifiedMeal` seam and Meal Printer's validated `GetMealThing` seam; fail closed on changed shapes, preserve native creation/feedstock ownership, bind the exact reserved plate once, and exclude NutriBars.
   - [ ] 7.4i.2 Complete failed-dispense rollback plus Replimat animal/survival-batch exclusions and returned-setting service cleanup.
+    - [x] 7.4i.2a Roll back only the matching active dining session when the guarded native dispenser returns null; observe two ordinary Replimat diners reserve clean settings, the nearer diner consume the only feedstock serving, and the rejected diner receive no meal while the same plate/cutlery return clean without additional feedstock loss.
+    - [ ] 7.4i.2b Observe and retain Replimat animal-feeder and survival-batch exclusions through their separate native player workflows.
+    - [ ] 7.4i.2c Complete returned-setting service cleanup in the exact Replimat/Dubs/Common-Sense group.
 - [x] 7.4j TDD/COMPATIBILITY: Make every registry, Harmony prepare path, alert, setting, and job absent-safe after No Vanilla Meals removes vanilla meal Defs; cover no-replacement and RimCuisine-replacement configurations.
   - [x] 7.4j.1 Prove the exact Processor Framework/all-RimCuisine/No-Vanilla replacement matrix uses no removed official Def or stale work multiplier while retaining finalized pottage, rubaboo, pizza, and extravagant-meal coverage.
   - [x] 7.4j.2 Prove the exact no-replacement matrix reaches a playable map without stale registry, Harmony, job, setting, or kitchenware-alert behavior.

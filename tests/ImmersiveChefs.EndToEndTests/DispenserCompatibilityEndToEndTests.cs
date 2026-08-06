@@ -255,6 +255,275 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
 }
 
 [RimWorldEndToEndTest(
+    "immersive-chefs.replimat-failed-dispense-rollback",
+    "fumblesneeze.immersivechefs",
+    EndToEndTestContract.CorePackageId,
+    "brrainz.harmony",
+    "sumghai.Replimat",
+    "sumghai.ReplimatMeals",
+    "Dubwise.DubsBadHygiene",
+    "avilmask.CommonSense",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 5_400,
+    MaxGameTicks = 18_000,
+    MaxWallClockSeconds = 180)]
+public sealed class ReplimatFailedDispenseRollbackTest : IRimWorldEndToEndTest
+{
+    private Map map = null!;
+    private Pawn diner = null!;
+    private Pawn competingDiner = null!;
+    private ThingWithComps terminal = null!;
+    private ThingWithComps tank = null!;
+    private ThingWithComps computer = null!;
+    private ThingWithComps plate = null!;
+    private ThingWithComps cutlery = null!;
+    private ThingWithComps competingPlate = null!;
+    private ThingWithComps competingCutlery = null!;
+    private Thing? firstDispensedMeal;
+    private float feedstockBefore;
+    private float feedstockAfterFirstDispense;
+    private bool wareCarriedBeforeFailure;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        map = Current.Game.CurrentMap;
+        var center = FoodSearchE2EFixture.FindRoomCenter(map);
+        FoodSearchE2EFixture.BuildSealedRoom(map, center);
+        DispenserE2EFixture.SpawnConduitGrid(map, center, 9, 7);
+        DispenserE2EFixture.SpawnPowerSources(map, center + new IntVec3(-8, 0, 6), 18);
+
+        terminal = DispenserE2EFixture.SpawnBuilding(
+            map,
+            "ReplimatTerminal",
+            center + new IntVec3(-3, 0, 0));
+        tank = DispenserE2EFixture.SpawnBuilding(map, "ReplimatFeedTank", center);
+        computer = DispenserE2EFixture.SpawnBuilding(
+            map,
+            "ReplimatComputer",
+            center + new IntVec3(2, 0, 0));
+        DispenserE2EFixture.SetReplimatFeedstockPercent(tank, 0.002f);
+        DispenserE2EFixture.SettlePower(map, new[] { terminal, tank, computer }, 600);
+        EndToEndAssert.True(
+            DispenserE2EFixture.ReadBooleanProperty(terminal, "CanDispenseNow"),
+            "The native terminal must initially be able to dispense.");
+        feedstockBefore = DispenserE2EFixture.ReadSingleProperty(tank, "StoredFeedstock");
+        EndToEndAssert.True(feedstockBefore > 0.46f && feedstockBefore < 0.51f,
+            "The native feed tank must contain exactly one Ramen-scale serving.");
+
+        var expectedMeal = DefDatabase<ThingDef>.GetNamed("ReplimatMeals_F_Ramen");
+        var replimatOnlyPolicy = new FoodPolicy(9_811, "Immersive Chefs failed Replimat E2E");
+        replimatOnlyPolicy.filter.SetDisallowAll();
+        replimatOnlyPolicy.filter.SetAllow(expectedMeal, true);
+
+        competingDiner = FoodSearchE2EFixture.CreateColonist("First Replimat diner");
+        GenSpawn.Spawn(competingDiner, center + new IntVec3(-1, 0, -4), map);
+        FoodSearchE2EFixture.SetHunger(competingDiner, 0.10f);
+        competingDiner.foodRestriction.CurrentFoodPolicy = replimatOnlyPolicy;
+
+        diner = FoodSearchE2EFixture.CreateColonist("Failed Replimat diner");
+        GenSpawn.Spawn(diner, center + new IntVec3(4, 0, -4), map);
+        FoodSearchE2EFixture.SetHunger(diner, 0.10f);
+        diner.foodRestriction.CurrentFoodPolicy = replimatOnlyPolicy;
+
+        plate = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Plate", ThingDefOf.Steel);
+        cutlery = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Cutlery", ThingDefOf.Steel);
+        competingPlate = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Plate", ThingDefOf.Steel);
+        competingCutlery = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Cutlery", ThingDefOf.Steel);
+        GenSpawn.Spawn(plate, center + new IntVec3(3, 0, -3), map);
+        GenSpawn.Spawn(cutlery, center + new IntVec3(4, 0, -3), map);
+        GenSpawn.Spawn(competingPlate, center + new IntVec3(-2, 0, -3), map);
+        GenSpawn.Spawn(competingCutlery, center + new IntVec3(-1, 0, -3), map);
+        FoodSearchE2EFixture.UseStrictNonEmergencyDining(context);
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        var fixture = new[]
+        {
+            diner.ThingID, competingDiner.ThingID, terminal.ThingID, tank.ThingID,
+            computer.ThingID, plate.ThingID, cutlery.ThingID,
+            competingPlate.ThingID, competingCutlery.ThingID
+        };
+        yield return new SelectionActionStep("select failed Replimat fixture", fixture, false);
+        yield return new CameraActionStep("frame failed Replimat fixture", fixture, 220);
+        yield return new ScreenshotStep("before failed Replimat request", Array.Empty<string>(), 0);
+        yield return new TimeControlActionStep(
+            "run failed Replimat request until ware is carried",
+            false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the exact setting is carried before failure",
+            _ => ObserveWareCarried(),
+            new EndToEndDeadline(1_800, 5_000, TimeSpan.FromSeconds(60)));
+        yield return new SelectionActionStep(
+            "select diner carrying the clean setting",
+            new[] { diner.ThingID },
+            false);
+        yield return new ScreenshotStep(
+            "observe clean setting carried before failed dispense",
+            Array.Empty<string>(),
+            0);
+        yield return new WaitUntilStep(
+            "the first diner receives the only Replimat serving",
+            _ => ObserveFirstDispense(),
+            new EndToEndDeadline(1_800, 5_000, TimeSpan.FromSeconds(60)));
+        yield return new SelectionActionStep(
+            "select first diner with sole Replimat serving",
+            new[] { competingDiner.ThingID },
+            false);
+        yield return new ScreenshotStep("observe the sole native Replimat serving", Array.Empty<string>(), 0);
+        yield return new WaitUntilStep(
+            "failed dispense returns the exact setting clean",
+            _ => ObserveRollback(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(75)));
+        yield return new TimeControlActionStep(
+            "pause after failed Replimat rollback",
+            true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep("failed Replimat request rolls back once", _ => AssertRolledBack());
+        yield return new SelectionActionStep("select rolled-back Replimat plate", new[] { plate.ThingID }, false);
+        yield return new CameraActionStep(
+            "frame rolled-back Replimat setting",
+            new[] { diner.ThingID, terminal.ThingID, plate.ThingID, cutlery.ThingID },
+            220);
+        yield return new ScreenshotStep("observe clean rolled-back Replimat plate", Array.Empty<string>(), 0);
+        yield return new SelectionActionStep(
+            "select rolled-back Replimat cutlery",
+            new[] { cutlery.ThingID },
+            false);
+        yield return new ScreenshotStep("observe clean rolled-back Replimat cutlery", Array.Empty<string>(), 0);
+        yield return new CheckpointStep(
+            "failed Replimat rollback result",
+            _ => new Dictionary<string, string>
+            {
+                ["wareCarriedBeforeFailure"] = wareCarriedBeforeFailure.ToString(),
+                ["firstMealThingId"] = firstDispensedMeal?.ThingID ?? string.Empty,
+                ["plateThingId"] = plate.ThingID,
+                ["cutleryThingId"] = cutlery.ThingID,
+                ["plateDirty"] = (plate.GetComp<CompSanitation>()?.IsDirty == true).ToString(),
+                ["cutleryDirty"] = (cutlery.GetComp<CompSanitation>()?.IsDirty == true).ToString(),
+                ["feedstockBefore"] = feedstockBefore.ToString("R"),
+                ["feedstockAfterFirstDispense"] = feedstockAfterFirstDispense.ToString("R"),
+                ["feedstockAfter"] = DispenserE2EFixture.ReadSingleProperty(tank, "StoredFeedstock").ToString("R")
+            });
+    }
+
+    private bool ObserveWareCarried()
+    {
+        var session = DiningSessionRegistry.Current(diner);
+        if (!ReferenceEquals(session?.CarriedPlate, plate) ||
+            !ReferenceEquals(session.CarriedCutlery, cutlery))
+        {
+            return false;
+        }
+
+        wareCarriedBeforeFailure = true;
+        return true;
+    }
+
+    private bool ObserveFirstDispense()
+    {
+        var meal = FindPawnReplimatMeal(competingDiner);
+        var feedstock = DispenserE2EFixture.ReadSingleProperty(tank, "StoredFeedstock");
+        if (meal is null || feedstock >= feedstockBefore)
+        {
+            return false;
+        }
+
+        firstDispensedMeal = meal;
+        feedstockAfterFirstDispense = feedstock;
+        return true;
+    }
+
+    private bool ObserveRollback()
+    {
+        return firstDispensedMeal is not null &&
+               DiningSessionRegistry.Current(diner) is null &&
+               plate.Spawned && plate.GetComp<CompSanitation>()?.IsDirty == false &&
+               cutlery.Spawned && cutlery.GetComp<CompSanitation>()?.IsDirty == false &&
+               !HasUnexpectedReplimatMeal();
+    }
+
+    private void AssertRolledBack()
+    {
+        EndToEndAssert.True(wareCarriedBeforeFailure && firstDispensedMeal is not null,
+            "The test must observe carried ware and the competing native serving before rollback.");
+        EndToEndAssert.True(DiningSessionRegistry.Current(diner) is null,
+            "A failed native dispense must remove its dining session.");
+        EndToEndAssert.True(plate.Spawned && plate.GetComp<CompSanitation>()?.IsDirty == false,
+            "The same failed-dispense plate must return clean.");
+        EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()?.IsDirty == false,
+            "The same failed-dispense cutlery must return clean.");
+        EndToEndAssert.Equal(
+            feedstockAfterFirstDispense,
+            DispenserE2EFixture.ReadSingleProperty(tank, "StoredFeedstock"),
+            "The rejected second dispense must not consume additional Replimat feedstock.");
+        EndToEndAssert.True(!HasUnexpectedReplimatMeal(),
+            "The failed second dispense must not create another Replimat meal.");
+    }
+
+    private bool HasUnexpectedReplimatMeal()
+    {
+        var candidates = map.listerThings.AllThings.ToList();
+        foreach (var pawn in new[] { diner, competingDiner })
+        {
+            if (pawn.carryTracker?.CarriedThing is { } carried)
+            {
+                candidates.Add(carried);
+            }
+
+            if (pawn.inventory?.innerContainer is { } inventory)
+            {
+                candidates.AddRange(inventory);
+            }
+        }
+
+        return candidates
+            .Distinct()
+            .Any(thing =>
+                !thing.Destroyed &&
+                !ReferenceEquals(thing, firstDispensedMeal) &&
+                MealClassificationCatalog.ReplimatMealDefNames.Contains(thing.def.defName));
+    }
+
+    private static Thing? FindPawnReplimatMeal(Pawn pawn)
+    {
+        var candidates = new List<Thing>();
+        if (pawn.carryTracker?.CarriedThing is { } carried)
+        {
+            candidates.Add(carried);
+        }
+
+        if (pawn.inventory?.innerContainer is { } inventory)
+        {
+            candidates.AddRange(inventory);
+        }
+
+        if (pawn.CurJob is { } job)
+        {
+            foreach (var target in new[]
+                     {
+                         job.GetTarget(TargetIndex.A),
+                         job.GetTarget(TargetIndex.B),
+                         job.GetTarget(TargetIndex.C)
+                     })
+            {
+                if (target.Thing is { } thing)
+                {
+                    candidates.Add(thing);
+                }
+            }
+        }
+
+        return candidates
+            .Distinct()
+            .FirstOrDefault(thing =>
+                !thing.Destroyed &&
+                MealClassificationCatalog.ReplimatMealDefNames.Contains(thing.def.defName));
+    }
+}
+
+[RimWorldEndToEndTest(
     "immersive-chefs.meal-printer-fine-dining",
     "fumblesneeze.immersivechefs",
     EndToEndTestContract.CorePackageId,

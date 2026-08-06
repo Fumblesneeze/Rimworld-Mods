@@ -5,6 +5,21 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class DispenserCompatibilityAdapterTests
 {
+    [TestCase(true, false, true)]
+    [TestCase(true, true, false)]
+    [TestCase(false, false, false)]
+    public void Failed_native_dispense_rolls_back_only_the_matching_active_dining_session(
+        bool diningSessionMatchesSource,
+        bool resultCreated,
+        bool expected)
+    {
+        Assert.That(
+            DispenserMealResolutionPolicy.ShouldRollback(
+                diningSessionMatchesSource,
+                resultCreated),
+            Is.EqualTo(expected));
+    }
+
     [TestCase(false, false, false)]
     [TestCase(true, true, false)]
     [TestCase(true, false, true)]

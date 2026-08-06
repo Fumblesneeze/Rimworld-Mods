@@ -893,6 +893,21 @@ internal static class DiningSessionRegistry
         return Current(pawn)?.RequestedMealDef;
     }
 
+    internal static bool MatchesCurrentSource(Pawn pawn, Thing source)
+    {
+        return pawn.CurJob is { } job &&
+               ReferenceEquals(job.GetTarget(TargetIndex.A).Thing, source) &&
+               Sessions.TryGetValue(job, out _);
+    }
+
+    internal static void RollbackFailedDispense(Pawn pawn, Thing source)
+    {
+        if (MatchesCurrentSource(pawn, source))
+        {
+            Cleanup(pawn, pawn.CurJob);
+        }
+    }
+
     internal static void BeginIngestion(Pawn pawn)
     {
         if (!PawnSessions.TryGetValue(pawn, out var session) ||
