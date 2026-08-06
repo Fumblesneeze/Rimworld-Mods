@@ -112,3 +112,14 @@ rejected because its tall rear panel and more frontal view made it read less nat
 rotatable RimWorld worktable. Both prompts requested a clean state-neutral professional meat-prep
 station on pure green chroma. The selected 512×256 fixed-color sprite has an exact 2:1 canvas and
 uses `Graphic_Single`/`Cutout` for native rotation.
+
+## Vegetable station
+
+Selected: candidate A, generated 2026-08-06. Its broad pale cutting board, fixed mandoline, box
+grater, peeler, dry perforated rinse basket, and closed drawers remain readable at 2×1 map scale
+without permanently depicting vegetables, water, active machinery, or powered lights. Candidate B
+was rejected because its large spiral slicer and full wooden cabinet made the silhouette busier and
+more frontal at final scale. Both prompts requested distinct clean, dry, idle vegetable-preparation
+equipment on pure green chroma. The selected 512×256 fixed-color sprite has an exact 2:1 canvas,
+fills 480×240 visible pixels to match the sibling 2-cell stations, retains zero vivid-green key
+pixels, and uses `Graphic_Single`/`Cutout` for native rotation.
