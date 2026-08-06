@@ -43,6 +43,10 @@ A manifest MAY use reusable `requiredPackageIds`/`forbiddenPackageIds` constrain
 - **WHEN** an exact-mode manifest names Core, Harmony, its product mod, and the Gateway in that order but the requested or live active package sequence has the same members in another order or contains another package
 - **THEN** the host does not build or stage that project and the runtime does not expose its assembly for loading or invocation
 
+#### Scenario: Focused product matrix excludes completed fixture suites
+- **WHEN** an exact product or compatibility matrix matches one product test project but does not match the Gateway fixture project's own exact Core-plus-Gateway matrix
+- **THEN** the host stages and validates only the matching product project, accepts its nonempty complete result snapshot without requiring unstaged Gateway fixture descriptors, and still requires all four exact Gateway fixtures whenever any Gateway fixture descriptor is present
+
 #### Scenario: Manifest adds an undeclared field or repeats a field
 - **WHEN** a staged integration-test manifest contains an unknown or duplicate top-level JSON property
 - **THEN** validation records an invalid-manifest failure instead of deserializing a permissive approximation

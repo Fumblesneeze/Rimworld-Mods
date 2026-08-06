@@ -2024,11 +2024,15 @@ function Assert-IntegrationTestTerminalSnapshot {
     $actualDescriptors = @($gatewayDescriptors |
         ForEach-Object { [string]$_.TestName + '|' + [string]$_.RunAt } |
         Sort-Object)
-    if ($gatewayDescriptors.Count -ne 4 -or
+    if ($gatewayDescriptors.Count -gt 0 -and
+        ($gatewayDescriptors.Count -ne 4 -or
         @(Compare-Object -CaseSensitive `
             -ReferenceObject @($expectedDescriptors | Sort-Object) `
-            -DifferenceObject $actualDescriptors).Count -ne 0) {
+            -DifferenceObject $actualDescriptors).Count -ne 0)) {
         throw 'Integration-test discovery did not expose the four exact Gateway fixture descriptors.'
+    }
+    if ($FailureProbe -and $gatewayDescriptors.Count -eq 0) {
+        throw 'The deliberate integration failure probe requires the four Gateway fixture descriptors.'
     }
 
     $topLevelFailures = @($Snapshot.Failures)
@@ -2196,23 +2200,25 @@ function Assert-IntegrationTestTerminalSnapshot {
         }
         throw "Integration-test MainMenuLoaded lifecycle was '$mainMenuState'; Quicktest requires pending or completed. Failures: $failureDetail"
     }
-    $expectedGatewayResultNames = @()
-    if ($TargetRunAt -ceq 'MainMenuLoaded' -or $mainMenuState -ceq 'completed') {
-        $expectedGatewayResultNames += @($mainMenuA, $mainMenuB)
-    }
-    if ($TargetRunAt -ceq 'PlayableMapLoaded') {
-        $expectedGatewayResultNames += @($mapA, $mapB)
-    }
     $gatewayResults = @($allResults |
         Where-Object { [string]$_.OwningPackageId -ieq $gatewayOwner })
-    $gatewayResultNames = @($gatewayResults | ForEach-Object { [string]$_.TestName } | Sort-Object)
-    if ($gatewayResults.Count -ne $expectedGatewayResultNames.Count -or
-        @(Compare-Object -CaseSensitive `
-            -ReferenceObject @($expectedGatewayResultNames | Sort-Object) `
-            -DifferenceObject $gatewayResultNames).Count -ne 0) {
-        $missingNames = @($expectedGatewayResultNames |
-            Where-Object { $gatewayResultNames -cnotcontains $_ })
-        throw "Integration-test results did not contain each exact expected Gateway fixture result name: $($missingNames -join ', ')"
+    if ($gatewayDescriptors.Count -gt 0) {
+        $expectedGatewayResultNames = @()
+        if ($TargetRunAt -ceq 'MainMenuLoaded' -or $mainMenuState -ceq 'completed') {
+            $expectedGatewayResultNames += @($mainMenuA, $mainMenuB)
+        }
+        if ($TargetRunAt -ceq 'PlayableMapLoaded') {
+            $expectedGatewayResultNames += @($mapA, $mapB)
+        }
+        $gatewayResultNames = @($gatewayResults | ForEach-Object { [string]$_.TestName } | Sort-Object)
+        if ($gatewayResults.Count -ne $expectedGatewayResultNames.Count -or
+            @(Compare-Object -CaseSensitive `
+                -ReferenceObject @($expectedGatewayResultNames | Sort-Object) `
+                -DifferenceObject $gatewayResultNames).Count -ne 0) {
+            $missingNames = @($expectedGatewayResultNames |
+                Where-Object { $gatewayResultNames -cnotcontains $_ })
+            throw "Integration-test results did not contain each exact expected Gateway fixture result name: $($missingNames -join ', ')"
+        }
     }
 
     $targetResults = @($allResults | Where-Object { [string]$_.RunAt -ceq $TargetRunAt })
@@ -5144,7 +5150,6 @@ try {
             -TargetRunAt $targetIntegrationLifecycle `
             -FailureProbe:$IntegrationFailureProbe `
             -ExpectedFailureTestName $expectedIntegrationFailureTestName `
-            -MinimumDiscoveredTestCount 4 `
             -ExpectedTests @($validatedExpectedIntegrationTests)
         Assert-IntegrationTestAssemblyProvenance `
             -Snapshot $integrationTestsEnvelope.result `
@@ -5165,7 +5170,6 @@ try {
             -TargetRunAt $targetIntegrationLifecycle `
             -FailureProbe:$IntegrationFailureProbe `
             -ExpectedFailureTestName $expectedIntegrationFailureTestName `
-            -MinimumDiscoveredTestCount 4 `
             -ExpectedTests @($validatedExpectedIntegrationTests)
         Assert-IntegrationTestAssemblyProvenance `
             -Snapshot $repeatIntegrationEnvelope.result `
@@ -5186,7 +5190,6 @@ try {
             -TargetRunAt $targetIntegrationLifecycle `
             -FailureProbe:$IntegrationFailureProbe `
             -ExpectedFailureTestName $expectedIntegrationFailureTestName `
-            -MinimumDiscoveredTestCount 4 `
             -ExpectedTests @($validatedExpectedIntegrationTests)
         Assert-IntegrationTestAssemblyProvenance `
             -Snapshot $persistedIntegrationSnapshot `

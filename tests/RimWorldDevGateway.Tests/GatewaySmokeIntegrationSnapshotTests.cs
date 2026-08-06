@@ -22,6 +22,8 @@ public sealed class GatewaySmokeIntegrationSnapshotTests
     private const string MapB =
         "RimWorldDevGateway.InGame.IntegrationTests.PlayableMapIntegrationTests.B_LaterTestStillRunsAfterTheFailureProbe";
     private const string ExtraTest = "Extra.Owner.Tests.Passes";
+    private const string FocusOwner = "fumblesneeze.immersivechefs";
+    private const string FocusTest = "ImmersiveChefs.Texture.Tests.DmtrOwnership";
     private const string MainMenuCompletedLifecycle =
         "{\"RunAt\":\"MainMenuLoaded\",\"State\":\"completed\",\"StartedUtc\":\"2026-08-01T00:00:00.0000000Z\",\"CompletedUtc\":\"2026-08-01T00:00:02.0000000Z\",\"ExecutedCount\":2,\"PassedCount\":2,\"FailedCount\":0}";
     private const string MainMenuFailedLifecycle =
@@ -141,6 +143,21 @@ public sealed class GatewaySmokeIntegrationSnapshotTests
             Assert.That(failed.ExitCode, Is.EqualTo(1));
             Assert.That(failed.StandardError, Does.Contain("expected integration test").IgnoreCase);
         });
+    }
+
+    [Test]
+    public void Focused_product_snapshot_does_not_require_the_unstaged_gateway_fixture_suite()
+    {
+        var accepted = InvokeAssertion(
+            ValidFocusedProductSnapshot,
+            failureProbe: false,
+            targetRunAt: "MainMenuLoaded",
+            expectedOwner: FocusOwner,
+            expectedRunAt: "MainMenuLoaded",
+            expectedTestName: FocusTest,
+            minimumDiscoveredTestCount: 1);
+
+        Assert.That(accepted.ExitCode, Is.Zero, accepted.StandardError);
     }
 
     [Test]
@@ -275,7 +292,8 @@ public sealed class GatewaySmokeIntegrationSnapshotTests
         string targetRunAt = "PlayableMapLoaded",
         string? expectedOwner = null,
         string? expectedRunAt = null,
-        string? expectedTestName = null)
+        string? expectedTestName = null,
+        int minimumDiscoveredTestCount = 4)
     {
         var expectedArgument = expectedOwner is null
             ? string.Empty
@@ -288,7 +306,7 @@ public sealed class GatewaySmokeIntegrationSnapshotTests
             null,
             "$snapshot = Get-Content -LiteralPath $snapshotPath -Raw | ConvertFrom-Json" + Environment.NewLine +
             $"Assert-IntegrationTestTerminalSnapshot -Snapshot $snapshot -TargetRunAt {PowerShellLiteral(targetRunAt)} " +
-            $"-FailureProbe:${failureProbe.ToString().ToLowerInvariant()} -MinimumDiscoveredTestCount 4" +
+            $"-FailureProbe:${failureProbe.ToString().ToLowerInvariant()} -MinimumDiscoveredTestCount {minimumDiscoveredTestCount}" +
             expectedArgument + " | Out-Null");
     }
 
@@ -483,4 +501,22 @@ public sealed class GatewaySmokeIntegrationSnapshotTests
         .Replace("," + Result(MapA, "PlayableMapLoaded", "passed", "00:00:03"), string.Empty)
         .Replace("," + Result(MapB, "PlayableMapLoaded", "passed", "00:00:04"), string.Empty)
         .Replace("," + Result(ExtraTest, "PlayableMapLoaded", "passed", "00:00:05", "extra.owner", "Extra"), string.Empty);
+
+    private static readonly string ValidFocusedProductSnapshot =
+        "{\"Enabled\":true,\"DiscoveryState\":\"completed\",\"DiscoveredAssemblyCount\":1," +
+        "\"DiscoveredAssemblies\":[" +
+        "{\"OwningPackageId\":\"" + FocusOwner + "\",\"SourceIdentity\":\"focused-source\",\"AssemblyIdentity\":\"Extra\"}]," +
+        "\"DiscoveredTestCount\":1," +
+        "\"DiscoveredTests\":[" + Descriptor(FocusTest, "MainMenuLoaded", FocusOwner) + "]," +
+        "\"Failures\":[],\"OmittedFailureCount\":0,\"OmittedResultCount\":0," +
+        "\"LifecyclePoints\":[" +
+        "{\"RunAt\":\"MainMenuLoaded\",\"State\":\"completed\",\"StartedUtc\":\"2026-08-01T00:00:00.0000000Z\",\"CompletedUtc\":\"2026-08-01T00:00:01.0000000Z\",\"ExecutedCount\":1,\"PassedCount\":1,\"FailedCount\":0}," +
+        PlayableMapPendingLifecycle + "]," +
+        "\"Results\":[" + Result(
+            FocusTest,
+            "MainMenuLoaded",
+            "passed",
+            "00:00:01",
+            FocusOwner,
+            "Extra") + "]}";
 }
