@@ -7,4 +7,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ImmersiveChefs.FinalProductMods.InGame.IntegrationTests")]
 [assembly: InternalsVisibleTo("ImmersiveChefs.FoodSearchMods.InGame.IntegrationTests")]
 [assembly: InternalsVisibleTo("ImmersiveChefs.VceFriedMods.InGame.IntegrationTests")]
+[assembly: InternalsVisibleTo("ImmersiveChefs.ReplimatMods.InGame.IntegrationTests")]
+[assembly: InternalsVisibleTo("ImmersiveChefs.MealPrinterMods.InGame.IntegrationTests")]
 [assembly: InternalsVisibleTo("ImmersiveChefs.EndToEndTests")]

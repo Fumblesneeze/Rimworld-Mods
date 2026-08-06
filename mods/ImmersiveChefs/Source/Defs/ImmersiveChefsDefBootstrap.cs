@@ -146,6 +146,18 @@ internal static class ImmersiveChefsDefBootstrap
         {
             OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.PrioritizeMeals, prioritizeMealsReason);
         }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.Replimat) &&
+            !ReplimatAdapter.TryInitialize(ImmersiveChefsMod.HarmonyInstance, out var replimatReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.Replimat, replimatReason);
+        }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.MealPrinter) &&
+            !MealPrinterAdapter.TryInitialize(ImmersiveChefsMod.HarmonyInstance, out var mealPrinterReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.MealPrinter, mealPrinterReason);
+        }
     }
 
     private static void EnablePreparedIngredients()

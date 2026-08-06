@@ -348,7 +348,7 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 3. Vanilla Expanded Framework; matching Vanilla Cooking Expanded modules; Food Texture Variety Core/main/VCE add-ons; Dynamic Meal Texture Replacer; Variety Matters; Vanilla Food Variety Expanded; Immersive Chefs; and Gateway for ingredient and graphic provenance.
 4. Fast Meals; Meals on Wheels; Prioritize Meals over Preserved Foods; Immersive Chefs; and Gateway for food search, mobile holders, and fast-work exemptions.
 5. Replimat; Replimat Meals; Dubs Bad Hygiene; Common Sense; Immersive Chefs; and Gateway for dispenser ware and cleanup.
-6. Meal Printer; Hospitality; Cash Register; Gastronomy; Immersive Chefs; and Gateway for printed and served meals.
+6. Hospitality; Meal Printer; Cash Register; Gastronomy; Immersive Chefs; and Gateway for printed and served meals. Hospitality precedes Meal Printer per the printer's declared load-after rule, and Cash Register precedes Gastronomy per Gastronomy's required dependency.
 7. Processor Framework; all RimCuisine 2 modules; No Vanilla Meals; Immersive Chefs; and Gateway for replacement Defs and preservation exclusions.
 8. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
 

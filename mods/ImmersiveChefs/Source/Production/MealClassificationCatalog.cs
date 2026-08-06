@@ -57,9 +57,50 @@ public sealed class MealClassificationCatalog
         "OskarPotocki.VanillaFactionsExpanded.Core";
     public const string VanillaFishingExpandedPackageId = "VanillaExpanded.VCEF";
     public const string ProcessorFrameworkPackageId = "syrchalis.processor.framework";
+    public const string ReplimatPackageId = "sumghai.Replimat";
+    public const string ReplimatMealsPackageId = "sumghai.ReplimatMeals";
 
     private static readonly Lazy<MealClassificationCatalog> CompleteOptionalCatalog =
         new(CreateCompleteOptionalCatalog);
+    private static readonly string[] ReplimatSimpleMealDefNames =
+    {
+        "ReplimatMeals_S_Borscht", "ReplimatMeals_S_CaesarSalad",
+        "ReplimatMeals_S_CubanSandwich", "ReplimatMeals_S_Currywurst",
+        "ReplimatMeals_S_Dumplings", "ReplimatMeals_S_FishAndChips",
+        "ReplimatMeals_S_Gyros", "ReplimatMeals_S_Kakigori",
+        "ReplimatMeals_S_MargheritaPizza", "ReplimatMeals_S_MincedPorkRice",
+        "ReplimatMeals_S_Pancakes", "ReplimatMeals_S_PastramiOnRye",
+        "ReplimatMeals_S_PorkBuns", "ReplimatMeals_S_Poutine",
+        "ReplimatMeals_S_Sachertorte", "ReplimatMeals_S_ShrimpTacos",
+        "ReplimatMeals_S_Takoyaki", "ReplimatMeals_S_Tiramisu",
+        "ReplimatMeals_S_Weisswurst", "ReplimatMeals_S_Zongzi"
+    };
+    private static readonly string[] ReplimatAdvancedMealDefNames =
+    {
+        "ReplimatMeals_F_BeefNoodleSoup", "ReplimatMeals_F_BeefRouladen",
+        "ReplimatMeals_F_BunnyChow", "ReplimatMeals_F_ChaliapinSteak",
+        "ReplimatMeals_F_ChickenAndWaffles", "ReplimatMeals_F_ChickenKyiv",
+        "ReplimatMeals_F_ChickenPotPie", "ReplimatMeals_F_ChickenTikkaMasala",
+        "ReplimatMeals_F_JollofRice", "ReplimatMeals_F_Kasespatzle",
+        "ReplimatMeals_F_KatsuCurry", "ReplimatMeals_F_Koshari",
+        "ReplimatMeals_F_LocoMoco", "ReplimatMeals_F_Nachos",
+        "ReplimatMeals_F_Omurice", "ReplimatMeals_F_Paella",
+        "ReplimatMeals_F_Pho", "ReplimatMeals_F_Ramen",
+        "ReplimatMeals_F_Ratatouille", "ReplimatMeals_F_ShepherdsPie",
+        "ReplimatMeals_F_TagliatelleAlRagu", "ReplimatMeals_F_TenzaruSoba"
+    };
+    private static readonly string[] ReplimatElaborateMealDefNames =
+    {
+        "ReplimatMeals_L_FullEnglishBreakfast", "ReplimatMeals_L_Gumbo",
+        "ReplimatMeals_L_Hangi", "ReplimatMeals_L_Kaiseki",
+        "ReplimatMeals_L_LobsterThermidor", "ReplimatMeals_L_SundayRoast"
+    };
+
+    internal static IReadOnlyList<string> ReplimatMealDefNames { get; } = Array.AsReadOnly(
+        ReplimatSimpleMealDefNames
+            .Concat(ReplimatAdvancedMealDefNames)
+            .Concat(ReplimatElaborateMealDefNames)
+            .ToArray());
 
     private readonly Dictionary<string, MealComplexity> recipes =
         new(StringComparer.OrdinalIgnoreCase);
@@ -156,6 +197,11 @@ public sealed class MealClassificationCatalog
             catalog.AddPackage(
                 RimCuisineMealsPackageId,
                 () => catalog.AddRimCuisineMeals(includeVanillaBulkRecipes: !noVanillaMeals));
+        }
+
+        if (packages.Contains(ReplimatPackageId) && packages.Contains(ReplimatMealsPackageId))
+        {
+            catalog.AddPackage(ReplimatMealsPackageId, catalog.AddReplimatMeals);
         }
 
         return catalog;
@@ -321,7 +367,9 @@ public sealed class MealClassificationCatalog
             FastMealsPackageId,
             ProcessorFrameworkPackageId,
             RimCuisineCorePackageId,
-            RimCuisineMealsPackageId
+            RimCuisineMealsPackageId,
+            ReplimatPackageId,
+            ReplimatMealsPackageId
         });
     }
 
@@ -492,6 +540,22 @@ public sealed class MealClassificationCatalog
                 }
                 : new[] { "RC2_CookExtravagantMeal", "RC2_CookExtravagantMealBulk" },
             new[] { "RC2_Pizza", "RC2_ExtravagantMeal" });
+    }
+
+    private void AddReplimatMeals()
+    {
+        Add(
+            MealComplexity.Simple,
+            Array.Empty<string>(),
+            ReplimatSimpleMealDefNames);
+        Add(
+            MealComplexity.Advanced,
+            Array.Empty<string>(),
+            ReplimatAdvancedMealDefNames);
+        Add(
+            MealComplexity.Elaborate,
+            Array.Empty<string>(),
+            ReplimatElaborateMealDefNames);
     }
 
     private void Add(

@@ -1,0 +1,15 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.MealPrinterMods.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "ludeon.rimworld",
+    "brrainz.harmony",
+    "Orion.Hospitality",
+    "Mlie.MealPrinter",
+    "Orion.CashRegister",
+    "Orion.Gastronomy",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

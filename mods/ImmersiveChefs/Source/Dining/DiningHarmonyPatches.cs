@@ -304,11 +304,7 @@ internal static class NutrientPastePlatePatch
             return;
         }
 
-        var pawn = __instance.Map.mapPawns.AllPawnsSpawned
-            .Where(candidate => candidate.RaceProps.Humanlike &&
-                                candidate.CurJob?.GetTarget(TargetIndex.A).Thing == __instance)
-            .OrderBy(candidate => candidate.Position.DistanceToSquared(__instance.InteractionCell))
-            .FirstOrDefault();
+        var pawn = DispenserMealBindingRuntime.FindCurrentGetter(__instance);
         if (pawn is not null)
         {
             DiningSessionRegistry.BindPastePlate(pawn, __result);

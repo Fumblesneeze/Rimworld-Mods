@@ -183,8 +183,8 @@ public sealed class KitchenwareRecipeDefContractTests
             Assert.That(cooking, Does.Contain("PlateMaterialEligibilityRuntime.Allows"));
             Assert.That(imported, Does.Contain("PlateMaterialEligibilityRuntime.Allows"));
             Assert.That(dining, Does.Contain("PlateMaterialEligibilityRuntime.Allows"));
-            Assert.That(dining, Does.Contain("MealComplexityRuntime.Classify(meal.def)"));
-            Assert.That(dining, Does.Contain("MealComplexityRuntime.Classify(foodSource.def)"));
+            Assert.That(dining, Does.Contain("FoodUtility.GetFinalIngestibleDef"));
+            Assert.That(dining, Does.Contain("MealComplexityRuntime.Classify(diningMealDef)"));
         });
     }
 

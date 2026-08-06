@@ -39,6 +39,8 @@ public sealed class IntegrationCatalogTests
     [TestCase("binchcannon.overcookedmeals", OptionalIntegration.OvercookedMeals)]
     [TestCase("Memegoddess.MealsOnWheels", OptionalIntegration.MealsOnWheels)]
     [TestCase("seekiworksmod.no10", OptionalIntegration.PrioritizeMeals)]
+    [TestCase("sumghai.Replimat", OptionalIntegration.Replimat)]
+    [TestCase("Mlie.MealPrinter", OptionalIntegration.MealPrinter)]
     public void Detect_marks_exact_optional_compatibility_integrations_active(
         string packageId,
         OptionalIntegration integration)
@@ -52,6 +54,8 @@ public sealed class IntegrationCatalogTests
     [TestCase("binchcannon.overcookedmeals.compat")]
     [TestCase("Memegoddess.MealsOnWheels.compat")]
     [TestCase("seekiworksmod.no100")]
+    [TestCase("sumghai.ReplimatMeals")]
+    [TestCase("Mlie.MealPrinterPlus")]
     public void Detect_ignores_lookalike_optional_compatibility_packages(string packageId)
     {
         var snapshot = IntegrationCatalog.Detect(new[] { packageId });
@@ -62,6 +66,8 @@ public sealed class IntegrationCatalogTests
             Assert.That(snapshot.IsActive(OptionalIntegration.OvercookedMeals), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.MealsOnWheels), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.PrioritizeMeals), Is.False);
+            Assert.That(snapshot.IsActive(OptionalIntegration.Replimat), Is.False);
+            Assert.That(snapshot.IsActive(OptionalIntegration.MealPrinter), Is.False);
         });
     }
 
@@ -97,6 +103,8 @@ public sealed class IntegrationCatalogTests
     [TestCase(OptionalIntegration.OvercookedMeals)]
     [TestCase(OptionalIntegration.MealsOnWheels)]
     [TestCase(OptionalIntegration.PrioritizeMeals)]
+    [TestCase(OptionalIntegration.Replimat)]
+    [TestCase(OptionalIntegration.MealPrinter)]
     public void Disabled_optional_compatibility_setting_prevents_activation_when_loaded(
         OptionalIntegration integration)
     {
@@ -105,7 +113,10 @@ public sealed class IntegrationCatalogTests
             "rabiosus.AdaptiveMealBill",
             "binchcannon.overcookedmeals",
             "Memegoddess.MealsOnWheels",
-            "seekiworksmod.no10"
+            "seekiworksmod.no10",
+            "sumghai.Replimat",
+            "sumghai.ReplimatMeals",
+            "Mlie.MealPrinter"
         });
         var settings = new ImmersiveChefsSettings
         {
@@ -120,6 +131,12 @@ public sealed class IntegrationCatalogTests
                 : OptionalIntegrationMode.Auto,
             PrioritizeMeals = integration == OptionalIntegration.PrioritizeMeals
                 ? OptionalIntegrationMode.Off
+                : OptionalIntegrationMode.Auto,
+            Replimat = integration == OptionalIntegration.Replimat
+                ? OptionalIntegrationMode.Off
+                : OptionalIntegrationMode.Auto,
+            MealPrinter = integration == OptionalIntegration.MealPrinter
+                ? OptionalIntegrationMode.Off
                 : OptionalIntegrationMode.Auto
         };
 
@@ -133,7 +150,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(17));
+            Assert.That(snapshot.States, Has.Count.EqualTo(19));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }
@@ -228,5 +245,32 @@ public sealed class IntegrationCatalogTests
                 complete,
                 new ImmersiveChefsSettings()),
             Is.True);
+    }
+
+    [Test]
+    public void Replimat_adapter_requires_the_exact_meal_addon()
+    {
+        var baseOnly = IntegrationCatalog.Detect(new[] { "sumghai.Replimat" });
+        var complete = IntegrationCatalog.Detect(new[]
+        {
+            "sumghai.Replimat",
+            "sumghai.ReplimatMeals"
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.Replimat,
+                    baseOnly,
+                    new ImmersiveChefsSettings()),
+                Is.False);
+            Assert.That(
+                OptionalIntegrationPolicy.IsEnabled(
+                    OptionalIntegration.Replimat,
+                    complete,
+                    new ImmersiveChefsSettings()),
+                Is.True);
+        });
     }
 }

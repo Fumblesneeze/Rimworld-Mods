@@ -73,6 +73,85 @@ public sealed class RecipeClassificationTests
         });
     }
 
+    [TestCase("ReplimatMeals_S_Borscht", MealComplexity.Simple)]
+    [TestCase("ReplimatMeals_S_Zongzi", MealComplexity.Simple)]
+    [TestCase("ReplimatMeals_F_BeefNoodleSoup", MealComplexity.Advanced)]
+    [TestCase("ReplimatMeals_F_TenzaruSoba", MealComplexity.Advanced)]
+    [TestCase("ReplimatMeals_L_FullEnglishBreakfast", MealComplexity.Elaborate)]
+    [TestCase("ReplimatMeals_L_SundayRoast", MealComplexity.Elaborate)]
+    public void Exact_replimat_and_meals_chain_registers_ingredientless_terminal_products(
+        string mealDefName,
+        MealComplexity expected)
+    {
+        var catalog = MealClassificationCatalog.Create(new[]
+        {
+            MealClassificationCatalog.ReplimatPackageId,
+            MealClassificationCatalog.ReplimatMealsPackageId
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(catalog.ClassifyMeal(mealDefName), Is.EqualTo(expected));
+            Assert.That(
+                MealClassificationCatalog.IsMealRegisteredForPackage(
+                    MealClassificationCatalog.ReplimatMealsPackageId,
+                    mealDefName),
+                Is.True);
+        });
+    }
+
+    [Test]
+    public void Replimat_meal_registry_requires_both_exact_packages_and_fails_as_one_shape()
+    {
+        var addonOnly = MealClassificationCatalog.Create(new[]
+        {
+            MealClassificationCatalog.ReplimatMealsPackageId
+        });
+        var changed = MealClassificationCatalog.CreateValidated(
+            new[]
+            {
+                MealClassificationCatalog.ReplimatPackageId,
+                MealClassificationCatalog.ReplimatMealsPackageId
+            },
+            _ => true,
+            defName => defName != "ReplimatMeals_F_Ramen");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(addonOnly.ClassifyMeal("ReplimatMeals_F_Ramen"), Is.Null);
+            Assert.That(changed.Failures, Has.Count.EqualTo(1));
+            Assert.That(changed.Failures[0].PackageId,
+                Is.EqualTo(MealClassificationCatalog.ReplimatMealsPackageId));
+            Assert.That(changed.Catalog.ClassifyMeal("ReplimatMeals_S_Borscht"), Is.Null);
+            Assert.That(changed.Catalog.ClassifyMeal("ReplimatMeals_F_Ramen"), Is.Null);
+            Assert.That(changed.Catalog.ClassifyMeal("ReplimatMeals_L_SundayRoast"), Is.Null);
+        });
+    }
+
+    [Test]
+    public void Replimat_registry_is_the_complete_distinct_installed_16_product_set()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(MealClassificationCatalog.ReplimatMealDefNames, Has.Count.EqualTo(48));
+            Assert.That(
+                MealClassificationCatalog.ReplimatMealDefNames.Distinct(StringComparer.Ordinal).ToArray().Length,
+                Is.EqualTo(48));
+            Assert.That(
+                MealClassificationCatalog.ReplimatMealDefNames.Count(name =>
+                    name.StartsWith("ReplimatMeals_S_", StringComparison.Ordinal)),
+                Is.EqualTo(20));
+            Assert.That(
+                MealClassificationCatalog.ReplimatMealDefNames.Count(name =>
+                    name.StartsWith("ReplimatMeals_F_", StringComparison.Ordinal)),
+                Is.EqualTo(22));
+            Assert.That(
+                MealClassificationCatalog.ReplimatMealDefNames.Count(name =>
+                    name.StartsWith("ReplimatMeals_L_", StringComparison.Ordinal)),
+                Is.EqualTo(6));
+        });
+    }
+
     [Test]
     public void Similar_names_do_not_activate_packages_or_enter_the_registry()
     {

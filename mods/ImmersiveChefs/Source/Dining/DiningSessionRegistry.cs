@@ -522,7 +522,8 @@ internal static class DiningSessionRegistry
     internal static bool TryAttach(Pawn pawn, Job job, Thing meal)
     {
         var pasteDispenser = meal is Building_NutrientPasteDispenser;
-        if ((!MealCoveragePolicy.IsCovered(meal.def) && !pasteDispenser) ||
+        var diningMealDef = ResolveDiningMealDef(meal, pasteDispenser);
+        if (diningMealDef is null || !MealCoveragePolicy.IsCovered(diningMealDef) ||
             !DiningPawnPolicy.AppliesDiningConsequences(pawn.RaceProps.Humanlike) || Sessions.TryGetValue(job, out _))
         {
             return true;
@@ -544,9 +545,7 @@ internal static class DiningSessionRegistry
                     KitchenwareProduct.Plate,
                     emergency,
                     ImmersiveChefsMod.Settings.WareRequirementMode,
-                    plateComplexity: pasteDispenser
-                        ? MealComplexity.Simple
-                        : MealComplexityRuntime.Classify(meal.def));
+                    plateComplexity: MealComplexityRuntime.Classify(diningMealDef));
                 if (plate is null &&
                     ImmersiveChefsMod.Settings.WareRequirementMode == WareRequirementMode.Strict &&
                     !emergency)
@@ -585,7 +584,8 @@ internal static class DiningSessionRegistry
     internal static bool TryAttachAssisted(Pawn feeder, Pawn patient, Job job, Thing foodSource)
     {
         var pasteDispenser = foodSource is Building_NutrientPasteDispenser;
-        if ((!MealCoveragePolicy.IsCovered(foodSource.def) && !pasteDispenser) ||
+        var diningMealDef = ResolveDiningMealDef(foodSource, pasteDispenser);
+        if (diningMealDef is null || !MealCoveragePolicy.IsCovered(diningMealDef) ||
             !DiningPawnPolicy.AppliesDiningConsequences(patient.RaceProps.Humanlike) ||
             Sessions.TryGetValue(job, out _))
         {
@@ -608,9 +608,7 @@ internal static class DiningSessionRegistry
                     KitchenwareProduct.Plate,
                     emergency,
                     settings.WareRequirementMode,
-                    plateComplexity: pasteDispenser
-                        ? MealComplexity.Simple
-                        : MealComplexityRuntime.Classify(foodSource.def));
+                    plateComplexity: MealComplexityRuntime.Classify(diningMealDef));
                 if (plate is null && settings.WareRequirementMode == WareRequirementMode.Strict && !emergency)
                 {
                     return false;
@@ -638,6 +636,13 @@ internal static class DiningSessionRegistry
         PawnSessions.Remove(patient);
         PawnSessions.Add(patient, session);
         return true;
+    }
+
+    private static ThingDef? ResolveDiningMealDef(Thing foodSource, bool pasteDispenser)
+    {
+        return pasteDispenser
+            ? FoodUtility.GetFinalIngestibleDef(foodSource, false)
+            : foodSource.def;
     }
 
     internal static void TryAttachTravel(Pawn pawn, ThingWithComps meal)

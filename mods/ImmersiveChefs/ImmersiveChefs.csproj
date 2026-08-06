@@ -35,6 +35,9 @@
     <RimWorldLoadAfter Include="binchcannon.overcookedmeals" />
     <RimWorldLoadAfter Include="Memegoddess.MealsOnWheels" />
     <RimWorldLoadAfter Include="seekiworksmod.no10" />
+    <RimWorldLoadAfter Include="sumghai.Replimat" />
+    <RimWorldLoadAfter Include="sumghai.ReplimatMeals" />
+    <RimWorldLoadAfter Include="Mlie.MealPrinter" />
     <RimWorldLoadAfter Include="Mlie.DThermodynamicsHotMeals" />
     <RimWorldLoadAfter Include="Mlie.RC2.Core" />
     <RimWorldLoadAfter Include="Mlie.RC2.MaME" />

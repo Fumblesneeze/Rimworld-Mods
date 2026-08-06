@@ -9,7 +9,8 @@ public static class MealCoveragePolicy
     {
         "Pemmican",
         "MealSurvivalPack",
-        "BabyFood"
+        "BabyFood",
+        "MealPrinter_NutriBar"
     };
 
     public static bool IsCovered(RecipeDef? recipe)

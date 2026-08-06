@@ -96,6 +96,8 @@ internal sealed class ImmersiveChefsSettingsUi
         Cycle(listing, "Overcooked Meals", ref settings.OvercookedMeals);
         Cycle(listing, "Meals on Wheels", ref settings.MealsOnWheels);
         Cycle(listing, "Prioritize Meals over Preserved Foods", ref settings.PrioritizeMeals);
+        Cycle(listing, "Replimat + Replimat Meals", ref settings.Replimat);
+        Cycle(listing, "Meal Printer", ref settings.MealPrinter);
 
         listing.End();
         Widgets.EndScrollView();

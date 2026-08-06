@@ -20,7 +20,9 @@ public enum OptionalIntegration
     AdaptiveMealBill,
     OvercookedMeals,
     MealsOnWheels,
-    PrioritizeMeals
+    PrioritizeMeals,
+    Replimat,
+    MealPrinter
 }
 
 public sealed class IntegrationSnapshot
@@ -73,7 +75,9 @@ public static class IntegrationCatalog
             [OptionalIntegration.AdaptiveMealBill] = "rabiosus.AdaptiveMealBill",
             [OptionalIntegration.OvercookedMeals] = "binchcannon.overcookedmeals",
             [OptionalIntegration.MealsOnWheels] = "Memegoddess.MealsOnWheels",
-            [OptionalIntegration.PrioritizeMeals] = "seekiworksmod.no10"
+            [OptionalIntegration.PrioritizeMeals] = "seekiworksmod.no10",
+            [OptionalIntegration.Replimat] = "sumghai.Replimat",
+            [OptionalIntegration.MealPrinter] = "Mlie.MealPrinter"
         };
 
     public static IntegrationSnapshot Detect(IEnumerable<string> loadedPackageIds)
@@ -125,6 +129,7 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.VanillaNutrientPasteExpanded =>
                 snapshot.IsActive(OptionalIntegration.VanillaExpandedFramework) &&
                 settings.VanillaExpandedFramework != OptionalIntegrationMode.Off,
+            OptionalIntegration.Replimat => snapshot.ContainsPackage("sumghai.ReplimatMeals"),
             _ => true
         };
     }
@@ -151,6 +156,8 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.OvercookedMeals => settings.OvercookedMeals,
             OptionalIntegration.MealsOnWheels => settings.MealsOnWheels,
             OptionalIntegration.PrioritizeMeals => settings.PrioritizeMeals,
+            OptionalIntegration.Replimat => settings.Replimat,
+            OptionalIntegration.MealPrinter => settings.MealPrinter,
             _ => OptionalIntegrationMode.Auto
         };
     }

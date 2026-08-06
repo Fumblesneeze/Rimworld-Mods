@@ -90,6 +90,7 @@ public sealed class CaravanDiningPolicyTests
     [TestCase("Pemmican")]
     [TestCase("MealSurvivalPack")]
     [TestCase("BabyFood")]
+    [TestCase("MealPrinter_NutriBar")]
     public void Travel_food_exclusions_are_not_covered(string defName)
     {
         Assert.That(MealCoveragePolicy.IsBuiltInExcluded(defName), Is.True);

@@ -66,6 +66,8 @@ public sealed class ImmersiveChefsSettings : ModSettings
     public OptionalIntegrationMode OvercookedMeals = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode MealsOnWheels = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode PrioritizeMeals = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode Replimat = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode MealPrinter = OptionalIntegrationMode.Auto;
 
     public override void ExposeData()
     {
@@ -111,6 +113,8 @@ public sealed class ImmersiveChefsSettings : ModSettings
         Scribe_Values.Look(ref OvercookedMeals, "overcookedMeals", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref MealsOnWheels, "mealsOnWheels", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref PrioritizeMeals, "prioritizeMeals", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref Replimat, "replimat", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref MealPrinter, "mealPrinter", OptionalIntegrationMode.Auto);
         ClampToAllowedRanges();
     }
 
