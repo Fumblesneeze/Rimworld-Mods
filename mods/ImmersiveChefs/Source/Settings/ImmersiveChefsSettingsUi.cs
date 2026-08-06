@@ -9,7 +9,7 @@ internal sealed class ImmersiveChefsSettingsUi
 
     public void Draw(Rect rect, ImmersiveChefsSettings settings)
     {
-        var view = new Rect(0f, 0f, rect.width - 20f, 1450f);
+        var view = new Rect(0f, 0f, rect.width - 20f, 1510f);
         Widgets.BeginScrollView(rect, ref scrollPosition, view);
         var listing = new Listing_Standard();
         listing.Begin(view);
@@ -31,6 +31,13 @@ internal sealed class ImmersiveChefsSettingsUi
         settings.DishwasherCapacityScale = listing.SliderLabeled(
             $"Dishwasher capacity: {settings.DishwasherCapacityScale:0.00}x (restart required)",
             settings.DishwasherCapacityScale, 0.5f, 4f, 0.25f, null);
+        Cycle(
+            listing,
+            "Texture variation integration (restart required)",
+            ref settings.TextureVariationIntegration);
+        listing.CheckboxLabeled(
+            "Show dirty ware textures (restart required)",
+            ref settings.ShowDirtyWareTextures);
 
         listing.GapLine();
         listing.Label("Live simulation settings");

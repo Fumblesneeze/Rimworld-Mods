@@ -69,6 +69,8 @@ public sealed class ImmersiveChefsSettings : ModSettings
     public OptionalIntegrationMode Replimat = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode MealPrinter = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode FoodTextureVariety = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode TextureVariationIntegration = OptionalIntegrationMode.Auto;
+    public bool ShowDirtyWareTextures = true;
 
     public override void ExposeData()
     {
@@ -117,6 +119,11 @@ public sealed class ImmersiveChefsSettings : ModSettings
         Scribe_Values.Look(ref Replimat, "replimat", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref MealPrinter, "mealPrinter", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref FoodTextureVariety, "foodTextureVariety", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(
+            ref TextureVariationIntegration,
+            "textureVariationIntegration",
+            OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref ShowDirtyWareTextures, "showDirtyWareTextures", true);
         ClampToAllowedRanges();
     }
 

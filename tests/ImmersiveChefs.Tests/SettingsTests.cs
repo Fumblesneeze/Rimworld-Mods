@@ -28,6 +28,8 @@ public sealed class SettingsTests
             Assert.That(settings.MealsOnWheels, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.PrioritizeMeals, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.FoodTextureVariety, Is.EqualTo(OptionalIntegrationMode.Auto));
+            Assert.That(settings.TextureVariationIntegration, Is.EqualTo(OptionalIntegrationMode.Auto));
+            Assert.That(settings.ShowDirtyWareTextures, Is.True);
         });
 
         settings.EmergencyHungerThreshold = 1f;
