@@ -214,3 +214,8 @@
 - [x] 28.2 GREEN: select the sole current-version candidate, publish a temporary physical local-mod copy before process start, retain ownership evidence, and clean it only after exact-process exit.
 - [x] 28.3 ROBUSTNESS: isolate an active-mod integration-manifest scan failure even when its synthetic diagnostic identity is not a valid Windows path.
 - [x] 28.4 IN-GAME: load the installed duplicate Processor Framework through its selected RimWorld 1.6 Workshop item in an exact Processor Framework/RimCuisine/Immersive Chefs/Gateway process; execute the staged product integration suite and verify adapter activation plus complete owned-copy/process/stage/credential cleanup.
+
+## 29. mods/RimWorldDevGateway — Native E2E persistence boundary
+
+- [x] 29.1 SPEC/TDD: add a typed, safe-leaf save-and-reload step backed by RimWorld's native main-thread save/load operations, isolated-save ownership, replacement-game detection, and bounded completion semantics.
+- [x] 29.2 IN-GAME: run only the focused Food Texture Variety persistence E2E test; observe the same selected meal and texture before/after a native game replacement and clean the exact isolated save.

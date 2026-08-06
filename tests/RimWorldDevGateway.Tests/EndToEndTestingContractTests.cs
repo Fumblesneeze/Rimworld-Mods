@@ -156,6 +156,62 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Save_load_action_requires_one_safe_leaf_save_name()
+    {
+        var step = new SaveLoadActionStep("reload", "ImmersiveChefs_FtvPersistence");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(step.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(step.SaveName, Is.EqualTo("ImmersiveChefs_FtvPersistence"));
+            Assert.That(
+                () => new SaveLoadActionStep("reload", "folder/save"),
+                Throws.TypeOf<ArgumentException>());
+            Assert.That(
+                () => new SaveLoadActionStep("reload", ".."),
+                Throws.TypeOf<ArgumentException>());
+        });
+    }
+
+    [TestCase("CON")]
+    [TestCase("nul.txt")]
+    [TestCase("COM9")]
+    [TestCase("COM¹.rws")]
+    [TestCase("COM²")]
+    [TestCase("COM³.backup")]
+    [TestCase("LPT1.backup")]
+    [TestCase("LPT¹")]
+    [TestCase("LPT².rws")]
+    [TestCase("LPT³.backup")]
+    [TestCase("save.")]
+    [TestCase("save ")]
+    [TestCase(" save")]
+    public void Save_load_action_rejects_windows_aliases_and_noncanonical_names(string saveName)
+    {
+        Assert.That(
+            () => new SaveLoadActionStep("reload", saveName),
+            Throws.TypeOf<ArgumentException>());
+    }
+
+    [Test]
+    public void Save_load_action_preserves_the_bounded_windows_leaf_contract()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                new SaveLoadActionStep(
+                    "reload",
+                    new string('a', SaveLoadActionStep.MaxSaveNameLength)).SaveName,
+                Has.Length.EqualTo(SaveLoadActionStep.MaxSaveNameLength));
+            Assert.That(
+                () => new SaveLoadActionStep(
+                    "reload",
+                    new string('a', SaveLoadActionStep.MaxSaveNameLength + 1)),
+                Throws.TypeOf<ArgumentException>());
+        });
+    }
+
+    [Test]
     public void Dialog_confirmation_declares_only_the_exact_supported_window_type()
     {
         var step = new DialogConfirmationActionStep(

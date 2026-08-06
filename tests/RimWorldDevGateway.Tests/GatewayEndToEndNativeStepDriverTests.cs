@@ -30,6 +30,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
             new DialogConfirmationActionStep(
                 "dialog",
                 "Example.Dialog"),
+            new SaveLoadActionStep("save-load", "GatewayE2E"),
             ProcessInputActionStep.Click(
                 "click",
                 new EndToEndScreenPoint(10, 20),
@@ -43,11 +44,12 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "dialog", "input", "screenshot"
+                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "dialog", "save-load", "input", "screenshot"
             }));
             Assert.That(operations.Take(9).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[9], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[10], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations[9], Is.SameAs(actions.SaveLoadOperation));
+            Assert.That(operations[10], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[11], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -79,6 +81,9 @@ public sealed class GatewayEndToEndNativeStepDriverTests
                 new Dictionary<string, string> { ["screenshot"] = "evidence.png" });
 
         public IGatewayEndToEndStepOperation InputOperation { get; } =
+            GatewayEndToEndCompletedStepOperation.Passed();
+
+        public IGatewayEndToEndStepOperation SaveLoadOperation { get; } =
             GatewayEndToEndCompletedStepOperation.Passed();
 
         public GatewayEndToEndStepOutcome Apply(TimeControlActionStep step, IEndToEndContext context) =>
@@ -113,6 +118,12 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Calls.Add("input");
             return InputOperation;
+        }
+
+        public IGatewayEndToEndStepOperation Begin(SaveLoadActionStep step, IEndToEndContext context)
+        {
+            Calls.Add("save-load");
+            return SaveLoadOperation;
         }
 
         public IGatewayEndToEndStepOperation Begin(ScreenshotStep step, IEndToEndContext context)

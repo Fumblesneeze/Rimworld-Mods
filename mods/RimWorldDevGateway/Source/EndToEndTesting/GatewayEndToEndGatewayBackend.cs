@@ -217,6 +217,13 @@ public sealed class GatewayEndToEndGatewayBackend :
             "The process-scoped input action failed.");
     }
 
+    public IGatewayEndToEndStepOperation BeginSaveLoad(
+        SaveLoadActionStep step,
+        IEndToEndContext context) =>
+        new GatewayEndToEndSaveLoadStepOperation(
+            new VerseGatewayEndToEndSaveLoadRuntime(),
+            step.SaveName);
+
     public IGatewayEndToEndStepOperation BeginScreenshot(
         ScreenshotStep step,
         IEndToEndContext context)

@@ -88,6 +88,10 @@ public interface IGatewayEndToEndActionBackend
         ProcessInputActionStep step,
         IEndToEndContext context);
 
+    IGatewayEndToEndStepOperation BeginSaveLoad(
+        SaveLoadActionStep step,
+        IEndToEndContext context);
+
     IGatewayEndToEndStepOperation BeginScreenshot(
         ScreenshotStep step,
         IEndToEndContext context);
@@ -296,6 +300,13 @@ public sealed class GatewayEndToEndNativeActions :
         Require(step, context);
         return backend.BeginInput(step, context) ??
                throw new InvalidOperationException("The input backend returned no operation.");
+    }
+
+    public IGatewayEndToEndStepOperation Begin(SaveLoadActionStep step, IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend.BeginSaveLoad(step, context) ??
+               throw new InvalidOperationException("The save/load backend returned no operation.");
     }
 
     public IGatewayEndToEndStepOperation Begin(ScreenshotStep step, IEndToEndContext context)

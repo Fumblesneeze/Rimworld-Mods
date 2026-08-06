@@ -130,6 +130,17 @@ Built-in gateway automations SHALL resolve optional content by package ID and De
 - **WHEN** quickstart is given a descriptor containing valid Defs from another loaded target mod
 - **THEN** it resolves and spawns those Defs without loading any Immersive Chefs assembly or adapter
 
+### Requirement: Native E2E save and reload action
+The attributed E2E contract SHALL expose a typed save-and-reload action that accepts only a safe leaf save name. The Gateway SHALL invoke RimWorld's native `GameDataSaveLoader.SaveGame` and `GameDataSaveLoader.LoadGame` operations on the main thread only from a player-controlled playable game. It SHALL fail when native saving is disabled, refuse to overwrite an existing isolated save, and verify the new file is nonempty before loading it. Completion SHALL require a different `Current.Game` instance, restored player control and current playable map, and no current or queued long event. Frame and wall-clock deadlines SHALL remain authoritative because loading may reset the game-tick clock. The attributed test SHALL own and delete its exact isolated save through deferred cleanup.
+
+#### Scenario: Existing save name is rejected
+- **WHEN** an E2E test requests a save leaf that already exists in its isolated save-data folder
+- **THEN** the action fails before saving or loading and leaves the existing file unchanged
+
+#### Scenario: Visible object survives native save and reload
+- **WHEN** a focused E2E test records a visible Thing, invokes the typed save-and-reload action, reacquires that Thing by stable game identity, and observes it after load
+- **THEN** the test continues only after the replacement game and playable map settle and can retain before/after screenshots and checkpoints for the same observable object
+
 ### Requirement: Normal mod configuration preservation
 Automated launch SHALL use an isolated save-data folder and isolated `ModsConfig.xml`. If a future host operation is explicitly configured to modify the normal `ModsConfig.xml`, it SHALL back up and hash the exact file first, restore it in `finally`, and verify the restored hash before reporting success.
 

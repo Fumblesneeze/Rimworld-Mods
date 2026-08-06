@@ -291,11 +291,13 @@ public sealed class GatewayEndToEndNativeActionsTests
     }
 
     [Test]
-    public void Input_screenshot_float_menu_trade_incident_and_dialog_delegate_to_the_durable_backend_operations()
+    public void Input_save_load_screenshot_float_menu_trade_incident_and_dialog_delegate_to_the_durable_backend_operations()
     {
         var backend = new RecordingBackend();
         var actions = new GatewayEndToEndNativeActions(backend);
         var input = ProcessInputActionStep.Key("key", "Space");
+        var saveLoad = new SaveLoadActionStep("reload", "FocusedPersistence");
+        var saveLoadContext = Context();
         var screenshot = new ScreenshotStep("shot", new[] { "pawn_1" }, 8);
         var menu = new FloatMenuActionStep("eat", "pawn_1", "meal_1", "consume");
         var settlementTrade = new SettlementTradeActionStep("trade", 41, 42);
@@ -305,6 +307,7 @@ public sealed class GatewayEndToEndNativeActionsTests
             "Example.Dialog");
 
         var inputOperation = actions.Begin(input, Context());
+        var saveLoadOperation = actions.Begin(saveLoad, saveLoadContext);
         var screenshotOperation = actions.Begin(screenshot, Context());
         var menuOutcome = actions.Apply(menu, Context());
         var settlementTradeOutcome = actions.Apply(settlementTrade, Context());
@@ -315,12 +318,15 @@ public sealed class GatewayEndToEndNativeActionsTests
         Assert.Multiple(() =>
         {
             Assert.That(inputOperation, Is.SameAs(backend.InputOperation));
+            Assert.That(saveLoadOperation, Is.SameAs(backend.SaveLoadOperation));
             Assert.That(screenshotOperation, Is.SameAs(backend.ScreenshotOperation));
             Assert.That(menuOutcome.Passed, Is.True);
             Assert.That(settlementTradeOutcome.Passed, Is.True);
             Assert.That(incidentOutcome.Passed, Is.True);
             Assert.That(dialogOutcome.Passed, Is.True);
             Assert.That(backend.InputStep, Is.SameAs(input));
+            Assert.That(backend.SaveLoadStep, Is.SameAs(saveLoad));
+            Assert.That(backend.SaveLoadContext, Is.SameAs(saveLoadContext));
             Assert.That(backend.ScreenshotStep, Is.SameAs(screenshot));
             Assert.That(backend.FloatMenuStep, Is.SameAs(menu));
             Assert.That(backend.SettlementTradeStep, Is.SameAs(settlementTrade));
@@ -379,6 +385,10 @@ public sealed class GatewayEndToEndNativeActionsTests
 
         public ProcessInputActionStep? InputStep { get; private set; }
 
+        public SaveLoadActionStep? SaveLoadStep { get; private set; }
+
+        public IEndToEndContext? SaveLoadContext { get; private set; }
+
         public ScreenshotStep? ScreenshotStep { get; private set; }
 
         public FloatMenuActionStep? FloatMenuStep { get; private set; }
@@ -397,6 +407,9 @@ public sealed class GatewayEndToEndNativeActionsTests
             GatewayEndToEndCompletedStepOperation.Passed();
 
         public IGatewayEndToEndStepOperation ScreenshotOperation { get; } =
+            GatewayEndToEndCompletedStepOperation.Passed();
+
+        public IGatewayEndToEndStepOperation SaveLoadOperation { get; } =
             GatewayEndToEndCompletedStepOperation.Passed();
 
         public void SetTime(bool paused, EndToEndGameSpeed speed) => Time = (paused, speed);
@@ -502,6 +515,15 @@ public sealed class GatewayEndToEndNativeActionsTests
         {
             InputStep = step;
             return InputOperation;
+        }
+
+        public IGatewayEndToEndStepOperation BeginSaveLoad(
+            SaveLoadActionStep step,
+            IEndToEndContext context)
+        {
+            SaveLoadStep = step;
+            SaveLoadContext = context;
+            return SaveLoadOperation;
         }
 
         public IGatewayEndToEndStepOperation BeginScreenshot(

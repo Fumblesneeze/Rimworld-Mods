@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 
 namespace RimWorldDevGateway.EndToEndTesting;
 
@@ -256,6 +257,19 @@ public sealed class TimeControlActionStep : EndToEndStep
     public EndToEndGameSpeed Speed { get; }
 }
 
+public sealed class SaveLoadActionStep : EndToEndStep
+{
+    public const int MaxSaveNameLength = 240;
+
+    public SaveLoadActionStep(string name, string saveName)
+        : base(name, EndToEndStepKind.Act)
+    {
+        SaveName = StepValues.SafeFileName(saveName, nameof(saveName));
+    }
+
+    public string SaveName { get; }
+}
+
 public sealed class SelectionActionStep : EndToEndStep
 {
     public SelectionActionStep(string name, IEnumerable<string> targetRuntimeIds, bool additive)
@@ -486,6 +500,20 @@ public sealed class CheckpointStep : EndToEndStep
 
 internal static class StepValues
 {
+    // Windows limits a single path component to 255 UTF-16 code units. Leave
+    // room for RimWorld's .rws and recovery suffixes rather than relying on a
+    // later filesystem exception from the Unity main thread.
+    private static readonly HashSet<string> ReservedWindowsDeviceNames = new(
+        new[]
+        {
+            "CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$",
+            "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+            "COM¹", "COM²", "COM³",
+            "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+            "LPT¹", "LPT²", "LPT³"
+        },
+        StringComparer.OrdinalIgnoreCase);
+
     public static string Required(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -510,5 +538,24 @@ internal static class StepValues
         }
 
         return new ReadOnlyCollection<string>(copy);
+    }
+
+    public static string SafeFileName(string value, string parameterName)
+    {
+        var candidate = Required(value, parameterName);
+        var deviceBaseName = candidate.Split('.')[0];
+        if (!string.Equals(value, candidate, StringComparison.Ordinal) ||
+            candidate.Length > SaveLoadActionStep.MaxSaveNameLength ||
+            candidate is "." or ".." ||
+            candidate.EndsWith(".", StringComparison.Ordinal) ||
+            candidate.EndsWith(" ", StringComparison.Ordinal) ||
+            ReservedWindowsDeviceNames.Contains(deviceBaseName) ||
+            candidate.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
+            !string.Equals(Path.GetFileName(candidate), candidate, StringComparison.Ordinal))
+        {
+            throw new ArgumentException("A safe leaf save name is required.", parameterName);
+        }
+
+        return candidate;
     }
 }
