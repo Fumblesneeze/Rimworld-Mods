@@ -16,6 +16,8 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery";
     private const string ChefsKnifeTexturePath =
         "ImmersiveChefs/Things/Item/Kitchenware/ChefsKnife/ChefsKnife";
+    private const string GlitterCookwareTexturePath =
+        "ImmersiveChefs/Things/Item/Kitchenware/GlitterCookware/GlitterCookware";
 
     [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
@@ -148,6 +150,36 @@ public sealed class VisualAssetPackageTests
         AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion: true);
     }
 
+    [Test]
+    public void Glitterworld_cookware_uses_owned_fixed_color_single_sprite_art()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "Kitchenware.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_GlitterworldCookware");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, GlitterCookwareTexturePath + ".png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(GlitterCookwareTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That(graphicData.Element("color"), Is.Null, "Fixed glitter art must retain its authored color.");
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, GlitterCookwareTexturePath + ".png")), Is.True);
+        });
+
+        AssertTransparentSprite(diffusePath);
+    }
+
     private static string TextureFile(string root, string texturePath)
     {
         return Path.Combine(
@@ -234,6 +266,38 @@ public sealed class VisualAssetPackageTests
                     Is.GreaterThan(100),
                     "Fixed handles need a visible black mask region.");
             }
+        });
+    }
+
+    private static void AssertTransparentSprite(string diffusePath)
+    {
+        if (!File.Exists(diffusePath))
+        {
+            return;
+        }
+
+        using var diffuse = new Bitmap(diffusePath);
+        var visiblePixels = 0;
+        for (var y = 0; y < diffuse.Height; y++)
+        {
+            for (var x = 0; x < diffuse.Width; x++)
+            {
+                if (diffuse.GetPixel(x, y).A > 0)
+                {
+                    visiblePixels++;
+                }
+            }
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diffuse.Width, Is.GreaterThanOrEqualTo(128));
+            Assert.That(diffuse.Height, Is.GreaterThanOrEqualTo(128));
+            Assert.That(diffuse.GetPixel(0, 0).A, Is.EqualTo(0));
+            Assert.That(diffuse.GetPixel(diffuse.Width - 1, 0).A, Is.EqualTo(0));
+            Assert.That(diffuse.GetPixel(0, diffuse.Height - 1).A, Is.EqualTo(0));
+            Assert.That(diffuse.GetPixel(diffuse.Width - 1, diffuse.Height - 1).A, Is.EqualTo(0));
+            Assert.That(visiblePixels, Is.GreaterThan(100));
         });
     }
 

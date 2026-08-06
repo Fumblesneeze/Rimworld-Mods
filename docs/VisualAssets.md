@@ -45,3 +45,12 @@ open roll reads more like a work-surface display than worn personal equipment. B
 for a three-knife professional kitchen set on pure green chroma. The selected 256 px diffuse has
 zero green-dominant fringe. `ChefsKnife_m.png` uses red only for the neutral blade and rivet regions;
 the dark leather roll and wooden handles remain fixed black-mask accents.
+
+## Glitterworld cookware set
+
+Selected: candidate B, generated 2026-08-06. Its nested pearl-alloy pot, smart lids, clipped utensil,
+graphite grips, and cyan seams remain one compact advanced kit at 64 px. Candidate A was rejected
+because its separated pot, pan, lids, and spoon read as four loose map objects. Both prompts asked
+for fixed-color self-cleaning cookware on pure green chroma. The selected 256 px sprite uses the
+ordinary `Cutout` shader without a Stuff mask or global Def tint, preserving the authored alloy and
+status-light colors.

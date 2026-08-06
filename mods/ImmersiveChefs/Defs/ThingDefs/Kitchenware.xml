@@ -132,10 +132,9 @@
     <label>glitterworld cookware set</label>
     <description>A self-cleaning, nonflammable cookware set imported from a glitterworld. It cannot be manufactured locally.</description>
     <graphicData>
-      <texPath>Things/Item/Resource/Plasteel</texPath>
-      <graphicClass>Graphic_StackCount</graphicClass>
-      <shaderType>CutoutComplex</shaderType>
-      <color>(0.55,0.95,1)</color>
+      <texPath>ImmersiveChefs/Things/Item/Kitchenware/GlitterCookware/GlitterCookware</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>Cutout</shaderType>
       <drawSize>(0.95,0.95)</drawSize>
     </graphicData>
     <stackLimit>1</stackLimit>
