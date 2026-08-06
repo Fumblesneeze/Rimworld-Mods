@@ -132,6 +132,67 @@ public sealed class GatewayEndToEndGatewayBackend : IGatewayEndToEndActionBacken
     public GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step) =>
         settlementTrade.Apply(step);
 
+    public GatewayEndToEndStepOutcome ApplyIncident(IncidentActionStep step)
+    {
+        var map = Current.Game?.CurrentMap;
+        if (map is null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "incident_map_unavailable",
+                "A playable current map is required to execute an incident.");
+        }
+
+        var incident = DefDatabase<IncidentDef>.GetNamedSilentFail(step.IncidentDefName);
+        if (incident is null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "incident_def_missing",
+                "The requested exact IncidentDef is not loaded.");
+        }
+
+        Faction? faction = null;
+        if (step.FactionLoadId is { } factionLoadId)
+        {
+            var matches = Find.FactionManager.AllFactionsListForReading
+                .Where(candidate => candidate.loadID == factionLoadId)
+                .ToArray();
+            if (matches.Length != 1)
+            {
+                return GatewayEndToEndStepOutcome.Fail(
+                    "incident_faction_missing",
+                    "The requested exact faction load ID is not present exactly once.");
+            }
+
+            faction = matches[0];
+        }
+
+        try
+        {
+            var parms = StorytellerUtility.DefaultParmsNow(incident.category, map);
+            parms.forced = true;
+            parms.faction = faction;
+            if (!incident.Worker.TryExecute(parms))
+            {
+                return GatewayEndToEndStepOutcome.Fail(
+                    "incident_rejected",
+                    "RimWorld's native incident worker rejected the requested incident.");
+            }
+
+            return GatewayEndToEndStepOutcome.Pass(
+                new Dictionary<string, string>
+                {
+                    ["incidentDef"] = incident.defName,
+                    ["factionLoadId"] = faction?.loadID.ToString() ?? string.Empty
+                });
+        }
+        catch (Exception exception)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "incident_execution_failed",
+                "RimWorld's native incident worker threw " + exception.GetType().Name + ".");
+        }
+    }
+
     public GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step) =>
         tradeDialogs.Apply(step);
 

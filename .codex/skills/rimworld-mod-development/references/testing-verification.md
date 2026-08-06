@@ -45,6 +45,8 @@ The grouped runner passes each child's exact additional-mod order through a UTF-
 
 For a native right-click order, use `context.GetRequiredService<IEndToEndFloatMenuCatalog>()`, call `Query(actorRuntimeId, targetRuntimeId)` on the E2E execution thread, and choose exactly one enabled option by its visible label. Feed the returned `StableId` to `FloatMenuActionStep`. Never duplicate the stable-ID hash or directly start the job that the native option would create.
 
+For a scenario that must cross RimWorld's incident boundary, use `IncidentActionStep` with one exact loaded `IncidentDef` name and, when required, the exact live faction load ID. The Gateway builds forced current-map storyteller parameters and invokes the real incident worker. Do not replace it with a generic callback, a guessed storyteller queue entry, translated labels, or synthetic result construction; retain a later wait and screenshot of the ordinary map/UI outcome.
+
 Prefer action → wait → observation steps that exercise the same native path a player uses. Direct arrangement may create preconditions but must not create the claimed result. After a reviewed run, inspect the exact native screenshots yourself and describe the visible causal result. Endpoint state, logs, and synthetic assertions do not independently satisfy acceptance.
 
 ## Package checks

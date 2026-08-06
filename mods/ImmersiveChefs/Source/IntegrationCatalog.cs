@@ -18,7 +18,9 @@ public enum OptionalIntegration
     VanillaExpandedFramework,
     VanillaNutrientPasteExpanded,
     AdaptiveMealBill,
-    OvercookedMeals
+    OvercookedMeals,
+    MealsOnWheels,
+    PrioritizeMeals
 }
 
 public sealed class IntegrationSnapshot
@@ -69,7 +71,9 @@ public static class IntegrationCatalog
             [OptionalIntegration.VanillaExpandedFramework] = "oskarpotocki.vanillafactionsexpanded.core",
             [OptionalIntegration.VanillaNutrientPasteExpanded] = "vanillaexpanded.vnutriente",
             [OptionalIntegration.AdaptiveMealBill] = "rabiosus.AdaptiveMealBill",
-            [OptionalIntegration.OvercookedMeals] = "binchcannon.overcookedmeals"
+            [OptionalIntegration.OvercookedMeals] = "binchcannon.overcookedmeals",
+            [OptionalIntegration.MealsOnWheels] = "Memegoddess.MealsOnWheels",
+            [OptionalIntegration.PrioritizeMeals] = "seekiworksmod.no10"
         };
 
     public static IntegrationSnapshot Detect(IEnumerable<string> loadedPackageIds)
@@ -145,6 +149,8 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.VanillaNutrientPasteExpanded => settings.VanillaNutrientPasteExpanded,
             OptionalIntegration.AdaptiveMealBill => settings.AdaptiveMealBill,
             OptionalIntegration.OvercookedMeals => settings.OvercookedMeals,
+            OptionalIntegration.MealsOnWheels => settings.MealsOnWheels,
+            OptionalIntegration.PrioritizeMeals => settings.PrioritizeMeals,
             _ => OptionalIntegrationMode.Auto
         };
     }

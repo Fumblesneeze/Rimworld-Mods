@@ -220,6 +220,23 @@ public sealed class SettlementTradeActionStep : EndToEndStep
     public string? ExpectedFailureCode { get; }
 }
 
+public sealed class IncidentActionStep : EndToEndStep
+{
+    public IncidentActionStep(
+        string name,
+        string incidentDefName,
+        int? factionLoadId = null)
+        : base(name, EndToEndStepKind.Act)
+    {
+        IncidentDefName = StepValues.Required(incidentDefName, nameof(incidentDefName));
+        FactionLoadId = factionLoadId;
+    }
+
+    public string IncidentDefName { get; }
+
+    public int? FactionLoadId { get; }
+}
+
 public sealed class TimeControlActionStep : EndToEndStep
 {
     public TimeControlActionStep(string name, bool paused, EndToEndGameSpeed speed)

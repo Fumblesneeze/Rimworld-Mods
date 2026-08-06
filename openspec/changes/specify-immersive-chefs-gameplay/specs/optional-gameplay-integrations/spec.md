@@ -204,6 +204,12 @@ When `seekiworksmod.no10` is active, its finalized `optimalityOffsetHumanlikes`,
 - **WHEN** an eater can reach both an acceptable plated perishable meal and preserved food under the supported priority mod
 - **THEN** upstream selection still prefers the perishable meal and Immersive Chefs applies dining consequences only to the selected serving
 
+#### Scenario: A foodless trader caravan receives upstream compensation
+
+- **WHEN** RimWorld's native trader-caravan arrival passes a humanlike trader with no acceptable food through the supported priority mod's finalized compensation postfix
+- **THEN** that upstream postfix remains authoritative for adding preserved food and Immersive Chefs neither replaces it nor plates hand-eaten Pemmican or packaged survival meals
+- **THEN** only an independently added covered non-travel meal follows the ordinary external-stock plate rule
+
 ### Requirement: RimCuisine 2 classifies meals without adopting preservation
 
 When the supported Processor Framework, `Mlie.RC2.Core`, and `Mlie.RC2.MaME` chain is active, Immersive Chefs SHALL explicitly cover `RC2_ThinPottage` and `RC2_Rubaboo` as Simple, `RC2_ThickPottage` as Advanced, and `RC2_Pizza` plus `RC2_ExtravagantMeal` as Elaborate. RC2 recipes `CookSimpleMealBulk`, `RC2_CookFineMealBulk`, and `RC2_CookLavishMealBulk` SHALL use the ordinary Simple/Advanced/Elaborate registry only while their exact vanilla product Defs remain finalized; when No Vanilla Meals removes those products, Immersive Chefs SHALL neither resurrect them nor treat the now-invalid recipe path as a replacement. `Mlie.RC2.BaBE` and `Mlie.RC2.SaSE` SHALL be allowed to coexist but their drinks, drugs, processing products, and preservation outputs SHALL remain outside Immersive Chefs. `RC2_Hardtack`, `RC2_CannedMeal`, canned goods, dried/pickled food, snacks, and raw/processed ingredients SHALL not require plate, cutlery, or cookware.

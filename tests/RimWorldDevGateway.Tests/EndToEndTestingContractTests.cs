@@ -137,6 +137,25 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Incident_action_requires_an_exact_def_and_preserves_any_exact_faction_load_id()
+    {
+        var step = new IncidentActionStep(
+            "spawn trader caravan",
+            "TraderCaravanArrival",
+            factionLoadId: -17);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(step.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(step.IncidentDefName, Is.EqualTo("TraderCaravanArrival"));
+            Assert.That(step.FactionLoadId, Is.EqualTo(-17));
+            Assert.That(
+                () => new IncidentActionStep("incident", " "),
+                Throws.TypeOf<ArgumentException>());
+        });
+    }
+
+    [Test]
     public void Shared_steps_do_not_publish_an_unbounded_synchronous_delegate_action()
     {
         var unsafeProperties = typeof(EndToEndStep).Assembly

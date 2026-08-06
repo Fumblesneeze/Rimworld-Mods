@@ -1,0 +1,14 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.FoodSearchMods.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "ludeon.rimworld",
+    "brrainz.harmony",
+    "Argon.CheapMeals",
+    "Memegoddess.MealsOnWheels",
+    "seekiworksmod.no10",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

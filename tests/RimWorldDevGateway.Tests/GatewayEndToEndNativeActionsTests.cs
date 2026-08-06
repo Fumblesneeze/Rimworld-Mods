@@ -260,7 +260,7 @@ public sealed class GatewayEndToEndNativeActionsTests
     }
 
     [Test]
-    public void Input_screenshot_float_menu_and_settlement_trade_delegate_to_the_durable_backend_operations()
+    public void Input_screenshot_float_menu_settlement_trade_and_incident_delegate_to_the_durable_backend_operations()
     {
         var backend = new RecordingBackend();
         var actions = new GatewayEndToEndNativeActions(backend);
@@ -268,11 +268,13 @@ public sealed class GatewayEndToEndNativeActionsTests
         var screenshot = new ScreenshotStep("shot", new[] { "pawn_1" }, 8);
         var menu = new FloatMenuActionStep("eat", "pawn_1", "meal_1", "consume");
         var settlementTrade = new SettlementTradeActionStep("trade", 41, 42);
+        var incident = new IncidentActionStep("incident", "TraderCaravanArrival", 17);
 
         var inputOperation = actions.Begin(input, Context());
         var screenshotOperation = actions.Begin(screenshot, Context());
         var menuOutcome = actions.Apply(menu, Context());
         var settlementTradeOutcome = actions.Apply(settlementTrade, Context());
+        var incidentOutcome = actions.Apply(incident, Context());
 
         Assert.Multiple(() =>
         {
@@ -280,10 +282,12 @@ public sealed class GatewayEndToEndNativeActionsTests
             Assert.That(screenshotOperation, Is.SameAs(backend.ScreenshotOperation));
             Assert.That(menuOutcome.Passed, Is.True);
             Assert.That(settlementTradeOutcome.Passed, Is.True);
+            Assert.That(incidentOutcome.Passed, Is.True);
             Assert.That(backend.InputStep, Is.SameAs(input));
             Assert.That(backend.ScreenshotStep, Is.SameAs(screenshot));
             Assert.That(backend.FloatMenuStep, Is.SameAs(menu));
             Assert.That(backend.SettlementTradeStep, Is.SameAs(settlementTrade));
+            Assert.That(backend.IncidentStep, Is.SameAs(incident));
         });
     }
 
@@ -340,6 +344,8 @@ public sealed class GatewayEndToEndNativeActionsTests
         public FloatMenuActionStep? FloatMenuStep { get; private set; }
 
         public SettlementTradeActionStep? SettlementTradeStep { get; private set; }
+
+        public IncidentActionStep? IncidentStep { get; private set; }
 
         public bool RejectNextInteraction { get; set; }
 
@@ -433,6 +439,12 @@ public sealed class GatewayEndToEndNativeActionsTests
         public GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step)
         {
             SettlementTradeStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
+
+        public GatewayEndToEndStepOutcome ApplyIncident(IncidentActionStep step)
+        {
+            IncidentStep = step;
             return GatewayEndToEndStepOutcome.Pass();
         }
 

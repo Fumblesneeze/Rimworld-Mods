@@ -132,6 +132,18 @@ internal static class ImmersiveChefsDefBootstrap
         {
             OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.OvercookedMeals, overcookedReason);
         }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.MealsOnWheels) &&
+            !MealsOnWheelsAdapter.TryInitialize(out var mealsOnWheelsReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.MealsOnWheels, mealsOnWheelsReason);
+        }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.PrioritizeMeals) &&
+            !PrioritizeMealsAdapter.TryInitialize(out var prioritizeMealsReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.PrioritizeMeals, prioritizeMealsReason);
+        }
     }
 
     private static void EnablePreparedIngredients()

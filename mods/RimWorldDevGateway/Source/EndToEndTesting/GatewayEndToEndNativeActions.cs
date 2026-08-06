@@ -80,6 +80,8 @@ public interface IGatewayEndToEndActionBackend
 
     GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step);
 
+    GatewayEndToEndStepOutcome ApplyIncident(IncidentActionStep step);
+
     GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step);
 
     IGatewayEndToEndStepOperation BeginInput(
@@ -249,6 +251,15 @@ public sealed class GatewayEndToEndNativeActions : IGatewayEndToEndNativeActions
         Require(step, context);
         return backend.ApplySettlementTrade(step) ??
                throw new InvalidOperationException("The settlement-trade backend returned no outcome.");
+    }
+
+    public GatewayEndToEndStepOutcome Apply(
+        IncidentActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend.ApplyIncident(step) ??
+               throw new InvalidOperationException("The incident backend returned no outcome.");
     }
 
     public GatewayEndToEndStepOutcome Apply(

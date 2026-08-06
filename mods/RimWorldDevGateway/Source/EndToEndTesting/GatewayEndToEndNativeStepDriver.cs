@@ -16,6 +16,8 @@ public interface IGatewayEndToEndNativeActions
 
     GatewayEndToEndStepOutcome Apply(SettlementTradeActionStep step, IEndToEndContext context);
 
+    GatewayEndToEndStepOutcome Apply(IncidentActionStep step, IEndToEndContext context);
+
     GatewayEndToEndStepOutcome Apply(TradeDialogActionStep step, IEndToEndContext context);
 
     IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context);
@@ -50,6 +52,7 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
             GizmoActionStep gizmo => Complete(actions.Apply(gizmo, context)),
             FloatMenuActionStep floatMenu => Complete(actions.Apply(floatMenu, context)),
             SettlementTradeActionStep settlementTrade => Complete(actions.Apply(settlementTrade, context)),
+            IncidentActionStep incident => Complete(actions.Apply(incident, context)),
             TradeDialogActionStep tradeDialog => Complete(actions.Apply(tradeDialog, context)),
             ProcessInputActionStep input =>
                 actions.Begin(input, context)

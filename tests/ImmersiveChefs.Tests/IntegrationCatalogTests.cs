@@ -37,7 +37,9 @@ public sealed class IntegrationCatalogTests
 
     [TestCase("rabiosus.AdaptiveMealBill", OptionalIntegration.AdaptiveMealBill)]
     [TestCase("binchcannon.overcookedmeals", OptionalIntegration.OvercookedMeals)]
-    public void Detect_marks_exact_final_product_integrations_active(
+    [TestCase("Memegoddess.MealsOnWheels", OptionalIntegration.MealsOnWheels)]
+    [TestCase("seekiworksmod.no10", OptionalIntegration.PrioritizeMeals)]
+    public void Detect_marks_exact_optional_compatibility_integrations_active(
         string packageId,
         OptionalIntegration integration)
     {
@@ -48,7 +50,9 @@ public sealed class IntegrationCatalogTests
 
     [TestCase("rabiosus.AdaptiveMealBill.lookalike")]
     [TestCase("binchcannon.overcookedmeals.compat")]
-    public void Detect_ignores_lookalike_final_product_packages(string packageId)
+    [TestCase("Memegoddess.MealsOnWheels.compat")]
+    [TestCase("seekiworksmod.no100")]
+    public void Detect_ignores_lookalike_optional_compatibility_packages(string packageId)
     {
         var snapshot = IntegrationCatalog.Detect(new[] { packageId });
 
@@ -56,6 +60,8 @@ public sealed class IntegrationCatalogTests
         {
             Assert.That(snapshot.IsActive(OptionalIntegration.AdaptiveMealBill), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.OvercookedMeals), Is.False);
+            Assert.That(snapshot.IsActive(OptionalIntegration.MealsOnWheels), Is.False);
+            Assert.That(snapshot.IsActive(OptionalIntegration.PrioritizeMeals), Is.False);
         });
     }
 
@@ -89,13 +95,17 @@ public sealed class IntegrationCatalogTests
 
     [TestCase(OptionalIntegration.AdaptiveMealBill)]
     [TestCase(OptionalIntegration.OvercookedMeals)]
-    public void Disabled_final_product_setting_prevents_activation_when_loaded(
+    [TestCase(OptionalIntegration.MealsOnWheels)]
+    [TestCase(OptionalIntegration.PrioritizeMeals)]
+    public void Disabled_optional_compatibility_setting_prevents_activation_when_loaded(
         OptionalIntegration integration)
     {
         var snapshot = IntegrationCatalog.Detect(new[]
         {
             "rabiosus.AdaptiveMealBill",
-            "binchcannon.overcookedmeals"
+            "binchcannon.overcookedmeals",
+            "Memegoddess.MealsOnWheels",
+            "seekiworksmod.no10"
         });
         var settings = new ImmersiveChefsSettings
         {
@@ -103,6 +113,12 @@ public sealed class IntegrationCatalogTests
                 ? OptionalIntegrationMode.Off
                 : OptionalIntegrationMode.Auto,
             OvercookedMeals = integration == OptionalIntegration.OvercookedMeals
+                ? OptionalIntegrationMode.Off
+                : OptionalIntegrationMode.Auto,
+            MealsOnWheels = integration == OptionalIntegration.MealsOnWheels
+                ? OptionalIntegrationMode.Off
+                : OptionalIntegrationMode.Auto,
+            PrioritizeMeals = integration == OptionalIntegration.PrioritizeMeals
                 ? OptionalIntegrationMode.Off
                 : OptionalIntegrationMode.Auto
         };
@@ -117,7 +133,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(15));
+            Assert.That(snapshot.States, Has.Count.EqualTo(17));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }
