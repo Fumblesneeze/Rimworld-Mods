@@ -75,6 +75,26 @@ public static class FinalizedImmersiveChefsIntegrationTests
             0,
             selected.Length,
             "No finalized Immersive Chefs Def may retain the optional selector in the base group.");
+
+        var buildingDefs = new[]
+        {
+            "ImmersiveChefs_Dishwasher",
+            "ImmersiveChefs_IndustrialDishwasher",
+            "ImmersiveChefs_PrepStation",
+            "ImmersiveChefs_SauceStation",
+            "ImmersiveChefs_MeatStation",
+            "ImmersiveChefs_VegetableStation",
+            "ImmersiveChefs_PastryStation",
+            "ImmersiveChefs_Microwave"
+        };
+        foreach (var defName in buildingDefs)
+        {
+            IntegrationAssert.True(
+                !DefDatabase<ThingDef>.GetNamed(defName).comps.Any(properties =>
+                    properties.GetType().FullName ==
+                    "VEF.Buildings.CompProperties_RandomBuildingGraphic"),
+                defName + " must not retain a VEF comp when the optional packages are absent.");
+        }
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]

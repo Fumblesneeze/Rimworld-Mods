@@ -19,6 +19,79 @@
           <xpath>/Defs/ThingDef[defName="ImmersiveChefs_ChefsKnife"]/graphicData/graphicClass</xpath>
           <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
         </li>
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Dishwasher"]/comps</xpath>
+          <value>
+            <li Class="VEF.Buildings.CompProperties_RandomBuildingGraphic">
+              <randomGraphics><li>ImmersiveChefs/Things/Building/Dishwasher/Dishwasher</li><li>ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_Variant01</li></randomGraphics>
+              <optionalNames><li>standard dishwasher</li><li>alternate dishwasher</li></optionalNames>
+            </li>
+          </value>
+        </li>
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_IndustrialDishwasher"]/comps</xpath>
+          <value>
+            <li Class="VEF.Buildings.CompProperties_RandomBuildingGraphic">
+              <randomGraphics><li>ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher</li><li>ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_Variant01</li></randomGraphics>
+              <optionalNames><li>standard industrial dishwasher</li><li>alternate industrial dishwasher</li></optionalNames>
+            </li>
+          </value>
+        </li>
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_PrepStation"]</xpath>
+          <value>
+            <comps>
+              <li Class="VEF.Buildings.CompProperties_RandomBuildingGraphic">
+                <randomGraphics><li>ImmersiveChefs/Things/Building/KitchenStation/PrepStation</li><li>ImmersiveChefs/Things/Building/KitchenStation/PrepStation_Variant01</li></randomGraphics>
+                <optionalNames><li>standard prep station</li><li>alternate prep station</li></optionalNames>
+              </li>
+            </comps>
+          </value>
+        </li>
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_SauceStation"]</xpath>
+          <value>
+            <comps>
+              <li Class="VEF.Buildings.CompProperties_RandomBuildingGraphic">
+                <randomGraphics><li>ImmersiveChefs/Things/Building/KitchenStation/SauceStation</li><li>ImmersiveChefs/Things/Building/KitchenStation/SauceStation_Variant01</li></randomGraphics>
+                <optionalNames><li>standard sauce station</li><li>alternate sauce station</li></optionalNames>
+              </li>
+            </comps>
+          </value>
+        </li>
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_MeatStation"]</xpath>
+          <value>
+            <comps>
+              <li Class="VEF.Buildings.CompProperties_RandomBuildingGraphic">
+                <randomGraphics><li>ImmersiveChefs/Things/Building/KitchenStation/MeatStation</li><li>ImmersiveChefs/Things/Building/KitchenStation/MeatStation_Variant01</li></randomGraphics>
+                <optionalNames><li>standard meat station</li><li>alternate meat station</li></optionalNames>
+              </li>
+            </comps>
+          </value>
+        </li>
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_VegetableStation"]</xpath>
+          <value>
+            <comps>
+              <li Class="VEF.Buildings.CompProperties_RandomBuildingGraphic">
+                <randomGraphics><li>ImmersiveChefs/Things/Building/KitchenStation/VegetableStation</li><li>ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_Variant01</li></randomGraphics>
+                <optionalNames><li>standard vegetable station</li><li>alternate vegetable station</li></optionalNames>
+              </li>
+            </comps>
+          </value>
+        </li>
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_PastryStation"]</xpath>
+          <value>
+            <comps>
+              <li Class="VEF.Buildings.CompProperties_RandomBuildingGraphic">
+                <randomGraphics><li>ImmersiveChefs/Things/Building/KitchenStation/PastryStation</li><li>ImmersiveChefs/Things/Building/KitchenStation/PastryStation_Variant01</li></randomGraphics>
+                <optionalNames><li>standard pastry station</li><li>alternate pastry station</li></optionalNames>
+              </li>
+            </comps>
+          </value>
+        </li>
       </operations>
     </match>
   </Operation>

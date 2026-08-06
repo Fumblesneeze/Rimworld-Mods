@@ -168,3 +168,24 @@ looked powered; new candidate A was rejected because its broad front and oversiz
 flatter and less map-like. Both new prompts requested appliance-only art on pure green chroma. The
 selected fixed-color 512×512 `Graphic_Single`/`Cutout` sprite has 346×320 visible bounds; on the
 Def's 0.82×0.82 mesh it occupies roughly 0.55×0.51 cells so the real table/workbench remains visible.
+
+## Optional building variation families
+
+When exact VTEX/VEF integration is active, each dishwasher, specialist station, and the fallback
+microwave has a two-member family: its selected standard sprite plus one selected `_Variant01`
+sprite. VEF remains the graphic owner and supplies its native `Random Graphic` gizmo. The domestic
+variant emphasizes an open rack and side controls; the industrial variant changes the wash tunnel,
+rack lanes, and control placement. The prep variant rearranges its sink, board, and pans; sauce
+changes vessel and hob layout; meat changes its butcher-block/tool composition; vegetable changes
+its board, basket, and hand tools; pastry changes mixer/slab/tray layout; and the microwave changes
+door, handle, vent, and control geometry while remaining a support-only countertop appliance.
+
+For each concept, generated alternatives were compared against the standard sprite at final map
+scale. The retained variants were the candidates whose silhouette and workstation purpose survived
+that reduction without baking in food, steam, powered lights, water, or activity state. Every
+variant uses the standard sprite's exact canvas and occupied footprint, retains transparency, has
+no vivid chroma-key pixels or bright-blue powered cue, and uses the same fixed-color
+`Graphic_Single`/`Cutout` contract. The exact VTEX E2E catalog visibly exercised the native gizmo on
+all eight buildings and captured both family members at their real Def draw sizes. Rejected source
+candidates and comparison montages remain under ignored
+`artifacts/VisualAssets/BuildingVariations`.

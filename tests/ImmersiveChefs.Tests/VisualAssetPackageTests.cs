@@ -106,6 +106,42 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
+    public void Building_texture_variation_family_is_complete_distinct_and_chroma_free()
+    {
+        var root = FindRepositoryRoot();
+        var texturePaths = new[]
+        {
+            DishwasherTexturePath,
+            IndustrialDishwasherTexturePath,
+            PrepStationTexturePath,
+            SauceStationTexturePath,
+            MeatStationTexturePath,
+            VegetableStationTexturePath,
+            PastryStationTexturePath,
+            MicrowaveTexturePath
+        };
+
+        foreach (var texturePath in texturePaths)
+        {
+            var basePath = TextureFile(root, texturePath + ".png");
+            var variantPath = TextureFile(root, texturePath + "_Variant01.png");
+            var packagedVariantPath = PackagedTextureFile(root, texturePath + "_Variant01.png");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.Exists(variantPath), Is.True, texturePath + " source variant");
+                Assert.That(File.Exists(packagedVariantPath), Is.True, texturePath + " packaged variant");
+            });
+            AssertPackagedTextureMatchesSource(variantPath, packagedVariantPath);
+            AssertTransparentSprite(variantPath);
+            AssertSameCanvas(basePath, variantPath);
+            AssertNoVividGreenChroma(variantPath);
+            AssertNoBrightBlueEmission(variantPath);
+            AssertSpritesDiffer(basePath, variantPath);
+        }
+    }
+
+    [Test]
     public void Ordinary_cookware_uses_owned_stuffable_art_with_a_matching_mask()
     {
         var root = FindRepositoryRoot();
@@ -708,6 +744,18 @@ public sealed class VisualAssetPackageTests
             bitmap.Width * heightUnits,
             Is.EqualTo(bitmap.Height * widthUnits),
             "The texture canvas must match its draw mesh without Unity stretching it.");
+    }
+
+    private static void AssertSameCanvas(string expectedPath, string actualPath)
+    {
+        if (!File.Exists(expectedPath) || !File.Exists(actualPath))
+        {
+            return;
+        }
+
+        using var expected = new Bitmap(expectedPath);
+        using var actual = new Bitmap(actualPath);
+        Assert.That(actual.Size, Is.EqualTo(expected.Size));
     }
 
     private static void AssertNoBrightBlueEmission(string diffusePath)

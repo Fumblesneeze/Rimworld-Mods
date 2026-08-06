@@ -68,15 +68,24 @@ The host command requires the complete nonempty ordered active package sequence;
 
 Use `[IntegrationTest(RunAt.MainMenuLoaded)]` for finalized Def values, PatchOperations, `DefOf`, and complete startup Harmony ownership. Use `PlayableMapLoaded` only when the assertion genuinely needs a current map. These tests replace synthetic host assumptions, not the native player workflow required to accept gameplay.
 
-The portable texture gate has two process-isolated finalized-Def groups. The ordinary
+The texture-variation gate has two process-isolated finalized-Def groups. The ordinary
 Core/Harmony/Immersive/Gateway group proves all four supported portable Defs retain
-`Graphic_Single` when VEF/VTEX is absent. The exact
-Core/Harmony/VEF/VTEX/Immersive/Gateway group loads
+`Graphic_Single` and all eight supported buildings retain no VEF comp when VEF/VTEX is absent. The
+exact Core/Harmony/VEF/VTEX/Immersive/Gateway group loads
 `ImmersiveChefs.TextureVariations.InGame.IntegrationTests` and proves only cookware, plate,
 cutlery, and chef's knives receive `Graphic_PortableKitchenwareVariation`; fixed adobe and
-glitterworld art remain ordinary graphics. Accepted runs are
+glitterworld art remain ordinary graphics; and each dishwasher, specialist station, and fallback
+microwave receives one two-member `CompProperties_RandomBuildingGraphic` family. The accepted
+portable finalized-Def runs are
 `artifacts/GatewaySmoke/texture-variation-base-green-20260806/20260806T165802541Z` and
-`artifacts/GatewaySmoke/texture-variation-vtex-20260806/20260806T165852388Z`.
+`artifacts/GatewaySmoke/texture-variation-vtex-20260806/20260806T165852388Z`. The current two-member
+building shape plus native action is covered by the focused exact-mod E2E run
+`artifacts/EndToEndRuns/Grouped/20260806T175646645Z`; it admitted only
+`immersive-chefs.texture-variation-visual-catalog`, invoked every native VEF `Random Graphic`
+gizmo, observed every rendered path move to the opposite configured family member, retained the
+before/after and portable sanitation catalogs, and completed verified cleanup. The acting agent
+inspected all three retained frames. During development, rerun only this stable ID when changing
+this slice; do not replay unrelated completed catalogs.
 
 The accepted RimCuisine replacement-Def integration run is `artifacts\GatewaySmoke\20260805T145248752Z`. Its exact process loaded Core, Harmony, the selected RimWorld 1.6 Processor Framework Workshop item, all four RimCuisine 2 modules, No Vanilla Meals, Immersive Chefs, and Gateway. The exact compatibility assembly observed all ten official meal ThingDefs absent, every surviving vanilla-product recipe unclassified with its initialization-time multiplier at `1`, and the surviving pottage, rubaboo, pizza, and extravagant-meal Defs finalized with their intended ware/culinary components and tiers. This is finalized-loader evidence; native cooking and trade remain separate E2E acceptance work.
 

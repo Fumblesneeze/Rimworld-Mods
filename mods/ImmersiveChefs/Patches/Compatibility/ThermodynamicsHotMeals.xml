@@ -39,6 +39,21 @@
           </ThingDef>
         </value>
       </li>
+      <li Class="ImmersiveChefs.PatchOperationTextureVariations">
+        <match Class="PatchOperationSequence">
+          <operations>
+            <li Class="PatchOperationAdd">
+              <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Microwave"]/comps</xpath>
+              <value>
+                <li Class="VEF.Buildings.CompProperties_RandomBuildingGraphic">
+                  <randomGraphics><li>ImmersiveChefs/Things/Building/Appliance/Microwave</li><li>ImmersiveChefs/Things/Building/Appliance/Microwave_Variant01</li></randomGraphics>
+                  <optionalNames><li>standard microwave</li><li>alternate microwave</li></optionalNames>
+                </li>
+              </value>
+            </li>
+          </operations>
+        </match>
+      </li>
       <li Class="ImmersiveChefs.PatchOperationRemoveIfModActive">
         <packageId>Mlie.DThermodynamicsHotMeals</packageId>
         <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Microwave"]</xpath>
