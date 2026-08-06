@@ -91,7 +91,7 @@
   - [x] 6.6b Observe three identical plated 70 °C meals progress for the same player-controlled interval inside real powered 21 °C ambient, 5 °C refrigerated, and -10 °C frozen holder rooms; their native inspectors must visibly diverge into Warm, RoomTemperature, and Frozen bands without scenario-driven ticks or direct thermal mutation.
   - [x] 6.6c Observe one native ingestion split the current Masterwork-80 serving and one bound plate from a three-serving stack; the same original map handle must visibly change from count/plates/quality `3/3/80` to `2/2/50`, without scenario calls to split, consume, or pawn-job APIs.
   - [x] 6.6d Through native Architect placement without Thermodynamics, build the compact microwave on a dining table and a production workbench, observe each support remain selectable and usable, reject floor/blueprint/bed/storage placements, complete one native reheat, then destroy the active support and observe transactional meal cancellation plus exactly one recoverable minified microwave.
-  - [ ] 6.6e In an exact Thermodynamics group, observe its `DMicrowave`/temperature UI/heating behavior with no Immersive Chefs microwave or duplicate thermal thought/job/toil; cook, heat, and eat one plated meal and observe the exact plate/cutlery plus culinary quality and sanitation lifecycle still occur once.
+  - [x] 6.6e In an exact Thermodynamics group, observe its `DMicrowave`/temperature UI/heating behavior with no Immersive Chefs microwave or duplicate thermal thought/job/toil; cook, heat, and eat one plated meal and observe the exact plate/cutlery plus culinary quality and sanitation lifecycle still occur once.
 
 ## 7. mods/ImmersiveChefs - Dining standards and optional integrations
 
@@ -131,7 +131,7 @@
   - [x] 7.6f In the RimCuisine/No-Vanilla-Meals group, reach main menu/map without removed-Def failures, cook registered surviving pottage/extravagant meals, exercise a valid pizza spawn/trade path, and observe vanilla-product bulk recipes, cans, hardtack, preservation, drinks, drugs, ingredients, and snacks remain absent or outside Immersive Chefs as appropriate.
     - [x] 7.6f.1 Cook thin pottage and extravagant meals through native RimCuisine bills with exact serving-count plate tiers, culinary state, lower-tier rejection, and dirty returned cookware visible in the ordinary UI.
     - [x] 7.6f.2 Trade an upstream-generated pizza and inspect the retained excluded RimCuisine products/recipes in the same exact grouped process.
-  - [ ] 7.6g In the RimFridge/Thermodynamics group, store, retrieve, heat, and eat a plated meal while Thermodynamics alone owns temperature/microwave behavior and exact culinary, plate, cutlery, and sanitation state survive once.
+  - [x] 7.6g In the RimFridge/Thermodynamics group, store, retrieve, heat, and eat a plated meal while Thermodynamics alone owns temperature/microwave behavior and exact culinary, plate, cutlery, and sanitation state survive once.
 
 ## 8. mods/ImmersiveChefs - Release verification
 
