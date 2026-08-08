@@ -8,7 +8,8 @@ internal enum GatewayEndToEndMapResetPhase
     Roofs,
     Designations,
     Zones,
-    Things
+    Things,
+    Notifications
 }
 
 public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIsolationOperations
@@ -20,11 +21,14 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
             GatewayEndToEndMapResetPhase.Roofs,
             GatewayEndToEndMapResetPhase.Designations,
             GatewayEndToEndMapResetPhase.Zones,
-            GatewayEndToEndMapResetPhase.Things
+            GatewayEndToEndMapResetPhase.Things,
+            GatewayEndToEndMapResetPhase.Notifications
         };
     private readonly GatewayGameControlController gameControl;
     private readonly GatewayCameraController camera;
     private readonly GatewayGizmoRegistry gizmos;
+    private readonly GatewayEndToEndNotificationReset notifications =
+        new(new VerseGatewayEndToEndNotificationOperations());
     private BaselineState? activeBaseline;
 
     public VerseGatewayEndToEndIsolationOperations(
@@ -83,6 +87,9 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
                     break;
                 case GatewayEndToEndMapResetPhase.Things:
                     RemoveThings(map);
+                    break;
+                case GatewayEndToEndMapResetPhase.Notifications:
+                    notifications.Clear();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(phase));
@@ -152,6 +159,7 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
                !map.AllCells.Any(cell => ShouldRemoveRoof(map.roofGrid.RoofAt(cell))) &&
                map.designationManager.AllDesignations.Count == 0 &&
                map.zoneManager.AllZones.Count == 0 &&
+               notifications.IsEmpty() &&
                Find.Selector.SelectedObjectsListForReading.Count == 0 &&
                gizmos.CurrentInteraction is null &&
                Find.WindowStack.Windows.All(state.Windows.Contains);

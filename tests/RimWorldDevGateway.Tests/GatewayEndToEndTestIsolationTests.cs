@@ -18,8 +18,49 @@ public sealed class GatewayEndToEndTestIsolationTests
                 GatewayEndToEndMapResetPhase.Roofs,
                 GatewayEndToEndMapResetPhase.Designations,
                 GatewayEndToEndMapResetPhase.Zones,
-                GatewayEndToEndMapResetPhase.Things
+                GatewayEndToEndMapResetPhase.Things,
+                GatewayEndToEndMapResetPhase.Notifications
             }));
+    }
+
+    [Test]
+    public void Notification_reset_clears_every_surface_after_map_removal_and_verifies_empty()
+    {
+        var operations = new RecordingNotificationOperations();
+        var reset = new GatewayEndToEndNotificationReset(operations);
+
+        reset.Clear();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(operations.Calls, Is.EqualTo(new[]
+            {
+                "letters", "messages", "alerts"
+            }));
+            Assert.That(reset.IsEmpty(), Is.True);
+        });
+    }
+
+    [Test]
+    public void Notification_reset_requires_every_surface_to_be_empty()
+    {
+        foreach (var remaining in new[] { "messages", "letters", "alerts" })
+        {
+            var operations = new RecordingNotificationOperations { Remaining = remaining };
+
+            Assert.That(
+                new GatewayEndToEndNotificationReset(operations).IsEmpty(),
+                Is.False,
+                remaining);
+        }
+    }
+
+    [Test]
+    public void Notification_reset_pins_the_current_delayed_letter_and_active_alert_collection_shapes()
+    {
+        Assert.That(
+            VerseGatewayEndToEndNotificationOperations.PrivateShapesAvailable,
+            Is.True);
     }
 
     [Test]
@@ -193,5 +234,24 @@ public sealed class GatewayEndToEndTestIsolationTests
             Restored = baseline;
             return Failure != "restore";
         }
+    }
+
+    private sealed class RecordingNotificationOperations : IGatewayEndToEndNotificationOperations
+    {
+        public List<string> Calls { get; } = new();
+
+        public string? Remaining { get; set; }
+
+        public bool MessagesEmpty => Remaining != "messages";
+
+        public bool LettersEmpty => Remaining != "letters";
+
+        public bool AlertsEmpty => Remaining != "alerts";
+
+        public void ClearMessages() => Calls.Add("messages");
+
+        public void ClearLetters() => Calls.Add("letters");
+
+        public void ClearAlerts() => Calls.Add("alerts");
     }
 }
