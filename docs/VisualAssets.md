@@ -101,6 +101,27 @@ opaque green vegetables.
 
 ## Domestic dishwasher
 
+The 2026-08-09 building-art correction reopened every building selection and directional/live
+acceptance task below. The former `Graphic_Single` notes describe the rejected historical package,
+not an accepted target. A controlled generator comparison used the same 1024×1024 four-cardinal
+dishwasher brief and seed `424242` for built-in image generation plus local `flux2-nasa`, `flux2`,
+`krea2`, `realvisxl`, `juggernaut`, and `zimage`. Raw sheets, normalized 512×256 drafts, and the
+comparison montage remain under ignored
+`artifacts/VisualAssets/BuildingGeneratorComparison/20260809`.
+
+The focused exact run `artifacts/EndToEndRuns/Grouped/20260808T222729488Z` rendered every normalized
+draft through a disposable real ThingDef, selected each draft through the native selection path,
+and captured it beside the same Core butcher table, electric stove, and machining table in one
+process. The acting agent inspected all eight retained screenshots. Built-in generation won: it was
+the only route whose low bench, closed washer lid, rack, outline, and broad value groups remained
+readable at the actual map zoom without becoming muddy or changing product identity. Flux2 NASA and
+plain Flux2 collapsed into low-contrast tan cabinet shapes; Krea 2 became an underspecified olive
+icon; RealVisXL and Juggernaut failed the requested workstation/cardinal composition; Z-Image
+produced inconsistent generic cabinets. The disposable comparison Defs, textures, and E2E test were
+removed after the decision and never enter the release package. The winning built-in art direction
+still requires new complete north/east/south/west families and final live comparison before any
+building section below can be accepted again.
+
 Selected: candidate B, generated 2026-08-06. Its steep map view, twin top-loading racks, visible
 plates, stainless shell, and near-edge controls remain legible across a 2×1 footprint. Candidate A
 was rejected because its frontal view would read like a UI icon pasted onto the map and rotate

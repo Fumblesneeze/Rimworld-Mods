@@ -19,17 +19,37 @@ When its fallback Def is active, the microwave artwork SHALL depict only a compa
 ### Requirement: Every distinct asset is selected from multiple candidates
 At least two distinct raster candidates SHALL be generated for every distinct item or building concept before selection. Candidate review SHALL record the prompt/variant identity, final-scale preview, selection outcome, and concise reason. Rejected candidates and review montages SHALL remain in ignored working/evidence paths and SHALL NOT enter the release package; the selected final and durable provenance/prompt record SHALL remain in the repository.
 
+Before the custom-building art direction is finalized, one controlled representative dishwasher brief SHALL be sampled through the built-in image generator and every locally registered headless workflow available through the repository operator's `local-image-generation` skill: `flux2-nasa`, `flux2`, `krea2`, `realvisxl`, `juggernaut`, and `zimage`. The samples SHALL use the same functional brief, cardinal-sheet layout, output dimensions, and seed where the workflow supports it. They SHALL be chroma-removed and normalized to identical game canvases without otherwise correcting a model's composition. Selection SHALL be based on the resulting real-Def sprites rendered beside Core production benches at the same live map scale; a model SHALL NOT win merely because its full-resolution source is more polished.
+
 #### Scenario: An agent selects a cookware sprite
 - **WHEN** two or more cookware candidates have been generated
 - **THEN** each is compared at the actual intended map/UI scale against a retained live RimWorld visual context
 - **THEN** only the strongest readable, stylistically coherent candidate is wired into the shipped Def
 
+#### Scenario: Local generator routes produce different dishwasher drafts
+- **WHEN** the same representative brief has completed through the built-in generator and all six locally registered routes
+- **THEN** every successful draft is normalized to the same directional canvases and rendered in one focused live comparison beside the same Core bench references
+- **THEN** the retained decision records which route best matches RimWorld's map-scale style and why, plus any route failure, without silently substituting a different generator
+
 ### Requirement: Raster assets have clean game-ready silhouettes
-Selected textures SHALL be PNGs with alpha, transparent corners, no chroma fringe, no baked floor/contact shadow, no text or watermark, and enough transparent padding to avoid cropping under selection brackets. Items SHALL remain recognizable at their intended 48–64 pixel review scale and buildings at their real footprint/draw size. Any Def retaining `Graphic_Multi` SHALL provide a complete valid directional texture set; otherwise it SHALL intentionally use a single graphic whose non-rotation is visually acceptable.
+Selected textures SHALL be PNGs with alpha, transparent corners, no chroma fringe, no baked floor/contact shadow, no text or watermark, and enough transparent padding to avoid cropping under selection brackets. Items SHALL remain recognizable at their intended 48–64 pixel review scale and buildings at their real footprint/draw size.
+
+Every rotatable Immersive Chefs building, including every base appliance/station, the fallback microwave, and every optional VTEX building variant, SHALL use `Graphic_Multi` and provide valid `_north`, `_east`, `_south`, and `_west` textures. North/south SHALL fit the unrotated footprint, while east/west SHALL be separately authored or deliberately reframed vertical views of the same physical building rather than a runtime rotation of one front-facing raster. The four views SHALL preserve recognizable equipment placement, visual mass, footprint occupancy, worker-facing orientation, and transparent padding. No rotatable custom building MAY use `Graphic_Single` as an escape from directional coverage.
+
+Custom workbenches and appliances SHALL align with the visual language of representative Core production benches at map scale: painted rather than photorealistic rendering, an orthographic/top-down read, restrained highlights and micro-detail, a strong silhouette, bounded contrast, and comparable apparent height and density within the occupied cells. Candidate and final comparisons SHALL use the same live camera zoom, map lighting, footprint scale, and crop for the custom building and its vanilla comparator; a source render that looks polished in isolation but reads as glossy front-elevation concept art in game SHALL be rejected.
 
 #### Scenario: Chroma removal damages an edge
 - **WHEN** alpha inspection finds opaque corners, key-color residue, clipped geometry, or a halo at final scale
 - **THEN** that candidate is corrected and revalidated or rejected before Def wiring
+
+#### Scenario: A two-cell station is rotated east
+- **WHEN** the player rotates the finalized station from north to east through the native placement or reinstall command
+- **THEN** RimWorld resolves the station's authored east texture and vertical footprint instead of rotating a horizontal front elevation
+- **THEN** the same tools, work surface, and worker-facing identity remain recognizable in the vertical view
+
+#### Scenario: A polished candidate conflicts with the vanilla map style
+- **WHEN** the candidate is shown beside a Core stove, machining table, butcher table, or other representative production bench at identical map scale and lighting
+- **THEN** excessive perspective, gloss, micro-detail, visual height, or transparent-padding mismatch keeps the candidate unselected even if its standalone render is attractive
 
 ### Requirement: Stuff-aware art preserves material identity with explicit masks
 Stuffable cookware, plates, cutlery, and chef's knives SHALL use neutral value separation, a Stuff-compatible shader, and a matching mask texture for every selected diffuse path so RimWorld can color material-bearing surfaces from the Thing's actual Stuff while preserving outlines, highlights, handles, and other deliberately non-Stuff accents. Directional textures SHALL have matching directional masks. Fixed-material assets MAY use a deliberate base color and MAY omit a Stuff mask. The selected artwork SHALL remain legible and materially distinct for every eligible representative Core material: wood, stone, steel, silver, and gold, with optional registered materials checked in their exact active-mod groups.
@@ -44,6 +64,8 @@ Stuffable cookware, plates, cutlery, and chef's knives SHALL use neutral value s
 
 ### Requirement: Vanilla Textures Expanded - Variations is an absent-safe cosmetic integration
 The optional texture-variation integration SHALL key to exact package ID `VanillaExpanded.VTEXVariations` and SHALL load after that package and `OskarPotocki.VanillaFactionsExpanded.Core` without making either a required dependency. With the inspected compatible RimWorld 1.6 shape active, supported Immersive Chefs appliances and stations SHALL use the real `VEF.Buildings.CompProperties_RandomBuildingGraphic` contract for randomized/player-cyclable building families. Because that upstream contract is building-only, portable cookware, plates, cutlery, and chef's knives SHALL instead use a reflection-free Immersive Chefs selector activated by the same exact package gate. The portable selector SHALL choose only cosmetic variants compatible with product kind, Stuff material class, and sanitation state; it MUST NOT alter gameplay stats, identity, stack admission, save semantics, or cleaning ownership.
+
+Every base and optional building path supplied to the upstream component SHALL name a complete four-direction family satisfying the same authored-horizontal/authored-vertical contract as the fallback. Cycling variants MUST NOT revert a building to a single raster or a mechanically rotated front view.
 
 The active integration SHALL provide visibly appropriate wood and registered-stone families for each eligible portable product rather than presenting those materials as merely brown or gray metal. Ordinary metal/plastic art SHALL remain a sensible fallback for unclassified materials. A dirty state SHALL be visibly distinguishable through a bounded dirt overlay or dirty texture family when one exists, while clean and dirty renderings preserve the actual Stuff tint through their masks. Cosmetic choices SHALL remain stable across an ordinary save/load and SHALL not fabricate sanitation state.
 
@@ -70,7 +92,7 @@ Immersive Chefs SHALL expose `TextureVariationIntegration` as `Auto` or `Off`, d
 - **THEN** Immersive Chefs logs one actionable compatibility warning, disables only cosmetic variation, and continues rendering every Thing with its base fallback
 
 ### Requirement: Final art is accepted through live game rendering
-Static source inspection and local thumbnails are supporting evidence only. The reviewed built package SHALL be loaded in a fresh isolated RimWorld process, every selected asset SHALL be rendered through its real finalized Def beside representative vanilla content, and the acting agent SHALL personally inspect retained screenshots. The visual catalog SHALL cover map rendering, selection brackets, stack overlays for stackable items, item scale, building footprint/rotation, and ordinary inspector or build-menu presentation where applicable.
+Static source inspection and local thumbnails are supporting evidence only. The reviewed built package SHALL be loaded in a fresh isolated RimWorld process, every selected asset SHALL be rendered through its real finalized Def beside representative vanilla content, and the acting agent SHALL personally inspect retained screenshots. The visual catalog SHALL cover map rendering, selection brackets, stack overlays for stackable items, item scale, building footprint/rotation, and ordinary inspector or build-menu presentation where applicable. For buildings, retained close screenshots SHALL place each custom building and an appropriate Core production bench in the same live scene at the same zoom and lighting, and SHALL show north, east, south, and west views closely enough to judge both style and directional consistency.
 
 #### Scenario: A selected source image looks good outside the game
 - **WHEN** the real Def renders it too small, too large, muddy after Stuff tint, directionally incomplete, visually ambiguous, or inconsistent beside vanilla assets
