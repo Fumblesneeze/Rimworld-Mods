@@ -10,6 +10,46 @@ using Verse;
 namespace ImmersiveChefs.EndToEndTests;
 
 [RimWorldEndToEndTest(
+    "immersive-chefs.food-texture-variety-vce-save-load",
+    "fumblesneeze.immersivechefs",
+    EndToEndTestContract.CorePackageId,
+    "brrainz.harmony",
+    "OskarPotocki.VanillaFactionsExpanded.Core",
+    "VanillaExpanded.VCookE",
+    "VanillaExpanded.VCookEBakery",
+    "VanillaExpanded.VCookEHaute",
+    "VanillaExpanded.VCookEStews",
+    "VanillaExpanded.VCEF",
+    "VanillaExpanded.VCookESushi",
+    "Goat.Food.Texture.Variety.Core",
+    "Goat.Food.Texture.Variety",
+    "Goat.Food.Texture.Variety.VECooking",
+    "Goat.Food.Texture.Variety.VEStew",
+    "Goat.Food.Texture.Variety.VESushi",
+    "Thekiborg.DMTR",
+    "Evyatar108.VarietyMattersImprovedRedux",
+    "VanillaExpanded.VanillaFoodVarietyExpanded",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 7_200,
+    MaxGameTicks = 28_000,
+    MaxWallClockSeconds = 300)]
+public sealed class FoodTextureVarietyVcePersistenceTest : IRimWorldEndToEndTest
+{
+    private FoodTextureVarietyPersistenceFixture fixture = null!;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        fixture = new FoodTextureVarietyPersistenceFixture(
+            "VCE_CookedStewSimple",
+            "ImmersiveChefsE2E_FtvVcePersistence");
+        fixture.Arrange(context);
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) =>
+        fixture.Execute(context);
+}
+
+[RimWorldEndToEndTest(
     "immersive-chefs.food-texture-variety-save-load",
     "fumblesneeze.immersivechefs",
     EndToEndTestContract.CorePackageId,
@@ -17,22 +57,52 @@ namespace ImmersiveChefs.EndToEndTests;
     "Goat.Food.Texture.Variety.Core",
     "Goat.Food.Texture.Variety",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 4_800,
-    MaxGameTicks = 20_000,
-    MaxWallClockSeconds = 180)]
+    MaxFrames = 7_200,
+    MaxGameTicks = 28_000,
+    MaxWallClockSeconds = 300)]
 public sealed class FoodTextureVarietyPersistenceTest : IRimWorldEndToEndTest
 {
-    private const string FirstSaveName = "ImmersiveChefsE2E_FtvPersistenceFirst";
-    private const string SecondSaveName = "ImmersiveChefsE2E_FtvPersistenceSecond";
+    private FoodTextureVarietyPersistenceFixture fixture = null!;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        fixture = new FoodTextureVarietyPersistenceFixture(
+            "FTV_MealSimple",
+            "ImmersiveChefsE2E_FtvPersistence");
+        fixture.Arrange(context);
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) =>
+        fixture.Execute(context);
+}
+
+internal sealed class FoodTextureVarietyPersistenceFixture : IRimWorldEndToEndTest
+{
+    private readonly string mealDefName;
+    private readonly string FirstSaveName;
+    private readonly string SecondSaveName;
     private string mealId = string.Empty;
     private string holderPawnId = string.Empty;
     private string plateId = string.Empty;
     private IntVec3 mealCell;
     private string[] selectedPaths = Array.Empty<string>();
     private int selectedIndex;
+    private CulinaryServingSnapshot expectedServing;
+
+    internal FoodTextureVarietyPersistenceFixture(string mealDefName, string saveNamePrefix)
+    {
+        this.mealDefName = mealDefName;
+        FirstSaveName = saveNamePrefix + "First";
+        SecondSaveName = saveNamePrefix + "Second";
+    }
 
     public void Arrange(IEndToEndContext context)
     {
+        var priorMealTemperature = ImmersiveChefsMod.Settings.MealTemperatureEnabled;
+        ImmersiveChefsMod.Settings.MealTemperatureEnabled = false;
+        context.DeferCleanup(() =>
+            ImmersiveChefsMod.Settings.MealTemperatureEnabled = priorMealTemperature);
+
         var savePaths = new[]
         {
             GenFilePaths.FilePathForSavedGame(FirstSaveName),
@@ -54,20 +124,21 @@ public sealed class FoodTextureVarietyPersistenceTest : IRimWorldEndToEndTest
             .First(candidate => candidate.InBounds(map) && candidate.Standable(map) &&
                                 candidate.GetEdifice(map) is null &&
                                 candidate.GetFirstPawn(map) is null);
-        var mealDef = DefDatabase<ThingDef>.GetNamed("FTV_MealSimple");
+        var mealDef = DefDatabase<ThingDef>.GetNamed(mealDefName);
         var meal = (ThingWithComps)ThingMaker.MakeThing(mealDef);
         meal.stackCount = 1;
         meal.GetComp<CompIngredients>()!.ingredients.Add(
             DefDatabase<ThingDef>.GetNamed("RawRice"));
-        meal.GetComp<CompCulinaryState>()!.ReplaceServings(new[]
-        {
-            new CulinaryServingRecord(
-                78,
-                64f,
-                ContaminationSources.DirtyCookware,
-                0,
-                Find.TickManager.TicksGame)
-        });
+        var seededServing = new CulinaryServingRecord(
+            78,
+            64f,
+            ContaminationSources.DirtyCookware | ContaminationSources.WildWaterPlate,
+            2,
+            Math.Max(1, Find.TickManager.TicksGame),
+            new[] { "RawRice" },
+            DietaryFlags.Plant | DietaryFlags.VegetarianCompatible);
+        expectedServing = seededServing.Capture();
+        meal.GetComp<CompCulinaryState>()!.ReplaceServings(new[] { seededServing });
 
         var plate = (ThingWithComps)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
@@ -181,10 +252,17 @@ public sealed class FoodTextureVarietyPersistenceTest : IRimWorldEndToEndTest
             "FoodTextureVariety.Graphic_MealVariantsExpanded",
             meal.Graphic.GetType().FullName,
             "Food Texture Variety must remain the visible graphic owner.");
+        EndToEndAssert.Equal(mealId, meal.ThingID,
+            "The exact meal identity must survive both native reloads.");
+        EndToEndAssert.Equal(1, meal.stackCount,
+            "The saved meal must remain one physical serving.");
+        var ingredients = meal.GetComp<CompIngredients>()!.ingredients;
         EndToEndAssert.Equal(
             1,
-            meal.GetComp<CompIngredients>()!.ingredients.Count(def => def.defName == "RawRice"),
-            "Ingredient provenance must survive exactly once.");
+            ingredients.Count,
+            "Exactly one public ingredient entry must survive the native reloads.");
+        EndToEndAssert.Equal("RawRice", ingredients[0].defName,
+            "The sole surviving public ingredient must remain RawRice.");
 
         var embedded = meal.GetComp<CompEmbeddedWare>()!;
         EndToEndAssert.Equal(1, embedded.EmbeddedPlateCount,
@@ -194,12 +272,37 @@ public sealed class FoodTextureVarietyPersistenceTest : IRimWorldEndToEndTest
             "The same physical plate identity must survive the native game reload.");
         EndToEndAssert.True(plate.GetComp<CompSanitation>()!.IsDirty,
             "The embedded plate's dirty state must survive the native game reload.");
+        var culinary = meal.GetComp<CompCulinaryState>()!;
+        EndToEndAssert.Equal(1, culinary.Servings.Count,
+            "Exactly one culinary serving must survive the native reloads.");
+        var actualServing = culinary.PeekCurrentServingWithoutThermalUpdate();
+        EndToEndAssert.NotNull(actualServing,
+            "The exact culinary serving must remain available after reload.");
+        AssertServingEqual(expectedServing, actualServing!.Capture());
+    }
+
+    private static void AssertServingEqual(
+        CulinaryServingSnapshot expected,
+        CulinaryServingSnapshot actual)
+    {
+        EndToEndAssert.Equal(expected.SchemaVersion, actual.SchemaVersion,
+            "Culinary schema version must survive.");
+        EndToEndAssert.Equal(expected.QualityScore, actual.QualityScore,
+            "Culinary quality must survive.");
+        EndToEndAssert.Equal(expected.TemperatureCelsius, actual.TemperatureCelsius,
+            "Culinary temperature must survive.");
+        EndToEndAssert.Equal(expected.Contamination, actual.Contamination,
+            "Culinary contamination must survive.");
+        EndToEndAssert.Equal(expected.MicrowaveReheatCount, actual.MicrowaveReheatCount,
+            "Culinary microwave count must survive.");
+        EndToEndAssert.Equal(expected.LastThermalTick, actual.LastThermalTick,
+            "Culinary thermal tick must survive.");
         EndToEndAssert.Equal(
-            78,
-            meal.GetComp<CompCulinaryState>()!
-                .PeekCurrentServingWithoutThermalUpdate()!
-                .QualityScore,
-            "Culinary quality must survive exactly once.");
+            string.Join("|", expected.HiddenSourceDefNames),
+            string.Join("|", actual.HiddenSourceDefNames),
+            "Hidden culinary provenance must survive exactly.");
+        EndToEndAssert.Equal(expected.HiddenDietaryFlags, actual.HiddenDietaryFlags,
+            "Hidden dietary flags must survive.");
     }
 
     private static void AssertPendingFirstDraw(ThingWithComps meal)
