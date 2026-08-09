@@ -15,7 +15,7 @@ Immersive Chefs adds cookware sets, plates, stackable cutlery, belt-slot chef's 
 
 Kitchenware is Stuff-aware. Primitive stone/adobe/wood paths, smithy-era metals, machining-era metals/plastics, and trade/quest-only self-cleaning glitterworld cookware use material and craftsmanship to derive cleanliness, speed, comfort, durability, and culinary modifiers. Optional adapters are detected for Processor Framework, Expanded Materials, ABS polymer, Dubs Bad Hygiene, Gastronomy, Common Sense, Hospitality, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, and Vanilla Nutrient Paste Expanded. Their individual `Auto` setting can be changed to `Off` when troubleshooting.
 
-The current OpenSpec also defines exact-package compatibility work for Adaptive Meal Bill, Meals on Wheels, Replimat Meals, the Vanilla Cooking Expanded family, Fried/Fast Meals, Food Texture Variety, Prioritize Meals over Preserved Foods, RimCuisine 2, Meal Printer, RimFridge, Overcooked Meals, and No Vanilla Meals. The RimCuisine/No-Vanilla registry, guarded Adaptive Meal Bill/Overcooked Meals final-product adapters, Fast Meals/Meals on Wheels/Prioritize food selection, Replimat sanitation/exclusions, and Meal Printer/Hospitality/Gastronomy service paths are implemented and proven in exact loaded-mod integration plus native cooking, dining, incident, trade, service, and dishwasher E2E workflows. Other integrations are not considered implemented until their guarded tests and native observable E2E matrix pass.
+The supported exact-package food ecosystem includes Adaptive Meal Bill, Meals on Wheels, Replimat Meals, the Vanilla Cooking Expanded family, Fried/Fast Meals, Food Texture Variety, Dynamic Meal Texture Replacer, Prioritize Meals over Preserved Foods, RimCuisine 2, Meal Printer, RimFridge, Overcooked Meals, No Vanilla Meals, and Thermodynamics - Hot Meals. See the [player guide](docs/ImmersiveChefs.md) for every exact package chain, ownership boundary, setting, incompatibility grouping, save guarantee, and troubleshooting path.
 
 Active cooking, dining, service, and assistant jobs safely restart after loading a save. RimWorld persists the exact physical ware; Immersive Chefs returns any session-carried items and retries the interrupted job so process-local coordination state cannot duplicate or strand them.
 
@@ -559,6 +559,7 @@ Do not commit tokens, a gateway `current.json`, normal RimWorld configuration/sa
 
 ## Design and workflow references
 
+- [Immersive Chefs player settings, compatibility, saves, and troubleshooting](docs/ImmersiveChefs.md)
 - [Development workflow](docs/Development.md)
 - [Host tests, Harmony, loaded mods, and Defs](docs/TestingEnvironments.md)
 - [Dev Gateway security, API, and evidence](docs/Gateway.md)

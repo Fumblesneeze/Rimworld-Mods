@@ -151,7 +151,7 @@
 - [x] 8.1 BUILD: Run a clean Release build and guarded unit suite against the configured RimWorld 1.6 installation with zero warnings, errors, and zero-test false positives.
 - [ ] 8.2 IN-GAME: Run isolated minimal, all-supported, and incompatibility smoke matrices through the repo's gateway/FlaUI tooling, retaining state/log/screenshot evidence and restoring any normal configuration in `finally`.
 - [x] 8.3 REFACTOR: Perform independent correctness/test and KISS/compatibility reviews, fix accepted findings, and rerun the complete matrix.
-- [ ] 8.4 DOCUMENT: Update player settings, the exact food-ecosystem compatibility matrix, current-schema save behavior, known limitations, and troubleshooting documentation; state that pre-release migration/uninstall cleanup, ceramics/porcelain, food waste, and preservation are deferred.
+- [x] 8.4 DOCUMENT: Update player settings, the exact food-ecosystem compatibility matrix, current-schema save behavior, known limitations, and troubleshooting documentation; state that pre-release migration/uninstall cleanup, ceramics/porcelain, food waste, and preservation are deferred.
 
 ## 9. mods/ImmersiveChefs - Travel, guests, assisted feeding, and storage
 
