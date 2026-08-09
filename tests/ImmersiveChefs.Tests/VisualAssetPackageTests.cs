@@ -1,6 +1,8 @@
 using System.Drawing;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using NUnit.Framework;
 
@@ -11,6 +13,8 @@ public sealed class VisualAssetPackageTests
 {
     private const string CookwareTexturePath =
         "ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware";
+    private const string PrimitiveCookwareTexturePath =
+        "ImmersiveChefs/Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware";
     private const string PlateTexturePath =
         "ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate";
     private const string CutleryTexturePath =
@@ -634,6 +638,115 @@ public sealed class VisualAssetPackageTests
         });
 
         AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion: true);
+    }
+
+    [Test]
+    public void Primitive_cookware_uses_distinct_stuffable_art_with_permanent_wood_accents()
+    {
+        var root = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "Kitchenware.xml"));
+        var def = document.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_PrimitiveCookware");
+        var graphicData = def.Element("graphicData")!;
+        var diffusePath = TextureFile(root, PrimitiveCookwareTexturePath + ".png");
+        var maskPath = TextureFile(root, PrimitiveCookwareTexturePath + "_m.png");
+        var dirtyPath = TextureFile(root, PrimitiveCookwareTexturePath + "_Dirty.png");
+        var dirtyMaskPath = TextureFile(root, PrimitiveCookwareTexturePath + "_Dirty_m.png");
+        var modernPath = TextureFile(root, CookwareTexturePath + ".png");
+        var oldStoneVariantPath = TextureFile(root, CookwareTexturePath + "_Stone.png");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                (string?)graphicData.Element("texPath"),
+                Is.EqualTo(PrimitiveCookwareTexturePath));
+            Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("CutoutComplex"));
+            Assert.That(File.Exists(diffusePath), Is.True);
+            Assert.That(File.Exists(maskPath), Is.True);
+            Assert.That(File.Exists(dirtyPath), Is.True);
+            Assert.That(File.Exists(dirtyMaskPath), Is.True);
+            Assert.That(File.ReadAllBytes(diffusePath), Is.Not.EqualTo(File.ReadAllBytes(modernPath)));
+            Assert.That(File.ReadAllBytes(diffusePath), Is.Not.EqualTo(File.ReadAllBytes(oldStoneVariantPath)));
+            Assert.That(File.Exists(PackagedTextureFile(root, PrimitiveCookwareTexturePath + ".png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_m.png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_Dirty.png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_Dirty_m.png")), Is.True);
+        });
+
+        AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion: true);
+        AssertTransparentMatchingPair(dirtyPath, dirtyMaskPath, requireFixedBlackRegion: true);
+        AssertVisibleBounds(diffusePath, 170, 230, 170, 230);
+    }
+
+    [Test]
+    public void Preview_pipeline_packages_exact_sixteen_by_nine_images_below_one_mebibyte()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "scripts", "Build-ImmersiveChefsPreview.ps1");
+        var workshopPath = Path.Combine(
+            root, "mods", "ImmersiveChefs", "Release", "workshop", "preview-main.png");
+        var aboutPath = Path.Combine(root, "mods", "ImmersiveChefs", "About", "Preview.png");
+        var packagedAboutPath = Path.Combine(
+            root, "artifacts", "Mods", "fumblesneeze.immersivechefs", "About", "Preview.png");
+
+        Assert.That(File.Exists(scriptPath), Is.True, "The preview must have a deterministic renderer.");
+        var script = File.ReadAllText(scriptPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(script, Does.Contain("YOU DONKEY!"));
+            Assert.That(script, Does.Contain("IMMERSIVE CHEFS"));
+            Assert.That(script, Does.Contain("1280x720"));
+            Assert.That(script, Does.Contain("640x360"));
+            Assert.That(File.Exists(workshopPath), Is.True);
+            Assert.That(File.Exists(aboutPath), Is.True);
+            Assert.That(File.Exists(packagedAboutPath), Is.True);
+        });
+
+        AssertPreview(workshopPath, 1280, 720);
+        AssertPreview(aboutPath, 640, 360);
+
+        var temporaryRoot = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "immersive-chefs-preview-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryRoot);
+        try
+        {
+            var renderedWorkshop = Path.Combine(temporaryRoot, "workshop.png");
+            var renderedAbout = Path.Combine(temporaryRoot, "about.png");
+            var result = RunPreviewRenderer(scriptPath, renderedWorkshop, renderedAbout);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.Zero, result.StandardError);
+                Assert.That(
+                    File.ReadAllBytes(renderedWorkshop),
+                    Is.EqualTo(File.ReadAllBytes(workshopPath)),
+                    "The committed Workshop preview must be byte-for-byte reproducible.");
+                Assert.That(
+                    File.ReadAllBytes(renderedAbout),
+                    Is.EqualTo(File.ReadAllBytes(aboutPath)),
+                    "The committed About preview must be byte-for-byte reproducible.");
+            });
+
+            var sharedOutput = Path.Combine(temporaryRoot, "same.png");
+            var invalid = RunPreviewRenderer(scriptPath, sharedOutput, sharedOutput);
+            Assert.Multiple(() =>
+            {
+                Assert.That(invalid.ExitCode, Is.EqualTo(2));
+                Assert.That(invalid.StandardError, Does.Contain("distinct"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(temporaryRoot, recursive: true);
+        }
     }
 
     [Test]
@@ -1583,6 +1696,59 @@ public sealed class VisualAssetPackageTests
             Assert.That(visibleHeight, Is.InRange(minimumHeight, maximumHeight));
         });
     }
+
+    private static void AssertPreview(string path, int expectedWidth, int expectedHeight)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        using var bitmap = new Bitmap(path);
+        Assert.Multiple(() =>
+        {
+            Assert.That(bitmap.Width, Is.EqualTo(expectedWidth), path);
+            Assert.That(bitmap.Height, Is.EqualTo(expectedHeight), path);
+            Assert.That(new FileInfo(path).Length, Is.LessThan(1024 * 1024), path);
+        });
+    }
+
+    private static (int ExitCode, string StandardOutput, string StandardError) RunPreviewRenderer(
+        string scriptPath,
+        string workshopOutput,
+        string aboutOutput)
+    {
+        var start = new ProcessStartInfo
+        {
+            FileName = "powershell",
+            Arguments =
+                "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File " +
+                Quote(scriptPath) +
+                " -WorkshopOutput " +
+                Quote(workshopOutput) +
+                " -AboutOutput " +
+                Quote(aboutOutput) +
+                " -Output json",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        using var process = Process.Start(start)!;
+        var standardOutput = process.StandardOutput.ReadToEndAsync();
+        var standardError = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(30_000))
+        {
+            process.Kill();
+            process.WaitForExit();
+            Assert.Fail("Preview rendering exceeded 30 seconds.");
+        }
+
+        Task.WaitAll(standardOutput, standardError);
+        return (process.ExitCode, standardOutput.Result, standardError.Result);
+    }
+
+    private static string Quote(string value) => "\"" + value.Replace("\"", "\\\"") + "\"";
 
     private static string FindRepositoryRoot()
     {

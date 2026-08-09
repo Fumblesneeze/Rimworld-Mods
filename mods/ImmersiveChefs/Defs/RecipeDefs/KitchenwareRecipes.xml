@@ -9,11 +9,7 @@
     <effectWorking>Smith</effectWorking>
     <soundWorking>Recipe_Smith</soundWorking>
     <productHasIngredientStuff>true</productHasIngredientStuff>
-    <fixedIngredientFilter>
-      <categories>
-        <li>Root</li>
-      </categories>
-    </fixedIngredientFilter>
+    <fixedIngredientFilter />
   </RecipeDef>
 
   <RecipeDef Name="ImmersiveChefs_SmithingKitchenwareRecipeBase" ParentName="ImmersiveChefs_KitchenwareRecipeBase" Abstract="True">
@@ -26,10 +22,10 @@
     <description>Make one primitive cookware set from stone blocks, with wood for handles and utensils.</description>
     <jobString>Making primitive stone cookware.</jobString>
     <ingredients>
-      <li><filter><categories><li>Root</li></categories></filter><count>40</count></li>
-      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>5</count></li>
+      <li><filter /><count>5</count></li>
+      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>1</count></li>
     </ingredients>
-    <products><ImmersiveChefs_Cookware>1</ImmersiveChefs_Cookware></products>
+    <products><ImmersiveChefs_PrimitiveCookware>1</ImmersiveChefs_PrimitiveCookware></products>
     <recipeUsers><li>CraftingSpot</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cookware</product><fabricationTier>PrimitiveStone</fabricationTier></li></modExtensions>
   </RecipeDef>
@@ -39,7 +35,7 @@
     <label>make primitive stone plates x4</label>
     <description>Make four crude plates from stone blocks.</description>
     <jobString>Making primitive stone plates.</jobString>
-    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>24</count></li></ingredients>
+    <ingredients><li><filter /><count>4</count></li></ingredients>
     <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
     <recipeUsers><li>CraftingSpot</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>PrimitiveStone</fabricationTier></li></modExtensions>
@@ -52,8 +48,8 @@
     <jobString>Smithing cookware.</jobString>
     <workAmount>1500</workAmount>
     <ingredients>
-      <li><filter><categories><li>Root</li></categories></filter><count>50</count></li>
-      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>5</count></li>
+      <li><filter /><count>6</count></li>
+      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>1</count></li>
     </ingredients>
     <products><ImmersiveChefs_Cookware>1</ImmersiveChefs_Cookware></products>
     <recipeUsers><li>FueledSmithy</li><li>ElectricSmithy</li></recipeUsers>
@@ -69,8 +65,8 @@
     <effectWorking>Cook</effectWorking>
     <soundWorking>Recipe_Machining</soundWorking>
     <ingredients>
-      <li><filter><categories><li>Root</li></categories></filter><count>50</count></li>
-      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>5</count></li>
+      <li><filter /><count>6</count></li>
+      <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>1</count></li>
     </ingredients>
     <products><ImmersiveChefs_Cookware>1</ImmersiveChefs_Cookware></products>
     <recipeUsers><li>TableMachining</li></recipeUsers>
@@ -85,7 +81,7 @@
     <workAmount>1400</workAmount>
     <effectWorking>Cook</effectWorking>
     <soundWorking>Recipe_Machining</soundWorking>
-    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>30</count></li></ingredients>
+    <ingredients><li><filter /><count>6</count></li></ingredients>
     <products><ImmersiveChefs_ChefsKnife>1</ImmersiveChefs_ChefsKnife></products>
     <recipeUsers><li>TableMachining</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>ChefsKnife</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
@@ -96,7 +92,7 @@
     <label>make soft plates x4</label>
     <description>Make four plates from wood or another registered soft material.</description>
     <jobString>Making plates.</jobString>
-    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>20</count></li></ingredients>
+    <ingredients><li><filter /><count>4</count></li></ingredients>
     <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
     <recipeUsers><li>CraftingSpot</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>Soft</fabricationTier></li></modExtensions>
@@ -107,7 +103,7 @@
     <label>make soft cutlery x4</label>
     <description>Make four cutlery settings from wood or another registered soft material.</description>
     <jobString>Making cutlery.</jobString>
-    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
+    <ingredients><li><filter /><count>2</count></li></ingredients>
     <products><ImmersiveChefs_Cutlery>4</ImmersiveChefs_Cutlery></products>
     <recipeUsers><li>CraftingSpot</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cutlery</product><fabricationTier>Soft</fabricationTier></li></modExtensions>
@@ -118,7 +114,7 @@
     <label>smith metal plates x4</label>
     <description>Smith four plates from an intermediate metal.</description>
     <jobString>Smithing plates.</jobString>
-    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>20</count></li></ingredients>
+    <ingredients><li><filter /><count>4</count></li></ingredients>
     <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
     <recipeUsers><li>FueledSmithy</li><li>ElectricSmithy</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
@@ -129,7 +125,7 @@
     <label>smith metal cutlery x4</label>
     <description>Smith four cutlery settings from an intermediate metal.</description>
     <jobString>Smithing cutlery.</jobString>
-    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
+    <ingredients><li><filter /><count>2</count></li></ingredients>
     <products><ImmersiveChefs_Cutlery>4</ImmersiveChefs_Cutlery></products>
     <recipeUsers><li>FueledSmithy</li><li>ElectricSmithy</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cutlery</product><fabricationTier>Intermediate</fabricationTier></li></modExtensions>
@@ -142,7 +138,7 @@
     <jobString>Machining plates.</jobString>
     <effectWorking>Cook</effectWorking>
     <soundWorking>Recipe_Machining</soundWorking>
-    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>20</count></li></ingredients>
+    <ingredients><li><filter /><count>4</count></li></ingredients>
     <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
     <recipeUsers><li>TableMachining</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Plate</product><fabricationTier>Modern</fabricationTier></li></modExtensions>
@@ -155,7 +151,7 @@
     <jobString>Machining cutlery.</jobString>
     <effectWorking>Cook</effectWorking>
     <soundWorking>Recipe_Machining</soundWorking>
-    <ingredients><li><filter><categories><li>Root</li></categories></filter><count>12</count></li></ingredients>
+    <ingredients><li><filter /><count>2</count></li></ingredients>
     <products><ImmersiveChefs_Cutlery>4</ImmersiveChefs_Cutlery></products>
     <recipeUsers><li>TableMachining</li></recipeUsers>
     <modExtensions><li Class="ImmersiveChefs.KitchenwareRecipeExtension"><product>Cutlery</product><fabricationTier>Modern</fabricationTier></li></modExtensions>

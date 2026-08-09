@@ -106,11 +106,6 @@ public sealed class KitchenMaterialClassification
 
 public sealed class KitchenMaterialClassifier
 {
-    private static readonly HashSet<string> PrimitiveStoneDefs = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "BlocksSandstone", "BlocksGranite", "BlocksLimestone", "BlocksSlate", "BlocksMarble"
-    };
-
     private static readonly HashSet<string> WoodDefs = new(StringComparer.OrdinalIgnoreCase)
     {
         "WoodLog"
@@ -177,11 +172,10 @@ public sealed class KitchenMaterialClassifier
             return null;
         }
 
-        if (PrimitiveStoneDefs.Contains(material.DefName))
+        var hasExplicitKind = includes.TryGetValue(material.DefName, out var kind);
+        if (hasExplicitKind)
         {
-            return product is KitchenwareProduct.Cookware or KitchenwareProduct.Plate
-                ? new KitchenMaterialClassification(KitchenMaterialKind.PrimitiveStone, FabricationTier.PrimitiveStone)
-                : null;
+            return ClassifyExplicit(kind, product);
         }
 
         if (WoodDefs.Contains(material.DefName) || (material.IsWoody && !material.IsMetallic && !material.IsStony))
@@ -191,17 +185,26 @@ public sealed class KitchenMaterialClassifier
                 : null;
         }
 
-        var hasExplicitKind = includes.TryGetValue(material.DefName, out var kind);
-        if (!hasExplicitKind)
+        if (material.IsStony)
         {
-            if (!material.IsMetallic)
-            {
-                return null;
-            }
-
-            kind = InferMetalKind(material.DefName);
+            return product is KitchenwareProduct.Cookware or KitchenwareProduct.Plate
+                ? new KitchenMaterialClassification(KitchenMaterialKind.PrimitiveStone, FabricationTier.PrimitiveStone)
+                : null;
         }
 
+        if (!material.IsMetallic)
+        {
+            return null;
+        }
+
+        kind = InferMetalKind(material.DefName);
+        return ClassifyExplicit(kind, product);
+    }
+
+    private static KitchenMaterialClassification? ClassifyExplicit(
+        KitchenMaterialKind kind,
+        KitchenwareProduct product)
+    {
         if (kind is KitchenMaterialKind.Plastic or KitchenMaterialKind.Ceramic)
         {
             if (product is not (KitchenwareProduct.Plate or KitchenwareProduct.Cutlery))

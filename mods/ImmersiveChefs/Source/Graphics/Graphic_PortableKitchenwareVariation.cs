@@ -76,6 +76,18 @@ public sealed class Graphic_PortableKitchenwareVariation : Graphic_Single
             extension.product,
             material,
             dirty);
+        if (extension.baseGraphicMaterialKind == material)
+        {
+            family = family switch
+            {
+                PortableTextureFamily.Wood => PortableTextureFamily.Base,
+                PortableTextureFamily.WoodDirty => PortableTextureFamily.BaseDirty,
+                PortableTextureFamily.Stone => PortableTextureFamily.Base,
+                PortableTextureFamily.StoneDirty => PortableTextureFamily.BaseDirty,
+                _ => family
+            };
+        }
+
         return family == PortableTextureFamily.Base ? this : GraphicFor(family);
     }
 

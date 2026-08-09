@@ -12,3 +12,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ImmersiveChefs.EndToEndTests")]
 [assembly: InternalsVisibleTo("ImmersiveChefs.Ftv.InGame.IntegrationTests")]
 [assembly: InternalsVisibleTo("ImmersiveChefs.VisualProvenance.InGame.IntegrationTests")]
+[assembly: InternalsVisibleTo("ImmersiveChefs.AbsPolymer.InGame.IntegrationTests")]

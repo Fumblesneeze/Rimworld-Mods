@@ -6,6 +6,7 @@ public sealed class KitchenwareExtension : DefModExtension
 {
     public KitchenwareProduct product;
     public KitchenMaterialKind? fixedMaterialKind;
+    public KitchenMaterialKind? baseGraphicMaterialKind;
     public bool selfCleaning;
     public float plateEquivalent = 1f;
 }

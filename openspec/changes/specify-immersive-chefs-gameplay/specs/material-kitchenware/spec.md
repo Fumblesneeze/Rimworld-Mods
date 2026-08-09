@@ -60,27 +60,27 @@ Kitchenware recipes SHALL use the following baseline resource costs and outputs:
 
 | Product and fabrication route | Workstation | Ingredients | Output |
 | --- | --- | --- | --- |
-| Primitive stone cookware | `CraftingSpot` | 10 units of one eligible stony Stuff plus 2 wood | 1 cookware set |
-| Medieval cookware | `FueledSmithy` or `ElectricSmithy` | 20 units of one eligible intermediate metal Stuff plus 2 wood | 1 cookware set |
-| Modern cookware | `TableMachining` | 20 units of one eligible modern metal Stuff plus 2 wood | 1 cookware set |
-| Chef's knife set | `TableMachining` | 20 units of one eligible metal Stuff | 1 chef's knife set |
-| Soft or fixed plates | `CraftingSpot` | 8 units of wood, registered lead, or the fixed adobe ingredient | 4 plates |
-| Soft cutlery | `CraftingSpot` | 4 units of wood or registered lead | 4 cutlery settings |
-| Intermediate metal plates | `FueledSmithy` or `ElectricSmithy` | 8 units of one eligible intermediate metal Stuff | 4 plates |
-| Intermediate metal cutlery | `FueledSmithy` or `ElectricSmithy` | 4 units of one eligible intermediate metal Stuff | 4 cutlery settings |
-| Universal metal/plastic plates | `TableMachining` | 8 units of any eligible metal or registered plastic Stuff | 4 plates |
-| Universal metal/plastic cutlery | `TableMachining` | 4 units of any eligible metal or registered plastic Stuff | 4 cutlery settings |
+| Primitive stone cookware | `CraftingSpot` | 5 units of one eligible stony Stuff plus 1 wood | 1 cookware set |
+| Medieval cookware | `FueledSmithy` or `ElectricSmithy` | 6 units of one eligible intermediate metal Stuff plus 1 wood | 1 cookware set |
+| Modern cookware | `TableMachining` | 6 units of one eligible modern metal Stuff plus 1 wood | 1 cookware set |
+| Chef's knife set | `TableMachining` | 6 units of one eligible metal Stuff | 1 chef's knife set |
+| Soft or fixed plates | `CraftingSpot` | 4 units of wood, registered lead, or the fixed adobe ingredient | 4 plates |
+| Soft cutlery | `CraftingSpot` | 2 units of wood or registered lead | 4 cutlery settings |
+| Intermediate metal plates | `FueledSmithy` or `ElectricSmithy` | 4 units of one eligible intermediate metal Stuff | 4 plates |
+| Intermediate metal cutlery | `FueledSmithy` or `ElectricSmithy` | 2 units of one eligible intermediate metal Stuff | 4 cutlery settings |
+| Universal metal/plastic plates | `TableMachining` | 4 units of any eligible metal or registered plastic Stuff | 4 plates |
+| Universal metal/plastic cutlery | `TableMachining` | 2 units of any eligible metal or registered plastic Stuff | 4 cutlery settings |
 
-These costs SHALL remain benchmarked against same-era Core objects instead of being treated as isolated tuning constants: one Core wall consumes 5 material units and one Core steel knife consumes 30, so primitive cookware costs two wall-equivalents of stone, metal cookware costs four wall-equivalents and remains cheaper than a combat knife plus handles, and one place setting costs at most two material units. A future rebalance SHALL record its comparator Defs and ratios before changing the table.
+These costs SHALL remain benchmarked against same-era Core objects instead of being treated as isolated tuning constants: one Core wall consumes 5 material units and one Core steel knife consumes 30, so primitive cookware costs one wall-equivalent of stone, metal cookware costs only 1.2 wall-equivalents, a non-weapon chef's knife set costs 20% of the combat knife, and one complete place setting costs 1.5 material units. A future rebalance SHALL record its comparator Defs and ratios before changing the table.
 
 Every recipe SHALL use the completing pawn's Crafting skill to assign a vanilla `QualityCategory` to all items in its output batch. The wood in each cookware recipe SHALL represent handles, spatulas, and related non-metal parts rather than a second selectable Stuff. Every ingredient requirement SHALL use a semantic player label such as `any stony material`, `any intermediate metal`, or `wood`; no generated bill requirement MAY expose an internal category such as `root`. Plate and cutlery recipes SHALL have no Immersive Chefs research prerequisite: progression comes from access to `CraftingSpot`, vanilla `Smithing`/`Electricity` for the smithies, and vanilla `Machining` for `TableMachining`. The machining recipes SHALL remain a late universal route even for materials also available at an earlier station.
 
 #### Scenario: Craft one cookware abstraction
-- **WHEN** a pawn completes a cookware recipe using 20 stainless steel and 2 wood at a machining table
+- **WHEN** a pawn completes a cookware recipe using 6 stainless steel and 1 wood at a machining table
 - **THEN** exactly one stainless-steel cookware item is produced, it represents the full cookware set, and its quality is generated from that crafting operation
 
 #### Scenario: Begin with stone cookware
-- **WHEN** a tribal colony has no research and completes the primitive recipe using 10 granite blocks and 2 wood at `CraftingSpot`
+- **WHEN** a tribal colony has no research and completes the primitive recipe using 5 granite blocks and 1 wood at `CraftingSpot`
 - **THEN** it receives one Stuff-colored granite cookware set with the primitive performance and durability profile
 
 #### Scenario: Smith intermediate place settings
@@ -89,7 +89,7 @@ Every recipe SHALL use the completing pawn's Crafting skill to assign a vanilla 
 
 #### Scenario: Craft a batch of wood place settings
 - **WHEN** a pawn completes each wood place-setting recipe at a crafting spot
-- **THEN** 8 wood yields four wood plates and 4 wood yields four stackable wood cutlery settings, with one shared crafting quality per batch
+- **THEN** 4 wood yields four wood plates and 2 wood yields four stackable wood cutlery settings, with one shared crafting quality per batch
 
 ### Requirement: Portable culinary ware enters appropriate trader stock
 Every portable Immersive Chefs ware item that a player can reasonably carry and own SHALL be sellable. Trader stock SHALL remain low and thematic: neolithic bulk-goods traders MAY carry primitive cookware and inexpensive wood or stone tableware; outlander bulk-goods traders MAY carry ordinary cookware, plates, cutlery, and chef's knife sets; and exotic-goods traders MAY rarely carry glitterworld cookware. Prepared ingredients, dirty ware, installed buildings, and research-locked station/appliance products SHALL not be injected as ordinary stock merely to satisfy sellability. Stock generators SHALL preserve Stuff, quality, sanitation, and stack counts and SHALL not create optional-mod package coupling.

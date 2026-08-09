@@ -4,6 +4,10 @@
     <match Class="PatchOperationSequence">
       <operations>
         <li Class="PatchOperationReplace">
+          <xpath>/Defs/ThingDef[defName="ImmersiveChefs_PrimitiveCookware"]/graphicData/graphicClass</xpath>
+          <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
+        </li>
+        <li Class="PatchOperationReplace">
           <xpath>/Defs/ThingDef[defName="ImmersiveChefs_Cookware"]/graphicData/graphicClass</xpath>
           <value><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass></value>
         </li>

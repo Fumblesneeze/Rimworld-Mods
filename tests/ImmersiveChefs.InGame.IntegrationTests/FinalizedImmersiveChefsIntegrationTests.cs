@@ -272,6 +272,9 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var primitive = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePrimitiveCookware");
         var medieval = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeMedievalCookware");
         var modern = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeModernCookware");
+        var knife = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeChefsKnife");
+        var softPlates = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeSoftPlates");
+        var softCutlery = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeSoftCutlery");
 
         IntegrationAssert.NotNull(
             medieval.IngredientValueGetter,
@@ -281,13 +284,53 @@ public static class FinalizedImmersiveChefsIntegrationTests
             medieval.IngredientValueGetter!.GetType(),
             "Finalized kitchenware recipes must count resource units rather than vanilla Stuff volume.");
         IntegrationAssert.Equal(
-            50f,
+            6f,
             medieval.ingredients[0].GetBaseCount(),
-            "The finalized medieval cookware recipe must retain its fifty-unit material cost.");
+            "The finalized medieval cookware recipe must retain its Core-benchmarked six-unit material cost.");
+        IntegrationAssert.Equal(
+            5f,
+            primitive.ingredients[0].GetBaseCount(),
+            "Primitive cookware must cost one Core wall-equivalent of stony material.");
+        IntegrationAssert.Equal(
+            1f,
+            primitive.ingredients[1].GetBaseCount(),
+            "Primitive cookware must use one wood unit for its handles and utensils.");
+        IntegrationAssert.Equal(
+            6f,
+            modern.ingredients[0].GetBaseCount(),
+            "Modern cookware must cost six material units.");
+        IntegrationAssert.Equal(
+            6f,
+            knife.ingredients[0].GetBaseCount(),
+            "The non-weapon chef's knife set must cost one fifth of Core's thirty-unit combat knife.");
+        IntegrationAssert.Equal(
+            4f,
+            softPlates.ingredients[0].GetBaseCount(),
+            "Four plates must cost four material units.");
+        IntegrationAssert.Equal(
+            2f,
+            softCutlery.ingredients[0].GetBaseCount(),
+            "Four cutlery settings must cost two material units.");
         IntegrationAssert.Equal(
             1f,
             medieval.IngredientValueGetter.ValuePerUnitOf(ThingDefOf.Silver),
             "Small-volume silver must contribute one whole recipe unit per item.");
+        IntegrationAssert.Equal(
+            "5x any stony material",
+            primitive.IngredientValueGetter!.BillRequirementsDescription(primitive, primitive.ingredients[0]),
+            "The primitive recipe must expose semantic material text rather than an internal Root category.");
+        IntegrationAssert.Equal(
+            "1x wood",
+            primitive.IngredientValueGetter.BillRequirementsDescription(primitive, primitive.ingredients[1]),
+            "The handle requirement must be player-facing wood text.");
+        IntegrationAssert.Equal(
+            "6x any modern metal",
+            modern.IngredientValueGetter!.BillRequirementsDescription(modern, modern.ingredients[0]),
+            "The machining material requirement must remain semantic after finalization.");
+        IntegrationAssert.Equal(
+            "6x any eligible metal",
+            knife.IngredientValueGetter!.BillRequirementsDescription(knife, knife.ingredients[0]),
+            "The chef's knife requirement must describe both intermediate and modern eligible metals.");
         IntegrationAssert.Equal(
             WorkTypeDefOf.Crafting,
             primitive.requiredGiverWorkType,
@@ -352,6 +395,107 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedPrimitiveCookwareUsesEveryEligibleStonyStuffAndDistinctArt()
+    {
+        var primitiveDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_PrimitiveCookware");
+        var modernDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware");
+        var recipe = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePrimitiveCookware");
+        var stonyStuff = DefDatabase<ThingDef>.AllDefsListForReading
+            .Where(definition => definition.stuffProps?.categories?.Any(category => category.defName == "Stony") == true)
+            .ToArray();
+
+        IntegrationAssert.True(
+            stonyStuff.Length > 0,
+            "The finalized Def database must contain at least one stony Stuff comparator.");
+        IntegrationAssert.True(
+            stonyStuff.All(definition => recipe.ingredients[0].filter.Allows(definition)),
+            "The primitive cookware material filter must accept every non-excluded finalized Stony Stuff.");
+        IntegrationAssert.Equal(
+            primitiveDef,
+            recipe.products.Single().thingDef,
+            "The primitive bill must create the distinct primitive cookware Def.");
+        IntegrationAssert.True(
+            primitiveDef.stuffCategories?.Count == 1 &&
+            primitiveDef.stuffCategories[0].defName == "Stony",
+            "Primitive cookware must be stony-only.");
+        IntegrationAssert.True(
+            modernDef.stuffCategories?.Count == 1 &&
+            modernDef.stuffCategories[0].defName == "Metallic",
+            "Modern cookware must no longer expose the primitive stone path.");
+        IntegrationAssert.True(
+            !string.Equals(
+                primitiveDef.graphicData?.texPath,
+                modernDef.graphicData?.texPath,
+                StringComparison.Ordinal),
+            "Primitive cookware must own a distinct graphic path.");
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void FinalizedPortableWareIsSellableAndTraderStockRemainsLowAndThematic()
+    {
+        var primitive = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_PrimitiveCookware");
+        var cookware = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware");
+        var plate = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+        var cutlery = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery");
+        var knife = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_ChefsKnife");
+        var glitter = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_GlitterworldCookware");
+
+        foreach (var definition in new[] { primitive, cookware, plate, cutlery, knife, glitter })
+        {
+            IntegrationAssert.Equal(
+                Tradeability.All,
+                definition.tradeability,
+                $"Portable ware {definition.defName} must be buyable and sellable.");
+        }
+
+        AssertClassifiedStock("Caravan_Neolithic_BulkGoods", primitive, -3, 1);
+        AssertClassifiedStock("Base_Neolithic_Standard", primitive, -3, 1);
+        AssertClassifiedStock("Caravan_Outlander_BulkGoods", cookware, -2, 1);
+        AssertClassifiedStock("Base_Outlander_Standard", cookware, -2, 1);
+        AssertClassifiedStock("Orbital_BulkGoods", knife, -3, 1);
+        AssertSingleDefStock("Caravan_Outlander_Exotic", glitter, -3, 1);
+        AssertSingleDefStock("Orbital_Exotic", glitter, -3, 1);
+
+        static void AssertClassifiedStock(
+            string traderDefName,
+            ThingDef product,
+            int expectedMinimum,
+            int expectedMaximum)
+        {
+            var trader = DefDatabase<TraderKindDef>.GetNamed(traderDefName);
+            var generator = trader.stockGenerators
+                .OfType<StockGenerator_Kitchenware>()
+                .Single(candidate => candidate.HandlesThingDef(product));
+            var eligible = generator.EligibleStuffs().ToArray();
+            IntegrationAssert.True(
+                eligible.Length > 0,
+                $"{traderDefName} must resolve eligible Stuff for {product.defName}.");
+            IntegrationAssert.Equal(
+                expectedMinimum,
+                generator.countRange.min,
+                $"{traderDefName} must retain the declared low-stock lower bound for {product.defName}.");
+            IntegrationAssert.Equal(
+                expectedMaximum,
+                generator.countRange.max,
+                $"{traderDefName} must retain the declared low-stock upper bound for {product.defName}.");
+        }
+
+        static void AssertSingleDefStock(
+            string traderDefName,
+            ThingDef product,
+            int expectedMinimum,
+            int expectedMaximum)
+        {
+            var trader = DefDatabase<TraderKindDef>.GetNamed(traderDefName);
+            var generator = trader.stockGenerators
+                .OfType<StockGenerator_SingleDef>()
+                .Single(candidate => candidate.HandlesThingDef(product));
+            IntegrationAssert.Equal(expectedMinimum, generator.countRange.min, traderDefName);
+            IntegrationAssert.Equal(expectedMaximum, generator.countRange.max, traderDefName);
+        }
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedChefsKnifeIsBeltApparelWithoutSanitationState()
     {
         var knife = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_ChefsKnife");
@@ -378,9 +522,9 @@ public static class FinalizedImmersiveChefsIntegrationTests
             knife.comps.All(properties => properties.compClass != typeof(CompEquippable)),
             "A personal chef's knife must not finalize an equippable weapon component.");
         IntegrationAssert.Equal(
-            30f,
+            6f,
             recipe.ingredients[0].GetBaseCount(),
-            "The finalized machining recipe must consume thirty units of one eligible metal.");
+            "The finalized machining recipe must consume six units of one eligible metal.");
         IntegrationAssert.True(
             recipe.recipeUsers.Any(user => user.defName == "TableMachining"),
             "The chef's knife recipe must remain on the machining table.");
@@ -393,9 +537,9 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var extension = glitterworld.GetModExtension<KitchenwareExtension>();
 
         IntegrationAssert.Equal(
-            Tradeability.Buyable,
+            Tradeability.All,
             glitterworld.tradeability,
-            "Glitterworld cookware must be eligible for trader stock.");
+            "Glitterworld cookware must be eligible for trader stock and resale.");
         IntegrationAssert.True(
             glitterworld.generateCommonality > 0f,
             "Glitterworld cookware must remain eligible for generated trader and quest stock.");

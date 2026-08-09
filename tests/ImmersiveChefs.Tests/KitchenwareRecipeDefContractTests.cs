@@ -106,6 +106,177 @@ public sealed class KitchenwareRecipeDefContractTests
     }
 
     [Test]
+    public void Kitchenware_costs_are_core_benchmarked_and_filters_do_not_expose_root()
+    {
+        var document = XDocument.Load(Path.Combine(
+            FindRepositoryRoot(),
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "RecipeDefs",
+            "KitchenwareRecipes.xml"));
+        var expected = new Dictionary<string, float[]>
+        {
+            ["ImmersiveChefs_MakePrimitiveCookware"] = new[] { 5f, 1f },
+            ["ImmersiveChefs_MakePrimitivePlates"] = new[] { 4f },
+            ["ImmersiveChefs_MakeMedievalCookware"] = new[] { 6f, 1f },
+            ["ImmersiveChefs_MakeModernCookware"] = new[] { 6f, 1f },
+            ["ImmersiveChefs_MakeChefsKnife"] = new[] { 6f },
+            ["ImmersiveChefs_MakeSoftPlates"] = new[] { 4f },
+            ["ImmersiveChefs_MakeSoftCutlery"] = new[] { 2f },
+            ["ImmersiveChefs_SmithPlates"] = new[] { 4f },
+            ["ImmersiveChefs_SmithCutlery"] = new[] { 2f },
+            ["ImmersiveChefs_MachinePlates"] = new[] { 4f },
+            ["ImmersiveChefs_MachineCutlery"] = new[] { 2f }
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach (var pair in expected)
+            {
+                var recipe = document.Root!.Elements("RecipeDef")
+                    .Single(element => (string?)element.Element("defName") == pair.Key);
+                var actual = recipe.Element("ingredients")!.Elements("li")
+                    .Select(element => (float)element.Element("count")!)
+                    .ToArray();
+                Assert.That(actual, Is.EqualTo(pair.Value), pair.Key);
+            }
+
+            Assert.That(
+                document.Descendants("categories").Elements("li").Select(element => element.Value),
+                Does.Not.Contain("Root"));
+        });
+    }
+
+    [Test]
+    public void Primitive_cookware_is_a_distinct_stony_product_with_its_own_texture()
+    {
+        var root = FindRepositoryRoot();
+        var things = XDocument.Load(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "Kitchenware.xml"));
+        var recipes = XDocument.Load(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Defs", "RecipeDefs", "KitchenwareRecipes.xml"));
+        var primitive = things.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_PrimitiveCookware");
+        var modern = things.Root!.Elements("ThingDef")
+            .Single(element => (string?)element.Element("defName") == "ImmersiveChefs_Cookware");
+        var recipe = recipes.Root!.Elements("RecipeDef")
+            .Single(element =>
+                (string?)element.Element("defName") == "ImmersiveChefs_MakePrimitiveCookware");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                primitive.Element("stuffCategories")!.Elements("li").Select(element => element.Value),
+                Is.EqualTo(new[] { "Stony" }));
+            Assert.That(
+                modern.Element("stuffCategories")!.Elements("li").Select(element => element.Value),
+                Is.EqualTo(new[] { "Metallic" }));
+            Assert.That(
+                (string?)primitive.Element("graphicData")?.Element("texPath"),
+                Is.Not.EqualTo((string?)modern.Element("graphicData")?.Element("texPath")));
+            Assert.That(
+                (string?)recipe.Element("products")?.Element("ImmersiveChefs_PrimitiveCookware"),
+                Is.EqualTo("1"));
+        });
+    }
+
+    [Test]
+    public void Portable_ware_is_sellable_and_trader_stock_is_low_and_thematic()
+    {
+        var root = FindRepositoryRoot();
+        var things = XDocument.Load(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "Kitchenware.xml"));
+        var patches = XDocument.Load(Path.Combine(
+            root, "mods", "ImmersiveChefs", "Patches", "KitchenwareTraderStock.xml"));
+        var portableDefs = new[]
+        {
+            "ImmersiveChefs_PrimitiveCookware",
+            "ImmersiveChefs_Cookware",
+            "ImmersiveChefs_Plate",
+            "ImmersiveChefs_AdobePlate",
+            "ImmersiveChefs_Cutlery",
+            "ImmersiveChefs_GlitterworldCookware",
+            "ImmersiveChefs_ChefsKnife"
+        };
+        var kitchenwareBaseTradeability = (string?)things.Root!.Elements("ThingDef")
+            .Single(element =>
+                (string?)element.Attribute("Name") == "ImmersiveChefs_KitchenwareBase")
+            .Element("tradeability");
+        var expectedTraders = new[]
+        {
+            "Caravan_Neolithic_BulkGoods",
+            "Base_Neolithic_Standard",
+            "Caravan_Outlander_BulkGoods",
+            "Base_Outlander_Standard",
+            "Orbital_BulkGoods",
+            "Caravan_Outlander_Exotic",
+            "Orbital_Exotic"
+        };
+
+        var stockXml = patches.ToString(SaveOptions.DisableFormatting);
+        var stuffableStockGenerators = patches
+            .Descendants("li")
+            .Where(element =>
+                ((string?)element.Element("thingDef")) is
+                    "ImmersiveChefs_PrimitiveCookware" or
+                    "ImmersiveChefs_Cookware" or
+                    "ImmersiveChefs_Plate" or
+                    "ImmersiveChefs_Cutlery" or
+                    "ImmersiveChefs_ChefsKnife")
+            .ToArray();
+        Assert.Multiple(() =>
+        {
+            foreach (var defName in portableDefs)
+            {
+                var def = things.Root!.Elements("ThingDef")
+                    .Single(element => (string?)element.Element("defName") == defName);
+                var tradeability = (string?)def.Element("tradeability") ??
+                                   ((string?)def.Attribute("ParentName") == "ImmersiveChefs_KitchenwareBase"
+                                       ? kitchenwareBaseTradeability
+                                       : null);
+                Assert.That(tradeability, Is.EqualTo("All"), defName);
+            }
+
+            foreach (var trader in expectedTraders)
+            {
+                Assert.That(stockXml, Does.Contain($"defName=\"{trader}\""), trader);
+            }
+
+            Assert.That(stockXml, Does.Not.Contain("ImmersiveChefs_PreparedFood"));
+            Assert.That(stockXml, Does.Not.Contain("ImmersiveChefs_Dishwasher"));
+            Assert.That(stockXml, Does.Contain("ImmersiveChefs_GlitterworldCookware"));
+            Assert.That(stockXml, Does.Contain("-3~1"));
+            Assert.That(stuffableStockGenerators, Is.Not.Empty);
+            Assert.That(
+                stuffableStockGenerators.Select(element => (string?)element.Attribute("Class")),
+                Is.All.EqualTo("ImmersiveChefs.StockGenerator_Kitchenware"));
+            Assert.That(
+                stuffableStockGenerators.All(element =>
+                    element.Element("product") is not null &&
+                    element.Element("fabricationTiers")?.Elements("li").Any() == true),
+                Is.True,
+                "Stuffable trader stock must declare the same product/tier classifier boundary as recipes.");
+        });
+    }
+
+    [Test]
+    public void Chefs_knife_requirement_says_any_eligible_metal()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "mods",
+            "ImmersiveChefs",
+            "Source",
+            "Defs",
+            "IngredientValueGetter_Units.cs"));
+
+        Assert.That(source, Does.Contain("KitchenwareProduct.ChefsKnife"));
+        Assert.That(source, Does.Contain("\"any eligible metal\""));
+    }
+
+    [Test]
     public void Chefs_knife_is_a_belt_apparel_without_mutable_sanitation()
     {
         var document = XDocument.Load(Path.Combine(

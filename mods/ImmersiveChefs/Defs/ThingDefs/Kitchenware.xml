@@ -10,6 +10,7 @@
     <drawGUIOverlay>true</drawGUIOverlay>
     <rotatable>false</rotatable>
     <techLevel>Neolithic</techLevel>
+    <tradeability>All</tradeability>
     <statBases>
       <MaxHitPoints>160</MaxHitPoints>
       <DeteriorationRate>1</DeteriorationRate>
@@ -31,6 +32,34 @@
   </ThingDef>
 
   <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
+    <defName>ImmersiveChefs_PrimitiveCookware</defName>
+    <label>primitive stone cookware set</label>
+    <description>One rough carved-stone pot, shallow pan and lids with simple wooden handles and utensils. This complete primitive cookware set is slow, fragile and difficult to keep sanitary.</description>
+    <graphicData>
+      <texPath>ImmersiveChefs/Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(0.95,0.95)</drawSize>
+    </graphicData>
+    <stackLimit>1</stackLimit>
+    <stuffCategories>
+      <li>Stony</li>
+    </stuffCategories>
+    <statBases>
+      <MaxHitPoints>100</MaxHitPoints>
+      <MarketValue>18</MarketValue>
+      <Mass>4.5</Mass>
+    </statBases>
+    <modExtensions>
+      <li Class="ImmersiveChefs.KitchenwareExtension">
+        <product>Cookware</product>
+        <baseGraphicMaterialKind>PrimitiveStone</baseGraphicMaterialKind>
+        <plateEquivalent>4</plateEquivalent>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
     <defName>ImmersiveChefs_Cookware</defName>
     <label>cookware set</label>
     <description>One complete reusable kitchen set: a pot, pan, lids, handles and small utensils. Its material and craftsmanship affect cooking speed, cleanliness, comfort and culinary quality.</description>
@@ -43,7 +72,6 @@
     <stackLimit>1</stackLimit>
     <stuffCategories>
       <li>Metallic</li>
-      <li>Stony</li>
     </stuffCategories>
     <statBases>
       <MaxHitPoints>220</MaxHitPoints>
@@ -140,7 +168,7 @@
     </graphicData>
     <stackLimit>1</stackLimit>
     <techLevel>Spacer</techLevel>
-    <tradeability>Buyable</tradeability>
+    <tradeability>All</tradeability>
     <generateCommonality>0.08</generateCommonality>
     <statBases>
       <MaxHitPoints>480</MaxHitPoints>
@@ -181,6 +209,7 @@
     <thingCategories>
       <li>ApparelUtility</li>
     </thingCategories>
+    <tradeability>All</tradeability>
     <apparel>
       <countsAsClothingForNudity>false</countsAsClothingForNudity>
       <careIfWornByCorpse>false</careIfWornByCorpse>

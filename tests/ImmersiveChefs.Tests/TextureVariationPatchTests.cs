@@ -25,7 +25,7 @@ public sealed class TextureVariationPatchTests
     }
 
     [Test]
-    public void Portable_selector_patch_is_bounded_to_the_four_supported_defs()
+    public void Portable_selector_patch_is_bounded_to_the_five_supported_defs()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -47,6 +47,7 @@ public sealed class TextureVariationPatchTests
             .ToList();
         var expectedDefNames = new[]
         {
+            "ImmersiveChefs_PrimitiveCookware",
             "ImmersiveChefs_Cookware",
             "ImmersiveChefs_Plate",
             "ImmersiveChefs_Cutlery",

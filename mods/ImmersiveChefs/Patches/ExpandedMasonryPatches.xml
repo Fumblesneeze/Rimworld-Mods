@@ -15,7 +15,7 @@
           <workSkill>Crafting</workSkill>
           <requiredGiverWorkType>Crafting</requiredGiverWorkType>
           <effectWorking>ConstructMetal</effectWorking>
-          <ingredients><li><filter><thingDefs><li>EM_AdobeBricks</li></thingDefs></filter><count>20</count></li></ingredients>
+          <ingredients><li><filter><thingDefs><li>EM_AdobeBricks</li></thingDefs></filter><count>4</count></li></ingredients>
           <fixedIngredientFilter><thingDefs><li>EM_AdobeBricks</li></thingDefs></fixedIngredientFilter>
           <products><ImmersiveChefs_AdobePlate>4</ImmersiveChefs_AdobePlate></products>
           <recipeUsers><li>CraftingSpot</li></recipeUsers>

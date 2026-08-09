@@ -30,6 +30,7 @@ public static class TextureVariationFinalizedDefTests
 
         var expectedDefNames = new[]
         {
+            "ImmersiveChefs_PrimitiveCookware",
             "ImmersiveChefs_Cookware",
             "ImmersiveChefs_Plate",
             "ImmersiveChefs_Cutlery",
@@ -49,7 +50,7 @@ public static class TextureVariationFinalizedDefTests
         IntegrationAssert.Equal(
             string.Join("|", expectedDefNames.OrderBy(value => value, StringComparer.Ordinal)),
             string.Join("|", selected),
-            "The exact VTEX/VEF group must install the selector on exactly the four supported portable Defs.");
+            "The exact VTEX/VEF group must install the selector on exactly the five supported portable Defs.");
         foreach (var defName in expectedDefNames)
         {
             IntegrationAssert.Equal(

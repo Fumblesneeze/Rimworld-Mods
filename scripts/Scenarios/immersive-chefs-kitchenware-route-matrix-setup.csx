@@ -182,7 +182,7 @@ new System.Func<string>(() =>
             ThingDefOf.Silver,
             ThingDefOf.Silver
         };
-        var primaryCounts = new[] { 20, 12, 20, 50, 20, 12 };
+        var primaryCounts = new[] { 4, 2, 4, 6, 4, 2 };
         for (var index = 0; index < tables.Length; index++)
         {
             var primary = ThingMaker.MakeThing(primaryMaterials[index]);
@@ -194,7 +194,7 @@ new System.Func<string>(() =>
             if (index == 3)
             {
                 var handles = ThingMaker.MakeThing(ThingDefOf.WoodLog);
-                handles.stackCount = 5;
+                handles.stackCount = 1;
                 GenSpawn.Spawn(
                     handles,
                     new IntVec3(tables[index].Position.x - 2, 0, tables[index].Position.z - 2),

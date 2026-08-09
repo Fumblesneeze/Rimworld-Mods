@@ -1,0 +1,12 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.AbsPolymer.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "ludeon.rimworld",
+    "brrainz.harmony",
+    "Mlie.SimplySublimeABSPolymer",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

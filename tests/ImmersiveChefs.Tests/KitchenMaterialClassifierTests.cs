@@ -44,19 +44,22 @@ public sealed class KitchenMaterialClassifierTests
         var classifier = KitchenMaterialClassifier.CreateDefault();
 
         var classification = classifier.Classify(
-            new KitchenMaterialDescriptor(defName, isMetallic: defName != "WoodLog" && !defName.StartsWith("Blocks")),
+            new KitchenMaterialDescriptor(
+                defName,
+                isMetallic: defName != "WoodLog" && !defName.StartsWith("Blocks"),
+                isStony: defName.StartsWith("Blocks")),
             product);
 
         Assert.That(classification?.FabricationTier, Is.EqualTo(expectedTier));
     }
 
     [Test]
-    public void Broad_stony_and_overlapping_abs_tags_do_not_override_explicit_registration()
+    public void Broad_stony_is_primitive_but_explicit_registration_still_wins()
     {
         var classifier = KitchenMaterialClassifier.CreateDefault();
 
-        var jade = classifier.Classify(
-            new KitchenMaterialDescriptor("Jade", isStony: true),
+        var moddedStone = classifier.Classify(
+            new KitchenMaterialDescriptor("EM_ModdedStoneBlocks", isStony: true),
             KitchenwareProduct.Cookware);
         var abs = classifier.Classify(
             new KitchenMaterialDescriptor("ABSPolymer", isMetallic: true, isWoody: true, isStony: true),
@@ -64,9 +67,23 @@ public sealed class KitchenMaterialClassifierTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(jade, Is.Null);
+            Assert.That(moddedStone?.Kind, Is.EqualTo(KitchenMaterialKind.PrimitiveStone));
+            Assert.That(moddedStone?.FabricationTier, Is.EqualTo(FabricationTier.PrimitiveStone));
             Assert.That(abs?.Kind, Is.EqualTo(KitchenMaterialKind.Plastic));
             Assert.That(abs?.FabricationTier, Is.EqualTo(FabricationTier.Modern));
         });
+    }
+
+    [Test]
+    public void Explicit_exclusion_wins_over_stony_category()
+    {
+        var classifier = KitchenMaterialClassifier.CreateDefault();
+        classifier.Exclude("UnsafeModStone");
+
+        var classification = classifier.Classify(
+            new KitchenMaterialDescriptor("UnsafeModStone", isStony: true),
+            KitchenwareProduct.Plate);
+
+        Assert.That(classification, Is.Null);
     }
 }
