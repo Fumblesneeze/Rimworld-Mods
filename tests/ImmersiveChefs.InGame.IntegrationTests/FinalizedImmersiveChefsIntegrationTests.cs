@@ -343,6 +343,22 @@ public static class FinalizedImmersiveChefsIntegrationTests
             WorkTypeDefOf.Smithing,
             modern.requiredGiverWorkType,
             "Machining kitchenware must use the Smithing work giver.");
+
+        var recipesWithNoWoodSlot = DefDatabase<RecipeDef>.AllDefsListForReading
+            .Where(recipe => recipe.GetModExtension<KitchenwareRecipeExtension>() is not null)
+            .Where(recipe => recipe.ingredients is { Count: > 0 } &&
+                             recipe.ingredients.All(slot => !slot.filter.Allows(ThingDefOf.WoodLog)))
+            .ToArray();
+        IntegrationAssert.True(
+            recipesWithNoWoodSlot.Length > 0,
+            "The finalized kitchenware catalog must include recipes that do not accept wood.");
+        IntegrationAssert.True(
+            recipesWithNoWoodSlot.All(recipe =>
+                recipe.defaultIngredientFilter is not null &&
+                !recipe.defaultIngredientFilter.Allows(ThingDefOf.WoodLog) &&
+                recipe.fixedIngredientFilter is not null &&
+                !recipe.fixedIngredientFilter.Allows(ThingDefOf.WoodLog)),
+            "Default and fixed bill filters must not expose wood unless an actual ingredient slot accepts it.");
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
@@ -410,6 +426,10 @@ public static class FinalizedImmersiveChefsIntegrationTests
         IntegrationAssert.True(
             stonyStuff.All(definition => recipe.ingredients[0].filter.Allows(definition)),
             "The primitive cookware material filter must accept every non-excluded finalized Stony Stuff.");
+        IntegrationAssert.True(
+            recipe.defaultIngredientFilter is not null &&
+            stonyStuff.All(definition => recipe.defaultIngredientFilter.Allows(definition)),
+            "The finalized default bill filter must keep every Stony Stuff enabled for player selection.");
         IntegrationAssert.Equal(
             primitiveDef,
             recipe.products.Single().thingDef,
@@ -428,6 +448,10 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 modernDef.graphicData?.texPath,
                 StringComparison.Ordinal),
             "Primitive cookware must own a distinct graphic path.");
+        IntegrationAssert.Equal(
+            KitchenMaterialKind.PrimitiveStone,
+            primitiveDef.GetModExtension<KitchenwareExtension>()?.baseGraphicMaterialKind,
+            "Finalized primitive cookware must treat its distinct art as the base stone family.");
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]

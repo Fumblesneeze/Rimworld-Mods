@@ -18,9 +18,9 @@
 
   <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase">
     <defName>ImmersiveChefs_MakePrimitiveCookware</defName>
-    <label>make primitive stone cookware</label>
+    <label>make primitive stone cookware set</label>
     <description>Make one primitive cookware set from stone blocks, with wood for handles and utensils.</description>
-    <jobString>Making primitive stone cookware.</jobString>
+    <jobString>Making primitive stone cookware set.</jobString>
     <ingredients>
       <li><filter /><count>5</count></li>
       <li><filter><thingDefs><li>WoodLog</li></thingDefs></filter><count>1</count></li>
@@ -43,9 +43,9 @@
 
   <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_MakeMedievalCookware</defName>
-    <label>smith medieval cookware</label>
+    <label>smith medieval cookware set</label>
     <description>Smith one complete cookware set from an intermediate metal, with wood for handles and utensils.</description>
-    <jobString>Smithing cookware.</jobString>
+    <jobString>Smithing cookware set.</jobString>
     <workAmount>1500</workAmount>
     <ingredients>
       <li><filter /><count>6</count></li>
@@ -58,9 +58,9 @@
 
   <RecipeDef ParentName="ImmersiveChefs_SmithingKitchenwareRecipeBase">
     <defName>ImmersiveChefs_MakeModernCookware</defName>
-    <label>machine modern cookware</label>
+    <label>machine modern cookware set</label>
     <description>Machine one complete cookware set from a modern metal, with wood for handles and utensils.</description>
-    <jobString>Machining cookware.</jobString>
+    <jobString>Machining cookware set.</jobString>
     <workAmount>1800</workAmount>
     <effectWorking>Cook</effectWorking>
     <soundWorking>Recipe_Machining</soundWorking>

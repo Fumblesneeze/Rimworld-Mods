@@ -149,6 +149,64 @@ public sealed class KitchenwareRecipeDefContractTests
     }
 
     [Test]
+    public void Cookware_recipes_name_the_complete_set_consistently()
+    {
+        var document = XDocument.Load(Path.Combine(
+            FindRepositoryRoot(),
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "RecipeDefs",
+            "KitchenwareRecipes.xml"));
+        var cookwareRecipes = new[]
+        {
+            "ImmersiveChefs_MakePrimitiveCookware",
+            "ImmersiveChefs_MakeMedievalCookware",
+            "ImmersiveChefs_MakeModernCookware"
+        };
+
+        Assert.Multiple(() =>
+        {
+            foreach (var defName in cookwareRecipes)
+            {
+                var recipe = document.Root!.Elements("RecipeDef")
+                    .Single(element => (string?)element.Element("defName") == defName);
+                Assert.That(
+                    (string?)recipe.Element("label"),
+                    Does.Contain("cookware set"),
+                    $"{defName} label");
+                Assert.That(
+                    (string?)recipe.Element("jobString"),
+                    Does.Contain("cookware set"),
+                    $"{defName} job string");
+            }
+        });
+    }
+
+    [Test]
+    public void Player_facing_catalog_and_alert_text_names_cookware_sets()
+    {
+        var filters = XDocument.Load(Path.Combine(
+            FindRepositoryRoot(),
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "SpecialThingFilterDefs",
+            "KitchenwareSanitationFilters.xml"));
+        var descriptions = filters.Descendants("description")
+            .Select(element => element.Value)
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                KitchenwareAlertRuntime.ProductLabel(KitchenwareProduct.Cookware),
+                Is.EqualTo("cookware sets"));
+            Assert.That(descriptions, Is.All.Contains("cookware sets"));
+        });
+    }
+
+    [Test]
     public void Primitive_cookware_is_a_distinct_stony_product_with_its_own_texture()
     {
         var root = FindRepositoryRoot();
@@ -176,6 +234,13 @@ public sealed class KitchenwareRecipeDefContractTests
             Assert.That(
                 (string?)primitive.Element("graphicData")?.Element("texPath"),
                 Is.Not.EqualTo((string?)modern.Element("graphicData")?.Element("texPath")));
+            Assert.That(
+                (string?)primitive.Element("modExtensions")?
+                    .Elements("li")
+                    .Single(element =>
+                        (string?)element.Attribute("Class") == "ImmersiveChefs.KitchenwareExtension")
+                    .Element("baseGraphicMaterialKind"),
+                Is.EqualTo("PrimitiveStone"));
             Assert.That(
                 (string?)recipe.Element("products")?.Element("ImmersiveChefs_PrimitiveCookware"),
                 Is.EqualTo("1"));

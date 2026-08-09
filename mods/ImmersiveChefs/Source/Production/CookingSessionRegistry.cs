@@ -452,8 +452,8 @@ internal static class CookingSessionRegistry
             ReleaseReservations(pawn, job, cookware);
             ReleaseReservations(pawn, job, plates);
             missingReason = !cookwareAllowed && !platesAllowed
-                ? "clean cookware and plates"
-                : !cookwareAllowed ? "clean cookware" : "clean plates";
+                ? "a clean cookware set and clean plates"
+                : !cookwareAllowed ? "a clean cookware set" : "clean plates";
             return false;
         }
 

@@ -72,4 +72,26 @@ public sealed class KitchenwareAlertPolicyTests
                 inMentalState),
             Is.EqualTo(expected));
     }
+
+    [Test]
+    public void Alert_label_names_the_exact_missing_product_types()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                KitchenwareAlertRuntime.MissingLabel(new[] { KitchenwareProduct.Cookware }),
+                Is.EqualTo("Missing cookware sets"));
+            Assert.That(
+                KitchenwareAlertRuntime.MissingLabel(new[] { KitchenwareProduct.Plate }),
+                Is.EqualTo("Missing plates"));
+            Assert.That(
+                KitchenwareAlertRuntime.MissingLabel(new[]
+                {
+                    KitchenwareProduct.Plate,
+                    KitchenwareProduct.Cookware,
+                    KitchenwareProduct.Plate
+                }),
+                Is.EqualTo("Missing cookware sets and plates"));
+        });
+    }
 }

@@ -6,14 +6,15 @@ namespace ImmersiveChefs;
 
 public sealed class Alert_MissingKitchenware : Alert
 {
-    public override string GetLabel() => "Missing kitchenware";
+    public override string GetLabel() => KitchenwareAlertRuntime.MissingLabel(
+        KitchenwareAlertRuntime.CaptureMissingShortages().Select(shortage => shortage.Product));
 
     public override TaggedString GetExplanation()
     {
         var shortages = KitchenwareAlertRuntime.CaptureMissingShortages();
         if (shortages.Count == 0)
         {
-            return "An active strict cooking bill requires kitchenware that the colony does not own.";
+            return "An active strict cooking bill requires cookware sets or plates that the colony does not own.";
         }
 
         var products = shortages
@@ -138,11 +139,23 @@ internal static class KitchenwareAlertRuntime
 
     internal static string ProductLabel(KitchenwareProduct product) => product switch
     {
-        KitchenwareProduct.Cookware => "cookware",
+        KitchenwareProduct.Cookware => "cookware sets",
         KitchenwareProduct.Plate => "plates",
         KitchenwareProduct.Cutlery => "cutlery",
         _ => "kitchenware"
     };
+
+    internal static string MissingLabel(IEnumerable<KitchenwareProduct> products)
+    {
+        var labels = products
+            .Distinct()
+            .OrderBy(product => product)
+            .Select(ProductLabel)
+            .ToArray();
+        return labels.Length == 0
+            ? "Missing cookware sets or plates"
+            : "Missing " + string.Join(" and ", labels);
+    }
 
     private static void CaptureRequirements(KitchenwareAlertMapState state)
     {

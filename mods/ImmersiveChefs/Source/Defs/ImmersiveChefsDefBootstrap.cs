@@ -41,8 +41,13 @@ internal static class ImmersiveChefsDefBootstrap
             foreach (var thingDef in DefDatabase<ThingDef>.AllDefsListForReading)
             {
                 var allowed = AllowsMaterial(classifier, extension, thingDef);
+                var acceptedBySecondarySlot = recipe.ingredients
+                    .Skip(1)
+                    .Any(ingredient => ingredient.filter.Allows(thingDef));
+                var acceptedByAnySlot = allowed || acceptedBySecondarySlot;
                 materialFilter.SetAllow(thingDef, allowed);
-                recipe.fixedIngredientFilter?.SetAllow(thingDef, allowed || thingDef.defName == "WoodLog");
+                recipe.defaultIngredientFilter?.SetAllow(thingDef, acceptedByAnySlot);
+                recipe.fixedIngredientFilter?.SetAllow(thingDef, acceptedByAnySlot);
             }
         }
 
