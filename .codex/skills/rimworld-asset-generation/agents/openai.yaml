@@ -1,0 +1,4 @@
+interface:
+  display_name: "RimWorld Asset Generation"
+  short_description: "Generate and verify RimWorld-ready sprites"
+  default_prompt: "Use $rimworld-asset-generation to generate, normalize, package, and verify a RimWorld sprite."

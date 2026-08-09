@@ -69,6 +69,15 @@ docs/TddEvidence.md
 !.codex/skills/rimworld-mod-development/**
 !.codex/skills/release-rimworld-mods/
 !.codex/skills/release-rimworld-mods/**
+!.codex/skills/rimworld-asset-generation/
+.codex/skills/rimworld-asset-generation/**
+!.codex/skills/rimworld-asset-generation/SKILL.md
+!.codex/skills/rimworld-asset-generation/agents/
+!.codex/skills/rimworld-asset-generation/agents/openai.yaml
+!.codex/skills/rimworld-asset-generation/references/
+!.codex/skills/rimworld-asset-generation/references/*.md
+!.codex/skills/rimworld-asset-generation/scripts/
+!.codex/skills/rimworld-asset-generation/scripts/*.ps1
 .codex/cache/
 .codex/tmp/
 .codex/state/
