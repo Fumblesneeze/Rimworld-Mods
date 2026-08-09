@@ -122,25 +122,80 @@ removed after the decision and never enter the release package.
 
 ## Current directional building catalog
 
-Built-in image generation supplied the selected 2026-08-09 dishwasher, industrial dishwasher,
-ingredient-prep, sauce, meat, vegetable, pastry, and countertop-microwave designs plus one VTEX
-variant of each. The retained transparent working set and direction sheets live under ignored
-`artifacts/VisualAssets/DirectionalBuildings/20260809`; rejected single-view/glossy candidates do
-not ship. Green-key removal used border-derived mattes, despill, and a one-pixel edge contraction,
-followed by explicit checks for opaque corners, fringe pixels, and powered-looking blue cues.
-The base and alternate sheets are the two retained revised map-style candidates for each concept;
-both passed selection because they provide distinct, state-neutral layouts suitable for the two
-upstream-cyclable families. Earlier glossy/front-elevation candidates remain rejection history.
+### Measured Core projection baseline
 
-Every packaged family now uses `Graphic_Multi`/`Cutout` and exactly `_north`, `_east`, `_south`, and
-`_west` files. The 2x1 stations use 512x256 horizontal and 256x512 vertical canvases; the 3x1
-industrial dishwasher uses 768x256 and 256x768; the 3.5x1.5 prep station uses 840x360 and 360x840;
-the countertop microwave uses a square 512x512 canvas for every direction. North/east are coherent
-authored horizontal/vertical views; opposite faces preserve the same equipment layout and worker
-orientation. These buildings are fixed-color, so no Stuff mask is appropriate; portable Stuff-aware
-wares retain their separate masked paths described above.
+The 2026-08-09 directional correction was reopened after the generated cardinal frames proved
+geometrically inconsistent. A read-only Unity asset extraction sampled twelve actual Core
+production-bench families from RimWorld 1.6.4871 `resources.assets`; extracted rasters, contact
+sheets, and machine-readable extraction metadata remain ignored under
+`artifacts/VisualAssets/VanillaWorkbenchBaseline/20260809` and are not redistributed.
 
-The reviewed final base run is
+The measurements are durable in `docs/WorkbenchSpriteGeometry.xml`. Core's standard 3x1 benches
+use a 224x96 north/south canvas and 96x224 east canvas for a 3.5x1.5 Def draw size: exactly 64
+pixels per map cell. The clean hand-tailoring bench makes the shared construction especially clear.
+Its centered tabletop is exactly 192x64 pixels, matching the 3x1 footprint, and its visible apron,
+legs, or underframe occupy only the next 9 pixels on the **screen-bottom** edge. In the east frame,
+the tabletop becomes 64x192 but the same 9-pixel underframe remains at the image bottom; it does
+not rotate onto a long side. North and south likewise retain the same table/body projection while
+their shears and thread move for the opposite interaction side. The butcher, machining, smithing,
+stove, stonecutting, brewery, drug-lab, sculpting, and electric-tailoring samples confirm the same
+canvas/footprint scale while documenting legitimate equipment projections beyond the bare table.
+
+Immersive Chefs now derives two authoring templates at four times Core density. A 2x1 bench uses a
+2.5x1.5 draw canvas: 640x384 horizontally and 384x640 vertically, with a centered 512x256 or
+256x512 tabletop and a 36-pixel screen-bottom underframe. A 3x1 bench uses Core's 3.5x1.5 draw
+canvas: 896x384 or 384x896, with a centered 768x256 or 256x768 tabletop and the same 36-pixel
+underframe. These are hard composition guides, not merely resize targets. The table/body must be
+the same construction across opposite frames; only the tools, controls, racks, vessels, and other
+worker-facing equipment may rotate or change position.
+
+The previously promoted south/west correction was rejected because it violated this baseline. In
+particular, several east/west frames placed a cabinet face on a long side or image top, while several
+south frames changed the apparent table height or construction. No earlier catalog run or hash is
+acceptance evidence for the replacement below.
+
+Built-in image generation then produced fourteen new four-cardinal sheets: base and VTEX alternate
+families for the domestic and industrial dishwashers plus prep, sauce, meat, vegetable, and pastry
+stations. The prompt used the measured bare Core table as a projection reference, fixed one camera
+for all four cards, required the apron/underframe at screen bottom in every card, and explicitly
+forbade manufacturing vertical or opposite views by pixel rotation. North places the worker below,
+East left, South above, and West right. The countertop microwave was not regenerated in this pass:
+it is a one-cell appliance rather than a workbench and already has independently authored square
+cardinal art.
+
+The raw sheets and normalization pipeline remain ignored under
+`artifacts/VisualAssets/MeasuredCardinalRedraft/20260809`. Normalization uses direction-specific
+source crops, preserves only the connected workstation silhouette plus intentionally enclosed green
+ingredients, removes the chroma-connected background, neutralizes green outside preserved holes,
+removes detached fragments, and resizes the result into the exact measured tabletop/underframe
+bounds. A final two-pixel silhouette-edge decontamination pass produced zero green-dominant fringe
+pixels across all 56 frames. Dark- and light-background contacts and a fixed-pixels-per-cell Core
+comparison are retained in that directory.
+
+Every workbench family uses `Graphic_Multi`/`Cutout` with exactly `_north`, `_east`, `_south`, and
+`_west` files. A 2x1 station now uses a 640x384 horizontal or 384x640 vertical canvas and a
+`(2.5,1.5)` draw size. The 3x1 industrial dishwasher and prep station use 896x384 or 384x896 and a
+`(3.5,1.5)` draw size. Each opposite pair preserves one construction and fixed-camera
+foreshortening while its tools, controls, racks, and worker-facing details change projection. Most
+importantly, the `Rot4.South` view—with its interaction cell north of the footprint—keeps the
+screen-near underframe at image bottom instead of presenting a bench viewed from the impossible
+opposite camera. These buildings are fixed-color, so no Stuff mask is appropriate; portable
+Stuff-aware wares retain their separate masked paths described above.
+
+`docs/DirectionalSpriteApprovals.xml` pins the exact hashes and truthful world-space equipment
+order of all 56 visually reviewed frames and links them to `docs/WorkbenchSpriteGeometry.xml`.
+The first independent review rejected east/west equipment order in five families and then caught a
+mislabeled base-prep sink during the correction. The final high-resolution review confirmed that
+north/east preserve each canonical order, south/west reverse it, and every apron remains at screen
+bottom. The focused package RED is
+`artifacts/TestResults/20260809T122818689Z-30760-b04d8e17e1eb4579b06f80e0d6cc4a82`;
+it failed on the old 2x1 dishwasher draw size. A later focused RED at
+`artifacts/TestResults/20260809T162822134Z-59348-ac873c37815b4637ba123c7e7b5f31ce`
+rejected approvals without direction-specific equipment order. The reviewed final 20-test visual
+package GREEN is
+`artifacts/TestResults/20260809T165649825Z-24268-7ba9ce5a349544dbb2b5c520ee6aee1e`.
+
+The earlier base run is
 `artifacts/EndToEndRuns/Grouped/20260809T001235413Z`. In the exact Core/Harmony/Immersive
 Chefs/Gateway process it captured all eight concrete building Defs in four cardinal directions,
 including 32 close same-zoom custom/Core pairs, Production-menu icons and labels, and the microwave
@@ -150,6 +205,27 @@ visual mass beside Core benches. The same run then used the native Production `D
 path to turn an empty marked area into an east-facing dishwasher; screenshots 41 and 42 retain the
 before/action/after evidence. PID 50160 exited cleanly, the isolated config/preferences hashes were
 unchanged, the staged bundles were removed, and credentials were sanitized.
+
+That run predates the measured replacement and is retained as causal defect evidence, not
+acceptance for the corrected binaries.
+
+Final live acceptance is
+`artifacts/EndToEndRuns/Grouped/20260809T165805515Z`. The exact
+Core/Harmony/Immersive Chefs/Gateway process ran only
+`immersive-chefs.base-building-visual-catalog` on Release product DLL SHA-256
+`AFAB04A24BDA87E56B58F0AF9EE9B018E84AD1D95058E61E395A80DF34093F0E`.
+Screenshots 2–5 show the complete north/east/south/west custom rows beside same-facing Core
+benches; screenshots 9–40 retain each close same-zoom pair. The acting agent personally inspected
+the exact frames and observed consistent map scale, constant tabletop/apron depth, world-rotated
+equipment, and a screen-bottom apron in every south-facing/north-interaction dishwasher and station.
+
+Screenshots 41/42, 43/44, 45/46, and 47/48 are causal before/after pairs for native Production
+designator placement of north/east/south/west dishwashers beside same-facing machining benches.
+The after frames visibly contain the selected player-placed building where the before frame was
+empty; screenshot 46 also shows the interaction spot north of the south-facing dishwasher while its
+apron remains at screen bottom. The focused scenario passed, the retained log contained no error
+entries, PID 47552 exited normally through window close without force, normal config and preferences
+hashes were unchanged, credentials were sanitized, and the staged test bundle was removed.
 
 The following 2026-08-06 notes are retained only as rejection history for the superseded
 single-view package. They are not descriptions of the shipped building art.

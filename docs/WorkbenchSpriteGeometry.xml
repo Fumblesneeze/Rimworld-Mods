@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Read-only measurements from the locally installed RimWorld Core resources. Extracted Core
+  textures are ignored evidence and are never copied into this repository or the mod package.
+  Rectangles use x,y,width,height with an exclusive right/bottom edge.
+-->
+<workbenchSpriteGeometry gameVersion="1.6.4871 rev590"
+                             source="RimWorldWin64_Data/resources.assets"
+                             sourceSha256="7c0c69bde01910dde60205bc1417cd56a39e27affd2de36735dcedd6facd6155">
+  <coreBaseline footprint="3x1" drawSize="3.5,1.5" pixelsPerCell="64">
+    <projection direction="north-south"
+                canvas="224x96"
+                tabletop="16,16,192,64"
+                screenSouthUnderframe="16,80,192,9" />
+    <projection direction="east-west"
+                canvas="96x224"
+                tabletop="16,16,64,192"
+                screenSouthUnderframe="16,208,64,9" />
+    <samples>
+      <texture name="TableButcher" northAlpha="16,16,192,73" eastAlpha="16,16,64,201" southAlpha="16,16,192,73" />
+      <texture name="TableTailorHand" northAlpha="16,16,192,73" eastAlpha="16,16,64,201" southAlpha="16,16,192,73" canonicalBareTable="true" />
+      <texture name="TableTailorElectric" northAlpha="16,16,192,73" eastAlpha="16,16,64,201" southAlpha="16,8,192,81" />
+      <texture name="TableSmithingFueled" northAlpha="16,13,192,77" eastAlpha="12,15,69,202" southAlpha="16,13,192,76" />
+      <texture name="TableSmithingElectric" northAlpha="16,9,192,81" eastAlpha="15,15,66,201" southAlpha="16,21,192,68" />
+      <texture name="TableMachining" northAlpha="16,16,192,73" eastAlpha="16,16,64,201" southAlpha="16,16,192,73" />
+      <texture name="TableStoveElectric" northAlpha="15,12,193,77" eastAlpha="14,16,66,201" southAlpha="16,12,193,77" />
+      <texture name="TableStoveFueled" northAlpha="16,13,192,76" eastAlpha="12,16,68,201" southAlpha="16,13,192,76" />
+      <texture name="TableStonecutter" northAlpha="16,16,192,72" eastAlpha="14,16,66,201" southAlpha="16,9,192,79" />
+      <texture name="TableBrewery" northAlpha="12,6,202,86" eastAlpha="13,13,74,204" southAlpha="13,6,201,86" />
+      <texture name="TableDrugLab" northAlpha="16,3,192,86" eastAlpha="16,1,69,216" southAlpha="16,1,197,95" />
+      <texture name="TableSculpting" northAlpha="11,4,197,85" eastAlpha="7,9,77,208" southAlpha="16,16,200,73" />
+    </samples>
+  </coreBaseline>
+
+  <immersiveChefsTemplates pixelsPerCell="256" underframeDepth="36">
+    <template footprint="2x1"
+              drawSize="2.5,1.5"
+              horizontalCanvas="640x384"
+              horizontalTabletop="64,64,512,256"
+              horizontalScreenSouthUnderframe="64,320,512,36"
+              verticalCanvas="384x640"
+              verticalTabletop="64,64,256,512"
+              verticalScreenSouthUnderframe="64,576,256,36" />
+    <template footprint="3x1"
+              drawSize="3.5,1.5"
+              horizontalCanvas="896x384"
+              horizontalTabletop="64,64,768,256"
+              horizontalScreenSouthUnderframe="64,320,768,36"
+              verticalCanvas="384x896"
+              verticalTabletop="64,64,256,768"
+              verticalScreenSouthUnderframe="64,832,256,36" />
+  </immersiveChefsTemplates>
+</workbenchSpriteGeometry>

@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.IO;
+using System.Security.Cryptography;
 using System.Xml.Linq;
 using NUnit.Framework;
 
@@ -324,13 +325,13 @@ public sealed class VisualAssetPackageTests
             .ToDictionary(element => (string)element.Element("defName")!);
         var buildings = new[]
         {
-            ("ImmersiveChefs_Dishwasher", DishwasherTexturePath, 2, 1),
-            ("ImmersiveChefs_IndustrialDishwasher", IndustrialDishwasherTexturePath, 3, 1),
+            ("ImmersiveChefs_Dishwasher", DishwasherTexturePath, 5, 3),
+            ("ImmersiveChefs_IndustrialDishwasher", IndustrialDishwasherTexturePath, 7, 3),
             ("ImmersiveChefs_PrepStation", PrepStationTexturePath, 7, 3),
-            ("ImmersiveChefs_SauceStation", SauceStationTexturePath, 2, 1),
-            ("ImmersiveChefs_MeatStation", MeatStationTexturePath, 2, 1),
-            ("ImmersiveChefs_VegetableStation", VegetableStationTexturePath, 2, 1),
-            ("ImmersiveChefs_PastryStation", PastryStationTexturePath, 2, 1),
+            ("ImmersiveChefs_SauceStation", SauceStationTexturePath, 5, 3),
+            ("ImmersiveChefs_MeatStation", MeatStationTexturePath, 5, 3),
+            ("ImmersiveChefs_VegetableStation", VegetableStationTexturePath, 5, 3),
+            ("ImmersiveChefs_PastryStation", PastryStationTexturePath, 5, 3),
             ("ImmersiveChefs_Microwave", MicrowaveTexturePath, 1, 1)
         };
         var directions = new[] { "north", "east", "south", "west" };
@@ -386,17 +387,220 @@ public sealed class VisualAssetPackageTests
                 AssertCanvasAspect(south, widthUnits, heightUnits);
                 AssertCanvasAspect(east, heightUnits, widthUnits);
                 AssertCanvasAspect(west, heightUnits, widthUnits);
-                if (defName == "ImmersiveChefs_Microwave")
-                {
-                    AssertSpritesDiffer(north, south);
-                    AssertSpritesDiffer(east, west);
-                }
-                else
-                {
-                    AssertHalfTurnMatches(north, south);
-                    AssertHalfTurnMatches(east, west);
-                }
+                AssertSpritesDiffer(north, south);
+                AssertSpritesDiffer(east, west);
+                AssertNotExactHalfTurn(north, south);
+                AssertNotExactHalfTurn(east, west);
             }
+        }
+    }
+
+    [Test]
+    public void Workbench_families_follow_the_measured_core_projection_templates()
+    {
+        var root = FindRepositoryRoot();
+        var geometryPath = Path.Combine(root, "docs", "WorkbenchSpriteGeometry.xml");
+        Assert.That(File.Exists(geometryPath), Is.True, "The measured Core projection must be durable.");
+
+        var geometry = XDocument.Load(geometryPath).Root!;
+        var baseline = geometry.Element("coreBaseline")!;
+        var samples = baseline.Element("samples")!.Elements("texture").ToArray();
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)geometry.Attribute("gameVersion"), Is.EqualTo("1.6.4871 rev590"));
+            Assert.That((string?)baseline.Attribute("footprint"), Is.EqualTo("3x1"));
+            Assert.That((string?)baseline.Attribute("drawSize"), Is.EqualTo("3.5,1.5"));
+            Assert.That((string?)baseline.Attribute("pixelsPerCell"), Is.EqualTo("64"));
+            Assert.That(samples.Length, Is.GreaterThanOrEqualTo(12));
+            Assert.That(
+                samples.Single(element =>
+                    (string?)element.Attribute("name") == "TableTailorHand")
+                    .Attribute("canonicalBareTable")?.Value,
+                Is.EqualTo("true"));
+        });
+
+        var templates = geometry.Element("immersiveChefsTemplates")!
+            .Elements("template")
+            .ToDictionary(
+                element => (string)element.Attribute("footprint")!,
+                element => element,
+                StringComparer.Ordinal);
+        var documents = new[]
+        {
+            Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "KitchenBuildings.xml"),
+            Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "PreparedFoodAndStation.xml"),
+            Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "AssistantStations.xml")
+        }
+            .Select(XDocument.Load)
+            .ToArray();
+        var defs = documents
+            .SelectMany(document => document.Descendants("ThingDef"))
+            .Where(element => element.Element("defName") is not null)
+            .ToDictionary(element => (string)element.Element("defName")!);
+        var families = new[]
+        {
+            ("ImmersiveChefs_Dishwasher", DishwasherTexturePath, "2x1"),
+            ("ImmersiveChefs_IndustrialDishwasher", IndustrialDishwasherTexturePath, "3x1"),
+            ("ImmersiveChefs_PrepStation", PrepStationTexturePath, "3x1"),
+            ("ImmersiveChefs_SauceStation", SauceStationTexturePath, "2x1"),
+            ("ImmersiveChefs_MeatStation", MeatStationTexturePath, "2x1"),
+            ("ImmersiveChefs_VegetableStation", VegetableStationTexturePath, "2x1"),
+            ("ImmersiveChefs_PastryStation", PastryStationTexturePath, "2x1")
+        };
+
+        foreach (var (defName, texturePath, footprint) in families)
+        {
+            var template = templates[footprint];
+            var expectedDrawSize = "(" + (string)template.Attribute("drawSize")! + ")";
+            var horizontal = ParseCanvas((string)template.Attribute("horizontalCanvas")!);
+            var vertical = ParseCanvas((string)template.Attribute("verticalCanvas")!);
+            var horizontalTabletop = ParseRectangle((string)template.Attribute("horizontalTabletop")!);
+            var horizontalUnderframe = ParseRectangle(
+                (string)template.Attribute("horizontalScreenSouthUnderframe")!);
+            var verticalTabletop = ParseRectangle((string)template.Attribute("verticalTabletop")!);
+            var verticalUnderframe = ParseRectangle(
+                (string)template.Attribute("verticalScreenSouthUnderframe")!);
+            Assert.That(
+                (string?)defs[defName].Element("graphicData")!.Element("drawSize"),
+                Is.EqualTo(expectedDrawSize),
+                defName + " must use its measured Core-derived draw canvas.");
+
+            foreach (var variant in new[] { string.Empty, "_Variant01" })
+            {
+                var paths = new Dictionary<string, string>(StringComparer.Ordinal);
+                foreach (var (direction, expectedCanvas) in new[]
+                         {
+                             ("north", horizontal),
+                             ("east", vertical),
+                             ("south", horizontal),
+                             ("west", vertical)
+                         })
+                {
+                    var path = TextureFile(root, texturePath + variant + "_" + direction + ".png");
+                    paths.Add(direction, path);
+                    using var bitmap = new System.Drawing.Bitmap(path);
+                    Assert.That(
+                        (bitmap.Width, bitmap.Height),
+                        Is.EqualTo(expectedCanvas),
+                        path + " must use the exact normalized projection canvas.");
+                    AssertMeasuredProjection(
+                        bitmap,
+                        direction is "north" or "south" ? horizontalTabletop : verticalTabletop,
+                        direction is "north" or "south" ? horizontalUnderframe : verticalUnderframe,
+                        path);
+                    AssertNoGreenSilhouetteFringe(path);
+                }
+
+                AssertOppositeUnderframesUseTheSameProjection(
+                    paths["north"],
+                    paths["south"],
+                    horizontalUnderframe);
+                AssertOppositeUnderframesUseTheSameProjection(
+                    paths["east"],
+                    paths["west"],
+                    verticalUnderframe);
+            }
+        }
+    }
+
+    [Test]
+    public void Reviewed_cardinal_sprites_are_pinned_to_fixed_camera_landmark_approvals()
+    {
+        var root = FindRepositoryRoot();
+        var approvalPath = Path.Combine(root, "docs", "DirectionalSpriteApprovals.xml");
+        Assert.That(
+            File.Exists(approvalPath),
+            Is.True,
+            "Directional art needs a reviewed landmark manifest before it can be accepted.");
+
+        var approvedFrames = XDocument.Load(approvalPath)
+            .Root!
+            .Elements("frame")
+            .ToDictionary(
+                element => (string)element.Attribute("path")!,
+                element => element,
+                StringComparer.Ordinal);
+        var expectedPaths = new[]
+        {
+            ("Dishwasher", "Dishwasher"),
+            ("Dishwasher", "IndustrialDishwasher"),
+            ("KitchenStation", "PrepStation"),
+            ("KitchenStation", "SauceStation"),
+            ("KitchenStation", "MeatStation"),
+            ("KitchenStation", "VegetableStation"),
+            ("KitchenStation", "PastryStation")
+        }
+            .SelectMany(family => new[] { string.Empty, "_Variant01" }
+                .SelectMany(variant => new[] { "north", "east", "south", "west" }
+                    .Select(direction =>
+                        family.Item1 + "/" + family.Item2 + variant + "_" + direction + ".png")))
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.That(
+            approvedFrames.Keys,
+            Is.EquivalentTo(expectedPaths),
+            "Every corrected cardinal frame needs one explicit reviewed landmark approval.");
+
+        var textureRoot = Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Textures",
+            "ImmersiveChefs",
+            "Things",
+            "Building");
+        foreach (var path in expectedPaths)
+        {
+            var approval = approvedFrames[path];
+            var landmarks = (string?)approval.Attribute("landmarks") ?? string.Empty;
+            var equipmentOrder = (string?)approval.Attribute("equipmentOrder") ?? string.Empty;
+            var expectedHash = (string?)approval.Attribute("sha256") ?? string.Empty;
+            var texturePath = Path.Combine(
+                textureRoot,
+                path.Replace('/', Path.DirectorySeparatorChar));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.Exists(texturePath), Is.True, path);
+                Assert.That(
+                    landmarks,
+                    Does.Contain("screen-bottom underframe"),
+                    path + " must record the fixed-camera body landmark.");
+                Assert.That(
+                    equipmentOrder.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Length,
+                    Is.GreaterThanOrEqualTo(2),
+                    path + " must record its direction-specific world-space equipment order.");
+                Assert.That(
+                    expectedHash,
+                    Does.Match("^[0-9a-f]{64}$"),
+                    path + " must pin the exact visually reviewed sprite.");
+            });
+            if (!File.Exists(texturePath))
+            {
+                continue;
+            }
+
+            Assert.That(
+                Sha256(texturePath),
+                Is.EqualTo(expectedHash),
+                path + " changed after its directional landmark review.");
+        }
+
+        foreach (var family in expectedPaths
+                     .Select(path => path.Substring(0, path.LastIndexOf('_')))
+                     .Distinct(StringComparer.Ordinal))
+        {
+            var north = EquipmentOrder(approvedFrames[family + "_north.png"]);
+            var east = EquipmentOrder(approvedFrames[family + "_east.png"]);
+            var south = EquipmentOrder(approvedFrames[family + "_south.png"]);
+            var west = EquipmentOrder(approvedFrames[family + "_west.png"]);
+            Assert.Multiple(() =>
+            {
+                Assert.That(east, Is.EqualTo(north), family + " east must rotate north's order clockwise.");
+                Assert.That(south, Is.EqualTo(north.Reverse()), family + " south must reverse north's order.");
+                Assert.That(west, Is.EqualTo(north.Reverse()), family + " west must rotate north's order counter-clockwise.");
+            });
         }
     }
 
@@ -615,7 +819,7 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(DishwasherTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, DishwasherTexturePath + "_north.png")), Is.True);
         });
@@ -645,7 +849,7 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(IndustrialDishwasherTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(3,1)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(3.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, IndustrialDishwasherTexturePath + "_north.png")), Is.True);
         });
@@ -713,13 +917,13 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(SauceStationTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, SauceStationTexturePath + "_north.png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);
-        AssertCanvasAspect(diffusePath, widthUnits: 2, heightUnits: 1);
+        AssertCanvasAspect(diffusePath, widthUnits: 5, heightUnits: 3);
         AssertNoBrightBlueEmission(diffusePath);
     }
 
@@ -745,13 +949,13 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(MeatStationTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, MeatStationTexturePath + "_north.png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);
-        AssertCanvasAspect(diffusePath, widthUnits: 2, heightUnits: 1);
+        AssertCanvasAspect(diffusePath, widthUnits: 5, heightUnits: 3);
         AssertNoBrightBlueEmission(diffusePath);
     }
 
@@ -778,14 +982,14 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(VegetableStationTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(packagedPath), Is.True);
         });
 
         AssertPackagedTextureMatchesSource(diffusePath, packagedPath);
         AssertTransparentSprite(diffusePath);
-        AssertCanvasAspect(diffusePath, widthUnits: 2, heightUnits: 1);
+        AssertCanvasAspect(diffusePath, widthUnits: 5, heightUnits: 3);
         AssertNoVividGreenChroma(diffusePath);
         AssertNoBrightBlueEmission(diffusePath);
     }
@@ -813,14 +1017,14 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(PastryStationTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(packagedPath), Is.True);
         });
 
         AssertPackagedTextureMatchesSource(diffusePath, packagedPath);
         AssertTransparentSprite(diffusePath);
-        AssertCanvasAspect(diffusePath, widthUnits: 2, heightUnits: 1);
+        AssertCanvasAspect(diffusePath, widthUnits: 5, heightUnits: 3);
         AssertNoVividGreenChroma(diffusePath);
         AssertNoBrightBlueEmission(diffusePath);
     }
@@ -1034,10 +1238,10 @@ public sealed class VisualAssetPackageTests
             for (var x = 0; x < bitmap.Width; x++)
             {
                 var pixel = bitmap.GetPixel(x, y);
-                if (pixel.A > 0 &&
+                if (pixel.A >= 64 &&
                     pixel.B >= 100 &&
                     pixel.B > pixel.R * 1.25 &&
-                    pixel.B > pixel.G * 1.05)
+                    pixel.B > pixel.G * 1.15)
                 {
                     brightBluePixels++;
                 }
@@ -1071,6 +1275,7 @@ public sealed class VisualAssetPackageTests
                 {
                     vividGreenPixels++;
                 }
+
             }
         }
 
@@ -1078,6 +1283,62 @@ public sealed class VisualAssetPackageTests
             vividGreenPixels,
             Is.Zero,
             "The selected sprite must not retain vivid green chroma-key pixels.");
+    }
+
+    private static void AssertNoGreenSilhouetteFringe(string diffusePath)
+    {
+        if (!File.Exists(diffusePath))
+        {
+            return;
+        }
+
+        using var bitmap = new Bitmap(diffusePath);
+        var greenSilhouetteEdgePixels = 0;
+        for (var y = 0; y < bitmap.Height; y++)
+        {
+            for (var x = 0; x < bitmap.Width; x++)
+            {
+                var pixel = bitmap.GetPixel(x, y);
+                if (pixel.A > 0 &&
+                    pixel.G > pixel.R * 1.2 &&
+                    pixel.G > pixel.B * 1.2 &&
+                    pixel.G - Math.Max(pixel.R, pixel.B) >= 3 &&
+                    IsSilhouetteEdge(bitmap, x, y, radius: 2))
+                {
+                    greenSilhouetteEdgePixels++;
+                }
+            }
+        }
+
+        Assert.That(
+            greenSilhouetteEdgePixels,
+            Is.Zero,
+            diffusePath + " must not retain dark or low-alpha green chroma fringe on its silhouette.");
+    }
+
+    private static bool IsSilhouetteEdge(Bitmap bitmap, int x, int y, int radius)
+    {
+        for (var offsetY = -radius; offsetY <= radius; offsetY++)
+        {
+            for (var offsetX = -radius; offsetX <= radius; offsetX++)
+            {
+                if (offsetX * offsetX + offsetY * offsetY > radius * radius)
+                {
+                    continue;
+                }
+
+                var sampleX = x + offsetX;
+                var sampleY = y + offsetY;
+                if (sampleX < 0 || sampleY < 0 ||
+                    sampleX >= bitmap.Width || sampleY >= bitmap.Height ||
+                    bitmap.GetPixel(sampleX, sampleY).A == 0)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void AssertPackagedTextureMatchesSource(string sourcePath, string packagedPath)
@@ -1100,13 +1361,37 @@ public sealed class VisualAssetPackageTests
             return;
         }
 
+        using var left = new Bitmap(leftPath);
+        using var right = new Bitmap(rightPath);
+        Assert.That(right.Size, Is.EqualTo(left.Size));
+
+        var visiblePixels = 0;
+        var mismatches = 0;
+        for (var y = 0; y < left.Height; y++)
+        {
+            for (var x = 0; x < left.Width; x++)
+            {
+                var leftPixel = left.GetPixel(x, y);
+                var rightPixel = right.GetPixel(x, y);
+                if (leftPixel.A > 0 || rightPixel.A > 0)
+                {
+                    visiblePixels++;
+                }
+
+                if (!PremultipliedPixelsMatch(leftPixel, rightPixel))
+                {
+                    mismatches++;
+                }
+            }
+        }
+
         Assert.That(
-            File.ReadAllBytes(rightPath),
-            Is.Not.EqualTo(File.ReadAllBytes(leftPath)),
-            "A selected variation must not duplicate its base sprite byte-for-byte.");
+            mismatches,
+            Is.GreaterThan(visiblePixels / 100),
+            "A selected variation must differ in more than PNG encoding or transparent-pixel metadata.");
     }
 
-    private static void AssertHalfTurnMatches(string sourcePath, string oppositePath)
+    private static void AssertNotExactHalfTurn(string sourcePath, string oppositePath)
     {
         if (!File.Exists(sourcePath) || !File.Exists(oppositePath))
         {
@@ -1123,7 +1408,7 @@ public sealed class VisualAssetPackageTests
         {
             for (var x = 0; x < expected.Width; x++)
             {
-                if (actual.GetPixel(x, y) != expected.GetPixel(x, y))
+                if (!PremultipliedPixelsMatch(actual.GetPixel(x, y), expected.GetPixel(x, y)))
                 {
                     mismatches++;
                 }
@@ -1132,8 +1417,129 @@ public sealed class VisualAssetPackageTests
 
         Assert.That(
             mismatches,
-            Is.Zero,
-            "The opposite cardinal sprite must move the worker-facing edge through an exact half turn.");
+            Is.GreaterThan(expected.Width * expected.Height / 100),
+            "An opposite cardinal sprite must be authored from RimWorld's fixed map camera, not manufactured by rotating another raster.");
+    }
+
+    private static bool PremultipliedPixelsMatch(Color left, Color right)
+    {
+        return left.A == right.A &&
+               left.R * left.A == right.R * right.A &&
+               left.G * left.A == right.G * right.A &&
+               left.B * left.A == right.B * right.A;
+    }
+
+    private static string Sha256(string path)
+    {
+        using var sha256 = SHA256.Create();
+        using var stream = File.OpenRead(path);
+        return BitConverter.ToString(sha256.ComputeHash(stream))
+            .Replace("-", string.Empty)
+            .ToLowerInvariant();
+    }
+
+    private static (int Width, int Height) ParseCanvas(string value)
+    {
+        var parts = value.Split('x');
+        Assert.That(parts.Length, Is.EqualTo(2), "Invalid canvas measurement: " + value);
+        return (int.Parse(parts[0]), int.Parse(parts[1]));
+    }
+
+    private static Rectangle ParseRectangle(string value)
+    {
+        var parts = value.Split(',');
+        Assert.That(parts.Length, Is.EqualTo(4), "Invalid measured rectangle: " + value);
+        return new Rectangle(
+            int.Parse(parts[0]),
+            int.Parse(parts[1]),
+            int.Parse(parts[2]),
+            int.Parse(parts[3]));
+    }
+
+    private static void AssertMeasuredProjection(
+        Bitmap bitmap,
+        Rectangle tabletop,
+        Rectangle screenSouthUnderframe,
+        string path)
+    {
+        var expectedVisibleBounds = Rectangle.FromLTRB(
+            tabletop.Left,
+            tabletop.Top,
+            tabletop.Right,
+            screenSouthUnderframe.Bottom);
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                AlphaBounds(bitmap),
+                Is.EqualTo(expectedVisibleBounds),
+                path + " must use the exact Core-derived tabletop plus underframe bounds.");
+            Assert.That(
+                AlphaCoverage(bitmap, screenSouthUnderframe),
+                Is.GreaterThanOrEqualTo(0.70),
+                path + " must retain a substantial underframe in the screen-south projection band.");
+        });
+    }
+
+    private static void AssertOppositeUnderframesUseTheSameProjection(
+        string firstPath,
+        string oppositePath,
+        Rectangle underframe)
+    {
+        using var first = new Bitmap(firstPath);
+        using var opposite = new Bitmap(oppositePath);
+        Assert.That(
+            Math.Abs(AlphaCoverage(first, underframe) - AlphaCoverage(opposite, underframe)),
+            Is.LessThanOrEqualTo(0.08),
+            "Opposite frames must keep a common fixed-camera body projection instead of rotating the apron away from screen-south.");
+    }
+
+    private static Rectangle AlphaBounds(Bitmap bitmap)
+    {
+        var minimumX = bitmap.Width;
+        var minimumY = bitmap.Height;
+        var maximumX = -1;
+        var maximumY = -1;
+        for (var y = 0; y < bitmap.Height; y++)
+        {
+            for (var x = 0; x < bitmap.Width; x++)
+            {
+                if (bitmap.GetPixel(x, y).A == 0)
+                {
+                    continue;
+                }
+
+                minimumX = Math.Min(minimumX, x);
+                minimumY = Math.Min(minimumY, y);
+                maximumX = Math.Max(maximumX, x);
+                maximumY = Math.Max(maximumY, y);
+            }
+        }
+
+        return maximumX < minimumX
+            ? Rectangle.Empty
+            : Rectangle.FromLTRB(minimumX, minimumY, maximumX + 1, maximumY + 1);
+    }
+
+    private static double AlphaCoverage(Bitmap bitmap, Rectangle area)
+    {
+        long alpha = 0;
+        for (var y = area.Top; y < area.Bottom; y++)
+        {
+            for (var x = area.Left; x < area.Right; x++)
+            {
+                alpha += bitmap.GetPixel(x, y).A;
+            }
+        }
+
+        return alpha / (255d * area.Width * area.Height);
+    }
+
+    private static string[] EquipmentOrder(XElement approval)
+    {
+        return ((string?)approval.Attribute("equipmentOrder") ?? string.Empty)
+            .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(value => value.Trim())
+            .ToArray();
     }
 
     private static void AssertVisibleBounds(

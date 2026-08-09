@@ -29,7 +29,7 @@
     <defName>ImmersiveChefs_Dishwasher</defName>
     <label>dishwasher</label>
     <description>A domestic powered dishwasher. It preserves the identity, material, quality and durability of up to 16 place settings while a cycle pauses safely through power loss.</description>
-    <graphicData><texPath>ImmersiveChefs/Things/Building/Dishwasher/Dishwasher</texPath><graphicClass>Graphic_Multi</graphicClass><shaderType>Cutout</shaderType><drawSize>(2,1)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Building/Dishwasher/Dishwasher</texPath><graphicClass>Graphic_Multi</graphicClass><shaderType>Cutout</shaderType><drawSize>(2.5,1.5)</drawSize></graphicData>
     <size>(2,1)</size>
     <costList><Steel>90</Steel><ComponentIndustrial>3</ComponentIndustrial></costList>
     <researchPrerequisites><li>ImmersiveChefs_Dishwashing</li></researchPrerequisites>
@@ -40,7 +40,7 @@
     <defName>ImmersiveChefs_IndustrialDishwasher</defName>
     <label>industrial dishwasher</label>
     <description>A high-throughput powered dishwasher with capacity for 64 place settings.</description>
-    <graphicData><texPath>ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher</texPath><graphicClass>Graphic_Multi</graphicClass><shaderType>Cutout</shaderType><drawSize>(3,1)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher</texPath><graphicClass>Graphic_Multi</graphicClass><shaderType>Cutout</shaderType><drawSize>(3.5,1.5)</drawSize></graphicData>
     <size>(3,1)</size>
     <costList><Steel>220</Steel><ComponentIndustrial>8</ComponentIndustrial></costList>
     <researchPrerequisites><li>ImmersiveChefs_ProfessionalKitchens</li></researchPrerequisites>

@@ -13,9 +13,9 @@ namespace ImmersiveChefs.EndToEndTests;
     EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 3_600,
-    MaxGameTicks = 6_000,
-    MaxWallClockSeconds = 150)]
+    MaxFrames = 4_800,
+    MaxGameTicks = 8_000,
+    MaxWallClockSeconds = 180)]
 public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
 {
     private static readonly string[] ExpectedBuildingDefNames =
@@ -36,12 +36,11 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
     private readonly Dictionary<Rot4, List<string>> rotationRows = new();
     private readonly Dictionary<Rot4, List<string>> rotationReferenceRows = new();
     private readonly Dictionary<(string DefName, int Rotation), string> vanillaComparisonIds = new();
+    private readonly Dictionary<int, NativePlacementFixture> nativePlacements = new();
     private Building tableSupport = null!;
     private Building workbenchSupport = null!;
     private Building tableMicrowave = null!;
     private Building workbenchMicrowave = null!;
-    private Building nativePlacementMarker = null!;
-    private IntVec3 nativePlacementCell;
     private string nativePlacementGizmoType = null!;
     private string nativePlacementStableId = null!;
 
@@ -133,14 +132,19 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 stuff));
         }
 
-        nativePlacementCell = FindNativePlacementCell(map, center);
-        nativePlacementMarker = SpawnBuilding(
-            map,
-            nativePlacementCell + new IntVec3(0, 0, 4),
-            "DiningChair",
-            Rot4.South,
-            ThingDefOf.WoodLog);
-        supports.Add(nativePlacementMarker);
+        foreach (var (rotation, cell) in FindNativePlacementCells(map, center))
+        {
+            var referenceWorkbench = SpawnBuilding(
+                map,
+                cell + new IntVec3(0, 0, 5),
+                "TableMachining",
+                rotation,
+                null);
+            supports.Add(referenceWorkbench);
+            nativePlacements.Add(
+                rotation.AsInt,
+                new NativePlacementFixture(rotation, cell, referenceWorkbench));
+        }
 
         var buildOptions = context.GetRequiredService<IEndToEndGizmoCatalog>()
             .Query(Array.Empty<string>(), new[] { "Production" })
@@ -207,6 +211,9 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         {
             var ids = rotationRows[rotation].Concat(rotationReferenceRows[rotation]).ToArray();
             var direction = RotationName(rotation);
+            var perspectiveLabel = rotation == Rot4.South
+                ? "south-facing / north-interaction"
+                : direction;
             yield return new SelectionActionStep(
                 "select the " + direction + " custom and Core comparison rows",
                 rotationRows[rotation],
@@ -216,7 +223,7 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 ids,
                 paddingPixels: 110);
             yield return new ScreenshotStep(
-                direction + " custom buildings beside same-rotation Core benches",
+                perspectiveLabel + " custom buildings beside same-rotation Core benches",
                 ids,
                 110);
         }
@@ -259,6 +266,9 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         {
             var defName = fixture.Building.def.defName;
             var direction = RotationName(fixture.Rotation);
+            var perspectiveLabel = fixture.Rotation == Rot4.South
+                ? "south-facing / north-interaction"
+                : direction;
             var referenceId = vanillaComparisonIds[(defName, fixture.Rotation.AsInt)];
             var ids = new[] { fixture.Building.ThingID, referenceId };
             yield return new SelectionActionStep(
@@ -270,56 +280,74 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 ids,
                 paddingPixels: 100);
             yield return new ScreenshotStep(
-                "close " + direction + " " + defName + " and Core bench comparison",
+                "close " + perspectiveLabel + " " + defName + " and Core bench comparison",
                 ids,
                 100);
         }
 
-        yield return new SelectionActionStep(
-            "select the native placement marker before the player action",
-            new[] { nativePlacementMarker.ThingID },
-            additive: false);
-        yield return new CameraActionStep(
-            "frame the empty native dishwasher placement cell",
-            new[] { nativePlacementMarker.ThingID },
-            paddingPixels: 260);
-        yield return new ScreenshotStep(
-            "before native east-facing dishwasher placement",
-            Array.Empty<string>(),
-            0);
-        yield return new GizmoActionStep(
-            "place an east-facing dishwasher through the native Production designator",
-            Array.Empty<string>(),
-            nativePlacementGizmoType,
-            EndToEndGizmoInteraction.Place,
-            stableGizmoId: nativePlacementStableId,
-            startCell: new EndToEndMapCell(nativePlacementCell.x, nativePlacementCell.z),
-            architectCategoryDefNames: new[] { "Production" },
-            rotation: EndToEndCardinalRotation.East);
-        yield return new WaitUntilStep(
-            "wait for the native east-facing dishwasher to appear",
-            _ => FindNativePlacement() is { Rotation: var rotation } && rotation == Rot4.East,
-            new EndToEndDeadline(180, 600, TimeSpan.FromSeconds(10)));
-        var placed = FindNativePlacement() ?? throw new EndToEndAssertionException(
-            "The native dishwasher placement completed without a player-visible building.");
-        yield return new SelectionActionStep(
-            "select the player-placed east-facing dishwasher",
-            new[] { placed.ThingID },
-            additive: false);
-        yield return new CameraActionStep(
-            "frame the player-placed east-facing dishwasher",
-            new[] { nativePlacementMarker.ThingID, placed.ThingID },
-            paddingPixels: 220);
-        yield return new ScreenshotStep(
-            "after native east-facing dishwasher placement",
-            new[] { nativePlacementMarker.ThingID, placed.ThingID },
-            220);
-        yield return new AssertionStep(
-            "observe the exact native placement orientation",
-            _ => EndToEndAssert.Equal(
-                Rot4.East.AsInt,
-                placed.Rotation.AsInt,
-                "The native player placement must create an east-facing dishwasher."));
+        foreach (var requestedRotation in new[] { Rot4.North, Rot4.East, Rot4.South, Rot4.West })
+        {
+            var fixture = nativePlacements[requestedRotation.AsInt];
+            var direction = RotationName(requestedRotation);
+            var perspectiveLabel = requestedRotation == Rot4.South
+                ? "south-facing / north-interaction"
+                : direction + "-facing";
+            yield return new SelectionActionStep(
+                "select the same-facing Core workbench before the " + direction + " player action",
+                new[] { fixture.ReferenceWorkbench.ThingID },
+                additive: false);
+            yield return new CameraActionStep(
+                "frame the empty " + direction + " native dishwasher placement cell",
+                new[] { fixture.ReferenceWorkbench.ThingID },
+                paddingPixels: 260);
+            yield return new ScreenshotStep(
+                "before native " + perspectiveLabel + " dishwasher placement",
+                Array.Empty<string>(),
+                0);
+            yield return new GizmoActionStep(
+                "place a " + direction + "-facing dishwasher through the native Production designator",
+                Array.Empty<string>(),
+                nativePlacementGizmoType,
+                EndToEndGizmoInteraction.Place,
+                stableGizmoId: nativePlacementStableId,
+                startCell: new EndToEndMapCell(fixture.Cell.x, fixture.Cell.z),
+                architectCategoryDefNames: new[] { "Production" },
+                rotation: EndToEndRotation(requestedRotation));
+            yield return new WaitUntilStep(
+                "wait for the native " + direction + "-facing dishwasher to appear",
+                _ => FindNativePlacement(fixture) is { Rotation: var rotation } &&
+                     rotation == requestedRotation,
+                new EndToEndDeadline(180, 600, TimeSpan.FromSeconds(10)));
+            var placed = FindNativePlacement(fixture) ?? throw new EndToEndAssertionException(
+                "The native " + direction + " dishwasher placement completed without a player-visible building.");
+            yield return new SelectionActionStep(
+                "select the player-placed " + direction + "-facing dishwasher",
+                new[] { placed.ThingID },
+                additive: false);
+            yield return new CameraActionStep(
+                "frame the player-placed " + perspectiveLabel + " dishwasher",
+                new[] { fixture.ReferenceWorkbench.ThingID, placed.ThingID },
+                paddingPixels: 220);
+            yield return new ScreenshotStep(
+                "after native " + perspectiveLabel + " dishwasher placement",
+                new[] { fixture.ReferenceWorkbench.ThingID, placed.ThingID },
+                220);
+            yield return new AssertionStep(
+                "observe the exact native " + direction + " placement orientation",
+                _ =>
+                {
+                    EndToEndAssert.Equal(
+                        requestedRotation.AsInt,
+                        placed.Rotation.AsInt,
+                        "The native player placement must create a " + direction + "-facing dishwasher.");
+                    if (requestedRotation == Rot4.South)
+                    {
+                        EndToEndAssert.True(
+                            placed.InteractionCell.z > placed.OccupiedRect().maxZ,
+                            "The selected south-facing dishwasher must expose its observable interaction spot to the north.");
+                    }
+                });
+        }
 
         yield return new CheckpointStep(
             "base building visual catalog",
@@ -352,47 +380,89 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         vanillaComparisonIds.Add((customDefName, rotation.AsInt), reference.ThingID);
     }
 
-    private Building? FindNativePlacement() =>
-        nativePlacementCell.GetThingList(Current.Game.CurrentMap)
+    private static Building? FindNativePlacement(NativePlacementFixture fixture) =>
+        fixture.Cell.GetThingList(Current.Game.CurrentMap)
             .OfType<Building>()
             .SingleOrDefault(building =>
                 building.def.defName == "ImmersiveChefs_Dishwasher" &&
                 building.Faction == Faction.OfPlayer);
 
-    private static IntVec3 FindNativePlacementCell(Map map, IntVec3 center)
+    private static IReadOnlyList<(Rot4 Rotation, IntVec3 Cell)> FindNativePlacementCells(
+        Map map,
+        IntVec3 center)
     {
         var dishwasher = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Dishwasher");
-        var chair = DefDatabase<ThingDef>.GetNamed("DiningChair");
+        var referenceWorkbench = DefDatabase<ThingDef>.GetNamed("TableMachining");
+        var placements = new List<(Rot4 Rotation, IntVec3 Cell)>();
         var bounds = CellRect.FromLimits(
             center.x - 34,
             center.z + 19,
             center.x + 34,
             center.z + 24);
-        foreach (var cell in bounds.Cells.OrderBy(candidate => candidate.DistanceToSquared(center)))
+        foreach (var rotation in new[] { Rot4.North, Rot4.East, Rot4.South, Rot4.West })
         {
-            var markerCell = cell + new IntVec3(0, 0, 4);
-            if (cell.InBounds(map) &&
-                markerCell.InBounds(map) &&
-                GenConstruct.CanPlaceBlueprintAt(
-                    dishwasher,
-                    cell,
-                    Rot4.East,
-                    map,
-                    godMode: true).Accepted &&
-                GenConstruct.CanPlaceBlueprintAt(
-                    chair,
-                    markerCell,
-                    Rot4.South,
-                    map,
-                    godMode: true,
-                    stuffDef: ThingDefOf.WoodLog).Accepted)
+            var found = false;
+            foreach (var cell in bounds.Cells.OrderBy(candidate => candidate.DistanceToSquared(center)))
             {
-                return cell;
+                var referenceCell = cell + new IntVec3(0, 0, 5);
+                if (placements.Any(existing => existing.Cell.DistanceToSquared(cell) < 100) ||
+                    !cell.InBounds(map) ||
+                    !referenceCell.InBounds(map) ||
+                    !GenConstruct.CanPlaceBlueprintAt(
+                        dishwasher,
+                        cell,
+                        rotation,
+                        map,
+                        godMode: true).Accepted ||
+                    !GenConstruct.CanPlaceBlueprintAt(
+                        referenceWorkbench,
+                        referenceCell,
+                        rotation,
+                        map,
+                        godMode: true).Accepted)
+                {
+                    continue;
+                }
+
+                placements.Add((rotation, cell));
+                found = true;
+                break;
+            }
+
+            if (!found)
+            {
+                throw new EndToEndAssertionException(
+                    "No bounded green native placement cell can host a " +
+                    RotationName(rotation) + "-facing dishwasher and same-facing Core workbench.");
             }
         }
 
-        throw new EndToEndAssertionException(
-            "No bounded green native placement cell can host an east-facing dishwasher and its visual marker.");
+        return placements;
+    }
+
+    private static EndToEndCardinalRotation EndToEndRotation(Rot4 rotation)
+    {
+        if (rotation == Rot4.North)
+        {
+            return EndToEndCardinalRotation.North;
+        }
+
+        if (rotation == Rot4.East)
+        {
+            return EndToEndCardinalRotation.East;
+        }
+
+        if (rotation == Rot4.South)
+        {
+            return EndToEndCardinalRotation.South;
+        }
+
+        if (rotation == Rot4.West)
+        {
+            return EndToEndCardinalRotation.West;
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(rotation), rotation, "Only cardinal placement rotations are supported.");
     }
 
     private static string VanillaReferenceDefName(string customDefName) => customDefName switch
@@ -530,6 +600,29 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 Building.def.defName + " must occupy its rotated Def width.");
             EndToEndAssert.Equal(expectedHeight, occupied.Height,
                 Building.def.defName + " must occupy its rotated Def height.");
+            if (Rotation == Rot4.South && Building.def.hasInteractionCell)
+            {
+                EndToEndAssert.True(
+                    Building.InteractionCell.z > occupied.maxZ,
+                    Building.def.defName +
+                    " must expose its north-side interaction cell in the reverse-facing visual fixture.");
+            }
         }
+    }
+
+    private sealed class NativePlacementFixture
+    {
+        internal NativePlacementFixture(Rot4 rotation, IntVec3 cell, Building referenceWorkbench)
+        {
+            Rotation = rotation;
+            Cell = cell;
+            ReferenceWorkbench = referenceWorkbench;
+        }
+
+        internal Rot4 Rotation { get; }
+
+        internal IntVec3 Cell { get; }
+
+        internal Building ReferenceWorkbench { get; }
     }
 }

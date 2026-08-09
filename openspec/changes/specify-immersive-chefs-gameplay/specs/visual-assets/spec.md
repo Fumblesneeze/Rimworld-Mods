@@ -34,9 +34,11 @@ Before the custom-building art direction is finalized, one controlled representa
 ### Requirement: Raster assets have clean game-ready silhouettes
 Selected textures SHALL be PNGs with alpha, transparent corners, no chroma fringe, no baked floor/contact shadow, no text or watermark, and enough transparent padding to avoid cropping under selection brackets. Items SHALL remain recognizable at their intended 48–64 pixel review scale and buildings at their real footprint/draw size.
 
-Every rotatable Immersive Chefs building, including every base appliance/station, the fallback microwave, and every optional VTEX building variant, SHALL use `Graphic_Multi` and provide valid `_north`, `_east`, `_south`, and `_west` textures. North/south SHALL fit the unrotated footprint, while east/west SHALL be separately authored or deliberately reframed vertical views of the same physical building rather than a runtime rotation of one front-facing raster. The four views SHALL preserve recognizable equipment placement, visual mass, footprint occupancy, worker-facing orientation, and transparent padding. No rotatable custom building MAY use `Graphic_Single` as an escape from directional coverage.
+Every rotatable Immersive Chefs building, including every base appliance/station, the fallback microwave, and every optional VTEX building variant, SHALL use `Graphic_Multi` and provide valid `_north`, `_east`, `_south`, and `_west` textures. All four cardinal frames SHALL be separately authored or deliberately reframed views of the same physical building from RimWorld's fixed map camera; no opposite frame MAY be manufactured by rotating another raster. North/south SHALL fit the unrotated footprint, while east/west SHALL fit the rotated vertical footprint. Turning the building SHALL rotate its equipment and worker-facing layout in world space while the visible near-side vertical face, tabletop foreshortening, lighting, and fixed-camera perspective remain screen-consistent. The four views SHALL preserve recognizable equipment placement, visual mass, footprint occupancy, worker-facing orientation, and transparent padding. No rotatable custom building MAY use `Graphic_Single` as an escape from directional coverage.
 
 Custom workbenches and appliances SHALL align with the visual language of representative Core production benches at map scale: painted rather than photorealistic rendering, an orthographic/top-down read, restrained highlights and micro-detail, a strong silhouette, bounded contrast, and comparable apparent height and density within the occupied cells. Candidate and final comparisons SHALL use the same live camera zoom, map lighting, footprint scale, and crop for the custom building and its vanilla comparator; a source render that looks polished in isolation but reads as glossy front-elevation concept art in game SHALL be rejected.
+
+Directional workbench art SHALL be constrained by measured Core projection geometry rather than generated as four unrelated illustrations. The retained baseline SHALL sample multiple unpacked Core workbench `Texture2D` families and record the game version, canvas, alpha bounds, Def footprint/draw size, centered tabletop projection, and visible underframe depth without shipping any extracted Core raster. Immersive Chefs' 2x1 benches SHALL use the derived 2.5x1.5 canvas and its 3x1 benches SHALL use the Core 3.5x1.5 canvas. At 256 authored pixels per map cell, their horizontal frames SHALL therefore be exactly 640x384 and 896x384 pixels respectively, with rotated frames exactly 384x640 and 384x896. The projected tabletop SHALL occupy the centered footprint rectangle and the shallow visible underframe SHALL remain on the screen-south edge in every cardinal frame. North/south SHALL share the same horizontal table/body projection and east/west the same vertical table/body projection; only equipment placement, control orientation, and other world-facing details rotate. A cabinet/apron on the image top or long side, or four inconsistent apparent table heights, SHALL be rejected as an impossible camera perspective.
 
 #### Scenario: Chroma removal damages an edge
 - **WHEN** alpha inspection finds opaque corners, key-color residue, clipped geometry, or a halo at final scale
@@ -46,6 +48,17 @@ Custom workbenches and appliances SHALL align with the visual language of repres
 - **WHEN** the player rotates the finalized station from north to east through the native placement or reinstall command
 - **THEN** RimWorld resolves the station's authored east texture and vertical footprint instead of rotating a horizontal front elevation
 - **THEN** the same tools, work surface, and worker-facing identity remain recognizable in the vertical view
+
+#### Scenario: A station's interaction spot rotates to the north
+- **WHEN** the player rotates a workbench so its interaction cell is north of the occupied footprint
+- **THEN** RimWorld resolves the separately authored reverse-facing texture rather than a 180-degree transform of the opposite frame
+- **THEN** tools and controls face the northern worker while the bench's visible near-side face and tabletop perspective remain consistent with the fixed map camera and nearby Core workbenches
+
+#### Scenario: Directional sprites are normalized against measured Core benches
+- **WHEN** the selected 2x1 and 3x1 workbench families are inspected in all four cardinal directions
+- **THEN** their canvases, centered tabletop bounds, shallow underframe depth, transparent padding, and apparent height match the recorded Core-derived projection templates
+- **THEN** every visible underframe remains on the screen-bottom edge while equipment rotates toward the interaction side
+- **THEN** north/south and east/west no longer read as unrelated bench constructions or raster rotations
 
 #### Scenario: A polished candidate conflicts with the vanilla map style
 - **WHEN** the candidate is shown beside a Core stove, machining table, butcher table, or other representative production bench at identical map scale and lighting
