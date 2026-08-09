@@ -19,9 +19,9 @@ namespace ImmersiveChefs.EndToEndTests;
     "Memegoddess.MealsOnWheels",
     "seekiworksmod.no10",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 4_800,
-    MaxGameTicks = 16_000,
-    MaxWallClockSeconds = 150)]
+    MaxFrames = 6_600,
+    MaxGameTicks = 27_000,
+    MaxWallClockSeconds = 235)]
 public sealed class MealsOnWheelsBorrowedMealTest : IRimWorldEndToEndTest
 {
     private Map map = null!;
@@ -32,6 +32,7 @@ public sealed class MealsOnWheelsBorrowedMealTest : IRimWorldEndToEndTest
     private ThingWithComps cutlery = null!;
     private bool borrowedJobObserved;
     private bool holderReleasedMeal;
+    private bool cutleryAcquiredObserved;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -84,6 +85,10 @@ public sealed class MealsOnWheelsBorrowedMealTest : IRimWorldEndToEndTest
             "the meal transfers while retaining its embedded plate",
             _ => ObserveMealTransfer(),
             new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(45)));
+        yield return new WaitUntilStep(
+            "the ordinary dining path acquires the exact cutlery",
+            _ => ObserveCutleryAcquisition(),
+            new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(45)));
         yield return new SelectionActionStep(
             "select the diner carrying the borrowed plated meal",
             new[] { eater.ThingID },
@@ -133,6 +138,7 @@ public sealed class MealsOnWheelsBorrowedMealTest : IRimWorldEndToEndTest
             {
                 ["borrowedJobObserved"] = borrowedJobObserved.ToString(),
                 ["holderReleasedMeal"] = holderReleasedMeal.ToString(),
+                ["cutleryAcquiredObserved"] = cutleryAcquiredObserved.ToString(),
                 ["mealThingId"] = meal.ThingID,
                 ["mealDestroyed"] = meal.Destroyed.ToString(),
                 ["plateThingId"] = plate.ThingID,
@@ -184,12 +190,28 @@ public sealed class MealsOnWheelsBorrowedMealTest : IRimWorldEndToEndTest
         return true;
     }
 
+    private bool ObserveCutleryAcquisition()
+    {
+        if (meal.Destroyed || cutlery.Destroyed)
+        {
+            return false;
+        }
+
+        cutleryAcquiredObserved |=
+            !cutlery.Spawned &&
+            ReferenceEquals(cutlery.holdingOwner, eater.inventory?.innerContainer) &&
+            cutlery.stackCount == 1;
+        return cutleryAcquiredObserved;
+    }
+
     private void AssertCompletedLifecycle()
     {
         EndToEndAssert.True(borrowedJobObserved,
             "The native hunger job must visibly select the other pawn's meal.");
         EndToEndAssert.True(holderReleasedMeal,
             "The source pawn must release the exact meal through the native ingest job.");
+        EndToEndAssert.True(cutleryAcquiredObserved,
+            "The ordinary ingest toils must acquire the exact cutlery before eating.");
         EndToEndAssert.True(meal.Destroyed,
             "The borrowed meal must disappear only after native ingestion completes.");
         EndToEndAssert.False(
@@ -199,6 +221,16 @@ public sealed class MealsOnWheelsBorrowedMealTest : IRimWorldEndToEndTest
             "The original embedded plate must return to the map dirty.");
         EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()?.IsDirty == true,
             "The exact acquired cutlery must return to the map dirty.");
+        EndToEndAssert.Equal(1, plate.stackCount,
+            "The exact returned plate must remain one physical unit.");
+        EndToEndAssert.Equal(1, cutlery.stackCount,
+            "The exact returned cutlery must remain one physical unit.");
+        EndToEndAssert.Equal(1,
+            FoodSearchE2EFixture.CountThingUnits(map, plate.def, meal, eater, holder),
+            "Borrowed dining must conserve exactly one plate across all holders.");
+        EndToEndAssert.Equal(1,
+            FoodSearchE2EFixture.CountThingUnits(map, cutlery.def, meal, eater, holder),
+            "Borrowed dining must conserve exactly one cutlery set across all holders.");
     }
 }
 
@@ -211,9 +243,9 @@ public sealed class MealsOnWheelsBorrowedMealTest : IRimWorldEndToEndTest
     "Memegoddess.MealsOnWheels",
     "seekiworksmod.no10",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 4_800,
-    MaxGameTicks = 16_000,
-    MaxWallClockSeconds = 150)]
+    MaxFrames = 6_600,
+    MaxGameTicks = 27_000,
+    MaxWallClockSeconds = 235)]
 public sealed class PrioritizePerishablePlatedMealTest : IRimWorldEndToEndTest
 {
     private Map map = null!;
@@ -226,6 +258,7 @@ public sealed class PrioritizePerishablePlatedMealTest : IRimWorldEndToEndTest
     private int survivalCount;
     private int pemmicanCount;
     private bool prioritizedJobObserved;
+    private bool cutleryAcquiredObserved;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -288,6 +321,10 @@ public sealed class PrioritizePerishablePlatedMealTest : IRimWorldEndToEndTest
             _ => ObservePrioritizedJob(),
             new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(45)));
         yield return new WaitUntilStep(
+            "the ordinary dining path acquires prioritized-meal cutlery",
+            _ => ObserveCutleryAcquisition(),
+            new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(45)));
+        yield return new WaitUntilStep(
             "the diner reaches the selected perishable plated meal",
             _ => ReachedSelectedPerishableMeal(),
             new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(45)));
@@ -339,6 +376,7 @@ public sealed class PrioritizePerishablePlatedMealTest : IRimWorldEndToEndTest
             _ => new Dictionary<string, string>
             {
                 ["prioritizedJobObserved"] = prioritizedJobObserved.ToString(),
+                ["cutleryAcquiredObserved"] = cutleryAcquiredObserved.ToString(),
                 ["selectedMeal"] = perishableMeal.def.defName,
                 ["selectedMealThingId"] = perishableMeal.ThingID,
                 ["mealDestroyed"] = perishableMeal.Destroyed.ToString(),
@@ -371,6 +409,20 @@ public sealed class PrioritizePerishablePlatedMealTest : IRimWorldEndToEndTest
         return true;
     }
 
+    private bool ObserveCutleryAcquisition()
+    {
+        if (perishableMeal.Destroyed || cutlery.Destroyed)
+        {
+            return false;
+        }
+
+        cutleryAcquiredObserved |=
+            !cutlery.Spawned &&
+            ReferenceEquals(cutlery.holdingOwner, eater.inventory?.innerContainer) &&
+            cutlery.stackCount == 1;
+        return cutleryAcquiredObserved;
+    }
+
     private bool ReachedSelectedPerishableMeal()
     {
         if (perishableMeal.Destroyed ||
@@ -388,12 +440,24 @@ public sealed class PrioritizePerishablePlatedMealTest : IRimWorldEndToEndTest
     {
         EndToEndAssert.True(prioritizedJobObserved,
             "The ordinary hunger job must visibly choose the perishable meal.");
+        EndToEndAssert.True(cutleryAcquiredObserved,
+            "The ordinary ingest toils must acquire the exact prioritized-meal cutlery before eating.");
         EndToEndAssert.True(perishableMeal.Destroyed,
             "The selected perishable meal must complete native ingestion.");
         EndToEndAssert.True(plate.Spawned && plate.GetComp<CompSanitation>()?.IsDirty == true,
             "The selected meal's exact plate must return dirty.");
         EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()?.IsDirty == true,
             "The exact acquired cutlery must return dirty.");
+        EndToEndAssert.Equal(1, plate.stackCount,
+            "The exact returned prioritized-meal plate must remain one physical unit.");
+        EndToEndAssert.Equal(1, cutlery.stackCount,
+            "The exact returned prioritized-meal cutlery must remain one physical unit.");
+        EndToEndAssert.Equal(1,
+            FoodSearchE2EFixture.CountThingUnits(map, plate.def, perishableMeal, eater),
+            "Prioritized dining must conserve exactly one plate across all holders.");
+        EndToEndAssert.Equal(1,
+            FoodSearchE2EFixture.CountThingUnits(map, cutlery.def, perishableMeal, eater),
+            "Prioritized dining must conserve exactly one cutlery set across all holders.");
         EndToEndAssert.True(survivalMeal.Spawned && survivalMeal.stackCount == survivalCount,
             "The closer packaged survival meal must remain untouched.");
         EndToEndAssert.True(pemmican.Spawned && pemmican.stackCount == pemmicanCount,
@@ -657,6 +721,27 @@ public sealed class PrioritizeTraderCaravanCompensationTest : IRimWorldEndToEndT
 
 internal static class FoodSearchE2EFixture
 {
+    internal static int CountThingUnits(
+        Map map,
+        ThingDef def,
+        ThingWithComps meal,
+        params Pawn[] pawns)
+    {
+        var spawned = map.listerThings.ThingsOfDef(def).Sum(thing => thing.stackCount);
+        var heldByPawns = pawns.Sum(pawn =>
+            (pawn.inventory?.innerContainer
+                 .Where(thing => thing.def == def)
+                 .Sum(thing => thing.stackCount) ?? 0) +
+            (pawn.carryTracker?.CarriedThing is { } carried && carried.def == def
+                ? carried.stackCount
+                : 0));
+        var embedded = !meal.Destroyed &&
+                       string.Equals(def.defName, "ImmersiveChefs_Plate", StringComparison.Ordinal)
+            ? meal.GetComp<CompEmbeddedWare>()?.EmbeddedPlateCount ?? 0
+            : 0;
+        return spawned + heldByPawns + embedded;
+    }
+
     internal static void UseStrictNonEmergencyDining(IEndToEndContext context)
     {
         var priorMode = ImmersiveChefsMod.Settings.WareRequirementMode;

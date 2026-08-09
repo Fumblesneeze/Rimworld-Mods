@@ -13,16 +13,26 @@ namespace ImmersiveChefs.EndToEndTests;
     EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
     "Argon.CheapMeals",
+    "Memegoddess.MealsOnWheels",
+    "seekiworksmod.no10",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 3_600,
-    MaxGameTicks = 12_000,
-    MaxWallClockSeconds = 120)]
+    MaxFrames = 4_800,
+    MaxGameTicks = 16_000,
+    MaxWallClockSeconds = 150)]
 public sealed class FastMealsCompatibilityTest : IRimWorldEndToEndTest
 {
     private readonly List<Fixture> fixtures = new();
 
     public void Arrange(IEndToEndContext context)
     {
+        var priorWareRequirementMode = ImmersiveChefsMod.Settings.WareRequirementMode;
+        var priorAutoCallAssistants = ImmersiveChefsMod.Settings.AutoCallAssistants;
+        context.DeferCleanup(() =>
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = priorWareRequirementMode;
+            ImmersiveChefsMod.Settings.AutoCallAssistants = priorAutoCallAssistants;
+        });
+
         var map = Current.Game.CurrentMap;
         var centers = FindRoomCenters(map, 2);
         fixtures.Add(CreateFixture(
@@ -129,6 +139,16 @@ public sealed class FastMealsCompatibilityTest : IRimWorldEndToEndTest
                         embedded.PeekPlateThing()?.Stuff?.defName,
                         fixture.Name + " must use its classified plate-material tier.");
                     EndToEndAssert.True(
+                        ReferenceEquals(fixture.Plate, embedded.PeekPlateThing()),
+                        fixture.Name + " must embed the exact plate reserved for its native bill.");
+                    EndToEndAssert.True(
+                        !fixture.Plate.Destroyed && !fixture.Plate.Spawned,
+                        fixture.Name + " must hold its original plate only inside the cooked meal.");
+                    EndToEndAssert.Equal(
+                        1,
+                        fixture.Plate.stackCount,
+                        fixture.Name + " must preserve one physical reserved plate.");
+                    EndToEndAssert.True(
                         fixture.Cookware.Spawned,
                         fixture.Name + " must return the exact cookware to the map.");
                     EndToEndAssert.True(
@@ -154,6 +174,11 @@ public sealed class FastMealsCompatibilityTest : IRimWorldEndToEndTest
                             rejected.Stuff?.defName + " plate untouched on the map.");
                     }
                 }
+
+                EndToEndAssert.Equal(
+                    fixtures.Sum(fixture => 1 + fixture.RejectedPlates.Count),
+                    CountAllPlateUnits(Current.Game.CurrentMap),
+                    "Fast Meals cooking must neither duplicate nor lose any arranged plate unit.");
             });
         yield return new SelectionActionStep(
             "select both freshly cooked Fast Meals products",
@@ -188,7 +213,8 @@ public sealed class FastMealsCompatibilityTest : IRimWorldEndToEndTest
                     "; work=" + fixture.Recipe.WorkAmountForStuff(fixture.Stove.Stuff) +
                     "; product=" + fixture.Product?.def.defName +
                     "; embeddedPlate=" +
-                    fixture.Product?.GetComp<CompEmbeddedWare>()?.PeekPlateThing()?.Stuff?.defName +
+                    fixture.Product?.GetComp<CompEmbeddedWare>()?.PeekPlateThing()?.ThingID +
+                    ":" + fixture.Product?.GetComp<CompEmbeddedWare>()?.PeekPlateThing()?.Stuff?.defName +
                     "; cookwareDirty=" +
                     (fixture.Cookware.GetComp<CompSanitation>()?.IsDirty == true) +
                     "; rejected=" + string.Join(
@@ -196,6 +222,24 @@ public sealed class FastMealsCompatibilityTest : IRimWorldEndToEndTest
                         fixture.RejectedPlates.Select(plate =>
                             (plate.Stuff?.defName ?? "missing") + ":" +
                             (plate.Spawned ? "spawned" : "unheld")))));
+    }
+
+    private int CountAllPlateUnits(Map map)
+    {
+        var plateDef = fixtures[0].Plate.def;
+        var spawned = map.listerThings.ThingsOfDef(plateDef).Sum(thing => thing.stackCount);
+        var heldByPawns = fixtures.Sum(fixture =>
+            (fixture.Pawn.inventory?.innerContainer
+                 .Where(thing => thing.def == plateDef)
+                 .Sum(thing => thing.stackCount) ?? 0) +
+            (fixture.Pawn.carryTracker?.CarriedThing is { } carried && carried.def == plateDef
+                ? carried.stackCount
+                : 0));
+        var embedded = fixtures.Sum(fixture =>
+            fixture.Product is { Destroyed: false }
+                ? fixture.Product.GetComp<CompEmbeddedWare>()?.EmbeddedPlateCount ?? 0
+                : 0);
+        return spawned + heldByPawns + embedded;
     }
 
     private static Fixture CreateFixture(
