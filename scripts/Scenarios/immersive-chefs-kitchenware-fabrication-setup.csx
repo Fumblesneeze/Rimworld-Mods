@@ -175,25 +175,25 @@ new System.Func<string>(() =>
         stage = "create exact recipe ingredients";
         var granite = DefDatabase<ThingDef>.GetNamed("BlocksGranite");
         var primitiveStone = ThingMaker.MakeThing(granite);
-        primitiveStone.stackCount = 40;
+        primitiveStone.stackCount = 5;
         GenSpawn.Spawn(
             primitiveStone,
             new IntVec3(primitiveCenter.x - 2, 0, primitiveCenter.z + 2),
             map);
         var primitiveWood = ThingMaker.MakeThing(ThingDefOf.WoodLog);
-        primitiveWood.stackCount = 5;
+        primitiveWood.stackCount = 1;
         GenSpawn.Spawn(
             primitiveWood,
             new IntVec3(primitiveCenter.x - 2, 0, primitiveCenter.z - 2),
             map);
         var modernSteel = ThingMaker.MakeThing(ThingDefOf.Steel);
-        modernSteel.stackCount = 50;
+        modernSteel.stackCount = 6;
         GenSpawn.Spawn(
             modernSteel,
             new IntVec3(modernCenter.x - 2, 0, modernCenter.z + 2),
             map);
         var modernWood = ThingMaker.MakeThing(ThingDefOf.WoodLog);
-        modernWood.stackCount = 5;
+        modernWood.stackCount = 1;
         GenSpawn.Spawn(
             modernWood,
             new IntVec3(modernCenter.x - 2, 0, modernCenter.z - 2),

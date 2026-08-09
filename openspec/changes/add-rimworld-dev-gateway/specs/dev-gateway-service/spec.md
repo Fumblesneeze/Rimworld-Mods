@@ -1,6 +1,14 @@
 ## ADDED Requirements
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
+### Requirement: Stable package identity
+The gateway project, runtime package constant, About manifest, deployment folder, shared test contracts, exact-mod launch matrices, and current operational documentation SHALL use package ID `fumblesneeze.rimworlddevgateway` consistently and SHALL NOT retain a superseded package identity. An explicitly labeled historical evidence record MAY preserve the identity actually used by that old run only when it also states that the run predates and cannot verify the current identity.
+
+#### Scenario: Build and launch the gateway package
+- **WHEN** a contributor builds and launches the gateway in an isolated exact-mod RimWorld process
+- **THEN** the project metadata, runtime status, About manifest, deployed folder, and active mod list identify it as `fumblesneeze.rimworlddevgateway`
+- **AND** no duplicate legacy gateway package is staged or activated
+
 ### Requirement: Independent developer-only mod
 RimWorld Dev Gateway SHALL be a separately loadable developer-only mod, and Immersive Chefs SHALL NOT declare it as a required dependency, optional dependency, assembly reference, or load-order dependency.
 

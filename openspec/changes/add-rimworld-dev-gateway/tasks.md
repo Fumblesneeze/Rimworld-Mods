@@ -2,8 +2,9 @@
 
 **TDD audit note:** broad unchecked RED boxes below remain intentionally unchecked where a complete per-behavior RED artifact was not retained. Checked GREEN boxes report implemented, passing behavior, not retroactive RED evidence. Exact recovered and current red/green records remain in a local ignored ledger alongside `artifacts/TestResults/tdd/`.
 
-- [x] 1.1 Add the loadable `fumblesneeze.rimworlddevgateway` mod project, pinned EmbedIO 3.5.2 and Mono.CSharp 4.0.0.143 package references, central test project, optional companion host-tool project, solution entries, and package metadata without referencing Immersive Chefs.
+- [x] 1.1 Add the loadable RimWorld Dev Gateway mod project, pinned EmbedIO 3.5.2 and Mono.CSharp 4.0.0.143 package references, central test project, optional companion host-tool project, solution entries, and package metadata without referencing Immersive Chefs.
 - [x] 1.2 Add shared API/manifest DTO contracts and test fixtures for deterministic clocks, tokens, process identities, temporary save-data roots, fake dispatch, and bounded EmbedIO request/response contexts.
+- [x] 1.3 Migrate the stable package identity to `fumblesneeze.rimworlddevgateway`, update every current contract/matrix/tooling reference, and verify the reviewed package through a fresh isolated Core-plus-gateway launch under the new identity. The reviewed DLL `9A232EBA…` loaded exactly Core plus the new Gateway ID at `artifacts/GatewaySmoke/20260809T224040507Z`; the visible main menu was clean, both exact main-menu integration tests passed under the renamed owner, and the only warning was the intentional unrestricted-execution banner.
 
 ## 2. mods/RimWorldDevGateway — TDD RED: Service foundation
 
@@ -81,7 +82,7 @@
 
 - [x] 13.1 Build Release against the configured RimWorld 1.6 assemblies with zero errors/warnings and verify repeatable incremental and clean outputs.
 - [x] 13.2 Inspect the generated mod package for correct About metadata, API/contract assemblies, developer warning, supported version, exact compatible `EmbedIO.dll`, `Swan.Lite.dll`, `System.ValueTuple.dll`, and Mono.CSharp 4.0.0.143 `Mono.CSharp.dll` runtime dependencies, and no Immersive Chefs, optional Workshop, Kestrel/ASP.NET Core, Watson.Lite/Watson.Core/CavemanTcp, Roslyn, test, or host-tool runtime dependency.
-- [x] 13.3 Verify a normal build writes only repository artifacts and an explicit deploy writes only the exact `fumblesneeze.rimworlddevgateway` game-mod folder.
+- [x] 13.3 Verify a normal build writes only repository artifacts and an explicit deploy writes only the exact `fumblesneeze.rimworlddevgateway` game-mod folder. Reverified during the package-identity migration with the Release artifact and explicit deploy both resolving to their exact new-ID folders.
 - [x] 13.4 Document manifest discovery, exact version-one status/UI schemas, byte-paginated logs, synchronous automation lifecycle, direct curl/PowerShell raw-C# examples, state/lifecycle/limits and C# language compatibility, optional client/assembly fallback, automation descriptor, additional-mod isolated launch, post-quickstart evidence, danger model, cleanup, and extension procedure.
 
 ## 14. mods/RimWorldDevGateway — In-game verification

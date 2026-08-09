@@ -17,6 +17,7 @@
 
 - [x] 3.1 Add the thin RimWorld Mod/Harmony entry point, stable startup marker, and optional load-order metadata without optional assembly references.
 - [x] 3.2 Build without live deployment and verify generated About metadata, the RimWorld 1.6 assembly, and absence of bundled dependency DLLs.
+- [x] 3.3 Migrate the stable package identity to `fumblesneeze.immersivechefs`, update every current contract/matrix/tooling reference, and verify the reviewed package through a fresh exact-mod RimWorld launch under the new identity. The reviewed DLL `7B2D6D72…` passed the Gateway-free Core/Harmony/product smoke at `artifacts/RimWorldSmoke/20260809T223956853Z` and the exact product integration-owner run at `artifacts/GatewaySmoke/20260809T224140197Z`; both visible main menus were clean and the latter passed 24/24 main-menu tests with only the Gateway's intentional danger warning.
 
 ## 4. mods/ImmersiveChefs - Test and game command runners
 

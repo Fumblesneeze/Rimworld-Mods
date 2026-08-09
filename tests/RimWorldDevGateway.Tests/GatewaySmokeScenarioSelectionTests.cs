@@ -290,8 +290,12 @@ public sealed class GatewaySmokeScenarioSelectionTests
             Assert.That(setup, Does.Contain("BlocksGranite"));
             Assert.That(setup, Does.Contain("ThingDefOf.Steel"));
             Assert.That(setup, Does.Contain("new Bill_Production"));
-            Assert.That(setup, Does.Contain("new[] { 4, 2, 4, 6, 4, 2 }"));
-            Assert.That(setup, Does.Contain("handles.stackCount = 1"));
+            Assert.That(setup, Does.Contain("primitiveStone.stackCount = 5"));
+            Assert.That(setup, Does.Contain("primitiveWood.stackCount = 1"));
+            Assert.That(setup, Does.Contain("modernSteel.stackCount = 6"));
+            Assert.That(setup, Does.Contain("modernWood.stackCount = 1"));
+            Assert.That(setup, Does.Not.Contain("primitiveStone.stackCount = 40"));
+            Assert.That(setup, Does.Not.Contain("modernSteel.stackCount = 50"));
             Assert.That(setup, Does.Contain("BillStoreModeDefOf.DropOnFloor"));
             Assert.That(setup, Does.Contain("CompPowerBattery"));
             Assert.That(setup, Does.Contain("UpdatePowerNetsAndConnections_First"));

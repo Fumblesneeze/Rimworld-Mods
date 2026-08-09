@@ -14,7 +14,7 @@ public sealed class GatewaySmokePackageIdCliTests
 {
     [TestCase("Example.Mod", "example.mod")]
     [TestCase("LUDEON.RIMWORLD", "ludeon.rimworld")]
-    [TestCase("fumblesneeze.rimworlddevgateway", "fumblesneeze.rimworlddevgateway")]
+    [TestCase("FUMBLESNEEZE.RIMWORLDDEVGATEWAY", "fumblesneeze.rimworlddevgateway")]
     public void Active_package_ids_reject_case_insensitive_duplicates_before_path_validation(
         string additionalPackageId,
         string collidingPackageId)

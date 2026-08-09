@@ -488,7 +488,7 @@ public sealed class EndToEndTestingContractTests
     {
     }
 
-    [RimWorldEndToEndTest("invalid.duplicate", "fumblesneeze.immersivechefs", "ludeon.rimworld", "fumblesneeze.immersivechefs", "fumblesneeze.immersivechefs")]
+    [RimWorldEndToEndTest("invalid.duplicate", "fumblesneeze.immersivechefs", "ludeon.rimworld", "fumblesneeze.immersivechefs", "FUMBLESNEEZE.IMMERSIVECHEFS")]
     public sealed class DuplicatePackageTest : NoOpTest
     {
     }
