@@ -128,6 +128,9 @@ variant of each. The retained transparent working set and direction sheets live 
 `artifacts/VisualAssets/DirectionalBuildings/20260809`; rejected single-view/glossy candidates do
 not ship. Green-key removal used border-derived mattes, despill, and a one-pixel edge contraction,
 followed by explicit checks for opaque corners, fringe pixels, and powered-looking blue cues.
+The base and alternate sheets are the two retained revised map-style candidates for each concept;
+both passed selection because they provide distinct, state-neutral layouts suitable for the two
+upstream-cyclable families. Earlier glossy/front-elevation candidates remain rejection history.
 
 Every packaged family now uses `Graphic_Multi`/`Cutout` and exactly `_north`, `_east`, `_south`, and
 `_west` files. The 2x1 stations use 512x256 horizontal and 256x512 vertical canvases; the 3x1
@@ -261,6 +264,17 @@ portable wood/stone/metal and clean/dirty graphics without changing sanitation s
 configuration and preferences hashes remained unchanged, the process exited cleanly, staged bundles
 were removed, and credentials were sanitized. Rejected source candidates and comparison montages
 remain under ignored `artifacts/VisualAssets/BuildingVariations`.
+
+The exact Thermodynamics exclusion rerun is
+`artifacts/EndToEndRuns/Grouped/20260809T004004598Z`. In PID 56300, the ordered
+Core/Harmony/RimFridge/Thermodynamics/Immersive Chefs/Gateway group cooked a plated simple meal,
+stored it in RimFridge, heated it through Thermodynamics' native `DMicrowave` job, and ate it.
+The acting agent inspected all five retained frames: the selected frozen meal showed one bound
+plate, culinary quality, and Thermodynamics' own temperature text; the diner visibly heated the
+same meal at `DMicrowave`; and the exact dirty plate/cutlery setting appeared after ingestion. The
+finalized Immersive Chefs microwave Def was absent, so none of its directional art materialized.
+The exact process passed 35 steps, exited cleanly, removed its staged bundles and credentials, and
+left both normal configuration hashes unchanged.
 
 The exact base-package building catalog separately rendered all eight concrete building Defs in
 their four rotations beside native production/dining references. Its retained frames show readable
