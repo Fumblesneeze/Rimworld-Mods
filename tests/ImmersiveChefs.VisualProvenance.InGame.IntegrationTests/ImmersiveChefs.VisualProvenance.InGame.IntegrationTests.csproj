@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net480</TargetFramework>
-    <AssemblyName>ImmersiveChefs.Ftv.InGame.IntegrationTests</AssemblyName>
+    <AssemblyName>ImmersiveChefs.VisualProvenance.InGame.IntegrationTests</AssemblyName>
     <RootNamespace>ImmersiveChefs.MealTexture.InGame.IntegrationTests</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -16,6 +16,6 @@
     <Reference Include="Assembly-CSharp"><HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
   <ItemGroup>
-    <None Update="ImmersiveChefs.Ftv.InGame.IntegrationTests.integrationtests.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
+    <None Update="ImmersiveChefs.VisualProvenance.InGame.IntegrationTests.integrationtests.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
 </Project>

@@ -1,0 +1,26 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.VisualProvenance.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "ludeon.rimworld",
+    "brrainz.harmony",
+    "OskarPotocki.VanillaFactionsExpanded.Core",
+    "VanillaExpanded.VCookE",
+    "VanillaExpanded.VCookEBakery",
+    "VanillaExpanded.VCookEHaute",
+    "VanillaExpanded.VCookEStews",
+    "VanillaExpanded.VCEF",
+    "VanillaExpanded.VCookESushi",
+    "Goat.Food.Texture.Variety.Core",
+    "Goat.Food.Texture.Variety",
+    "Goat.Food.Texture.Variety.VECooking",
+    "Goat.Food.Texture.Variety.VEStew",
+    "Goat.Food.Texture.Variety.VESushi",
+    "Thekiborg.DMTR",
+    "Evyatar108.VarietyMattersImprovedRedux",
+    "VanillaExpanded.VanillaFoodVarietyExpanded",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

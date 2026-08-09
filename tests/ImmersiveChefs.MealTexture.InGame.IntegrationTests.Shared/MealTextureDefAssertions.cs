@@ -14,6 +14,9 @@ internal static class MealTextureDefAssertions
     internal const string DmtrPackageId = "Thekiborg.DMTR";
     internal const string FtvCorePackageId = "Goat.Food.Texture.Variety.Core";
     internal const string FtvPackageId = "Goat.Food.Texture.Variety";
+    internal const string FtvVceCookingPackageId = "Goat.Food.Texture.Variety.VECooking";
+    internal const string FtvVceStewPackageId = "Goat.Food.Texture.Variety.VEStew";
+    internal const string FtvVceSushiPackageId = "Goat.Food.Texture.Variety.VESushi";
     internal const string DmtrGraphicType =
         "DynamicMealTextureReplacer.Graphic_IngredientsVariant";
     internal const string DmtrExtensionType =
@@ -154,6 +157,62 @@ internal static class MealTextureDefAssertions
                     $"{exception.GetType().FullName}: {exception.Message}");
             }
         }
+    }
+
+    internal static void AssertFtvOwnsVceAddonMeals()
+    {
+        RequireActive(
+            FtvCorePackageId,
+            FtvPackageId,
+            FtvVceCookingPackageId,
+            FtvVceStewPackageId,
+            FtvVceSushiPackageId);
+
+        var coveredMeals = new[]
+        {
+            "VCE_SimpleBake", "VCE_FineBake", "VCE_LavishBake", "VCE_GourmetBake",
+            "VCE_SimpleGrill", "VCE_FineGrill", "VCE_LavishGrill", "VCE_GourmetGrill",
+            "VCE_RuinedSimpleGrill", "VCE_RuinedFineGrill", "VCE_RuinedLavishGrill",
+            "VCE_RuinedGourmetGrill", "VCE_CookedSoupSimple", "VCE_CookedSoupFine",
+            "VCE_CookedSoupLavish", "VCE_CookedSoupGourmet", "VCE_MealGourmet",
+            "VCE_CookedStewSimple", "VCE_CookedStewFine", "VCE_CookedStewLavish",
+            "VCE_Chirashizushi", "VCE_Norimaki", "VCE_Uramaki", "VCE_Nigiri",
+            "VCE_Temaki", "VCE_Futomaki", "VCE_Gunkanmaki", "VCE_Oshizushi"
+        };
+        foreach (var defName in coveredMeals)
+        {
+            AssertFtvOwner(defName);
+            AssertImmersiveMealState(DefDatabase<ThingDef>.GetNamed(defName));
+        }
+
+        var upstreamOnlyFoods = new[]
+        {
+            "VCE_SimpleDessert", "VCE_FineDessert", "VCE_LavishDessert", "VCE_GourmetDessert",
+            "VCE_Cheese", "VCE_DeepFriedBigMeat", "VCE_DeepFriedFish",
+            "VCE_DeepFriedVegetables", "VCE_DeepFriedSushi"
+        };
+        foreach (var defName in upstreamOnlyFoods)
+        {
+            AssertFtvOwner(defName);
+        }
+    }
+
+    private static void AssertFtvOwner(string defName)
+    {
+        var meal = DefDatabase<ThingDef>.GetNamed(defName);
+        IntegrationAssert.NotNull(meal.graphicData, $"{defName} must retain finalized graphic data.");
+        IntegrationAssert.Equal(
+            FtvGraphicType,
+            meal.graphicData.graphicClass?.FullName,
+            $"FTV must remain the finalized graphic owner for {defName}.");
+        IntegrationAssert.True(meal.comps is not null, $"{defName} must retain a component list.");
+        IntegrationAssert.Equal(
+            1,
+            meal.comps!.Count(properties => string.Equals(
+                properties.compClass?.FullName,
+                FtvCompType,
+                StringComparison.Ordinal)),
+            $"{defName} must retain exactly one FTV alternate-texture comp.");
     }
 
     private static void AssertImmersiveMealState(ThingDef meal)
