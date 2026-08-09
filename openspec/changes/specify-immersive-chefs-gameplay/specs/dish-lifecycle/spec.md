@@ -98,6 +98,8 @@ For a spawned meal, a surviving plate SHALL appear at or adjacent to the meal's 
 ### Requirement: Doing dishes is Cleaning work
 Immersive Chefs SHALL add a `Doing dishes` work giver governed by the vanilla Cleaning work type. Eligible cleaners SHALL reserve dirty ware and its destination atomically. With `PreferDishwashers` enabled, they SHALL prefer hauling it to an available dishwasher and use hand washing only when no eligible dishwasher has load capacity or can be reached. With that setting disabled, the work giver MAY select either an eligible dishwasher or valid hand-washing source through ordinary priority, reachability, and reservation rules. Ordinary hauling logic MAY deliver dirty ware to dishwasher input storage, but SHALL NOT divert ware away from an already selected eligible dishwasher merely to enable hand washing.
 
+Hand-washing duration SHALL scale with the physical abstraction represented by the exact item instead of using one duration for every product. At the default work scale, one plate SHALL take 250 ticks, one cutlery setting 125 ticks, and a cookware set 1,000 ticks. The configured hand-washing work scale SHALL multiply those baselines once. A stack split for one job SHALL use only the admitted physical unit's duration.
+
 #### Scenario: Dishwasher has capacity
 - **WHEN** a cleaner searches for work while dirty ware and a reachable eligible dishwasher with free capacity exist
 - **THEN** the generated job reserves both and hauls the ware to that dishwasher instead of selecting a hand-washing source
@@ -109,6 +111,21 @@ Immersive Chefs SHALL add a `Doing dishes` work giver governed by the vanilla Cl
 #### Scenario: Cleaning work is disabled
 - **WHEN** a pawn has the Cleaning work type disabled
 - **THEN** the pawn is not assigned a `Doing dishes` job by normal work selection
+
+#### Scenario: Compare a plate with a cookware set
+- **WHEN** otherwise equal pawns hand-wash one plate and one cookware set at the same source and default settings
+- **THEN** the plate completes after 250 work ticks while the complete pot/pan/lid cookware abstraction takes 1,000 work ticks
+
+### Requirement: A blocked cook may clean required cookware
+When a covered cooking bill would otherwise be runnable but no permitted clean cookware set exists, the bill-owning Cooking work path SHALL look for an eligible dirty cookware set before reporting a permanent wait. If the cook can reserve that exact set and an eligible dishwasher or hand-washing source, the cook SHALL perform the ordinary identity-preserving washing job and then reconsider the original bill. This prerequisite wash belongs to the cook's attempt to satisfy the bill and SHALL be available even when that pawn has ordinary Cleaning work disabled; it MUST still honor forbiddance, reachability, reservations, source operation, water consumption, and dishwasher capacity. It SHALL not fabricate cookware, clean it instantly, or bypass the normal washing toils.
+
+#### Scenario: A bill has only dirty cookware available
+- **WHEN** a pawn eligible for Cooking but disabled for ordinary Cleaning scans a runnable covered bill and can reach one dirty cookware set plus a valid water source
+- **THEN** the pawn washes that exact set through the normal washing job and may then start the bill with the same clean set
+
+#### Scenario: The dirty cookware cannot be washed
+- **WHEN** the only dirty cookware is forbidden, reserved, unreachable, or has no valid washing destination
+- **THEN** the cooking scan reports the exact missing-clean-cookware reason and does not mutate or teleport the item
 
 ### Requirement: Connected water-source priority
 Hand-washing jobs SHALL choose reachable, allowed water sources in this order: an operational Dubs Bad Hygiene kitchen sink when that integration is active; another recognized connected water fixture such as a sink, water bowl, or well; and a safe standable water-terrain cell as the configurable final fallback when `AllowTerrainHandwashing` is enabled. A powered appliance SHALL be eligible only while powered, and an appliance or fixture whose integration exposes a water network SHALL be eligible only while connected to an operational supplied network.
@@ -132,6 +149,8 @@ Hand-washing jobs SHALL choose reachable, allowed water sources in this order: a
 ### Requirement: Wild-water washing is usable but not sanitary-equivalent
 
 A completed wash at a recognized supplied fixture or dishwasher SHALL mark ware clean with safe-wash provenance. A completed wash at water terrain SHALL mark it clean with wild-water provenance. Caravan travel washing SHALL produce the same wild-water provenance. The provenance SHALL remain until a later completed wash replaces it and SHALL be included at the next applicable cooking or dining poisoning calculation even though the ware is selectable as clean.
+
+Wash provenance is an internal risk input, not ordinary player knowledge. Inspect panes, labels, stack labels, and trade labels MUST NOT append `wild-water washed` or an equivalent hidden-provenance disclosure. Developer diagnostics and test-only state MAY still expose it.
 
 #### Scenario: Terrain-washed plate is reused
 - **WHEN** a dirty plate is washed at a water-terrain fallback and later used for an eligible meal

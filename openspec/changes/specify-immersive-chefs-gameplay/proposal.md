@@ -15,6 +15,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - Specify player-facing settings and safe emergency fallbacks so the simulation cannot deadlock or starve pawns.
 - Specify `Dishwashing` and `Professional Kitchens` research while leaving ordinary tableware progression to the crafting spot, smithies, and machining table.
 - Replace every player-visible placeholder texture with selected custom art, require multiple candidates per asset, compare candidates at game scale against RimWorld's live visual context, and ship only the selected alpha-clean result.
+- Correct playtest findings by Core-benchmarking recipe costs, broadening stony material discovery, adding thematic low trader stock, distinguishing primitive cookware art, conserving personally owned visitor-caravan dishes, hiding latent sanitation/poison diagnostics, attributing actual poisoning, scaling washing work, letting cooks wash or explicitly force dirty cookware, rendering active cookware, and adding game/Workshop preview art.
 - Record food preservation/canning and food waste as future extension points; neither is in this change's implementation scope.
 - Defer ceramic/porcelain content until a provider is installed, while explicitly classifying the installed Vanilla Cooking Expanded family and the other named meal ecosystems in this change.
 - This change is the gameplay contract governing the implementation and its remaining in-game acceptance work.

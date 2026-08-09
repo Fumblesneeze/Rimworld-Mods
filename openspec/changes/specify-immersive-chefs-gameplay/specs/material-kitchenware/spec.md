@@ -5,6 +5,8 @@
 ### Requirement: Kitchenware has explicit gameplay identities
 Immersive Chefs SHALL add four distinct, quality-bearing kitchenware types: a cookware set, a plate, a cutlery setting, and a chef's knife set. One cookware item SHALL abstract one pot, one pan, their lids, handles, and small utensils; one plate and one cutlery item SHALL each serve one meal portion; and one chef's knife item SHALL represent a cook's personal knife set.
 
+Player-facing terminology SHALL call the pot/pan/lid abstraction a `cookware set` everywhere. `Tableware` MAY collectively mean plates and cutlery, and `kitchenware` MAY name the broad catalog category containing all four product types, but alerts, bills, requirements, float-menu messages, inspect strings, and other actionable text MUST name the exact missing or used product rather than calling a cookware set `kitchenware`.
+
 #### Scenario: Inspect each crafted kitchenware type
 - **WHEN** a player inspects a cookware set, plate, cutlery setting, and chef's knife set
 - **THEN** each item identifies its gameplay unit and displays its material, crafting quality, cleanliness, comfort, and every speed or culinary stat applicable to that type
@@ -21,9 +23,9 @@ Metal, wood, registered stone-block, and compatible plastic kitchenware SHALL be
 - **THEN** every item retains its material, color source, crafting quality, quantity, and sanitation state
 
 ### Requirement: Material eligibility is capability-based and extensible
-Cookware and chef's knives SHALL accept compatible metallic Stuff, including vanilla steel, silver, and gold and supported modded lead, iron, steel variants, stainless steel, brass, bronze, copper, aluminium, titanium, and other metals. Primitive cookware SHALL additionally accept only registered block Stuffs `BlocksSandstone`, `BlocksGranite`, `BlocksLimestone`, `BlocksSlate`, and `BlocksMarble`; broad `Stony` membership MUST NOT admit jade or raw stone. Plates SHALL accept compatible metal, wood, ceramic, adobe, and registered plastic materials. Cutlery SHALL accept compatible metal, wood, and registered plastic materials.
+Cookware and chef's knives SHALL accept compatible metallic Stuff, including vanilla steel, silver, and gold and supported modded lead, iron, steel variants, stainless steel, brass, bronze, copper, aluminium, titanium, and other metals. Primitive cookware and stone plates SHALL accept any Stuff with the finalized `Stony` material category so loaded material mods participate without an Immersive Chefs Def-name allowlist. Explicit Immersive Chefs exclusions and more-specific material registrations SHALL take precedence over broad categories, so a deliberately excluded material remains unavailable and an explicitly registered plastic or metal is not misclassified merely because it also advertises `Stony`. Plates SHALL accept compatible metal, wood, stone, ceramic, adobe, and registered plastic materials. Cutlery SHALL accept compatible metal, wood, and registered plastic materials.
 
-The classifier SHALL use explicit kitchen-material registrations plus narrowly applicable Stuff properties, SHALL allow compatibility patches to include or exclude individual StuffDefs, and MUST NOT classify a material solely from one broad category tag. Each eligible material SHALL receive a product-aware fabrication tier of `PrimitiveStone`, `Soft`, `Intermediate`, or `Modern`. Registered wood and lead SHALL be `Soft` for plates and cutlery; iron, copper, bronze, brass, silver, gold, aluminium, and otherwise compatible unknown metals SHALL default to `Intermediate`; vanilla steel, Expanded Materials steel variants/stainless/titanium, plasteel, and registered plastics SHALL be `Modern` for their supported products. This rule SHALL permit the locally downloaded ABS polymer to be registered as plastic despite also advertising metallic, woody, and stony categories, and SHALL permit a future brass Stuff without requiring a hard-coded package ID.
+The classifier SHALL use explicit kitchen-material registrations plus narrowly applicable Stuff properties and SHALL allow compatibility patches to include or exclude individual StuffDefs. Each eligible material SHALL receive a product-aware fabrication tier of `PrimitiveStone`, `Soft`, `Intermediate`, or `Modern`. Registered wood and lead SHALL be `Soft` for plates and cutlery; any otherwise-unclassified `Stony` Stuff SHALL be `PrimitiveStone` for cookware and plates; iron, copper, bronze, brass, silver, gold, aluminium, and otherwise compatible unknown metals SHALL default to `Intermediate`; vanilla steel, Expanded Materials steel variants/stainless/titanium, plasteel, and registered plastics SHALL be `Modern` for their supported products. This rule SHALL permit the locally downloaded ABS polymer to be registered as plastic despite also advertising metallic, woody, and stony categories, and SHALL permit future stony or brass Stuff without requiring a hard-coded package ID.
 
 #### Scenario: Expanded Materials - Metals is active
 - **WHEN** `argon.expandedmaterials.metals` supplies `EM_Iron`, `EM_MildSteel`, `EM_TemperedSteel`, `EM_Lead`, `EM_Bronze`, `EM_Copper`, `EM_StainlessSteel`, and `EM_Titanium`
@@ -36,6 +38,11 @@ The classifier SHALL use explicit kitchen-material registrations plus narrowly a
 #### Scenario: ABS polymer is registered explicitly
 - **WHEN** `mlie.simplysublimeabspolymer` is active and its ABS Stuff carries several broad material categories
 - **THEN** the compatibility registration classifies ABS as plastic for plates and cutlery but does not accidentally classify every metallic, woody, or stony Stuff as plastic
+
+#### Scenario: A material mod adds a new stone block Stuff
+- **WHEN** a loaded mod supplies an otherwise-unregistered Stuff carrying the finalized `Stony` category
+- **THEN** primitive cookware and stone-plate recipes accept it at the crafting spot without an Immersive Chefs package-specific patch
+- **THEN** any explicit exclusion or explicit non-stone registration for that Stuff still wins
 
 ### Requirement: Deferred ceramic and supported adobe shapes have safe recipe paths
 Immersive Chefs SHALL NOT require an unsupported pre-1.6 ceramics package and SHALL NOT invent ceramic or porcelain content, research, or recipes in the current change. A later compatibility change MAY use the existing registration seam to add ceramic Stuff or a fixed ceramic ingredient-to-plate recipe after a supported RimWorld 1.6 provider is selected. Because the locally available `EM_AdobeBricks` is a resource rather than Stuff, its current integration SHALL use a fixed-material adobe plate recipe and MUST NOT pretend that the output is made from Stuff.
@@ -53,25 +60,27 @@ Kitchenware recipes SHALL use the following baseline resource costs and outputs:
 
 | Product and fabrication route | Workstation | Ingredients | Output |
 | --- | --- | --- | --- |
-| Primitive stone cookware | `CraftingSpot` | 40 units of one registered vanilla stone-block Stuff plus 5 wood | 1 cookware set |
-| Medieval cookware | `FueledSmithy` or `ElectricSmithy` | 50 units of one eligible intermediate metal Stuff plus 5 wood | 1 cookware set |
-| Modern cookware | `TableMachining` | 50 units of one eligible modern metal Stuff plus 5 wood | 1 cookware set |
-| Chef's knife set | `TableMachining` | 30 units of one eligible metal Stuff | 1 chef's knife set |
-| Soft or fixed plates | `CraftingSpot` | 20 units of wood, registered lead, or the fixed adobe ingredient | 4 plates |
-| Soft cutlery | `CraftingSpot` | 12 units of wood or registered lead | 4 cutlery settings |
-| Intermediate metal plates | `FueledSmithy` or `ElectricSmithy` | 20 units of one eligible intermediate metal Stuff | 4 plates |
-| Intermediate metal cutlery | `FueledSmithy` or `ElectricSmithy` | 12 units of one eligible intermediate metal Stuff | 4 cutlery settings |
-| Universal metal/plastic plates | `TableMachining` | 20 units of any eligible metal or registered plastic Stuff | 4 plates |
-| Universal metal/plastic cutlery | `TableMachining` | 12 units of any eligible metal or registered plastic Stuff | 4 cutlery settings |
+| Primitive stone cookware | `CraftingSpot` | 10 units of one eligible stony Stuff plus 2 wood | 1 cookware set |
+| Medieval cookware | `FueledSmithy` or `ElectricSmithy` | 20 units of one eligible intermediate metal Stuff plus 2 wood | 1 cookware set |
+| Modern cookware | `TableMachining` | 20 units of one eligible modern metal Stuff plus 2 wood | 1 cookware set |
+| Chef's knife set | `TableMachining` | 20 units of one eligible metal Stuff | 1 chef's knife set |
+| Soft or fixed plates | `CraftingSpot` | 8 units of wood, registered lead, or the fixed adobe ingredient | 4 plates |
+| Soft cutlery | `CraftingSpot` | 4 units of wood or registered lead | 4 cutlery settings |
+| Intermediate metal plates | `FueledSmithy` or `ElectricSmithy` | 8 units of one eligible intermediate metal Stuff | 4 plates |
+| Intermediate metal cutlery | `FueledSmithy` or `ElectricSmithy` | 4 units of one eligible intermediate metal Stuff | 4 cutlery settings |
+| Universal metal/plastic plates | `TableMachining` | 8 units of any eligible metal or registered plastic Stuff | 4 plates |
+| Universal metal/plastic cutlery | `TableMachining` | 4 units of any eligible metal or registered plastic Stuff | 4 cutlery settings |
 
-Every recipe SHALL use the completing pawn's Crafting skill to assign a vanilla `QualityCategory` to all items in its output batch. The wood in each cookware recipe SHALL represent handles, spatulas, and related non-metal parts rather than a second selectable Stuff. Plate and cutlery recipes SHALL have no Immersive Chefs research prerequisite: progression comes from access to `CraftingSpot`, vanilla `Smithing`/`Electricity` for the smithies, and vanilla `Machining` for `TableMachining`. The machining recipes SHALL remain a late universal route even for materials also available at an earlier station.
+These costs SHALL remain benchmarked against same-era Core objects instead of being treated as isolated tuning constants: one Core wall consumes 5 material units and one Core steel knife consumes 30, so primitive cookware costs two wall-equivalents of stone, metal cookware costs four wall-equivalents and remains cheaper than a combat knife plus handles, and one place setting costs at most two material units. A future rebalance SHALL record its comparator Defs and ratios before changing the table.
+
+Every recipe SHALL use the completing pawn's Crafting skill to assign a vanilla `QualityCategory` to all items in its output batch. The wood in each cookware recipe SHALL represent handles, spatulas, and related non-metal parts rather than a second selectable Stuff. Every ingredient requirement SHALL use a semantic player label such as `any stony material`, `any intermediate metal`, or `wood`; no generated bill requirement MAY expose an internal category such as `root`. Plate and cutlery recipes SHALL have no Immersive Chefs research prerequisite: progression comes from access to `CraftingSpot`, vanilla `Smithing`/`Electricity` for the smithies, and vanilla `Machining` for `TableMachining`. The machining recipes SHALL remain a late universal route even for materials also available at an earlier station.
 
 #### Scenario: Craft one cookware abstraction
-- **WHEN** a pawn completes a cookware recipe using 50 stainless steel and 5 wood at a machining table
+- **WHEN** a pawn completes a cookware recipe using 20 stainless steel and 2 wood at a machining table
 - **THEN** exactly one stainless-steel cookware item is produced, it represents the full cookware set, and its quality is generated from that crafting operation
 
 #### Scenario: Begin with stone cookware
-- **WHEN** a tribal colony has no research and completes the primitive recipe using 40 granite blocks and 5 wood at `CraftingSpot`
+- **WHEN** a tribal colony has no research and completes the primitive recipe using 10 granite blocks and 2 wood at `CraftingSpot`
 - **THEN** it receives one Stuff-colored granite cookware set with the primitive performance and durability profile
 
 #### Scenario: Smith intermediate place settings
@@ -80,7 +89,19 @@ Every recipe SHALL use the completing pawn's Crafting skill to assign a vanilla 
 
 #### Scenario: Craft a batch of wood place settings
 - **WHEN** a pawn completes each wood place-setting recipe at a crafting spot
-- **THEN** 20 wood yields four wood plates and 12 wood yields four stackable wood cutlery settings, with one shared crafting quality per batch
+- **THEN** 8 wood yields four wood plates and 4 wood yields four stackable wood cutlery settings, with one shared crafting quality per batch
+
+### Requirement: Portable culinary ware enters appropriate trader stock
+Every portable Immersive Chefs ware item that a player can reasonably carry and own SHALL be sellable. Trader stock SHALL remain low and thematic: neolithic bulk-goods traders MAY carry primitive cookware and inexpensive wood or stone tableware; outlander bulk-goods traders MAY carry ordinary cookware, plates, cutlery, and chef's knife sets; and exotic-goods traders MAY rarely carry glitterworld cookware. Prepared ingredients, dirty ware, installed buildings, and research-locked station/appliance products SHALL not be injected as ordinary stock merely to satisfy sellability. Stock generators SHALL preserve Stuff, quality, sanitation, and stack counts and SHALL not create optional-mod package coupling.
+
+#### Scenario: Buy everyday kitchen supplies
+- **WHEN** an eligible bulk-goods trader generates stock
+- **THEN** it may contain a low number of era-appropriate cookware sets, plates, cutlery settings, or chef's knife sets using valid Stuff and quality
+- **THEN** the player can buy or sell eligible portable ware through the native trade dialog
+
+#### Scenario: Find glitterworld cookware
+- **WHEN** an eligible exotic-goods trader generates stock repeatedly
+- **THEN** glitterworld cookware appears only at its declared low chance and never appears as routine bulk stock
 
 ### Requirement: Material and craftsmanship drive visible performance stats
 Immersive Chefs SHALL expose data-driven kitchenware stats with the following applicability:

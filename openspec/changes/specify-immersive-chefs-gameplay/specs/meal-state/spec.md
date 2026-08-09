@@ -100,6 +100,8 @@ At ingestion the mod SHALL begin with the compatible base-game poisoning probabi
 
 The normalized plate or cutlery service score SHALL be `clamp(0.75 * craftsmanship score + 0.25 * material-cleanliness score, 0, 100)`, using the kitchenware system's normalized values; an absent item contributes no service-score delta. Cold, Frozen, and Microwave rows SHALL be included only while Immersive Chefs owns temperature and SHALL contribute nothing when Thermodynamics is active. The sum of custom deltas SHALL be multiplied by `FoodPoisoningEffectScale`, the final probability SHALL be clamped from zero through `MaximumCustomPoisonChance`, and the mod MUST NOT lower a compatible base probability that already exceeds that configured cap. Dirty cookware contamination SHALL remain on the serving record even after the cookware itself is dropped. A pawn eating a serving involving any dirty cookware, plate, or cutlery SHALL additionally receive one non-stacking `Ate with dirty kitchenware` thought at mood `-6` for one in-game day.
 
+The meal's ordinary inspect text MUST NOT reveal whether the serving is poisoned or explicitly state that it is not poisoned, even when developer mode is enabled; discovering latent poisoning SHALL remain a consequence of ingestion. When ingestion actually causes food poisoning, Immersive Chefs SHALL attribute the resulting notification/health cause to the single largest positive contributor present in the final calculation. Dirty cookware, dirty plate, dirty cutlery, unsafe wild-water washing, cold/frozen temperature, low culinary quality, microwave reheating, and the compatible vanilla base source SHALL be eligible contributors. Ties SHALL use a deterministic priority matching the risk table's physical severity. The cause text SHALL use a readable label such as `dirty cookware`, `dirty plate`, or `frozen meal`, never `unknown` when the mod supplied a positive risk contributor. This cause attribution MUST NOT expose latent poison state before ingestion or change the actual probability.
+
 Wild-water provenance SHALL be evaluated independently from dirty state, SHALL be preserved in cookware contamination snapshots and embedded plate bindings, and SHALL use the same deltas whether the wash occurred at map water terrain or through caravan travel abstraction. The general `FoodPoisoningEffectScale` and `MaximumCustomPoisonChance` SHALL apply to these deltas. Safely washing an item before use SHALL remove its wild-water delta.
 
 #### Scenario: Dirty full place setting is dramatically riskier
@@ -118,6 +120,14 @@ Wild-water provenance SHALL be evaluated independently from dirty state, SHALL b
 #### Scenario: Wild-water place setting adds bounded risk
 - **WHEN** a pawn eats a warm, otherwise clean serving cooked without dirty cookware from a wild-water-washed plate using wild-water-washed cutlery
 - **THEN** the custom risk includes `+7` percentage points from wash provenance before scaling and the configured cap
+
+#### Scenario: Inspect a poisoned serving before eating
+- **WHEN** a covered meal's vanilla poison component has already selected it as poisoned and the player inspects it, including in developer mode
+- **THEN** neither `poisoned` nor `not poisoned` appears in ordinary meal inspection
+
+#### Scenario: Dirty cookware is the largest poisoning contributor
+- **WHEN** ingestion causes food poisoning and the final dirty-cookware delta is larger than every other positive source
+- **THEN** the resulting player-visible cause names dirty cookware rather than `unknown`
 
 ### Requirement: Pawns reheat eligible cold meals in a countertop microwave
 When Thermodynamics - Hot Meals is absent, the mod SHALL provide a powered one-cell countertop microwave unlocked directly by vanilla `Electricity` that accepts one eligible plated meal serving per heating job. It SHALL require neither `ImmersiveChefs_Dishwashing` nor `ImmersiveChefs_ProfessionalKitchens`. The microwave SHALL render and construct at `BuildingOnTop`, SHALL be a non-edifice, SHALL not clear or replace the supporting building, and SHALL occupy the top-building altitude for that cell. Its placement worker SHALL require an already completed, spawned table or workbench cell whose Def provides an eating/item surface; bare terrain, blueprints, frames, beds, shelves/storage, and unrelated buildings SHALL be rejected. The support MAY be vanilla or modded and the rule SHALL be capability-based rather than a hard-coded Def-name list. Even More Linkables is an inspected implementation example, not a dependency.

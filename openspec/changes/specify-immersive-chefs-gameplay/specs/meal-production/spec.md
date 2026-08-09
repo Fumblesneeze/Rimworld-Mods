@@ -47,9 +47,23 @@ An explicit missing-ware result SHALL record every unavailable cookware or plate
 ### Requirement: Ware selection prefers cleanliness before secondary stats
 The ware selector SHALL always rank clean cookware and plates ahead of dirty equivalents. It SHALL exclude dirty wares unless the precedence matrix permits them for the configured fallback and current emergency state. Among wares in the same allowed sanitation state, it SHALL apply player restrictions, material cleanliness, crafting quality, speed, comfort, culinary value, path cost, and stack availability as deterministic secondary considerations.
 
+When the configured policy would ordinarily reject dirty cookware, a selected eligible cook SHALL receive a native right-click option on the covered bill giver to `Force cook with dirty cookware` if all food ingredients and plates are available and a reachable dirty cookware set is the only cookware blocker. Choosing it SHALL enqueue the ordinary `DoBill` job with a one-job dirty-cookware override; it SHALL not change the global fallback setting, pre-clean the set, suppress sanitation recording, or hide the resulting poisoning contribution. The option SHALL be absent when clean cookware exists, no eligible dirty set exists, the bill is not otherwise runnable, or the pawn cannot perform the bill.
+
 #### Scenario: Clean low-quality and dirty high-quality cookware are both available
 - **WHEN** an ordinary covered cooking job searches for cookware
 - **THEN** it reserves the clean cookware even when the dirty cookware has a higher material or crafting quality
+
+#### Scenario: Player explicitly forces dirty cookware
+- **WHEN** a selected eligible cook right-clicks a covered bill giver whose only cookware option is one reachable dirty set and chooses `Force cook with dirty cookware`
+- **THEN** the normal bill job reserves and uses that exact set, records its dirty-cookware contamination on the meal, and leaves the global ware policy unchanged
+
+### Requirement: Active cooking visibly uses the reserved cookware
+Once the lead pawn begins the recipe's active cooking toil, the exact reserved cookware set SHALL render as a carried/placed work prop centered in front of the pawn toward the bill giver, comparable to RimWorld's visible ingredient handling. It SHALL remain one physical Thing held by the cooking session, preserve its Stuff tint and selected graphic, and disappear from the work prop when active cooking ends. It MUST NOT render during ingredient hauling alone, duplicate on the map, obscure the pawn, or manufacture a cosmetic substitute.
+
+#### Scenario: Watch a cook work at a stove
+- **WHEN** the pawn reaches the active cooking toil with a reserved cookware set
+- **THEN** that exact set is visibly centered between pawn and work surface with its material treatment
+- **THEN** completion or interruption removes the work prop and releases the same physical set under the sanitation lifecycle
 
 ### Requirement: Meal complexity sets the minimum plate material
 Plate eligibility SHALL use an explicit minimum material tier independently from crafting quality and sanitation. A `Simple` recipe or covered meal SHALL accept any registered plate material, including wood, adobe, and stone. An `Advanced`/Fine recipe or meal SHALL accept metal, registered plastic, or registered ceramic/porcelain and SHALL reject wood, adobe, and stone. An `Elaborate`/Lavish recipe or meal SHALL accept only silver, gold, or registered ceramic/porcelain. An unclassified covered mod recipe or meal SHALL default to the Simple plate tier unless compatibility XML explicitly supplies a minimum plate tier. Clean-first and dirty-fallback rules SHALL operate only within the eligible material set; an emergency MAY produce an explicitly unplated serving but MUST NOT silently downgrade to an ineligible plate material.

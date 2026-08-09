@@ -156,6 +156,20 @@ Kitchenware recipes have no Immersive Chefs research prerequisite. The actual va
 
 `ImmersiveChefs_Dishwashing` requires vanilla `Electricity` and unlocks the domestic dishwasher. `ImmersiveChefs_ProfessionalKitchens` requires `ImmersiveChefs_Dishwashing` and vanilla `Machining`, and unlocks the industrial dishwasher plus the prep, sauce, meat, vegetable, and pastry stations. The microwave uses vanilla `Electricity` directly. Glitterworld cookware has no recipe or research and appears only through trade or quest rewards. Ceramic/porcelain progression remains absent until a compatible provider is selected.
 
+### 12. Playtest corrections use player-visible semantics and Core benchmarks
+
+The complete pot/pan/lid abstraction is always player-facing `cookware set`; `tableware` means plates plus cutlery, while `kitchenware` is only the umbrella catalog/category. Ingredient requirements are rendered from product/tier semantics rather than the implementation filter summary, so internal categories such as `Root` never leak into bills.
+
+Recipe costs are comparator decisions rather than isolated numbers. The retained Core 1.6 anchors are a 5-unit material wall and a 30-unit steel combat knife: primitive cookware costs 10 stone plus 2 wood, medieval/modern cookware 20 material plus 2 wood, the non-weapon chef's knife set 20 material, plates 8 material per four, and cutlery 4 per four. The stone path accepts finalized `Stony` Stuff after explicit registration/exclusion precedence so loaded material packs work without Def-name enumeration. Primitive stone cookware is a distinct product Def and sprite because it is a rough carved set, not a gray modern pan.
+
+Trade injection follows product/era intent: neolithic bulk traders carry only primitive/soft wares, outlander bulk traders carry small quantities of ordinary portable wares, and exotic traders very rarely carry self-cleaning glitterworld cookware. All portable wares are sellable; prepared ingredients and installed buildings are not added as ordinary stock. Exact trader Defs and counts are regression-tested so the matrix does not silently grow.
+
+Sanitation remains mechanically meaningful without leaking hidden state. Ordinary inspection hides the vanilla poisoned/not-poisoned string and wild-water provenance. If poisoning occurs, the largest positive contributor from the actual final calculation is retained only long enough to name the resulting cause. Hand-wash duration derives from the existing plate-equivalent abstraction. A cook blocked only by dirty cookware first executes the real washing job; the native right-click dirty override is explicit, one-job scoped, and still records contamination. The exact held cookware is rendered only during active recipe work.
+
+Travel ownership is captured before holder transfer. World caravans continue automatic wild-water washing, while a visiting trader/guest on a colony map receives its own brought plate back dirty in personal inventory. Colony/Gastronomy service provenance instead returns colony ware to clearing.
+
+Preview art uses a generated original parody composition plus deterministic text. The release source keeps a 1280x720 Workshop master and packages a 640x360 `About/Preview.png`; both are 16:9 PNGs below 1 MiB. Primitive cookware and preview selections each require at least two candidates and focused live rendering before acceptance.
+
 ## Risks / Trade-offs
 
 - **[Stack metadata causes fragmentation]** → Quantize culinary quality and temperature for stack compatibility, preserve exact plate counts, and prefer correctness over forced merging.

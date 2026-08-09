@@ -86,6 +86,8 @@ An eligible meal eaten from a caravan SHALL retain the same culinary state, plat
 
 The caravan journey SHALL abstract routine washing after each eligible dining event: returned ware becomes clean with wild-water wash provenance. It remains usable, but the next applicable poisoning calculation SHALL include the same wild-water provenance risk as ware washed at a water-terrain fallback on a map.
 
+The same ownership rule SHALL cover a visiting trader or guest caravan temporarily spawned on a colony map. If the diner brought the meal in personal inventory, its exact embedded plate and personally sourced cutlery SHALL return dirty to that pawn's inventory after native ingestion rather than being dropped into colony space. If Gastronomy or another recognized colony service workflow supplied the meal or tableware, that service provenance SHALL win and the colony SHALL retain the returned dirty ware for clearing. Personal-versus-colony ownership MUST be captured before any server or ingestion transfer changes the current holder.
+
 #### Scenario: Caravan pawn eats a plated meal
 
 - **WHEN** a caravan pawn consumes an eligible serving with an embedded plate and selects caravan cutlery
@@ -106,6 +108,14 @@ The caravan journey SHALL abstract routine washing after each eligible dining ev
 
 - **WHEN** a caravan pawn consumes pemmican or a registered packaged travel meal
 - **THEN** no plate or cutlery is selected, returned, washed, or reported missing
+
+#### Scenario: An arrived trader eats the meal it brought
+- **WHEN** a trader-caravan pawn on the colony map consumes an eligible plated meal that originated in its personal inventory without colony restaurant service
+- **THEN** the exact embedded plate returns dirty to that pawn's inventory after the meal disappears and is not dropped for colony ownership
+
+#### Scenario: An arrived guest receives colony restaurant service
+- **WHEN** Gastronomy supplies an eligible colony meal and colony place setting to a visiting pawn
+- **THEN** the returned dirty plate and cutlery remain colony property for the server/clearing workflow rather than being inserted into the guest's inventory
 
 ### Requirement: Colony expectations scale gradually
 
