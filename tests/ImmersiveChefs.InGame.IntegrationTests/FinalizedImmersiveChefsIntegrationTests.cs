@@ -89,8 +89,13 @@ public static class FinalizedImmersiveChefsIntegrationTests
         };
         foreach (var defName in buildingDefs)
         {
+            var def = DefDatabase<ThingDef>.GetNamed(defName);
+            IntegrationAssert.Equal(
+                typeof(Graphic_Multi),
+                def.graphicData.graphicClass,
+                defName + " must retain authored cardinal art after finalization.");
             IntegrationAssert.True(
-                !DefDatabase<ThingDef>.GetNamed(defName).comps.Any(properties =>
+                !def.comps.Any(properties =>
                     properties.GetType().FullName ==
                     "VEF.Buildings.CompProperties_RandomBuildingGraphic"),
                 defName + " must not retain a VEF comp when the optional packages are absent.");

@@ -123,9 +123,9 @@ public sealed class VisualAssetPackageTests
 
         foreach (var texturePath in texturePaths)
         {
-            var basePath = TextureFile(root, texturePath + ".png");
-            var variantPath = TextureFile(root, texturePath + "_Variant01.png");
-            var packagedVariantPath = PackagedTextureFile(root, texturePath + "_Variant01.png");
+            var basePath = TextureFile(root, texturePath + "_north.png");
+            var variantPath = TextureFile(root, texturePath + "_Variant01_north.png");
+            var packagedVariantPath = PackagedTextureFile(root, texturePath + "_Variant01_north.png");
 
             Assert.Multiple(() =>
             {
@@ -138,6 +138,101 @@ public sealed class VisualAssetPackageTests
             AssertNoVividGreenChroma(variantPath);
             AssertNoBrightBlueEmission(variantPath);
             AssertSpritesDiffer(basePath, variantPath);
+        }
+    }
+
+    [Test]
+    public void Every_rotatable_custom_building_uses_complete_authored_directional_families()
+    {
+        var root = FindRepositoryRoot();
+        var documents = new[]
+        {
+            Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "KitchenBuildings.xml"),
+            Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "PreparedFoodAndStation.xml"),
+            Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "AssistantStations.xml"),
+            Path.Combine(root, "mods", "ImmersiveChefs", "Patches", "Compatibility", "ThermodynamicsHotMeals.xml")
+        }
+            .Select(XDocument.Load)
+            .ToArray();
+        var defs = documents
+            .SelectMany(document => document.Descendants("ThingDef"))
+            .Where(element => element.Element("defName") is not null)
+            .ToDictionary(element => (string)element.Element("defName")!);
+        var buildings = new[]
+        {
+            ("ImmersiveChefs_Dishwasher", DishwasherTexturePath, 2, 1),
+            ("ImmersiveChefs_IndustrialDishwasher", IndustrialDishwasherTexturePath, 3, 1),
+            ("ImmersiveChefs_PrepStation", PrepStationTexturePath, 7, 3),
+            ("ImmersiveChefs_SauceStation", SauceStationTexturePath, 2, 1),
+            ("ImmersiveChefs_MeatStation", MeatStationTexturePath, 2, 1),
+            ("ImmersiveChefs_VegetableStation", VegetableStationTexturePath, 2, 1),
+            ("ImmersiveChefs_PastryStation", PastryStationTexturePath, 2, 1),
+            ("ImmersiveChefs_Microwave", MicrowaveTexturePath, 1, 1)
+        };
+        var directions = new[] { "north", "east", "south", "west" };
+
+        foreach (var (defName, texturePath, widthUnits, heightUnits) in buildings)
+        {
+            var graphicData = defs[defName].Element("graphicData")!;
+            Assert.That(
+                (string?)graphicData.Element("graphicClass"),
+                Is.EqualTo("Graphic_Multi"),
+                defName + " must use authored direction-specific building art.");
+
+            foreach (var familyPath in new[] { texturePath, texturePath + "_Variant01" })
+            {
+                Assert.Multiple(() =>
+                {
+                    Assert.That(
+                        File.Exists(TextureFile(root, familyPath + ".png")),
+                        Is.False,
+                        familyPath + " must not retain the rejected single-view source raster.");
+                    Assert.That(
+                        File.Exists(PackagedTextureFile(root, familyPath + ".png")),
+                        Is.False,
+                        familyPath + " must not package the rejected single-view raster.");
+                    foreach (var direction in directions)
+                    {
+                        Assert.That(
+                            File.Exists(TextureFile(root, familyPath + "_" + direction + ".png")),
+                            Is.True,
+                            familyPath + " source " + direction);
+                        Assert.That(
+                            File.Exists(PackagedTextureFile(root, familyPath + "_" + direction + ".png")),
+                            Is.True,
+                            familyPath + " packaged " + direction);
+                    }
+                });
+
+                var north = TextureFile(root, familyPath + "_north.png");
+                var east = TextureFile(root, familyPath + "_east.png");
+                var south = TextureFile(root, familyPath + "_south.png");
+                var west = TextureFile(root, familyPath + "_west.png");
+                foreach (var direction in directions)
+                {
+                    var source = TextureFile(root, familyPath + "_" + direction + ".png");
+                    var packaged = PackagedTextureFile(root, familyPath + "_" + direction + ".png");
+                    AssertPackagedTextureMatchesSource(source, packaged);
+                    AssertTransparentSprite(source);
+                    AssertNoVividGreenChroma(source);
+                    AssertNoBrightBlueEmission(source);
+                }
+
+                AssertCanvasAspect(north, widthUnits, heightUnits);
+                AssertCanvasAspect(south, widthUnits, heightUnits);
+                AssertCanvasAspect(east, heightUnits, widthUnits);
+                AssertCanvasAspect(west, heightUnits, widthUnits);
+                if (defName == "ImmersiveChefs_Microwave")
+                {
+                    AssertSpritesDiffer(north, south);
+                    AssertSpritesDiffer(east, west);
+                }
+                else
+                {
+                    AssertHalfTurnMatches(north, south);
+                    AssertHalfTurnMatches(east, west);
+                }
+            }
         }
     }
 
@@ -335,7 +430,7 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
-    public void Domestic_dishwasher_uses_owned_rotatable_single_sprite_art()
+    public void Domestic_dishwasher_uses_owned_directional_sprite_art()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -349,23 +444,23 @@ public sealed class VisualAssetPackageTests
             .Single(element =>
                 (string?)element.Element("defName") == "ImmersiveChefs_Dishwasher");
         var graphicData = def.Element("graphicData")!;
-        var diffusePath = TextureFile(root, DishwasherTexturePath + ".png");
+        var diffusePath = TextureFile(root, DishwasherTexturePath + "_north.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(DishwasherTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
             Assert.That(File.Exists(diffusePath), Is.True);
-            Assert.That(File.Exists(PackagedTextureFile(root, DishwasherTexturePath + ".png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, DishwasherTexturePath + "_north.png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);
     }
 
     [Test]
-    public void Industrial_dishwasher_uses_owned_rotatable_single_sprite_art()
+    public void Industrial_dishwasher_uses_owned_directional_sprite_art()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -379,23 +474,23 @@ public sealed class VisualAssetPackageTests
             .Single(element =>
                 (string?)element.Element("defName") == "ImmersiveChefs_IndustrialDishwasher");
         var graphicData = def.Element("graphicData")!;
-        var diffusePath = TextureFile(root, IndustrialDishwasherTexturePath + ".png");
+        var diffusePath = TextureFile(root, IndustrialDishwasherTexturePath + "_north.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(IndustrialDishwasherTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(3,1)"));
             Assert.That(File.Exists(diffusePath), Is.True);
-            Assert.That(File.Exists(PackagedTextureFile(root, IndustrialDishwasherTexturePath + ".png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, IndustrialDishwasherTexturePath + "_north.png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);
     }
 
     [Test]
-    public void Ingredient_prep_station_uses_owned_rotatable_single_sprite_art()
+    public void Ingredient_prep_station_uses_owned_directional_sprite_art()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -409,16 +504,16 @@ public sealed class VisualAssetPackageTests
             .Single(element =>
                 (string?)element.Element("defName") == "ImmersiveChefs_PrepStation");
         var graphicData = def.Element("graphicData")!;
-        var diffusePath = TextureFile(root, PrepStationTexturePath + ".png");
+        var diffusePath = TextureFile(root, PrepStationTexturePath + "_north.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(PrepStationTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(3.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
-            Assert.That(File.Exists(PackagedTextureFile(root, PrepStationTexturePath + ".png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, PrepStationTexturePath + "_north.png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);
@@ -433,7 +528,7 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
-    public void Sauce_station_uses_owned_rotatable_single_sprite_art()
+    public void Sauce_station_uses_owned_directional_sprite_art()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -447,16 +542,16 @@ public sealed class VisualAssetPackageTests
             .Single(element =>
                 (string?)element.Element("defName") == "ImmersiveChefs_SauceStation");
         var graphicData = def.Element("graphicData")!;
-        var diffusePath = TextureFile(root, SauceStationTexturePath + ".png");
+        var diffusePath = TextureFile(root, SauceStationTexturePath + "_north.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(SauceStationTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
             Assert.That(File.Exists(diffusePath), Is.True);
-            Assert.That(File.Exists(PackagedTextureFile(root, SauceStationTexturePath + ".png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, SauceStationTexturePath + "_north.png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);
@@ -465,7 +560,7 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
-    public void Meat_station_uses_owned_rotatable_single_sprite_art()
+    public void Meat_station_uses_owned_directional_sprite_art()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -479,16 +574,16 @@ public sealed class VisualAssetPackageTests
             .Single(element =>
                 (string?)element.Element("defName") == "ImmersiveChefs_MeatStation");
         var graphicData = def.Element("graphicData")!;
-        var diffusePath = TextureFile(root, MeatStationTexturePath + ".png");
+        var diffusePath = TextureFile(root, MeatStationTexturePath + "_north.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(MeatStationTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
             Assert.That(File.Exists(diffusePath), Is.True);
-            Assert.That(File.Exists(PackagedTextureFile(root, MeatStationTexturePath + ".png")), Is.True);
+            Assert.That(File.Exists(PackagedTextureFile(root, MeatStationTexturePath + "_north.png")), Is.True);
         });
 
         AssertTransparentSprite(diffusePath);
@@ -497,7 +592,7 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
-    public void Vegetable_station_uses_owned_rotatable_single_sprite_art()
+    public void Vegetable_station_uses_owned_directional_sprite_art()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -511,13 +606,13 @@ public sealed class VisualAssetPackageTests
             .Single(element =>
                 (string?)element.Element("defName") == "ImmersiveChefs_VegetableStation");
         var graphicData = def.Element("graphicData")!;
-        var diffusePath = TextureFile(root, VegetableStationTexturePath + ".png");
-        var packagedPath = PackagedTextureFile(root, VegetableStationTexturePath + ".png");
+        var diffusePath = TextureFile(root, VegetableStationTexturePath + "_north.png");
+        var packagedPath = PackagedTextureFile(root, VegetableStationTexturePath + "_north.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(VegetableStationTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
             Assert.That(File.Exists(diffusePath), Is.True);
@@ -532,7 +627,7 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
-    public void Pastry_station_uses_owned_rotatable_single_sprite_art()
+    public void Pastry_station_uses_owned_directional_sprite_art()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -546,13 +641,13 @@ public sealed class VisualAssetPackageTests
             .Single(element =>
                 (string?)element.Element("defName") == "ImmersiveChefs_PastryStation");
         var graphicData = def.Element("graphicData")!;
-        var diffusePath = TextureFile(root, PastryStationTexturePath + ".png");
-        var packagedPath = PackagedTextureFile(root, PastryStationTexturePath + ".png");
+        var diffusePath = TextureFile(root, PastryStationTexturePath + "_north.png");
+        var packagedPath = PackagedTextureFile(root, PastryStationTexturePath + "_north.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(PastryStationTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2,1)"));
             Assert.That(File.Exists(diffusePath), Is.True);
@@ -581,15 +676,15 @@ public sealed class VisualAssetPackageTests
             .Single(element =>
                 (string?)element.Element("defName") == "ImmersiveChefs_Microwave");
         var graphicData = def.Element("graphicData")!;
-        var diffusePath = TextureFile(root, MicrowaveTexturePath + ".png");
-        var packagedPath = PackagedTextureFile(root, MicrowaveTexturePath + ".png");
+        var diffusePath = TextureFile(root, MicrowaveTexturePath + "_north.png");
+        var packagedPath = PackagedTextureFile(root, MicrowaveTexturePath + "_north.png");
         var obsoleteSourcePath = TextureFile(root, "Things/Building/Microwave/Microwave.png");
         var obsoletePackagedPath = PackagedTextureFile(root, "Things/Building/Microwave/Microwave.png");
 
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(MicrowaveTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
             Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(0.82,0.82)"));
             Assert.That(File.Exists(diffusePath), Is.True);
@@ -609,7 +704,7 @@ public sealed class VisualAssetPackageTests
             minimumWidth: 280,
             maximumWidth: 430,
             minimumHeight: 180,
-            maximumHeight: 340);
+            maximumHeight: 430);
         AssertNoVividGreenChroma(diffusePath);
         AssertNoBrightBlueEmission(diffusePath);
     }
@@ -845,6 +940,36 @@ public sealed class VisualAssetPackageTests
             File.ReadAllBytes(rightPath),
             Is.Not.EqualTo(File.ReadAllBytes(leftPath)),
             "A selected variation must not duplicate its base sprite byte-for-byte.");
+    }
+
+    private static void AssertHalfTurnMatches(string sourcePath, string oppositePath)
+    {
+        if (!File.Exists(sourcePath) || !File.Exists(oppositePath))
+        {
+            return;
+        }
+
+        using var expected = new Bitmap(sourcePath);
+        using var actual = new Bitmap(oppositePath);
+        expected.RotateFlip(RotateFlipType.Rotate180FlipNone);
+        Assert.That(actual.Size, Is.EqualTo(expected.Size));
+
+        var mismatches = 0;
+        for (var y = 0; y < expected.Height; y++)
+        {
+            for (var x = 0; x < expected.Width; x++)
+            {
+                if (actual.GetPixel(x, y) != expected.GetPixel(x, y))
+                {
+                    mismatches++;
+                }
+            }
+        }
+
+        Assert.That(
+            mismatches,
+            Is.Zero,
+            "The opposite cardinal sprite must move the worker-facing edge through an exact half turn.");
     }
 
     private static void AssertVisibleBounds(

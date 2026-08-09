@@ -34,11 +34,16 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
     private readonly List<Building> supports = new();
     private readonly List<Building> vanillaReferences = new();
     private readonly Dictionary<Rot4, List<string>> rotationRows = new();
-    private readonly Dictionary<string, string> inspectorIds = new(StringComparer.Ordinal);
+    private readonly Dictionary<Rot4, List<string>> rotationReferenceRows = new();
+    private readonly Dictionary<(string DefName, int Rotation), string> vanillaComparisonIds = new();
     private Building tableSupport = null!;
     private Building workbenchSupport = null!;
     private Building tableMicrowave = null!;
     private Building workbenchMicrowave = null!;
+    private Building nativePlacementMarker = null!;
+    private IntVec3 nativePlacementCell;
+    private string nativePlacementGizmoType = null!;
+    private string nativePlacementStableId = null!;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -68,14 +73,12 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         foreach (var (rotation, z) in rows)
         {
             rotationRows.Add(rotation, new List<string>());
+            rotationReferenceRows.Add(rotation, new List<string>());
             foreach (var (defName, x) in columns)
             {
                 var fixture = AddBuilding(map, center + new IntVec3(x, 0, z), defName, rotation);
                 rotationRows[rotation].Add(fixture.Building.ThingID);
-                if (rotation == Rot4.North)
-                {
-                    inspectorIds.Add(defName, fixture.Building.ThingID);
-                }
+                AddVanillaComparison(map, center, defName, x, z + 3, rotation);
             }
 
             var supportDefName = rotation == Rot4.North || rotation == Rot4.South
@@ -94,11 +97,17 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 "ImmersiveChefs_Microwave",
                 rotation);
             rotationRows[rotation].Add(microwave.Building.ThingID);
+            AddVanillaComparison(
+                map,
+                center,
+                "ImmersiveChefs_Microwave",
+                28,
+                z + 3,
+                rotation);
             if (rotation == Rot4.North)
             {
                 tableSupport = support;
                 tableMicrowave = microwave.Building;
-                inspectorIds.Add("ImmersiveChefs_Microwave", microwave.Building.ThingID);
             }
             else if (rotation == Rot4.East)
             {
@@ -124,9 +133,20 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 stuff));
         }
 
-        var buildables = context.GetRequiredService<IEndToEndGizmoCatalog>()
+        nativePlacementCell = FindNativePlacementCell(map, center);
+        nativePlacementMarker = SpawnBuilding(
+            map,
+            nativePlacementCell + new IntVec3(0, 0, 4),
+            "DiningChair",
+            Rot4.South,
+            ThingDefOf.WoodLog);
+        supports.Add(nativePlacementMarker);
+
+        var buildOptions = context.GetRequiredService<IEndToEndGizmoCatalog>()
             .Query(Array.Empty<string>(), new[] { "Production" })
             .Where(option => option.Interaction == EndToEndGizmoInteraction.Place)
+            .ToArray();
+        var buildables = buildOptions
             .Select(option => option.BuildableDefName)
             .Where(defName => defName is not null)
             .ToHashSet(StringComparer.Ordinal);
@@ -136,6 +156,16 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 buildables.Contains(expected),
                 "The native Production architect catalog must expose " + expected + ".");
         }
+
+        var placement = buildOptions.Single(option =>
+            string.Equals(
+                option.BuildableDefName,
+                "ImmersiveChefs_Dishwasher",
+                StringComparison.Ordinal));
+        EndToEndAssert.True(!placement.Disabled,
+            "The native dishwasher place designator must be enabled for the visual acceptance action.");
+        nativePlacementGizmoType = placement.RuntimeType;
+        nativePlacementStableId = placement.StableId;
     }
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
@@ -175,11 +205,20 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
 
         foreach (var rotation in new[] { Rot4.North, Rot4.East, Rot4.South, Rot4.West })
         {
-            var ids = rotationRows[rotation].ToArray();
+            var ids = rotationRows[rotation].Concat(rotationReferenceRows[rotation]).ToArray();
             var direction = RotationName(rotation);
-            yield return new SelectionActionStep("select the " + direction + " building row", ids, additive: false);
-            yield return new CameraActionStep("frame the " + direction + " building row", ids, paddingPixels: 130);
-            yield return new ScreenshotStep(direction + " rotation footprints and silhouettes", ids, 130);
+            yield return new SelectionActionStep(
+                "select the " + direction + " custom and Core comparison rows",
+                rotationRows[rotation],
+                additive: false);
+            yield return new CameraActionStep(
+                "frame the " + direction + " custom and Core comparison rows",
+                ids,
+                paddingPixels: 110);
+            yield return new ScreenshotStep(
+                direction + " custom buildings beside same-rotation Core benches",
+                ids,
+                110);
         }
 
         yield return new SelectionActionStep(
@@ -214,19 +253,73 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         yield return new ScreenshotStep("native Production build menu labels and icons", Array.Empty<string>(), 0);
         yield return new ArchitectCategoryActionStep("close the native Production build menu", "Production", open: false);
 
-        foreach (var defName in ExpectedBuildingDefNames)
+        foreach (var fixture in customBuildings
+                     .OrderBy(item => item.Building.def.defName, StringComparer.Ordinal)
+                     .ThenBy(item => item.Rotation.AsInt))
         {
-            var id = inspectorIds[defName];
+            var defName = fixture.Building.def.defName;
+            var direction = RotationName(fixture.Rotation);
+            var referenceId = vanillaComparisonIds[(defName, fixture.Rotation.AsInt)];
+            var ids = new[] { fixture.Building.ThingID, referenceId };
             yield return new SelectionActionStep(
-                "select " + defName + " for its native inspector",
-                new[] { id },
+                "select the " + direction + " " + defName + " for close comparison",
+                new[] { fixture.Building.ThingID },
                 additive: false);
             yield return new CameraActionStep(
-                "focus " + defName + " at final building scale",
-                new[] { id },
-                paddingPixels: 260);
-            yield return new ScreenshotStep("inspect " + defName + " readability", Array.Empty<string>(), 0);
+                "frame the " + direction + " " + defName + " beside a same-facing Core bench",
+                ids,
+                paddingPixels: 100);
+            yield return new ScreenshotStep(
+                "close " + direction + " " + defName + " and Core bench comparison",
+                ids,
+                100);
         }
+
+        yield return new SelectionActionStep(
+            "select the native placement marker before the player action",
+            new[] { nativePlacementMarker.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the empty native dishwasher placement cell",
+            new[] { nativePlacementMarker.ThingID },
+            paddingPixels: 260);
+        yield return new ScreenshotStep(
+            "before native east-facing dishwasher placement",
+            Array.Empty<string>(),
+            0);
+        yield return new GizmoActionStep(
+            "place an east-facing dishwasher through the native Production designator",
+            Array.Empty<string>(),
+            nativePlacementGizmoType,
+            EndToEndGizmoInteraction.Place,
+            stableGizmoId: nativePlacementStableId,
+            startCell: new EndToEndMapCell(nativePlacementCell.x, nativePlacementCell.z),
+            architectCategoryDefNames: new[] { "Production" },
+            rotation: EndToEndCardinalRotation.East);
+        yield return new WaitUntilStep(
+            "wait for the native east-facing dishwasher to appear",
+            _ => FindNativePlacement() is { Rotation: var rotation } && rotation == Rot4.East,
+            new EndToEndDeadline(180, 600, TimeSpan.FromSeconds(10)));
+        var placed = FindNativePlacement() ?? throw new EndToEndAssertionException(
+            "The native dishwasher placement completed without a player-visible building.");
+        yield return new SelectionActionStep(
+            "select the player-placed east-facing dishwasher",
+            new[] { placed.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the player-placed east-facing dishwasher",
+            new[] { nativePlacementMarker.ThingID, placed.ThingID },
+            paddingPixels: 220);
+        yield return new ScreenshotStep(
+            "after native east-facing dishwasher placement",
+            new[] { nativePlacementMarker.ThingID, placed.ThingID },
+            220);
+        yield return new AssertionStep(
+            "observe the exact native placement orientation",
+            _ => EndToEndAssert.Equal(
+                Rot4.East.AsInt,
+                placed.Rotation.AsInt,
+                "The native player placement must create an east-facing dishwasher."));
 
         yield return new CheckpointStep(
             "base building visual catalog",
@@ -239,6 +332,85 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                         .Select(fixture => RotationName(fixture.Rotation) + ":" + fixture.Building.Graphic.path)),
                     StringComparer.Ordinal));
     }
+
+    private void AddVanillaComparison(
+        Map map,
+        IntVec3 center,
+        string customDefName,
+        int x,
+        int z,
+        Rot4 rotation)
+    {
+        var reference = SpawnBuilding(
+            map,
+            center + new IntVec3(x, 0, z),
+            VanillaReferenceDefName(customDefName),
+            rotation,
+            VanillaReferenceStuff(customDefName));
+        vanillaReferences.Add(reference);
+        rotationReferenceRows[rotation].Add(reference.ThingID);
+        vanillaComparisonIds.Add((customDefName, rotation.AsInt), reference.ThingID);
+    }
+
+    private Building? FindNativePlacement() =>
+        nativePlacementCell.GetThingList(Current.Game.CurrentMap)
+            .OfType<Building>()
+            .SingleOrDefault(building =>
+                building.def.defName == "ImmersiveChefs_Dishwasher" &&
+                building.Faction == Faction.OfPlayer);
+
+    private static IntVec3 FindNativePlacementCell(Map map, IntVec3 center)
+    {
+        var dishwasher = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Dishwasher");
+        var chair = DefDatabase<ThingDef>.GetNamed("DiningChair");
+        var bounds = CellRect.FromLimits(
+            center.x - 34,
+            center.z + 19,
+            center.x + 34,
+            center.z + 24);
+        foreach (var cell in bounds.Cells.OrderBy(candidate => candidate.DistanceToSquared(center)))
+        {
+            var markerCell = cell + new IntVec3(0, 0, 4);
+            if (cell.InBounds(map) &&
+                markerCell.InBounds(map) &&
+                GenConstruct.CanPlaceBlueprintAt(
+                    dishwasher,
+                    cell,
+                    Rot4.East,
+                    map,
+                    godMode: true).Accepted &&
+                GenConstruct.CanPlaceBlueprintAt(
+                    chair,
+                    markerCell,
+                    Rot4.South,
+                    map,
+                    godMode: true,
+                    stuffDef: ThingDefOf.WoodLog).Accepted)
+            {
+                return cell;
+            }
+        }
+
+        throw new EndToEndAssertionException(
+            "No bounded green native placement cell can host an east-facing dishwasher and its visual marker.");
+    }
+
+    private static string VanillaReferenceDefName(string customDefName) => customDefName switch
+    {
+        "ImmersiveChefs_IndustrialDishwasher" => "TableMachining",
+        "ImmersiveChefs_PrepStation" => "TableButcher",
+        "ImmersiveChefs_MeatStation" => "TableButcher",
+        "ImmersiveChefs_VegetableStation" => "TableButcher",
+        _ => "ElectricStove"
+    };
+
+    private static ThingDef? VanillaReferenceStuff(string customDefName) => customDefName switch
+    {
+        "ImmersiveChefs_PrepStation" => ThingDefOf.Steel,
+        "ImmersiveChefs_MeatStation" => ThingDefOf.Steel,
+        "ImmersiveChefs_VegetableStation" => ThingDefOf.Steel,
+        _ => null
+    };
 
     private BuildingFixture AddBuilding(
         Map map,

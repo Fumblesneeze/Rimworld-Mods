@@ -118,9 +118,38 @@ readable at the actual map zoom without becoming muddy or changing product ident
 plain Flux2 collapsed into low-contrast tan cabinet shapes; Krea 2 became an underspecified olive
 icon; RealVisXL and Juggernaut failed the requested workstation/cardinal composition; Z-Image
 produced inconsistent generic cabinets. The disposable comparison Defs, textures, and E2E test were
-removed after the decision and never enter the release package. The winning built-in art direction
-still requires new complete north/east/south/west families and final live comparison before any
-building section below can be accepted again.
+removed after the decision and never enter the release package.
+
+## Current directional building catalog
+
+Built-in image generation supplied the selected 2026-08-09 dishwasher, industrial dishwasher,
+ingredient-prep, sauce, meat, vegetable, pastry, and countertop-microwave designs plus one VTEX
+variant of each. The retained transparent working set and direction sheets live under ignored
+`artifacts/VisualAssets/DirectionalBuildings/20260809`; rejected single-view/glossy candidates do
+not ship. Green-key removal used border-derived mattes, despill, and a one-pixel edge contraction,
+followed by explicit checks for opaque corners, fringe pixels, and powered-looking blue cues.
+
+Every packaged family now uses `Graphic_Multi`/`Cutout` and exactly `_north`, `_east`, `_south`, and
+`_west` files. The 2x1 stations use 512x256 horizontal and 256x512 vertical canvases; the 3x1
+industrial dishwasher uses 768x256 and 256x768; the 3.5x1.5 prep station uses 840x360 and 360x840;
+the countertop microwave uses a square 512x512 canvas for every direction. North/east are coherent
+authored horizontal/vertical views; opposite faces preserve the same equipment layout and worker
+orientation. These buildings are fixed-color, so no Stuff mask is appropriate; portable Stuff-aware
+wares retain their separate masked paths described above.
+
+The reviewed final base run is
+`artifacts/EndToEndRuns/Grouped/20260809T001235413Z`. In the exact Core/Harmony/Immersive
+Chefs/Gateway process it captured all eight concrete building Defs in four cardinal directions,
+including 32 close same-zoom custom/Core pairs, Production-menu icons and labels, and the microwave
+on both a real dining table and machining table. The acting agent inspected those exact frames and
+observed coherent map-scale silhouettes, distinct vertical views, readable brackets, and comparable
+visual mass beside Core benches. The same run then used the native Production `Designator_Place`
+path to turn an empty marked area into an east-facing dishwasher; screenshots 41 and 42 retain the
+before/action/after evidence. PID 50160 exited cleanly, the isolated config/preferences hashes were
+unchanged, the staged bundles were removed, and credentials were sanitized.
+
+The following 2026-08-06 notes are retained only as rejection history for the superseded
+single-view package. They are not descriptions of the shipped building art.
 
 Selected: candidate B, generated 2026-08-06. Its steep map view, twin top-loading racks, visible
 plates, stainless shell, and near-edge controls remain legible across a 2×1 footprint. Candidate A

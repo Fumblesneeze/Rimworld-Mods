@@ -153,7 +153,7 @@ public sealed class MicrowaveCountertopTests
             "Things",
             "Building",
             "Appliance",
-            "Microwave.png");
+            "Microwave_north.png");
 
         Assert.Multiple(() =>
         {
@@ -174,7 +174,7 @@ public sealed class MicrowaveCountertopTests
                 Is.EqualTo("ImmersiveChefs/Things/Building/Appliance/Microwave"));
             Assert.That(
                 (string?)def.Element("graphicData")?.Element("graphicClass"),
-                Is.EqualTo("Graphic_Single"));
+                Is.EqualTo("Graphic_Multi"));
             Assert.That(
                 (string?)def.Element("graphicData")?.Element("shaderType"),
                 Is.EqualTo("Cutout"));

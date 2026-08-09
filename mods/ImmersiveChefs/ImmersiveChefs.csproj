@@ -66,6 +66,21 @@
     <Delete Files="$(RimWorldModPackageFolder)\1.6\Textures\Things\Building\Microwave\Microwave.png" />
   </Target>
 
+  <Target Name="RemoveRejectedSingleViewBuildingTextures" BeforeTargets="Build;CopyMod">
+    <ItemGroup>
+      <LegacySingleViewBuildingTexture Include="Appliance\Microwave;Appliance\Microwave_Variant01" />
+      <LegacySingleViewBuildingTexture Include="Dishwasher\Dishwasher;Dishwasher\Dishwasher_Variant01" />
+      <LegacySingleViewBuildingTexture Include="Dishwasher\IndustrialDishwasher;Dishwasher\IndustrialDishwasher_Variant01" />
+      <LegacySingleViewBuildingTexture Include="KitchenStation\PrepStation;KitchenStation\PrepStation_Variant01" />
+      <LegacySingleViewBuildingTexture Include="KitchenStation\SauceStation;KitchenStation\SauceStation_Variant01" />
+      <LegacySingleViewBuildingTexture Include="KitchenStation\MeatStation;KitchenStation\MeatStation_Variant01" />
+      <LegacySingleViewBuildingTexture Include="KitchenStation\VegetableStation;KitchenStation\VegetableStation_Variant01" />
+      <LegacySingleViewBuildingTexture Include="KitchenStation\PastryStation;KitchenStation\PastryStation_Variant01" />
+    </ItemGroup>
+    <Delete Files="@(LegacySingleViewBuildingTexture->'$(OutputVersionFolder)\Textures\ImmersiveChefs\Things\Building\%(Identity).png')" />
+    <Delete Files="@(LegacySingleViewBuildingTexture->'$(RimWorldModPackageFolder)\1.6\Textures\ImmersiveChefs\Things\Building\%(Identity).png')" />
+  </Target>
+
   <!-- ModSdk 0.0.9's optional XSD generator cannot traverse RimWorld 1.6's
        recursive Def graph. XML is instead validated by the staged Def host and
        the in-game finalized-Def suite. Keep this opt-in until the SDK is fixed. -->
