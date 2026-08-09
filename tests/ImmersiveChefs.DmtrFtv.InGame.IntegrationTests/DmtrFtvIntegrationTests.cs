@@ -14,4 +14,15 @@ public static class DmtrFtvIntegrationTests
         MealTextureDefAssertions.AssertDmtrOwnsVanillaMeals();
         MealTextureDefAssertions.AssertFtvOwnsVarietyMeals();
     }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void HiddenPasteAndPhysicalPlateLifecycleRemainHonest()
+    {
+        MealTextureLifecycleAssertions.AssertHonestFallbackAndExactPlateLifecycle(
+            "MealSimple",
+            MealTextureDefAssertions.DmtrGraphicType);
+        MealTextureLifecycleAssertions.AssertHonestFallbackAndExactPlateLifecycle(
+            "FTV_MealSimple",
+            MealTextureDefAssertions.FtvGraphicType);
+    }
 }

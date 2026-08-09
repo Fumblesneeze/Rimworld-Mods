@@ -37,4 +37,12 @@ public static class FtvIntegrationTests
         FtvPersistenceAssertions.AssertSelectedTextureGroupSurvivesRealScribePipeline(
             "FTV_MealSimple");
     }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void HiddenPasteAndPhysicalPlateLifecycleRemainHonest()
+    {
+        MealTextureLifecycleAssertions.AssertHonestFallbackAndExactPlateLifecycle(
+            "FTV_MealSimple",
+            MealTextureDefAssertions.FtvGraphicType);
+    }
 }

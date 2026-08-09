@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\ImmersiveChefs.MealTexture.InGame.IntegrationTests.Shared\MealTextureDefAssertions.cs" Link="MealTextureDefAssertions.cs" />
+    <Compile Include="..\ImmersiveChefs.MealTexture.InGame.IntegrationTests.Shared\MealTextureLifecycleAssertions.cs" Link="MealTextureLifecycleAssertions.cs" />
     <Compile Include="..\ImmersiveChefs.MealTexture.InGame.IntegrationTests.Shared\FtvPersistenceAssertions.cs" Link="FtvPersistenceAssertions.cs" />
     <ProjectReference Include="..\..\mods\ImmersiveChefs\ImmersiveChefs.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.IntegrationTesting\RimWorldDevGateway.IntegrationTesting.csproj" />

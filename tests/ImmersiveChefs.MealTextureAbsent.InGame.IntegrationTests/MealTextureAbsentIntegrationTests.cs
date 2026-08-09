@@ -13,4 +13,12 @@ public static class MealTextureAbsentIntegrationTests
             MealTextureDefAssertions.FtvPackageId);
         MealTextureDefAssertions.AssertVanillaMealOwner();
     }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void HiddenPasteAndPhysicalPlateLifecycleRemainHonest()
+    {
+        MealTextureLifecycleAssertions.AssertHonestFallbackAndExactPlateLifecycle(
+            "MealSimple",
+            typeof(Verse.Graphic_MealVariants).FullName!);
+    }
 }
