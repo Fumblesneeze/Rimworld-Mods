@@ -81,6 +81,13 @@
     <Delete Files="@(LegacySingleViewBuildingTexture->'$(RimWorldModPackageFolder)\1.6\Textures\ImmersiveChefs\Things\Building\%(Identity).png')" />
   </Target>
 
+  <Target Name="RemoveDisposableVisualComparisonAssets" BeforeTargets="Build;CopyMod">
+    <Delete Files="$(OutputVersionFolder)\Defs\ThingDefs\VisualGeneratorComparison.xml" />
+    <Delete Files="$(RimWorldModPackageFolder)\1.6\Defs\ThingDefs\VisualGeneratorComparison.xml" />
+    <RemoveDir Directories="$(OutputVersionFolder)\Textures\ImmersiveChefs\Dev\GeneratorComparison" />
+    <RemoveDir Directories="$(RimWorldModPackageFolder)\1.6\Textures\ImmersiveChefs\Dev\GeneratorComparison" />
+  </Target>
+
   <!-- ModSdk 0.0.9's optional XSD generator cannot traverse RimWorld 1.6's
        recursive Def graph. XML is instead validated by the staged Def host and
        the in-game finalized-Def suite. Keep this opt-in until the SDK is fixed. -->

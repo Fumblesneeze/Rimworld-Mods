@@ -38,6 +38,170 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/Appliance/Microwave";
 
     [Test]
+    public void Disposable_generator_comparison_assets_are_absent_from_the_package()
+    {
+        var root = FindRepositoryRoot();
+        var projectPath = Path.Combine(root, "mods", "ImmersiveChefs", "ImmersiveChefs.csproj");
+        var packagedVersionRoot = Path.Combine(
+            root,
+            "artifacts",
+            "Mods",
+            "fumblesneeze.immersivechefs",
+            "1.6");
+        var project = XDocument.Load(projectPath);
+        var cleanupTarget = project.Root!
+            .Elements("Target")
+            .Single(element =>
+                (string?)element.Attribute("Name") == "RemoveDisposableVisualComparisonAssets");
+        var scheduledTargets = ((string?)cleanupTarget.Attribute("BeforeTargets") ?? string.Empty)
+            .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.That(scheduledTargets, Is.EquivalentTo(new[] { "Build", "CopyMod" }));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                File.Exists(Path.Combine(
+                    packagedVersionRoot,
+                    "Defs",
+                    "ThingDefs",
+                    "VisualGeneratorComparison.xml")),
+                Is.False,
+                "The disposable visual-comparison Def must never survive incremental packaging.");
+            Assert.That(
+                Directory.Exists(Path.Combine(
+                    packagedVersionRoot,
+                    "Textures",
+                    "ImmersiveChefs",
+                    "Dev",
+                    "GeneratorComparison")),
+                Is.False,
+                "Local and built-in generator drafts are evidence artifacts, not release textures.");
+        });
+
+        var isolatedRoot = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "visual-package-cleanup-" + Guid.NewGuid().ToString("N"));
+        var isolatedOutputVersion = Path.Combine(isolatedRoot, "artifacts", "1.6");
+        var isolatedLivePackage = Path.Combine(isolatedRoot, "live-package");
+        var seededPaths = new[]
+        {
+            Path.Combine(
+                isolatedOutputVersion,
+                "Defs",
+                "ThingDefs",
+                "VisualGeneratorComparison.xml"),
+            Path.Combine(
+                isolatedOutputVersion,
+                "Textures",
+                "ImmersiveChefs",
+                "Dev",
+                "GeneratorComparison",
+                "draft.png"),
+            Path.Combine(
+                isolatedLivePackage,
+                "1.6",
+                "Defs",
+                "ThingDefs",
+                "VisualGeneratorComparison.xml"),
+            Path.Combine(
+                isolatedLivePackage,
+                "1.6",
+                "Textures",
+                "ImmersiveChefs",
+                "Dev",
+                "GeneratorComparison",
+                "draft.png")
+        };
+
+        System.Diagnostics.Process? cleanupProcess = null;
+        var cleanupProcessStarted = false;
+        try
+        {
+            foreach (var seededPath in seededPaths)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(seededPath)!);
+                File.WriteAllText(seededPath, "disposable visual-comparison sentinel");
+            }
+
+            var arguments =
+                $"msbuild \"{projectPath}\" -nologo " +
+                "-t:RemoveDisposableVisualComparisonAssets " +
+                $"-p:OutputVersionFolder=\"{isolatedOutputVersion}\" " +
+                $"-p:RimWorldModPackageFolder=\"{isolatedLivePackage}\"";
+            var standardOutput = new System.Text.StringBuilder();
+            var standardError = new System.Text.StringBuilder();
+            cleanupProcess = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            cleanupProcess.OutputDataReceived += (_, eventArgs) =>
+            {
+                if (eventArgs.Data is not null)
+                {
+                    standardOutput.AppendLine(eventArgs.Data);
+                }
+            };
+            cleanupProcess.ErrorDataReceived += (_, eventArgs) =>
+            {
+                if (eventArgs.Data is not null)
+                {
+                    standardError.AppendLine(eventArgs.Data);
+                }
+            };
+            cleanupProcessStarted = cleanupProcess.Start();
+            Assert.That(cleanupProcessStarted, Is.True, "Failed to start the isolated cleanup target.");
+            cleanupProcess.BeginOutputReadLine();
+            cleanupProcess.BeginErrorReadLine();
+            var exited = cleanupProcess.WaitForExit(30_000);
+            if (!exited)
+            {
+                cleanupProcess.Kill();
+                cleanupProcess.WaitForExit(5_000);
+            }
+            else
+            {
+                cleanupProcess.WaitForExit();
+            }
+
+            Assert.That(
+                exited,
+                Is.True,
+                "The isolated cleanup target did not complete in 30 seconds.");
+            Assert.That(
+                cleanupProcess.ExitCode,
+                Is.Zero,
+                standardOutput + Environment.NewLine + standardError);
+            Assert.That(
+                seededPaths.Any(File.Exists),
+                Is.False,
+                "The cleanup target must remove stale comparison assets from both output roots.");
+        }
+        finally
+        {
+            if (cleanupProcessStarted && cleanupProcess is not null && !cleanupProcess.HasExited)
+            {
+                cleanupProcess.Kill();
+                cleanupProcess.WaitForExit(5_000);
+            }
+
+            cleanupProcess?.Dispose();
+            if (Directory.Exists(isolatedRoot))
+            {
+                Directory.Delete(isolatedRoot, recursive: true);
+            }
+        }
+    }
+
+    [Test]
     public void Portable_texture_variation_families_are_complete_masked_and_chroma_free()
     {
         var root = FindRepositoryRoot();
