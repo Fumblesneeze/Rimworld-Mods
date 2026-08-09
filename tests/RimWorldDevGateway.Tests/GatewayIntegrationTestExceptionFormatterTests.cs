@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Text;
 using RimWorldDevGateway.IntegrationTesting;
 
 namespace RimWorldDevGateway.Tests;
@@ -62,6 +64,54 @@ public sealed class GatewayIntegrationTestExceptionFormatterTests
             Assert.That(details.Message, Is.EqualTo(
                 "RimWorld rejected the requested state for [REDACTED]."));
             Assert.That(details.Message, Does.Not.Contain(credential));
+        });
+    }
+
+    [Test]
+    public void Trusted_exception_redacts_a_credential_that_crosses_the_character_limit()
+    {
+        const string credential = "SESSION-CREDENTIAL-DO-NOT-RETAIN";
+        var exception = CaptureAssertion(new string('x', 28) + credential + "suffix");
+
+        var details = GatewayIntegrationTestExceptionFormatter.Format(
+            exception,
+            credential,
+            maximumTypeCharacters: 64,
+            maximumMessageCharacters: 32,
+            maximumStackCharacters: 64);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(details.Message, Does.Not.Contain("S"));
+            Assert.That(details.Message, Does.Contain("..."));
+            Assert.That(details.Message.Length, Is.LessThanOrEqualTo(32));
+        });
+    }
+
+    [Test]
+    public void Utf8_bound_preserves_astral_pairs_and_normalizes_isolated_surrogates()
+    {
+        var astral = GatewayIntegrationTestExceptionFormatter.RedactAndBoundUtf8(
+            "A\ud83d\ude00B",
+            null,
+            maximumUtf8Bytes: 8);
+        var truncatedAstral = GatewayIntegrationTestExceptionFormatter.RedactAndBoundUtf8(
+            "A\ud83d\ude00B",
+            null,
+            maximumUtf8Bytes: 5);
+        var isolated = GatewayIntegrationTestExceptionFormatter.RedactAndBoundUtf8(
+            "A\ud83dB\ude00C",
+            null,
+            maximumUtf8Bytes: 64);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(astral, Is.EqualTo("A\ud83d\ude00B"));
+            Assert.That(Encoding.UTF8.GetByteCount(astral), Is.EqualTo(6));
+            Assert.That(truncatedAstral, Is.EqualTo("A..."));
+            Assert.That(Encoding.UTF8.GetByteCount(truncatedAstral), Is.LessThanOrEqualTo(5));
+            Assert.That(isolated, Is.EqualTo("A\ufffdB\ufffdC"));
+            Assert.That(isolated.Any(char.IsSurrogate), Is.False);
         });
     }
 

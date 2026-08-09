@@ -328,6 +328,55 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Gizmo_step_accepts_cardinal_rotation_only_for_native_place()
+    {
+        var step = new GizmoActionStep(
+            "place-east",
+            Array.Empty<string>(),
+            "RimWorld.Designator_Build",
+            EndToEndGizmoInteraction.Place,
+            startCell: new EndToEndMapCell(10, 20),
+            architectCategoryDefNames: new[] { "Production" },
+            rotation: EndToEndCardinalRotation.East);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(step.Rotation, Is.EqualTo(EndToEndCardinalRotation.East));
+            Assert.That(
+                () => new GizmoActionStep(
+                    "drag-east",
+                    Array.Empty<string>(),
+                    "RimWorld.Designator_Zone",
+                    EndToEndGizmoInteraction.Drag,
+                    startCell: new EndToEndMapCell(10, 20),
+                    endCell: new EndToEndMapCell(12, 22),
+                    architectCategoryDefNames: new[] { "Zone" },
+                    rotation: EndToEndCardinalRotation.East),
+                Throws.TypeOf<ArgumentException>());
+        });
+    }
+
+    [Test]
+    public void Gizmo_step_preserves_the_original_nine_parameter_constructor_for_staged_bundles()
+    {
+        var constructor = typeof(GizmoActionStep).GetConstructor(new[]
+        {
+            typeof(string),
+            typeof(IEnumerable<string>),
+            typeof(string),
+            typeof(EndToEndGizmoInteraction),
+            typeof(string),
+            typeof(EndToEndMapCell?),
+            typeof(EndToEndMapCell?),
+            typeof(IEnumerable<string>),
+            typeof(bool)
+        });
+
+        Assert.That(constructor, Is.Not.Null,
+            "Already-built dynamic E2E bundles must retain their exact GizmoActionStep constructor token.");
+    }
+
+    [Test]
     public void Assertion_and_context_helpers_produce_owned_failures_and_cleanup()
     {
         var context = new FakeContext();

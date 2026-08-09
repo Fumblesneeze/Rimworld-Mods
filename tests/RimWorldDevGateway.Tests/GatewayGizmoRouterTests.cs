@@ -132,6 +132,27 @@ public sealed class GatewayGizmoRouterTests
     }
 
     [Test]
+    public void Interaction_json_accepts_one_cardinal_rotation_only_for_cell_input()
+    {
+        var input = GatewayGizmoRequestJson.ReadInteractionInput(
+            "{\"kind\":\"cell\",\"cell\":{\"x\":5,\"z\":6},\"rotation\":\"East\"}");
+        var wrongShape = Assert.Throws<System.Runtime.Serialization.SerializationException>(() =>
+            GatewayGizmoRequestJson.ReadInteractionInput(
+                "{\"kind\":\"rectangle\",\"cornerA\":{\"x\":1,\"z\":2}," +
+                "\"cornerB\":{\"x\":3,\"z\":4},\"rotation\":\"West\"}"));
+        var invalid = Assert.Throws<System.Runtime.Serialization.SerializationException>(() =>
+            GatewayGizmoRequestJson.ReadInteractionInput(
+                "{\"kind\":\"cell\",\"cell\":{\"x\":5,\"z\":6},\"rotation\":\"Diagonal\"}"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(input.Rotation, Is.EqualTo(GatewayCardinalRotation.East));
+            Assert.That(wrongShape?.Message, Does.Contain("rotation"));
+            Assert.That(invalid?.Message, Does.Contain("cardinal rotation"));
+        });
+    }
+
+    [Test]
     public void Gizmo_discovery_failure_returns_500_and_logs_the_preserved_cause()
     {
         var dispatcher = new GatewayDispatcher();
@@ -277,6 +298,10 @@ public sealed class GatewayGizmoRouterTests
             {
                 toggleState = !toggleState;
             }
+        }
+
+        public void Prepare(GatewayInteractionInput input)
+        {
         }
 
         public GatewayTargetAcceptance Preflight(GatewayInteractionTarget target) =>

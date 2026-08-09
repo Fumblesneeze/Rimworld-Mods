@@ -168,8 +168,9 @@ public sealed class GatewayEndToEndNativeActionsTests
                 new[] { "architect" },
                 "Designator_Build",
                 EndToEndGizmoInteraction.Place,
-                "place",
-                new EndToEndMapCell(5, 6)),
+                stableGizmoId: "place",
+                startCell: new EndToEndMapCell(5, 6),
+                rotation: EndToEndCardinalRotation.East),
             Context());
         var dragged = actions.Apply(
             new GizmoActionStep(
@@ -188,6 +189,7 @@ public sealed class GatewayEndToEndNativeActionsTests
             Assert.That(dragged.Passed, Is.True);
             Assert.That(backend.AppliedInputs[0].Kind, Is.EqualTo(GatewayInteractionInputKind.Cell));
             Assert.That(backend.AppliedInputs[0].Cells.Single().X, Is.EqualTo(5));
+            Assert.That(backend.AppliedInputs[0].Rotation, Is.EqualTo(GatewayCardinalRotation.East));
             Assert.That(backend.AppliedInputs[1].Kind, Is.EqualTo(GatewayInteractionInputKind.Rectangle));
             Assert.That(backend.AppliedInputs[1].Cells.Select(cell => (cell.X, cell.Z)),
                 Is.EqualTo(new[] { (1, 2), (3, 4) }));
@@ -221,6 +223,37 @@ public sealed class GatewayEndToEndNativeActionsTests
         {
             Assert.That(outcome.Passed, Is.True);
             Assert.That(backend.AppliedInputs, Has.Count.EqualTo(1));
+            Assert.That(backend.CancelledInteraction, Is.EqualTo("interaction-place"));
+        });
+    }
+
+    [Test]
+    public void Unexpected_native_placement_rejection_reports_the_bounded_native_reason()
+    {
+        var backend = new RecordingBackend { RejectNextInteraction = true };
+        backend.Gizmos.Add(Gizmo(
+            "place",
+            "place",
+            "Designator_Build",
+            GatewayGizmoInteractionKind.Placement,
+            GatewayInteractionInputKind.Cell));
+
+        var outcome = new GatewayEndToEndNativeActions(backend).Apply(
+            new GizmoActionStep(
+                "reject",
+                Array.Empty<string>(),
+                "Designator_Build",
+                EndToEndGizmoInteraction.Place,
+                stableGizmoId: "place",
+                startCell: new EndToEndMapCell(5, 6),
+                architectCategoryDefNames: new[] { "Production" }),
+            Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.False);
+            Assert.That(outcome.FailureCode, Is.EqualTo("gizmo_target_rejected"));
+            Assert.That(outcome.FailureMessage, Does.Contain("Requires a countertop."));
             Assert.That(backend.CancelledInteraction, Is.EqualTo("interaction-place"));
         });
     }

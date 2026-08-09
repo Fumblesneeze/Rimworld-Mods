@@ -48,6 +48,14 @@ public enum GatewayInteractionInputKind
     Rectangle
 }
 
+public enum GatewayCardinalRotation
+{
+    North = 0,
+    East = 1,
+    South = 2,
+    West = 3
+}
+
 public enum GatewayInteractionTargetKind
 {
     Thing,
@@ -219,6 +227,8 @@ public interface IGatewayGizmoCandidate
     GatewayGizmoCandidateSnapshot Capture();
 
     void Invoke();
+
+    void Prepare(GatewayInteractionInput input);
 
     GatewayTargetAcceptance Preflight(GatewayInteractionTarget target);
 
@@ -408,11 +418,13 @@ public sealed class GatewayInteractionInput
     private GatewayInteractionInput(
         GatewayInteractionInputKind kind,
         string? thingHandle,
-        IReadOnlyList<GatewayMapCell> cells)
+        IReadOnlyList<GatewayMapCell> cells,
+        GatewayCardinalRotation? rotation = null)
     {
         Kind = kind;
         ThingHandle = thingHandle;
         Cells = cells;
+        Rotation = rotation;
     }
 
     public GatewayInteractionInputKind Kind { get; }
@@ -421,17 +433,22 @@ public sealed class GatewayInteractionInput
 
     public IReadOnlyList<GatewayMapCell> Cells { get; }
 
+    public GatewayCardinalRotation? Rotation { get; }
+
     public static GatewayInteractionInput ForThing(string thingHandle) =>
         new(
             GatewayInteractionInputKind.Thing,
             thingHandle ?? throw new ArgumentNullException(nameof(thingHandle)),
             Array.Empty<GatewayMapCell>());
 
-    public static GatewayInteractionInput ForCell(GatewayMapCell cell) =>
+    public static GatewayInteractionInput ForCell(
+        GatewayMapCell cell,
+        GatewayCardinalRotation? rotation = null) =>
         new(
             GatewayInteractionInputKind.Cell,
             null,
-            new[] { cell ?? throw new ArgumentNullException(nameof(cell)) });
+            new[] { cell ?? throw new ArgumentNullException(nameof(cell)) },
+            ValidateRotation(rotation));
 
     public static GatewayInteractionInput ForCells(IEnumerable<GatewayMapCell> cells) =>
         new(
@@ -473,6 +490,16 @@ public sealed class GatewayInteractionInput
         }
 
         return new ReadOnlyCollection<GatewayMapCell>(copy);
+    }
+
+    private static GatewayCardinalRotation? ValidateRotation(GatewayCardinalRotation? rotation)
+    {
+        if (rotation.HasValue && !Enum.IsDefined(typeof(GatewayCardinalRotation), rotation.Value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(rotation));
+        }
+
+        return rotation;
     }
 }
 
@@ -737,6 +764,8 @@ public sealed class GatewayGizmoRegistry
                 "interaction_target_mismatch",
                 $"The active interaction does not accept {input.Kind} input.");
         }
+
+        candidate.Prepare(input);
 
         var targets = Expand(input);
         var accepted = new List<GatewayInteractionTarget>(targets.Count);

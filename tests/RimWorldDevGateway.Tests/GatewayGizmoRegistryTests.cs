@@ -136,6 +136,29 @@ public sealed class GatewayGizmoRegistryTests
     }
 
     [Test]
+    public void Rotated_placement_prepares_the_revalidated_candidate_before_native_preflight()
+    {
+        var candidate = FakeCandidate.Place("build-dishwasher");
+        var registry = new GatewayGizmoRegistry(new FakeSource(candidate));
+        var gizmoHandle = registry.Query(GatewayGizmoQuery.ForSelection()).Items.Single().Handle;
+        var interaction = registry.Invoke(gizmoHandle).Interaction!;
+
+        var result = registry.Apply(
+            interaction.Handle,
+            GatewayInteractionInput.ForCell(
+                new GatewayMapCell(8, 11),
+                GatewayCardinalRotation.East));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Completed, Is.True);
+            Assert.That(candidate.Prepared, Has.Count.EqualTo(1));
+            Assert.That(candidate.Prepared.Single().Rotation, Is.EqualTo(GatewayCardinalRotation.East));
+            Assert.That(candidate.Events, Is.EqualTo(new[] { "prepare", "preflight", "apply" }));
+        });
+    }
+
+    [Test]
     public void Cancel_refuses_a_non_current_handle_then_cancels_the_matching_interaction()
     {
         var candidate = FakeCandidate.Target("set-target", "Thing_Turret1");
@@ -373,6 +396,10 @@ public sealed class GatewayGizmoRegistryTests
 
         public List<GatewayInteractionTarget> Applied { get; } = new();
 
+        public List<GatewayInteractionInput> Prepared { get; } = new();
+
+        public List<string> Events { get; } = new();
+
         public int CancelCount { get; private set; }
 
         public static FakeCandidate Immediate(string identity, string ownerHandle)
@@ -430,6 +457,39 @@ public sealed class GatewayGizmoRegistryTests
                     return new GatewayNativeApplyResult(completed: true);
                 },
                 cancel: () => candidate!.CancelCount++);
+            return candidate;
+        }
+
+        public static FakeCandidate Place(string identity)
+        {
+            FakeCandidate? candidate = null;
+            candidate = new FakeCandidate(new GatewayGizmoCandidateSnapshot(
+                identity,
+                GatewayGizmoSource.Architect,
+                Array.Empty<string>(),
+                "RimWorld.Designator_Build",
+                "Dishwasher",
+                "Place a dishwasher.",
+                order: 20f,
+                disabled: false,
+                disabledReason: null,
+                hotKey: null,
+                groupKey: -1,
+                GatewayGizmoInteractionKind.Placement,
+                toggleState: null,
+                new[] { GatewayInteractionInputKind.Cell }),
+                preflight: target =>
+                {
+                    candidate!.Events.Add("preflight");
+                    candidate.Preflighted.Add(target);
+                    return new GatewayTargetAcceptance(accepted: true);
+                },
+                apply: targets =>
+                {
+                    candidate!.Events.Add("apply");
+                    candidate.Applied.AddRange(targets);
+                    return new GatewayNativeApplyResult(completed: true);
+                });
             return candidate;
         }
 
@@ -503,6 +563,12 @@ public sealed class GatewayGizmoRegistryTests
         public GatewayGizmoCandidateSnapshot Capture() => capture();
 
         public void Invoke() => invoke();
+
+        public void Prepare(GatewayInteractionInput input)
+        {
+            Events.Add("prepare");
+            Prepared.Add(input);
+        }
 
         public GatewayTargetAcceptance Preflight(GatewayInteractionTarget target) => preflight(target);
 

@@ -241,9 +241,28 @@ public sealed class GatewayEndToEndNativeActions :
                         "The semantic gizmo target was expected to be rejected by native preflight.");
             }
 
-            return completed
-                ? GatewayEndToEndStepOutcome.Pass()
-                : Fail("gizmo_not_completed", "The semantic gizmo interaction did not complete.");
+            if (completed)
+            {
+                return GatewayEndToEndStepOutcome.Pass();
+            }
+
+            if (result.Accepted.Count == 0 && result.Rejected.Count > 0)
+            {
+                var reasons = string.Join(
+                    "; ",
+                    result.Rejected
+                        .Select(item => item.Reason)
+                        .Where(reason => !string.IsNullOrWhiteSpace(reason))
+                        .Distinct(StringComparer.Ordinal)
+                        .Take(4));
+                return Fail(
+                    "gizmo_target_rejected",
+                    string.IsNullOrWhiteSpace(reasons)
+                        ? "RimWorld's native gizmo preflight rejected the semantic target."
+                        : "RimWorld's native gizmo preflight rejected the semantic target: " + reasons);
+            }
+
+            return Fail("gizmo_not_completed", "The semantic gizmo interaction did not complete.");
         }
         finally
         {
@@ -349,7 +368,11 @@ public sealed class GatewayEndToEndNativeActions :
                 throw new InvalidOperationException("The placement gizmo does not accept cell input.");
             }
 
-            return GatewayInteractionInput.ForCell(first);
+            return GatewayInteractionInput.ForCell(
+                first,
+                step.Rotation.HasValue
+                    ? (GatewayCardinalRotation)(int)step.Rotation.Value
+                    : null);
         }
 
         var end = step.EndCell ?? throw new InvalidOperationException(

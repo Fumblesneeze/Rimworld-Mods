@@ -5,6 +5,9 @@ namespace RimWorldDevGateway;
 
 public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecutionMachine
 {
+    internal const int MaximumFailureMessageUtf8Bytes = 8 * 1024;
+    private const int MaximumFailureIdentityUtf8Bytes = 1024;
+    private const int MaximumFailureStackUtf8Bytes = 32 * 1024;
     private readonly GatewayEndToEndRuntimeTestDescriptor[] descriptors;
     private readonly IGatewayEndToEndClock clock;
     private readonly Func<GatewayEndToEndTestContext> contextFactory;
@@ -123,13 +126,15 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
                     CompletedFrame = clock.FrameCount,
                     CompletedGameTick = clock.GameTick,
                     CompletedUtc = clock.UtcNow,
-                    CleanupState = "not_run",
-                    Failure = new GatewayEndToEndExecutionFailureSnapshot(
+                    CleanupState = "not_run"
+                };
+                AssignFailure(
+                    skipped,
+                    new GatewayEndToEndExecutionFailureSnapshot(
                         "infrastructure",
                         "process_tainted",
                         "The E2E process was tainted by an unverifiable prior cleanup.",
-                        null)
-                };
+                        null));
                 completed.Add(skipped);
             }
 
@@ -170,11 +175,13 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
                 processTainted = true;
                 current!.Status = "infrastructure_failed";
                 current.CleanupState = "not_run";
-                current.Failure = new GatewayEndToEndExecutionFailureSnapshot(
-                    "infrastructure",
-                    "player_control_not_ready",
-                    "RimWorld did not grant player control before the E2E test deadline.",
-                    null);
+                AssignFailure(
+                    current,
+                    new GatewayEndToEndExecutionFailureSnapshot(
+                        "infrastructure",
+                        "player_control_not_ready",
+                        "RimWorld did not grant player control before the E2E test deadline.",
+                        null));
                 current.CompletedFrame = clock.FrameCount;
                 current.CompletedGameTick = clock.GameTick;
                 current.CompletedUtc = clock.UtcNow;
@@ -397,7 +404,7 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
         current!.Status = "cleaning";
         if (failure is not null)
         {
-            current.Failure = failure;
+            AssignFailure(current, failure);
         }
 
         plannedTerminalStatus = terminalStatus;
@@ -446,11 +453,11 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
                 null);
             if (current.Failure is null)
             {
-                current.Failure = cleanupFailure;
+                AssignFailure(current, cleanupFailure);
             }
             else
             {
-                current.CleanupFailure = cleanupFailure;
+                AssignFailure(current, cleanupFailure, cleanup: true);
             }
         }
         else
@@ -503,6 +510,50 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
             details.Message,
             details.Type,
             details.StackTrace);
+    }
+
+    private GatewayEndToEndExecutionFailureSnapshot SanitizeFailure(
+        GatewayEndToEndExecutionFailureSnapshot failure) =>
+        new(
+            GatewayIntegrationTestExceptionFormatter.RedactAndBoundUtf8(
+                failure.Kind,
+                sessionCredential,
+                MaximumFailureIdentityUtf8Bytes),
+            GatewayIntegrationTestExceptionFormatter.RedactAndBoundUtf8(
+                failure.Code,
+                sessionCredential,
+                MaximumFailureIdentityUtf8Bytes),
+            GatewayIntegrationTestExceptionFormatter.RedactAndBoundUtf8(
+                failure.Message,
+                sessionCredential,
+                MaximumFailureMessageUtf8Bytes),
+            failure.ExceptionType is null
+                ? null
+                : GatewayIntegrationTestExceptionFormatter.RedactAndBoundUtf8(
+                    failure.ExceptionType,
+                    sessionCredential,
+                    MaximumFailureIdentityUtf8Bytes),
+            failure.StackTrace is null
+                ? null
+                : GatewayIntegrationTestExceptionFormatter.RedactAndBoundUtf8(
+                    failure.StackTrace,
+                    sessionCredential,
+                    MaximumFailureStackUtf8Bytes));
+
+    private void AssignFailure(
+        TestRecord record,
+        GatewayEndToEndExecutionFailureSnapshot failure,
+        bool cleanup = false)
+    {
+        var sanitized = SanitizeFailure(failure);
+        if (cleanup)
+        {
+            record.CleanupFailure = sanitized;
+        }
+        else
+        {
+            record.Failure = sanitized;
+        }
     }
 
     private static GatewayEndToEndExecutionFailureSnapshot Timeout(string code, string message) =>

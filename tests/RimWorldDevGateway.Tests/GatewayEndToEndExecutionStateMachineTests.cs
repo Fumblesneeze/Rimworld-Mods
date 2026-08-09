@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using RimWorldDevGateway.EndToEndTesting;
+using System.Text;
 
 namespace RimWorldDevGateway.Tests;
 
@@ -259,6 +260,93 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
         });
     }
 
+    [Test]
+    public void Failed_step_diagnostics_are_credential_free_and_utf8_bounded_before_persistence()
+    {
+        const string credential = "SESSION-CREDENTIAL-DO-NOT-RETAIN";
+        var clock = new FakeClock();
+        var driver = new RecordingDriver
+        {
+            Operation = GatewayEndToEndCompletedStepOperation.Failed(
+                "native_rejection",
+                credential + new string('\u20ac', 10_000))
+        };
+        var machine = new GatewayEndToEndExecutionStateMachine(
+            new[] { Descriptor<DurableWorkflowTest>("bounded-failure") },
+            clock,
+            () => new GatewayEndToEndTestContext(
+                () => clock.FrameCount,
+                () => clock.GameTick,
+                _ => null),
+            driver,
+            new RecordingIsolation(),
+            credential);
+
+        AdvanceUntil(machine, clock, snapshot => snapshot.CurrentTest?.Failure is not null);
+        var failure = machine.Snapshot.CurrentTest!.Failure!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(failure.Message, Does.Not.Contain(credential));
+            Assert.That(
+                Encoding.UTF8.GetByteCount(failure.Message),
+                Is.LessThanOrEqualTo(GatewayEndToEndExecutionStateMachine.MaximumFailureMessageUtf8Bytes));
+            Assert.That(failure.Message, Does.EndWith("..."));
+        });
+    }
+
+    [Test]
+    public void Readiness_cleanup_and_skipped_failures_all_use_the_central_credential_sanitizer()
+    {
+        const string credential = "process";
+        var clock = new FakeClock();
+        var isolation = new RecordingIsolation { CleanupIsTrustworthy = false };
+        var machine = new GatewayEndToEndExecutionStateMachine(
+            new[]
+            {
+                Descriptor<PassingTest>("a-cleanup-fails"),
+                Descriptor<DurableWorkflowTest>("b-skipped")
+            },
+            clock,
+            () => new GatewayEndToEndTestContext(
+                () => clock.FrameCount,
+                () => clock.GameTick,
+                _ => null),
+            new RecordingDriver(),
+            isolation,
+            credential);
+
+        AdvanceToTerminal(machine, clock);
+
+        Assert.That(
+            machine.Snapshot.Results
+                .SelectMany(result => new[] { result.Failure, result.CleanupFailure })
+                .Where(failure => failure is not null)
+                .Select(failure => failure!.Message),
+            Has.None.Contains(credential));
+
+        const string readinessCredential = "RimWorld";
+        var readinessClock = new FakeClock();
+        var readinessMachine = new GatewayEndToEndExecutionStateMachine(
+            new[] { Descriptor<PassingTest>("readiness-fails") },
+            readinessClock,
+            () => new GatewayEndToEndTestContext(
+                () => readinessClock.FrameCount,
+                () => readinessClock.GameTick,
+                _ => null),
+            new RecordingDriver(),
+            new RecordingIsolation { IsReady = false },
+            readinessCredential);
+        readinessMachine.Advance();
+        readinessMachine.ConfirmPersisted(readinessMachine.Snapshot);
+        readinessClock.NextFrame(gameTicks: 0, wallClock: TimeSpan.FromSeconds(31));
+        readinessMachine.Advance();
+
+        Assert.That(
+            readinessMachine.Snapshot.CurrentTest!.Failure!.Message,
+            Does.Not.Contain(readinessCredential));
+    }
+
     private static GatewayEndToEndExecutionStateMachine Machine(
         FakeClock clock,
         RecordingDriver driver,
@@ -345,10 +433,12 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
     {
         public int BeginCount { get; private set; }
 
+        public IGatewayEndToEndStepOperation? Operation { get; set; }
+
         public IGatewayEndToEndStepOperation Begin(EndToEndStep step, IEndToEndContext context)
         {
             BeginCount++;
-            return GatewayEndToEndCompletedStepOperation.Passed();
+            return Operation ?? GatewayEndToEndCompletedStepOperation.Passed();
         }
     }
 

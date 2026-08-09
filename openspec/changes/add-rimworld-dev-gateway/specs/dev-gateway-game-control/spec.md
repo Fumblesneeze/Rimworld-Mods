@@ -122,6 +122,8 @@ A modded owner whose `GetGizmos()` or reverse-designator enumeration throws SHAL
 
 `GET /api/v1/interactions/current` SHALL return the active interaction or null. `POST /api/v1/interactions/{handle}/apply` SHALL accept exactly one matching thing, cell, explicit cell set, line, or rectangle input; resolve shapes to at most 4,096 unique cells; preflight every target using the native targeter/designator validator; then invoke the captured native callback or designator and report accepted/rejected targets plus completion state. `POST /api/v1/interactions/{handle}/cancel` SHALL cancel only the matching interaction. Native world-target commands and mod-defined multi-stage interactions SHALL be reported as unsupported until a typed adapter exists; native world debug tools remain available through the debug-action activation plus process-scoped pointer workflow.
 
+A cell input for a native `Designator_Place` MAY name exactly one cardinal `rotation` (`North`, `East`, `South`, or `West`). The gateway SHALL select and configure the revalidated native place designator with that rotation before calling its own `CanDesignateCell` and `DesignateMultiCell` paths. Rotation on another interaction/input kind, an invalid cardinal value, or a requested orientation that the placing Def cannot represent SHALL fail before designation. The gateway SHALL NOT set the resulting Thing rotation after placement or bypass the native designator.
+
 Only one interaction MAY be active. Starting another SHALL return `interaction_in_progress`. Map changes, lost/destroyed owners, changed command fingerprints, or native cancellation SHALL return `stale_interaction` and clear it. The gateway SHALL NOT synthesize `Event.current`, guess a mod-defined callback, or silently use pixel input.
 
 #### Scenario: Press an ordinary command button
@@ -139,6 +141,11 @@ Only one interaction MAY be active. Starting another SHALL return `interaction_i
 #### Scenario: Drag a wall or zone
 - **WHEN** a drag designator interaction receives a valid bounded line or rectangle
 - **THEN** the gateway deterministically expands and preflights the cells, invokes the native multi-cell designator, and returns the affected cells
+
+#### Scenario: Place a rotatable building facing east
+- **WHEN** a native building placement interaction receives one valid cell with `rotation` equal to `East`
+- **THEN** the gateway configures that exact revalidated `Designator_Place` before native preflight and the ordinary designation path produces the east-facing building
+- **THEN** the gateway does not mutate the spawned building's rotation after placement
 
 #### Scenario: Custom gizmo cannot be classified safely
 - **WHEN** a mod-defined Gizmo exposes no supported semantic contract

@@ -22,6 +22,8 @@
 - [x] 2.13 TDD: Project the already-captured native toggle state and exact hotkey Def name through the host-safe E2E gizmo catalog while preserving the original public constructor for prebuilt bundle compatibility.
 - [x] 2.14 TDD/E2E: Add a host-safe exact-window confirmation step with a private fail-closed adapter registry, preserve the existing public native-action/backend interfaces, and confirm Replimat's native survival-batch dialog in a minimized run without exposing callback fields to test bundles.
 - [x] 2.15 TDD/E2E: Add a host-safe exact Architect-category open/close step behind optional internal adapter interfaces, use the native main-button/category-click/escape paths without foreground input, and visibly prove the Production build menu in a minimized product catalog.
+- [x] 2.16 TDD/E2E: Add an optional exact cardinal rotation to cell-shaped `Place` steps, reject it for every other gizmo interaction, and project it to the Gateway native placement input for player-visible rotated-building acceptance.
+- [x] 2.17 TDD: Sanitize every persistable E2E failure centrally, redact the live session credential, cap failure messages to the shared 8 KiB UTF-8 diagnostic budget, and retain a deterministic truncation marker for hostile native rejection text.
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 

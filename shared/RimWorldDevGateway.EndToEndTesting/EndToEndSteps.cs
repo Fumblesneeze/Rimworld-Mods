@@ -20,6 +20,14 @@ public enum EndToEndGizmoInteraction
     Drag = 3
 }
 
+public enum EndToEndCardinalRotation
+{
+    North = 0,
+    East = 1,
+    South = 2,
+    West = 3
+}
+
 public enum EndToEndGameSpeed
 {
     Normal = 1,
@@ -131,6 +139,59 @@ public sealed class GizmoActionStep : EndToEndStep
         EndToEndMapCell? endCell = null,
         IEnumerable<string>? architectCategoryDefNames = null,
         bool expectRejected = false)
+        : this(
+            name,
+            targetRuntimeIds,
+            gizmoType,
+            interaction,
+            rotation: null,
+            stableGizmoId,
+            startCell,
+            endCell,
+            architectCategoryDefNames,
+            expectRejected,
+            useCardinalOverload: false)
+    {
+    }
+
+    public GizmoActionStep(
+        string name,
+        IEnumerable<string> targetRuntimeIds,
+        string gizmoType,
+        EndToEndGizmoInteraction interaction,
+        EndToEndCardinalRotation rotation,
+        string? stableGizmoId = null,
+        EndToEndMapCell? startCell = null,
+        EndToEndMapCell? endCell = null,
+        IEnumerable<string>? architectCategoryDefNames = null,
+        bool expectRejected = false)
+        : this(
+            name,
+            targetRuntimeIds,
+            gizmoType,
+            interaction,
+            rotation,
+            stableGizmoId,
+            startCell,
+            endCell,
+            architectCategoryDefNames,
+            expectRejected,
+            useCardinalOverload: true)
+    {
+    }
+
+    private GizmoActionStep(
+        string name,
+        IEnumerable<string> targetRuntimeIds,
+        string gizmoType,
+        EndToEndGizmoInteraction interaction,
+        EndToEndCardinalRotation? rotation,
+        string? stableGizmoId,
+        EndToEndMapCell? startCell,
+        EndToEndMapCell? endCell,
+        IEnumerable<string>? architectCategoryDefNames,
+        bool expectRejected,
+        bool useCardinalOverload)
         : base(name, EndToEndStepKind.Act)
     {
         TargetRuntimeIds = StepValues.CopyIds(targetRuntimeIds, nameof(targetRuntimeIds));
@@ -150,6 +211,19 @@ public sealed class GizmoActionStep : EndToEndStep
         StartCell = startCell;
         EndCell = endCell;
         ExpectRejected = expectRejected;
+        if (rotation.HasValue && !Enum.IsDefined(typeof(EndToEndCardinalRotation), rotation.Value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(rotation));
+        }
+
+        if (rotation.HasValue && interaction != EndToEndGizmoInteraction.Place)
+        {
+            throw new ArgumentException(
+                "A cardinal rotation is valid only for a native Place gizmo step.",
+                nameof(rotation));
+        }
+
+        Rotation = rotation;
     }
 
     public IReadOnlyList<string> TargetRuntimeIds { get; }
@@ -167,6 +241,8 @@ public sealed class GizmoActionStep : EndToEndStep
     public EndToEndMapCell? EndCell { get; }
 
     public bool ExpectRejected { get; }
+
+    public EndToEndCardinalRotation? Rotation { get; }
 
     private static string Required(string value, string parameterName) => StepValues.Required(value, parameterName);
 }

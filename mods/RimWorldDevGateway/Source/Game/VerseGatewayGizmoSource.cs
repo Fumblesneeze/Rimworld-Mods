@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Reflection;
 using RimWorld;
 using Verse;
 
@@ -335,6 +336,7 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
         private readonly GatewayGizmoSource source;
         private readonly IReadOnlyList<string> owners;
         private readonly string identity;
+        private Designator_Place? selectedPlaceDesignator;
 
         public VerseCandidate(
             Map map,
@@ -398,6 +400,34 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
             }
         }
 
+        public void Prepare(GatewayInteractionInput input)
+        {
+            if (!input.Rotation.HasValue)
+            {
+                return;
+            }
+
+            if (gizmo is not Designator_Place placeDesignator)
+            {
+                throw new GatewayGizmoException(
+                    "interaction_rotation_unsupported",
+                    "Cardinal rotation is supported only by a native place designator.");
+            }
+
+            CompletePlaceDesignatorLifecycle();
+            selectedPlaceDesignator = placeDesignator;
+            try
+            {
+                placeDesignator.Selected();
+                DesignatorPlaceRotationAdapter.Configure(placeDesignator, input.Rotation.Value);
+            }
+            catch
+            {
+                CompletePlaceDesignatorLifecycle();
+                throw;
+            }
+        }
+
         public GatewayTargetAcceptance Preflight(GatewayInteractionTarget target)
         {
             if (gizmo is Command_Target command)
@@ -420,16 +450,28 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
 
             if (gizmo is Designator designator && target.Kind == GatewayInteractionTargetKind.Cell)
             {
-                var cell = ToIntVec3(target.Cell!);
-                if (!cell.InBounds(map))
+                try
                 {
-                    return new GatewayTargetAcceptance(false, "The cell is outside the current map.");
-                }
+                    var cell = ToIntVec3(target.Cell!);
+                    if (!cell.InBounds(map))
+                    {
+                        return new GatewayTargetAcceptance(false, "The cell is outside the current map.");
+                    }
 
-                var report = designator.CanDesignateCell(cell);
-                return report.Accepted
-                    ? new GatewayTargetAcceptance(true)
-                    : new GatewayTargetAcceptance(false, report.Reason);
+                    var report = designator.CanDesignateCell(cell);
+                    if (report.Accepted)
+                    {
+                        return new GatewayTargetAcceptance(true);
+                    }
+
+                    CompletePlaceDesignatorLifecycle();
+                    return new GatewayTargetAcceptance(false, report.Reason);
+                }
+                catch
+                {
+                    CompletePlaceDesignatorLifecycle();
+                    throw;
+                }
             }
 
             return new GatewayTargetAcceptance(false, "The gizmo does not accept this target kind.");
@@ -460,8 +502,15 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
 
             if (gizmo is Designator designator)
             {
-                designator.DesignateMultiCell(targets.Select(target => ToIntVec3(target.Cell!)));
-                return new GatewayNativeApplyResult(completed: true);
+                try
+                {
+                    designator.DesignateMultiCell(targets.Select(target => ToIntVec3(target.Cell!)));
+                    return new GatewayNativeApplyResult(completed: true);
+                }
+                finally
+                {
+                    CompletePlaceDesignatorLifecycle();
+                }
             }
 
             throw new GatewayGizmoException(
@@ -471,7 +520,14 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
 
         public void Cancel()
         {
-            // Semantic adapters do not select RimWorld's global Targeter or DesignatorManager.
+            CompletePlaceDesignatorLifecycle();
+        }
+
+        private void CompletePlaceDesignatorLifecycle()
+        {
+            var selected = selectedPlaceDesignator;
+            selectedPlaceDesignator = null;
+            selected?.Deselected();
         }
 
         private TargetInfo ResolveTargetInfo(
@@ -559,6 +615,46 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
 
         private static string? BoundNullable(string? value, int maximumLength) =>
             value is null ? null : Bound(value, maximumLength);
+    }
+
+    internal static class DesignatorPlaceRotationAdapter
+    {
+        private static readonly FieldInfo? PlacingRotation = typeof(Designator_Place).GetField(
+            "placingRot",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
+        internal static void Configure(
+            Designator_Place designator,
+            GatewayCardinalRotation rotation)
+        {
+            if (designator is null)
+            {
+                throw new ArgumentNullException(nameof(designator));
+            }
+
+            if (!Enum.IsDefined(typeof(GatewayCardinalRotation), rotation))
+            {
+                throw new GatewayGizmoException(
+                    "interaction_rotation_invalid",
+                    "The requested placement rotation is not cardinal.");
+            }
+
+            if (designator.PlacingDef is not ThingDef { rotatable: true })
+            {
+                throw new GatewayGizmoException(
+                    "interaction_rotation_unsupported",
+                    "The placing Def does not support cardinal rotation.");
+            }
+
+            if (PlacingRotation is null || PlacingRotation.FieldType != typeof(Rot4))
+            {
+                throw new GatewayGizmoException(
+                    "interaction_rotation_unavailable",
+                    "This RimWorld build does not expose the expected native placing rotation.");
+            }
+
+            PlacingRotation.SetValue(designator, new Rot4((int)rotation));
+        }
     }
 
     private static Thing? ResolveThing(IEnumerable<Thing> candidates, string handle) =>

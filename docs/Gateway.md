@@ -268,6 +268,16 @@ Use `ownerScope: "explicitOwners"` with `ownerHandles` for explicit owners. The 
 { "kind": "cell", "cell": { "x": 101, "z": 99 } }
 ```
 
+For a native `Designator_Place`, the cell may include one exact cardinal orientation:
+
+```json
+{
+  "kind": "cell",
+  "cell": { "x": 101, "z": 99 },
+  "rotation": "East"
+}
+```
+
 ```json
 {
   "kind": "line",
@@ -286,9 +296,9 @@ Use `ownerScope: "explicitOwners"` with `ownerHandles` for explicit owners. The 
 
 `cells` accepts an explicit `cells` array. Lines use deterministic Bresenham expansion; rectangles are inclusive and filled; duplicates are removed; one interaction resolves to at most 4,096 unique cells. Every target is preflighted through the native targeter/designator, and the result distinguishes accepted and rejected targets. Cancel only the exact current handle. Starting another interaction returns `interaction_in_progress`; map, owner, or command-list changes make it stale.
 
-Typed version-one placement covers designators whose complete meaning is a cell set. A wall/build designator that still needs a Stuff or rotation choice is not applied through this typed route; use a named `quickstart.spawn` descriptor or raw C# for that development setup. Zone/build adapters can be added later once their extra choices have explicit schemas. World targeting and mod-defined multi-stage GUI interactions remain unsupported.
+Typed version-one placement covers designators whose complete meaning is a cell set plus, for `Designator_Place`, an optional `North`, `East`, `South`, or `West` orientation. The gateway initializes and configures the exact revalidated native place designator before its own preflight and designation; it does not rotate the resulting Thing afterward. Rotation on another input/designator and rotation of a non-rotatable placing Def fail closed. A build designator that still needs a Stuff choice is not applied through this typed route; use a named `quickstart.spawn` descriptor or raw C# for that development setup. World targeting and mod-defined multi-stage GUI interactions remain unsupported.
 
-The safe native adapters cover ordinary `Command_Action`, `Command_Toggle`, local `Command_Target`, and cell-based `Designator` operations. Group-only UI semantics, abilities/verbs/world targets, sliders, custom `GizmoOnGUI`, right-click menus, build material/rotation choice, and multi-stage targeting are intentionally `unsupported`; use raw C# or process-scoped input, then add a tested typed adapter when that workflow becomes recurring.
+The safe native adapters cover ordinary `Command_Action`, `Command_Toggle`, local `Command_Target`, cell-based `Designator` operations, and exact cardinal rotation for native place designators. Group-only UI semantics, abilities/verbs/world targets, sliders, custom `GizmoOnGUI`, right-click menus, build material choice, and multi-stage targeting are intentionally `unsupported`; use raw C# or process-scoped input, then add a tested typed adapter when that workflow becomes recurring.
 
 ## Unrestricted C# and assembly execution
 

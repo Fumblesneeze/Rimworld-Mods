@@ -24,7 +24,8 @@ public static class GatewayGizmoRequestJson
         "start",
         "end",
         "cornerA",
-        "cornerB"
+        "cornerB",
+        "rotation"
     };
 
     public static GatewayGizmoQuery ReadQuery(string json)
@@ -72,7 +73,8 @@ public static class GatewayGizmoRequestJson
                     RequireOnlyString(properties, "thingHandle", kind)),
             GatewayInteractionInputKind.Cell =>
                 GatewayInteractionInput.ForCell(
-                    RequireOnlyCell(properties, "cell", kind)),
+                    RequireOnlyCell(properties, "cell", kind, "rotation"),
+                    ReadCardinalRotation(properties)),
             GatewayInteractionInputKind.Cells =>
                 GatewayInteractionInput.ForCells(
                     RequireOnlyCells(properties, "cells", kind)),
@@ -283,6 +285,25 @@ public static class GatewayGizmoRequestJson
         return new GatewayMapCell(
             ReadInt32(coordinates, "x", 0),
             ReadInt32(coordinates, "z", 0));
+    }
+
+    private static GatewayCardinalRotation? ReadCardinalRotation(
+        IReadOnlyDictionary<string, object?> properties)
+    {
+        var text = ReadString(properties, "rotation", required: false);
+        if (text is null)
+        {
+            return null;
+        }
+
+        if (!Enum.TryParse<GatewayCardinalRotation>(text, ignoreCase: true, out var rotation) ||
+            !Enum.IsDefined(typeof(GatewayCardinalRotation), rotation))
+        {
+            throw Error(
+                "Property 'rotation' must name one cardinal rotation: North, East, South, or West.");
+        }
+
+        return rotation;
     }
 
     private static void RejectExtraneousShapeProperties(

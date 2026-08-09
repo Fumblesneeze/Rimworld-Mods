@@ -93,6 +93,8 @@ E2E bundles live under version-resolved `DevEndToEndTests` directories and are l
 
 `GET /api/v1/end-to-end-tests` exposes durable discovery, current test/step, group state, and terminal results. It does not reuse `GET /integration-tests` because lifecycle assertions and multi-frame destructive workflows have different contracts, flags, state machines, and failure semantics.
 
+The execution state machine sanitizes every failure before exposing a persistable snapshot. It replaces the exact session credential while streaming only a bounded prefix, then applies the existing 8 KiB Gateway diagnostic-message budget by encoded UTF-8 bytes; failure identities and stacks retain their narrower independent ceilings. This prevents a mod-controlled native rejection reason from turning an otherwise bounded four-target diagnostic into an oversized or credential-bearing artifact.
+
 ### 6. The host runner is a PowerShell command built on the existing launcher
 
 `scripts/Invoke-RimWorldEndToEndTests.ps1` is Windows-only because it coordinates RimWorld, exact process identity, isolated configuration, screen-local input, and existing PowerShell launch/cleanup helpers. It provides test/group filters, configuration and path overrides, watchdog controls, and `-Output table|json`. Exit code `0` means every selected test and cleanup passed, `1` means a runtime/test/infrastructure failure, and `2` means invalid usage or discovery/selection failure.
@@ -108,6 +110,7 @@ The first tracer is the adverse meal outcome because it requires arrangement, a 
 - **A test mutates undeclared static state** → Require exact process groups, context cleanup registration, reset verification, and fail/taint rather than pretending later results are isolated.
 - **Destructive clearing exercises unstable RimWorld internals** → Keep reset code small, version-tested, exception-isolated, and validated before proceeding; use the process boundary when reset cannot be trusted.
 - **Native UI labels are translated or modded** → Prefer stable gizmo/action identities and exact runtime cardinality; label matching must include expected type/owner and fail closed.
+- **Rotated placement is faked after construction** → Carry an optional cardinal through the host-safe `GizmoActionStep` only for `Place`, and let the Gateway configure the exact native `Designator_Place` before its own preflight/designation path.
 - **A waiter/pawn workflow takes nondeterministic time** → Tests declare predicate-based deadlines and capture current job/target/screenshot evidence on timeout rather than sleeping guessed durations.
 - **One process crash loses group results** → Persist admitted/running/terminal test snapshots incrementally and let the host synthesize explicit aborted results for missing terminals.
 - **Instrumentation makes E2E tests look like gameplay code** → Keep all contracts and assemblies in shared/tests/staged paths and add package checks rejecting them from releases.

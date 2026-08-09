@@ -219,3 +219,9 @@
 
 - [x] 29.1 SPEC/TDD: add a typed, safe-leaf save-and-reload step backed by RimWorld's native main-thread save/load operations, isolated-save ownership, replacement-game detection, and bounded completion semantics.
 - [x] 29.2 IN-GAME: run only the focused Food Texture Variety persistence E2E test; observe the same selected meal and texture before/after a native game replacement and clean the exact isolated save.
+
+## 30. mods/RimWorldDevGateway — Cardinal native placement
+
+- [x] 30.1 SPEC/TDD RED: define and reproduce an optional exact cardinal rotation on cell-shaped native placement, including rejection for invalid values, other shapes, non-place designators, and non-rotatable placing Defs.
+- [x] 30.2 GREEN: configure the revalidated `Designator_Place` before its native preflight/designation path without editing the resulting Thing or synthesizing input events.
+- [x] 30.3 E2E/IN-GAME: place an Immersive Chefs building through the native Production designator with a requested non-default rotation and retain before/action/after evidence that the resulting player-visible building faces that direction.

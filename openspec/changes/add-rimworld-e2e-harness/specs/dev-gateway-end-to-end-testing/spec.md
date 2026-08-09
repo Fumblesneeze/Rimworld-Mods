@@ -61,6 +61,13 @@ The Gateway SHALL discover, validate, byte-load, and execute marker-owned E2E bu
 ### Requirement: E2E tests execute as bounded multi-frame workflows
 The E2E contract SHALL separate main-thread fixture arrangement from an iterator of typed `act`, `wait`, and `observe` steps. Synchronous arrangement and iterator-side fixture maintenance SHALL use bounded candidate sets and fixed-cost setup operations; a map-wide sort/search, long-running generation loop, blocking delegate, or other setup that can cross Windows' hung-window interval SHALL instead be bounded or split across frames before it is admitted as an E2E fixture. The Gateway SHALL NOT expose a generic synchronous callback step as an action. The Gateway SHALL wait without capturing or clearing an isolation baseline until the quickstart game reports native player control, SHALL bound that wait by the test's declared deadline, SHALL advance the iterator without blocking frame rendering, SHALL execute Unity/Verse access only on the main thread, and SHALL enforce test-declared frame, game-tick, and wall-clock deadlines plus a host watchdog. Supported action steps SHALL include native gizmos selected from exact Thing owners and/or exact architect category Def names, exact float-menu orders, typed native settlement-trade, trade-dialog, registered exact-window confirmation, incident, and save/reload operations, pause/speed, selection, camera, and process-scoped input; supported observation steps SHALL include predicate assertions, full or object-bounded screenshots, and named checkpoints. The shared read-only gizmo catalog SHALL preserve the selected descriptor's observed toggle state and exact hotkey Def name when available, while retaining the original constructor contract for already-built E2E bundles.
 
+A typed gizmo `Place` step MAY declare one exact cardinal rotation. The shared contract SHALL permit that option only for a cell-shaped placement step, and the runtime SHALL project it to the Gateway's native place-designator interaction rather than mutate a resulting Thing. Other gizmo interaction kinds SHALL reject the option during contract validation.
+
+#### Scenario: An E2E test performs a rotated native placement
+- **WHEN** a test selects one exact Architect place designator and applies it to one cell with `East`
+- **THEN** the runtime passes the cardinal choice into the native placement interaction before preflight and designation
+- **THEN** later waits, queries, and screenshots can observe the east-facing placed building
+
 A typed Architect-category action SHALL accept one exact loaded `DesignationCategoryDef` and an
 open/close intent. Opening SHALL use RimWorld's native Architect main-button activation path, select
 the exact category through the current Architect tab's own cached category object and inspected
@@ -170,7 +177,7 @@ After native player control becomes available, before the first test and in guar
 - **THEN** reset preserves that feature while still removing and verifying the absence of every destroyable disposable fixture
 
 ### Requirement: Failures are isolated and diagnostically complete
-An assertion, test exception, unsupported native action, stale handle, or ordinary test timeout SHALL fail only the current test when map reset remains trustworthy. Each failure SHALL retain the current step, bounded causal exception, live job/target and selection checkpoint when available, final screenshot, log cursor page, and cleanup result. A test failure MUST NOT be converted into a process success merely because later cleanup passed.
+An assertion, test exception, unsupported native action, stale handle, or ordinary test timeout SHALL fail only the current test when map reset remains trustworthy. Each failure SHALL retain the current step, bounded causal exception, live job/target and selection checkpoint when available, final screenshot, log cursor page, and cleanup result. Before any failure snapshot becomes persistable, the runtime SHALL redact the exact live session credential from every failure field and cap the failure message to the same 8 KiB UTF-8 diagnostic-message budget used by Gateway log entries; identity and stack fields SHALL remain separately bounded. A test failure MUST NOT be converted into a process success merely because later cleanup passed.
 
 #### Scenario: One test fails and cleanup succeeds
 - **WHEN** the first test in a group fails an observable assertion and the reset returns to a verified empty map
@@ -180,6 +187,10 @@ An assertion, test exception, unsupported native action, stale handle, or ordina
 #### Scenario: RimWorld exits during a test
 - **WHEN** the exact process exits before terminal persistence
 - **THEN** the host synthesizes explicit aborted results for the active and unrun tests and retains the flushed process log and cleanup status
+
+#### Scenario: A mod returns hostile native rejection text
+- **WHEN** a native player action returns an oversized rejection reason containing the live bearer credential
+- **THEN** the persisted failure retains a useful deterministic prefix, replaces the credential, fits the 8 KiB UTF-8 message budget, and never invokes arbitrary exception formatting
 
 ### Requirement: Results are durable and automation-friendly
 The runner SHALL emit one aggregate JSON result, one JUnit XML result, and table or JSON console output. Results SHALL identify the game version, exact PID/start identity, complete ordered mods, product/Gateway/E2E assembly identities and hashes, test and step timings, game ticks, assertions, screenshots, logs, cleanup, and before/after normal configuration hashes. Exit code `0` SHALL mean every selected test and cleanup passed, `1` SHALL mean a test/runtime/infrastructure failure, and `2` SHALL mean invalid usage or discovery/selection failure.
