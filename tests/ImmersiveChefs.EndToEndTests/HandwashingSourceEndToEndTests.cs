@@ -446,6 +446,326 @@ public sealed class DubsSinkHandwashingPriorityTest : IRimWorldEndToEndTest
     }
 }
 
+[RimWorldEndToEndTest(
+    "immersive-chefs.dubs-handwashing-full-fallback-order",
+    "fumblesneeze.immersivechefs",
+    EndToEndTestContract.CorePackageId,
+    "brrainz.harmony",
+    "Dubwise.DubsBadHygiene",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 15_600,
+    MaxGameTicks = 55_000,
+    MaxWallClockSeconds = 540)]
+public sealed class DubsHandwashingFullFallbackOrderTest : IRimWorldEndToEndTest
+{
+    private Map map = null!;
+    private Pawn cleaner = null!;
+    private ThingWithComps plate = null!;
+    private ThingWithComps kitchenSink = null!;
+    private ThingWithComps sinkTower = null!;
+    private ThingWithComps basin = null!;
+    private ThingWithComps basinTower = null!;
+    private ThingWithComps waterTub = null!;
+    private ThingWithComps well = null!;
+    private IntVec3 terrainCell;
+    private string plateId = string.Empty;
+    private float basinWaterAfterWash;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        map = Current.Game.CurrentMap;
+        HandwashingE2EFixture.PreserveSettings(context);
+        var center = FoodSearchE2EFixture.FindRoomCenter(map);
+        FoodSearchE2EFixture.BuildSealedRoom(map, center);
+        terrainCell = center + new IntVec3(4, 0, -4);
+        HandwashingE2EFixture.SetTemporaryTerrain(context, map, terrainCell, TerrainDefOf.WaterShallow);
+
+        kitchenSink = DispenserE2EFixture.SpawnBuilding(
+            map,
+            "KitchenSink",
+            center + new IntVec3(3, 0, 2));
+        sinkTower = HandwashingE2EFixture.SpawnDubsSinkWaterSupply(map, kitchenSink, 10f);
+        HandwashingE2EFixture.SpawnDubsSewageOutlet(
+            map,
+            kitchenSink,
+            center + new IntVec3(-5, 0, 4));
+        basin = DispenserE2EFixture.SpawnBuilding(
+            map,
+            "BasinStuff",
+            center + new IntVec3(3, 0, -1));
+        basinTower = DispenserE2EFixture.SpawnDubsWaterSupply(map, basin, 10f);
+        HandwashingE2EFixture.SpawnDubsSewageOutlet(
+            map,
+            basin,
+            center + new IntVec3(5, 0, -4));
+        waterTub = DispenserE2EFixture.SpawnBuilding(
+            map,
+            "WashBucket",
+            center + new IntVec3(1, 0, -3));
+        HandwashingE2EFixture.SetDubsHauledWaterUses(waterTub, 3);
+        well = DispenserE2EFixture.SpawnBuilding(
+            map,
+            "PrimitiveWell",
+            center + new IntVec3(-3, 0, -3));
+
+        cleaner = HandwashingE2EFixture.CreateInactiveCleaner("Dubs fallback dish cleaner");
+        GenSpawn.Spawn(cleaner, center + new IntVec3(-1, 0, 0), map);
+        plate = HandwashingE2EFixture.MakeDirtyPlate(ThingDefOf.Steel);
+        GenSpawn.Spawn(plate, center + new IntVec3(0, 0, 0), map);
+        plateId = plate.ThingID;
+
+        var settings = ImmersiveChefsMod.Settings;
+        settings.PreferDishwashers = true;
+        settings.AllowTerrainHandwashing = true;
+        settings.DishwashingWorkScale = 0.25f;
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        yield return new TimeControlActionStep(
+            "settle both exact Dubs plumbing networks",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "the kitchen sink and basin each pass their native supplied Dubs report",
+            _ => HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, kitchenSink, 1f) &&
+                 HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, basin, 1f),
+            new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(30)));
+        yield return new TimeControlActionStep(
+            "pause before the ordered handwashing sequence",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+
+        foreach (var step in WashAtObject(
+                     "connected kitchen sink",
+                     kitchenSink,
+                     WashProvenance.Safe,
+                     () => HandwashingE2EFixture.Nearly(
+                         HandwashingE2EFixture.ReadDubsNetworkWater(kitchenSink),
+                         9f)))
+        {
+            yield return step;
+        }
+
+        yield return new AssertionStep(
+            "disallow colonists through the kitchen sink's native Dubs fixture policy",
+            _ =>
+            {
+                HandwashingE2EFixture.SetDubsFixtureAllowsColonists(kitchenSink, false);
+                EndToEndAssert.False(
+                    HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, kitchenSink, 1f),
+                    "The real Dubs kitchen sink must reject this colonist before fallback selection.");
+            });
+        foreach (var step in WashAtObject(
+                     "connected basin fallback",
+                     basin,
+                     WashProvenance.Safe,
+                     () => HandwashingE2EFixture.Nearly(
+                         HandwashingE2EFixture.ReadDubsNetworkWater(basin),
+                         9f)))
+        {
+            yield return step;
+        }
+
+        yield return new AssertionStep(
+            "remove basin water so its native Working report selects the hauled-water tier",
+            _ =>
+            {
+                basinWaterAfterWash = HandwashingE2EFixture.ReadDubsNetworkWater(basin);
+                HandwashingE2EFixture.SetDubsStoredWater(basinTower, basin, 0f);
+                EndToEndAssert.False(
+                    HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, basin, 1f),
+                    "The real Dubs basin must reject work after its supplied water is removed.");
+            });
+        foreach (var step in WashAtObject(
+                     "hauled-water tub fallback",
+                     waterTub,
+                     WashProvenance.WildWater,
+                     () => HandwashingE2EFixture.ReadDubsHauledWaterUses(waterTub) == 2))
+        {
+            yield return step;
+        }
+
+        yield return new AssertionStep(
+            "empty the hauled-water tub so the primitive well becomes eligible",
+            _ => HandwashingE2EFixture.SetDubsHauledWaterUses(waterTub, 0));
+        foreach (var step in WashAtObject(
+                     "primitive well fallback",
+                     well,
+                     WashProvenance.WildWater,
+                     () => HandwashingE2EFixture.ReadDubsHauledWaterUses(waterTub) == 0))
+        {
+            yield return step;
+        }
+
+        yield return new AssertionStep(
+            "forbid the well so water terrain becomes the final fallback",
+            _ => well.SetForbidden(true, warnOnFail: false));
+        foreach (var step in WashAtTerrain())
+        {
+            yield return step;
+        }
+
+        yield return new CheckpointStep(
+            "full Dubs handwashing fallback order result",
+            _ => new Dictionary<string, string>
+            {
+                ["plate"] = plateId,
+                ["sink"] = kitchenSink.ThingID,
+                ["basin"] = basin.ThingID,
+                ["waterTub"] = waterTub.ThingID,
+                ["well"] = well.ThingID,
+                ["terrain"] = terrainCell.ToString(),
+                ["sinkWaterAfter"] = HandwashingE2EFixture.ReadDubsNetworkWater(kitchenSink).ToString("R"),
+                ["basinWaterAfterWash"] = basinWaterAfterWash.ToString("R"),
+                ["basinWaterFinal"] = HandwashingE2EFixture.ReadDubsNetworkWater(basin).ToString("R"),
+                ["tubUsesAfter"] = HandwashingE2EFixture.ReadDubsHauledWaterUses(waterTub).ToString()
+            });
+    }
+
+    private IEnumerable<EndToEndStep> WashAtObject(
+        string label,
+        ThingWithComps source,
+        WashProvenance expectedProvenance,
+        Func<bool> debitAssertion)
+    {
+        yield return new AssertionStep(
+            $"prepare the exact plate for {label}",
+            _ =>
+            {
+                plate.GetComp<CompSanitation>()!.MarkDirty();
+                cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
+                HandwashingE2EFixture.AssertObjectDestination(
+                    cleaner,
+                    plate,
+                    source,
+                    expectedProvenance);
+            });
+        HandwashingE2EFixture.ActivateCleaner(cleaner);
+        yield return new TimeControlActionStep(
+            $"run ordinary Cleaning toward the {label}",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            $"the cleaner carries the exact plate to the {label}",
+            _ => HandwashingE2EFixture.IsDoingDishesAt(cleaner, source, plateId),
+            new EndToEndDeadline(1_200, 4_000, TimeSpan.FromSeconds(45)));
+        yield return new TimeControlActionStep(
+            $"pause during the {label} wash",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            $"select the cleaner using the {label}",
+            new[] { cleaner.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            $"frame the cleaner and {label}",
+            new[] { cleaner.ThingID, source.ThingID },
+            paddingPixels: 240);
+        yield return new ScreenshotStep(
+            $"ordinary Doing dishes visibly uses the {label}",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new TimeControlActionStep(
+            $"finish the {label} wash",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            $"the exact plate returns clean from the {label}",
+            _ => plate.Spawned &&
+                 plate.GetComp<CompSanitation>() is { IsDirty: false } sanitation &&
+                 sanitation.WashProvenance == expectedProvenance,
+            new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(45)));
+        yield return new TimeControlActionStep(
+            $"pause after the {label} wash",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            $"the {label} consumes once and preserves the exact plate",
+            _ =>
+            {
+                EndToEndAssert.True(debitAssertion(), $"The {label} must consume its exact one-wash charge once.");
+                EndToEndAssert.Equal(plateId, plate.ThingID,
+                    $"The {label} must return the same exact plate.");
+                EndToEndAssert.Equal(1, plate.stackCount,
+                    $"The {label} must conserve one physical plate.");
+                HandwashingE2EFixture.AssertTotalPlateUnits(map, 1);
+            });
+    }
+
+    private IEnumerable<EndToEndStep> WashAtTerrain()
+    {
+        yield return new AssertionStep(
+            "prepare the exact plate for final terrain fallback",
+            _ =>
+            {
+                plate.GetComp<CompSanitation>()!.MarkDirty();
+                cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
+                HandwashingE2EFixture.AssertTerrainDestination(cleaner, plate, terrainCell);
+            });
+        HandwashingE2EFixture.ActivateCleaner(cleaner);
+        yield return new TimeControlActionStep(
+            "run ordinary Cleaning toward final terrain fallback",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the cleaner carries the exact plate to final terrain fallback",
+            _ => HandwashingE2EFixture.IsDoingDishesAt(cleaner, terrainCell, plateId),
+            new EndToEndDeadline(1_200, 4_000, TimeSpan.FromSeconds(45)));
+        yield return new TimeControlActionStep(
+            "pause during final terrain handwashing",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the cleaner at final terrain fallback",
+            new[] { cleaner.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame final terrain handwashing",
+            new[] { cleaner.ThingID },
+            paddingPixels: 260);
+        yield return new ScreenshotStep(
+            "ordinary Doing dishes visibly reaches terrain only after every object tier is unavailable",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new TimeControlActionStep(
+            "finish final terrain handwashing",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "the exact terrain-washed plate returns clean",
+            _ => plate.Spawned &&
+                 plate.GetComp<CompSanitation>() is { IsDirty: false, WashedInWildWater: true },
+            new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(45)));
+        yield return new TimeControlActionStep(
+            "pause after final terrain handwashing",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the exact plate after the full fallback chain",
+            new[] { plate.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the exact plate and exhausted fallback fixture",
+            new[] { plate.ThingID, waterTub.ThingID, well.ThingID },
+            paddingPixels: 240);
+        yield return new ScreenshotStep(
+            "same plate visibly records wild-water cleaning after the final fallback",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new AssertionStep(
+            "the full fallback chain conserves the exact plate once",
+            _ =>
+            {
+                EndToEndAssert.Equal(plateId, plate.ThingID,
+                    "The final terrain fallback must return the same exact plate.");
+                EndToEndAssert.Equal(1, plate.stackCount,
+                    "The full fallback chain must conserve one physical plate.");
+                HandwashingE2EFixture.AssertTotalPlateUnits(map, 1);
+            });
+    }
+}
+
 internal static class HandwashingE2EFixture
 {
     internal static void PreserveSettings(IEndToEndContext context)
@@ -556,6 +876,19 @@ internal static class HandwashingE2EFixture
             "The exact reachable water-terrain cell must be selected with wild-water provenance.");
     }
 
+    internal static void AssertObjectDestination(
+        Pawn pawn,
+        Thing ware,
+        Thing source,
+        WashProvenance provenance)
+    {
+        EndToEndAssert.True(
+            WorkGiver_DoDishes.TryFindDestination(pawn, ware, out var destination) &&
+            ReferenceEquals(destination.Target.Thing, source) &&
+            destination.Provenance == provenance,
+            $"The exact {source.def.defName} source must be selected with {provenance} provenance.");
+    }
+
     internal static bool IsDoingDishesAt(Pawn pawn, Thing destination, string wareId) =>
         pawn.CurJobDef == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
         ReferenceEquals(pawn.CurJob?.GetTarget(TargetIndex.B).Thing, destination) &&
@@ -624,6 +957,90 @@ internal static class HandwashingE2EFixture
             "The connected Dubs network must observe the fixture water change.");
     }
 
+    internal static int ReadDubsHauledWaterUses(ThingWithComps source)
+    {
+        var field = GetRequiredPublicInstanceField(source.GetType(), "WaterUsesRemaining");
+        var value = ReadRequiredField(source, field, "Dubs hauled-water uses");
+        EndToEndAssert.True(value is int,
+            "The installed Dubs hauled-water use count must remain an Int32.");
+        return (int)value!;
+    }
+
+    internal static void SetDubsHauledWaterUses(ThingWithComps source, int uses)
+    {
+        var field = GetRequiredPublicInstanceField(source.GetType(), "WaterUsesRemaining");
+        EndToEndAssert.True(field.FieldType == typeof(int),
+            "The installed Dubs WaterUsesRemaining field must remain a public Int32.");
+        WriteRequiredField(source, field, Math.Max(0, uses), "Dubs hauled-water uses");
+    }
+
+    internal static void SetDubsFixtureAllowsColonists(ThingWithComps fixture, bool allowed)
+    {
+        var field = GetRequiredPublicInstanceField(fixture.GetType(), "AllowColonists");
+        EndToEndAssert.True(field.FieldType == typeof(bool),
+            "The installed Dubs fixture AllowColonists field must remain a public Boolean.");
+        WriteRequiredField(fixture, field, allowed, "Dubs fixture colonist permission");
+    }
+
+    internal static bool DubsFixtureAllowsAndWorks(Pawn pawn, ThingWithComps fixture, float waterUsed)
+    {
+        var pawnAllowed = fixture.GetType().GetMethod(
+            "PawnAllowed",
+            BindingFlags.Public | BindingFlags.Instance,
+            binder: null,
+            types: new[] { typeof(Pawn) },
+            modifiers: null);
+        var working = fixture.GetType().GetMethod(
+            "Working",
+            BindingFlags.Public | BindingFlags.Instance,
+            binder: null,
+            types: new[] { typeof(float) },
+            modifiers: null);
+        EndToEndAssert.True(
+            pawnAllowed?.ReturnType == typeof(AcceptanceReport) &&
+            working?.ReturnType == typeof(AcceptanceReport),
+            "The installed Dubs fixture must retain exact PawnAllowed(Pawn) and Working(float) reports.");
+        return pawnAllowed!.Invoke(fixture, new object[] { pawn }) is AcceptanceReport pawnReport &&
+               pawnReport.Accepted &&
+               working!.Invoke(fixture, new object[] { waterUsed }) is AcceptanceReport workingReport &&
+               workingReport.Accepted;
+    }
+
+    internal static ThingWithComps SpawnDubsSewageOutlet(
+        Map map,
+        ThingWithComps fixture,
+        IntVec3 outletCell)
+    {
+        var pipeDef = DefDatabase<ThingDef>.GetNamed("sewagePipeHidden");
+        var outlet = DispenserE2EFixture.SpawnBuilding(map, "SewageOutlet", outletCell);
+        var cursor = new IntVec3(
+            outletCell.x + Math.Sign(fixture.Position.x - outletCell.x),
+            0,
+            outletCell.z);
+        while (cursor.x != fixture.Position.x)
+        {
+            SpawnPipeIfMissing(map, pipeDef, cursor);
+            cursor = new IntVec3(
+                cursor.x + Math.Sign(fixture.Position.x - cursor.x),
+                0,
+                cursor.z);
+        }
+        while (cursor.z != fixture.Position.z)
+        {
+            SpawnPipeIfMissing(map, pipeDef, cursor);
+            cursor = new IntVec3(
+                cursor.x,
+                0,
+                cursor.z + Math.Sign(fixture.Position.z - cursor.z));
+        }
+
+        RefreshDubsPipeNetworks(fixture);
+        EndToEndAssert.True(
+            DubsFixturesShareNetwork(fixture, outlet),
+            "The real Dubs sewage outlet must join the fixture's exact plumbing network.");
+        return outlet;
+    }
+
     private static object? ReadDubsNetwork(ThingWithComps fixture)
     {
         var pipe = GetExactDubsComp(fixture, "DubsBadHygiene.CompPipe", "plumbing");
@@ -672,6 +1089,18 @@ internal static class HandwashingE2EFixture
             pipeComp,
             GetRequiredPublicInstanceVoidMethod(pipeCompType, "RegenPipeGrids"),
             "regenerate the Dubs plumbing grids");
+    }
+
+    private static void SpawnPipeIfMissing(Map map, ThingDef pipeDef, IntVec3 cell)
+    {
+        if (cell.GetThingList(map).Any(thing => thing.def == pipeDef))
+        {
+            return;
+        }
+
+        var pipe = ThingMaker.MakeThing(pipeDef, ThingDefOf.Steel);
+        pipe.SetFactionDirect(Faction.OfPlayer);
+        GenSpawn.Spawn(pipe, cell, map);
     }
 
     private static ThingComp GetExactDubsComp(

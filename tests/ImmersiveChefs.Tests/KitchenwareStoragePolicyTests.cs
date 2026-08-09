@@ -57,4 +57,48 @@ public sealed class KitchenwareStoragePolicyTests
                 Is.Null);
         });
     }
+
+    [TestCase(0, 0, WashProvenance.Safe)]
+    [TestCase(1, 1, WashProvenance.Safe)]
+    [TestCase(2, 2, WashProvenance.WildWater)]
+    [TestCase(3, 3, WashProvenance.WildWater)]
+    public void Recognized_handwashing_sources_have_a_stable_fallback_order_and_provenance(
+        int kindValue,
+        int expectedPriority,
+        WashProvenance expectedProvenance)
+    {
+        var kind = (HandwashingSourceKind)kindValue;
+        Assert.Multiple(() =>
+        {
+            Assert.That(WashSourcePolicy.Priority(kind), Is.EqualTo(expectedPriority));
+            Assert.That(
+                WashSourcePolicy.ClassifyDubsSource(
+                    kind,
+                    dubsIntegrationEnabled: true,
+                    pawnAllowed: true,
+                    operational: true,
+                    hasAvailableWater: true),
+                Is.EqualTo(expectedProvenance));
+        });
+    }
+
+    [TestCase(false, true, true, true)]
+    [TestCase(true, false, true, true)]
+    [TestCase(true, true, false, true)]
+    [TestCase(true, true, true, false)]
+    public void Recognized_dubs_source_fails_closed_without_integration_pawn_permission_operation_or_water(
+        bool integrationEnabled,
+        bool pawnAllowed,
+        bool operational,
+        bool hasAvailableWater)
+    {
+        Assert.That(
+            WashSourcePolicy.ClassifyDubsSource(
+                HandwashingSourceKind.HauledWater,
+                integrationEnabled,
+                pawnAllowed,
+                operational,
+                hasAvailableWater),
+            Is.Null);
+    }
 }

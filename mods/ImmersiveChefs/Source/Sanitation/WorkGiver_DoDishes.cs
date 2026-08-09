@@ -123,18 +123,19 @@ internal static class HandwashingSourceFinder
     internal static bool TryFind(Pawn pawn, IntVec3 origin, out DishwashingDestination destination)
     {
         var source = pawn.Map.listerThings.AllThings
-            .Where(IsNamedWaterSource)
-            .Select(thing => new { Thing = thing, Provenance = ClassifyObjectSource(thing) })
-            .Where(candidate => candidate.Provenance.HasValue)
+            .Select(thing => new { Thing = thing, Source = ClassifyObjectSource(pawn, thing) })
+            .Where(candidate => candidate.Source.HasValue)
             .Where(candidate =>
                 !candidate.Thing.IsForbidden(pawn) &&
                 pawn.CanReserveAndReach(candidate.Thing, PathEndMode.Touch, Danger.Some))
-            .OrderBy(candidate => WaterSourcePriority(candidate.Thing.def.defName))
+            .OrderBy(candidate => WashSourcePolicy.Priority(candidate.Source!.Value.Kind))
             .ThenBy(candidate => candidate.Thing.Position.DistanceToSquared(origin))
             .FirstOrDefault();
         if (source is not null)
         {
-            destination = DishwashingDestination.ForHandwashing(source.Thing, source.Provenance!.Value);
+            destination = DishwashingDestination.ForHandwashing(
+                source.Thing,
+                source.Source!.Value.Provenance);
             return true;
         }
 
@@ -155,7 +156,7 @@ internal static class HandwashingSourceFinder
         return false;
     }
 
-    private static WashProvenance? ClassifyObjectSource(Thing thing)
+    private static HandwashingObjectSource? ClassifyObjectSource(Pawn pawn, Thing thing)
     {
         var power = thing.TryGetComp<CompPowerTrader>();
         var fuel = thing.TryGetComp<CompRefuelable>();
@@ -166,12 +167,38 @@ internal static class HandwashingSourceFinder
                           (flick is null || flick.SwitchIsOn) &&
                           (breakdown is null || !breakdown.BrokenDown);
         var fromDubs = IsFromDubsBadHygiene(thing);
-        return WashSourcePolicy.ClassifyObjectSource(
-            fromDubs,
-            ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene),
-            fromDubs && DubsWaterAdapter.IsPlumbedDubsFixture(thing),
-            operational && (!fromDubs || DubsWaterAdapter.IsOperationalFixture(thing)),
-            !fromDubs || DubsWaterAdapter.CanSupplyCycleWater(thing));
+        if (fromDubs)
+        {
+            if (!DubsWaterAdapter.TryClassifyHandwashingSource(
+                    pawn,
+                    thing,
+                    out var kind,
+                    out var pawnAllowed,
+                    out var dubsOperational,
+                    out var hasAvailableWater))
+            {
+                return null;
+            }
+
+            var provenance = WashSourcePolicy.ClassifyDubsSource(
+                kind,
+                ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene),
+                pawnAllowed,
+                operational && dubsOperational,
+                hasAvailableWater);
+            return provenance.HasValue
+                ? new HandwashingObjectSource(kind, provenance.Value)
+                : null;
+        }
+
+        if (!IsNamedWaterSource(thing) || !operational)
+        {
+            return null;
+        }
+
+        return new HandwashingObjectSource(
+            GenericWaterSourceKind(thing.def.defName),
+            WashProvenance.WildWater);
     }
 
     private static bool IsFromDubsBadHygiene(Thing thing) =>
@@ -189,17 +216,61 @@ internal static class HandwashingSourceFinder
                name.IndexOf("Well", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private static int WaterSourcePriority(string defName)
+    private static HandwashingSourceKind GenericWaterSourceKind(string defName)
     {
-        if (defName.IndexOf("KitchenSink", StringComparison.OrdinalIgnoreCase) >= 0) return 0;
-        if (defName.IndexOf("Sink", StringComparison.OrdinalIgnoreCase) >= 0) return 1;
-        if (defName.IndexOf("WaterBowl", StringComparison.OrdinalIgnoreCase) >= 0) return 2;
-        return 3;
+        if (defName.IndexOf("WaterBowl", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return HandwashingSourceKind.HauledWater;
+        }
+
+        return defName.IndexOf("Well", StringComparison.OrdinalIgnoreCase) >= 0
+            ? HandwashingSourceKind.Well
+            : HandwashingSourceKind.ConnectedFixture;
     }
+}
+
+internal enum HandwashingSourceKind
+{
+    DubsKitchenSink,
+    ConnectedFixture,
+    HauledWater,
+    Well
+}
+
+internal readonly struct HandwashingObjectSource
+{
+    internal HandwashingObjectSource(HandwashingSourceKind kind, WashProvenance provenance)
+    {
+        Kind = kind;
+        Provenance = provenance;
+    }
+
+    internal HandwashingSourceKind Kind { get; }
+
+    internal WashProvenance Provenance { get; }
 }
 
 internal static class WashSourcePolicy
 {
+    internal static int Priority(HandwashingSourceKind kind) => (int)kind;
+
+    internal static WashProvenance? ClassifyDubsSource(
+        HandwashingSourceKind kind,
+        bool dubsIntegrationEnabled,
+        bool pawnAllowed,
+        bool operational,
+        bool hasAvailableWater)
+    {
+        if (!dubsIntegrationEnabled || !pawnAllowed || !operational || !hasAvailableWater)
+        {
+            return null;
+        }
+
+        return kind is HandwashingSourceKind.DubsKitchenSink or HandwashingSourceKind.ConnectedFixture
+            ? WashProvenance.Safe
+            : WashProvenance.WildWater;
+    }
+
     internal static WashProvenance? ClassifyObjectSource(
         bool fromDubs,
         bool dubsIntegrationEnabled,

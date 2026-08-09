@@ -74,6 +74,19 @@ public static class DishwasherCyclePolicy
         return Math.Max(0.001f,
             Math.Max(0f, finalPlateEquivalentLoad) * Math.Max(0f, waterPerPlateEquivalent));
     }
+
+    public static bool CanContinueWithWater(
+        bool requiresDubsWater,
+        bool waterDebited,
+        bool hasSuppliedConnection,
+        bool residualSupplyRequired,
+        bool hasResidualSupply)
+    {
+        return !requiresDubsWater ||
+               (waterDebited &&
+                hasSuppliedConnection &&
+                (!residualSupplyRequired || hasResidualSupply));
+    }
 }
 
 public sealed class CompDishwasher : ThingComp, IThingHolder
@@ -84,6 +97,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
     private int loadingTicksRemaining;
     private bool batchCaptured;
     private bool waterDebitedForCycle;
+    private bool residualWaterSupplyRequiredForCycle;
     private float capturedWaterCharge;
     private string pauseReason = string.Empty;
     private IntVec3 lastKnownPosition = IntVec3.Invalid;
@@ -299,6 +313,10 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         Scribe_Values.Look(ref loadingTicksRemaining, "loadingTicksRemaining", 0);
         Scribe_Values.Look(ref batchCaptured, "batchCaptured", false);
         Scribe_Values.Look(ref waterDebitedForCycle, "waterDebitedForCycle", false);
+        Scribe_Values.Look(
+            ref residualWaterSupplyRequiredForCycle,
+            "residualWaterSupplyRequiredForCycle",
+            false);
         Scribe_Values.Look(ref capturedWaterCharge, "capturedWaterCharge", 0f);
         Scribe_Values.Look(ref pauseReason, "pauseReason", string.Empty);
         Scribe_Values.Look(ref lastKnownPosition, "lastKnownPosition", IntVec3.Invalid);
@@ -338,6 +356,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             capturedCycleTicks = 0;
             batchCaptured = false;
             waterDebitedForCycle = false;
+            residualWaterSupplyRequiredForCycle = false;
             capturedWaterCharge = 0f;
         }
 
@@ -357,8 +376,12 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             return false;
         }
 
-        return !RequiresDubsWater ||
-               (waterDebitedForCycle && DubsWaterAdapter.IsConnected(parent));
+        return DishwasherCyclePolicy.CanContinueWithWater(
+            RequiresDubsWater,
+            waterDebitedForCycle,
+            DubsWaterAdapter.HasSuppliedConnection(parent),
+            residualWaterSupplyRequiredForCycle,
+            DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f));
     }
 
     internal void NotifyProcessorEmptied()
@@ -385,14 +408,19 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             }
 
             waterDebitedForCycle = true;
+            residualWaterSupplyRequiredForCycle =
+                DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f);
         }
 
 
-        if (Props.requiresDubsWater && waterDebitedForCycle &&
-            ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene) &&
-            !DubsWaterAdapter.IsConnected(parent))
+        if (!DishwasherCyclePolicy.CanContinueWithWater(
+                RequiresDubsWater,
+                waterDebitedForCycle,
+                DubsWaterAdapter.HasSuppliedConnection(parent),
+                residualWaterSupplyRequiredForCycle,
+                DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f)))
         {
-            reason = "water supply disconnected";
+            reason = "water supply unavailable";
             return false;
         }
 
@@ -451,11 +479,18 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             }
 
             waterDebitedForCycle = true;
+            residualWaterSupplyRequiredForCycle =
+                DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f);
         }
 
-        if (RequiresDubsWater && !DubsWaterAdapter.IsConnected(parent))
+        if (!DishwasherCyclePolicy.CanContinueWithWater(
+                RequiresDubsWater,
+                waterDebitedForCycle,
+                DubsWaterAdapter.HasSuppliedConnection(parent),
+                residualWaterSupplyRequiredForCycle,
+                DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f)))
         {
-            pauseReason = "water supply disconnected";
+            pauseReason = "water supply unavailable";
             return;
         }
 
@@ -486,6 +521,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         loadingTicksRemaining = 0;
         batchCaptured = false;
         waterDebitedForCycle = false;
+        residualWaterSupplyRequiredForCycle = false;
         capturedWaterCharge = 0f;
         pauseReason = string.Empty;
     }

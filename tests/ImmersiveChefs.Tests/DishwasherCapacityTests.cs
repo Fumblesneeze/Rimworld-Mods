@@ -118,6 +118,30 @@ public sealed class DishwasherCapacityTests
         });
     }
 
+    [TestCase(false, false, false, false, false, true)]
+    [TestCase(true, false, true, false, false, false)]
+    [TestCase(true, true, false, false, false, false)]
+    [TestCase(true, true, true, false, false, true)]
+    [TestCase(true, true, true, true, false, false)]
+    [TestCase(true, true, true, true, true, true)]
+    public void Debited_processor_batch_requires_its_captured_connection_and_only_preexisting_residual_supply(
+        bool requiresDubsWater,
+        bool waterDebited,
+        bool hasSuppliedConnection,
+        bool residualSupplyRequired,
+        bool hasResidualSupply,
+        bool expected)
+    {
+        Assert.That(
+            DishwasherCyclePolicy.CanContinueWithWater(
+                requiresDubsWater,
+                waterDebited,
+                hasSuppliedConnection,
+                residualSupplyRequired,
+                hasResidualSupply),
+            Is.EqualTo(expected));
+    }
+
     [TestCase(0.25f, 0.25f)]
     [TestCase(1f, 1f)]
     [TestCase(4f, 4f)]
