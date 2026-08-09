@@ -246,12 +246,21 @@ scale. The retained variants were the candidates whose silhouette and workstatio
 that reduction without baking in food, steam, powered lights, water, or activity state. Every
 variant uses the standard sprite's exact canvas and occupied footprint, retains transparency, has
 no vivid chroma-key pixels or bright-blue powered cue, and uses the same fixed-color
-`Graphic_Single`/`Cutout` contract. The exact VTEX E2E catalog visibly exercised the native gizmo on
-all eight buildings, restored the real two-member lists, and captured the selected graphics before
-and after a native RimWorld save/load at their real Def draw sizes. The same round trip visibly
-preserved the concrete wood/stone/metal and clean/dirty portable textures on the same Stuff-bearing
-Things without changing sanitation state. Rejected source candidates and comparison montages remain
-under ignored `artifacts/VisualAssets/BuildingVariations`.
+`Graphic_Multi`/`Cutout` contract.
+
+The reviewed optional-mod run is
+`artifacts/EndToEndRuns/Grouped/20260809T002924352Z`. Its exact
+Core/Harmony/VEF/VTEX/Immersive Chefs/Gateway process (PID 44916) arranged all eight building
+families in North, East, South, and West copies, then invoked each real VEF graphic-cycle gizmo until
+the selected Thing visibly used `_Variant01`. Screenshots 2–9 retain the 32 selected alternate
+views; the acting agent inspected the cardinal groups at their exact map scale and observed coherent
+directional silhouettes and footprints. The test restored every two-member VEF family before a
+native RimWorld save/load. Its checkpoint and screenshots 11–14 show that every same Thing retained
+the exact `_Variant01` path and rotation after loading. Screenshots 10 and 15 likewise retain the
+portable wood/stone/metal and clean/dirty graphics without changing sanitation state. The isolated
+configuration and preferences hashes remained unchanged, the process exited cleanly, staged bundles
+were removed, and credentials were sanitized. Rejected source candidates and comparison montages
+remain under ignored `artifacts/VisualAssets/BuildingVariations`.
 
 The exact base-package building catalog separately rendered all eight concrete building Defs in
 their four rotations beside native production/dining references. Its retained frames show readable

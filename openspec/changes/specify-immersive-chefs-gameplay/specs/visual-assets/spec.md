@@ -87,6 +87,10 @@ Immersive Chefs SHALL expose `TextureVariationIntegration` as `Auto` or `Off`, d
 - **WHEN** the player invokes the upstream graphic-cycle gizmo on an Immersive Chefs appliance or station and then saves and reloads
 - **THEN** the real VEF component changes among only the declared complete building variants and preserves the selected graphic through the upstream save contract
 
+#### Scenario: A player views one variant in every direction
+- **WHEN** north-, east-, south-, and west-facing copies of each supported non-minifiable kitchen building are changed to the same alternate family through their native VEF graphic-cycle gizmos
+- **THEN** every copy resolves the matching authored directional texture from that alternate family, preserves its footprint and equipment identity, and retains the same direction and selected family after RimWorld save/load
+
 #### Scenario: The optional API shape changes
 - **WHEN** the package ID is active but the inspected `VEF.Buildings.CompProperties_RandomBuildingGraphic` shape is unavailable or incompatible
 - **THEN** Immersive Chefs logs one actionable compatibility warning, disables only cosmetic variation, and continues rendering every Thing with its base fallback
