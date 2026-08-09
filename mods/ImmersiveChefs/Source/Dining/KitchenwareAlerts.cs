@@ -155,7 +155,7 @@ internal static class KitchenwareAlertRuntime
                      .OfType<Building_WorkTable>()
                      .Where(station => station is IBillGiver))
         {
-            var playerOwned = station.Faction == Faction.OfPlayer;
+            var playerOwned = station.Faction == Faction.OfPlayerSilentFail;
             var alertEnabled =
                 station.def.GetModExtension<KitchenwareAlertStationExtension>()?.enabled == true;
             var operational = IsOperational(station);

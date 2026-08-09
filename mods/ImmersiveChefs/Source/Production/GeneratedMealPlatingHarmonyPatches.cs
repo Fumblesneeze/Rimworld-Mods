@@ -17,7 +17,7 @@ internal static class GeneratedPawnInventoryMealPlatingPatch
             !GeneratedMealPlatePolicy.AllowsExternalPawnInventory(
                 __0.RaceProps.Humanlike,
                 __0.Faction is not null,
-                __0.Faction == Faction.OfPlayer))
+                __0.Faction == Faction.OfPlayerSilentFail))
         {
             return;
         }

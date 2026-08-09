@@ -60,9 +60,17 @@ public sealed class TemperatureOwnershipTests
             "Patches",
             "Compatibility",
             "ThermodynamicsHotMeals.xml"));
-        var operations = document.Descendants("operations").Single().Elements("li").ToList();
-        var add = operations[0];
-        var guardedRemove = operations[1];
+        var operations = document.Root?
+            .Element("Operation")?
+            .Element("operations")?
+            .Elements("li")
+            .ToList() ?? new List<XElement>();
+        var add = operations.Single(operation =>
+            (string?)operation.Attribute("Class") == "PatchOperationAdd");
+        var guardedRemove = operations.Single(operation =>
+            (string?)operation.Attribute("Class") == "ImmersiveChefs.PatchOperationRemoveIfModActive");
+        var addIndex = operations.IndexOf(add);
+        var guardedRemoveIndex = operations.IndexOf(guardedRemove);
 
         Assert.Multiple(() =>
         {
@@ -84,6 +92,7 @@ public sealed class TemperatureOwnershipTests
             Assert.That(
                 (string?)guardedRemove.Element("xpath"),
                 Is.EqualTo("/Defs/ThingDef[defName=\"ImmersiveChefs_Microwave\"]"));
+            Assert.That(addIndex, Is.LessThan(guardedRemoveIndex));
             Assert.That(File.Exists(oldUnconditionalPath), Is.False);
         });
     }
