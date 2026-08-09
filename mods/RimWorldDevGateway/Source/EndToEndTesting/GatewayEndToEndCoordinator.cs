@@ -15,7 +15,7 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
     private readonly List<GatewayEndToEndTestSnapshot> tests = new();
     private readonly List<GatewayEndToEndRuntimeTestDescriptor> runtimeTests = new();
     private readonly HashSet<string> discoveredTestIds = new(StringComparer.Ordinal);
-    private readonly HashSet<string> selectedTestIds;
+    private readonly HashSet<string> selectedTestIds = new(StringComparer.Ordinal);
     private readonly List<GatewayEndToEndFailureSnapshot> failures = new();
     private readonly GatewayEndToEndSnapshot disabledSnapshot = new(false, "disabled");
     private GatewayEndToEndSnapshot snapshot;
