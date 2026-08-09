@@ -99,6 +99,7 @@ Package-ID matching is case-insensitive; the canonical IDs below are the exact i
 | RimCuisine 2 | `syrchalis.processor.framework`, then `Mlie.RC2.Core`; meal coverage uses `Mlie.RC2.MaME`; `Mlie.RC2.BaBE` and `Mlie.RC2.SaSE` may coexist | Explicitly covers pottage, rubaboo, pizza, and extravagant meals. Hardtack, canned/preserved food, drinks, drugs, snacks, ingredients, and processing products remain excluded. |
 | Meal Printer | `Mlie.MealPrinter` | Pawns bring a plate for native Simple/Fine outputs; printer configuration/feedstock remain upstream-owned and NutriBars are excluded. It fails closed when No Vanilla Meals removes required vanilla products. |
 | RimFridge | `rimfridge.kv.rw` | Passive preservation: RimFridge owns storage and ambient temperature while exact ware and non-temperature culinary state survive storage/retrieval. |
+| [sbz] Fridge | `adaptive.storage.framework`, then `sbz.NeatStorageFridge` | Passive preservation: Adaptive Storage owns the native holder, rendering, capacity, power/flick conditions, and adjusted item ambient temperature. Immersive Chefs follows that ambient value only while its fallback thermal system owns meal temperature; it adds no holder patch or second cooling multiplier, and exact serving/provenance/ware state survives transfer and save/load. |
 | Overcooked Meals | `binchcannon.overcookedmeals` | The upstream replacement survives with copied ingredients; Immersive Chefs binds ware only to that final Thing and applies one explicit severe culinary penalty. |
 | No Vanilla Meals | `Mlie.NoVanillaMeals` | Removed vanilla Defs are never resurrected or used by alerts/jobs. Remaining explicit replacement registries still work; external unplated meals remain safe and honestly unplated. |
 | Thermodynamics - Hot Meals | `Mlie.DThermodynamicsHotMeals` | Exclusive temperature, thermal UI/thought/risk, reheating, and microwave owner. Immersive Chefs removes its own microwave and thermal paths while keeping quality, ingredients, ware, sanitation, and non-temperature risk. |
@@ -112,7 +113,9 @@ The maintained compatibility verification deliberately separates overlapping or 
 5. Replimat + Replimat Meals + Dubs Bad Hygiene + Common Sense.
 6. Hospitality + Meal Printer + Cash Register + Gastronomy.
 7. Processor Framework + all RimCuisine 2 modules + No Vanilla Meals.
-8. RimFridge + Thermodynamics - Hot Meals.
+8. Adaptive Storage Framework alone, proving the incomplete optional chain remains safe.
+9. Adaptive Storage Framework + [sbz] Fridge.
+10. RimFridge + Thermodynamics - Hot Meals.
 
 Each group also includes Immersive Chefs and the developer-only Gateway in isolated verification. Meal Printer/Adaptive vanilla-product paths are intentionally not combined with No Vanilla Meals.
 

@@ -32,6 +32,7 @@ The compatibility registry and grouped test runner SHALL use the exact active pa
 | RimCuisine 2 | `Mlie.RC2.Core`, `Mlie.RC2.MaME`, `Mlie.RC2.BaBE`, `Mlie.RC2.SaSE` | Processor Framework before Core; Core before modules; Harmony where declared |
 | Meal Printer | `Mlie.MealPrinter` | Harmony; vanilla meal Defs remain present |
 | RimFridge | `rimfridge.kv.rw` | Harmony; storage/ambient-temperature owner |
+| [sbz] Fridge | `adaptive.storage.framework`, `sbz.NeatStorageFridge` | Harmony before Adaptive Storage Framework; framework before fridge; Adaptive Storage owns holder capacity, rendering, and ambient-temperature adjustment |
 | Overcooked Meals | `binchcannon.overcookedmeals` | Harmony; final product replacement owner |
 | No Vanilla Meals | `Mlie.NoVanillaMeals` | finalized vanilla meal/recipe removal owner |
 
@@ -272,6 +273,44 @@ When `rimfridge.kv.rw` is active, its storage and `CompRefrigerator` behavior pl
 - **WHEN** a plated meal enters and later leaves a working RimFridge building
 - **THEN** its exact ware and non-temperature culinary state survive while the active upstream temperature owner alone observes the fridge environment
 
+### Requirement: [sbz] Fridge and Adaptive Storage preserve complete meal state
+
+When exact packages `adaptive.storage.framework` and `sbz.NeatStorageFridge` are active, Adaptive Storage Framework SHALL remain the exclusive owner of fridge capacity, storage-cell registration,
+holder transfer, item rendering, power/switch conditions, and its `Thing.AmbientTemperature`
+adjustment. The inspected supported shapes are Adaptive Storage Framework assembly
+`AdaptiveStorageFramework, Version=1.2.4.0` and [sbz] Fridge's `sbzFridgeBase` extension with
+`coolingOffset=100` and `coolingMin=-10`. Immersive Chefs SHALL add no storage patch or compile-time
+reference for this passive compatibility path.
+
+Immersive Chefs SHALL preserve the exact meal Thing, stack count, ingredient provenance, complete
+per-serving culinary state, embedded plate identity and sanitation while the meal is stored,
+rendered, saved, loaded, and retrieved through an [sbz] fridge. While Immersive Chefs owns
+temperature, its existing lazy thermal calculation SHALL consume the meal's upstream-adjusted
+`AmbientTemperature` and SHALL not apply a second refrigerator multiplier beyond the ordinary
+temperature bands. While Thermodynamics - Hot Meals is active, its complete temperature exclusion
+still applies and Immersive Chefs SHALL not read the Adaptive Storage temperature for thermal state.
+Powering or switching the fridge off SHALL stop Adaptive Storage's cooling without changing any
+non-temperature meal or ware state.
+
+This guarantee is passive and SHALL expose no integration toggle. Package absence, the fridge
+package without its required framework, or changed upstream shape SHALL not activate an adapter or
+cause a missing-assembly failure.
+
+#### Scenario: Powered [sbz] fridge cools an intact plated meal
+
+- **WHEN** a pawn hauls one plated meal into a powered, switched-on [sbz] fridge through the native storage job, the player saves and reloads, and a pawn later retrieves that meal
+- **THEN** Adaptive Storage owns the physical holder and reports its adjusted environment while the same meal, serving records, provenance, plate identity, and sanitation survive exactly once
+
+#### Scenario: [sbz] fridge loses power
+
+- **WHEN** the player switches off or disconnects power from a fridge containing a plated meal and advances time
+- **THEN** Adaptive Storage stops applying its cooling condition, Immersive Chefs follows the resulting ambient temperature only while it is the thermal owner, and no culinary or ware state is lost or duplicated
+
+#### Scenario: Thermodynamics is active with [sbz] Fridge
+
+- **WHEN** Adaptive Storage Framework, [sbz] Fridge, Thermodynamics - Hot Meals, and Immersive Chefs are active together
+- **THEN** Adaptive Storage owns storage, Thermodynamics owns meal temperature, and Immersive Chefs owns only culinary, provenance, physical ware, and sanitation state
+
 ### Requirement: Overcooked Meals owns final product replacement
 
 When `binchcannon.overcookedmeals` is active and its supported `GenRecipe.PostProcessProduct` replacement shape validates, it SHALL remain authoritative for replacing a cooked output with `OvercookedMeals_MealOvercooked`, its nutrition, thought, poisoning behavior, and copied ingredient data. Immersive Chefs SHALL bind the reserved plate and culinary state only to the final surviving output, apply one explicit severe culinary-quality penalty, dirty cookware once, and preserve the active temperature provider once. It SHALL NOT attach a plate to the destroyed original or duplicate Overcooked Meals' poisoning or thought effects.
@@ -387,7 +426,9 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 5. Replimat; Replimat Meals; Dubs Bad Hygiene; Common Sense; Immersive Chefs; and Gateway for dispenser ware and cleanup.
 6. Hospitality; Meal Printer; Cash Register; Gastronomy; Immersive Chefs; and Gateway for printed and served meals. Hospitality precedes Meal Printer per the printer's declared load-after rule, and Cash Register precedes Gastronomy per Gastronomy's required dependency.
 7. Processor Framework; all RimCuisine 2 modules; No Vanilla Meals; Immersive Chefs; and Gateway for replacement Defs and preservation exclusions.
-8. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
+8. Adaptive Storage Framework; Immersive Chefs; and Gateway for incomplete optional-chain safety through ordinary plated dining.
+9. Adaptive Storage Framework; [sbz] Fridge; Immersive Chefs; and Gateway for native holder transfer, save/load, fallback temperature, and power-loss behavior.
+10. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
 
 Every named supported food mod SHALL appear in at least one maintained exact group. Host tests SHALL cover pure policy and package grouping, loaded main-menu integration tests SHALL verify finalized Defs and Harmony ownership, and E2E tests SHALL prove native player-observable cooking, dispensing, selection, serving, storage, and eating behavior. A broad all-supported startup canary MAY be added, but it SHALL NOT substitute for these behavioral groups or claim that every unsupported permutation is compatible.
 
