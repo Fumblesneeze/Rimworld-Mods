@@ -97,4 +97,88 @@ function Write-RimWorldEndToEndJUnitReport {
     }
 }
 
-Export-ModuleMember -Function ConvertTo-RimWorldXml10Text, Write-RimWorldEndToEndJUnitReport
+function Get-RimWorldDeployedProductEvidence {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$PackageId,
+
+        [Parameter(Mandatory)]
+        [string]$ProjectPath,
+
+        [Parameter(Mandatory)]
+        [string]$RimWorldPath,
+
+        [Parameter(Mandatory)]
+        [string]$BuildLogPath
+    )
+
+    $resolvedProject = (Resolve-Path -LiteralPath $ProjectPath -ErrorAction Stop).Path
+    $resolvedGame = (Resolve-Path -LiteralPath $RimWorldPath -ErrorAction Stop).Path
+    $resolvedBuildLog = (Resolve-Path -LiteralPath $BuildLogPath -ErrorAction Stop).Path
+    $packageRoot = Join-Path (Join-Path $resolvedGame 'Mods') $PackageId
+    if (-not (Test-Path -LiteralPath $packageRoot -PathType Container)) {
+        throw "Deployed product package '$PackageId' does not exist at '$packageRoot'."
+    }
+
+    $packageRoot = (Resolve-Path -LiteralPath $packageRoot -ErrorAction Stop).Path
+    $packageRootInfo = Get-Item -LiteralPath $packageRoot -Force -ErrorAction Stop
+    if (($packageRootInfo.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Deployed product package '$PackageId' must not be a reparse point."
+    }
+
+    $entries = @(Get-ChildItem -LiteralPath $packageRoot -Recurse -Force -ErrorAction Stop)
+    foreach ($entry in $entries) {
+        if (($entry.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Deployed product package '$PackageId' contains a reparse entry."
+        }
+    }
+
+    $files = [System.Collections.Generic.List[object]]::new()
+    foreach ($file in @($entries | Where-Object { -not $_.PSIsContainer })) {
+        $relativePath = $file.FullName.Substring($packageRoot.Length).TrimStart('\', '/') -replace '\\', '/'
+        $segments = @($relativePath -split '/')
+        if (@($segments | Where-Object { $_ -ieq 'DevEndToEndTests' }).Count -gt 0) {
+            continue
+        }
+
+        $files.Add([pscustomobject]@{
+            RelativePath = $relativePath
+            Length = [long]$file.Length
+            Sha256 = (Get-FileHash `
+                -LiteralPath $file.FullName `
+                -Algorithm SHA256 `
+                -ErrorAction Stop).Hash.ToUpperInvariant()
+        })
+    }
+
+    $orderedFiles = @($files | Sort-Object -Property RelativePath -CaseSensitive)
+    if ($orderedFiles.Count -eq 0) {
+        throw "Deployed product package '$PackageId' contains no product files."
+    }
+
+    return [pscustomobject]@{
+        PackageId = $PackageId
+        Project = $resolvedProject
+        PackageRoot = $packageRoot
+        BuildLog = $resolvedBuildLog
+        Files = $orderedFiles
+    }
+}
+
+function ConvertTo-RimWorldProductEvidenceJson {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [object[]]$Evidence
+    )
+
+    return ConvertTo-Json -InputObject @($Evidence) -Depth 8 -Compress
+}
+
+Export-ModuleMember -Function `
+    ConvertTo-RimWorldXml10Text, `
+    Write-RimWorldEndToEndJUnitReport, `
+    Get-RimWorldDeployedProductEvidence, `
+    ConvertTo-RimWorldProductEvidenceJson

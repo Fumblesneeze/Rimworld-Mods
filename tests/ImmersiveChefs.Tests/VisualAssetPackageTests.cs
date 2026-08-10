@@ -661,6 +661,13 @@ public sealed class VisualAssetPackageTests
         var dirtyMaskPath = TextureFile(root, PrimitiveCookwareTexturePath + "_Dirty_m.png");
         var modernPath = TextureFile(root, CookwareTexturePath + ".png");
         var oldStoneVariantPath = TextureFile(root, CookwareTexturePath + "_Stone.png");
+        var packagedPaths = new[]
+        {
+            (diffusePath, PackagedTextureFile(root, PrimitiveCookwareTexturePath + ".png")),
+            (maskPath, PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_m.png")),
+            (dirtyPath, PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_Dirty.png")),
+            (dirtyMaskPath, PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_Dirty_m.png"))
+        };
 
         Assert.Multiple(() =>
         {
@@ -674,11 +681,19 @@ public sealed class VisualAssetPackageTests
             Assert.That(File.Exists(dirtyMaskPath), Is.True);
             Assert.That(File.ReadAllBytes(diffusePath), Is.Not.EqualTo(File.ReadAllBytes(modernPath)));
             Assert.That(File.ReadAllBytes(diffusePath), Is.Not.EqualTo(File.ReadAllBytes(oldStoneVariantPath)));
-            Assert.That(File.Exists(PackagedTextureFile(root, PrimitiveCookwareTexturePath + ".png")), Is.True);
-            Assert.That(File.Exists(PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_m.png")), Is.True);
-            Assert.That(File.Exists(PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_Dirty.png")), Is.True);
-            Assert.That(File.Exists(PackagedTextureFile(root, PrimitiveCookwareTexturePath + "_Dirty_m.png")), Is.True);
+            Assert.That(packagedPaths.Select(pair => pair.Item2), Is.All.Matches<string>(File.Exists));
         });
+
+        foreach (var (sourcePath, packagedPath) in packagedPaths)
+        {
+            AssertPackagedTextureMatchesSource(sourcePath, packagedPath);
+            using var packaged = new Bitmap(packagedPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(packaged.Width, Is.EqualTo(256), packagedPath);
+                Assert.That(packaged.Height, Is.EqualTo(256), packagedPath);
+            });
+        }
 
         AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion: true);
         AssertTransparentMatchingPair(dirtyPath, dirtyMaskPath, requireFixedBlackRegion: true);

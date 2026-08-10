@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -16,6 +17,7 @@ public sealed class RimWorldEndToEndRunnerCliTests
     public void Runner_composes_exact_group_launches_and_guaranteed_stage_cleanup()
     {
         var source = File.ReadAllText(RunnerPath());
+        var support = File.ReadAllText(SupportModulePath());
 
         Assert.Multiple(() =>
         {
@@ -32,6 +34,13 @@ public sealed class RimWorldEndToEndRunnerCliTests
             Assert.That(source, Does.Contain("'clean'"));
             Assert.That(source, Does.Contain("aggregate.json"));
             Assert.That(source, Does.Contain("results.junit.xml"));
+            Assert.That(source, Does.Contain("product-deployment-evidence.json"));
+            Assert.That(source, Does.Contain("Get-RimWorldDeployedProductEvidence"));
+            Assert.That(source, Does.Contain("ProductDeploymentEvidence"));
+            Assert.That(source, Does.Contain("ConvertTo-RimWorldProductEvidenceJson"));
+            Assert.That(support, Does.Contain("[System.IO.FileAttributes]::ReparsePoint"));
+            Assert.That(support, Does.Contain("Get-ChildItem -LiteralPath $packageRoot -Recurse -Force -ErrorAction Stop"));
+            Assert.That(support, Does.Contain("-LiteralPath $file.FullName").And.Contain("-ErrorAction Stop"));
         });
     }
 
@@ -87,6 +96,96 @@ public sealed class RimWorldEndToEndRunnerCliTests
                 Assert.That(xml, Does.Not.Contain("\u001b").And.Not.Contain("\0"));
                 Assert.That(failure.Attribute("message")!.Value, Is.EqualTo("failed \ufffd visibly"));
                 Assert.That(failure.Value, Does.Contain("red \ufffd[31m failure \ud83e\uddc0 \ufffd done"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(temporaryRoot, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Deployment_evidence_hashes_the_exact_product_package_and_excludes_test_staging()
+    {
+        var temporaryRoot = Path.Combine(
+            Path.GetTempPath(),
+            "RimWorldEndToEndRunnerCliTests",
+            Guid.NewGuid().ToString("N"));
+        var game = Path.Combine(temporaryRoot, "Game");
+        var package = Path.Combine(game, "Mods", "example.product");
+        var assembly = Path.Combine(package, "1.6", "Assemblies", "Example.dll");
+        var texture = Path.Combine(package, "1.6", "Textures", "Example.png");
+        var stagedTest = Path.Combine(package, "1.6", "DevEndToEndTests", "Example.Tests.dll");
+        var project = Path.Combine(temporaryRoot, "Example.csproj");
+        var buildLog = Path.Combine(temporaryRoot, "build.log");
+        Directory.CreateDirectory(Path.GetDirectoryName(assembly)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(texture)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(stagedTest)!);
+        File.WriteAllText(assembly, "assembly", new UTF8Encoding(false));
+        File.WriteAllText(texture, "texture", new UTF8Encoding(false));
+        File.WriteAllText(stagedTest, "test-only", new UTF8Encoding(false));
+        File.WriteAllText(project, "<Project />", new UTF8Encoding(false));
+        File.WriteAllText(buildLog, "build", new UTF8Encoding(false));
+        try
+        {
+            var invocation = string.Join(Environment.NewLine, new[]
+            {
+                $"Import-Module {PowerShellLiteral(SupportModulePath())} -Force",
+                "$evidence = Get-RimWorldDeployedProductEvidence " +
+                "-PackageId 'example.product' " +
+                $"-ProjectPath {PowerShellLiteral(project)} " +
+                $"-RimWorldPath {PowerShellLiteral(game)} " +
+                $"-BuildLogPath {PowerShellLiteral(buildLog)}",
+                "$evidence | ConvertTo-Json -Depth 8 -Compress"
+            });
+            var run = InvokeSource(invocation, temporaryRoot);
+
+            Assert.That(run.ExitCode, Is.EqualTo(0), run.StandardError);
+            Assert.Multiple(() =>
+            {
+                Assert.That(run.StandardOutput, Does.Contain("\"PackageId\":\"example.product\""));
+                Assert.That(run.StandardOutput, Does.Contain("1.6/Assemblies/Example.dll"));
+                Assert.That(run.StandardOutput, Does.Contain("1.6/Textures/Example.png"));
+                Assert.That(run.StandardOutput, Does.Contain(HashFile(assembly)));
+                Assert.That(run.StandardOutput, Does.Contain(HashFile(texture)));
+                Assert.That(run.StandardOutput, Does.Not.Contain("DevEndToEndTests"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(temporaryRoot, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Product_evidence_json_keeps_an_array_root_for_one_or_two_products()
+    {
+        var temporaryRoot = Path.Combine(
+            Path.GetTempPath(),
+            "RimWorldEndToEndRunnerCliTests",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryRoot);
+        try
+        {
+            var invocation = string.Join(Environment.NewLine, new[]
+            {
+                $"Import-Module {PowerShellLiteral(SupportModulePath())} -Force",
+                "ConvertTo-RimWorldProductEvidenceJson -Evidence @([pscustomobject]@{ PackageId = 'one' })",
+                "ConvertTo-RimWorldProductEvidenceJson -Evidence @(" +
+                "[pscustomobject]@{ PackageId = 'one' }, " +
+                "[pscustomobject]@{ PackageId = 'two' })"
+            });
+            var run = InvokeSource(invocation, temporaryRoot);
+            var lines = run.StandardOutput
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(run.ExitCode, Is.EqualTo(0), run.StandardError);
+                Assert.That(lines, Has.Length.EqualTo(2));
+                Assert.That(lines[0], Is.EqualTo("[{\"PackageId\":\"one\"}]"));
+                Assert.That(lines[1], Is.EqualTo(
+                    "[{\"PackageId\":\"one\"},{\"PackageId\":\"two\"}]"));
             });
         }
         finally
@@ -167,6 +266,13 @@ public sealed class RimWorldEndToEndRunnerCliTests
     }
 
     private static string PowerShellLiteral(string value) => $"'{value.Replace("'", "''")}'";
+
+    private static string HashFile(string path)
+    {
+        using var algorithm = SHA256.Create();
+        using var stream = File.OpenRead(path);
+        return BitConverter.ToString(algorithm.ComputeHash(stream)).Replace("-", string.Empty);
+    }
 
     private static string SupportModulePath() => Path.Combine(
         FindSourceRepositoryRoot(),

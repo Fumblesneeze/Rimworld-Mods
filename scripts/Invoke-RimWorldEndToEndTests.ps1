@@ -461,9 +461,11 @@ $runDirectory = Join-Path $artifactRoot $runId
 $null = New-Item -Path $runDirectory -ItemType Directory -Force
 $leaseFile = Join-Path $runDirectory 'stage.lease.json'
 $stageOutputPath = Join-Path $runDirectory 'stage.json'
+$productDeploymentEvidencePath = Join-Path $runDirectory 'product-deployment-evidence.json'
 $aggregatePath = Join-Path $runDirectory 'aggregate.json'
 $junitPath = Join-Path $runDirectory 'results.junit.xml'
 $groupResults = [System.Collections.Generic.List[object]]::new()
+$productDeploymentEvidence = [System.Collections.Generic.List[object]]::new()
 $stagePublished = $false
 $stageCleaned = $false
 $infrastructureFailure = $null
@@ -497,7 +499,19 @@ try {
         if ($build.ExitCode -ne 0) {
             throw "Product mod '$ownerId' deployment failed. See $buildLogPath"
         }
+
+        $productDeploymentEvidence.Add(
+            (Get-RimWorldDeployedProductEvidence `
+                -PackageId $ownerId `
+                -ProjectPath ([string]$productProjects[$ownerId]) `
+                -RimWorldPath $resolvedRimWorldPath `
+                -BuildLogPath $buildLogPath))
     }
+
+    [System.IO.File]::WriteAllText(
+        $productDeploymentEvidencePath,
+        (ConvertTo-RimWorldProductEvidenceJson -Evidence @($productDeploymentEvidence)),
+        [System.Text.UTF8Encoding]::new($false))
 
     $stage = Invoke-HostTool `
         -Operation 'stage' `
@@ -659,6 +673,8 @@ $aggregate = [pscustomobject]@{
     StagePublished = $stagePublished
     StageCleaned = $stageCleaned
     InfrastructureFailure = $infrastructureFailure
+    ProductDeploymentEvidence = @($productDeploymentEvidence)
+    ProductDeploymentEvidencePath = $productDeploymentEvidencePath
     Groups = @($groupResults)
     Aggregate = $aggregatePath
     JUnit = $junitPath
@@ -685,6 +701,7 @@ Write-RunnerResult ([pscustomobject]@{
     PlannedGroupCount = $aggregate.PlannedGroupCount
     CompletedGroupCount = $aggregate.CompletedGroupCount
     StageCleaned = $aggregate.StageCleaned
+    ProductDeploymentEvidence = $aggregate.ProductDeploymentEvidencePath
     Groups = @($groupResults | Select-Object GroupId, Status, ExitCode)
     Aggregate = $aggregatePath
     JUnit = $junitPath

@@ -4,6 +4,62 @@ Selected sprites are tracked in the mod package. Generated candidates, chroma-ke
 comparison montages, and rejected variants are retained under ignored `artifacts/VisualAssets`
 during development.
 
+## Primitive stone cookware set
+
+Two 1254×1254 original chroma-key candidates were generated on 2026-08-09 from the same brief:
+one complete primitive cooking abstraction made from roughly carved stone, including a pot, shallow
+pan, lids, wooden handles, and a wooden spatula, viewed from RimWorld's high three-quarter item
+camera with no modern metal parts. Candidate 01 separated every component; candidate 02 nested the
+complete set into one compact carried-item silhouette. Candidate 02 was selected because the pot,
+pan, two stone lids, forked handle, and spatula stay recognizable together at 64 px, whereas
+candidate 01 reads as several loose Things at map scale. The raw/normalized comparison remains under
+ignored `artifacts/VisualAssets/PrimitiveCookware`.
+
+The selected 256×256 diffuse uses `CutoutComplex`. Its mask assigns the carved stone to RimWorld's
+primary Stuff channel and leaves the permanent wood/leather accents black, so modded `Stony` Stuff
+can tint the stone without recoloring handles. Clean and dirty diffuse/mask pairs share exact alpha.
+The selected clean diffuse SHA-256 is
+`EBF421F3C6E79D9680D5B0C2645192DEE897E49C0C638DE5BB1DFD93045ECC0D`; the mask SHA-256 is
+`839DDB50C8B4F9FD53A4F19527B6695CFE4604C68AA784622584F3F6F2B1F62A`.
+
+Final map-scale inspection is retained in
+`artifacts/EndToEndRuns/Grouped/20260810T004109168Z`: a pawn accepted the native bill order,
+consumed exactly five granite blocks plus one wood, and produced the selected good-quality
+granite set. Screenshot 000006 shows the exact crafted Thing selected both on the map and in its
+native inspector; the compact pot/pan/lid/handle silhouette remains distinguishable at game scale.
+That run's `product-deployment-evidence.json` binds the screenshot to product DLL SHA-256
+`8ACE7D039A56D1F878E0A760BF867A19F4DB4D24D4694ACA3490648EF72FF030` and primitive diffuse
+SHA-256 `EBF421F3C6E79D9680D5B0C2645192DEE897E49C0C638DE5BB1DFD93045ECC0D`.
+
+## About and Workshop preview
+
+Two original 1672×941 (16:9) chef-parody compositions were generated on 2026-08-09. Both briefs
+asked for a blond, furious celebrity-chef analogue rendered as a RimWorld pawn in a colony kitchen,
+a distressed apprentice pawn, a burnt meal, a large empty speech bubble, and a separate empty title
+banner. Candidate 01 was selected because the pointing chef, apprentice, ruined meal, and speech
+bubble preserve the familiar joke without using a photograph, while candidate 02's literal donkey
+competes with the mod premise. The unselected comparison remains under ignored
+`artifacts/VisualAssets/Preview`.
+
+`scripts/Build-ImmersiveChefsPreview.ps1` owns the text, not the generator. It reproducibly writes
+`YOU DONKEY!` into the bubble and `IMMERSIVE CHEFS` into the banner, producing a 1280×720 Workshop
+master and a 640×360 RimWorld `About/Preview.png`. Both are palette-compressed PNGs below 1 MiB.
+The exact Workshop master is an internal 16:9 authoring choice; Valve's UGC API fixes the image
+preview ceiling below 1 MiB but does not prescribe that exact pixel size. The 640×360 About image
+matches the most common 16:9 size in the first 100 locally installed RimWorld preview files. The
+deterministic output hashes are
+`5C8E8CF3671F6F4F105A5385AED75D44D7D0A4A9F9C8056EBE7A5225CA269B91` (Workshop) and
+`99DDC17E8592822CEE25BED497EE275691E8BE1FA38C936D2405D3F960F10578` (About).
+
+Final native inspection used the exact Core/Harmony/Immersive Chefs/Dev Gateway package order in
+`artifacts/GatewaySmoke/20260810T000531403Z/20260810T000532068Z`. The selected Immersive Chefs row
+showed the complete 16:9 image without cropping: chef, apprentice, ruined meal, `YOU DONKEY!`, and
+`IMMERSIVE CHEFS` were all legible at 1600×900. The same run packaged product DLL SHA-256
+`8ACE7D039A56D1F878E0A760BF867A19F4DB4D24D4694ACA3490648EF72FF030`, completed with exit code 0,
+restored the normal configuration hashes, sanitized its credentials, and contained no error or
+warning lines in `Player.log` beyond the separately captured intentional Dev Gateway activation
+warning in the structured stream.
+
 ## Cookware set
 
 Selected: candidate A, generated 2026-08-06. It keeps the pot, pan, two lids, handles, and
