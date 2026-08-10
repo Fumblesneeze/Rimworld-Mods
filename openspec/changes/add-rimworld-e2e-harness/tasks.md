@@ -4,6 +4,7 @@
 - [x] 1.2 TDD GREEN: Implement `RimWorldDevGateway.EndToEndTesting` with attributes, interfaces, typed steps, context/assertion contracts, result states, and no Unity/RimWorld dependency.
 - [x] 1.3 TDD RED: Add failing metadata-discovery tests for marked project discovery, compiled attribute extraction without execution, exact grouping, duplicates, package resolution, owner/output drift, zero selection, and deterministic ordering.
 - [x] 1.4 TDD GREEN: Implement the build/metadata descriptor/staging tool and atomic marker-owned `DevEndToEndTests` publication plan.
+- [x] 1.4a TDD/ROBUSTNESS: Reproduce commit, backup, and rollback move locks plus same-destination concurrent publishers; serialize the complete cross-process transaction, retry transient moves within a bound, fail occupied restoration explicitly, and retain exact lease cleanup ownership.
 
 ## 2. mods/RimWorldDevGateway — TDD runtime loading and execution
 

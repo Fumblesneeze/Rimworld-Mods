@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using RimWorldDevGateway.Contracts;
@@ -121,6 +122,7 @@ public sealed class EndToEndStagePublisher
 
         var parent = Path.GetDirectoryName(expectedDestination) ??
             throw new EndToEndStageException("The E2E stage destination has no parent directory.");
+        using var transactionLock = AcquireDestinationTransactionLock(expectedDestination);
         Directory.CreateDirectory(parent);
         EnsureExistingTreeHasNoReparsePoint(Path.GetFullPath(plan.ModsRoot), parent);
 
@@ -147,12 +149,12 @@ public sealed class EndToEndStagePublisher
                     plan.OwnerPackageId,
                     plan.RimWorldVersion,
                     expectedTransactionId: null);
-                Directory.Move(expectedDestination, backup);
+                MoveDirectoryWithTransientRetry(expectedDestination, backup);
                 movedExisting = true;
                 faultInjector?.OnFaultPoint("after-backup");
             }
 
-            Directory.Move(temporary, expectedDestination);
+            MoveDirectoryWithTransientRetry(temporary, expectedDestination);
             committedNewStage = true;
             faultInjector?.OnFaultPoint("after-commit");
             if (Directory.Exists(backup))
@@ -193,7 +195,10 @@ public sealed class EndToEndStagePublisher
                 throw;
             }
 
-            throw new EndToEndStageException("E2E stage publication failed and was rolled back.", exception);
+            throw new EndToEndStageException(
+                "E2E stage publication failed and was rolled back. " +
+                exception.GetType().Name + ": " + exception.Message,
+                exception);
         }
     }
 
@@ -204,6 +209,7 @@ public sealed class EndToEndStagePublisher
             throw new ArgumentNullException(nameof(lease));
         }
 
+        using var transactionLock = AcquireDestinationTransactionLock(lease.DestinationDirectory);
         if (!Directory.Exists(lease.DestinationDirectory))
         {
             return true;
@@ -304,7 +310,7 @@ public sealed class EndToEndStagePublisher
         return marker;
     }
 
-    private static void TryRollback(
+    private void TryRollback(
         string destination,
         string temporary,
         string backup,
@@ -335,9 +341,16 @@ public sealed class EndToEndStagePublisher
 
         try
         {
-            if (movedExisting && Directory.Exists(backup) && !Directory.Exists(destination))
+            if (movedExisting && Directory.Exists(backup))
             {
-                Directory.Move(backup, destination);
+                if (Directory.Exists(destination))
+                {
+                    throw new EndToEndStageException(
+                        "E2E stage rollback cannot restore the previous owned stage because the " +
+                        "destination became occupied.");
+                }
+
+                MoveDirectoryWithTransientRetry(backup, destination);
             }
         }
         catch (Exception exception)
@@ -366,6 +379,96 @@ public sealed class EndToEndStagePublisher
             fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         {
             throw new EndToEndStageException($"Unsafe E2E bundle file name: '{fileName}'.");
+        }
+    }
+
+    private void MoveDirectoryWithTransientRetry(string source, string destination)
+    {
+        var deadline = Stopwatch.StartNew();
+        var delayMilliseconds = 25;
+        while (true)
+        {
+            try
+            {
+                Directory.Move(source, destination);
+                return;
+            }
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException &&
+                Directory.Exists(source) &&
+                !Directory.Exists(destination) &&
+                deadline.Elapsed < TimeSpan.FromSeconds(2))
+            {
+                faultInjector?.OnFaultPoint("move-retry");
+                Thread.Sleep(delayMilliseconds);
+                delayMilliseconds = Math.Min(delayMilliseconds * 2, 250);
+            }
+        }
+    }
+
+    private static IDisposable AcquireDestinationTransactionLock(string destination)
+    {
+        var canonicalDestination = Path.GetFullPath(destination)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .ToUpperInvariant();
+        var nameHash = Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(canonicalDestination)))
+            .ToLowerInvariant();
+        var mutexName = OperatingSystem.IsWindows()
+            ? @"Local\RimWorldDevGateway.E2EStage." + nameHash
+            : "RimWorldDevGateway.E2EStage." + nameHash;
+        var mutex = new Mutex(initiallyOwned: false, mutexName);
+        var acquired = false;
+        try
+        {
+            try
+            {
+                acquired = mutex.WaitOne(TimeSpan.FromSeconds(30));
+            }
+            catch (AbandonedMutexException)
+            {
+                acquired = true;
+            }
+
+            if (!acquired)
+            {
+                throw new EndToEndStageException(
+                    "Timed out waiting for exclusive ownership of the E2E stage destination.");
+            }
+
+            return new DestinationTransactionLock(mutex);
+        }
+        catch
+        {
+            if (acquired)
+            {
+                mutex.ReleaseMutex();
+            }
+
+            mutex.Dispose();
+            throw;
+        }
+    }
+
+    private sealed class DestinationTransactionLock : IDisposable
+    {
+        private Mutex? mutex;
+
+        internal DestinationTransactionLock(Mutex mutex)
+        {
+            this.mutex = mutex;
+        }
+
+        public void Dispose()
+        {
+            var owned = Interlocked.Exchange(ref mutex, null);
+            if (owned is null)
+            {
+                return;
+            }
+
+            owned.ReleaseMutex();
+            owned.Dispose();
         }
     }
 
