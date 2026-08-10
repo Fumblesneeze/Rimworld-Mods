@@ -30,7 +30,16 @@ public sealed class JobDriver_DoDishes : JobDriver
             yield break;
         }
 
-        var duration = Math.Max(1, (int)Math.Round(1000f * ImmersiveChefsMod.Settings.DishwashingWorkScale));
+        var ware = TargetThingA;
+        var perItemPlateEquivalents =
+            ware?.def.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f;
+        var count = ware is null
+            ? 1
+            : Math.Max(1, Math.Min(job.count > 0 ? job.count : ware.stackCount, ware.stackCount));
+        var duration = DishwashingWorkPolicy.HandwashingDurationTicks(
+            perItemPlateEquivalents,
+            count,
+            ImmersiveChefsMod.Settings.DishwashingWorkScale);
         yield return Toils_General.DoAtomic(() =>
         {
             if (TargetThingB is { } source &&
