@@ -13,9 +13,10 @@
     <designationCategory>Production</designationCategory>
     <researchPrerequisites><li>ImmersiveChefs_ProfessionalKitchens</li></researchPrerequisites>
     <costList><Steel>55</Steel><ComponentIndustrial>1</ComponentIndustrial></costList>
-    <statBases><WorkToBuild>1200</WorkToBuild><MaxHitPoints>150</MaxHitPoints><Flammability>0.3</Flammability><Cleanliness>1</Cleanliness></statBases>
+    <statBases><WorkToBuild>1200</WorkToBuild><MaxHitPoints>150</MaxHitPoints><Mass>20</Mass><Flammability>0.3</Flammability><Cleanliness>1</Cleanliness></statBases>
     <size>(2,1)</size>
     <minifiedDef>MinifiedThing</minifiedDef>
+    <thingCategories><li>BuildingsMisc</li></thingCategories>
     <comps>
       <li Class="CompProperties_Power"><compClass>CompPowerTrader</compClass><basePowerConsumption>120</basePowerConsumption></li>
       <li Class="CompProperties_Flickable" />

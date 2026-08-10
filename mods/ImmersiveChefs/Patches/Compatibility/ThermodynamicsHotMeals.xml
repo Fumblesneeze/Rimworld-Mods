@@ -22,6 +22,7 @@
             <rotatable>true</rotatable>
             <clearBuildingArea>false</clearBuildingArea>
             <minifiedDef>MinifiedThing</minifiedDef>
+            <thingCategories><li>BuildingsMisc</li></thingCategories>
             <hasInteractionCell>true</hasInteractionCell>
             <interactionCellOffset>(0,0,-1)</interactionCellOffset>
             <building><isEdifice>false</isEdifice></building>
@@ -29,7 +30,7 @@
             <designationCategory>Production</designationCategory>
             <researchPrerequisites><li>Electricity</li></researchPrerequisites>
             <costList><Steel>35</Steel><ComponentIndustrial>2</ComponentIndustrial></costList>
-            <statBases><WorkToBuild>800</WorkToBuild><MaxHitPoints>100</MaxHitPoints><Flammability>0.2</Flammability></statBases>
+            <statBases><WorkToBuild>800</WorkToBuild><MaxHitPoints>100</MaxHitPoints><Mass>10</Mass><Flammability>0.2</Flammability></statBases>
             <comps>
               <li Class="CompProperties_Power"><compClass>CompPowerTrader</compClass><basePowerConsumption>700</basePowerConsumption></li>
               <li Class="CompProperties_Flickable" />
