@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "name": "immersive-chefs-caravan-dining",
   "requiredPackageIds": [
+    "brrainz.harmony",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

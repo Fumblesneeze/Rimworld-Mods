@@ -49,7 +49,7 @@
 
 - [x] 5.1 TDD RED: Add the adverse-meal attributed tracer requiring exact Core/Harmony/Immersive Chefs, passive awful/frozen/dirty arrangement, native Undraft/time action, ordinary ingestion, dirty exact ware return, visible thoughts, deterministic food poisoning, and before/action/after screenshots.
 - [x] 5.2 TDD GREEN: Make the reviewed Gateway/test/product implementation pass the tracer without direct job assignment, ticking, memory injection, hediff injection, or synthetic ingestion.
-- [ ] 5.3 INVENTORY: Classify every existing `scripts/Scenarios` descriptor as pending E2E migration, converted, interactive-only, or retired, naming its exact mod group and observable player workflow.
+- [x] 5.3 INVENTORY: Classify every existing `scripts/Scenarios` descriptor as pending E2E migration, converted, interactive-only, or retired, naming its exact mod group and observable player workflow.
 - [ ] 5.4 MIGRATE: Convert base kitchenware/cooking/dining/temperature/preparation/sanitation scenarios into sequential E2E tests and delete duplicate automation only after equivalent evidence passes.
 - [ ] 5.5 MIGRATE: Convert Processor/Dubs, Gastronomy/Hospitality/Common Sense, VNPE/variety/material, DLC, caravan, patient/child/animal, save/load, trade, and other optional-mod scenarios into their exact E2E groups.
 
