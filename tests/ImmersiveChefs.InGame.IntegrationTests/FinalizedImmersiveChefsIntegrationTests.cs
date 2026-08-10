@@ -362,6 +362,51 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void ExistingSteelPlateInfoUsesItsActualMachiningMaterial()
+    {
+        var plate = ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        try
+        {
+            var request = StatRequest.For(plate);
+            var ingredients = plate.def.SpecialDisplayStats(request)
+                .Single(entry => entry.DisplayPriorityWithinCategory == 1102);
+            var ingredientLinks = ingredients.GetHyperlinks(request)
+                .Select(link => link.def)
+                .ToArray();
+            var primitive = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePrimitivePlates");
+
+            IntegrationAssert.Equal(
+                "4x steel",
+                ingredients.ValueString,
+                "An existing steel plate must report its exact machining material in the native info card.");
+            IntegrationAssert.True(
+                ingredients.ValueString.IndexOf("stony", StringComparison.OrdinalIgnoreCase) < 0,
+                "A steel plate must not inherit the first primitive producing recipe's material category.");
+            IntegrationAssert.Equal(
+                1,
+                ingredientLinks.Length,
+                "The corrected native row must expose exactly one material hyperlink for this one-slot recipe.");
+            IntegrationAssert.Equal(
+                ThingDefOf.Steel,
+                ingredientLinks[0],
+                "The corrected native row must link to actual steel, not a primitive recipe material.");
+            IntegrationAssert.Equal(
+                "4x any stony material",
+                primitive.IngredientValueGetter!.BillRequirementsDescription(primitive, primitive.ingredients[0]),
+                "The primitive bill editor must retain its broad semantic Stuff requirement.");
+        }
+        finally
+        {
+            if (!plate.Destroyed)
+            {
+                plate.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void FinalizedPlateMaterialsRespectMealComplexityTiers()
     {
         var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");

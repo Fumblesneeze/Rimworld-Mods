@@ -75,6 +75,12 @@ These costs SHALL remain benchmarked against same-era Core objects instead of be
 
 Every recipe SHALL use the completing pawn's Crafting skill to assign a vanilla `QualityCategory` to all items in its output batch. The wood in each cookware recipe SHALL represent handles, spatulas, and related non-metal parts rather than a second selectable Stuff. Every ingredient requirement SHALL use a semantic player label such as `any stony material`, `any intermediate metal`, or `wood`; no generated bill requirement MAY expose an internal category such as `root`. Plate and cutlery recipes SHALL have no Immersive Chefs research prerequisite: progression comes from access to `CraftingSpot`, vanilla `Smithing`/`Electricity` for the smithies, and vanilla `Machining` for `TableMachining`. The machining recipes SHALL remain a late universal route even for materials also available at an earlier station.
 
+The bill-configuration requirement SHALL remain a semantic description of the materials that recipe accepts. The info card for an existing Stuff-made kitchenware Thing SHALL instead select the producing recipe tier appropriate to that Thing's actual Stuff and show the exact material for the batch cost. It MUST NOT inherit the unrelated first producing recipe merely because RimWorld enumerated that recipe first.
+
+#### Scenario: Steel plate reports its real production material
+- **WHEN** the player opens the native info card for an existing steel plate while primitive, soft, intermediate, and machining plate recipes are all finalized
+- **THEN** the Ingredients row reports the machining batch cost using steel, does not report `any stony material`, and the primitive bill still advertises its broad stony requirement
+
 #### Scenario: Craft one cookware abstraction
 - **WHEN** a pawn completes a cookware recipe using 6 stainless steel and 1 wood at a machining table
 - **THEN** exactly one stainless-steel cookware item is produced, it represents the full cookware set, and its quality is generated from that crafting operation

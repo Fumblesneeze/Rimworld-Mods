@@ -236,6 +236,7 @@
 - [x] 11.10 TDD/TOXICITY: Classify Core uranium and supported lead as the only default toxic ware materials; persist hidden cookware material per serving; add the bounded live exposure setting; and prove exact once-only vanilla `ToxicBuildup` doses for actual humanlike ingestion while ordinary materials, animals, aborts, chef knives, and inspection remain unaffected.
 - [x] 11.11 E2E/UI: Replace the playtest-feedback suites' screen-coordinate and keyboard tab/info-card/inspect-pane-close/window-cancel actions with typed in-process native actions, fail closed on stale selection/window identity and bounded resolution, and prove those suites including [sbz] Fridge run from the minimized launcher without restore, foreground, resize, or maximize operations.
 - [x] 11.12 REVIEW/BUILD: Independently review the material-toxicity and semantic-UI slices, resolve findings, rerun only their focused host/build/package gates, and validate OpenSpec strictly before final in-game acceptance.
+- [x] 11.13 TDD/INFO CARD: Replace RimWorld's first-producing-recipe Ingredients row for an existing Stuff-made kitchenware Thing with the exact material and appropriate fabrication-tier batch cost, preserve semantic broad material text in bill configuration, then independently review and verify the native steel-plate info card on the reviewed build.
 
 ## 12. mods/ImmersiveChefs - Batched dishwashing and localization
 

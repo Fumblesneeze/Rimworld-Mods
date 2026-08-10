@@ -58,6 +58,9 @@ public sealed class LocalizationRenderingTest : IRimWorldEndToEndTest
         yield return ThingInfoCardActionStep.Open(
             "open the exact plate native info card",
             fixture.Plate.ThingID);
+        yield return new AssertionStep(
+            "the selected steel plate reports its actual machining material",
+            _ => fixture.AssertActualPlateIngredientRow());
         yield return new ScreenshotStep(
             "native plate info card visibly renders translated Def and sanitation text",
             Array.Empty<string>(),
@@ -337,6 +340,33 @@ internal sealed class LocalizationRenderingFixture
         EndToEndAssert.True(alert.GetReport().AnyCulpritValid,
             "The native missing-kitchenware alert must be active for the owned strict stove bill.");
         AssertExact(expected.AlertLabel, alert.GetLabel());
+    }
+
+    internal void AssertActualPlateIngredientRow()
+    {
+        var request = StatRequest.For(Plate);
+        var ingredients = Plate.def.SpecialDisplayStats(request)
+            .Single(entry => entry.DisplayPriorityWithinCategory == 1102);
+        var ingredientLinks = ingredients.GetHyperlinks(request)
+            .Select(link => link.def)
+            .ToArray();
+        var expectedValue = "ImmersiveChefs_IngredientRequirement".Translate(
+            4f,
+            ThingDefOf.Steel.label).ToString();
+        var primitive = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePrimitivePlates");
+
+        EndToEndAssert.Equal(expectedValue, ingredients.ValueString,
+            "The native steel-plate info row must name steel rather than the first primitive recipe.");
+        EndToEndAssert.Equal(1, ingredientLinks.Length,
+            "The native one-slot plate row must expose one exact material hyperlink.");
+        EndToEndAssert.Equal(ThingDefOf.Steel, ingredientLinks[0],
+            "The native Ingredients hyperlink must open actual steel rather than primitive stone.");
+        EndToEndAssert.Equal(
+            "ImmersiveChefs_IngredientRequirement".Translate(
+                4f,
+                "ImmersiveChefs_Ingredient_AnyStonyMaterial".Translate()).ToString(),
+            primitive.IngredientValueGetter!.BillRequirementsDescription(primitive, primitive.ingredients[0]),
+            "The primitive bill must retain its broad translated stony-material requirement.");
     }
 
     internal bool AlertReadoutRefreshElapsed(long currentFrame, long startFrame) =>

@@ -8,6 +8,36 @@ namespace ImmersiveChefs.Tests;
 public sealed class KitchenwareRecipeDefContractTests
 {
     [Test]
+    public void Existing_kitchenware_selects_the_recipe_tier_matching_its_actual_material()
+    {
+        var allPlateTiersInCoreEnumerationOrder = new[]
+        {
+            FabricationTier.PrimitiveStone,
+            FabricationTier.Soft,
+            FabricationTier.Intermediate,
+            FabricationTier.Modern
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                KitchenwareIngredientInfoPolicy.PreferredFabricationTier(
+                    KitchenwareProduct.Plate,
+                    new KitchenMaterialClassification(KitchenMaterialKind.Steel, FabricationTier.Modern),
+                    allPlateTiersInCoreEnumerationOrder),
+                Is.EqualTo(FabricationTier.Modern),
+                "A steel Thing must not inherit the first primitive producing recipe.");
+            Assert.That(
+                KitchenwareIngredientInfoPolicy.PreferredFabricationTier(
+                    KitchenwareProduct.Plate,
+                    new KitchenMaterialClassification(KitchenMaterialKind.Bronze, FabricationTier.Intermediate),
+                    allPlateTiersInCoreEnumerationOrder),
+                Is.EqualTo(FabricationTier.Intermediate),
+                "An exact-era recipe should win over the universal machining fallback.");
+        });
+    }
+
+    [Test]
     public void Kitchenware_unit_costs_ignore_vanilla_small_volume_scaling()
     {
         var getter = new IngredientValueGetter_Units();
