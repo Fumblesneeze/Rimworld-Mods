@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_MakePrimitiveCookware.label>fabriquer une batterie primitive en pierre</ImmersiveChefs_MakePrimitiveCookware.label>
+  <ImmersiveChefs_MakePrimitiveCookware.description>Fabrique une batterie de cuisine primitive avec des blocs de pierre et du bois pour les poignées et ustensiles.</ImmersiveChefs_MakePrimitiveCookware.description>
+  <ImmersiveChefs_MakePrimitiveCookware.jobString>Fabrique une batterie primitive en pierre.</ImmersiveChefs_MakePrimitiveCookware.jobString>
+  <ImmersiveChefs_MakePrimitivePlates.label>fabriquer 4 assiettes primitives en pierre</ImmersiveChefs_MakePrimitivePlates.label>
+  <ImmersiveChefs_MakePrimitivePlates.description>Fabrique quatre assiettes grossières avec des blocs de pierre.</ImmersiveChefs_MakePrimitivePlates.description>
+  <ImmersiveChefs_MakePrimitivePlates.jobString>Fabrique des assiettes primitives en pierre.</ImmersiveChefs_MakePrimitivePlates.jobString>
+  <ImmersiveChefs_MakeMedievalCookware.label>forger une batterie de cuisine médiévale</ImmersiveChefs_MakeMedievalCookware.label>
+  <ImmersiveChefs_MakeMedievalCookware.description>Forge une batterie complète dans un métal intermédiaire, avec du bois pour les poignées et ustensiles.</ImmersiveChefs_MakeMedievalCookware.description>
+  <ImmersiveChefs_MakeMedievalCookware.jobString>Forge une batterie de cuisine.</ImmersiveChefs_MakeMedievalCookware.jobString>
+  <ImmersiveChefs_MakeModernCookware.label>usiner une batterie de cuisine moderne</ImmersiveChefs_MakeModernCookware.label>
+  <ImmersiveChefs_MakeModernCookware.description>Usine une batterie complète dans un métal moderne, avec du bois pour les poignées et ustensiles.</ImmersiveChefs_MakeModernCookware.description>
+  <ImmersiveChefs_MakeModernCookware.jobString>Usine une batterie de cuisine.</ImmersiveChefs_MakeModernCookware.jobString>
+  <ImmersiveChefs_MakeChefsKnife.label>fabriquer un jeu de couteaux de chef</ImmersiveChefs_MakeChefsKnife.label>
+  <ImmersiveChefs_MakeChefsKnife.description>Usine dans du métal le jeu personnel de couteaux d'un chef.</ImmersiveChefs_MakeChefsKnife.description>
+  <ImmersiveChefs_MakeChefsKnife.jobString>Usine un jeu de couteaux de chef.</ImmersiveChefs_MakeChefsKnife.jobString>
+  <ImmersiveChefs_MakeSoftPlates.label>fabriquer 4 assiettes tendres</ImmersiveChefs_MakeSoftPlates.label>
+  <ImmersiveChefs_MakeSoftPlates.description>Fabrique quatre assiettes en bois ou dans un autre matériau tendre enregistré.</ImmersiveChefs_MakeSoftPlates.description>
+  <ImmersiveChefs_MakeSoftPlates.jobString>Fabrique des assiettes.</ImmersiveChefs_MakeSoftPlates.jobString>
+  <ImmersiveChefs_MakeSoftCutlery.label>fabriquer 4 couverts tendres</ImmersiveChefs_MakeSoftCutlery.label>
+  <ImmersiveChefs_MakeSoftCutlery.description>Fabrique quatre couverts en bois ou dans un autre matériau tendre enregistré.</ImmersiveChefs_MakeSoftCutlery.description>
+  <ImmersiveChefs_MakeSoftCutlery.jobString>Fabrique des couverts.</ImmersiveChefs_MakeSoftCutlery.jobString>
+  <ImmersiveChefs_SmithPlates.label>forger 4 assiettes métalliques</ImmersiveChefs_SmithPlates.label>
+  <ImmersiveChefs_SmithPlates.description>Forge quatre assiettes dans un métal intermédiaire.</ImmersiveChefs_SmithPlates.description>
+  <ImmersiveChefs_SmithPlates.jobString>Forge des assiettes.</ImmersiveChefs_SmithPlates.jobString>
+  <ImmersiveChefs_SmithCutlery.label>forger 4 couverts métalliques</ImmersiveChefs_SmithCutlery.label>
+  <ImmersiveChefs_SmithCutlery.description>Forge quatre couverts dans un métal intermédiaire.</ImmersiveChefs_SmithCutlery.description>
+  <ImmersiveChefs_SmithCutlery.jobString>Forge des couverts.</ImmersiveChefs_SmithCutlery.jobString>
+  <ImmersiveChefs_MachinePlates.label>usiner 4 assiettes</ImmersiveChefs_MachinePlates.label>
+  <ImmersiveChefs_MachinePlates.description>Usine quatre assiettes dans tout métal admissible ou plastique enregistré.</ImmersiveChefs_MachinePlates.description>
+  <ImmersiveChefs_MachinePlates.jobString>Usine des assiettes.</ImmersiveChefs_MachinePlates.jobString>
+  <ImmersiveChefs_MachineCutlery.label>usiner 4 couverts</ImmersiveChefs_MachineCutlery.label>
+  <ImmersiveChefs_MachineCutlery.description>Usine quatre couverts dans tout métal admissible ou plastique enregistré.</ImmersiveChefs_MachineCutlery.description>
+  <ImmersiveChefs_MachineCutlery.jobString>Usine des couverts.</ImmersiveChefs_MachineCutlery.jobString>
+  <ImmersiveChefs_PrepareIngredients.label>préparer les ingrédients</ImmersiveChefs_PrepareIngredients.label>
+  <ImmersiveChefs_PrepareIngredients.description>Prépare une demi-unité nutritive d'ingrédients comestibles en dix portions de cuisine tout en conservant leur provenance.</ImmersiveChefs_PrepareIngredients.description>
+  <ImmersiveChefs_PrepareIngredients.jobString>Prépare les ingrédients.</ImmersiveChefs_PrepareIngredients.jobString>
+</LanguageData>

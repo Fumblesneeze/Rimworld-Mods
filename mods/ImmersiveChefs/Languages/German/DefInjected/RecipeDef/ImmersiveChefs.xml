@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_MakePrimitiveCookware.label>primitives Stein-Kochgeschirrset herstellen</ImmersiveChefs_MakePrimitiveCookware.label>
+  <ImmersiveChefs_MakePrimitiveCookware.description>Stellt ein primitives Kochgeschirrset aus Steinblöcken und Holz für Griffe und Utensilien her.</ImmersiveChefs_MakePrimitiveCookware.description>
+  <ImmersiveChefs_MakePrimitiveCookware.jobString>Stellt primitives Stein-Kochgeschirr her.</ImmersiveChefs_MakePrimitiveCookware.jobString>
+  <ImmersiveChefs_MakePrimitivePlates.label>4 primitive Steinteller herstellen</ImmersiveChefs_MakePrimitivePlates.label>
+  <ImmersiveChefs_MakePrimitivePlates.description>Stellt vier grobe Teller aus Steinblöcken her.</ImmersiveChefs_MakePrimitivePlates.description>
+  <ImmersiveChefs_MakePrimitivePlates.jobString>Stellt primitive Steinteller her.</ImmersiveChefs_MakePrimitivePlates.jobString>
+  <ImmersiveChefs_MakeMedievalCookware.label>mittelalterliches Kochgeschirrset schmieden</ImmersiveChefs_MakeMedievalCookware.label>
+  <ImmersiveChefs_MakeMedievalCookware.description>Schmiedet ein vollständiges Kochgeschirrset aus einem Metall mittlerer Stufe und Holz für Griffe und Utensilien.</ImmersiveChefs_MakeMedievalCookware.description>
+  <ImmersiveChefs_MakeMedievalCookware.jobString>Schmiedet ein Kochgeschirrset.</ImmersiveChefs_MakeMedievalCookware.jobString>
+  <ImmersiveChefs_MakeModernCookware.label>modernes Kochgeschirrset maschinell fertigen</ImmersiveChefs_MakeModernCookware.label>
+  <ImmersiveChefs_MakeModernCookware.description>Fertigt ein vollständiges Kochgeschirrset aus modernem Metall und Holz für Griffe und Utensilien.</ImmersiveChefs_MakeModernCookware.description>
+  <ImmersiveChefs_MakeModernCookware.jobString>Fertigt ein Kochgeschirrset.</ImmersiveChefs_MakeModernCookware.jobString>
+  <ImmersiveChefs_MakeChefsKnife.label>Kochmesserset herstellen</ImmersiveChefs_MakeChefsKnife.label>
+  <ImmersiveChefs_MakeChefsKnife.description>Fertigt ein persönliches Kochmesserset aus Metall.</ImmersiveChefs_MakeChefsKnife.description>
+  <ImmersiveChefs_MakeChefsKnife.jobString>Fertigt ein Kochmesserset.</ImmersiveChefs_MakeChefsKnife.jobString>
+  <ImmersiveChefs_MakeSoftPlates.label>4 weiche Teller herstellen</ImmersiveChefs_MakeSoftPlates.label>
+  <ImmersiveChefs_MakeSoftPlates.description>Stellt vier Teller aus Holz oder einem anderen registrierten weichen Material her.</ImmersiveChefs_MakeSoftPlates.description>
+  <ImmersiveChefs_MakeSoftPlates.jobString>Stellt Teller her.</ImmersiveChefs_MakeSoftPlates.jobString>
+  <ImmersiveChefs_MakeSoftCutlery.label>4 weiche Bestecksets herstellen</ImmersiveChefs_MakeSoftCutlery.label>
+  <ImmersiveChefs_MakeSoftCutlery.description>Stellt vier Bestecksets aus Holz oder einem anderen registrierten weichen Material her.</ImmersiveChefs_MakeSoftCutlery.description>
+  <ImmersiveChefs_MakeSoftCutlery.jobString>Stellt Besteck her.</ImmersiveChefs_MakeSoftCutlery.jobString>
+  <ImmersiveChefs_SmithPlates.label>4 Metallteller schmieden</ImmersiveChefs_SmithPlates.label>
+  <ImmersiveChefs_SmithPlates.description>Schmiedet vier Teller aus einem Metall mittlerer Stufe.</ImmersiveChefs_SmithPlates.description>
+  <ImmersiveChefs_SmithPlates.jobString>Schmiedet Teller.</ImmersiveChefs_SmithPlates.jobString>
+  <ImmersiveChefs_SmithCutlery.label>4 Metallbestecksets schmieden</ImmersiveChefs_SmithCutlery.label>
+  <ImmersiveChefs_SmithCutlery.description>Schmiedet vier Bestecksets aus einem Metall mittlerer Stufe.</ImmersiveChefs_SmithCutlery.description>
+  <ImmersiveChefs_SmithCutlery.jobString>Schmiedet Besteck.</ImmersiveChefs_SmithCutlery.jobString>
+  <ImmersiveChefs_MachinePlates.label>4 Teller maschinell fertigen</ImmersiveChefs_MachinePlates.label>
+  <ImmersiveChefs_MachinePlates.description>Fertigt vier Teller aus einem geeigneten Metall oder registriertem Kunststoff.</ImmersiveChefs_MachinePlates.description>
+  <ImmersiveChefs_MachinePlates.jobString>Fertigt Teller.</ImmersiveChefs_MachinePlates.jobString>
+  <ImmersiveChefs_MachineCutlery.label>4 Bestecksets maschinell fertigen</ImmersiveChefs_MachineCutlery.label>
+  <ImmersiveChefs_MachineCutlery.description>Fertigt vier Bestecksets aus einem geeigneten Metall oder registriertem Kunststoff.</ImmersiveChefs_MachineCutlery.description>
+  <ImmersiveChefs_MachineCutlery.jobString>Fertigt Besteck.</ImmersiveChefs_MachineCutlery.jobString>
+  <ImmersiveChefs_PrepareIngredients.label>Zutaten vorbereiten</ImmersiveChefs_PrepareIngredients.label>
+  <ImmersiveChefs_PrepareIngredients.description>Verarbeitet eine halbe Nährwerteinheit essbarer Zutaten zu zehn Kochportionen und bewahrt deren Herkunft.</ImmersiveChefs_PrepareIngredients.description>
+  <ImmersiveChefs_PrepareIngredients.jobString>Bereitet Zutaten vor.</ImmersiveChefs_PrepareIngredients.jobString>
+</LanguageData>

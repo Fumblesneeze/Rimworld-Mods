@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_SettingsCategory>Иммерсивные повара</ImmersiveChefs_SettingsCategory>
+  <ImmersiveChefs_Settings_RestartHeading>Классификация и Def-настройки, требующие перезапуска</ImmersiveChefs_Settings_RestartHeading>
+  <ImmersiveChefs_Settings_WareRequirement>Режим требований к кухонной утвари (требуется перезапуск)</ImmersiveChefs_Settings_WareRequirement>
+  <ImmersiveChefs_Settings_SimpleRecipeTime>Время простых рецептов: {0}x (требуется перезапуск)</ImmersiveChefs_Settings_SimpleRecipeTime>
+  <ImmersiveChefs_Settings_FineRecipeTime>Время изысканных рецептов: {0}x (требуется перезапуск)</ImmersiveChefs_Settings_FineRecipeTime>
+  <ImmersiveChefs_Settings_LavishRecipeTime>Время роскошных рецептов: {0}x (требуется перезапуск)</ImmersiveChefs_Settings_LavishRecipeTime>
+  <ImmersiveChefs_Settings_PreparedRot>Порча подготовленных продуктов: {0}x (требуется перезапуск)</ImmersiveChefs_Settings_PreparedRot>
+  <ImmersiveChefs_Settings_DishwasherCapacity>Вместимость посудомойки: {0}x (требуется перезапуск)</ImmersiveChefs_Settings_DishwasherCapacity>
+  <ImmersiveChefs_Settings_TextureVariation>Интеграция вариантов текстур (требуется перезапуск)</ImmersiveChefs_Settings_TextureVariation>
+  <ImmersiveChefs_Settings_ShowDirtyTextures>Показывать текстуры грязной утвари (требуется перезапуск)</ImmersiveChefs_Settings_ShowDirtyTextures>
+  <ImmersiveChefs_Settings_LiveHeading>Настройки текущей симуляции</ImmersiveChefs_Settings_LiveHeading>
+  <ImmersiveChefs_Settings_DirtyFallback>Допуск грязной кухонной утвари</ImmersiveChefs_Settings_DirtyFallback>
+  <ImmersiveChefs_Settings_EmergencyHunger>Критический голод: {0}</ImmersiveChefs_Settings_EmergencyHunger>
+  <ImmersiveChefs_Settings_PreparedWorkReduction>Сокращение работы за счёт подготовки: {0}</ImmersiveChefs_Settings_PreparedWorkReduction>
+  <ImmersiveChefs_Settings_PasteQuality>Качество подготовки пасты: {0}</ImmersiveChefs_Settings_PasteQuality>
+  <ImmersiveChefs_Settings_AutoAssistants>Автоматически звать помощников повара</ImmersiveChefs_Settings_AutoAssistants>
+  <ImmersiveChefs_Settings_MaxAssistants>Максимум помощников: {0}</ImmersiveChefs_Settings_MaxAssistants>
+  <ImmersiveChefs_Settings_AssistantEffect>Эффективность помощников: {0}x</ImmersiveChefs_Settings_AssistantEffect>
+  <ImmersiveChefs_Settings_PreferDishwashers>Предпочитать посудомоечные машины</ImmersiveChefs_Settings_PreferDishwashers>
+  <ImmersiveChefs_Settings_TerrainHandwashing>Разрешить ручное мытьё в природной воде</ImmersiveChefs_Settings_TerrainHandwashing>
+  <ImmersiveChefs_Settings_DishwashingWork>Работа на мытьё посуды: {0}x</ImmersiveChefs_Settings_DishwashingWork>
+  <ImmersiveChefs_Settings_CulinaryQuality>Кулинарное качество</ImmersiveChefs_Settings_CulinaryQuality>
+  <ImmersiveChefs_Settings_QualityMood>Влияние качества на настроение: {0}x</ImmersiveChefs_Settings_QualityMood>
+  <ImmersiveChefs_Settings_FoodPoisoningEffect>Влияние пищевого отравления: {0}x</ImmersiveChefs_Settings_FoodPoisoningEffect>
+  <ImmersiveChefs_Settings_MaxPoisonChance>Максимальный дополнительный риск отравления: {0}</ImmersiveChefs_Settings_MaxPoisonChance>
+  <ImmersiveChefs_Settings_ToxicExposure>Токсичность кухонной утвари: {0}x</ImmersiveChefs_Settings_ToxicExposure>
+  <ImmersiveChefs_Settings_MealTemperature>Температура блюда</ImmersiveChefs_Settings_MealTemperature>
+  <ImmersiveChefs_Settings_ThermalHalfLife>Тепловой период полураспада: {0} ч</ImmersiveChefs_Settings_ThermalHalfLife>
+  <ImmersiveChefs_Settings_AutoMicrowaveBelow>Автоматически разогревать ниже: {0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Потеря качества от микроволновки: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_MicrowavePoisonChance>Риск отравления от микроволновки: {0} п. п.</ImmersiveChefs_Settings_MicrowavePoisonChance>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Температуру блюд и микроволновку предоставляет Thermodynamics - Hot Meals</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ColonyStandards>Стандарты питания колонии</ImmersiveChefs_Settings_ColonyStandards>
+  <ImmersiveChefs_Settings_RoyaltyStandards>Стандарты питания знати</ImmersiveChefs_Settings_RoyaltyStandards>
+  <ImmersiveChefs_Settings_IntegrationsHeading>Необязательные интеграции (требуется перезапуск; Авто или Выкл.)</ImmersiveChefs_Settings_IntegrationsHeading>
+
+  <ImmersiveChefs_Integration_ProcessorFramework>Processor Framework</ImmersiveChefs_Integration_ProcessorFramework>
+  <ImmersiveChefs_Integration_ExpandedMaterials>Expanded Materials</ImmersiveChefs_Integration_ExpandedMaterials>
+  <ImmersiveChefs_Integration_AbsPolymer>ABS Polymer</ImmersiveChefs_Integration_AbsPolymer>
+  <ImmersiveChefs_Integration_DubsBadHygiene>Dubs Bad Hygiene</ImmersiveChefs_Integration_DubsBadHygiene>
+  <ImmersiveChefs_Integration_Gastronomy>Gastronomy</ImmersiveChefs_Integration_Gastronomy>
+  <ImmersiveChefs_Integration_CommonSense>Common Sense</ImmersiveChefs_Integration_CommonSense>
+  <ImmersiveChefs_Integration_Hospitality>Hospitality</ImmersiveChefs_Integration_Hospitality>
+  <ImmersiveChefs_Integration_VarietyMatters>Variety Matters</ImmersiveChefs_Integration_VarietyMatters>
+  <ImmersiveChefs_Integration_VanillaFoodVarietyExpanded>Vanilla Food Variety Expanded</ImmersiveChefs_Integration_VanillaFoodVarietyExpanded>
+  <ImmersiveChefs_Integration_VanillaExpandedFramework>Vanilla Expanded Framework</ImmersiveChefs_Integration_VanillaExpandedFramework>
+  <ImmersiveChefs_Integration_VanillaNutrientPasteExpanded>Vanilla Nutrient Paste Expanded</ImmersiveChefs_Integration_VanillaNutrientPasteExpanded>
+  <ImmersiveChefs_Integration_AdaptiveMealBill>Adaptive Meal Bill</ImmersiveChefs_Integration_AdaptiveMealBill>
+  <ImmersiveChefs_Integration_OvercookedMeals>Overcooked Meals</ImmersiveChefs_Integration_OvercookedMeals>
+  <ImmersiveChefs_Integration_MealsOnWheels>Meals on Wheels</ImmersiveChefs_Integration_MealsOnWheels>
+  <ImmersiveChefs_Integration_PrioritizeMeals>Prioritize Meals over Preserved Foods</ImmersiveChefs_Integration_PrioritizeMeals>
+  <ImmersiveChefs_Integration_Replimat>Replimat + Replimat Meals</ImmersiveChefs_Integration_Replimat>
+  <ImmersiveChefs_Integration_MealPrinter>Meal Printer</ImmersiveChefs_Integration_MealPrinter>
+  <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
+  <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
+
+  <ImmersiveChefs_Enum_WareRequirementMode_Strict>Строго</ImmersiveChefs_Enum_WareRequirementMode_Strict>
+  <ImmersiveChefs_Enum_WareRequirementMode_Prefer>Предпочитать</ImmersiveChefs_Enum_WareRequirementMode_Prefer>
+  <ImmersiveChefs_Enum_WareRequirementMode_Off>Выкл.</ImmersiveChefs_Enum_WareRequirementMode_Off>
+  <ImmersiveChefs_Enum_DirtyWareFallback_Never>Никогда</ImmersiveChefs_Enum_DirtyWareFallback_Never>
+  <ImmersiveChefs_Enum_DirtyWareFallback_UrgentOnly>Только в крайнем случае</ImmersiveChefs_Enum_DirtyWareFallback_UrgentOnly>
+  <ImmersiveChefs_Enum_DirtyWareFallback_Always>Всегда</ImmersiveChefs_Enum_DirtyWareFallback_Always>
+  <ImmersiveChefs_Enum_OptionalIntegrationMode_Auto>Авто</ImmersiveChefs_Enum_OptionalIntegrationMode_Auto>
+  <ImmersiveChefs_Enum_OptionalIntegrationMode_Off>Выкл.</ImmersiveChefs_Enum_OptionalIntegrationMode_Off>
+
+  <ImmersiveChefs_Microwave_MissingSupport>Требуется готовый стол или верстак с поверхностью для еды или предметов.</ImmersiveChefs_Microwave_MissingSupport>
+  <ImmersiveChefs_Microwave_BlockedInteraction>Поверните или переместите микроволновку, чтобы клетка взаимодействия находилась рядом с опорной поверхностью.</ImmersiveChefs_Microwave_BlockedInteraction>
+  <ImmersiveChefs_DispensePreparedPaste>Выдать подготовленную кулинарную пасту</ImmersiveChefs_DispensePreparedPaste>
+  <ImmersiveChefs_ForceCookDirtyCookware>Готовить с грязной посудой принудительно</ImmersiveChefs_ForceCookDirtyCookware>
+  <ImmersiveChefs_ForceCookDirtyCookwareUnavailable>Нельзя принудительно начать готовку: задание больше нельзя выполнить с грязной посудой.</ImmersiveChefs_ForceCookDirtyCookwareUnavailable>
+  <ImmersiveChefs_MissingKitchenware>Не хватает: {0} (Иммерсивные повара)</ImmersiveChefs_MissingKitchenware>
+  <ImmersiveChefs_Missing_AdaptiveRecipe>доступный конкретный рецепт</ImmersiveChefs_Missing_AdaptiveRecipe>
+  <ImmersiveChefs_Missing_CookwareAndPlates>чистый набор посуды для готовки и чистые тарелки</ImmersiveChefs_Missing_CookwareAndPlates>
+  <ImmersiveChefs_Missing_Cookware>чистый набор посуды для готовки</ImmersiveChefs_Missing_Cookware>
+  <ImmersiveChefs_Missing_Plates>чистые тарелки</ImmersiveChefs_Missing_Plates>
+
+  <ImmersiveChefs_Cleanliness_SelfCleaning>Чистота: самоочистка</ImmersiveChefs_Cleanliness_SelfCleaning>
+  <ImmersiveChefs_Cleanliness_Dirty>Чистота: грязно</ImmersiveChefs_Cleanliness_Dirty>
+  <ImmersiveChefs_Cleanliness_Clean>Чистота: чисто</ImmersiveChefs_Cleanliness_Clean>
+  <ImmersiveChefs_ServiceWare_Unplated>Сервировка: без тарелки</ImmersiveChefs_ServiceWare_Unplated>
+  <ImmersiveChefs_ServiceWare_BoundPlates>Прикреплено тарелок: {0}</ImmersiveChefs_ServiceWare_BoundPlates>
+  <ImmersiveChefs_IngredientRequirement>{0}x {1}</ImmersiveChefs_IngredientRequirement>
+  <ImmersiveChefs_Ingredient_Wood>древесина</ImmersiveChefs_Ingredient_Wood>
+  <ImmersiveChefs_Ingredient_AnyEligibleMetal>любой подходящий металл</ImmersiveChefs_Ingredient_AnyEligibleMetal>
+  <ImmersiveChefs_Ingredient_AnyStonyMaterial>любой каменный материал</ImmersiveChefs_Ingredient_AnyStonyMaterial>
+  <ImmersiveChefs_Ingredient_WoodOrSoftMaterial>древесина или мягкий материал</ImmersiveChefs_Ingredient_WoodOrSoftMaterial>
+  <ImmersiveChefs_Ingredient_AnyIntermediateMetal>любой металл среднего уровня</ImmersiveChefs_Ingredient_AnyIntermediateMetal>
+  <ImmersiveChefs_Ingredient_AnyMetalOrPlastic>любой подходящий металл или пластик</ImmersiveChefs_Ingredient_AnyMetalOrPlastic>
+  <ImmersiveChefs_Ingredient_AnyModernMetal>любой современный металл</ImmersiveChefs_Ingredient_AnyModernMetal>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_Label>сделать 4 глинобитные тарелки</ImmersiveChefs_Recipe_MakeAdobePlates_Label>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_Description>Сформировать четыре грубые тарелки из глинобитных кирпичей.</ImmersiveChefs_Recipe_MakeAdobePlates_Description>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_JobString>Формует глинобитные тарелки.</ImmersiveChefs_Recipe_MakeAdobePlates_JobString>
+
+  <ImmersiveChefs_Product_CookwarePlural>наборы посуды для готовки</ImmersiveChefs_Product_CookwarePlural>
+  <ImmersiveChefs_Product_Plates>тарелки</ImmersiveChefs_Product_Plates>
+  <ImmersiveChefs_Product_Cutlery>столовые приборы</ImmersiveChefs_Product_Cutlery>
+  <ImmersiveChefs_Product_Kitchenware>кухонная утварь</ImmersiveChefs_Product_Kitchenware>
+  <ImmersiveChefs_ListAnd>{0} и {1}</ImmersiveChefs_ListAnd>
+  <ImmersiveChefs_AlertMissingKitchenware_DefaultLabel>Нет посуды для готовки или тарелок</ImmersiveChefs_AlertMissingKitchenware_DefaultLabel>
+  <ImmersiveChefs_AlertMissingKitchenware_Label>Не хватает следующего: {0}</ImmersiveChefs_AlertMissingKitchenware_Label>
+  <ImmersiveChefs_AlertMissingKitchenware_DefaultExplanation>Активное строгое задание на готовку требует наборов посуды или тарелок, которых нет у колонии.</ImmersiveChefs_AlertMissingKitchenware_DefaultExplanation>
+  <ImmersiveChefs_AlertMissingKitchenware_Explanation>Активное строгое задание на рабочем кухонном месте требует {0}, которых нет на этой карте. Грязная, запрещённая, зарезервированная или временно недоступная утварь всё равно считается имеющейся. Выберите предупреждение, чтобы перейти между затронутыми рабочими местами.</ImmersiveChefs_AlertMissingKitchenware_Explanation>
+
+  <ImmersiveChefs_CulinaryBand_Awful>Ужасное</ImmersiveChefs_CulinaryBand_Awful>
+  <ImmersiveChefs_CulinaryBand_Poor>Плохое</ImmersiveChefs_CulinaryBand_Poor>
+  <ImmersiveChefs_CulinaryBand_Normal>Обычное</ImmersiveChefs_CulinaryBand_Normal>
+  <ImmersiveChefs_CulinaryBand_Good>Хорошее</ImmersiveChefs_CulinaryBand_Good>
+  <ImmersiveChefs_CulinaryBand_Excellent>Отличное</ImmersiveChefs_CulinaryBand_Excellent>
+  <ImmersiveChefs_CulinaryBand_Masterwork>Шедевральное</ImmersiveChefs_CulinaryBand_Masterwork>
+  <ImmersiveChefs_CulinaryBand_Legendary>Легендарное</ImmersiveChefs_CulinaryBand_Legendary>
+  <ImmersiveChefs_ThermalBand_SteamingHot>Обжигающе горячее</ImmersiveChefs_ThermalBand_SteamingHot>
+  <ImmersiveChefs_ThermalBand_Warm>Тёплое</ImmersiveChefs_ThermalBand_Warm>
+  <ImmersiveChefs_ThermalBand_RoomTemperature>Комнатной температуры</ImmersiveChefs_ThermalBand_RoomTemperature>
+  <ImmersiveChefs_ThermalBand_Cold>Холодное</ImmersiveChefs_ThermalBand_Cold>
+  <ImmersiveChefs_ThermalBand_Frozen>Замороженное</ImmersiveChefs_ThermalBand_Frozen>
+  <ImmersiveChefs_CulinaryQualityInspect>Кулинарное качество: {0} ({1})</ImmersiveChefs_CulinaryQualityInspect>
+  <ImmersiveChefs_MealTemperatureInspect>Температура блюда: {0} ({1} °C)</ImmersiveChefs_MealTemperatureInspect>
+  <ImmersiveChefs_PreparedSource_NutrientPaste>питательная паста</ImmersiveChefs_PreparedSource_NutrientPaste>
+  <ImmersiveChefs_PreparedSource_Unknown>неизвестный ингредиент</ImmersiveChefs_PreparedSource_Unknown>
+  <ImmersiveChefs_PreparedFoodInspect>Качество подготовки: {0}/100\nИсточник: {1}\nПитательность единицы: {2}</ImmersiveChefs_PreparedFoodInspect>
+
+  <ImmersiveChefs_Stat_KitchenCleanliness>Кухонная чистота</ImmersiveChefs_Stat_KitchenCleanliness>
+  <ImmersiveChefs_Stat_KitchenComfort>Удобство готовки</ImmersiveChefs_Stat_KitchenComfort>
+  <ImmersiveChefs_Stat_DiningComfort>Удобство за столом</ImmersiveChefs_Stat_DiningComfort>
+  <ImmersiveChefs_Stat_CookingSpeed>Множитель скорости готовки</ImmersiveChefs_Stat_CookingSpeed>
+  <ImmersiveChefs_Stat_CulinaryModifier>Модификатор кулинарного качества</ImmersiveChefs_Stat_CulinaryModifier>
+  <ImmersiveChefs_Stat_EatingSpeed>Множитель скорости еды</ImmersiveChefs_Stat_EatingSpeed>
+  <ImmersiveChefs_Stat_KitchenCleanlinessValue>Кухонная чистота: {0}</ImmersiveChefs_Stat_KitchenCleanlinessValue>
+  <ImmersiveChefs_Stat_KitchenComfortValue>Удобство готовки: {0}</ImmersiveChefs_Stat_KitchenComfortValue>
+  <ImmersiveChefs_Stat_DiningComfortValue>Удобство за столом: {0}</ImmersiveChefs_Stat_DiningComfortValue>
+  <ImmersiveChefs_Stat_CookingSpeedValue>Множитель скорости готовки: {0}</ImmersiveChefs_Stat_CookingSpeedValue>
+  <ImmersiveChefs_Stat_CulinaryModifierValue>Модификатор кулинарного качества: {0}</ImmersiveChefs_Stat_CulinaryModifierValue>
+  <ImmersiveChefs_Stat_EatingSpeedValue>Множитель скорости еды: {0}</ImmersiveChefs_Stat_EatingSpeedValue>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs рассчитывает это значение по материалу и качеству изготовления.</ImmersiveChefs_Stat_Explanation>
+
+  <ImmersiveChefs_Dishwasher_StatusIdle>простаивает</ImmersiveChefs_Dishwasher_StatusIdle>
+  <ImmersiveChefs_Dishwasher_StatusLoading>загрузка</ImmersiveChefs_Dishwasher_StatusLoading>
+  <ImmersiveChefs_Dishwasher_StatusWashing>моет ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
+  <ImmersiveChefs_Dishwasher_StatusPaused>приостановлено: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>нет электричества</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoWater>нет подачи воды</ImmersiveChefs_Dishwasher_PauseNoWater>
+  <ImmersiveChefs_Dishwasher_Inspect>Посудомойка: {0}\nВместимость: {1}/{2} комплектов</ImmersiveChefs_Dishwasher_Inspect>
+  <ImmersiveChefs_Dishwasher_EjectLabel>Выгрузить посуду</ImmersiveChefs_Dishwasher_EjectLabel>
+  <ImmersiveChefs_Dishwasher_EjectDescription>Отменить цикл и вернуть именно эту посуду без очистки.</ImmersiveChefs_Dishwasher_EjectDescription>
+  <ImmersiveChefs_Processor_Wash>вымыть {0}</ImmersiveChefs_Processor_Wash>
+
+  <ImmersiveChefs_PoisonCause_LowQuality>низкое качество блюда</ImmersiveChefs_PoisonCause_LowQuality>
+  <ImmersiveChefs_PoisonCause_ColdMeal>холодное блюдо</ImmersiveChefs_PoisonCause_ColdMeal>
+  <ImmersiveChefs_PoisonCause_FrozenMeal>замороженное блюдо</ImmersiveChefs_PoisonCause_FrozenMeal>
+  <ImmersiveChefs_PoisonCause_DirtyCookware>грязная посуда для готовки</ImmersiveChefs_PoisonCause_DirtyCookware>
+  <ImmersiveChefs_PoisonCause_DirtyPlate>грязная тарелка</ImmersiveChefs_PoisonCause_DirtyPlate>
+  <ImmersiveChefs_PoisonCause_DirtyCutlery>грязные столовые приборы</ImmersiveChefs_PoisonCause_DirtyCutlery>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedCookware>посуда, вымытая небезопасной водой</ImmersiveChefs_PoisonCause_UnsafeWashedCookware>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedPlate>тарелка, вымытая небезопасной водой</ImmersiveChefs_PoisonCause_UnsafeWashedPlate>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedCutlery>приборы, вымытые небезопасной водой</ImmersiveChefs_PoisonCause_UnsafeWashedCutlery>
+  <ImmersiveChefs_PoisonCause_PoorPlate>плохая тарелка</ImmersiveChefs_PoisonCause_PoorPlate>
+  <ImmersiveChefs_PoisonCause_PoorCutlery>плохие столовые приборы</ImmersiveChefs_PoisonCause_PoorCutlery>
+  <ImmersiveChefs_PoisonCause_ReheatedMeal>разогретое блюдо</ImmersiveChefs_PoisonCause_ReheatedMeal>
+  <ImmersiveChefs_PoisonCause_PoisonedMeal>заражённое блюдо</ImmersiveChefs_PoisonCause_PoisonedMeal>
+</LanguageData>

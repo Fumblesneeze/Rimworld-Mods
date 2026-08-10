@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_AssistCooking.label>ayudar a cocinar</ImmersiveChefs_AssistCooking.label><ImmersiveChefs_AssistCooking.verb>ayudar a cocinar en</ImmersiveChefs_AssistCooking.verb><ImmersiveChefs_AssistCooking.gerund>ayudando a cocinar en</ImmersiveChefs_AssistCooking.gerund>
+  <ImmersiveChefs_PlateMeals.label>emplatar comidas</ImmersiveChefs_PlateMeals.label><ImmersiveChefs_PlateMeals.verb>emplatar</ImmersiveChefs_PlateMeals.verb><ImmersiveChefs_PlateMeals.gerund>emplatando comidas</ImmersiveChefs_PlateMeals.gerund>
+  <ImmersiveChefs_PrepareIngredients.label>preparar ingredientes</ImmersiveChefs_PrepareIngredients.label><ImmersiveChefs_PrepareIngredients.verb>preparar ingredientes en</ImmersiveChefs_PrepareIngredients.verb><ImmersiveChefs_PrepareIngredients.gerund>preparando ingredientes en</ImmersiveChefs_PrepareIngredients.gerund>
+  <ImmersiveChefs_DoDishes.label>lavar la vajilla</ImmersiveChefs_DoDishes.label><ImmersiveChefs_DoDishes.verb>lavar</ImmersiveChefs_DoDishes.verb><ImmersiveChefs_DoDishes.gerund>lavando la vajilla</ImmersiveChefs_DoDishes.gerund>
+</LanguageData>

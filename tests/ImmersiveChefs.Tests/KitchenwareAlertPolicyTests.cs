@@ -79,19 +79,23 @@ public sealed class KitchenwareAlertPolicyTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                KitchenwareAlertRuntime.MissingLabel(new[] { KitchenwareProduct.Cookware }),
-                Is.EqualTo("Missing cookware sets"));
+                KitchenwareAlertRuntime.MissingProductTranslationKeys(new[] { KitchenwareProduct.Cookware }),
+                Is.EqualTo(new[] { "ImmersiveChefs_Product_CookwarePlural" }));
             Assert.That(
-                KitchenwareAlertRuntime.MissingLabel(new[] { KitchenwareProduct.Plate }),
-                Is.EqualTo("Missing plates"));
+                KitchenwareAlertRuntime.MissingProductTranslationKeys(new[] { KitchenwareProduct.Plate }),
+                Is.EqualTo(new[] { "ImmersiveChefs_Product_Plates" }));
             Assert.That(
-                KitchenwareAlertRuntime.MissingLabel(new[]
+                KitchenwareAlertRuntime.MissingProductTranslationKeys(new[]
                 {
                     KitchenwareProduct.Plate,
                     KitchenwareProduct.Cookware,
                     KitchenwareProduct.Plate
                 }),
-                Is.EqualTo("Missing cookware sets and plates"));
+                Is.EqualTo(new[]
+                {
+                    "ImmersiveChefs_Product_CookwarePlural",
+                    "ImmersiveChefs_Product_Plates"
+                }));
         });
     }
 }

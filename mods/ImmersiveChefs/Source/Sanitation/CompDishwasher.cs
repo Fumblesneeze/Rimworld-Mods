@@ -255,23 +255,31 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         {
             var processorLoad = ProcessorFrameworkAdapter.UsedPlateEquivalentCapacity(parent);
             var processorStatus = processorLoad <= 0f
-                ? "idle"
+                ? "ImmersiveChefs_Dishwasher_StatusIdle".Translate()
                 : loadingTicksRemaining > 0
-                    ? "loading"
+                    ? "ImmersiveChefs_Dishwasher_StatusLoading".Translate()
                     : !string.IsNullOrEmpty(pauseReason)
-                        ? $"paused: {pauseReason}"
-                        : $"washing ({ProcessorFrameworkAdapter.ProgressPercent(parent):0}%)";
-            return $"Dishwasher: {processorStatus}\nCapacity: {processorLoad:0.##}/{Capacity:0.##} place settings";
+                        ? "ImmersiveChefs_Dishwasher_StatusPaused".Translate(TranslatePauseReason(pauseReason))
+                        : "ImmersiveChefs_Dishwasher_StatusWashing".Translate(
+                            ProcessorFrameworkAdapter.ProgressPercent(parent).ToString("0"));
+            return "ImmersiveChefs_Dishwasher_Inspect".Translate(
+                processorStatus,
+                processorLoad.ToString("0.##"),
+                Capacity.ToString("0.##"));
         }
 
         var status = !Contents.Any
-            ? "idle"
+            ? "ImmersiveChefs_Dishwasher_StatusIdle".Translate()
             : loadingTicksRemaining > 0
-                ? "loading"
+                ? "ImmersiveChefs_Dishwasher_StatusLoading".Translate()
             : string.IsNullOrEmpty(pauseReason)
-                ? $"washing ({Math.Min(100, (int)(100f * progressTicks / Math.Max(1, capturedCycleTicks)))}%)"
-                : $"paused: {pauseReason}";
-        return $"Dishwasher: {status}\nCapacity: {UsedCapacity:0.##}/{Capacity:0.##} place settings";
+                ? "ImmersiveChefs_Dishwasher_StatusWashing".Translate(
+                    Math.Min(100, (int)(100f * progressTicks / Math.Max(1, capturedCycleTicks))))
+                : "ImmersiveChefs_Dishwasher_StatusPaused".Translate(TranslatePauseReason(pauseReason));
+        return "ImmersiveChefs_Dishwasher_Inspect".Translate(
+            status,
+            UsedCapacity.ToString("0.##"),
+            Capacity.ToString("0.##"));
     }
 
     public override IEnumerable<Gizmo> CompGetGizmosExtra()
@@ -282,8 +290,8 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             {
                 yield return new Command_Action
                 {
-                    defaultLabel = "Eject dishes",
-                    defaultDesc = "Cancel this cycle and return the exact dishes without cleaning them.",
+                    defaultLabel = "ImmersiveChefs_Dishwasher_EjectLabel".Translate(),
+                    defaultDesc = "ImmersiveChefs_Dishwasher_EjectDescription".Translate(),
                     action = () => ProcessorFrameworkAdapter.EjectAllDirty(parent)
                 };
             }
@@ -298,10 +306,17 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
         yield return new Command_Action
         {
-            defaultLabel = "Eject dishes",
-            defaultDesc = "Cancel this cycle and return the exact dishes without cleaning them.",
+            defaultLabel = "ImmersiveChefs_Dishwasher_EjectLabel".Translate(),
+            defaultDesc = "ImmersiveChefs_Dishwasher_EjectDescription".Translate(),
             action = EjectAll
         };
+    }
+
+    private static string TranslatePauseReason(string reason)
+    {
+        return reason == "no power"
+            ? "ImmersiveChefs_Dishwasher_PauseNoPower".Translate()
+            : "ImmersiveChefs_Dishwasher_PauseNoWater".Translate();
     }
 
     public override void PostExposeData()

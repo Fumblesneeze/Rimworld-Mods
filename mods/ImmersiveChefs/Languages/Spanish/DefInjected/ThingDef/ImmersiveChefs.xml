@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_SauceStation.label>puesto de salsas</ImmersiveChefs_SauceStation.label>
+  <ImmersiveChefs_SauceStation.description>Un puesto especializado vinculado para salsas, condimentos y acabados.</ImmersiveChefs_SauceStation.description>
+  <ImmersiveChefs_MeatStation.label>puesto de carnes</ImmersiveChefs_MeatStation.label>
+  <ImmersiveChefs_MeatStation.description>Un puesto especializado vinculado para limpiar carne y prepararla en paralelo.</ImmersiveChefs_MeatStation.description>
+  <ImmersiveChefs_VegetableStation.label>puesto de verduras</ImmersiveChefs_VegetableStation.label>
+  <ImmersiveChefs_VegetableStation.description>Un puesto especializado vinculado para preparar verduras y guarniciones.</ImmersiveChefs_VegetableStation.description>
+  <ImmersiveChefs_PastryStation.label>puesto de repostería</ImmersiveChefs_PastryStation.label>
+  <ImmersiveChefs_PastryStation.description>Un puesto especializado vinculado para masas, pastelería y postres.</ImmersiveChefs_PastryStation.description>
+  <ImmersiveChefs_Dishwasher.label>lavavajillas</ImmersiveChefs_Dishwasher.label>
+  <ImmersiveChefs_Dishwasher.description>Un lavavajillas doméstico eléctrico. Conserva la identidad, material, calidad y durabilidad de hasta 16 servicios mientras su ciclo se pausa de forma segura durante un corte eléctrico.</ImmersiveChefs_Dishwasher.description>
+  <ImmersiveChefs_IndustrialDishwasher.label>lavavajillas industrial</ImmersiveChefs_IndustrialDishwasher.label>
+  <ImmersiveChefs_IndustrialDishwasher.description>Un lavavajillas eléctrico de alto rendimiento con capacidad para 64 servicios.</ImmersiveChefs_IndustrialDishwasher.description>
+  <ImmersiveChefs_PrimitiveCookware.label>batería de cocina pétrea primitiva</ImmersiveChefs_PrimitiveCookware.label>
+  <ImmersiveChefs_PrimitiveCookware.description>Una olla de piedra tallada toscamente, una sartén baja y tapas con mangos y utensilios sencillos de madera. Esta batería primitiva completa es lenta, frágil y difícil de mantener limpia.</ImmersiveChefs_PrimitiveCookware.description>
+  <ImmersiveChefs_Cookware.label>batería de cocina</ImmersiveChefs_Cookware.label>
+  <ImmersiveChefs_Cookware.description>Un juego de cocina reutilizable completo: olla, sartén, tapas, mangos y utensilios pequeños. Su material y fabricación influyen en la velocidad, limpieza, comodidad y calidad culinaria.</ImmersiveChefs_Cookware.description>
+  <ImmersiveChefs_Plate.label>plato</ImmersiveChefs_Plate.label>
+  <ImmersiveChefs_Plate.description>Un plato reutilizable para una porción de comida. Su material y fabricación influyen en la comodidad, velocidad al comer e higiene.</ImmersiveChefs_Plate.description>
+  <ImmersiveChefs_AdobePlate.label>plato de adobe</ImmersiveChefs_AdobePlate.label>
+  <ImmersiveChefs_AdobePlate.description>Un plato tosco de ladrillos de adobe. Es poroso, frágil y extremadamente difícil de mantener limpio.</ImmersiveChefs_AdobePlate.description>
+  <ImmersiveChefs_Cutlery.label>juego de cubiertos</ImmersiveChefs_Cutlery.label>
+  <ImmersiveChefs_Cutlery.description>Un juego reutilizable de tenedor, cuchara y cuchillo para un comensal. Su material y fabricación influyen en la comodidad e higiene.</ImmersiveChefs_Cutlery.description>
+  <ImmersiveChefs_GlitterworldCookware.label>batería de cocina ultratecnológica</ImmersiveChefs_GlitterworldCookware.label>
+  <ImmersiveChefs_GlitterworldCookware.description>Una batería autolimpiable e incombustible importada de un mundo brillante. No puede fabricarse localmente.</ImmersiveChefs_GlitterworldCookware.description>
+  <ImmersiveChefs_ChefsKnife.label>juego de cuchillos de chef</ImmersiveChefs_ChefsKnife.label>
+  <ImmersiveChefs_ChefsKnife.description>El juego personal de cuchillos de un cocinero. Se lleva en el cinturón utilitario y mejora el trabajo culinario sin sustituir un arma.</ImmersiveChefs_ChefsKnife.description>
+  <ImmersiveChefs_PreparedFood.label>ingredientes preparados</ImmersiveChefs_PreparedFood.label>
+  <ImmersiveChefs_PreparedFood.description>Ingredientes cortados, limpiados y porcionados, listos para la cocción final. La inspección conserva su nutrición, origen y calidad de preparación.</ImmersiveChefs_PreparedFood.description>
+  <ImmersiveChefs_PrepStation.label>puesto de preparación de ingredientes</ImmersiveChefs_PrepStation.label>
+  <ImmersiveChefs_PrepStation.description>Una mesa profesional para lavar, limpiar, cortar y porcionar ingredientes antes de la cocción final.</ImmersiveChefs_PrepStation.description>
+  <ImmersiveChefs_Microwave.label>microondas</ImmersiveChefs_Microwave.label>
+  <ImmersiveChefs_Microwave.description>Un aparato eléctrico compacto que recalienta una comida fría emplatada antes de comer. Recupera la temperatura a costa de un poco de calidad culinaria y seguridad.</ImmersiveChefs_Microwave.description>
+</LanguageData>

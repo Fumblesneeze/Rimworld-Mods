@@ -177,13 +177,19 @@ public sealed class CompCulinaryState : ThingComp
         var lines = new List<string>();
         if (ImmersiveChefsMod.Settings.CulinaryQualityEnabled)
         {
-            lines.Add($"Culinary quality: {CulinaryQualityCalculator.LabelFor(record.QualityScore)} ({record.QualityScore})");
+            var quality = ("ImmersiveChefs_CulinaryBand_" +
+                           CulinaryQualityCalculator.LabelFor(record.QualityScore)).Translate();
+            lines.Add("ImmersiveChefs_CulinaryQualityInspect".Translate(quality, record.QualityScore));
         }
 
         if (TemperatureOwnership.ImmersiveChefsFeaturesActive &&
             ImmersiveChefsMod.Settings.MealTemperatureEnabled)
         {
-            lines.Add($"Meal temperature: {ThermalCalculator.BandFor(record.TemperatureCelsius)} ({record.TemperatureCelsius:0.#} °C)");
+            var band = ("ImmersiveChefs_ThermalBand_" +
+                        ThermalCalculator.BandFor(record.TemperatureCelsius)).Translate();
+            lines.Add("ImmersiveChefs_MealTemperatureInspect".Translate(
+                band,
+                record.TemperatureCelsius.ToString("0.#")));
         }
 
         return string.Join("\n", lines);

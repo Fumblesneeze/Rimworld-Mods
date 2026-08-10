@@ -148,8 +148,12 @@ public static class SanitationInspectionText
 {
     public static string For(bool isDirty, bool selfCleaning)
     {
-        return selfCleaning
-            ? "Cleanliness: self-cleaning"
-            : $"Cleanliness: {(isDirty ? "dirty" : "clean")}";
+        return TranslationKeyFor(isDirty, selfCleaning).Translate();
     }
+
+    public static string TranslationKeyFor(bool isDirty, bool selfCleaning) => selfCleaning
+        ? "ImmersiveChefs_Cleanliness_SelfCleaning"
+        : isDirty
+            ? "ImmersiveChefs_Cleanliness_Dirty"
+            : "ImmersiveChefs_Cleanliness_Clean";
 }

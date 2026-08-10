@@ -218,7 +218,7 @@ internal static class ProcessorFrameworkAdapter
         var process = Activator.CreateInstance(processDefType!)
                       ?? throw new InvalidOperationException("Processor process Def could not be created.");
         SetField(process, "defName", defName);
-        SetField(process, "label", $"wash {ware.label}");
+        SetField(process, "label", "ImmersiveChefs_Processor_Wash".Translate(ware.label));
         SetField(process, "thingDef", ware);
         SetField(process, "processDays",
             Math.Max(1, cycleTicks) * ImmersiveChefsMod.Settings.DishwashingWorkScale / 60000f);

@@ -40,7 +40,7 @@ internal static class WorkGiverDoBillWarePatch
                 return;
             }
 
-            JobFailReason.Is($"Missing {missingReason} (Immersive Chefs)");
+            JobFailReason.Is("ImmersiveChefs_MissingKitchenware".Translate(missingReason));
             __result = null;
         }
     }

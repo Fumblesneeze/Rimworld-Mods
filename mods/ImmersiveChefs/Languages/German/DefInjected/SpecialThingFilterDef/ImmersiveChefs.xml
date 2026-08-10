@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_AllowCleanKitchenware.label>saubere Küchenutensilien</ImmersiveChefs_AllowCleanKitchenware.label>
+  <ImmersiveChefs_AllowCleanKitchenware.description>Erlaubt saubere Kochgeschirrsets, Teller und Besteck, einschließlich mit natürlichem Wasser gespülter Gegenstände.</ImmersiveChefs_AllowCleanKitchenware.description>
+  <ImmersiveChefs_AllowDirtyKitchenware.label>schmutzige Küchenutensilien</ImmersiveChefs_AllowDirtyKitchenware.label>
+  <ImmersiveChefs_AllowDirtyKitchenware.description>Erlaubt Kochgeschirrsets, Teller und Besteck, die gespült werden müssen.</ImmersiveChefs_AllowDirtyKitchenware.description>
+</LanguageData>

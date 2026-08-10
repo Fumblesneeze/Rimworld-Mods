@@ -50,14 +50,14 @@ public sealed class PersistentStateTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                SanitationInspectionText.For(isDirty: false, selfCleaning: false),
-                Is.EqualTo("Cleanliness: clean"));
+                SanitationInspectionText.TranslationKeyFor(isDirty: false, selfCleaning: false),
+                Is.EqualTo("ImmersiveChefs_Cleanliness_Clean"));
             Assert.That(
-                SanitationInspectionText.For(isDirty: true, selfCleaning: false),
-                Is.EqualTo("Cleanliness: dirty"));
+                SanitationInspectionText.TranslationKeyFor(isDirty: true, selfCleaning: false),
+                Is.EqualTo("ImmersiveChefs_Cleanliness_Dirty"));
             Assert.That(
-                SanitationInspectionText.For(isDirty: false, selfCleaning: true),
-                Is.EqualTo("Cleanliness: self-cleaning"));
+                SanitationInspectionText.TranslationKeyFor(isDirty: false, selfCleaning: true),
+                Is.EqualTo("ImmersiveChefs_Cleanliness_SelfCleaning"));
         });
     }
 

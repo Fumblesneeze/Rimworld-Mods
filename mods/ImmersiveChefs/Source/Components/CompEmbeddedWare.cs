@@ -226,8 +226,9 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
                    otherComp.personalPlateOwnerThingId);
     }
 
-    public override string CompInspectStringExtra() =>
-        EmbeddedPlateCount == 0 ? "Service ware: unplated" : $"Bound plates: {EmbeddedPlateCount}";
+    public override string CompInspectStringExtra() => EmbeddedPlateCount == 0
+        ? "ImmersiveChefs_ServiceWare_Unplated".Translate()
+        : "ImmersiveChefs_ServiceWare_BoundPlates".Translate(EmbeddedPlateCount);
 
     public override void PostExposeData()
     {

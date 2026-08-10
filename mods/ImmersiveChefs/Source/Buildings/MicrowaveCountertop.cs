@@ -146,11 +146,6 @@ internal static class MicrowaveSupportRuntime
 
 public sealed class PlaceWorker_MicrowaveCountertop : PlaceWorker
 {
-    private const string MissingSupport =
-        "Requires a completed table or workbench with an eating or item surface.";
-    private const string BlockedInteraction =
-        "Rotate or move the microwave so its interaction cell is beside the supporting surface.";
-
     public override AcceptanceReport AllowsPlacing(
         BuildableDef checkingDef,
         IntVec3 loc,
@@ -162,7 +157,7 @@ public sealed class PlaceWorker_MicrowaveCountertop : PlaceWorker
         var support = MicrowaveSupportRuntime.FindAt(loc, map, thingToIgnore);
         if (support is null)
         {
-            return MissingSupport;
+            return "ImmersiveChefs_Microwave_MissingSupport".Translate();
         }
 
         if (checkingDef is not ThingDef thingDef || !thingDef.hasInteractionCell)
@@ -184,7 +179,7 @@ public sealed class PlaceWorker_MicrowaveCountertop : PlaceWorker
                 interactionCell.InBounds(map),
                 interactionCell.InBounds(map) && interactionCell.Standable(map)))
         {
-            return BlockedInteraction;
+            return "ImmersiveChefs_Microwave_BlockedInteraction".Translate();
         }
 
         return AcceptanceReport.WasAccepted;

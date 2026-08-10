@@ -15,22 +15,24 @@ public sealed class IngredientValueGetter_Units : IngredientValueGetter
         var index = recipe.ingredients?.IndexOf(ingredient) ?? -1;
         if (index > 0)
         {
-            return ingredient.GetBaseCount() + "x wood";
+            return "ImmersiveChefs_IngredientRequirement".Translate(
+                ingredient.GetBaseCount(),
+                "ImmersiveChefs_Ingredient_Wood".Translate());
         }
 
         var extension = recipe.GetModExtension<KitchenwareRecipeExtension>();
         var materialLabel = extension?.product == KitchenwareProduct.ChefsKnife
-            ? "any eligible metal"
+            ? "ImmersiveChefs_Ingredient_AnyEligibleMetal".Translate()
             : extension?.fabricationTier switch
         {
-            FabricationTier.PrimitiveStone => "any stony material",
-            FabricationTier.Soft => "wood or soft material",
-            FabricationTier.Intermediate => "any intermediate metal",
+            FabricationTier.PrimitiveStone => "ImmersiveChefs_Ingredient_AnyStonyMaterial".Translate(),
+            FabricationTier.Soft => "ImmersiveChefs_Ingredient_WoodOrSoftMaterial".Translate(),
+            FabricationTier.Intermediate => "ImmersiveChefs_Ingredient_AnyIntermediateMetal".Translate(),
             FabricationTier.Modern when extension.product is KitchenwareProduct.Plate or KitchenwareProduct.Cutlery =>
-                "any eligible metal or plastic",
-            FabricationTier.Modern => "any modern metal",
+                "ImmersiveChefs_Ingredient_AnyMetalOrPlastic".Translate(),
+            FabricationTier.Modern => "ImmersiveChefs_Ingredient_AnyModernMetal".Translate(),
             _ => ingredient.filter.Summary
         };
-        return ingredient.GetBaseCount() + "x " + materialLabel;
+        return "ImmersiveChefs_IngredientRequirement".Translate(ingredient.GetBaseCount(), materialLabel);
     }
 }

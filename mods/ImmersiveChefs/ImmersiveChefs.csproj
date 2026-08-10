@@ -6,6 +6,7 @@
     <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
     <RimWorldModName>Immersive Chefs</RimWorldModName>
     <RimWorldPackageId>fumblesneeze.immersivechefs</RimWorldPackageId>
+    <RimWorldDistributionKind>Product</RimWorldDistributionKind>
     <Authors>Fumblesneeze</Authors>
     <AssemblyName>ImmersiveChefs</AssemblyName>
     <RootNamespace>ImmersiveChefs</RootNamespace>

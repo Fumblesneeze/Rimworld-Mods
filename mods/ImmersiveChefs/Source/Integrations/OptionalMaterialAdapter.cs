@@ -5,6 +5,10 @@ namespace ImmersiveChefs;
 
 internal static class OptionalMaterialAdapter
 {
+    private static readonly System.Reflection.FieldInfo CachedLabelCapField =
+        AccessTools.Field(typeof(Def), "cachedLabelCap") ??
+        throw new MissingFieldException(typeof(Def).FullName, "cachedLabelCap");
+
     private static readonly string[] ExpandedMetalDefs =
     {
         "EM_Iron",
@@ -60,6 +64,13 @@ internal static class OptionalMaterialAdapter
         }
 
         var adobeRecipe = DefDatabase<RecipeDef>.GetNamedSilentFail("ImmersiveChefs_MakeAdobePlates");
+        if (adobeRecipe is not null)
+        {
+            adobeRecipe.label = "ImmersiveChefs_Recipe_MakeAdobePlates_Label".Translate();
+            CachedLabelCapField.SetValue(adobeRecipe, default(TaggedString));
+            adobeRecipe.description = "ImmersiveChefs_Recipe_MakeAdobePlates_Description".Translate();
+            adobeRecipe.jobString = "ImmersiveChefs_Recipe_MakeAdobePlates_JobString".Translate();
+        }
         if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.ExpandedMaterialsMasonry))
         {
             if (DefDatabase<ThingDef>.GetNamedSilentFail("EM_AdobeBricks") is null || adobeRecipe is null)

@@ -199,8 +199,16 @@ public sealed class KitchenwareRecipeDefContractTests
 
         Assert.Multiple(() =>
         {
+            var english = XDocument.Load(Path.Combine(
+                FindRepositoryRoot(),
+                "mods",
+                "ImmersiveChefs",
+                "Languages",
+                "English",
+                "Keyed",
+                "ImmersiveChefs.xml"));
             Assert.That(
-                KitchenwareAlertRuntime.ProductLabel(KitchenwareProduct.Cookware),
+                english.Root!.Element(KitchenwareAlertRuntime.ProductTranslationKey(KitchenwareProduct.Cookware))?.Value,
                 Is.EqualTo("cookware sets"));
             Assert.That(descriptions, Is.All.Contains("cookware sets"));
         });
@@ -338,7 +346,12 @@ public sealed class KitchenwareRecipeDefContractTests
             "IngredientValueGetter_Units.cs"));
 
         Assert.That(source, Does.Contain("KitchenwareProduct.ChefsKnife"));
-        Assert.That(source, Does.Contain("\"any eligible metal\""));
+        Assert.That(source, Does.Contain("ImmersiveChefs_Ingredient_AnyEligibleMetal"));
+        var english = XDocument.Load(Path.Combine(
+            FindRepositoryRoot(), "mods", "ImmersiveChefs", "Languages", "English", "Keyed", "ImmersiveChefs.xml"));
+        Assert.That(
+            english.Root!.Element("ImmersiveChefs_Ingredient_AnyEligibleMetal")?.Value,
+            Is.EqualTo("any eligible metal"));
     }
 
     [Test]

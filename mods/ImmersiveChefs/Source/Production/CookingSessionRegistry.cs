@@ -448,7 +448,7 @@ internal static class CookingSessionRegistry
         missingReason = null;
         if (!AdaptiveMealBillAdapter.TryResolveConcreteRecipe(job, out var reservationRecipe))
         {
-            missingReason = "adaptive concrete recipe";
+            missingReason = "ImmersiveChefs_Missing_AdaptiveRecipe".Translate();
             return false;
         }
 
@@ -495,8 +495,10 @@ internal static class CookingSessionRegistry
             ReleaseReservations(pawn, job, cookware);
             ReleaseReservations(pawn, job, plates);
             missingReason = !cookwareAllowed && !platesAllowed
-                ? "a clean cookware set and clean plates"
-                : !cookwareAllowed ? "a clean cookware set" : "clean plates";
+                ? "ImmersiveChefs_Missing_CookwareAndPlates".Translate()
+                : !cookwareAllowed
+                    ? "ImmersiveChefs_Missing_Cookware".Translate()
+                    : "ImmersiveChefs_Missing_Plates".Translate();
             return false;
         }
 

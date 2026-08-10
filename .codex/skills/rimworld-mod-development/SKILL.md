@@ -13,7 +13,8 @@ Follow the root `AGENTS.md`. Use the repository's OpenSpec, Zlepper ModSdk, TDD,
 2. For a new behavior or bug fix, use the repo-local `tdd` skill and complete a red-green-refactor slice. Do not implement from the prose alone.
 3. For Harmony or optional C# integration work, read [references/harmony-compatibility.md](references/harmony-compatibility.md).
 4. For Defs, recipes, XML inheritance, stuff, or conditional patches, read [references/xml-defs-patching.md](references/xml-defs-patching.md).
-5. Before claiming completion or compatibility, read and follow [references/testing-verification.md](references/testing-verification.md).
+5. For player-facing text, language catalogs, or distributable-package release checks, read [references/localization-release.md](references/localization-release.md).
+6. Before claiming completion or compatibility, read and follow [references/testing-verification.md](references/testing-verification.md).
 
 If no applicable OpenSpec names exactly one owning mod, create or clarify that change before choosing files. Treat downloaded or Workshop mod content as read-only inspection input: never edit it, commit it, or copy its assemblies into the owning mod's release.
 

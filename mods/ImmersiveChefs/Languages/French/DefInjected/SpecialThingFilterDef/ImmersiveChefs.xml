@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_AllowCleanKitchenware.label>matériel de cuisine propre</ImmersiveChefs_AllowCleanKitchenware.label><ImmersiveChefs_AllowCleanKitchenware.description>Autorise les batteries, assiettes et couverts propres, y compris ceux lavés dans une eau naturelle.</ImmersiveChefs_AllowCleanKitchenware.description>
+  <ImmersiveChefs_AllowDirtyKitchenware.label>matériel de cuisine sale</ImmersiveChefs_AllowDirtyKitchenware.label><ImmersiveChefs_AllowDirtyKitchenware.description>Autorise les batteries, assiettes et couverts qui doivent être lavés.</ImmersiveChefs_AllowDirtyKitchenware.description>
+</LanguageData>

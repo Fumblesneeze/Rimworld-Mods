@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><LanguageData>
+  <ImmersiveChefs_AssistCooking.label>помогать готовить</ImmersiveChefs_AssistCooking.label><ImmersiveChefs_AssistCooking.verb>помогать готовить у</ImmersiveChefs_AssistCooking.verb><ImmersiveChefs_AssistCooking.gerund>помогает готовить у</ImmersiveChefs_AssistCooking.gerund>
+  <ImmersiveChefs_PlateMeals.label>раскладывать блюда</ImmersiveChefs_PlateMeals.label><ImmersiveChefs_PlateMeals.verb>разложить</ImmersiveChefs_PlateMeals.verb><ImmersiveChefs_PlateMeals.gerund>раскладывает блюда</ImmersiveChefs_PlateMeals.gerund>
+  <ImmersiveChefs_PrepareIngredients.label>подготавливать ингредиенты</ImmersiveChefs_PrepareIngredients.label><ImmersiveChefs_PrepareIngredients.verb>подготавливать ингредиенты у</ImmersiveChefs_PrepareIngredients.verb><ImmersiveChefs_PrepareIngredients.gerund>подготавливает ингредиенты у</ImmersiveChefs_PrepareIngredients.gerund>
+  <ImmersiveChefs_DoDishes.label>мыть посуду</ImmersiveChefs_DoDishes.label><ImmersiveChefs_DoDishes.verb>мыть</ImmersiveChefs_DoDishes.verb><ImmersiveChefs_DoDishes.gerund>моет посуду</ImmersiveChefs_DoDishes.gerund>
+</LanguageData>

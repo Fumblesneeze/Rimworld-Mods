@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_SettingsCategory>Immersive Chefs</ImmersiveChefs_SettingsCategory>
+  <ImmersiveChefs_Settings_RestartHeading>Klassifizierungs- und Def-Einstellungen mit Neustartpflicht</ImmersiveChefs_Settings_RestartHeading>
+  <ImmersiveChefs_Settings_WareRequirement>Anforderungsmodus für Küchenutensilien (Neustart erforderlich)</ImmersiveChefs_Settings_WareRequirement>
+  <ImmersiveChefs_Settings_SimpleRecipeTime>Zeit für einfache Rezepte: {0}x (Neustart erforderlich)</ImmersiveChefs_Settings_SimpleRecipeTime>
+  <ImmersiveChefs_Settings_FineRecipeTime>Zeit für feine Rezepte: {0}x (Neustart erforderlich)</ImmersiveChefs_Settings_FineRecipeTime>
+  <ImmersiveChefs_Settings_LavishRecipeTime>Zeit für luxuriöse Rezepte: {0}x (Neustart erforderlich)</ImmersiveChefs_Settings_LavishRecipeTime>
+  <ImmersiveChefs_Settings_PreparedRot>Verderb vorbereiteter Zutaten: {0}x (Neustart erforderlich)</ImmersiveChefs_Settings_PreparedRot>
+  <ImmersiveChefs_Settings_DishwasherCapacity>Spülmaschinenkapazität: {0}x (Neustart erforderlich)</ImmersiveChefs_Settings_DishwasherCapacity>
+  <ImmersiveChefs_Settings_TextureVariation>Integration für Texturvarianten (Neustart erforderlich)</ImmersiveChefs_Settings_TextureVariation>
+  <ImmersiveChefs_Settings_ShowDirtyTextures>Texturen für schmutzige Küchenutensilien anzeigen (Neustart erforderlich)</ImmersiveChefs_Settings_ShowDirtyTextures>
+  <ImmersiveChefs_Settings_LiveHeading>Einstellungen der laufenden Simulation</ImmersiveChefs_Settings_LiveHeading>
+  <ImmersiveChefs_Settings_DirtyFallback>Rückgriff auf schmutzige Küchenutensilien</ImmersiveChefs_Settings_DirtyFallback>
+  <ImmersiveChefs_Settings_EmergencyHunger>Notfallhunger: {0}</ImmersiveChefs_Settings_EmergencyHunger>
+  <ImmersiveChefs_Settings_PreparedWorkReduction>Arbeitsersparnis durch Vorbereitung: {0}</ImmersiveChefs_Settings_PreparedWorkReduction>
+  <ImmersiveChefs_Settings_PasteQuality>Zubereitungsqualität der Paste: {0}</ImmersiveChefs_Settings_PasteQuality>
+  <ImmersiveChefs_Settings_AutoAssistants>Kochassistenten automatisch rufen</ImmersiveChefs_Settings_AutoAssistants>
+  <ImmersiveChefs_Settings_MaxAssistants>Maximale Assistenten: {0}</ImmersiveChefs_Settings_MaxAssistants>
+  <ImmersiveChefs_Settings_AssistantEffect>Wirkung der Assistenten: {0}x</ImmersiveChefs_Settings_AssistantEffect>
+  <ImmersiveChefs_Settings_PreferDishwashers>Spülmaschinen bevorzugen</ImmersiveChefs_Settings_PreferDishwashers>
+  <ImmersiveChefs_Settings_TerrainHandwashing>Handspülen an natürlichen Wasserstellen erlauben</ImmersiveChefs_Settings_TerrainHandwashing>
+  <ImmersiveChefs_Settings_DishwashingWork>Spülarbeit: {0}x</ImmersiveChefs_Settings_DishwashingWork>
+  <ImmersiveChefs_Settings_CulinaryQuality>Kulinarische Qualität</ImmersiveChefs_Settings_CulinaryQuality>
+  <ImmersiveChefs_Settings_QualityMood>Stimmungswirkung der Qualität: {0}x</ImmersiveChefs_Settings_QualityMood>
+  <ImmersiveChefs_Settings_FoodPoisoningEffect>Wirkung von Lebensmittelvergiftung: {0}x</ImmersiveChefs_Settings_FoodPoisoningEffect>
+  <ImmersiveChefs_Settings_MaxPoisonChance>Maximale zusätzliche Vergiftungswahrscheinlichkeit: {0}</ImmersiveChefs_Settings_MaxPoisonChance>
+  <ImmersiveChefs_Settings_ToxicExposure>Giftstoffbelastung durch Küchenutensilien: {0}x</ImmersiveChefs_Settings_ToxicExposure>
+  <ImmersiveChefs_Settings_MealTemperature>Mahlzeitentemperatur</ImmersiveChefs_Settings_MealTemperature>
+  <ImmersiveChefs_Settings_ThermalHalfLife>Thermische Halbwertszeit: {0} Std.</ImmersiveChefs_Settings_ThermalHalfLife>
+  <ImmersiveChefs_Settings_AutoMicrowaveBelow>Automatisch aufwärmen unter: {0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Qualitätsverlust durch Mikrowelle: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_MicrowavePoisonChance>Vergiftungsrisiko durch Mikrowelle: {0} Prozentpunkte</ImmersiveChefs_Settings_MicrowavePoisonChance>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Mahlzeitentemperatur und Mikrowelle werden von Thermodynamics - Hot Meals bereitgestellt</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ColonyStandards>Essstandards der Kolonie</ImmersiveChefs_Settings_ColonyStandards>
+  <ImmersiveChefs_Settings_RoyaltyStandards>Essstandards für Adel</ImmersiveChefs_Settings_RoyaltyStandards>
+  <ImmersiveChefs_Settings_IntegrationsHeading>Optionale Integrationen (Neustart erforderlich; Auto oder Aus)</ImmersiveChefs_Settings_IntegrationsHeading>
+
+  <ImmersiveChefs_Integration_ProcessorFramework>Processor Framework</ImmersiveChefs_Integration_ProcessorFramework>
+  <ImmersiveChefs_Integration_ExpandedMaterials>Expanded Materials</ImmersiveChefs_Integration_ExpandedMaterials>
+  <ImmersiveChefs_Integration_AbsPolymer>ABS Polymer</ImmersiveChefs_Integration_AbsPolymer>
+  <ImmersiveChefs_Integration_DubsBadHygiene>Dubs Bad Hygiene</ImmersiveChefs_Integration_DubsBadHygiene>
+  <ImmersiveChefs_Integration_Gastronomy>Gastronomy</ImmersiveChefs_Integration_Gastronomy>
+  <ImmersiveChefs_Integration_CommonSense>Common Sense</ImmersiveChefs_Integration_CommonSense>
+  <ImmersiveChefs_Integration_Hospitality>Hospitality</ImmersiveChefs_Integration_Hospitality>
+  <ImmersiveChefs_Integration_VarietyMatters>Variety Matters</ImmersiveChefs_Integration_VarietyMatters>
+  <ImmersiveChefs_Integration_VanillaFoodVarietyExpanded>Vanilla Food Variety Expanded</ImmersiveChefs_Integration_VanillaFoodVarietyExpanded>
+  <ImmersiveChefs_Integration_VanillaExpandedFramework>Vanilla Expanded Framework</ImmersiveChefs_Integration_VanillaExpandedFramework>
+  <ImmersiveChefs_Integration_VanillaNutrientPasteExpanded>Vanilla Nutrient Paste Expanded</ImmersiveChefs_Integration_VanillaNutrientPasteExpanded>
+  <ImmersiveChefs_Integration_AdaptiveMealBill>Adaptive Meal Bill</ImmersiveChefs_Integration_AdaptiveMealBill>
+  <ImmersiveChefs_Integration_OvercookedMeals>Overcooked Meals</ImmersiveChefs_Integration_OvercookedMeals>
+  <ImmersiveChefs_Integration_MealsOnWheels>Meals on Wheels</ImmersiveChefs_Integration_MealsOnWheels>
+  <ImmersiveChefs_Integration_PrioritizeMeals>Prioritize Meals over Preserved Foods</ImmersiveChefs_Integration_PrioritizeMeals>
+  <ImmersiveChefs_Integration_Replimat>Replimat + Replimat Meals</ImmersiveChefs_Integration_Replimat>
+  <ImmersiveChefs_Integration_MealPrinter>Meal Printer</ImmersiveChefs_Integration_MealPrinter>
+  <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
+  <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
+
+  <ImmersiveChefs_Enum_WareRequirementMode_Strict>Streng</ImmersiveChefs_Enum_WareRequirementMode_Strict>
+  <ImmersiveChefs_Enum_WareRequirementMode_Prefer>Bevorzugen</ImmersiveChefs_Enum_WareRequirementMode_Prefer>
+  <ImmersiveChefs_Enum_WareRequirementMode_Off>Aus</ImmersiveChefs_Enum_WareRequirementMode_Off>
+  <ImmersiveChefs_Enum_DirtyWareFallback_Never>Nie</ImmersiveChefs_Enum_DirtyWareFallback_Never>
+  <ImmersiveChefs_Enum_DirtyWareFallback_UrgentOnly>Nur in Notfällen</ImmersiveChefs_Enum_DirtyWareFallback_UrgentOnly>
+  <ImmersiveChefs_Enum_DirtyWareFallback_Always>Immer</ImmersiveChefs_Enum_DirtyWareFallback_Always>
+  <ImmersiveChefs_Enum_OptionalIntegrationMode_Auto>Auto</ImmersiveChefs_Enum_OptionalIntegrationMode_Auto>
+  <ImmersiveChefs_Enum_OptionalIntegrationMode_Off>Aus</ImmersiveChefs_Enum_OptionalIntegrationMode_Off>
+
+  <ImmersiveChefs_Microwave_MissingSupport>Benötigt einen fertiggestellten Tisch oder eine Werkbank mit Ess- oder Ablagefläche.</ImmersiveChefs_Microwave_MissingSupport>
+  <ImmersiveChefs_Microwave_BlockedInteraction>Drehe oder versetze die Mikrowelle, damit ihr Interaktionsfeld neben der Stellfläche liegt.</ImmersiveChefs_Microwave_BlockedInteraction>
+  <ImmersiveChefs_DispensePreparedPaste>Vorbereitete Kochpaste ausgeben</ImmersiveChefs_DispensePreparedPaste>
+  <ImmersiveChefs_ForceCookDirtyCookware>Kochen mit schmutzigem Kochgeschirr erzwingen</ImmersiveChefs_ForceCookDirtyCookware>
+  <ImmersiveChefs_ForceCookDirtyCookwareUnavailable>Kochen kann nicht erzwungen werden: Der Auftrag ist mit schmutzigem Kochgeschirr nicht mehr ausführbar.</ImmersiveChefs_ForceCookDirtyCookwareUnavailable>
+  <ImmersiveChefs_MissingKitchenware>Es fehlt {0} (Immersive Chefs)</ImmersiveChefs_MissingKitchenware>
+  <ImmersiveChefs_Missing_AdaptiveRecipe>ein verfügbares konkretes Rezept</ImmersiveChefs_Missing_AdaptiveRecipe>
+  <ImmersiveChefs_Missing_CookwareAndPlates>ein sauberes Kochgeschirrset und saubere Teller</ImmersiveChefs_Missing_CookwareAndPlates>
+  <ImmersiveChefs_Missing_Cookware>ein sauberes Kochgeschirrset</ImmersiveChefs_Missing_Cookware>
+  <ImmersiveChefs_Missing_Plates>saubere Teller</ImmersiveChefs_Missing_Plates>
+
+  <ImmersiveChefs_Cleanliness_SelfCleaning>Sauberkeit: selbstreinigend</ImmersiveChefs_Cleanliness_SelfCleaning>
+  <ImmersiveChefs_Cleanliness_Dirty>Sauberkeit: schmutzig</ImmersiveChefs_Cleanliness_Dirty>
+  <ImmersiveChefs_Cleanliness_Clean>Sauberkeit: sauber</ImmersiveChefs_Cleanliness_Clean>
+  <ImmersiveChefs_ServiceWare_Unplated>Serviergeschirr: ohne Teller</ImmersiveChefs_ServiceWare_Unplated>
+  <ImmersiveChefs_ServiceWare_BoundPlates>Gebundene Teller: {0}</ImmersiveChefs_ServiceWare_BoundPlates>
+  <ImmersiveChefs_IngredientRequirement>{0}x {1}</ImmersiveChefs_IngredientRequirement>
+  <ImmersiveChefs_Ingredient_Wood>Holz</ImmersiveChefs_Ingredient_Wood>
+  <ImmersiveChefs_Ingredient_AnyEligibleMetal>beliebiges geeignetes Metall</ImmersiveChefs_Ingredient_AnyEligibleMetal>
+  <ImmersiveChefs_Ingredient_AnyStonyMaterial>beliebiges steinartiges Material</ImmersiveChefs_Ingredient_AnyStonyMaterial>
+  <ImmersiveChefs_Ingredient_WoodOrSoftMaterial>Holz oder weiches Material</ImmersiveChefs_Ingredient_WoodOrSoftMaterial>
+  <ImmersiveChefs_Ingredient_AnyIntermediateMetal>beliebiges mittleres Metall</ImmersiveChefs_Ingredient_AnyIntermediateMetal>
+  <ImmersiveChefs_Ingredient_AnyMetalOrPlastic>beliebiges geeignetes Metall oder Kunststoff</ImmersiveChefs_Ingredient_AnyMetalOrPlastic>
+  <ImmersiveChefs_Ingredient_AnyModernMetal>beliebiges modernes Metall</ImmersiveChefs_Ingredient_AnyModernMetal>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_Label>4 Lehmteller formen</ImmersiveChefs_Recipe_MakeAdobePlates_Label>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_Description>Formt vier grobe Teller aus Lehmziegeln.</ImmersiveChefs_Recipe_MakeAdobePlates_Description>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_JobString>Formt Lehmteller.</ImmersiveChefs_Recipe_MakeAdobePlates_JobString>
+
+  <ImmersiveChefs_Product_CookwarePlural>Kochgeschirrsets</ImmersiveChefs_Product_CookwarePlural>
+  <ImmersiveChefs_Product_Plates>Teller</ImmersiveChefs_Product_Plates>
+  <ImmersiveChefs_Product_Cutlery>Besteck</ImmersiveChefs_Product_Cutlery>
+  <ImmersiveChefs_Product_Kitchenware>Küchenutensilien</ImmersiveChefs_Product_Kitchenware>
+  <ImmersiveChefs_ListAnd>{0} und {1}</ImmersiveChefs_ListAnd>
+  <ImmersiveChefs_AlertMissingKitchenware_DefaultLabel>Kochgeschirrsets oder Teller fehlen</ImmersiveChefs_AlertMissingKitchenware_DefaultLabel>
+  <ImmersiveChefs_AlertMissingKitchenware_Label>Es fehlen {0}</ImmersiveChefs_AlertMissingKitchenware_Label>
+  <ImmersiveChefs_AlertMissingKitchenware_DefaultExplanation>Ein aktiver strenger Kochauftrag benötigt Kochgeschirrsets oder Teller, die der Kolonie nicht gehören.</ImmersiveChefs_AlertMissingKitchenware_DefaultExplanation>
+  <ImmersiveChefs_AlertMissingKitchenware_Explanation>Ein aktiver strenger Kochauftrag an einer betriebsbereiten Küchenwerkbank benötigt {0}, die auf dieser Karte nicht vorhanden sind. Schmutzige, verbotene, reservierte und vorübergehend unerreichbare Gegenstände zählen weiterhin als vorhanden. Wähle die Warnung, um die betroffenen Kochstellen durchzugehen.</ImmersiveChefs_AlertMissingKitchenware_Explanation>
+
+  <ImmersiveChefs_CulinaryBand_Awful>Grauenhaft</ImmersiveChefs_CulinaryBand_Awful>
+  <ImmersiveChefs_CulinaryBand_Poor>Schlecht</ImmersiveChefs_CulinaryBand_Poor>
+  <ImmersiveChefs_CulinaryBand_Normal>Normal</ImmersiveChefs_CulinaryBand_Normal>
+  <ImmersiveChefs_CulinaryBand_Good>Gut</ImmersiveChefs_CulinaryBand_Good>
+  <ImmersiveChefs_CulinaryBand_Excellent>Ausgezeichnet</ImmersiveChefs_CulinaryBand_Excellent>
+  <ImmersiveChefs_CulinaryBand_Masterwork>Meisterwerk</ImmersiveChefs_CulinaryBand_Masterwork>
+  <ImmersiveChefs_CulinaryBand_Legendary>Legendär</ImmersiveChefs_CulinaryBand_Legendary>
+  <ImmersiveChefs_ThermalBand_SteamingHot>Dampfend heiß</ImmersiveChefs_ThermalBand_SteamingHot>
+  <ImmersiveChefs_ThermalBand_Warm>Warm</ImmersiveChefs_ThermalBand_Warm>
+  <ImmersiveChefs_ThermalBand_RoomTemperature>Raumtemperatur</ImmersiveChefs_ThermalBand_RoomTemperature>
+  <ImmersiveChefs_ThermalBand_Cold>Kalt</ImmersiveChefs_ThermalBand_Cold>
+  <ImmersiveChefs_ThermalBand_Frozen>Gefroren</ImmersiveChefs_ThermalBand_Frozen>
+  <ImmersiveChefs_CulinaryQualityInspect>Kulinarische Qualität: {0} ({1})</ImmersiveChefs_CulinaryQualityInspect>
+  <ImmersiveChefs_MealTemperatureInspect>Mahlzeitentemperatur: {0} ({1} °C)</ImmersiveChefs_MealTemperatureInspect>
+  <ImmersiveChefs_PreparedSource_NutrientPaste>Nährpaste</ImmersiveChefs_PreparedSource_NutrientPaste>
+  <ImmersiveChefs_PreparedSource_Unknown>unbekannte Zutat</ImmersiveChefs_PreparedSource_Unknown>
+  <ImmersiveChefs_PreparedFoodInspect>Zubereitungsqualität: {0}/100\nQuelle: {1}\nNährwert pro Einheit: {2}</ImmersiveChefs_PreparedFoodInspect>
+
+  <ImmersiveChefs_Stat_KitchenCleanliness>Küchensauberkeit</ImmersiveChefs_Stat_KitchenCleanliness>
+  <ImmersiveChefs_Stat_KitchenComfort>Küchenkomfort</ImmersiveChefs_Stat_KitchenComfort>
+  <ImmersiveChefs_Stat_DiningComfort>Esskomfort</ImmersiveChefs_Stat_DiningComfort>
+  <ImmersiveChefs_Stat_CookingSpeed>Kochgeschwindigkeitsfaktor</ImmersiveChefs_Stat_CookingSpeed>
+  <ImmersiveChefs_Stat_CulinaryModifier>Modifikator der kulinarischen Qualität</ImmersiveChefs_Stat_CulinaryModifier>
+  <ImmersiveChefs_Stat_EatingSpeed>Essgeschwindigkeitsfaktor</ImmersiveChefs_Stat_EatingSpeed>
+  <ImmersiveChefs_Stat_KitchenCleanlinessValue>Küchensauberkeit: {0}</ImmersiveChefs_Stat_KitchenCleanlinessValue>
+  <ImmersiveChefs_Stat_KitchenComfortValue>Küchenkomfort: {0}</ImmersiveChefs_Stat_KitchenComfortValue>
+  <ImmersiveChefs_Stat_DiningComfortValue>Esskomfort: {0}</ImmersiveChefs_Stat_DiningComfortValue>
+  <ImmersiveChefs_Stat_CookingSpeedValue>Kochgeschwindigkeitsfaktor: {0}</ImmersiveChefs_Stat_CookingSpeedValue>
+  <ImmersiveChefs_Stat_CulinaryModifierValue>Modifikator der kulinarischen Qualität: {0}</ImmersiveChefs_Stat_CulinaryModifierValue>
+  <ImmersiveChefs_Stat_EatingSpeedValue>Essgeschwindigkeitsfaktor: {0}</ImmersiveChefs_Stat_EatingSpeedValue>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs leitet diesen Wert aus Material und Fertigungsqualität ab.</ImmersiveChefs_Stat_Explanation>
+
+  <ImmersiveChefs_Dishwasher_StatusIdle>inaktiv</ImmersiveChefs_Dishwasher_StatusIdle>
+  <ImmersiveChefs_Dishwasher_StatusLoading>wird beladen</ImmersiveChefs_Dishwasher_StatusLoading>
+  <ImmersiveChefs_Dishwasher_StatusWashing>spült ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
+  <ImmersiveChefs_Dishwasher_StatusPaused>pausiert: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>kein Strom</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoWater>keine Wasserversorgung</ImmersiveChefs_Dishwasher_PauseNoWater>
+  <ImmersiveChefs_Dishwasher_Inspect>Spülmaschine: {0}\nKapazität: {1}/{2} Gedecke</ImmersiveChefs_Dishwasher_Inspect>
+  <ImmersiveChefs_Dishwasher_EjectLabel>Geschirr auswerfen</ImmersiveChefs_Dishwasher_EjectLabel>
+  <ImmersiveChefs_Dishwasher_EjectDescription>Bricht diesen Spülgang ab und gibt genau dieses Geschirr ungereinigt zurück.</ImmersiveChefs_Dishwasher_EjectDescription>
+  <ImmersiveChefs_Processor_Wash>spüle {0}</ImmersiveChefs_Processor_Wash>
+
+  <ImmersiveChefs_PoisonCause_LowQuality>minderwertige Mahlzeit</ImmersiveChefs_PoisonCause_LowQuality>
+  <ImmersiveChefs_PoisonCause_ColdMeal>kalte Mahlzeit</ImmersiveChefs_PoisonCause_ColdMeal>
+  <ImmersiveChefs_PoisonCause_FrozenMeal>gefrorene Mahlzeit</ImmersiveChefs_PoisonCause_FrozenMeal>
+  <ImmersiveChefs_PoisonCause_DirtyCookware>schmutziges Kochgeschirr</ImmersiveChefs_PoisonCause_DirtyCookware>
+  <ImmersiveChefs_PoisonCause_DirtyPlate>schmutziger Teller</ImmersiveChefs_PoisonCause_DirtyPlate>
+  <ImmersiveChefs_PoisonCause_DirtyCutlery>schmutziges Besteck</ImmersiveChefs_PoisonCause_DirtyCutlery>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedCookware>unsicher gespültes Kochgeschirr</ImmersiveChefs_PoisonCause_UnsafeWashedCookware>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedPlate>unsicher gespülter Teller</ImmersiveChefs_PoisonCause_UnsafeWashedPlate>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedCutlery>unsicher gespültes Besteck</ImmersiveChefs_PoisonCause_UnsafeWashedCutlery>
+  <ImmersiveChefs_PoisonCause_PoorPlate>minderwertiger Teller</ImmersiveChefs_PoisonCause_PoorPlate>
+  <ImmersiveChefs_PoisonCause_PoorCutlery>minderwertiges Besteck</ImmersiveChefs_PoisonCause_PoorCutlery>
+  <ImmersiveChefs_PoisonCause_ReheatedMeal>aufgewärmte Mahlzeit</ImmersiveChefs_PoisonCause_ReheatedMeal>
+  <ImmersiveChefs_PoisonCause_PoisonedMeal>verdorbene Mahlzeit</ImmersiveChefs_PoisonCause_PoisonedMeal>
+</LanguageData>

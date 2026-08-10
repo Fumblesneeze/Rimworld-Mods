@@ -71,7 +71,7 @@ internal static class PreparedPasteFloatMenuPatch
                 continue;
             }
 
-            __result.Add(new FloatMenuOption("Dispense prepared cooking paste", () =>
+            __result.Add(new FloatMenuOption("ImmersiveChefs_DispensePreparedPaste".Translate(), () =>
             {
                 var job = JobMaker.MakeJob(ImmersiveChefsDefOf.ImmersiveChefs_DispensePreparedPaste, dispenser);
                 pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);

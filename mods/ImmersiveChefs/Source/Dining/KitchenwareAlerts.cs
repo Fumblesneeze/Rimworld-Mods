@@ -14,7 +14,7 @@ public sealed class Alert_MissingKitchenware : Alert
         var shortages = KitchenwareAlertRuntime.CaptureMissingShortages();
         if (shortages.Count == 0)
         {
-            return "An active strict cooking bill requires cookware sets or plates that the colony does not own.";
+            return "ImmersiveChefs_AlertMissingKitchenware_DefaultExplanation".Translate();
         }
 
         var products = shortages
@@ -22,11 +22,8 @@ public sealed class Alert_MissingKitchenware : Alert
             .Distinct()
             .OrderBy(product => product)
             .Select(KitchenwareAlertRuntime.ProductLabel);
-        return "An active strict cooking bill on an operational kitchen workstation requires " +
-               string.Join(" and ", products) +
-               " that do not exist on its map. Dirty, forbidden, reserved, and temporarily " +
-               "unreachable ware still counts as existing. Select the alert to cycle through " +
-               "the affected cooking workstations.";
+        return "ImmersiveChefs_AlertMissingKitchenware_Explanation".Translate(
+            KitchenwareAlertRuntime.JoinWithAnd(products));
     }
 
     public override AlertReport GetReport()
@@ -137,24 +134,43 @@ internal static class KitchenwareAlertRuntime
         return state;
     }
 
-    internal static string ProductLabel(KitchenwareProduct product) => product switch
+    internal static string ProductTranslationKey(KitchenwareProduct product) => product switch
     {
-        KitchenwareProduct.Cookware => "cookware sets",
-        KitchenwareProduct.Plate => "plates",
-        KitchenwareProduct.Cutlery => "cutlery",
-        _ => "kitchenware"
+        KitchenwareProduct.Cookware => "ImmersiveChefs_Product_CookwarePlural",
+        KitchenwareProduct.Plate => "ImmersiveChefs_Product_Plates",
+        KitchenwareProduct.Cutlery => "ImmersiveChefs_Product_Cutlery",
+        _ => "ImmersiveChefs_Product_Kitchenware"
     };
+
+    internal static string ProductLabel(KitchenwareProduct product) =>
+        ProductTranslationKey(product).Translate();
+
+    internal static IReadOnlyList<string> MissingProductTranslationKeys(
+        IEnumerable<KitchenwareProduct> products) => products
+        .Distinct()
+        .OrderBy(product => product)
+        .Select(ProductTranslationKey)
+        .ToArray();
 
     internal static string MissingLabel(IEnumerable<KitchenwareProduct> products)
     {
-        var labels = products
-            .Distinct()
-            .OrderBy(product => product)
-            .Select(ProductLabel)
+        var labels = MissingProductTranslationKeys(products)
+            .Select(key => key.Translate().ToString())
             .ToArray();
         return labels.Length == 0
-            ? "Missing cookware sets or plates"
-            : "Missing " + string.Join(" and ", labels);
+            ? "ImmersiveChefs_AlertMissingKitchenware_DefaultLabel".Translate()
+            : "ImmersiveChefs_AlertMissingKitchenware_Label".Translate(JoinWithAnd(labels));
+    }
+
+    internal static string JoinWithAnd(IEnumerable<string> values)
+    {
+        var items = values.ToArray();
+        return items.Length switch
+        {
+            0 => string.Empty,
+            1 => items[0],
+            _ => "ImmersiveChefs_ListAnd".Translate(string.Join(", ", items.Take(items.Length - 1)), items[^1])
+        };
     }
 
     private static void CaptureRequirements(KitchenwareAlertMapState state)

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_AssistCooking.label>beim Kochen helfen</ImmersiveChefs_AssistCooking.label>
+  <ImmersiveChefs_AssistCooking.verb>beim Kochen helfen an</ImmersiveChefs_AssistCooking.verb>
+  <ImmersiveChefs_AssistCooking.gerund>hilft beim Kochen an</ImmersiveChefs_AssistCooking.gerund>
+  <ImmersiveChefs_PlateMeals.label>Mahlzeiten anrichten</ImmersiveChefs_PlateMeals.label>
+  <ImmersiveChefs_PlateMeals.verb>anrichten</ImmersiveChefs_PlateMeals.verb>
+  <ImmersiveChefs_PlateMeals.gerund>richtet Mahlzeiten an</ImmersiveChefs_PlateMeals.gerund>
+  <ImmersiveChefs_PrepareIngredients.label>Zutaten vorbereiten</ImmersiveChefs_PrepareIngredients.label>
+  <ImmersiveChefs_PrepareIngredients.verb>Zutaten vorbereiten an</ImmersiveChefs_PrepareIngredients.verb>
+  <ImmersiveChefs_PrepareIngredients.gerund>bereitet Zutaten vor an</ImmersiveChefs_PrepareIngredients.gerund>
+  <ImmersiveChefs_DoDishes.label>Geschirr spülen</ImmersiveChefs_DoDishes.label>
+  <ImmersiveChefs_DoDishes.verb>spülen</ImmersiveChefs_DoDishes.verb>
+  <ImmersiveChefs_DoDishes.gerund>spült Geschirr</ImmersiveChefs_DoDishes.gerund>
+</LanguageData>

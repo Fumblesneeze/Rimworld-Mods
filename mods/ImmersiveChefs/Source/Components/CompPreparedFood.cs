@@ -82,9 +82,15 @@ public sealed class CompPreparedFood : ThingComp
     public override string CompInspectStringExtra()
     {
         var sources = exactSourcesHidden
-            ? "nutrient paste"
-            : string.Join(", ", contributions.Select(value => value.DefName).Distinct());
-        return $"Preparation quality: {preparationQuality}/100\nSource: {sources}\nNutrition per unit: {NutritionPerItem:0.###}";
+            ? "ImmersiveChefs_PreparedSource_NutrientPaste".Translate().ToString()
+            : string.Join(", ", contributions
+                .Select(value => DefDatabase<ThingDef>.GetNamedSilentFail(value.DefName)?.LabelCap.ToString() ??
+                                 "ImmersiveChefs_PreparedSource_Unknown".Translate().ToString())
+                .Distinct());
+        return "ImmersiveChefs_PreparedFoodInspect".Translate(
+            preparationQuality,
+            sources,
+            NutritionPerItem.ToString("0.###"));
     }
 
     public override void PostExposeData()

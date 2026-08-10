@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><LanguageData>
+  <ImmersiveChefs_AssistCooking.label>协助烹饪</ImmersiveChefs_AssistCooking.label><ImmersiveChefs_AssistCooking.verb>在此协助烹饪</ImmersiveChefs_AssistCooking.verb><ImmersiveChefs_AssistCooking.gerund>正在协助烹饪</ImmersiveChefs_AssistCooking.gerund>
+  <ImmersiveChefs_PlateMeals.label>饭菜装盘</ImmersiveChefs_PlateMeals.label><ImmersiveChefs_PlateMeals.verb>装盘</ImmersiveChefs_PlateMeals.verb><ImmersiveChefs_PlateMeals.gerund>正在将饭菜装盘</ImmersiveChefs_PlateMeals.gerund>
+  <ImmersiveChefs_PrepareIngredients.label>预处理食材</ImmersiveChefs_PrepareIngredients.label><ImmersiveChefs_PrepareIngredients.verb>在此预处理食材</ImmersiveChefs_PrepareIngredients.verb><ImmersiveChefs_PrepareIngredients.gerund>正在预处理食材</ImmersiveChefs_PrepareIngredients.gerund>
+  <ImmersiveChefs_DoDishes.label>洗碗</ImmersiveChefs_DoDishes.label><ImmersiveChefs_DoDishes.verb>清洗</ImmersiveChefs_DoDishes.verb><ImmersiveChefs_DoDishes.gerund>正在洗碗</ImmersiveChefs_DoDishes.gerund>
+</LanguageData>

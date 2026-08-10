@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_CulinaryQuality.stages.0.label>糟糕的烹饪</ImmersiveChefs_CulinaryQuality.stages.0.label><ImmersiveChefs_CulinaryQuality.stages.0.description>这顿饭难吃极了。</ImmersiveChefs_CulinaryQuality.stages.0.description>
+  <ImmersiveChefs_CulinaryQuality.stages.1.label>较差的烹饪</ImmersiveChefs_CulinaryQuality.stages.1.label><ImmersiveChefs_CulinaryQuality.stages.1.description>这顿饭做得很差。</ImmersiveChefs_CulinaryQuality.stages.1.description>
+  <ImmersiveChefs_CulinaryQuality.stages.2.label>普通的烹饪</ImmersiveChefs_CulinaryQuality.stages.2.label><ImmersiveChefs_CulinaryQuality.stages.2.description>这顿饭平平无奇。</ImmersiveChefs_CulinaryQuality.stages.2.description>
+  <ImmersiveChefs_CulinaryQuality.stages.3.label>良好的烹饪</ImmersiveChefs_CulinaryQuality.stages.3.label><ImmersiveChefs_CulinaryQuality.stages.3.description>这是一顿不错的饭。</ImmersiveChefs_CulinaryQuality.stages.3.description>
+  <ImmersiveChefs_CulinaryQuality.stages.4.label>优秀的烹饪</ImmersiveChefs_CulinaryQuality.stages.4.label><ImmersiveChefs_CulinaryQuality.stages.4.description>这顿饭非常出色。</ImmersiveChefs_CulinaryQuality.stages.4.description>
+  <ImmersiveChefs_CulinaryQuality.stages.5.label>大师级烹饪</ImmersiveChefs_CulinaryQuality.stages.5.label><ImmersiveChefs_CulinaryQuality.stages.5.description>这顿饭的烹饪堪称大师之作。</ImmersiveChefs_CulinaryQuality.stages.5.description>
+  <ImmersiveChefs_CulinaryQuality.stages.6.label>传奇烹饪</ImmersiveChefs_CulinaryQuality.stages.6.label><ImmersiveChefs_CulinaryQuality.stages.6.description>这是一顿令人终生难忘的饭。</ImmersiveChefs_CulinaryQuality.stages.6.description>
+  <ImmersiveChefs_MealTemperature.stages.0.label>热气腾腾的饭菜</ImmersiveChefs_MealTemperature.stages.0.label><ImmersiveChefs_MealTemperature.stages.0.description>饭菜端上来时热气腾腾。</ImmersiveChefs_MealTemperature.stages.0.description>
+  <ImmersiveChefs_MealTemperature.stages.1.label>温热的饭菜</ImmersiveChefs_MealTemperature.stages.1.label><ImmersiveChefs_MealTemperature.stages.1.description>饭菜温热得恰到好处。</ImmersiveChefs_MealTemperature.stages.1.description>
+  <ImmersiveChefs_MealTemperature.stages.2.label>室温饭菜</ImmersiveChefs_MealTemperature.stages.2.label><ImmersiveChefs_MealTemperature.stages.2.description>饭菜不冷也不热。</ImmersiveChefs_MealTemperature.stages.2.description>
+  <ImmersiveChefs_MealTemperature.stages.3.label>冷饭</ImmersiveChefs_MealTemperature.stages.3.label><ImmersiveChefs_MealTemperature.stages.3.description>我不得不吃一顿冷饭。</ImmersiveChefs_MealTemperature.stages.3.description>
+  <ImmersiveChefs_MealTemperature.stages.4.label>冰冻饭菜</ImmersiveChefs_MealTemperature.stages.4.label><ImmersiveChefs_MealTemperature.stages.4.description>我不得不吃一顿冰冻的饭。</ImmersiveChefs_MealTemperature.stages.4.description>
+  <ImmersiveChefs_DiningExperience.stages.0.label>正规的餐具摆设</ImmersiveChefs_DiningExperience.stages.0.label><ImmersiveChefs_DiningExperience.stages.0.description>我用了正规的餐盘和餐具吃饭。</ImmersiveChefs_DiningExperience.stages.0.description>
+  <ImmersiveChefs_DiningExperience.stages.1.label>没有餐具进食</ImmersiveChefs_DiningExperience.stages.1.label><ImmersiveChefs_DiningExperience.stages.1.description>吃饭时没有餐具可用。</ImmersiveChefs_DiningExperience.stages.1.description>
+  <ImmersiveChefs_DiningExperience.stages.2.label>没有餐盘进食</ImmersiveChefs_DiningExperience.stages.2.label><ImmersiveChefs_DiningExperience.stages.2.description>吃饭时没有餐盘可用。</ImmersiveChefs_DiningExperience.stages.2.description>
+  <ImmersiveChefs_DiningExperience.stages.3.label>徒手进食</ImmersiveChefs_DiningExperience.stages.3.label><ImmersiveChefs_DiningExperience.stages.3.description>吃饭时既没有餐盘，也没有餐具。</ImmersiveChefs_DiningExperience.stages.3.description>
+  <ImmersiveChefs_DiningExperience.stages.4.label>使用脏污餐具进食</ImmersiveChefs_DiningExperience.stages.4.label><ImmersiveChefs_DiningExperience.stages.4.description>我的餐盘和餐具都是脏的。</ImmersiveChefs_DiningExperience.stages.4.description>
+  <ImmersiveChefs_DiningExperience.stages.5.label>令人失望的用餐舒适度</ImmersiveChefs_DiningExperience.stages.5.label><ImmersiveChefs_DiningExperience.stages.5.description>这套餐具没有达到我期望的舒适程度。</ImmersiveChefs_DiningExperience.stages.5.description>
+  <ImmersiveChefs_DiningExperience.stages.6.label>低档餐具</ImmersiveChefs_DiningExperience.stages.6.label><ImmersiveChefs_DiningExperience.stages.6.description>餐具的材料和工艺没有达到我的标准。</ImmersiveChefs_DiningExperience.stages.6.description>
+  <ImmersiveChefs_DiningExperience.stages.7.label>饭菜过于简单</ImmersiveChefs_DiningExperience.stages.7.label><ImmersiveChefs_DiningExperience.stages.7.description>这顿饭对于我现在的身份来说太简单了。</ImmersiveChefs_DiningExperience.stages.7.description>
+  <ImmersiveChefs_DiningExperience.stages.8.label>烹饪水准低下</ImmersiveChefs_DiningExperience.stages.8.label><ImmersiveChefs_DiningExperience.stages.8.description>烹饪质量没有达到我现在的期望。</ImmersiveChefs_DiningExperience.stages.8.description>
+  <ImmersiveChefs_DiningExperience.stages.9.label>多项用餐标准未达成</ImmersiveChefs_DiningExperience.stages.9.label><ImmersiveChefs_DiningExperience.stages.9.description>整次用餐体验都配不上我的标准。</ImmersiveChefs_DiningExperience.stages.9.description>
+</LanguageData>

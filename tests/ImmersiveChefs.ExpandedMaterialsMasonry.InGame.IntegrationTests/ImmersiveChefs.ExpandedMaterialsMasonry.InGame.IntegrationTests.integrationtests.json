@@ -1,0 +1,14 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.ExpandedMaterialsMasonry.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "brrainz.harmony",
+    "ludeon.rimworld",
+    "argon.corelib",
+    "oskarpotocki.vanillafactionsexpanded.core",
+    "argon.expandedmaterials.masonry",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_CulinaryQuality.stages.0.label>grauenhaft gekocht</ImmersiveChefs_CulinaryQuality.stages.0.label>
+  <ImmersiveChefs_CulinaryQuality.stages.0.description>Diese Mahlzeit war entsetzlich.</ImmersiveChefs_CulinaryQuality.stages.0.description>
+  <ImmersiveChefs_CulinaryQuality.stages.1.label>schlecht gekocht</ImmersiveChefs_CulinaryQuality.stages.1.label>
+  <ImmersiveChefs_CulinaryQuality.stages.1.description>Diese Mahlzeit war schlecht zubereitet.</ImmersiveChefs_CulinaryQuality.stages.1.description>
+  <ImmersiveChefs_CulinaryQuality.stages.2.label>gewöhnlich gekocht</ImmersiveChefs_CulinaryQuality.stages.2.label>
+  <ImmersiveChefs_CulinaryQuality.stages.2.description>Diese Mahlzeit war unauffällig.</ImmersiveChefs_CulinaryQuality.stages.2.description>
+  <ImmersiveChefs_CulinaryQuality.stages.3.label>gut gekocht</ImmersiveChefs_CulinaryQuality.stages.3.label>
+  <ImmersiveChefs_CulinaryQuality.stages.3.description>Das war eine gute Mahlzeit.</ImmersiveChefs_CulinaryQuality.stages.3.description>
+  <ImmersiveChefs_CulinaryQuality.stages.4.label>ausgezeichnet gekocht</ImmersiveChefs_CulinaryQuality.stages.4.label>
+  <ImmersiveChefs_CulinaryQuality.stages.4.description>Diese Mahlzeit war ausgezeichnet.</ImmersiveChefs_CulinaryQuality.stages.4.description>
+  <ImmersiveChefs_CulinaryQuality.stages.5.label>meisterhaft gekocht</ImmersiveChefs_CulinaryQuality.stages.5.label>
+  <ImmersiveChefs_CulinaryQuality.stages.5.description>Diese Mahlzeit war meisterhaft zubereitet.</ImmersiveChefs_CulinaryQuality.stages.5.description>
+  <ImmersiveChefs_CulinaryQuality.stages.6.label>legendär gekocht</ImmersiveChefs_CulinaryQuality.stages.6.label>
+  <ImmersiveChefs_CulinaryQuality.stages.6.description>Das war eine unvergessliche Mahlzeit.</ImmersiveChefs_CulinaryQuality.stages.6.description>
+  <ImmersiveChefs_MealTemperature.stages.0.label>dampfend heiße Mahlzeit</ImmersiveChefs_MealTemperature.stages.0.label>
+  <ImmersiveChefs_MealTemperature.stages.0.description>Die Mahlzeit wurde dampfend heiß serviert.</ImmersiveChefs_MealTemperature.stages.0.description>
+  <ImmersiveChefs_MealTemperature.stages.1.label>warme Mahlzeit</ImmersiveChefs_MealTemperature.stages.1.label>
+  <ImmersiveChefs_MealTemperature.stages.1.description>Die Mahlzeit war angenehm warm.</ImmersiveChefs_MealTemperature.stages.1.description>
+  <ImmersiveChefs_MealTemperature.stages.2.label>zimmerwarme Mahlzeit</ImmersiveChefs_MealTemperature.stages.2.label>
+  <ImmersiveChefs_MealTemperature.stages.2.description>Die Mahlzeit war weder warm noch kalt.</ImmersiveChefs_MealTemperature.stages.2.description>
+  <ImmersiveChefs_MealTemperature.stages.3.label>kalte Mahlzeit</ImmersiveChefs_MealTemperature.stages.3.label>
+  <ImmersiveChefs_MealTemperature.stages.3.description>Ich musste eine kalte Mahlzeit essen.</ImmersiveChefs_MealTemperature.stages.3.description>
+  <ImmersiveChefs_MealTemperature.stages.4.label>gefrorene Mahlzeit</ImmersiveChefs_MealTemperature.stages.4.label>
+  <ImmersiveChefs_MealTemperature.stages.4.description>Ich musste eine gefrorene Mahlzeit essen.</ImmersiveChefs_MealTemperature.stages.4.description>
+  <ImmersiveChefs_DiningExperience.stages.0.label>ordentliches Gedeck</ImmersiveChefs_DiningExperience.stages.0.label>
+  <ImmersiveChefs_DiningExperience.stages.0.description>Ich aß mit einem ordentlichen Teller und Besteck.</ImmersiveChefs_DiningExperience.stages.0.description>
+  <ImmersiveChefs_DiningExperience.stages.1.label>ohne Besteck gegessen</ImmersiveChefs_DiningExperience.stages.1.label>
+  <ImmersiveChefs_DiningExperience.stages.1.description>Ich hatte kein Besteck für meine Mahlzeit.</ImmersiveChefs_DiningExperience.stages.1.description>
+  <ImmersiveChefs_DiningExperience.stages.2.label>ohne Teller gegessen</ImmersiveChefs_DiningExperience.stages.2.label>
+  <ImmersiveChefs_DiningExperience.stages.2.description>Ich hatte keinen Teller für meine Mahlzeit.</ImmersiveChefs_DiningExperience.stages.2.description>
+  <ImmersiveChefs_DiningExperience.stages.3.label>ohne Geschirr gegessen</ImmersiveChefs_DiningExperience.stages.3.label>
+  <ImmersiveChefs_DiningExperience.stages.3.description>Ich hatte weder Teller noch Besteck.</ImmersiveChefs_DiningExperience.stages.3.description>
+  <ImmersiveChefs_DiningExperience.stages.4.label>mit schmutzigem Geschirr gegessen</ImmersiveChefs_DiningExperience.stages.4.label>
+  <ImmersiveChefs_DiningExperience.stages.4.description>Mein Gedeck war schmutzig.</ImmersiveChefs_DiningExperience.stages.4.description>
+  <ImmersiveChefs_DiningExperience.stages.5.label>enttäuschender Esskomfort</ImmersiveChefs_DiningExperience.stages.5.label>
+  <ImmersiveChefs_DiningExperience.stages.5.description>Mein Gedeck war weniger angenehm, als ich erwarte.</ImmersiveChefs_DiningExperience.stages.5.description>
+  <ImmersiveChefs_DiningExperience.stages.6.label>minderwertiges Geschirr</ImmersiveChefs_DiningExperience.stages.6.label>
+  <ImmersiveChefs_DiningExperience.stages.6.description>Material und Verarbeitung meines Geschirrs genügten meinen Ansprüchen nicht.</ImmersiveChefs_DiningExperience.stages.6.description>
+  <ImmersiveChefs_DiningExperience.stages.7.label>Mahlzeit zu einfach</ImmersiveChefs_DiningExperience.stages.7.label>
+  <ImmersiveChefs_DiningExperience.stages.7.description>Diese Mahlzeit war für meinen derzeitigen Rang zu einfach.</ImmersiveChefs_DiningExperience.stages.7.description>
+  <ImmersiveChefs_DiningExperience.stages.8.label>schlechter kulinarischer Standard</ImmersiveChefs_DiningExperience.stages.8.label>
+  <ImmersiveChefs_DiningExperience.stages.8.description>Die Kochqualität entsprach nicht meinen derzeitigen Erwartungen.</ImmersiveChefs_DiningExperience.stages.8.description>
+  <ImmersiveChefs_DiningExperience.stages.9.label>mehrere Essstandards verfehlt</ImmersiveChefs_DiningExperience.stages.9.label>
+  <ImmersiveChefs_DiningExperience.stages.9.description>Dieses gesamte Esserlebnis lag unter meinen Ansprüchen.</ImmersiveChefs_DiningExperience.stages.9.description>
+</LanguageData>

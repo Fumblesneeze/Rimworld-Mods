@@ -826,7 +826,13 @@ internal static class HandwashingE2EFixture
                     pawn.timetable?.SetAssignment(hour, TimeAssignmentDefOf.Work);
                 }
 
-                pawn.workSettings.SetPriority(WorkTypeDefOf.Cleaning, 0);
+                foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+                {
+                    if (!pawn.WorkTypeIsDisabled(workType))
+                    {
+                        pawn.workSettings.SetPriority(workType, 0);
+                    }
+                }
                 return pawn;
             }
 

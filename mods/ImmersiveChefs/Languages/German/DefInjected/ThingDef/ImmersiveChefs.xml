@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_SauceStation.label>Saucenstation</ImmersiveChefs_SauceStation.label>
+  <ImmersiveChefs_SauceStation.description>Eine verbundene Spezialstation für Saucen, Würzen und den letzten Schliff.</ImmersiveChefs_SauceStation.description>
+  <ImmersiveChefs_MeatStation.label>Fleischstation</ImmersiveChefs_MeatStation.label>
+  <ImmersiveChefs_MeatStation.description>Eine verbundene Spezialstation zum Parieren von Fleisch und zur gleichzeitigen Vorbereitung.</ImmersiveChefs_MeatStation.description>
+  <ImmersiveChefs_VegetableStation.label>Gemüsestation</ImmersiveChefs_VegetableStation.label>
+  <ImmersiveChefs_VegetableStation.description>Eine verbundene Spezialstation zur Gemüsevorbereitung und zum Garnieren.</ImmersiveChefs_VegetableStation.description>
+  <ImmersiveChefs_PastryStation.label>Backstation</ImmersiveChefs_PastryStation.label>
+  <ImmersiveChefs_PastryStation.description>Eine verbundene Spezialstation für Teig, Gebäck und Desserts.</ImmersiveChefs_PastryStation.description>
+  <ImmersiveChefs_Dishwasher.label>Spülmaschine</ImmersiveChefs_Dishwasher.label>
+  <ImmersiveChefs_Dishwasher.description>Eine elektrische Haushaltsspülmaschine. Sie bewahrt Identität, Material, Qualität und Haltbarkeit von bis zu 16 Gedecken, während ihr Spülgang Stromausfälle sicher überdauert.</ImmersiveChefs_Dishwasher.description>
+  <ImmersiveChefs_IndustrialDishwasher.label>Industriespülmaschine</ImmersiveChefs_IndustrialDishwasher.label>
+  <ImmersiveChefs_IndustrialDishwasher.description>Eine leistungsstarke elektrische Spülmaschine mit Platz für 64 Gedecke.</ImmersiveChefs_IndustrialDishwasher.description>
+  <ImmersiveChefs_PrimitiveCookware.label>primitives Stein-Kochgeschirrset</ImmersiveChefs_PrimitiveCookware.label>
+  <ImmersiveChefs_PrimitiveCookware.description>Ein grob gehauener Steintopf, eine flache Pfanne und Deckel mit einfachen Holzgriffen und Utensilien. Dieses vollständige primitive Set ist langsam, zerbrechlich und schwer sauber zu halten.</ImmersiveChefs_PrimitiveCookware.description>
+  <ImmersiveChefs_Cookware.label>Kochgeschirrset</ImmersiveChefs_Cookware.label>
+  <ImmersiveChefs_Cookware.description>Ein vollständiges wiederverwendbares Küchenset aus Topf, Pfanne, Deckeln, Griffen und kleinen Utensilien. Material und Verarbeitung beeinflussen Kochgeschwindigkeit, Sauberkeit, Komfort und kulinarische Qualität.</ImmersiveChefs_Cookware.description>
+  <ImmersiveChefs_Plate.label>Teller</ImmersiveChefs_Plate.label>
+  <ImmersiveChefs_Plate.description>Ein wiederverwendbarer Teller für eine Mahlzeitenportion. Material und Verarbeitung beeinflussen Esskomfort, Essgeschwindigkeit und Hygiene.</ImmersiveChefs_Plate.description>
+  <ImmersiveChefs_AdobePlate.label>Lehmteller</ImmersiveChefs_AdobePlate.label>
+  <ImmersiveChefs_AdobePlate.description>Ein grober Teller aus Lehmziegeln. Er ist porös, zerbrechlich und äußerst schwer sauber zu halten.</ImmersiveChefs_AdobePlate.description>
+  <ImmersiveChefs_Cutlery.label>Besteckset</ImmersiveChefs_Cutlery.label>
+  <ImmersiveChefs_Cutlery.description>Ein wiederverwendbares Set aus Gabel, Löffel und Messer für eine Person. Material und Verarbeitung beeinflussen Esskomfort und Hygiene.</ImmersiveChefs_Cutlery.description>
+  <ImmersiveChefs_GlitterworldCookware.label>Glitzerwelt-Kochgeschirrset</ImmersiveChefs_GlitterworldCookware.label>
+  <ImmersiveChefs_GlitterworldCookware.description>Ein selbstreinigendes, nicht brennbares Kochgeschirrset aus einer Glitzerwelt. Es kann nicht vor Ort hergestellt werden.</ImmersiveChefs_GlitterworldCookware.description>
+  <ImmersiveChefs_ChefsKnife.label>Kochmesserset</ImmersiveChefs_ChefsKnife.label>
+  <ImmersiveChefs_ChefsKnife.description>Ein persönliches Set aus Kochmessern. Es wird am Werkzeuggürtel getragen und verbessert die Küchenarbeit, ohne eine Waffe zu ersetzen.</ImmersiveChefs_ChefsKnife.description>
+  <ImmersiveChefs_PreparedFood.label>vorbereitete Zutaten</ImmersiveChefs_PreparedFood.label>
+  <ImmersiveChefs_PreparedFood.description>Geschnittene, parierte und portionierte Zutaten für die abschließende Zubereitung. Die Inspektion zeigt Nährwert, Herkunft und Vorbereitungsqualität.</ImmersiveChefs_PreparedFood.description>
+  <ImmersiveChefs_PrepStation.label>Zutaten-Vorbereitungsstation</ImmersiveChefs_PrepStation.label>
+  <ImmersiveChefs_PrepStation.description>Ein professioneller Arbeitstisch zum Waschen, Parieren, Schneiden und Portionieren von Zutaten vor dem Kochen.</ImmersiveChefs_PrepStation.description>
+  <ImmersiveChefs_Microwave.label>Mikrowelle</ImmersiveChefs_Microwave.label>
+  <ImmersiveChefs_Microwave.description>Ein kompaktes Elektrogerät, das eine kalte Mahlzeit auf einem Teller vor dem Essen erwärmt. Das Aufwärmen stellt die Temperatur auf Kosten etwas kulinarischer Qualität und Sicherheit wieder her.</ImmersiveChefs_Microwave.description>
+</LanguageData>

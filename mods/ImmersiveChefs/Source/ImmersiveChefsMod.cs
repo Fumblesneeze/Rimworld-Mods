@@ -51,7 +51,7 @@ public sealed class ImmersiveChefsMod : Mod
 
     public override string SettingsCategory()
     {
-        return "Immersive Chefs";
+        return "ImmersiveChefs_SettingsCategory".Translate();
     }
 
     public override void DoSettingsWindowContents(UnityEngine.Rect inRect)

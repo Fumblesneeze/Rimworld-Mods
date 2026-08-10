@@ -41,17 +41,19 @@ public sealed class CompKitchenwareStats : ThingComp
         var product = parent.def.GetModExtension<KitchenwareExtension>()?.product ?? KitchenwareProduct.Plate;
         var lines = new List<string>
         {
-            $"Kitchen cleanliness: {stats.MaterialCleanliness:0}",
-            $"{(product is KitchenwareProduct.Cookware or KitchenwareProduct.ChefsKnife ? "Kitchen" : "Dining")} comfort: {stats.Comfort:P0}"
+            "ImmersiveChefs_Stat_KitchenCleanlinessValue".Translate(stats.MaterialCleanliness.ToString("0")),
+            (product is KitchenwareProduct.Cookware or KitchenwareProduct.ChefsKnife
+                ? "ImmersiveChefs_Stat_KitchenComfortValue"
+                : "ImmersiveChefs_Stat_DiningComfortValue").Translate(stats.Comfort.ToString("P0"))
         };
         if (product is KitchenwareProduct.Cookware or KitchenwareProduct.ChefsKnife)
         {
-            lines.Add($"Cooking speed factor: {stats.CookingSpeedFactor:P0}");
-            lines.Add($"Culinary quality modifier: {stats.CulinaryQualityModifier:+0;-0;0}");
+            lines.Add("ImmersiveChefs_Stat_CookingSpeedValue".Translate(stats.CookingSpeedFactor.ToString("P0")));
+            lines.Add("ImmersiveChefs_Stat_CulinaryModifierValue".Translate(stats.CulinaryQualityModifier.ToString("+0;-0;0")));
         }
         else if (product == KitchenwareProduct.Plate)
         {
-            lines.Add($"Eating speed factor: {stats.CookingSpeedFactor:P0}");
+            lines.Add("ImmersiveChefs_Stat_EatingSpeedValue".Translate(stats.CookingSpeedFactor.ToString("P0")));
         }
 
         return string.Join("\n", lines);
@@ -61,19 +63,21 @@ public sealed class CompKitchenwareStats : ThingComp
     {
         var stats = Calculate();
         var product = parent.def.GetModExtension<KitchenwareExtension>()?.product ?? KitchenwareProduct.Plate;
-        yield return Entry("Kitchen cleanliness", stats.MaterialCleanliness.ToString("0"), 3100);
+        yield return Entry("ImmersiveChefs_Stat_KitchenCleanliness".Translate(), stats.MaterialCleanliness.ToString("0"), 3100);
         yield return Entry(
-            product is KitchenwareProduct.Cookware or KitchenwareProduct.ChefsKnife ? "Kitchen comfort" : "Dining comfort",
+            (product is KitchenwareProduct.Cookware or KitchenwareProduct.ChefsKnife
+                ? "ImmersiveChefs_Stat_KitchenComfort"
+                : "ImmersiveChefs_Stat_DiningComfort").Translate(),
             stats.Comfort.ToString("P0"),
             3090);
         if (product is KitchenwareProduct.Cookware or KitchenwareProduct.ChefsKnife)
         {
-            yield return Entry("Cooking speed factor", stats.CookingSpeedFactor.ToString("P0"), 3080);
-            yield return Entry("Culinary quality modifier", stats.CulinaryQualityModifier.ToString("+0;-0;0"), 3070);
+            yield return Entry("ImmersiveChefs_Stat_CookingSpeed".Translate(), stats.CookingSpeedFactor.ToString("P0"), 3080);
+            yield return Entry("ImmersiveChefs_Stat_CulinaryModifier".Translate(), stats.CulinaryQualityModifier.ToString("+0;-0;0"), 3070);
         }
         else if (product == KitchenwareProduct.Plate)
         {
-            yield return Entry("Eating speed factor", stats.CookingSpeedFactor.ToString("P0"), 3080);
+            yield return Entry("ImmersiveChefs_Stat_EatingSpeed".Translate(), stats.CookingSpeedFactor.ToString("P0"), 3080);
         }
     }
 
@@ -111,7 +115,7 @@ public sealed class CompKitchenwareStats : ThingComp
             StatCategoryDefOf.BasicsNonPawn,
             label,
             value,
-            "Immersive Chefs derives this value from material and crafting quality.",
+            "ImmersiveChefs_Stat_Explanation".Translate(),
             priority);
     }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_AllowCleanKitchenware.label>utensilios de cocina limpios</ImmersiveChefs_AllowCleanKitchenware.label>
+  <ImmersiveChefs_AllowCleanKitchenware.description>Permite baterías de cocina, platos y cubiertos limpios, incluidos los lavados con agua natural.</ImmersiveChefs_AllowCleanKitchenware.description>
+  <ImmersiveChefs_AllowDirtyKitchenware.label>utensilios de cocina sucios</ImmersiveChefs_AllowDirtyKitchenware.label>
+  <ImmersiveChefs_AllowDirtyKitchenware.description>Permite baterías de cocina, platos y cubiertos que necesitan lavarse.</ImmersiveChefs_AllowDirtyKitchenware.description>
+</LanguageData>
