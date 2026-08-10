@@ -61,11 +61,24 @@ Keep `About/Preview.png` at 640×360 PNG and below 1 MiB. Treat the 1280×720 Wo
 repository's authoring/export contract; verify the upload service's current byte and format rules
 again when publishing because they are external rather than a RimWorld Def contract.
 
-The centered build was visually preflighted in RimWorld's native Mods screen at 1600×900 in
-`artifacts/GatewaySmoke/20260810T094442300Z`; the complete image was uncropped and both labels were
-legible. That run is deliberately not final acceptance evidence because it exposed the launcher's
-obsolete Core-before-Harmony order. OpenSpec task 11.9 remains open until the reviewed asset is
-reobserved in a fresh Harmony-before-Core process.
+The centered build was finally inspected in RimWorld's native Mods screen at 1600×900 in
+`artifacts/GatewaySmoke/20260810T102100000Z-harmony-preview-final/20260810T104439749Z`. The exact
+visible process loaded Harmony, Core, Immersive Chefs, and the Dev Gateway in that order; the
+complete preview was uncropped, `YOU DONKEY!` was centered in its speech bubble, and the native
+metadata panel showed `Author: Fumblesneeze` and `ID: fumblesneeze.immersivechefs`. The run binds
+that view to product DLL SHA-256
+`B5CFE3A09C9158338F48106F12A2A88B074C39C012ACF97F7F1F4B464E48B9E1`, About preview SHA-256
+`2C0F3B30588810F91C006FEC47AB9E6BD1576AD92E46F03ED167B5880A63E4B9`; it exited cleanly and
+restored both normal configuration hashes. RimWorld does not load the separate Workshop master;
+its SHA-256 `B61BC0C7E4C626C0C7643278C077466FCEF8BCDBB23092897550490004CDB936` is instead bound to the
+same centered source/layout by the deterministic focused asset test and committed build output. A
+second exact Harmony-first developer-mode process at
+`artifacts/GatewaySmoke/20260810T-final-console-harmony-first-2/20260810T104837321Z` visibly
+inspected the native debug log: Immersive Chefs initialized normally with no product warning or
+exception. Yellow metadata warnings belonged to unrelated downloaded-but-disabled mods, while the
+active Gateway emitted only its intentional unrestricted-execution warning. OpenSpec task 11.9
+remains open for its broader final-build crafting, trade, visitor, cooking, washing, and dining
+workflows; the preview slice itself is accepted on the reviewed build.
 
 ## Cookware set
 
