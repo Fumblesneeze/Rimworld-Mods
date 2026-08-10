@@ -62,23 +62,40 @@ repository's authoring/export contract; verify the upload service's current byte
 again when publishing because they are external rather than a RimWorld Def contract.
 
 The centered build was finally inspected in RimWorld's native Mods screen at 1600×900 in
-`artifacts/GatewaySmoke/20260810T102100000Z-harmony-preview-final/20260810T104439749Z`. The exact
-visible process loaded Harmony, Core, Immersive Chefs, and the Dev Gateway in that order; the
+`artifacts/GatewaySmoke/20260810T-current-final-preview-135/20260810T175453038Z`. The exact visible,
+non-maximized process loaded Harmony, Core, Immersive Chefs, and the Dev Gateway in that order; the
 complete preview was uncropped, `YOU DONKEY!` was centered in its speech bubble, and the native
 metadata panel showed `Author: Fumblesneeze` and `ID: fumblesneeze.immersivechefs`. The run binds
-that view to product DLL SHA-256
-`B5CFE3A09C9158338F48106F12A2A88B074C39C012ACF97F7F1F4B464E48B9E1`, About preview SHA-256
-`2C0F3B30588810F91C006FEC47AB9E6BD1576AD92E46F03ED167B5880A63E4B9`; it exited cleanly and
-restored both normal configuration hashes. RimWorld does not load the separate Workshop master;
-its SHA-256 `B61BC0C7E4C626C0C7643278C077466FCEF8BCDBB23092897550490004CDB936` is instead bound to the
-same centered source/layout by the deterministic focused asset test and committed build output. A
-second exact Harmony-first developer-mode process at
-`artifacts/GatewaySmoke/20260810T-final-console-harmony-first-2/20260810T104837321Z` visibly
-inspected the native debug log: Immersive Chefs initialized normally with no product warning or
-exception. Yellow metadata warnings belonged to unrelated downloaded-but-disabled mods, while the
-active Gateway emitted only its intentional unrestricted-execution warning. OpenSpec task 11.9
-remains open for its broader final-build crafting, trade, visitor, cooking, washing, and dining
-workflows; the preview slice itself is accepted on the reviewed build.
+that view to final reviewed product DLL SHA-256
+`1354240F7F31A1208C21299E70F3A8A96DB4AD078818EB2CBF3869355DFF7BD2`, About preview SHA-256
+`2C0F3B30588810F91C006FEC47AB9E6BD1576AD92E46F03ED167B5880A63E4B9`; it exited through the
+native window-close path with exit code zero, sanitized the Gateway credential, and restored both
+normal configuration hashes. Its retained Gateway log contains only the expected unrestricted-
+execution security warning and no unexpected warning or error. RimWorld does
+not load the separate Workshop master; its SHA-256
+`B61BC0C7E4C626C0C7643278C077466FCEF8BCDBB23092897550490004CDB936` is instead bound to the same
+centered source/layout by the deterministic focused asset test and committed build output.
+
+The final minimal player-workflow acceptance run is
+`artifacts/EndToEndRuns/Grouped/20260810T-current-final-135/20260810T175016221Z`. Its six sequential native scenarios cover the
+current-build crafting, trader stock and purchase, visitor dining and exact personal ware return,
+cook-owned washing, force-dirty cooking, food-poisoning cause, toxic-ware ingestion, primitive art,
+and player-facing inspection surfaces. All six passed on the same product DLL, their 38 causal
+screenshots were personally inspected, and no Immersive Chefs warning or error appeared. Its only
+structured warning was the Dev Gateway's intentional unrestricted-execution notice. Cleanup
+restored the normal mod-list and preference hashes and removed the exact staged E2E bundles.
+
+The required optional-material workflow ran on that same DLL in
+`artifacts/GatewaySmoke/20260810T-current-final-expanded-materials-console/20260810T174058503Z`.
+The exact active order was Harmony, Core, Argonic Core, Vanilla Expanded Framework, Expanded
+Materials - Masonry, Expanded Materials - Metals, Immersive Chefs, and Gateway. Native one-shot
+bills visibly progressed and produced wooden, adobe, and silver kitchenware; the selected adobe
+plate's native inspector showed its completed four-unit stack and material profile. The native
+developer console was opened and personally inspected in the same process: it showed both Expanded
+Materials integrations initialized, no error, the expected Gateway warnings, and metadata warnings
+belonging to unrelated downloaded-but-disabled mods. The process exited natively, sanitized its
+credential, and restored both normal configuration hashes. The final preview run skipped deployment;
+retained before/after hashes prove that it used the same `1354240F...F7BD2` DLL.
 
 ## Cookware set
 
