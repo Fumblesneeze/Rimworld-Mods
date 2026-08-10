@@ -19,13 +19,14 @@ When its fallback Def is active, the microwave artwork SHALL depict only a compa
 - **THEN** none of those Defs points at its former vanilla placeholder
 
 ### Requirement: The mod has game and Workshop preview artwork
-The release SHALL include `About/Preview.png` as a 640x360, 16:9 PNG below 1 MiB for RimWorld's mod list. It SHALL also retain a 1280x720, 16:9 Workshop preview master below 1 MiB in the release-source area, from which the About preview is deterministically downscaled. Both SHALL depict a recognizable angry celebrity-chef-inspired RimWorld pawn shouting through a speech bubble containing the exact text `YOU DONKEY!`, with a large, legible `IMMERSIVE CHEFS` banner. The composition SHALL be an original RimWorld-style parody illustration rather than copied television photography or meme raster, and the exact title/bubble text SHALL be applied deterministically after image generation so spelling and safe margins are testable.
+The release SHALL include `About/Preview.png` as a 640x360, 16:9 PNG below 1 MiB for RimWorld's mod list. It SHALL also retain a 1280x720, 16:9 Workshop preview master below 1 MiB in the release-source area, from which the About preview is deterministically downscaled. Both SHALL depict a recognizable angry celebrity-chef-inspired RimWorld pawn shouting through a speech bubble containing the exact text `YOU DONKEY!`, with a large, legible `IMMERSIVE CHEFS` banner. The bubble text's visible bounds SHALL be horizontally and vertically centered within the body of the speech bubble with balanced white space. The composition SHALL be an original RimWorld-style parody illustration rather than copied television photography or meme raster, and the exact title/bubble text SHALL be applied deterministically after image generation so spelling, centering, and safe margins are testable.
 
 At least two generated compositions SHALL be compared at both final sizes. The selected image SHALL keep the pawn, speech bubble, banner, and kitchen context readable in RimWorld's mod list without cropping, tiny text, or misleading gameplay imagery. Rejected candidates SHALL remain in ignored evidence paths and only the selected preview files SHALL enter release sources/package.
 
 #### Scenario: Browse Immersive Chefs in the mod list
 - **WHEN** the player selects Immersive Chefs in RimWorld's native Mods screen
 - **THEN** the 640x360 preview visibly shows the chef pawn, exact `YOU DONKEY!` bubble, and `IMMERSIVE CHEFS` banner without clipping or unreadable text
+- **AND** `YOU DONKEY!` is centered horizontally and vertically in the speech-bubble body rather than crowding one edge
 
 #### Scenario: Validate the Workshop preview source
 - **WHEN** release package tests inspect the 1280x720 master and 640x360 About derivative

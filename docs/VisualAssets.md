@@ -42,14 +42,14 @@ competes with the mod premise. The unselected comparison remains under ignored
 `artifacts/VisualAssets/Preview`.
 
 `scripts/Build-ImmersiveChefsPreview.ps1` owns the text, not the generator. It reproducibly writes
-`YOU DONKEY!` into the bubble and `IMMERSIVE CHEFS` into the banner, producing a 1280×720 Workshop
+`YOU DONKEY!` into the horizontal and vertical center of the bubble and `IMMERSIVE CHEFS` into the banner, producing a 1280×720 Workshop
 master and a 640×360 RimWorld `About/Preview.png`. Both are palette-compressed PNGs below 1 MiB.
 The exact Workshop master is an internal 16:9 authoring choice; Valve's UGC API fixes the image
 preview ceiling below 1 MiB but does not prescribe that exact pixel size. The 640×360 About image
 matches the most common 16:9 size in the first 100 locally installed RimWorld preview files. The
 deterministic output hashes are
-`5C8E8CF3671F6F4F105A5385AED75D44D7D0A4A9F9C8056EBE7A5225CA269B91` (Workshop) and
-`99DDC17E8592822CEE25BED497EE275691E8BE1FA38C936D2405D3F960F10578` (About).
+`B61BC0C7E4C626C0C7643278C077466FCEF8BCDBB23092897550490004CDB936` (Workshop) and
+`2C0F3B30588810F91C006FEC47AB9E6BD1576AD92E46F03ED167B5880A63E4B9` (About).
 
 Rebuild both previews from the selected source without editing the generated PNGs:
 
@@ -61,14 +61,11 @@ Keep `About/Preview.png` at 640×360 PNG and below 1 MiB. Treat the 1280×720 Wo
 repository's authoring/export contract; verify the upload service's current byte and format rules
 again when publishing because they are external rather than a RimWorld Def contract.
 
-Final native inspection used the exact Core/Harmony/Immersive Chefs/Dev Gateway package order in
-`artifacts/GatewaySmoke/20260810T000531403Z/20260810T000532068Z`. The selected Immersive Chefs row
-showed the complete 16:9 image without cropping: chef, apprentice, ruined meal, `YOU DONKEY!`, and
-`IMMERSIVE CHEFS` were all legible at 1600×900. The same run packaged product DLL SHA-256
-`8ACE7D039A56D1F878E0A760BF867A19F4DB4D24D4694ACA3490648EF72FF030`, completed with exit code 0,
-restored the normal configuration hashes, sanitized its credentials, and contained no error or
-warning lines in `Player.log` beyond the separately captured intentional Dev Gateway activation
-warning in the structured stream.
+The centered build was visually preflighted in RimWorld's native Mods screen at 1600×900 in
+`artifacts/GatewaySmoke/20260810T094442300Z`; the complete image was uncropped and both labels were
+legible. That run is deliberately not final acceptance evidence because it exposed the launcher's
+obsolete Core-before-Harmony order. OpenSpec task 11.9 remains open until the reviewed asset is
+reobserved in a fresh Harmony-before-Core process.
 
 ## Cookware set
 

@@ -78,7 +78,7 @@ try {
         '-stroke', '#fff3dc',
         '-strokewidth', '1',
         '-gravity', 'northeast',
-        '-annotate', '+105+72',
+        '-annotate', '+205+92',
         'YOU DONKEY!',
         '-font', 'Impact',
         '-pointsize', '92',

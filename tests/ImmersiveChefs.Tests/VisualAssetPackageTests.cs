@@ -726,6 +726,14 @@ public sealed class VisualAssetPackageTests
 
         AssertPreview(workshopPath, 1280, 720);
         AssertPreview(aboutPath, 640, 360);
+        AssertSpeechBubbleTextCentered(
+            workshopPath,
+            new Rectangle(620, 40, 552, 162),
+            maximumCenterOffset: 4.0);
+        AssertSpeechBubbleTextCentered(
+            aboutPath,
+            new Rectangle(310, 20, 276, 81),
+            maximumCenterOffset: 2.0);
 
         var temporaryRoot = Path.Combine(
             TestContext.CurrentContext.WorkDirectory,
@@ -1725,6 +1733,58 @@ public sealed class VisualAssetPackageTests
             Assert.That(bitmap.Width, Is.EqualTo(expectedWidth), path);
             Assert.That(bitmap.Height, Is.EqualTo(expectedHeight), path);
             Assert.That(new FileInfo(path).Length, Is.LessThan(1024 * 1024), path);
+        });
+    }
+
+    private static void AssertSpeechBubbleTextCentered(
+        string path,
+        Rectangle bubbleInterior,
+        double maximumCenterOffset)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        using var bitmap = new Bitmap(path);
+        var minimumX = int.MaxValue;
+        var minimumY = int.MaxValue;
+        var maximumX = int.MinValue;
+        var maximumY = int.MinValue;
+        for (var y = bubbleInterior.Top; y < bubbleInterior.Bottom; y++)
+        {
+            for (var x = bubbleInterior.Left; x < bubbleInterior.Right; x++)
+            {
+                var pixel = bitmap.GetPixel(x, y);
+                if (pixel.R >= 180 || pixel.G >= 180 || pixel.B >= 180)
+                {
+                    continue;
+                }
+
+                minimumX = Math.Min(minimumX, x);
+                minimumY = Math.Min(minimumY, y);
+                maximumX = Math.Max(maximumX, x);
+                maximumY = Math.Max(maximumY, y);
+            }
+        }
+
+        Assert.That(maximumX, Is.GreaterThanOrEqualTo(minimumX), "No dark bubble text was found in " + path);
+        Assert.That(maximumY, Is.GreaterThanOrEqualTo(minimumY), "No dark bubble text was found in " + path);
+        var textCenterX = (minimumX + maximumX) / 2.0;
+        var textCenterY = (minimumY + maximumY) / 2.0;
+        var bubbleCenterX = bubbleInterior.Left + (bubbleInterior.Width - 1) / 2.0;
+        var bubbleCenterY = bubbleInterior.Top + (bubbleInterior.Height - 1) / 2.0;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                Math.Abs(textCenterX - bubbleCenterX),
+                Is.LessThanOrEqualTo(maximumCenterOffset),
+                $"Speech-bubble text is not horizontally centered in {path}.");
+            Assert.That(
+                Math.Abs(textCenterY - bubbleCenterY),
+                Is.LessThanOrEqualTo(maximumCenterOffset),
+                $"Speech-bubble text is not vertically centered in {path}.");
         });
     }
 
