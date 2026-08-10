@@ -12,6 +12,8 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - Specify culinary quality, temperature, reheating, poisoning risk, dining thoughts, expectations, and Royalty standards.
 - Specify caravan cooling and reusable tableware, guest and Hospitality ware sourcing, child and patient feeding, wild-water sanitation provenance, missing-cutlery dirt, and clean/dirty stockpile filters.
 - Specify optional integrations for the locally installed material, hygiene, restaurant, dispenser/printer, recipe-replacement, food-selection, storage, variety, and meal-content ecosystem without making them hard dependencies.
+- Specify an absent-safe Pick Up And Haul integration that gathers a nearby hand-washing batch, washes each physical dish separately, and returns the clean batch through that mod's tracked inventory/unload workflow.
+- Make every distributed Immersive Chefs player-facing string localizable and ship complete context-authored English, German, Spanish, French, Simplified Chinese, and Russian catalogs guarded by the repository release checks.
 - Specify player-facing settings and safe emergency fallbacks so the simulation cannot deadlock or starve pawns.
 - Specify `Dishwashing` and `Professional Kitchens` research while leaving ordinary tableware progression to the crafting spot, smithies, and machining table.
 - Replace every player-visible placeholder texture with selected custom art, require multiple candidates per asset, compare candidates at game scale against RimWorld's live visual context, and ship only the selected alpha-clean result.
@@ -33,6 +35,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - `dining-standards`: Cutlery acquisition, expectations, Royalty requirements, comfort, and unmet-standard thoughts.
 - `optional-gameplay-integrations`: Package-ID-gated compatibility behavior for the supported local mod ecosystem.
 - `visual-assets`: Candidate generation, style/readability selection, Stuff-compatible masks, package wiring, optional Vanilla Textures Expanded - Variations families, and in-game visual acceptance for custom items and buildings.
+- `localization`: Complete keyed and Def-injected product localization plus distributable-mod release coverage.
 
 ### Modified Capabilities
 
@@ -40,7 +43,7 @@ None.
 
 ## Impact
 
-The implementation primarily affects `mods/ImmersiveChefs`, including Defs, XML patches, Harmony patches, serialized components, jobs/work givers, buildings, settings, compatibility adapters, and tests. Harmony remains the sole required third-party mod. Every inspected content, material, hygiene, restaurant, dispenser/printer, selection, storage, variety, replacement-meal, and framework package named by the optional-integration contract remains optional.
+The implementation primarily affects `mods/ImmersiveChefs`, including Defs, XML patches, Harmony patches, serialized components, jobs/work givers, buildings, settings, language catalogs, compatibility adapters, and tests. Harmony remains the sole required third-party mod. Every inspected content, material, hygiene, hauling, restaurant, dispenser/printer, selection, storage, variety, replacement-meal, and framework package named by the optional-integration contract remains optional.
 
 ## Affected Mods
 

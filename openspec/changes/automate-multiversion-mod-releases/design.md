@@ -50,7 +50,7 @@ Add a global target catalog at `release/rimworld-targets.yaml` and a per-mod man
 
 The target catalog records a stable target ID, exact game version/build, RimWorld compatibility folder (for example `1.6`), app ID, platform/architecture, ordered base/DLC depot and manifest IDs, required compilation file selectors, expected `Version.txt`, and approved SHA-256 hashes. Branch names and external catalogs may discover candidates, but a release consumes only committed manifest IDs and approved content hashes.
 
-The per-mod manifest records package/project paths, existing Workshop item ID, publication language/title/tags/visibility, one current development target, supported compile target IDs, optional additional regression target IDs, typed required/optional mod relationships, shared and target-specific package allowlists, exceptional C# compatibility-seam paths, XML legacy-override mappings, verification profiles, presentation sources/templates, and upload policy. Each uploaded compatibility folder maps to exactly one compile target. Additional exact patch builds may be regression-only and exercise that folder's compiled product, but cannot create a second payload for the same folder. A JSON Schema (or equivalently strict typed validation) rejects unknown properties, duplicate compatibility folders, an invalid development target, incomplete dependency identities, and package IDs that disagree with About/project metadata before side effects.
+The per-mod manifest records package/project paths, whether the mod is distributable or a development-only tool, required player languages for distributable products, existing Workshop item ID, publication language/title/tags/visibility, one current development target, supported compile target IDs, optional additional regression target IDs, typed required/optional mod relationships, shared and target-specific package allowlists, exceptional C# compatibility-seam paths, XML legacy-override mappings, verification profiles, presentation sources/templates, and upload policy. Each uploaded compatibility folder maps to exactly one compile target. Additional exact patch builds may be regression-only and exercise that folder's compiled product, but cannot create a second payload for the same folder. A JSON Schema (or equivalently strict typed validation) rejects unknown properties, an omitted distribution classification, duplicate compatibility folders, an invalid development target, incomplete dependency identities, and package IDs that disagree with About/project metadata before side effects.
 
 This separates shared game-build identity from a mod's compatibility and publication claims. Putting depot details in every mod manifest would duplicate mutable security-sensitive input; deriving them from a local installation would make the release non-reproducible.
 
@@ -164,6 +164,12 @@ The dry-run shows additions and removals in all three projections and binds the 
 
 Maintaining separate hand-authored lists was rejected because required/optional drift could make the mod unloadable, mislead users, or cause Steam to install optional integrations as hard requirements.
 
+### 15. Treat complete localization as staged product content
+
+Every distributable mod manifest declares the repository's baseline release languages: `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`. A development-only tool may explicitly opt out; `fumblesneeze.rimworlddevgateway` uses that classification because it is not a player distribution product. The stage validator parses canonical keyed text, Def source fields, conditional patch-added Def fields, and guarded runtime translation keys; it compares those inventories with every required locale, rejects malformed/duplicate/stale entries and placeholder or rich-text-tag drift, and records catalog hashes in candidate evidence. English Def source values may be canonical without redundant DefInjected copies, but every runtime key requires an English keyed value.
+
+This gate validates completeness and structure, not linguistic quality by pretending that directory presence or string equality is sufficient. Product development records that the required translations were authored by an agent or human from gameplay context rather than sent through an automated translation service, and native-language smoke profiles render representative settings, Def, job, alert, and runtime text. Publication remains blocked when either structural coverage or the product's declared live language profile is incomplete.
+
 ## Risks / Trade-offs
 
 - **[Steam revokes access to an old manifest]** → Fail target onboarding/release with the exact inaccessible manifest; never replace it silently. Preserve approved file hashes as evidence but do not redistribute the files.
@@ -181,6 +187,7 @@ Maintaining separate hand-authored lists was rejected because required/optional 
 - **[Full historical installations consume substantial disk]** → Separate compact compilation and full-run caches, use manifest-keyed reuse and explicit cache inventory/pruning, and never prune an active lease.
 - **[The release orchestrator becomes a second test framework]** → Invoke existing guarded build/E2E scripts and add only target resolution, contracts, and evidence plumbing.
 - **[A Gateway publisher weakens product isolation]** → Keep publisher code/package ownership in RimWorld Dev Gateway, validate product package exclusions, and perform at least one final product acceptance run without Gateway.
+- **[A release ships English fallbacks or broken placeholders]** → Inventory canonical player text, require exact six-language structural parity for distributable mods, and bind catalog hashes plus live language evidence into the candidate receipt.
 
 ## Migration Plan
 

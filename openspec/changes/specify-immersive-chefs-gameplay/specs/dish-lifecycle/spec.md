@@ -116,6 +116,16 @@ Hand-washing duration SHALL scale with the physical abstraction represented by t
 - **WHEN** otherwise equal pawns hand-wash one plate and one cookware set at the same source and default settings
 - **THEN** the plate completes after 250 work ticks while the complete pot/pan/lid cookware abstraction takes 1,000 work ticks
 
+### Requirement: Optional nearby dish batching preserves individual work
+
+When the validated Pick Up And Haul integration is active, a hand-washing job SHALL use its tracked pawn-inventory and native unload system to collect a bounded nearby batch, travel to the selected source once, wash each admitted physical unit separately, and return the resulting batch together. Batch admission MUST preserve the ordinary dirty-ware, forbiddance, reachability, reservation, source, capacity, and pawn-encumbrance rules. It MUST NOT multiply one representative item's duration over mixed products or mark the whole batch clean atomically: every plate, cutlery setting, and cookware set SHALL consume its own configured work and source use before its sanitation transition commits.
+
+#### Scenario: Mixed batch retains per-item washing time
+
+- **WHEN** one plate, one cutlery setting, and one cookware set form a Pick Up And Haul hand-washing batch at default work scale
+- **THEN** the pawn completes separate 250-, 125-, and 1,000-tick wash phases at the selected source
+- **THEN** each exact unit becomes clean only after its own phase and the tracked batch is subsequently unloaded through Pick Up And Haul
+
 ### Requirement: A blocked cook may clean required cookware
 When a covered cooking bill would otherwise be runnable but no permitted clean cookware set exists, the bill-owning Cooking work path SHALL look for an eligible dirty cookware set before reporting a permanent wait. If the cook can reserve that exact set and an eligible dishwasher or hand-washing source, the cook SHALL perform the ordinary identity-preserving washing job and then reconsider the original bill. This prerequisite wash belongs to the cook's attempt to satisfy the bill and SHALL be available even when that pawn has ordinary Cleaning work disabled; it MUST still honor forbiddance, reachability, reservations, source operation, water consumption, and dishwasher capacity. It SHALL not fabricate cookware, clean it instantly, or bypass the normal washing toils.
 

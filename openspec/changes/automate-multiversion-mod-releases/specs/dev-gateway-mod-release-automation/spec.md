@@ -75,6 +75,27 @@ The release staging step SHALL assemble each mod from an explicit allowlist, rej
 - **WHEN** a staged gameplay package contains a Gateway or test assembly
 - **THEN** package validation fails before any publication operation is admitted
 
+### Requirement: Distributable releases have complete localization catalogs
+
+Every per-mod release manifest SHALL explicitly classify the mod as distributable or development-only. A distributable RimWorld mod SHALL declare and ship at least `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`. Before a candidate is staged, the release gate SHALL parse its canonical keyed runtime strings, translatable Def source fields, conditional patch-added Def fields, and guarded runtime translation-key inventory; require structurally complete catalogs for every declared language; validate XML, duplicate/stale keys, placeholder parity, and rich-text tag parity; and reject guarded raw player-interface literals. English source Def values MAY supply the canonical English Def text, but all runtime keys require English keyed entries. Directory presence or nonzero translation-file count SHALL NOT satisfy the gate.
+
+Development-only mods MAY explicitly opt out. RimWorld Dev Gateway SHALL be classified development-only and SHALL not be presented as a localized player product. A distributable mod's release evidence SHALL retain catalog hashes and its declared human/agent authorship review; an automated machine-translation service SHALL NOT be invoked by the release pipeline to fill missing entries.
+
+#### Scenario: Product adds one untranslated setting
+
+- **WHEN** a distributable mod adds an English setting key but omits it from German, Spanish, French, Simplified Chinese, or Russian
+- **THEN** validation names every missing locale/key and fails before staging or publication
+
+#### Scenario: Translation corrupts a placeholder
+
+- **WHEN** one localized value drops, renames, or duplicates a canonical format placeholder or breaks a rich-text tag pair
+- **THEN** the release gate rejects that catalog even though the key exists
+
+#### Scenario: Development Gateway is enumerated
+
+- **WHEN** repository release validation sees `fumblesneeze.rimworlddevgateway`
+- **THEN** its explicit development-only classification exempts it from player-language coverage without weakening the rule for distributable product mods
+
 ### Requirement: Isolated regression runs can select an exact game build
 The scenario and grouped E2E runners SHALL accept a declared RimWorld target, resolve or acquire its complete exact game build into an ignored cache, launch a fresh exact-PID process with isolated savedata and the target package layout, and record the game/depot/manifest/file identity in evidence. They MUST retain all existing configuration-hash, cleanup, player-action, and personal screenshot-inspection acceptance gates.
 

@@ -14,6 +14,7 @@ The repository needs reproducible multi-version releases without committing RimW
 - Render the Steam Workshop description separately from the in-game `About/About.xml`, including required/optional mod sections, deterministic text banners, and content/mechanics graphics composed from templates, mod sprites, and authored copy.
 - Generate required-mod entries in packaged RimWorld metadata and add a typed, authenticated Dev Gateway publication operation that uses RimWorld's initialized Steam integration to upload the reviewed staged package, presentation assets, and exact Steam required-item relationships without depending on the incomplete in-game upload UI.
 - Record immutable build, dependency, verification, presentation, and publication evidence while keeping Steam credentials and downloaded proprietary game content out of the repository and release package.
+- Classify each mod as distributable or development-only and reject a distributable candidate unless its complete player-facing string inventory has valid English, German, Spanish, French, Simplified Chinese, and Russian catalogs with matching placeholders and tags; development-only Gateway text is exempt.
 - Specify developer/release infrastructure only; this change does not implement or alter shipping gameplay behavior.
 
 ## Affected Mods

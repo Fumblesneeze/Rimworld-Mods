@@ -6,6 +6,8 @@ The inspected RimWorld 1.6 VTEX Variations package is `VanillaExpanded.VTEXVaria
 
 The supported Thermodynamics continuation is exact package `Mlie.DThermodynamicsHotMeals` (Workshop `2909103255`, inspected mod version `1.6.6`, assembly `Hot Meals`). It owns food-temperature comps, ambient diffusion, temperature thoughts, automatic heating injection, `HeatMeal`/`DHotMeals.JobDriver_HeatMeal`, and building `DMicrowave`. When that package is active, it is the exclusive provider for the whole hot/cold-meal and microwave concern. For the Immersive Chefs fallback microwave, the inspected supported reupload of Even More Linkables is package `hobbes.bamba.evenmorelinkables16` (Workshop `3536014093`); its tabletop Defs demonstrate `BuildingOnTop`, `blocksAltitudes/BuildingOnTop`, `building/isEdifice=false`, and `clearBuildingArea=false`. Immersive Chefs adopts those vanilla Def mechanics without depending on that mod and adds stricter table/workbench support validation.
 
+The installed Pick Up And Haul continuation is exact package `Mehni.PickUpAndHaul` (Workshop `1279012058`). Its RimWorld 1.6 `PickUpAndHaul.dll` is assembly `PickUpAndHaul, Version=1.0.0.0` with SHA-256 `CDAA18CD402A4CD7F9E3381F63EC000A6693440F34420B864C4FDD6CA04C86C6`. The inspected public shape provides `PickUpAndHaul.CompHauledToInventory.RegisterHauledItem(Verse.Thing)`, its tracked inventory, `PawnUnloadChecker.CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and the `UnloadYourHauledInventory` job driver. Immersive Chefs uses those boundaries reflectively and never copies or references that optional assembly.
+
 This document defines the implementation architecture and acceptance contract; completed behavior is tracked in `tasks.md` and is accepted only after its in-game observation task is complete.
 
 ## Goals / Non-Goals
@@ -170,6 +172,18 @@ Travel ownership is captured before holder transfer. World caravans continue aut
 
 Preview art uses a generated original parody composition plus deterministic text. The release source keeps a 1280x720 Workshop master and packages a 640x360 `About/Preview.png`; both are 16:9 PNGs below 1 MiB. Primitive cookware and preview selections each require at least two candidates and focused live rendering before acceptance.
 
+### 13. Pick Up And Haul owns batched transport, not washing semantics
+
+When its exact package and public 1.6 shape validate, a normal hand-washing job may reserve a bounded nearby batch instead of one stack. Immersive Chefs still owns dirty eligibility, source selection, per-physical-item duration, water debit, sanitation transition, and interruption behavior. The adapter moves only that job's reserved ware through Pick Up And Haul's tracked pawn inventory, visits the selected source once, washes each physical plate, cutlery setting, or cookware set separately, and then asks the upstream native unload workflow to return the completed batch to ordinary valid storage. The initial collection radius is the inspected upstream close-work radius of 12 cells and collection stops before over-encumbering the pawn.
+
+The adapter is disabled as one unit when the package is absent, set to `Off`, or any exact assembly/type/method/JobDef shape changes. The ordinary one-target `Doing dishes` job remains the fallback. Interruption never rolls back completed washes: cleaned units remain clean, not-yet-washed units remain dirty, and all already collected units remain registered for upstream unloading without duplicating or consuming unrelated inventory.
+
+### 14. Localization is a product and release invariant
+
+All player-visible product text uses RimWorld translation keys or Def-injected translations. This includes Def labels/descriptions/job strings, settings and enum values, inspect rows and culinary bands, alerts, float-menu actions, failure messages, work reports, and conditional compatibility content. Diagnostic-only developer logs, identifiers, package IDs, external proper names, and the development-only Gateway are outside the player-text catalog.
+
+English source/keyed text is the canonical catalog. German, Spanish, French, Simplified Chinese, and Russian ship complete matching catalogs written by the implementing agent from gameplay context rather than by a machine-translation service. A repository release check compares every required locale to the canonical keyed and Def-field inventories, validates XML and placeholder/tag parity, rejects raw user-interface literals at the guarded call sites, and fails a distributable product package when any required entry is missing. Live acceptance switches RimWorld through every required language and inspects representative settings, Def, job, alert, and runtime text rather than treating file presence alone as translation proof.
+
 ## Risks / Trade-offs
 
 - **[Stack metadata causes fragmentation]** → Quantize culinary quality and temperature for stack compatibility, preserve exact plate counts, and prefer correctness over forced merging.
@@ -181,6 +195,8 @@ Preview art uses a generated original parody composition plus deterministic text
 - **[Water connectivity differs by mod]** → Put source recognition behind adapters and never assume a building is usable from Def name alone.
 - **[Processor Framework loses dish identity]** → Intercept its stock output path behind a version/shape guard, retain the original items, and fall back locally only when PF is absent or incompatible.
 - **[Royalty demands become impossible]** → Validate every tier against base-game or fixed-recipe materials and degrade missing optional categories to documented equivalents.
+- **[A batched wash is interrupted with ware in inventory]** → Register each collected unit with Pick Up And Haul immediately, preserve its current sanitation state, and delegate cleanup to the validated native unload path.
+- **[Translation catalogs silently drift]** → Derive one canonical player-text inventory during tests and require exact six-language coverage plus placeholder parity before a distributable package can pass release checks.
 
 ## Implementation Rollout
 

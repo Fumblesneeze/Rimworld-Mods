@@ -33,6 +33,7 @@ The compatibility registry and grouped test runner SHALL use the exact active pa
 | Meal Printer | `Mlie.MealPrinter` | Harmony; vanilla meal Defs remain present |
 | RimFridge | `rimfridge.kv.rw` | Harmony; storage/ambient-temperature owner |
 | [sbz] Fridge | `adaptive.storage.framework`, `sbz.NeatStorageFridge` | Harmony before Adaptive Storage Framework; framework before fridge; Adaptive Storage owns holder capacity, rendering, and ambient-temperature adjustment |
+| Pick Up And Haul | `Mehni.PickUpAndHaul` | Harmony; tracked pawn inventory and native batch-unload owner |
 | Overcooked Meals | `binchcannon.overcookedmeals` | Harmony; final product replacement owner |
 | No Vanilla Meals | `Mlie.NoVanillaMeals` | finalized vanilla meal/recipe removal owner |
 
@@ -131,6 +132,27 @@ When `avilmask.CommonSense` is active and the locally supported `CommonSense` as
 
 - **WHEN** `avilmask.CommonSense` is active but the expected public settings surface is absent or incompatible
 - **THEN** one actionable warning disables only opportunistic post-dining cleanup and ordinary Immersive Chefs sanitation continues
+
+### Requirement: Pick Up And Haul transports a hand-washed batch
+
+When exact package `Mehni.PickUpAndHaul` is active and assembly `PickUpAndHaul, Version=1.0.0.0` exposes the validated public hauled-inventory component, `RegisterHauledItem(Verse.Thing)`, `CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and native `UnloadYourHauledInventory` JobDef/driver shape, an ordinary `Doing dishes` hand-washing job SHALL collect a bounded nearby batch before visiting its chosen source. It SHALL reserve only dirty eligible ware within 12 cells of the first item that can use the same exact hand-washing source, stop before the pawn would become over-encumbered, register each collected physical unit immediately in Pick Up And Haul's tracked inventory, wash units one by one with their own duration and water use, and invoke the upstream native unload workflow once for the return trip. Cleaned ware SHALL travel back together in the tracked inventory and enter ordinary valid clean storage through Pick Up And Haul rather than a parallel Immersive Chefs unloading implementation.
+
+Immersive Chefs SHALL retain ownership of sanitation, source priority, water provenance, per-item work, reservations, and exact identity. Pre-existing inventory and previously tracked hauling items SHALL not be washed or claimed. If the batch is interrupted, completed units remain clean, unwashed units remain dirty, and every collected unit remains registered for upstream unloading. Package absence, `Off`, incomplete dependency state, or any changed member/JobDef shape SHALL select the ordinary one-target dishwashing path without a hard reference or missing-assembly error.
+
+#### Scenario: Cleaner batches nearby mixed dishes
+
+- **WHEN** one plate, one cutlery setting, and one cookware set are dirty near each other, share one eligible sink, fit the cleaner's remaining carrying capacity, and Pick Up And Haul is active
+- **THEN** the pawn reserves and collects the three exact units before going to the sink, visibly washes them one at a time using their individual work durations, and Pick Up And Haul returns the completed clean batch through one native unload workflow
+
+#### Scenario: Batched washing is interrupted
+
+- **WHEN** the pawn has cleaned the plate but is interrupted before washing the cutlery and cookware
+- **THEN** the exact plate remains clean, the other exact units remain dirty, all collected units remain tracked for native unloading, and no unit or unrelated inventory item is lost, duplicated, or silently cleaned
+
+#### Scenario: Pick Up And Haul is unavailable or changed
+
+- **WHEN** its package is absent, its integration setting is `Off`, or the expected public assembly/member/JobDef shape does not validate
+- **THEN** Immersive Chefs issues only the ordinary one-target `Doing dishes` job and disables no other sanitation behavior
 
 ### Requirement: Variety integrations preserve provenance components
 
@@ -429,6 +451,7 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 8. Adaptive Storage Framework; Immersive Chefs; and Gateway for incomplete optional-chain safety through ordinary plated dining.
 9. Adaptive Storage Framework; [sbz] Fridge; Immersive Chefs; and Gateway for native holder transfer, save/load, fallback temperature, and power-loss behavior.
 10. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
+11. Pick Up And Haul; Immersive Chefs; and Gateway for native tracked-inventory batch collection, sequential hand washing, interruption, and batch unloading.
 
 Every named supported food mod SHALL appear in at least one maintained exact group. Host tests SHALL cover pure policy and package grouping, loaded main-menu integration tests SHALL verify finalized Defs and Harmony ownership, and E2E tests SHALL prove native player-observable cooking, dispensing, selection, serving, storage, and eating behavior. A broad all-supported startup canary MAY be added, but it SHALL NOT substitute for these behavioral groups or claim that every unsupported permutation is compatible.
 

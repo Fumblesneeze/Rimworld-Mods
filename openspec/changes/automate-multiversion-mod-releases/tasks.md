@@ -4,6 +4,7 @@
 - [ ] 1.2 Add RED unit tests for per-mod release manifests, including package/About disagreement, undeclared development/supported targets, duplicate package IDs or compatibility folders, invalid required/optional dependency identities, missing Workshop identity, and invalid file/XML-override policies.
 - [ ] 1.3 Add RED tests proving invalid manifests fail before downloader, build, process-launch, or publisher adapters are invoked.
 - [ ] 1.4 Define versioned schemas and typed contracts for target catalogs, mod manifests, required/optional mod graphs, C# target symbols, XML projections, dependency receipts, staged candidates, presentation bundles, verification results, dry-run diffs, and publication receipts.
+- [ ] 1.5 Add RED manifest and localization-policy tests for explicit distributable/development-only classification, the six baseline languages, canonical keyed/Def/runtime inventories, missing/duplicate/stale entries, malformed XML, placeholder/tag drift, raw guarded UI literals, and the exact Gateway exemption.
 
 ## 2. mods/RimWorldDevGateway — Contract GREEN and refactor
 
@@ -12,6 +13,7 @@
 - [ ] 2.3 Refactor validation into side-effect-free public services and keep actionable property paths in every validation error while the focused and owning suites remain green.
 - [ ] 2.4 Document the target-onboarding review that turns external discovery data into pinned manifest IDs and approved `Version.txt`/managed-file hashes.
 - [ ] 2.5 Add RED/GREEN projection tests proving supported versions and required mod entries in generated About metadata come only from the per-mod manifest.
+- [ ] 2.6 Implement strict distribution/language manifest contracts and a side-effect-free localization inventory/validation service; require agent/human authorship evidence without adding a machine-translation facility.
 
 ## 3. mods/RimWorldDevGateway — Exact Steam acquisition TDD
 
@@ -35,6 +37,7 @@
 - [ ] 4.9 Implement the minimum parsed typed XML operation engine and per-target ignored projection required to make the focused XML tests green without raw text preprocessing or version source folders.
 - [ ] 4.10 Refactor symbol and XML projection provenance into the target receipt and reject staged compatibility folders whose symbol, transform, About version, or manifest identity disagrees.
 - [ ] 4.11 Add a policy check that permits RimWorld version directives only under the neutral `Compatibility/RimWorld/` area or in exact manifest-allowlisted files with rationale, without requiring speculative legacy branches before a demonstrated divergence.
+- [ ] 4.12 Make candidate staging reject a distributable mod whose English/German/Spanish/French/ChineseSimplified/Russian keyed and Def-injected catalogs do not exactly cover its player-text inventory or whose placeholders/tags/raw guarded UI strings fail policy; retain catalog hashes in stage evidence and exempt only explicitly development-only mods.
 
 ## 5. mods/RimWorldDevGateway — Exact-version regression runner TDD
 
