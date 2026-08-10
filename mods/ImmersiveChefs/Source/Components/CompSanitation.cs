@@ -17,6 +17,8 @@ public sealed class CompSanitation : ThingComp
     private bool dirty;
     private WashProvenance washProvenance;
     private int schemaVersion = SanitationStateModel.CurrentSchemaVersion;
+    private string? personalDiningOwnerThingId;
+    private bool returnToMapAfterInterruptedSession;
 
     public bool IsDirty => dirty;
 
@@ -24,8 +26,44 @@ public sealed class CompSanitation : ThingComp
 
     public bool WashedInWildWater => washProvenance == WashProvenance.WildWater;
 
+    public bool ReturnToMapAfterInterruptedSession => returnToMapAfterInterruptedSession;
+
     public bool SelfCleaning => ((CompProperties_Sanitation)props).selfCleaning ||
                                 parent.def.GetModExtension<KitchenwareExtension>()?.selfCleaning == true;
+
+    public bool IsPersonalDiningWareFor(Pawn pawn) =>
+        pawn is not null && IsPersonalDiningWareFor(pawn.ThingID);
+
+    public bool IsPersonalDiningWareFor(string? pawnThingId) =>
+        !string.IsNullOrEmpty(personalDiningOwnerThingId) &&
+        StringComparer.Ordinal.Equals(personalDiningOwnerThingId, pawnThingId);
+
+    public void MarkPersonalDiningOwner(Pawn pawn)
+    {
+        MarkPersonalDiningOwner(pawn?.ThingID);
+    }
+
+    public void MarkPersonalDiningOwner(string? pawnThingId)
+    {
+        personalDiningOwnerThingId = pawnThingId;
+        returnToMapAfterInterruptedSession = false;
+    }
+
+    public void ClearPersonalDiningOwner()
+    {
+        personalDiningOwnerThingId = null;
+    }
+
+    public void MarkSessionTransferredWare()
+    {
+        personalDiningOwnerThingId = null;
+        returnToMapAfterInterruptedSession = true;
+    }
+
+    public void ClearSessionTransfer()
+    {
+        returnToMapAfterInterruptedSession = false;
+    }
 
     public void MarkDirty()
     {
@@ -53,7 +91,11 @@ public sealed class CompSanitation : ThingComp
         var otherComp = (other as ThingWithComps)?.GetComp<CompSanitation>();
         return otherComp is not null &&
                dirty == otherComp.dirty &&
-               washProvenance == otherComp.washProvenance;
+               washProvenance == otherComp.washProvenance &&
+               returnToMapAfterInterruptedSession == otherComp.returnToMapAfterInterruptedSession &&
+               StringComparer.Ordinal.Equals(
+                   personalDiningOwnerThingId,
+                   otherComp.personalDiningOwnerThingId);
     }
 
     public override void PostSplitOff(Thing piece)
@@ -67,6 +109,8 @@ public sealed class CompSanitation : ThingComp
         splitSanitation.dirty = dirty;
         splitSanitation.washProvenance = washProvenance;
         splitSanitation.schemaVersion = schemaVersion;
+        splitSanitation.personalDiningOwnerThingId = personalDiningOwnerThingId;
+        splitSanitation.returnToMapAfterInterruptedSession = returnToMapAfterInterruptedSession;
     }
 
     public override string CompInspectStringExtra()
@@ -85,6 +129,11 @@ public sealed class CompSanitation : ThingComp
         Scribe_Values.Look(ref schemaVersion, "schemaVersion", SanitationStateModel.CurrentSchemaVersion);
         Scribe_Values.Look(ref dirty, "dirty", false);
         Scribe_Values.Look(ref washProvenance, "washProvenance", WashProvenance.None);
+        Scribe_Values.Look(ref personalDiningOwnerThingId, "personalDiningOwnerThingId");
+        Scribe_Values.Look(
+            ref returnToMapAfterInterruptedSession,
+            "returnToMapAfterInterruptedSession",
+            false);
         if (SelfCleaning)
         {
             dirty = false;

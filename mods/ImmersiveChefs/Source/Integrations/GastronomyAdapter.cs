@@ -233,17 +233,29 @@ internal static class GastronomyAdapter
 
         internal void Cancel(Pawn server)
         {
-            if (delivered || carriedCutlery is null || server.MapHeld is not { } map)
+            if (delivered || carriedCutlery is null)
             {
+                return;
+            }
+
+            if (server.MapHeld is not { } map)
+            {
+                GameComponent_ImmersiveChefsRecovery.ScheduleWareRecovery(server, carriedCutlery);
                 return;
             }
 
             if (carriedCutlery.holdingOwner is { } owner)
             {
-                owner.TryDrop(carriedCutlery, server.PositionHeld, map, ThingPlaceMode.Near, out _);
+                if (owner.TryDrop(carriedCutlery, server.PositionHeld, map, ThingPlaceMode.Near, out _))
+                {
+                    (carriedCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.ClearSessionTransfer();
+                    carriedCutlery = null;
+                }
+                else
+                {
+                    GameComponent_ImmersiveChefsRecovery.ScheduleWareRecovery(server, carriedCutlery);
+                }
             }
-
-            carriedCutlery = null;
         }
 
         private void PickupCutlery(Pawn server)
@@ -263,6 +275,7 @@ internal static class GastronomyAdapter
 
             if (server.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
             {
+                (picked as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
                 carriedCutlery = picked;
             }
             else if (server.MapHeld is { } map)

@@ -23,6 +23,11 @@ internal sealed class DiningSession : IThingHolder
     private bool travelPlateWasDirty;
     private WashProvenance travelPlateWashProvenance;
     private bool cutleryFromPersonalInventory;
+    private bool returnPlateToPersonalInventory;
+    private bool capturedPlateSanitationKnown;
+    private bool capturedPlateWasDirty;
+    private WashProvenance capturedPlateWashProvenance;
+    private readonly CompEmbeddedWare? mealEmbeddedWare;
 
     internal DiningSession(
         Pawn pawn,
@@ -33,7 +38,9 @@ internal sealed class DiningSession : IThingHolder
         DiningCutlerySource cutlerySource,
         Pawn? servingPawn = null,
         Pawn? carrierPawn = null,
-        ThingDef? requestedMealDef = null)
+        ThingDef? requestedMealDef = null,
+        bool returnPlateToPersonalInventory = false,
+        CompEmbeddedWare? mealEmbeddedWare = null)
         : this(
             pawn,
             job,
@@ -44,7 +51,9 @@ internal sealed class DiningSession : IThingHolder
             cutlerySource,
             servingPawn,
             carrierPawn,
-            requestedMealDef)
+            requestedMealDef,
+            returnPlateToPersonalInventory,
+            mealEmbeddedWare)
     {
     }
 
@@ -59,6 +68,8 @@ internal sealed class DiningSession : IThingHolder
             DiningCutlerySource.Colony,
             null,
             null,
+            null,
+            false,
             null)
     {
     }
@@ -73,7 +84,9 @@ internal sealed class DiningSession : IThingHolder
         DiningCutlerySource cutlerySource,
         Pawn? servingPawn,
         Pawn? carrierPawn,
-        ThingDef? requestedMealDef)
+        ThingDef? requestedMealDef,
+        bool returnPlateToPersonalInventory,
+        CompEmbeddedWare? mealEmbeddedWare)
     {
         Pawn = pawn;
         CarrierPawn = carrierPawn ?? pawn;
@@ -86,6 +99,8 @@ internal sealed class DiningSession : IThingHolder
         ReservedPlate = reservedPlate;
         ServingPawn = servingPawn;
         RequestedMealDef = requestedMealDef;
+        this.returnPlateToPersonalInventory = returnPlateToPersonalInventory;
+        this.mealEmbeddedWare = mealEmbeddedWare;
     }
 
     internal Pawn Pawn { get; }
@@ -109,6 +124,14 @@ internal sealed class DiningSession : IThingHolder
     internal void CapturePlate(Thing plate)
     {
         PlateServiceSnapshot ??= KitchenwareRuntime.Describe(plate);
+        if (!capturedPlateSanitationKnown)
+        {
+            var sanitation = (plate as ThingWithComps)?.GetComp<CompSanitation>();
+            capturedPlateSanitationKnown = true;
+            capturedPlateWasDirty = sanitation?.IsDirty == true;
+            capturedPlateWashProvenance = sanitation?.WashProvenance ?? WashProvenance.None;
+        }
+
         if (caravan is not null && plate.holdingOwner is null)
         {
             Plate = plate;
@@ -156,13 +179,16 @@ internal sealed class DiningSession : IThingHolder
             ReferenceEquals(Cutlery.holdingOwner, CarrierPawn.inventory?.innerContainer))
         {
             var inventory = CarrierPawn.inventory!.innerContainer;
+            ClearTemporaryWareProvenance(Cutlery);
             var personal = inventory.Take(Cutlery, 1);
+            (personal as ThingWithComps)?.GetComp<CompSanitation>()?.MarkPersonalDiningOwner(CarrierPawn);
             if (inventory.TryAdd(personal, canMergeWithExistingStacks: false))
             {
                 CarriedCutlery = personal;
             }
             else if (CarrierPawn.MapHeld is { } map)
             {
+                ClearTemporaryWareProvenance(personal);
                 GenPlace.TryPlaceThing(personal, CarrierPawn.PositionHeld, map, ThingPlaceMode.Near);
                 Log.Error("[ImmersiveChefs] Could not retain a guest's personal cutlery in inventory; " +
                           "the exact item was placed beside the guest instead.");
@@ -183,6 +209,7 @@ internal sealed class DiningSession : IThingHolder
 
         if (CarrierPawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
         {
+            (picked as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
             CarriedCutlery = picked;
         }
         else if (CarrierPawn.MapHeld is { } map)
@@ -206,6 +233,7 @@ internal sealed class DiningSession : IThingHolder
 
         if (CarrierPawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
         {
+            (picked as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
             CarriedPlate = picked;
         }
         else if (CarrierPawn.MapHeld is { } map)
@@ -216,25 +244,60 @@ internal sealed class DiningSession : IThingHolder
 
     internal void AcceptServedCutlery(Thing cutlery)
     {
+        (cutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
         CarriedCutlery = cutlery;
     }
 
     internal void AcceptWaiterService(Thing? deliveredCutlery, Pawn server)
     {
         ServingPawn = server;
-        if (deliveredCutlery is null || ReferenceEquals(CarriedCutlery, deliveredCutlery))
+        returnPlateToPersonalInventory = false;
+        mealEmbeddedWare?.ClearPersonalPlateOwner();
+        if (deliveredCutlery is null)
         {
             return;
         }
 
-        if (CarriedCutlery is not null && !cutleryFromPersonalInventory &&
-            CarrierPawn.MapHeld is { } map && CarriedCutlery.holdingOwner is { } owner)
+        if (ReferenceEquals(CarriedCutlery, deliveredCutlery))
         {
-            owner.TryDrop(CarriedCutlery, CarrierPawn.PositionHeld, map, ThingPlaceMode.Near, out _);
+            cutleryFromPersonalInventory = false;
+            (deliveredCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
+            return;
+        }
+
+        if (CarriedCutlery is not null)
+        {
+            if (cutleryFromPersonalInventory)
+            {
+                ClearTemporaryWareProvenance(CarriedCutlery);
+            }
+            else
+            {
+                var returned = false;
+                if (CarrierPawn.MapHeld is { } map && CarriedCutlery.holdingOwner is { } owner)
+                {
+                    if (owner.TryDrop(
+                            CarriedCutlery,
+                            CarrierPawn.PositionHeld,
+                            map,
+                            ThingPlaceMode.Near,
+                            out _))
+                    {
+                        ClearTemporaryWareProvenance(CarriedCutlery);
+                        returned = true;
+                    }
+                }
+
+                if (!returned)
+                {
+                    ScheduleMarkedWareRecovery(CarrierPawn, CarriedCutlery);
+                }
+            }
         }
 
         cutleryFromPersonalInventory = false;
         SetCutlery(deliveredCutlery);
+        (deliveredCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
         CarriedCutlery = deliveredCutlery;
     }
 
@@ -260,6 +323,7 @@ internal sealed class DiningSession : IThingHolder
         }
 
         Plate = embedded.PeekPlateThing();
+        (Plate as ThingWithComps)?.GetComp<CompSanitation>()?.ClearSessionTransfer();
         CarriedPlate = null;
         var culinary = withComps.GetComp<CompCulinaryState>();
         if (initializePasteServing)
@@ -310,7 +374,16 @@ internal sealed class DiningSession : IThingHolder
         if (Plate is { } embeddedPlate && Pawn.MapHeld is { } plateMap)
         {
             (embeddedPlate as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
-            dirtyPlate = DropAt(embeddedPlate, clearingOrigin, plateMap);
+            if (!returnPlateToPersonalInventory || !TryReturnPersonalPlate(embeddedPlate))
+            {
+                dirtyPlate = DropAt(embeddedPlate, clearingOrigin, plateMap);
+                if (returnPlateToPersonalInventory && dirtyPlate is not null)
+                {
+                    Log.Error(
+                        "[ImmersiveChefs] Could not return a guest's exact meal plate to personal inventory; " +
+                        "the plate was placed beside the guest instead.");
+                }
+            }
 
             Plate = null;
         }
@@ -323,6 +396,7 @@ internal sealed class DiningSession : IThingHolder
             if (cutleryFromPersonalInventory &&
                 ReferenceEquals(usedCutlery.holdingOwner, CarrierPawn.inventory?.innerContainer))
             {
+                ClearTemporaryWareProvenance(usedCutlery);
                 CarriedCutlery = null;
             }
             else
@@ -347,6 +421,11 @@ internal sealed class DiningSession : IThingHolder
                 dirtyCutlery,
                 gastronomyOwned: false);
         }
+
+        if (!ReferenceEquals(Cutlery, CarriedCutlery))
+        {
+            ClearTemporaryWareProvenance(Cutlery);
+        }
     }
 
     internal void Cancel()
@@ -360,13 +439,20 @@ internal sealed class DiningSession : IThingHolder
         }
 
         DropPlate(CarrierPawn);
+        RecoverCapturedPlateForCancellation();
         if (cutleryFromPersonalInventory)
         {
+            ClearTemporaryWareProvenance(CarriedCutlery);
             CarriedCutlery = null;
         }
         else
         {
             DropCarried(CarrierPawn);
+        }
+
+        if (!ReferenceEquals(Cutlery, CarriedCutlery))
+        {
+            ClearTemporaryWareProvenance(Cutlery);
         }
     }
 
@@ -383,6 +469,9 @@ internal sealed class DiningSession : IThingHolder
     {
         Cutlery = cutlery;
         var sanitation = (cutlery as ThingWithComps)?.GetComp<CompSanitation>();
+        sanitation?.ClearPersonalDiningOwner();
+        sanitation?.ClearSessionTransfer();
+
         CutleryWasDirty = sanitation?.IsDirty == true;
         CutleryWasWildWaterWashed = sanitation?.WashedInWildWater == true;
         CutleryServiceScore = cutlery is null ? null : KitchenwareRuntime.ServiceScore(cutlery);
@@ -485,26 +574,146 @@ internal sealed class DiningSession : IThingHolder
 
     private Thing? DropPlate(Pawn dropPawn)
     {
-        if (CarriedPlate is null || dropPawn.MapHeld is not { } map)
+        if (CarriedPlate is null)
         {
+            return null;
+        }
+
+        if (dropPawn.MapHeld is not { } map)
+        {
+            ScheduleMarkedWareRecovery(dropPawn, CarriedPlate);
             return null;
         }
 
         var dropped = DropAt(CarriedPlate, dropPawn.PositionHeld, map);
-        CarriedPlate = null;
+        if (dropped is not null)
+        {
+            ClearTemporaryWareProvenance(CarriedPlate);
+            CarriedPlate = null;
+        }
+        else
+        {
+            ScheduleMarkedWareRecovery(dropPawn, CarriedPlate);
+        }
+
         return dropped;
+    }
+
+    private bool TryReturnPersonalPlate(Thing plate)
+    {
+        var inventory = CarrierPawn.inventory?.innerContainer;
+        if (inventory is null || plate.Destroyed || plate.stackCount != 1)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(plate.holdingOwner, inventory))
+        {
+            return true;
+        }
+
+        return plate.holdingOwner is null &&
+               inventory.TryAdd(plate, canMergeWithExistingStacks: false);
+    }
+
+    private void RecoverCapturedPlateForCancellation()
+    {
+        if (Plate is not { } capturedPlate || capturedPlate.holdingOwner is not null)
+        {
+            return;
+        }
+
+        RestoreCapturedPlateSanitation(capturedPlate);
+        if (returnPlateToPersonalInventory && TryReturnPersonalPlate(capturedPlate))
+        {
+            Plate = null;
+            return;
+        }
+
+        var map = CarrierPawn.MapHeld ?? Pawn.MapHeld;
+        if (map is not null)
+        {
+            var origin = CarrierPawn.Spawned ? CarrierPawn.PositionHeld : Pawn.PositionHeld;
+            if (DropAt(capturedPlate, origin, map) is not null)
+            {
+                Plate = null;
+                return;
+            }
+        }
+
+        var fallbackInventory = ServingPawn?.inventory?.innerContainer ??
+                                CarrierPawn.inventory?.innerContainer;
+        if (capturedPlate.holdingOwner is null &&
+            fallbackInventory?.TryAdd(capturedPlate, canMergeWithExistingStacks: false) == true)
+        {
+            Plate = null;
+            Log.Error(
+                "[ImmersiveChefs] Exceptional dining cleanup could not place the exact captured plate; " +
+                "it was retained in a responsible pawn inventory instead.");
+            return;
+        }
+
+        Log.Error(
+            "[ImmersiveChefs] Exceptional dining cleanup could not retain or place the exact captured plate.");
+    }
+
+    private void RestoreCapturedPlateSanitation(Thing plate)
+    {
+        if (!capturedPlateSanitationKnown ||
+            (plate as ThingWithComps)?.GetComp<CompSanitation>() is not { } sanitation)
+        {
+            return;
+        }
+
+        sanitation.MarkClean(capturedPlateWashProvenance);
+        if (capturedPlateWasDirty)
+        {
+            sanitation.MarkDirty();
+        }
     }
 
     private Thing? DropCarried(Pawn dropPawn)
     {
-        if (CarriedCutlery is null || dropPawn.MapHeld is not { } map)
+        if (CarriedCutlery is null)
         {
             return null;
         }
 
+        if (dropPawn.MapHeld is not { } map)
+        {
+            ScheduleMarkedWareRecovery(dropPawn, CarriedCutlery);
+            return null;
+        }
+
         var dropped = DropAt(CarriedCutlery, dropPawn.PositionHeld, map);
-        CarriedCutlery = null;
+        if (dropped is not null)
+        {
+            ClearTemporaryWareProvenance(CarriedCutlery);
+            CarriedCutlery = null;
+        }
+        else
+        {
+            ScheduleMarkedWareRecovery(dropPawn, CarriedCutlery);
+        }
+
         return dropped;
+    }
+
+    private static void ClearTemporaryWareProvenance(Thing? thing)
+    {
+        var sanitation = (thing as ThingWithComps)?.GetComp<CompSanitation>();
+        sanitation?.ClearPersonalDiningOwner();
+        sanitation?.ClearSessionTransfer();
+    }
+
+    private static void ScheduleMarkedWareRecovery(Pawn pawn, Thing? thing)
+    {
+        if (thing is not null &&
+            (thing as ThingWithComps)?.GetComp<CompSanitation>()
+                ?.ReturnToMapAfterInterruptedSession == true)
+        {
+            GameComponent_ImmersiveChefsRecovery.ScheduleWareRecovery(pawn, thing);
+        }
     }
 
     private static Thing? DropAt(Thing thing, IntVec3 position, Map map)
@@ -580,6 +789,18 @@ internal static class DiningSessionRegistry
             return true;
         }
 
+        var mayUsePersonalInventory = MayUsePersonalInventory(pawn);
+        var embeddedWare = (meal as ThingWithComps)?.GetComp<CompEmbeddedWare>();
+        var mealWasInPersonalInventory =
+            ReferenceEquals(meal.holdingOwner, pawn.inventory?.innerContainer);
+        if (mayUsePersonalInventory && mealWasInPersonalInventory &&
+            embeddedWare?.PeekPlateThing() is not null)
+        {
+            embeddedWare.MarkPersonalPlateOwner(pawn);
+        }
+
+        var personalPlateProvenance = embeddedWare?.PeekPlateThing() is not null &&
+                                      (mealWasInPersonalInventory || embeddedWare.IsPersonalPlateFor(pawn));
         Thing? selected = null;
         Thing? plate = null;
         if (ImmersiveChefsMod.Settings.WareRequirementMode != WareRequirementMode.Off)
@@ -611,7 +832,7 @@ internal static class DiningSessionRegistry
                 KitchenwareProduct.Cutlery,
                 emergency,
                 WareRequirementMode.Prefer,
-                allowPersonalInventory: MayUsePersonalInventory(pawn));
+                allowPersonalInventory: mayUsePersonalInventory);
         }
 
         var microwave = pasteDispenser ? null : FindMicrowave(pawn, meal);
@@ -626,7 +847,13 @@ internal static class DiningSessionRegistry
             plate,
             microwave,
             cutlerySource,
-            requestedMealDef: diningMealDef);
+            requestedMealDef: diningMealDef,
+            returnPlateToPersonalInventory:
+                GuestWareSelectionPolicy.ShouldReturnMealPlateToPersonalInventory(
+                    mayUsePersonalInventory,
+                    personalPlateProvenance,
+                    servedByColony: false),
+            mealEmbeddedWare: embeddedWare);
         Sessions.Add(job, session);
         PawnSessions.Remove(pawn);
         PawnSessions.Add(pawn, session);
@@ -830,7 +1057,10 @@ internal static class DiningSessionRegistry
             null,
             null,
             DiningCutlerySource.Colony,
-            server);
+            server,
+            requestedMealDef: meal.def,
+            mealEmbeddedWare: (meal as ThingWithComps)?.GetComp<CompEmbeddedWare>());
+        session.AcceptWaiterService(cutlery, server);
         if (cutlery is not null)
         {
             session.AcceptServedCutlery(cutlery);

@@ -3908,10 +3908,19 @@ public static class FinalizedImmersiveChefsIntegrationTests
             forceGenerateNewPawn: true,
             canGeneratePawnRelations: false));
         var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var servedPlate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
         var cancelledCutlery = (ThingWithComps)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
             ThingDefOf.Steel);
         var completedCutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        var retainedPersonalCutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        var takeoverCutlery = (ThingWithComps)ThingMaker.MakeThing(
             DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
             ThingDefOf.Steel);
         var cancelledJob = JobMaker.MakeJob(JobDefOf.Ingest, meal);
@@ -3923,17 +3932,78 @@ public static class FinalizedImmersiveChefsIntegrationTests
             GenSpawn.Spawn(server, cells[1], map);
             cancelledCutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
             completedCutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            retainedPersonalCutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            takeoverCutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            var embedded = meal.GetComp<CompEmbeddedWare>();
+            IntegrationAssert.True(
+                embedded.TryEmbedPlate(servedPlate),
+                "The waiter ownership fixture must begin with one exact embedded plate.");
+            IntegrationAssert.True(
+                patron.inventory.innerContainer.TryAdd(
+                    retainedPersonalCutlery,
+                    canMergeWithExistingStacks: false),
+                "The waiter-takeover fixture must begin with exact personal cutlery.");
+            IntegrationAssert.True(
+                patron.inventory.innerContainer.TryAdd(takeoverCutlery, canMergeWithExistingStacks: false),
+                "The waiter-takeover fixture must deliver exact colony cutlery.");
+            var takeoverSession = new DiningSession(
+                patron,
+                JobMaker.MakeJob(JobDefOf.Ingest, meal),
+                retainedPersonalCutlery,
+                null,
+                null,
+                DiningCutlerySource.PersonalInventory,
+                returnPlateToPersonalInventory: true,
+                mealEmbeddedWare: embedded);
+            takeoverSession.PickupCutlery();
+            IntegrationAssert.True(
+                retainedPersonalCutlery.GetComp<CompSanitation>().IsPersonalDiningWareFor(patron),
+                "The picked personal cutlery must carry its temporary owner before waiter takeover.");
+            takeoverSession.AcceptWaiterService(takeoverCutlery, server);
+            IntegrationAssert.True(
+                patron.inventory.innerContainer.Contains(retainedPersonalCutlery) &&
+                !retainedPersonalCutlery.GetComp<CompSanitation>().IsDirty &&
+                !retainedPersonalCutlery.GetComp<CompSanitation>().IsPersonalDiningWareFor(patron) &&
+                !retainedPersonalCutlery.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession,
+                "Waiter takeover must retain clean personal cutlery and clear its temporary provenance.");
+            takeoverSession.Cancel();
+            IntegrationAssert.True(
+                takeoverCutlery.Spawned &&
+                !takeoverCutlery.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession,
+                "Cancelling waiter takeover must return colony cutlery and clear its recovery marker.");
             IntegrationAssert.True(
                 patron.inventory.innerContainer.TryAdd(cancelledCutlery, canMergeWithExistingStacks: false),
                 "The waiter-delivered cancellation fixture must begin in the patron inventory.");
 
+            embedded.MarkPersonalPlateOwner(patron);
+            cancelledCutlery.GetComp<CompSanitation>().MarkPersonalDiningOwner(patron);
             DiningSessionRegistry.TryAttachServed(patron, cancelledJob, meal, cancelledCutlery, server);
+            IntegrationAssert.False(
+                embedded.IsPersonalPlateFor(patron),
+                "Waiter service must replace personal plate provenance with colony service ownership.");
+            IntegrationAssert.False(
+                cancelledCutlery.GetComp<CompSanitation>().IsPersonalDiningWareFor(patron),
+                "Waiter service must replace personal cutlery provenance with colony service ownership.");
+            IntegrationAssert.True(
+                cancelledCutlery.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession,
+                "Waiter-delivered colony cutlery must be positively marked for interrupted-session recovery.");
             DiningSessionRegistry.Cleanup(patron, cancelledJob);
+            IntegrationAssert.False(
+                cancelledCutlery.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession,
+                "Cancelling waiter service must clear its temporary session-transfer marker.");
 
             IntegrationAssert.True(
                 patron.inventory.innerContainer.TryAdd(completedCutlery, canMergeWithExistingStacks: false),
                 "The waiter-delivered completion fixture must begin in the patron inventory.");
+            embedded.MarkPersonalPlateOwner(patron);
+            completedCutlery.GetComp<CompSanitation>().MarkPersonalDiningOwner(patron);
             DiningSessionRegistry.TryAttachServed(patron, completedJob, meal, completedCutlery, server);
+            IntegrationAssert.False(
+                embedded.IsPersonalPlateFor(patron),
+                "Repeated waiter service must keep the embedded plate under colony ownership.");
+            IntegrationAssert.False(
+                completedCutlery.GetComp<CompSanitation>().IsPersonalDiningWareFor(patron),
+                "Repeated waiter service must keep delivered cutlery under colony ownership.");
             DiningSessionRegistry.Complete(patron);
 
             IntegrationAssert.True(
@@ -3948,12 +4018,25 @@ public static class FinalizedImmersiveChefsIntegrationTests
             IntegrationAssert.True(
                 completedCutlery.GetComp<CompSanitation>().IsDirty,
                 "Completing served dining must return the used colony cutlery dirty.");
+            IntegrationAssert.False(
+                completedCutlery.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession,
+                "Completing waiter service must clear its temporary session-transfer marker.");
         }
         finally
         {
             DiningSessionRegistry.Cleanup(patron, cancelledJob);
             DiningSessionRegistry.Cleanup(patron, completedJob);
-            foreach (var thing in new Thing[] { cancelledCutlery, completedCutlery, meal, patron, server })
+            foreach (var thing in new Thing[]
+                     {
+                         cancelledCutlery,
+                         completedCutlery,
+                         retainedPersonalCutlery,
+                         takeoverCutlery,
+                         meal,
+                         servedPlate,
+                         patron,
+                         server
+                     })
             {
                 if (!thing.Destroyed)
                 {
@@ -3961,6 +4044,164 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 }
             }
         }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void PendingMarkedWareRecoveryRunsWithoutAnActiveJob()
+    {
+        var map = Find.CurrentMap;
+        var cell = map.AllCells
+            .Where(candidate => candidate.Standable(map) && candidate.GetThingList(map).Count == 0)
+            .OrderBy(candidate => candidate.DistanceToSquared(map.Center))
+            .First();
+        var pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        var activeCutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+
+        try
+        {
+            GenSpawn.Spawn(pawn, cell, map);
+            pawn.jobs.StopAll();
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.TryAdd(cutlery, canMergeWithExistingStacks: false),
+                "The pending-recovery fixture must begin in the pawn's exact inventory.");
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.TryAdd(activeCutlery, canMergeWithExistingStacks: false),
+                "The pending-recovery fixture must retain a distinct active-session control.");
+            cutlery.GetComp<CompSanitation>().MarkSessionTransferredWare();
+            activeCutlery.GetComp<CompSanitation>().MarkSessionTransferredWare();
+            GameComponent_ImmersiveChefsRecovery.ScheduleWareRecovery(pawn, cutlery);
+
+            Current.Game.GetComponent<GameComponent_ImmersiveChefsRecovery>().GameComponentTick();
+
+            IntegrationAssert.True(
+                cutlery.Spawned && !pawn.inventory.innerContainer.Contains(cutlery),
+                "Pending marked ware must return to the map without an active dining or cooking job.");
+            IntegrationAssert.False(
+                cutlery.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession,
+                "Successful pending recovery must consume its exact transfer marker.");
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.Contains(activeCutlery) &&
+                !activeCutlery.Spawned &&
+                activeCutlery.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession,
+                "Exact pending recovery must not drop a newly delivered active-session setting " +
+                "that was not scheduled.");
+        }
+        finally
+        {
+            pawn.jobs?.StopAll();
+            pawn.inventory?.innerContainer.ClearAndDestroyContents();
+            foreach (var thing in new Thing[] { cutlery, activeCutlery, pawn })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void ExceptionalIngestionCleanupReturnsTheExactCapturedPersonalPlate()
+    {
+        var map = Find.CurrentMap;
+        var playerFaction = Faction.OfPlayer;
+        var guestFaction = Find.FactionManager.AllFactionsListForReading.First(faction =>
+            faction != playerFaction && !faction.HostileTo(playerFaction) && !faction.def.hidden);
+        var guest = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            guestFaction,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.WoodLog);
+        var embedded = meal.GetComp<CompEmbeddedWare>();
+        var job = JobMaker.MakeJob(JobDefOf.Ingest, meal);
+        var originalRequirementMode = ImmersiveChefsMod.Settings.WareRequirementMode;
+
+        try
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = WareRequirementMode.Off;
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            IntegrationAssert.True(
+                embedded.TryEmbedPlate(plate),
+                "The exceptional-ingestion fixture must begin with the exact clean embedded plate.");
+            var fixtureCell = map.AllCells
+                .Where(cell => cell.Standable(map) && cell.GetThingList(map).Count == 0)
+                .OrderBy(cell => cell.DistanceToSquared(map.Center))
+                .First();
+            GenSpawn.Spawn(guest, fixtureCell, map);
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.TryAdd(meal, canMergeWithExistingStacks: false),
+                "The visiting pawn must bring its exact plated meal in personal inventory.");
+            IntegrationAssert.True(
+                DiningSessionRegistry.TryAttach(guest, job, meal),
+                "The visiting pawn must attach a personal-meal dining session.");
+            var throwingComp = new ThrowAfterEmbeddedWareComp { parent = meal };
+            meal.AllComps.Add(throwingComp);
+            var expectedFailureObserved = false;
+            try
+            {
+                meal.Ingested(guest, meal.GetStatValue(StatDefOf.Nutrition));
+            }
+            catch (ExpectedLaterIngestionCompException)
+            {
+                expectedFailureObserved = true;
+            }
+
+            IntegrationAssert.True(
+                expectedFailureObserved,
+                "The real Thing.Ingested path must invoke the controlled later-comp failure.");
+            IntegrationAssert.True(
+                DiningSessionRegistry.Current(guest) is null,
+                "The Harmony ingestion finalizer must cancel the failed dining session.");
+
+            IntegrationAssert.True(
+                guest.inventory.innerContainer.Contains(plate) &&
+                !plate.Spawned &&
+                plate.stackCount == 1,
+                "Exceptional ingestion cleanup must return the exact single plate to personal inventory.");
+            IntegrationAssert.True(
+                !plate.GetComp<CompSanitation>().IsDirty,
+                "Exceptional ingestion cleanup must restore the unused plate's clean sanitation state.");
+        }
+        finally
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = originalRequirementMode;
+            DiningSessionRegistry.EndIngestion(guest);
+            DiningSessionRegistry.Cleanup(guest, job);
+            guest.ClearAllReservations(releaseDestinationsOnlyIfObsolete: false);
+            guest.inventory.innerContainer.ClearAndDestroyContents();
+            foreach (var thing in new Thing[] { meal, plate, guest })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    private sealed class ThrowAfterEmbeddedWareComp : ThingComp
+    {
+        public override void PostIngested(Pawn ingester)
+        {
+            throw new ExpectedLaterIngestionCompException();
+        }
+    }
+
+    private sealed class ExpectedLaterIngestionCompException : Exception
+    {
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
@@ -4012,12 +4253,19 @@ public static class FinalizedImmersiveChefsIntegrationTests
             cancellationSession!.PickupCutlery();
             var cancelledPiece = cancellationSession.CarriedCutlery as ThingWithComps;
             IntegrationAssert.NotNull(cancelledPiece, "Personal pickup must retain one exact split item.");
+            IntegrationAssert.True(
+                cancelledPiece!.GetComp<CompSanitation>().IsPersonalDiningWareFor(guest),
+                "Only the exact picked personal unit may carry the active dining-owner marker.");
             DiningSessionRegistry.Cleanup(guest, cancellationJob);
             IntegrationAssert.True(
                 guest.inventory.innerContainer.Contains(cancelledPiece!) &&
                 cancelledPiece!.GetComp<CompSanitation>().IsDirty &&
-                cancelledPiece.GetComp<CompSanitation>().WashProvenance == WashProvenance.WildWater,
-                "Cancellation must preserve dirty wild-water sanitation on the split personal item.");
+                cancelledPiece.GetComp<CompSanitation>().WashProvenance == WashProvenance.WildWater &&
+                !cancelledPiece.GetComp<CompSanitation>().IsPersonalDiningWareFor(guest) &&
+                !cancelledPiece.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession &&
+                !dirtyStack.GetComp<CompSanitation>().IsPersonalDiningWareFor(guest),
+                "Cancellation must preserve dirty wild-water sanitation and clear transient provenance " +
+                "from both the split personal item and its source stack.");
 
             guest.inventory.innerContainer.ClearAndDestroyContents();
             completionStack = (ThingWithComps)ThingMaker.MakeThing(
@@ -4039,12 +4287,19 @@ public static class FinalizedImmersiveChefsIntegrationTests
             completionSession!.PickupCutlery();
             var completedPiece = completionSession.CarriedCutlery as ThingWithComps;
             IntegrationAssert.NotNull(completedPiece, "Personal completion must retain one exact split item.");
+            IntegrationAssert.True(
+                completedPiece!.GetComp<CompSanitation>().IsPersonalDiningWareFor(guest),
+                "Only the exact picked completion unit may carry the active dining-owner marker.");
             DiningSessionRegistry.Complete(guest);
             IntegrationAssert.True(
                 guest.inventory.innerContainer.Contains(completedPiece!) &&
                 completedPiece!.GetComp<CompSanitation>().IsDirty &&
-                completedPiece.GetComp<CompSanitation>().WashProvenance == WashProvenance.WildWater,
-                "Completed dining must dirty the split personal item without losing wild-water provenance.");
+                completedPiece.GetComp<CompSanitation>().WashProvenance == WashProvenance.WildWater &&
+                !completedPiece.GetComp<CompSanitation>().IsPersonalDiningWareFor(guest) &&
+                !completedPiece.GetComp<CompSanitation>().ReturnToMapAfterInterruptedSession &&
+                !completionStack.GetComp<CompSanitation>().IsPersonalDiningWareFor(guest),
+                "Completed dining must dirty the split personal item without losing wild-water provenance " +
+                "and must clear all transient provenance.");
         }
         finally
         {

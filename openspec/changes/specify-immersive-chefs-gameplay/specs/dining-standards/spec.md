@@ -113,6 +113,11 @@ The same ownership rule SHALL cover a visiting trader or guest caravan temporari
 - **WHEN** a trader-caravan pawn on the colony map consumes an eligible plated meal that originated in its personal inventory without colony restaurant service
 - **THEN** the exact embedded plate returns dirty to that pawn's inventory after the meal disappears and is not dropped for colony ownership
 
+#### Scenario: Personal visitor ware survives interrupted dining persistence
+- **WHEN** the game is saved and loaded while an arrived trader or guest is carrying its personally owned plated meal and cutlery through an active ingestion job
+- **THEN** loaded-game recovery interrupts the transient job without dropping the personal cutlery, preserves the meal's exact personal-plate provenance for the replacement native ingestion job, consumes any temporary recovery marker without duplicating either item, and leaves every unrelated kitchenware item in that visitor's inventory untouched
+- **THEN** any positively marked colony ware whose first physical return fails remains marked and its exact pawn-and-Thing identity is retried by a bounded-per-tick pending-recovery path that does not depend on the interrupted job remaining active or disturb newly delivered active-session ware
+
 #### Scenario: An arrived guest receives colony restaurant service
 - **WHEN** Gastronomy supplies an eligible colony meal and colony place setting to a visiting pawn
 - **THEN** the returned dirty plate and cutlery remain colony property for the server/clearing workflow rather than being inserted into the guest's inventory

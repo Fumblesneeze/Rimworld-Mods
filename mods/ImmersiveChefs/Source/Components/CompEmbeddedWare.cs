@@ -17,6 +17,7 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
     private ThingOwner<Thing>? embeddedPlates;
     private int lastFireDamageTick = -1;
     private bool platingOpportunityFailed;
+    private string? personalPlateOwnerThingId;
     private readonly IngestionLifecycleState ingestionLifecycle = new();
 
     private ThingOwner<Thing> EmbeddedPlates =>
@@ -25,6 +26,28 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
     public int EmbeddedPlateCount => EmbeddedPlates.InnerListForReading.Sum(plate => plate.stackCount);
 
     public bool PlatingOpportunityFailed => platingOpportunityFailed;
+
+    public bool IsPersonalPlateFor(Pawn pawn) =>
+        pawn is not null && IsPersonalPlateFor(pawn.ThingID);
+
+    public bool IsPersonalPlateFor(string? pawnThingId) =>
+        !string.IsNullOrEmpty(personalPlateOwnerThingId) &&
+        StringComparer.Ordinal.Equals(personalPlateOwnerThingId, pawnThingId);
+
+    public void MarkPersonalPlateOwner(Pawn pawn)
+    {
+        MarkPersonalPlateOwner(pawn?.ThingID);
+    }
+
+    public void MarkPersonalPlateOwner(string? pawnThingId)
+    {
+        personalPlateOwnerThingId = pawnThingId;
+    }
+
+    public void ClearPersonalPlateOwner()
+    {
+        personalPlateOwnerThingId = null;
+    }
 
     public IReadOnlyList<PlateBinding> Bindings => EmbeddedPlates.InnerListForReading
         .SelectMany(plate => Enumerable.Repeat(Snapshot(plate), plate.stackCount))
@@ -182,6 +205,7 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
         }
 
         target.platingOpportunityFailed = platingOpportunityFailed;
+        target.personalPlateOwnerThingId = personalPlateOwnerThingId;
         TransferTo(target, Math.Min(piece.stackCount, EmbeddedPlateCount));
     }
 
@@ -196,7 +220,10 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
     {
         var otherComp = (other as ThingWithComps)?.GetComp<CompEmbeddedWare>();
         return otherComp is not null &&
-               platingOpportunityFailed == otherComp.platingOpportunityFailed;
+               platingOpportunityFailed == otherComp.platingOpportunityFailed &&
+               StringComparer.Ordinal.Equals(
+                   personalPlateOwnerThingId,
+                   otherComp.personalPlateOwnerThingId);
     }
 
     public override string CompInspectStringExtra() =>
@@ -207,6 +234,7 @@ public sealed class CompEmbeddedWare : ThingComp, IThingHolder
         Scribe_Deep.Look(ref embeddedPlates, "embeddedPlates", this);
         Scribe_Values.Look(ref lastFireDamageTick, "lastFireDamageTick", -1);
         Scribe_Values.Look(ref platingOpportunityFailed, "platingOpportunityFailed", false);
+        Scribe_Values.Look(ref personalPlateOwnerThingId, "personalPlateOwnerThingId");
         embeddedPlates ??= new ThingOwner<Thing>(this, oneStackOnly: false, LookMode.Deep);
     }
 

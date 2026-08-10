@@ -36,7 +36,9 @@ internal sealed class ReservedWarePortion
         }
 
         RemainingCount--;
-        return target.PeekPlateThing();
+        var embedded = target.PeekPlateThing();
+        (embedded as ThingWithComps)?.GetComp<CompSanitation>()?.ClearSessionTransfer();
+        return embedded;
     }
 }
 
@@ -109,8 +111,14 @@ internal sealed class CookingSession
     internal void Pickup(Pawn pawn, ReservedWarePortion portion)
     {
         var source = portion.Thing;
-        if (source.Destroyed || source.ParentHolder == pawn.inventory?.innerContainer)
+        if (source.Destroyed)
         {
+            return;
+        }
+
+        if (source.ParentHolder == pawn.inventory?.innerContainer)
+        {
+            (source as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
             return;
         }
 
@@ -123,6 +131,7 @@ internal sealed class CookingSession
 
         if (pawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
         {
+            (picked as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
             return;
         }
 
@@ -382,23 +391,42 @@ internal sealed class CookingSession
         };
     }
 
-    private static void DropExact(Thing thing, IntVec3 position, Map map)
+    private void DropExact(Thing thing, IntVec3 position, Map map)
     {
+        var wasInPawnInventory = ReferenceEquals(
+            thing.holdingOwner,
+            Pawn.inventory?.innerContainer);
+        var placed = false;
         if (thing.holdingOwner is { } owner)
         {
-            owner.TryDrop(thing, position, map, ThingPlaceMode.Near, out _);
+            placed = owner.TryDrop(thing, position, map, ThingPlaceMode.Near, out _);
         }
         else if (thing.Spawned)
         {
             if (thing.Position != position)
             {
                 thing.DeSpawn(DestroyMode.Vanish);
-                GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near);
+                placed = GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near);
+            }
+            else
+            {
+                placed = true;
             }
         }
         else
         {
-            GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near);
+            placed = GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near);
+        }
+
+        if (placed)
+        {
+            (thing as ThingWithComps)?.GetComp<CompSanitation>()?.ClearSessionTransfer();
+        }
+        else if (wasInPawnInventory &&
+                 (thing as ThingWithComps)?.GetComp<CompSanitation>()
+                     ?.ReturnToMapAfterInterruptedSession == true)
+        {
+            GameComponent_ImmersiveChefsRecovery.ScheduleWareRecovery(Pawn, thing);
         }
     }
 }

@@ -1329,8 +1329,17 @@ public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTes
             "The exact served plate and cutlery must occupy 1.25 dishwasher capacity.");
         EndToEndAssert.True(
             guest.inventory?.innerContainer.Contains(personalCutlery) == true &&
-            personalCutlery.GetComp<CompSanitation>()?.IsDirty == false,
+            personalCutlery.GetComp<CompSanitation>()?.IsDirty == false &&
+            personalCutlery.GetComp<CompSanitation>()?.IsPersonalDiningWareFor(guest) == false &&
+            personalCutlery.GetComp<CompSanitation>()?.ReturnToMapAfterInterruptedSession == false,
             "The arrived guest must retain its exact clean personal cutlery after colony waiter service.");
+        EndToEndAssert.False(
+            guest.inventory?.innerContainer.Contains(plate) == true ||
+            guest.inventory?.innerContainer.Contains(cutlery) == true,
+            "Gastronomy-served colony plate and cutlery must never become the arrived guest's property.");
+        EndToEndAssert.False(
+            cutlery.GetComp<CompSanitation>()?.ReturnToMapAfterInterruptedSession == true,
+            "Completed waiter service must clear the colony cutlery's transient recovery marker.");
     }
 }
 
@@ -1898,10 +1907,18 @@ internal static class DispenserE2EFixture
             chair.SetFactionDirect(Faction.OfPlayer);
             GenSpawn.Spawn(chair, chairCell, map, Rot4.FromIntVec3(spotCell - chairCell));
 
+            var registerSupport = SpawnBuilding(
+                map,
+                "Table1x2c",
+                center + new IntVec3(-3, 0, 0));
+            var registerCell = registerSupport.OccupiedRect().Cells.First();
             var cashRegister = SpawnBuilding(
                 map,
                 "CashRegister_CashRegister",
-                center + new IntVec3(-3, 0, 0));
+                registerCell);
+            EndToEndAssert.True(
+                registerCell.GetThingList(map).Contains(registerSupport),
+                "The real tabletop cash register must be spawned on its exact native table support.");
             var dishwasher = SpawnBuilding(
                 map,
                 "ImmersiveChefs_Dishwasher",
@@ -2329,7 +2346,7 @@ internal static class DispenserE2EFixture
             var hopper = SpawnBuilding(map, ThingDefOf.Hopper.defName, hopperCell);
             stage = "spawn native hopper feedstock";
             var feedstock = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("RawRice"));
-            feedstock.stackCount = 100;
+            feedstock.stackCount = Math.Min(60, feedstock.def.stackLimit);
             GenSpawn.Spawn(feedstock, hopperCell, map);
 
             stage = "settle native power and hopper state";

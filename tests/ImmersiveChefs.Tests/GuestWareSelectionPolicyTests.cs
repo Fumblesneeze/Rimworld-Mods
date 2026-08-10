@@ -64,4 +64,22 @@ public sealed class GuestWareSelectionPolicyTests
                 arrivedHospitalityGuest),
             Is.EqualTo(expected));
     }
+
+    [TestCase(true, true, false, true)]
+    [TestCase(true, true, true, false)]
+    [TestCase(true, false, false, false)]
+    [TestCase(false, true, false, false)]
+    public void Personal_plate_return_requires_original_guest_inventory_without_colony_service(
+        bool mayUsePersonalInventory,
+        bool mealWasInPersonalInventory,
+        bool servedByColony,
+        bool expected)
+    {
+        Assert.That(
+            GuestWareSelectionPolicy.ShouldReturnMealPlateToPersonalInventory(
+                mayUsePersonalInventory,
+                mealWasInPersonalInventory,
+                servedByColony),
+            Is.EqualTo(expected));
+    }
 }

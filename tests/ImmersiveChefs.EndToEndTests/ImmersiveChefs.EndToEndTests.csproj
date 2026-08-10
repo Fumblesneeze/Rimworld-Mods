@@ -21,6 +21,10 @@
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="0Harmony">
       <HintPath>$(HarmonyAssemblyPath)</HintPath>
       <Private>false</Private>

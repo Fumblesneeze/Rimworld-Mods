@@ -50,6 +50,12 @@ public static class GuestWareSelectionPolicy
         bool arrivedHospitalityGuest) =>
         ordinaryNonHostileGuest || arrivedHospitalityGuest;
 
+    public static bool ShouldReturnMealPlateToPersonalInventory(
+        bool mayUsePersonalInventory,
+        bool mealWasInPersonalInventory,
+        bool servedByColony) =>
+        mayUsePersonalInventory && mealWasInPersonalInventory && !servedByColony;
+
     public static T? Select<T>(
         IEnumerable<ServiceWareCandidate<T>> colonyCandidates,
         IEnumerable<ServiceWareCandidate<T>> personalCandidates,
