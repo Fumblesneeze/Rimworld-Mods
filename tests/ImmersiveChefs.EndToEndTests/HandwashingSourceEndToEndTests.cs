@@ -129,7 +129,7 @@ public sealed class TerrainHandwashingLifecycleTest : IRimWorldEndToEndTest
             new[] { plate.ThingID, cleaner.ThingID },
             paddingPixels: 260);
         yield return new ScreenshotStep(
-            "exact plate visibly reports clean and wild-water washed",
+            "exact plate visibly reports clean without exposing wild-water provenance",
             Array.Empty<string>(),
             paddingPixels: 0);
 
@@ -429,7 +429,7 @@ public sealed class DubsSinkHandwashingPriorityTest : IRimWorldEndToEndTest
             new[] { plate.ThingID, sink.ThingID, tower.ThingID },
             paddingPixels: 220);
         yield return new ScreenshotStep(
-            "exact plate visibly reports wild-water washed after Dubs supply loss",
+            "exact plate reports clean without exposing fallback wash provenance",
             Array.Empty<string>(),
             paddingPixels: 0);
         yield return new CheckpointStep(

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_PoisonCause_LowQuality>low-quality meal</ImmersiveChefs_PoisonCause_LowQuality>
+  <ImmersiveChefs_PoisonCause_ColdMeal>cold meal</ImmersiveChefs_PoisonCause_ColdMeal>
+  <ImmersiveChefs_PoisonCause_FrozenMeal>frozen meal</ImmersiveChefs_PoisonCause_FrozenMeal>
+  <ImmersiveChefs_PoisonCause_DirtyCookware>dirty cookware</ImmersiveChefs_PoisonCause_DirtyCookware>
+  <ImmersiveChefs_PoisonCause_DirtyPlate>dirty plate</ImmersiveChefs_PoisonCause_DirtyPlate>
+  <ImmersiveChefs_PoisonCause_DirtyCutlery>dirty cutlery</ImmersiveChefs_PoisonCause_DirtyCutlery>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedCookware>unsafely washed cookware</ImmersiveChefs_PoisonCause_UnsafeWashedCookware>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedPlate>unsafely washed plate</ImmersiveChefs_PoisonCause_UnsafeWashedPlate>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedCutlery>unsafely washed cutlery</ImmersiveChefs_PoisonCause_UnsafeWashedCutlery>
+  <ImmersiveChefs_PoisonCause_PoorPlate>poor plate</ImmersiveChefs_PoisonCause_PoorPlate>
+  <ImmersiveChefs_PoisonCause_PoorCutlery>poor cutlery</ImmersiveChefs_PoisonCause_PoorCutlery>
+  <ImmersiveChefs_PoisonCause_ReheatedMeal>reheated meal</ImmersiveChefs_PoisonCause_ReheatedMeal>
+  <ImmersiveChefs_PoisonCause_PoisonedMeal>poisoned meal</ImmersiveChefs_PoisonCause_PoisonedMeal>
+</LanguageData>

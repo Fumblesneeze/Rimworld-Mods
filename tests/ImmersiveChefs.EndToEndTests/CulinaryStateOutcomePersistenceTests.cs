@@ -33,10 +33,15 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
     private string mealId = string.Empty;
     private string plateId = string.Empty;
     private string cutleryId = string.Empty;
+    private HashSet<Message> initialLiveMessages = null!;
+    private string dinerLabel = string.Empty;
+    private string mealLabel = string.Empty;
 
     public void Arrange(IEndToEndContext context)
     {
         PreserveSettings(context);
+        InstallLocalizedPoisonInspectLeakProbe(context);
+        initialLiveMessages = LiveMessages().ToHashSet();
         var savePath = GenFilePaths.FilePathForSavedGame(SaveName);
         context.DeferCleanup(() =>
         {
@@ -71,6 +76,7 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
             DefDatabase<ThingDef>.GetNamed("RawRice"));
 
         plate = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Plate", ThingDefOf.WoodLog);
+        plate.GetComp<CompSanitation>()!.MarkClean(WashProvenance.WildWater);
         plate.GetComp<CompSanitation>()!.MarkDirty();
         EndToEndAssert.True(
             meal.GetComp<CompEmbeddedWare>()!.TryEmbedPlate(plate),
@@ -83,6 +89,8 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
         mealId = meal.ThingID;
         plateId = plate.ThingID;
         cutleryId = cutlery.ThingID;
+        dinerLabel = diner.LabelShort;
+        mealLabel = meal.LabelCapNoCount;
     }
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
@@ -100,12 +108,30 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
             new[] { dinerId, mealId, cutleryId },
             paddingPixels: 220);
         yield return new ScreenshotStep(
-            "observe frozen excellent dirty-plated serving before save",
+            "observe private poison and wash provenance hidden before ingestion",
             Array.Empty<string>(),
             paddingPixels: 0);
         yield return new AssertionStep(
-            "capture exact pre-save culinary state",
-            _ => AssertPersistedState());
+            "ordinary inspection hides poison and wild-water state",
+            _ =>
+            {
+                LocalizedPoisonInspectLeakProbe.InvocationCount = 0;
+                var mealInspect = meal.GetInspectString();
+                var plateInspect = plate.GetComp<CompSanitation>()!.CompInspectStringExtra();
+                EndToEndAssert.True(
+                    LocalizedPoisonInspectLeakProbe.InvocationCount > 0,
+                    "The exact food-poison component probe must attempt a localized inspect contribution.");
+                EndToEndAssert.True(
+                    mealInspect.IndexOf(LocalizedPoisonInspectLeakProbe.Sentinel, StringComparison.Ordinal) < 0,
+                    "Covered meal inspection must structurally suppress the food-poison component regardless of locale.");
+                EndToEndAssert.True(
+                    plateInspect.IndexOf("wild-water", StringComparison.OrdinalIgnoreCase) < 0,
+                    "Ordinary plate inspection must not expose wild-water wash provenance.");
+                EndToEndAssert.Equal(WashProvenance.WildWater,
+                    plate.GetComp<CompSanitation>()!.WashProvenance,
+                    "Hiding provenance must not alter its internal sanitation state.");
+                AssertPersistedState();
+            });
         yield return new SaveLoadActionStep(
             "save and load culinary state through RimWorld",
             SaveName);
@@ -181,6 +207,10 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
         yield return new AssertionStep(
             "loaded serving applies each exact outcome once",
             _ => AssertCompletedOutcome());
+        yield return new ScreenshotStep(
+            "observe food poisoning attributed to dirty cookware",
+            Array.Empty<string>(),
+            paddingPixels: 0);
 
         yield return new SelectionActionStep(
             "select culinary outcome diner",
@@ -308,6 +338,9 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
             "Native save/load must preserve one physical embedded plate.");
         EndToEndAssert.True(plate.GetComp<CompSanitation>()!.IsDirty,
             "Native save/load must preserve the plate's dirty state.");
+        EndToEndAssert.Equal(WashProvenance.WildWater,
+            plate.GetComp<CompSanitation>()!.WashProvenance,
+            "Native save/load must preserve hidden wild-water provenance without displaying it.");
         EndToEndAssert.Equal(cutleryId, cutlery.ThingID,
             "Native save/load must preserve the exact clean cutlery identity.");
         EndToEndAssert.True(!cutlery.GetComp<CompSanitation>()!.IsDirty,
@@ -363,6 +396,20 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
             "The contaminated setting must produce one dirty-tableware thought.");
         EndToEndAssert.True(diner.health.hediffSet.HasHediff(HediffDefOf.FoodPoisoning),
             "The configured deterministic 100% final risk must visibly apply food poisoning.");
+        var poisonMessages = LiveMessages()
+            .Where(message => !initialLiveMessages.Contains(message) &&
+                              message.text.IndexOf(
+                                  "has gotten food poisoning from",
+                                  StringComparison.OrdinalIgnoreCase) >= 0 &&
+                              message.text.IndexOf(dinerLabel, StringComparison.OrdinalIgnoreCase) >= 0 &&
+                              message.text.IndexOf(mealLabel, StringComparison.OrdinalIgnoreCase) >= 0)
+            .ToArray();
+        EndToEndAssert.Equal(1, poisonMessages.Length,
+            "The completed ingestion must produce one new native food-poisoning notification correlated to the exact diner and meal.");
+        EndToEndAssert.True(
+            poisonMessages[0].text.IndexOf("Cause: Dirty cookware.", StringComparison.OrdinalIgnoreCase) >= 0,
+            "The native notification must name dirty cookware, the deterministic largest contributor, rather than unknown. " +
+            $"Observed: {poisonMessages[0].text}");
         EndToEndAssert.True(plate.Spawned && plate.GetComp<CompSanitation>()!.IsDirty,
             "The exact loaded plate must return dirty after eating.");
         EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()!.IsDirty,
@@ -384,5 +431,40 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
         var thoughtDef = DefDatabase<ThoughtDef>.GetNamed(defName);
         return diner.needs?.mood?.thoughts?.memories
                    .GetFirstMemoryOfDef(thoughtDef)?.CurStageIndex ?? -1;
+    }
+
+    private static IReadOnlyList<Message> LiveMessages()
+    {
+        return (IReadOnlyList<Message>)(HarmonyLib.AccessTools
+            .Field(typeof(Messages), "liveMessages")
+            .GetValue(null) ?? Array.Empty<Message>());
+    }
+
+    private static void InstallLocalizedPoisonInspectLeakProbe(IEndToEndContext context)
+    {
+        const string owner = "fumblesneeze.immersivechefs.e2e.localized-poison-inspect-probe";
+        var harmony = new HarmonyLib.Harmony(owner);
+        context.DeferCleanup(() => harmony.UnpatchAll(owner));
+        harmony.Patch(
+            HarmonyLib.AccessTools.Method(typeof(ThingComp), nameof(ThingComp.CompInspectStringExtra)),
+            postfix: new HarmonyLib.HarmonyMethod(
+                typeof(LocalizedPoisonInspectLeakProbe),
+                nameof(LocalizedPoisonInspectLeakProbe.Postfix)));
+    }
+
+    private static class LocalizedPoisonInspectLeakProbe
+    {
+        internal const string Sentinel = "Vergiftungszustand: verborgen";
+        internal static int InvocationCount;
+
+        [HarmonyLib.HarmonyPriority(HarmonyLib.Priority.Normal)]
+        internal static void Postfix(ThingComp __instance, ref string __result)
+        {
+            if (__instance is CompFoodPoisonable)
+            {
+                InvocationCount++;
+                __result = Sentinel;
+            }
+        }
     }
 }

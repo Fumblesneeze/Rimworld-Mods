@@ -38,6 +38,41 @@ public readonly struct DiningRiskInputs
     public float MaximumChance { get; }
 }
 
+public enum FoodPoisonRiskContributor
+{
+    None,
+    LowCulinaryQuality,
+    ColdMeal,
+    FrozenMeal,
+    DirtyCookware,
+    DirtyPlate,
+    DirtyCutlery,
+    WildWaterCookware,
+    WildWaterPlate,
+    WildWaterCutlery,
+    PoorPlate,
+    PoorCutlery,
+    MicrowaveReheating,
+    VanillaBase
+}
+
+public readonly struct DiningPoisonRiskResult
+{
+    public DiningPoisonRiskResult(
+        float finalChance,
+        FoodPoisonRiskContributor largestPositiveContributor,
+        float largestPositiveContributionPercentagePoints)
+    {
+        FinalChance = finalChance;
+        LargestPositiveContributor = largestPositiveContributor;
+        LargestPositiveContributionPercentagePoints = largestPositiveContributionPercentagePoints;
+    }
+
+    public float FinalChance { get; }
+    public FoodPoisonRiskContributor LargestPositiveContributor { get; }
+    public float LargestPositiveContributionPercentagePoints { get; }
+}
+
 public static class DiningOutcomeCalculator
 {
     private const ContaminationSources DirtyWare =
@@ -47,33 +82,145 @@ public static class DiningOutcomeCalculator
 
     public static float FinalPoisonChance(DiningRiskInputs inputs)
     {
+        return CalculatePoisonRisk(inputs).FinalChance;
+    }
+
+    public static DiningPoisonRiskResult CalculatePoisonRisk(DiningRiskInputs inputs)
+    {
         var baseChance = Clamp(inputs.BaseChance, 0f, 1f);
         var cap = Clamp(inputs.MaximumChance, 0f, 1f);
         if (baseChance > cap)
         {
-            return baseChance;
+            return new DiningPoisonRiskResult(
+                baseChance,
+                baseChance > 0f ? FoodPoisonRiskContributor.VanillaBase : FoodPoisonRiskContributor.None,
+                baseChance * 100f);
         }
 
-        var percentagePoints = (50 - Clamp(inputs.QualityScore, 0, 100)) * 0.20f;
-        percentagePoints += inputs.ThermalBand switch
+        var scale = Math.Max(0f, inputs.EffectScale);
+        var largestContributor = FoodPoisonRiskContributor.None;
+        var largestContribution = 0f;
+
+        var qualityPoints = (50 - Clamp(inputs.QualityScore, 0, 100)) * 0.20f;
+        var percentagePoints = qualityPoints;
+        Consider(
+            FoodPoisonRiskContributor.LowCulinaryQuality,
+            qualityPoints * scale,
+            ref largestContributor,
+            ref largestContribution);
+
+        var thermalPoints = inputs.ThermalBand switch
         {
             ThermalBand.Cold => 3f,
             ThermalBand.Frozen => 8f,
             _ => 0f
         };
-        percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtyCookware) ? 15f : 0f;
-        percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtyPlate) ? 15f : 0f;
-        percentagePoints += Has(inputs.Contamination, ContaminationSources.DirtyCutlery) ? 10f : 0f;
-        percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterCookware) ? 5f : 0f;
-        percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterPlate) ? 4f : 0f;
-        percentagePoints += Has(inputs.Contamination, ContaminationSources.WildWaterCutlery) ? 3f : 0f;
-        percentagePoints += ServiceDelta(inputs.PlateServiceScore);
-        percentagePoints += ServiceDelta(inputs.CutleryServiceScore);
-        percentagePoints += Math.Max(0, inputs.MicrowaveReheatCount) *
-                            Math.Max(0f, inputs.MicrowaveExtraPercentagePoints);
+        percentagePoints += thermalPoints;
+        Consider(
+            inputs.ThermalBand == ThermalBand.Frozen
+                ? FoodPoisonRiskContributor.FrozenMeal
+                : FoodPoisonRiskContributor.ColdMeal,
+            thermalPoints * scale,
+            ref largestContributor,
+            ref largestContribution);
 
-        var adjusted = baseChance + ((percentagePoints / 100f) * Math.Max(0f, inputs.EffectScale));
-        return Clamp(adjusted, 0f, cap);
+        AddContaminationCandidate(
+            inputs.Contamination,
+            ContaminationSources.DirtyCookware,
+            FoodPoisonRiskContributor.DirtyCookware,
+            15f,
+            scale,
+            ref percentagePoints,
+            ref largestContributor,
+            ref largestContribution);
+        AddContaminationCandidate(
+            inputs.Contamination,
+            ContaminationSources.DirtyPlate,
+            FoodPoisonRiskContributor.DirtyPlate,
+            15f,
+            scale,
+            ref percentagePoints,
+            ref largestContributor,
+            ref largestContribution);
+        AddContaminationCandidate(
+            inputs.Contamination,
+            ContaminationSources.DirtyCutlery,
+            FoodPoisonRiskContributor.DirtyCutlery,
+            10f,
+            scale,
+            ref percentagePoints,
+            ref largestContributor,
+            ref largestContribution);
+        AddContaminationCandidate(
+            inputs.Contamination,
+            ContaminationSources.WildWaterCookware,
+            FoodPoisonRiskContributor.WildWaterCookware,
+            5f,
+            scale,
+            ref percentagePoints,
+            ref largestContributor,
+            ref largestContribution);
+        AddContaminationCandidate(
+            inputs.Contamination,
+            ContaminationSources.WildWaterPlate,
+            FoodPoisonRiskContributor.WildWaterPlate,
+            4f,
+            scale,
+            ref percentagePoints,
+            ref largestContributor,
+            ref largestContribution);
+        AddContaminationCandidate(
+            inputs.Contamination,
+            ContaminationSources.WildWaterCutlery,
+            FoodPoisonRiskContributor.WildWaterCutlery,
+            3f,
+            scale,
+            ref percentagePoints,
+            ref largestContributor,
+            ref largestContribution);
+
+        var plateServicePoints = ServiceDelta(inputs.PlateServiceScore);
+        percentagePoints += plateServicePoints;
+        Consider(
+            FoodPoisonRiskContributor.PoorPlate,
+            plateServicePoints * scale,
+            ref largestContributor,
+            ref largestContribution);
+
+        var cutleryServicePoints = ServiceDelta(inputs.CutleryServiceScore);
+        percentagePoints += cutleryServicePoints;
+        Consider(
+            FoodPoisonRiskContributor.PoorCutlery,
+            cutleryServicePoints * scale,
+            ref largestContributor,
+            ref largestContribution);
+
+        var microwavePoints = Math.Max(0, inputs.MicrowaveReheatCount) *
+                              Math.Max(0f, inputs.MicrowaveExtraPercentagePoints);
+        percentagePoints += microwavePoints;
+        Consider(
+            FoodPoisonRiskContributor.MicrowaveReheating,
+            microwavePoints * scale,
+            ref largestContributor,
+            ref largestContribution);
+
+        // The compatible vanilla probability participates in cause attribution, but is deliberately
+        // considered after the physical/custom table so exact ties retain the table's severity order.
+        Consider(
+            FoodPoisonRiskContributor.VanillaBase,
+            baseChance * 100f,
+            ref largestContributor,
+            ref largestContribution);
+
+        var adjusted = baseChance + ((percentagePoints / 100f) * scale);
+        var finalChance = Clamp(adjusted, 0f, cap);
+        if (finalChance <= 0f)
+        {
+            largestContributor = FoodPoisonRiskContributor.None;
+            largestContribution = 0f;
+        }
+
+        return new DiningPoisonRiskResult(finalChance, largestContributor, largestContribution);
     }
 
     public static int QualityMoodOffset(int qualityScore)
@@ -118,6 +265,64 @@ public static class DiningOutcomeCalculator
 
     private static bool Has(ContaminationSources sources, ContaminationSources value) =>
         (sources & value) != 0;
+
+    private static void AddContaminationCandidate(
+        ContaminationSources sources,
+        ContaminationSources source,
+        FoodPoisonRiskContributor contributor,
+        float points,
+        float scale,
+        ref float totalPoints,
+        ref FoodPoisonRiskContributor largestContributor,
+        ref float largestContribution)
+    {
+        if (!Has(sources, source))
+        {
+            return;
+        }
+
+        totalPoints += points;
+        Consider(contributor, points * scale, ref largestContributor, ref largestContribution);
+    }
+
+    private static void Consider(
+        FoodPoisonRiskContributor contributor,
+        float contribution,
+        ref FoodPoisonRiskContributor largestContributor,
+        ref float largestContribution)
+    {
+        if (contribution <= 0f ||
+            contribution < largestContribution ||
+            (Math.Abs(contribution - largestContribution) < 0.0001f &&
+             AttributionPriority(contributor) <= AttributionPriority(largestContributor)))
+        {
+            return;
+        }
+
+        largestContributor = contributor;
+        largestContribution = contribution;
+    }
+
+    private static int AttributionPriority(FoodPoisonRiskContributor contributor)
+    {
+        return contributor switch
+        {
+            FoodPoisonRiskContributor.DirtyCookware => 140,
+            FoodPoisonRiskContributor.DirtyPlate => 130,
+            FoodPoisonRiskContributor.DirtyCutlery => 120,
+            FoodPoisonRiskContributor.FrozenMeal => 110,
+            FoodPoisonRiskContributor.LowCulinaryQuality => 100,
+            FoodPoisonRiskContributor.MicrowaveReheating => 90,
+            FoodPoisonRiskContributor.WildWaterCookware => 80,
+            FoodPoisonRiskContributor.WildWaterPlate => 70,
+            FoodPoisonRiskContributor.WildWaterCutlery => 60,
+            FoodPoisonRiskContributor.ColdMeal => 50,
+            FoodPoisonRiskContributor.PoorPlate => 40,
+            FoodPoisonRiskContributor.PoorCutlery => 30,
+            FoodPoisonRiskContributor.VanillaBase => 20,
+            _ => 0
+        };
+    }
 
     private static int Clamp(int value, int minimum, int maximum) =>
         Math.Max(minimum, Math.Min(maximum, value));

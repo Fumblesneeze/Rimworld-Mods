@@ -45,6 +45,23 @@ public sealed class PersistentStateTests
     }
 
     [Test]
+    public void Ordinary_sanitation_inspection_hides_wild_water_provenance()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                SanitationInspectionText.For(isDirty: false, selfCleaning: false),
+                Is.EqualTo("Cleanliness: clean"));
+            Assert.That(
+                SanitationInspectionText.For(isDirty: true, selfCleaning: false),
+                Is.EqualTo("Cleanliness: dirty"));
+            Assert.That(
+                SanitationInspectionText.For(isDirty: false, selfCleaning: true),
+                Is.EqualTo("Cleanliness: self-cleaning"));
+        });
+    }
+
+    [Test]
     public void Splitting_a_meal_stack_transfers_exact_plate_bindings_without_duplication()
     {
         var meals = new MealStackState(new[]

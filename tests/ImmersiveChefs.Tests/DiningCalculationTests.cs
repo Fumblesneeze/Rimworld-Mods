@@ -82,4 +82,87 @@ public sealed class DiningCalculationTests
                 Is.EqualTo(ContaminationSources.DirtyCutlery));
         });
     }
+
+    [Test]
+    public void Poisoning_reports_the_largest_scaled_positive_contributor_without_changing_probability()
+    {
+        var inputs = new DiningRiskInputs(
+            baseChance: 0.02f,
+            qualityScore: 0,
+            thermalBand: ThermalBand.Frozen,
+            contamination: ContaminationSources.DirtyCookware |
+                           ContaminationSources.DirtyPlate |
+                           ContaminationSources.WildWaterCutlery,
+            plateServiceScore: 0f,
+            cutleryServiceScore: 100f,
+            microwaveReheatCount: 2,
+            microwaveExtraPercentagePoints: 5f,
+            effectScale: 2f,
+            maximumChance: 1f);
+
+        var result = DiningOutcomeCalculator.CalculatePoisonRisk(inputs);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.FinalChance,
+                Is.EqualTo(DiningOutcomeCalculator.FinalPoisonChance(inputs)).Within(0.0001f));
+            Assert.That(result.FinalChance, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(result.LargestPositiveContributor,
+                Is.EqualTo(FoodPoisonRiskContributor.DirtyCookware));
+            Assert.That(result.LargestPositiveContributionPercentagePoints,
+                Is.EqualTo(30f).Within(0.0001f));
+        });
+    }
+
+    [Test]
+    public void Poisoning_ties_use_physical_risk_priority_and_vanilla_base_remains_eligible()
+    {
+        var physicalTie = DiningOutcomeCalculator.CalculatePoisonRisk(new DiningRiskInputs(
+            0f, 50, ThermalBand.Warm,
+            ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate,
+            null, null, 0, 0.5f, 1f, 0.50f));
+        var vanillaDominates = DiningOutcomeCalculator.CalculatePoisonRisk(new DiningRiskInputs(
+            0.30f, 50, ThermalBand.Warm,
+            ContaminationSources.DirtyCookware,
+            null, null, 0, 0.5f, 1f, 0.50f));
+        var physicalTieBeatsQuality = DiningOutcomeCalculator.CalculatePoisonRisk(new DiningRiskInputs(
+            0f, 0, ThermalBand.Warm,
+            ContaminationSources.DirtyCutlery,
+            null, null, 0, 0.5f, 1f, 0.50f));
+        var physicalTieBeatsBase = DiningOutcomeCalculator.CalculatePoisonRisk(new DiningRiskInputs(
+            0.15f, 50, ThermalBand.Warm,
+            ContaminationSources.DirtyCookware,
+            null, null, 0, 0.5f, 1f, 0.50f));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(physicalTie.LargestPositiveContributor,
+                Is.EqualTo(FoodPoisonRiskContributor.DirtyCookware));
+            Assert.That(vanillaDominates.LargestPositiveContributor,
+                Is.EqualTo(FoodPoisonRiskContributor.VanillaBase));
+            Assert.That(vanillaDominates.FinalChance, Is.EqualTo(0.45f).Within(0.0001f));
+            Assert.That(physicalTieBeatsQuality.LargestPositiveContributor,
+                Is.EqualTo(FoodPoisonRiskContributor.DirtyCutlery));
+            Assert.That(physicalTieBeatsBase.LargestPositiveContributor,
+                Is.EqualTo(FoodPoisonRiskContributor.DirtyCookware));
+        });
+    }
+
+    [Test]
+    public void Disabled_custom_risk_does_not_claim_a_custom_cause()
+    {
+        var result = DiningOutcomeCalculator.CalculatePoisonRisk(new DiningRiskInputs(
+            0f, 0, ThermalBand.Frozen,
+            ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate,
+            0f, 0f, 4, 5f, 0f, 0.50f));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.FinalChance, Is.Zero);
+            Assert.That(result.LargestPositiveContributor,
+                Is.EqualTo(FoodPoisonRiskContributor.None));
+            Assert.That(result.LargestPositiveContributionPercentagePoints, Is.Zero);
+        });
+    }
+
 }

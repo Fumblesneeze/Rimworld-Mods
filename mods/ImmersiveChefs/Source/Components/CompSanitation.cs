@@ -115,13 +115,7 @@ public sealed class CompSanitation : ThingComp
 
     public override string CompInspectStringExtra()
     {
-        if (SelfCleaning)
-        {
-            return "Cleanliness: self-cleaning";
-        }
-
-        var provenance = washProvenance == WashProvenance.WildWater ? " (wild-water washed)" : string.Empty;
-        return $"Cleanliness: {(dirty ? "dirty" : "clean")}{provenance}";
+        return SanitationInspectionText.For(dirty, SelfCleaning);
     }
 
     public override void PostExposeData()
@@ -147,5 +141,15 @@ public sealed class CompSanitation : ThingComp
         {
             map.listerHaulables.Notify_AddedThing(parent);
         }
+    }
+}
+
+public static class SanitationInspectionText
+{
+    public static string For(bool isDirty, bool selfCleaning)
+    {
+        return selfCleaning
+            ? "Cleanliness: self-cleaning"
+            : $"Cleanliness: {(isDirty ? "dirty" : "clean")}";
     }
 }

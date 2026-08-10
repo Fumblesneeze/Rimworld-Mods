@@ -336,60 +336,92 @@ internal static class UnifiedFoodPoisoningPatch
     private static readonly AccessTools.FieldRef<CompFoodPoisonable, float> PoisonPercent =
         AccessTools.FieldRefAccess<CompFoodPoisonable, float>("poisonPct");
 
-    private static void Prefix(CompFoodPoisonable __instance, Pawn ingester, out float __state)
+    private static void Prefix(CompFoodPoisonable __instance, Pawn ingester, out PoisoningPatchState __state)
     {
-        __state = PoisonPercent(__instance);
-        if (__instance.parent is not ThingWithComps meal ||
-            !MealCoveragePolicy.IsCovered(meal.def) ||
-            !DiningPawnPolicy.AppliesDiningConsequences(ingester.RaceProps.Humanlike))
+        var originalPoisonPercent = PoisonPercent(__instance);
+        var previousAttribution = FoodPoisonAttributionContext.Replace(FoodPoisonRiskContributor.None);
+        __state = new PoisoningPatchState(originalPoisonPercent, previousAttribution);
+        try
         {
-            return;
-        }
+            if (__instance.parent is not ThingWithComps meal ||
+                !MealCoveragePolicy.IsCovered(meal.def) ||
+                !DiningPawnPolicy.AppliesDiningConsequences(ingester.RaceProps.Humanlike))
+            {
+                return;
+            }
 
-        var record = meal.GetComp<CompCulinaryState>()?.PeekCurrentServing();
-        if (record is null)
+            var record = meal.GetComp<CompCulinaryState>()?.PeekCurrentServing();
+            if (record is null)
+            {
+                return;
+            }
+
+            var dining = DiningSessionRegistry.Current(ingester);
+            var contamination = record.Contamination;
+            contamination |= SanitationContamination.ForCutlery(
+                dining?.CutleryWasDirty == true,
+                dining?.CutleryWasWildWaterWashed == true
+                    ? WashProvenance.WildWater
+                    : WashProvenance.Safe);
+
+            var embeddedPlate = meal.GetComp<CompEmbeddedWare>()?.PeekPlateThing();
+            var servicePlate = dining?.Plate ?? embeddedPlate;
+            var plateSanitation = (servicePlate as ThingWithComps)?.GetComp<CompSanitation>();
+            contamination |= SanitationContamination.ForPlate(
+                plateSanitation?.IsDirty == true,
+                plateSanitation?.WashProvenance ?? WashProvenance.None);
+
+            var settings = ImmersiveChefsMod.Settings;
+            var ownsTemperature = TemperatureOwnership.ImmersiveChefsFeaturesActive &&
+                                  settings.MealTemperatureEnabled;
+            var band = ownsTemperature
+                ? ThermalCalculator.BandFor(record.TemperatureCelsius)
+                : ThermalBand.RoomTemperature;
+            var risk = DiningOutcomeCalculator.CalculatePoisonRisk(new DiningRiskInputs(
+                originalPoisonPercent,
+                settings.CulinaryQualityEnabled ? record.QualityScore : 50,
+                band,
+                contamination,
+                servicePlate is { } plate
+                    ? KitchenwareRuntime.ServiceScore(plate)
+                    : null,
+                dining?.CutleryServiceScore,
+                ownsTemperature ? record.MicrowaveReheatCount : 0,
+                settings.MicrowaveExtraPoisonChance,
+                settings.FoodPoisoningEffectScale,
+                settings.MaximumCustomPoisonChance));
+            PoisonPercent(__instance) = risk.FinalChance;
+            FoodPoisonAttributionContext.Replace(risk.LargestPositiveContributor);
+        }
+        catch
         {
-            return;
+            PoisonPercent(__instance) = originalPoisonPercent;
+            FoodPoisonAttributionContext.Replace(previousAttribution);
+            throw;
         }
-
-        var dining = DiningSessionRegistry.Current(ingester);
-        var contamination = record.Contamination;
-        contamination |= SanitationContamination.ForCutlery(
-            dining?.CutleryWasDirty == true,
-            dining?.CutleryWasWildWaterWashed == true
-                ? WashProvenance.WildWater
-                : WashProvenance.Safe);
-
-        var embeddedPlate = meal.GetComp<CompEmbeddedWare>()?.PeekPlateThing();
-        var servicePlate = dining?.Plate ?? embeddedPlate;
-        var plateSanitation = (servicePlate as ThingWithComps)?.GetComp<CompSanitation>();
-        contamination |= SanitationContamination.ForPlate(
-            plateSanitation?.IsDirty == true,
-            plateSanitation?.WashProvenance ?? WashProvenance.None);
-
-        var settings = ImmersiveChefsMod.Settings;
-        var ownsTemperature = TemperatureOwnership.ImmersiveChefsFeaturesActive &&
-                              settings.MealTemperatureEnabled;
-        var band = ownsTemperature
-            ? ThermalCalculator.BandFor(record.TemperatureCelsius)
-            : ThermalBand.RoomTemperature;
-        PoisonPercent(__instance) = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
-            __state,
-            settings.CulinaryQualityEnabled ? record.QualityScore : 50,
-            band,
-            contamination,
-            servicePlate is { } plate
-                ? KitchenwareRuntime.ServiceScore(plate)
-                : null,
-            dining?.CutleryServiceScore,
-            ownsTemperature ? record.MicrowaveReheatCount : 0,
-            settings.MicrowaveExtraPoisonChance,
-            settings.FoodPoisoningEffectScale,
-            settings.MaximumCustomPoisonChance));
     }
 
-    private static void Postfix(CompFoodPoisonable __instance, float __state)
+    private static Exception? Finalizer(
+        CompFoodPoisonable __instance,
+        PoisoningPatchState __state,
+        Exception? __exception)
     {
-        PoisonPercent(__instance) = __state;
+        PoisonPercent(__instance) = __state.OriginalPoisonPercent;
+        FoodPoisonAttributionContext.Replace(__state.PreviousAttribution);
+        return __exception;
+    }
+
+    private readonly struct PoisoningPatchState
+    {
+        internal PoisoningPatchState(
+            float originalPoisonPercent,
+            FoodPoisonRiskContributor previousAttribution)
+        {
+            OriginalPoisonPercent = originalPoisonPercent;
+            PreviousAttribution = previousAttribution;
+        }
+
+        internal float OriginalPoisonPercent { get; }
+        internal FoodPoisonRiskContributor PreviousAttribution { get; }
     }
 }
