@@ -360,6 +360,89 @@ public sealed class SelectionActionStep : EndToEndStep
     public bool Additive { get; }
 }
 
+public enum EndToEndPawnInspectTab
+{
+    Gear = 0,
+    Needs = 1,
+    Health = 2
+}
+
+public sealed class PawnInspectTabActionStep : EndToEndStep
+{
+    public PawnInspectTabActionStep(
+        string name,
+        string pawnRuntimeId,
+        EndToEndPawnInspectTab tab)
+        : base(name, EndToEndStepKind.Act)
+    {
+        if (!Enum.IsDefined(typeof(EndToEndPawnInspectTab), tab))
+        {
+            throw new ArgumentOutOfRangeException(nameof(tab));
+        }
+
+        PawnRuntimeId = StepValues.Required(pawnRuntimeId, nameof(pawnRuntimeId));
+        Tab = tab;
+    }
+
+    public string PawnRuntimeId { get; }
+
+    public EndToEndPawnInspectTab Tab { get; }
+}
+
+public sealed class ThingInfoCardActionStep : EndToEndStep
+{
+    private ThingInfoCardActionStep(string name, string thingRuntimeId, bool open)
+        : base(name, EndToEndStepKind.Act)
+    {
+        ThingRuntimeId = StepValues.Required(thingRuntimeId, nameof(thingRuntimeId));
+        IsOpenAction = open;
+    }
+
+    public string ThingRuntimeId { get; }
+
+    public bool IsOpenAction { get; }
+
+    public static ThingInfoCardActionStep Open(string name, string thingRuntimeId) =>
+        new(name, thingRuntimeId, open: true);
+
+    public static ThingInfoCardActionStep Close(string name, string thingRuntimeId) =>
+        new(name, thingRuntimeId, open: false);
+}
+
+public sealed class InspectPaneCloseActionStep : EndToEndStep
+{
+    public InspectPaneCloseActionStep(
+        string name,
+        string selectedThingRuntimeId,
+        string expectedTabRuntimeType)
+        : base(name, EndToEndStepKind.Act)
+    {
+        SelectedThingRuntimeId = StepValues.Required(
+            selectedThingRuntimeId,
+            nameof(selectedThingRuntimeId));
+        ExpectedTabRuntimeType = StepValues.Required(
+            expectedTabRuntimeType,
+            nameof(expectedTabRuntimeType));
+    }
+
+    public string SelectedThingRuntimeId { get; }
+
+    public string ExpectedTabRuntimeType { get; }
+}
+
+public sealed class WindowCancelActionStep : EndToEndStep
+{
+    public WindowCancelActionStep(string name, string expectedWindowRuntimeType)
+        : base(name, EndToEndStepKind.Act)
+    {
+        ExpectedWindowRuntimeType = StepValues.Required(
+            expectedWindowRuntimeType,
+            nameof(expectedWindowRuntimeType));
+    }
+
+    public string ExpectedWindowRuntimeType { get; }
+}
+
 public sealed class ArchitectCategoryActionStep : EndToEndStep
 {
     public ArchitectCategoryActionStep(string name, string categoryDefName, bool open)

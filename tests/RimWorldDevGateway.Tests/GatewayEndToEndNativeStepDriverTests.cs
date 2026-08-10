@@ -31,6 +31,10 @@ public sealed class GatewayEndToEndNativeStepDriverTests
                 "dialog",
                 "Example.Dialog"),
             new ArchitectCategoryActionStep("architect", "Production", open: true),
+            new PawnInspectTabActionStep("inspect-tab", "pawn_1", EndToEndPawnInspectTab.Gear),
+            ThingInfoCardActionStep.Open("info-card", "thing_1"),
+            new InspectPaneCloseActionStep("close-inspect", "thing_1", "Example.ContentsTab"),
+            new WindowCancelActionStep("cancel-window", "Example.Dialog"),
             new SaveLoadActionStep("save-load", "GatewayE2E"),
             ProcessInputActionStep.Click(
                 "click",
@@ -45,12 +49,12 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "dialog", "architect", "save-load", "input", "screenshot"
+                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "dialog", "architect", "inspect-tab", "info-card", "close-inspect", "cancel-window", "save-load", "input", "screenshot"
             }));
-            Assert.That(operations.Take(10).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[10], Is.SameAs(actions.SaveLoadOperation));
-            Assert.That(operations[11], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[12], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations.Take(14).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[14], Is.SameAs(actions.SaveLoadOperation));
+            Assert.That(operations[15], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[16], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -74,7 +78,8 @@ public sealed class GatewayEndToEndNativeStepDriverTests
     private sealed class RecordingNativeActions :
         IGatewayEndToEndNativeActions,
         IGatewayEndToEndDialogConfirmationNativeActions,
-        IGatewayEndToEndArchitectCategoryNativeActions
+        IGatewayEndToEndArchitectCategoryNativeActions,
+        IGatewayEndToEndInspectionNativeActions
     {
         public List<string> Calls { get; } = new();
 
@@ -119,6 +124,22 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         public GatewayEndToEndStepOutcome Apply(
             ArchitectCategoryActionStep step,
             IEndToEndContext context) => Record("architect");
+
+        public GatewayEndToEndStepOutcome Apply(
+            PawnInspectTabActionStep step,
+            IEndToEndContext context) => Record("inspect-tab");
+
+        public GatewayEndToEndStepOutcome Apply(
+            ThingInfoCardActionStep step,
+            IEndToEndContext context) => Record("info-card");
+
+        public GatewayEndToEndStepOutcome Apply(
+            InspectPaneCloseActionStep step,
+            IEndToEndContext context) => Record("close-inspect");
+
+        public GatewayEndToEndStepOutcome Apply(
+            WindowCancelActionStep step,
+            IEndToEndContext context) => Record("cancel-window");
 
         public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)
         {

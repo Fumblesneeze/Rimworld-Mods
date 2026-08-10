@@ -264,9 +264,13 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
             powerToggle.RuntimeType,
             EndToEndGizmoInteraction.Toggle,
             stableGizmoId: powerToggle.StableId);
-        yield return ProcessInputActionStep.Key(
-            "close Adaptive Storage's force-pausing contents window after designation",
-            "Escape");
+        yield return new InspectPaneCloseActionStep(
+            "close Adaptive Storage's force-pausing contents tab after designation",
+            fridgeId,
+            "AdaptiveStorage.ContentsITab");
+        yield return new WindowCancelActionStep(
+            "cancel the exact native power-designation message box",
+            "Verse.Dialog_MessageBox");
         yield return new AssertionStep(
             "enable only the native basic work needed to execute the flick designation",
             _ =>
@@ -602,6 +606,8 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
             phase + " must preserve hidden provenance exactly once.");
         EndToEndAssert.Equal(expected.HiddenDietaryFlags, actual.HiddenDietaryFlags,
             phase + " must preserve dietary flags.");
+        EndToEndAssert.Equal(expected.CookwareMaterial, actual.CookwareMaterial,
+            phase + " must preserve hidden cookware material provenance.");
         AssertWareAndPublicProvenance(phase);
     }
 

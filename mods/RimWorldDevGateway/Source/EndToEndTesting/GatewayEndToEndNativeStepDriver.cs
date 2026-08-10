@@ -37,6 +37,17 @@ internal interface IGatewayEndToEndArchitectCategoryNativeActions
     GatewayEndToEndStepOutcome Apply(ArchitectCategoryActionStep step, IEndToEndContext context);
 }
 
+internal interface IGatewayEndToEndInspectionNativeActions
+{
+    GatewayEndToEndStepOutcome Apply(PawnInspectTabActionStep step, IEndToEndContext context);
+
+    GatewayEndToEndStepOutcome Apply(ThingInfoCardActionStep step, IEndToEndContext context);
+
+    GatewayEndToEndStepOutcome Apply(InspectPaneCloseActionStep step, IEndToEndContext context);
+
+    GatewayEndToEndStepOutcome Apply(WindowCancelActionStep step, IEndToEndContext context);
+}
+
 public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
 {
     private readonly IGatewayEndToEndNativeActions actions;
@@ -78,6 +89,30 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
                     : GatewayEndToEndCompletedStepOperation.Failed(
                         "unsupported_e2e_step",
                         "The native E2E adapter does not support Architect-category actions."),
+            PawnInspectTabActionStep inspectTab => actions is
+                IGatewayEndToEndInspectionNativeActions inspectionActions
+                    ? Complete(inspectionActions.Apply(inspectTab, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support pawn inspect-tab actions."),
+            ThingInfoCardActionStep infoCard => actions is
+                IGatewayEndToEndInspectionNativeActions inspectionActions
+                    ? Complete(inspectionActions.Apply(infoCard, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support Thing info-card actions."),
+            InspectPaneCloseActionStep closeInspect => actions is
+                IGatewayEndToEndInspectionNativeActions inspectionActions
+                    ? Complete(inspectionActions.Apply(closeInspect, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support inspect-pane close actions."),
+            WindowCancelActionStep cancelWindow => actions is
+                IGatewayEndToEndInspectionNativeActions inspectionActions
+                    ? Complete(inspectionActions.Apply(cancelWindow, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support exact-window cancel actions."),
             SaveLoadActionStep saveLoad =>
                 actions.Begin(saveLoad, context)
                 ?? throw new InvalidOperationException("The save/load adapter returned no operation."),

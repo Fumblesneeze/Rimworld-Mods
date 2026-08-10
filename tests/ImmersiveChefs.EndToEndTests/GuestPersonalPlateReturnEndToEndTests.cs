@@ -2,11 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using HarmonyLib;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
-using UnityEngine;
 using Verse;
 using Verse.AI;
 using Verse.AI.Group;
@@ -25,11 +22,6 @@ namespace ImmersiveChefs.EndToEndTests;
 public sealed class ArrivedTraderPersonalMealWareReturnTest : IRimWorldEndToEndTest
 {
     private const string SaveName = "ImmersiveChefs_ArrivedTraderPersonalWare";
-    private const string InfoButtonObserverHarmonyId =
-        "fumblesneeze.immersivechefs.e2e.arrived-trader-info-button-observer";
-    private static readonly EndToEndScreenPoint GearTab = new(108, 686);
-    private static readonly Dictionary<int, EndToEndScreenPoint> InfoButtonCenters = new();
-
     private Map map = null!;
     private Pawn observer = null!;
     private Faction traderFaction = null!;
@@ -47,30 +39,8 @@ public sealed class ArrivedTraderPersonalMealWareReturnTest : IRimWorldEndToEndT
     private string cutleryId = string.Empty;
     private string unrelatedPersonalPlateId = string.Empty;
     private string activeJobLoadId = string.Empty;
-    private EndToEndScreenPoint returnedCutleryInfo;
-    private EndToEndScreenPoint returnedPlateInfo;
-
     public void Arrange(IEndToEndContext context)
     {
-        var infoButton = AccessTools.Method(
-            typeof(Widgets),
-            nameof(Widgets.InfoCardButton),
-            new[] { typeof(float), typeof(float), typeof(Thing) });
-        EndToEndAssert.NotNull(
-            infoButton,
-            "The exact native Thing info-card button seam must remain available for player-input evidence.");
-        var observerHarmony = new Harmony(InfoButtonObserverHarmonyId);
-        observerHarmony.Patch(
-            infoButton,
-            prefix: new HarmonyMethod(
-                typeof(ArrivedTraderPersonalMealWareReturnTest),
-                nameof(ObserveInfoCardButton)));
-        context.DeferCleanup(() =>
-        {
-            observerHarmony.Unpatch(infoButton, HarmonyPatchType.Prefix, InfoButtonObserverHarmonyId);
-            InfoButtonCenters.Clear();
-        });
-
         var savePath = GenFilePaths.FilePathForSavedGame(SaveName);
         context.DeferCleanup(() =>
         {
@@ -133,10 +103,10 @@ public sealed class ArrivedTraderPersonalMealWareReturnTest : IRimWorldEndToEndT
             "frame the arrived trader before dining",
             new[] { trader.ThingID },
             paddingPixels: 260);
-        yield return ProcessInputActionStep.Click(
+        yield return new PawnInspectTabActionStep(
             "open the arrived trader's native Gear tab before dining",
-            GearTab,
-            EndToEndMouseButton.Left);
+            trader.ThingID,
+            EndToEndPawnInspectTab.Gear);
         yield return new ScreenshotStep(
             "observe arrived trader's personal meal and cutlery before dining",
             Array.Empty<string>(),
@@ -182,10 +152,10 @@ public sealed class ArrivedTraderPersonalMealWareReturnTest : IRimWorldEndToEndT
             "select the same arrived trader after native loading",
             new[] { trader.ThingID },
             additive: false);
-        yield return ProcessInputActionStep.Click(
+        yield return new PawnInspectTabActionStep(
             "open the loaded trader's native Gear tab",
-            GearTab,
-            EndToEndMouseButton.Left);
+            trader.ThingID,
+            EndToEndPawnInspectTab.Gear);
         yield return new ScreenshotStep(
             "observe personal cutlery and unrelated kitchenware retained after interrupted-job loading",
             Array.Empty<string>(),
@@ -216,37 +186,26 @@ public sealed class ArrivedTraderPersonalMealWareReturnTest : IRimWorldEndToEndT
             "observe exact dirty plate and cutlery retained in trader inventory",
             Array.Empty<string>(),
             paddingPixels: 0);
-        yield return new AssertionStep(
-            "resolve the native info buttons for the exact returned personal setting",
-            _ => ResolveReturnedInfoButtons());
-        yield return ProcessInputActionStep.Click(
+        yield return ThingInfoCardActionStep.Open(
             "open the exact returned plate's native info card",
-            returnedPlateInfo,
-            EndToEndMouseButton.Left);
-        yield return new AssertionStep(
-            "bind the opened native info card to the exact returned plate",
-            _ => AssertExactInfoCard(plate!));
+            plateId);
         yield return new ScreenshotStep(
             "observe the returned personal plate's dirty sanitation state",
             Array.Empty<string>(),
             paddingPixels: 0);
-        yield return ProcessInputActionStep.Key(
+        yield return ThingInfoCardActionStep.Close(
             "close the returned plate info card",
-            "Escape");
-        yield return ProcessInputActionStep.Click(
+            plateId);
+        yield return ThingInfoCardActionStep.Open(
             "open the exact returned cutlery's native info card",
-            returnedCutleryInfo,
-            EndToEndMouseButton.Left);
-        yield return new AssertionStep(
-            "bind the opened native info card to the exact returned cutlery",
-            _ => AssertExactInfoCard(cutlery!));
+            cutleryId);
         yield return new ScreenshotStep(
             "observe the returned personal cutlery's dirty sanitation state",
             Array.Empty<string>(),
             paddingPixels: 0);
-        yield return ProcessInputActionStep.Key(
+        yield return ThingInfoCardActionStep.Close(
             "close the returned cutlery info card",
-            "Escape");
+            cutleryId);
         yield return new CheckpointStep(
             "arrived trader personal tableware result",
             _ => new Dictionary<string, string>
@@ -517,48 +476,6 @@ public sealed class ArrivedTraderPersonalMealWareReturnTest : IRimWorldEndToEndT
         unrelatedPersonalPlate!.Destroy(DestroyMode.Vanish);
     }
 
-    private static void AssertExactInfoCard(Thing expected)
-    {
-        var dialog = Find.WindowStack.Windows.OfType<Dialog_InfoCard>().SingleOrDefault();
-        EndToEndAssert.NotNull(dialog,
-            "The native info-card click must open exactly one ordinary Thing info dialog.");
-        var openedThing = typeof(Dialog_InfoCard)
-            .GetField("thing", BindingFlags.Instance | BindingFlags.NonPublic)
-            ?.GetValue(dialog) as Thing;
-        EndToEndAssert.True(
-            ReferenceEquals(openedThing, expected),
-            $"The native info card must describe exact Thing {expected.ThingID}, not " +
-            (openedThing?.ThingID ?? "no Thing"));
-    }
-
-    private void ResolveReturnedInfoButtons()
-    {
-        EndToEndAssert.True(
-            InfoButtonCenters.TryGetValue(plate!.thingIDNumber, out returnedPlateInfo),
-            "The native Gear tab must render an info-card button for the exact returned personal plate.");
-        EndToEndAssert.True(
-            InfoButtonCenters.TryGetValue(cutlery!.thingIDNumber, out returnedCutleryInfo),
-            "The native Gear tab must render an info-card button for the exact returned personal cutlery.");
-        EndToEndAssert.False(
-            returnedPlateInfo.X == returnedCutleryInfo.X && returnedPlateInfo.Y == returnedCutleryInfo.Y,
-            "The exact plate and cutlery must expose distinct native info-card click targets.");
-    }
-
-    private static void ObserveInfoCardButton(float x, float y, Thing thing)
-    {
-        if (thing is null)
-        {
-            return;
-        }
-
-        const int nativeInfoButtonSize = 24;
-        var screenPoint = GUIUtility.GUIToScreenPoint(new Vector2(
-            x + nativeInfoButtonSize / 2f,
-            y + nativeInfoButtonSize / 2f));
-        InfoButtonCenters[thing.thingIDNumber] = new EndToEndScreenPoint(
-            Mathf.RoundToInt(screenPoint.x),
-            Mathf.RoundToInt(screenPoint.y));
-    }
 
     private void CleanupIncidentFixtures(
         HashSet<int> preIncidentPawnIds,

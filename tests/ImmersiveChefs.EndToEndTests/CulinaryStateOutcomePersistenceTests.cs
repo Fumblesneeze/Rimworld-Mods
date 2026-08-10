@@ -20,9 +20,6 @@ namespace ImmersiveChefs.EndToEndTests;
 public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
 {
     private const string SaveName = "ImmersiveChefsCulinaryOutcomePersistence";
-    private static readonly EndToEndScreenPoint NeedsTab = new(325, 686);
-    private static readonly EndToEndScreenPoint HealthTab = new(395, 686);
-
     private Map map = null!;
     private Pawn diner = null!;
     private ThingWithComps meal = null!;
@@ -216,18 +213,18 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
             "select culinary outcome diner",
             new[] { dinerId },
             additive: false);
-        yield return ProcessInputActionStep.Click(
+        yield return new PawnInspectTabActionStep(
             "open the native Needs tab",
-            NeedsTab,
-            EndToEndMouseButton.Left);
+            dinerId,
+            EndToEndPawnInspectTab.Needs);
         yield return new ScreenshotStep(
             "observe culinary temperature and dirty-setting thoughts",
             Array.Empty<string>(),
             paddingPixels: 0);
-        yield return ProcessInputActionStep.Click(
+        yield return new PawnInspectTabActionStep(
             "open the native Health tab",
-            HealthTab,
-            EndToEndMouseButton.Left);
+            dinerId,
+            EndToEndPawnInspectTab.Health);
         yield return new ScreenshotStep(
             "observe deterministic food poisoning after loaded meal",
             Array.Empty<string>(),
@@ -366,6 +363,8 @@ public sealed class CulinaryStateOutcomePersistenceTest : IRimWorldEndToEndTest
             "Hidden culinary provenance must survive save/load exactly.");
         EndToEndAssert.Equal(expectedServing.HiddenDietaryFlags, actual.HiddenDietaryFlags,
             "Hidden dietary flags must survive save/load.");
+        EndToEndAssert.Equal(expectedServing.CookwareMaterial, actual.CookwareMaterial,
+            "Hidden cookware material provenance must survive save/load.");
         EndToEndAssert.Equal(
             "RawRice",
             string.Join("|", meal.GetComp<CompIngredients>()!.ingredients

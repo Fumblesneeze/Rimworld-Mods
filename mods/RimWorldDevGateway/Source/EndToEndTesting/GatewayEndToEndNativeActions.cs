@@ -107,10 +107,22 @@ internal interface IGatewayEndToEndArchitectCategoryBackend
     GatewayEndToEndStepOutcome ApplyArchitectCategory(ArchitectCategoryActionStep step);
 }
 
+internal interface IGatewayEndToEndInspectionBackend
+{
+    GatewayEndToEndStepOutcome ApplyPawnInspectTab(PawnInspectTabActionStep step);
+
+    GatewayEndToEndStepOutcome ApplyThingInfoCard(ThingInfoCardActionStep step);
+
+    GatewayEndToEndStepOutcome ApplyInspectPaneClose(InspectPaneCloseActionStep step);
+
+    GatewayEndToEndStepOutcome ApplyWindowCancel(WindowCancelActionStep step);
+}
+
 public sealed class GatewayEndToEndNativeActions :
     IGatewayEndToEndNativeActions,
     IGatewayEndToEndDialogConfirmationNativeActions,
-    IGatewayEndToEndArchitectCategoryNativeActions
+    IGatewayEndToEndArchitectCategoryNativeActions,
+    IGatewayEndToEndInspectionNativeActions
 {
     private readonly IGatewayEndToEndActionBackend backend;
 
@@ -331,6 +343,58 @@ public sealed class GatewayEndToEndNativeActions :
             : Fail(
                 "unsupported_e2e_step",
                 "The configured E2E backend does not support Architect-category actions.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionNativeActions.Apply(
+        PawnInspectTabActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndInspectionBackend inspectionBackend
+            ? inspectionBackend.ApplyPawnInspectTab(step) ??
+              throw new InvalidOperationException("The pawn inspect-tab backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support pawn inspect-tab actions.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionNativeActions.Apply(
+        ThingInfoCardActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndInspectionBackend inspectionBackend
+            ? inspectionBackend.ApplyThingInfoCard(step) ??
+              throw new InvalidOperationException("The Thing info-card backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support Thing info-card actions.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionNativeActions.Apply(
+        InspectPaneCloseActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndInspectionBackend inspectionBackend
+            ? inspectionBackend.ApplyInspectPaneClose(step) ??
+              throw new InvalidOperationException("The inspect-pane close backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support inspect-pane close actions.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionNativeActions.Apply(
+        WindowCancelActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndInspectionBackend inspectionBackend
+            ? inspectionBackend.ApplyWindowCancel(step) ??
+              throw new InvalidOperationException("The exact-window cancel backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support exact-window cancel actions.");
     }
 
     public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)

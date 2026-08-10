@@ -9,6 +9,37 @@ namespace RimWorldDevGateway.Tests;
 public sealed class EndToEndTestingContractTests
 {
     [Test]
+    public void Semantic_inspection_steps_require_exact_targets_without_screen_coordinates()
+    {
+        var tab = new PawnInspectTabActionStep("open gear", "Thing_Human123", EndToEndPawnInspectTab.Gear);
+        var open = ThingInfoCardActionStep.Open("open plate", "Thing_Plate456");
+        var close = ThingInfoCardActionStep.Close("close plate", "Thing_Plate456");
+        var closeInspect = new InspectPaneCloseActionStep(
+            "close contents",
+            "Thing_Fridge789",
+            "AdaptiveStorage.ContentsITab");
+        var cancelWindow = new WindowCancelActionStep(
+            "cancel dialog",
+            "Verse.Dialog_MessageBox");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(tab.PawnRuntimeId, Is.EqualTo("Thing_Human123"));
+            Assert.That(tab.Tab, Is.EqualTo(EndToEndPawnInspectTab.Gear));
+            Assert.That(open.ThingRuntimeId, Is.EqualTo("Thing_Plate456"));
+            Assert.That(open.IsOpenAction, Is.True);
+            Assert.That(close.IsOpenAction, Is.False);
+            Assert.That(closeInspect.SelectedThingRuntimeId, Is.EqualTo("Thing_Fridge789"));
+            Assert.That(closeInspect.ExpectedTabRuntimeType, Is.EqualTo("AdaptiveStorage.ContentsITab"));
+            Assert.That(cancelWindow.ExpectedWindowRuntimeType, Is.EqualTo("Verse.Dialog_MessageBox"));
+            Assert.That(tab, Is.Not.InstanceOf<ProcessInputActionStep>());
+            Assert.That(open, Is.Not.InstanceOf<ProcessInputActionStep>());
+            Assert.That(closeInspect, Is.Not.InstanceOf<ProcessInputActionStep>());
+            Assert.That(cancelWindow, Is.Not.InstanceOf<ProcessInputActionStep>());
+        });
+    }
+
+    [Test]
     public void Describe_accepts_a_concrete_product_test_with_an_exact_ordered_package_set()
     {
         var descriptor = EndToEndTestContract.Describe(typeof(ValidProductTest));

@@ -20,7 +20,8 @@ public interface IGatewayEndToEndFloatMenuActions
 public sealed class GatewayEndToEndGatewayBackend :
     IGatewayEndToEndActionBackend,
     IGatewayEndToEndDialogConfirmationBackend,
-    IGatewayEndToEndArchitectCategoryBackend
+    IGatewayEndToEndArchitectCategoryBackend,
+    IGatewayEndToEndInspectionBackend
 {
     private static int nextScreenshotId;
     private readonly GatewayGameControlController gameControl;
@@ -208,6 +209,30 @@ public sealed class GatewayEndToEndGatewayBackend :
         VerseGatewayEndToEndArchitectCategoryActions.Apply(
             step,
             new VerseGatewayEndToEndArchitectCategoryRuntime());
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyPawnInspectTab(
+        PawnInspectTabActionStep step) =>
+        VerseGatewayEndToEndInspectionActions.Apply(
+            step,
+            new VerseGatewayEndToEndInspectionRuntime());
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyThingInfoCard(
+        ThingInfoCardActionStep step) =>
+        VerseGatewayEndToEndInspectionActions.Apply(
+            step,
+            new VerseGatewayEndToEndInspectionRuntime());
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyInspectPaneClose(
+        InspectPaneCloseActionStep step) =>
+        VerseGatewayEndToEndInspectionActions.Apply(
+            step,
+            new VerseGatewayEndToEndInspectionRuntime());
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyWindowCancel(
+        WindowCancelActionStep step) =>
+        VerseGatewayEndToEndInspectionActions.Apply(
+            step,
+            new VerseGatewayEndToEndInspectionRuntime());
 
     public IGatewayEndToEndStepOperation BeginInput(
         ProcessInputActionStep step,
