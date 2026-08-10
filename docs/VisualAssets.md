@@ -51,6 +51,16 @@ deterministic output hashes are
 `5C8E8CF3671F6F4F105A5385AED75D44D7D0A4A9F9C8056EBE7A5225CA269B91` (Workshop) and
 `99DDC17E8592822CEE25BED497EE275691E8BE1FA38C936D2405D3F960F10578` (About).
 
+Rebuild both previews from the selected source without editing the generated PNGs:
+
+```powershell
+.\scripts\Build-ImmersiveChefsPreview.ps1
+```
+
+Keep `About/Preview.png` at 640×360 PNG and below 1 MiB. Treat the 1280×720 Workshop image as the
+repository's authoring/export contract; verify the upload service's current byte and format rules
+again when publishing because they are external rather than a RimWorld Def contract.
+
 Final native inspection used the exact Core/Harmony/Immersive Chefs/Dev Gateway package order in
 `artifacts/GatewaySmoke/20260810T000531403Z/20260810T000532068Z`. The selected Immersive Chefs row
 showed the complete 16:9 image without cropping: chef, apprentice, ruined meal, `YOU DONKEY!`, and

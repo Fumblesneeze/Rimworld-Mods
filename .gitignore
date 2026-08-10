@@ -67,6 +67,11 @@ docs/TddEvidence.md
 .codex/skills/*
 !.codex/skills/rimworld-mod-development/
 !.codex/skills/rimworld-mod-development/**
+!.codex/skills/rimworld-game-balance/
+.codex/skills/rimworld-game-balance/**
+!.codex/skills/rimworld-game-balance/SKILL.md
+!.codex/skills/rimworld-game-balance/agents/
+!.codex/skills/rimworld-game-balance/agents/openai.yaml
 !.codex/skills/release-rimworld-mods/
 !.codex/skills/release-rimworld-mods/**
 !.codex/skills/rimworld-asset-generation/

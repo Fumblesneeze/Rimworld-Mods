@@ -1,0 +1,4 @@
+interface:
+  display_name: "RimWorld Game Balance"
+  short_description: "Balance recipes, stats, and trader stock"
+  default_prompt: "Use $rimworld-game-balance to rebalance this RimWorld content against measured game comparators."

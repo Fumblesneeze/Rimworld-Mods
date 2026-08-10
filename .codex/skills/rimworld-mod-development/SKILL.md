@@ -63,7 +63,8 @@ Run verification in this order:
 7. Final isolated Core-plus-target-mod game start using the reviewed build.
 8. Actual player action, driven through the native UI/game-command/job path with authenticated Dev Gateway control when useful.
 9. Personal observation of the resulting player-visible behavior through the live view or exact-run before/action/after screenshots; use exact-PID FlaUI when the gateway cannot expose the needed control or view.
-10. Evidence retention and OpenSpec task-state update.
+10. In developer mode, inspect the native console and the complete flushed `Player.log` for errors and warnings. Classify every match; do not silently accept a warning because the scenario passed.
+11. Evidence retention and OpenSpec task-state update.
 
 TDD, build success, review, logs, loaded Defs/patches, API responses, and raw-C# state checks are supporting gates, not gameplay acceptance. Do not accept a behavior until the acting agent exercises the real player workflow and observes its in-game result. If a review fix or later edit can affect runtime behavior, repeat the final live run on that revision.
 
