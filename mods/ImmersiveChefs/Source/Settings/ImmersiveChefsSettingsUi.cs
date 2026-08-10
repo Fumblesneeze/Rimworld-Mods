@@ -142,6 +142,7 @@ internal sealed class ImmersiveChefsSettingsUi
         Cycle(listing, "ImmersiveChefs_Integration_MealPrinter".Translate(), ref settings.MealPrinter);
         Cycle(listing, "ImmersiveChefs_Integration_FoodTextureVariety".Translate(), ref settings.FoodTextureVariety);
         Cycle(listing, "ImmersiveChefs_Integration_PickUpAndHaul".Translate(), ref settings.PickUpAndHaul);
+        Cycle(listing, "ImmersiveChefs_Integration_CookForYourself".Translate(), ref settings.CookForYourself);
 
         listing.End();
         Widgets.EndScrollView();

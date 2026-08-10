@@ -55,6 +55,7 @@
   <ImmersiveChefs_Integration_MealPrinter>Meal Printer</ImmersiveChefs_Integration_MealPrinter>
   <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
   <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
+  <ImmersiveChefs_Integration_CookForYourself>Cook for Yourself</ImmersiveChefs_Integration_CookForYourself>
 
   <ImmersiveChefs_Enum_WareRequirementMode_Strict>Strict</ImmersiveChefs_Enum_WareRequirementMode_Strict>
   <ImmersiveChefs_Enum_WareRequirementMode_Prefer>Prefer</ImmersiveChefs_Enum_WareRequirementMode_Prefer>

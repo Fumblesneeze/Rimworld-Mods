@@ -57,7 +57,7 @@ When Thermodynamics - Hot Meals is active, its temperature system and microwave 
 
 ### Optional integration switches
 
-These contributing adapters have individual `Auto`/`Off` switches and default to `Auto`: Processor Framework, Expanded Materials, ABS Polymer, Dubs Bad Hygiene, Gastronomy, Common Sense, Hospitality, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, Vanilla Nutrient Paste Expanded, Adaptive Meal Bill, Overcooked Meals, Meals on Wheels, Prioritize Meals over Preserved Foods, Replimat plus Replimat Meals, Meal Printer, Food Texture Variety, and Texture Variations.
+These contributing adapters have individual `Auto`/`Off` switches and default to `Auto`: Processor Framework, Expanded Materials, ABS Polymer, Dubs Bad Hygiene, Gastronomy, Common Sense, Hospitality, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, Vanilla Nutrient Paste Expanded, Adaptive Meal Bill, Overcooked Meals, Meals on Wheels, Prioritize Meals over Preserved Foods, Replimat plus Replimat Meals, Meal Printer, Food Texture Variety, Texture Variations, Pick Up And Haul, and Cook for Yourself.
 
 Use `Off` to isolate a suspected integration problem, then restart RimWorld. The upstream mod remains loaded and untouched. Passive compatibility that only preserves another mod's ownership has no meaningless switch, and Thermodynamics conflict prevention intentionally has no switch that could enable duplicate providers.
 

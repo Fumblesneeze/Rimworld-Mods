@@ -52,6 +52,7 @@ public sealed class LocalizationReleaseGateTests
         "ImmersiveChefs_Integration_MealPrinter",
         "ImmersiveChefs_Integration_FoodTextureVariety",
         "ImmersiveChefs_Integration_PickUpAndHaul",
+        "ImmersiveChefs_Integration_CookForYourself",
         "ImmersiveChefs_IngredientRequirement"
     };
 
