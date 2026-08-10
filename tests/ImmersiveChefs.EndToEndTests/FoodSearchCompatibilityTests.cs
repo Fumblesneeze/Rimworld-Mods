@@ -758,7 +758,7 @@ internal static class FoodSearchE2EFixture
     internal static Pawn CreateColonist(string name)
     {
         var pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
-        pawn.Name = new NameSingle(name);
+        HumanlikePawnFixture.SetName(pawn, name);
         pawn.inventory?.innerContainer.ClearAndDestroyContents();
         pawn.workSettings.EnableAndInitialize();
         foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)

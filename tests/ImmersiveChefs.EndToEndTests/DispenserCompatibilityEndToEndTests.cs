@@ -2000,7 +2000,7 @@ internal static class DispenserE2EFixture
                 guestFaction,
                 forceGenerateNewPawn: true,
                 canGeneratePawnRelations: false));
-            guest.Name = new NameSingle("Printer restaurant guest");
+            HumanlikePawnFixture.SetName(guest, "Printer restaurant guest");
             guest.inventory?.innerContainer.ClearAndDestroyContents();
             GenSpawn.Spawn(guest, center + new IntVec3(3, 0, 3), map);
             var compGuest = guest.AllComps.FirstOrDefault(compGuestType!.IsInstanceOfType);
@@ -2217,7 +2217,7 @@ internal static class DispenserE2EFixture
                 continue;
             }
 
-            pawn.Name = new NameSingle(name);
+            HumanlikePawnFixture.SetName(pawn, name);
             pawn.inventory?.innerContainer.ClearAndDestroyContents();
             pawn.workSettings.EnableAndInitialize();
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)

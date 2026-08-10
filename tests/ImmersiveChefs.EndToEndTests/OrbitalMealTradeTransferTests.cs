@@ -228,7 +228,7 @@ public sealed class OrbitalMealTradeTransferTest : IRimWorldEndToEndTest
             if (pawn.health.capacities.CapableOf(PawnCapacityDefOf.Talking) &&
                 pawn.health.capacities.CapableOf(PawnCapacityDefOf.Hearing))
             {
-                pawn.Name = new NameSingle("Orbital Meal Buyer");
+                HumanlikePawnFixture.SetName(pawn, "Orbital Meal Buyer");
                 pawn.skills.GetSkill(SkillDefOf.Social).Level = 20;
                 return pawn;
             }

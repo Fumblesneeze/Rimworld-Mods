@@ -243,7 +243,7 @@ public sealed class RimCuisineNoVanillaPizzaTradeTest : IRimWorldEndToEndTest
             if (pawn.health.capacities.GetLevel(PawnCapacityDefOf.Talking) >= 0.95f &&
                 pawn.health.capacities.GetLevel(PawnCapacityDefOf.Hearing) >= 0.95f)
             {
-                pawn.Name = new NameSingle("RimCuisine Pizza Buyer");
+                HumanlikePawnFixture.SetName(pawn, "RimCuisine Pizza Buyer");
                 pawn.skills.GetSkill(SkillDefOf.Social).Level = 20;
                 return pawn;
             }

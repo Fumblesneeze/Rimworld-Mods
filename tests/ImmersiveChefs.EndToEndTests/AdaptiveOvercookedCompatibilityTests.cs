@@ -93,7 +93,7 @@ public sealed class AdaptiveOvercookedCompatibilityTest : IRimWorldEndToEndTest
         foodPoisonChance.skillNeedFactors = new List<SkillNeed>();
         foodPoisonChance.Worker.ClearCacheForThing(cook);
 
-        cook.Name = new NameSingle("Adaptive Overcooked Chef");
+        HumanlikePawnFixture.SetName(cook, "Adaptive Overcooked Chef");
         GenSpawn.Spawn(cook, center + (IntVec3.South * 3), map);
         SatisfyCookHunger();
 

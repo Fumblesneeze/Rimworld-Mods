@@ -177,7 +177,7 @@ public sealed class PlateMaterialTierTest : IRimWorldEndToEndTest
     {
         BuildSealedRoom(map, center);
         var pawn = GenerateCook();
-        pawn.Name = new NameSingle(name);
+        HumanlikePawnFixture.SetName(pawn, name);
         pawn.workSettings.EnableAndInitialize();
         foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
         {

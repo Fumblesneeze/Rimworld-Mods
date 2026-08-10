@@ -240,7 +240,7 @@ public sealed class GeneratedMealOriginTest : IRimWorldEndToEndTest
     private static Pawn CreateDiner(string name)
     {
         var diner = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
-        diner.Name = new NameSingle(name);
+        HumanlikePawnFixture.SetName(diner, name);
         diner.inventory?.innerContainer.ClearAndDestroyContents();
         diner.workSettings.EnableAndInitialize();
         foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)

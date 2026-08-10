@@ -34,6 +34,7 @@
 - [x] 3.2 TDD GREEN: Implement pre/post-test disposable-map reset and process tainting so ordinary test failures continue only after a verified empty baseline.
 - [x] 3.2a TDD RED/GREEN: Remove constructed roofs and overhead mountain before any map content, include roofs in empty-baseline verification, and prove the exact sequential group has no roof-collapse or leaked-death evidence.
 - [x] 3.2b TDD/E2E: After initial and between-test map removal, clear and verify live messages, visible/delayed letters, and active alert-readout entries through exact Gateway-owned shapes so alert-sensitive scenarios start from a clean notification slate.
+- [x] 3.2c TDD/E2E: Reproduce sequential colonist generation failing after an earlier fixture replaces a humanlike name with `NameSingle`; keep stable fixture labels through valid native `NameTriple` values, retain `NameSingle` only for animals, and prove a later same-process generation plus the affected gameplay sequence complete with clean logs.
 - [x] 3.3 REFACTOR: Keep test orchestration, native action adapters, reset ownership, persistence, and HTTP projection behind narrow modules shared with existing Gateway services rather than duplicate implementations.
 
 ## 4. host runner — CLI TDD and orchestration

@@ -33,7 +33,7 @@ public sealed class LegacyUnplatedMealTest : IRimWorldEndToEndTest
             .First(cell => cell.InBounds(map) && cell.Standable(map) && cell.GetEdifice(map) is null);
 
         pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
-        pawn.Name = new NameSingle("Legacy Meal Compatibility Diner");
+        HumanlikePawnFixture.SetName(pawn, "Legacy Meal Compatibility Diner");
         pawn.inventory?.innerContainer.ClearAndDestroyContents();
         GenSpawn.Spawn(pawn, pawnCell, map);
         if (pawn.needs?.food is { } food)

@@ -206,7 +206,7 @@ public sealed class SettlementMealTradeTransferTest : IRimWorldEndToEndTest
             if (pawn.health.capacities.GetLevel(PawnCapacityDefOf.Talking) >= 0.95f &&
                 pawn.health.capacities.GetLevel(PawnCapacityDefOf.Hearing) >= 0.95f)
             {
-                pawn.Name = new NameSingle("Settlement Meal Buyer");
+                HumanlikePawnFixture.SetName(pawn, "Settlement Meal Buyer");
                 pawn.skills.GetSkill(SkillDefOf.Social).Level = 20;
                 return pawn;
             }

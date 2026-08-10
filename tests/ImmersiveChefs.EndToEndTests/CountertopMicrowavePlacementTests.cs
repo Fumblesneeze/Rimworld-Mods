@@ -110,7 +110,7 @@ public sealed class CountertopMicrowavePlacementTest : IRimWorldEndToEndTest
         supports.Add(blueprint);
 
         builder = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
-        builder.Name = new NameSingle("Countertop Appliance Builder");
+        HumanlikePawnFixture.SetName(builder, "Countertop Appliance Builder");
         builder.workSettings.EnableAndInitialize();
         foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
         {

@@ -451,7 +451,7 @@ public sealed class VceFriedNativeCookingTest : IRimWorldEndToEndTest
                 continue;
             }
 
-            pawn.Name = new NameSingle(name);
+            HumanlikePawnFixture.SetName(pawn, name);
             pawn.inventory?.innerContainer.ClearAndDestroyContents();
             pawn.workSettings.EnableAndInitialize();
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)

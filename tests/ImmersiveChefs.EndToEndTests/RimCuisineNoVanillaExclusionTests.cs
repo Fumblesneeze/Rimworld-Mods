@@ -289,7 +289,7 @@ public sealed class RimCuisineNoVanillaExclusionTest : IRimWorldEndToEndTest
                 "Could not generate a capable native RimCuisine cigarette worker.");
         }
 
-        worker.Name = new NameSingle("RimCuisine Cigarette Maker");
+        HumanlikePawnFixture.SetName(worker, "RimCuisine Cigarette Maker");
         worker.inventory?.innerContainer.ClearAndDestroyContents();
         worker.workSettings.EnableAndInitialize();
         foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
@@ -416,7 +416,7 @@ public sealed class RimCuisineNoVanillaExclusionTest : IRimWorldEndToEndTest
             if (pawn.health.capacities.GetLevel(PawnCapacityDefOf.Talking) >= 0.95f &&
                 pawn.health.capacities.GetLevel(PawnCapacityDefOf.Hearing) >= 0.95f)
             {
-                pawn.Name = new NameSingle("RimCuisine Catalog Buyer");
+                HumanlikePawnFixture.SetName(pawn, "RimCuisine Catalog Buyer");
                 pawn.skills.GetSkill(SkillDefOf.Social).Level = 20;
                 return pawn;
             }

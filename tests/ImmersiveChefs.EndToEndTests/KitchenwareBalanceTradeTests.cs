@@ -383,7 +383,7 @@ public sealed class KitchenwareBalanceTradeTest : IRimWorldEndToEndTest
                 continue;
             }
 
-            pawn.Name = new NameSingle("Primitive Cookware Crafter");
+            HumanlikePawnFixture.SetName(pawn, "Primitive Cookware Crafter");
             pawn.inventory?.innerContainer.ClearAndDestroyContents();
             pawn.workSettings.EnableAndInitialize();
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
@@ -420,7 +420,7 @@ public sealed class KitchenwareBalanceTradeTest : IRimWorldEndToEndTest
             if (pawn.health.capacities.CapableOf(PawnCapacityDefOf.Talking) &&
                 pawn.health.capacities.CapableOf(PawnCapacityDefOf.Hearing))
             {
-                pawn.Name = new NameSingle("Kitchenware Buyer");
+                HumanlikePawnFixture.SetName(pawn, "Kitchenware Buyer");
                 pawn.skills.GetSkill(SkillDefOf.Social).Level = 20;
                 return pawn;
             }

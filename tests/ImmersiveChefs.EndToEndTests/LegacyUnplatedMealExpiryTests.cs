@@ -34,7 +34,7 @@ public sealed class LegacyUnplatedMealExpiryTest : IRimWorldEndToEndTest
             .First(cell => cell.InBounds(map) && cell.Standable(map) && cell.GetEdifice(map) is null);
 
         observer = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
-        observer.Name = new NameSingle("Legacy Meal Expiry Observer");
+        HumanlikePawnFixture.SetName(observer, "Legacy Meal Expiry Observer");
         observer.inventory?.innerContainer.ClearAndDestroyContents();
         GenSpawn.Spawn(observer, observerCell, map);
         observer.drafter.Drafted = true;
