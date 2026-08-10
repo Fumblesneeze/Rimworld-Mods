@@ -122,6 +122,12 @@ internal static class ImmersiveChefsDefBootstrap
             OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.CommonSense, commonSenseReason);
         }
 
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.PickUpAndHaul) &&
+            !PickUpAndHaulAdapter.TryInitialize(out var pickUpAndHaulReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.PickUpAndHaul, pickUpAndHaulReason);
+        }
+
         if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.Hospitality) &&
             !HospitalityAdapter.TryInitialize(out var hospitalityReason))
         {

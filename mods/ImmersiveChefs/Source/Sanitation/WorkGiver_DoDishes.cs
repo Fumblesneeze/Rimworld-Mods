@@ -25,7 +25,9 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
             return null;
         }
 
-        return CreateJob(thing, destination);
+        var job = CreateJob(thing, destination);
+        ConfigurePickUpAndHaulBatch(pawn, thing, destination, job);
+        return job;
     }
 
     internal static Job CreateJob(Thing thing, DishwashingDestination destination)
@@ -48,11 +50,72 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
         return job;
     }
 
-    private static bool IsDirtyWare(Thing thing)
+    internal static bool IsDirtyWare(Thing thing)
     {
         return thing.def.GetModExtension<KitchenwareExtension>()?.product is
                    KitchenwareProduct.Cookware or KitchenwareProduct.Plate or KitchenwareProduct.Cutlery &&
                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true;
+    }
+
+    private static void ConfigurePickUpAndHaulBatch(
+        Pawn pawn,
+        Thing primary,
+        DishwashingDestination destination,
+        Job job)
+    {
+        if (!destination.IsHandwashing || !PickUpAndHaulAdapter.CanTrack(pawn))
+        {
+            return;
+        }
+
+        var candidates = new List<Thing> { primary };
+        candidates.AddRange(pawn.Map.listerThings.AllThings
+            .Where(thing => !ReferenceEquals(thing, primary))
+            .Where(IsDirtyWare)
+            .Where(thing => thing.Position.DistanceToSquared(primary.Position) <=
+                            DishwashingBatchPolicy.SearchRadius * DishwashingBatchPolicy.SearchRadius)
+            .OrderBy(thing => thing.Position.DistanceToSquared(primary.Position)));
+        candidates = candidates.Distinct().ToList();
+
+        var descriptors = candidates.Select(thing =>
+        {
+            var eligible = !thing.IsForbidden(pawn) &&
+                           pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some);
+            var sameSource = eligible &&
+                             TryFindDestination(pawn, thing, out var candidateDestination) &&
+                             candidateDestination.IsHandwashing &&
+                             SameTarget(candidateDestination.Target, destination.Target);
+            return new DishwashingBatchCandidate(
+                thing.ThingID,
+                thing.Position.DistanceToSquared(primary.Position),
+                thing.stackCount,
+                Math.Max(0.001f, thing.GetStatValue(StatDefOf.Mass)),
+                sameSource,
+                eligible);
+        }).ToList();
+        var capacity = MassUtility.Capacity(pawn);
+        var availableMass = Math.Max(0f, capacity * (1f - MassUtility.EncumbrancePercent(pawn)));
+        var selection = DishwashingBatchPolicy.Select(descriptors, availableMass);
+        if (selection.Count == 0 || selection.All(item => item.Id != primary.ThingID))
+        {
+            return;
+        }
+
+        var byId = candidates.ToDictionary(thing => thing.ThingID, StringComparer.Ordinal);
+        job.SetTarget(TargetIndex.A, LocalTargetInfo.Invalid);
+        job.targetQueueA = selection.Select(item => (LocalTargetInfo)byId[item.Id]).ToList();
+        job.countQueue = selection.Select(item => item.Count).ToList();
+        job.count = 1;
+    }
+
+    private static bool SameTarget(LocalTargetInfo left, LocalTargetInfo right)
+    {
+        if (left.HasThing || right.HasThing)
+        {
+            return left.HasThing && right.HasThing && ReferenceEquals(left.Thing, right.Thing);
+        }
+
+        return left.Cell == right.Cell;
     }
 
     internal static bool TryFindDestination(Pawn pawn, Thing dirtyWare, out DishwashingDestination destination)

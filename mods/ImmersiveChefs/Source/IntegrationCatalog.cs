@@ -24,7 +24,8 @@ public enum OptionalIntegration
     Replimat,
     MealPrinter,
     FoodTextureVariety,
-    TextureVariations
+    TextureVariations,
+    PickUpAndHaul
 }
 
 public sealed class IntegrationSnapshot
@@ -81,7 +82,8 @@ public static class IntegrationCatalog
             [OptionalIntegration.Replimat] = "sumghai.Replimat",
             [OptionalIntegration.MealPrinter] = "Mlie.MealPrinter",
             [OptionalIntegration.FoodTextureVariety] = "Goat.Food.Texture.Variety",
-            [OptionalIntegration.TextureVariations] = "VanillaExpanded.VTEXVariations"
+            [OptionalIntegration.TextureVariations] = "VanillaExpanded.VTEXVariations",
+            [OptionalIntegration.PickUpAndHaul] = "Mehni.PickUpAndHaul"
         };
 
     public static IntegrationSnapshot Detect(IEnumerable<string> loadedPackageIds)
@@ -169,6 +171,7 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.MealPrinter => settings.MealPrinter,
             OptionalIntegration.FoodTextureVariety => settings.FoodTextureVariety,
             OptionalIntegration.TextureVariations => settings.TextureVariationIntegration,
+            OptionalIntegration.PickUpAndHaul => settings.PickUpAndHaul,
             _ => OptionalIntegrationMode.Auto
         };
     }

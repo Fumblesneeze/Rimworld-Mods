@@ -30,6 +30,7 @@ public sealed class SettingsTests
             Assert.That(settings.PrioritizeMeals, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.FoodTextureVariety, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.TextureVariationIntegration, Is.EqualTo(OptionalIntegrationMode.Auto));
+            Assert.That(settings.PickUpAndHaul, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.ShowDirtyWareTextures, Is.True);
         });
 

@@ -113,6 +113,7 @@ internal sealed class ImmersiveChefsSettingsUi
         Cycle(listing, "Replimat + Replimat Meals", ref settings.Replimat);
         Cycle(listing, "Meal Printer", ref settings.MealPrinter);
         Cycle(listing, "Food Texture Variety", ref settings.FoodTextureVariety);
+        Cycle(listing, "Pick Up And Haul", ref settings.PickUpAndHaul);
 
         listing.End();
         Widgets.EndScrollView();
