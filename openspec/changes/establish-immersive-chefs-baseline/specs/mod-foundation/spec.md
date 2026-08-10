@@ -10,12 +10,13 @@ The repository SHALL keep OpenSpec artifacts at repository root and SHALL keep e
 - **THEN** the contributor finds OpenSpec configuration and changes under root `openspec/` and the owned mod under `mods/ImmersiveChefs`
 
 ### Requirement: Loadable RimWorld 1.6 package
-The build SHALL produce a RimWorld 1.6 mod package named Immersive Chefs with package ID `fumblesneeze.immersivechefs`, a generated `About/About.xml`, and its game assembly under `1.6/Assemblies`. The MSBuild package identity, runtime package constant, generated About manifest, deployment folder, current operational documentation, and exact-mod verification matrices SHALL use that identity consistently and SHALL NOT retain a superseded package identity. An explicitly labeled historical evidence record MAY preserve the identity actually used by that old run only when it also states that the run predates and cannot verify the current identity.
+The build SHALL produce a RimWorld 1.6 mod package named Immersive Chefs with package ID `fumblesneeze.immersivechefs`, public author `Fumblesneeze`, a generated `About/About.xml`, and its game assembly under `1.6/Assemblies`. The MSBuild package identity and author, runtime package constant, generated About manifest, deployment folder, current operational documentation, and exact-mod verification matrices SHALL use those public identities consistently and SHALL NOT expose a private full name or retain a superseded package identity. An explicitly labeled historical evidence record MAY preserve the identity actually used by that old run only when it also states that the run predates and cannot verify the current identity.
 
 #### Scenario: Build the distributable mod
 - **WHEN** a contributor invokes the documented mod build command against a valid RimWorld 1.6 installation
 - **THEN** the output folder contains valid metadata and `1.6/Assemblies/ImmersiveChefs.dll`
 - **AND** the project, runtime constant, About manifest, deployment folder, and verification manifest all identify the package as `fumblesneeze.immersivechefs`
+- **AND** the project and generated About manifest identify the author as `Fumblesneeze`
 
 ### Requirement: Minimal hard dependency surface
 Immersive Chefs SHALL declare Harmony package `brrainz.harmony` as its only required third-party mod, SHALL load after supported optional integrations when present, and SHALL NOT bundle Harmony or optional-mod assemblies.

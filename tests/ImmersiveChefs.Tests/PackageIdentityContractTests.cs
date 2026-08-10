@@ -7,6 +7,7 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class PackageIdentityContractTests
 {
+    private const string ExpectedAuthor = "Fumblesneeze";
     private const string ExpectedPackageId = "fumblesneeze.immersivechefs";
 
     [Test]
@@ -21,10 +22,12 @@ public sealed class PackageIdentityContractTests
             Assert.That(
                 project.Descendants("RimWorldPackageId").Single().Value,
                 Is.EqualTo(ExpectedPackageId));
+            Assert.That(project.Descendants("Authors").Single().Value, Is.EqualTo(ExpectedAuthor));
             Assert.That(ImmersiveChefsMod.PackageId, Is.EqualTo(ExpectedPackageId));
             Assert.That(
                 about.Root?.Element("packageId")?.Value,
                 Is.EqualTo(ExpectedPackageId));
+            Assert.That(about.Root?.Element("author")?.Value, Is.EqualTo(ExpectedAuthor));
         });
     }
 
