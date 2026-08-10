@@ -20,8 +20,8 @@ public sealed class GatewayEndToEndBundleCatalogTests
 
     private static readonly string[] BaseActivePackages =
     {
-        "ludeon.rimworld",
         "brrainz.harmony",
+        "ludeon.rimworld",
         "alpha.mod",
         EndToEndTestContract.GatewayPackageId
     };
@@ -48,6 +48,30 @@ public sealed class GatewayEndToEndBundleCatalogTests
             Assert.That(result.Source.AssemblyIdentity, Is.EqualTo(stage.Manifest.AssemblyIdentity));
             Assert.That(result.Source.AssemblySha256, Is.EqualTo(stage.Manifest.AssemblySha256));
             Assert.That(loader.LoadCount, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Core_before_declared_harmony_is_rejected_before_loading_the_assembly()
+    {
+        using var stage = new CatalogStage(manifest =>
+        {
+            foreach (var test in manifest.Tests)
+            {
+                test.ActivePackageIds = new[] { "ludeon.rimworld", "brrainz.harmony", "alpha.mod" };
+            }
+        });
+        var loader = new RecordingAssemblyLoader();
+
+        var result = new GatewayEndToEndBundleCatalog(loader).Inspect(
+            stage.Candidate,
+            new[] { "ludeon.rimworld", "brrainz.harmony", "alpha.mod", EndToEndTestContract.GatewayPackageId });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.State, Is.EqualTo("failed"));
+            Assert.That(result.Failure!.Code, Is.EqualTo("manifest_tests_invalid"));
+            Assert.That(loader.LoadCount, Is.Zero);
         });
     }
 

@@ -10,8 +10,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.dmtr-imported-unplated",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Thekiborg.DMTR",
     "fumblesneeze.immersivechefs",
     MaxFrames = 3_600,
@@ -33,8 +33,8 @@ public sealed class DmtrImportedUnplatedTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.ftv-imported-unplated",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Goat.Food.Texture.Variety.Core",
     "Goat.Food.Texture.Variety",
     "fumblesneeze.immersivechefs",
@@ -57,8 +57,8 @@ public sealed class FtvImportedUnplatedTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.dmtr-ftv-imported-unplated",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Thekiborg.DMTR",
     "Goat.Food.Texture.Variety.Core",
     "Goat.Food.Texture.Variety",

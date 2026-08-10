@@ -11,8 +11,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.toxic-kitchenware-no-dose",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 7_200,
     MaxGameTicks = 24_000,

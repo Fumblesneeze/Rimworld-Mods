@@ -10,8 +10,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.legacy-unplated-meal",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 2_400,
     MaxGameTicks = 8_000,

@@ -419,7 +419,7 @@ When `syrchalis.processor.framework` is active and its expected local shape vali
 
 The integration runner SHALL group E2E tests by declared exact package requirements and exclusions, launch one fresh RimWorld process per distinct ordered group, run that group's tests sequentially, and aggregate the results. Before each E2E case it SHALL remove roofs including overhead mountain, then clear map contents and create only the declared fixture. The maintained behavior matrix SHALL contain these groups:
 
-1. Core, Harmony, Immersive Chefs, and Gateway as the base inverse.
+1. Harmony, Core, Immersive Chefs, and Gateway as the base inverse.
 2. Vanilla Expanded Framework; all installed Vanilla Cooking Expanded meal modules; Fried Meals; Adaptive Meal Bill; Overcooked Meals; Immersive Chefs; and Gateway for the shared final-product boundary.
 3. Vanilla Expanded Framework; matching Vanilla Cooking Expanded modules; Food Texture Variety Core/main/VCE add-ons; Dynamic Meal Texture Replacer; Variety Matters; Vanilla Food Variety Expanded; Immersive Chefs; and Gateway for ingredient and graphic provenance.
 4. Fast Meals; Meals on Wheels; Prioritize Meals over Preserved Foods; Immersive Chefs; and Gateway for food search, mobile holders, and fast-work exemptions.

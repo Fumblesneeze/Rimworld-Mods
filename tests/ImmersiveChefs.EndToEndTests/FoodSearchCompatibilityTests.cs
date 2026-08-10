@@ -13,8 +13,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.meals-on-wheels-borrowed-meal",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Argon.CheapMeals",
     "Memegoddess.MealsOnWheels",
     "seekiworksmod.no10",
@@ -237,8 +237,8 @@ public sealed class MealsOnWheelsBorrowedMealTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.prioritize-perishable-plated-meal",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Argon.CheapMeals",
     "Memegoddess.MealsOnWheels",
     "seekiworksmod.no10",
@@ -472,8 +472,8 @@ public sealed class PrioritizePerishablePlatedMealTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.prioritize-trader-caravan-compensation",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Argon.CheapMeals",
     "Memegoddess.MealsOnWheels",
     "seekiworksmod.no10",

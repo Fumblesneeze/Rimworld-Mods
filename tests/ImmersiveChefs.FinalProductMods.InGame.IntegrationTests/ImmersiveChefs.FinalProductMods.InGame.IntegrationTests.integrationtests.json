@@ -3,8 +3,8 @@
   "assembly": "ImmersiveChefs.FinalProductMods.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "rabiosus.AdaptiveMealBill",
     "binchcannon.overcookedmeals",
     "fumblesneeze.immersivechefs",

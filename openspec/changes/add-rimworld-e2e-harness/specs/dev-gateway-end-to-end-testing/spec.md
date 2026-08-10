@@ -3,16 +3,20 @@
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: E2E tests are separate attributed runtime fixtures
-The repository SHALL provide a separately packaged `RimWorldDevGateway.EndToEndTesting` contract. Every E2E test SHALL be a concrete attributed test type with a globally stable test ID, one owning package ID, and the complete ordered active package sequence required by that test, excluding only the Gateway package which the host appends last. A non-Gateway owner MUST appear in that declared sequence. A Gateway-owned infrastructure test MUST declare `fumblesneeze.rimworlddevgateway` as owner, MUST rely on the one implicit final Gateway package, and MUST NOT list Gateway in the sequence. E2E projects and assemblies MUST remain outside ordinary NUnit/VSTest registration, product `Assemblies` directories, and release packages.
+The repository SHALL provide a separately packaged `RimWorldDevGateway.EndToEndTesting` contract. Every E2E test SHALL be a concrete attributed test type with a globally stable test ID, one owning package ID, and the complete ordered active package sequence required by that test, excluding only the Gateway package which the host appends last. A sequence without Harmony SHALL start with Core. When `brrainz.harmony` is present, it SHALL be the first package and `ludeon.rimworld` SHALL be second, matching Harmony's installed `loadBefore` contract. A non-Gateway owner MUST appear in that declared sequence. A Gateway-owned infrastructure test MUST declare `fumblesneeze.rimworlddevgateway` as owner, MUST rely on the one implicit final Gateway package, and MUST NOT list Gateway in the sequence. E2E projects and assemblies MUST remain outside ordinary NUnit/VSTest registration, product `Assemblies` directories, and release packages.
 
 #### Scenario: A product declares an E2E workflow
-- **WHEN** a test type implements the E2E contract and declares Core, Harmony, its owning product, and an optional integration in exact order
+- **WHEN** a test type implements the E2E contract and declares Harmony, Core, its owning product, and an optional integration in exact order
 - **THEN** host discovery reports that stable test under exactly that non-Gateway mod group
 - **THEN** the product's ordinary release artifact contains neither the E2E assembly nor a Gateway reference
 
 #### Scenario: A test declaration is ambiguous
 - **WHEN** a test ID is duplicated, a non-Gateway owner is absent from its package sequence, an owner is neither present nor the exact implicit Gateway owner, Gateway is listed explicitly, or its package sequence is empty, duplicated, missing, or unresolvable
 - **THEN** discovery fails before launching RimWorld with an actionable validation error
+
+#### Scenario: Harmony is placed after Core
+- **WHEN** a test declares `brrainz.harmony` anywhere other than first or declares Core before Harmony
+- **THEN** discovery rejects the declaration before build, staging, or launch
 
 #### Scenario: Gateway owns an infrastructure self-test
 - **WHEN** a Gateway-owned test declares Core as its exact non-Gateway sequence and `fumblesneeze.rimworlddevgateway` as owner
@@ -33,7 +37,7 @@ The runner SHALL accept one or more exact stable test-ID filters independently f
 - **THEN** the run fails before test arrangement and never substitutes a same-group or similarly named test
 
 #### Scenario: Three tests share two mod combinations
-- **WHEN** two tests declare the same Core/Harmony/product sequence and a third also declares one optional mod
+- **WHEN** two tests declare the same Harmony/Core/product sequence and a third also declares one optional mod
 - **THEN** the runner starts two processes
 - **THEN** the first matching process runs the two same-group tests sequentially and the second runs the optional-mod test
 

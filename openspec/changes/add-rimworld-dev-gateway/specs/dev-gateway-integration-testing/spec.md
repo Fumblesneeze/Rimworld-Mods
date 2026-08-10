@@ -40,7 +40,7 @@ A manifest MAY use reusable `requiredPackageIds`/`forbiddenPackageIds` constrain
 - **THEN** the host rejects the request before invoking `dotnet` or writing a stage
 
 #### Scenario: Exact product matrix is reordered or widened
-- **WHEN** an exact-mode manifest names Core, Harmony, its product mod, and the Gateway in that order but the requested or live active package sequence has the same members in another order or contains another package
+- **WHEN** an exact-mode manifest names Harmony, Core, its product mod, and the Gateway in that order but the requested or live active package sequence has the same members in another order or contains another package
 - **THEN** the host does not build or stage that project and the runtime does not expose its assembly for loading or invocation
 
 #### Scenario: Focused product matrix excludes completed fixture suites

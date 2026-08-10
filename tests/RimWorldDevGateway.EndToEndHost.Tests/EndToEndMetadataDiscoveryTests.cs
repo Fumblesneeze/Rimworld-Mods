@@ -40,8 +40,8 @@ public sealed class EndToEndMetadataDiscoveryTests
             Assert.That(declaration.OwnerPackageId, Is.EqualTo("alpha.mod"));
             Assert.That(declaration.ActivePackageIds, Is.EqualTo(new[]
             {
-                "ludeon.rimworld",
                 "brrainz.harmony",
+                "ludeon.rimworld",
                 "alpha.mod"
             }));
             Assert.That(declaration.ImplementsContract, Is.True);
@@ -73,15 +73,15 @@ public sealed class EndToEndMetadataDiscoveryTests
 
         var result = EndToEndDiscoveryValidator.ValidateAndGroup(
             new[] { candidate },
-            new[] { "ludeon.rimworld", "brrainz.harmony", "alpha.mod", "optional.mod" });
+            new[] { "brrainz.harmony", "ludeon.rimworld", "alpha.mod", "optional.mod" });
 
         Assert.Multiple(() =>
         {
             Assert.That(result.Groups, Has.Count.EqualTo(2));
             Assert.That(result.Groups[0].ActivePackageIds, Is.EqualTo(new[]
             {
-                "ludeon.rimworld",
                 "brrainz.harmony",
+                "ludeon.rimworld",
                 "alpha.mod"
             }));
             Assert.That(result.Groups[0].Tests.Select(test => test.Id), Is.EqualTo(new[]
@@ -115,6 +115,7 @@ public sealed class EndToEndMetadataDiscoveryTests
             Assert.That(error.Message, Does.Contain("invalid.interface").And.Contain("IRimWorldEndToEndTest"));
             Assert.That(error.Message, Does.Contain("invalid.owner").And.Contain("owner"));
             Assert.That(error.Message, Does.Contain("invalid.duplicate-package").And.Contain("duplicate"));
+            Assert.That(error.Message, Does.Contain("invalid.harmony-order").And.Contain("brrainz.harmony"));
             Assert.That(error.Message, Does.Contain("invalid.explicit-gateway").And.Contain("must not list"));
             Assert.That(error.Message, Does.Contain("invalid.deadline").And.Contain("deadline"));
             Assert.That(error.Message, Does.Contain("invalid.duplicate-id").And.Contain("duplicate test ID"));

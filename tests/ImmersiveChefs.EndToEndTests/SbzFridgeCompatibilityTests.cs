@@ -12,8 +12,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.sbz-fridge-passive-storage",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "adaptive.storage.framework",
     "sbz.NeatStorageFridge",
     "fumblesneeze.immersivechefs",
@@ -708,8 +708,8 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.adaptive-storage-framework-only",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "adaptive.storage.framework",
     "fumblesneeze.immersivechefs",
     MaxFrames = 5_000,

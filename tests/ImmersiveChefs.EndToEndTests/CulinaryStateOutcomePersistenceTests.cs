@@ -11,8 +11,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.culinary-state-save-load-outcomes",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 5_400,
     MaxGameTicks = 18_000,

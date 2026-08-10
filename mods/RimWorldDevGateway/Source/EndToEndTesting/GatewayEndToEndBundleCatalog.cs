@@ -289,7 +289,7 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             string.IsNullOrWhiteSpace(test.TypeName) ||
             !StringComparer.OrdinalIgnoreCase.Equals(owner, containingPackageId) ||
             packages.Length == 0 ||
-            !StringComparer.OrdinalIgnoreCase.Equals(packages[0], EndToEndTestContract.CorePackageId) ||
+            !EndToEndTestContract.HasValidLaunchPrefix(packages) ||
             packages.Any(string.IsNullOrEmpty) ||
             packages.Distinct(StringComparer.OrdinalIgnoreCase).Count() != packages.Length ||
             packages.Contains(EndToEndTestContract.GatewayPackageId, StringComparer.OrdinalIgnoreCase) ||

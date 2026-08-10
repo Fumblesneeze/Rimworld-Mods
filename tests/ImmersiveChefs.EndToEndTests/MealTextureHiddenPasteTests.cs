@@ -10,8 +10,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.texture-absent-hidden-paste",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 7_200,
     MaxGameTicks = 28_000,
@@ -33,8 +33,8 @@ public sealed class TextureAbsentHiddenPasteTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.dmtr-hidden-paste",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Thekiborg.DMTR",
     "fumblesneeze.immersivechefs",
     MaxFrames = 7_200,
@@ -57,8 +57,8 @@ public sealed class DmtrHiddenPasteTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.ftv-hidden-paste",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Goat.Food.Texture.Variety.Core",
     "Goat.Food.Texture.Variety",
     "fumblesneeze.immersivechefs",
@@ -82,8 +82,8 @@ public sealed class FtvHiddenPasteTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.dmtr-ftv-hidden-paste",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Thekiborg.DMTR",
     "Goat.Food.Texture.Variety.Core",
     "Goat.Food.Texture.Variety",

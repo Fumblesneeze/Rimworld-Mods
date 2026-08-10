@@ -3,8 +3,8 @@
   "assembly": "ImmersiveChefs.NoVanillaMealsOnly.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "Mlie.NoVanillaMeals",
     "fumblesneeze.immersivechefs",
     "fumblesneeze.rimworlddevgateway"

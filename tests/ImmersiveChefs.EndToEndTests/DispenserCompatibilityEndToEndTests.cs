@@ -14,8 +14,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.replimat-native-dining",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "sumghai.Replimat",
     "sumghai.ReplimatMeals",
     "Dubwise.DubsBadHygiene",
@@ -385,8 +385,8 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.replimat-failed-dispense-rollback",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "sumghai.Replimat",
     "sumghai.ReplimatMeals",
     "Dubwise.DubsBadHygiene",
@@ -654,8 +654,8 @@ public sealed class ReplimatFailedDispenseRollbackTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.meal-printer-fine-dining",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Orion.Hospitality",
     "Mlie.MealPrinter",
     "Orion.CashRegister",
@@ -825,8 +825,8 @@ public sealed class MealPrinterFineDiningTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.meal-printer-gastronomy-guest-service",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Orion.Hospitality",
     "Mlie.MealPrinter",
     "Orion.CashRegister",
@@ -1346,8 +1346,8 @@ public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTes
 [RimWorldEndToEndTest(
     "immersive-chefs.meal-printer-nutribar-exclusion",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Orion.Hospitality",
     "Mlie.MealPrinter",
     "Orion.CashRegister",
@@ -1472,8 +1472,8 @@ public sealed class MealPrinterNutriBarExclusionTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.replimat-animal-feeder-exclusion",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "sumghai.Replimat",
     "sumghai.ReplimatMeals",
     "Dubwise.DubsBadHygiene",
@@ -1693,8 +1693,8 @@ public sealed class ReplimatAnimalFeederExclusionTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.replimat-survival-batch-exclusion",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "sumghai.Replimat",
     "sumghai.ReplimatMeals",
     "Dubwise.DubsBadHygiene",

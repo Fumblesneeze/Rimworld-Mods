@@ -19,8 +19,8 @@ public static class FoodSearchModsIntegrationTests
             .ToArray();
         var expected = new[]
         {
-            "ludeon.rimworld",
             "brrainz.harmony",
+            "ludeon.rimworld",
             "Argon.CheapMeals",
             "Memegoddess.MealsOnWheels",
             "seekiworksmod.no10",

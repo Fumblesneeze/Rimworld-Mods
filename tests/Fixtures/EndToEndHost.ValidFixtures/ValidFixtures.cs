@@ -7,8 +7,8 @@ namespace EndToEndHost.ValidFixtures;
 [RimWorldEndToEndTest(
     "alpha.base-a",
     "alpha.mod",
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "alpha.mod",
     MaxFrames = 300,
     MaxGameTicks = 1_200,
@@ -33,8 +33,8 @@ public sealed class ExplosiveStaticConstructorTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "alpha.base-b",
     "alpha.mod",
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "alpha.mod")]
 public sealed class SecondBaseTest : IRimWorldEndToEndTest
 {
@@ -51,8 +51,8 @@ public sealed class SecondBaseTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "alpha.optional",
     "alpha.mod",
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "alpha.mod",
     "optional.mod")]
 public sealed class OptionalTest : IRimWorldEndToEndTest

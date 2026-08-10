@@ -13,8 +13,8 @@ public static class MealPrinterModsIntegrationTests
 {
     private static readonly string[] ExpectedPackages =
     {
-        "ludeon.rimworld",
         "brrainz.harmony",
+        "ludeon.rimworld",
         "Orion.Hospitality",
         "Mlie.MealPrinter",
         "Orion.CashRegister",

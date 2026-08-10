@@ -282,8 +282,8 @@ public sealed class EndToEndBundleStagingTests
 
     private static readonly string[] ResolvablePackages =
     {
-        "ludeon.rimworld",
         "brrainz.harmony",
+        "ludeon.rimworld",
         "alpha.mod",
         "optional.mod"
     };

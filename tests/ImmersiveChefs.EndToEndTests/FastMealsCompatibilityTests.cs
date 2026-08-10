@@ -10,8 +10,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.fast-meals-native-cooking",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Argon.CheapMeals",
     "Memegoddess.MealsOnWheels",
     "seekiworksmod.no10",

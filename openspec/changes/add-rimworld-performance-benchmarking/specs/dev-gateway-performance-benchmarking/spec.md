@@ -50,7 +50,7 @@ Every sample SHALL retain raw DPA entries for registered product methods and rel
 The initial Immersive Chefs fixture SHALL build a deterministic multi-room, non-trivial-pathing colony with 36 human pawns across cooking, assistance, cleaning/hauling, nursing/patient, and dining roles; 24 animals; simultaneous recipe tiers; prep/support stations; domestic and industrial dishwashing; microwaves; separated storage; patients and nurses; and two caravans containing pawns, animals, meals, plates, and cutlery. Exact Defs, counts, layout version, jobs, and expected throughput SHALL be machine-verified before and after every sample. Optional groups SHALL activate the corresponding installed integrations without changing unrelated base identities.
 
 #### Scenario: Base Immersive Chefs performance run
-- **WHEN** Core, Harmony, Immersive Chefs, DPA, and Gateway form the exact active set
+- **WHEN** Harmony, Core, Immersive Chefs, DPA, and Gateway form the exact active set
 - **THEN** the workload continuously exercises cooking, assistance, dining, temperature, tableware, sanitation, washing, hauling, patient feeding, animal exclusion, and caravan state without requiring an optional mod
 
 #### Scenario: Processor and Dubs group runs

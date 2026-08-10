@@ -2598,7 +2598,27 @@ foreach ($expectation in $ExpectedIntegrationTests) {
     $validatedExpectedIntegrationTestSpecs.Add($expectation)
 }
 
-$activeModIds = @('ludeon.rimworld') + @($validatedAdditionalModIds) + @('fumblesneeze.rimworlddevgateway')
+function Get-GatewayActiveModIds {
+    param([string[]]$AdditionalPackageIds)
+
+    $harmonyPackageId = 'brrainz.harmony'
+    $corePackageId = 'ludeon.rimworld'
+    $gatewayPackageId = 'fumblesneeze.rimworlddevgateway'
+    $remainingPackageIds = @($AdditionalPackageIds | Where-Object {
+        -not [string]::Equals($_, $harmonyPackageId, [System.StringComparison]::OrdinalIgnoreCase)
+    })
+    $hasHarmony = @($AdditionalPackageIds | Where-Object {
+        [string]::Equals($_, $harmonyPackageId, [System.StringComparison]::OrdinalIgnoreCase)
+    }).Count -gt 0
+
+    if ($hasHarmony) {
+        return @($harmonyPackageId, $corePackageId) + $remainingPackageIds + @($gatewayPackageId)
+    }
+
+    return @($corePackageId) + $remainingPackageIds + @($gatewayPackageId)
+}
+
+$activeModIds = @(Get-GatewayActiveModIds -AdditionalPackageIds $validatedAdditionalModIds)
 
 if ($IntegrationFailureProbe -and (-not $RunIntegrationTests -or -not $Quicktest)) {
     Exit-InvalidInput '-IntegrationFailureProbe requires both -RunIntegrationTests and -Quicktest.'

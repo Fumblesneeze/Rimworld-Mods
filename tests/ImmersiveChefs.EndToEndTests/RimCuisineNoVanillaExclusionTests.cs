@@ -11,8 +11,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.rimcuisine-no-vanilla-exclusions",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "syrchalis.processor.framework",
     "Mlie.RC2.Core",
     "Mlie.RC2.MaME",

@@ -3,8 +3,8 @@
   "assembly": "ImmersiveChefs.FoodSearchMods.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "Argon.CheapMeals",
     "Memegoddess.MealsOnWheels",
     "seekiworksmod.no10",

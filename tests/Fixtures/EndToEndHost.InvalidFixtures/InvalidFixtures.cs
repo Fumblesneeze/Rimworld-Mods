@@ -6,10 +6,20 @@ namespace EndToEndHost.InvalidFixtures;
 [RimWorldEndToEndTest(
     "invalid.owner",
     "alpha.mod",
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "another.mod")]
 public sealed class MissingOwnerTest : NoOpTest
+{
+}
+
+[RimWorldEndToEndTest(
+    "invalid.harmony-order",
+    "alpha.mod",
+    "ludeon.rimworld",
+    "brrainz.harmony",
+    "alpha.mod")]
+public sealed class CoreBeforeHarmonyTest : NoOpTest
 {
 }
 

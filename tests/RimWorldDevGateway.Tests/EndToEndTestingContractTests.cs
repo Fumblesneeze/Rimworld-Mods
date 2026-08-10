@@ -50,8 +50,8 @@ public sealed class EndToEndTestingContractTests
             Assert.That(descriptor.OwnerPackageId, Is.EqualTo("fumblesneeze.immersivechefs"));
             Assert.That(descriptor.ActivePackageIds, Is.EqualTo(new[]
             {
-                "ludeon.rimworld",
                 "brrainz.harmony",
+                "ludeon.rimworld",
                 "fumblesneeze.immersivechefs"
             }));
             Assert.That(descriptor.Deadline.MaxFrames, Is.EqualTo(900));
@@ -86,7 +86,7 @@ public sealed class EndToEndTestingContractTests
     [TestCase(typeof(AttributedNonTest), "IRimWorldEndToEndTest")]
     [TestCase(typeof(MissingOwnerTest), "owner")]
     [TestCase(typeof(DuplicatePackageTest), "duplicate")]
-    [TestCase(typeof(CoreNotFirstTest), "ludeon.rimworld")]
+    [TestCase(typeof(CoreBeforeHarmonyTest), "brrainz.harmony")]
     [TestCase(typeof(InvalidDeadlineTest), "deadline")]
     public void Describe_rejects_invalid_declarations(Type testType, string messageFragment)
     {
@@ -473,8 +473,8 @@ public sealed class EndToEndTestingContractTests
     [RimWorldEndToEndTest(
         "immersive-chefs.adverse-meal",
         "fumblesneeze.immersivechefs",
-        "ludeon.rimworld",
         "brrainz.harmony",
+        "ludeon.rimworld",
         "fumblesneeze.immersivechefs",
         MaxFrames = 900,
         MaxGameTicks = 2_500,
@@ -524,8 +524,8 @@ public sealed class EndToEndTestingContractTests
     {
     }
 
-    [RimWorldEndToEndTest("invalid.core-order", "fumblesneeze.immersivechefs", "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.immersivechefs")]
-    public sealed class CoreNotFirstTest : NoOpTest
+    [RimWorldEndToEndTest("invalid.harmony-order", "fumblesneeze.immersivechefs", "ludeon.rimworld", "brrainz.harmony", "fumblesneeze.immersivechefs")]
+    public sealed class CoreBeforeHarmonyTest : NoOpTest
     {
     }
 

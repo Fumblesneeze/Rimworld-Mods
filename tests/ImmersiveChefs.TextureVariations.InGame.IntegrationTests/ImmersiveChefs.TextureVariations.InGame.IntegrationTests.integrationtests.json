@@ -3,8 +3,8 @@
   "assembly": "ImmersiveChefs.TextureVariations.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "OskarPotocki.VanillaFactionsExpanded.Core",
     "VanillaExpanded.VTEXVariations",
     "fumblesneeze.immersivechefs",

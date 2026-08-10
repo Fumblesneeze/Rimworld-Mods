@@ -11,8 +11,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.countertop-microwave-native-reheat",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 3_600,
     MaxGameTicks = 12_000,
@@ -98,8 +98,8 @@ public sealed class CountertopMicrowaveNativeReheatTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.countertop-microwave-support-loss",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 4_200,
     MaxGameTicks = 14_000,

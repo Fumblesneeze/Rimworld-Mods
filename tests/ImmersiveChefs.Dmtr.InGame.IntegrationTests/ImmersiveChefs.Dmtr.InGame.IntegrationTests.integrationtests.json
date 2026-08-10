@@ -3,8 +3,8 @@
   "assembly": "ImmersiveChefs.Dmtr.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "Thekiborg.DMTR",
     "fumblesneeze.immersivechefs",
     "fumblesneeze.rimworlddevgateway"

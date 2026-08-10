@@ -3,8 +3,8 @@
   "assembly": "ImmersiveChefs.VceFriedMods.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "OskarPotocki.VanillaFactionsExpanded.Core",
     "VanillaExpanded.VCookE",
     "VanillaExpanded.VCookEBakery",

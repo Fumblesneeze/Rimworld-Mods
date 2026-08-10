@@ -13,8 +13,8 @@ public static class ReplimatModsIntegrationTests
 {
     private static readonly string[] ExpectedPackages =
     {
-        "ludeon.rimworld",
         "brrainz.harmony",
+        "ludeon.rimworld",
         "sumghai.Replimat",
         "sumghai.ReplimatMeals",
         "Dubwise.DubsBadHygiene",

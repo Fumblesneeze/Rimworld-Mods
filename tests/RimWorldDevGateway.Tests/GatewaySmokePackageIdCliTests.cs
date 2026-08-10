@@ -12,6 +12,41 @@ namespace RimWorldDevGateway.Tests;
 [NonParallelizable]
 public sealed class GatewaySmokePackageIdCliTests
 {
+    [Test]
+    public void Active_order_honors_harmony_load_before_and_keeps_core_first_when_harmony_is_absent()
+    {
+        var repositoryRoot = FindSourceRepositoryRoot();
+        var smokePath = Path.Combine(repositoryRoot, "scripts", "Invoke-GatewaySmoke.ps1");
+        var temporaryRoot = Path.Combine(Path.GetTempPath(), "GatewaySmokePackageIdCliTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryRoot);
+        try
+        {
+            var probePath = Path.Combine(temporaryRoot, "probe.ps1");
+            var probe =
+                $"$tokens = $null; $errors = $null; $ast = [Management.Automation.Language.Parser]::ParseFile({PowerShellLiteral(smokePath)}, [ref]$tokens, [ref]$errors)" + Environment.NewLine +
+                "$functionAst = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Get-GatewayActiveModIds' }, $true)" + Environment.NewLine +
+                "if ($null -eq $functionAst) { throw 'Get-GatewayActiveModIds was not found.' }" + Environment.NewLine +
+                ". ([scriptblock]::Create($functionAst.Extent.Text))" + Environment.NewLine +
+                "$withHarmony = @(Get-GatewayActiveModIds -AdditionalPackageIds @('optional.one','BRRAINZ.HARMONY','optional.two'))" + Environment.NewLine +
+                "$withoutHarmony = @(Get-GatewayActiveModIds -AdditionalPackageIds @('optional.one','optional.two'))" + Environment.NewLine +
+                "[pscustomobject]@{ withHarmony = $withHarmony; withoutHarmony = $withoutHarmony } | ConvertTo-Json -Compress" + Environment.NewLine;
+            File.WriteAllText(probePath, probe, new UTF8Encoding(false));
+            var run = InvokePowerShell(probePath);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+                Assert.That(run.StandardOutput.Trim(), Is.EqualTo(
+                    "{\"withHarmony\":[\"brrainz.harmony\",\"ludeon.rimworld\",\"optional.one\",\"optional.two\",\"fumblesneeze.rimworlddevgateway\"]," +
+                    "\"withoutHarmony\":[\"ludeon.rimworld\",\"optional.one\",\"optional.two\",\"fumblesneeze.rimworlddevgateway\"]}"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(temporaryRoot, recursive: true);
+        }
+    }
+
     [TestCase("Example.Mod", "example.mod")]
     [TestCase("LUDEON.RIMWORLD", "ludeon.rimworld")]
     [TestCase("FUMBLESNEEZE.RIMWORLDDEVGATEWAY", "fumblesneeze.rimworlddevgateway")]
@@ -136,6 +171,30 @@ public sealed class GatewaySmokePackageIdCliTests
         {
             Directory.Delete(temporaryRoot, recursive: true);
         }
+    }
+
+    private static InvocationResult InvokePowerShell(string scriptPath)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "pwsh.exe",
+            Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{scriptPath}\"",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start pwsh.");
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(30000))
+        {
+            process.Kill();
+            throw new TimeoutException("Gateway smoke package-order probe timed out.");
+        }
+
+        Task.WaitAll(output, error);
+        return new InvocationResult(process.ExitCode, output.Result, error.Result);
     }
 
     private static string FindSourceRepositoryRoot()

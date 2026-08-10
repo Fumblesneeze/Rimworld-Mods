@@ -17,8 +17,8 @@ public static class FinalProductModsIntegrationTests
             .ToArray();
         var expected = new[]
         {
-            "ludeon.rimworld",
             "brrainz.harmony",
+            "ludeon.rimworld",
             "rabiosus.AdaptiveMealBill",
             "binchcannon.overcookedmeals",
             "fumblesneeze.immersivechefs",

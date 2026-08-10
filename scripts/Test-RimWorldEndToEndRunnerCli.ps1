@@ -45,7 +45,7 @@ foreach ($testId in $ExpectedTestIds) {
         throw "Grouped E2E dry run omitted expected test '$testId'."
     }
 }
-$dependencyFirstGroupId = 'ludeon.rimworld|brrainz.harmony|oskarpotocki.vanillafactionsexpanded.core|vanillaexpanded.vcooke|vanillaexpanded.vcookebakery|vanillaexpanded.vcookehaute|vanillaexpanded.vcookestews|vanillaexpanded.vcef|vanillaexpanded.vcookesushi|ucp.friedmeals|rabiosus.adaptivemealbill|binchcannon.overcookedmeals|fumblesneeze.immersivechefs'
+$dependencyFirstGroupId = 'brrainz.harmony|ludeon.rimworld|oskarpotocki.vanillafactionsexpanded.core|vanillaexpanded.vcooke|vanillaexpanded.vcookebakery|vanillaexpanded.vcookehaute|vanillaexpanded.vcookestews|vanillaexpanded.vcef|vanillaexpanded.vcookesushi|ucp.friedmeals|rabiosus.adaptivemealbill|binchcannon.overcookedmeals|fumblesneeze.immersivechefs'
 $dependencyFirstGroups = @($groups | Where-Object {
     [string]$_.GroupId -ceq $dependencyFirstGroupId
 })

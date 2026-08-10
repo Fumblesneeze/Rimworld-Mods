@@ -40,11 +40,15 @@ Mutating automation runs SHALL accept a caller idempotency key, retain its bound
 - **THEN** the gateway returns `idempotency_conflict` before starting new work
 
 ### Requirement: Quickstart launch and readiness flow
-The host smoke command SHALL be able to launch RimWorld with an isolated save-data folder, `-quicktest`, and a minimal explicit mod list consisting of Core, zero or more caller-supplied additional package IDs, and the gateway in that order; discover and authenticate through the session manifest; verify through the raw endpoint that RimWorld actually loaded that ordered list; accept optional expected target-mod log markers; reject common mod/gateway load or initialization exception signatures; and wait with bounded diagnostics for both gateway readiness and a playable map before invoking any main-thread Def export, integration verification, or scenario setup. With no additional package IDs, the default SHALL remain Core plus the gateway. This command SHALL use direct HTTP and SHALL NOT require the optional companion client.
+The host smoke command SHALL be able to launch RimWorld with an isolated save-data folder, `-quicktest`, and a minimal explicit mod list consisting of Core, zero or more caller-supplied additional package IDs, and the gateway. With no Harmony package, Core SHALL be first; when caller-supplied `brrainz.harmony` is present, Harmony SHALL be first and Core second, matching Harmony's installed `loadBefore` contract. Caller-supplied packages other than Harmony SHALL retain their relative order after Core, and the gateway SHALL remain last. The host SHALL discover and authenticate through the session manifest; verify through the raw endpoint that RimWorld actually loaded that ordered list; accept optional expected target-mod log markers; reject common mod/gateway load or initialization exception signatures; and wait with bounded diagnostics for both gateway readiness and a playable map before invoking any main-thread Def export, integration verification, or scenario setup. With no additional package IDs, the default SHALL remain Core plus the gateway. This command SHALL use direct HTTP and SHALL NOT require the optional companion client.
 
 #### Scenario: Quickstart reaches a playable map
 - **WHEN** the host launches a supported RimWorld build with valid mod paths, optional additional package IDs, and a scenario descriptor
 - **THEN** it records and verifies the actual isolated ordered mod list, obtains authenticated status for the exact launched PID, and starts setup only after that process reports a playable map
+
+#### Scenario: Harmony participates in an isolated launch
+- **WHEN** the caller includes `brrainz.harmony` among additional package IDs
+- **THEN** the isolated active order starts with Harmony followed by Core, preserves every other caller package's relative order after Core, and leaves the gateway last
 
 #### Scenario: Quicktest never reaches a map
 - **WHEN** the launched process exits, logs a mod error, or exceeds the readiness deadline before a playable map exists

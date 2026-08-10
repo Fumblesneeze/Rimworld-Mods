@@ -12,8 +12,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.food-texture-variety-vce-save-load",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "OskarPotocki.VanillaFactionsExpanded.Core",
     "VanillaExpanded.VCookE",
     "VanillaExpanded.VCookEBakery",
@@ -52,8 +52,8 @@ public sealed class FoodTextureVarietyVcePersistenceTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.food-texture-variety-save-load",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Goat.Food.Texture.Variety.Core",
     "Goat.Food.Texture.Variety",
     "fumblesneeze.immersivechefs",

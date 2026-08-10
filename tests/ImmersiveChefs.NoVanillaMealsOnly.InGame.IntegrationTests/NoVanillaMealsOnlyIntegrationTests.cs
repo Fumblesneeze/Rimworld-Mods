@@ -12,8 +12,8 @@ public static class NoVanillaMealsOnlyIntegrationTests
 {
     private static readonly string[] ExactPackageIds =
     {
-        "ludeon.rimworld",
         "brrainz.harmony",
+        "ludeon.rimworld",
         MealClassificationCatalog.NoVanillaMealsPackageId,
         ImmersiveChefsMod.PackageId,
         "fumblesneeze.rimworlddevgateway"

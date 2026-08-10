@@ -3,8 +3,8 @@
   "assembly": "ImmersiveChefs.MealPrinterMods.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "Orion.Hospitality",
     "Mlie.MealPrinter",
     "Orion.CashRegister",

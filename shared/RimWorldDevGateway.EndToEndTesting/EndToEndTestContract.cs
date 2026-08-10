@@ -222,6 +222,7 @@ public sealed class EndToEndContractException : Exception
 
 public static class EndToEndTestContract
 {
+    public const string HarmonyPackageId = "brrainz.harmony";
     public const string CorePackageId = "ludeon.rimworld";
     public const string GatewayPackageId = "fumblesneeze.rimworlddevgateway";
 
@@ -268,10 +269,7 @@ public static class EndToEndTestContract
             throw Invalid(testType, "must declare a non-empty active package sequence");
         }
 
-        if (!StringComparer.OrdinalIgnoreCase.Equals(packages[0], CorePackageId))
-        {
-            throw Invalid(testType, $"must list {CorePackageId} first");
-        }
+        ValidateLaunchPrefix(packages, testType);
 
         var duplicate = packages
             .GroupBy(value => value, StringComparer.OrdinalIgnoreCase)
@@ -306,6 +304,58 @@ public static class EndToEndTestContract
                 attribute.MaxFrames,
                 attribute.MaxGameTicks,
                 TimeSpan.FromSeconds(attribute.MaxWallClockSeconds)));
+    }
+
+    public static bool HasValidLaunchPrefix(IReadOnlyList<string> packages)
+    {
+        if (packages is null || packages.Count == 0)
+        {
+            return false;
+        }
+
+        var harmonyIndex = IndexOf(packages, HarmonyPackageId);
+        return harmonyIndex < 0
+            ? StringComparer.OrdinalIgnoreCase.Equals(packages[0], CorePackageId)
+            : harmonyIndex == 0 &&
+              packages.Count > 1 &&
+              StringComparer.OrdinalIgnoreCase.Equals(packages[1], CorePackageId);
+    }
+
+    private static void ValidateLaunchPrefix(IReadOnlyList<string> packages, Type testType)
+    {
+        var harmonyIndex = IndexOf(packages, HarmonyPackageId);
+        if (harmonyIndex < 0)
+        {
+            if (!StringComparer.OrdinalIgnoreCase.Equals(packages[0], CorePackageId))
+            {
+                throw Invalid(testType, $"must list {CorePackageId} first when {HarmonyPackageId} is absent");
+            }
+
+            return;
+        }
+
+        if (harmonyIndex != 0)
+        {
+            throw Invalid(testType, $"must list {HarmonyPackageId} first when Harmony is active");
+        }
+
+        if (packages.Count < 2 || !StringComparer.OrdinalIgnoreCase.Equals(packages[1], CorePackageId))
+        {
+            throw Invalid(testType, $"must list {CorePackageId} immediately after {HarmonyPackageId}");
+        }
+    }
+
+    private static int IndexOf(IReadOnlyList<string> values, string expected)
+    {
+        for (var index = 0; index < values.Count; index++)
+        {
+            if (StringComparer.OrdinalIgnoreCase.Equals(values[index], expected))
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private static string RequiredToken(string? value, string field, Type testType)

@@ -3,8 +3,8 @@
   "assembly": "ImmersiveChefs.DmtrFtv.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
-    "ludeon.rimworld",
     "brrainz.harmony",
+    "ludeon.rimworld",
     "Thekiborg.DMTR",
     "Goat.Food.Texture.Variety.Core",
     "Goat.Food.Texture.Variety",

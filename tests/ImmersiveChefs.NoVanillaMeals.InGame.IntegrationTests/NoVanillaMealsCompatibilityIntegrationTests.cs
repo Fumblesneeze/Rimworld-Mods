@@ -10,8 +10,8 @@ public static class NoVanillaMealsCompatibilityIntegrationTests
 {
     private static readonly string[] ExactPackageIds =
     {
-        "ludeon.rimworld",
         "brrainz.harmony",
+        "ludeon.rimworld",
         MealClassificationCatalog.ProcessorFrameworkPackageId,
         MealClassificationCatalog.RimCuisineCorePackageId,
         MealClassificationCatalog.RimCuisineMealsPackageId,

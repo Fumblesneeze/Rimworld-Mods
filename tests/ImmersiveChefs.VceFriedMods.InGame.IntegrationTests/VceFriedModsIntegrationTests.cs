@@ -11,8 +11,8 @@ public static class VceFriedModsIntegrationTests
 {
     private static readonly string[] ExpectedPackages =
     {
-        "ludeon.rimworld",
         "brrainz.harmony",
+        "ludeon.rimworld",
         "OskarPotocki.VanillaFactionsExpanded.Core",
         "VanillaExpanded.VCookE",
         "VanillaExpanded.VCookEBakery",

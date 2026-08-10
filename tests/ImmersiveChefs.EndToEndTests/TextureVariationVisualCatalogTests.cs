@@ -12,8 +12,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.texture-variation-visual-catalog",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "OskarPotocki.VanillaFactionsExpanded.Core",
     "VanillaExpanded.VTEXVariations",
     "fumblesneeze.immersivechefs",

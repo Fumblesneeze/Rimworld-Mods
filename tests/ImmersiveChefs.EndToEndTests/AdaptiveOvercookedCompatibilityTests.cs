@@ -11,8 +11,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.adaptive-overcooked-final-product",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "OskarPotocki.VanillaFactionsExpanded.Core",
     "VanillaExpanded.VCookE",
     "VanillaExpanded.VCookEBakery",

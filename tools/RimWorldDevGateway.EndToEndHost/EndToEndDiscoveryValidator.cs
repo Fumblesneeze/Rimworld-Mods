@@ -4,6 +4,7 @@ namespace RimWorldDevGateway.EndToEndHost;
 
 public static class EndToEndDiscoveryValidator
 {
+    public const string HarmonyPackageId = "brrainz.harmony";
     public const string CorePackageId = "ludeon.rimworld";
     public const string GatewayPackageId = "fumblesneeze.rimworlddevgateway";
 
@@ -140,9 +141,9 @@ public static class EndToEndDiscoveryValidator
         {
             errors.Add($"'{displayId}' has an empty active package sequence");
         }
-        else if (!StringComparer.OrdinalIgnoreCase.Equals(packages[0], CorePackageId))
+        else
         {
-            errors.Add($"'{displayId}' must list {CorePackageId} first");
+            ValidateLaunchPrefix(packages, displayId, errors);
         }
 
         var duplicate = packages
@@ -178,6 +179,33 @@ public static class EndToEndDiscoveryValidator
             declaration.MaxWallClockSeconds <= 0)
         {
             errors.Add($"'{displayId}' must declare positive frame, game-tick, and wall-clock deadline values");
+        }
+    }
+
+    private static void ValidateLaunchPrefix(string[] packages, string displayId, ICollection<string> errors)
+    {
+        var harmonyIndex = Array.FindIndex(
+            packages,
+            packageId => StringComparer.OrdinalIgnoreCase.Equals(packageId, HarmonyPackageId));
+        if (harmonyIndex < 0)
+        {
+            if (!StringComparer.OrdinalIgnoreCase.Equals(packages[0], CorePackageId))
+            {
+                errors.Add($"'{displayId}' must list {CorePackageId} first when {HarmonyPackageId} is absent");
+            }
+
+            return;
+        }
+
+        if (harmonyIndex != 0)
+        {
+            errors.Add($"'{displayId}' must list {HarmonyPackageId} first when Harmony is active");
+            return;
+        }
+
+        if (packages.Length < 2 || !StringComparer.OrdinalIgnoreCase.Equals(packages[1], CorePackageId))
+        {
+            errors.Add($"'{displayId}' must list {CorePackageId} immediately after {HarmonyPackageId}");
         }
     }
 

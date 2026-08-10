@@ -12,8 +12,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.rimfridge-thermodynamics-dining",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "rimfridge.kv.rw",
     "Mlie.DThermodynamicsHotMeals",
     "fumblesneeze.immersivechefs",

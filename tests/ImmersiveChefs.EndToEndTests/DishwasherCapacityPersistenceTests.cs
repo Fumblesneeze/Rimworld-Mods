@@ -13,8 +13,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.dishwasher-research-progression",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 3_600,
     MaxGameTicks = 8_000,
@@ -334,8 +334,8 @@ public sealed class DishwasherResearchProgressionTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.local-dishwasher-capacity-persistence",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 11_000,
     MaxGameTicks = 45_000,

@@ -12,8 +12,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.terrain-handwashing-lifecycle",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "fumblesneeze.immersivechefs",
     MaxFrames = 4_200,
     MaxGameTicks = 12_000,
@@ -189,8 +189,8 @@ public sealed class TerrainHandwashingLifecycleTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.dubs-sink-handwashing-priority",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Dubwise.DubsBadHygiene",
     "fumblesneeze.immersivechefs",
     MaxFrames = 6_600,
@@ -449,8 +449,8 @@ public sealed class DubsSinkHandwashingPriorityTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "immersive-chefs.dubs-handwashing-full-fallback-order",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "Dubwise.DubsBadHygiene",
     "fumblesneeze.immersivechefs",
     MaxFrames = 15_600,

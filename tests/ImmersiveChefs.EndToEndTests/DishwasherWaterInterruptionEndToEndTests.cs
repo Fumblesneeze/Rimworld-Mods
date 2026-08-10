@@ -11,8 +11,8 @@ namespace ImmersiveChefs.EndToEndTests;
 [RimWorldEndToEndTest(
     "immersive-chefs.dubs-processor-dishwasher-water-interruption",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "syrchalis.processor.framework",
     "Dubwise.DubsBadHygiene",
     "fumblesneeze.immersivechefs",
@@ -319,8 +319,8 @@ public sealed class DubsProcessorDishwasherWaterInterruptionTest : IRimWorldEndT
 [RimWorldEndToEndTest(
     "immersive-chefs.dubs-processor-dishwasher-exact-water-charge",
     "fumblesneeze.immersivechefs",
-    EndToEndTestContract.CorePackageId,
     "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
     "syrchalis.processor.framework",
     "Dubwise.DubsBadHygiene",
     "fumblesneeze.immersivechefs",
