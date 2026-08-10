@@ -435,7 +435,12 @@ internal static class CookingSessionRegistry
 {
     private static readonly ConditionalWeakTable<Job, CookingSession> Sessions = new();
 
-    internal static bool TryAttach(Pawn pawn, Job job, Thing billGiver, out string? missingReason)
+    internal static bool TryAttach(
+        Pawn pawn,
+        Job job,
+        Thing billGiver,
+        out string? missingReason,
+        bool forceDirtyCookware = false)
     {
         missingReason = null;
         if (!AdaptiveMealBillAdapter.TryResolveConcreteRecipe(job, out var reservationRecipe))
@@ -462,7 +467,14 @@ internal static class CookingSessionRegistry
         // Stock-production bills have no consumer identity. Treating the cook's hunger as the
         // consumer emergency incorrectly makes an unrelated colonist's bill use dirty ware.
         var emergency = UrgentProductionRequestRegistry.HasActive(pawn.Map);
-        var cookware = FindPortions(pawn, job, KitchenwareProduct.Cookware, 1, emergency, out var cookwareUse);
+        var cookware = FindPortions(
+            pawn,
+            job,
+            KitchenwareProduct.Cookware,
+            1,
+            emergency,
+            out var cookwareUse,
+            forcedUse: forceDirtyCookware ? WareUse.Dirty : null);
         var requiredPlates = MealCoveragePolicy.ServingCount(reservationRecipe!);
         var plateComplexity = MealClassificationRuntime.ClassifyRecipe(reservationRecipe);
         var plates = FindPortions(
@@ -494,6 +506,41 @@ internal static class CookingSessionRegistry
         return true;
     }
 
+    internal static bool CanOfferDirtyCookwareOverride(Pawn pawn, Job otherwiseRunnableBillJob)
+    {
+        return TryEvaluateDirtyCookwareAction(
+                   pawn,
+                   otherwiseRunnableBillJob,
+                   requireWashingDestination: false,
+                   out _,
+                   out _,
+                   out var state) &&
+               DirtyCookwareActionPolicy.ShouldOfferOneJobOverride(state);
+    }
+
+    internal static bool TryCreatePrerequisiteWashJob(
+        Pawn pawn,
+        Job otherwiseRunnableBillJob,
+        out Job? washJob)
+    {
+        washJob = null;
+        if (!TryEvaluateDirtyCookwareAction(
+                pawn,
+                otherwiseRunnableBillJob,
+                requireWashingDestination: true,
+                out var dirtyCookware,
+                out var destination,
+                out var state) ||
+            !DirtyCookwareActionPolicy.ShouldRunPrerequisiteWash(state) ||
+            dirtyCookware is null)
+        {
+            return false;
+        }
+
+        washJob = WorkGiver_DoDishes.CreateJob(dirtyCookware, destination);
+        return true;
+    }
+
     internal static float NotifyWorkTick(Pawn pawn)
     {
         if (pawn.CurJob is { } job && Sessions.TryGetValue(job, out var session))
@@ -502,6 +549,41 @@ internal static class CookingSessionRegistry
         }
 
         return 0f;
+    }
+
+    internal static bool TryGetActiveWorkProp(
+        Pawn pawn,
+        out Thing? cookware,
+        out Thing? billGiver)
+    {
+        cookware = null;
+        billGiver = null;
+        var currentJob = pawn.CurJob;
+        if (currentJob is null || !Sessions.TryGetValue(currentJob, out var session))
+        {
+            return false;
+        }
+
+        cookware = session.Cookware?.Thing;
+        billGiver = session.BillGiver;
+        var state = new CookingWorkPropState(
+            currentJobMatches: ReferenceEquals(currentJob, session.Job),
+            currentDriverIsDoBill: pawn.jobs.curDriver is JobDriver_DoBill,
+            workStarted: session.WorkStarted,
+            productsCompleted: session.ProductsCompleted,
+            cookwareExists: cookware is { Destroyed: false },
+            cookwareHeldByCook: cookware is not null &&
+                                ReferenceEquals(
+                                    cookware.holdingOwner,
+                                    pawn.inventory?.innerContainer));
+        if (CookingWorkPropPolicy.ShouldDraw(state))
+        {
+            return true;
+        }
+
+        cookware = null;
+        billGiver = null;
+        return false;
     }
 
     internal static IEnumerable<Toil> AddWarePickupToils(Pawn pawn, IEnumerable<Toil> original)
@@ -604,31 +686,24 @@ internal static class CookingSessionRegistry
         int requiredCount,
         bool emergency,
         out WareSelectionResult selection,
-        MealComplexity? plateComplexity = null)
+        MealComplexity? plateComplexity = null,
+        WareUse? forcedUse = null)
     {
-        var candidates = pawn.Map.listerThings.AllThings
-            .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
-            .Where(thing => product != KitchenwareProduct.Plate ||
-                            PlateMaterialEligibilityRuntime.Allows(thing, plateComplexity))
-            .Where(thing => !thing.IsForbidden(pawn) && pawn.CanReach(thing, PathEndMode.Touch, Danger.Some))
-            .Where(thing => pawn.CanReserve(thing, 1, Math.Min(requiredCount, thing.stackCount)))
-            .Select(thing => new
-            {
-                Thing = thing,
-                Dirty = (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,
-                Score = SecondaryScore(thing, pawn)
-            })
-            .OrderBy(candidate => candidate.Dirty)
-            .ThenByDescending(candidate => candidate.Score)
-            .ToList();
+        var candidates = FindCandidates(pawn, job, product, requiredCount, plateComplexity);
         var cleanAvailable = candidates.Any(candidate => !candidate.Dirty);
         var dirtyAvailable = candidates.Any(candidate => candidate.Dirty);
-        selection = WareSelectionPolicy.Select(
-            ImmersiveChefsMod.Settings.WareRequirementMode,
-            ImmersiveChefsMod.Settings.DirtyWareFallback,
-            emergency,
-            cleanAvailable,
-            dirtyAvailable);
+        selection = forcedUse switch
+        {
+            WareUse.Dirty when !cleanAvailable && dirtyAvailable =>
+                new WareSelectionResult(WareUse.Dirty, WareAdmission.Allowed),
+            WareUse.Dirty => new WareSelectionResult(WareUse.Missing, WareAdmission.Blocked),
+            _ => WareSelectionPolicy.Select(
+                ImmersiveChefsMod.Settings.WareRequirementMode,
+                ImmersiveChefsMod.Settings.DirtyWareFallback,
+                emergency,
+                cleanAvailable,
+                dirtyAvailable)
+        };
         if (selection.Use is WareUse.Missing or WareUse.MissingEmergency or WareUse.Exempt)
         {
             return new List<ReservedWarePortion>();
@@ -666,6 +741,121 @@ internal static class CookingSessionRegistry
         }
 
         return result;
+    }
+
+    private static bool TryEvaluateDirtyCookwareAction(
+        Pawn pawn,
+        Job otherwiseRunnableBillJob,
+        bool requireWashingDestination,
+        out Thing? dirtyCookware,
+        out DishwashingDestination destination,
+        out DirtyCookwareActionState state)
+    {
+        dirtyCookware = null;
+        destination = DishwashingDestination.Invalid;
+        state = default;
+        if (pawn.Map is null ||
+            !AdaptiveMealBillAdapter.TryResolveConcreteRecipe(
+                otherwiseRunnableBillJob,
+                out var reservationRecipe) ||
+            !MealCoveragePolicy.IsCovered(reservationRecipe))
+        {
+            return false;
+        }
+
+        var settings = ImmersiveChefsMod.Settings;
+        var emergency = UrgentProductionRequestRegistry.HasActive(pawn.Map);
+        var cookware = FindCandidates(
+            pawn,
+            otherwiseRunnableBillJob,
+            KitchenwareProduct.Cookware,
+            requiredCount: 1,
+            plateComplexity: null);
+        var requiredPlates = MealCoveragePolicy.ServingCount(reservationRecipe!);
+        var plates = FindCandidates(
+            pawn,
+            otherwiseRunnableBillJob,
+            KitchenwareProduct.Plate,
+            requiredPlates,
+            MealClassificationRuntime.ClassifyRecipe(reservationRecipe));
+        var cleanCookwareAvailable = cookware.Any(candidate => !candidate.Dirty);
+        dirtyCookware = cookware.FirstOrDefault(candidate => candidate.Dirty)?.Thing;
+        var dirtyCookwareAvailable = dirtyCookware is not null;
+        var cleanPlatesAvailable = plates
+            .Where(candidate => !candidate.Dirty)
+            .Sum(candidate => candidate.Thing.stackCount) >= requiredPlates;
+        var normalCookwareUse = WareSelectionPolicy.Select(
+            settings.WareRequirementMode,
+            settings.DirtyWareFallback,
+            emergency,
+            cleanCookwareAvailable,
+            dirtyCookwareAvailable);
+        var requirementsActive = settings.WareRequirementMode != WareRequirementMode.Off &&
+                                 normalCookwareUse.Admission == WareAdmission.Blocked;
+        var cookingWorkType = DefDatabase<WorkTypeDef>.GetNamedSilentFail("Cooking");
+        var cookEligible = cookingWorkType is not null &&
+                           !pawn.WorkTypeIsDisabled(cookingWorkType) &&
+                           pawn.workSettings?.WorkIsActive(cookingWorkType) == true;
+        var hasDestination = dirtyCookware is not null &&
+                             (!requireWashingDestination ||
+                              WorkGiver_DoDishes.TryFindDestination(
+                                  pawn,
+                                  dirtyCookware,
+                                  out destination));
+        state = new DirtyCookwareActionState(
+            requirementsActive,
+            billOtherwiseRunnable: true,
+            cookEligible,
+            cleanPlatesAvailable,
+            cleanCookwareAvailable,
+            dirtyCookwareAvailable,
+            washingDestinationAvailable: hasDestination);
+        return true;
+    }
+
+    private static List<WareCandidate> FindCandidates(
+        Pawn pawn,
+        Job job,
+        KitchenwareProduct product,
+        int requiredCount,
+        MealComplexity? plateComplexity)
+    {
+        if (pawn.Map is null)
+        {
+            return new List<WareCandidate>();
+        }
+
+        return pawn.Map.listerThings.AllThings
+            .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
+            .Where(thing => product != KitchenwareProduct.Plate ||
+                            PlateMaterialEligibilityRuntime.Allows(thing, plateComplexity))
+            .Where(thing => !thing.IsForbidden(pawn) &&
+                            pawn.CanReach(thing, PathEndMode.Touch, Danger.Some))
+            .Where(thing => pawn.CanReserve(
+                thing,
+                1,
+                Math.Min(requiredCount, thing.stackCount)))
+            .Select(thing => new WareCandidate(
+                thing,
+                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,
+                SecondaryScore(thing, pawn)))
+            .OrderBy(candidate => candidate.Dirty)
+            .ThenByDescending(candidate => candidate.Score)
+            .ToList();
+    }
+
+    private sealed class WareCandidate
+    {
+        internal WareCandidate(Thing thing, bool dirty, float score)
+        {
+            Thing = thing;
+            Dirty = dirty;
+            Score = score;
+        }
+
+        internal Thing Thing { get; }
+        internal bool Dirty { get; }
+        internal float Score { get; }
     }
 
     private static float SecondaryScore(Thing thing, Pawn pawn)

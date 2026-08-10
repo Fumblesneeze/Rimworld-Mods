@@ -4,6 +4,9 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using HarmonyLib;
 using NUnit.Framework;
+using RimWorld;
+using UnityEngine;
+using Verse;
 
 namespace ImmersiveChefs.Harmony.Tests;
 
@@ -261,6 +264,70 @@ public sealed class HarmonyIsolationTests
                            "fumblesneeze.immersivechefs.tests.prepared-food-policy",
                            foodPolicyBoundary!,
                            policyPatch))
+                {
+                }
+            },
+            Throws.Nothing);
+    }
+
+    [Test]
+    public void Dirty_cookware_control_and_work_prop_patches_bind_to_real_player_boundaries()
+    {
+        var productAssembly = typeof(ImmersiveChefsMod).Assembly;
+        var doBillPostfix = productAssembly
+            .GetType("ImmersiveChefs.WorkGiverDoBillWarePatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var floatMenuPostfix = productAssembly
+            .GetType("ImmersiveChefs.DirtyCookwareFloatMenuPatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var drawPostfix = productAssembly
+            .GetType("ImmersiveChefs.CookingWorkPropDrawPatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var doBillBoundary = AccessTools.Method(
+            typeof(WorkGiver_DoBill),
+            nameof(WorkGiver_DoBill.JobOnThing),
+            new[] { typeof(Pawn), typeof(Thing), typeof(bool) });
+        var floatMenuBoundary = AccessTools.Method(
+            typeof(FloatMenuMakerMap),
+            nameof(FloatMenuMakerMap.GetOptions),
+            new[]
+            {
+                typeof(List<Pawn>),
+                typeof(Vector3),
+                typeof(FloatMenuContext).MakeByRefType()
+            });
+        var drawBoundary = AccessTools.Method(
+            typeof(Pawn),
+            "DrawAt",
+            new[] { typeof(Vector3), typeof(bool) });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(doBillBoundary, Is.Not.Null);
+            Assert.That(floatMenuBoundary, Is.Not.Null);
+            Assert.That(drawBoundary, Is.Not.Null);
+        });
+        Assert.That(
+            () =>
+            {
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.dirty-cookware-do-bill",
+                           doBillBoundary!,
+                           doBillPostfix))
+                {
+                }
+
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.dirty-cookware-float-menu",
+                           floatMenuBoundary!,
+                           floatMenuPostfix))
+                {
+                }
+
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.cooking-work-prop",
+                           drawBoundary!,
+                           drawPostfix))
                 {
                 }
             },

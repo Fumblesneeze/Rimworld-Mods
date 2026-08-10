@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <ImmersiveChefs_ForceCookDirtyCookware>Force cook with dirty cookware</ImmersiveChefs_ForceCookDirtyCookware>
+  <ImmersiveChefs_ForceCookDirtyCookwareUnavailable>Cannot force cooking: the bill is no longer runnable with dirty cookware.</ImmersiveChefs_ForceCookDirtyCookwareUnavailable>
   <ImmersiveChefs_PoisonCause_LowQuality>low-quality meal</ImmersiveChefs_PoisonCause_LowQuality>
   <ImmersiveChefs_PoisonCause_ColdMeal>cold meal</ImmersiveChefs_PoisonCause_ColdMeal>
   <ImmersiveChefs_PoisonCause_FrozenMeal>frozen meal</ImmersiveChefs_PoisonCause_FrozenMeal>
