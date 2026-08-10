@@ -26,6 +26,7 @@
 - [x] 2.16 TDD/E2E: Add an optional exact cardinal rotation to cell-shaped `Place` steps, reject it for every other gizmo interaction, and project it to the Gateway native placement input for player-visible rotated-building acceptance.
 - [x] 2.17 TDD: Sanitize every persistable E2E failure centrally, redact the live session credential, cap failure messages to the shared 8 KiB UTF-8 diagnostic budget, and retain a deterministic truncation marker for hostile native rejection text.
 - [x] 2.18 TDD/E2E: Add typed exact-selected-pawn inspect-tab, exact-Thing info-card, exact inspect-pane-close, and exact-window cancel steps with fail-closed native adapters and bounded aggregate holder resolution; migrate the feedback suites including [sbz] Fridge off process input and prove their minimized runs never restore, foreground, resize, or maximize RimWorld.
+- [x] 2.19 TDD/E2E: Add a typed exact-package mod-settings action that opens and verifies RimWorld's native dialog for the exact active `Mod` without foreground input, then use it in the minimized six-language product localization workflow.
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 
@@ -40,6 +41,7 @@
 - [x] 4.1 TDD RED: Add a real dry-run helper and failing CLI tests for discovery, group/test filters, one process per exact group, deterministic command plans, table/JSON output, JUnit/aggregate artifacts, exit codes 0/1/2, zero selection, failure continuation, and guaranteed cleanup.
 - [x] 4.2 TDD GREEN: Implement `scripts/Invoke-RimWorldEndToEndTests.ps1` by composing the existing exact-PID isolated launcher and E2E staging/polling contracts.
 - [x] 4.2a TDD/IN-GAME: Add exact stable `-TestId` selection from host planning through restart-bound Gateway admission/execution, reject missing or additional IDs, and prove one selected test runs alone inside a multi-test exact mod group.
+- [x] 4.2b TDD/LAUNCH: Add one bounded exact-language option from grouped runner through Gateway smoke, persist it only in isolated `Prefs.xml`, expose it in dry-run/result evidence, reject unsafe tokens before mutation, and prove a selected product localization test starts minimized under that language without changing normal preferences.
 - [x] 4.3 BUILD: Add E2E projects to repository build/discovery without registering their methods with NUnit/VSTest; reject every E2E/Gateway reference from ordinary product packages and ignore generated stages/results.
 
 ## 5. tests/ImmersiveChefs.EndToEndTests — tracer and scenario migration

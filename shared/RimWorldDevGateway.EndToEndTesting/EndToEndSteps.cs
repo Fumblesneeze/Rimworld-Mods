@@ -443,6 +443,17 @@ public sealed class WindowCancelActionStep : EndToEndStep
     public string ExpectedWindowRuntimeType { get; }
 }
 
+public sealed class ModSettingsActionStep : EndToEndStep
+{
+    public ModSettingsActionStep(string name, string packageId)
+        : base(name, EndToEndStepKind.Act)
+    {
+        PackageId = StepValues.Required(packageId, nameof(packageId));
+    }
+
+    public string PackageId { get; }
+}
+
 public sealed class ArchitectCategoryActionStep : EndToEndStep
 {
     public ArchitectCategoryActionStep(string name, string categoryDefName, bool open)

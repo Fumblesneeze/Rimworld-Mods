@@ -41,6 +41,37 @@ The runner SHALL accept one or more exact stable test-ID filters independently f
 - **THEN** the runner starts two processes
 - **THEN** the first matching process runs the two same-group tests sequentially and the second runs the optional-mod test
 
+### Requirement: A selected E2E run can start in one exact RimWorld language
+The host runner SHALL accept one optional canonical RimWorld language-folder name, validate it as a bounded leaf token, pass it to the isolated launcher, and write it only to that process's disposable `Prefs.xml` as `langFolderName`. Dry-run, aggregate, and child smoke evidence SHALL record the requested language. Omitting the option SHALL retain the isolated launcher's English default. The runner SHALL bind a selected localization test to the exact requested active language so an unavailable locale cannot silently fall back to English. The runner SHALL never edit or derive the language from the user's normal preferences, and language selection SHALL NOT restore, focus, resize, or maximize the game window.
+
+When an exact requested non-English language is not installed in Core, the development-only Gateway package MAY provide metadata-only `LanguageInfo.xml` for that canonical folder. The isolated launcher MAY publish that exact metadata into Core's language-discovery directory only as a hash-bound lease after Gateway deployment and before process launch. It SHALL acquire one destination-derived cross-process ownership primitive with a bounded wait, re-plan provider presence while holding it, retain it through owned-process exit and exact cleanup, and release it afterward. It SHALL preserve an already installed provider, record source/target hashes and ownership, remove only its exact created file after the owned process is confirmed stopped, remove the directory only when it created it and it is empty, and fail the run if safe cleanup cannot be verified. The provider SHALL contain no product, Gateway, or Core translated strings and SHALL NOT be shipped by Immersive Chefs.
+
+#### Scenario: One localization test is repeated across languages
+- **WHEN** an operator invokes the same exact stable E2E test separately with `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`
+- **THEN** every invocation starts one fresh minimized process whose disposable preferences request exactly that language
+- **THEN** each result records the requested language and the user's normal preferences hash remains unchanged
+
+#### Scenario: A language token is unsafe
+- **WHEN** the supplied value is empty, contains a path separator, traversal, whitespace normalization, or exceeds the documented bound
+- **THEN** the runner exits as invalid usage before deployment, staging, process launch, or normal-configuration mutation
+
+#### Scenario: A requested locale is absent from Core
+- **WHEN** an exact supported product locale is requested but Core has no matching language metadata
+- **THEN** the launcher leases the Gateway's metadata-only provider into the exact Core language folder, records its hashes, and starts the minimized isolated process in that locale
+- **THEN** after the exact owned process exits, the launcher removes only that hash-identical leased file and any empty directory it created and records verified cleanup
+
+#### Scenario: Core already provides the requested locale
+- **WHEN** the exact language metadata already exists in Core
+- **THEN** the launcher does not overwrite, copy, claim, or later remove it
+
+#### Scenario: Locale-provider ownership changes after planning
+- **WHEN** an absent provider appears or an installed provider disappears between planning and publication
+- **THEN** the launcher fails closed without borrowing, replacing, or recreating that path
+
+#### Scenario: Locale-provider publication fails after file creation
+- **WHEN** exclusive copy, hashing, equality validation, or evidence-record creation fails after the launcher creates its target file
+- **THEN** the same publication scope removes its exact partial file and any empty directory it created before returning the failure
+
 #### Scenario: Runtime order differs from discovery
 - **WHEN** the actual loaded package set is missing, adds, or reorders any declared package
 - **THEN** the Gateway loads no mismatched E2E test and the group fails before test arrangement
@@ -71,10 +102,17 @@ The E2E contract SHALL separate main-thread fixture arrangement from an iterator
 
 A typed pawn inspect-tab action SHALL accept one exact selected pawn runtime ID and one allowlisted semantic tab identity (`Gear`, `Needs`, or `Health`). It SHALL require that pawn to be the current sole selection, open RimWorld's exact current `InspectPaneUtility` tab type, and verify the resulting open tab. A typed Thing info-card action SHALL accept one exact live Thing runtime ID plus open/close intent; opening SHALL resolve that exact Thing across spawned Things, pawn inventories, and the one-hop direct contents of spawned holders, invoke the native `Dialog_InfoCard(Thing)` path, and require exactly one card bound to the same live Thing, while closing SHALL remove only that exact card through the native window lifecycle. Exact-Thing resolution SHALL aggregate reference-distinct matches across all supported scopes, SHALL NOT recursively invoke untrusted `GetChildHolders`, and SHALL scan no more unique candidates or holders than the Gateway's existing maximum native interaction-target budget. Exhaustion SHALL fail with stable `info_card_resolution_limit`; an exception while enumerating any supported scope SHALL fail with stable `info_card_resolution_incomplete` instead of silently accepting a partial search. A typed inspect-pane close action SHALL require one exact sole-selected Thing and the exact full runtime type name of the currently open inspect tab, invoke RimWorld's native `CloseOpenTab` plus the Inspect main-button toggle when its main pane remains active, and verify that neither the subtab nor its force-pausing main pane remains open. A typed window-cancel action SHALL require exactly one currently open window with the requested full runtime type, invoke its native `OnCancelKeyPressed` lifecycle, and verify that exact window is gone; zero or multiple matches SHALL fail without mutating any window. When Unity's current event is not already an Escape `KeyDown`, the adapter SHALL provide an isolated synthetic Escape `KeyDown` for that native lifecycle and SHALL restore the original event in guaranteed cleanup so `Event.Use()` neither warns on repaint/layout nor consumes unrelated input. Missing, stale, ambiguous, unsupported, or mismatched selection/window state SHALL fail closed. These actions SHALL run on the Unity main thread and SHALL NOT call process input, restore, focus, resize, move, or maximize the RimWorld window.
 
+A typed mod-settings action SHALL accept one exact active package ID, resolve exactly one live `Verse.Mod` whose content package ID matches it ordinal-ignore-case, open RimWorld's native `Dialog_ModSettings(Mod)` window, and verify that exactly one open settings dialog remains bound to the same `Mod` instance. Missing or duplicate package matches, constructor/field shape drift, missing player control, or an already-open mismatched or duplicate settings dialog SHALL fail closed. The action SHALL NOT select a mod by translated name, invoke the settings renderer directly, or use process input, focus, restore, resize, move, or maximize.
+
 #### Scenario: A minimized dining suite inspects native pawn and Thing UI
 - **WHEN** an E2E workflow selects one pawn, opens its Gear or Health tab, opens the exact returned plate's info card, or closes an exact optional-mod inspect tab and captures the visible UI while the isolated process is minimized
 - **THEN** the native inspect pane and exact info card visibly render the requested state
 - **THEN** the Gateway uses no screen coordinate, keyboard event, process activation, restore, resize, or maximize operation
+
+#### Scenario: A minimized localization suite opens the product settings page
+- **WHEN** an E2E workflow requests the exact active product package and captures the resulting native settings dialog
+- **THEN** the dialog is bound to that exact loaded `Mod` instance and visibly renders its translated settings labels
+- **THEN** the Gateway uses no translated mod name, screen coordinate, keyboard event, process activation, restore, resize, or maximize operation
 
 A typed gizmo `Place` step MAY declare one exact cardinal rotation. The shared contract SHALL permit that option only for a cell-shaped placement step, and the runtime SHALL project it to the Gateway's native place-designator interaction rather than mutate a resulting Thing. Other gizmo interaction kinds SHALL reject the option during contract validation.
 

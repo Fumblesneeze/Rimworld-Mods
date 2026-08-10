@@ -35,6 +35,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
             ThingInfoCardActionStep.Open("info-card", "thing_1"),
             new InspectPaneCloseActionStep("close-inspect", "thing_1", "Example.ContentsTab"),
             new WindowCancelActionStep("cancel-window", "Example.Dialog"),
+            new ModSettingsActionStep("mod-settings", "fumblesneeze.immersivechefs"),
             new SaveLoadActionStep("save-load", "GatewayE2E"),
             ProcessInputActionStep.Click(
                 "click",
@@ -49,12 +50,12 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "dialog", "architect", "inspect-tab", "info-card", "close-inspect", "cancel-window", "save-load", "input", "screenshot"
+                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "dialog", "architect", "inspect-tab", "info-card", "close-inspect", "cancel-window", "mod-settings", "save-load", "input", "screenshot"
             }));
-            Assert.That(operations.Take(14).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[14], Is.SameAs(actions.SaveLoadOperation));
-            Assert.That(operations[15], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[16], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations.Take(15).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[15], Is.SameAs(actions.SaveLoadOperation));
+            Assert.That(operations[16], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[17], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -140,6 +141,10 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         public GatewayEndToEndStepOutcome Apply(
             WindowCancelActionStep step,
             IEndToEndContext context) => Record("cancel-window");
+
+        public GatewayEndToEndStepOutcome Apply(
+            ModSettingsActionStep step,
+            IEndToEndContext context) => Record("mod-settings");
 
         public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)
         {

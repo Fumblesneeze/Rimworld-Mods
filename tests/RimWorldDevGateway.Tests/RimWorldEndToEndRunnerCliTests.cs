@@ -28,6 +28,8 @@ public sealed class RimWorldEndToEndRunnerCliTests
             Assert.That(source, Does.Contain("'-AdditionalModIdsFile'"));
             Assert.That(source, Does.Contain("[string[]]$TestId"));
             Assert.That(source, Does.Contain("'-EndToEndTestIds'"));
+            Assert.That(source, Does.Contain("[string]$Language = 'English'"));
+            Assert.That(source, Does.Contain("'-Language', $Language"));
             Assert.That(source, Does.Contain("[System.IO.File]::WriteAllLines"));
             Assert.That(source, Does.Contain("Join-Path $runDirectory ('smoke-{0:D3}' -f $groupIndex)"));
             Assert.That(source, Does.Contain("finally"));
@@ -41,6 +43,20 @@ public sealed class RimWorldEndToEndRunnerCliTests
             Assert.That(support, Does.Contain("[System.IO.FileAttributes]::ReparsePoint"));
             Assert.That(support, Does.Contain("Get-ChildItem -LiteralPath $packageRoot -Recurse -Force -ErrorAction Stop"));
             Assert.That(support, Does.Contain("-LiteralPath $file.FullName").And.Contain("-ErrorAction Stop"));
+        });
+    }
+
+    [Test]
+    public void Unsafe_language_is_rejected_by_parameter_binding_before_game_path_validation()
+    {
+        var missing = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var run = Invoke("-DryRun", "-Language", "../German", "-RimWorldPath", missing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Not.Zero);
+            Assert.That(run.StandardError, Does.Contain("Language"));
+            Assert.That(run.StandardError, Does.Not.Contain("RimWorld path does not exist"));
         });
     }
 
@@ -204,8 +220,13 @@ public sealed class RimWorldEndToEndRunnerCliTests
         try
         {
             var invocationPath = Path.Combine(temporaryRoot, "invoke.ps1");
-            var escapedArguments = string.Join(" ", Array.ConvertAll(arguments, PowerShellLiteral));
+            var escapedArguments = string.Join(" ", Array.ConvertAll(
+                arguments,
+                argument => argument.StartsWith("-", StringComparison.Ordinal)
+                    ? argument
+                    : PowerShellLiteral(argument)));
             var invocation =
+                "$ErrorActionPreference = 'Stop'" + Environment.NewLine +
                 $"& {PowerShellLiteral(RunnerPath())} {escapedArguments}" + Environment.NewLine +
                 "exit $LASTEXITCODE" + Environment.NewLine;
             File.WriteAllText(invocationPath, invocation, new UTF8Encoding(false));

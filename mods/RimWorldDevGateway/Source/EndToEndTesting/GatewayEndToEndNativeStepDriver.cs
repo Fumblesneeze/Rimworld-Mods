@@ -46,6 +46,8 @@ internal interface IGatewayEndToEndInspectionNativeActions
     GatewayEndToEndStepOutcome Apply(InspectPaneCloseActionStep step, IEndToEndContext context);
 
     GatewayEndToEndStepOutcome Apply(WindowCancelActionStep step, IEndToEndContext context);
+
+    GatewayEndToEndStepOutcome Apply(ModSettingsActionStep step, IEndToEndContext context);
 }
 
 public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
@@ -113,6 +115,12 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
                     : GatewayEndToEndCompletedStepOperation.Failed(
                         "unsupported_e2e_step",
                         "The native E2E adapter does not support exact-window cancel actions."),
+            ModSettingsActionStep modSettings => actions is
+                IGatewayEndToEndInspectionNativeActions inspectionActions
+                    ? Complete(inspectionActions.Apply(modSettings, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support mod-settings actions."),
             SaveLoadActionStep saveLoad =>
                 actions.Begin(saveLoad, context)
                 ?? throw new InvalidOperationException("The save/load adapter returned no operation."),

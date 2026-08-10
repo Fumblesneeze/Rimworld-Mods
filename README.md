@@ -166,6 +166,12 @@ Run dynamically loaded, multi-frame E2E workflows grouped by their exact declare
 # Run every resolvable group, one fresh minimized RimWorld process per group.
 .\scripts\Invoke-RimWorldEndToEndTests.ps1 -TimeoutSeconds 300 -Output table
 
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 `
+  -TestId immersive-chefs.localization-rendering `
+  -Language German `
+  -TimeoutSeconds 300 `
+  -Output json
+
 # Run one stable group ID.
 .\scripts\Invoke-RimWorldEndToEndTests.ps1 `
   -GroupId 'brrainz.harmony|ludeon.rimworld|fumblesneeze.immersivechefs' `
@@ -179,7 +185,7 @@ Run dynamically loaded, multi-frame E2E workflows grouped by their exact declare
   -Output json
 ```
 
-The runner discovers downloaded package IDs from the game, local mods, DLC data, and Workshop folders; transports both the large discovery inventory and each child process's exact additional-mod order through UTF-8 package-ID files; deploys repo-owned product mods before publishing marker-owned test bundles; and always removes its exact leased stage. `-TestId` validates stable IDs against that plan and makes the in-game Gateway admit and execute only those exact tests. Use it for active feature slices; reserve unfiltered groups or all groups for explicit maintenance regression and release preparation. Each group gets an isolated save-data/config directory, aggregate JSON, XML-safe JUnit, durable endpoint state, and step screenshots below `artifacts\EndToEndRuns\Grouped`. The short `smoke-NNN` runtime branch avoids Unity Mono's classic Windows path-length failure while the descriptive group report directory remains intact. E2E assemblies stay outside product `Assemblies` and ordinary NUnit/VSTest runs. A passing result proves the codified workflow, but the acting agent must still inspect that run's native before/action/after screenshots before accepting game behavior.
+The runner discovers downloaded package IDs from the game, local mods, DLC data, and Workshop folders; transports both the large discovery inventory and each child process's exact additional-mod order through UTF-8 package-ID files; deploys repo-owned product mods before publishing marker-owned test bundles; and always removes its exact leased stage. `-TestId` validates stable IDs against that plan and makes the in-game Gateway admit and execute only those exact tests. `-Language` accepts one bounded RimWorld language-folder name, writes it only to the disposable process's `Prefs.xml`, records it in evidence, and defaults to `English`; repeat a localization test in separate processes for every required locale. When Core lacks a requested locale, the launcher uses a recorded, hash-verified lease of the Gateway's metadata-only language provider and removes it after the exact process exits without overwriting an installed provider. Use the runner for active feature slices; reserve unfiltered groups or all groups for explicit maintenance regression and release preparation. Each group gets an isolated save-data/config directory, aggregate JSON, XML-safe JUnit, durable endpoint state, and step screenshots below `artifacts\EndToEndRuns\Grouped`. The short `smoke-NNN` runtime branch avoids Unity Mono's classic Windows path-length failure while the descriptive group report directory remains intact. E2E assemblies stay outside product `Assemblies` and ordinary NUnit/VSTest runs. A passing result proves the codified workflow, but the acting agent must still inspect that run's native before/action/after screenshots before accepting game behavior.
 
 Run the Immersive Chefs XML/integration matrix with both loaded mods:
 

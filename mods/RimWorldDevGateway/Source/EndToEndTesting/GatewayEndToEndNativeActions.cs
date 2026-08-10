@@ -116,6 +116,8 @@ internal interface IGatewayEndToEndInspectionBackend
     GatewayEndToEndStepOutcome ApplyInspectPaneClose(InspectPaneCloseActionStep step);
 
     GatewayEndToEndStepOutcome ApplyWindowCancel(WindowCancelActionStep step);
+
+    GatewayEndToEndStepOutcome ApplyModSettings(ModSettingsActionStep step);
 }
 
 public sealed class GatewayEndToEndNativeActions :
@@ -395,6 +397,19 @@ public sealed class GatewayEndToEndNativeActions :
             : Fail(
                 "unsupported_e2e_step",
                 "The configured E2E backend does not support exact-window cancel actions.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionNativeActions.Apply(
+        ModSettingsActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndInspectionBackend inspectionBackend
+            ? inspectionBackend.ApplyModSettings(step) ??
+              throw new InvalidOperationException("The mod-settings backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support mod-settings actions.");
     }
 
     public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)

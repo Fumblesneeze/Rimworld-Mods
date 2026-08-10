@@ -264,6 +264,42 @@ public sealed class VerseGatewayEndToEndInspectionActionsTests
         });
     }
 
+    [Test]
+    public void Mod_settings_opens_and_verifies_the_exact_active_package()
+    {
+        var runtime = new RecordingRuntime();
+
+        var outcome = VerseGatewayEndToEndInspectionActions.Apply(
+            new ModSettingsActionStep("open settings", "fumblesneeze.immersivechefs"),
+            runtime);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(runtime.Calls, Is.EqualTo(new[]
+            {
+                "open-mod-settings:fumblesneeze.immersivechefs",
+                "is-mod-settings-open:fumblesneeze.immersivechefs"
+            }));
+        });
+    }
+
+    [Test]
+    public void Mod_settings_requires_player_control_before_resolving_a_package()
+    {
+        var runtime = new RecordingRuntime { PlayerHasControl = false };
+
+        var outcome = VerseGatewayEndToEndInspectionActions.Apply(
+            new ModSettingsActionStep("open settings", "fumblesneeze.immersivechefs"),
+            runtime);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.FailureCode, Is.EqualTo("mod_settings_player_control_required"));
+            Assert.That(runtime.Calls, Is.Empty);
+        });
+    }
+
     [TestCase(false, false, true)]
     [TestCase(true, false, true)]
     [TestCase(true, true, false)]
@@ -290,6 +326,8 @@ public sealed class VerseGatewayEndToEndInspectionActionsTests
         public bool ThrowResolutionLimit { get; set; }
 
         public bool ExactWindowOpen { get; set; }
+
+        public bool ExactModSettingsOpen { get; set; }
 
         public List<string> Calls { get; } = new();
 
@@ -367,6 +405,19 @@ public sealed class VerseGatewayEndToEndInspectionActionsTests
             Calls.Add("cancel-window:" + expectedWindowRuntimeType);
             ExactWindowOpen = false;
             return true;
+        }
+
+        public bool OpenModSettings(string packageId)
+        {
+            Calls.Add("open-mod-settings:" + packageId);
+            ExactModSettingsOpen = true;
+            return true;
+        }
+
+        public bool IsExactModSettingsOpen(string packageId)
+        {
+            Calls.Add("is-mod-settings-open:" + packageId);
+            return ExactModSettingsOpen;
         }
     }
 

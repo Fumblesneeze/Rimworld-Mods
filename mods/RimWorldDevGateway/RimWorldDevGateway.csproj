@@ -5,6 +5,7 @@
     <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
     <RimWorldModName>RimWorld Dev Gateway</RimWorldModName>
     <RimWorldPackageId>fumblesneeze.rimworlddevgateway</RimWorldPackageId>
+    <RimWorldDistributionKind>DevelopmentOnly</RimWorldDistributionKind>
     <Authors>Fumblesneeze</Authors>
     <AssemblyName>RimWorldDevGateway</AssemblyName>
     <RootNamespace>RimWorldDevGateway</RootNamespace>
@@ -26,4 +27,18 @@
     <PackageReference Include="EmbedIO" Version="3.5.2" />
     <PackageReference Include="Mono.CSharp" Version="4.0.0.143" />
   </ItemGroup>
+
+  <!-- Language discovery happens before RimWorld resolves versioned load folders. These files
+       provide metadata only so isolated E2E runs can activate product locales that are not
+       installed in Core; they intentionally contain no Gateway or base-game translations. -->
+  <Target Name="StageGatewayLocaleProviderMetadata" BeforeTargets="OutputRimWorldResources">
+    <ItemGroup>
+      <GatewayLocaleProviderMetadata Include="Languages\**\LanguageInfo.xml" />
+      <RimWorldResourceLanguages Remove="Languages\**\LanguageInfo.xml" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(GatewayLocaleProviderMetadata)"
+      DestinationFiles="$(ModSpecificOutputfolder)\Languages\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Delete Files="@(GatewayLocaleProviderMetadata->'$(OutputVersionFolder)\Languages\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>

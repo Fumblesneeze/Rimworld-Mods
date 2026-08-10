@@ -75,6 +75,9 @@ param(
 
     [string]$ArtifactsPath,
 
+    [ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')]
+    [string]$Language = 'English',
+
     [ValidateRange(30, 600)]
     [int]$TimeoutSeconds = 180,
 
@@ -2694,7 +2697,8 @@ function Write-MinimalPrefs {
     param(
         [Parameter(Mandatory)][string]$Path,
         [Parameter(Mandatory)][ValidateRange(640, 7680)][int]$RenderWidth,
-        [Parameter(Mandatory)][ValidateRange(480, 4320)][int]$RenderHeight
+        [Parameter(Mandatory)][ValidateRange(480, 4320)][int]$RenderHeight,
+        [Parameter(Mandatory)][ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')][string]$Language
     )
 
     $settings = [System.Xml.XmlWriterSettings]::new()
@@ -2713,11 +2717,254 @@ function Write-MinimalPrefs {
             'screenHeight',
             $RenderHeight.ToString([Globalization.CultureInfo]::InvariantCulture))
         $writer.WriteElementString('fullscreen', 'False')
+        $writer.WriteElementString('langFolderName', $Language)
+        $writer.WriteElementString('devMode', 'True')
         $writer.WriteEndElement()
         $writer.WriteEndDocument()
     }
     finally {
         $writer.Dispose()
+    }
+}
+
+function Get-GatewaySmokeLanguageProviderMutexName {
+    param([Parameter(Mandatory)][string]$TargetPath)
+
+    $normalized = [System.IO.Path]::GetFullPath($TargetPath).ToUpperInvariant()
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $digest = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($normalized))
+    }
+    finally {
+        $sha256.Dispose()
+    }
+    return 'Local\Fumblesneeze.RimWorldDevGateway.LanguageProvider.' +
+        ([System.BitConverter]::ToString($digest).Replace('-', ''))
+}
+
+function Enter-GatewaySmokeLanguageProviderLease {
+    param([Parameter(Mandatory)][string]$TargetPath)
+
+    $mutexName = Get-GatewaySmokeLanguageProviderMutexName -TargetPath $TargetPath
+    $mutex = [System.Threading.Mutex]::new($false, $mutexName)
+    $acquired = $false
+    try {
+        try {
+            $acquired = $mutex.WaitOne(30000)
+        }
+        catch [System.Threading.AbandonedMutexException] {
+            $acquired = $true
+        }
+        if (-not $acquired) {
+            throw "Timed out waiting for the exact language-provider lease: $TargetPath"
+        }
+
+        return [pscustomobject]@{
+            Mutex = $mutex
+            Name = $mutexName
+            TargetPath = [System.IO.Path]::GetFullPath($TargetPath)
+            Acquired = $true
+        }
+    }
+    catch {
+        if (-not $acquired) {
+            $mutex.Dispose()
+        }
+        throw
+    }
+}
+
+function Exit-GatewaySmokeLanguageProviderLease {
+    param([Parameter(Mandatory)][object]$Lease)
+
+    try {
+        if ([bool]$Lease.Acquired) {
+            $Lease.Mutex.ReleaseMutex()
+            $Lease.Acquired = $false
+        }
+    }
+    finally {
+        $Lease.Mutex.Dispose()
+    }
+}
+
+function Get-GatewaySmokeStreamSha256 {
+    param([Parameter(Mandatory)][System.IO.Stream]$Stream)
+
+    $Stream.Position = 0
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $digest = $sha256.ComputeHash($Stream)
+        return [System.BitConverter]::ToString($digest).Replace('-', '')
+    }
+    finally {
+        $sha256.Dispose()
+    }
+}
+
+function Get-GatewaySmokeLanguageProviderPlan {
+    param(
+        [Parameter(Mandatory)][string]$RimWorldPath,
+        [Parameter(Mandatory)][ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')][string]$Language
+    )
+
+    $languageRoot = [System.IO.Path]::GetFullPath(
+        (Join-Path $RimWorldPath 'Data\Core\Languages'))
+    $targetDirectory = [System.IO.Path]::GetFullPath(
+        (Join-Path $languageRoot $Language))
+    $targetPath = [System.IO.Path]::GetFullPath(
+        (Join-Path $targetDirectory 'LanguageInfo.xml'))
+    $requiredPrefix = $languageRoot.TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $targetPath.StartsWith($requiredPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Resolved language-provider target escapes RimWorld Core Languages: $targetPath"
+    }
+
+    $builtIn = $Language -ceq 'English' -and (Test-Path -LiteralPath $targetPath -PathType Leaf)
+    return [pscustomobject]@{
+        Language = $Language
+        Mode = if ($builtIn) { 'built-in' } elseif (Test-Path -LiteralPath $targetPath -PathType Leaf) { 'installed' } else { 'planned-staged-metadata' }
+        TargetDirectory = $targetDirectory
+        TargetPath = $targetPath
+    }
+}
+
+function Publish-GatewaySmokeLanguageProvider {
+    param(
+        [Parameter(Mandatory)][object]$Plan,
+        [Parameter(Mandatory)][string]$RimWorldPath
+    )
+
+    $planMode = [string]$Plan.Mode
+    $targetExists = Test-Path -LiteralPath ([string]$Plan.TargetPath) -PathType Leaf
+    if ($planMode -ne 'planned-staged-metadata') {
+        if ($planMode -notin @('built-in', 'installed')) {
+            throw "Unknown language-provider plan mode: $planMode"
+        }
+        if (-not $targetExists) {
+            throw "Installed language-provider metadata disappeared after planning: $($Plan.TargetPath)"
+        }
+        return [pscustomobject]@{
+            Language = [string]$Plan.Language
+            Mode = $planMode
+            TargetDirectory = [string]$Plan.TargetDirectory
+            TargetPath = [string]$Plan.TargetPath
+            CreatedDirectory = $false
+            CreatedFile = $false
+        }
+    }
+    if ($targetExists) {
+        throw "Language-provider metadata appeared after an absent plan; refusing to borrow or overwrite it: $($Plan.TargetPath)"
+    }
+
+    $sourcePath = [System.IO.Path]::GetFullPath((Join-Path $RimWorldPath (
+        "Mods\fumblesneeze.rimworlddevgateway\Languages\{0}\LanguageInfo.xml" -f [string]$Plan.Language)))
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+        throw "Gateway locale-provider metadata is missing for '$($Plan.Language)': $sourcePath"
+    }
+
+    $targetDirectory = [string]$Plan.TargetDirectory
+    $targetPath = [string]$Plan.TargetPath
+    $createdDirectory = -not (Test-Path -LiteralPath $targetDirectory -PathType Container)
+    $createdFile = $false
+    try {
+        if ($createdDirectory) {
+            $null = New-Item -Path $targetDirectory -ItemType Directory
+        }
+
+        $sourceStream = $null
+        $targetStream = $null
+        try {
+            $sourceStream = [System.IO.File]::Open(
+                $sourcePath,
+                [System.IO.FileMode]::Open,
+                [System.IO.FileAccess]::Read,
+                [System.IO.FileShare]::Read)
+            $targetStream = [System.IO.File]::Open(
+                $targetPath,
+                [System.IO.FileMode]::CreateNew,
+                [System.IO.FileAccess]::ReadWrite,
+                [System.IO.FileShare]::None)
+            $createdFile = $true
+            $sourceStream.CopyTo($targetStream)
+            $targetStream.Flush($true)
+            $sourceSha256 = Get-GatewaySmokeStreamSha256 -Stream $sourceStream
+            $targetSha256 = Get-GatewaySmokeStreamSha256 -Stream $targetStream
+            if ($sourceSha256 -cne $targetSha256) {
+                throw "Published language-provider metadata does not match its packaged source: $targetPath"
+            }
+        }
+        finally {
+            if ($null -ne $targetStream) {
+                $targetStream.Dispose()
+            }
+            if ($null -ne $sourceStream) {
+                $sourceStream.Dispose()
+            }
+        }
+
+        return [pscustomobject]@{
+            Language = [string]$Plan.Language
+            Mode = 'staged-metadata'
+            SourcePath = $sourcePath
+            SourceSha256 = $sourceSha256
+            TargetDirectory = $targetDirectory
+            TargetPath = $targetPath
+            TargetSha256 = $targetSha256
+            CreatedDirectory = $createdDirectory
+            CreatedFile = $true
+        }
+    }
+    catch {
+        if ($createdFile -and (Test-Path -LiteralPath $targetPath -PathType Leaf)) {
+            Remove-Item -LiteralPath $targetPath -Force
+        }
+        if ($createdDirectory -and
+            (Test-Path -LiteralPath $targetDirectory -PathType Container) -and
+            @(Get-ChildItem -LiteralPath $targetDirectory -Force).Count -eq 0) {
+            Remove-Item -LiteralPath $targetDirectory
+        }
+        throw
+    }
+}
+
+function Remove-GatewaySmokeLanguageProvider {
+    param(
+        [Parameter(Mandatory)][object]$Record,
+        [Parameter(Mandatory)][string]$RimWorldPath
+    )
+
+    $languageRoot = [System.IO.Path]::GetFullPath((Join-Path $RimWorldPath 'Data\Core\Languages'))
+    $targetPath = [System.IO.Path]::GetFullPath([string]$Record.TargetPath)
+    $targetDirectory = [System.IO.Path]::GetFullPath([string]$Record.TargetDirectory)
+    $requiredPrefix = $languageRoot.TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $targetPath.StartsWith($requiredPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+        -not $targetDirectory.StartsWith($requiredPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Refusing to remove a language-provider path outside RimWorld Core Languages.'
+    }
+
+    if ([bool]$Record.CreatedFile -and (Test-Path -LiteralPath $targetPath -PathType Leaf)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$Record.TargetSha256) -and
+            (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash -cne [string]$Record.TargetSha256) {
+            throw "Refusing to remove changed language-provider metadata: $targetPath"
+        }
+        Remove-Item -LiteralPath $targetPath -Force
+    }
+
+    if ([bool]$Record.CreatedDirectory -and
+        (Test-Path -LiteralPath $targetDirectory -PathType Container) -and
+        @(Get-ChildItem -LiteralPath $targetDirectory -Force).Count -eq 0) {
+        Remove-Item -LiteralPath $targetDirectory
+    }
+
+    return [pscustomobject]@{
+        Status = 'restored'
+        TargetPath = $targetPath
+        FileExists = Test-Path -LiteralPath $targetPath -PathType Leaf
+        DirectoryExists = Test-Path -LiteralPath $targetDirectory -PathType Container
     }
 }
 
@@ -4498,6 +4745,8 @@ $credentialCleanupPath = Join-Path $runDirectory 'credential-cleanup.json'
 $integrationStageCleanupPath = Join-Path $runDirectory 'integration-test-stage-cleanup.json'
 $workshopOverridesPath = Join-Path $runDirectory 'workshop-overrides.json'
 $workshopOverrideCleanupPath = Join-Path $runDirectory 'workshop-override-cleanup.json'
+$languageProviderPath = Join-Path $runDirectory 'language-provider.json'
+$languageProviderCleanupPath = Join-Path $runDirectory 'language-provider-cleanup.json'
 $cleanupStatusPath = Join-Path $runDirectory 'cleanup-status.json'
 $evidenceSummaryPath = Join-Path $runDirectory 'evidence-summary.json'
 $hangDumpPath = Join-Path $runDirectory 'RimWorldWin64-hang.dmp'
@@ -4511,7 +4760,11 @@ $renderHeight = 900
 Write-MinimalPrefs `
     -Path $prefsPath `
     -RenderWidth $renderWidth `
-    -RenderHeight $renderHeight
+    -RenderHeight $renderHeight `
+    -Language $Language
+$languageProviderPlan = Get-GatewaySmokeLanguageProviderPlan `
+    -RimWorldPath $resolvedRimWorldPath `
+    -Language $Language
 $launchVisible = [bool]$VisibleWindow -or $runGatewayRegressionScenario
 $launchWindowStyle = if ($launchVisible) { 'Normal' } else { 'Minimized' }
 $unityWindowArguments = @(
@@ -4577,9 +4830,12 @@ if ($DryRun) {
         Prefs = $prefsPath
         RunInBackground = $true
         MusicVolume = 0
+        DeveloperMode = $true
         RenderWidth = $renderWidth
         RenderHeight = $renderHeight
         Fullscreen = $false
+        Language = $Language
+        LanguageProvider = $languageProviderPlan
         UnityWindowArguments = $unityWindowArguments
         LaunchWindowStyle = $launchWindowStyle
         VisibleWindow = $launchVisible
@@ -4652,6 +4908,10 @@ $requiredAssemblies = @()
 $requiredAssemblyEvidence = @()
 $productPackageEvidence = [System.Collections.Generic.List[object]]::new()
 $workshopOverrideRecords = [System.Collections.Generic.List[object]]::new()
+$languageProviderLease = $null
+$languageProviderRecord = $null
+$languageProviderCleanup = $null
+$languageProviderCleanupStatus = 'not-staged'
 $processCleanupStatus = 'not-started'
 $credentialCleanupStatus = 'not-started'
 $integrationStageCleanupStatus = if ($RunIntegrationTests) { 'not-staged' } else { 'not-requested' }
@@ -4711,6 +4971,24 @@ try {
             throw "Gateway build/deploy failed with exit $buildExitCode. See $buildLogPath"
         }
     }
+
+    $languageProviderLease = Enter-GatewaySmokeLanguageProviderLease `
+        -TargetPath ([string]$languageProviderPlan.TargetPath)
+    $languageProviderPlan = Get-GatewaySmokeLanguageProviderPlan `
+        -RimWorldPath $resolvedRimWorldPath `
+        -Language $Language
+    $languageProviderRecord = Publish-GatewaySmokeLanguageProvider `
+        -Plan $languageProviderPlan `
+        -RimWorldPath $resolvedRimWorldPath
+    $languageProviderCleanupStatus = if ([bool]$languageProviderRecord.CreatedFile) {
+        'staged'
+    }
+    else {
+        'not-required'
+    }
+    $languageProviderRecord |
+        ConvertTo-Json -Depth 6 |
+        Set-Content -LiteralPath $languageProviderPath -Encoding UTF8
 
     if ($RunIntegrationTests) {
         $integrationBundleScript = Join-Path $repositoryRoot 'scripts\Build-InGameIntegrationTests.ps1'
@@ -4892,10 +5170,25 @@ try {
     } | ConvertTo-Json -Depth 8 |
         Set-Content -LiteralPath $workshopOverridesPath -Encoding UTF8
 
-    $launchedProcess = Start-GatewayRimWorldProcess `
-        -ExecutablePath $rimWorldExecutable `
-        -LaunchArguments $launchArguments `
-        -WindowStyle $launchWindowStyle
+    $previousExpectedLanguage = [Environment]::GetEnvironmentVariable(
+        'RIMWORLD_E2E_EXPECTED_LANGUAGE',
+        [EnvironmentVariableTarget]::Process)
+    [Environment]::SetEnvironmentVariable(
+        'RIMWORLD_E2E_EXPECTED_LANGUAGE',
+        $Language,
+        [EnvironmentVariableTarget]::Process)
+    try {
+        $launchedProcess = Start-GatewayRimWorldProcess `
+            -ExecutablePath $rimWorldExecutable `
+            -LaunchArguments $launchArguments `
+            -WindowStyle $launchWindowStyle
+    }
+    finally {
+        [Environment]::SetEnvironmentVariable(
+            'RIMWORLD_E2E_EXPECTED_LANGUAGE',
+            $previousExpectedLanguage,
+            [EnvironmentVariableTarget]::Process)
+    }
     $launchedProcessStartUtc = [datetimeoffset]::new(
         $launchedProcess.StartTime.ToUniversalTime(),
         [timespan]::Zero)
@@ -6758,9 +7051,13 @@ try {
         Prefs = $prefsPath
         RunInBackground = $true
         MusicVolume = 0
+        DeveloperMode = $true
         RenderWidth = $renderWidth
         RenderHeight = $renderHeight
         Fullscreen = $false
+        Language = $Language
+        LanguageProvider = $languageProviderPath
+        LanguageProviderCleanup = $languageProviderCleanupPath
         UnityWindowArguments = $unityWindowArguments
         LaunchWindowStyle = $launchWindowStyle
         VisibleWindow = $launchVisible
@@ -7012,6 +7309,77 @@ finally {
             -Failures $failureRecords `
             -Category 'process-cleanup' `
             -Message "Process-cleanup status persistence failed: $($_.Exception.Message)"
+    }
+
+    if ($null -ne $languageProviderRecord) {
+        if (-not [bool]$languageProviderRecord.CreatedFile) {
+            $languageProviderCleanupStatus = 'not-required'
+            $languageProviderCleanup = [pscustomobject]@{
+                Status = 'not-required'
+                TargetPath = [string]$languageProviderRecord.TargetPath
+                FileExists = Test-Path -LiteralPath ([string]$languageProviderRecord.TargetPath) -PathType Leaf
+            }
+        }
+        elseif ($null -eq $launchedProcess -or $processConfirmedExited) {
+            try {
+                $languageProviderCleanup = Remove-GatewaySmokeLanguageProvider `
+                    -Record $languageProviderRecord `
+                    -RimWorldPath $resolvedRimWorldPath
+                $languageProviderCleanupStatus = 'completed'
+            }
+            catch {
+                $languageProviderCleanupStatus = 'failed'
+                $languageProviderCleanup = [pscustomobject]@{
+                    Status = 'failed'
+                    TargetPath = [string]$languageProviderRecord.TargetPath
+                    Error = $_.Exception.Message
+                }
+                Add-GatewaySmokeFailure `
+                    -Failures $failureRecords `
+                    -Category 'language-provider-cleanup' `
+                    -Message "Language-provider cleanup failed: $($_.Exception.Message)"
+            }
+        }
+        else {
+            $languageProviderCleanupStatus = 'blocked-process-alive'
+            $languageProviderCleanup = [pscustomobject]@{
+                Status = 'blocked-process-alive'
+                TargetPath = [string]$languageProviderRecord.TargetPath
+                Error = "Owned RimWorld PID $($launchedProcess.Id) was not confirmed dead."
+            }
+            Add-GatewaySmokeFailure `
+                -Failures $failureRecords `
+                -Category 'language-provider-cleanup' `
+                -Message "Language-provider metadata was retained because owned RimWorld PID $($launchedProcess.Id) was not confirmed dead."
+        }
+    }
+    else {
+        $languageProviderCleanup = [pscustomobject]@{
+            Status = $languageProviderCleanupStatus
+            TargetPath = [string]$languageProviderPlan.TargetPath
+        }
+    }
+    try {
+        $languageProviderCleanup |
+            ConvertTo-Json -Depth 6 |
+            Set-Content -LiteralPath $languageProviderCleanupPath -Encoding UTF8
+    }
+    catch {
+        Add-GatewaySmokeFailure `
+            -Failures $failureRecords `
+            -Category 'language-provider-cleanup' `
+            -Message "Language-provider cleanup status persistence failed: $($_.Exception.Message)"
+    }
+    if ($null -ne $languageProviderLease) {
+        try {
+            Exit-GatewaySmokeLanguageProviderLease -Lease $languageProviderLease
+        }
+        catch {
+            Add-GatewaySmokeFailure `
+                -Failures $failureRecords `
+                -Category 'language-provider-cleanup' `
+                -Message "Language-provider lease release failed: $($_.Exception.Message)"
+        }
     }
 
     $workshopOverrideCleanupDetails = [System.Collections.Generic.List[object]]::new()

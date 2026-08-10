@@ -35,6 +35,7 @@ public sealed class GatewaySmokeBackgroundLaunchTests
                 Assert.That(result.StandardOutput, Does.Contain("\"RenderWidth\":1600"));
                 Assert.That(result.StandardOutput, Does.Contain("\"RenderHeight\":900"));
                 Assert.That(result.StandardOutput, Does.Contain("\"Fullscreen\":false"));
+                Assert.That(result.StandardOutput, Does.Contain("\"Language\":\"English\""));
                 Assert.That(
                     result.StandardOutput,
                     Does.Contain("\"UnityWindowArguments\":[\"-screen-fullscreen\",\"0\",\"-screen-width\",\"1600\",\"-screen-height\",\"900\"]"));
@@ -60,6 +61,47 @@ public sealed class GatewaySmokeBackgroundLaunchTests
             Assert.That(
                 preferences.SelectSingleNode("/PrefsData/fullscreen")?.InnerText,
                 Is.EqualTo("False"));
+            Assert.That(
+                preferences.SelectSingleNode("/PrefsData/langFolderName")?.InnerText,
+                Is.EqualTo("English"));
+            Assert.That(
+                preferences.SelectSingleNode("/PrefsData/devMode")?.InnerText,
+                Is.EqualTo("True"));
+        }
+        finally
+        {
+            Directory.Delete(artifactRoot, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Explicit_language_is_written_only_to_the_isolated_preferences_and_evidence()
+    {
+        var artifactRoot = Path.Combine(
+            Path.GetTempPath(),
+            nameof(GatewaySmokeBackgroundLaunchTests),
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(artifactRoot);
+        try
+        {
+            var result = RunDryRun(artifactRoot, "-Language German");
+            var preferences = new XmlDocument();
+            preferences.Load(Directory.GetFiles(artifactRoot, "Prefs.xml", SearchOption.AllDirectories).Single());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.Zero, result.StandardError);
+                Assert.That(result.StandardOutput, Does.Contain("\"Language\":\"German\""));
+                Assert.That(result.StandardOutput, Does.Contain("\"LanguageProvider\":"));
+                Assert.That(result.StandardOutput, Does.Contain("\"Mode\":\"planned-staged-metadata\""));
+                Assert.That(
+                    result.StandardOutput,
+                    Does.Contain("Data\\\\Core\\\\Languages\\\\German\\\\LanguageInfo.xml"));
+                Assert.That(
+                    preferences.SelectSingleNode("/PrefsData/langFolderName")?.InnerText,
+                    Is.EqualTo("German"));
+                Assert.That(result.StandardOutput, Does.Contain("\"LaunchWindowStyle\":\"Minimized\""));
+            });
         }
         finally
         {

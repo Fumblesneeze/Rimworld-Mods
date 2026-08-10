@@ -36,6 +36,9 @@ param(
 
     [string]$ArtifactsPath,
 
+    [ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')]
+    [string]$Language = 'English',
+
     [ValidateRange(30, 600)]
     [int]$TimeoutSeconds = 300,
 
@@ -419,6 +422,7 @@ foreach ($group in $selectedGroups) {
     $plannedCommand = @(
         'pwsh', '-NoProfile', '-NonInteractive', '-File', $smokeScript,
         '-Quicktest', '-RunEndToEndTests', '-SkipBuildDeploy',
+        '-Language', $Language,
         '-TimeoutSeconds', [string]$TimeoutSeconds,
         '-Output', 'json'
     )
@@ -431,6 +435,7 @@ foreach ($group in $selectedGroups) {
 
     $launchPlans.Add([pscustomobject]@{
         GroupId = [string]$group.groupId
+        Language = $Language
         ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
         Tests = @($group.tests)
         AdditionalModIds = $additionalIds
@@ -546,6 +551,7 @@ try {
         foreach ($argument in @(
             '-NoProfile', '-NonInteractive', '-File', $smokeScript,
             '-Quicktest', '-RunEndToEndTests', '-SkipBuildDeploy',
+            '-Language', $Language,
             '-TimeoutSeconds', [string]$TimeoutSeconds,
             '-ArtifactsPath', $groupArtifactRoot,
             '-Output', 'json')) {
@@ -593,6 +599,7 @@ try {
                 [string]$smokeResult.Status -eq 'passed'
             $groupResults.Add([pscustomobject]@{
                 GroupId = [string]$group.groupId
+                Language = $Language
                 ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
                 PlannedTests = @($group.tests)
                 Status = if ($groupPassed) { 'passed' } else { 'failed' }
@@ -616,6 +623,7 @@ try {
             [System.IO.File]::WriteAllText($stderrPath, $groupFailure, [System.Text.UTF8Encoding]::new($false))
             $groupResults.Add([pscustomobject]@{
                 GroupId = [string]$group.groupId
+                Language = $Language
                 ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
                 PlannedTests = @($group.tests)
                 Status = 'failed'
@@ -667,6 +675,7 @@ $aggregate = [pscustomobject]@{
     Status = if ($passed) { 'passed' } else { 'failed' }
     RunId = $runId
     RunDirectory = $runDirectory
+    Language = $Language
     AvailablePackageCount = $packageIds.Count
     PlannedGroupCount = $selectedGroups.Count
     CompletedGroupCount = $groupResults.Count
@@ -698,6 +707,7 @@ Write-RunnerResult ([pscustomobject]@{
     Status = $aggregate.Status
     RunId = $aggregate.RunId
     RunDirectory = $aggregate.RunDirectory
+    Language = $aggregate.Language
     PlannedGroupCount = $aggregate.PlannedGroupCount
     CompletedGroupCount = $aggregate.CompletedGroupCount
     StageCleaned = $aggregate.StageCleaned

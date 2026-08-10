@@ -21,6 +21,9 @@ public sealed class EndToEndTestingContractTests
         var cancelWindow = new WindowCancelActionStep(
             "cancel dialog",
             "Verse.Dialog_MessageBox");
+        var modSettings = new ModSettingsActionStep(
+            "open settings",
+            "fumblesneeze.immersivechefs");
 
         Assert.Multiple(() =>
         {
@@ -32,10 +35,15 @@ public sealed class EndToEndTestingContractTests
             Assert.That(closeInspect.SelectedThingRuntimeId, Is.EqualTo("Thing_Fridge789"));
             Assert.That(closeInspect.ExpectedTabRuntimeType, Is.EqualTo("AdaptiveStorage.ContentsITab"));
             Assert.That(cancelWindow.ExpectedWindowRuntimeType, Is.EqualTo("Verse.Dialog_MessageBox"));
+            Assert.That(modSettings.PackageId, Is.EqualTo("fumblesneeze.immersivechefs"));
             Assert.That(tab, Is.Not.InstanceOf<ProcessInputActionStep>());
             Assert.That(open, Is.Not.InstanceOf<ProcessInputActionStep>());
             Assert.That(closeInspect, Is.Not.InstanceOf<ProcessInputActionStep>());
             Assert.That(cancelWindow, Is.Not.InstanceOf<ProcessInputActionStep>());
+            Assert.That(modSettings, Is.Not.InstanceOf<ProcessInputActionStep>());
+            Assert.That(
+                () => new ModSettingsActionStep("open settings", " "),
+                Throws.TypeOf<ArgumentException>());
         });
     }
 

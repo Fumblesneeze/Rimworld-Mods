@@ -31,6 +31,10 @@ internal interface IGatewayEndToEndInspectionRuntime
     bool IsExactWindowOpen(string expectedWindowRuntimeType);
 
     bool CancelExactWindow(string expectedWindowRuntimeType);
+
+    bool OpenModSettings(string packageId);
+
+    bool IsExactModSettingsOpen(string packageId);
 }
 
 internal sealed class GatewayEndToEndInspectionLimitException : Exception
@@ -179,6 +183,48 @@ internal static class VerseGatewayEndToEndInspectionActions
             return Fail(
                 "info_card_action_failed",
                 "The native Thing info-card action threw " + exception.GetType().Name + ".");
+        }
+    }
+
+    internal static GatewayEndToEndStepOutcome Apply(
+        ModSettingsActionStep step,
+        IGatewayEndToEndInspectionRuntime runtime)
+    {
+        if (step is null)
+        {
+            throw new ArgumentNullException(nameof(step));
+        }
+
+        if (runtime is null)
+        {
+            throw new ArgumentNullException(nameof(runtime));
+        }
+
+        if (!runtime.PlayerHasControl)
+        {
+            return Fail(
+                "mod_settings_player_control_required",
+                "Native player control is required to open mod settings.");
+        }
+
+        try
+        {
+            return runtime.OpenModSettings(step.PackageId) &&
+                   runtime.IsExactModSettingsOpen(step.PackageId)
+                ? GatewayEndToEndStepOutcome.Pass(
+                    new Dictionary<string, string>
+                    {
+                        ["packageId"] = step.PackageId
+                    })
+                : Fail(
+                    "mod_settings_open_failed",
+                    "RimWorld did not open one native settings dialog bound to the requested exact active mod.");
+        }
+        catch (Exception exception)
+        {
+            return Fail(
+                "mod_settings_action_failed",
+                "The native mod-settings action threw " + exception.GetType().Name + ".");
         }
     }
 
@@ -498,6 +544,8 @@ internal sealed class VerseGatewayEndToEndInspectionRuntime : IGatewayEndToEndIn
     private const BindingFlags InstanceNonPublic = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly FieldInfo? InfoCardThingField = typeof(Dialog_InfoCard)
         .GetField("thing", InstanceNonPublic);
+    private static readonly FieldInfo? ModSettingsModField = typeof(Dialog_ModSettings)
+        .GetField("mod", InstanceNonPublic);
     private readonly GatewayEndToEndThingResolver thingResolver = new(
         new VerseGatewayEndToEndThingCandidateSource());
 
@@ -640,6 +688,36 @@ internal sealed class VerseGatewayEndToEndInspectionRuntime : IGatewayEndToEndIn
         return true;
     }
 
+    public bool OpenModSettings(string packageId)
+    {
+        if (ModSettingsModField?.FieldType != typeof(Mod))
+        {
+            return false;
+        }
+
+        var matches = ExactActiveMods(packageId);
+        if (matches.Length != 1 || OpenModSettingsDialogs().Length != 0)
+        {
+            return false;
+        }
+
+        Find.WindowStack.Add(new Dialog_ModSettings(matches[0]));
+        return true;
+    }
+
+    public bool IsExactModSettingsOpen(string packageId)
+    {
+        if (ModSettingsModField?.FieldType != typeof(Mod))
+        {
+            return false;
+        }
+
+        var mods = ExactActiveMods(packageId);
+        var dialogs = OpenModSettingsDialogs();
+        return mods.Length == 1 && dialogs.Length == 1 &&
+               ReferenceEquals(ModSettingsModField.GetValue(dialogs[0]), mods[0]);
+    }
+
     private static Type TabType(EndToEndPawnInspectTab tab) => tab switch
     {
         EndToEndPawnInspectTab.Gear => typeof(ITab_Pawn_Gear),
@@ -677,6 +755,21 @@ internal sealed class VerseGatewayEndToEndInspectionRuntime : IGatewayEndToEndIn
             window.GetType().FullName,
             expectedWindowRuntimeType,
             StringComparison.Ordinal))
+        .Take(2)
+        .ToArray();
+
+    private static Mod[] ExactActiveMods(string packageId) =>
+        LoadedModManager.ModHandles
+            .Where(mod => string.Equals(
+                mod.Content?.PackageId,
+                packageId,
+                StringComparison.OrdinalIgnoreCase))
+            .Take(2)
+            .ToArray();
+
+    private static Dialog_ModSettings[] OpenModSettingsDialogs() =>
+        (Find.WindowStack?.Windows.OfType<Dialog_ModSettings>() ??
+         Enumerable.Empty<Dialog_ModSettings>())
         .Take(2)
         .ToArray();
 
