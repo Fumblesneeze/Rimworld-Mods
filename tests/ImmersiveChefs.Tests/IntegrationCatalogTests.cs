@@ -43,6 +43,7 @@ public sealed class IntegrationCatalogTests
     [TestCase("Mlie.MealPrinter", OptionalIntegration.MealPrinter)]
     [TestCase("Goat.Food.Texture.Variety", OptionalIntegration.FoodTextureVariety)]
     [TestCase("Mehni.PickUpAndHaul", OptionalIntegration.PickUpAndHaul)]
+    [TestCase("lordfelix.CookForYourself", OptionalIntegration.CookForYourself)]
     public void Detect_marks_exact_optional_compatibility_integrations_active(
         string packageId,
         OptionalIntegration integration)
@@ -61,6 +62,7 @@ public sealed class IntegrationCatalogTests
     [TestCase("Goat.Food.Texture.Variety.Core")]
     [TestCase("Goat.Food.Texture.Variety.lookalike")]
     [TestCase("Mehni.PickUpAndHaul.compat")]
+    [TestCase("lordfelix.CookForYourself.compat")]
     public void Detect_ignores_lookalike_optional_compatibility_packages(string packageId)
     {
         var snapshot = IntegrationCatalog.Detect(new[] { packageId });
@@ -75,6 +77,7 @@ public sealed class IntegrationCatalogTests
             Assert.That(snapshot.IsActive(OptionalIntegration.MealPrinter), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.FoodTextureVariety), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.PickUpAndHaul), Is.False);
+            Assert.That(snapshot.IsActive(OptionalIntegration.CookForYourself), Is.False);
         });
     }
 
@@ -117,6 +120,20 @@ public sealed class IntegrationCatalogTests
 
         Assert.That(
             OptionalIntegrationPolicy.IsEnabled(OptionalIntegration.PickUpAndHaul, snapshot, settings),
+            Is.False);
+    }
+
+    [Test]
+    public void Disabled_cook_for_yourself_setting_prevents_activation_when_loaded()
+    {
+        var snapshot = IntegrationCatalog.Detect(new[] { "lordfelix.CookForYourself" });
+        var settings = new ImmersiveChefsSettings
+        {
+            CookForYourself = OptionalIntegrationMode.Off
+        };
+
+        Assert.That(
+            OptionalIntegrationPolicy.IsEnabled(OptionalIntegration.CookForYourself, snapshot, settings),
             Is.False);
     }
 
@@ -228,7 +245,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(22));
+            Assert.That(snapshot.States, Has.Count.EqualTo(23));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }

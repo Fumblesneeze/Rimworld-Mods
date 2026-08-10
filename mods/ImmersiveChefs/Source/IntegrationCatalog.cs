@@ -25,7 +25,8 @@ public enum OptionalIntegration
     MealPrinter,
     FoodTextureVariety,
     TextureVariations,
-    PickUpAndHaul
+    PickUpAndHaul,
+    CookForYourself
 }
 
 public sealed class IntegrationSnapshot
@@ -83,7 +84,8 @@ public static class IntegrationCatalog
             [OptionalIntegration.MealPrinter] = "Mlie.MealPrinter",
             [OptionalIntegration.FoodTextureVariety] = "Goat.Food.Texture.Variety",
             [OptionalIntegration.TextureVariations] = "VanillaExpanded.VTEXVariations",
-            [OptionalIntegration.PickUpAndHaul] = "Mehni.PickUpAndHaul"
+            [OptionalIntegration.PickUpAndHaul] = "Mehni.PickUpAndHaul",
+            [OptionalIntegration.CookForYourself] = "lordfelix.CookForYourself"
         };
 
     public static IntegrationSnapshot Detect(IEnumerable<string> loadedPackageIds)
@@ -172,6 +174,7 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.FoodTextureVariety => settings.FoodTextureVariety,
             OptionalIntegration.TextureVariations => settings.TextureVariationIntegration,
             OptionalIntegration.PickUpAndHaul => settings.PickUpAndHaul,
+            OptionalIntegration.CookForYourself => settings.CookForYourself,
             _ => OptionalIntegrationMode.Auto
         };
     }

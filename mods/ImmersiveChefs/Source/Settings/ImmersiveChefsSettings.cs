@@ -72,6 +72,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
     public OptionalIntegrationMode FoodTextureVariety = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode TextureVariationIntegration = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode PickUpAndHaul = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode CookForYourself = OptionalIntegrationMode.Auto;
     public bool ShowDirtyWareTextures = true;
 
     public override void ExposeData()
@@ -130,6 +131,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
             "textureVariationIntegration",
             OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref PickUpAndHaul, "pickUpAndHaul", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref CookForYourself, "cookForYourself", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref ShowDirtyWareTextures, "showDirtyWareTextures", true);
         ClampToAllowedRanges();
     }
