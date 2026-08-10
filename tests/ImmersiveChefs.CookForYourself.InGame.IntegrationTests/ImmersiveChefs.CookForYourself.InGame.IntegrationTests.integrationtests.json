@@ -1,0 +1,12 @@
+{
+  "ownerPackageId": "fumblesneeze.immersivechefs",
+  "assembly": "ImmersiveChefs.CookForYourself.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "brrainz.harmony",
+    "ludeon.rimworld",
+    "lordfelix.CookForYourself",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}
