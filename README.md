@@ -409,15 +409,12 @@ Use the patient-feeding scene to compare three real `FeedPatient` jobs side by s
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
 ```
 
-Use the microwave-reheating scene for the ordinary self-feeding path. It pauses with a hungry drafted colonist, an exact frozen Masterwork-80 plated meal, clean cutlery, and a microwave on a charged battery power net. Select the colonist, invoke the native Undraft gizmo, and resume at Normal speed. The pawn should carry the meal to the microwave; after eating, the Needs panel should show `Excellent cooking` and `Steaming hot meal`, making the configured five-point quality loss visible as a Masterwork-to-Excellent band change and confirming the 60 °C result, while the exact returned plate and cutlery should both inspect as dirty:
+Use the product-owned countertop-microwave E2E test for the ordinary self-feeding path. It starts minimized, arranges a hungry drafted colonist with an exact frozen plated meal and clean cutlery beside a powered countertop microwave, then uses typed native Undraft and time controls. The retained screenshots cover active reheating, the steaming reheated meal, completed dining, and the exact dirty returned setting:
 
 ```powershell
-.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow `
-  -Scenario immersive-chefs-microwave-reheating `
-  -InteractiveHoldSeconds 120 `
-  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
-  -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
-  -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.'
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 `
+  -TestId immersive-chefs.countertop-microwave-native-reheat `
+  -Output json
 ```
 
 Use the meal-cooling-holders scene to compare ordinary ambient, refrigerated, and frozen storage. It creates three identical plated Simple meals at 70 °C in separate sealed rooms, using a real powered heater set to 21 °C, a cooler set to 5 °C, and a cooler set to -10 °C. The scenario pauses without advancing temperature. Resume through native game-speed control for about two in-game hours, pause, and select each exact meal. With the default two-hour half-life, their inspectors should visibly separate into Warm, RoomTemperature, and Frozen bands:
