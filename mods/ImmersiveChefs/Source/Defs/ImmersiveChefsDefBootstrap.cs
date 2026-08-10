@@ -128,6 +128,16 @@ internal static class ImmersiveChefsDefBootstrap
             OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.PickUpAndHaul, pickUpAndHaulReason);
         }
 
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.CookForYourself) &&
+            !CookForYourselfAdapter.TryInitialize(
+                ImmersiveChefsMod.HarmonyInstance,
+                out var cookForYourselfReason))
+        {
+            OptionalIntegrationDiagnostics.WarnOnce(
+                OptionalIntegration.CookForYourself,
+                cookForYourselfReason);
+        }
+
         if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.Hospitality) &&
             !HospitalityAdapter.TryInitialize(out var hospitalityReason))
         {

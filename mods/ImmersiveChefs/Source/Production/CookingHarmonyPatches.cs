@@ -297,6 +297,7 @@ internal static class CookingJobCleanupPatch
     {
         var pawn = Traverse.Create(__instance).Field("pawn").GetValue<Pawn>();
         CookingSessionRegistry.Cleanup(pawn, pawn.CurJob);
+        CookForYourselfAdapter.Cleanup(pawn.CurJob);
         KitchenAssistanceRegistry.Cleanup(pawn, pawn.CurJob);
         DiningSessionRegistry.Cleanup(pawn, pawn.CurJob);
         GastronomyAdapter.Cleanup(pawn, pawn.CurJob);

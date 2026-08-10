@@ -334,6 +334,58 @@ public sealed class HarmonyIsolationTests
             Throws.Nothing);
     }
 
+    [Test]
+    public void Last_priority_admission_finalizer_observes_a_result_replaced_by_another_finalizer()
+    {
+        const string replacingOwner = "fumblesneeze.immersivechefs.tests.finalizer-replacer";
+        const string observingOwner = "fumblesneeze.immersivechefs.tests.finalizer-observer";
+        var target = typeof(FinalizerOrderingProbe).GetMethod(
+            nameof(FinalizerOrderingProbe.Read),
+            BindingFlags.Public | BindingFlags.Static)!;
+        var replace = typeof(FinalizerOrderingPatches).GetMethod(
+            nameof(FinalizerOrderingPatches.Replace),
+            BindingFlags.Public | BindingFlags.Static)!;
+        var observe = typeof(FinalizerOrderingPatches).GetMethod(
+            nameof(FinalizerOrderingPatches.Observe),
+            BindingFlags.Public | BindingFlags.Static)!;
+        var replacingHarmony = new HarmonyLib.Harmony(replacingOwner);
+        var observingHarmony = new HarmonyLib.Harmony(observingOwner);
+        var admissionPriority = (int)typeof(ImmersiveChefsMod).Assembly
+            .GetType("ImmersiveChefs.CookForYourselfPatchPolicy", throwOnError: true)!
+            .GetField(
+                "AdmissionFinalizerPriority",
+                BindingFlags.NonPublic | BindingFlags.Static)!
+            .GetRawConstantValue()!;
+        FinalizerOrderingPatches.Observed = null;
+
+        try
+        {
+            replacingHarmony.Patch(target, finalizer: new HarmonyMethod(replace));
+            observingHarmony.Patch(
+                target,
+                finalizer: new HarmonyMethod(observe)
+                {
+                    priority = admissionPriority
+                });
+
+            Assert.That(FinalizerOrderingProbe.Read(), Is.EqualTo("replaced"));
+            Assert.That(FinalizerOrderingPatches.Observed, Is.EqualTo("replaced"));
+        }
+        finally
+        {
+            replacingHarmony.UnpatchAll(replacingOwner);
+            observingHarmony.UnpatchAll(observingOwner);
+            FinalizerOrderingPatches.Observed = null;
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(FinalizerOrderingProbe.Read(), Is.EqualTo("original"));
+            Assert.That(HarmonyLib.Harmony.HasAnyPatches(replacingOwner), Is.False);
+            Assert.That(HarmonyLib.Harmony.HasAnyPatches(observingOwner), Is.False);
+        });
+    }
+
     private static string ComputeSha256(string path)
     {
         using var stream = File.OpenRead(path);
@@ -356,6 +408,29 @@ public sealed class HarmonyIsolationTests
 
         public static void InvalidPostfix(string parameterThatDoesNotExist)
         {
+        }
+    }
+
+    private static class FinalizerOrderingProbe
+    {
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static string Read() => "original";
+    }
+
+    private static class FinalizerOrderingPatches
+    {
+        public static string? Observed { get; set; }
+
+        public static Exception? Replace(ref string __result, Exception? __exception)
+        {
+            __result = "replaced";
+            return __exception;
+        }
+
+        public static Exception? Observe(ref string __result, Exception? __exception)
+        {
+            Observed = __result;
+            return __exception;
         }
     }
 

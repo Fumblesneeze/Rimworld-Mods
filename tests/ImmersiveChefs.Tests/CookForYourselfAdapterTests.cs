@@ -162,6 +162,86 @@ public sealed class CookForYourselfAdapterTests
             Is.EqualTo(CookForYourselfAdmission.PassThrough));
     }
 
+    [Test]
+    public void Cooking_toil_selection_requires_one_exact_active_work_toil()
+    {
+        var toils = new[]
+        {
+            new CookForYourselfToilShape("GotoThing", false, false, false, false),
+            new CookForYourselfToilShape("CookMealForSelf", true, true, true, true),
+            new CookForYourselfToilShape("FinishCookMealForSelf", false, false, true, false)
+        };
+
+        Assert.That(CookForYourselfToilPolicy.TrySelectExactIndex(toils, out var index), Is.True);
+        Assert.That(index, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Missing_or_ambiguous_cooking_toil_fails_closed()
+    {
+        var exact = new CookForYourselfToilShape("CookMealForSelf", true, true, true, true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                CookForYourselfToilPolicy.TrySelectExactIndex(
+                    new[] { new CookForYourselfToilShape("Changed", true, true, true, true) },
+                    out _),
+                Is.False);
+            Assert.That(
+                CookForYourselfToilPolicy.TrySelectExactIndex(new[] { exact, exact }, out _),
+                Is.False);
+        });
+    }
+
+    [TestCase(1f, 1f, 1, 1f, 0f, 0f)]
+    [TestCase(2f, 1f, 3, 1.5f, 0f, 3f)]
+    [TestCase(2f, 1f, 3, 0.5f, 0f, -3f)]
+    [TestCase(2f, 1f, 3, 1f, 0.25f, 1.5f)]
+    [TestCase(2f, 2f, 3, 1.5f, 0f, 6f)]
+    [TestCase(2f, 2f, 3, 1f, 0.25f, 1.5f)]
+    public void Additional_progress_preserves_upstream_base_work_and_adds_owned_modifiers(
+        float pawnWorkPerTick,
+        float workTableFactor,
+        int delta,
+        float cookingSpeedFactor,
+        float assistantBonus,
+        float expectedAdditionalProgress)
+    {
+        Assert.That(
+            CookForYourselfWorkPolicy.AdditionalProgress(
+                pawnWorkPerTick,
+                workTableFactor,
+                delta,
+                cookingSpeedFactor,
+                assistantBonus),
+            Is.EqualTo(expectedAdditionalProgress).Within(0.0001f));
+    }
+
+    [TestCase(true, true)]
+    [TestCase(false, false)]
+    public void Only_exactly_admitted_jobs_are_decorated_even_after_global_disable(
+        bool jobWasAdmitted,
+        bool expected)
+    {
+        Assert.That(
+            CookForYourselfPatchPolicy.ShouldDecorateDriver(jobWasAdmitted),
+            Is.EqualTo(expected));
+    }
+
+    [TestCase(false, 0, false)]
+    [TestCase(true, 0, true)]
+    [TestCase(true, 1, false)]
+    public void Patch_installation_is_all_or_nothing_and_not_duplicated(
+        bool allTargetsValidated,
+        int existingOwnedPatchCount,
+        bool expected)
+    {
+        Assert.That(
+            CookForYourselfPatchPolicy.ShouldInstall(allTargetsValidated, existingOwnedPatchCount),
+            Is.EqualTo(expected));
+    }
+
     private static CookForYourselfShape Changed(Action<CookForYourselfShape> mutation)
     {
         var shape = SupportedShape;

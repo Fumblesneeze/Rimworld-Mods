@@ -452,6 +452,47 @@ internal static class CookingSessionRegistry
             return false;
         }
 
+        // Stock-production bills have no consumer identity. Treating the cook's hunger as the
+        // consumer emergency incorrectly makes an unrelated colonist's bill use dirty ware.
+        return TryAttachResolved(
+            pawn,
+            job,
+            billGiver,
+            reservationRecipe!,
+            UrgentProductionRequestRegistry.HasActive(pawn.Map),
+            out missingReason,
+            forceDirtyCookware);
+    }
+
+    internal static bool TryAttach(
+        Pawn pawn,
+        Job job,
+        Thing billGiver,
+        RecipeDef reservationRecipe,
+        bool emergency,
+        out string? missingReason)
+    {
+        return TryAttachResolved(
+            pawn,
+            job,
+            billGiver,
+            reservationRecipe,
+            emergency,
+            out missingReason,
+            forceDirtyCookware: false);
+    }
+
+    private static bool TryAttachResolved(
+        Pawn pawn,
+        Job job,
+        Thing billGiver,
+        RecipeDef reservationRecipe,
+        bool emergency,
+        out string? missingReason,
+        bool forceDirtyCookware)
+    {
+        missingReason = null;
+
         if (!MealCoveragePolicy.IsCovered(reservationRecipe))
         {
             return true;
@@ -460,55 +501,96 @@ internal static class CookingSessionRegistry
         var settings = ImmersiveChefsMod.Settings;
         if (settings.WareRequirementMode == WareRequirementMode.Off)
         {
-            Sessions.Add(job, new CookingSession(
-                pawn, job, reservationRecipe!, billGiver, null,
-                Array.Empty<ReservedWarePortion>(), false, true));
-            KitchenAssistanceRegistry.Open(pawn, job, billGiver);
+            AddSession(
+                pawn,
+                job,
+                billGiver,
+                new CookingSession(
+                    pawn, job, reservationRecipe!, billGiver, null,
+                    Array.Empty<ReservedWarePortion>(), false, true));
             return true;
         }
 
-        // Stock-production bills have no consumer identity. Treating the cook's hunger as the
-        // consumer emergency incorrectly makes an unrelated colonist's bill use dirty ware.
-        var emergency = UrgentProductionRequestRegistry.HasActive(pawn.Map);
-        var cookware = FindPortions(
-            pawn,
-            job,
-            KitchenwareProduct.Cookware,
-            1,
-            emergency,
-            out var cookwareUse,
-            forcedUse: forceDirtyCookware ? WareUse.Dirty : null);
-        var requiredPlates = MealCoveragePolicy.ServingCount(reservationRecipe!);
-        var plateComplexity = MealClassificationRuntime.ClassifyRecipe(reservationRecipe);
-        var plates = FindPortions(
-            pawn,
-            job,
-            KitchenwareProduct.Plate,
-            requiredPlates,
-            emergency,
-            out var plateUse,
-            plateComplexity);
-        var cookwareAllowed = cookwareUse.Admission == WareAdmission.Allowed;
-        var platesAllowed = plateUse.Admission == WareAdmission.Allowed;
-        if (!cookwareAllowed || !platesAllowed)
+        var cookware = new List<ReservedWarePortion>();
+        var plates = new List<ReservedWarePortion>();
+        try
+        {
+            cookware = FindPortions(
+                pawn,
+                job,
+                KitchenwareProduct.Cookware,
+                1,
+                emergency,
+                out var cookwareUse,
+                forcedUse: forceDirtyCookware ? WareUse.Dirty : null);
+            var requiredPlates = MealCoveragePolicy.ServingCount(reservationRecipe!);
+            var plateComplexity = MealClassificationRuntime.ClassifyRecipe(reservationRecipe);
+            plates = FindPortions(
+                pawn,
+                job,
+                KitchenwareProduct.Plate,
+                requiredPlates,
+                emergency,
+                out var plateUse,
+                plateComplexity);
+            var cookwareAllowed = cookwareUse.Admission == WareAdmission.Allowed;
+            var platesAllowed = plateUse.Admission == WareAdmission.Allowed;
+            if (!cookwareAllowed || !platesAllowed)
+            {
+                ReleaseReservations(pawn, job, cookware);
+                ReleaseReservations(pawn, job, plates);
+                missingReason = !cookwareAllowed && !platesAllowed
+                    ? "ImmersiveChefs_Missing_CookwareAndPlates".Translate()
+                    : !cookwareAllowed
+                        ? "ImmersiveChefs_Missing_Cookware".Translate()
+                        : "ImmersiveChefs_Missing_Plates".Translate();
+                return false;
+            }
+
+            var selectedCookware = cookware.FirstOrDefault();
+            var emergencyMissing = emergency &&
+                                   (selectedCookware is null || plates.Sum(portion => portion.Count) < requiredPlates);
+            AddSession(
+                pawn,
+                job,
+                billGiver,
+                new CookingSession(
+                    pawn, job, reservationRecipe!, billGiver, selectedCookware, plates, emergencyMissing, false));
+            return true;
+        }
+        catch
         {
             ReleaseReservations(pawn, job, cookware);
             ReleaseReservations(pawn, job, plates);
-            missingReason = !cookwareAllowed && !platesAllowed
-                ? "ImmersiveChefs_Missing_CookwareAndPlates".Translate()
-                : !cookwareAllowed
-                    ? "ImmersiveChefs_Missing_Cookware".Translate()
-                    : "ImmersiveChefs_Missing_Plates".Translate();
-            return false;
+            AbortAdmission(pawn, job);
+            throw;
+        }
+    }
+
+    private static void AddSession(Pawn pawn, Job job, Thing billGiver, CookingSession session)
+    {
+        Sessions.Add(job, session);
+        try
+        {
+            KitchenAssistanceRegistry.Open(pawn, job, billGiver);
+        }
+        catch
+        {
+            Sessions.Remove(job);
+            KitchenAssistanceRegistry.Cleanup(pawn, job);
+            throw;
+        }
+    }
+
+    internal static void AbortAdmission(Pawn pawn, Job? job)
+    {
+        if (job is null)
+        {
+            return;
         }
 
-        var selectedCookware = cookware.FirstOrDefault();
-        var emergencyMissing = emergency &&
-                               (selectedCookware is null || plates.Sum(portion => portion.Count) < requiredPlates);
-        Sessions.Add(job, new CookingSession(
-            pawn, job, reservationRecipe!, billGiver, selectedCookware, plates, emergencyMissing, false));
-        KitchenAssistanceRegistry.Open(pawn, job, billGiver);
-        return true;
+        Sessions.Remove(job);
+        KitchenAssistanceRegistry.Cleanup(pawn, job);
     }
 
     internal static bool CanOfferDirtyCookwareOverride(Pawn pawn, Job otherwiseRunnableBillJob)
@@ -573,7 +655,8 @@ internal static class CookingSessionRegistry
         billGiver = session.BillGiver;
         var state = new CookingWorkPropState(
             currentJobMatches: ReferenceEquals(currentJob, session.Job),
-            currentDriverIsDoBill: pawn.jobs.curDriver is JobDriver_DoBill,
+            currentDriverIsDoBill: pawn.jobs.curDriver is JobDriver_DoBill ||
+                                   CookForYourselfAdapter.OwnsDriver(pawn.jobs.curDriver),
             workStarted: session.WorkStarted,
             productsCompleted: session.ProductsCompleted,
             cookwareExists: cookware is { Destroyed: false },
@@ -717,20 +800,28 @@ internal static class CookingSessionRegistry
         var wantDirty = selection.Use == WareUse.Dirty;
         var remaining = requiredCount;
         var result = new List<ReservedWarePortion>();
-        foreach (var candidate in candidates.Where(candidate => candidate.Dirty == wantDirty))
+        try
         {
-            var count = Math.Min(remaining, candidate.Thing.stackCount);
-            if (count <= 0 || !pawn.Reserve(candidate.Thing, job, 1, count))
+            foreach (var candidate in candidates.Where(candidate => candidate.Dirty == wantDirty))
             {
-                continue;
-            }
+                var count = Math.Min(remaining, candidate.Thing.stackCount);
+                if (count <= 0 || !pawn.Reserve(candidate.Thing, job, 1, count))
+                {
+                    continue;
+                }
 
-            result.Add(new ReservedWarePortion(candidate.Thing, count));
-            remaining -= count;
-            if (remaining == 0)
-            {
-                break;
+                result.Add(new ReservedWarePortion(candidate.Thing, count));
+                remaining -= count;
+                if (remaining == 0)
+                {
+                    break;
+                }
             }
+        }
+        catch
+        {
+            ReleaseReservations(pawn, job, result);
+            throw;
         }
 
         if (remaining > 0)
