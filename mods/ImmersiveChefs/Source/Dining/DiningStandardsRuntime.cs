@@ -124,7 +124,8 @@ internal static class DiningStandardsRuntime
             KitchenMaterialKind.Gold => ServiceMaterialTier.Gold,
             KitchenMaterialKind.Silver => ServiceMaterialTier.Silver,
             KitchenMaterialKind.StainlessSteel or KitchenMaterialKind.Ceramic => ServiceMaterialTier.Refined,
-            KitchenMaterialKind.Steel or KitchenMaterialKind.Plastic or KitchenMaterialKind.AdvancedSteel or
+            KitchenMaterialKind.Steel or KitchenMaterialKind.Uranium or KitchenMaterialKind.Plastic or
+                KitchenMaterialKind.AdvancedSteel or
                 KitchenMaterialKind.Titanium or KitchenMaterialKind.Plasteel => ServiceMaterialTier.Durable,
             _ => ServiceMaterialTier.Basic
         };

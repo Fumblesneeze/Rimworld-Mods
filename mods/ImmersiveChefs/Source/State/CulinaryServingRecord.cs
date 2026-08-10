@@ -23,7 +23,8 @@ public readonly struct CulinaryServingSnapshot
         int microwaveReheatCount,
         int lastThermalTick,
         IEnumerable<string>? hiddenSourceDefNames = null,
-        DietaryFlags hiddenDietaryFlags = DietaryFlags.None)
+        DietaryFlags hiddenDietaryFlags = DietaryFlags.None,
+        KitchenMaterialKind cookwareMaterial = KitchenMaterialKind.OtherMetal)
     {
         SchemaVersion = schemaVersion;
         QualityScore = qualityScore;
@@ -33,6 +34,7 @@ public readonly struct CulinaryServingSnapshot
         LastThermalTick = lastThermalTick;
         HiddenSourceDefNames = CulinaryServingRecord.NormalizeHiddenSources(hiddenSourceDefNames);
         HiddenDietaryFlags = hiddenDietaryFlags;
+        CookwareMaterial = NormalizeMaterial(cookwareMaterial);
     }
 
     public int SchemaVersion { get; }
@@ -43,11 +45,17 @@ public readonly struct CulinaryServingSnapshot
     public int LastThermalTick { get; }
     public IReadOnlyList<string> HiddenSourceDefNames { get; }
     public DietaryFlags HiddenDietaryFlags { get; }
+    public KitchenMaterialKind CookwareMaterial { get; }
+
+    private static KitchenMaterialKind NormalizeMaterial(KitchenMaterialKind material) =>
+        Enum.IsDefined(typeof(KitchenMaterialKind), material)
+            ? material
+            : KitchenMaterialKind.OtherMetal;
 }
 
 public sealed class CulinaryServingRecord
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
 
     public CulinaryServingRecord(
         int qualityScore,
@@ -56,7 +64,8 @@ public sealed class CulinaryServingRecord
         int microwaveReheatCount,
         int lastThermalTick,
         IEnumerable<string>? hiddenSourceDefNames = null,
-        DietaryFlags hiddenDietaryFlags = DietaryFlags.None)
+        DietaryFlags hiddenDietaryFlags = DietaryFlags.None,
+        KitchenMaterialKind cookwareMaterial = KitchenMaterialKind.OtherMetal)
     {
         QualityScore = Math.Max(0, Math.Min(100, qualityScore));
         TemperatureCelsius = temperatureCelsius;
@@ -65,6 +74,9 @@ public sealed class CulinaryServingRecord
         LastThermalTick = Math.Max(0, lastThermalTick);
         HiddenSourceDefNames = NormalizeHiddenSources(hiddenSourceDefNames);
         HiddenDietaryFlags = hiddenDietaryFlags;
+        CookwareMaterial = Enum.IsDefined(typeof(KitchenMaterialKind), cookwareMaterial)
+            ? cookwareMaterial
+            : KitchenMaterialKind.OtherMetal;
     }
 
     public int QualityScore { get; private set; }
@@ -74,6 +86,7 @@ public sealed class CulinaryServingRecord
     public int LastThermalTick { get; private set; }
     public IReadOnlyList<string> HiddenSourceDefNames { get; }
     public DietaryFlags HiddenDietaryFlags { get; }
+    public KitchenMaterialKind CookwareMaterial { get; }
 
     public CulinaryServingSnapshot Capture()
     {
@@ -85,7 +98,8 @@ public sealed class CulinaryServingRecord
             MicrowaveReheatCount,
             LastThermalTick,
             HiddenSourceDefNames,
-            HiddenDietaryFlags);
+            HiddenDietaryFlags,
+            CookwareMaterial);
     }
 
     public static CulinaryServingRecord Restore(CulinaryServingSnapshot snapshot)
@@ -97,7 +111,8 @@ public sealed class CulinaryServingRecord
             snapshot.MicrowaveReheatCount,
             snapshot.LastThermalTick,
             snapshot.HiddenSourceDefNames,
-            snapshot.HiddenDietaryFlags);
+            snapshot.HiddenDietaryFlags,
+            snapshot.CookwareMaterial);
     }
 
     public void Reheat(float targetTemperature, int qualityLoss, int currentTick)

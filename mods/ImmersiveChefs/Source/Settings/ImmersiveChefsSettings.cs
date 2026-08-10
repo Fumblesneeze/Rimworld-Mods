@@ -44,6 +44,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
     public float QualityMoodScale = 1f;
     public float FoodPoisoningEffectScale = 1f;
     public float MaximumCustomPoisonChance = 0.50f;
+    public float ToxicKitchenwareExposureScale = 1f;
     public bool MealTemperatureEnabled = true;
     public float ThermalHalfLifeHours = 2f;
     public float AutoMicrowaveBelow = 10f;
@@ -94,6 +95,10 @@ public sealed class ImmersiveChefsSettings : ModSettings
         Scribe_Values.Look(ref QualityMoodScale, "qualityMoodScale", 1f);
         Scribe_Values.Look(ref FoodPoisoningEffectScale, "foodPoisoningEffectScale", 1f);
         Scribe_Values.Look(ref MaximumCustomPoisonChance, "maximumCustomPoisonChance", 0.50f);
+        Scribe_Values.Look(
+            ref ToxicKitchenwareExposureScale,
+            "toxicKitchenwareExposureScale",
+            1f);
         Scribe_Values.Look(ref MealTemperatureEnabled, "mealTemperatureEnabled", true);
         Scribe_Values.Look(ref ThermalHalfLifeHours, "thermalHalfLifeHours", 2f);
         Scribe_Values.Look(ref AutoMicrowaveBelow, "autoMicrowaveBelow", 10f);
@@ -143,6 +148,10 @@ public sealed class ImmersiveChefsSettings : ModSettings
         QualityMoodScale = Clamp(QualityMoodScale, 0f, 2f);
         FoodPoisoningEffectScale = Clamp(FoodPoisoningEffectScale, 0f, 3f);
         MaximumCustomPoisonChance = Clamp(MaximumCustomPoisonChance, 0.05f, 1f);
+        ToxicKitchenwareExposureScale = float.IsNaN(ToxicKitchenwareExposureScale) ||
+                                         float.IsInfinity(ToxicKitchenwareExposureScale)
+            ? 1f
+            : Clamp(ToxicKitchenwareExposureScale, 0f, 3f);
         ThermalHalfLifeHours = Clamp(ThermalHalfLifeHours, 0.25f, 12f);
         AutoMicrowaveBelow = Clamp(AutoMicrowaveBelow, -10f, 30f);
         MicrowaveQualityLoss = Math.Max(0, Math.Min(20, MicrowaveQualityLoss));

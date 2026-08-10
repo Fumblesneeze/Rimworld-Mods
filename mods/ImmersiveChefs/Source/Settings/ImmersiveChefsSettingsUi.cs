@@ -9,7 +9,7 @@ internal sealed class ImmersiveChefsSettingsUi
 
     public void Draw(Rect rect, ImmersiveChefsSettings settings)
     {
-        var view = new Rect(0f, 0f, rect.width - 20f, 1510f);
+        var view = new Rect(0f, 0f, rect.width - 20f, 1545f);
         Widgets.BeginScrollView(rect, ref scrollPosition, view);
         var listing = new Listing_Standard();
         listing.Begin(view);
@@ -67,6 +67,13 @@ internal sealed class ImmersiveChefsSettingsUi
             $"Food poisoning effect: {settings.FoodPoisoningEffectScale:0.00}x", settings.FoodPoisoningEffectScale, 0f, 3f, 0.05f, null);
         settings.MaximumCustomPoisonChance = listing.SliderLabeled(
             $"Maximum custom poison chance: {settings.MaximumCustomPoisonChance:P0}", settings.MaximumCustomPoisonChance, 0.05f, 1f, 0.01f, null);
+        settings.ToxicKitchenwareExposureScale = listing.SliderLabeled(
+            $"Toxic kitchenware exposure: {settings.ToxicKitchenwareExposureScale:0.00}x",
+            settings.ToxicKitchenwareExposureScale,
+            0f,
+            3f,
+            0.05f,
+            null);
         if (TemperatureOwnership.ImmersiveChefsFeaturesActive)
         {
             listing.CheckboxLabeled("Meal temperature", ref settings.MealTemperatureEnabled);

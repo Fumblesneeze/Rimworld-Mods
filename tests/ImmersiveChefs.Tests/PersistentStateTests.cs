@@ -123,7 +123,8 @@ public sealed class PersistentStateTests
             microwaveReheatCount: 2,
             lastThermalTick: 123456,
             hiddenSourceDefNames: new[] { "RawRice", "Meat_Human", "RawRice" },
-            hiddenDietaryFlags: DietaryFlags.Plant | DietaryFlags.HumanMeat);
+            hiddenDietaryFlags: DietaryFlags.Plant | DietaryFlags.HumanMeat,
+            cookwareMaterial: KitchenMaterialKind.Lead);
 
         var restored = CulinaryServingRecord.Restore(serving.Capture());
 
@@ -138,6 +139,7 @@ public sealed class PersistentStateTests
             Assert.That(restored.HiddenSourceDefNames, Is.EqualTo(new[] { "Meat_Human", "RawRice" }));
             Assert.That(restored.HiddenDietaryFlags,
                 Is.EqualTo(DietaryFlags.Plant | DietaryFlags.HumanMeat));
+            Assert.That(restored.CookwareMaterial, Is.EqualTo(KitchenMaterialKind.Lead));
         });
     }
 
@@ -202,7 +204,8 @@ public sealed class PersistentStateTests
                 0,
                 100,
                 new[] { "Meat_Human" },
-                DietaryFlags.HumanMeat)
+                DietaryFlags.HumanMeat,
+                KitchenMaterialKind.Uranium)
         });
 
         culinary.PostSplitOff(meal);
@@ -214,6 +217,7 @@ public sealed class PersistentStateTests
             Assert.That(culinary.Servings[0].TemperatureCelsius, Is.EqualTo(62f));
             Assert.That(culinary.Servings[0].HiddenSourceDefNames, Is.EqualTo(new[] { "Meat_Human" }));
             Assert.That(culinary.Servings[0].HiddenDietaryFlags, Is.EqualTo(DietaryFlags.HumanMeat));
+            Assert.That(culinary.Servings[0].CookwareMaterial, Is.EqualTo(KitchenMaterialKind.Uranium));
         });
     }
 

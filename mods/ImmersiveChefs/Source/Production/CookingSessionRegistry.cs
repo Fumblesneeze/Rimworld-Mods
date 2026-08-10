@@ -177,6 +177,8 @@ internal sealed class CookingSession
         var hiddenDietaryFlags = hiddenPrepared.Aggregate(
             DietaryFlags.None,
             (flags, prepared) => flags | prepared.DietaryFlags);
+        var cookwareMaterial = KitchenwareRuntime.Describe(Cookware?.Thing)?.Material ??
+                               KitchenMaterialKind.OtherMetal;
 
         for (var index = 0; index < product.stackCount; index++)
         {
@@ -209,7 +211,8 @@ internal sealed class CookingSession
                 microwaveReheatCount: 0,
                 lastThermalTick: ownsTemperature ? currentTick : 0,
                 hiddenSourceDefNames,
-                hiddenDietaryFlags));
+                hiddenDietaryFlags,
+                cookwareMaterial));
         }
 
         culinaryState?.ReplaceServings(records);

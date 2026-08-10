@@ -21,6 +21,7 @@ public sealed class SettingsTests
             Assert.That(settings.MaximumAssistants, Is.EqualTo(4));
             Assert.That(settings.CulinaryQualityEnabled, Is.True);
             Assert.That(settings.MealTemperatureEnabled, Is.True);
+            Assert.That(settings.ToxicKitchenwareExposureScale, Is.EqualTo(1f));
             Assert.That(settings.Hospitality, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.CommonSense, Is.EqualTo(OptionalIntegrationMode.Auto));
             Assert.That(settings.AdaptiveMealBill, Is.EqualTo(OptionalIntegrationMode.Auto));
@@ -37,6 +38,7 @@ public sealed class SettingsTests
         settings.MaximumAssistants = 99;
         settings.ThermalHalfLifeHours = 0f;
         settings.MicrowaveExtraPoisonChance = 99f;
+        settings.ToxicKitchenwareExposureScale = 99f;
         settings.ClampToAllowedRanges();
 
         Assert.Multiple(() =>
@@ -46,6 +48,11 @@ public sealed class SettingsTests
             Assert.That(settings.MaximumAssistants, Is.EqualTo(4));
             Assert.That(settings.ThermalHalfLifeHours, Is.EqualTo(0.25f));
             Assert.That(settings.MicrowaveExtraPoisonChance, Is.EqualTo(5f));
+            Assert.That(settings.ToxicKitchenwareExposureScale, Is.EqualTo(3f));
         });
+
+        settings.ToxicKitchenwareExposureScale = float.NaN;
+        settings.ClampToAllowedRanges();
+        Assert.That(settings.ToxicKitchenwareExposureScale, Is.EqualTo(1f));
     }
 }

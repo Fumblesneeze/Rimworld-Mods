@@ -21,6 +21,7 @@ public enum KitchenMaterialKind
     PrimitiveStone,
     Wood,
     Lead,
+    Uranium,
     Iron,
     Copper,
     Bronze,
@@ -117,6 +118,7 @@ public sealed class KitchenMaterialClassifier
             ["Steel"] = KitchenMaterialKind.Steel,
             ["Silver"] = KitchenMaterialKind.Silver,
             ["Gold"] = KitchenMaterialKind.Gold,
+            ["Uranium"] = KitchenMaterialKind.Uranium,
             ["Plasteel"] = KitchenMaterialKind.Plasteel,
             ["EM_Iron"] = KitchenMaterialKind.Iron,
             ["EM_MildSteel"] = KitchenMaterialKind.Steel,
@@ -234,6 +236,7 @@ public sealed class KitchenMaterialClassifier
         if (defName.IndexOf("Brass", StringComparison.OrdinalIgnoreCase) >= 0) return KitchenMaterialKind.Brass;
         if (defName.IndexOf("Copper", StringComparison.OrdinalIgnoreCase) >= 0) return KitchenMaterialKind.Copper;
         if (defName.IndexOf("Lead", StringComparison.OrdinalIgnoreCase) >= 0) return KitchenMaterialKind.Lead;
+        if (defName.IndexOf("Uranium", StringComparison.OrdinalIgnoreCase) >= 0) return KitchenMaterialKind.Uranium;
         if (defName.IndexOf("Iron", StringComparison.OrdinalIgnoreCase) >= 0) return KitchenMaterialKind.Iron;
         return KitchenMaterialKind.OtherMetal;
     }
@@ -245,6 +248,7 @@ public sealed class KitchenMaterialClassifier
             KitchenMaterialKind.Steel or
             KitchenMaterialKind.StainlessSteel or
             KitchenMaterialKind.AdvancedSteel or
+            KitchenMaterialKind.Uranium or
             KitchenMaterialKind.Titanium or
             KitchenMaterialKind.Plasteel => FabricationTier.Modern,
             _ => FabricationTier.Intermediate

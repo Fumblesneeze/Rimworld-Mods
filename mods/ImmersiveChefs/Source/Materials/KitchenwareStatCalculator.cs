@@ -71,6 +71,7 @@ public static class KitchenwareStatCalculator
             KitchenMaterialKind.Adobe => new MaterialProfile(5f, 0.65f, 0.10f, -12),
             KitchenMaterialKind.Wood => new MaterialProfile(10f, 0.80f, 0.30f, -8),
             KitchenMaterialKind.Lead => new MaterialProfile(12f, 0.75f, 0.25f, -10),
+            KitchenMaterialKind.Uranium => new MaterialProfile(25f, 0.85f, 0.25f, -6),
             KitchenMaterialKind.Iron => new MaterialProfile(30f, 0.90f, 0.35f, -4),
             KitchenMaterialKind.Copper => new MaterialProfile(38f, 1.00f, 0.45f, 0),
             KitchenMaterialKind.Bronze => new MaterialProfile(60f, 1.00f, 0.60f, 2),

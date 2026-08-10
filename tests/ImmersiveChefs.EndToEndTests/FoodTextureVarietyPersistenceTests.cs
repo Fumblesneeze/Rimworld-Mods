@@ -136,7 +136,8 @@ internal sealed class FoodTextureVarietyPersistenceFixture : IRimWorldEndToEndTe
             2,
             Math.Max(1, Find.TickManager.TicksGame),
             new[] { "RawRice" },
-            DietaryFlags.Plant | DietaryFlags.VegetarianCompatible);
+            DietaryFlags.Plant | DietaryFlags.VegetarianCompatible,
+            KitchenMaterialKind.Lead);
         expectedServing = seededServing.Capture();
         meal.GetComp<CompCulinaryState>()!.ReplaceServings(new[] { seededServing });
 
@@ -303,6 +304,8 @@ internal sealed class FoodTextureVarietyPersistenceFixture : IRimWorldEndToEndTe
             "Hidden culinary provenance must survive exactly.");
         EndToEndAssert.Equal(expected.HiddenDietaryFlags, actual.HiddenDietaryFlags,
             "Hidden dietary flags must survive.");
+        EndToEndAssert.Equal(expected.CookwareMaterial, actual.CookwareMaterial,
+            "Hidden cookware material provenance must survive.");
     }
 
     private static void AssertPendingFirstDraw(ThingWithComps meal)
@@ -332,7 +335,10 @@ internal sealed class FoodTextureVarietyPersistenceFixture : IRimWorldEndToEndTe
             ["ingredientCount"] = meal.GetComp<CompIngredients>()!.ingredients.Count.ToString(),
             ["culinaryQuality"] = meal.GetComp<CompCulinaryState>()!
                 .PeekCurrentServingWithoutThermalUpdate()!
-                .QualityScore.ToString()
+                .QualityScore.ToString(),
+            ["cookwareMaterial"] = meal.GetComp<CompCulinaryState>()!
+                .PeekCurrentServingWithoutThermalUpdate()!
+                .CookwareMaterial.ToString()
         };
     }
 

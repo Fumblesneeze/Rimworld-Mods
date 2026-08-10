@@ -45,7 +45,8 @@ internal static class FtvPersistenceAssertions
                 2,
                 Math.Max(1, Find.TickManager.TicksGame),
                 new[] { "RawRice" },
-                DietaryFlags.Plant | DietaryFlags.VegetarianCompatible);
+                DietaryFlags.Plant | DietaryFlags.VegetarianCompatible,
+                KitchenMaterialKind.Uranium);
             var expectedServing = seededServing.Capture();
             culinary!.ReplaceServings(new[] { seededServing });
 
@@ -192,6 +193,8 @@ internal static class FtvPersistenceAssertions
             "Hidden ingredient provenance must survive.");
         IntegrationAssert.Equal(expected.HiddenDietaryFlags, actual.HiddenDietaryFlags,
             "Hidden dietary flags must survive.");
+        IntegrationAssert.Equal(expected.CookwareMaterial, actual.CookwareMaterial,
+            "Hidden cookware material provenance must survive.");
     }
 
     private static void SaveThing(string path, ref Thing thing)

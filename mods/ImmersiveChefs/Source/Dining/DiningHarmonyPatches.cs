@@ -19,6 +19,8 @@ internal static class DiningIngestionOutcomePatch
         internal ThingDef MealDef { get; }
         internal CompEmbeddedWare? EmbeddedWare { get; }
         internal CulinaryServingRecord? Serving { get; set; }
+        internal KitchenMaterialKind PlateMaterial { get; set; } = KitchenMaterialKind.OtherMetal;
+        internal KitchenMaterialKind CutleryMaterial { get; set; } = KitchenMaterialKind.OtherMetal;
         internal bool Completed { get; set; }
     }
 
@@ -36,6 +38,10 @@ internal static class DiningIngestionOutcomePatch
         DiningSessionRegistry.TryAttachTravel(ingester, meal);
         DiningSessionRegistry.BeginIngestion(ingester);
         snapshot.Serving = meal.GetComp<CompCulinaryState>()?.PeekCurrentServing();
+        snapshot.PlateMaterial = KitchenwareRuntime.Describe(
+            snapshot.EmbeddedWare?.PeekPlateThing())?.Material ?? KitchenMaterialKind.OtherMetal;
+        snapshot.CutleryMaterial = KitchenwareRuntime.Describe(
+            DiningSessionRegistry.Current(ingester)?.Cutlery)?.Material ?? KitchenMaterialKind.OtherMetal;
         snapshot.Serving?.AddContamination(
             DiningSessionRegistry.Current(ingester)?.TravelPlateContamination ?? ContaminationSources.None);
     }
@@ -65,6 +71,16 @@ internal static class DiningIngestionOutcomePatch
                     dining?.CutleryWasWildWaterWashed == true
                         ? WashProvenance.WildWater
                         : WashProvenance.Safe));
+
+                var plateMaterial = dining?.PlateServiceSnapshot?.Material ?? __state.PlateMaterial;
+                var cutleryMaterial = KitchenwareRuntime.Describe(dining?.Cutlery)?.Material ??
+                                      __state.CutleryMaterial;
+                ToxicKitchenwareExposureRuntime.Apply(
+                    ingester,
+                    serving.CookwareMaterial,
+                    plateMaterial,
+                    cutleryMaterial,
+                    __result);
 
                 DiningExperience.Apply(ingester, __state.MealDef, serving, dining);
             }

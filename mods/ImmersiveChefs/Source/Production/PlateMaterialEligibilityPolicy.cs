@@ -8,6 +8,7 @@ public static class PlateMaterialEligibilityPolicy
         {
             MealComplexity.Advanced => material is
                 KitchenMaterialKind.Lead or
+                KitchenMaterialKind.Uranium or
                 KitchenMaterialKind.Iron or
                 KitchenMaterialKind.Copper or
                 KitchenMaterialKind.Bronze or

@@ -229,6 +229,7 @@ public sealed class CompCulinaryState : ThingComp
         private int lastThermalTick;
         private List<string> hiddenSourceDefNames = new();
         private int hiddenDietaryFlags;
+        private int cookwareMaterial = (int)KitchenMaterialKind.OtherMetal;
 
         public void ExposeData()
         {
@@ -241,6 +242,10 @@ public sealed class CompCulinaryState : ThingComp
             Scribe_Collections.Look(ref hiddenSourceDefNames, "hiddenSourceDefNames", LookMode.Value);
             hiddenSourceDefNames ??= new List<string>();
             Scribe_Values.Look(ref hiddenDietaryFlags, "hiddenDietaryFlags", 0);
+            Scribe_Values.Look(
+                ref cookwareMaterial,
+                "cookwareMaterial",
+                (int)KitchenMaterialKind.OtherMetal);
         }
 
         public CulinaryServingRecord ToRecord() => new(
@@ -250,7 +255,8 @@ public sealed class CompCulinaryState : ThingComp
             microwaveReheatCount,
             lastThermalTick,
             hiddenSourceDefNames,
-            (DietaryFlags)hiddenDietaryFlags);
+            (DietaryFlags)hiddenDietaryFlags,
+            (KitchenMaterialKind)cookwareMaterial);
 
         public CulinaryServingData Copy() => From(ToRecord());
 
@@ -266,7 +272,8 @@ public sealed class CompCulinaryState : ThingComp
                 microwaveReheatCount = snapshot.MicrowaveReheatCount,
                 lastThermalTick = snapshot.LastThermalTick,
                 hiddenSourceDefNames = snapshot.HiddenSourceDefNames.ToList(),
-                hiddenDietaryFlags = (int)snapshot.HiddenDietaryFlags
+                hiddenDietaryFlags = (int)snapshot.HiddenDietaryFlags,
+                cookwareMaterial = (int)snapshot.CookwareMaterial
             };
         }
     }

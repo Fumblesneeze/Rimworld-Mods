@@ -133,7 +133,7 @@ Kitchen Comfort SHALL represent tool ergonomics while cooking; Dining Comfort SH
 ### Requirement: Known materials have coherent hygiene profiles
 The default and Expanded Materials compatibility profiles SHALL make material choices observably meaningful. A clean adobe plate SHALL contribute an intrinsic normalized material-cleanliness score of `5`, and a clean wooden plate or cutlery setting SHALL contribute `10`, on the kitchenware system's `0`-through-`100` material-cleanliness scale. Those porous-material penalties SHALL remain even while the item's mutable sanitation state is clean. Registered ceramic SHALL contribute at least `70` and ordinary vanilla steel SHALL contribute `50`, so clean wood and adobe remain materially worse than common durable service ware.
 
-Primitive stone cookware SHALL have intrinsic material-cleanliness `15`, Cooking Speed Factor `0.60`, Kitchen Comfort `0.10`, and material Culinary Quality Modifier `-12`; after Stuff and quality factors its maximum hit points SHALL be no more than half those of equal-quality vanilla-steel cookware. Lead SHALL have a strong cleanliness and culinary penalty; iron SHALL be less clean and less efficient than ordinary steel; stainless steel SHALL be the cleanest general-purpose metal; bronze and brass SHALL favor comfort while remaining below stainless steel for cleanliness; and advanced steel variants and titanium SHALL favor speed and culinary performance. Where Expanded Materials supplies existing cleanliness offsets, the integration SHALL preserve at least the observed ordering of `EM_StainlessSteel` (+0.5) above `EM_Bronze` (+0.2) above an otherwise neutral material.
+Primitive stone cookware SHALL have intrinsic material-cleanliness `15`, Cooking Speed Factor `0.60`, Kitchen Comfort `0.10`, and material Culinary Quality Modifier `-12`; after Stuff and quality factors its maximum hit points SHALL be no more than half those of equal-quality vanilla-steel cookware. Lead SHALL have a strong cleanliness and culinary penalty; uranium SHALL be treated as a distinct modern metal with an unsafe culinary profile rather than an anonymous `OtherMetal`; iron SHALL be less clean and less efficient than ordinary steel; stainless steel SHALL be the cleanest general-purpose metal; bronze and brass SHALL favor comfort while remaining below stainless steel for cleanliness; and advanced steel variants and titanium SHALL favor speed and culinary performance. Where Expanded Materials supplies existing cleanliness offsets, the integration SHALL preserve at least the observed ordering of `EM_StainlessSteel` (+0.5) above `EM_Bronze` (+0.2) above an otherwise neutral material.
 
 #### Scenario: Primitive cookware remains deliberately inferior
 - **WHEN** equal-quality granite and vanilla-steel cookware are compared
@@ -150,7 +150,38 @@ Primitive stone cookware SHALL have intrinsic material-cleanliness `15`, Cooking
 
 #### Scenario: Choose unsafe lead for availability
 - **WHEN** a player deliberately crafts kitchenware from lead
-- **THEN** the recipe remains valid but the info card and downstream meal-risk calculation expose lead's sanitation and culinary disadvantages
+- **THEN** the recipe remains valid and its info card exposes lead's ordinary sanitation and culinary disadvantages without revealing any latent toxicity state
+
+### Requirement: Only toxic ware materials add vanilla toxic buildup
+Lead and uranium SHALL be the only default kitchenware materials that contribute toxic exposure. A covered humanlike ingestion SHALL add a small dose to the eater's vanilla `ToxicBuildup` Hediff for each toxic ware item actually used: `0.020` severity for toxic cookware recorded on that serving, `0.015` for its toxic plate, and `0.010` for its toxic cutlery. At the default scale, an all-toxic place setting therefore adds `0.045` per meal; compared with Core's `0.08` severity-per-day recovery, repeated ordinary use can accumulate slowly while occasional exposure normally recovers. Lead and uranium SHALL use the same initial dose table until playtesting justifies a material-specific distinction.
+
+Exposure SHALL occur once only after RimWorld reports positive nutrition ingestion. Crafting, carrying, reserving, cooking, inspection, aborted ingestion, non-toxic kitchenware, chef's knives, missing/legacy cookware provenance, animals, and excluded hand-eaten foods SHALL add no toxic buildup. The cooked serving SHALL preserve only its hidden cookware-material provenance through stack split/merge and save/load; the embedded physical plate and exact dining cutlery remain authoritative for their own material. The meal, cookware, plate, and cutlery inspect strings MUST NOT reveal a toxicity flag, predicted dose, or current latent toxic state. Pawn Health inspection SHALL remain entirely vanilla-owned: the initial buildup stays hidden while vanilla marks its stage `becomeVisible=false`, and the Hediff becomes player-visible only at vanilla's current threshold.
+
+`ToxicKitchenwareExposureScale` SHALL be a live setting with default `1.0` and range `0.0`–`3.0`. It SHALL multiply only the material-dose sum at ingestion, clamp before application, and SHALL NOT affect food-poisoning probability, food-poisoning attribution, material cleanliness, or culinary quality. Setting it to zero disables new toxic-ware exposure without deleting an existing pawn Hediff or rewriting stored meal provenance.
+
+#### Scenario: Repeated lead service accumulates vanilla buildup
+- **WHEN** a humanlike pawn eats a covered meal cooked with lead cookware from a lead plate using lead cutlery at default settings
+- **THEN** the completed native ingestion adds exactly `0.045` severity to the pawn's vanilla `ToxicBuildup` Hediff once
+- **THEN** no kitchenware or meal inspection reveals that hidden dose or the pawn's latent Hediff state
+
+#### Scenario: Uranium plate contributes only when used
+- **WHEN** a humanlike pawn completes ingestion from an actual uranium plate while the cookware and cutlery are non-toxic
+- **THEN** exactly the `0.015` plate dose is added after positive nutrition ingestion
+- **THEN** merely crafting, carrying, reserving, or inspecting the uranium plate adds nothing
+
+#### Scenario: Native cooking records toxic cookware separately from service ware
+- **WHEN** a pawn performs an ordinary `DoBill` job using actual uranium cookware, the resulting meal receives an ordinary steel plate, and the pawn later completes native ingestion using actual uranium cutlery
+- **THEN** the cooked serving retains uranium as its hidden cookware material while the exact physical steel plate and uranium cutlery remain authoritative for themselves
+- **THEN** positive ingestion adds exactly `0.030` severity once (`0.020` cookware plus `0.010` cutlery), while cooking itself adds nothing
+
+#### Scenario: Ordinary ware and animals remain toxicity-free
+- **WHEN** a humanlike pawn uses steel, wood, stone, silver, gold, ceramic, plastic, or glitterworld ware, or an animal eats a meal associated with any ware
+- **THEN** Immersive Chefs adds no toxic buildup
+
+#### Scenario: Native visibility threshold owns disclosure
+- **WHEN** toxic-ware ingestion raises an eater from a hidden vanilla `ToxicBuildup` severity below the first visible stage to or above that stage
+- **THEN** the buildup becomes visible only on the pawn's native Health tab
+- **THEN** the consumed meal and returned dirty ware still expose no toxicity diagnostic
 
 ### Requirement: Glitterworld cookware is exceptional acquisition-only equipment
 Immersive Chefs SHALL add fixed-material glitterworld cookware that has no crafting recipe and no research unlock. It SHALL enter the colony only through eligible trader stock or quest rewards, SHALL generate at `Good` crafting quality or better, SHALL be nonflammable, and SHALL expose intrinsic material-cleanliness `100`, Cooking Speed Factor `1.35`, Kitchen Comfort `0.90`, and material Culinary Quality Modifier `+15`.
