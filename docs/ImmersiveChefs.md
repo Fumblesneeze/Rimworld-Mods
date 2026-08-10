@@ -88,6 +88,7 @@ Package-ID matching is case-insensitive; the canonical IDs below are the exact i
 | Ecosystem | Exact active package IDs and required chain | Ownership and scope |
 | --- | --- | --- |
 | Adaptive Meal Bill | `rabiosus.AdaptiveMealBill` | Adaptive chooses the concrete recipe; ware and culinary state attach once to the surviving final product. Keep it separate from No Vanilla Meals matrices. |
+| Cook for Yourself *(planned)* | `lordfelix.CookForYourself` | Its own think nodes choose one-off self/dependent meals, stations, recipes, ingredients, and delivery. The planned adapter will add the exact cookware/plate reservation, custom-driver work effects, culinary state, and ordinary dining ware lifecycle to covered meals without creating a bill; excluded food remains upstream-only. |
 | Meals on Wheels Continued | `Memegoddess.MealsOnWheels` | Preserves borrowed/shuttle meal ownership and its embedded plate; the eater or nurse follows ordinary cutlery rules. |
 | Replimat Meals | `sumghai.Replimat`, then `sumghai.ReplimatMeals` | Colonists bring eligible ware to the native terminal; Replimat retains feedstock, product choice, hidden ingredients, and no-poisoning behavior. Animal feed and packaged survival batches remain excluded. |
 | Vanilla Cooking Expanded | `OskarPotocki.VanillaFactionsExpanded.Core`, `VanillaExpanded.VCookE`, plus any of `VanillaExpanded.VCookEBakery`, `VanillaExpanded.VCookEHaute`, `VanillaExpanded.VCookEStews`, `VanillaExpanded.VCookESushi`; Sushi also requires `VanillaExpanded.VCEF` | Explicit finalized full-meal registries classify Simple/Fine/Lavish/Gourmet products. Preservation, canning, condiments, ingredients, cheeses, snacks, non-meal desserts, and drinks remain upstream-only. |
@@ -116,6 +117,7 @@ The maintained compatibility verification deliberately separates overlapping or 
 8. Adaptive Storage Framework alone, proving the incomplete optional chain remains safe.
 9. Adaptive Storage Framework + [sbz] Fridge.
 10. RimFridge + Thermodynamics - Hot Meals.
+11. *(Planned)* Cook for Yourself, isolated around its custom non-bill job driver.
 
 Each group also includes Immersive Chefs and the developer-only Gateway in isolated verification. Meal Printer/Adaptive vanilla-product paths are intentionally not combined with No Vanilla Meals.
 

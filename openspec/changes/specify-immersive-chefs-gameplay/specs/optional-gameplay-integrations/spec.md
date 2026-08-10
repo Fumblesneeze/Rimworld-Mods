@@ -34,6 +34,7 @@ The compatibility registry and grouped test runner SHALL use the exact active pa
 | RimFridge | `rimfridge.kv.rw` | Harmony; storage/ambient-temperature owner |
 | [sbz] Fridge | `adaptive.storage.framework`, `sbz.NeatStorageFridge` | Harmony before Adaptive Storage Framework; framework before fridge; Adaptive Storage owns holder capacity, rendering, and ambient-temperature adjustment |
 | Pick Up And Haul | `Mehni.PickUpAndHaul` | Harmony; tracked pawn inventory and native batch-unload owner |
+| Cook for Yourself | `lordfelix.CookForYourself` | Harmony; custom one-off cooking job and self/dependent delivery owner |
 | Overcooked Meals | `binchcannon.overcookedmeals` | Harmony; final product replacement owner |
 | No Vanilla Meals | `Mlie.NoVanillaMeals` | finalized vanilla meal/recipe removal owner |
 
@@ -153,6 +154,39 @@ Immersive Chefs SHALL retain ownership of sanitation, source priority, water pro
 
 - **WHEN** its package is absent, its integration setting is `Off`, or the expected public assembly/member/JobDef shape does not validate
 - **THEN** Immersive Chefs issues only the ordinary one-target `Doing dishes` job and disables no other sanitation behavior
+
+### Requirement: Cook for Yourself one-off jobs use the normal culinary ware lifecycle
+
+When exact package `lordfelix.CookForYourself` is active and assembly `CookForYourself, Version=1.0.0.0` exposes the validated `JobGiver_CookMealForSelf.TryGiveJob(Pawn)`, `JobGiver_CookMealForDependent.TryGiveJob(Pawn)`, `JobDriver_CookMealForSelf.MakeNewToils()`, private `float workLeft`, `CFS_CookMealForSelf` JobDef, and job target/tag contract, Cook for Yourself SHALL remain authoritative for deciding whether a pawn needs a one-off meal and for selecting the station, concrete recipe, exact ingredients, recipient, and delivery mode. Immersive Chefs SHALL resolve the concrete recipe and apply its existing meal-coverage/exclusion policy before admission. For a covered meal, it SHALL attach its normal cooking session only to the exact returned job, reserve and collect one eligible cookware set plus the concrete recipe's required admissible plates, decorate the one validated active cooking toil with cookware/knife/preparation speed and linked-assistant contribution, visibly render the held cookware during that real work, dirty the cookware only after work begins, and bind culinary state plus each exact plate once to the surviving `GenRecipe.MakeRecipeProducts` output. Baby food, pemmican, packaged/travel food, and every other uncovered product SHALL pass through the upstream job unchanged without kitchenware, cutlery, culinary state, or Immersive Chefs work modifiers.
+
+The adapter SHALL NOT create a bill, call either upstream job giver twice, rerun ingredient selection, replace the upstream JobDef/driver, start ingestion or feeding itself, change dependent priority, or alter baby/patient/inventory delivery. A self-cook's native follow-up ingestion SHALL use ordinary cutlery and return the exact plate/cutlery dirty. A patient follow-up SHALL use the existing nurse/cutlery/conscious-thought rules. Cancellation before recipe work SHALL return clean ware; cancellation after work begins SHALL return the exact cookware dirty and unused plates clean. Package absence, `Off`, incomplete dependencies, or any changed shape SHALL disable only this integration without a hard reference or missing-type error, leaving the upstream mod and other Immersive Chefs workflows operational.
+
+#### Scenario: Hungry cook makes and eats one meal
+
+- **WHEN** no suitable prepared meal exists, Cook for Yourself chooses a reachable Simple recipe, and clean cookware, one admissible plate, and cutlery are available
+- **THEN** the pawn's ordinary food think tree issues the upstream one-off job, the pawn visibly collects the exact cookware and plate before the selected ingredients, cooks through the upstream driver with the normal speed/assistant effects, and the surviving meal receives that plate and culinary state exactly once
+- **THEN** the upstream self-delivery starts native ingestion, the pawn uses the exact cutlery, and the exact plate, cutlery, and cookware return dirty without a persistent bill or duplicate product
+
+#### Scenario: Cook prepares a meal for a patient
+
+- **WHEN** Cook for Yourself selects a conscious hungry patient as its dependent and the one-off meal finishes normally
+- **THEN** its upstream driver starts the native patient-feeding job while Immersive Chefs supplies the exact plated meal and nurse cutlery lifecycle
+- **THEN** completed feeding returns the exact plate and cutlery dirty with no self-dining thought assigned to the cook and no change to Cook for Yourself's patient priority
+
+#### Scenario: One-off cooking is interrupted
+
+- **WHEN** the custom job is cancelled before work or after its validated cooking toil begins
+- **THEN** every reserved or collected ware unit is conserved exactly once, unused plates remain clean, cookware becomes dirty only in the after-work case, ingredients remain under the upstream job's normal interruption semantics, and no synthetic meal is created
+
+#### Scenario: Excluded one-off food remains handheld
+
+- **WHEN** Cook for Yourself chooses baby food, pemmican, packaged/travel food, or another recipe excluded by the existing Immersive Chefs meal-coverage policy
+- **THEN** the upstream one-off job proceeds unchanged without reserving cookware, plates, or cutlery and without receiving culinary state or Immersive Chefs work modifiers
+
+#### Scenario: Cook for Yourself is unavailable or changed
+
+- **WHEN** its package is absent, its integration setting is `Off`, or any expected assembly/type/method/field/JobDef/job-contract shape does not validate
+- **THEN** Immersive Chefs applies no partial custom-driver patch, logs at most one bounded diagnostic for an active incompatible package, and its ordinary cooking/dining behavior remains usable
 
 ### Requirement: Variety integrations preserve provenance components
 
@@ -452,6 +486,7 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 9. Adaptive Storage Framework; [sbz] Fridge; Immersive Chefs; and Gateway for native holder transfer, save/load, fallback temperature, and power-loss behavior.
 10. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
 11. Pick Up And Haul; Immersive Chefs; and Gateway for native tracked-inventory batch collection, sequential hand washing, interruption, and batch unloading.
+12. Harmony; Core; Cook for Yourself; Immersive Chefs; and Gateway for one-off self-cooking, exact ware/session lifecycle, native self-ingestion, patient delivery, interruption, excluded-food pass-through, and an `Off`-setting run in which the upstream one-off job still completes unchanged. Package absence and changed-shape behavior remain host/base-process fail-closed gates rather than claims of this active-mod group.
 
 Every named supported food mod SHALL appear in at least one maintained exact group. Host tests SHALL cover pure policy and package grouping, loaded main-menu integration tests SHALL verify finalized Defs and Harmony ownership, and E2E tests SHALL prove native player-observable cooking, dispensing, selection, serving, storage, and eating behavior. A broad all-supported startup canary MAY be added, but it SHALL NOT substitute for these behavioral groups or claim that every unsupported permutation is compatible.
 

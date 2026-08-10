@@ -8,6 +8,8 @@ The supported Thermodynamics continuation is exact package `Mlie.DThermodynamics
 
 The installed Pick Up And Haul continuation is exact package `Mehni.PickUpAndHaul` (Workshop `1279012058`). Its RimWorld 1.6 `PickUpAndHaul.dll` is assembly `PickUpAndHaul, Version=1.0.0.0` with SHA-256 `CDAA18CD402A4CD7F9E3381F63EC000A6693440F34420B864C4FDD6CA04C86C6`. The inspected public shape provides `PickUpAndHaul.CompHauledToInventory.RegisterHauledItem(Verse.Thing)`, its tracked inventory, `PawnUnloadChecker.CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and the `UnloadYourHauledInventory` job driver. Immersive Chefs uses those boundaries reflectively and never copies or references that optional assembly.
 
+The installed Cook for Yourself mod is exact package `lordfelix.CookForYourself` (Workshop `3766233150`). Its RimWorld 1.6 `CookForYourself.dll` is assembly `CookForYourself, Version=1.0.0.0`, MVID `d559047c-a763-4d2f-8cab-7077d5f4a309`, with SHA-256 `BCC8970E205CE58CDA15BF9861239776B7A72B5D190DC5DAB232A9E6CF63CFF7`. It prepends `CookForYourself.JobGiver_CookMealForSelf` and `JobGiver_CookMealForDependent` to humanlike food think trees. Both return `CFS_CookMealForSelf`, carrying the chosen `RecipeDef.defName` in `Job.controlGroupTag`, the station in target A, selected ingredients in queue B/countQueue, and an optional dependent in target C. Its `JobDriver_CookMealForSelf` deliberately bypasses `Bill`, `WorkGiver_DoBill`, and `JobDriver_DoBill`, but ultimately calls the ordinary `GenRecipe.MakeRecipeProducts` boundary before starting native self-ingestion, baby/patient feeding, or inventory delivery. That bypass currently skips Immersive Chefs' cooking-session admission and work lifecycle, so an explicit adapter is required.
+
 This document defines the implementation architecture and acceptance contract; completed behavior is tracked in `tasks.md` and is accepted only after its in-game observation task is complete.
 
 ## Goals / Non-Goals
@@ -184,6 +186,14 @@ All player-visible product text uses RimWorld translation keys or Def-injected t
 
 English source/keyed text is the canonical catalog. German, Spanish, French, Simplified Chinese, and Russian ship complete matching catalogs written by the implementing agent from gameplay context rather than by a machine-translation service. A repository release check compares every required locale to the canonical keyed and Def-field inventories, validates XML and placeholder/tag parity, rejects raw user-interface literals at the guarded call sites, and fails a distributable product package when any required entry is missing. Live acceptance switches RimWorld through every required language and inspects representative settings, Def, job, alert, and runtime text rather than treating file presence alone as translation proof.
 
+### 15. Cook for Yourself retains autonomous meal ownership while Immersive Chefs owns ware
+
+The adapter patches only the exact inspected one-off job admission and custom-driver seams. After either upstream job giver has selected its station, concrete recipe, exact ingredient queue, and optional recipient, Immersive Chefs resolves that exact recipe from `controlGroupTag`. It first applies the existing meal-coverage and exclusion policy: baby food, pemmican, packaged/travel food, and any other uncovered product pass through unchanged. Only a covered meal attempts the same cookware/plate session admission used by a normal cooking bill. Strict shortage rejects that covered one-off job before ingredients are moved; `Prefer`, `Off`, and emergency behavior retain their existing meanings. No Immersive Chefs code re-runs the upstream station, recipe, ingredient, recipient, or urgency search.
+
+For an admitted job, the adapter prepends the ordinary reserved-ware pickup to the upstream toil sequence and decorates exactly the single validated active cooking toil. The custom driver remains responsible for ingredient hauling, recipe work, product creation, and delivery; Immersive Chefs contributes cookware/knife/preparation speed, linked-assistant accumulation, active cookware rendering, dirty transition after real work begins, culinary state, and one exact plate at the existing `GenRecipe.MakeRecipeProducts` boundary. Native self-ingestion and patient feeding then reuse the ordinary cutlery, thought, toxicity, and dirty-return paths. Interruption releases the exact session reservations and returns collected ware without consuming ingredients or inventing a meal.
+
+Package absence and an `Off` setting silently leave the adapter inactive. Drift in the exact assembly, two job-giver methods, driver method/field shape, JobDef, or recipe/station job contract for an active package disables only this adapter with one bounded warning. Cook for Yourself then retains its original behavior, and no optional type appears in an eager Immersive Chefs signature or assembly reference.
+
 ## Risks / Trade-offs
 
 - **[Stack metadata causes fragmentation]** → Quantize culinary quality and temperature for stack compatibility, preserve exact plate counts, and prefer correctness over forced merging.
@@ -197,6 +207,7 @@ English source/keyed text is the canonical catalog. German, Spanish, French, Sim
 - **[Royalty demands become impossible]** → Validate every tier against base-game or fixed-recipe materials and degrade missing optional categories to documented equivalents.
 - **[A batched wash is interrupted with ware in inventory]** → Register each collected unit with Pick Up And Haul immediately, preserve its current sanitation state, and delegate cleanup to the validated native unload path.
 - **[Translation catalogs silently drift]** → Derive one canonical player-text inventory during tests and require exact six-language coverage plus placeholder parity before a distributable package can pass release checks.
+- **[A one-off cooking mod bypasses bills]** → Attach only after its own job giver has selected the full job, decorate its validated custom driver, and reuse the existing product/cleanup boundaries without duplicating upstream meal planning.
 
 ## Implementation Rollout
 
