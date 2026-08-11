@@ -12,5 +12,13 @@
   <ItemGroup>
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.PerformanceTesting\RimWorldDevGateway.PerformanceTesting.csproj" />
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 </Project>
