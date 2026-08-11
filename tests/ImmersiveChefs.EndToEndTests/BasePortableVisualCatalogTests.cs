@@ -20,6 +20,7 @@ public sealed class BasePortableVisualCatalogTest : IRimWorldEndToEndTest
 {
     private static readonly string[] ExpectedPortableDefNames =
     {
+        "ImmersiveChefs_PrimitiveCookware",
         "ImmersiveChefs_Cookware",
         "ImmersiveChefs_Plate",
         "ImmersiveChefs_AdobePlate",
@@ -53,11 +54,22 @@ public sealed class BasePortableVisualCatalogTest : IRimWorldEndToEndTest
             map,
             "cookware",
             center + new IntVec3(-16, 0, 8),
+            "ImmersiveChefs_PrimitiveCookware",
+            materials.Skip(1).Take(1));
+        inspectorIds["primitive cookware"] = customItems.First(item =>
+            item.Thing.def.defName == "ImmersiveChefs_PrimitiveCookware" &&
+            item.Thing.Stuff == granite &&
+            item.ExpectedDirty).Thing.ThingID;
+
+        AddStuffPairs(
+            map,
+            "cookware",
+            center + new IntVec3(-16, 0, 8),
             "ImmersiveChefs_Cookware",
-            materials.Skip(1));
+            materials.Skip(2));
         inspectorIds["cookware"] = customItems.First(item =>
             item.Thing.def.defName == "ImmersiveChefs_Cookware" &&
-            item.Thing.Stuff == granite &&
+            item.Thing.Stuff == ThingDefOf.Steel &&
             item.ExpectedDirty).Thing.ThingID;
 
         AddStuffPairs(
@@ -205,6 +217,7 @@ public sealed class BasePortableVisualCatalogTest : IRimWorldEndToEndTest
 
         foreach (var inspectorName in new[]
                  {
+                     "primitive cookware",
                      "cookware",
                      "plate",
                      "adobe plate",
