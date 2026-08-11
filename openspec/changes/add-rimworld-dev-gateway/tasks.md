@@ -48,7 +48,7 @@
 
 - [ ] 8.1 Write failing tests proving unrestricted execution is enabled with default/no settings and requires no restart switch, allowlist, signature, confirmation, or predeclared automation.
 - [ ] 8.2 Write failing raw-endpoint tests for exact `text/plain`/UTF-8 media handling, strict decoding and BOM removal, the 65,536-byte route bound, expression results, bounded value/type/diagnostics, compile errors, state retention after success/error, serialized concurrency, clean-process reset, main-thread affinity, and honest timeout behavior.
-- [ ] 8.3 Write failing tests for bounded optional assembly upload, compatible assembly loading, exact public-static entry resolution, main-thread execution context, result normalization, inner-exception errors, cancellation semantics, upload accounting, and session-extension hooks.
+- [x] 8.3 Write failing tests for bounded optional assembly upload, compatible assembly loading, exact public-static entry resolution, main-thread execution context, result normalization, inner-exception errors, cancellation semantics, upload accounting, and session-extension hooks. Evidence: compile RED `20260811T125704939Z`, instance-overload RED `20260811T130642354Z`, review-boundary RED `20260811T131503680Z`, and reviewed GREEN `20260811T131628823Z` (22/22).
 - [x] 8.4 Add host-tool tests for isolated .NET Framework fallback compilation against current managed/contract assemblies, bounded diagnostics, unique assembly names, upload correlation, temporary cleanup, and absence of Roslyn from the mod package.
 - [ ] 8.5 Run only the new raw-REPL, optional assembly, and compiler tests and record the expected red results.
 
@@ -56,7 +56,7 @@
 
 - [x] 9.1 Pin and package Mono.CSharp 4.0.0.143 and complete the always-enabled `/api/v1/executions/csharp` path: exact UTF-8 `text/plain` validation, endpoint/evaluator bounds, one serialized stateful evaluator per run, preloaded loaded-process references, main-thread dispatch, compile diagnostics, stable errors/timeouts, and shutdown-only reset semantics.
 - [x] 9.2 Implement the optional `/api/v1/executions/assembly` loader with a 16 MiB per-upload bound, monotonic upload count, and exact public-static entry contract on the main-thread dispatcher, without a hard per-run ceiling.
-- [ ] 9.3 Complete optional assembly execution-context cancellation, runtime extension hooks, and normalized bounded results; treat any future upload-count API telemetry as a separately versioned contract rather than widening version-one status implicitly.
+- [x] 9.3 Complete optional assembly execution-context cancellation, runtime extension hooks, and normalized bounded results; treat any future upload-count API telemetry as a separately versioned contract rather than widening version-one status implicitly. Evidence: reviewed focused GREEN `artifacts/TestResults/20260811T131628823Z-19112-e72a727358cc4892bd34e62938c39aa4`; exact current-build minimized Core+Gateway run `artifacts/GatewaySmoke/assembly-context-final/20260811T131843523Z` uploaded the checked-in context probe, returned `Playing`/thread `1`, discovered and ran its available session-scoped automation without restart, retained personally inspected live evidence, produced zero error entries, restored both normal hashes, sanitized credentials, and exited its exact PID cleanly.
 - [x] 9.4 Implement the optional companion snippet compiler/uploader command using the installed host .NET SDK and make host-tool tests pass without shipping Roslyn into Unity.
 
 ## 10. mods/RimWorldDevGateway — TDD RED: Automations and quickstart

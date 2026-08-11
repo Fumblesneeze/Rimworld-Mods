@@ -214,16 +214,21 @@ public sealed class GatewayApiRouter
                 var automations = Require(services.Automations, "automations_unavailable");
                 var payload = GatewayAutomationRequestJson.Read(
                     Encoding.UTF8.GetString(request.Body));
-                return DispatchSnapshot(
+                return DispatchSnapshotWithCancellation(
                     request,
                     requestId,
                     "developer-spawn",
-                    () => automations.StartRun(
+                    cancellationToken => automations.StartRun(
                         "quickstart.spawn",
                         requestId,
                         payload.Arguments,
-                        payload.IdempotencyKey),
-                    stopwatch);
+                        payload.IdempotencyKey,
+                        cancellationToken: cancellationToken),
+                    stopwatch,
+                    new GatewayJsonLimits(
+                        maximumDepth: 16,
+                        maximumNodes: 100_000,
+                        maximumUtf8Bytes: GatewayLoopbackServer.MaximumResponseBytes));
             }
 
             if (request.Method == "POST" && request.Path == "/api/v1/gizmos/query")
@@ -425,16 +430,22 @@ public sealed class GatewayApiRouter
                 var executor = Require(services.AssemblyExecutor, "assembly_execution_unavailable");
                 var payload = DeserializeBody<GatewayAssemblyExecutionRequest>(request);
                 var assemblyBytes = Convert.FromBase64String(payload.AssemblyBase64);
-                return DispatchSnapshot(
+                return DispatchSnapshotWithCancellation(
                     request,
                     requestId,
                     "execution.assembly",
-                    () => executor.Execute(
+                    cancellationToken => executor.Execute(
                         assemblyBytes,
                         payload.EntryType,
                         payload.EntryMethod,
-                        payload.RequestJson),
-                    stopwatch);
+                        payload.RequestJson,
+                        requestId,
+                        cancellationToken),
+                    stopwatch,
+                    new GatewayJsonLimits(
+                        maximumDepth: 8,
+                        maximumNodes: 64,
+                        maximumUtf8Bytes: GatewayLoopbackServer.MaximumResponseBytes));
             }
 
             if (request.Method == "POST" && request.Path == "/api/v1/screenshots")
@@ -603,12 +614,21 @@ public sealed class GatewayApiRouter
                 }
 
                 var payload = GatewayAutomationRequestJson.Read(Encoding.UTF8.GetString(request.Body));
-                return DispatchSnapshot(
+                return DispatchSnapshotWithCancellation(
                     request,
                     requestId,
                     "automation." + name,
-                    () => automations.StartRun(name, requestId, payload.Arguments, payload.IdempotencyKey),
-                    stopwatch);
+                    cancellationToken => automations.StartRun(
+                        name,
+                        requestId,
+                        payload.Arguments,
+                        payload.IdempotencyKey,
+                        cancellationToken: cancellationToken),
+                    stopwatch,
+                    new GatewayJsonLimits(
+                        maximumDepth: 16,
+                        maximumNodes: 100_000,
+                        maximumUtf8Bytes: GatewayLoopbackServer.MaximumResponseBytes));
             }
 
             if (request.Method == "POST" && request.Path == "/api/v1/server/shutdown")

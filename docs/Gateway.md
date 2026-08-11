@@ -332,9 +332,10 @@ There is no reset endpoint. Restart the disposable RimWorld process to discard R
 
 `execute-source` creates a unique temporary `net48` project on the host, references `Assembly-CSharp*.dll`, `Unity*.dll`, and the gateway contract assembly, invokes the installed .NET SDK, uploads the resulting DLL, and removes the temporary directory. This path uses the host compiler; the in-game `Mono.CSharp.dll` exists only for the direct REPL endpoint, and Roslyn is not shipped in the mod.
 
-The exact entry contract is a declared public static method taking and returning one string. The client defaults the method name to `Execute` and the request string to `{}`:
+The named type must declare exactly one public static, non-generic method with the requested case-sensitive name. It returns `string` and may use the legacy `(string requestJson)` signature or the context-aware `(string requestJson, GatewayAssemblyExecutionContext context)` signature. The client defaults the method name to `Execute` and the request string to `{}`. Use the context-aware form when uploaded code needs request correlation, cooperative cancellation, or a session automation:
 
 ```csharp
+using RimWorldDevGateway.Contracts;
 using System.Threading;
 using Verse;
 
@@ -342,9 +343,25 @@ namespace Inspect;
 
 public static class Entry
 {
-    public static string Execute(string requestJson)
+    public static string Execute(
+        string requestJson,
+        GatewayAssemblyExecutionContext context)
     {
-        return "state=" + Current.ProgramState + ";thread=" + Thread.CurrentThread.ManagedThreadId;
+        context.CancellationToken.ThrowIfCancellationRequested();
+        context.RuntimeExtensions.RegisterSessionAutomation(
+            new GatewayAssemblyAutomationDescriptor(
+                "inspect.state",
+                "1",
+                "Reports the current game state.",
+                mutating: false),
+            (argumentsJson, cancellationToken) =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return "state=" + Current.ProgramState + ";arguments=" + argumentsJson;
+            });
+        return "request=" + context.RequestId +
+            ";state=" + Current.ProgramState +
+            ";thread=" + Thread.CurrentThread.ManagedThreadId;
     }
 }
 ```
@@ -363,7 +380,9 @@ Compile, upload, and invoke it while the same game process remains running:
   -o json
 ```
 
-The method runs through the Unity main-thread dispatcher. Its returned string is placed in the API result. The server only checks the signature and upload bound; it intentionally does not inspect, authorize, sandbox, or unload the assembly.
+The method runs through the Unity main-thread dispatcher. The API result contains `Value`, `Truncated`, and `OriginalUtf8Bytes`; `Value` is deterministically limited to 10 MiB UTF-8 including the truncation marker. This bound is chosen so worst-case sixfold JSON escaping still fits the transport's 64 MiB response ceiling. Context-aware code receives the dispatch cancellation token. A registered automation is process-session scoped, appears in `GET /automations`, receives at most 1 MiB of normalized argument JSON plus its automation cancellation token, and has the same 10 MiB result bound. Its metadata is limited to 64 schema entries, 64 prerequisites, 256 UTF-8 bytes per schema key, 4,096 UTF-8 bytes per schema value/prerequisite, and 512 KiB total. Empty/null or oversized metadata fails before registration. HTTP request/deadline cancellation is linked into the run token for cooperative started handlers; this is transport lifecycle handling, not a version-one remote-cancel API. The legacy one-string signature remains accepted but cannot observe cancellation after invocation. The server intentionally does not authorize, sandbox, or unload uploaded assemblies.
+
+The checked-in `scripts\Fixtures\GatewayAssemblyExecutionSmoke.cs` is the canonical live probe for context-aware upload and no-restart session registration.
 
 ## Finalized Def export
 

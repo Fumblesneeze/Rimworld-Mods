@@ -406,7 +406,8 @@ public sealed class GatewayAutomationRegistry
         string requestId,
         IReadOnlyDictionary<string, object?> arguments,
         string? idempotencyKey = null,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(requestId))
         {
@@ -494,6 +495,8 @@ public sealed class GatewayAutomationRegistry
             }
         }
 
+        using var externalCancellation = cancellationToken.Register(
+            () => run.RequestCancellation());
         Execute(registration, run, argumentSnapshot);
         TrimHistory();
         return run;

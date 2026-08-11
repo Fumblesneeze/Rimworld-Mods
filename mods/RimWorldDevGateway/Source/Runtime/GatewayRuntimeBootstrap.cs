@@ -260,7 +260,10 @@ public static class GatewayRuntimeBootstrap
                     stateProvider,
                     logBuffer,
                     new GatewayApiServices(
-                        assemblyExecutor: new GatewayAssemblyExecutor(16 * 1024 * 1024),
+                        assemblyExecutor: new GatewayAssemblyExecutor(
+                            maximumAssemblyBytes: 16 * 1024 * 1024,
+                            maximumResultUtf8Bytes: GatewayAssemblyExecutor.DefaultMaximumResultUtf8Bytes,
+                            runtimeExtensions: new GatewayAssemblyRuntimeExtensions(automations)),
                         csharpEvaluator: new GatewayCSharpEvaluator(),
                         screenshotService: screenshots,
                         windowsInput: windowsInput,

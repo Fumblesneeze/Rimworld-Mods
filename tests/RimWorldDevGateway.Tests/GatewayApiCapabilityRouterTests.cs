@@ -156,7 +156,7 @@ public sealed class GatewayApiCapabilityRouterTests
     }
 
     [Test]
-    public void Uploaded_assembly_endpoint_executes_on_the_dispatcher_and_returns_its_string_result()
+    public void Uploaded_assembly_endpoint_executes_on_the_dispatcher_and_returns_its_bounded_result()
     {
         var dispatcher = new GatewayDispatcher();
         var executor = new GatewayAssemblyExecutor(4 * 1024 * 1024);
@@ -187,8 +187,100 @@ public sealed class GatewayApiCapabilityRouterTests
         {
             Assert.That(response.StatusCode, Is.EqualTo(200));
             Assert.That(body, Does.Contain("\"ok\":true"));
+            Assert.That(body, Does.Contain("\"requestId\":\"execution-route\""));
+            Assert.That(body, Does.Contain("\"Truncated\":false"));
+            Assert.That(body, Does.Contain("\"OriginalUtf8Bytes\":"));
             Assert.That(body, Does.Contain(":{\\\"api\\\":true}"));
             Assert.That(executor.UploadCount, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Uploaded_assembly_context_observes_request_cancellation()
+    {
+        var dispatcher = new GatewayDispatcher();
+        var executor = new GatewayAssemblyExecutor(4 * 1024 * 1024);
+        var router = new GatewayApiRouter(
+            dispatcher,
+            new StubStateProvider(),
+            new GatewayLogBuffer(),
+            new GatewayApiServices(assemblyExecutor: executor),
+            responseTimeout: TimeSpan.FromSeconds(5));
+        var payload = new GatewayAssemblyExecutionRequest
+        {
+            AssemblyBase64 = Convert.ToBase64String(
+                File.ReadAllBytes(typeof(UploadedAssemblyFixture).Assembly.Location)),
+            EntryType = typeof(UploadedAssemblyFixture).FullName!,
+            EntryMethod = nameof(UploadedAssemblyFixture.WaitForCancellation),
+            RequestJson = "{}"
+        };
+        using var cancellation = new CancellationTokenSource();
+        var request = Post(
+            "/api/v1/executions/assembly",
+            GatewayContractJson.Write(payload),
+            cancellation.Token);
+
+        var responseTask = Task.Run(() => router.Handle(request, "cancelled-assembly-route"));
+        Assert.That(SpinWait.SpinUntil(() => dispatcher.PendingCount == 1, 1000), Is.True);
+        cancellation.CancelAfter(TimeSpan.FromMilliseconds(100));
+        dispatcher.Drain(DispatchPhase.Update);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                () => responseTask.GetAwaiter().GetResult(),
+                Throws.TypeOf<OperationCanceledException>());
+            Assert.That(dispatcher.PendingCount, Is.Zero);
+        });
+    }
+
+    [Test]
+    public void Uploaded_session_automation_observes_started_request_cancellation()
+    {
+        var dispatcher = new GatewayDispatcher();
+        var automations = new GatewayAutomationRegistry(runIdFactory: () => "uploaded-cancel-run");
+        var handlerStarted = new ManualResetEventSlim(false);
+        var handlerObservedCancellation = false;
+        new GatewayAssemblyRuntimeExtensions(automations).RegisterSessionAutomation(
+            new GatewayAssemblyAutomationDescriptor(
+                "uploaded.wait-for-cancellation",
+                "1",
+                "Waits for request cancellation.",
+                mutating: false),
+            (_, cancellationToken) =>
+            {
+                handlerStarted.Set();
+                cancellationToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
+                handlerObservedCancellation = cancellationToken.IsCancellationRequested;
+                cancellationToken.ThrowIfCancellationRequested();
+                return "not-cancelled";
+            });
+        var router = new GatewayApiRouter(
+            dispatcher,
+            new StubStateProvider(),
+            new GatewayLogBuffer(),
+            new GatewayApiServices(automations: automations),
+            responseTimeout: TimeSpan.FromSeconds(5));
+        using var cancellation = new CancellationTokenSource();
+        var request = Post(
+            "/api/v1/automations/uploaded.wait-for-cancellation/runs",
+            "{\"arguments\":{}}",
+            cancellation.Token);
+
+        var responseTask = Task.Run(() => router.Handle(request, "cancelled-uploaded-automation"));
+        Assert.That(SpinWait.SpinUntil(() => dispatcher.PendingCount == 1, 1000), Is.True);
+        cancellation.CancelAfter(TimeSpan.FromMilliseconds(100));
+        dispatcher.Drain(DispatchPhase.Update);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(handlerStarted.IsSet, Is.True);
+            Assert.That(handlerObservedCancellation, Is.True);
+            Assert.That(automations.ListRuns().Single().State, Is.EqualTo("cancelled"));
+            Assert.That(
+                () => responseTask.GetAwaiter().GetResult(),
+                Throws.TypeOf<OperationCanceledException>());
+            Assert.That(dispatcher.PendingCount, Is.Zero);
         });
     }
 
