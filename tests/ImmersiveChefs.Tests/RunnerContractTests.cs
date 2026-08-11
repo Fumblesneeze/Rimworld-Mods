@@ -66,6 +66,24 @@ public sealed class RunnerContractTests
         });
     }
 
+    [Test]
+    public void Gateway_group_includes_the_exact_installed_Circinus_shape_suite()
+    {
+        using var run = FakeDotNetRun.Start("all-pass", "RimWorldDevGateway");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero);
+            Assert.That(run.Json["Status"], Is.EqualTo("passed"));
+            Assert.That(run.InvokedSuites, Is.EqualTo(new[]
+            {
+                "RimWorldDevGateway.Unit",
+                "RimWorldDevGateway.Snapshots",
+                "RimWorldDevGateway.CircinusShape"
+            }));
+        });
+    }
+
     private static string SuiteStatus(IDictionary<string, object> suite)
     {
         return $"{suite["Suite"]}:{suite["Status"]}";

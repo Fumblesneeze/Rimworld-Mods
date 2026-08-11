@@ -29,7 +29,7 @@ Use the applicable change ID in place of `add-rimworld-dev-gateway`. Update a ta
 During ordinary feature work, run the exact focused test or exact active-mod group for the current slice. Run an owning suite only when the change affects shared behavior within that suite. Reserve the repository wrapper and complete compatibility/E2E matrices for explicit release preparation or deliberate maintenance/regression work:
 
 ```powershell
-.\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway -Configuration Release -TestFilter "FullyQualifiedName~GatewayApiRouterTests"
+.\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway.Unit -Configuration Release -TestFilter "FullyQualifiedName~GatewayApiRouterTests"
 .\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway -Configuration Release
 .\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs -Configuration Release
 .\scripts\Invoke-Tests.ps1 -Configuration Release

@@ -17,6 +17,9 @@ its own nonzero parameter-binding exit (normally 1).
 .\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway -Configuration Release -Output json
 
 .EXAMPLE
+.\scripts\Invoke-Tests.ps1 -Suite RimWorldDevGateway.Unit -TestFilter 'FullyQualifiedName~GatewayApiRouterTests'
+
+.EXAMPLE
 .\scripts\Invoke-Tests.ps1 -Suite ImmersiveChefs
 
 .EXAMPLE
@@ -31,10 +34,12 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'RimWorldDevGateway', 'RimWorldDevGateway.Snapshots')]
+    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
+
+    [string]$CircinusAssemblyPath,
 
     [string]$TestFilter,
 
@@ -123,7 +128,7 @@ try {
             Project = Join-Path $repositoryRoot 'tests\ImmersiveChefs.Defs.Tests\ImmersiveChefs.Defs.Tests.csproj'
         },
         [pscustomobject]@{
-            Name = 'RimWorldDevGateway'
+            Name = 'RimWorldDevGateway.Unit'
             Group = 'RimWorldDevGateway'
             Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Tests\RimWorldDevGateway.Tests.csproj'
         }
@@ -132,12 +137,17 @@ try {
             Group = 'RimWorldDevGateway'
             Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Snapshots.Tests\RimWorldDevGateway.Snapshots.Tests.csproj'
         }
+        [pscustomobject]@{
+            Name = 'RimWorldDevGateway.CircinusShape'
+            Group = 'RimWorldDevGateway'
+            Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.CircinusShape.Tests\RimWorldDevGateway.CircinusShape.Tests.csproj'
+        }
     )
     $selectedSuites = if ($Suite -eq 'All') {
         @($availableSuites)
     }
-    elseif ($Suite -eq 'ImmersiveChefs') {
-        @($availableSuites | Where-Object Group -EQ 'ImmersiveChefs')
+    elseif ($Suite -in @('ImmersiveChefs', 'RimWorldDevGateway')) {
+        @($availableSuites | Where-Object Group -EQ $Suite)
     }
     else {
         @($availableSuites | Where-Object Name -EQ $Suite)
@@ -192,6 +202,31 @@ try {
         }
     }
 
+    $resolvedCircinusAssemblyPath = $null
+    if (@($selectedSuites | Where-Object Name -EQ 'RimWorldDevGateway.CircinusShape').Count -gt 0) {
+        $candidateCircinusPath = if ([string]::IsNullOrWhiteSpace($CircinusAssemblyPath)) {
+            Join-Path $resolvedWorkshopPath '3773680130\Assemblies\Circinus.dll'
+        }
+        else {
+            $CircinusAssemblyPath
+        }
+
+        if (-not (Test-Path -LiteralPath $candidateCircinusPath -PathType Leaf)) {
+            Exit-InvalidInput "Circinus test assembly does not exist: $candidateCircinusPath"
+        }
+
+        $resolvedCircinusAssemblyPath = (Resolve-Path -LiteralPath $candidateCircinusPath).Path
+        try {
+            $circinusIdentity = [Reflection.AssemblyName]::GetAssemblyName($resolvedCircinusAssemblyPath)
+            if ($circinusIdentity.Name -ne 'Circinus') {
+                Exit-InvalidInput "Circinus test assembly has simple name '$($circinusIdentity.Name)', expected 'Circinus': $resolvedCircinusAssemblyPath"
+            }
+        }
+        catch {
+            Exit-InvalidInput "Circinus test assembly identity could not be read: $resolvedCircinusAssemblyPath. $($_.Exception.Message)"
+        }
+    }
+
     $runId = "{0}-{1}-{2}" -f
         [datetime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ', [Globalization.CultureInfo]::InvariantCulture),
         $PID,
@@ -238,6 +273,10 @@ try {
 
         if ($selected.Name -eq 'ImmersiveChefs.Harmony') {
             $arguments += "-p:HarmonyAssemblyPath=$resolvedHarmonyAssemblyPath"
+        }
+
+        if ($selected.Name -eq 'RimWorldDevGateway.CircinusShape') {
+            $arguments += "-p:CircinusAssemblyPath=$resolvedCircinusAssemblyPath"
         }
 
         try {
