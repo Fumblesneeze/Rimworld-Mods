@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using RimWorldDevGateway.Performance;
+using RimWorldDevGateway.PerformanceTesting;
 
 namespace RimWorldDevGateway.Tests;
 
@@ -169,6 +170,41 @@ public sealed class CircinusRuntimeAdapterTests
             Assert.That(GetStaticField<bool>("Circinus.Profiling.ProfilerRegistry", "Recording"), Is.False);
             Assert.That(GetProperty<bool>(CurrentRecorder(), "Recording"), Is.False);
         });
+    }
+
+    [Test]
+    public void Complete_resolved_selection_is_hand_armed_and_owned_by_one_run()
+    {
+        var method = typeof(CircinusRuntimeAdapterTests).GetMethod(
+            nameof(ProfiledFixtureMethod),
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+        var selection = PerformanceMethodSelectorResolver.Resolve(
+            new[] { typeof(CircinusRuntimeAdapterTests).Assembly },
+            new EmptyHarmonyCatalog(),
+            new[]
+            {
+                new PerformanceSelectionRequest(
+                    PerformanceMethodSelectorKind.Method,
+                    typeof(CircinusRuntimeAdapterTests).FullName + "::" + nameof(ProfiledFixtureMethod),
+                    "fixture"),
+                new PerformanceSelectionRequest(
+                    PerformanceMethodSelectorKind.CircinusTarget,
+                    "fixture.valid",
+                    "target")
+            });
+        var binding = Bind();
+        Assert.That(binding.TryBeginRun("resolved-selection", out var run, out var startReason),
+            Is.True, startReason);
+
+        using (var activeRun = run!)
+        {
+            Assert.That(activeRun.TryArmSelection(selection, out var armReason), Is.True, armReason);
+            Assert.That(InvokeStatic<bool>("Circinus.Profiling.Instrumenter", "IsPatched", method), Is.True);
+            var profiler = InvokeStatic<object>("Circinus.Profiling.ProfilerRegistry", "Find", method);
+            Assert.That((bool)profiler.GetType().GetField("HandArmed")!.GetValue(profiler)!, Is.True);
+        }
+
+        Assert.That(InvokeStatic<bool>("Circinus.Profiling.Instrumenter", "IsPatched", method), Is.False);
     }
 
     [Test]
@@ -625,6 +661,12 @@ public sealed class CircinusRuntimeAdapterTests
         }
 
         public Type? Resolve(string fullName) => fullName == replacedName ? replacement : inner.Resolve(fullName);
+    }
+
+    private sealed class EmptyHarmonyCatalog : IPerformanceHarmonyCatalog
+    {
+        public IReadOnlyList<PerformanceHarmonyPatch> ResolveOwner(string exactOwnerId) =>
+            Array.Empty<PerformanceHarmonyPatch>();
     }
 
     private sealed class ChangedRunDocument

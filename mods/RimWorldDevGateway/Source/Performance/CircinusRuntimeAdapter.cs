@@ -828,6 +828,36 @@ internal sealed class CircinusRuntimeRun : IDisposable
 
     public string RunId => runId;
 
+    public bool TryArmSelection(PerformanceMethodSelection selection, out string reason)
+    {
+        if (!CanMutate(out reason)) return false;
+        if (selection is null)
+        {
+            reason = "Circinus performance method selection is null.";
+            return false;
+        }
+
+        foreach (var method in selection.Methods)
+        {
+            var label = method.Categories.FirstOrDefault() ?? "performance";
+            if (TryArmMethod(method.Method, label, out reason)) continue;
+            Dispose();
+            reason = "Could not arm the complete performance method selection: " + reason;
+            return false;
+        }
+
+        foreach (var target in selection.CircinusTargets)
+        {
+            if (TryArmTarget(target, out reason)) continue;
+            Dispose();
+            reason = "Could not arm the complete Circinus target selection: " + reason;
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
     public bool TryArmMethod(MethodBase method, string label, out string reason)
     {
         if (!CanMutate(out reason)) return false;

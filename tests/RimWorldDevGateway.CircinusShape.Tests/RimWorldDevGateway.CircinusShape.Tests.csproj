@@ -21,6 +21,10 @@
       <_Parameter1>CircinusAssemblyPath</_Parameter1>
       <_Parameter2>$([System.IO.Path]::GetFullPath('$(CircinusAssemblyPath)'))</_Parameter2>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>HarmonyAssemblyPath</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(HarmonyAssemblyPath)'))</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <Target Name="ValidateCircinusTestAssembly" BeforeTargets="ResolveAssemblyReferences">

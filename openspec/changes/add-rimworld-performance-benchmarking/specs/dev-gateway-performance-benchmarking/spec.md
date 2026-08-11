@@ -30,6 +30,8 @@ Every isolated performance launch SHALL stage and live-verify Circinus settings 
 ### Requirement: Relevant product methods are registered dynamically
 Before recording, the runtime SHALL deterministically hand-arm all attached runtime Harmony prefixes, postfixes, and finalizers owned by each selected product's exact Harmony ID, every selected product tick/component method named by the performance contract, selected Circinus curated system targets, and every explicit benchmark-manifest method/type selector. It SHALL retain each resolved declaring type, method, signature, module, assembly, category, selection reason, and hand-armed state; reject unsupported or unresolved selectors; and avoid whole-assembly profiling unless explicitly requested.
 
+Harmony registry discovery SHALL validate the exact loaded public member shape and stop above the published repository safety ceilings of 65,536 global patched targets or 65,536 total patch attachments before further materialization. These provider-failure ceilings SHALL have exact/over boundary tests and MUST NOT be presented as Harmony, Circinus, request, or artifact limits. The selected hand-armed set SHALL still obey Circinus' separate native output ceilings.
+
 The runtime SHALL also discover and retain every product-owned transpiler identity and patched target. It SHALL mark direct workload timing unsupported for transpiler methods rather than pretending their patch-time invocation is runtime cost. The separately automated DPA diagnostic MAY investigate transformed IL, but its result MUST NOT enter a Circinus baseline or satisfy a canonical performance group.
 
 #### Scenario: A product adds a new Harmony postfix

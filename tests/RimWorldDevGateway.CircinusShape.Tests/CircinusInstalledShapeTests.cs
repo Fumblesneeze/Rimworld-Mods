@@ -42,6 +42,22 @@ public sealed class CircinusInstalledShapeTests
         });
     }
 
+    [Test]
+    public void Installed_Harmony_assembly_matches_the_exact_runtime_patch_discovery_shape()
+    {
+        var path = typeof(CircinusInstalledShapeTests).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .Single(attribute => attribute.Key == "HarmonyAssemblyPath")
+            .Value;
+        var assembly = Assembly.LoadFrom(path);
+
+        Assert.That(ReflectionPerformanceHarmonyCatalog.TryBind(
+            new[] { assembly },
+            out var catalog,
+            out var reason), Is.True, reason);
+        Assert.That(catalog, Is.Not.Null);
+    }
+
     private static string Sha256(string path)
     {
         using var stream = File.OpenRead(path);

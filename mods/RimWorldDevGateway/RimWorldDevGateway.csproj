@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.Contracts\RimWorldDevGateway.Contracts.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.IntegrationTesting\RimWorldDevGateway.IntegrationTesting.csproj" />
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.PerformanceTesting\RimWorldDevGateway.PerformanceTesting.csproj" />
     <PackageReference Include="EmbedIO" Version="3.5.2" />
     <PackageReference Include="Mono.CSharp" Version="4.0.0.143" />
   </ItemGroup>
