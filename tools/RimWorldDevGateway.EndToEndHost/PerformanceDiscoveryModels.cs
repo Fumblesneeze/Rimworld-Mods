@@ -121,6 +121,26 @@ public sealed class PerformanceAssemblyMetadata
     public IReadOnlyList<PerformanceMetadataDeclaration> Declarations { get; }
 }
 
+public sealed class PerformanceProjectRecord
+{
+    public PerformanceProjectRecord(
+        string projectPath,
+        string ownerPackageId,
+        string assemblyName,
+        string targetFramework)
+    {
+        ProjectPath = projectPath;
+        OwnerPackageId = ownerPackageId;
+        AssemblyName = assemblyName;
+        TargetFramework = targetFramework;
+    }
+
+    public string ProjectPath { get; }
+    public string OwnerPackageId { get; }
+    public string AssemblyName { get; }
+    public string TargetFramework { get; }
+}
+
 public sealed class PerformanceAssemblyCandidate
 {
     public PerformanceAssemblyCandidate(

@@ -183,7 +183,8 @@ public static class PerformanceDiscoveryValidator
 
         if (declaration.EvidenceLens is < 0 or > 3)
             errors.Add($"'{display}' has invalid evidence lens {declaration.EvidenceLens}");
-        var subjectActive = packages.Contains(subject, StringComparer.OrdinalIgnoreCase);
+        var subjectActive = StringComparer.OrdinalIgnoreCase.Equals(subject, GatewayPackageId) ||
+                            packages.Contains(subject, StringComparer.OrdinalIgnoreCase);
         if (declaration.EvidenceLens == 3)
         {
             if (subjectActive || StringComparer.OrdinalIgnoreCase.Equals(owner, subject))

@@ -1,65 +1,96 @@
+using System.Collections.ObjectModel;
 using System.Xml.Linq;
 
 namespace RimWorldDevGateway.EndToEndHost;
 
 public static class EndToEndProjectDiscovery
 {
+    public static IReadOnlyList<EndToEndProjectRecord> Discover(string repositoryRoot) =>
+        new ReadOnlyCollection<EndToEndProjectRecord>(MarkedProjectDiscovery.Discover(
+                repositoryRoot,
+                "RimWorldEndToEndTest",
+                "RimWorldEndToEndTestOwnerPackageId",
+                "E2E",
+                int.MaxValue)
+            .Select(record => new EndToEndProjectRecord(
+                record.ProjectPath,
+                record.OwnerPackageId,
+                record.AssemblyName,
+                record.TargetFramework))
+            .ToArray());
+}
+
+public static class PerformanceProjectDiscovery
+{
+    public static IReadOnlyList<PerformanceProjectRecord> Discover(string repositoryRoot) =>
+        new ReadOnlyCollection<PerformanceProjectRecord>(MarkedProjectDiscovery.Discover(
+                repositoryRoot,
+                "RimWorldPerformanceTest",
+                "RimWorldPerformanceTestOwnerPackageId",
+                "performance",
+                PerformanceDiscoveryValidator.MaximumBenchmarks)
+            .Select(record => new PerformanceProjectRecord(
+                record.ProjectPath,
+                record.OwnerPackageId,
+                record.AssemblyName,
+                record.TargetFramework))
+            .ToArray());
+}
+
+internal sealed record MarkedProjectRecord(
+    string ProjectPath,
+    string OwnerPackageId,
+    string AssemblyName,
+    string TargetFramework);
+
+internal static class MarkedProjectDiscovery
+{
     private static readonly HashSet<string> IgnoredDirectories = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".git",
-        ".vs",
-        "artifacts",
-        "bin",
-        "obj",
-        "TestResults"
+        ".git", ".vs", "artifacts", "bin", "obj", "TestResults"
     };
 
-    public static IReadOnlyList<EndToEndProjectRecord> Discover(string repositoryRoot)
+    public static IReadOnlyList<MarkedProjectRecord> Discover(
+        string repositoryRoot,
+        string markerProperty,
+        string ownerProperty,
+        string description,
+        int maximumProjects)
     {
         if (string.IsNullOrWhiteSpace(repositoryRoot))
-        {
             throw new ArgumentException("A repository root is required.", nameof(repositoryRoot));
-        }
 
         var root = Path.GetFullPath(repositoryRoot);
         if (!Directory.Exists(root))
-        {
-            throw new EndToEndDiscoveryException($"E2E discovery root does not exist: {root}");
-        }
+            throw new EndToEndDiscoveryException($"{description} discovery root does not exist: {root}");
 
-        var projectPaths = EnumerateProjectPaths(root);
-        var records = new List<EndToEndProjectRecord>();
-        foreach (var projectPath in projectPaths)
+        var records = new List<MarkedProjectRecord>();
+        foreach (var projectPath in EnumerateProjectPaths(root))
         {
             var document = XDocument.Load(projectPath, LoadOptions.None);
-            var optIns = Values(document, "RimWorldEndToEndTest").ToArray();
-            if (optIns.Length == 0 || !optIns.Any(value => StringComparer.OrdinalIgnoreCase.Equals(value, "true")))
-            {
+            var optIns = Values(document, markerProperty).ToArray();
+            if (optIns.Length == 0 || !optIns.Any(value =>
+                    StringComparer.OrdinalIgnoreCase.Equals(value, "true")))
                 continue;
-            }
-
             if (optIns.Length != 1 || !StringComparer.OrdinalIgnoreCase.Equals(optIns[0], "true"))
-            {
                 throw new EndToEndDiscoveryException(
-                    $"Marked project must declare exactly one literal RimWorldEndToEndTest=true: {projectPath}");
-            }
+                    $"Marked project must declare exactly one literal {markerProperty}=true: {projectPath}");
 
-            var owners = Values(document, "RimWorldEndToEndTestOwnerPackageId").ToArray();
+            var owners = Values(document, ownerProperty).ToArray();
             if (owners.Length != 1 || string.IsNullOrWhiteSpace(owners[0]))
-            {
                 throw new EndToEndDiscoveryException(
-                    $"Marked project must declare exactly one RimWorldEndToEndTestOwnerPackageId: {projectPath}");
-            }
+                    $"Marked project must declare exactly one {ownerProperty}: {projectPath}");
 
             var assemblyNames = Values(document, "AssemblyName").ToArray();
             var targetFrameworks = Values(document, "TargetFramework").ToArray();
             if (targetFrameworks.Length != 1 || string.IsNullOrWhiteSpace(targetFrameworks[0]))
-            {
                 throw new EndToEndDiscoveryException(
                     $"Marked project must declare exactly one TargetFramework: {projectPath}");
-            }
 
-            records.Add(new EndToEndProjectRecord(
+            if (records.Count == maximumProjects)
+                throw new EndToEndDiscoveryException(
+                    $"{description} discovery exceeds the published {maximumProjects}-project ceiling.");
+            records.Add(new MarkedProjectRecord(
                 projectPath,
                 owners[0].Trim().ToLowerInvariant(),
                 assemblyNames.Length == 1 && !string.IsNullOrWhiteSpace(assemblyNames[0])
@@ -68,8 +99,9 @@ public static class EndToEndProjectDiscovery
                 targetFrameworks[0].Trim()));
         }
 
-        return new System.Collections.ObjectModel.ReadOnlyCollection<EndToEndProjectRecord>(
-            records.OrderBy(record => record.ProjectPath, StringComparer.OrdinalIgnoreCase).ToArray());
+        return new ReadOnlyCollection<MarkedProjectRecord>(records
+            .OrderBy(record => record.ProjectPath, StringComparer.OrdinalIgnoreCase)
+            .ToArray());
     }
 
     private static IReadOnlyList<string> EnumerateProjectPaths(string root)
@@ -86,10 +118,7 @@ public static class EndToEndProjectDiscovery
                 var info = new DirectoryInfo(child);
                 if (IgnoredDirectories.Contains(info.Name) ||
                     (info.Attributes & FileAttributes.ReparsePoint) != 0)
-                {
                     continue;
-                }
-
                 pending.Push(child);
             }
         }

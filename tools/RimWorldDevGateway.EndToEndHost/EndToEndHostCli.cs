@@ -19,6 +19,7 @@ public static class EndToEndHostCli
         root.Subcommands.Add(CreatePlanCommand());
         root.Subcommands.Add(CreateStageCommand());
         root.Subcommands.Add(CreateCleanCommand());
+        root.Subcommands.Add(CreatePerformancePlanCommand());
         return root;
     }
 
@@ -161,6 +162,69 @@ public static class EndToEndHostCli
         return command;
     }
 
+    private static Command CreatePerformancePlanCommand()
+    {
+        var common = CommonOptions.Create();
+        var artifactRoot = new Option<string>("--artifact-root")
+        {
+            Description = "Root for deterministic raw, normalized, CSV, Markdown, and aggregate report paths.",
+            Required = true
+        };
+        var benchmarkIds = new Option<string[]>("--benchmark-id")
+        {
+            Description = "Exact benchmark ID filter. Repeat to select more than one benchmark.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var groupIds = new Option<string[]>("--group-id")
+        {
+            Description = "Exact performance group ID filter. Repeat to select more than one group.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var warmUpTicks = new Option<int?>("--warm-up-ticks")
+        {
+            Description = "Optional non-negative warm-up tick override."
+        };
+        var sampleTicks = new Option<int?>("--sample-ticks")
+        {
+            Description = "Optional positive sample tick override."
+        };
+        var repetitions = new Option<int?>("--repetitions")
+        {
+            Description = $"Optional repetition override from 1 to {PerformanceRunPlanBuilder.MaximumRepetitions}."
+        };
+        var command = new Command(
+            "performance-plan",
+            "Build marked performance fixtures and print fresh-process benchmark/repetition plans without staging or launching.");
+        common.AddTo(command);
+        command.Options.Add(artifactRoot);
+        command.Options.Add(benchmarkIds);
+        command.Options.Add(groupIds);
+        command.Options.Add(warmUpTicks);
+        command.Options.Add(sampleTicks);
+        command.Options.Add(repetitions);
+        command.SetAction(parseResult => Execute(parseResult, () =>
+        {
+            var input = common.Read(parseResult);
+            var projects = PerformanceProjectDiscovery.Discover(input.RepositoryRoot);
+            var candidates = new EndToEndProjectBuilder().BuildPerformance(
+                projects,
+                input.Configuration,
+                TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
+            var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(candidates, input.PackageIds);
+            var plan = PerformanceRunPlanBuilder.Create(
+                discovery,
+                parseResult.GetValue(benchmarkIds) ?? Array.Empty<string>(),
+                parseResult.GetValue(groupIds) ?? Array.Empty<string>(),
+                parseResult.GetValue(warmUpTicks),
+                parseResult.GetValue(sampleTicks),
+                parseResult.GetValue(repetitions),
+                RequiredPath(parseResult.GetValue(artifactRoot), "artifact root"));
+            WritePerformancePlan(parseResult, plan, common.ReadOutput(parseResult));
+            return 0;
+        }));
+        return command;
+    }
+
     private static int Execute(ParseResult parseResult, Func<int> action)
     {
         try
@@ -221,6 +285,67 @@ public static class EndToEndHostCli
                 bundles = owner.Bundles.Select(bundle => bundle.AssemblyFileName).ToArray()
             }).ToArray(),
             leases = leases?.Select(LeaseRecord.From).ToArray() ?? Array.Empty<LeaseRecord>()
+        });
+    }
+
+    private static void WritePerformancePlan(ParseResult parseResult, PerformanceRunPlan plan, string output)
+    {
+        Write(parseResult, output, new
+        {
+            status = "planned",
+            mutatedGame = false,
+            groups = plan.Groups.Select(group => new
+            {
+                group.GroupId,
+                activePackageIds = group.ActivePackageIds,
+                benchmarks = group.Benchmarks.Select(benchmark => benchmark.Id).ToArray()
+            }).ToArray(),
+            processes = plan.Processes.Select(process => new
+            {
+                process.Sequence,
+                process.GroupId,
+                process.BenchmarkId,
+                process.TypeName,
+                process.ProjectPath,
+                process.AssemblyPath,
+                process.AssemblyIdentity,
+                process.ModuleVersionId,
+                process.AssemblySha256,
+                process.StagingOwnerPackageId,
+                process.MeasuredSubjectPackageId,
+                process.DeterministicSeed,
+                process.WorkloadVersion,
+                process.ComparisonId,
+                process.ProductAbsentControlId,
+                methodSelectors = process.MethodSelectors.Select(selector => new
+                {
+                    selector.Kind,
+                    selector.Value,
+                    selector.Category
+                }).ToArray(),
+                throughputCheckpoints = process.ThroughputCheckpoints.Select(checkpoint => new
+                {
+                    checkpoint.Id,
+                    checkpoint.MinimumCount
+                }).ToArray(),
+                process.EvidenceLens,
+                process.Repetition,
+                process.WarmUpTicks,
+                process.SampleTicks,
+                process.GameSpeed,
+                activePackageIds = process.ActivePackageIds,
+                process.ProcessDirectory,
+                process.RawCircinusJsonPath,
+                process.NormalizedJsonPath,
+                process.CsvReportPath,
+                process.MarkdownReportPath
+            }).ToArray(),
+            reports = new
+            {
+                plan.AggregateJsonPath,
+                plan.AggregateCsvPath,
+                plan.SummaryMarkdownPath
+            }
         });
     }
 

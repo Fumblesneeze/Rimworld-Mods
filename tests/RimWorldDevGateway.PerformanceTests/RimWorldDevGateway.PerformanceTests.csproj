@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net480</TargetFramework>
+    <AssemblyName>RimWorldDevGateway.PerformanceTests</AssemblyName>
+    <RootNamespace>RimWorldDevGateway.PerformanceTests</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RimWorldPerformanceTest>true</RimWorldPerformanceTest>
+    <RimWorldPerformanceTestOwnerPackageId>fumblesneeze.rimworlddevgateway</RimWorldPerformanceTestOwnerPackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.PerformanceTesting\RimWorldDevGateway.PerformanceTesting.csproj" />
+  </ItemGroup>
+</Project>

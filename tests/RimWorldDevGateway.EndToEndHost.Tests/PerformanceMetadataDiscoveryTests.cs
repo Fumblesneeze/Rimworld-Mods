@@ -9,6 +9,12 @@ namespace RimWorldDevGateway.EndToEndHost.Tests;
 [TestFixture]
 public sealed class PerformanceMetadataDiscoveryTests
 {
+    internal static PerformanceAssemblyCandidate[] ValidCandidatesForPlanning()
+    {
+        var metadata = PerformanceAssemblyMetadataReader.Read(FixtureAssembly());
+        return ValidCandidates(metadata);
+    }
+
     private static readonly string RepositoryRoot = FindRepositoryRoot();
     private static readonly string Configuration =
 #if DEBUG

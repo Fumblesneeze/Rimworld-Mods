@@ -339,7 +339,9 @@ public static class PerformanceTestContract
             throw Invalid(testType, "has an invalid evidence lens");
         }
 
-        var subjectActive = packages.Contains(subject, StringComparer.OrdinalIgnoreCase);
+        var subjectActive =
+            StringComparer.OrdinalIgnoreCase.Equals(subject, EndToEndTestContract.GatewayPackageId) ||
+            packages.Contains(subject, StringComparer.OrdinalIgnoreCase);
         if (attribute.EvidenceLens == PerformanceEvidenceLens.ProductAbsentControl)
         {
             if (subjectActive || StringComparer.OrdinalIgnoreCase.Equals(owner, subject))

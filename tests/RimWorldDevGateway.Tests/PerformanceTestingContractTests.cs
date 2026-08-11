@@ -110,6 +110,20 @@ public sealed class PerformanceTestingContractTests
     }
 
     [Test]
+    public void Implicit_gateway_can_be_the_measured_subject_without_listing_it_twice()
+    {
+        var descriptor = PerformanceTestContract.Describe(typeof(ValidGatewayBenchmark));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor.StagingOwnerPackageId, Is.EqualTo(EndToEndTestContract.GatewayPackageId));
+            Assert.That(descriptor.MeasuredSubjectPackageId, Is.EqualTo(EndToEndTestContract.GatewayPackageId));
+            Assert.That(descriptor.ActivePackageIds, Does.Not.Contain(EndToEndTestContract.GatewayPackageId));
+            Assert.That(descriptor.LaunchedPackageIds.Last(), Is.EqualTo(EndToEndTestContract.GatewayPackageId));
+        });
+    }
+
+    [Test]
     public void Grouping_rejects_missing_or_semantically_different_product_absent_controls()
     {
         var missing = Assert.Throws<PerformanceContractException>(() =>
@@ -528,6 +542,15 @@ public sealed class PerformanceTestingContractTests
     public sealed class DriftedProductAbsentControl : NoOpBenchmark
     {
     }
+
+    [RimWorldPerformanceTest(
+        "gateway.valid",
+        EndToEndTestContract.GatewayPackageId,
+        EndToEndTestContract.GatewayPackageId,
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        PerformanceTestContract.CircinusPackageId)]
+    public sealed class ValidGatewayBenchmark : NoOpBenchmark { }
 
     public sealed class MissingAttributeBenchmark : NoOpBenchmark { }
 

@@ -173,6 +173,93 @@ public sealed class EndToEndProjectBuilder
         return candidates.AsReadOnly();
     }
 
+    public IReadOnlyList<PerformanceAssemblyCandidate> BuildPerformance(
+        IEnumerable<PerformanceProjectRecord> projects,
+        string configuration,
+        TimeSpan timeoutPerCommand)
+    {
+        if (projects is null) throw new ArgumentNullException(nameof(projects));
+        ValidateConfiguration(configuration);
+        if (timeoutPerCommand <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeoutPerCommand));
+
+        var materialized = new List<PerformanceProjectRecord>();
+        using (var enumerator = projects.GetEnumerator())
+        {
+            while (enumerator.MoveNext())
+            {
+                if (materialized.Count == PerformanceDiscoveryValidator.MaximumBenchmarks)
+                    throw new EndToEndProjectBuildException(
+                        $"Performance build exceeds the published " +
+                        $"{PerformanceDiscoveryValidator.MaximumBenchmarks}-project ceiling before any build starts.");
+                materialized.Add(enumerator.Current ??
+                    throw new EndToEndProjectBuildException("Performance build contains a null project record."));
+            }
+        }
+        var ordered = materialized.OrderBy(
+            project => project.ProjectPath,
+            StringComparer.OrdinalIgnoreCase).ToArray();
+        if (ordered.Length == 0)
+            throw new EndToEndProjectBuildException("Performance build selected zero marked projects.");
+
+        return ordered.Select(project => BuildPerformanceOne(project, configuration, timeoutPerCommand))
+            .ToArray();
+    }
+
+    private PerformanceAssemblyCandidate BuildPerformanceOne(
+        PerformanceProjectRecord project,
+        string configuration,
+        TimeSpan timeout)
+    {
+        var projectPath = Path.GetFullPath(project.ProjectPath);
+        if (!File.Exists(projectPath))
+            throw new EndToEndProjectBuildException($"Performance project does not exist: {projectPath}");
+        var workingDirectory = Path.GetDirectoryName(projectPath) ??
+            throw new EndToEndProjectBuildException($"Performance project has no parent directory: {projectPath}");
+
+        var build = commandRunner.Run(dotnetExecutable, new[]
+        {
+            "build", projectPath, "--configuration", configuration, "--nologo", "--verbosity", "minimal"
+        }, workingDirectory, timeout);
+        EnsureSucceeded("performance build", projectPath, build);
+        var propertiesResult = commandRunner.Run(dotnetExecutable, new[]
+        {
+            "msbuild", projectPath, "-nologo", "-verbosity:quiet", "-property:Configuration=" + configuration,
+            "-getProperty:TargetPath", "-getProperty:AssemblyName", "-getProperty:TargetFramework"
+        }, workingDirectory, timeout);
+        EnsureSucceeded("performance output-property query", projectPath, propertiesResult);
+        var properties = ReadProperties(projectPath, propertiesResult.StandardOutput);
+
+        if (!StringComparer.Ordinal.Equals(properties.TargetFramework, "net480") ||
+            !StringComparer.Ordinal.Equals(project.TargetFramework, "net480"))
+            throw new EndToEndProjectBuildException(
+                $"Performance project '{projectPath}' must target net480; declared '{project.TargetFramework}', " +
+                $"evaluated '{properties.TargetFramework}'.");
+        if (!StringComparer.Ordinal.Equals(properties.AssemblyName, project.AssemblyName))
+            throw new EndToEndProjectBuildException(
+                $"Performance project '{projectPath}' evaluated assembly name '{properties.AssemblyName}' " +
+                $"instead of discovered '{project.AssemblyName}'.");
+
+        var targetPath = Path.GetFullPath(properties.TargetPath);
+        if (!File.Exists(targetPath))
+            throw new EndToEndProjectBuildException(
+                $"Performance project '{projectPath}' reported a missing TargetPath: {targetPath}");
+
+        try
+        {
+            return new PerformanceAssemblyCandidate(
+                projectPath,
+                project.OwnerPackageId,
+                project.AssemblyName,
+                PerformanceAssemblyMetadataReader.Read(targetPath));
+        }
+        catch (Exception exception) when (exception is not EndToEndProjectBuildException)
+        {
+            throw new EndToEndProjectBuildException(
+                $"Could not read compiled performance metadata for '{projectPath}'.",
+                exception);
+        }
+    }
+
     private EndToEndAssemblyCandidate BuildOne(
         EndToEndProjectRecord project,
         string configuration,
