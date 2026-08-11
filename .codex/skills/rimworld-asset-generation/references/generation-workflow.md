@@ -103,8 +103,12 @@ white fringes.
 1. Extract several comparable Core textures read-only and retain their exact source/image hashes in
    ignored evidence; never commit extracted Core pixels.
 2. Measure the proxy at the actual final canvas, record the product source hash/topology, and define a
-   horizontal or vertical minimum transparent run through every gap the candidate radius could close.
-3. Generate at least one- and two-final-pixel candidates from the already approved art. Use
+   uniquely identified horizontal or vertical minimum transparent run through every gap the candidate
+   radius could close. A source-space exclusion must name that ID, intersect its final-scale run, and
+   stay wholly inside the run's four-final-pixel neighborhood; unrelated or oversized exception
+   rectangles fail closed.
+3. Generate the two class-approved depths from the already approved art (fine `0.75/1`, broad
+   `1/2`, building `2/3` final pixels). Use
    `Add-RimWorldSpriteOutline.ps1` so the candidates preserve source pixels and Stuff-mask semantics.
 4. Compare both candidates beside the Core sample at map scale on light and dark backgrounds. Reject
    blobby handles, sealed openings, visible cast-shadow reads, and contours that dominate fine tools.

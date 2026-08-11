@@ -24,6 +24,7 @@ except ImportError as error:  # pragma: no cover - exercised by the wrapper's ru
 FOREGROUND_ALPHA = 96
 DARK_LUMA = 80.0
 MINIMUM_COMPONENT_AREA = 2
+MAXIMUM_EXCLUSION_PADDING_FINAL_PIXELS = 4.0
 
 
 class UsageError(Exception):
@@ -173,7 +174,7 @@ def connected_components(
 
 def topology(image: Image.Image) -> tuple[int, int]:
     width, height = image.size
-    alpha = [pixel[3] for pixel in image.getdata()]
+    alpha = [pixel[3] for pixel in image.get_flattened_data()]
     foreground = [value >= FOREGROUND_ALPHA for value in alpha]
     foreground_components = sum(
         1
@@ -236,7 +237,7 @@ def validate_approval(image: Image.Image, approval: ET.Element | None, phase: st
             f"expected {expected_components}/{expected_holes}."
         )
 
-    alpha = [pixel[3] for pixel in image.getdata()]
+    alpha = [pixel[3] for pixel in image.get_flattened_data()]
     for gap in approval.findall("protectedGap"):
         orientation = gap.get("orientation")
         try:
@@ -273,10 +274,114 @@ def validate_approval(image: Image.Image, approval: ET.Element | None, phase: st
             )
 
 
-def validate_edge_clearance(image: Image.Image, minimum: int | None) -> None:
+def source_contour_exclusions(
+    approval: ET.Element | None,
+    width: int,
+    height: int,
+    final_width: int,
+    final_height: int,
+) -> list[bool]:
+    excluded = [False] * (width * height)
+    if approval is None:
+        return excluded
+    rectangles = approval.findall("sourceContourExclusion")
+    if rectangles and not approval.findall("protectedGap"):
+        raise UsageError("A source contour exclusion requires a protected gap cross-section.")
+    protected_gaps: dict[str, tuple[float, float, float, float]] = {}
+    for gap in approval.findall("protectedGap"):
+        gap_id = (gap.get("id") or "").strip()
+        if not gap_id:
+            continue
+        if gap_id in protected_gaps:
+            raise UsageError(f"Protected gap id '{gap_id}' is duplicated.")
+        orientation = gap.get("orientation")
+        try:
+            fixed = int(gap.attrib["fixedCoordinate"])
+            start = int(gap.attrib["start"])
+            end = int(gap.attrib["end"])
+        except (KeyError, ValueError) as error:
+            raise UsageError("Protected gap coordinates are missing or invalid.") from error
+        if orientation == "vertical":
+            bounds = (float(fixed), float(start), float(fixed + 1), float(end + 1))
+        elif orientation == "horizontal":
+            bounds = (float(start), float(fixed), float(end + 1), float(fixed + 1))
+        else:
+            raise UsageError("Protected gap orientation must be horizontal or vertical.")
+        protected_gaps[gap_id] = bounds
+    for rectangle in rectangles:
+        reason = (rectangle.get("reason") or "").strip()
+        if not reason:
+            raise UsageError("A source contour exclusion requires a semantic reason.")
+        protected_gap_id = (rectangle.get("protectedGapId") or "").strip()
+        if not protected_gap_id or protected_gap_id not in protected_gaps:
+            raise UsageError(
+                "A source contour exclusion must reference one existing protected gap id."
+            )
+        try:
+            x = int(rectangle.attrib["x"])
+            y = int(rectangle.attrib["y"])
+            rectangle_width = int(rectangle.attrib["width"])
+            rectangle_height = int(rectangle.attrib["height"])
+        except (KeyError, ValueError) as error:
+            raise UsageError("Source contour exclusion bounds are missing or invalid.") from error
+        if (
+            x < 0
+            or y < 0
+            or rectangle_width < 1
+            or rectangle_height < 1
+            or x + rectangle_width > width
+            or y + rectangle_height > height
+        ):
+            raise UsageError("Source contour exclusion is outside the source canvas.")
+        source_bounds_at_final = (
+            x * final_width / width,
+            y * final_height / height,
+            (x + rectangle_width) * final_width / width,
+            (y + rectangle_height) * final_height / height,
+        )
+        gap_bounds = protected_gaps[protected_gap_id]
+        intersects_gap = (
+            source_bounds_at_final[0] < gap_bounds[2]
+            and source_bounds_at_final[2] > gap_bounds[0]
+            and source_bounds_at_final[1] < gap_bounds[3]
+            and source_bounds_at_final[3] > gap_bounds[1]
+        )
+        if not intersects_gap:
+            raise UsageError(
+                f"Source contour exclusion does not intersect protected gap "
+                f"'{protected_gap_id}' at final scale."
+            )
+        local_bounds = (
+            gap_bounds[0] - MAXIMUM_EXCLUSION_PADDING_FINAL_PIXELS,
+            gap_bounds[1] - MAXIMUM_EXCLUSION_PADDING_FINAL_PIXELS,
+            gap_bounds[2] + MAXIMUM_EXCLUSION_PADDING_FINAL_PIXELS,
+            gap_bounds[3] + MAXIMUM_EXCLUSION_PADDING_FINAL_PIXELS,
+        )
+        is_local = (
+            source_bounds_at_final[0] >= local_bounds[0]
+            and source_bounds_at_final[1] >= local_bounds[1]
+            and source_bounds_at_final[2] <= local_bounds[2]
+            and source_bounds_at_final[3] <= local_bounds[3]
+        )
+        if not is_local:
+            raise UsageError(
+                f"Source contour exclusion for protected gap '{protected_gap_id}' "
+                f"must stay within its {MAXIMUM_EXCLUSION_PADDING_FINAL_PIXELS:g}-pixel "
+                "local neighborhood at final scale."
+            )
+        for current_y in range(y, y + rectangle_height):
+            row = current_y * width
+            for current_x in range(x, x + rectangle_width):
+                excluded[row + current_x] = True
+    return excluded
+
+
+def validate_edge_clearance(
+    image: Image.Image, final_width: int, final_height: int, minimum: float | None
+) -> None:
     if minimum is None:
         return
-    alpha = [pixel[3] for pixel in image.getdata()]
+    alpha = [pixel[3] for pixel in image.get_flattened_data()]
     visible = [
         (index % image.width, index // image.width)
         for index, value in enumerate(alpha)
@@ -284,14 +389,17 @@ def validate_edge_clearance(image: Image.Image, minimum: int | None) -> None:
     ]
     if not visible:
         raise ApprovalError("Outlined result has no final-scale foreground.")
-    left = min(x for x, _ in visible)
-    right = image.width - 1 - max(x for x, _ in visible)
-    top = min(y for _, y in visible)
-    bottom = image.height - 1 - max(y for _, y in visible)
+    horizontal_scale = image.width / final_width
+    vertical_scale = image.height / final_height
+    left = min(x for x, _ in visible) / horizontal_scale
+    right = (image.width - 1 - max(x for x, _ in visible)) / horizontal_scale
+    top = min(y for _, y in visible) / vertical_scale
+    bottom = (image.height - 1 - max(y for _, y in visible)) / vertical_scale
     actual = min(left, right, top, bottom)
     if actual < minimum:
         raise ApprovalError(
-            f"Post-outline edge clearance is {actual} pixels; expected at least {minimum}."
+            f"Post-outline normalized-source edge clearance is {actual:.6f} final pixels; "
+            f"expected at least {minimum:.6f}."
         )
 
 
@@ -350,17 +458,17 @@ def read_policy(
     try:
         range_parts = permitted.split("-")
         if len(range_parts) == 1:
-            minimum_final_pixels = maximum_final_pixels = int(range_parts[0])
+            minimum_final_pixels = maximum_final_pixels = float(range_parts[0])
         elif len(range_parts) == 2:
-            minimum_final_pixels = int(range_parts[0])
-            maximum_final_pixels = int(range_parts[1])
+            minimum_final_pixels = float(range_parts[0])
+            maximum_final_pixels = float(range_parts[1])
         else:
             raise ValueError("too many range separators")
-        minimum_clearance = int(root.attrib["minimumTransparentEdgeClearance"])
+        minimum_clearance = float(policy.attrib["minimumTransparentEdgeClearance"])
     except (KeyError, ValueError) as error:
         raise UsageError("Baseline stroke range or edge clearance is invalid.") from error
     if (
-        minimum_final_pixels < 1
+        minimum_final_pixels <= 0
         or maximum_final_pixels < minimum_final_pixels
         or minimum_clearance < 0
     ):
@@ -388,7 +496,7 @@ def read_policy(
 
 def dark_ring_fractions(image: Image.Image, count: int = 3) -> list[float]:
     width, height = image.size
-    pixels = list(image.getdata())
+    pixels = list(image.get_flattened_data())
     remaining = [pixel[3] >= FOREGROUND_ALPHA for pixel in pixels]
     fractions: list[float] = []
     for _ in range(count):
@@ -516,7 +624,7 @@ def process(args: argparse.Namespace) -> dict[str, object]:
     )
     with Image.open(args.input) as opened:
         source = opened.convert("RGBA")
-    source_pixels = list(source.getdata())
+    source_pixels = list(source.get_flattened_data())
     width, height = source.size
     policy, minimum_clearance = read_policy(
         args.baseline,
@@ -528,6 +636,9 @@ def process(args: argparse.Namespace) -> dict[str, object]:
         args.stroke_pixels,
     )
     source_alpha = [pixel[3] for pixel in source_pixels]
+    excluded = source_contour_exclusions(
+        approval, width, height, final_width, final_height
+    )
     source_final = resize_for_approval(source, final_width, final_height)
     validate_approval(source_final, approval, "Pre-outline")
 
@@ -538,7 +649,12 @@ def process(args: argparse.Namespace) -> dict[str, object]:
     outlined_pixels = list(source_pixels)
     added_indices: list[int] = []
     for index, alpha in enumerate(source_alpha):
-        if alpha == 0 and exterior[index] and 0 < distance[index] <= args.stroke_pixels:
+        if (
+            alpha == 0
+            and exterior[index]
+            and not excluded[index]
+            and 0 < distance[index] <= args.stroke_pixels
+        ):
             outlined_pixels[index] = outline_color
             added_indices.append(index)
     outlined = Image.new("RGBA", source.size)
@@ -546,7 +662,7 @@ def process(args: argparse.Namespace) -> dict[str, object]:
 
     outlined_final = resize_for_approval(outlined, final_width, final_height)
     validate_approval(outlined_final, approval, "Post-outline")
-    validate_edge_clearance(outlined_final, minimum_clearance)
+    validate_edge_clearance(outlined, final_width, final_height, minimum_clearance)
     fractions = dark_ring_fractions(outlined_final)
     validate_ring_thresholds(fractions, policy)
 
@@ -556,7 +672,7 @@ def process(args: argparse.Namespace) -> dict[str, object]:
             source_mask = opened.convert("RGBA")
         if source_mask.size != source.size:
             raise UsageError("Mask and diffuse dimensions differ.")
-        mask_pixels = list(source_mask.getdata())
+        mask_pixels = list(source_mask.get_flattened_data())
         for index, (mask_pixel, diffuse_pixel) in enumerate(zip(mask_pixels, source_pixels)):
             if mask_pixel[3] != diffuse_pixel[3]:
                 raise UsageError(f"Mask and diffuse alpha differ at source pixel {index}.")
@@ -564,8 +680,8 @@ def process(args: argparse.Namespace) -> dict[str, object]:
             mask_pixels[index] = (0, 0, 0, outline_color[3])
         mask_output = Image.new("RGBA", source.size)
         mask_output.putdata(mask_pixels)
-        if [pixel[3] for pixel in mask_output.getdata()] != [
-            pixel[3] for pixel in outlined.getdata()
+        if [pixel[3] for pixel in mask_output.get_flattened_data()] != [
+            pixel[3] for pixel in outlined.get_flattened_data()
         ]:
             raise ApprovalError("Outlined mask alpha does not equal outlined diffuse alpha.")
 

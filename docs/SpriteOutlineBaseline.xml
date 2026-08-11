@@ -33,19 +33,21 @@
                        packageProxyForUnityRendering="true"
                        authoritativeAcceptance="captured live RimWorld rendering at the tested zoom/import settings"
                        portableFinalCanvas="64x64"
-                       buildingPixelsPerCell="64"
-                       minimumTransparentEdgeClearance="2">
+                       buildingPixelsPerCell="64">
   <acceptanceClasses>
     <class id="portable-fine"
-           permittedAddedStrokeFinalPixels="1"
+           permittedAddedStrokeFinalPixels="0.75-1"
+           minimumTransparentEdgeClearance="1"
            ring1MinimumDarkFraction="0.95"
            ring2MinimumDarkFraction="0.40" />
     <class id="portable-broad"
            permittedAddedStrokeFinalPixels="1-2"
+           minimumTransparentEdgeClearance="1"
            ring1MinimumDarkFraction="0.95"
            ring2MinimumDarkFraction="0.75" />
     <class id="building"
-           permittedAddedStrokeFinalPixels="1-2"
+           permittedAddedStrokeFinalPixels="2-3"
+           minimumTransparentEdgeClearance="2"
            ring1MinimumDarkFraction="0.95"
            ring2MinimumDarkFraction="0.95"
            ring3MinimumDarkFraction="0.95" />

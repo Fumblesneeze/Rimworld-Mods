@@ -43,6 +43,67 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/Appliance/Microwave";
 
     [Test]
+    public void Every_shipped_Thing_diffuse_has_a_reviewed_Core_relative_outline_approval()
+    {
+        var root = FindRepositoryRoot();
+        var textureRoot = Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Textures",
+            "ImmersiveChefs",
+            "Things");
+        var manifestPath = Path.Combine(root, "docs", "SpriteOutlineApprovals.xml");
+        Assert.That(
+            File.Exists(manifestPath),
+            Is.True,
+            "Every shipped Thing diffuse needs a reviewed Core-relative outline approval.");
+
+        var manifest = XDocument.Load(manifestPath);
+        var sprites = manifest.Root!.Elements("sprite").ToArray();
+        var packagedDiffuses = Directory
+            .GetFiles(textureRoot, "*.png", SearchOption.AllDirectories)
+            .Where(path => !path.EndsWith("_m.png", StringComparison.OrdinalIgnoreCase))
+            .Select(path => path.Substring(textureRoot.Length + 1).Replace('\\', '/'))
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToArray();
+        var approvedPaths = sprites
+            .Select(sprite => (string?)sprite.Attribute("path") ?? string.Empty)
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(approvedPaths, Is.EqualTo(packagedDiffuses));
+            Assert.That(
+                sprites.Select(sprite => (string?)sprite.Attribute("id")),
+                Is.Unique,
+                "Outline approval ids must be stable and unique.");
+        });
+
+        foreach (var sprite in sprites)
+        {
+            var relativePath = (string)sprite.Attribute("path")!;
+            var diffusePath = Path.Combine(textureRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            Assert.Multiple(() =>
+            {
+                Assert.That((string?)sprite.Attribute("class"), Is.AnyOf("portable-fine", "portable-broad", "building"), relativePath);
+                Assert.That((int?)sprite.Attribute("finalWidth"), Is.GreaterThan(0), relativePath);
+                Assert.That((int?)sprite.Attribute("finalHeight"), Is.GreaterThan(0), relativePath);
+                Assert.That((int?)sprite.Attribute("foregroundComponents"), Is.GreaterThanOrEqualTo(1), relativePath);
+                Assert.That((int?)sprite.Attribute("backgroundHoles"), Is.GreaterThanOrEqualTo(0), relativePath);
+                Assert.That((int?)sprite.Attribute("selectedStrokeSourcePixels"), Is.GreaterThan(0), relativePath);
+                Assert.That((double?)sprite.Attribute("ring1"), Is.InRange(0.0, 1.0), relativePath);
+                Assert.That((double?)sprite.Attribute("ring2"), Is.InRange(0.0, 1.0), relativePath);
+                Assert.That((double?)sprite.Attribute("ring3"), Is.InRange(0.0, 1.0), relativePath);
+                Assert.That((string?)sprite.Attribute("reviewEvidence"), Is.Not.Null.And.Not.Empty, relativePath);
+                Assert.That((string?)sprite.Attribute("preOutlineSha256"), Does.Match("^[0-9A-F]{64}$"), relativePath);
+                Assert.That((string?)sprite.Attribute("outputSha256"), Is.EqualTo(ComputeSha256(diffusePath)), relativePath);
+            });
+        }
+    }
+
+    [Test]
     public void Outline_processor_adds_only_exterior_contour_and_preserves_topology_gaps_and_mask_semantics()
     {
         var root = FindRepositoryRoot();
@@ -109,11 +170,20 @@ public sealed class VisualAssetPackageTests
                         new XAttribute("backgroundHoles", "1"),
                         new XElement(
                             "protectedGap",
+                            new XAttribute("id", "synthetic-opening"),
                             new XAttribute("orientation", "horizontal"),
                             new XAttribute("fixedCoordinate", "12"),
                             new XAttribute("start", "25"),
                             new XAttribute("end", "31"),
-                            new XAttribute("minimumTransparentRunPixels", "3")))))
+                            new XAttribute("minimumTransparentRunPixels", "3")),
+                        new XElement(
+                            "sourceContourExclusion",
+                            new XAttribute("protectedGapId", "synthetic-opening"),
+                            new XAttribute("x", "25"),
+                            new XAttribute("y", "12"),
+                            new XAttribute("width", "1"),
+                            new XAttribute("height", "1"),
+                            new XAttribute("reason", "preserve the synthetic U-shaped opening")))))
                 .Save(manifestPath);
 
             var result = RunOutlineProcessor(
@@ -130,6 +200,64 @@ public sealed class VisualAssetPackageTests
             Assert.That(result.ExitCode, Is.Zero, result.StandardOutput + Environment.NewLine + result.StandardError);
             Assert.That(File.Exists(outputPath), Is.True, result.StandardOutput + Environment.NewLine + result.StandardError);
             Assert.That(File.Exists(maskOutputPath), Is.True, result.StandardOutput + Environment.NewLine + result.StandardError);
+
+            var unrelatedManifestPath = Path.Combine(temporaryRoot, "unrelated-exclusion-approvals.xml");
+            var unrelatedManifest = XDocument.Load(manifestPath);
+            var unrelatedExclusion = unrelatedManifest.Root!
+                .Element("sprite")!
+                .Element("sourceContourExclusion")!;
+            unrelatedExclusion.SetAttributeValue("x", "0");
+            unrelatedExclusion.SetAttributeValue("y", "0");
+            unrelatedManifest.Save(unrelatedManifestPath);
+            var unrelatedOutputPath = Path.Combine(temporaryRoot, "unrelated-exclusion.png");
+            var unrelatedMaskOutputPath = Path.Combine(temporaryRoot, "unrelated-exclusion_m.png");
+            var unrelated = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                unrelatedOutputPath,
+                2,
+                baselinePath,
+                unrelatedManifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                unrelatedMaskOutputPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(unrelated.ExitCode, Is.EqualTo(2), unrelated.StandardOutput + Environment.NewLine + unrelated.StandardError);
+                Assert.That(unrelated.StandardError, Does.Contain("protected gap").IgnoreCase);
+                Assert.That(File.Exists(unrelatedOutputPath), Is.False, "An unrelated exclusion published a diffuse.");
+                Assert.That(File.Exists(unrelatedMaskOutputPath), Is.False, "An unrelated exclusion published a mask.");
+            });
+
+            var oversizedManifestPath = Path.Combine(temporaryRoot, "oversized-exclusion-approvals.xml");
+            var oversizedManifest = XDocument.Load(manifestPath);
+            var oversizedExclusion = oversizedManifest.Root!
+                .Element("sprite")!
+                .Element("sourceContourExclusion")!;
+            oversizedExclusion.SetAttributeValue("x", "0");
+            oversizedExclusion.SetAttributeValue("y", "0");
+            oversizedExclusion.SetAttributeValue("width", "40");
+            oversizedExclusion.SetAttributeValue("height", "40");
+            oversizedManifest.Save(oversizedManifestPath);
+            var oversizedOutputPath = Path.Combine(temporaryRoot, "oversized-exclusion.png");
+            var oversizedMaskOutputPath = Path.Combine(temporaryRoot, "oversized-exclusion_m.png");
+            var oversized = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                oversizedOutputPath,
+                2,
+                baselinePath,
+                oversizedManifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                oversizedMaskOutputPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(oversized.ExitCode, Is.EqualTo(2), oversized.StandardOutput + Environment.NewLine + oversized.StandardError);
+                Assert.That(oversized.StandardError, Does.Contain("local neighborhood").IgnoreCase);
+                Assert.That(File.Exists(oversizedOutputPath), Is.False, "An oversized exclusion published a diffuse.");
+                Assert.That(File.Exists(oversizedMaskOutputPath), Is.False, "An oversized exclusion published a mask.");
+            });
 
             var rejectedOutputPath = Path.Combine(temporaryRoot, "rejected.png");
             var rejectedMaskOutputPath = Path.Combine(temporaryRoot, "rejected_m.png");
@@ -197,7 +325,11 @@ public sealed class VisualAssetPackageTests
 
             var strictBaselinePath = Path.Combine(temporaryRoot, "strict-baseline.xml");
             var strictBaseline = XDocument.Load(baselinePath);
-            strictBaseline.Root!.SetAttributeValue("minimumTransparentEdgeClearance", "4");
+            strictBaseline.Root!
+                .Element("acceptanceClasses")!
+                .Elements("class")
+                .Single(element => (string?)element.Attribute("id") == "portable-broad")
+                .SetAttributeValue("minimumTransparentEdgeClearance", "4");
             strictBaseline.Save(strictBaselinePath);
             var edgeOutputPath = Path.Combine(temporaryRoot, "edge.png");
             var edgeMaskOutputPath = Path.Combine(temporaryRoot, "edge_m.png");
@@ -305,6 +437,7 @@ public sealed class VisualAssetPackageTests
                 Assert.That(outlined.GetPixel(4, 5).A, Is.EqualTo(255), "Expected a new exterior contour pixel.");
                 Assert.That(outlined.GetPixel(9, 9).A, Is.Zero, "The enclosed hole must not receive contour.");
                 Assert.That(outlined.GetPixel(28, 12).A, Is.LessThan(96), "The protected U-shaped opening closed.");
+                Assert.That(outlined.GetPixel(25, 12).A, Is.Zero, "The approved source-space gap exclusion was ignored.");
             });
 
             for (var y = 0; y < source.Height; y++)
@@ -330,6 +463,80 @@ public sealed class VisualAssetPackageTests
                     }
                 }
             }
+        }
+        finally
+        {
+            if (Directory.Exists(temporaryRoot))
+            {
+                Directory.Delete(temporaryRoot, recursive: true);
+            }
+        }
+    }
+
+    [Test]
+    public void Outline_processor_accepts_the_measured_three_quarter_pixel_fine_item_boundary()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(
+            root,
+            ".codex",
+            "skills",
+            "rimworld-asset-generation",
+            "scripts",
+            "Add-RimWorldSpriteOutline.ps1");
+        var baselinePath = Path.Combine(root, "docs", "SpriteOutlineBaseline.xml");
+        var temporaryRoot = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "outline-fine-boundary-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryRoot);
+        var inputPath = Path.Combine(temporaryRoot, "fine.png");
+        var maskInputPath = Path.Combine(temporaryRoot, "fine_m.png");
+        var outputPath = Path.Combine(temporaryRoot, "fine-out.png");
+        var maskOutputPath = Path.Combine(temporaryRoot, "fine-out_m.png");
+        var manifestPath = Path.Combine(temporaryRoot, "approvals.xml");
+
+        try
+        {
+            using (var diffuse = new Bitmap(40, 40))
+            using (var mask = new Bitmap(40, 40))
+            {
+                FillRectangle(diffuse, 5, 5, 34, 34, Color.FromArgb(255, 23, 19, 15));
+                FillRectangle(mask, 5, 5, 34, 34, Color.FromArgb(255, 255, 0, 0));
+                diffuse.Save(inputPath, System.Drawing.Imaging.ImageFormat.Png);
+                mask.Save(maskInputPath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            new XDocument(
+                new XElement(
+                    "spriteOutlineApprovals",
+                    new XElement(
+                        "sprite",
+                        new XAttribute("id", "fine-boundary"),
+                        new XAttribute("class", "portable-fine"),
+                        new XAttribute("preOutlineSha256", ComputeSha256(inputPath)),
+                        new XAttribute("finalWidth", "30"),
+                        new XAttribute("finalHeight", "30"),
+                        new XAttribute("foregroundComponents", "1"),
+                        new XAttribute("backgroundHoles", "0"))))
+                .Save(manifestPath);
+
+            var result = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                outputPath,
+                1,
+                baselinePath,
+                manifestPath,
+                "fine-boundary",
+                maskInputPath,
+                maskOutputPath);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.Zero, result.StandardOutput + Environment.NewLine + result.StandardError);
+                Assert.That(File.Exists(outputPath), Is.True, "The accepted fine-item candidate was not published.");
+                Assert.That(File.Exists(maskOutputPath), Is.True, "The accepted fine-item mask was not published.");
+            });
         }
         finally
         {
@@ -727,6 +934,13 @@ public sealed class VisualAssetPackageTests
                 element => (string)element.Attribute("footprint")!,
                 element => element,
                 StringComparer.Ordinal);
+        var outlineStrokes = XDocument.Load(Path.Combine(root, "docs", "SpriteOutlineApprovals.xml"))
+            .Root!
+            .Elements("sprite")
+            .ToDictionary(
+                element => (string)element.Attribute("path")!,
+                element => (int)element.Attribute("selectedStrokeSourcePixels")!,
+                StringComparer.Ordinal);
         var documents = new[]
         {
             Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "KitchenBuildings.xml"),
@@ -779,6 +993,8 @@ public sealed class VisualAssetPackageTests
                          })
                 {
                     var path = TextureFile(root, texturePath + variant + "_" + direction + ".png");
+                    var outlinePath = (texturePath + variant + "_" + direction + ".png")
+                        .Substring("ImmersiveChefs/Things/".Length);
                     paths.Add(direction, path);
                     using var bitmap = new System.Drawing.Bitmap(path);
                     Assert.That(
@@ -789,6 +1005,7 @@ public sealed class VisualAssetPackageTests
                         bitmap,
                         direction is "north" or "south" ? horizontalTabletop : verticalTabletop,
                         direction is "north" or "south" ? horizontalUnderframe : verticalUnderframe,
+                        outlineStrokes[outlinePath],
                         path);
                     AssertNoGreenSilhouetteFringe(path);
                 }
@@ -1482,6 +1699,14 @@ public sealed class VisualAssetPackageTests
         var packagedPath = PackagedTextureFile(root, MicrowaveTexturePath + "_north.png");
         var obsoleteSourcePath = TextureFile(root, "Things/Building/Microwave/Microwave.png");
         var obsoletePackagedPath = PackagedTextureFile(root, "Things/Building/Microwave/Microwave.png");
+        var outlineStroke = XDocument.Load(Path.Combine(root, "docs", "SpriteOutlineApprovals.xml"))
+            .Root!
+            .Elements("sprite")
+            .Single(element =>
+                (string?)element.Attribute("path") == "Building/Appliance/Microwave_north.png")
+            .Attribute("selectedStrokeSourcePixels")!
+            .Value;
+        var addedDiameter = int.Parse(outlineStroke) * 2;
 
         Assert.Multiple(() =>
         {
@@ -1503,10 +1728,10 @@ public sealed class VisualAssetPackageTests
         AssertCanvasAspect(diffusePath, widthUnits: 1, heightUnits: 1);
         AssertVisibleBounds(
             diffusePath,
-            minimumWidth: 280,
-            maximumWidth: 430,
-            minimumHeight: 180,
-            maximumHeight: 430);
+            minimumWidth: 280 + addedDiameter,
+            maximumWidth: 430 + addedDiameter,
+            minimumHeight: 180 + addedDiameter,
+            maximumHeight: 430 + addedDiameter);
         AssertNoVividGreenChroma(diffusePath);
         AssertNoBrightBlueEmission(diffusePath);
     }
@@ -1894,13 +2119,14 @@ public sealed class VisualAssetPackageTests
         Bitmap bitmap,
         Rectangle tabletop,
         Rectangle screenSouthUnderframe,
+        int addedOutlinePixels,
         string path)
     {
         var expectedVisibleBounds = Rectangle.FromLTRB(
-            tabletop.Left,
-            tabletop.Top,
-            tabletop.Right,
-            screenSouthUnderframe.Bottom);
+            tabletop.Left - addedOutlinePixels,
+            tabletop.Top - addedOutlinePixels,
+            tabletop.Right + addedOutlinePixels,
+            screenSouthUnderframe.Bottom + addedOutlinePixels);
         Assert.Multiple(() =>
         {
             Assert.That(
@@ -2101,6 +2327,14 @@ public sealed class VisualAssetPackageTests
                 bitmap.SetPixel(x, y, color);
             }
         }
+    }
+
+    private static string ComputeSha256(string path)
+    {
+        using var sha256 = SHA256.Create();
+        return BitConverter
+            .ToString(sha256.ComputeHash(File.ReadAllBytes(path)))
+            .Replace("-", string.Empty);
     }
 
     private static void ClearRectangle(
