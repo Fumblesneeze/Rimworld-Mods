@@ -449,3 +449,42 @@ The exact base-package building catalog separately rendered all eight concrete b
 their four rotations beside native production/dining references. Its retained frames show readable
 selection brackets, footprints, inspectors, Production-menu icons and labels, and the appliance-only
 fallback microwave visibly sharing cells with both a real dining table and a real machining table.
+
+## Core-relative comic outlines
+
+Every shipped Thing diffuse now carries a near-black exterior contour selected against measured
+Core references at final map scale. Portable fine-detail art uses a 0.75–1 pixel contour, broad
+portable art uses 1–2 pixels, and buildings use 2–3 pixels in the deterministic Pillow final-scale
+proxy used for package approval. The
+processor only fills originally transparent canvas-edge-connected background, preserves the prior
+opaque art and protected internal gaps, and mirrors the final alpha into all 17 Stuff masks while
+keeping the added contour fixed black. `docs/SpriteOutlineApprovals.xml` records the selected class,
+stroke, topology oracle, protected runs, final-scale ring measurements, and output hashes for all 83
+diffuses; focused tests separately enforce every one of the 17 masks and its alpha/class semantics.
+
+The final reviewed package was exercised in three fresh minimized processes, all using product DLL
+SHA-256 `FBFDCF5D5831B9E5D346AEBB5222D44E2EE9EA84F542283BF61FFF28A20A82BC`:
+
+- `artifacts/EndToEndRuns/Grouped/20260811T105154314Z` visibly renders every base building family in
+  all four directions beside same-direction Core benches, then uses native placement and rotation on
+  the dishwasher. Its portable catalog shows primitive granite and modern steel cookware,
+  glitterworld cookware, wood/stone/steel/silver/gold clean and dirty tableware, the chef's knife,
+  and prepared ingredients with readable selection brackets, preserved cutlery-tine gaps, material
+  tinting, and distinct sanitation art. The final native prepared-paste cooking/eating workflow
+  visibly returns the exact outlined dirty steel plate and cutlery.
+- `artifacts/EndToEndRuns/Grouped/20260811T104554802Z` visibly follows the ordinary dirty-cookware
+  workflow from the selected dirty steel set through wild-water washing and native cooking, with the
+  Stuff-tinted kitchenware prop centered before the chef. It separately retains the forced-dirty
+  cooking action and the exact dirty cookware physically returned beside the stove after the bill
+  completes.
+- `artifacts/EndToEndRuns/Grouped/20260811T104809748Z` invokes the real VEF graphic-cycle gizmos and
+  visibly renders all eight optional alternate building families in North, East, South, and West.
+  Their contours, fixed-camera underframes, equipment order, and interaction-side perspective remain
+  consistent. The portable VTEX wood/stone/metal and clean/dirty families retain their Stuff masks,
+  contours, gaps, and sanitation state before and after native save/load.
+
+The acting agent inspected those exact frames at original resolution on both light and dark terrain.
+All three processes passed their admitted workflows, exited with code zero, restored the normal
+configuration and preference hashes, removed staged bundles, and sanitized credentials. Their
+developer-mode logs contain no product warning or error; the only warning-severity entry is the Dev
+Gateway's intentional unrestricted-development notice.
