@@ -124,12 +124,18 @@ Each run retains its isolated mod list, build log, Player log, and screenshots, 
 
 The historical combined gateway-control record is `artifacts\GatewaySmoke\20260801T125136445Z`; it verified inside RimWorld the ordered isolated list Core, Harmony, Immersive Chefs, and RimWorld Dev Gateway plus the recorded gateway mechanics. It is not gameplay acceptance under `AGENTS.md` and must not be reused for a changed build. See [Gateway.md](Gateway.md) for the exact raw-execution, quickstart, screenshot, input, log-correlation, and cleanup assertions it proves.
 
-## Repository-local skill
+## Repository-local skills
 
-Use `.codex/skills/rimworld-mod-development/SKILL.md` for Harmony, XML patching, optional integration, TDD, and live-verification conventions. Validate changes to that skill with the installed skill-creator validator:
+Start with `.codex/skills/rimworld-mod-development/SKILL.md`; it routes Harmony/XML, compatibility,
+player-facing UI, localization, TDD, and live verification. Use `rimworld-dev-gateway` for launcher,
+REPL, semantic/input control, scenarios, screenshots, or gateway failure diagnosis;
+`rimworld-performance-benchmarking` for Circinus/DPA work; and the asset, balance, or release skill for
+those specialized workflows. Validate changed skills with the installed skill-creator validator:
 
 ```powershell
-python C:\Users\<you>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .\.codex\skills\rimworld-mod-development
+$validator = 'C:\Users\<you>\.codex\skills\.system\skill-creator\scripts\quick_validate.py'
+@('rimworld-mod-development','rimworld-dev-gateway','rimworld-performance-benchmarking') |
+  ForEach-Object { python $validator ".\.codex\skills\$_" }
 ```
 
 For distributable-mod language layout, contextual terminology, focused localization checks, and the six-language live release gate, see [Localization.md](Localization.md).

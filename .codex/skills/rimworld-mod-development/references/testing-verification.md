@@ -14,6 +14,19 @@ For a red-green slice in a registered project, filter its exact wrapper suite an
 
 The Zlepper testing SDK only references game assemblies; it does not load mods, apply Harmony, or load Def XML. Keep ordinary, explicit-Harmony, and DefDatabase tests in separate projects/processes. Simulate package presence through the public package-ID boundary; use constructed lightweight `Def` fixtures only in an initially empty isolated Def database; use actual RimWorld for populated/Core/Workshop databases, `ThingDef`/`RecipeDef`, XML inheritance/cross-references/PatchOperations, or another mod's real lifecycle. Read [the host-test decision table](../../../../docs/TestingEnvironments.md) before adding such a test.
 
+Choose the environment from what the assertion genuinely needs:
+
+| Need | Honest environment |
+| --- | --- |
+| Pure policy/calculation/package-ID selection | `ImmersiveChefs.Unit`; no loaded mods, Harmony, or representative populated Def database |
+| One explicit Harmony target/patch | `ImmersiveChefs.Harmony`; acquire only that owner/patch and remove it in guaranteed cleanup |
+| Lightweight Def behavior | `ImmersiveChefs.Defs`; construct real `Def` objects and register all fixtures in one initially empty scoped database |
+| Core/Workshop Defs, XML inheritance, PatchOperations, `DefOf`, mod constructors, or full patch set | Fresh exact RimWorld process with the owner and complete ordered mod list |
+
+Never mutate `LoadedModManager` to pretend a mod is installed. Def fixtures are real constructed Defs,
+not XML-loaded content and not mocks; an assertion that depends on the actual loaded Def must run in
+game.
+
 ## Startup-gated in-game integration tests
 
 Use a separate assembly when an assertion needs RimWorld's real loader rather than a player action: finalized Def values, XML inheritance and PatchOperations, active-mod matrices, `DefOf`, or the complete set of startup Harmony patches. Do not add that assembly to an ordinary NUnit project or a mod's `Assemblies/` folder.
@@ -41,6 +54,11 @@ Use a separately marked E2E project for a workflow that needs ordinary game fram
 
 The runner discovers downloaded package IDs, deploys repo-owned products before marker-owned staging, appends Gateway last, launches one fresh isolated process per exact group, and runs same-group tests sequentially. Its runtime reset removes every destroyable disposable Thing/Pawn plus zones, designations, selection, interactions, and test windows, then clears and verifies live messages, visible and delayed letters, and active alert-readout entries; permanent non-destroyable map features remain environment. A failed reset taints the process and skips later tests. The host persists aggregate JSON/JUnit and screenshots, shuts down the exact PID, sanitizes credentials, and cleans only its exact lease in `finally`.
 
+Before the ordinary reset, remove all roofs, including overhead mountain, through the scenario-owned
+test seam; then clear disposable state and alerts. For a plain quickstart, pass `-Quicktest` and omit
+`-Scenario`; the resulting evidence label `none` is not a literal scenario argument. Fixture setup and
+mutation occur only after the attributed test starts—never as implicit startup behavior.
+
 The grouped runner passes each child's exact additional-mod order through a UTF-8 package-ID file and uses a short `smoke-NNN` runtime branch; do not replace either with repeated cross-process PowerShell array parameters or a descriptive save-data path that can exceed Mono's Windows file boundary. Retained stderr stays raw, while JUnit replaces only XML-invalid characters.
 
 For a native right-click order, use `context.GetRequiredService<IEndToEndFloatMenuCatalog>()`, call `Query(actorRuntimeId, targetRuntimeId)` on the E2E execution thread, and choose exactly one enabled option by its visible label. Feed the returned `StableId` to `FloatMenuActionStep`. Never duplicate the stable-ID hash or directly start the job that the native option would create.
@@ -48,6 +66,35 @@ For a native right-click order, use `context.GetRequiredService<IEndToEndFloatMe
 For a scenario that must cross RimWorld's incident boundary, use `IncidentActionStep` with one exact loaded `IncidentDef` name and, when required, the exact live faction load ID. The Gateway builds forced current-map storyteller parameters and invokes the real incident worker. Do not replace it with a generic callback, a guessed storyteller queue entry, translated labels, or synthetic result construction; retain a later wait and screenshot of the ordinary map/UI outcome.
 
 Prefer action → wait → observation steps that exercise the same native path a player uses. Direct arrangement may create preconditions but must not create the claimed result. After a reviewed run, inspect the exact native screenshots yourself and describe the visible causal result. Endpoint state, logs, and synthetic assertions do not independently satisfy acceptance.
+
+### E2E authoring invariants learned from live failures
+
+- Budget every group honestly. Its frame, game-tick, and wall-time caps must exceed the sum of all
+  sequential per-step maxima plus bounded action/screenshot/assertion/save-load overhead. A combined
+  group must cover every admitted case, not one case's deadline multiplied by hope.
+- Keep later cases inert. Arrange or activate hunger, bills, jobs, and other autonomous triggers only
+  when that iterator begins; zero work priorities do not disable ingest/think-tree behavior.
+- Assert physical units with `stackCount` across spawned, carried, inventory, holder, and embedded
+  state. Counting Thing objects misses duplicates merged into a stack. When exact fixtures matter,
+  also assert each returned Thing identity and `stackCount == 1`.
+- Exercise the real engine seam. Calling `meal.Graphic.GetType()` proves a CLR owner, not ingredient
+  graphic selection; invoke `MatSingleFor`/the actual selected Graphic method. Starting a Job directly
+  proves less than choosing its native float-menu/gizmo/bill action.
+- At stable checkpoints assert all relevant persistent state. Save/load tests compare exact Thing IDs,
+  stack counts, ingredients, every serving/component field, sanitation, selection/graphic provenance,
+  and holder ownership—not one representative field.
+- If time legitimately evolves state during a persistence-only fixture, disable that subsystem through
+  the narrow product setting, register restoration before seeding state, and do not claim the fixture
+  proves the disabled behavior.
+- Preserve the primary failure during cleanup. Attempt destruction/restoration for each fixture
+  independently; aggregate cleanup-only failures without masking an existing assertion exception.
+- Frame related actors/Things with the camera, then select only the evidence target before a full-frame
+  screenshot. RimWorld multi-selection hides the ordinary single-Thing inspect pane.
+- Wait for `Game.PlayerHasControl` and a valid player faction before incidents/jobs/reset. Eliminate
+  `Could not find player faction` sequencing errors; a green assertion with an error-severity log is
+  not acceptable evidence.
+- After any runtime/asset-affecting edit, rebuild and rerun affected live groups. Evidence whose product
+  DLL hash predates the final reviewed package cannot close the task.
 
 ## Package checks
 

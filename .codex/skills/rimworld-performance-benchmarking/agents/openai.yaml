@@ -1,0 +1,4 @@
+interface:
+  display_name: "RimWorld Performance Benchmarking"
+  short_description: "Benchmark RimWorld mods with Circinus"
+  default_prompt: "Use $rimworld-performance-benchmarking to design or run an isolated Circinus performance benchmark for this RimWorld mod."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "RimWorld Dev Gateway"
+  short_description: "Operate isolated in-game automation safely"
+  default_prompt: "Use $rimworld-dev-gateway to extend or operate the isolated RimWorld automation gateway for this verification task."

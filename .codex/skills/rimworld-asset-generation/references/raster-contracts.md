@@ -24,6 +24,21 @@
   alpha as the diffuse only at new contour coordinates, and those new mask pixels must be black so
   Stuff tint does not recolor the line.
 
+## About and Workshop previews
+
+- `About/Preview.png` is the image RimWorld renders on its native Mods screen. Measure locally
+  installed packages before choosing a house size; this repository uses 640×360 because it is the
+  common local 16:9 shape, not because RimWorld declares one universal mandatory dimension.
+- Steam Workshop preview upload has a file-size ceiling; it does not mandate this repository's
+  1280×720 authoring master. Keep the reviewed upload below the current proven limit and derive the
+  About image deterministically from the same owned source.
+- Render banners and speech-bubble text in a deterministic build script, not by repeatedly editing
+  generated PNG pixels. Center text against the measured visible bubble/banner bounds at every output
+  size and test cropping/file size.
+- Verify the final About image in RimWorld's native Mods screen with the correct package ID, author,
+  dependency order, and metadata visible. A static image preview does not prove the game crops or
+  scales it acceptably.
+
 ## Stuff masks
 
 RimWorld's conventional `CutoutComplex` mask uses opaque red for the primary color/Stuff-tinted

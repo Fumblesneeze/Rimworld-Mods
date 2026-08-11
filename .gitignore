@@ -63,7 +63,7 @@ docs/LocalDependencies.md
 docs/RequirementsGaps.md
 docs/TddEvidence.md
 
-# Downloaded/local Codex skills. The repository-specific skill is source.
+# Downloaded/local Codex skills. Explicitly allowlisted repository skills are source.
 .codex/skills/*
 !.codex/skills/rimworld-mod-development/
 !.codex/skills/rimworld-mod-development/**
@@ -74,6 +74,10 @@ docs/TddEvidence.md
 !.codex/skills/rimworld-game-balance/agents/openai.yaml
 !.codex/skills/release-rimworld-mods/
 !.codex/skills/release-rimworld-mods/**
+!.codex/skills/rimworld-dev-gateway/
+!.codex/skills/rimworld-dev-gateway/**
+!.codex/skills/rimworld-performance-benchmarking/
+!.codex/skills/rimworld-performance-benchmarking/**
 !.codex/skills/rimworld-asset-generation/
 .codex/skills/rimworld-asset-generation/**
 !.codex/skills/rimworld-asset-generation/SKILL.md

@@ -26,6 +26,16 @@ Resolve optional Defs by exact Def name only after the package is active. For C#
 - required fields/properties and lifecycle timing;
 - graceful no-op behavior when any probe fails.
 
+Validate the complete callable shape, not just method name and parameter count: declaring type,
+static/instance kind, accessibility, generic state, exact parameter types, and exact return type. A
+supported `void UseBucket()` must fail closed if a future version returns another type. Record the
+guarded assembly identity/MVID/hash so the selected strategy is auditable.
+
+An available object is not necessarily eligible. Call and honor the upstream mod's native assignment,
+access, `PawnAllowed`, `Working`, power, network, guest/prisoner/animal, or equivalent reports both
+when selecting a target and immediately before committing the operation. Thread the actual pawn and
+context through the adapter; never bypass native restrictions because a fixture exists.
+
 Log one bounded compatibility warning, not one per tick/job. Expose adapter availability in diagnostics and write tests for absent, present-supported, and present-incompatible cases.
 
 ## Patch hygiene
@@ -36,3 +46,7 @@ Log one bounded compatibility warning, not one per tick/job. Expose adapter avai
 - Use stable IDs or `ThingID` handles across queued work, then resolve and revalidate on execution.
 - For job-giver and reservation changes, test cancellation, save/load, destroyed targets, drafted/downed pawns, map changes, and competing pawns.
 - For compatibility claims, inspect the locally downloaded 1.6 assembly and prove the patch point in an isolated in-game run.
+- When a patch temporarily suppresses or redirects global/component state for an inspect or render
+  operation, use a Prefix plus Finalizer restoration path so exceptions cannot leak the suppression.
+- Prove root-sequence patch ownership with the exact direct operation/patch classes. Descendant-wide
+  XML/Harmony test searches can become ambiguous when another optional sequence is nested later.

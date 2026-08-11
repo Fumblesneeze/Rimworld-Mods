@@ -1,6 +1,6 @@
 ---
 name: rimworld-mod-development
-description: Build, change, test, package, and verify RimWorld 1.6 mods in this repository. Use for C# or XML mod implementation, Harmony patches, Defs and PatchOperations, optional-mod integrations, Zlepper ModSdk tests, isolated RimWorld launches, Dev Gateway automation, or FlaUI evidence capture.
+description: Build, change, test, package, and verify RimWorld 1.6 mods in this repository. Use for C# or XML implementation, Harmony and optional-mod adapters, Defs/PatchOperations, player-facing alerts or inspect text, Zlepper tests, compatibility matrices, isolated game launches, Dev Gateway automation, or performance and live acceptance work.
 ---
 
 # RimWorld Mod Development
@@ -13,8 +13,12 @@ Follow the root `AGENTS.md`. Use the repository's OpenSpec, Zlepper ModSdk, TDD,
 2. For a new behavior or bug fix, use the repo-local `tdd` skill and complete a red-green-refactor slice. Do not implement from the prose alone.
 3. For Harmony or optional C# integration work, read [references/harmony-compatibility.md](references/harmony-compatibility.md).
 4. For Defs, recipes, XML inheritance, stuff, or conditional patches, read [references/xml-defs-patching.md](references/xml-defs-patching.md).
-5. For player-facing text, language catalogs, or distributable-package release checks, read [references/localization-release.md](references/localization-release.md).
-6. Before claiming completion or compatibility, read and follow [references/testing-verification.md](references/testing-verification.md).
+5. For optional-mod scope or exact active-mod test grouping, read [references/compatibility-matrices.md](references/compatibility-matrices.md).
+6. For alerts, inspect panes, hidden state, terminology, or right-click affordances, read [references/player-facing-ui.md](references/player-facing-ui.md).
+7. For player-facing text, language catalogs, or distributable-package release checks, read [references/localization-release.md](references/localization-release.md).
+8. Before claiming completion or compatibility, read and follow [references/testing-verification.md](references/testing-verification.md).
+9. For launcher, REPL, camera/input, quicktest/scenario, screenshot, or Gateway-extension work, use the repo-local `rimworld-dev-gateway` skill.
+10. For Circinus, DPA, profiling, benchmark fixtures, or historical performance comparison, use the repo-local `rimworld-performance-benchmarking` skill and inspect its OpenSpec task state before naming commands.
 
 If no applicable OpenSpec names exactly one owning mod, create or clarify that change before choosing files. Treat downloaded or Workshop mod content as read-only inspection input: never edit it, commit it, or copy its assemblies into the owning mod's release.
 
@@ -30,6 +34,15 @@ Place integration artifacts under `mods/<OwningMod>`:
 - tests: the owning test project's matching `Compatibility/<ExternalMod>/` area
 
 Extend existing projects; do not create a new assembly unless the owning design explicitly requires one.
+
+### Repository identity conventions
+
+- Product and development package IDs use `fumblesneeze.<mod-designator>`; keep the designator stable,
+  lowercase, and free of the author's real name.
+- Author metadata is `Fumblesneeze`.
+- Put `brrainz.harmony` before Core in isolated active-mod lists. Put Core before product/optional mods,
+  keep their exact declared order, and append the Dev Gateway last only in gateway-assisted runs.
+- Use the package ID as the Harmony owner ID. Do not bundle Harmony or optional-mod assemblies.
 
 ## Preserve module boundaries
 
@@ -48,6 +61,8 @@ For each requirement:
 4. Run the focused test again. Run the owning suite only when the slice changes shared behavior across that suite; reserve broad regression for an explicit maintenance or release checkpoint.
 5. Refactor only while green. Prefer deeper domain modules over scattered Harmony patches.
 6. Update only OpenSpec task boxes whose acceptance evidence now exists.
+7. Commit logical reviewable increments once their focused verification is green. Do not combine
+   unrelated finished slices merely to reduce commit count; reviewers should see the active chunk.
 
 Use stable Def names and package IDs in tests. Put volatile RimWorld/Unity access behind small seams so most tests remain host-side; reserve live game validation for engine lifecycle, loaded Def databases, rendering, input, and real optional-mod assemblies.
 

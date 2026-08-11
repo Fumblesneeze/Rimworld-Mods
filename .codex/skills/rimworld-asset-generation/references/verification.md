@@ -35,6 +35,8 @@ On the independently reviewed Release package:
 5. Capture before placement, the player action, and close after views at one comparable zoom.
 6. Select each result and inspect the actual texture/material state. Explicitly inspect the
    north-interaction (`Rot4.South`) view for a screen-bottom underframe.
+   Frame multiple comparison objects through the camera first, then select only the target whose
+   single-Thing inspect panel is evidence; a multi-selection screenshot does not show that panel.
 7. For Stuff masks, observe wood/stone/metal or other materially distinct Things; verify fixed
    accents do not tint and dirty overlays remain visible.
 8. Personally view the screenshots. Record concrete observations, not just automation assertions.

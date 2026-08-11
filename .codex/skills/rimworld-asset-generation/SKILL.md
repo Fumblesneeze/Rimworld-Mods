@@ -1,6 +1,6 @@
 ---
 name: rimworld-asset-generation
-description: Generate, edit, mask, normalize, package, and verify RimWorld 1.6 raster assets. Use for Thing or building sprites, Graphic_Single/Graphic_Multi cardinal families, Stuff masks, material or sanitation variants, fixed-camera workbench perspective, Core-asset measurement, generator comparisons, texture approval manifests, and live in-game visual acceptance.
+description: Generate, edit, mask, normalize, package, and verify RimWorld 1.6 raster assets. Use for Thing/building sprites, About or Workshop previews, Graphic_Single/Graphic_Multi cardinal families, Stuff masks, material/sanitation variants, fixed-camera workbench perspective, Core measurement, generator comparisons, approval manifests, and live visual acceptance.
 ---
 
 # RimWorld Asset Generation
@@ -25,6 +25,8 @@ Read only the references needed for the asset:
 1. Discover the runtime contract before drawing.
    - Identify the owning Def, `graphicClass`, shader, `texPath`, `drawSize`, footprint, rotations,
      Stuff colors, optional graphic owner, and every required filename.
+   - For About/Workshop art, inspect the consumer's real dimension/file-size contract and locally
+     installed comparators before composing; do not assume one Steam image size is mandated.
    - Inspect active optional mods and finalized Defs when another mod can replace graphic ownership.
    - For a building family, measure several comparable Core textures rather than guessing from one.
      Extract Core art read-only into ignored evidence; never redistribute it.
@@ -68,6 +70,8 @@ Read only the references needed for the asset:
      same-facing Core reference.
    - Personally inspect exact-process before/action/after screenshots. For Stuff art, observe at
      least the materially distinct colors that exercise masked and fixed regions.
+   - Frame related objects with the camera, then select only the one whose native inspect pane must
+     be visible; multi-selection replaces the normal Thing inspector.
    - Record the build hash, exact mod list, screenshots, clean log, config restoration, and cleanup.
      Do not check the OpenSpec task if that causal visible evidence is missing.
 

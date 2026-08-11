@@ -1,4 +1,4 @@
 interface:
   display_name: "RimWorld Mod Development"
   short_description: "Build, test, and verify RimWorld mods safely"
-  default_prompt: "Use the repository's RimWorld framework, TDD workflow, OpenSpec ownership, compatibility practices, and isolated in-game gateway verification."
+  default_prompt: "Use $rimworld-mod-development to implement and verify this RimWorld mod change through the repository workflow."
