@@ -19,7 +19,11 @@ internal sealed class GatewayPerformanceEndToEndAdapter : IRimWorldEndToEndTest
     public void Arrange(IEndToEndContext context)
     {
         var service = context.GetRequiredService<GatewayPerformanceRunService>();
-        context.DeferCleanup(service.Cleanup);
+        if (context is GatewayEndToEndTestContext gatewayContext &&
+            service is CoordinatedGatewayPerformanceRunService coordinated)
+            gatewayContext.DeferCleanup(coordinated.TryCleanup);
+        else
+            context.DeferCleanup(service.Cleanup);
         service.Prepare(descriptor, context);
         benchmark.Arrange(context);
     }

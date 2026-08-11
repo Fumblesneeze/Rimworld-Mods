@@ -38,6 +38,11 @@ param(
     [ValidateRange(1, 32)]
     [Nullable[int]]$Repetitions,
 
+    [ValidateSet('Dpa')]
+    [string]$DiagnosticProfiler,
+
+    [string]$DiagnosticSelector,
+
     [string]$ArtifactsPath,
 
     [string]$BaselineDirectory,
@@ -187,7 +192,9 @@ function Invoke-PerformanceHostOperation {
         [Parameter(Mandatory)][string]$RepositoryRoot,
         [Parameter(Mandatory)][string]$ModsRoot,
         [Parameter(Mandatory)][string[]]$PackageIds,
-        [Parameter(Mandatory)][string]$LeaseFile
+        [Parameter(Mandatory)][string]$LeaseFile,
+        [switch]$DpaDiagnostic,
+        [string]$DiagnosticSelector
     )
     $packageFile = $null
     try {
@@ -206,6 +213,12 @@ function Invoke-PerformanceHostOperation {
                 $packageFile, $PackageIds, [System.Text.UTF8Encoding]::new($false))
             $arguments.Add('--package-id-file')
             $arguments.Add($packageFile)
+            if ($DpaDiagnostic) {
+                $arguments.Add('--diagnostic-profiler')
+                $arguments.Add('dpa')
+                $arguments.Add('--diagnostic-selector')
+                $arguments.Add($DiagnosticSelector)
+            }
         }
         $arguments.Add('--lease-file')
         $arguments.Add($LeaseFile)
@@ -609,10 +622,20 @@ if ([string]::IsNullOrWhiteSpace($BaselineDirectory)) {
 if ([string]::IsNullOrWhiteSpace($BaselinePolicyPath)) {
     $BaselinePolicyPath = Join-Path $repositoryRoot 'performance\thresholds.json'
 }
+$isDpaDiagnostic = -not [string]::IsNullOrWhiteSpace($DiagnosticProfiler)
+if ($isDpaDiagnostic -and [string]::IsNullOrWhiteSpace($DiagnosticSelector)) {
+    Exit-InvalidInput '-DiagnosticProfiler Dpa requires one exact -DiagnosticSelector.'
+}
+if (-not $isDpaDiagnostic -and -not [string]::IsNullOrWhiteSpace($DiagnosticSelector)) {
+    Exit-InvalidInput '-DiagnosticSelector is valid only with -DiagnosticProfiler Dpa.'
+}
+if ($isDpaDiagnostic -and ($CreateBaselineCandidate -or $InformationalCrossVersion)) {
+    Exit-InvalidInput 'DPA diagnostics cannot create or compare Circinus baselines.'
+}
 if ($CreateBaselineCandidate -and $InformationalCrossVersion) {
     Exit-InvalidInput '-CreateBaselineCandidate cannot be combined with -InformationalCrossVersion.'
 }
-if (-not $CreateBaselineCandidate) {
+if (-not $CreateBaselineCandidate -and -not $isDpaDiagnostic) {
     if (-not (Test-Path -LiteralPath $BaselineDirectory -PathType Container)) {
         Exit-InvalidInput "Performance baseline directory does not exist: $BaselineDirectory"
     }
@@ -644,7 +667,13 @@ else {
         ForEach-Object { $_.Trim().ToLowerInvariant() } |
         Sort-Object -Unique)
 }
-foreach ($required in @('brrainz.harmony', 'ludeon.rimworld', 'astryl.circinus', 'fumblesneeze.rimworlddevgateway')) {
+$requiredPackages = @('brrainz.harmony', 'ludeon.rimworld', 'fumblesneeze.rimworlddevgateway')
+$requiredPackages += if ($isDpaDiagnostic) {
+    'dubwise.dubsperformanceanalyzer.steam'
+} else {
+    'astryl.circinus'
+}
+foreach ($required in $requiredPackages) {
     if ($packages -notcontains $required) { Exit-InvalidInput "Available mod IDs must include $required." }
 }
 foreach ($package in $packages) {
@@ -674,6 +703,10 @@ foreach ($id in $BenchmarkId) { $arguments.Add('--benchmark-id'); $arguments.Add
 if ($null -ne $WarmUpTicks) { $arguments.Add('--warm-up-ticks'); $arguments.Add([string]$WarmUpTicks) }
 if ($null -ne $SampleTicks) { $arguments.Add('--sample-ticks'); $arguments.Add([string]$SampleTicks) }
 if ($null -ne $Repetitions) { $arguments.Add('--repetitions'); $arguments.Add([string]$Repetitions) }
+if ($isDpaDiagnostic) {
+    $arguments.Add('--diagnostic-profiler'); $arguments.Add('dpa')
+    $arguments.Add('--diagnostic-selector'); $arguments.Add($DiagnosticSelector.Trim())
+}
 
 $hostResult = $null
 try {
@@ -699,13 +732,13 @@ if ($DryRun) {
         Groups = @($plan.groups)
         Processes = @($plan.processes)
         Reports = $plan.reports
-        Baseline = [pscustomobject]@{
+        Baseline = if ($isDpaDiagnostic) { $null } else { [pscustomobject]@{
             Mode = if ($CreateBaselineCandidate) { 'candidate' } else { 'compare' }
             Directory = [System.IO.Path]::GetFullPath($BaselineDirectory)
             Policy = [System.IO.Path]::GetFullPath($BaselinePolicyPath)
             Candidate = [System.IO.Path]::GetFullPath($BaselineCandidatePath)
             InformationalCrossVersion = [bool]$InformationalCrossVersion
-        }
+        } }
     }
     if ($Output -eq 'json') { $result | ConvertTo-Json -Depth 16 -Compress }
     else { $result | Format-List }
@@ -739,7 +772,8 @@ $aggregateMarkdownPath = [string]$plan.reports.summaryMarkdownPath
 $currentSnapshotPath = Join-Path $artifactRoot 'performance-current.json'
 $baselineComparisonPath = Join-Path $artifactRoot 'baseline-comparison.json'
 $null = New-Item -Path $artifactRoot -ItemType Directory -Force
-$settingsPath = Write-CircinusLocalOnlySettings -Directory $settingsInput
+$null = New-Item -Path $settingsInput -ItemType Directory -Force
+$settingsPath = if ($isDpaDiagnostic) { $null } else { Write-CircinusLocalOnlySettings -Directory $settingsInput }
 $stagePublished = $false
 $stageAttempted = $false
 $stageCleaned = $false
@@ -748,7 +782,7 @@ $processResults = [System.Collections.Generic.List[object]]::new()
 $deploymentEvidence = [System.Collections.Generic.List[object]]::new()
 $projects = @{}
 $circinusAssemblyPath = Join-Path $workshop '3773680130\Assemblies\Circinus.dll'
-$circinusAssemblyIdentity = Get-ExactAssemblyIdentity -Path $circinusAssemblyPath
+$circinusAssemblyIdentity = if ($isDpaDiagnostic) { $null } else { Get-ExactAssemblyIdentity -Path $circinusAssemblyPath }
 $baselineResult = $null
 
 try {
@@ -794,7 +828,9 @@ try {
         -RepositoryRoot $repositoryRoot `
         -ModsRoot $modsRoot `
         -PackageIds $packages `
-        -LeaseFile $leaseFile
+        -LeaseFile $leaseFile `
+        -DpaDiagnostic:$isDpaDiagnostic `
+        -DiagnosticSelector $DiagnosticSelector
     [System.IO.File]::WriteAllText(
         $stagePath, $stage.StandardOutput + $stage.StandardError,
         [System.Text.UTF8Encoding]::new($false))
@@ -852,40 +888,102 @@ try {
             $smokeResult = $smoke.StandardOutput | ConvertFrom-Json -ErrorAction Stop
             if ([string]$smokeResult.Status -ne 'passed') { throw 'Gateway smoke did not report passed.' }
 
-            $normalizedSources = @(Get-ChildItem -LiteralPath $smokeRoot -Recurse -File -Filter 'performance.normalized.json')
-            $inMemorySources = @(Get-ChildItem -LiteralPath $smokeRoot -Recurse -File -Filter 'circinus.in-memory.json')
-            $persistedSources = @(Get-ChildItem -LiteralPath $smokeRoot -Recurse -File -Filter 'circinus.persisted.json')
-            if ($normalizedSources.Count -ne 1 -or $inMemorySources.Count -ne 1 -or $persistedSources.Count -ne 1) {
-                throw 'Performance process did not produce one exact normalized/in-memory/persisted artifact set.'
+            if ($isDpaDiagnostic) {
+                $diagnosticSources = @(Get-ChildItem -LiteralPath $smokeRoot -Recurse -File -Filter 'dpa.raw.json')
+                $forbiddenCircinusSources = @(
+                    Get-ChildItem -LiteralPath $smokeRoot -Recurse -File |
+                        Where-Object { $_.Name -in @(
+                            'performance.normalized.json', 'circinus.in-memory.json', 'circinus.persisted.json') })
+                if ($diagnosticSources.Count -ne 1) {
+                    throw 'DPA diagnostic process did not produce one exact raw artifact.'
+                }
+                if ($forbiddenCircinusSources.Count -ne 0) {
+                    throw 'DPA diagnostic process produced a forbidden Circinus/normalized artifact.'
+                }
+                $raw = Copy-ExactPerformanceArtifact `
+                    -Source $diagnosticSources[0].FullName `
+                    -Destination ([string]$processPlan.rawDiagnosticJsonPath)
+                $diagnostic = Get-Content -LiteralPath $raw.Path -Raw | ConvertFrom-Json -ErrorAction Stop
+                $diagnosticCheckpoints = @($diagnostic.checkpoints | ForEach-Object { [string]$_ })
+                $missingThroughput = @($processPlan.throughputCheckpoints | Where-Object {
+                    $checkpointId = [string]$_.id
+                    -not @($diagnosticCheckpoints | Where-Object {
+                        $_.StartsWith($checkpointId + '=', [StringComparison]::Ordinal)
+                    }).Count
+                })
+                if ([string]$diagnostic.schema -cne 'RimWorldDevGateway/DpaDiagnostic/v1' -or
+                    [string]$diagnostic.kind -cne 'diagnostic' -or
+                    [string]$diagnostic.profiler -cne 'dpa' -or
+                    [bool]$diagnostic.baselineEligible -or
+                    [string]$diagnostic.workloadVersion -cne [string]$processPlan.workloadVersion -or
+                    [string]::IsNullOrWhiteSpace([string]$diagnostic.assembly.identity) -or
+                    [string]::IsNullOrWhiteSpace([string]$diagnostic.assembly.moduleVersionId) -or
+                    [string]::IsNullOrWhiteSpace([string]$diagnostic.assembly.sha256) -or
+                    @($diagnostic.requestedSelectors).Count -ne 1 -or
+                    [string]$diagnostic.requestedSelectors[0] -cne [string]$processPlan.diagnosticSelector -or
+                    @($diagnostic.selectors).Count -ne 1 -or
+                    [string]::IsNullOrWhiteSpace([string]$diagnostic.selectors[0]) -or
+                    -not ([string]$diagnostic.selectors[0]).Contains('::') -or
+                    -not ([string]$diagnostic.selectors[0]).Contains('@') -or
+                    @($diagnosticCheckpoints | Where-Object { $_.StartsWith('sample-start-tick=', [StringComparison]::Ordinal) }).Count -ne 1 -or
+                    @($diagnosticCheckpoints | Where-Object { $_.StartsWith('sample-end-tick=', [StringComparison]::Ordinal) }).Count -ne 1 -or
+                    $missingThroughput.Count -ne 0 -or
+                    @($diagnostic.entries).Count -eq 0) {
+                    throw 'DPA diagnostic raw artifact failed its exact noncanonical identity checks.'
+                }
+                $processResults.Add([pscustomobject]@{
+                    Sequence = [int]$processPlan.sequence
+                    BenchmarkId = [string]$processPlan.benchmarkId
+                    GroupId = [string]$processPlan.groupId
+                    EvidenceLens = 'diagnostic'
+                    Repetition = [int]$processPlan.repetition
+                    Status = 'passed'
+                    ActivePackageIds = @($processPlan.activePackageIds)
+                    SmokeResult = $smokeResult
+                    Raw = $raw
+                    DiagnosticSelector = [string]$processPlan.diagnosticSelector
+                    BaselineEligible = $false
+                    Metrics = @()
+                    StandardOutput = $stdoutPath
+                    StandardError = $stderrPath
+                })
             }
-            $raw = Copy-ExactPerformanceArtifact `
-                -Source $inMemorySources[0].FullName `
-                -Destination ([string]$processPlan.rawCircinusJsonPath)
-            $persistedDestination = Join-Path $processDirectory 'circinus.persisted.json'
-            $persisted = Copy-ExactPerformanceArtifact `
-                -Source $persistedSources[0].FullName `
-                -Destination $persistedDestination
-            $normalizedCopy = Copy-ExactPerformanceArtifact `
-                -Source $normalizedSources[0].FullName `
-                -Destination ([string]$processPlan.normalizedJsonPath)
-            $normalized = Get-Content -LiteralPath $normalizedCopy.Path -Raw | ConvertFrom-Json -ErrorAction Stop
-            $rows = Write-PerformanceProcessReports -Normalized $normalized -ProcessPlan $processPlan
-            $processResults.Add([pscustomobject]@{
-                Sequence = [int]$processPlan.sequence
-                BenchmarkId = [string]$processPlan.benchmarkId
-                GroupId = [string]$processPlan.groupId
-                EvidenceLens = [string]$normalized.evidenceLens
-                Repetition = [int]$processPlan.repetition
-                Status = 'passed'
-                ActivePackageIds = @($processPlan.activePackageIds)
-                SmokeResult = $smokeResult
-                Raw = $raw
-                Persisted = $persisted
-                Normalized = $normalizedCopy
-                Metrics = @($rows)
-                StandardOutput = $stdoutPath
-                StandardError = $stderrPath
-            })
+            else {
+                $normalizedSources = @(Get-ChildItem -LiteralPath $smokeRoot -Recurse -File -Filter 'performance.normalized.json')
+                $inMemorySources = @(Get-ChildItem -LiteralPath $smokeRoot -Recurse -File -Filter 'circinus.in-memory.json')
+                $persistedSources = @(Get-ChildItem -LiteralPath $smokeRoot -Recurse -File -Filter 'circinus.persisted.json')
+                if ($normalizedSources.Count -ne 1 -or $inMemorySources.Count -ne 1 -or $persistedSources.Count -ne 1) {
+                    throw 'Performance process did not produce one exact normalized/in-memory/persisted artifact set.'
+                }
+                $raw = Copy-ExactPerformanceArtifact `
+                    -Source $inMemorySources[0].FullName `
+                    -Destination ([string]$processPlan.rawCircinusJsonPath)
+                $persistedDestination = Join-Path $processDirectory 'circinus.persisted.json'
+                $persisted = Copy-ExactPerformanceArtifact `
+                    -Source $persistedSources[0].FullName `
+                    -Destination $persistedDestination
+                $normalizedCopy = Copy-ExactPerformanceArtifact `
+                    -Source $normalizedSources[0].FullName `
+                    -Destination ([string]$processPlan.normalizedJsonPath)
+                $normalized = Get-Content -LiteralPath $normalizedCopy.Path -Raw | ConvertFrom-Json -ErrorAction Stop
+                $rows = Write-PerformanceProcessReports -Normalized $normalized -ProcessPlan $processPlan
+                $processResults.Add([pscustomobject]@{
+                    Sequence = [int]$processPlan.sequence
+                    BenchmarkId = [string]$processPlan.benchmarkId
+                    GroupId = [string]$processPlan.groupId
+                    EvidenceLens = [string]$normalized.evidenceLens
+                    Repetition = [int]$processPlan.repetition
+                    Status = 'passed'
+                    ActivePackageIds = @($processPlan.activePackageIds)
+                    SmokeResult = $smokeResult
+                    Raw = $raw
+                    Persisted = $persisted
+                    Normalized = $normalizedCopy
+                    Metrics = @($rows)
+                    StandardOutput = $stdoutPath
+                    StandardError = $stderrPath
+                })
+            }
         }
         catch {
             $processResults.Add([pscustomobject]@{
@@ -956,7 +1054,7 @@ finally {
 $allPassed = $processResults.Count -eq @($plan.processes).Count -and
     @($processResults | Where-Object { [string]$_.Status -ne 'passed' }).Count -eq 0
 $passed = $allPassed -and $stageCleaned -and [string]::IsNullOrWhiteSpace($infrastructureFailure)
-if ($passed) {
+if ($passed -and -not $isDpaDiagnostic) {
     try {
         $currentSnapshot = New-PerformanceCurrentSnapshot `
             -Plan $plan `
@@ -998,6 +1096,20 @@ if ($passed) {
         $infrastructureFailure = "Performance baseline operation failed: $($_.Exception.Message)"
     }
 }
+if ($isDpaDiagnostic) {
+    $forbiddenDiagnosticArtifacts = @($currentSnapshotPath, $baselineComparisonPath) +
+        @($plan.processes | ForEach-Object {
+            @([string]$_.rawCircinusJsonPath, [string]$_.normalizedJsonPath,
+                [string]$_.csvReportPath, [string]$_.markdownReportPath)
+        })
+    $contaminatingArtifacts = @($forbiddenDiagnosticArtifacts | Where-Object {
+        -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_)
+    })
+    if ($contaminatingArtifacts.Count -ne 0) {
+        $passed = $false
+        $infrastructureFailure = 'DPA diagnostic produced a forbidden Circinus, normalized, or baseline artifact.'
+    }
+}
 $performanceOutcome = if (-not $passed) {
     'failed'
 }
@@ -1025,21 +1137,27 @@ $markdown = @(
     '# RimWorld performance run', '',
     "- Run: $runId",
     "- Status: $performanceOutcome",
+    "- Profiler: $(if ($isDpaDiagnostic) { 'DPA diagnostic (noncanonical)' } else { 'Circinus' })",
     "- Processes: $($processResults.Count)/$(@($plan.processes).Count)",
     "- Stage cleanup: $stageCleaned",
     "- Baseline: $(if ($null -eq $baselineResult) { 'not-run' } else { [string]$baselineResult.status })", '',
-    'Circinus attribution is gross measurement. Instrumented, armed-disabled, and fully-disarmed lenses must be compared only within one compatible workload family.'
+    $(if ($isDpaDiagnostic) {
+        'DPA output is raw diagnostic evidence only. It is not normalized and cannot enter a Circinus baseline.'
+    } else {
+        'Circinus attribution is gross measurement. Instrumented, armed-disabled, and fully-disarmed lenses must be compared only within one compatible workload family.'
+    })
 )
 [System.IO.File]::WriteAllLines($aggregateMarkdownPath, $markdown, [System.Text.UTF8Encoding]::new($false))
 $aggregate = [pscustomobject]@{
     Status = $performanceOutcome
     RunId = $runId
+    Profiler = if ($isDpaDiagnostic) { 'dpa-diagnostic' } else { 'circinus' }
     RunDirectory = $artifactRoot
     AvailablePackageCount = $packages.Count
     StagePublished = $stagePublished
     StageCleaned = $stageCleaned
     InfrastructureFailure = $infrastructureFailure
-    Baseline = [pscustomobject]@{
+    Baseline = if ($isDpaDiagnostic) { $null } else { [pscustomobject]@{
         Mode = if ($CreateBaselineCandidate) { 'candidate' } else { 'compare' }
         CurrentSnapshot = $currentSnapshotPath
         AcceptedDirectory = [System.IO.Path]::GetFullPath($BaselineDirectory)
@@ -1047,8 +1165,8 @@ $aggregate = [pscustomobject]@{
         Candidate = if ($CreateBaselineCandidate) { [System.IO.Path]::GetFullPath($BaselineCandidatePath) } else { $null }
         Comparison = if (-not $CreateBaselineCandidate) { $baselineComparisonPath } else { $null }
         Result = $baselineResult
-    }
-    CircinusSettings = [pscustomobject]@{
+    } }
+    CircinusSettings = if ($isDpaDiagnostic) { $null } else { [pscustomobject]@{
         Path = $settingsPath
         Sha256 = (Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash
         LocalOnly = $true
@@ -1056,15 +1174,23 @@ $aggregate = [pscustomobject]@{
         NormalBefore = $NormalCircinusSettingsBefore
         NormalAfter = $NormalCircinusSettingsAfter
         NormalUnchanged = $NormalCircinusSettingsUnchanged
-    }
+    } }
+    DiagnosticIsolation = if ($isDpaDiagnostic) { [pscustomobject]@{
+        BaselineEligible = $false
+        CircinusArtifactsCreated = $false
+        NormalCircinusSettingsPath = $NormalCircinusSettingsPath
+        NormalCircinusSettingsBefore = $NormalCircinusSettingsBefore
+        NormalCircinusSettingsAfter = $NormalCircinusSettingsAfter
+        NormalCircinusSettingsUnchanged = $NormalCircinusSettingsUnchanged
+    } } else { $null }
     ProductDeployment = $deploymentPath
     Processes = @($processResults)
     Reports = [pscustomobject]@{
         AggregateJson = $aggregateJsonPath
         AggregateCsv = $aggregateCsvPath
         SummaryMarkdown = $aggregateMarkdownPath
-        CurrentSnapshot = $currentSnapshotPath
-        BaselineComparison = if (-not $CreateBaselineCandidate) { $baselineComparisonPath } else { $null }
+        CurrentSnapshot = if ($isDpaDiagnostic) { $null } else { $currentSnapshotPath }
+        BaselineComparison = if ($isDpaDiagnostic -or $CreateBaselineCandidate) { $null } else { $baselineComparisonPath }
     }
 }
 $aggregate | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $aggregateJsonPath -Encoding utf8
@@ -1076,6 +1202,7 @@ $result = [pscustomobject]@{
     Status = $performanceOutcome
     RunId = $runId
     RunDirectory = $artifactRoot
+    Profiler = if ($isDpaDiagnostic) { 'dpa-diagnostic' } else { 'circinus' }
     ProcessCount = $processResults.Count
     StageCleaned = $stageCleaned
     Aggregate = $aggregateJsonPath

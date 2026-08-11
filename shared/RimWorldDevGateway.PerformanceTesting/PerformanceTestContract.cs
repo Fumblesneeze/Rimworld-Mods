@@ -24,6 +24,12 @@ public enum PerformanceEvidenceLens
     ProductAbsentControl = 3
 }
 
+public enum PerformanceProfilerKind
+{
+    Circinus = 0,
+    DpaDiagnostic = 1
+}
+
 public enum PerformanceMethodSelectorKind
 {
     HarmonyOwner = 0,
@@ -165,6 +171,31 @@ public sealed class PerformanceTestDescriptor
         string? productAbsentControlId,
         IReadOnlyList<PerformanceMethodSelector> methodSelectors,
         IReadOnlyList<PerformanceThroughputCheckpoint> throughputCheckpoints)
+        : this(testType, id, stagingOwnerPackageId, measuredSubjectPackageId, activePackageIds,
+            deterministicSeed, workloadVersion, comparisonId, warmUpTicks, sampleTicks, gameSpeed,
+            repetitions, evidenceLens, productAbsentControlId, methodSelectors, throughputCheckpoints,
+            PerformanceProfilerKind.Circinus)
+    {
+    }
+
+    internal PerformanceTestDescriptor(
+        Type testType,
+        string id,
+        string stagingOwnerPackageId,
+        string measuredSubjectPackageId,
+        IReadOnlyList<string> activePackageIds,
+        int deterministicSeed,
+        string workloadVersion,
+        string comparisonId,
+        int warmUpTicks,
+        int sampleTicks,
+        PerformanceGameSpeed gameSpeed,
+        int repetitions,
+        PerformanceEvidenceLens evidenceLens,
+        string? productAbsentControlId,
+        IReadOnlyList<PerformanceMethodSelector> methodSelectors,
+        IReadOnlyList<PerformanceThroughputCheckpoint> throughputCheckpoints,
+        PerformanceProfilerKind profiler)
     {
         TestType = testType;
         Id = id;
@@ -182,6 +213,7 @@ public sealed class PerformanceTestDescriptor
         ProductAbsentControlId = productAbsentControlId;
         MethodSelectors = methodSelectors;
         ThroughputCheckpoints = throughputCheckpoints;
+        Profiler = profiler;
         LaunchedPackageIds = Array.AsReadOnly(activePackageIds
             .Concat(new[] { EndToEndTestContract.GatewayPackageId })
             .ToArray());
@@ -220,6 +252,7 @@ public sealed class PerformanceTestDescriptor
     public IReadOnlyList<PerformanceMethodSelector> MethodSelectors { get; }
 
     public IReadOnlyList<PerformanceThroughputCheckpoint> ThroughputCheckpoints { get; }
+    public PerformanceProfilerKind Profiler { get; }
 }
 
 public sealed class PerformanceTestGroup
@@ -259,6 +292,49 @@ public static class PerformanceTestContract
     public const int MaximumSelectorCharacters = 1024;
     public const int MaximumMethodSelectors = 256;
     public const int MaximumThroughputCheckpoints = 64;
+
+    public static PerformanceTestDescriptor ForDpaDiagnostic(
+        PerformanceTestDescriptor canonical,
+        string exactOuterMethodSelector)
+    {
+        if (canonical is null) throw new ArgumentNullException(nameof(canonical));
+        if (canonical.Profiler != PerformanceProfilerKind.Circinus)
+            throw new PerformanceContractException("Only a canonical Circinus descriptor can become a DPA diagnostic.");
+        var selector = RequiredBounded(
+            exactOuterMethodSelector,
+            MaximumSelectorCharacters,
+            "DPA diagnostic selector",
+            canonical.TestType);
+        var packages = canonical.ActivePackageIds.ToArray();
+        if (packages.Length < 3 ||
+            !StringComparer.OrdinalIgnoreCase.Equals(packages[2], CircinusPackageId))
+            throw new PerformanceContractException("The canonical descriptor has no exact Circinus launch prefix.");
+        packages[2] = DpaPackageId;
+        return new PerformanceTestDescriptor(
+            canonical.TestType,
+            canonical.Id,
+            canonical.StagingOwnerPackageId,
+            canonical.MeasuredSubjectPackageId,
+            Array.AsReadOnly(packages),
+            canonical.DeterministicSeed,
+            canonical.WorkloadVersion,
+            canonical.ComparisonId,
+            canonical.WarmUpTicks,
+            canonical.SampleTicks,
+            canonical.GameSpeed,
+            1,
+            canonical.EvidenceLens,
+            canonical.ProductAbsentControlId,
+            Array.AsReadOnly(new[]
+            {
+                new PerformanceMethodSelector(
+                    PerformanceMethodSelectorKind.Method,
+                    selector,
+                    "dpa-internal-call")
+            }),
+            canonical.ThroughputCheckpoints,
+            PerformanceProfilerKind.DpaDiagnostic);
+    }
 
     public static PerformanceTestDescriptor Describe(Type testType)
     {

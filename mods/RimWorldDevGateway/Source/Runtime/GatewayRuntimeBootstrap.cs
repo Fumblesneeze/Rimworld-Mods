@@ -5,6 +5,7 @@ using System.Threading;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using RimWorldDevGateway.Performance;
+using RimWorldDevGateway.PerformanceTesting;
 using UnityEngine;
 using Verse;
 
@@ -237,13 +238,27 @@ public static class GatewayRuntimeBootstrap
                             artifactDirectory =>
                             {
                                 var testServices = new Dictionary<Type, object>(contextServices);
-                                var performanceBackend = new GatewayCircinusPerformanceBackend(
-                                    () => AppDomain.CurrentDomain.GetAssemblies(),
-                                    () => LoadedModManager.RunningModsListForReading
+                                Func<IReadOnlyList<string>> activePerformancePackages = () =>
+                                    LoadedModManager.RunningModsListForReading
                                         .Select(mod => mod.PackageId)
-                                        .ToArray(),
-                                    () => GenFilePaths.SaveDataFolderPath,
-                                    artifactDirectory);
+                                        .ToArray();
+                                var packages = activePerformancePackages();
+                                IGatewayPerformanceRuntimeBackend performanceBackend =
+                                    packages.Contains(
+                                        PerformanceTestContract.DpaPackageId,
+                                        StringComparer.OrdinalIgnoreCase) &&
+                                    !packages.Contains(
+                                        PerformanceTestContract.CircinusPackageId,
+                                        StringComparer.OrdinalIgnoreCase)
+                                        ? new GatewayDpaPerformanceBackend(
+                                            () => AppDomain.CurrentDomain.GetAssemblies(),
+                                            activePerformancePackages,
+                                            artifactDirectory)
+                                        : new GatewayCircinusPerformanceBackend(
+                                            () => AppDomain.CurrentDomain.GetAssemblies(),
+                                            activePerformancePackages,
+                                            () => GenFilePaths.SaveDataFolderPath,
+                                            artifactDirectory);
                                 testServices[typeof(GatewayPerformanceRunService)] =
                                     new CoordinatedGatewayPerformanceRunService(performanceBackend);
                                 return new GatewayEndToEndTestContext(

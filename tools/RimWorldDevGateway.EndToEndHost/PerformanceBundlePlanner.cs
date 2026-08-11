@@ -23,17 +23,24 @@ public static class PerformanceBundlePlanner
         IEnumerable<PerformanceAssemblyCandidate> assemblyCandidates,
         IEnumerable<string> resolvablePackageIds,
         string modsRoot,
-        string rimWorldVersion)
+        string rimWorldVersion,
+        PerformanceProfilerMode profiler = PerformanceProfilerMode.Circinus,
+        string? diagnosticSelector = null)
     {
+        ValidateProfiler(profiler, diagnosticSelector);
         var candidates = MaterializeCandidates(assemblyCandidates);
-        var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(candidates, resolvablePackageIds);
+        var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(
+            candidates,
+            resolvablePackageIds,
+            canonicalCircinusIsDeclarationOnly: profiler == PerformanceProfilerMode.DpaDiagnostic);
         var root = Path.GetFullPath(string.IsNullOrWhiteSpace(modsRoot)
             ? throw new ArgumentException("A mods root is required.", nameof(modsRoot))
             : modsRoot);
         var ownerStages = candidates
             .GroupBy(candidate => candidate.ExpectedOwnerPackageId.Trim().ToLowerInvariant(), StringComparer.Ordinal)
             .OrderBy(group => group.Key, StringComparer.Ordinal)
-            .Select(group => CreateOwnerStage(root, rimWorldVersion, group.Key, group))
+            .Select(group => CreateOwnerStage(
+                root, rimWorldVersion, group.Key, group, profiler, diagnosticSelector))
             .ToArray();
         return new PerformanceBundlePlan(discovery, ownerStages);
     }
@@ -42,11 +49,13 @@ public static class PerformanceBundlePlanner
         string modsRoot,
         string rimWorldVersion,
         string ownerPackageId,
-        IEnumerable<PerformanceAssemblyCandidate> candidates)
+        IEnumerable<PerformanceAssemblyCandidate> candidates,
+        PerformanceProfilerMode profiler,
+        string? diagnosticSelector)
     {
         var bundles = candidates
             .OrderBy(candidate => candidate.Metadata.AssemblyName, StringComparer.Ordinal)
-            .Select(candidate => CreateBundle(ownerPackageId, candidate))
+            .Select(candidate => CreateBundle(ownerPackageId, candidate, profiler, diagnosticSelector))
             .ToArray();
         var duplicateFile = bundles
             .SelectMany(bundle => new[] { bundle.AssemblyFileName, bundle.ManifestFileName })
@@ -68,7 +77,9 @@ public static class PerformanceBundlePlanner
 
     private static EndToEndBundleArtifact CreateBundle(
         string ownerPackageId,
-        PerformanceAssemblyCandidate candidate)
+        PerformanceAssemblyCandidate candidate,
+        PerformanceProfilerMode profiler,
+        string? diagnosticSelector)
     {
         var metadata = candidate.Metadata;
         var assemblyFileName = metadata.AssemblyName + ".dll";
@@ -94,7 +105,7 @@ public static class PerformanceBundlePlanner
                 }).ToArray(),
             Tests = metadata.Declarations
                 .OrderBy(test => test.Id, StringComparer.Ordinal)
-                .Select(test => ToManifestTest(ownerPackageId, test))
+                .Select(test => ToManifestTest(ownerPackageId, test, profiler, diagnosticSelector))
                 .ToArray()
         };
         return new EndToEndBundleArtifact(
@@ -107,7 +118,9 @@ public static class PerformanceBundlePlanner
 
     private static EndToEndBundleTest ToManifestTest(
         string ownerPackageId,
-        PerformanceMetadataDeclaration test)
+        PerformanceMetadataDeclaration test,
+        PerformanceProfilerMode profiler,
+        string? diagnosticSelector)
     {
         PerformanceBundleDeadline deadline;
         try
@@ -125,7 +138,7 @@ public static class PerformanceBundlePlanner
             Id = test.Id.Trim(),
             TypeName = test.TypeName,
             OwnerPackageId = ownerPackageId,
-            ActivePackageIds = test.ActivePackageIds.Select(value => value.Trim().ToLowerInvariant()).ToArray(),
+            ActivePackageIds = Packages(test.ActivePackageIds, profiler),
             MaxFrames = deadline.MaxFrames,
             MaxGameTicks = deadline.MaxGameTicks,
             MaxWallClockSeconds = deadline.MaxWallClockSeconds,
@@ -137,22 +150,72 @@ public static class PerformanceBundlePlanner
             WarmUpTicks = test.WarmUpTicks,
             SampleTicks = test.SampleTicks,
             GameSpeed = test.GameSpeed,
-            Repetitions = test.Repetitions,
+            Repetitions = profiler == PerformanceProfilerMode.DpaDiagnostic ? 1 : test.Repetitions,
             EvidenceLens = test.EvidenceLens,
             ProductAbsentControlId = test.ProductAbsentControlId,
-            MethodSelectors = test.MethodSelectors.Select(selector => new PerformanceBundleMethodSelector
-            {
-                Kind = selector.Kind,
-                Value = selector.Value,
-                Category = selector.Category
-            }).ToArray(),
+            MethodSelectors = profiler == PerformanceProfilerMode.DpaDiagnostic
+                ? new[]
+                {
+                    new PerformanceBundleMethodSelector
+                    {
+                        Kind = PerformanceDiscoveryValidator.ExactMethodSelectorKind,
+                        Value = diagnosticSelector!.Trim(),
+                        Category = "dpa-internal-call"
+                    }
+                }
+                : test.MethodSelectors.Select(selector => new PerformanceBundleMethodSelector
+                {
+                    Kind = selector.Kind,
+                    Value = selector.Value,
+                    Category = selector.Category
+                }).ToArray(),
             ThroughputCheckpoints = test.ThroughputCheckpoints.Select(checkpoint =>
                 new PerformanceBundleThroughputCheckpoint
                 {
                     Id = checkpoint.Id,
                     MinimumCount = checkpoint.MinimumCount
-                }).ToArray()
+                }).ToArray(),
+            PerformanceProfiler = profiler == PerformanceProfilerMode.DpaDiagnostic ? "dpa" : "circinus",
+            DiagnosticSelector = profiler == PerformanceProfilerMode.DpaDiagnostic
+                ? diagnosticSelector!.Trim()
+                : null
         };
+    }
+
+    private static string[] Packages(
+        IReadOnlyList<string> source,
+        PerformanceProfilerMode profiler)
+    {
+        var result = source.Select(value => value.Trim().ToLowerInvariant()).ToArray();
+        if (profiler == PerformanceProfilerMode.DpaDiagnostic)
+        {
+            if (result.Length < 3 ||
+                !StringComparer.OrdinalIgnoreCase.Equals(
+                    result[2], PerformanceDiscoveryValidator.CircinusPackageId))
+                throw new EndToEndStageException(
+                    "A DPA diagnostic requires the exact canonical Circinus source prefix.");
+            result[2] = PerformanceDiscoveryValidator.DpaPackageId;
+        }
+        return result;
+    }
+
+    private static void ValidateProfiler(
+        PerformanceProfilerMode profiler,
+        string? diagnosticSelector)
+    {
+        if (!Enum.IsDefined(typeof(PerformanceProfilerMode), profiler))
+            throw new ArgumentException("The performance profiler is invalid.");
+        if (profiler == PerformanceProfilerMode.DpaDiagnostic)
+        {
+            var selector = diagnosticSelector?.Trim() ?? string.Empty;
+            if (selector.Length == 0 || selector.Length > PerformanceDiscoveryValidator.MaximumSelectorCharacters)
+                throw new ArgumentException(
+                    "A DPA diagnostic requires one bounded exact outer-method selector.");
+        }
+        else if (!string.IsNullOrWhiteSpace(diagnosticSelector))
+        {
+            throw new ArgumentException("A diagnostic selector is valid only with the DPA profiler.");
+        }
     }
 
     private static PerformanceAssemblyCandidate[] MaterializeCandidates(

@@ -74,6 +74,9 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         Assert.That(complete.Current, Is.TypeOf<TimeControlActionStep>());
         Assert.That(calls.Last(), Is.EqualTo("arm:100"));
         Assert.That(complete.MoveNext(), Is.True);
+        Assert.That(complete.Current, Is.TypeOf<WaitUntilStep>());
+        Assert.That(((WaitUntilStep)complete.Current).Predicate(context), Is.True);
+        Assert.That(complete.MoveNext(), Is.True);
         Assert.That(complete.Current, Is.TypeOf<CheckpointStep>());
 
         Assert.Multiple(() =>
@@ -137,7 +140,7 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         Assert.Throws<InvalidOperationException>(() => adapter.Arrange(context));
         Assert.Multiple(() =>
         {
-            Assert.That(context.RunDeferredCleanup(), Is.True);
+            Assert.That(context.RunDeferredCleanup(), Is.EqualTo(DeferredCleanupStatus.Completed));
             Assert.That(calls, Is.EqualTo(new[] { "prepare", "cleanup" }));
         });
     }
@@ -175,6 +178,27 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         Assert.That(exception!.Message, Does.Contain("observed 4").And.Contain("at least 5"));
         Assert.That(backend.ThroughputCounts, Is.Null);
         service.Cleanup();
+    }
+
+    [Test]
+    public void Coordinated_cleanup_retains_a_pending_backend_until_async_ownership_is_confirmed()
+    {
+        var backend = new PendingCleanupBackend();
+        var service = new CoordinatedGatewayPerformanceRunService(backend);
+        var descriptor = PerformanceTestContract.Describe(typeof(ShortFixtureBenchmark));
+        var context = new GatewayEndToEndTestContext(() => 0, () => 0, _ => null);
+        service.Prepare(descriptor, context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(service.TryCleanup(), Is.False);
+            Assert.That(service.TryCleanup(), Is.False);
+            Assert.That(service.TryCleanup(), Is.True);
+            Assert.That(backend.Attempts, Is.EqualTo(3));
+            Assert.That(() => service.Prepare(descriptor, context), Throws.Nothing,
+                "Confirmed cleanup must release the coordinated service for a later run.");
+        });
+        Assert.That(service.TryCleanup(), Is.True);
     }
 
     private sealed class FailingPrepareService : GatewayPerformanceRunService
@@ -233,6 +257,11 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
             ThroughputCounts = throughputCounts;
             return new Dictionary<string, string> { ["normalized"] = "normalized.json" };
         }
+        public bool TryFinalize(out string reason)
+        {
+            reason = string.Empty;
+            return true;
+        }
         public void Cleanup() => calls.Add("cleanup");
     }
 
@@ -240,6 +269,34 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
     {
         public long Value { get; set; }
         public long Read(string id) => Value;
+    }
+
+    private sealed class PendingCleanupBackend :
+        IGatewayPerformanceRuntimeBackend,
+        IDeferredGatewayPerformanceCleanup
+    {
+        public int Attempts { get; private set; }
+        public void Prepare(PerformanceTestDescriptor descriptor) { }
+        public void Start(PerformanceTestDescriptor descriptor) { }
+        public void ArmTickBoundary(int gameTick) { }
+        public void ConfirmTickBoundary(int gameTick) { }
+        public void DisarmTickBoundary() { }
+        public IReadOnlyDictionary<string, string> Complete(
+            PerformanceTestDescriptor descriptor,
+            GatewayPerformanceControlWindow controlWindow,
+            IReadOnlyDictionary<string, long> throughputCounts) =>
+            new Dictionary<string, string>();
+        public bool TryFinalize(out string reason) { reason = string.Empty; return true; }
+        public bool TryCleanup(out string reason)
+        {
+            Attempts++;
+            reason = Attempts < 3 ? "pending" : string.Empty;
+            return Attempts >= 3;
+        }
+        public void Cleanup()
+        {
+            if (!TryCleanup(out var reason)) throw new InvalidOperationException(reason);
+        }
     }
 
     [RimWorldPerformanceTest(

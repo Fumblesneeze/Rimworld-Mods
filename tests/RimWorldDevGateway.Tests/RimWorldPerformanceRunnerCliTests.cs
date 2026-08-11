@@ -60,7 +60,8 @@ public sealed class RimWorldPerformanceRunnerCliTests
             Assert.That(processes[0].NormalizedJsonPath, Does.EndWith("normalized.json"));
             Assert.That(processes[0].CsvReportPath, Does.EndWith("metrics.csv"));
             Assert.That(processes[0].MarkdownReportPath, Does.EndWith("summary.md"));
-            Assert.That(root.Baseline.Mode, Is.EqualTo("compare"));
+            Assert.That(root.Baseline, Is.Not.Null);
+            Assert.That(root.Baseline!.Mode, Is.EqualTo("compare"));
             Assert.That(root.Baseline.Directory, Does.EndWith(Path.Combine("performance", "baselines")));
             Assert.That(root.Baseline.Policy, Does.EndWith(Path.Combine("performance", "thresholds.json")));
             Assert.That(root.Baseline.InformationalCrossVersion, Is.False);
@@ -72,6 +73,56 @@ public sealed class RimWorldPerformanceRunnerCliTests
                 "RimWorldDevGateway.PerformanceTests.CalibrationTickComponent::MapComponentTick()"
             }));
             Assert.That(Directory.Exists(artifactRoot), Is.False);
+        });
+    }
+
+    [Test]
+    public void Dpa_diagnostic_dry_run_replaces_Circinus_and_exposes_no_baseline_operation()
+    {
+        var artifactRoot = Path.Combine(Path.GetTempPath(), "RimWorldPerformanceRunnerCliTests", Guid.NewGuid().ToString("N"));
+        const string selector = "Verse.Map::MapPreTick()";
+        var run = Invoke(
+            "-DryRun", "-Output", "json",
+            "-AvailableModIds",
+            "brrainz.harmony,ludeon.rimworld,dubwise.dubsperformanceanalyzer.steam,fumblesneeze.rimworlddevgateway",
+            "-BenchmarkId", "gateway.circinus-calibration.instrumented",
+            "-DiagnosticProfiler", "Dpa", "-DiagnosticSelector", selector,
+            "-WarmUpTicks", "30", "-SampleTicks", "120",
+            "-ArtifactsPath", artifactRoot);
+
+        Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+        PerformanceDryRun root;
+        using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(run.StandardOutput)))
+            root = (PerformanceDryRun)new DataContractJsonSerializer(typeof(PerformanceDryRun)).ReadObject(stream)!;
+        var process = root.Processes.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(process.Profiler, Is.EqualTo("DpaDiagnostic"));
+            Assert.That(process.DiagnosticSelector, Is.EqualTo(selector));
+            Assert.That(process.ActivePackageIds, Is.EqualTo(new[]
+            {
+                "brrainz.harmony", "ludeon.rimworld", "dubwise.dubsperformanceanalyzer.steam",
+                "fumblesneeze.rimworlddevgateway"
+            }));
+            Assert.That(process.RawDiagnosticJsonPath, Does.EndWith("dpa.raw.json"));
+            Assert.That(process.MethodSelectors.Select(item => item.Value), Is.EqualTo(new[] { selector }));
+            Assert.That(process.Repetition, Is.EqualTo(1));
+            Assert.That(root.Baseline, Is.Null, "Diagnostic output must not offer a Circinus baseline operation.");
+            Assert.That(Directory.Exists(artifactRoot), Is.False);
+        });
+    }
+
+    [Test]
+    public void Dpa_diagnostic_rejects_Circinus_baseline_candidate_mode_before_discovery()
+    {
+        var run = Invoke(
+            "-DryRun", "-CreateBaselineCandidate",
+            "-DiagnosticProfiler", "Dpa", "-DiagnosticSelector", "Verse.Map::MapPreTick()");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(2));
+            Assert.That(run.StandardError, Does.Contain("cannot create or compare Circinus baselines"));
         });
     }
 
@@ -94,7 +145,8 @@ public sealed class RimWorldPerformanceRunnerCliTests
             root = (PerformanceDryRun)new DataContractJsonSerializer(typeof(PerformanceDryRun)).ReadObject(stream)!;
         Assert.Multiple(() =>
         {
-            Assert.That(root.Baseline.Mode, Is.EqualTo("candidate"));
+            Assert.That(root.Baseline, Is.Not.Null);
+            Assert.That(root.Baseline!.Mode, Is.EqualTo("candidate"));
             Assert.That(root.Baseline.Candidate, Is.EqualTo(candidate));
             Assert.That(File.Exists(candidate), Is.False);
             Assert.That(Directory.Exists(artifactRoot), Is.False);
@@ -214,7 +266,7 @@ public sealed class RimWorldPerformanceRunnerCliTests
         [DataMember] public string Status { get; set; } = string.Empty;
         [DataMember] public bool MutatedGame { get; set; }
         [DataMember] public PerformanceProcess[] Processes { get; set; } = Array.Empty<PerformanceProcess>();
-        [DataMember] public PerformanceBaselinePlan Baseline { get; set; } = new();
+        [DataMember] public PerformanceBaselinePlan? Baseline { get; set; }
     }
 
     [DataContract]
@@ -237,9 +289,13 @@ public sealed class RimWorldPerformanceRunnerCliTests
         [DataMember(Name = "deterministicSeed")] public int DeterministicSeed { get; set; }
         [DataMember(Name = "workloadVersion")] public string WorkloadVersion { get; set; } = string.Empty;
         [DataMember(Name = "repetition")] public int Repetition { get; set; }
+        [DataMember(Name = "profiler")] public string Profiler { get; set; } = string.Empty;
+        [DataMember(Name = "diagnosticSelector")] public string? DiagnosticSelector { get; set; }
+        [DataMember(Name = "activePackageIds")] public string[] ActivePackageIds { get; set; } = Array.Empty<string>();
         [DataMember(Name = "maxWallClockSeconds")] public int MaxWallClockSeconds { get; set; }
         [DataMember(Name = "methodSelectors")] public PerformanceSelector[] MethodSelectors { get; set; } = Array.Empty<PerformanceSelector>();
         [DataMember(Name = "rawCircinusJsonPath")] public string RawCircinusJsonPath { get; set; } = string.Empty;
+        [DataMember(Name = "rawDiagnosticJsonPath")] public string RawDiagnosticJsonPath { get; set; } = string.Empty;
         [DataMember(Name = "normalizedJsonPath")] public string NormalizedJsonPath { get; set; } = string.Empty;
         [DataMember(Name = "csvReportPath")] public string CsvReportPath { get; set; } = string.Empty;
         [DataMember(Name = "markdownReportPath")] public string MarkdownReportPath { get; set; } = string.Empty;

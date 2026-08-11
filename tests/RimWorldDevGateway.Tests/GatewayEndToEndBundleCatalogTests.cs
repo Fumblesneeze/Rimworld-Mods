@@ -55,6 +55,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
     [Test]
     public void Exact_performance_bundle_is_admitted_as_a_lazy_E2E_adapter_with_full_descriptor()
     {
+        GC.KeepAlive(typeof(UnityEngine.Vector3).Assembly);
         using var stage = new PerformanceCatalogStage();
         var result = new GatewayEndToEndBundleCatalog().Inspect(
             stage.Candidate,
@@ -79,6 +80,37 @@ public sealed class GatewayEndToEndBundleCatalogTests
             Assert.That(instrumented.PerformanceDescriptor.EvidenceLens,
                 Is.EqualTo(PerformanceEvidenceLens.ProductInstrumented));
             Assert.That(instrumented.CreateTest(), Is.AssignableTo<IRimWorldEndToEndTest>());
+        });
+    }
+
+    [Test]
+    public void Exact_Dpa_performance_bundle_is_admitted_only_as_a_noncanonical_diagnostic()
+    {
+        GC.KeepAlive(typeof(UnityEngine.Vector3).Assembly);
+        const string selector = "Verse.Map::MapPreTick()";
+        using var stage = new PerformanceCatalogStage(dpaDiagnostic: true, selector);
+        var result = new GatewayEndToEndBundleCatalog().Inspect(
+            stage.Candidate,
+            new[]
+            {
+                "brrainz.harmony",
+                "ludeon.rimworld",
+                PerformanceTestContract.DpaPackageId,
+                EndToEndTestContract.GatewayPackageId
+            });
+
+        Assert.That(result.State, Is.EqualTo("loaded"), result.Failure?.Message);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Source!.Tests, Has.Count.EqualTo(3));
+            Assert.That(result.Source.Tests.Select(test => test.PerformanceDescriptor!.Profiler),
+                Is.All.EqualTo(PerformanceProfilerKind.DpaDiagnostic));
+            Assert.That(result.Source.Tests.SelectMany(test => test.PerformanceDescriptor!.ActivePackageIds),
+                Does.Not.Contain(PerformanceTestContract.CircinusPackageId));
+            Assert.That(result.Source.Tests.Select(test => test.PerformanceDescriptor!.MethodSelectors.Single().Value),
+                Is.All.EqualTo(selector));
+            Assert.That(result.Source.Tests.Select(test => test.PerformanceDescriptor!.Repetitions),
+                Is.All.EqualTo(1));
         });
     }
 
@@ -358,7 +390,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
 
     private sealed class PerformanceCatalogStage : IDisposable
     {
-        public PerformanceCatalogStage()
+        public PerformanceCatalogStage(bool dpaDiagnostic = false, string? diagnosticSelector = null)
         {
             Root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "performance-catalog", Guid.NewGuid().ToString("N"));
             var owner = EndToEndTestContract.GatewayPackageId;
@@ -393,7 +425,8 @@ public sealed class GatewayEndToEndBundleCatalogTests
                         PublicKeyOrToken = GatewayEndToEndAssemblyIdentity.FormatKey(reference.GetPublicKeyToken()),
                         Identity = GatewayEndToEndAssemblyIdentity.FormatReference(reference)
                     }).ToArray(),
-                Tests = descriptors.Select(ToManifest).ToArray()
+                Tests = descriptors.Select(descriptor => ToManifest(
+                    descriptor, dpaDiagnostic, diagnosticSelector)).ToArray()
             };
             var manifestPath = Path.Combine(directory, manifestFile);
             File.WriteAllText(manifestPath, GatewayContractJson.Write(manifest));
@@ -416,7 +449,10 @@ public sealed class GatewayEndToEndBundleCatalogTests
             if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true);
         }
 
-        private static EndToEndBundleTest ToManifest(PerformanceTestDescriptor descriptor)
+        private static EndToEndBundleTest ToManifest(
+            PerformanceTestDescriptor descriptor,
+            bool dpaDiagnostic,
+            string? diagnosticSelector)
         {
             var deadline = PerformanceBundleDeadline.Calculate(
                 descriptor.WarmUpTicks,
@@ -426,7 +462,9 @@ public sealed class GatewayEndToEndBundleCatalogTests
                 Id = descriptor.Id,
                 TypeName = descriptor.TestType.FullName!,
                 OwnerPackageId = descriptor.StagingOwnerPackageId,
-                ActivePackageIds = descriptor.ActivePackageIds.ToArray(),
+                ActivePackageIds = (dpaDiagnostic
+                    ? PerformanceTestContract.ForDpaDiagnostic(descriptor, diagnosticSelector!).ActivePackageIds
+                    : descriptor.ActivePackageIds).ToArray(),
                 MaxFrames = deadline.MaxFrames,
                 MaxGameTicks = deadline.MaxGameTicks,
                 MaxWallClockSeconds = deadline.MaxWallClockSeconds,
@@ -438,10 +476,12 @@ public sealed class GatewayEndToEndBundleCatalogTests
                 WarmUpTicks = descriptor.WarmUpTicks,
                 SampleTicks = descriptor.SampleTicks,
                 GameSpeed = (int)descriptor.GameSpeed,
-                Repetitions = descriptor.Repetitions,
+                Repetitions = dpaDiagnostic ? 1 : descriptor.Repetitions,
                 EvidenceLens = (int)descriptor.EvidenceLens,
                 ProductAbsentControlId = descriptor.ProductAbsentControlId,
-                MethodSelectors = descriptor.MethodSelectors.Select(selector => new PerformanceBundleMethodSelector
+                MethodSelectors = (dpaDiagnostic
+                    ? PerformanceTestContract.ForDpaDiagnostic(descriptor, diagnosticSelector!).MethodSelectors
+                    : descriptor.MethodSelectors).Select(selector => new PerformanceBundleMethodSelector
                 {
                     Kind = (int)selector.Kind,
                     Value = selector.Value,
@@ -452,7 +492,9 @@ public sealed class GatewayEndToEndBundleCatalogTests
                     {
                         Id = checkpoint.Id,
                         MinimumCount = checkpoint.MinimumCount
-                    }).ToArray()
+                    }).ToArray(),
+                PerformanceProfiler = dpaDiagnostic ? "dpa" : "circinus",
+                DiagnosticSelector = dpaDiagnostic ? diagnosticSelector : null
             };
         }
 

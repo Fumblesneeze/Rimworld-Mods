@@ -169,6 +169,12 @@ internal sealed class GatewayCircinusPerformanceBackend : IGatewayPerformanceRun
         preparedDescriptor = null;
     }
 
+    public bool TryFinalize(out string reason)
+    {
+        reason = string.Empty;
+        return true;
+    }
+
     internal static void DisposeOwned<T>(ref T? owned) where T : class, IDisposable
     {
         var retained = owned;
@@ -237,7 +243,7 @@ internal static class PerformanceArtifactWriter
         if (normalized is null) throw new ArgumentNullException(nameof(normalized));
         var root = Path.GetFullPath(artifactRoot);
         Directory.CreateDirectory(root);
-        var name = "performance-" + HashIdentity(benchmarkId).Substring(0, 20);
+        var name = "performance-" + HashArtifactIdentity(benchmarkId).Substring(0, 20);
         var destination = Path.Combine(root, name);
         if (Directory.Exists(destination))
             throw new IOException("The exact performance artifact directory already exists.");
@@ -269,7 +275,7 @@ internal static class PerformanceArtifactWriter
         };
     }
 
-    private static string HashIdentity(string value)
+    internal static string HashArtifactIdentity(string value)
     {
         if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("A benchmark ID is required.", nameof(value));
         using var algorithm = SHA256.Create();

@@ -120,8 +120,9 @@ public sealed class GatewayEndToEndTestContext : IEndToEndContext
     private readonly Func<long> frameCount;
     private readonly Func<int> gameTick;
     private readonly Func<Type, object?> serviceProvider;
-    private readonly List<Action> cleanupActions = new();
+    private readonly List<Func<bool>> cleanupActions = new();
     private bool cleaning;
+    private bool cleanupFailed;
 
     public GatewayEndToEndTestContext(
         Func<long> frameCount,
@@ -159,26 +160,46 @@ public sealed class GatewayEndToEndTestContext : IEndToEndContext
             throw new InvalidOperationException("E2E cleanup has already started.");
         }
 
-        cleanupActions.Add(cleanupAction);
+        cleanupActions.Add(() =>
+        {
+            cleanupAction();
+            return true;
+        });
     }
 
-    internal bool RunDeferredCleanup()
+    internal void DeferCleanup(Func<bool> cleanupPoll)
+    {
+        if (cleanupPoll is null) throw new ArgumentNullException(nameof(cleanupPoll));
+        if (cleaning) throw new InvalidOperationException("E2E cleanup has already started.");
+        cleanupActions.Add(cleanupPoll);
+    }
+
+    internal DeferredCleanupStatus RunDeferredCleanup()
     {
         cleaning = true;
-        var succeeded = true;
-        for (var index = cleanupActions.Count - 1; index >= 0; index--)
+        while (cleanupActions.Count != 0)
         {
+            var index = cleanupActions.Count - 1;
             try
             {
-                cleanupActions[index]();
+                if (!cleanupActions[index]()) return DeferredCleanupStatus.Pending;
+                cleanupActions.RemoveAt(index);
             }
             catch
             {
-                succeeded = false;
+                cleanupActions.RemoveAt(index);
+                cleanupFailed = true;
             }
         }
-
-        cleanupActions.Clear();
-        return succeeded;
+        return cleanupFailed ? DeferredCleanupStatus.Failed : DeferredCleanupStatus.Completed;
     }
+
+    internal void AbandonDeferredCleanup() => cleanupActions.Clear();
+}
+
+internal enum DeferredCleanupStatus
+{
+    Pending,
+    Completed,
+    Failed
 }

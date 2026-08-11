@@ -172,7 +172,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         var admitted = matchingTests.Select(test =>
         {
             var compiled = compiledById[test.Id];
-            return compiled.PerformanceDescriptor is null
+            var performanceDescriptor = EffectivePerformanceDescriptor(compiled.PerformanceDescriptor, test);
+            return performanceDescriptor is null
                 ? new GatewayEndToEndRuntimeTestDescriptor(
                     test.Id,
                     test.OwnerPackageId,
@@ -191,8 +192,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
                     test.MaxGameTicks,
                     test.MaxWallClockSeconds,
                     compiled.TestType,
-                    () => new GatewayPerformanceEndToEndAdapter(compiled.PerformanceDescriptor),
-                    compiled.PerformanceDescriptor);
+                    () => new GatewayPerformanceEndToEndAdapter(performanceDescriptor),
+                    performanceDescriptor);
         }).ToArray();
 
         return GatewayEndToEndBundleInspectionResult.Loaded(
@@ -332,6 +333,24 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         {
             throw Failure("manifest_tests_invalid", "A staged performance declaration is incomplete.");
         }
+        if (kind == EndToEndBundleTest.PerformanceKind)
+        {
+            var profiler = string.IsNullOrWhiteSpace(test.PerformanceProfiler)
+                ? "circinus"
+                : test.PerformanceProfiler!.Trim().ToLowerInvariant();
+            var dpa = profiler == "dpa";
+            if ((profiler != "circinus" && !dpa) ||
+                packages.Length < 3 ||
+                (dpa && (!StringComparer.OrdinalIgnoreCase.Equals(
+                             packages[2], PerformanceTestContract.DpaPackageId) ||
+                         packages.Contains(PerformanceTestContract.CircinusPackageId,
+                             StringComparer.OrdinalIgnoreCase) ||
+                         string.IsNullOrWhiteSpace(test.DiagnosticSelector))) ||
+                (!dpa && (!StringComparer.OrdinalIgnoreCase.Equals(
+                              packages[2], PerformanceTestContract.CircinusPackageId) ||
+                          !string.IsNullOrWhiteSpace(test.DiagnosticSelector))))
+                throw Failure("manifest_tests_invalid", "A staged performance profiler declaration is invalid.");
+        }
     }
 
     private static bool MatchesActiveGroup(
@@ -401,7 +420,9 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             {
                 throw Failure(
                     "dependency_identity_mismatch",
-                    "An exact compiled E2E dependency identity is not loaded.");
+                    "The exact compiled E2E dependency identity '" +
+                    GatewayEndToEndAssemblyIdentity.FormatReference(reference) +
+                    "' is not loaded.");
             }
         }
     }
@@ -581,6 +602,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         {
             var actual = compiled[index];
             var expected = orderedManifest[index];
+            var effectiveDescriptor = EffectivePerformanceDescriptor(actual.PerformanceDescriptor, expected);
+            var effectivePackages = effectiveDescriptor?.ActivePackageIds ?? actual.ActivePackageIds;
             if (!StringComparer.Ordinal.Equals(actual.Id, expected.Id) ||
                 !StringComparer.Ordinal.Equals(actual.TypeName, expected.TypeName) ||
                 !StringComparer.Ordinal.Equals(actual.Kind,
@@ -588,7 +611,7 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
                         ? EndToEndBundleTest.EndToEndKind
                         : expected.Kind) ||
                 !StringComparer.OrdinalIgnoreCase.Equals(actual.OwnerPackageId, expected.OwnerPackageId) ||
-                !actual.ActivePackageIds.SequenceEqual(expected.ActivePackageIds, StringComparer.OrdinalIgnoreCase) ||
+                !effectivePackages.SequenceEqual(expected.ActivePackageIds, StringComparer.OrdinalIgnoreCase) ||
                 actual.MaxFrames != expected.MaxFrames ||
                 actual.MaxGameTicks != expected.MaxGameTicks ||
                 actual.MaxWallClockSeconds != expected.MaxWallClockSeconds)
@@ -596,14 +619,29 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
                 throw Failure("compiled_test_manifest_mismatch", "The compiled E2E test metadata differs from discovery.");
             }
 
-            if (actual.PerformanceDescriptor is not null &&
-                !PerformanceManifestMatches(actual.PerformanceDescriptor, expected))
+            if (effectiveDescriptor is not null &&
+                !PerformanceManifestMatches(effectiveDescriptor, expected))
             {
                 throw Failure(
                     "compiled_test_manifest_mismatch",
                     "The compiled performance metadata differs from discovery.");
             }
         }
+    }
+
+    private static PerformanceTestDescriptor? EffectivePerformanceDescriptor(
+        PerformanceTestDescriptor? canonical,
+        EndToEndBundleTest manifest)
+    {
+        if (canonical is null) return null;
+        var profiler = string.IsNullOrWhiteSpace(manifest.PerformanceProfiler)
+            ? "circinus"
+            : manifest.PerformanceProfiler!.Trim().ToLowerInvariant();
+        return profiler == "dpa"
+            ? PerformanceTestContract.ForDpaDiagnostic(
+                canonical,
+                manifest.DiagnosticSelector ?? string.Empty)
+            : canonical;
     }
 
     private static bool PerformanceManifestMatches(
@@ -632,8 +670,13 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
                        (selector.Kind, selector.Value, selector.Category))) &&
                actual.ThroughputCheckpoints.Select(checkpoint =>
                        (checkpoint.Id, checkpoint.MinimumCount))
-                   .SequenceEqual(checkpoints.Select(checkpoint =>
-                       (checkpoint.Id, checkpoint.MinimumCount)));
+                    .SequenceEqual(checkpoints.Select(checkpoint =>
+                        (checkpoint.Id, checkpoint.MinimumCount))) &&
+               ((actual.Profiler == PerformanceProfilerKind.DpaDiagnostic &&
+                 StringComparer.OrdinalIgnoreCase.Equals(expected.PerformanceProfiler, "dpa")) ||
+                (actual.Profiler == PerformanceProfilerKind.Circinus &&
+                 (string.IsNullOrWhiteSpace(expected.PerformanceProfiler) ||
+                  StringComparer.OrdinalIgnoreCase.Equals(expected.PerformanceProfiler, "circinus"))));
     }
 
     private static void EnsureRegularFile(string path, string code, string message)

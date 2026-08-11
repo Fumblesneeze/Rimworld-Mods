@@ -28,6 +28,11 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
     private IGatewayEndToEndStepOperation? stepOperation;
     private bool processTainted;
     private string plannedTerminalStatus = "passed";
+    private bool cleanupEnumeratorDisposed;
+    private bool cleanupTrustworthy;
+    private long cleanupStartedFrame;
+    private int cleanupStartedGameTick;
+    private DateTimeOffset cleanupStartedUtc;
 
     public GatewayEndToEndExecutionStateMachine(
         IEnumerable<GatewayEndToEndRuntimeTestDescriptor> tests,
@@ -407,40 +412,58 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
         }
 
         plannedTerminalStatus = terminalStatus;
+        cleanupEnumeratorDisposed = false;
+        cleanupTrustworthy = true;
+        cleanupStartedFrame = clock.FrameCount;
+        cleanupStartedGameTick = clock.GameTick;
+        cleanupStartedUtc = clock.UtcNow;
         phase = ExecutionPhase.Cleaning;
         Publish("running");
     }
 
     private void CleanupCurrentTest()
     {
-        var trustworthy = true;
-        try
+        if (!cleanupEnumeratorDisposed)
         {
-            enumerator?.Dispose();
-        }
-        catch
-        {
-            trustworthy = false;
+            try
+            {
+                enumerator?.Dispose();
+            }
+            catch
+            {
+                cleanupTrustworthy = false;
+            }
+            cleanupEnumeratorDisposed = true;
         }
 
         if (context is not null)
         {
-            trustworthy &= context.RunDeferredCleanup();
+            var deferred = context.RunDeferredCleanup();
+            if (deferred == DeferredCleanupStatus.Pending)
+            {
+                if (!CleanupDeadlineExceeded()) return;
+                context.AbandonDeferredCleanup();
+                cleanupTrustworthy = false;
+            }
+            else if (deferred == DeferredCleanupStatus.Failed)
+            {
+                cleanupTrustworthy = false;
+            }
             try
             {
-                trustworthy &= isolation.Cleanup(context);
+                cleanupTrustworthy &= isolation.Cleanup(context);
             }
             catch
             {
-                trustworthy = false;
+                cleanupTrustworthy = false;
             }
         }
         else
         {
-            trustworthy = false;
+            cleanupTrustworthy = false;
         }
 
-        if (!trustworthy)
+        if (!cleanupTrustworthy)
         {
             processTainted = true;
             current!.Status = "infrastructure_failed";
@@ -472,6 +495,12 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
         phase = ExecutionPhase.AfterTest;
         Publish("running");
     }
+
+    private bool CleanupDeadlineExceeded() => DeadlineExceeded(
+        cleanupStartedFrame,
+        cleanupStartedGameTick,
+        cleanupStartedUtc,
+        new EndToEndDeadline(3_600, 6_000, TimeSpan.FromSeconds(30)));
 
     private bool TestDeadlineExceeded() => DeadlineExceeded(
         current!.StartedFrame,

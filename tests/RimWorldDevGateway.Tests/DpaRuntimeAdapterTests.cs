@@ -60,13 +60,19 @@ public sealed class DpaRuntimeAdapterTests
             Assert.That(active.TryStart(out var startReason), Is.True, startReason);
             InvokeInstance("Verse.TickManager", "DoSingleTick");
             Assert.That(active.TryStopAndCapture(
-                "fixture-workload/v1", new[] { "sample-start", "sample-end" }, out var capture, out var stopReason),
+                "fixture-workload/v1",
+                new[] { "DpaRuntimeAdapterTests::ProfiledTarget()" },
+                new[] { "sample-start", "sample-end" },
+                out var capture,
+                out var stopReason),
                 Is.True, stopReason);
             Assert.Multiple(() =>
             {
                 Assert.That(capture!.Profiler, Is.EqualTo("dpa"));
                 Assert.That(capture.Kind, Is.EqualTo("diagnostic"));
                 Assert.That(capture.WorkloadVersion, Is.EqualTo("fixture-workload/v1"));
+                Assert.That(capture.RequestedSelectors,
+                    Is.EqualTo(new[] { "DpaRuntimeAdapterTests::ProfiledTarget()" }));
                 Assert.That(capture.Selectors, Has.Length.EqualTo(1));
                 Assert.That(capture.Entries, Has.Length.EqualTo(1));
                 Assert.That(capture.Entries[0].Samples, Has.Length.EqualTo(1));
@@ -123,7 +129,9 @@ public sealed class DpaRuntimeAdapterTests
         {
             Assert.That(active.TryStart(out reason), Is.True, reason);
             InvokeInstance("Verse.Root_Play", "Update");
-            Assert.That(active.TryStopAndCapture("fixture/v1", Array.Empty<string>(), out var capture, out reason),
+            Assert.That(active.TryStopAndCapture(
+                    "fixture/v1", new[] { "DpaRuntimeAdapterTests::ProfiledTarget()" },
+                    Array.Empty<string>(), out var capture, out reason),
                 Is.True, reason);
             Assert.Multiple(() =>
             {
@@ -154,7 +162,9 @@ public sealed class DpaRuntimeAdapterTests
         try
         {
             Assert.That(run!.TryStart(out reason), Is.True, reason);
-            Assert.That(run.TryStopAndCapture("fixture/v1", Array.Empty<string>(), out _, out reason), Is.False);
+            Assert.That(run.TryStopAndCapture(
+                "fixture/v1", new[] { "DpaRuntimeAdapterTests::ProfiledTarget()" },
+                Array.Empty<string>(), out _, out reason), Is.False);
             Assert.That(reason, Does.Contain("no invoked raw internal-callee entry"));
         }
         finally

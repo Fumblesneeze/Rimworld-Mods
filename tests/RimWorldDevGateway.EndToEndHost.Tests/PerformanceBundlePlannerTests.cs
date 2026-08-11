@@ -161,6 +161,40 @@ public sealed class PerformanceBundlePlannerTests
     }
 
     [Test]
+    public void Planner_emits_explicit_Dpa_only_diagnostic_manifests()
+    {
+        var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "performance-stage-dpa", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var plan = PerformanceBundlePlanner.Create(
+                PerformanceMetadataDiscoveryTests.ValidCandidatesForPlanning(),
+                Packages().Append(PerformanceDiscoveryValidator.DpaPackageId),
+                root,
+                "1.6",
+                PerformanceProfilerMode.DpaDiagnostic,
+                "Verse.Map::MapPreTick()");
+            var test = plan.OwnerStages.Single(item => item.OwnerPackageId == "alpha.mod")
+                .Bundles.Single().Manifest.Tests.Single(item => item.Id == "alpha.base-instrumented");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(test.PerformanceProfiler, Is.EqualTo("dpa"));
+                Assert.That(test.DiagnosticSelector, Is.EqualTo("Verse.Map::MapPreTick()"));
+                Assert.That(test.ActivePackageIds[2], Is.EqualTo(PerformanceDiscoveryValidator.DpaPackageId));
+                Assert.That(test.ActivePackageIds, Does.Not.Contain(PerformanceDiscoveryValidator.CircinusPackageId));
+                Assert.That(test.MethodSelectors, Has.Length.EqualTo(1));
+                Assert.That(test.MethodSelectors![0].Value, Is.EqualTo("Verse.Map::MapPreTick()"));
+                Assert.That(test.Repetitions, Is.EqualTo(1));
+            });
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
     public void Existing_marker_owned_publisher_stages_and_cleans_performance_bundle_exactly()
     {
         var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "performance-publish", Guid.NewGuid().ToString("N"));

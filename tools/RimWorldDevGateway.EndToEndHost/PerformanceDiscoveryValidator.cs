@@ -17,11 +17,13 @@ public static class PerformanceDiscoveryValidator
     public const int MaximumSelectorCharacters = 1024;
     public const int MaximumMethodSelectors = 256;
     public const int MaximumThroughputCheckpoints = 64;
+    public const int ExactMethodSelectorKind = 3;
 
     public static PerformanceDiscoveryResult ValidateAndGroup(
         IEnumerable<PerformanceAssemblyCandidate> assemblyCandidates,
         IEnumerable<string> resolvablePackageIds,
-        bool requireResolvedControls = true)
+        bool requireResolvedControls = true,
+        bool canonicalCircinusIsDeclarationOnly = false)
     {
         if (assemblyCandidates is null) throw new ArgumentNullException(nameof(assemblyCandidates));
         if (resolvablePackageIds is null) throw new ArgumentNullException(nameof(resolvablePackageIds));
@@ -48,7 +50,12 @@ public static class PerformanceDiscoveryValidator
             }
 
             totalDeclarations += declarationCount;
-            ValidateAssembly(candidate, packageCatalog, errors, discovered);
+            ValidateAssembly(
+                candidate,
+                packageCatalog,
+                errors,
+                discovered,
+                canonicalCircinusIsDeclarationOnly);
         }
 
         foreach (var duplicate in discovered.GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
@@ -108,7 +115,8 @@ public static class PerformanceDiscoveryValidator
         PerformanceAssemblyCandidate candidate,
         ISet<string> packageCatalog,
         ICollection<string> errors,
-        ICollection<PerformanceDiscoveredBenchmark> discovered)
+        ICollection<PerformanceDiscoveredBenchmark> discovered,
+        bool canonicalCircinusIsDeclarationOnly)
     {
         if (!StringComparer.Ordinal.Equals(candidate.ExpectedAssemblyName, candidate.Metadata.AssemblyName))
         {
@@ -131,7 +139,13 @@ public static class PerformanceDiscoveryValidator
         var expectedOwner = Normalize(candidate.ExpectedOwnerPackageId);
         foreach (var declaration in candidate.Metadata.Declarations.OrderBy(item => item.TypeName, StringComparer.Ordinal))
         {
-            ValidateDeclaration(candidate, declaration, expectedOwner, packageCatalog, errors);
+            ValidateDeclaration(
+                candidate,
+                declaration,
+                expectedOwner,
+                packageCatalog,
+                errors,
+                canonicalCircinusIsDeclarationOnly);
             discovered.Add(new PerformanceDiscoveredBenchmark(candidate, declaration));
         }
     }
@@ -141,7 +155,8 @@ public static class PerformanceDiscoveryValidator
         PerformanceMetadataDeclaration declaration,
         string expectedOwner,
         ISet<string> packageCatalog,
-        ICollection<string> errors)
+        ICollection<string> errors,
+        bool canonicalCircinusIsDeclarationOnly)
     {
         var display = string.IsNullOrWhiteSpace(declaration.Id) ? declaration.TypeName : declaration.Id;
         ValidateBoundedIdentity(declaration.Id, "benchmark ID", display, errors);
@@ -210,7 +225,10 @@ public static class PerformanceDiscoveryValidator
         ValidateCheckpoints(declaration, display, errors);
         foreach (var package in packages.Where(value => !string.IsNullOrEmpty(value)).Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            if (!packageCatalog.Contains(package)) errors.Add($"'{display}' declares unresolvable package '{package}'");
+            if (!packageCatalog.Contains(package) &&
+                !(canonicalCircinusIsDeclarationOnly &&
+                  StringComparer.OrdinalIgnoreCase.Equals(package, CircinusPackageId)))
+                errors.Add($"'{display}' declares unresolvable package '{package}'");
         }
     }
 

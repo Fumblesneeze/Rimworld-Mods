@@ -3,6 +3,12 @@ using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway.EndToEndHost;
 
+public enum PerformanceProfilerMode
+{
+    Circinus = 0,
+    DpaDiagnostic = 1
+}
+
 public sealed class PerformanceRunPlanGroup
 {
     internal PerformanceRunPlanGroup(
@@ -29,7 +35,9 @@ public sealed class PerformanceProcessPlan
         int repetition,
         int warmUpTicks,
         int sampleTicks,
-        string processDirectory)
+        string processDirectory,
+        PerformanceProfilerMode profiler,
+        string? diagnosticSelector)
     {
         Sequence = sequence;
         GroupId = groupId;
@@ -46,7 +54,16 @@ public sealed class PerformanceProcessPlan
         WorkloadVersion = benchmark.WorkloadVersion;
         ComparisonId = benchmark.ComparisonId;
         ProductAbsentControlId = benchmark.ProductAbsentControlId;
-        MethodSelectors = new ReadOnlyCollection<PerformanceMetadataSelector>(benchmark.MethodSelectors.ToArray());
+        MethodSelectors = new ReadOnlyCollection<PerformanceMetadataSelector>(
+            profiler == PerformanceProfilerMode.DpaDiagnostic
+                ? new[]
+                {
+                    new PerformanceMetadataSelector(
+                        PerformanceDiscoveryValidator.ExactMethodSelectorKind,
+                        diagnosticSelector!,
+                        "dpa-internal-call")
+                }
+                : benchmark.MethodSelectors.ToArray());
         ThroughputCheckpoints = new ReadOnlyCollection<PerformanceMetadataCheckpoint>(
             benchmark.ThroughputCheckpoints.ToArray());
         EvidenceLens = benchmark.EvidenceLens;
@@ -55,11 +72,17 @@ public sealed class PerformanceProcessPlan
         SampleTicks = sampleTicks;
         MaxWallClockSeconds = PerformanceBundleDeadline.Calculate(warmUpTicks, sampleTicks).MaxWallClockSeconds;
         GameSpeed = benchmark.GameSpeed;
-        ActivePackageIds = new ReadOnlyCollection<string>(benchmark.ActivePackageIds
+        Profiler = profiler;
+        DiagnosticSelector = diagnosticSelector;
+        var packages = profiler == PerformanceProfilerMode.DpaDiagnostic
+            ? DpaPackages(benchmark.ActivePackageIds)
+            : benchmark.ActivePackageIds.ToArray();
+        ActivePackageIds = new ReadOnlyCollection<string>(packages
             .Concat(new[] { PerformanceDiscoveryValidator.GatewayPackageId })
             .ToArray());
         ProcessDirectory = processDirectory;
         RawCircinusJsonPath = Path.Combine(processDirectory, "circinus.raw.json");
+        RawDiagnosticJsonPath = Path.Combine(processDirectory, "dpa.raw.json");
         NormalizedJsonPath = Path.Combine(processDirectory, "normalized.json");
         CsvReportPath = Path.Combine(processDirectory, "metrics.csv");
         MarkdownReportPath = Path.Combine(processDirectory, "summary.md");
@@ -88,12 +111,25 @@ public sealed class PerformanceProcessPlan
     public int SampleTicks { get; }
     public int MaxWallClockSeconds { get; }
     public int GameSpeed { get; }
+    public PerformanceProfilerMode Profiler { get; }
+    public string? DiagnosticSelector { get; }
     public IReadOnlyList<string> ActivePackageIds { get; }
     public string ProcessDirectory { get; }
     public string RawCircinusJsonPath { get; }
+    public string RawDiagnosticJsonPath { get; }
     public string NormalizedJsonPath { get; }
     public string CsvReportPath { get; }
     public string MarkdownReportPath { get; }
+
+    private static string[] DpaPackages(IReadOnlyList<string> packages)
+    {
+        var result = packages.ToArray();
+        if (result.Length < 3 ||
+            !StringComparer.OrdinalIgnoreCase.Equals(result[2], PerformanceDiscoveryValidator.CircinusPackageId))
+            throw new ArgumentException("A DPA diagnostic requires the exact canonical Circinus source prefix.");
+        result[2] = PerformanceDiscoveryValidator.DpaPackageId;
+        return result;
+    }
 }
 
 public sealed class PerformanceRunPlan
@@ -131,7 +167,9 @@ public static class PerformanceRunPlanBuilder
         int? warmUpTicksOverride,
         int? sampleTicksOverride,
         int? repetitionsOverride,
-        string artifactRoot)
+        string artifactRoot,
+        PerformanceProfilerMode profiler = PerformanceProfilerMode.Circinus,
+        string? diagnosticSelector = null)
     {
         if (discovery is null) throw new ArgumentNullException(nameof(discovery));
         var benchmarks = NormalizeFilters(benchmarkIds, "benchmark");
@@ -141,15 +179,29 @@ public static class PerformanceRunPlanBuilder
         if (repetitionsOverride <= 0) throw new ArgumentException("Repetitions override must be positive.");
         if (repetitionsOverride > MaximumRepetitions)
             throw new ArgumentException($"Repetitions override must not exceed {MaximumRepetitions}.");
+        if (!Enum.IsDefined(typeof(PerformanceProfilerMode), profiler))
+            throw new ArgumentException("The performance profiler is invalid.");
+        if (profiler == PerformanceProfilerMode.DpaDiagnostic &&
+            (string.IsNullOrWhiteSpace(diagnosticSelector) ||
+             diagnosticSelector.Trim().Length > PerformanceDiscoveryValidator.MaximumSelectorCharacters))
+            throw new ArgumentException("A DPA diagnostic requires one bounded exact outer-method selector.");
+        if (profiler == PerformanceProfilerMode.Circinus && !string.IsNullOrWhiteSpace(diagnosticSelector))
+            throw new ArgumentException("A diagnostic selector is valid only with the DPA profiler.");
 
         var root = Path.GetFullPath(string.IsNullOrWhiteSpace(artifactRoot)
             ? throw new ArgumentException("An artifact root is required.", nameof(artifactRoot))
             : artifactRoot);
-        var selectedGroups = discovery.Groups.Where(group =>
+        var matchingGroups = discovery.Groups.Where(group =>
                 groups.Count == 0 || groups.Contains(group.GroupId))
+            .ToArray();
+        if (groups.Any(id => matchingGroups.All(group => !StringComparer.Ordinal.Equals(group.GroupId, id))))
+            throw new ArgumentException("The performance group filter selected zero matching groups.");
+        var selectedGroups = matchingGroups
             .Select(group => new PerformanceRunPlanGroup(
-                group.GroupId,
-                group.ActivePackageIds,
+                profiler == PerformanceProfilerMode.DpaDiagnostic ? group.GroupId + "-dpa" : group.GroupId,
+                profiler == PerformanceProfilerMode.DpaDiagnostic
+                    ? ReplaceCircinus(group.ActivePackageIds)
+                    : group.ActivePackageIds,
                 group.Benchmarks.Where(benchmark =>
                     benchmarks.Count == 0 || benchmarks.Contains(benchmark.Id))))
             .Where(group => group.Benchmarks.Count > 0)
@@ -157,8 +209,6 @@ public static class PerformanceRunPlanBuilder
 
         if (selectedGroups.Length == 0)
             throw new ArgumentException("The combined performance group and benchmark filters selected zero benchmarks.");
-        if (groups.Any(id => selectedGroups.All(group => !StringComparer.Ordinal.Equals(group.GroupId, id))))
-            throw new ArgumentException("The performance group filter selected zero matching groups.");
         if (benchmarks.Any(id => selectedGroups.SelectMany(group => group.Benchmarks)
                 .All(benchmark => !StringComparer.Ordinal.Equals(benchmark.Id, id))))
             throw new ArgumentException("The performance benchmark filter selected zero matching benchmarks.");
@@ -168,7 +218,9 @@ public static class PerformanceRunPlanBuilder
         {
             foreach (var benchmark in group.Benchmarks)
             {
-                var repetitions = repetitionsOverride ?? benchmark.Repetitions;
+                var repetitions = profiler == PerformanceProfilerMode.DpaDiagnostic
+                    ? repetitionsOverride ?? 1
+                    : repetitionsOverride ?? benchmark.Repetitions;
                 if (repetitions is <= 0 or > MaximumRepetitions)
                     throw new ArgumentException(
                         $"Benchmark '{benchmark.Id}' repetitions must be between 1 and {MaximumRepetitions}.");
@@ -188,12 +240,24 @@ public static class PerformanceRunPlanBuilder
                         repetition,
                         warmUpTicksOverride ?? benchmark.WarmUpTicks,
                         sampleTicksOverride ?? benchmark.SampleTicks,
-                        directory));
+                        directory,
+                        profiler,
+                        diagnosticSelector?.Trim()));
                 }
             }
         }
 
         return new PerformanceRunPlan(root, selectedGroups, processes);
+    }
+
+    private static IReadOnlyList<string> ReplaceCircinus(IReadOnlyList<string> packages)
+    {
+        var result = packages.ToArray();
+        if (result.Length < 3 ||
+            !StringComparer.OrdinalIgnoreCase.Equals(result[2], PerformanceDiscoveryValidator.CircinusPackageId))
+            throw new ArgumentException("A DPA diagnostic requires the exact canonical Circinus source prefix.");
+        result[2] = PerformanceDiscoveryValidator.DpaPackageId;
+        return result;
     }
 
     private static HashSet<string> NormalizeFilters(IEnumerable<string> values, string description)

@@ -93,6 +93,72 @@ public sealed class PerformanceRunPlanTests
         });
     }
 
+    [Test]
+    public void Dpa_plan_keeps_a_canonical_group_filter_and_creates_one_noncanonical_process_without_Circinus()
+    {
+        var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(
+            PerformanceMetadataDiscoveryTests.ValidCandidatesForPlanning(),
+            new[]
+            {
+                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus",
+                "dubwise.dubsperformanceanalyzer.steam", "alpha.mod", "optional.mod",
+                "fumblesneeze.rimworlddevgateway"
+            },
+            requireResolvedControls: false);
+        var sourceGroup = discovery.Groups.Single(item => item.Benchmarks.Any(test => test.Id == "alpha.base-instrumented"));
+        var plan = PerformanceRunPlanBuilder.Create(
+            discovery,
+            new[] { "alpha.base-instrumented" },
+            new[] { sourceGroup.GroupId },
+            0,
+            600,
+            null,
+            Path.Combine(Path.GetTempPath(), "dpa-plan", Guid.NewGuid().ToString("N")),
+            PerformanceProfilerMode.DpaDiagnostic,
+            "Verse.Map::MapPreTick()");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(plan.Processes, Has.Count.EqualTo(1));
+            Assert.That(plan.Groups.Single().GroupId, Is.EqualTo(sourceGroup.GroupId + "-dpa"));
+            Assert.That(plan.Processes[0].Profiler, Is.EqualTo(PerformanceProfilerMode.DpaDiagnostic));
+            Assert.That(plan.Processes[0].DiagnosticSelector, Is.EqualTo("Verse.Map::MapPreTick()"));
+            Assert.That(plan.Processes[0].MethodSelectors.Select(item => item.Value),
+                Is.EqualTo(new[] { "Verse.Map::MapPreTick()" }));
+            Assert.That(plan.Processes[0].ActivePackageIds[2], Is.EqualTo(PerformanceDiscoveryValidator.DpaPackageId));
+            Assert.That(plan.Processes[0].ActivePackageIds, Does.Not.Contain(PerformanceDiscoveryValidator.CircinusPackageId));
+            Assert.That(plan.Processes[0].RawDiagnosticJsonPath, Does.EndWith("dpa.raw.json"));
+        });
+    }
+
+    [Test]
+    public void Dpa_plan_enforces_the_same_exact_selector_bound_as_staging()
+    {
+        var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(
+            PerformanceMetadataDiscoveryTests.ValidCandidatesForPlanning(),
+            new[]
+            {
+                "brrainz.harmony", "ludeon.rimworld", "dubwise.dubsperformanceanalyzer.steam",
+                "alpha.mod", "optional.mod", "fumblesneeze.rimworlddevgateway"
+            },
+            requireResolvedControls: false,
+            canonicalCircinusIsDeclarationOnly: true);
+        var exact = new string('x', PerformanceDiscoveryValidator.MaximumSelectorCharacters);
+        var over = exact + "x";
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => PerformanceRunPlanBuilder.Create(
+                discovery, new[] { "alpha.base-instrumented" }, Array.Empty<string>(),
+                null, null, null, Path.GetTempPath(), PerformanceProfilerMode.DpaDiagnostic, exact),
+                Throws.Nothing);
+            Assert.That(() => PerformanceRunPlanBuilder.Create(
+                discovery, new[] { "alpha.base-instrumented" }, Array.Empty<string>(),
+                null, null, null, Path.GetTempPath(), PerformanceProfilerMode.DpaDiagnostic, over),
+                Throws.TypeOf<ArgumentException>().With.Message.Contains("bounded"));
+        });
+    }
+
     [TestCase("unknown-benchmark", null, "benchmark")]
     [TestCase(null, "unknown-group", "group")]
     public void Plan_rejects_unknown_filters(string? benchmark, string? group, string expected)

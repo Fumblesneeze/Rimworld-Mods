@@ -123,6 +123,12 @@ public sealed class EndToEndBundleTest
 
     [DataMember(Name = "throughputCheckpoints", EmitDefaultValue = false, Order = 20)]
     public PerformanceBundleThroughputCheckpoint[]? ThroughputCheckpoints { get; set; }
+
+    [DataMember(Name = "performanceProfiler", EmitDefaultValue = false, Order = 21)]
+    public string? PerformanceProfiler { get; set; }
+
+    [DataMember(Name = "diagnosticSelector", EmitDefaultValue = false, Order = 22)]
+    public string? DiagnosticSelector { get; set; }
 }
 
 [DataContract]

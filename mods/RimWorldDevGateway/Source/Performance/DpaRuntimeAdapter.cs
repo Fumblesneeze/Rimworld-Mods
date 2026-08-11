@@ -611,6 +611,7 @@ internal sealed class DpaRuntimeRun : IDisposable
 
     public bool TryStopAndCapture(
         string workloadVersion,
+        IEnumerable<string> requestedSelectors,
         IEnumerable<string> checkpoints,
         out DpaDiagnosticCapture? capture,
         out string reason)
@@ -621,6 +622,12 @@ internal sealed class DpaRuntimeRun : IDisposable
             RequireUsable();
             if (!started || stopped) throw new InvalidOperationException("DPA diagnostic is not active.");
             ValidateText(workloadVersion, 256, "workload version");
+            var retainedRequestedSelectors = (requestedSelectors ??
+                    throw new ArgumentNullException(nameof(requestedSelectors)))
+                .Take(2).ToArray();
+            if (retainedRequestedSelectors.Length != 1)
+                throw new InvalidOperationException("DPA diagnostic requires exactly one requested selector identity.");
+            ValidateText(retainedRequestedSelectors[0], 4096, "requested selector");
             var retainedCheckpoints = (checkpoints ?? throw new ArgumentNullException(nameof(checkpoints)))
                 .Take(129).ToArray();
             if (retainedCheckpoints.Length > 128)
@@ -640,6 +647,7 @@ internal sealed class DpaRuntimeRun : IDisposable
                 identity,
                 workloadVersion,
                 category.ToString().ToLowerInvariant(),
+                retainedRequestedSelectors,
                 selectors.Select(PerformanceMethodIdentity.Of).ToArray(),
                 retainedCheckpoints,
                 entries);
@@ -789,12 +797,14 @@ internal sealed class DpaDiagnosticCapture
 
     public DpaDiagnosticCapture(
         DpaAssemblyIdentity assembly, string workloadVersion, string category,
-        IReadOnlyList<string> selectors, IReadOnlyList<string> checkpoints,
+        IReadOnlyList<string> requestedSelectors, IReadOnlyList<string> selectors,
+        IReadOnlyList<string> checkpoints,
         IReadOnlyList<DpaDiagnosticEntry> entries)
     {
         Assembly = assembly;
         WorkloadVersion = workloadVersion;
         Category = category;
+        RequestedSelectors = requestedSelectors.ToArray();
         Selectors = selectors.ToArray();
         Checkpoints = checkpoints.ToArray();
         Entries = entries.ToArray();
@@ -807,9 +817,10 @@ internal sealed class DpaDiagnosticCapture
     [DataMember(Name = "assembly", Order = 5)] public DpaAssemblyIdentity Assembly { get; private set; }
     [DataMember(Name = "workloadVersion", Order = 6)] public string WorkloadVersion { get; private set; }
     [DataMember(Name = "category", Order = 7)] public string Category { get; private set; }
-    [DataMember(Name = "selectors", Order = 8)] public string[] Selectors { get; private set; }
-    [DataMember(Name = "checkpoints", Order = 9)] public string[] Checkpoints { get; private set; }
-    [DataMember(Name = "entries", Order = 10)] public DpaDiagnosticEntry[] Entries { get; private set; }
+    [DataMember(Name = "requestedSelectors", Order = 8)] public string[] RequestedSelectors { get; private set; }
+    [DataMember(Name = "selectors", Order = 9)] public string[] Selectors { get; private set; }
+    [DataMember(Name = "checkpoints", Order = 10)] public string[] Checkpoints { get; private set; }
+    [DataMember(Name = "entries", Order = 11)] public DpaDiagnosticEntry[] Entries { get; private set; }
 }
 
 [DataContract]

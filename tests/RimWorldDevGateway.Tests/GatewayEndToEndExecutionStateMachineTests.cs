@@ -14,6 +14,9 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
         AssertionFailureTest.Reset();
         PassingTest.Reset();
         NeverCompletesTest.Reset();
+        PendingCleanupTest.Reset();
+        NeverCompletingCleanupTest.Reset();
+        ThrowingAbovePendingCleanupTest.Reset();
     }
 
     [Test]
@@ -153,6 +156,98 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
             Assert.That(machine.Snapshot.Results.Select(result => result.CleanupState),
                 Is.EqualTo(new[] { "passed", "passed" }));
             Assert.That(machine.Snapshot.ProcessTainted, Is.False);
+        });
+    }
+
+    [Test]
+    public void Deferred_cleanup_is_polled_across_frames_before_isolation_and_reuse()
+    {
+        var clock = new FakeClock();
+        var isolation = new RecordingIsolation();
+        var machine = Machine(
+            clock,
+            new RecordingDriver(),
+            isolation,
+            Descriptor<PendingCleanupTest>("pending-cleanup"));
+        AdvanceUntil(machine, clock, snapshot => snapshot.CurrentTest?.Status == "cleaning");
+        machine.ConfirmPersisted(machine.Snapshot);
+
+        clock.NextFrame();
+        machine.Advance();
+        Assert.Multiple(() =>
+        {
+            Assert.That(PendingCleanupTest.PollCount, Is.EqualTo(1));
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("cleaning"));
+            Assert.That(isolation.CleanupCount, Is.Zero);
+        });
+        clock.NextFrame();
+        machine.Advance();
+        Assert.That(PendingCleanupTest.PollCount, Is.EqualTo(2));
+        clock.NextFrame();
+        machine.Advance();
+        Assert.Multiple(() =>
+        {
+            Assert.That(PendingCleanupTest.PollCount, Is.EqualTo(3));
+            Assert.That(isolation.CleanupCount, Is.EqualTo(1));
+            Assert.That(machine.Snapshot.CurrentTest!.CleanupState, Is.EqualTo("passed"));
+        });
+    }
+
+    [Test]
+    public void Deferred_cleanup_timeout_taints_the_process_instead_of_claiming_reusable_state()
+    {
+        var clock = new FakeClock();
+        var isolation = new RecordingIsolation();
+        var machine = Machine(
+            clock,
+            new RecordingDriver(),
+            isolation,
+            Descriptor<NeverCompletingCleanupTest>("cleanup-timeout"));
+        AdvanceUntil(machine, clock, snapshot => snapshot.CurrentTest?.Status == "cleaning");
+        machine.ConfirmPersisted(machine.Snapshot);
+        clock.NextFrame(wallClock: TimeSpan.FromMilliseconds(1));
+        machine.Advance();
+        clock.NextFrame(wallClock: TimeSpan.FromSeconds(31));
+        machine.Advance();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("infrastructure_failed"));
+            Assert.That(machine.Snapshot.CurrentTest.CleanupState, Is.EqualTo("unverifiable"));
+            Assert.That(machine.Snapshot.CurrentTest.Failure!.Code, Is.EqualTo("cleanup_unverifiable"));
+            Assert.That(NeverCompletingCleanupTest.PollCount, Is.EqualTo(2));
+            Assert.That(isolation.CleanupCount, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Throwing_later_cleanup_does_not_erase_an_earlier_pending_owner()
+    {
+        var clock = new FakeClock();
+        var isolation = new RecordingIsolation();
+        var machine = Machine(
+            clock,
+            new RecordingDriver(),
+            isolation,
+            Descriptor<ThrowingAbovePendingCleanupTest>("throwing-above-pending"));
+        AdvanceUntil(machine, clock, snapshot => snapshot.CurrentTest?.Status == "cleaning");
+        machine.ConfirmPersisted(machine.Snapshot);
+        clock.NextFrame();
+        machine.Advance();
+        Assert.Multiple(() =>
+        {
+            Assert.That(ThrowingAbovePendingCleanupTest.ThrowCount, Is.EqualTo(1));
+            Assert.That(ThrowingAbovePendingCleanupTest.PollCount, Is.EqualTo(1));
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("cleaning"));
+        });
+        clock.NextFrame();
+        machine.Advance();
+        Assert.Multiple(() =>
+        {
+            Assert.That(ThrowingAbovePendingCleanupTest.PollCount, Is.EqualTo(2));
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("infrastructure_failed"));
+            Assert.That(machine.Snapshot.CurrentTest.CleanupState, Is.EqualTo("unverifiable"));
+            Assert.That(isolation.CleanupCount, Is.EqualTo(1));
         });
     }
 
@@ -539,6 +634,68 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
         }
 
         public static void Reset() => ArrangeCount = 0;
+    }
+
+    private sealed class PendingCleanupTest : IRimWorldEndToEndTest
+    {
+        public static int PollCount { get; private set; }
+
+        public void Arrange(IEndToEndContext context) =>
+            ((GatewayEndToEndTestContext)context).DeferCleanup(() => ++PollCount >= 3);
+
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            yield return new AssertionStep("passes", _ => EndToEndAssert.True(true));
+        }
+
+        public static void Reset() => PollCount = 0;
+    }
+
+    private sealed class NeverCompletingCleanupTest : IRimWorldEndToEndTest
+    {
+        public static int PollCount { get; private set; }
+
+        public void Arrange(IEndToEndContext context) =>
+            ((GatewayEndToEndTestContext)context).DeferCleanup(() =>
+            {
+                PollCount++;
+                return false;
+            });
+
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            yield return new AssertionStep("passes", _ => EndToEndAssert.True(true));
+        }
+
+        public static void Reset() => PollCount = 0;
+    }
+
+    private sealed class ThrowingAbovePendingCleanupTest : IRimWorldEndToEndTest
+    {
+        public static int PollCount { get; private set; }
+        public static int ThrowCount { get; private set; }
+
+        public void Arrange(IEndToEndContext context)
+        {
+            var gateway = (GatewayEndToEndTestContext)context;
+            gateway.DeferCleanup(() => ++PollCount >= 2);
+            gateway.DeferCleanup(() =>
+            {
+                ThrowCount++;
+                throw new InvalidOperationException("expected cleanup failure");
+            });
+        }
+
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            yield return new AssertionStep("passes", _ => EndToEndAssert.True(true));
+        }
+
+        public static void Reset()
+        {
+            PollCount = 0;
+            ThrowCount = 0;
+        }
     }
 
 }

@@ -31,7 +31,13 @@ internal interface IGatewayPerformanceRuntimeBackend
         PerformanceTestDescriptor descriptor,
         GatewayPerformanceControlWindow controlWindow,
         IReadOnlyDictionary<string, long> throughputCounts);
+    bool TryFinalize(out string reason);
     void Cleanup();
+}
+
+internal interface IDeferredGatewayPerformanceCleanup
+{
+    bool TryCleanup(out string reason);
 }
 
 internal sealed class GatewayPerformanceControlWindow
@@ -198,6 +204,10 @@ internal sealed class CoordinatedGatewayPerformanceRunService : GatewayPerforman
                 sampleStartCollections,
                 Collections()),
             counts);
+        yield return new WaitUntilStep(
+            "performance-backend-finalize",
+            _ => backend.TryFinalize(out var ignored),
+            new EndToEndDeadline(3_600, 6_000, TimeSpan.FromSeconds(30)));
         started = false;
         yield return new CheckpointStep(
             "performance-artifacts",
@@ -208,20 +218,31 @@ internal sealed class CoordinatedGatewayPerformanceRunService : GatewayPerforman
             paddingPixels: 0);
     }
 
+    internal bool TryCleanup()
+    {
+        if (backend is IDeferredGatewayPerformanceCleanup deferred &&
+            !deferred.TryCleanup(out var ignored))
+        {
+            return false;
+        }
+        if (backend is not IDeferredGatewayPerformanceCleanup) backend.Cleanup();
+        ResetState();
+        return true;
+    }
+
     public override void Cleanup()
     {
-        try
-        {
-            backend.Cleanup();
-        }
-        finally
-        {
-            prepared = false;
-            started = false;
-            sampleStartCollections = null;
-            sampleStartThroughput = null;
-            artifacts = new Dictionary<string, string>();
-        }
+        if (!TryCleanup())
+            throw new InvalidOperationException("Performance cleanup is still pending.");
+    }
+
+    private void ResetState()
+    {
+        prepared = false;
+        started = false;
+        sampleStartCollections = null;
+        sampleStartThroughput = null;
+        artifacts = new Dictionary<string, string>();
     }
 
     private static EndToEndDeadline Deadline(PerformanceTestDescriptor descriptor)

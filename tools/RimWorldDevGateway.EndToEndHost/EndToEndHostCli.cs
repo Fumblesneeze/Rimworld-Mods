@@ -181,6 +181,14 @@ public static class EndToEndHostCli
         {
             Description = $"Optional repetition override from 1 to {PerformanceRunPlanBuilder.MaximumRepetitions}."
         };
+        var diagnosticProfiler = new Option<string?>("--diagnostic-profiler")
+        {
+            Description = "Optional noncanonical diagnostic profiler; currently only 'dpa'."
+        };
+        var diagnosticSelector = new Option<string?>("--diagnostic-selector")
+        {
+            Description = "Exact outer method selector required by the DPA internal-call diagnostic."
+        };
         var command = new Command(
             "performance-plan",
             "Build marked performance fixtures and print fresh-process benchmark/repetition plans without staging or launching.");
@@ -191,6 +199,8 @@ public static class EndToEndHostCli
         command.Options.Add(warmUpTicks);
         command.Options.Add(sampleTicks);
         command.Options.Add(repetitions);
+        command.Options.Add(diagnosticProfiler);
+        command.Options.Add(diagnosticSelector);
         command.SetAction(parseResult => Execute(parseResult, () =>
         {
             var input = common.Read(parseResult);
@@ -199,7 +209,11 @@ public static class EndToEndHostCli
                 projects,
                 input.Configuration,
                 TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
-            var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(candidates, input.PackageIds);
+            var profiler = ReadProfiler(parseResult.GetValue(diagnosticProfiler));
+            var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(
+                candidates,
+                input.PackageIds,
+                canonicalCircinusIsDeclarationOnly: profiler == PerformanceProfilerMode.DpaDiagnostic);
             var plan = PerformanceRunPlanBuilder.Create(
                 discovery,
                 parseResult.GetValue(benchmarkIds) ?? Array.Empty<string>(),
@@ -207,7 +221,9 @@ public static class EndToEndHostCli
                 parseResult.GetValue(warmUpTicks),
                 parseResult.GetValue(sampleTicks),
                 parseResult.GetValue(repetitions),
-                RequiredPath(parseResult.GetValue(artifactRoot), "artifact root"));
+                RequiredPath(parseResult.GetValue(artifactRoot), "artifact root"),
+                profiler,
+                parseResult.GetValue(diagnosticSelector));
             WritePerformancePlan(parseResult, plan, common.ReadOutput(parseResult));
             return 0;
         }));
@@ -222,11 +238,21 @@ public static class EndToEndHostCli
             Description = "Required JSON lease path used later by the clean command.",
             Required = true
         };
+        var diagnosticProfiler = new Option<string?>("--diagnostic-profiler")
+        {
+            Description = "Optional noncanonical diagnostic profiler; currently only 'dpa'."
+        };
+        var diagnosticSelector = new Option<string?>("--diagnostic-selector")
+        {
+            Description = "Exact outer method selector required by the DPA internal-call diagnostic."
+        };
         var command = new Command(
             "performance-stage",
             "Build marked performance fixtures and atomically publish their exact manifests for one run.");
         common.AddTo(command);
         command.Options.Add(leaseFile);
+        command.Options.Add(diagnosticProfiler);
+        command.Options.Add(diagnosticSelector);
         command.SetAction(parseResult => Execute(parseResult, () =>
         {
             var input = common.Read(parseResult);
@@ -239,7 +265,9 @@ public static class EndToEndHostCli
                 candidates,
                 input.PackageIds,
                 input.ModsRoot,
-                input.RimWorldVersion);
+                input.RimWorldVersion,
+                ReadProfiler(parseResult.GetValue(diagnosticProfiler)),
+                parseResult.GetValue(diagnosticSelector));
             var publisher = new EndToEndStagePublisher();
             var leasePath = RequiredPath(parseResult.GetValue(leaseFile), "lease file");
             var leases = EndToEndStageTransaction.PublishAll(
@@ -491,9 +519,12 @@ public static class EndToEndHostCli
                 process.SampleTicks,
                 process.MaxWallClockSeconds,
                 process.GameSpeed,
+                profiler = process.Profiler.ToString(),
+                process.DiagnosticSelector,
                 activePackageIds = process.ActivePackageIds,
                 process.ProcessDirectory,
                 process.RawCircinusJsonPath,
+                process.RawDiagnosticJsonPath,
                 process.NormalizedJsonPath,
                 process.CsvReportPath,
                 process.MarkdownReportPath
@@ -505,6 +536,14 @@ public static class EndToEndHostCli
                 plan.SummaryMarkdownPath
             }
         });
+    }
+
+    private static PerformanceProfilerMode ReadProfiler(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return PerformanceProfilerMode.Circinus;
+        if (StringComparer.OrdinalIgnoreCase.Equals(value.Trim(), "dpa"))
+            return PerformanceProfilerMode.DpaDiagnostic;
+        throw new ArgumentException("Diagnostic profiler must be 'dpa'.");
     }
 
     private static void Write(ParseResult parseResult, string? output, object payload)

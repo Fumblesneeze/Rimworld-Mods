@@ -75,6 +75,58 @@ public sealed class PerformanceArtifactWriterTests
         }
     }
 
+    [Test]
+    public void Dpa_writer_publishes_only_one_raw_nonbaseline_diagnostic_document()
+    {
+        var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "dpa-diagnostic-artifacts", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var capture = new DpaDiagnosticCapture(
+                new DpaAssemblyIdentity("PerformanceAnalyzer, Version=1.0.0.0", Guid.NewGuid(), 42, "ABC", "fixture"),
+                "workload/v1",
+                "Tick",
+                new[] { "Verse.Map::MapPreTick()" },
+                new[] { "Assembly:Verse.Map::MapPreTick()@mvid:1" },
+                new[] { "sample-start-tick=10", "sample-end-tick=70" },
+                new[]
+                {
+                    new DpaDiagnosticEntry(
+                        "inner", "inner", "Verse.Map", "MapPreTick", 1, false,
+                        new[] { new DpaDiagnosticSample(0, 60, 1.25) })
+                });
+
+            var artifacts = DpaDiagnosticArtifactWriter.Write(root, "gateway.fixture", capture);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(artifacts, Has.Count.EqualTo(3));
+                Assert.That(artifacts["performance.diagnostic.profiler"], Is.EqualTo("dpa"));
+                Assert.That(artifacts["performance.diagnostic.baseline_eligible"], Is.EqualTo("false"));
+                Assert.That(File.Exists(artifacts["performance.diagnostic.raw"]), Is.True);
+                Assert.That(Directory.EnumerateFiles(root, "performance.normalized.json", SearchOption.AllDirectories), Is.Empty);
+                Assert.That(Directory.EnumerateFiles(root, "circinus.*.json", SearchOption.AllDirectories), Is.Empty);
+                Assert.That(Directory.EnumerateDirectories(root, ".tmp-*", SearchOption.TopDirectoryOnly), Is.Empty);
+            });
+            using var stream = File.OpenRead(artifacts["performance.diagnostic.raw"]);
+            var roundTrip = (DpaDiagnosticCapture)new DataContractJsonSerializer(
+                typeof(DpaDiagnosticCapture)).ReadObject(stream)!;
+            Assert.Multiple(() =>
+            {
+                Assert.That(roundTrip.Kind, Is.EqualTo("diagnostic"));
+                Assert.That(roundTrip.Profiler, Is.EqualTo("dpa"));
+                Assert.That(roundTrip.BaselineEligible, Is.False);
+                Assert.That(roundTrip.RequestedSelectors, Is.EqualTo(new[] { "Verse.Map::MapPreTick()" }));
+                Assert.That(roundTrip.Selectors, Is.EqualTo(new[] { "Assembly:Verse.Map::MapPreTick()@mvid:1" }));
+                Assert.That(roundTrip.Entries, Has.Length.EqualTo(1));
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static CircinusCapture Capture() => new(
         "run-exact", 1, 15, "{\"source\":\"memory\"}", "{\"source\":\"persisted\"}",
         Array.Empty<CircinusProfilerSidecar>());

@@ -53,6 +53,32 @@ public sealed class PerformanceTestingContractTests
     }
 
     [Test]
+    public void Dpa_diagnostic_clone_replaces_only_the_profiler_and_one_exact_outer_selector()
+    {
+        var canonical = PerformanceTestContract.Describe(typeof(ValidProductBenchmark));
+        var diagnostic = PerformanceTestContract.ForDpaDiagnostic(
+            canonical,
+            "Verse.Map::MapPreTick()");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Profiler, Is.EqualTo(PerformanceProfilerKind.DpaDiagnostic));
+            Assert.That(diagnostic.ActivePackageIds, Is.EqualTo(new[]
+            {
+                "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.DpaPackageId,
+                "fumblesneeze.immersivechefs"
+            }));
+            Assert.That(diagnostic.ActivePackageIds, Does.Not.Contain(PerformanceTestContract.CircinusPackageId));
+            Assert.That(diagnostic.MethodSelectors, Has.Count.EqualTo(1));
+            Assert.That(diagnostic.MethodSelectors[0].Kind, Is.EqualTo(PerformanceMethodSelectorKind.Method));
+            Assert.That(diagnostic.MethodSelectors[0].Value, Is.EqualTo("Verse.Map::MapPreTick()"));
+            Assert.That(diagnostic.Repetitions, Is.EqualTo(1));
+            Assert.That(diagnostic.WorkloadVersion, Is.EqualTo(canonical.WorkloadVersion));
+            Assert.That(diagnostic.ThroughputCheckpoints, Is.SameAs(canonical.ThroughputCheckpoints));
+        });
+    }
+
+    [Test]
     public void Grouping_is_ordinal_deterministic_and_never_inherits_downloaded_mods()
     {
         var groups = PerformanceTestContract.DescribeAndGroup(new[]
