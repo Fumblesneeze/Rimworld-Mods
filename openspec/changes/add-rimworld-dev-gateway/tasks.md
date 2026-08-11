@@ -122,7 +122,7 @@
 - [ ] 18.1 In one disposable isolated playable run, get/set/restore developer and god modes, pause/speed, and camera; prove reported before/after state matches visible/native state.
 - [ ] 18.2 Spawn a thing and pawn, query them by map and view filters, inspect them, atomically select them, and prove stable handles/results through direct HTTP.
 - [ ] 18.3 Discover and invoke one real immediate or toggle gizmo, one native debug action/tool, and one target or dragged architect designator; prove stale/disabled safety and retain screenshots/log/request IDs.
-- [ ] 18.4 Perform controlled shutdown, scan logs for gateway/mod/runtime exceptions, verify credentials and exact PID are cleaned up, and verify the normal mod configuration hash is unchanged.
+- [x] 18.4 Perform controlled shutdown, scan logs for gateway/mod/runtime exceptions, verify credentials and exact PID are cleaned up, and verify the normal mod configuration hash is unchanged. Current reviewed run: `artifacts/GatewaySmoke/gateway-regression-final/20260811T135003437Z`.
 - [x] 18.5 Run an independent code-review pass over the complete change, resolve or explicitly defer every finding, and rerun all affected tests plus Release/package/OpenSpec validation.
 
 ## 19. mods/RimWorldDevGateway — Freeze diagnosis and robust harness cleanup
@@ -131,13 +131,13 @@
 - [x] 19.2 RED/GREEN: observe and request-correlate late post-timeout faults, and preserve/log the native debug-discovery causal exception.
 - [x] 19.3 RED/GREEN: write token-free per-run started/terminal request journals with an atomic last-request record.
 - [x] 19.4 Change the host smoke to journal outbound requests, classify exit versus suspected hang, request graceful close first, and attempt a dump before exact-PID force fallback.
-- [ ] 19.5 On a future explicitly authorized live run, prove a real off-center camera pan and the new graceful cleanup/diagnostic artifacts; do not launch solely to close this evidence gap after the user's stop request.
+- [x] 19.5 On a future explicitly authorized live run, prove a real off-center camera pan and the new graceful cleanup/diagnostic artifacts; do not launch solely to close this evidence gap after the user's stop request. The reviewed `20260811T135003437Z` regression visibly moved the camera from the quickstart colony to an off-center desert region, zoomed, restored the original view, and completed graceful exact-PID cleanup.
 - [x] 19.6 TDD/REGRESSION: keep timed native drag delays off Unity's main thread, carry HTTP-client cancellation into queued operations, stop dispatcher admission before joining transport, log post-start timeouts immediately, and keep the extended debug deadline on discovery only. Durable RED artifacts exist for most slices; the original cancellation compile failure is retained only in the development transcript.
 - [x] 19.7 REGRESSION: isolate failing modded gizmo/thing metadata, preserve causal exceptions, emit correlated semantic/automation/gizmo diagnostics, and retain healthy query results. The object-isolation development observations are transcript-only; retained GREEN regressions and the correlated gizmo-mapping RED/GREEN artifact cover the current behavior.
 - [x] 19.8 RED/GREEN: serialize click, drag, chord, and text through one off-main-thread cancellation-aware input lane and retain that lane through guaranteed best-effort input release.
 - [x] 19.9 RED/GREEN: retain and retry listener, runtime, and session ownership when shutdown cleanup fails instead of committing a false stopped state or blocking recovery with an orphaned locator.
 - [x] 19.10 RED/GREEN: keep `last-request.json` on the newest active admission under concurrent completion and isolate/log broken selected-Thing and gizmo-owner enumeration while retaining healthy results.
-- [ ] 19.11 RED/GREEN: keep transport-worker request diagnostics out of `Verse.Log`, append them directly to the gateway ring buffer with correlation, and prove an open developer-log window remains responsive during HTTP traffic.
+- [x] 19.11 RED/GREEN: keep transport-worker request diagnostics out of `Verse.Log`, append them directly to the gateway ring buffer with correlation, and prove an open developer-log window remains responsive during HTTP traffic. Focused RED `artifacts/TestResults/20260811T133103514Z-22152-5e72b54f6b7b44d68496c5083e998d12`, reviewed GREEN `20260811T134912229Z-25000-daf7351d7bf643dfac2aca0c0eebb172`, and current exact-process proof `artifacts/GatewaySmoke/gateway-regression-final/20260811T135003437Z`.
 - [x] 19.12 TDD/IN-GAME: repair or replace the Windows hang-dump backend; reproduce the observed `comsvcs.dll` exit `-2147024773`/Win32 error 123 against an exact owned stalled RimWorld PID, retain an analyzable dump result without persisting bearer credentials, and preserve bounded exact-handle cleanup when capture fails or times out.
 
 ## 20. mods/RimWorldDevGateway — Finalized Def export

@@ -136,7 +136,7 @@ public sealed class GatewayAssemblyAutomationDescriptor
             throw new ArgumentException(label + " must not be empty.", parameterName);
         }
 
-        var bytes = Utf8Bytes(value);
+        var bytes = Utf8Bytes(value!);
         if (bytes > maximumUtf8Bytes)
         {
             throw new ArgumentException(

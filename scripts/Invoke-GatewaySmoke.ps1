@@ -3560,6 +3560,263 @@ function Save-GatewayScreenshot {
     }
 }
 
+function Invoke-GatewayDeveloperLogTrafficProbe {
+    param(
+        [Parameter(Mandatory)][string]$BaseUrl,
+        [Parameter(Mandatory)][string]$Token,
+        [ValidateRange(1, 128)][int]$TrafficCount = 24,
+        [Parameter(Mandatory)][string]$BeforeScreenshotPath,
+        [Parameter(Mandatory)][string]$AfterScreenshotPath,
+        [Parameter(Mandatory)][scriptblock]$GatewayGet,
+        [Parameter(Mandatory)][scriptblock]$GatewayTextPost,
+        [Parameter(Mandatory)][scriptblock]$GatewayScreenshot
+    )
+
+    $openRequestId = 'gateway-smoke-developer-log-open'
+    $closeRequestId = 'gateway-smoke-developer-log-close'
+    $uiBeforeRequestId = 'gateway-smoke-developer-log-ui-before'
+    $uiAfterRequestId = 'gateway-smoke-developer-log-ui-after'
+    $mainThreadRequestId = 'gateway-smoke-developer-log-main-thread-after-traffic'
+    $trafficRequestIds = @(
+        for ($index = 1; $index -le $TrafficCount; $index++) {
+            'gateway-smoke-developer-log-traffic-{0:D3}' -f $index
+        }
+    )
+    $ownsDeveloperLogWindow = $false
+    $mainThreadId = $null
+    $openSource = @'
+(new System.Func<string>(() =>
+{
+    var existing = Find.WindowStack.WindowOfType<LudeonTK.EditWindow_Log>();
+    if (existing != null)
+    {
+        return "already-open|" + System.Threading.Thread.CurrentThread.ManagedThreadId;
+    }
+
+    Find.WindowStack.Add(new LudeonTK.EditWindow_Log());
+    return "opened|" + System.Threading.Thread.CurrentThread.ManagedThreadId;
+}))()
+'@
+    $closeSource = @'
+(new System.Func<string>(() =>
+{
+    var existing = Find.WindowStack.WindowOfType<LudeonTK.EditWindow_Log>();
+    if (existing == null)
+    {
+        return "not-open";
+    }
+
+    Find.WindowStack.TryRemove(existing, false);
+    return "closed";
+}))()
+'@
+
+    $result = $null
+    $primaryFailure = $null
+    $cleanupFailure = $null
+    try {
+        $baselineResponse = & $GatewayGet `
+            ('{0}/logs?after=0&limit=1' -f $BaseUrl) `
+            $Token `
+            'gateway-smoke-developer-log-baseline'
+        if ([int]$baselineResponse.StatusCode -ne 200) {
+            throw "Developer-log baseline failed with HTTP $([int]$baselineResponse.StatusCode)."
+        }
+        $baselineEnvelope = $baselineResponse.Content | ConvertFrom-Json -ErrorAction Stop
+        if (-not $baselineEnvelope.ok) {
+            throw 'Developer-log baseline returned an unsuccessful Gateway envelope.'
+        }
+        $baselineCursor = [long]$baselineEnvelope.result.NewestCursor
+
+        $openResponse = & $GatewayTextPost `
+            ('{0}/executions/csharp' -f $BaseUrl) `
+            $Token `
+            $openRequestId `
+            $openSource
+        if ([int]$openResponse.StatusCode -ne 200) {
+            throw "Opening the native developer log failed with HTTP $([int]$openResponse.StatusCode)."
+        }
+        $openEnvelope = $openResponse.Content | ConvertFrom-Json -ErrorAction Stop
+        if (-not $openEnvelope.ok -or -not $openEnvelope.result.Succeeded) {
+            throw 'Opening the native developer log returned an unsuccessful execution envelope.'
+        }
+        $openValue = [string]$openEnvelope.result.Value
+        if ($openValue -cnotmatch '^(opened|already-open)\|([1-9][0-9]*)$') {
+            throw "Opening the native developer log returned an invalid ownership/thread result: '$openValue'."
+        }
+        $mainThreadId = [string]$Matches[2]
+        if ([string]$Matches[1] -cne 'opened') {
+            throw 'The native developer log was already open; the isolated probe refuses to claim or close it.'
+        }
+        $ownsDeveloperLogWindow = $true
+
+        $uiBeforeEnvelope = $null
+        $developerWindowsBefore = @()
+        for ($uiAttempt = 1; $uiAttempt -le 50; $uiAttempt++) {
+            $uiBeforeResponse = & $GatewayGet `
+                ('{0}/ui-state' -f $BaseUrl) `
+                $Token `
+                ('{0}-{1:D2}' -f $uiBeforeRequestId, $uiAttempt)
+            if ([int]$uiBeforeResponse.StatusCode -ne 200) {
+                throw "Developer-log UI inspection failed with HTTP $([int]$uiBeforeResponse.StatusCode)."
+            }
+            $uiBeforeEnvelope = $uiBeforeResponse.Content | ConvertFrom-Json -ErrorAction Stop
+            $developerWindowsBefore = @(
+                @($uiBeforeEnvelope.result.windows) |
+                    Where-Object { [string]$_.Type -ceq 'EditWindow_Log' }
+            )
+            if ($uiBeforeEnvelope.ok -and $developerWindowsBefore.Count -eq 1) {
+                break
+            }
+            Start-Sleep -Milliseconds 50
+        }
+        if ($null -eq $uiBeforeEnvelope -or
+            -not $uiBeforeEnvelope.ok -or
+            $developerWindowsBefore.Count -ne 1) {
+            throw 'The native developer log was not uniquely observable before transport traffic.'
+        }
+
+        $beforeScreenshotResponse = & $GatewayScreenshot `
+            $BaseUrl `
+            $Token `
+            'gateway-smoke-developer-log-before-screenshot' `
+            $BeforeScreenshotPath
+        if ([int]$beforeScreenshotResponse.StatusCode -ne 200) {
+            throw "Developer-log before screenshot failed with HTTP $([int]$beforeScreenshotResponse.StatusCode)."
+        }
+
+        foreach ($requestId in $trafficRequestIds) {
+            $trafficResponse = & $GatewayGet `
+                ('{0}/status' -f $BaseUrl) `
+                $Token `
+                $requestId
+            if ([int]$trafficResponse.StatusCode -ne 200) {
+                throw "Developer-log transport request '$requestId' failed with HTTP $([int]$trafficResponse.StatusCode)."
+            }
+            $trafficEnvelope = $trafficResponse.Content | ConvertFrom-Json -ErrorAction Stop
+            if (-not $trafficEnvelope.ok) {
+                throw "Developer-log transport request '$requestId' returned an unsuccessful Gateway envelope."
+            }
+        }
+
+        $mainThreadResponse = & $GatewayGet `
+            ('{0}/game-state' -f $BaseUrl) `
+            $Token `
+            $mainThreadRequestId
+        if ([int]$mainThreadResponse.StatusCode -ne 200) {
+            throw "The later main-thread probe failed with HTTP $([int]$mainThreadResponse.StatusCode)."
+        }
+        $mainThreadEnvelope = $mainThreadResponse.Content | ConvertFrom-Json -ErrorAction Stop
+        if (-not $mainThreadEnvelope.ok) {
+            throw 'The later main-thread probe returned an unsuccessful Gateway envelope.'
+        }
+
+        $uiAfterResponse = & $GatewayGet `
+            ('{0}/ui-state' -f $BaseUrl) `
+            $Token `
+            $uiAfterRequestId
+        if ([int]$uiAfterResponse.StatusCode -ne 200) {
+            throw "Post-traffic developer-log UI inspection failed with HTTP $([int]$uiAfterResponse.StatusCode)."
+        }
+        $uiAfterEnvelope = $uiAfterResponse.Content | ConvertFrom-Json -ErrorAction Stop
+        $developerWindowsAfter = @(
+            @($uiAfterEnvelope.result.windows) |
+                Where-Object { [string]$_.Type -ceq 'EditWindow_Log' }
+        )
+        if (-not $uiAfterEnvelope.ok -or $developerWindowsAfter.Count -ne 1) {
+            throw 'The native developer log did not remain uniquely observable after transport traffic.'
+        }
+
+        $afterScreenshotResponse = & $GatewayScreenshot `
+            $BaseUrl `
+            $Token `
+            'gateway-smoke-developer-log-after-screenshot' `
+            $AfterScreenshotPath
+        if ([int]$afterScreenshotResponse.StatusCode -ne 200) {
+            throw "Developer-log after screenshot failed with HTTP $([int]$afterScreenshotResponse.StatusCode)."
+        }
+
+        $logsResponse = & $GatewayGet `
+            ('{0}/logs?after={1}&limit=500' -f $BaseUrl, $baselineCursor) `
+            $Token `
+            'gateway-smoke-developer-log-correlated-logs'
+        if ([int]$logsResponse.StatusCode -ne 200) {
+            throw "Correlated developer-log read failed with HTTP $([int]$logsResponse.StatusCode)."
+        }
+        $logsEnvelope = $logsResponse.Content | ConvertFrom-Json -ErrorAction Stop
+        if (-not $logsEnvelope.ok -or
+            [bool]$logsEnvelope.result.HistoryEvicted -or
+            [bool]$logsEnvelope.result.PageTruncated) {
+            throw 'Correlated developer-log evidence was incomplete or unsuccessful.'
+        }
+        $entries = @($logsEnvelope.result.Entries)
+        $transportThreads = [System.Collections.Generic.HashSet[string]]::new(
+            [System.StringComparer]::Ordinal)
+        foreach ($requestId in $trafficRequestIds) {
+            $matches = @($entries | Where-Object { [string]$_.RequestId -ceq $requestId })
+            if ($matches.Count -eq 0) {
+                throw "Correlated developer-log evidence omitted transport request '$requestId'."
+            }
+            foreach ($entry in $matches) {
+                $thread = [string]$entry.Thread
+                if ([string]::IsNullOrWhiteSpace($thread) -or $thread -ceq $mainThreadId) {
+                    throw "Transport request '$requestId' was not recorded from a transport-worker thread."
+                }
+                $null = $transportThreads.Add($thread)
+            }
+        }
+
+        $result = [pscustomobject][ordered]@{
+            WindowType = 'LudeonTK.EditWindow_Log'
+            TrafficCount = $TrafficCount
+            TrafficRequestIds = @($trafficRequestIds)
+            TransportThreads = @($transportThreads | Sort-Object)
+            MainThreadId = $mainThreadId
+            MainThreadRequestId = $mainThreadRequestId
+            MainThreadProbeSucceeded = $true
+            BaselineCursor = $baselineCursor
+            NewestCursor = [long]$logsEnvelope.result.NewestCursor
+            Screenshots = @($BeforeScreenshotPath, $AfterScreenshotPath)
+        }
+    }
+    catch {
+        $primaryFailure = $_
+    }
+
+    if ($ownsDeveloperLogWindow) {
+        try {
+            $closeResponse = & $GatewayTextPost `
+                ('{0}/executions/csharp' -f $BaseUrl) `
+                $Token `
+                $closeRequestId `
+                $closeSource
+            if ([int]$closeResponse.StatusCode -ne 200) {
+                throw "Closing the native developer log failed with HTTP $([int]$closeResponse.StatusCode)."
+            }
+            $closeEnvelope = $closeResponse.Content | ConvertFrom-Json -ErrorAction Stop
+            if (-not $closeEnvelope.ok -or -not $closeEnvelope.result.Succeeded) {
+                throw 'Closing the native developer log returned an unsuccessful execution envelope.'
+            }
+        }
+        catch {
+            $cleanupFailure = $_
+        }
+    }
+
+    if ($null -ne $primaryFailure) {
+        if ($null -ne $cleanupFailure) {
+            $primaryFailure.Exception.Data['DeveloperLogCleanupFailure'] =
+                [string]$cleanupFailure.Exception.Message
+        }
+        throw $primaryFailure
+    }
+    if ($null -ne $cleanupFailure) {
+        throw $cleanupFailure
+    }
+
+    return $result
+}
+
 function Stop-OwnedDumpHelper {
     param(
         [Parameter(Mandatory)][System.Diagnostics.Process]$Helper,
@@ -5126,6 +5383,9 @@ $postQuickstartLogsPath = Join-Path $runDirectory 'post-quickstart-logs.json'
 $actionsPath = Join-Path $runDirectory 'actions.json'
 $automationsPath = Join-Path $runDirectory 'automations.json'
 $gatewayScreenshotPath = Join-Path $runDirectory 'gateway-screenshot.png'
+$developerLogTrafficPath = Join-Path $runDirectory 'developer-log-traffic.json'
+$developerLogBeforeScreenshotPath = Join-Path $runDirectory 'developer-log-before.png'
+$developerLogAfterScreenshotPath = Join-Path $runDirectory 'developer-log-after.png'
 $clickPath = Join-Path $runDirectory 'click.json'
 $executionPath = Join-Path $runDirectory 'execution.json'
 $executionStatePath = Join-Path $runDirectory 'execution-state.json'
@@ -5359,6 +5619,7 @@ $languageProviderCleanupStatus = 'not-staged'
 $processCleanupStatus = 'not-started'
 $hangDumpProbeExpectedTransition = $false
 $hangDumpProbeOutcome = $null
+$developerLogTraffic = $null
 $credentialCleanupStatus = 'not-started'
 $integrationStageCleanupStatus = if ($RunIntegrationTests) { 'not-staged' } else { 'not-requested' }
 $workshopOverrideCleanupStatus = if ($workshopOverridePlans.Count -eq 0) {
@@ -6127,6 +6388,40 @@ try {
             -not $gameStateEnableEnvelope.result.After.EffectiveGodMode) {
             throw "Game-state mutation did not enable developer and effective god mode. See $gameStateEnableDevPath"
         }
+
+        $developerLogGet = {
+            param($Uri, $Token, $RequestId)
+            Invoke-GatewayGet -Uri $Uri -Token $Token -RequestId $RequestId
+        }
+        $developerLogTextPost = {
+            param($Uri, $Token, $RequestId, $Source)
+            Invoke-GatewayTextPost `
+                -Uri $Uri `
+                -Token $Token `
+                -RequestId $RequestId `
+                -Source $Source
+        }
+        $developerLogScreenshot = {
+            param($BaseUrl, $Token, $RequestId, $Path)
+            $null = Save-GatewayScreenshot `
+                -BaseUrl $BaseUrl `
+                -Token $Token `
+                -RequestId $RequestId `
+                -ArtifactPath $Path
+            [pscustomobject]@{ StatusCode = 200 }
+        }
+        $developerLogTraffic = Invoke-GatewayDeveloperLogTrafficProbe `
+            -BaseUrl $baseUrl `
+            -Token $manifest.token `
+            -TrafficCount 24 `
+            -BeforeScreenshotPath $developerLogBeforeScreenshotPath `
+            -AfterScreenshotPath $developerLogAfterScreenshotPath `
+            -GatewayGet $developerLogGet `
+            -GatewayTextPost $developerLogTextPost `
+            -GatewayScreenshot $developerLogScreenshot
+        $developerLogTraffic |
+            ConvertTo-Json -Depth 12 |
+            Set-Content -LiteralPath $developerLogTrafficPath -Encoding UTF8
 
         $gamePauseRequestIds = [System.Collections.Generic.List[string]]::new()
         $gameStatePauseResponse = $null
@@ -7551,6 +7846,9 @@ try {
         ActionsResponse = $actionsPath
         AutomationsResponse = $automationsPath
         GatewayScreenshot = $gatewayScreenshotPath
+        DeveloperLogTraffic = if ($runGatewayRegressionScenario) { $developerLogTrafficPath } else { $null }
+        DeveloperLogBeforeScreenshot = if ($runGatewayRegressionScenario) { $developerLogBeforeScreenshotPath } else { $null }
+        DeveloperLogAfterScreenshot = if ($runGatewayRegressionScenario) { $developerLogAfterScreenshotPath } else { $null }
         ClickResponse = if ($runGatewayRegressionScenario) { $clickPath } else { $null }
         ClickOutcome = $clickOutcome
         ExecutionResponse = if ($runGatewayRegressionScenario) { $executionPath } else { $null }
