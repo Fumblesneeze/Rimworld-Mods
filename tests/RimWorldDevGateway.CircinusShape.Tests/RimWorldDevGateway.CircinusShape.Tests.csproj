@@ -5,6 +5,7 @@
     <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
     <CircinusAssemblyPath Condition="'$(CircinusAssemblyPath)' == ''">$(SteamModContentFolder)\3773680130\Assemblies\Circinus.dll</CircinusAssemblyPath>
     <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(SteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
+    <DpaAssemblyPath Condition="'$(DpaAssemblyPath)' == ''">$(SteamModContentFolder)\2038874626\1.6\Assemblies\PerformanceAnalyzer.dll</DpaAssemblyPath>
     <RootNamespace>RimWorldDevGateway.CircinusShape.Tests</RootNamespace>
     <AssemblyName>RimWorldDevGateway.CircinusShape.Tests</AssemblyName>
     <IsTestProject>true</IsTestProject>
@@ -25,10 +26,15 @@
       <_Parameter1>HarmonyAssemblyPath</_Parameter1>
       <_Parameter2>$([System.IO.Path]::GetFullPath('$(HarmonyAssemblyPath)'))</_Parameter2>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>DpaAssemblyPath</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(DpaAssemblyPath)'))</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <Target Name="ValidateCircinusTestAssembly" BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="!Exists('$(CircinusAssemblyPath)')" Text="The Circinus test assembly does not exist: $(CircinusAssemblyPath)." />
     <Error Condition="!Exists('$(HarmonyAssemblyPath)')" Text="The Harmony test dependency does not exist: $(HarmonyAssemblyPath)." />
+    <Error Condition="!Exists('$(DpaAssemblyPath)')" Text="The DPA test assembly does not exist: $(DpaAssemblyPath)." />
   </Target>
 </Project>
