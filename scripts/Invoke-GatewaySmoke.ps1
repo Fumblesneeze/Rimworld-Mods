@@ -98,6 +98,8 @@ param(
 
     [switch]$IntegrationFailureProbe,
 
+    [switch]$HangDumpProbe,
+
     [string]$QuickstartDescriptorPath,
 
     [switch]$DryRun,
@@ -3558,56 +3560,278 @@ function Save-GatewayScreenshot {
     }
 }
 
+function Stop-OwnedDumpHelper {
+    param(
+        [Parameter(Mandatory)][System.Diagnostics.Process]$Helper,
+        [Parameter(Mandatory)][string]$PartialDumpPath
+    )
+
+    $helperProcessId = $Helper.Id
+    $helperProcessStartUtc = $Helper.StartTime.ToUniversalTime().ToString(
+        'O',
+        [Globalization.CultureInfo]::InvariantCulture)
+    try {
+        $Helper.Kill($true)
+    }
+    catch [System.InvalidOperationException] {
+        $Helper.Refresh()
+        if (-not $Helper.HasExited) { throw }
+    }
+    catch {
+        return [pscustomobject]@{
+            Status = 'cleanup-failed'
+            Path = $PartialDumpPath
+            Detail = "Native dump helper termination failed: $($_.Exception.Message)"
+            HelperProcessId = $helperProcessId
+            HelperProcessStartUtc = $helperProcessStartUtc
+            HelperAlive = $true
+        }
+    }
+    if (-not $Helper.HasExited -and -not $Helper.WaitForExit(5000)) {
+        return [pscustomobject]@{
+            Status = 'cleanup-failed'
+            Path = $PartialDumpPath
+            Detail = 'Native dump helper did not exit after bounded termination.'
+            HelperProcessId = $helperProcessId
+            HelperProcessStartUtc = $helperProcessStartUtc
+            HelperAlive = $true
+        }
+    }
+    try {
+        if (Test-Path -LiteralPath $PartialDumpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $PartialDumpPath -Force
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            Status = 'cleanup-failed'
+            Path = $PartialDumpPath
+            Detail = "Timed-out native dump helper partial cleanup failed: $($_.Exception.Message)"
+            HelperProcessId = $helperProcessId
+            HelperProcessStartUtc = $helperProcessStartUtc
+            HelperAlive = $false
+        }
+    }
+    if (Test-Path -LiteralPath $PartialDumpPath -PathType Leaf) {
+        return [pscustomobject]@{
+            Status = 'cleanup-failed'
+            Path = $PartialDumpPath
+            Detail = 'Timed-out native dump helper left a partial artifact.'
+            HelperProcessId = $helperProcessId
+            HelperProcessStartUtc = $helperProcessStartUtc
+            HelperAlive = $false
+        }
+    }
+
+    return [pscustomobject]@{
+        Status = 'timed-out'
+        Path = $null
+        Detail = 'Native dump helper exceeded 20 seconds.'
+        HelperProcessId = $helperProcessId
+        HelperProcessStartUtc = $helperProcessStartUtc
+        HelperAlive = $false
+    }
+}
+
 function Capture-OwnedProcessDump {
     param(
         [Parameter(Mandatory)][System.Diagnostics.Process]$Process,
         [Parameter(Mandatory)][string]$DumpPath
     )
 
-    $rundll32 = (Get-Command rundll32.exe -ErrorAction SilentlyContinue).Source
-    if ([string]::IsNullOrWhiteSpace($rundll32)) {
-        return [pscustomobject]@{ Status = 'unavailable'; Path = $null; Detail = 'rundll32.exe was not found.' }
-    }
-
-    $comSvcs = Join-Path $env:SystemRoot 'System32\comsvcs.dll'
-    if (-not (Test-Path -LiteralPath $comSvcs -PathType Leaf)) {
-        return [pscustomobject]@{ Status = 'unavailable'; Path = $null; Detail = "comsvcs.dll was not found at $comSvcs" }
-    }
-
+    $helperPath = $null
+    $temporaryDumpPath = $null
     $helper = $null
     try {
-        $arguments = @(
-            "`"$comSvcs`",MiniDump",
-            [string]$Process.Id,
-            "`"$DumpPath`"",
-            'full'
-        )
-        $helper = Start-Process `
-            -FilePath $rundll32 `
-            -ArgumentList $arguments `
-            -PassThru `
-            -WindowStyle Hidden
+        $dumpDirectory = Split-Path -Parent $DumpPath
+        if ([string]::IsNullOrWhiteSpace($dumpDirectory) -or
+            -not (Test-Path -LiteralPath $dumpDirectory -PathType Container)) {
+            return [pscustomobject]@{ Status = 'failed'; Path = $null; Detail = 'The dump destination directory does not exist.' }
+        }
+        if (Test-Path -LiteralPath $DumpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $DumpPath -Force
+        }
+
+        $helperPath = Join-Path $dumpDirectory ('.rimworld-minidump-' + [guid]::NewGuid().ToString('N') + '.ps1')
+        $temporaryDumpPath = Join-Path $dumpDirectory ('.rimworld-minidump-' + [guid]::NewGuid().ToString('N') + '.tmp')
+        $helperSource = @'
+param(
+    [Parameter(Mandatory)][int]$TargetProcessId,
+    [Parameter(Mandatory)][long]$TargetProcessStartUtcTicks,
+    [Parameter(Mandatory)][string]$TargetDumpPath
+)
+$ErrorActionPreference = 'Stop'
+$nativeSource = @"
+using System;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+
+namespace RimWorldDevGateway.HostDiagnostics
+{
+    [Flags]
+    public enum MiniDumpType : uint
+    {
+        WithHandleData = 0x00000004,
+        WithUnloadedModules = 0x00000020,
+        WithProcessThreadData = 0x00000100,
+        WithFullMemoryInfo = 0x00000800,
+        WithThreadInfo = 0x00001000
+    }
+
+    public static class NativeMiniDump
+    {
+        [DllImport("Dbghelp.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool MiniDumpWriteDump(
+            IntPtr processHandle,
+            uint processId,
+            SafeFileHandle fileHandle,
+            MiniDumpType dumpType,
+            IntPtr exceptionParam,
+            IntPtr userStreamParam,
+            IntPtr callbackParam);
+    }
+}
+"@
+Add-Type -TypeDefinition $nativeSource -Language CSharp
+$target = [Diagnostics.Process]::GetProcessById($TargetProcessId)
+$stream = $null
+try {
+    if ($target.StartTime.ToUniversalTime().Ticks -ne $TargetProcessStartUtcTicks) {
+        [Console]::Error.WriteLine('Target process start identity changed before dump capture.')
+        exit 87
+    }
+    $stream = [IO.File]::Open(
+        $TargetDumpPath,
+        [IO.FileMode]::CreateNew,
+        [IO.FileAccess]::Write,
+        [IO.FileShare]::None)
+    $dumpType = [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithHandleData -bor
+        [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithUnloadedModules -bor
+        [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithProcessThreadData -bor
+        [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithFullMemoryInfo -bor
+        [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithThreadInfo
+    $captured = [RimWorldDevGateway.HostDiagnostics.NativeMiniDump]::MiniDumpWriteDump(
+        $target.Handle,
+        [uint32]$TargetProcessId,
+        $stream.SafeFileHandle,
+        $dumpType,
+        [IntPtr]::Zero,
+        [IntPtr]::Zero,
+        [IntPtr]::Zero)
+    if (-not $captured) {
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        [Console]::Error.WriteLine("MiniDumpWriteDump failed with Win32 error $errorCode.")
+        exit 86
+    }
+    $stream.Flush($true)
+}
+finally {
+    if ($null -ne $stream) { $stream.Dispose() }
+    $target.Dispose()
+}
+exit 0
+'@
+        [IO.File]::WriteAllText(
+            $helperPath,
+            $helperSource,
+            [Text.UTF8Encoding]::new($false))
+
+        $pwsh = Join-Path $PSHOME 'pwsh.exe'
+        if (-not (Test-Path -LiteralPath $pwsh -PathType Leaf)) {
+            return [pscustomobject]@{ Status = 'unavailable'; Path = $null; Detail = "pwsh.exe was not found at $pwsh" }
+        }
+
+        $startInfo = [Diagnostics.ProcessStartInfo]::new()
+        $startInfo.FileName = $pwsh
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $startInfo.ArgumentList.Add('-NoProfile')
+        $startInfo.ArgumentList.Add('-NonInteractive')
+        $startInfo.ArgumentList.Add('-ExecutionPolicy')
+        $startInfo.ArgumentList.Add('Bypass')
+        $startInfo.ArgumentList.Add('-File')
+        $startInfo.ArgumentList.Add($helperPath)
+        $startInfo.ArgumentList.Add('-TargetProcessId')
+        $startInfo.ArgumentList.Add([string]$Process.Id)
+        $startInfo.ArgumentList.Add('-TargetProcessStartUtcTicks')
+        $startInfo.ArgumentList.Add([string]$Process.StartTime.ToUniversalTime().Ticks)
+        $startInfo.ArgumentList.Add('-TargetDumpPath')
+        $startInfo.ArgumentList.Add($temporaryDumpPath)
+        $helper = [Diagnostics.Process]::Start($startInfo)
+        if ($null -eq $helper) {
+            return [pscustomobject]@{ Status = 'failed'; Path = $null; Detail = 'The native dump helper did not start.' }
+        }
         if (-not $helper.WaitForExit(20000)) {
-            Stop-Process -Id $helper.Id -Force -ErrorAction SilentlyContinue
-            return [pscustomobject]@{ Status = 'timed-out'; Path = $null; Detail = 'Dump helper exceeded 20 seconds.' }
+            return Stop-OwnedDumpHelper -Helper $helper -PartialDumpPath $temporaryDumpPath
         }
 
-        if ($helper.ExitCode -eq 0 -and (Test-Path -LiteralPath $DumpPath -PathType Leaf)) {
-            return [pscustomobject]@{ Status = 'captured'; Path = $DumpPath; Detail = 'Windows comsvcs MiniDump completed.' }
+        $helperError = $helper.StandardError.ReadToEnd().Trim()
+        $hasMiniDumpSignature = $false
+        if (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf) {
+            $signatureStream = [System.IO.File]::OpenRead($temporaryDumpPath)
+            try {
+                $signatureBytes = [byte[]]::new(4)
+                $hasMiniDumpSignature =
+                    $signatureStream.Read($signatureBytes, 0, $signatureBytes.Length) -eq 4 -and
+                    [System.Text.Encoding]::ASCII.GetString($signatureBytes) -ceq 'MDMP'
+            }
+            finally {
+                $signatureStream.Dispose()
+            }
+        }
+        if ($helper.ExitCode -eq 0 -and
+            (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf) -and
+            (Get-Item -LiteralPath $temporaryDumpPath).Length -ge 4 -and
+            $hasMiniDumpSignature) {
+            [System.IO.File]::Move($temporaryDumpPath, $DumpPath)
+            $temporaryDumpPath = $null
+            return [pscustomobject]@{
+                Status = 'captured'
+                Path = $DumpPath
+                Detail = 'Native MiniDumpWriteDump completed.'
+                TargetProcessId = [int]$Process.Id
+                TargetProcessStartUtc = $Process.StartTime.ToUniversalTime().ToString(
+                    'O',
+                    [Globalization.CultureInfo]::InvariantCulture)
+            }
         }
 
+        if (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $temporaryDumpPath -Force
+        }
         return [pscustomobject]@{
             Status = 'failed'
-            Path = if (Test-Path -LiteralPath $DumpPath -PathType Leaf) { $DumpPath } else { $null }
-            Detail = "Dump helper exited with code $($helper.ExitCode)."
+            Path = $null
+            Detail = if ([string]::IsNullOrWhiteSpace($helperError)) {
+                "Native dump helper exited with code $($helper.ExitCode)."
+            } else {
+                "Native dump helper exited with code $($helper.ExitCode): $helperError"
+            }
         }
     }
     catch {
+        if ($null -ne $temporaryDumpPath -and
+            (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf)) {
+            Remove-Item -LiteralPath $temporaryDumpPath -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $DumpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $DumpPath -Force -ErrorAction SilentlyContinue
+        }
         return [pscustomobject]@{ Status = 'failed'; Path = $null; Detail = $_.Exception.Message }
     }
     finally {
         if ($null -ne $helper) {
             $helper.Dispose()
+        }
+        if ($null -ne $helperPath -and (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
+            Remove-Item -LiteralPath $helperPath -Force -ErrorAction SilentlyContinue
+        }
+        if ($null -ne $temporaryDumpPath -and
+            (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf)) {
+            Remove-Item -LiteralPath $temporaryDumpPath -Force -ErrorAction SilentlyContinue
         }
     }
 }
@@ -3652,8 +3876,18 @@ function Stop-OwnedProcessGracefully {
         }
     }
 
-    Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
-    Wait-Process -Id $Process.Id -Timeout 15 -ErrorAction SilentlyContinue
+    try {
+        $Process.Kill()
+    }
+    catch [System.InvalidOperationException] {
+        $Process.Refresh()
+        if (-not $Process.HasExited) {
+            throw
+        }
+    }
+    if (-not $Process.HasExited) {
+        $null = $Process.WaitForExit(15000)
+    }
     $Process.Refresh()
     if (-not $Process.HasExited) {
         throw "Owned RimWorld PID $($Process.Id) remained alive after the exact-PID force fallback."
@@ -3665,6 +3899,25 @@ function Stop-OwnedProcessGracefully {
         Forced = $true
         ExitCode = $Process.ExitCode
         Dump = $dump
+    }
+}
+
+function ConvertTo-GatewayProcessCleanupArtifact {
+    param([Parameter(Mandatory)][object]$ProcessCleanup)
+
+    if ($null -ne $ProcessCleanup.Dump -and
+        [string]$ProcessCleanup.Dump.Status -ceq 'cleanup-failed') {
+        return [pscustomobject]@{
+            Status = 'failed'
+            Result = $ProcessCleanup
+            Error = [string]$ProcessCleanup.Dump.Detail
+        }
+    }
+
+    return [pscustomobject]@{
+        Status = 'completed'
+        Result = $ProcessCleanup
+        Error = $null
     }
 }
 
@@ -3717,7 +3970,12 @@ function Test-FileContainsBearerToken {
         throw 'A retained bearer token must be printable ASCII and at most 1024 characters.'
     }
 
-    $tokenBytes = [System.Text.Encoding]::ASCII.GetBytes($Token)
+    $tokenPatterns = @(
+        [System.Text.Encoding]::ASCII.GetBytes($Token),
+        [System.Text.Encoding]::Unicode.GetBytes($Token),
+        [System.Text.Encoding]::BigEndianUnicode.GetBytes($Token)
+    )
+    $maximumPatternLength = ($tokenPatterns | Measure-Object -Property Length -Maximum).Maximum
     $buffer = [byte[]]::new(64 * 1024)
     $tail = [byte[]]::new(0)
     $stream = [System.IO.FileStream]::new(
@@ -3734,12 +3992,34 @@ function Test-FileContainsBearerToken {
                 [System.Array]::Copy($tail, 0, $combined, 0, $tail.Length)
             }
             [System.Array]::Copy($buffer, 0, $combined, $tail.Length, $read)
-            $text = [System.Text.Encoding]::ASCII.GetString($combined)
-            if ($text.IndexOf($Token, [System.StringComparison]::Ordinal) -ge 0) {
-                return $true
+            foreach ($pattern in $tokenPatterns) {
+                $candidateIndex = 0
+                while ($candidateIndex -le $combined.Length - $pattern.Length) {
+                    $candidateIndex = [System.Array]::IndexOf[byte](
+                        $combined,
+                        $pattern[0],
+                        $candidateIndex)
+                    if ($candidateIndex -lt 0 -or
+                        $candidateIndex -gt $combined.Length - $pattern.Length) {
+                        break
+                    }
+
+                    $matches = $true
+                    for ($patternIndex = 1; $patternIndex -lt $pattern.Length; $patternIndex++) {
+                        if ($combined[$candidateIndex + $patternIndex] -ne $pattern[$patternIndex]) {
+                            $matches = $false
+                            break
+                        }
+                    }
+                    if ($matches) {
+                        return $true
+                    }
+
+                    $candidateIndex++
+                }
             }
 
-            $tailLength = [Math]::Min($tokenBytes.Length - 1, $combined.Length)
+            $tailLength = [Math]::Min($maximumPatternLength - 1, $combined.Length)
             if ($tailLength -le 0) {
                 $tail = [byte[]]::new(0)
                 continue
@@ -3759,6 +4039,67 @@ function Test-FileContainsBearerToken {
     }
 
     return $false
+}
+
+function Assert-GatewayHangDumpProbeOutcome {
+    param(
+        [Parameter(Mandatory)][bool]$ExpectedTransitionObserved,
+        [Parameter(Mandatory)][object]$ProcessCleanup,
+        [Parameter(Mandatory)][string]$ProcessCleanupStatus,
+        [Parameter(Mandatory)][string]$CredentialCleanupStatus,
+        [Parameter(Mandatory)][string]$ExpectedDumpPath,
+        [Parameter(Mandatory)][string]$BearerToken
+    )
+
+    if (-not $ExpectedTransitionObserved) {
+        throw 'Hang-dump probe never reached its exact expected post-start timeout transition.'
+    }
+    if ($ProcessCleanupStatus -cne 'completed' -or
+        $CredentialCleanupStatus -cne 'completed') {
+        throw "Hang-dump probe cleanup was incomplete: process=$ProcessCleanupStatus credentials=$CredentialCleanupStatus"
+    }
+    if ([string]$ProcessCleanup.Method -cne 'force-fallback' -or
+        $null -eq $ProcessCleanup.Dump -or
+        [string]$ProcessCleanup.Dump.Status -cne 'captured') {
+        throw 'Hang-dump probe did not exercise a captured dump followed by exact-handle force fallback.'
+    }
+
+    $resolvedExpectedDumpPath = [System.IO.Path]::GetFullPath($ExpectedDumpPath)
+    $resolvedActualDumpPath = [System.IO.Path]::GetFullPath([string]$ProcessCleanup.Dump.Path)
+    if (-not [string]::Equals(
+            $resolvedActualDumpPath,
+            $resolvedExpectedDumpPath,
+            [System.StringComparison]::OrdinalIgnoreCase) -or
+        -not (Test-Path -LiteralPath $resolvedExpectedDumpPath -PathType Leaf)) {
+        throw 'Hang-dump probe did not retain its exact captured dump path.'
+    }
+
+    $stream = [System.IO.File]::OpenRead($resolvedExpectedDumpPath)
+    try {
+        $signature = [byte[]]::new(4)
+        if ($stream.Read($signature, 0, $signature.Length) -ne 4 -or
+            [System.Text.Encoding]::ASCII.GetString($signature) -cne 'MDMP') {
+            throw 'Hang-dump probe retained a file without the native MDMP signature.'
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+
+    if (Test-FileContainsBearerToken -Path $resolvedExpectedDumpPath -Token $BearerToken) {
+        throw 'Hang-dump probe retained a native dump containing its bearer token.'
+    }
+
+    return [pscustomobject]@{
+        Status = 'passed'
+        DumpPath = $resolvedExpectedDumpPath
+        DumpLength = [long](Get-Item -LiteralPath $resolvedExpectedDumpPath).Length
+        DumpSha256 = (Get-FileHash -LiteralPath $resolvedExpectedDumpPath -Algorithm SHA256).Hash
+        ProcessMethod = [string]$ProcessCleanup.Method
+        ProcessId = [int]$ProcessCleanup.Dump.TargetProcessId
+        ProcessStartUtc = [string]$ProcessCleanup.Dump.TargetProcessStartUtc
+        CredentialsChecked = $true
+    }
 }
 
 function Assert-NoRetainedBearerToken {
@@ -4032,16 +4373,36 @@ function Protect-GatewayCredentialArtifacts {
     }
 
     $resolvedRunDirectory = [System.IO.Path]::GetFullPath($RunDirectory)
-    $resolvedSavedDataPath = [System.IO.Path]::GetFullPath($SavedDataPath)
-    $savedDataPrefix = $resolvedRunDirectory.TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
-    if (-not $resolvedSavedDataPath.StartsWith(
-            $savedDataPrefix,
-            [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw 'The disposable SavedData path is not inside the exact smoke run directory.'
-    }
+    $hangDumpPath = Assert-SafeGatewayArtifactPath `
+        -Path (Join-Path $resolvedRunDirectory 'RimWorldWin64-hang.dmp') `
+        -RootPath $resolvedRunDirectory
+    try {
+        $resolvedSavedDataPath = [System.IO.Path]::GetFullPath($SavedDataPath)
+        $savedDataPrefix = $resolvedRunDirectory.TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+        if (-not $resolvedSavedDataPath.StartsWith(
+                $savedDataPrefix,
+                [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'The disposable SavedData path is not inside the exact smoke run directory.'
+        }
 
     $knownTokens = [System.Collections.Generic.HashSet[string]]::new(
         [System.StringComparer]::Ordinal)
+    $sanitizationFailures = [System.Collections.Generic.List[string]]::new()
+    foreach ($partialDump in @(Get-ChildItem `
+            -LiteralPath $resolvedRunDirectory `
+            -File `
+            -Filter '.rimworld-minidump-*.tmp' `
+            -Force)) {
+        try {
+            $partialDumpPath = Assert-SafeGatewayArtifactPath `
+                -Path $partialDump.FullName `
+                -RootPath $resolvedRunDirectory
+            Remove-Item -LiteralPath $partialDumpPath -Force
+        }
+        catch {
+            $sanitizationFailures.Add("Partial native dump '$($partialDump.FullName)': $($_.Exception.Message)")
+        }
+    }
     if (-not [string]::IsNullOrEmpty($BearerToken)) {
         $null = $knownTokens.Add($BearerToken)
     }
@@ -4057,22 +4418,50 @@ function Protect-GatewayCredentialArtifacts {
         -RootPath $resolvedRunDirectory
     $matchingCurrent = $false
     if (Test-Path -LiteralPath $currentPath -PathType Leaf) {
-        $currentManifest = Read-GatewayCredentialManifest -Path $currentPath
-        if ([int]$currentManifest.processId -eq $ExpectedProcessId) {
-            $currentRunId = [string]$currentManifest.runId
-            if ($currentRunId -cnotmatch '^[A-Za-z0-9_-]{1,128}$') {
-                throw "Matching Gateway current.json contains an unsafe run ID: $currentRunId"
+        $currentManifest = $null
+        try {
+            $currentManifest = Read-GatewayCredentialManifest -Path $currentPath
+        }
+        catch {
+            $currentFailure = $_.Exception.Message
+            try {
+                Remove-Item -LiteralPath $currentPath -Force
+                $matchingCurrent = $true
             }
-            if (-not [string]::IsNullOrWhiteSpace($resolvedRunId) -and
-                $currentRunId -cne $resolvedRunId) {
-                throw "Gateway current.json run ID '$currentRunId' does not match the observed session '$resolvedRunId'."
+            catch {
+                $currentFailure += " Exact-file fallback removal also failed: $($_.Exception.Message)"
             }
-
-            $resolvedRunId = $currentRunId
+            $sanitizationFailures.Add("Current locator '$currentPath': $currentFailure")
+        }
+        if ($null -ne $currentManifest -and
+            [int]$currentManifest.processId -eq $ExpectedProcessId) {
             foreach ($currentToken in @($currentManifest.BearerTokens)) {
                 $null = $knownTokens.Add([string]$currentToken)
             }
-            $matchingCurrent = $true
+            try {
+                $currentRunId = [string]$currentManifest.runId
+                if ($currentRunId -cnotmatch '^[A-Za-z0-9_-]{1,128}$') {
+                    throw "Matching Gateway current.json contains an unsafe run ID: $currentRunId"
+                }
+                if (-not [string]::IsNullOrWhiteSpace($resolvedRunId) -and
+                    $currentRunId -cne $resolvedRunId) {
+                    throw "Gateway current.json run ID '$currentRunId' does not match the observed session '$resolvedRunId'."
+                }
+
+                $resolvedRunId = $currentRunId
+                $matchingCurrent = $true
+            }
+            catch {
+                $currentFailure = $_.Exception.Message
+                try {
+                    Remove-Item -LiteralPath $currentPath -Force
+                    $matchingCurrent = $true
+                }
+                catch {
+                    $currentFailure += " Exact-file fallback removal also failed: $($_.Exception.Message)"
+                }
+                $sanitizationFailures.Add("Current locator '$currentPath': $currentFailure")
+            }
         }
     }
 
@@ -4097,10 +4486,6 @@ function Protect-GatewayCredentialArtifacts {
             if (($sessionDirectory.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
                 throw "Refusing to inspect a reparse-point Gateway session directory: $($sessionDirectory.FullName)"
             }
-            if ($sessionDirectory.Name -cnotmatch '^[A-Za-z0-9_-]{1,128}$') {
-                throw "Gateway session directory has an unsafe run ID: $($sessionDirectory.Name)"
-            }
-
             $null = $sessionPaths.Add((Join-Path $sessionDirectory.FullName 'session.json'))
         }
     }
@@ -4116,21 +4501,43 @@ function Protect-GatewayCredentialArtifacts {
             continue
         }
 
-        $sessionManifest = Read-GatewayCredentialManifest -Path $sessionPath
+        $sessionManifest = $null
+        try {
+            $sessionManifest = Read-GatewayCredentialManifest -Path $sessionPath
+        }
+        catch {
+            $sessionFailure = $_.Exception.Message
+            try {
+                Remove-Item -LiteralPath $sessionPath -Force
+            }
+            catch {
+                $sessionFailure += " Exact-file fallback removal also failed: $($_.Exception.Message)"
+            }
+            $sanitizationFailures.Add("Session '$sessionPath': $sessionFailure")
+            continue
+        }
         if ([int]$sessionManifest.processId -ne $ExpectedProcessId) {
             continue
         }
 
-        $sessionRunId = [string]$sessionManifest.runId
-        if ($sessionRunId -cnotmatch '^[A-Za-z0-9_-]{1,128}$' -or
-            [System.IO.Path]::GetFileName((Split-Path -Parent $sessionPath)) -cne $sessionRunId) {
-            throw "Matching Gateway session manifest has an unsafe or inconsistent run ID: $sessionPath"
-        }
-
-        $null = $matchingSessionRunIds.Add($sessionRunId)
         foreach ($sessionToken in @($sessionManifest.BearerTokens)) {
             $null = $knownTokens.Add([string]$sessionToken)
         }
+        $sessionRunId = [string]$sessionManifest.runId
+        if ($sessionRunId -cnotmatch '^[A-Za-z0-9_-]{1,128}$' -or
+            [System.IO.Path]::GetFileName((Split-Path -Parent $sessionPath)) -cne $sessionRunId) {
+            $sessionFailure = "Matching Gateway session manifest has an unsafe or inconsistent run ID: $sessionPath"
+            try {
+                Remove-Item -LiteralPath $sessionPath -Force
+            }
+            catch {
+                $sessionFailure += " Exact-file fallback removal also failed: $($_.Exception.Message)"
+            }
+            $sanitizationFailures.Add("Session '$sessionPath': $sessionFailure")
+            continue
+        }
+
+        $null = $matchingSessionRunIds.Add($sessionRunId)
         $matchingSessions.Add([pscustomobject]@{
             Path = $sessionPath
             Manifest = $sessionManifest
@@ -4146,7 +4553,6 @@ function Protect-GatewayCredentialArtifacts {
         $reportedRunId = $null
     }
 
-    $sanitizationFailures = [System.Collections.Generic.List[string]]::new()
     $sanitizedSessionCount = 0
     foreach ($matchingSession in $matchingSessions) {
         try {
@@ -4189,17 +4595,26 @@ function Protect-GatewayCredentialArtifacts {
         }
     }
 
-    # Full-memory dumps can contain the bearer token in process memory. They are useful only
-    # transiently for diagnosis and are never retained after exact-PID cleanup.
-    $hangDumpPath = Assert-SafeGatewayArtifactPath `
-        -Path (Join-Path $resolvedRunDirectory 'RimWorldWin64-hang.dmp') `
-        -RootPath $resolvedRunDirectory
+    # The bounded native dump excludes full heap memory but can still contain stack fragments.
+    # Retain it only after every token recovered from the exact dead process's manifests is
+    # proven absent from the binary artifact.
     if (Test-Path -LiteralPath $hangDumpPath -PathType Leaf) {
-        try {
-            Remove-Item -LiteralPath $hangDumpPath -Force
+        $dumpContainsToken = $knownTokens.Count -eq 0
+        if (-not $dumpContainsToken) {
+            foreach ($knownToken in $knownTokens) {
+                if (Test-FileContainsBearerToken -Path $hangDumpPath -Token $knownToken) {
+                    $dumpContainsToken = $true
+                    break
+                }
+            }
         }
-        catch {
-            $sanitizationFailures.Add("Memory dump '$hangDumpPath': $($_.Exception.Message)")
+        if ($dumpContainsToken) {
+            try {
+                Remove-Item -LiteralPath $hangDumpPath -Force
+            }
+            catch {
+                $sanitizationFailures.Add("Memory dump '$hangDumpPath': $($_.Exception.Message)")
+            }
         }
     }
 
@@ -4216,12 +4631,26 @@ function Protect-GatewayCredentialArtifacts {
         throw "Gateway credential sanitation was incomplete: $($sanitizationFailures -join '; ')"
     }
 
-    return [pscustomobject]@{
-        ProcessId = $ExpectedProcessId
-        RunId = $reportedRunId
-        CurrentLocatorRemoved = $matchingCurrent
-        SessionsSanitized = $sanitizedSessionCount
-        TokensChecked = $knownTokens.Count
+        return [pscustomobject]@{
+            ProcessId = $ExpectedProcessId
+            RunId = $reportedRunId
+            CurrentLocatorRemoved = $matchingCurrent
+            SessionsSanitized = $sanitizedSessionCount
+            TokensChecked = $knownTokens.Count
+        }
+    }
+    catch {
+        $primaryFailure = $_.Exception.Message
+        try {
+            if (Test-Path -LiteralPath $hangDumpPath -PathType Leaf) {
+                Remove-Item -LiteralPath $hangDumpPath -Force
+            }
+        }
+        catch {
+            throw "Gateway credential sanitation failed and its native dump could not be deleted fail-closed: $primaryFailure; dump cleanup: $($_.Exception.Message)"
+        }
+
+        throw $primaryFailure
     }
 }
 
@@ -4637,6 +5066,19 @@ $runGatewayRegressionScenario = [bool]$scenarioPlan.RunsGatewayRegression
 if ($RequireRawClick -and -not $runGatewayRegressionScenario) {
     Exit-InvalidInput '-RequireRawClick is only valid with -Scenario gateway-regression.'
 }
+if ($HangDumpProbe -and -not $Quicktest) {
+    Exit-InvalidInput '-HangDumpProbe requires -Quicktest.'
+}
+if ($HangDumpProbe -and
+    ($runGatewayRegressionScenario -or
+        $null -ne $scenarioPlan.Descriptor -or
+        $RunIntegrationTests -or
+        $RunEndToEndTests -or
+        $InteractiveHoldSeconds -gt 0 -or
+        $VisibleWindow -or
+        $SkipBuildDeploy)) {
+    Exit-InvalidInput '-HangDumpProbe is an exclusive minimized current-build diagnostic and cannot be combined with scenarios, test runners, an interactive hold, -VisibleWindow, or -SkipBuildDeploy.'
+}
 try {
     Assert-GatewayScenarioRequiredPackages `
         -ScenarioPlan $scenarioPlan `
@@ -4737,6 +5179,7 @@ $interactionFinalPath = Join-Path $runDirectory 'interaction-final.json'
 $planCleanupPath = Join-Path $runDirectory 'interaction-plan-cleanup.json'
 $scenarioResultPath = Join-Path $runDirectory 'scenario.json'
 $interactiveHoldPath = Join-Path $runDirectory 'interactive-hold.json'
+$hangDumpProbePath = Join-Path $runDirectory 'hang-dump-probe.json'
 $shutdownPath = Join-Path $runDirectory 'shutdown.json'
 $hostRequestJournalPath = Join-Path $runDirectory 'last-host-request.json'
 $failureDiagnosticsPath = Join-Path $runDirectory 'failure-diagnostics.json'
@@ -4862,6 +5305,7 @@ if ($DryRun) {
         SelectedEndToEndTestIds = $selectedEndToEndTestIds
         SkipBuildDeploy = [bool]$SkipBuildDeploy
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
+        HangDumpProbe = [bool]$HangDumpProbe
         QuickstartDescriptor = if ($runGatewayRegressionScenario) { $resolvedQuickstartDescriptorPath } else { $null }
         LaunchArguments = $launchArguments
         NormalConfigHashBefore = $normalConfigHashBefore
@@ -4913,6 +5357,8 @@ $languageProviderRecord = $null
 $languageProviderCleanup = $null
 $languageProviderCleanupStatus = 'not-staged'
 $processCleanupStatus = 'not-started'
+$hangDumpProbeExpectedTransition = $false
+$hangDumpProbeOutcome = $null
 $credentialCleanupStatus = 'not-started'
 $integrationStageCleanupStatus = if ($RunIntegrationTests) { 'not-staged' } else { 'not-requested' }
 $workshopOverrideCleanupStatus = if ($workshopOverridePlans.Count -eq 0) {
@@ -6967,6 +7413,24 @@ try {
         } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $scenarioResultPath -Encoding UTF8
     }
 
+    if ($HangDumpProbe) {
+        $hangProbeResponse = Invoke-GatewayTextPost `
+            -Uri "$baseUrl/executions/csharp" `
+            -Token $manifest.token `
+            -RequestId 'gateway-smoke-hang-dump-probe' `
+            -Source 'System.Threading.Thread.Sleep(300000);'
+        [string]$hangProbeResponse.Content |
+            Set-Content -LiteralPath $hangDumpProbePath -Encoding UTF8
+        $hangProbeEnvelope = [string]$hangProbeResponse.Content | ConvertFrom-Json -ErrorAction Stop
+        if ([int]$hangProbeResponse.StatusCode -ne 504 -or
+            [string]$hangProbeEnvelope.error.code -cne 'response_timeout_after_start') {
+            throw "Hang-dump probe did not produce the exact post-start timeout. See $hangDumpProbePath"
+        }
+
+        $hangDumpProbeExpectedTransition = $true
+        throw 'Intentional hang-dump probe reached an exact started main-thread stall; beginning diagnostic cleanup.'
+    }
+
     if ($InteractiveHoldSeconds -gt 0) {
         $holdStartedUtc = [datetime]::UtcNow
         $holdDeadline = $holdStartedUtc.AddSeconds($InteractiveHoldSeconds)
@@ -7077,6 +7541,8 @@ try {
         SelectedEndToEndTestIds = $selectedEndToEndTestIds
         SkipBuildDeploy = [bool]$SkipBuildDeploy
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
+        HangDumpProbe = [bool]$HangDumpProbe
+        HangDumpProbeResponse = if ($HangDumpProbe) { $hangDumpProbePath } else { $null }
         UiStateResponse = $uiStatePath
         LogsResponse = $logsPath
         PostQuickstartStatusResponse = if ($runGatewayRegressionScenario) { $postQuickstartStatusPath } else { $null }
@@ -7167,10 +7633,15 @@ try {
 }
 catch {
     $failureMessage = $_.Exception.Message
-    Add-GatewaySmokeFailure `
-        -Failures $failureRecords `
-        -Category 'primary' `
-        -Message $failureMessage
+    $expectedHangDumpTransition = $HangDumpProbe -and
+        $hangDumpProbeExpectedTransition -and
+        $failureMessage -ceq 'Intentional hang-dump probe reached an exact started main-thread stall; beginning diagnostic cleanup.'
+    if (-not $expectedHangDumpTransition) {
+        Add-GatewaySmokeFailure `
+            -Failures $failureRecords `
+            -Category 'primary' `
+            -Message $failureMessage
+    }
     $processAlive = $false
     $processExitCode = $null
     if ($null -ne $launchedProcess) {
@@ -7202,6 +7673,7 @@ catch {
     try {
         [pscustomobject]@{
             Classification = $classification
+            ExpectedControlFlow = [bool]$expectedHangDumpTransition
             FailureUtc = [datetime]::UtcNow.ToString('O', [Globalization.CultureInfo]::InvariantCulture)
             Message = $failureMessage
             ProcessId = if ($null -ne $launchedProcess) { $launchedProcess.Id } else { $null }
@@ -7271,9 +7743,15 @@ finally {
             $processCleanup = Stop-OwnedProcessGracefully `
                 -Process $launchedProcess `
                 -DumpPath $hangDumpPath
-            $processCleanupStatus = 'completed'
-            $processCleanupArtifact.Status = $processCleanupStatus
-            $processCleanupArtifact.Result = $processCleanup
+            $processCleanupArtifact = ConvertTo-GatewayProcessCleanupArtifact `
+                -ProcessCleanup $processCleanup
+            $processCleanupStatus = [string]$processCleanupArtifact.Status
+            if ($processCleanupStatus -ceq 'failed') {
+                Add-GatewaySmokeFailure `
+                    -Failures $failureRecords `
+                    -Category 'process-cleanup' `
+                    -Message "Native dump helper cleanup failed for PID $($processCleanup.Dump.HelperProcessId) started $($processCleanup.Dump.HelperProcessStartUtc): $($processCleanup.Dump.Detail)"
+            }
         }
         catch {
             $processCleanupStatus = 'failed'
@@ -7562,6 +8040,48 @@ finally {
             -Failures $failureRecords `
             -Category 'stage-cleanup' `
             -Message "Integration-test stage-cleanup status persistence failed: $($_.Exception.Message)"
+    }
+}
+
+if ($HangDumpProbe) {
+    try {
+        $hangDumpProbeOutcome = Assert-GatewayHangDumpProbeOutcome `
+            -ExpectedTransitionObserved $hangDumpProbeExpectedTransition `
+            -ProcessCleanup $processCleanup `
+            -ProcessCleanupStatus $processCleanupStatus `
+            -CredentialCleanupStatus $credentialCleanupStatus `
+            -ExpectedDumpPath $hangDumpPath `
+            -BearerToken ([string]$manifest.token)
+        $result = [pscustomobject][ordered]@{
+            Status = 'passed'
+            Mode = 'hang-dump-probe'
+            RunId = $runId
+            RunDirectory = $runDirectory
+            RimWorldVersion = $rimWorldVersion
+            GatewayModVersion = [string]$manifest.modVersion
+            ProcessId = [int]$launchedProcess.Id
+            ProcessStartUtc = $launchedProcessStartUtc.ToUniversalTime().ToString(
+                'O',
+                [Globalization.CultureInfo]::InvariantCulture)
+            ActiveModIds = $activeModIds
+            LaunchWindowStyle = $launchWindowStyle
+            VisibleWindow = $launchVisible
+            HangDumpProbe = $true
+            HangDumpProbeResponse = $hangDumpProbePath
+            HangDumpProbeOutcome = $hangDumpProbeOutcome
+            FailureDiagnostics = $failureDiagnosticsPath
+            ProcessCleanup = $processCleanupPath
+            PlayerLog = $playerLogPath
+            RequiredAssemblyEvidence = @($requiredAssemblyEvidence)
+            NormalConfigHashBefore = $normalConfigHashBefore
+            NormalPrefsHashBefore = $normalPrefsHashBefore
+        }
+    }
+    catch {
+        Add-GatewaySmokeFailure `
+            -Failures $failureRecords `
+            -Category 'hang-dump-probe' `
+            -Message $_.Exception.Message
     }
 }
 

@@ -154,6 +154,101 @@ public sealed class GatewaySmokeCredentialCleanupTests
     }
 
     [Test]
+    public void Token_free_native_minidump_is_retained_for_hang_analysis()
+    {
+        using var fixture = Fixture.Create();
+        File.WriteAllBytes(fixture.HangDumpPath, Encoding.ASCII.GetBytes("MDMP token-free diagnostic"));
+
+        var run = fixture.Invoke(processHasExited: true, includeExpectedIdentity: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(File.Exists(fixture.HangDumpPath), Is.True);
+            Assert.That(new FileInfo(fixture.HangDumpPath).Length, Is.GreaterThan(0));
+        });
+    }
+
+    [Test]
+    public void Native_minidump_containing_the_bearer_token_is_removed_before_artifacts_are_retained()
+    {
+        using var fixture = Fixture.Create();
+        File.WriteAllBytes(
+            fixture.HangDumpPath,
+            Encoding.ASCII.GetBytes("MDMP accidental " + Token + " diagnostic"));
+
+        var run = fixture.Invoke(processHasExited: true, includeExpectedIdentity: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(File.Exists(fixture.HangDumpPath), Is.False);
+        });
+    }
+
+    [Test]
+    public void Native_minidump_containing_a_utf16_bearer_token_is_removed_before_artifacts_are_retained()
+    {
+        using var fixture = Fixture.Create();
+        File.WriteAllBytes(
+            fixture.HangDumpPath,
+            Encoding.Unicode.GetBytes("MDMP accidental " + Token + " diagnostic"));
+
+        var run = fixture.Invoke(processHasExited: true, includeExpectedIdentity: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(File.Exists(fixture.HangDumpPath), Is.False);
+        });
+    }
+
+    [Test]
+    public void Native_minidump_is_deleted_fail_closed_when_credential_discovery_fails()
+    {
+        using var fixture = Fixture.Create();
+        File.WriteAllText(fixture.CurrentPath, "{ malformed", new UTF8Encoding(false));
+        File.WriteAllBytes(fixture.HangDumpPath, Encoding.ASCII.GetBytes("MDMP token-free diagnostic"));
+
+        var run = fixture.Invoke(processHasExited: true, includeExpectedIdentity: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Not.Zero);
+            Assert.That(File.Exists(fixture.HangDumpPath), Is.False);
+            Assert.That(File.Exists(fixture.CurrentPath), Is.False);
+            Assert.That(File.Exists(fixture.SessionPath), Is.True);
+            Assert.That(File.ReadAllText(fixture.SessionPath), Does.Not.Contain(Token));
+        });
+    }
+
+    [Test]
+    public void Matching_shape_invalid_manifests_are_deleted_while_other_credentials_are_sanitized()
+    {
+        using var fixture = Fixture.Create();
+        File.WriteAllText(
+            fixture.CurrentPath,
+            ManifestJson(ProcessId, "unsafe/run", Token, "active"),
+            new UTF8Encoding(false));
+        var inconsistentSession = fixture.AddSession(
+            "other-run",
+            ManifestJson(ProcessId, "different-run", Token, "active"));
+        File.WriteAllBytes(fixture.HangDumpPath, Encoding.ASCII.GetBytes("MDMP token-free diagnostic"));
+
+        var run = fixture.Invoke(processHasExited: true, includeExpectedIdentity: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Not.Zero);
+            Assert.That(File.Exists(fixture.HangDumpPath), Is.False);
+            Assert.That(File.Exists(fixture.CurrentPath), Is.False);
+            Assert.That(File.Exists(inconsistentSession), Is.False);
+            Assert.That(File.Exists(fixture.SessionPath), Is.True);
+            Assert.That(File.ReadAllText(fixture.SessionPath), Does.Not.Contain(Token));
+        });
+    }
+
+    [Test]
     public void Atomic_redaction_never_creates_a_credential_backup_when_the_host_exits_after_replace()
     {
         using var fixture = Fixture.Create();
@@ -194,6 +289,7 @@ public sealed class GatewaySmokeCredentialCleanupTests
         public string CurrentPath { get; }
         public string SessionPath { get; }
         public string SessionDirectory => Path.GetDirectoryName(SessionPath)!;
+        public string HangDumpPath => Path.Combine(RunDirectory, "RimWorldWin64-hang.dmp");
 
         public string AddSession(string runId, string json)
         {

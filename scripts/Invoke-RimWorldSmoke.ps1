@@ -139,56 +139,278 @@ function Invoke-FlaUiJson {
     return $payload
 }
 
+function Stop-OwnedDumpHelper {
+    param(
+        [Parameter(Mandatory)][System.Diagnostics.Process]$Helper,
+        [Parameter(Mandatory)][string]$PartialDumpPath
+    )
+
+    $helperProcessId = $Helper.Id
+    $helperProcessStartUtc = $Helper.StartTime.ToUniversalTime().ToString(
+        'O',
+        [Globalization.CultureInfo]::InvariantCulture)
+    try {
+        $Helper.Kill($true)
+    }
+    catch [System.InvalidOperationException] {
+        $Helper.Refresh()
+        if (-not $Helper.HasExited) { throw }
+    }
+    catch {
+        return [pscustomobject]@{
+            Status = 'cleanup-failed'
+            Path = $PartialDumpPath
+            Detail = "Native dump helper termination failed: $($_.Exception.Message)"
+            HelperProcessId = $helperProcessId
+            HelperProcessStartUtc = $helperProcessStartUtc
+            HelperAlive = $true
+        }
+    }
+    if (-not $Helper.HasExited -and -not $Helper.WaitForExit(5000)) {
+        return [pscustomobject]@{
+            Status = 'cleanup-failed'
+            Path = $PartialDumpPath
+            Detail = 'Native dump helper did not exit after bounded termination.'
+            HelperProcessId = $helperProcessId
+            HelperProcessStartUtc = $helperProcessStartUtc
+            HelperAlive = $true
+        }
+    }
+    try {
+        if (Test-Path -LiteralPath $PartialDumpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $PartialDumpPath -Force
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            Status = 'cleanup-failed'
+            Path = $PartialDumpPath
+            Detail = "Timed-out native dump helper partial cleanup failed: $($_.Exception.Message)"
+            HelperProcessId = $helperProcessId
+            HelperProcessStartUtc = $helperProcessStartUtc
+            HelperAlive = $false
+        }
+    }
+    if (Test-Path -LiteralPath $PartialDumpPath -PathType Leaf) {
+        return [pscustomobject]@{
+            Status = 'cleanup-failed'
+            Path = $PartialDumpPath
+            Detail = 'Timed-out native dump helper left a partial artifact.'
+            HelperProcessId = $helperProcessId
+            HelperProcessStartUtc = $helperProcessStartUtc
+            HelperAlive = $false
+        }
+    }
+
+    return [pscustomobject]@{
+        Status = 'timed-out'
+        Path = $null
+        Detail = 'Native dump helper exceeded 20 seconds.'
+        HelperProcessId = $helperProcessId
+        HelperProcessStartUtc = $helperProcessStartUtc
+        HelperAlive = $false
+    }
+}
+
 function Capture-OwnedProcessDump {
     param(
         [Parameter(Mandatory)][System.Diagnostics.Process]$Process,
         [Parameter(Mandatory)][string]$DumpPath
     )
 
-    $rundll32 = (Get-Command rundll32.exe -ErrorAction SilentlyContinue).Source
-    if ([string]::IsNullOrWhiteSpace($rundll32)) {
-        return [pscustomobject]@{ Status = 'unavailable'; Path = $null; Detail = 'rundll32.exe was not found.' }
-    }
-
-    $comSvcs = Join-Path $env:SystemRoot 'System32\comsvcs.dll'
-    if (-not (Test-Path -LiteralPath $comSvcs -PathType Leaf)) {
-        return [pscustomobject]@{ Status = 'unavailable'; Path = $null; Detail = "comsvcs.dll was not found at $comSvcs" }
-    }
-
+    $helperPath = $null
+    $temporaryDumpPath = $null
     $helper = $null
     try {
-        $arguments = @(
-            "`"$comSvcs`",MiniDump",
-            [string]$Process.Id,
-            "`"$DumpPath`"",
-            'full'
-        )
-        $helper = Start-Process `
-            -FilePath $rundll32 `
-            -ArgumentList $arguments `
-            -PassThru `
-            -WindowStyle Hidden
+        $dumpDirectory = Split-Path -Parent $DumpPath
+        if ([string]::IsNullOrWhiteSpace($dumpDirectory) -or
+            -not (Test-Path -LiteralPath $dumpDirectory -PathType Container)) {
+            return [pscustomobject]@{ Status = 'failed'; Path = $null; Detail = 'The dump destination directory does not exist.' }
+        }
+        if (Test-Path -LiteralPath $DumpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $DumpPath -Force
+        }
+
+        $helperPath = Join-Path $dumpDirectory ('.rimworld-minidump-' + [guid]::NewGuid().ToString('N') + '.ps1')
+        $temporaryDumpPath = Join-Path $dumpDirectory ('.rimworld-minidump-' + [guid]::NewGuid().ToString('N') + '.tmp')
+        $helperSource = @'
+param(
+    [Parameter(Mandatory)][int]$TargetProcessId,
+    [Parameter(Mandatory)][long]$TargetProcessStartUtcTicks,
+    [Parameter(Mandatory)][string]$TargetDumpPath
+)
+$ErrorActionPreference = 'Stop'
+$nativeSource = @"
+using System;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+
+namespace RimWorldDevGateway.HostDiagnostics
+{
+    [Flags]
+    public enum MiniDumpType : uint
+    {
+        WithHandleData = 0x00000004,
+        WithUnloadedModules = 0x00000020,
+        WithProcessThreadData = 0x00000100,
+        WithFullMemoryInfo = 0x00000800,
+        WithThreadInfo = 0x00001000
+    }
+
+    public static class NativeMiniDump
+    {
+        [DllImport("Dbghelp.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool MiniDumpWriteDump(
+            IntPtr processHandle,
+            uint processId,
+            SafeFileHandle fileHandle,
+            MiniDumpType dumpType,
+            IntPtr exceptionParam,
+            IntPtr userStreamParam,
+            IntPtr callbackParam);
+    }
+}
+"@
+Add-Type -TypeDefinition $nativeSource -Language CSharp
+$target = [Diagnostics.Process]::GetProcessById($TargetProcessId)
+$stream = $null
+try {
+    if ($target.StartTime.ToUniversalTime().Ticks -ne $TargetProcessStartUtcTicks) {
+        [Console]::Error.WriteLine('Target process start identity changed before dump capture.')
+        exit 87
+    }
+    $stream = [IO.File]::Open(
+        $TargetDumpPath,
+        [IO.FileMode]::CreateNew,
+        [IO.FileAccess]::Write,
+        [IO.FileShare]::None)
+    $dumpType = [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithHandleData -bor
+        [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithUnloadedModules -bor
+        [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithProcessThreadData -bor
+        [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithFullMemoryInfo -bor
+        [RimWorldDevGateway.HostDiagnostics.MiniDumpType]::WithThreadInfo
+    $captured = [RimWorldDevGateway.HostDiagnostics.NativeMiniDump]::MiniDumpWriteDump(
+        $target.Handle,
+        [uint32]$TargetProcessId,
+        $stream.SafeFileHandle,
+        $dumpType,
+        [IntPtr]::Zero,
+        [IntPtr]::Zero,
+        [IntPtr]::Zero)
+    if (-not $captured) {
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        [Console]::Error.WriteLine("MiniDumpWriteDump failed with Win32 error $errorCode.")
+        exit 86
+    }
+    $stream.Flush($true)
+}
+finally {
+    if ($null -ne $stream) { $stream.Dispose() }
+    $target.Dispose()
+}
+exit 0
+'@
+        [IO.File]::WriteAllText(
+            $helperPath,
+            $helperSource,
+            [Text.UTF8Encoding]::new($false))
+
+        $pwsh = Join-Path $PSHOME 'pwsh.exe'
+        if (-not (Test-Path -LiteralPath $pwsh -PathType Leaf)) {
+            return [pscustomobject]@{ Status = 'unavailable'; Path = $null; Detail = "pwsh.exe was not found at $pwsh" }
+        }
+
+        $startInfo = [Diagnostics.ProcessStartInfo]::new()
+        $startInfo.FileName = $pwsh
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $startInfo.ArgumentList.Add('-NoProfile')
+        $startInfo.ArgumentList.Add('-NonInteractive')
+        $startInfo.ArgumentList.Add('-ExecutionPolicy')
+        $startInfo.ArgumentList.Add('Bypass')
+        $startInfo.ArgumentList.Add('-File')
+        $startInfo.ArgumentList.Add($helperPath)
+        $startInfo.ArgumentList.Add('-TargetProcessId')
+        $startInfo.ArgumentList.Add([string]$Process.Id)
+        $startInfo.ArgumentList.Add('-TargetProcessStartUtcTicks')
+        $startInfo.ArgumentList.Add([string]$Process.StartTime.ToUniversalTime().Ticks)
+        $startInfo.ArgumentList.Add('-TargetDumpPath')
+        $startInfo.ArgumentList.Add($temporaryDumpPath)
+        $helper = [Diagnostics.Process]::Start($startInfo)
+        if ($null -eq $helper) {
+            return [pscustomobject]@{ Status = 'failed'; Path = $null; Detail = 'The native dump helper did not start.' }
+        }
         if (-not $helper.WaitForExit(20000)) {
-            Stop-Process -Id $helper.Id -Force -ErrorAction SilentlyContinue
-            return [pscustomobject]@{ Status = 'timed-out'; Path = $null; Detail = 'Dump helper exceeded 20 seconds.' }
+            return Stop-OwnedDumpHelper -Helper $helper -PartialDumpPath $temporaryDumpPath
         }
 
-        if ($helper.ExitCode -eq 0 -and (Test-Path -LiteralPath $DumpPath -PathType Leaf)) {
-            return [pscustomobject]@{ Status = 'captured'; Path = $DumpPath; Detail = 'Windows comsvcs MiniDump completed.' }
+        $helperError = $helper.StandardError.ReadToEnd().Trim()
+        $hasMiniDumpSignature = $false
+        if (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf) {
+            $signatureStream = [System.IO.File]::OpenRead($temporaryDumpPath)
+            try {
+                $signatureBytes = [byte[]]::new(4)
+                $hasMiniDumpSignature =
+                    $signatureStream.Read($signatureBytes, 0, $signatureBytes.Length) -eq 4 -and
+                    [System.Text.Encoding]::ASCII.GetString($signatureBytes) -ceq 'MDMP'
+            }
+            finally {
+                $signatureStream.Dispose()
+            }
+        }
+        if ($helper.ExitCode -eq 0 -and
+            (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf) -and
+            (Get-Item -LiteralPath $temporaryDumpPath).Length -ge 4 -and
+            $hasMiniDumpSignature) {
+            [System.IO.File]::Move($temporaryDumpPath, $DumpPath)
+            $temporaryDumpPath = $null
+            return [pscustomobject]@{
+                Status = 'captured'
+                Path = $DumpPath
+                Detail = 'Native MiniDumpWriteDump completed.'
+                TargetProcessId = [int]$Process.Id
+                TargetProcessStartUtc = $Process.StartTime.ToUniversalTime().ToString(
+                    'O',
+                    [Globalization.CultureInfo]::InvariantCulture)
+            }
         }
 
+        if (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $temporaryDumpPath -Force
+        }
         return [pscustomobject]@{
             Status = 'failed'
-            Path = if (Test-Path -LiteralPath $DumpPath -PathType Leaf) { $DumpPath } else { $null }
-            Detail = "Dump helper exited with code $($helper.ExitCode)."
+            Path = $null
+            Detail = if ([string]::IsNullOrWhiteSpace($helperError)) {
+                "Native dump helper exited with code $($helper.ExitCode)."
+            } else {
+                "Native dump helper exited with code $($helper.ExitCode): $helperError"
+            }
         }
     }
     catch {
+        if ($null -ne $temporaryDumpPath -and
+            (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf)) {
+            Remove-Item -LiteralPath $temporaryDumpPath -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $DumpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $DumpPath -Force -ErrorAction SilentlyContinue
+        }
         return [pscustomobject]@{ Status = 'failed'; Path = $null; Detail = $_.Exception.Message }
     }
     finally {
         if ($null -ne $helper) {
             $helper.Dispose()
+        }
+        if ($null -ne $helperPath -and (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
+            Remove-Item -LiteralPath $helperPath -Force -ErrorAction SilentlyContinue
+        }
+        if ($null -ne $temporaryDumpPath -and
+            (Test-Path -LiteralPath $temporaryDumpPath -PathType Leaf)) {
+            Remove-Item -LiteralPath $temporaryDumpPath -Force -ErrorAction SilentlyContinue
         }
     }
 }
@@ -233,8 +455,18 @@ function Stop-OwnedProcessGracefully {
         }
     }
 
-    Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
-    Wait-Process -Id $Process.Id -Timeout 15 -ErrorAction SilentlyContinue
+    try {
+        $Process.Kill()
+    }
+    catch [System.InvalidOperationException] {
+        $Process.Refresh()
+        if (-not $Process.HasExited) {
+            throw
+        }
+    }
+    if (-not $Process.HasExited) {
+        $null = $Process.WaitForExit(15000)
+    }
     $Process.Refresh()
     if (-not $Process.HasExited) {
         throw "Owned RimWorld PID $($Process.Id) remained alive after the exact-PID force fallback."
@@ -460,6 +692,11 @@ finally {
                 -Process $launchedProcess `
                 -DumpPath $hangDumpPath
             $processCleanup | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $processCleanupPath -Encoding UTF8
+            if ($null -ne $processCleanup.Dump -and
+                [string]$processCleanup.Dump.Status -ceq 'cleanup-failed' -and
+                $null -eq $failureMessage) {
+                $failureMessage = "Native dump helper cleanup failed for PID $($processCleanup.Dump.HelperProcessId) started $($processCleanup.Dump.HelperProcessStartUtc): $($processCleanup.Dump.Detail)"
+            }
         }
         catch {
             if ($null -eq $failureMessage) {

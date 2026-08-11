@@ -162,6 +162,58 @@ public sealed class GatewaySmokeBackgroundLaunchTests
     }
 
     [Test]
+    public void Hang_dump_probe_is_an_explicit_minimized_quicktest_diagnostic()
+    {
+        var artifactRoot = Path.Combine(
+            Path.GetTempPath(),
+            nameof(GatewaySmokeBackgroundLaunchTests),
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(artifactRoot);
+        try
+        {
+            var result = RunDryRun(artifactRoot, "-Quicktest -HangDumpProbe");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.Zero, result.StandardError);
+                Assert.That(result.StandardOutput, Does.Contain("\"HangDumpProbe\":true"));
+                Assert.That(result.StandardOutput, Does.Contain("\"Quicktest\":true"));
+                Assert.That(result.StandardOutput, Does.Contain("\"LaunchWindowStyle\":\"Minimized\""));
+                Assert.That(result.StandardOutput, Does.Contain("\"VisibleWindow\":false"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(artifactRoot, recursive: true);
+        }
+    }
+
+    [TestCase("-Quicktest -HangDumpProbe -VisibleWindow")]
+    [TestCase("-Quicktest -HangDumpProbe -SkipBuildDeploy")]
+    public void Hang_dump_probe_rejects_non_minimized_or_stale_deployment_modes(string arguments)
+    {
+        var artifactRoot = Path.Combine(
+            Path.GetTempPath(),
+            nameof(GatewaySmokeBackgroundLaunchTests),
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(artifactRoot);
+        try
+        {
+            var result = RunDryRun(artifactRoot, arguments);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.EqualTo(2));
+                Assert.That(result.StandardError, Does.Contain("exclusive minimized current-build diagnostic"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(artifactRoot, recursive: true);
+        }
+    }
+
+    [Test]
     public void Process_launch_forwards_the_effective_window_style_to_start_process()
     {
         var script =
