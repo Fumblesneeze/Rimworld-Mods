@@ -40,6 +40,16 @@ param(
 
     [string]$ArtifactsPath,
 
+    [string]$BaselineDirectory,
+
+    [string]$BaselinePolicyPath,
+
+    [switch]$CreateBaselineCandidate,
+
+    [string]$BaselineCandidatePath,
+
+    [switch]$InformationalCrossVersion,
+
     [ValidateRange(60, [int]::MaxValue)]
     [int]$TimeoutSeconds = 600,
 
@@ -319,6 +329,266 @@ function Write-PerformanceProcessReports {
     return @($rows)
 }
 
+function Get-ExactAssemblyIdentity {
+    param([Parameter(Mandatory)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "Required performance dependency assembly is missing: $Path"
+    }
+    $name = [System.Reflection.AssemblyName]::GetAssemblyName($Path).FullName
+    $hash = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+    return "$name|sha256:$hash"
+}
+
+function Get-DeployedProductAssemblyIdentity {
+    param(
+        [Parameter(Mandatory)][object[]]$DeploymentEvidence,
+        [Parameter(Mandatory)][hashtable]$Projects,
+        [Parameter(Mandatory)][string]$PackageId
+    )
+    $deployment = @($DeploymentEvidence | Where-Object { [string]$_.PackageId -ieq $PackageId })
+    if ($deployment.Count -ne 1) {
+        throw "Expected one deployed product identity for '$PackageId', observed $($deployment.Count)."
+    }
+    if (-not $Projects.ContainsKey($PackageId.ToLowerInvariant())) {
+        throw "No repository project exists for measured subject '$PackageId'."
+    }
+    $project = [string]$Projects[$PackageId.ToLowerInvariant()]
+    $assemblyName = Get-ProjectProperty -ProjectPath $project -PropertyName 'AssemblyName'
+    if ([string]::IsNullOrWhiteSpace($assemblyName)) {
+        $assemblyName = [System.IO.Path]::GetFileNameWithoutExtension($project)
+    }
+    $relative = "1.6/Assemblies/$assemblyName.dll"
+    $file = @($deployment[0].Files | Where-Object {
+        ([string]$_.RelativePath).Replace('\', '/') -ceq $relative
+    })
+    if ($file.Count -ne 1) {
+        throw "Deployed product '$PackageId' did not expose one exact '$relative' identity."
+    }
+    return "$assemblyName|sha256:$([string]$file[0].Sha256)"
+}
+
+function New-PerformanceCurrentSnapshot {
+    param(
+        [Parameter(Mandatory)][object]$Plan,
+        [Parameter(Mandatory)][object[]]$ProcessResults,
+        [Parameter(Mandatory)][object[]]$DeploymentEvidence,
+        [Parameter(Mandatory)][hashtable]$Projects,
+        [Parameter(Mandatory)][string]$CircinusAssemblyIdentity,
+        [Parameter(Mandatory)][string]$SettingsSha256,
+        [Parameter(Mandatory)][string]$CreatedUtc,
+        [AllowNull()][string]$InfrastructureFailure
+    )
+    $runtimeErrors = [System.Collections.Generic.List[string]]::new()
+    if (-not [string]::IsNullOrWhiteSpace($InfrastructureFailure)) {
+        $runtimeErrors.Add($InfrastructureFailure)
+    }
+    foreach ($failed in @($ProcessResults | Where-Object { [string]$_.Status -ne 'passed' })) {
+        $runtimeErrors.Add("$([string]$failed.BenchmarkId): $([string]$failed.Failure)")
+    }
+
+    $observations = [System.Collections.Generic.List[object]]::new()
+    foreach ($result in @($ProcessResults | Where-Object Status -eq 'passed')) {
+        $processPlan = @($Plan.processes | Where-Object {
+            [int]$_.sequence -eq [int]$result.Sequence
+        })
+        if ($processPlan.Count -ne 1) {
+            throw "Could not resolve exact performance plan sequence $([int]$result.Sequence)."
+        }
+        $processPlan = $processPlan[0]
+        $raw = Get-Content -LiteralPath ([string]$result.Raw.Path) -Raw | ConvertFrom-Json -ErrorAction Stop
+        $normalized = Get-Content -LiteralPath ([string]$result.Normalized.Path) -Raw | ConvertFrom-Json -ErrorAction Stop
+        foreach ($problem in @(
+            @{ Name = 'incomplete'; Value = [bool]$raw.incomplete },
+            @{ Name = 'errorsDropped'; Value = [long]$raw.errorsDropped -gt 0 },
+            @{ Name = 'patchesDropped'; Value = [long]$raw.patchesDropped -gt 0 },
+            @{ Name = 'loadErrorsDropped'; Value = [long]$raw.loadErrorsDropped -gt 0 }
+        )) {
+            if ([bool]$problem.Value) {
+                $runtimeErrors.Add("$([string]$result.BenchmarkId): Circinus reported $([string]$problem.Name).")
+            }
+        }
+        $severeLoadErrors = @($raw.loadErrors | Where-Object {
+            [string]$_.severity -in @('error', 'exception', 'fatal')
+        })
+        if ($severeLoadErrors.Count -gt 0) {
+            $runtimeErrors.Add("$([string]$result.BenchmarkId): Circinus reported $($severeLoadErrors.Count) runtime error(s).")
+        }
+
+        $hardwareHash = [string]$raw.env.hardware.hash
+        $runtimeFingerprint = "os=$([string]$raw.install.os)|hardware=$hardwareHash"
+        $selectors = @($processPlan.methodSelectors | ForEach-Object {
+            "$([string]$_.kind):$([string]$_.value):$([string]$_.category)"
+        })
+        $profilingPolicy = "control=$([string]$normalized.controlMode)|selectors=$($selectors -join ';')"
+        $measurements = [System.Collections.Generic.List[object]]::new()
+        foreach ($metric in @($result.Metrics)) {
+            $sidecars = @($normalized.profilerSidecars | Where-Object {
+                [string]$_.rowKey -ceq [string]$metric.Key
+            })
+            if ($sidecars.Count -gt 1) {
+                throw "Metric '$([string]$metric.Key)' resolved multiple Circinus sidecars."
+            }
+            $sidecar = if ($sidecars.Count -eq 1) { $sidecars[0] } else { $null }
+            $exactMethod = if ($null -ne $sidecar) { [string]$sidecar.methodIdentity } else { '' }
+            $selector = if (-not [string]::IsNullOrWhiteSpace($exactMethod)) {
+                $exactMethod
+            }
+            else {
+                "$([string]$metric.Scope):$([string]$metric.Key)"
+            }
+            $hasWindowContext = $null -ne $sidecar -or [string]$metric.Scope -ceq 'mod'
+            $measurements.Add([pscustomobject]@{
+                Scope = [string]$metric.Scope
+                Selector = $selector
+                MetricName = [string]$metric.Name
+                Value = [double]$metric.Value
+                Unit = [string]$metric.Unit
+                Denominator = [string]$metric.Denominator
+                Claim = [string]$metric.Claim
+                Calls = if ($null -ne $sidecar) { [double]$sidecar.totalCalls } else { $null }
+                TimedCalls = if ($null -ne $sidecar) { [double]$sidecar.totalTimedCalls } else { $null }
+                DutyPercent = if ($hasWindowContext) { [double]$normalized.profilerPolicy.dutyPercent } else { $null }
+                SampleShift = if ($null -ne $sidecar) { [double]$sidecar.sampleShift } else { $null }
+                RecordedCycles = if ($hasWindowContext) { [double]$normalized.profilerPolicy.recordedCycles } else { $null }
+                ProfilerWindowMilliseconds = if ($hasWindowContext) { [double]$normalized.profilerPolicy.windowMilliseconds } else { $null }
+                ProfilerWindowTicks = if ($hasWindowContext) { [double]$normalized.profilerPolicy.windowTicks } else { $null }
+                SamplingContextIdentity = if ($null -ne $sidecar) {
+                    "cycles=$([double]$normalized.profilerPolicy.recordedCycles)|windowMs=$([double]$normalized.profilerPolicy.windowMilliseconds)|windowTicks=$([double]$normalized.profilerPolicy.windowTicks)|duty=$([double]$normalized.profilerPolicy.dutyPercent)|shift=$([double]$sidecar.sampleShift)|calls=$([double]$sidecar.totalCalls)|timed=$([double]$sidecar.totalTimedCalls)"
+                }
+                elseif ([string]$metric.Scope -ceq 'mod') {
+                    "cycles=$([double]$normalized.profilerPolicy.recordedCycles)|windowMs=$([double]$normalized.profilerPolicy.windowMilliseconds)|windowTicks=$([double]$normalized.profilerPolicy.windowTicks)|duty=$([double]$normalized.profilerPolicy.dutyPercent)"
+                }
+                else { '' }
+                ExactMethod = $exactMethod
+            })
+        }
+        $compatibility = [ordered]@{
+            BenchmarkId = [string]$processPlan.benchmarkId
+            GroupId = [string]$processPlan.groupId
+            WorkloadVersion = [string]$processPlan.workloadVersion
+            EvidenceLens = [string]$normalized.controlMode
+            ActivePackageIds = @($processPlan.activePackageIds | ForEach-Object { [string]$_ })
+            GameVersion = [string]$result.SmokeResult.LiveGameVersion
+            ProductAssemblyIdentity = Get-DeployedProductAssemblyIdentity `
+                -DeploymentEvidence $DeploymentEvidence `
+                -Projects $Projects `
+                -PackageId ([string]$processPlan.measuredSubjectPackageId)
+            TestAssemblyIdentity = "$([string]$processPlan.assemblyIdentity)|mvid:$([string]$processPlan.moduleVersionId)|sha256:$([string]$processPlan.assemblySha256)"
+            CircinusAssemblyIdentity = $CircinusAssemblyIdentity
+            CircinusSchemaIdentity = "$([int]$raw.schemaMajor).$([int]$raw.schemaMinor)"
+            ProfilingPolicyIdentity = $profilingPolicy
+            SamplingPolicyIdentity = "circinus-local-settings:$SettingsSha256|native-adaptive/v1"
+            HardwareRuntimeFingerprint = $runtimeFingerprint
+            DeterministicSeed = [int]$processPlan.deterministicSeed
+            WarmUpTicks = [int]$processPlan.warmUpTicks
+            SampleTicks = [int]$processPlan.sampleTicks
+            GameSpeed = [int]$processPlan.gameSpeed
+            RepetitionCount = 1
+            AggregationPolicyIdentity = 'arithmetic-mean/v1'
+        }
+        $identityJson = $compatibility | ConvertTo-Json -Depth 8 -Compress
+        $observations.Add([pscustomobject]@{
+            IdentityJson = $identityJson
+            Compatibility = [pscustomobject]$compatibility
+            Measurements = @($measurements)
+        })
+    }
+
+    $cases = [System.Collections.Generic.List[object]]::new()
+    foreach ($group in @($observations | Group-Object IdentityJson)) {
+        $members = @($group.Group)
+        $expectedRepetitions = $members.Count
+        $combined = [System.Collections.Generic.List[object]]::new()
+        $metricGroups = @($members | ForEach-Object { @($_.Measurements) } | Group-Object {
+            "$([string]$_.Scope)`n$([string]$_.Selector)`n$([string]$_.MetricName)"
+        })
+        foreach ($metricGroup in $metricGroups) {
+            $metrics = @($metricGroup.Group)
+            if ($metrics.Count -ne $expectedRepetitions) {
+                $runtimeErrors.Add("$([string]$members[0].Compatibility.BenchmarkId): repetition metric set drifted for '$([string]$metricGroup.Name)'.")
+                continue
+            }
+            $units = @($metrics | ForEach-Object { [string]$_.Unit } | Sort-Object -Unique)
+            $denominators = @($metrics | ForEach-Object { [string]$_.Denominator } | Sort-Object -Unique)
+            $claims = @($metrics | ForEach-Object { [string]$_.Claim } | Sort-Object -Unique)
+            $methods = @($metrics | ForEach-Object { [string]$_.ExactMethod } | Sort-Object -Unique)
+            if ($units.Count -ne 1 -or $denominators.Count -ne 1 -or $claims.Count -ne 1 -or $methods.Count -ne 1) {
+                $runtimeErrors.Add("$([string]$members[0].Compatibility.BenchmarkId): repetition metadata drifted for '$([string]$metricGroup.Name)'.")
+                continue
+            }
+            $calls = @($metrics | Where-Object { $null -ne $_.Calls } | ForEach-Object { [double]$_.Calls })
+            $timed = @($metrics | Where-Object { $null -ne $_.TimedCalls } | ForEach-Object { [double]$_.TimedCalls })
+            $duty = @($metrics | Where-Object { $null -ne $_.DutyPercent } | ForEach-Object { [double]$_.DutyPercent })
+            $shift = @($metrics | Where-Object { $null -ne $_.SampleShift } | ForEach-Object { [double]$_.SampleShift })
+            $cycles = @($metrics | Where-Object { $null -ne $_.RecordedCycles } | ForEach-Object { [double]$_.RecordedCycles })
+            $windowMilliseconds = @($metrics | Where-Object { $null -ne $_.ProfilerWindowMilliseconds } | ForEach-Object { [double]$_.ProfilerWindowMilliseconds })
+            $windowTicks = @($metrics | Where-Object { $null -ne $_.ProfilerWindowTicks } | ForEach-Object { [double]$_.ProfilerWindowTicks })
+            $combined.Add([pscustomobject]@{
+                Scope = [string]$metrics[0].Scope
+                Selector = [string]$metrics[0].Selector
+                MetricName = [string]$metrics[0].MetricName
+                Value = [double](($metrics | Measure-Object -Property Value -Average).Average)
+                Unit = [string]$units[0]
+                Denominator = [string]$denominators[0]
+                Claim = [string]$claims[0]
+                Calls = if ($calls.Count -eq $expectedRepetitions) { [double](($calls | Measure-Object -Average).Average) } else { $null }
+                TimedCalls = if ($timed.Count -eq $expectedRepetitions) { [double](($timed | Measure-Object -Average).Average) } else { $null }
+                DutyPercent = if ($duty.Count -eq $expectedRepetitions) { [double](($duty | Measure-Object -Average).Average) } else { $null }
+                SampleShift = if ($shift.Count -eq $expectedRepetitions) { [double](($shift | Measure-Object -Average).Average) } else { $null }
+                RecordedCycles = if ($cycles.Count -eq $expectedRepetitions) { [double](($cycles | Measure-Object -Average).Average) } else { $null }
+                ProfilerWindowMilliseconds = if ($windowMilliseconds.Count -eq $expectedRepetitions) { [double](($windowMilliseconds | Measure-Object -Average).Average) } else { $null }
+                ProfilerWindowTicks = if ($windowTicks.Count -eq $expectedRepetitions) { [double](($windowTicks | Measure-Object -Average).Average) } else { $null }
+                SamplingContextIdentity = @($metrics | ForEach-Object { [string]$_.SamplingContextIdentity }) -join '||'
+                ExactMethod = [string]$methods[0]
+            })
+        }
+        $compatibility = $members[0].Compatibility
+        $compatibility.RepetitionCount = $expectedRepetitions
+        $compatibility.AggregationPolicyIdentity = 'arithmetic-mean/v1'
+        $cases.Add([pscustomobject]@{
+            Compatibility = $compatibility
+            Measurements = @($combined)
+        })
+    }
+    return [pscustomobject]@{
+        SchemaVersion = 1
+        Status = 'current'
+        CreatedUtc = $CreatedUtc
+        RuntimeErrors = @($runtimeErrors | Sort-Object -Unique)
+        Cases = @($cases)
+    }
+}
+
+function Invoke-PerformanceBaselineOperation {
+    param(
+        [Parameter(Mandatory)][string]$HostProject,
+        [Parameter(Mandatory)][string]$CurrentSnapshot,
+        [string]$BaselineDirectory,
+        [string]$Policy,
+        [string]$Report,
+        [string]$CandidateOutput,
+        [switch]$CrossVersion
+    )
+    $arguments = [System.Collections.Generic.List[string]]::new()
+    foreach ($value in @(
+        'run', '--project', $HostProject, '--configuration', 'Release', '--',
+        'performance-baseline', '--current-snapshot', $CurrentSnapshot, '--output', 'json')) {
+        $arguments.Add($value)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($CandidateOutput)) {
+        $arguments.Add('--candidate-output')
+        $arguments.Add($CandidateOutput)
+    }
+    else {
+        foreach ($value in @(
+            '--baseline-directory', $BaselineDirectory,
+            '--policy', $Policy,
+            '--report', $Report)) { $arguments.Add($value) }
+        if ($CrossVersion) { $arguments.Add('--informational-cross-version') }
+    }
+    return Invoke-BoundedProcess -Executable 'dotnet' -Arguments @($arguments) -TimeoutMilliseconds 300000
+}
+
 if (-not (Test-Path -LiteralPath $RimWorldPath -PathType Container)) {
     Exit-InvalidInput "RimWorld path does not exist: $RimWorldPath"
 }
@@ -333,6 +603,23 @@ if (-not (Test-Path -LiteralPath (Join-Path $game 'RimWorldWin64.exe') -PathType
 }
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $hostProject = Join-Path $repositoryRoot 'tools\RimWorldDevGateway.EndToEndHost\RimWorldDevGateway.EndToEndHost.csproj'
+if ([string]::IsNullOrWhiteSpace($BaselineDirectory)) {
+    $BaselineDirectory = Join-Path $repositoryRoot 'performance\baselines'
+}
+if ([string]::IsNullOrWhiteSpace($BaselinePolicyPath)) {
+    $BaselinePolicyPath = Join-Path $repositoryRoot 'performance\thresholds.json'
+}
+if ($CreateBaselineCandidate -and $InformationalCrossVersion) {
+    Exit-InvalidInput '-CreateBaselineCandidate cannot be combined with -InformationalCrossVersion.'
+}
+if (-not $CreateBaselineCandidate) {
+    if (-not (Test-Path -LiteralPath $BaselineDirectory -PathType Container)) {
+        Exit-InvalidInput "Performance baseline directory does not exist: $BaselineDirectory"
+    }
+    if (-not (Test-Path -LiteralPath $BaselinePolicyPath -PathType Leaf)) {
+        Exit-InvalidInput "Performance threshold policy does not exist: $BaselinePolicyPath"
+    }
+}
 if ([string]::IsNullOrWhiteSpace($ArtifactsPath)) {
     $ArtifactsPath = if ($DryRun) {
         Join-Path $repositoryRoot 'artifacts\PerformanceRuns\Current'
@@ -344,6 +631,9 @@ if ([string]::IsNullOrWhiteSpace($ArtifactsPath)) {
 $runId = [datetime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ', [Globalization.CultureInfo]::InvariantCulture)
 $artifactBase = [System.IO.Path]::GetFullPath($ArtifactsPath)
 $artifactRoot = if ($DryRun) { $artifactBase } else { Join-Path $artifactBase $runId }
+if ([string]::IsNullOrWhiteSpace($BaselineCandidatePath)) {
+    $BaselineCandidatePath = Join-Path $artifactRoot 'baseline-candidate.json'
+}
 
 $packages = if ($AvailableModIds.Count -eq 0) {
     @(Get-InstalledPackageIds -GamePath $game -WorkshopPath $workshop)
@@ -409,6 +699,13 @@ if ($DryRun) {
         Groups = @($plan.groups)
         Processes = @($plan.processes)
         Reports = $plan.reports
+        Baseline = [pscustomobject]@{
+            Mode = if ($CreateBaselineCandidate) { 'candidate' } else { 'compare' }
+            Directory = [System.IO.Path]::GetFullPath($BaselineDirectory)
+            Policy = [System.IO.Path]::GetFullPath($BaselinePolicyPath)
+            Candidate = [System.IO.Path]::GetFullPath($BaselineCandidatePath)
+            InformationalCrossVersion = [bool]$InformationalCrossVersion
+        }
     }
     if ($Output -eq 'json') { $result | ConvertTo-Json -Depth 16 -Compress }
     else { $result | Format-List }
@@ -439,6 +736,8 @@ $NormalCircinusSettingsUnchanged = $false
 $aggregateJsonPath = [string]$plan.reports.aggregateJsonPath
 $aggregateCsvPath = [string]$plan.reports.aggregateCsvPath
 $aggregateMarkdownPath = [string]$plan.reports.summaryMarkdownPath
+$currentSnapshotPath = Join-Path $artifactRoot 'performance-current.json'
+$baselineComparisonPath = Join-Path $artifactRoot 'baseline-comparison.json'
 $null = New-Item -Path $artifactRoot -ItemType Directory -Force
 $settingsPath = Write-CircinusLocalOnlySettings -Directory $settingsInput
 $stagePublished = $false
@@ -447,6 +746,10 @@ $stageCleaned = $false
 $infrastructureFailure = $null
 $processResults = [System.Collections.Generic.List[object]]::new()
 $deploymentEvidence = [System.Collections.Generic.List[object]]::new()
+$projects = @{}
+$circinusAssemblyPath = Join-Path $workshop '3773680130\Assemblies\Circinus.dll'
+$circinusAssemblyIdentity = Get-ExactAssemblyIdentity -Path $circinusAssemblyPath
+$baselineResult = $null
 
 try {
     $projects = Get-RepoProductProjects -RepositoryRoot $repositoryRoot
@@ -653,6 +956,57 @@ finally {
 $allPassed = $processResults.Count -eq @($plan.processes).Count -and
     @($processResults | Where-Object { [string]$_.Status -ne 'passed' }).Count -eq 0
 $passed = $allPassed -and $stageCleaned -and [string]::IsNullOrWhiteSpace($infrastructureFailure)
+if ($passed) {
+    try {
+        $currentSnapshot = New-PerformanceCurrentSnapshot `
+            -Plan $plan `
+            -ProcessResults @($processResults) `
+            -DeploymentEvidence @($deploymentEvidence) `
+            -Projects $projects `
+            -CircinusAssemblyIdentity $circinusAssemblyIdentity `
+            -SettingsSha256 ((Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash) `
+            -CreatedUtc ([datetime]::UtcNow.ToString('O', [Globalization.CultureInfo]::InvariantCulture)) `
+            -InfrastructureFailure $infrastructureFailure
+        $currentSnapshot | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $currentSnapshotPath -Encoding utf8
+        $baselineRun = if ($CreateBaselineCandidate) {
+            Invoke-PerformanceBaselineOperation `
+                -HostProject $hostProject `
+                -CurrentSnapshot $currentSnapshotPath `
+                -CandidateOutput ([System.IO.Path]::GetFullPath($BaselineCandidatePath))
+        }
+        else {
+            Invoke-PerformanceBaselineOperation `
+                -HostProject $hostProject `
+                -CurrentSnapshot $currentSnapshotPath `
+                -BaselineDirectory ([System.IO.Path]::GetFullPath($BaselineDirectory)) `
+                -Policy ([System.IO.Path]::GetFullPath($BaselinePolicyPath)) `
+                -Report $baselineComparisonPath `
+                -CrossVersion:$InformationalCrossVersion
+        }
+        if (-not [string]::IsNullOrWhiteSpace($baselineRun.StandardOutput)) {
+            $baselineResult = $baselineRun.StandardOutput | ConvertFrom-Json -ErrorAction Stop
+        }
+        if ($baselineRun.ExitCode -ne 0) {
+            $passed = $false
+            if ($null -eq $baselineResult) {
+                $infrastructureFailure = "Performance baseline operation failed: $($baselineRun.StandardError.Trim())"
+            }
+        }
+    }
+    catch {
+        $passed = $false
+        $infrastructureFailure = "Performance baseline operation failed: $($_.Exception.Message)"
+    }
+}
+$performanceOutcome = if (-not $passed) {
+    'failed'
+}
+elseif ($null -ne $baselineResult -and [string]$baselineResult.status -ceq 'informational') {
+    'informational'
+}
+else {
+    'passed'
+}
 $aggregateRows = @($processResults | Where-Object Status -eq 'passed' | ForEach-Object {
     $result = $_
     @($result.Metrics) | ForEach-Object {
@@ -670,20 +1024,30 @@ $aggregateRows = @($processResults | Where-Object Status -eq 'passed' | ForEach-
 $markdown = @(
     '# RimWorld performance run', '',
     "- Run: $runId",
-    "- Status: $(if ($passed) { 'passed' } else { 'failed' })",
+    "- Status: $performanceOutcome",
     "- Processes: $($processResults.Count)/$(@($plan.processes).Count)",
-    "- Stage cleanup: $stageCleaned", '',
+    "- Stage cleanup: $stageCleaned",
+    "- Baseline: $(if ($null -eq $baselineResult) { 'not-run' } else { [string]$baselineResult.status })", '',
     'Circinus attribution is gross measurement. Instrumented, armed-disabled, and fully-disarmed lenses must be compared only within one compatible workload family.'
 )
 [System.IO.File]::WriteAllLines($aggregateMarkdownPath, $markdown, [System.Text.UTF8Encoding]::new($false))
 $aggregate = [pscustomobject]@{
-    Status = if ($passed) { 'passed' } else { 'failed' }
+    Status = $performanceOutcome
     RunId = $runId
     RunDirectory = $artifactRoot
     AvailablePackageCount = $packages.Count
     StagePublished = $stagePublished
     StageCleaned = $stageCleaned
     InfrastructureFailure = $infrastructureFailure
+    Baseline = [pscustomobject]@{
+        Mode = if ($CreateBaselineCandidate) { 'candidate' } else { 'compare' }
+        CurrentSnapshot = $currentSnapshotPath
+        AcceptedDirectory = [System.IO.Path]::GetFullPath($BaselineDirectory)
+        ThresholdPolicy = [System.IO.Path]::GetFullPath($BaselinePolicyPath)
+        Candidate = if ($CreateBaselineCandidate) { [System.IO.Path]::GetFullPath($BaselineCandidatePath) } else { $null }
+        Comparison = if (-not $CreateBaselineCandidate) { $baselineComparisonPath } else { $null }
+        Result = $baselineResult
+    }
     CircinusSettings = [pscustomobject]@{
         Path = $settingsPath
         Sha256 = (Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash
@@ -699,6 +1063,8 @@ $aggregate = [pscustomobject]@{
         AggregateJson = $aggregateJsonPath
         AggregateCsv = $aggregateCsvPath
         SummaryMarkdown = $aggregateMarkdownPath
+        CurrentSnapshot = $currentSnapshotPath
+        BaselineComparison = if (-not $CreateBaselineCandidate) { $baselineComparisonPath } else { $null }
     }
 }
 $aggregate | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $aggregateJsonPath -Encoding utf8
@@ -707,7 +1073,7 @@ if (-not $passed) {
     exit 1
 }
 $result = [pscustomobject]@{
-    Status = 'passed'
+    Status = $performanceOutcome
     RunId = $runId
     RunDirectory = $artifactRoot
     ProcessCount = $processResults.Count
@@ -715,6 +1081,7 @@ $result = [pscustomobject]@{
     Aggregate = $aggregateJsonPath
     Csv = $aggregateCsvPath
     Summary = $aggregateMarkdownPath
+    Baseline = $baselineResult
 }
 if ($Output -eq 'json') { $result | ConvertTo-Json -Depth 8 -Compress }
 else { $result | Format-List }

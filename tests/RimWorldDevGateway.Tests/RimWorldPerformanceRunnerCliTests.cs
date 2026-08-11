@@ -60,6 +60,10 @@ public sealed class RimWorldPerformanceRunnerCliTests
             Assert.That(processes[0].NormalizedJsonPath, Does.EndWith("normalized.json"));
             Assert.That(processes[0].CsvReportPath, Does.EndWith("metrics.csv"));
             Assert.That(processes[0].MarkdownReportPath, Does.EndWith("summary.md"));
+            Assert.That(root.Baseline.Mode, Is.EqualTo("compare"));
+            Assert.That(root.Baseline.Directory, Does.EndWith(Path.Combine("performance", "baselines")));
+            Assert.That(root.Baseline.Policy, Does.EndWith(Path.Combine("performance", "thresholds.json")));
+            Assert.That(root.Baseline.InformationalCrossVersion, Is.False);
             Assert.That(processes[0].MaxWallClockSeconds, Is.GreaterThan(0));
             Assert.That(processes[0].MethodSelectors.Select(item => item.Value), Is.EqualTo(new[]
             {
@@ -67,6 +71,32 @@ public sealed class RimWorldPerformanceRunnerCliTests
                 "RimWorldDevGateway.GatewayGameControlController::Capture()",
                 "RimWorldDevGateway.PerformanceTests.CalibrationTickComponent::MapComponentTick()"
             }));
+            Assert.That(Directory.Exists(artifactRoot), Is.False);
+        });
+    }
+
+    [Test]
+    public void Dry_run_exposes_explicit_non_overwriting_candidate_mode_without_writing_it()
+    {
+        var artifactRoot = Path.Combine(Path.GetTempPath(), "RimWorldPerformanceRunnerCliTests", Guid.NewGuid().ToString("N"));
+        var candidate = Path.Combine(artifactRoot, "review", "candidate.json");
+
+        var run = Invoke(
+            "-DryRun", "-Output", "json", "-CreateBaselineCandidate",
+            "-BaselineCandidatePath", candidate,
+            "-AvailableModIds", "brrainz.harmony,ludeon.rimworld,astryl.circinus,fumblesneeze.rimworlddevgateway",
+            "-BenchmarkId", "gateway.circinus-calibration.instrumented",
+            "-ArtifactsPath", artifactRoot);
+
+        Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+        PerformanceDryRun root;
+        using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(run.StandardOutput)))
+            root = (PerformanceDryRun)new DataContractJsonSerializer(typeof(PerformanceDryRun)).ReadObject(stream)!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(root.Baseline.Mode, Is.EqualTo("candidate"));
+            Assert.That(root.Baseline.Candidate, Is.EqualTo(candidate));
+            Assert.That(File.Exists(candidate), Is.False);
             Assert.That(Directory.Exists(artifactRoot), Is.False);
         });
     }
@@ -124,6 +154,18 @@ public sealed class RimWorldPerformanceRunnerCliTests
         });
     }
 
+    [Test]
+    public void Runtime_runner_surfaces_non_gating_cross_version_results_as_informational_not_passed()
+    {
+        var source = File.ReadAllText(RunnerPath());
+        Assert.Multiple(() =>
+        {
+            Assert.That(source, Does.Contain("$performanceOutcome"));
+            Assert.That(source, Does.Contain("[string]$baselineResult.status -ceq 'informational'"));
+            Assert.That(source, Does.Contain("Status = $performanceOutcome"));
+        });
+    }
+
     private static InvocationResult Invoke(params string[] arguments)
     {
         var temporaryRoot = Path.Combine(Path.GetTempPath(), "RimWorldPerformanceRunnerCliTests", Guid.NewGuid().ToString("N"));
@@ -172,6 +214,17 @@ public sealed class RimWorldPerformanceRunnerCliTests
         [DataMember] public string Status { get; set; } = string.Empty;
         [DataMember] public bool MutatedGame { get; set; }
         [DataMember] public PerformanceProcess[] Processes { get; set; } = Array.Empty<PerformanceProcess>();
+        [DataMember] public PerformanceBaselinePlan Baseline { get; set; } = new();
+    }
+
+    [DataContract]
+    private sealed class PerformanceBaselinePlan
+    {
+        [DataMember] public string Mode { get; set; } = string.Empty;
+        [DataMember] public string Directory { get; set; } = string.Empty;
+        [DataMember] public string Policy { get; set; } = string.Empty;
+        [DataMember] public string Candidate { get; set; } = string.Empty;
+        [DataMember] public bool InformationalCrossVersion { get; set; }
     }
 
     [DataContract]

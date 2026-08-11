@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "thresholds": [
+    {
+      "benchmarkId": "gateway.circinus-calibration.instrumented",
+      "evidenceLens": "instrumented",
+      "scope": "checkpoint",
+      "selector": "checkpoint:elapsed-wall-milliseconds",
+      "metricName": "elapsed-wall-milliseconds",
+      "unit": "ms",
+      "absoluteIncrease": 3000.0,
+      "relativeIncreasePercent": 20.0
+    },
+    {
+      "benchmarkId": "gateway.circinus-calibration.instrumented",
+      "evidenceLens": "instrumented",
+      "scope": "method",
+      "selector": "RimWorldDevGateway.PerformanceTests:RimWorldDevGateway.PerformanceTests.CalibrationTickComponent.MapComponentTick()",
+      "metricName": "gross-ms-per-estimated-call",
+      "unit": "ms/call",
+      "absoluteIncrease": 0.00002,
+      "relativeIncreasePercent": 25.0
+    },
+    {
+      "benchmarkId": "gateway.circinus-calibration.armed-disabled",
+      "evidenceLens": "armed-disabled-wrapper",
+      "scope": "checkpoint",
+      "selector": "checkpoint:elapsed-wall-milliseconds",
+      "metricName": "elapsed-wall-milliseconds",
+      "unit": "ms",
+      "absoluteIncrease": 3000.0,
+      "relativeIncreasePercent": 20.0
+    },
+    {
+      "benchmarkId": "gateway.circinus-calibration.disarmed",
+      "evidenceLens": "fully-disarmed",
+      "scope": "checkpoint",
+      "selector": "checkpoint:elapsed-wall-milliseconds",
+      "metricName": "elapsed-wall-milliseconds",
+      "unit": "ms",
+      "absoluteIncrease": 1500.0,
+      "relativeIncreasePercent": 20.0
+    }
+  ]
+}

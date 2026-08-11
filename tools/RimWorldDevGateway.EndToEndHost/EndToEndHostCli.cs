@@ -21,6 +21,7 @@ public static class EndToEndHostCli
         root.Subcommands.Add(CreateCleanCommand());
         root.Subcommands.Add(CreatePerformancePlanCommand());
         root.Subcommands.Add(CreatePerformanceStageCommand());
+        root.Subcommands.Add(CreatePerformanceBaselineCommand());
         return root;
     }
 
@@ -268,6 +269,117 @@ public static class EndToEndHostCli
             return 0;
         }));
         return command;
+    }
+
+    private static Command CreatePerformanceBaselineCommand()
+    {
+        var currentSnapshot = new Option<string>("--current-snapshot")
+        {
+            Description = "Canonical current performance snapshot JSON.",
+            Required = true
+        };
+        var baselineDirectory = new Option<string>("--baseline-directory")
+        {
+            Description = "Directory containing reviewed *.accepted.json baseline files."
+        };
+        var policy = new Option<string>("--policy")
+        {
+            Description = "Tracked per-metric threshold policy JSON."
+        };
+        var report = new Option<string>("--report")
+        {
+            Description = "Machine-readable comparison report path."
+        };
+        var candidateOutput = new Option<string>("--candidate-output")
+        {
+            Description = "Explicit non-overwriting candidate output path; no accepted comparison is performed."
+        };
+        var informationalCrossVersion = new Option<bool>("--informational-cross-version")
+        {
+            Description = "Report version/build/hardware-only drift without applying thresholds or failing."
+        };
+        var output = OutputOption();
+        var command = new Command(
+            "performance-baseline",
+            "Compare one canonical performance snapshot to reviewed compatible baselines or create a review candidate.");
+        command.Options.Add(currentSnapshot);
+        command.Options.Add(baselineDirectory);
+        command.Options.Add(policy);
+        command.Options.Add(report);
+        command.Options.Add(candidateOutput);
+        command.Options.Add(informationalCrossVersion);
+        command.Options.Add(output);
+        command.SetAction(parseResult => Execute(parseResult, () =>
+        {
+            var currentPath = RequiredExistingFile(parseResult.GetValue(currentSnapshot), "current snapshot");
+            var current = ReadJson<PerformanceBaselineSnapshot>(currentPath, "current snapshot");
+            var candidatePath = parseResult.GetValue(candidateOutput);
+            if (!string.IsNullOrWhiteSpace(candidatePath))
+            {
+                if (!string.IsNullOrWhiteSpace(parseResult.GetValue(baselineDirectory)) ||
+                    !string.IsNullOrWhiteSpace(parseResult.GetValue(policy)) ||
+                    !string.IsNullOrWhiteSpace(parseResult.GetValue(report)))
+                    throw new ArgumentException("Candidate creation cannot be combined with baseline comparison options.");
+                var destination = RequiredPath(candidatePath, "candidate output");
+                PerformanceBaselineStore.WriteCandidate(destination, current, DateTimeOffset.UtcNow);
+                Write(parseResult, parseResult.GetValue(output), new
+                {
+                    status = "candidate-created",
+                    candidate = destination,
+                    acceptedBaselineOverwritten = false
+                });
+                return 0;
+            }
+
+            var baselineRoot = RequiredExistingDirectory(parseResult.GetValue(baselineDirectory), "baseline directory");
+            var policyPath = RequiredExistingFile(parseResult.GetValue(policy), "threshold policy");
+            var reportPath = RequiredPath(parseResult.GetValue(report), "comparison report");
+            var baselines = Directory.GetFiles(baselineRoot, "*.accepted.json", SearchOption.TopDirectoryOnly)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(path => ReadJson<PerformanceBaselineSnapshot>(path, "accepted baseline"))
+                .ToArray();
+            var thresholdPolicy = ReadJson<PerformanceThresholdPolicy>(policyPath, "threshold policy");
+            var comparison = PerformanceBaselineComparer.Compare(
+                current,
+                baselines,
+                thresholdPolicy,
+                parseResult.GetValue(informationalCrossVersion));
+            WriteJsonFile(reportPath, comparison);
+            var informationOnly = comparison.Passed && comparison.Comparisons.Any(item =>
+                string.Equals(item.Status, "informational-cross-version", StringComparison.Ordinal));
+            Write(parseResult, parseResult.GetValue(output), new
+            {
+                status = !comparison.Passed ? "regression" : informationOnly ? "informational" : "passed",
+                comparison.Passed,
+                report = reportPath,
+                comparisonCount = comparison.Comparisons.Count,
+                failureCount = comparison.Failures.Count
+            });
+            return comparison.Passed ? 0 : 1;
+        }));
+        return command;
+    }
+
+    private static T ReadJson<T>(string path, string label)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<T>(File.ReadAllText(path), new JsonSerializerOptions(JsonOptions)
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? throw new ArgumentException($"The {label} contains no JSON document.");
+        }
+        catch (JsonException exception)
+        {
+            throw new ArgumentException($"The {label} is invalid JSON: {exception.Message}");
+        }
+    }
+
+    private static void WriteJsonFile(string path, object value)
+    {
+        var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
+        File.WriteAllText(path, JsonSerializer.Serialize(value, JsonOptions) + Environment.NewLine);
     }
 
     private static int Execute(ParseResult parseResult, Func<int> action)
