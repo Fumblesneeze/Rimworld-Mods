@@ -27,12 +27,14 @@ public sealed class EndToEndStageLease
         string destinationDirectory,
         string ownerPackageId,
         string rimWorldVersion,
-        string transactionId)
+        string transactionId,
+        EndToEndStageLeaseState state = EndToEndStageLeaseState.Prepared)
     {
         DestinationDirectory = destinationDirectory;
         OwnerPackageId = ownerPackageId;
         RimWorldVersion = rimWorldVersion;
         TransactionId = transactionId;
+        State = state;
     }
 
     public string DestinationDirectory { get; }
@@ -42,6 +44,19 @@ public sealed class EndToEndStageLease
     public string RimWorldVersion { get; }
 
     public string TransactionId { get; }
+
+    public EndToEndStageLeaseState State { get; private set; }
+
+    internal void MarkCommitted() => State = EndToEndStageLeaseState.Committed;
+
+    internal void MarkRolledBack() => State = EndToEndStageLeaseState.RolledBack;
+}
+
+public enum EndToEndStageLeaseState
+{
+    Prepared,
+    Committed,
+    RolledBack
 }
 
 public static class EndToEndStagePaths
@@ -104,11 +119,19 @@ public sealed class EndToEndStagePublisher
         this.faultInjector = faultInjector;
     }
 
-    public EndToEndStageLease Publish(EndToEndOwnerStagePlan plan)
+    public EndToEndStageLease Publish(EndToEndOwnerStagePlan plan) => Publish(plan, _ => { });
+
+    public EndToEndStageLease Publish(
+        EndToEndOwnerStagePlan plan,
+        Action<EndToEndStageLease> persistBeforeCommit)
     {
         if (plan is null)
         {
             throw new ArgumentNullException(nameof(plan));
+        }
+        if (persistBeforeCommit is null)
+        {
+            throw new ArgumentNullException(nameof(persistBeforeCommit));
         }
 
         var expectedDestination = EndToEndStagePaths.GetDestination(
@@ -131,12 +154,22 @@ public sealed class EndToEndStagePublisher
         var backup = Path.Combine(parent, ".DevEndToEndTests.backup." + transactionId);
         var movedExisting = false;
         var committedNewStage = false;
+        var preparedLease = new EndToEndStageLease(
+            expectedDestination,
+            plan.OwnerPackageId,
+            plan.RimWorldVersion,
+            transactionId);
         try
         {
             if (Directory.Exists(temporary) || Directory.Exists(backup))
             {
                 throw new EndToEndStageException("The generated E2E stage transaction path already exists.");
             }
+
+            // The lease is durable before creating even the temporary bundle. If the bounded host
+            // is terminated afterward, TryCleanup can recover every exact transaction path.
+            persistBeforeCommit(preparedLease);
+            faultInjector?.OnFaultPoint("after-lease-persist");
 
             Directory.CreateDirectory(temporary);
             WriteBundle(plan, temporary, transactionId);
@@ -156,17 +189,15 @@ public sealed class EndToEndStagePublisher
 
             MoveDirectoryWithTransientRetry(temporary, expectedDestination);
             committedNewStage = true;
+            preparedLease.MarkCommitted();
+            persistBeforeCommit(preparedLease);
             faultInjector?.OnFaultPoint("after-commit");
             if (Directory.Exists(backup))
             {
                 DeleteDirectory(backup, parent);
             }
 
-            return new EndToEndStageLease(
-                expectedDestination,
-                plan.OwnerPackageId,
-                plan.RimWorldVersion,
-                transactionId);
+            return preparedLease;
         }
         catch (Exception exception)
         {
@@ -190,6 +221,18 @@ public sealed class EndToEndStagePublisher
                     new AggregateException(rollbackFailures));
             }
 
+            preparedLease.MarkRolledBack();
+            try
+            {
+                persistBeforeCommit(preparedLease);
+            }
+            catch (Exception journalException)
+            {
+                throw new EndToEndStageException(
+                    "E2E stage publication was rolled back but its durable lease journal could not be cleared.",
+                    new AggregateException(exception, journalException));
+            }
+
             if (exception is EndToEndStageException)
             {
                 throw;
@@ -210,26 +253,66 @@ public sealed class EndToEndStagePublisher
         }
 
         using var transactionLock = AcquireDestinationTransactionLock(lease.DestinationDirectory);
-        if (!Directory.Exists(lease.DestinationDirectory))
-        {
-            return true;
-        }
+        var parent = Path.GetDirectoryName(lease.DestinationDirectory) ?? string.Empty;
+        var temporary = Path.Combine(parent, ".DevEndToEndTests.stage." + lease.TransactionId);
+        var backup = Path.Combine(parent, ".DevEndToEndTests.backup." + lease.TransactionId);
+        var hasTemporary = Directory.Exists(temporary);
+        var hasBackup = Directory.Exists(backup);
+        var hasDestination = Directory.Exists(lease.DestinationDirectory);
+        var destinationIsExact = false;
 
         try
         {
-            ReadAndValidateMarker(
-                lease.DestinationDirectory,
-                lease.OwnerPackageId,
-                lease.RimWorldVersion,
-                lease.TransactionId);
+            if (hasTemporary)
+                ReadAndValidateMarker(
+                    temporary,
+                    lease.OwnerPackageId,
+                    lease.RimWorldVersion,
+                    lease.TransactionId);
+            if (hasBackup)
+                ReadAndValidateMarker(
+                    backup,
+                    lease.OwnerPackageId,
+                    lease.RimWorldVersion,
+                    expectedTransactionId: null);
+            if (hasDestination)
+            {
+                try
+                {
+                    ReadAndValidateMarker(
+                        lease.DestinationDirectory,
+                        lease.OwnerPackageId,
+                        lease.RimWorldVersion,
+                        lease.TransactionId);
+                    destinationIsExact = true;
+                }
+                catch
+                {
+                    if ((!hasTemporary || hasBackup) &&
+                        !(lease.State == EndToEndStageLeaseState.Prepared &&
+                          !hasTemporary && !hasBackup))
+                        return false;
+                    // A persisted pre-commit lease may coexist only with its exact staged temp and
+                    // the untouched previous destination. Before temp creation, a prepared lease
+                    // can also coexist with only that untouched destination. Preserve it.
+                }
+            }
         }
         catch
         {
             return false;
         }
 
-        var parent = Path.GetDirectoryName(lease.DestinationDirectory) ?? string.Empty;
-        DeleteDirectory(lease.DestinationDirectory, parent);
+        if (hasTemporary) DeleteDirectory(temporary, parent);
+        if (destinationIsExact) DeleteDirectory(lease.DestinationDirectory, parent);
+        if (hasBackup)
+        {
+            if (Directory.Exists(lease.DestinationDirectory)) return false;
+            MoveDirectoryWithTransientRetry(backup, lease.DestinationDirectory);
+        }
+
+        if (hasDestination && !destinationIsExact && !hasTemporary)
+            return lease.State != EndToEndStageLeaseState.Committed;
         return true;
     }
 

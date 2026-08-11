@@ -84,25 +84,12 @@ public static class EndToEndHostCli
                 var plan = BuildPlan(options.Read(parseResult));
                 var leasePath = RequiredPath(parseResult.GetValue(leaseFile), "lease file");
                 var publisher = new EndToEndStagePublisher();
-                var leases = new List<EndToEndStageLease>();
-                try
-                {
-                    foreach (var owner in plan.OwnerStages)
-                    {
-                        leases.Add(publisher.Publish(owner));
-                    }
-
-                    WriteLeaseFile(leasePath, leases);
-                }
-                catch
-                {
-                    foreach (var lease in leases.AsEnumerable().Reverse())
-                    {
-                        publisher.TryCleanup(lease);
-                    }
-
-                    throw;
-                }
+                var leases = EndToEndStageTransaction.PublishAll(
+                    plan.OwnerStages,
+                    (owner, prepared) => publisher.Publish(owner, prepared),
+                    publisher.TryCleanup,
+                    staged => WriteLeaseFile(leasePath, staged),
+                    () => ClearLeaseFile(leasePath));
 
                 WritePlan(parseResult, plan, options.ReadOutput(parseResult), "staged", leases);
                 return 0;
@@ -254,9 +241,9 @@ public static class EndToEndHostCli
                 input.RimWorldVersion);
             var publisher = new EndToEndStagePublisher();
             var leasePath = RequiredPath(parseResult.GetValue(leaseFile), "lease file");
-            var leases = PerformanceStageTransaction.PublishAll(
+            var leases = EndToEndStageTransaction.PublishAll(
                 plan.OwnerStages,
-                publisher.Publish,
+                (owner, prepared) => publisher.Publish(owner, prepared),
                 publisher.TryCleanup,
                 staged => WriteLeaseFile(leasePath, staged),
                 () => ClearLeaseFile(leasePath));
@@ -390,6 +377,7 @@ public static class EndToEndHostCli
                 process.Repetition,
                 process.WarmUpTicks,
                 process.SampleTicks,
+                process.MaxWallClockSeconds,
                 process.GameSpeed,
                 activePackageIds = process.ActivePackageIds,
                 process.ProcessDirectory,
@@ -599,18 +587,23 @@ public static class EndToEndHostCli
         string DestinationDirectory,
         string OwnerPackageId,
         string RimWorldVersion,
-        string TransactionId)
+        string TransactionId,
+        EndToEndStageLeaseState State)
     {
         public static LeaseRecord From(EndToEndStageLease lease) => new(
             lease.DestinationDirectory,
             lease.OwnerPackageId,
             lease.RimWorldVersion,
-            lease.TransactionId);
+            lease.TransactionId,
+            lease.State);
 
         public EndToEndStageLease ToLease() => new(
             RequiredPath(DestinationDirectory, "lease destination"),
             CommonOptions.RequiredToken(OwnerPackageId, "lease owner package ID"),
             CommonOptions.RequiredToken(RimWorldVersion, "lease RimWorld version"),
-            CommonOptions.RequiredToken(TransactionId, "lease transaction ID"));
+            CommonOptions.RequiredToken(TransactionId, "lease transaction ID"),
+            Enum.IsDefined(typeof(EndToEndStageLeaseState), State)
+                ? State
+                : throw new EndToEndStageException("The lease state is invalid."));
     }
 }

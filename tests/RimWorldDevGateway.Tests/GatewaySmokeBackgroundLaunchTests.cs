@@ -136,6 +136,71 @@ public sealed class GatewaySmokeBackgroundLaunchTests
     }
 
     [Test]
+    public void Prelaunch_mod_settings_are_copied_only_into_the_isolated_config_and_reported()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            nameof(GatewaySmokeBackgroundLaunchTests),
+            Guid.NewGuid().ToString("N"));
+        var artifactRoot = Path.Combine(root, "artifacts");
+        var inputs = Path.Combine(root, "inputs");
+        Directory.CreateDirectory(inputs);
+        var settingsName = "Mod_3773680130_CircinusMod.xml";
+        File.WriteAllText(Path.Combine(inputs, settingsName), "<CircinusSettings><autoRecord>false</autoRecord></CircinusSettings>");
+        try
+        {
+            var result = RunDryRun(
+                artifactRoot,
+                $"-PrelaunchConfigDirectory \"{inputs}\"");
+            var staged = Directory.GetFiles(artifactRoot, settingsName, SearchOption.AllDirectories);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.Zero, result.StandardError);
+                Assert.That(staged, Has.Exactly(1).Items);
+                Assert.That(File.ReadAllText(staged.Single()),
+                    Is.EqualTo("<CircinusSettings><autoRecord>false</autoRecord></CircinusSettings>"));
+                Assert.That(result.StandardOutput, Does.Contain("\"PrelaunchConfigFiles\"")
+                    .And.Contain(settingsName)
+                    .And.Contain("\"Sha256\""));
+            });
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Prelaunch_config_rejects_reserved_launcher_files_before_process_start()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            nameof(GatewaySmokeBackgroundLaunchTests),
+            Guid.NewGuid().ToString("N"));
+        var artifactRoot = Path.Combine(root, "artifacts");
+        var inputs = Path.Combine(root, "inputs");
+        Directory.CreateDirectory(inputs);
+        File.WriteAllText(Path.Combine(inputs, "Prefs.xml"), "<PrefsData />");
+        try
+        {
+            var result = RunDryRun(
+                artifactRoot,
+                $"-PrelaunchConfigDirectory \"{inputs}\"");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.EqualTo(2));
+                Assert.That(result.StandardError, Does.Contain("reserved").IgnoreCase);
+            });
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
     public void Desktop_owning_gateway_regression_starts_visibly_without_an_override()
     {
         var artifactRoot = Path.Combine(

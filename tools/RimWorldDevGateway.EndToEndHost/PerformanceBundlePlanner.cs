@@ -180,11 +180,11 @@ public static class PerformanceBundlePlanner
     }
 }
 
-public static class PerformanceStageTransaction
+public static class EndToEndStageTransaction
 {
     public static IReadOnlyList<EndToEndStageLease> PublishAll(
         IEnumerable<EndToEndOwnerStagePlan> ownerStages,
-        Func<EndToEndOwnerStagePlan, EndToEndStageLease> publish,
+        Func<EndToEndOwnerStagePlan, Action<EndToEndStageLease>, EndToEndStageLease> publish,
         Func<EndToEndStageLease, bool> cleanup,
         Action<IReadOnlyList<EndToEndStageLease>> persistLeases,
         Action clearLeases)
@@ -196,14 +196,49 @@ public static class PerformanceStageTransaction
         if (clearLeases is null) throw new ArgumentNullException(nameof(clearLeases));
 
         var stages = ownerStages.ToArray();
-        if (stages.Length == 0) throw new EndToEndStageException("Performance staging selected zero owners.");
+        if (stages.Length == 0) throw new EndToEndStageException("Staging selected zero owners.");
         var leases = new List<EndToEndStageLease>();
         try
         {
             foreach (var owner in stages)
             {
-                leases.Add(publish(owner));
-                persistLeases(leases.ToArray());
+                EndToEndStageLease? prepared = null;
+                var published = publish(owner, lease =>
+                {
+                    if (lease is null)
+                        throw new EndToEndStageException("A stage published a null lease state.");
+                    if (prepared is null)
+                    {
+                        prepared = lease;
+                        leases.Add(prepared);
+                    }
+                    else if (!ReferenceEquals(prepared, lease))
+                    {
+                        throw new EndToEndStageException("A stage changed lease identity during publication.");
+                    }
+
+                    if (lease.State == EndToEndStageLeaseState.RolledBack)
+                    {
+                        leases.Remove(lease);
+                        if (leases.Count == 0) clearLeases();
+                        else persistLeases(leases.ToArray());
+                        return;
+                    }
+
+                    try
+                    {
+                        persistLeases(leases.ToArray());
+                    }
+                    catch
+                    {
+                        if (lease.State == EndToEndStageLeaseState.Prepared) leases.Remove(lease);
+                        throw;
+                    }
+                });
+                if (prepared is null || !ReferenceEquals(prepared, published) ||
+                    published.State != EndToEndStageLeaseState.Committed)
+                    throw new EndToEndStageException(
+                        "A stage did not return its exact pre-commit lease instance.");
             }
 
             return new ReadOnlyCollection<EndToEndStageLease>(leases.ToArray());
@@ -222,7 +257,7 @@ public static class PerformanceStageTransaction
                     else
                     {
                         cleanupFailures.Add(new EndToEndStageException(
-                            $"Cleanup refused retained performance stage '{leases[index].DestinationDirectory}'."));
+                            $"Cleanup refused retained stage '{leases[index].DestinationDirectory}'."));
                     }
                 }
                 catch (Exception exception)
@@ -244,7 +279,7 @@ public static class PerformanceStageTransaction
             if (cleanupFailures.Count == 0) throw;
             cleanupFailures.Insert(0, primary);
             throw new EndToEndStageException(
-                "Performance stage publication failed and cleanup was incomplete; retained leases were persisted.",
+                "Stage publication failed and cleanup was incomplete; retained leases were persisted.",
                 new AggregateException(cleanupFailures));
         }
     }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -266,6 +267,37 @@ public sealed class EndToEndBundleStagingTests
 
         Assert.That(publisher.TryCleanup(lease), Is.False);
         Assert.That(Directory.Exists(stage.DestinationDirectory), Is.True);
+    }
+
+    [Test]
+    public void Prepared_lease_before_temporary_creation_preserves_an_existing_owned_stage_and_clears()
+    {
+        using var sandbox = new StageSandbox();
+        var stage = Plan(sandbox.Root);
+        var publisher = new EndToEndStagePublisher();
+        var previous = publisher.Publish(stage, _ => { });
+        var sentinel = Path.Combine(stage.DestinationDirectory, "previous-stage.txt");
+        File.WriteAllText(sentinel, "previous");
+        var interrupted = (EndToEndStageLease)Activator.CreateInstance(
+            typeof(EndToEndStageLease),
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null,
+            args: new object[]
+            {
+                stage.DestinationDirectory,
+                stage.OwnerPackageId,
+                stage.RimWorldVersion,
+                Guid.NewGuid().ToString("N"),
+                EndToEndStageLeaseState.Prepared
+            },
+            culture: null)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(publisher.TryCleanup(interrupted), Is.True);
+            Assert.That(File.ReadAllText(sentinel), Is.EqualTo("previous"));
+        });
+        Assert.That(publisher.TryCleanup(previous), Is.True);
     }
 
     [TestCase("..")]

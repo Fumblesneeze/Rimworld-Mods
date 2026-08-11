@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway.EndToEndHost;
 
@@ -52,6 +53,7 @@ public sealed class PerformanceProcessPlan
         Repetition = repetition;
         WarmUpTicks = warmUpTicks;
         SampleTicks = sampleTicks;
+        MaxWallClockSeconds = PerformanceBundleDeadline.Calculate(warmUpTicks, sampleTicks).MaxWallClockSeconds;
         GameSpeed = benchmark.GameSpeed;
         ActivePackageIds = new ReadOnlyCollection<string>(benchmark.ActivePackageIds
             .Concat(new[] { PerformanceDiscoveryValidator.GatewayPackageId })
@@ -84,6 +86,7 @@ public sealed class PerformanceProcessPlan
     public int Repetition { get; }
     public int WarmUpTicks { get; }
     public int SampleTicks { get; }
+    public int MaxWallClockSeconds { get; }
     public int GameSpeed { get; }
     public IReadOnlyList<string> ActivePackageIds { get; }
     public string ProcessDirectory { get; }
@@ -177,7 +180,7 @@ public static class PerformanceRunPlanBuilder
                     var sequence = processes.Count + 1;
                     var directory = Path.Combine(
                         root,
-                        $"{sequence:D4}-{SafeToken(benchmark.Id)}-r{repetition:D2}");
+                        $"p{sequence:D4}-r{repetition:D2}");
                     processes.Add(new PerformanceProcessPlan(
                         sequence,
                         group.GroupId,
@@ -207,13 +210,4 @@ public static class PerformanceRunPlanBuilder
         return result;
     }
 
-    private static string SafeToken(string value)
-    {
-        var token = new string(value.ToLowerInvariant()
-            .Select(character => char.IsLetterOrDigit(character) || character is '.' or '_' or '-'
-                ? character
-                : '_')
-            .ToArray());
-        return token.Length <= 96 ? token : token[..96];
-    }
 }

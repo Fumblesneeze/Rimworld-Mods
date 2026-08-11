@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using RimWorldDevGateway.Contracts;
 using NUnit.Framework;
 
 namespace RimWorldDevGateway.EndToEndHost.Tests;
@@ -39,6 +40,8 @@ public sealed class PerformanceRunPlanTests
                 .EqualTo("alpha.base-instrumented"));
             Assert.That(plan.Processes, Has.All.Property(nameof(PerformanceProcessPlan.WarmUpTicks)).EqualTo(120));
             Assert.That(plan.Processes, Has.All.Property(nameof(PerformanceProcessPlan.SampleTicks)).EqualTo(600));
+            Assert.That(plan.Processes[0].MaxWallClockSeconds,
+                Is.EqualTo(PerformanceBundleDeadline.Calculate(120, 600).MaxWallClockSeconds));
             Assert.That(plan.Processes[0].ActivePackageIds.Last(), Is.EqualTo("fumblesneeze.rimworlddevgateway"));
             Assert.That(plan.Processes[0].TypeName, Does.EndWith("BaseInstrumentedBenchmark"));
             Assert.That(plan.Processes[0].AssemblyIdentity, Does.StartWith("PerformanceHost.ValidFixtures,"));
@@ -52,6 +55,8 @@ public sealed class PerformanceRunPlanTests
             Assert.That(plan.Processes[0].NormalizedJsonPath, Does.EndWith("normalized.json"));
             Assert.That(plan.Processes[0].CsvReportPath, Does.EndWith("metrics.csv"));
             Assert.That(plan.Processes[0].MarkdownReportPath, Does.EndWith("summary.md"));
+            Assert.That(plan.Processes.Select(item => Path.GetFileName(item.ProcessDirectory)),
+                Is.EqualTo(new[] { "p0001-r01", "p0002-r02", "p0003-r03" }));
             Assert.That(plan.AggregateJsonPath, Is.EqualTo(Path.Combine(Path.GetFullPath(artifactRoot), "aggregate.json")));
         });
     }

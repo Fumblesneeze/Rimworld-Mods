@@ -75,10 +75,12 @@ param(
 
     [string]$ArtifactsPath,
 
+    [string]$PrelaunchConfigDirectory,
+
     [ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')]
     [string]$Language = 'English',
 
-    [ValidateRange(30, 600)]
+    [ValidateRange(30, [int]::MaxValue)]
     [int]$TimeoutSeconds = 180,
 
     [ValidateRange(0, 3600)]
@@ -296,6 +298,75 @@ function Exit-InvalidInput {
 
     [Console]::Error.WriteLine($Message)
     exit 2
+}
+
+function Copy-GatewayPrelaunchConfig {
+    param(
+        [string]$SourceDirectory,
+        [Parameter(Mandatory)][string]$DestinationDirectory
+    )
+
+    if ([string]::IsNullOrWhiteSpace($SourceDirectory)) {
+        return @()
+    }
+    $sourceRoot = [System.IO.Path]::GetFullPath($SourceDirectory)
+    $destinationRoot = [System.IO.Path]::GetFullPath($DestinationDirectory)
+    if (-not (Test-Path -LiteralPath $sourceRoot -PathType Container)) {
+        throw "Prelaunch config directory does not exist: $sourceRoot"
+    }
+    $rootItem = Get-Item -LiteralPath $sourceRoot -Force -ErrorAction Stop
+    if (($rootItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw 'Prelaunch config directory cannot be a reparse point.'
+    }
+
+    $entries = @(Get-ChildItem -LiteralPath $sourceRoot -Force | Sort-Object Name)
+    if ($entries.Count -gt 64) {
+        throw 'Prelaunch config contains more than the repository safety ceiling of 64 files.'
+    }
+    $totalBytes = [long]0
+    $validated = [System.Collections.Generic.List[object]]::new()
+    foreach ($entry in $entries) {
+        if ($entry.PSIsContainer -or
+            ($entry.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Prelaunch config accepts only direct, ordinary XML files: $($entry.Name)"
+        }
+        if ($entry.Name -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.xml$') {
+            throw "Invalid prelaunch config file name: $($entry.Name)"
+        }
+        if ($entry.Name -ieq 'Prefs.xml' -or $entry.Name -ieq 'ModsConfig.xml') {
+            throw "Prelaunch config file '$($entry.Name)' is reserved by the isolated launcher."
+        }
+        if ([long]$entry.Length -gt 16MB) {
+            throw "Prelaunch config file '$($entry.Name)' exceeds the repository safety ceiling of 16 MiB."
+        }
+        $totalBytes += [long]$entry.Length
+        if ($totalBytes -gt 64MB) {
+            throw 'Prelaunch config exceeds the repository aggregate safety ceiling of 64 MiB.'
+        }
+        $validated.Add($entry)
+    }
+
+    $null = New-Item -Path $destinationRoot -ItemType Directory -Force
+    $records = [System.Collections.Generic.List[object]]::new()
+    foreach ($entry in $validated) {
+        $target = Join-Path $destinationRoot $entry.Name
+        if (Test-Path -LiteralPath $target) {
+            throw "Prelaunch config target already exists: $target"
+        }
+        [System.IO.File]::Copy($entry.FullName, $target, $false)
+        $sourceHash = (Get-FileHash -LiteralPath $entry.FullName -Algorithm SHA256).Hash
+        $targetHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
+        if ($sourceHash -cne $targetHash) {
+            throw "Prelaunch config copy hash mismatch for '$($entry.Name)'."
+        }
+        $records.Add([pscustomobject][ordered]@{
+            FileName = [string]$entry.Name
+            Length = [long]$entry.Length
+            Sha256 = [string]$targetHash
+            TargetPath = [string]$target
+        })
+    }
+    return @($records)
 }
 
 function Test-GatewayPackageId {
@@ -5465,6 +5536,14 @@ Write-MinimalPrefs `
     -RenderWidth $renderWidth `
     -RenderHeight $renderHeight `
     -Language $Language
+try {
+    $prelaunchConfigFiles = @(Copy-GatewayPrelaunchConfig `
+        -SourceDirectory $PrelaunchConfigDirectory `
+        -DestinationDirectory $configDirectory)
+}
+catch {
+    Exit-InvalidInput $_.Exception.Message
+}
 $languageProviderPlan = Get-GatewaySmokeLanguageProviderPlan `
     -RimWorldPath $resolvedRimWorldPath `
     -Language $Language
@@ -5531,6 +5610,7 @@ if ($DryRun) {
         InteractiveHoldSeconds = [int]$InteractiveHoldSeconds
         ModsConfig = $modsConfigPath
         Prefs = $prefsPath
+        PrelaunchConfigFiles = @($prelaunchConfigFiles)
         RunInBackground = $true
         MusicVolume = 0
         DeveloperMode = $true
@@ -7808,6 +7888,7 @@ try {
         FlaUiEvidence = if ($runGatewayRegressionScenario) { $flaUiEvidencePath } else { $null }
         ModsConfig = $modsConfigPath
         Prefs = $prefsPath
+        PrelaunchConfigFiles = @($prelaunchConfigFiles)
         RunInBackground = $true
         MusicVolume = 0
         DeveloperMode = $true

@@ -210,13 +210,13 @@ public sealed class PerformanceBundlePlannerTests
             EndToEndStageLease? retainedLease = null;
 
             var error = Assert.Throws<EndToEndStageException>(() =>
-                PerformanceStageTransaction.PublishAll(
+                EndToEndStageTransaction.PublishAll(
                     plan.OwnerStages,
-                    owner =>
+                    (owner, prepared) =>
                     {
                         publishes++;
                         if (publishes == 2) throw new InvalidOperationException("expected later-owner failure");
-                        retainedLease = publisher.Publish(owner);
+                        retainedLease = publisher.Publish(owner, prepared);
                         return retainedLease;
                     },
                     _ => false,
@@ -226,9 +226,10 @@ public sealed class PerformanceBundlePlannerTests
             Assert.Multiple(() =>
             {
                 Assert.That(error!.Message, Does.Contain("cleanup was incomplete"));
-                Assert.That(persisted, Has.Count.EqualTo(2));
+                Assert.That(persisted, Has.Count.EqualTo(3));
                 Assert.That(persisted[0], Has.Length.EqualTo(1));
                 Assert.That(persisted[1], Is.EqualTo(persisted[0]));
+                Assert.That(persisted[2], Is.EqualTo(persisted[0]));
                 Assert.That(Directory.Exists(plan.OwnerStages[0].DestinationDirectory), Is.True);
             });
             Assert.That(publisher.TryCleanup(retainedLease!), Is.True);
@@ -237,6 +238,60 @@ public sealed class PerformanceBundlePlannerTests
         {
             if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
+    }
+
+    [Test]
+    public void Publisher_persists_the_exact_lease_before_creating_the_temporary_stage()
+    {
+        var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "performance-stage-precommit", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var plan = PerformanceBundlePlanner.Create(
+                PerformanceMetadataDiscoveryTests.ValidCandidatesForPlanning(),
+                Packages(),
+                root,
+                "1.6");
+            EndToEndStageLease? observedLease = null;
+            var publisher = new EndToEndStagePublisher(new CallbackFaultInjector(point =>
+            {
+                if (point is "after-stage-write" or "after-commit")
+                {
+                    Assert.That(observedLease, Is.Not.Null);
+                }
+            }));
+            var lease = publisher.Publish(
+                plan.OwnerStages[0],
+                prepared =>
+                {
+                    Assert.That(prepared.DestinationDirectory, Is.EqualTo(plan.OwnerStages[0].DestinationDirectory));
+                    if (prepared.State == EndToEndStageLeaseState.Prepared)
+                    {
+                        var parent = Path.GetDirectoryName(prepared.DestinationDirectory)!;
+                        Assert.That(Directory.GetDirectories(parent, ".DevEndToEndTests.*"), Is.Empty,
+                            "The prepared lease must be durable before any transaction directory exists.");
+                    }
+                    observedLease = prepared;
+                });
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(observedLease, Is.SameAs(lease));
+                Assert.That(Directory.Exists(lease.DestinationDirectory), Is.True);
+            });
+            Assert.That(publisher.TryCleanup(lease), Is.True);
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private sealed class CallbackFaultInjector : IEndToEndStageFaultInjector
+    {
+        private readonly Action<string> callback;
+        public CallbackFaultInjector(Action<string> callback) => this.callback = callback;
+        public void OnFaultPoint(string point) => callback(point);
     }
 
     private static string[] Packages() => new[]

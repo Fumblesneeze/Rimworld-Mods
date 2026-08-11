@@ -51,12 +51,73 @@ public sealed class RimWorldPerformanceRunnerCliTests
                 Is.All.EqualTo("gateway.circinus-calibration.instrumented"));
             Assert.That(processes.Select(item => item.WarmUpTicks), Is.All.EqualTo(30));
             Assert.That(processes.Select(item => item.SampleTicks), Is.All.EqualTo(120));
+            Assert.That(processes.Select(item => item.GameSpeed), Is.All.EqualTo(1),
+                "The calibration family must run long enough for Circinus to retain native time-series samples.");
             Assert.That(processes.Select(item => item.Repetition), Is.EqualTo(new[] { 1, 2 }));
             Assert.That(processes[0].RawCircinusJsonPath, Does.EndWith("circinus.raw.json"));
             Assert.That(processes[0].NormalizedJsonPath, Does.EndWith("normalized.json"));
             Assert.That(processes[0].CsvReportPath, Does.EndWith("metrics.csv"));
             Assert.That(processes[0].MarkdownReportPath, Does.EndWith("summary.md"));
+            Assert.That(processes[0].MaxWallClockSeconds, Is.GreaterThan(0));
+            Assert.That(processes[0].MethodSelectors.Select(item => item.Value), Is.EqualTo(new[]
+            {
+                "fumblesneeze.rimworlddevgateway",
+                "RimWorldDevGateway.GatewayGameControlController::Capture()"
+            }));
             Assert.That(Directory.Exists(artifactRoot), Is.False);
+        });
+    }
+
+    [Test]
+    public void Dry_run_transports_a_large_resolvable_package_catalog_through_a_bounded_file_argument()
+    {
+        var optional = Enumerable.Range(0, 1200).Select(index => $"optional.performance.{index}");
+        var packages = string.Join(",", new[]
+        {
+            "brrainz.harmony", "ludeon.rimworld", "astryl.circinus",
+            "fumblesneeze.rimworlddevgateway"
+        }.Concat(optional));
+
+        var run = Invoke(
+            "-DryRun", "-Output", "json",
+            "-AvailableModIds", packages,
+            "-BenchmarkId", "gateway.circinus-calibration.instrumented");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput, Does.Contain("\"Status\":\"dry-run\""));
+        });
+    }
+
+    [Test]
+    public void Runtime_runner_hashes_the_normal_Circinus_settings_before_and_after_every_run()
+    {
+        var source = File.ReadAllText(RunnerPath());
+        var normalPath = source.IndexOf("NormalCircinusSettingsPath", StringComparison.Ordinal);
+        var before = source.IndexOf("NormalCircinusSettingsBefore", StringComparison.Ordinal);
+        var finallyBlock = source.IndexOf("finally {", before, StringComparison.Ordinal);
+        var after = source.IndexOf("NormalCircinusSettingsAfter", finallyBlock, StringComparison.Ordinal);
+        var unchanged = source.IndexOf("NormalCircinusSettingsUnchanged", after, StringComparison.Ordinal);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(normalPath, Is.GreaterThanOrEqualTo(0));
+            Assert.That(before, Is.GreaterThan(normalPath));
+            Assert.That(finallyBlock, Is.GreaterThan(before));
+            Assert.That(after, Is.GreaterThan(finallyBlock));
+            Assert.That(unchanged, Is.GreaterThan(after));
+        });
+    }
+
+    [Test]
+    public void Runtime_runner_disables_dotnet_build_server_reuse_for_redirected_bounded_children()
+    {
+        var source = File.ReadAllText(RunnerPath());
+        Assert.Multiple(() =>
+        {
+            Assert.That(source, Does.Contain("MSBUILDDISABLENODEREUSE'] = '1'"));
+            Assert.That(source, Does.Contain("DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER'] = '1'"));
         });
     }
 
@@ -116,11 +177,20 @@ public sealed class RimWorldPerformanceRunnerCliTests
         [DataMember(Name = "benchmarkId")] public string BenchmarkId { get; set; } = string.Empty;
         [DataMember(Name = "warmUpTicks")] public int WarmUpTicks { get; set; }
         [DataMember(Name = "sampleTicks")] public int SampleTicks { get; set; }
+        [DataMember(Name = "gameSpeed")] public int GameSpeed { get; set; }
         [DataMember(Name = "repetition")] public int Repetition { get; set; }
+        [DataMember(Name = "maxWallClockSeconds")] public int MaxWallClockSeconds { get; set; }
+        [DataMember(Name = "methodSelectors")] public PerformanceSelector[] MethodSelectors { get; set; } = Array.Empty<PerformanceSelector>();
         [DataMember(Name = "rawCircinusJsonPath")] public string RawCircinusJsonPath { get; set; } = string.Empty;
         [DataMember(Name = "normalizedJsonPath")] public string NormalizedJsonPath { get; set; } = string.Empty;
         [DataMember(Name = "csvReportPath")] public string CsvReportPath { get; set; } = string.Empty;
         [DataMember(Name = "markdownReportPath")] public string MarkdownReportPath { get; set; } = string.Empty;
+    }
+
+    [DataContract]
+    private sealed class PerformanceSelector
+    {
+        [DataMember(Name = "value")] public string Value { get; set; } = string.Empty;
     }
 
     private sealed class InvocationResult
