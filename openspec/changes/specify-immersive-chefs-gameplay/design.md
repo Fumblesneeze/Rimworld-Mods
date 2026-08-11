@@ -194,6 +194,8 @@ For an admitted job, the adapter prepends the ordinary reserved-ware pickup to t
 
 Package absence and an `Off` setting silently leave the adapter inactive. Drift in the exact assembly, two job-giver methods, driver method/field shape, JobDef, or recipe/station job contract for an active package disables only this adapter with one bounded warning. Cook for Yourself then retains its original behavior, and no optional type appears in an eager Immersive Chefs signature or assembly reference.
 
+Verification keeps ordinary covered workflows in the exact Harmony/Core/Cook for Yourself/Immersive Chefs group. The excluded-food proof uses a distinct Harmony/Core/Biotech/Cook for Yourself/Immersive Chefs group so a real baby triggers the upstream `Make_BabyFood` recipe and native `BottleFeedBaby` job under strict ware settings with no kitchenware present. This makes a false adapter admission fail visibly while leaving Biotech and Cook for Yourself authoritative for the complete excluded lifecycle.
+
 ## Risks / Trade-offs
 
 - **[Stack metadata causes fragmentation]** → Quantize culinary quality and temperature for stack compatibility, preserve exact plate counts, and prefer correctness over forced merging.

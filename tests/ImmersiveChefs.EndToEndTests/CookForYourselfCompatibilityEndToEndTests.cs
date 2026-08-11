@@ -26,6 +26,7 @@ public sealed class CookForYourselfSelfCookingTest : IRimWorldEndToEndTest
     private bool customCookingObserved;
     private bool activeCookwareObserved;
     private bool nativeIngestObserved;
+    private int ingestDiagnosticTick;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -209,6 +210,10 @@ public sealed class CookForYourselfSelfCookingTest : IRimWorldEndToEndTest
         EndToEndAssert.False(fixture.Plate.GetComp<CompSanitation>()!.IsDirty,
             "The unused plate must remain clean while cooking is in progress.");
         activeCookwareObserved = true;
+        if (ingestDiagnosticTick == 0)
+        {
+            ingestDiagnosticTick = Find.TickManager.TicksGame + 2_000;
+        }
         return true;
     }
 
@@ -217,7 +222,8 @@ public sealed class CookForYourselfSelfCookingTest : IRimWorldEndToEndTest
         meal ??= fixture.JobTransitions.IngestMeal;
         if (!fixture.JobTransitions.NativeIngestObserved || meal is null)
         {
-            if (Find.TickManager.TicksGame > 2_000)
+            if (ingestDiagnosticTick > 0 &&
+                Find.TickManager.TicksGame >= ingestDiagnosticTick)
             {
                 var covered = fixture.Map.listerThings.AllThings
                     .OfType<ThingWithComps>()
@@ -602,6 +608,285 @@ public sealed class CookForYourselfIntegrationOffTest : IRimWorldEndToEndTest
             .ToArray();
         EndToEndAssert.Equal(1, options.Length,
             "The integration-off cook must expose one current native Draft toggle.");
+        return options[0];
+    }
+}
+
+[RimWorldEndToEndTest(
+    "immersive-chefs.cook-for-yourself-baby-food-pass-through",
+    "fumblesneeze.immersivechefs",
+    "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
+    "ludeon.rimworld.biotech",
+    "lordfelix.CookForYourself",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 7_200,
+    MaxGameTicks = 28_000,
+    MaxWallClockSeconds = 275)]
+public sealed class CookForYourselfBabyFoodPassThroughTest : IRimWorldEndToEndTest
+{
+    private Map map = null!;
+    private Pawn cook = null!;
+    private Pawn baby = null!;
+    private ThingWithComps stove = null!;
+    private CookForYourselfJobTransitionTrace transitions = null!;
+    private ThingWithComps? babyFood;
+    private float initialBabyHunger;
+    private int initialBabyFoodStackCount;
+    private bool nativeCookingObserved;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        FoodSearchE2EFixture.UseStrictNonEmergencyDining(context);
+        var settings = ImmersiveChefsMod.Settings;
+        var priorIntegration = settings.CookForYourself;
+        context.DeferCleanup(() => settings.CookForYourself = priorIntegration);
+        settings.CookForYourself = OptionalIntegrationMode.Auto;
+
+        EndToEndAssert.True(ModsConfig.BiotechActive,
+            "The exact baby-food pass-through group must load Biotech.");
+        EndToEndAssert.True(CookForYourselfAdapter.Enabled,
+            "The exact supported Cook for Yourself adapter must be active in the Biotech group.");
+
+        map = Current.Game.CurrentMap;
+        var center = FoodSearchE2EFixture.FindRoomCenter(map);
+        FoodSearchE2EFixture.BuildSealedRoom(map, center);
+        var cooking = DefDatabase<WorkTypeDef>.GetNamed("Cooking");
+        cook = CookForYourselfFixture.CreateCapableCook("Baby-food cook", cooking);
+        FoodSearchE2EFixture.SetHunger(cook, 1f);
+        cook.workSettings.SetPriority(cooking, 1);
+        GenSpawn.Spawn(cook, center + (IntVec3.South * 3), map);
+        cook.drafter.Drafted = true;
+
+        baby = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            allowDowned: true,
+            canGeneratePawnRelations: false,
+            fixedBiologicalAge: 1f,
+            fixedChronologicalAge: 1f,
+            developmentalStages: DevelopmentalStage.Baby,
+            forceNoGear: true));
+        HumanlikePawnFixture.SetName(baby, "Hungry baby recipient");
+        FoodSearchE2EFixture.SetHunger(baby, 0.10f);
+        initialBabyHunger = baby.needs!.food!.CurLevelPercentage;
+        GenSpawn.Spawn(baby, center + (IntVec3.East * 3), map);
+
+        var stoveDef = DefDatabase<ThingDef>.GetNamed("FueledStove");
+        stove = (ThingWithComps)ThingMaker.MakeThing(
+            stoveDef,
+            stoveDef.MadeFromStuff ? ThingDefOf.Steel : null);
+        stove.SetFactionDirect(Faction.OfPlayer);
+        GenSpawn.Spawn(stove, center, map, Rot4.North);
+        stove.GetComp<CompRefuelable>()?.Refuel(999f);
+        var rice = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("RawRice"));
+        rice.stackCount = 20;
+        GenSpawn.Spawn(rice, center + (IntVec3.East * 2), map);
+
+        transitions = CookForYourselfJobTransitionTrace.Begin(cook);
+        context.DeferCleanup(transitions.Dispose);
+        AssertNoKitchenware();
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        yield return new TimeControlActionStep(
+            "pause before the excluded baby-food workflow",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the drafted baby-food cook",
+            new[] { cook.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the baby-food kitchen and recipient",
+            new[] { cook.ThingID, baby.ThingID, stove.ThingID },
+            paddingPixels: 210);
+        yield return new ScreenshotStep(
+            "observe the strict kitchen without any kitchenware before baby-food cooking",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        var draft = RequiredDraftToggle(context, expectedCurrentState: true);
+        yield return new GizmoActionStep(
+            "undraft through the native colonist gizmo to release dependent baby-food cooking",
+            new[] { cook.ThingID },
+            draft.RuntimeType,
+            EndToEndGizmoInteraction.Toggle,
+            stableGizmoId: draft.StableId);
+        yield return new TimeControlActionStep(
+            "run the native excluded baby-food workflow",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "Cook for Yourself reaches its real baby-food cooking toil without a cooking session",
+            _ => ObserveNativeExcludedCooking(),
+            new EndToEndDeadline(2_100, 8_000, TimeSpan.FromSeconds(75)));
+        yield return new SelectionActionStep(
+            "select the cook during native excluded baby-food cooking",
+            new[] { cook.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame native baby-food cooking at the stove",
+            new[] { cook.ThingID, stove.ThingID },
+            paddingPixels: 180);
+        yield return new ScreenshotStep(
+            "observe native baby-food cooking with no kitchenware work prop",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new WaitUntilStep(
+            "the upstream excluded product enters native bottle feeding",
+            _ => ObserveNativeBottleFeeding(),
+            new EndToEndDeadline(2_400, 9_000, TimeSpan.FromSeconds(85)));
+        yield return new SelectionActionStep(
+            "select the cook during native bottle feeding",
+            new[] { cook.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the native bottle-feeding action",
+            new[] { cook.ThingID, baby.ThingID },
+            paddingPixels: 170);
+        yield return new ScreenshotStep(
+            "observe the excluded baby food being fed through the native childcare job",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new TimeControlActionStep(
+            "finish native bottle feeding",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "native bottle feeding completes after the real baby gains nutrition",
+            _ => baby.needs?.food is { } food &&
+                 food.CurLevelPercentage > initialBabyHunger + 0.02f &&
+                 !string.Equals(
+                     cook.CurJobDef?.defName,
+                     transitions.ExcludedDeliveryJobDefName,
+                     StringComparison.Ordinal),
+            new EndToEndDeadline(2_100, 8_000, TimeSpan.FromSeconds(75)));
+        yield return new TimeControlActionStep(
+            "pause after native excluded baby-food feeding",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "excluded baby food remains entirely owned by Cook for Yourself and Biotech",
+            _ => AssertCompletedPassThrough());
+        yield return new ScreenshotStep(
+            "observe the completed native excluded-food lifecycle",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new CheckpointStep(
+            "Cook for Yourself excluded baby-food pass-through result",
+            _ => new Dictionary<string, string>
+            {
+                ["customJobObserved"] = transitions.CustomCookingJobObserved.ToString(),
+                ["customRecipientId"] = transitions.CustomCookingRecipient?.ThingID ?? "none",
+                ["nativeCookingObserved"] = nativeCookingObserved.ToString(),
+                ["excludedDeliveryObserved"] = transitions.ExcludedDeliveryObserved.ToString(),
+                ["deliveryJob"] = transitions.ExcludedDeliveryJobDefName ?? "none",
+                ["babyFoodId"] = babyFood?.ThingID ?? "none",
+                ["babyFoodDef"] = babyFood?.def.defName ?? "none",
+                ["initialBabyHunger"] = initialBabyHunger.ToString("0.###"),
+                ["finalBabyHunger"] = baby.needs?.food?.CurLevelPercentage.ToString("0.###") ?? "none",
+                ["initialBabyFoodStack"] = initialBabyFoodStackCount.ToString(),
+                ["finalBabyFoodStack"] = babyFood is null || babyFood.Destroyed
+                    ? "destroyed"
+                    : babyFood.stackCount.ToString()
+            });
+    }
+
+    private bool ObserveNativeExcludedCooking()
+    {
+        var currentToil = cook.jobs?.curDriver is { } driver
+            ? Traverse.Create(driver).Property("CurToil").GetValue<Toil>()
+            : null;
+        if (cook.CurJobDef?.defName != CookForYourselfCompatibility.JobDefName ||
+            !transitions.CustomCookingJobObserved ||
+            !ReferenceEquals(transitions.CustomCookingRecipient, baby) ||
+            currentToil?.debugName != "CookMealForSelf")
+        {
+            return false;
+        }
+
+        EndToEndAssert.False(CookingSessionRegistry.TryGetActiveWorkProp(
+                cook,
+                out _,
+                out _),
+            "Excluded baby-food cooking must not acquire or render Immersive Chefs kitchenware.");
+        EndToEndAssert.Equal("Make_BabyFood", cook.CurJob.controlGroupTag,
+            "The upstream custom job must retain the exact Biotech baby-food recipe tag.");
+        AssertNoKitchenware();
+        nativeCookingObserved = true;
+        return true;
+    }
+
+    private bool ObserveNativeBottleFeeding()
+    {
+        babyFood ??= transitions.ExcludedFood;
+        if (!transitions.ExcludedDeliveryObserved || babyFood is null)
+        {
+            return false;
+        }
+
+        EndToEndAssert.True(ReferenceEquals(transitions.ExcludedRecipient, baby),
+            "Cook for Yourself must hand the excluded product to native childcare for the exact baby.");
+        EndToEndAssert.Equal(JobDefOf.BottleFeedBaby.defName,
+            transitions.ExcludedDeliveryJobDefName,
+            "Cook for Yourself must hand the excluded product to Biotech's exact native BottleFeedBaby job.");
+        EndToEndAssert.Equal("BabyFood", babyFood.def.defName,
+            "The native excluded path must produce Biotech baby food.");
+        EndToEndAssert.False(MealCoveragePolicy.IsCovered(babyFood.def),
+            "Biotech baby food must remain excluded from Immersive Chefs meal coverage.");
+        EndToEndAssert.True(babyFood.GetComp<CompEmbeddedWare>() is null,
+            "Excluded baby food must not receive the embedded-plate component.");
+        EndToEndAssert.True(babyFood.GetComp<CompCulinaryState>() is null,
+            "Excluded baby food must not receive culinary serving state.");
+        initialBabyFoodStackCount = babyFood.stackCount;
+        AssertNoKitchenware();
+        return true;
+    }
+
+    private void AssertCompletedPassThrough()
+    {
+        EndToEndAssert.True(nativeCookingObserved && transitions.CustomCookingJobObserved,
+            "The native Cook for Yourself baby-food cooking job must be observed.");
+        EndToEndAssert.True(transitions.ExcludedDeliveryObserved &&
+                            ReferenceEquals(transitions.ExcludedRecipient, baby),
+            "The native childcare delivery transition must target the exact baby.");
+        EndToEndAssert.True(baby.needs?.food is { } food &&
+                            food.CurLevelPercentage > initialBabyHunger + 0.02f,
+            "The real baby must gain visible nutrition through native bottle feeding.");
+        EndToEndAssert.Equal(0, ((IBillGiver)stove).BillStack.Count,
+            "The excluded one-off baby-food workflow must remain bill-free.");
+        EndToEndAssert.False(CookingSessionRegistry.TryGetActiveWorkProp(cook, out _, out _),
+            "Excluded baby-food completion must leave no Immersive Chefs cooking session.");
+        AssertNoKitchenware();
+    }
+
+    private void AssertNoKitchenware()
+    {
+        EndToEndAssert.Equal(0,
+            map.listerThings.AllThings.Count(thing =>
+                thing.def.GetModExtension<KitchenwareExtension>() is not null),
+            "The baby-food pass-through fixture must never create or acquire kitchenware.");
+    }
+
+    private EndToEndGizmoOption RequiredDraftToggle(
+        IEndToEndContext context,
+        bool expectedCurrentState)
+    {
+        var options = context.GetRequiredService<IEndToEndGizmoCatalog>()
+            .Query(new[] { cook.ThingID }, Array.Empty<string>())
+            .Where(option =>
+                !option.Disabled &&
+                option.Interaction == EndToEndGizmoInteraction.Toggle &&
+                option.ToggleState == expectedCurrentState &&
+                string.Equals(option.HotKeyDefName, "Command_ColonistDraft", StringComparison.Ordinal))
+            .ToArray();
+        EndToEndAssert.Equal(1, options.Length,
+            "The selected baby-food cook must expose one current native Draft toggle.");
         return options[0];
     }
 }
@@ -1175,6 +1460,10 @@ internal sealed class CookForYourselfJobTransitionTrace : IDisposable
     internal int DependentFinalJobCount { get; private set; }
     internal bool CustomCookingJobObserved { get; private set; }
     internal Pawn? CustomCookingRecipient { get; private set; }
+    internal bool ExcludedDeliveryObserved { get; private set; }
+    internal ThingWithComps? ExcludedFood { get; private set; }
+    internal Pawn? ExcludedRecipient { get; private set; }
+    internal string? ExcludedDeliveryJobDefName { get; private set; }
     internal IReadOnlyList<string> ObservedCookJobDefs => observedCookJobDefs;
 
     internal static CookForYourselfJobTransitionTrace Begin(Pawn cook)
@@ -1282,6 +1571,33 @@ internal sealed class CookForYourselfJobTransitionTrace : IDisposable
             trace.CustomCookingJobObserved = true;
             trace.CustomCookingRecipient = newJob.GetTarget(TargetIndex.C).Pawn;
             return;
+        }
+
+        if (!trace.ExcludedDeliveryObserved)
+        {
+            var targets = new[]
+            {
+                newJob.GetTarget(TargetIndex.A),
+                newJob.GetTarget(TargetIndex.B),
+                newJob.GetTarget(TargetIndex.C)
+            };
+            var excludedFood = targets
+                .Select(target => target.Thing)
+                .OfType<ThingWithComps>()
+                .FirstOrDefault(thing =>
+                    thing.def.IsNutritionGivingIngestible &&
+                    !MealCoveragePolicy.IsCovered(thing.def));
+            var excludedRecipient = targets
+                .Select(target => target.Pawn)
+                .FirstOrDefault(candidate => candidate is not null &&
+                                             !ReferenceEquals(candidate, trace.cook));
+            if (excludedFood is not null && excludedRecipient is not null)
+            {
+                trace.ExcludedDeliveryObserved = true;
+                trace.ExcludedFood = excludedFood;
+                trace.ExcludedRecipient = excludedRecipient;
+                trace.ExcludedDeliveryJobDefName = newJob.def.defName;
+            }
         }
 
         if ((newJob.def != JobDefOf.Ingest && newJob.def != JobDefOf.FeedPatient) ||
