@@ -97,3 +97,17 @@ magick montage @inputs -thumbnail 256x256 -tile 4x -geometry 280x300+8+16 `
 
 Repeat with a light background. A dark-only review misses dark halos; a light-only review misses
 white fringes.
+
+## Adding a Core-relative comic contour
+
+1. Extract several comparable Core textures read-only and retain their exact source/image hashes in
+   ignored evidence; never commit extracted Core pixels.
+2. Measure the proxy at the actual final canvas, record the product source hash/topology, and define a
+   horizontal or vertical minimum transparent run through every gap the candidate radius could close.
+3. Generate at least one- and two-final-pixel candidates from the already approved art. Use
+   `Add-RimWorldSpriteOutline.ps1` so the candidates preserve source pixels and Stuff-mask semantics.
+4. Compare both candidates beside the Core sample at map scale on light and dark backgrounds. Reject
+   blobby handles, sealed openings, visible cast-shadow reads, and contours that dominate fine tools.
+5. Promote only the selected candidate, update its output hash/ring fractions, then verify the real Def
+   in RimWorld. The Pillow proxy is deterministic regression evidence, not a substitute for Unity's
+   imported/mipped render.

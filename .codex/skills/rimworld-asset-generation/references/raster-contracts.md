@@ -13,6 +13,16 @@
   pixels transparent and normalize their RGB to black to prevent colored fringes during filtering.
 - Mipmapped downscaling is the real legibility target. Inspect item art around 64 px and building art
   at ordinary map zoom.
+- Core-style Thing readability includes a deliberate near-black exterior contour measured at final
+  map density. Derive it from several same-scale Core comparators; do not guess a source-canvas brush
+  width or darken all internal edges indiscriminately.
+- Treat only 4-connected background flood-filled from the canvas edge as exterior. Enclosed plate
+  centers, cabinet openings, and holes are not contour targets. Record minimum transparent runs
+  across narrow handles, tines, and equipment separations before processing so a thick candidate
+  fails instead of silently closing them.
+- Preserve every original nontransparent pixel exactly. A `CutoutComplex` mask must gain the same
+  alpha as the diffuse only at new contour coordinates, and those new mask pixels must be black so
+  Stuff tint does not recolor the line.
 
 ## Stuff masks
 

@@ -43,6 +43,304 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/Appliance/Microwave";
 
     [Test]
+    public void Outline_processor_adds_only_exterior_contour_and_preserves_topology_gaps_and_mask_semantics()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(
+            root,
+            ".codex",
+            "skills",
+            "rimworld-asset-generation",
+            "scripts",
+            "Add-RimWorldSpriteOutline.ps1");
+        var baselinePath = Path.Combine(root, "docs", "SpriteOutlineBaseline.xml");
+        var temporaryRoot = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "outline-processor-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryRoot);
+        var inputPath = Path.Combine(temporaryRoot, "fixture.png");
+        var maskInputPath = Path.Combine(temporaryRoot, "fixture_m.png");
+        var outputPath = Path.Combine(temporaryRoot, "outlined.png");
+        var maskOutputPath = Path.Combine(temporaryRoot, "outlined_m.png");
+        var manifestPath = Path.Combine(temporaryRoot, "approvals.xml");
+
+        try
+        {
+            using (var diffuse = new Bitmap(40, 40))
+            using (var mask = new Bitmap(40, 40))
+            {
+                var diffuseColor = Color.FromArgb(255, 186, 123, 72);
+                var maskColor = Color.FromArgb(255, 255, 0, 0);
+
+                FillRectangle(diffuse, 5, 5, 14, 14, diffuseColor);
+                FillRectangle(mask, 5, 5, 14, 14, maskColor);
+                ClearRectangle(diffuse, 8, 8, 11, 11);
+                ClearRectangle(mask, 8, 8, 11, 11);
+
+                FillRectangle(diffuse, 22, 6, 24, 32, diffuseColor);
+                FillRectangle(diffuse, 32, 6, 34, 32, diffuseColor);
+                FillRectangle(diffuse, 22, 30, 34, 32, diffuseColor);
+                FillRectangle(mask, 22, 6, 24, 32, maskColor);
+                FillRectangle(mask, 32, 6, 34, 32, maskColor);
+                FillRectangle(mask, 22, 30, 34, 32, maskColor);
+
+                diffuse.Save(inputPath, System.Drawing.Imaging.ImageFormat.Png);
+                mask.Save(maskInputPath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            string sourceHash;
+            using (var sha256 = SHA256.Create())
+            {
+                sourceHash = BitConverter
+                    .ToString(sha256.ComputeHash(File.ReadAllBytes(inputPath)))
+                    .Replace("-", string.Empty);
+            }
+            new XDocument(
+                new XElement(
+                    "spriteOutlineApprovals",
+                    new XElement(
+                        "sprite",
+                        new XAttribute("id", "synthetic-fixture"),
+                        new XAttribute("class", "portable-broad"),
+                        new XAttribute("preOutlineSha256", sourceHash),
+                        new XAttribute("finalWidth", "40"),
+                        new XAttribute("finalHeight", "40"),
+                        new XAttribute("foregroundComponents", "2"),
+                        new XAttribute("backgroundHoles", "1"),
+                        new XElement(
+                            "protectedGap",
+                            new XAttribute("orientation", "horizontal"),
+                            new XAttribute("fixedCoordinate", "12"),
+                            new XAttribute("start", "25"),
+                            new XAttribute("end", "31"),
+                            new XAttribute("minimumTransparentRunPixels", "3")))))
+                .Save(manifestPath);
+
+            var result = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                outputPath,
+                2,
+                baselinePath,
+                manifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                maskOutputPath);
+
+            Assert.That(result.ExitCode, Is.Zero, result.StandardOutput + Environment.NewLine + result.StandardError);
+            Assert.That(File.Exists(outputPath), Is.True, result.StandardOutput + Environment.NewLine + result.StandardError);
+            Assert.That(File.Exists(maskOutputPath), Is.True, result.StandardOutput + Environment.NewLine + result.StandardError);
+
+            var rejectedOutputPath = Path.Combine(temporaryRoot, "rejected.png");
+            var rejectedMaskOutputPath = Path.Combine(temporaryRoot, "rejected_m.png");
+            var rejected = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                rejectedOutputPath,
+                3,
+                baselinePath,
+                manifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                rejectedMaskOutputPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(rejected.ExitCode, Is.EqualTo(2), rejected.StandardOutput + Environment.NewLine + rejected.StandardError);
+                Assert.That(File.Exists(rejectedOutputPath), Is.False, "A topology-invalid diffuse was written.");
+                Assert.That(File.Exists(rejectedMaskOutputPath), Is.False, "A topology-invalid mask was written.");
+            });
+
+            var undersizedManifestPath = Path.Combine(temporaryRoot, "undersized-approvals.xml");
+            var undersizedManifest = XDocument.Load(manifestPath);
+            var undersizedSprite = undersizedManifest.Root!.Element("sprite")!;
+            undersizedSprite.SetAttributeValue("finalWidth", "20");
+            undersizedSprite.SetAttributeValue("finalHeight", "20");
+            undersizedManifest.Save(undersizedManifestPath);
+            var undersizedOutputPath = Path.Combine(temporaryRoot, "undersized.png");
+            var undersizedMaskOutputPath = Path.Combine(temporaryRoot, "undersized_m.png");
+            var undersized = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                undersizedOutputPath,
+                1,
+                baselinePath,
+                undersizedManifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                undersizedMaskOutputPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(undersized.ExitCode, Is.EqualTo(2), undersized.StandardOutput + Environment.NewLine + undersized.StandardError);
+                Assert.That(File.Exists(undersizedOutputPath), Is.False, "An undersized-stroke diffuse was written.");
+                Assert.That(File.Exists(undersizedMaskOutputPath), Is.False, "An undersized-stroke mask was written.");
+            });
+
+            var brightOutputPath = Path.Combine(temporaryRoot, "bright.png");
+            var brightMaskOutputPath = Path.Combine(temporaryRoot, "bright_m.png");
+            var bright = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                brightOutputPath,
+                2,
+                baselinePath,
+                manifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                brightMaskOutputPath,
+                "#FFFFFF");
+            Assert.Multiple(() =>
+            {
+                Assert.That(bright.ExitCode, Is.EqualTo(1), bright.StandardOutput + Environment.NewLine + bright.StandardError);
+                Assert.That(File.Exists(brightOutputPath), Is.False, "A below-threshold diffuse was written.");
+                Assert.That(File.Exists(brightMaskOutputPath), Is.False, "A below-threshold mask was written.");
+            });
+
+            var strictBaselinePath = Path.Combine(temporaryRoot, "strict-baseline.xml");
+            var strictBaseline = XDocument.Load(baselinePath);
+            strictBaseline.Root!.SetAttributeValue("minimumTransparentEdgeClearance", "4");
+            strictBaseline.Save(strictBaselinePath);
+            var edgeOutputPath = Path.Combine(temporaryRoot, "edge.png");
+            var edgeMaskOutputPath = Path.Combine(temporaryRoot, "edge_m.png");
+            var edgeRejected = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                edgeOutputPath,
+                2,
+                strictBaselinePath,
+                manifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                edgeMaskOutputPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(edgeRejected.ExitCode, Is.EqualTo(1), edgeRejected.StandardOutput + Environment.NewLine + edgeRejected.StandardError);
+                Assert.That(File.Exists(edgeOutputPath), Is.False, "An edge-cropped diffuse was written.");
+                Assert.That(File.Exists(edgeMaskOutputPath), Is.False, "An edge-cropped mask was written.");
+            });
+
+            var fringeInputPath = Path.Combine(temporaryRoot, "fringe.png");
+            var fringeMaskInputPath = Path.Combine(temporaryRoot, "fringe_m.png");
+            using (var fringe = new Bitmap(inputPath))
+            using (var fringeMask = new Bitmap(maskInputPath))
+            {
+                fringe.SetPixel(0, 0, Color.FromArgb(1, 0, 0, 0));
+                fringeMask.SetPixel(0, 0, Color.FromArgb(1, 0, 0, 0));
+                fringe.Save(fringeInputPath, System.Drawing.Imaging.ImageFormat.Png);
+                fringeMask.Save(fringeMaskInputPath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+            string fringeHash;
+            using (var sha256 = SHA256.Create())
+            {
+                fringeHash = BitConverter
+                    .ToString(sha256.ComputeHash(File.ReadAllBytes(fringeInputPath)))
+                    .Replace("-", string.Empty);
+            }
+            var fringeManifestPath = Path.Combine(temporaryRoot, "fringe-approvals.xml");
+            var fringeManifest = XDocument.Load(manifestPath);
+            fringeManifest.Root!.Element("sprite")!
+                .SetAttributeValue("preOutlineSha256", fringeHash);
+            fringeManifest.Save(fringeManifestPath);
+            var fringeOutputPath = Path.Combine(temporaryRoot, "fringe-out.png");
+            var fringeMaskOutputPath = Path.Combine(temporaryRoot, "fringe-out_m.png");
+            var fringeRejected = RunOutlineProcessor(
+                scriptPath,
+                fringeInputPath,
+                fringeOutputPath,
+                2,
+                baselinePath,
+                fringeManifestPath,
+                "synthetic-fixture",
+                fringeMaskInputPath,
+                fringeMaskOutputPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(fringeRejected.ExitCode, Is.EqualTo(1), fringeRejected.StandardOutput + Environment.NewLine + fringeRejected.StandardError);
+                Assert.That(File.Exists(fringeOutputPath), Is.False, "A low-alpha edge-fringe diffuse was written.");
+                Assert.That(File.Exists(fringeMaskOutputPath), Is.False, "A low-alpha edge-fringe mask was written.");
+            });
+
+            var occupiedOutputPath = Path.Combine(temporaryRoot, "occupied.png");
+            var sentinel = new byte[] { 17, 35, 53, 71 };
+            File.WriteAllBytes(occupiedOutputPath, sentinel);
+            var occupied = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                occupiedOutputPath,
+                2,
+                baselinePath,
+                manifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                Path.Combine(temporaryRoot, "occupied_m.png"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(occupied.ExitCode, Is.EqualTo(2), occupied.StandardOutput + Environment.NewLine + occupied.StandardError);
+                Assert.That(File.ReadAllBytes(occupiedOutputPath), Is.EqualTo(sentinel), "An occupied destination was replaced.");
+            });
+
+            var collisionPath = Path.Combine(temporaryRoot, "collision.png");
+            var collision = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                collisionPath,
+                2,
+                baselinePath,
+                manifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                collisionPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(collision.ExitCode, Is.EqualTo(2), collision.StandardOutput + Environment.NewLine + collision.StandardError);
+                Assert.That(collision.StandardError, Does.Contain("distinct").IgnoreCase);
+                Assert.That(File.Exists(collisionPath), Is.False, "A cross-colliding destination was written.");
+            });
+
+            using var source = new Bitmap(inputPath);
+            using var sourceMask = new Bitmap(maskInputPath);
+            using var outlined = new Bitmap(outputPath);
+            using var outlinedMask = new Bitmap(maskOutputPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(outlined.GetPixel(4, 5).A, Is.EqualTo(255), "Expected a new exterior contour pixel.");
+                Assert.That(outlined.GetPixel(9, 9).A, Is.Zero, "The enclosed hole must not receive contour.");
+                Assert.That(outlined.GetPixel(28, 12).A, Is.LessThan(96), "The protected U-shaped opening closed.");
+            });
+
+            for (var y = 0; y < source.Height; y++)
+            {
+                for (var x = 0; x < source.Width; x++)
+                {
+                    var before = source.GetPixel(x, y);
+                    var after = outlined.GetPixel(x, y);
+                    var beforeMask = sourceMask.GetPixel(x, y);
+                    var afterMask = outlinedMask.GetPixel(x, y);
+                    if (before.A > 0)
+                    {
+                        Assert.That(after.ToArgb(), Is.EqualTo(before.ToArgb()), $"Diffuse changed at ({x},{y}).");
+                        Assert.That(afterMask.ToArgb(), Is.EqualTo(beforeMask.ToArgb()), $"Mask changed at ({x},{y}).");
+                    }
+
+                    Assert.That(afterMask.A, Is.EqualTo(after.A), $"Mask alpha differs at ({x},{y}).");
+                    if (before.A == 0 && after.A > 0)
+                    {
+                        Assert.That(afterMask.R, Is.Zero, $"New mask contour is not fixed black at ({x},{y}).");
+                        Assert.That(afterMask.G, Is.Zero, $"New mask contour is not fixed black at ({x},{y}).");
+                        Assert.That(afterMask.B, Is.Zero, $"New mask contour is not fixed black at ({x},{y}).");
+                    }
+                }
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(temporaryRoot))
+            {
+                Directory.Delete(temporaryRoot, recursive: true);
+            }
+        }
+    }
+
+    [Test]
     public void Disposable_generator_comparison_assets_are_absent_from_the_package()
     {
         var root = FindRepositoryRoot();
@@ -1786,6 +2084,109 @@ public sealed class VisualAssetPackageTests
                 Is.LessThanOrEqualTo(maximumCenterOffset),
                 $"Speech-bubble text is not vertically centered in {path}.");
         });
+    }
+
+    private static void FillRectangle(
+        Bitmap bitmap,
+        int minimumX,
+        int minimumY,
+        int maximumX,
+        int maximumY,
+        Color color)
+    {
+        for (var y = minimumY; y <= maximumY; y++)
+        {
+            for (var x = minimumX; x <= maximumX; x++)
+            {
+                bitmap.SetPixel(x, y, color);
+            }
+        }
+    }
+
+    private static void ClearRectangle(
+        Bitmap bitmap,
+        int minimumX,
+        int minimumY,
+        int maximumX,
+        int maximumY) =>
+        FillRectangle(bitmap, minimumX, minimumY, maximumX, maximumY, Color.Transparent);
+
+    private static (int ExitCode, string StandardOutput, string StandardError) RunOutlineProcessor(
+        string scriptPath,
+        string inputPath,
+        string outputPath,
+        int strokePixels,
+        string baselinePath,
+        string manifestPath,
+        string assetId,
+        string maskInputPath,
+        string maskOutputPath,
+        string outlineColor = "#17130F")
+    {
+        var start = new ProcessStartInfo
+        {
+            FileName = "powershell",
+            Arguments =
+                "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File " +
+                Quote(scriptPath) +
+                " -InputPath " +
+                Quote(inputPath) +
+                " -OutputPath " +
+                Quote(outputPath) +
+                " -StrokePixels " +
+                strokePixels +
+                " -OutlineColor " +
+                Quote(outlineColor) +
+                " -Baseline " +
+                Quote(baselinePath) +
+                " -TopologyManifest " +
+                Quote(manifestPath) +
+                " -AssetId " +
+                Quote(assetId) +
+                " -MaskInputPath " +
+                Quote(maskInputPath) +
+                " -MaskOutputPath " +
+                Quote(maskOutputPath) +
+                " -Output json",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        using var process = Process.Start(start)!;
+        var standardOutput = process.StandardOutput.ReadToEndAsync();
+        var standardError = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(30_000))
+        {
+            using (var treeKill = Process.Start(new ProcessStartInfo
+            {
+                FileName = "taskkill.exe",
+                Arguments = $"/PID {process.Id} /T /F",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            }))
+            {
+                if (treeKill is not null && !treeKill.WaitForExit(5_000))
+                {
+                    treeKill.Kill();
+                }
+            }
+
+            if (!process.WaitForExit(5_000))
+            {
+                Assert.Fail("Outline processor tree did not exit after bounded termination.");
+            }
+
+            Assert.Fail("Outline processing exceeded 30 seconds.");
+        }
+
+        Assert.That(
+            Task.WaitAll(new Task[] { standardOutput, standardError }, 5_000),
+            Is.True,
+            "Outline processor output streams did not close after process exit.");
+        return (process.ExitCode, standardOutput.Result, standardError.Result);
     }
 
     private static (int ExitCode, string StandardOutput, string StandardError) RunPreviewRenderer(

@@ -83,6 +83,7 @@ docs/TddEvidence.md
 !.codex/skills/rimworld-asset-generation/references/*.md
 !.codex/skills/rimworld-asset-generation/scripts/
 !.codex/skills/rimworld-asset-generation/scripts/*.ps1
+!.codex/skills/rimworld-asset-generation/scripts/*.py
 .codex/cache/
 .codex/tmp/
 .codex/state/

@@ -84,3 +84,31 @@ Run the bundled read-only helper from the repository root:
 Use `-Output json` for an approval/test pipeline. The helper reports the exact canvas, alpha bounds,
 visible coverage, channels, and SHA-256; it does not decide whether the perspective is visually
 correct.
+
+## Core-style outline processor
+
+Use the bundled processor only after the asset has a reviewed entry in the mod's outline approval
+manifest. It requires Python 3 and exactly Pillow 12.2.0 so its final-scale proxy matches the
+recorded Core baseline. The command never overwrites inputs or occupied outputs:
+
+```powershell
+& .\.codex\skills\rimworld-asset-generation\scripts\Add-RimWorldSpriteOutline.ps1 `
+  -InputPath .\mods\Example\Textures\Example\Things\Plate.png `
+  -OutputPath .\artifacts\VisualAssets\Plate.stroke4.png `
+  -StrokePixels 4 `
+  -Baseline .\docs\SpriteOutlineBaseline.xml `
+  -TopologyManifest .\docs\SpriteOutlineApprovals.xml `
+  -AssetId Plate `
+  -MaskInputPath .\mods\Example\Textures\Example\Things\Plate_m.png `
+  -MaskOutputPath .\artifacts\VisualAssets\Plate.stroke4_m.png `
+  -Output json
+```
+
+The approval entry names its `class`, pre-outline SHA-256, final canvas, component/hole counts, and
+each at-risk horizontal or vertical `protectedGap` cross-section. Class stroke limits, ring-darkness
+thresholds, and minimum edge clearance come from the baseline and cannot be weakened per asset.
+The processor preserves every original nontransparent RGBA pixel, adds only to originally alpha-zero
+canvas-edge-connected background, leaves enclosed holes alone, and mirrors new diffuse alpha into a
+fixed-black Stuff-mask contour. It rejects a candidate before publication when topology, gap width,
+ring darkness, or edge clearance fails. Pillow is a deterministic package proxy; the reviewed live
+RimWorld render remains authoritative.

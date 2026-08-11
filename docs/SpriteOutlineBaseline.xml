@@ -30,6 +30,8 @@
                        resamplerReducingGap="none"
                        resamplerColorSpace="stored 8-bit sRGB; no linear-light conversion"
                        resamplerAlpha="RGBA converted to premultiplied RGBa for resize, then back to straight RGBA"
+                       packageProxyForUnityRendering="true"
+                       authoritativeAcceptance="captured live RimWorld rendering at the tested zoom/import settings"
                        portableFinalCanvas="64x64"
                        buildingPixelsPerCell="64"
                        minimumTransparentEdgeClearance="2">
