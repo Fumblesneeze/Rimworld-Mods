@@ -45,7 +45,7 @@ public sealed class PerformanceMetadataDiscoveryTests
             Assert.That(declaration.GameSpeed, Is.EqualTo(2));
             Assert.That(declaration.Repetitions, Is.EqualTo(2));
             Assert.That(declaration.EvidenceLens, Is.EqualTo(1));
-            Assert.That(declaration.ProductAbsentControlId, Is.EqualTo("gateway.alpha-control"));
+            Assert.That(declaration.ProductAbsentControlId, Is.Null);
             Assert.That(declaration.MethodSelectors.Select(item => item.Value), Is.EqualTo(new[]
             {
                 "alpha.harmony",
@@ -67,28 +67,12 @@ public sealed class PerformanceMetadataDiscoveryTests
     {
         var metadata = PerformanceAssemblyMetadataReader.Read(FixtureAssembly());
         var result = PerformanceDiscoveryValidator.ValidateAndGroup(
-            new[]
-            {
-                new PerformanceAssemblyCandidate(
-                    FixtureProject(),
-                    "alpha.mod",
-                    "PerformanceHost.ValidFixtures",
-                    metadata)
-            },
-            new[]
-            {
-                "brrainz.harmony",
-                "ludeon.rimworld",
-                "astryl.circinus",
-                "optional.mod",
-                "alpha.mod",
-                "downloaded.but.inactive"
-            },
-            requireResolvedControls: false);
+            ValidCandidates(metadata),
+            PackageCatalog().Append("downloaded.but.inactive"));
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Groups, Has.Count.EqualTo(2));
+            Assert.That(result.Groups, Has.Count.EqualTo(3));
             Assert.That(result.Groups.SelectMany(group => group.Benchmarks).Select(item => item.Id),
                 Is.EquivalentTo(new[]
                 {
@@ -97,7 +81,11 @@ public sealed class PerformanceMetadataDiscoveryTests
                     "alpha.base-instrumented",
                     "alpha.optional",
                     "alpha.optional-armed-disabled",
-                    "alpha.optional-disarmed"
+                    "alpha.optional-disarmed",
+                    "gateway.alpha-present",
+                    "gateway.alpha-present-armed-disabled",
+                    "gateway.alpha-present-disarmed",
+                    "gateway.alpha-absent"
                 }));
             Assert.That(result.Groups.SelectMany(group => group.ActivePackageIds),
                 Does.Not.Contain("downloaded.but.inactive"));
@@ -117,10 +105,10 @@ public sealed class PerformanceMetadataDiscoveryTests
                         FixtureProject(),
                         "wrong.owner",
                         "Wrong.Output",
-                        metadata)
+                        metadata),
+                    ControlCandidate()
                 },
-                new[] { "ludeon.rimworld", "astryl.circinus", "alpha.mod" },
-                requireResolvedControls: false));
+                PackageCatalog().Where(package => package != "optional.mod")));
 
         Assert.That(error!.Message,
             Does.Contain("project owner").And.Contain("assembly output").And.Contain("optional.mod"));
@@ -147,11 +135,53 @@ public sealed class PerformanceMetadataDiscoveryTests
                     "astryl.circinus",
                     "optional.mod",
                     "alpha.mod"
-                },
-                requireResolvedControls: false));
+                }));
 
         Assert.That(error!.Message,
             Does.Contain("total performance declarations").And.Contain("1024"));
+    }
+
+    [Test]
+    public void Validator_rejects_an_absent_control_that_references_another_control()
+    {
+        var control = PerformanceAssemblyMetadataReader.Read(ControlAssembly());
+        var original = control.Declarations.Single(item => item.Id == "gateway.alpha-absent");
+        var invalid = new PerformanceMetadataDeclaration(
+            original.TypeName,
+            original.Id,
+            original.StagingOwnerPackageId,
+            original.MeasuredSubjectPackageId,
+            original.ActivePackageIds,
+            original.DeterministicSeed,
+            original.WorkloadVersion,
+            original.ComparisonId,
+            original.WarmUpTicks,
+            original.SampleTicks,
+            original.GameSpeed,
+            original.Repetitions,
+            original.EvidenceLens,
+            "gateway.another-absent-control",
+            original.MethodSelectors,
+            original.ThroughputCheckpoints,
+            original.IsConcrete,
+            original.ImplementsContract,
+            original.HasPublicParameterlessConstructor);
+        var invalidMetadata = new PerformanceAssemblyMetadata(control.Assembly, new[] { invalid });
+
+        var error = Assert.Throws<EndToEndDiscoveryException>(() =>
+            PerformanceDiscoveryValidator.ValidateAndGroup(
+                new[]
+                {
+                    new PerformanceAssemblyCandidate(
+                        ControlProject(),
+                        "fumblesneeze.rimworlddevgateway",
+                        "PerformanceHost.ControlFixtures",
+                        invalidMetadata)
+                },
+                PackageCatalog(),
+                requireResolvedControls: false));
+
+        Assert.That(error!.Message, Does.Contain("product-absent control").And.Contain("must not reference"));
     }
 
     private static string FixtureAssembly() => Path.Combine(
@@ -170,6 +200,51 @@ public sealed class PerformanceMetadataDiscoveryTests
         "Fixtures",
         "PerformanceHost.ValidFixtures",
         "PerformanceHost.ValidFixtures.csproj");
+
+    private static PerformanceAssemblyCandidate[] ValidCandidates(PerformanceAssemblyMetadata metadata) =>
+        new[]
+        {
+            new PerformanceAssemblyCandidate(
+                FixtureProject(),
+                "alpha.mod",
+                "PerformanceHost.ValidFixtures",
+                metadata),
+            ControlCandidate()
+        };
+
+    private static PerformanceAssemblyCandidate ControlCandidate() =>
+        new(
+            ControlProject(),
+            "fumblesneeze.rimworlddevgateway",
+            "PerformanceHost.ControlFixtures",
+            PerformanceAssemblyMetadataReader.Read(ControlAssembly()));
+
+    private static string[] PackageCatalog() =>
+        new[]
+        {
+            "brrainz.harmony",
+            "ludeon.rimworld",
+            "astryl.circinus",
+            "optional.mod",
+            "alpha.mod"
+        };
+
+    private static string ControlAssembly() => Path.Combine(
+        RepositoryRoot,
+        "tests",
+        "Fixtures",
+        "PerformanceHost.ControlFixtures",
+        "bin",
+        Configuration,
+        "net48",
+        "PerformanceHost.ControlFixtures.dll");
+
+    private static string ControlProject() => Path.Combine(
+        RepositoryRoot,
+        "tests",
+        "Fixtures",
+        "PerformanceHost.ControlFixtures",
+        "PerformanceHost.ControlFixtures.csproj");
 
     private static string FindRepositoryRoot()
     {

@@ -188,6 +188,8 @@ public static class PerformanceDiscoveryValidator
         {
             if (subjectActive || StringComparer.OrdinalIgnoreCase.Equals(owner, subject))
                 errors.Add($"'{display}' product-absent control must keep its subject absent and use another owner");
+            if (!string.IsNullOrWhiteSpace(declaration.ProductAbsentControlId))
+                errors.Add($"'{display}' product-absent control must not reference another product-absent control");
         }
         else if (!subjectActive)
         {

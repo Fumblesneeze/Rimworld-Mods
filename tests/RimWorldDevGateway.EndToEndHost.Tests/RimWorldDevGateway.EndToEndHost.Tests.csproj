@@ -20,6 +20,7 @@
     <EndToEndHostFixtureProject Include="..\Fixtures\EndToEndHost.InvalidFixtures\EndToEndHost.InvalidFixtures.csproj" />
     <EndToEndHostFixtureProject Include="..\Fixtures\EndToEndHost.LookalikeFixtures\EndToEndHost.LookalikeFixtures.csproj" />
     <EndToEndHostFixtureProject Include="..\Fixtures\PerformanceHost.ValidFixtures\PerformanceHost.ValidFixtures.csproj" />
+    <EndToEndHostFixtureProject Include="..\Fixtures\PerformanceHost.ControlFixtures\PerformanceHost.ControlFixtures.csproj" />
   </ItemGroup>
 
   <Target Name="BuildEndToEndHostFixtures" BeforeTargets="Build">

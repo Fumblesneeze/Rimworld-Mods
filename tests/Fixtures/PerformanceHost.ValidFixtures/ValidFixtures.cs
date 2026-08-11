@@ -19,8 +19,7 @@ namespace PerformanceHost.ValidFixtures;
     GameSpeed = PerformanceGameSpeed.Fast,
     Repetitions = 2,
     EvidenceLens = PerformanceEvidenceLens.ArmedDisabledWrapper,
-    ComparisonId = "alpha.base",
-    ProductAbsentControlId = "gateway.alpha-control")]
+    ComparisonId = "alpha.base")]
 [PerformanceMethodSelector(PerformanceMethodSelectorKind.Method, "Alpha.Work::Tick", "tick")]
 [PerformanceMethodSelector(PerformanceMethodSelectorKind.HarmonyOwner, "alpha.harmony", "patch")]
 [PerformanceThroughputCheckpoint("meals", 12)]
@@ -48,8 +47,7 @@ public sealed class BaseBenchmark : NoOpBenchmark
     GameSpeed = PerformanceGameSpeed.Fast,
     Repetitions = 2,
     EvidenceLens = PerformanceEvidenceLens.ProductInstrumented,
-    ComparisonId = "alpha.base",
-    ProductAbsentControlId = "gateway.alpha-control")]
+    ComparisonId = "alpha.base")]
 [PerformanceMethodSelector(PerformanceMethodSelectorKind.Method, "Alpha.Work::Tick", "tick")]
 [PerformanceMethodSelector(PerformanceMethodSelectorKind.HarmonyOwner, "alpha.harmony", "patch")]
 [PerformanceThroughputCheckpoint("meals", 12)]
@@ -71,8 +69,7 @@ public sealed class BaseInstrumentedBenchmark : NoOpBenchmark { }
     GameSpeed = PerformanceGameSpeed.Fast,
     Repetitions = 2,
     EvidenceLens = PerformanceEvidenceLens.FullyDisarmed,
-    ComparisonId = "alpha.base",
-    ProductAbsentControlId = "gateway.alpha-control")]
+    ComparisonId = "alpha.base")]
 [PerformanceMethodSelector(PerformanceMethodSelectorKind.Method, "Alpha.Work::Tick", "tick")]
 [PerformanceMethodSelector(PerformanceMethodSelectorKind.HarmonyOwner, "alpha.harmony", "patch")]
 [PerformanceThroughputCheckpoint("meals", 12)]
