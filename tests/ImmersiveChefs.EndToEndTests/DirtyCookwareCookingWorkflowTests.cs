@@ -174,7 +174,7 @@ public sealed class DirtyCookwareCookingWorkflowTest : IRimWorldEndToEndTest
         yield return new TimeControlActionStep(
             "finish prerequisite washing and begin the original bill",
             paused: false,
-            EndToEndGameSpeed.Superfast);
+            EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
             "the same cook begins real bill work with the exact cookware prop",
             _ => CookingSessionRegistry.TryGetActiveWorkProp(
@@ -188,6 +188,23 @@ public sealed class DirtyCookwareCookingWorkflowTest : IRimWorldEndToEndTest
             "pause during cooking with the exact cookware prop",
             paused: true,
             EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "the paused cook still owns the exact active cookware prop",
+            _ =>
+            {
+                EndToEndAssert.True(
+                    CookingSessionRegistry.TryGetActiveWorkProp(
+                        automatic.Cook,
+                        out var prop,
+                        out var giver) &&
+                    ReferenceEquals(prop, automatic.Cookware) &&
+                    ReferenceEquals(giver, automatic.Stove),
+                    "The evidence pause must occur during real bill work with the exact cookware prop.");
+                EndToEndAssert.True(ReferenceEquals(
+                        automatic.Cookware.holdingOwner,
+                        automatic.Cook.inventory?.innerContainer),
+                    "The paused active cookware prop must remain in the cook inventory.");
+            });
         yield return new SelectionActionStep(
             "select the cook using the exact cookware",
             new[] { automatic.Cook.ThingID },
