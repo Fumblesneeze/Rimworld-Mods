@@ -51,8 +51,10 @@ public sealed class RimWorldPerformanceRunnerCliTests
                 Is.All.EqualTo("gateway.circinus-calibration.instrumented"));
             Assert.That(processes.Select(item => item.WarmUpTicks), Is.All.EqualTo(30));
             Assert.That(processes.Select(item => item.SampleTicks), Is.All.EqualTo(120));
-            Assert.That(processes.Select(item => item.GameSpeed), Is.All.EqualTo(1),
-                "The calibration family must run long enough for Circinus to retain native time-series samples.");
+            Assert.That(processes.Select(item => item.GameSpeed), Is.All.EqualTo(3),
+                "The dense calibration must run uncapped so wrapper and timing costs clear the normal-speed floor.");
+            Assert.That(processes.Select(item => item.DeterministicSeed), Is.All.EqualTo(60161));
+            Assert.That(processes.Select(item => item.WorkloadVersion), Is.All.EqualTo("gateway-calibration/v4"));
             Assert.That(processes.Select(item => item.Repetition), Is.EqualTo(new[] { 1, 2 }));
             Assert.That(processes[0].RawCircinusJsonPath, Does.EndWith("circinus.raw.json"));
             Assert.That(processes[0].NormalizedJsonPath, Does.EndWith("normalized.json"));
@@ -62,7 +64,8 @@ public sealed class RimWorldPerformanceRunnerCliTests
             Assert.That(processes[0].MethodSelectors.Select(item => item.Value), Is.EqualTo(new[]
             {
                 "fumblesneeze.rimworlddevgateway",
-                "RimWorldDevGateway.GatewayGameControlController::Capture()"
+                "RimWorldDevGateway.GatewayGameControlController::Capture()",
+                "RimWorldDevGateway.PerformanceTests.CalibrationTickComponent::MapComponentTick()"
             }));
             Assert.That(Directory.Exists(artifactRoot), Is.False);
         });
@@ -178,6 +181,8 @@ public sealed class RimWorldPerformanceRunnerCliTests
         [DataMember(Name = "warmUpTicks")] public int WarmUpTicks { get; set; }
         [DataMember(Name = "sampleTicks")] public int SampleTicks { get; set; }
         [DataMember(Name = "gameSpeed")] public int GameSpeed { get; set; }
+        [DataMember(Name = "deterministicSeed")] public int DeterministicSeed { get; set; }
+        [DataMember(Name = "workloadVersion")] public string WorkloadVersion { get; set; } = string.Empty;
         [DataMember(Name = "repetition")] public int Repetition { get; set; }
         [DataMember(Name = "maxWallClockSeconds")] public int MaxWallClockSeconds { get; set; }
         [DataMember(Name = "methodSelectors")] public PerformanceSelector[] MethodSelectors { get; set; } = Array.Empty<PerformanceSelector>();
