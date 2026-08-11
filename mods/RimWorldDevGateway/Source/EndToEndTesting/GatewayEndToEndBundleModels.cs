@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Reflection;
+using RimWorldDevGateway.EndToEndTesting;
+using RimWorldDevGateway.PerformanceTesting;
 
 namespace RimWorldDevGateway;
 
@@ -45,6 +47,32 @@ public sealed class GatewayEndToEndRuntimeTestDescriptor
         int maxGameTicks,
         int maxWallClockSeconds,
         Type testType)
+        : this(
+            id,
+            ownerPackageId,
+            activePackageIds,
+            typeName,
+            maxFrames,
+            maxGameTicks,
+            maxWallClockSeconds,
+            testType,
+            () => (IRimWorldEndToEndTest?)Activator.CreateInstance(testType) ??
+                  throw new InvalidOperationException("The admitted E2E test constructor returned null."),
+            performanceDescriptor: null)
+    {
+    }
+
+    internal GatewayEndToEndRuntimeTestDescriptor(
+        string id,
+        string ownerPackageId,
+        IEnumerable<string> activePackageIds,
+        string typeName,
+        int maxFrames,
+        int maxGameTicks,
+        int maxWallClockSeconds,
+        Type testType,
+        Func<IRimWorldEndToEndTest> testFactory,
+        PerformanceTestDescriptor? performanceDescriptor)
     {
         Id = id;
         OwnerPackageId = ownerPackageId;
@@ -54,6 +82,8 @@ public sealed class GatewayEndToEndRuntimeTestDescriptor
         MaxGameTicks = maxGameTicks;
         MaxWallClockSeconds = maxWallClockSeconds;
         TestType = testType;
+        TestFactory = testFactory ?? throw new ArgumentNullException(nameof(testFactory));
+        PerformanceDescriptor = performanceDescriptor;
     }
 
     public string Id { get; }
@@ -71,6 +101,14 @@ public sealed class GatewayEndToEndRuntimeTestDescriptor
     public int MaxWallClockSeconds { get; }
 
     public Type TestType { get; }
+
+    internal Func<IRimWorldEndToEndTest> TestFactory { get; }
+
+    public PerformanceTestDescriptor? PerformanceDescriptor { get; }
+
+    public bool IsPerformance => PerformanceDescriptor is not null;
+
+    internal IRimWorldEndToEndTest CreateTest() => TestFactory();
 }
 
 public sealed class GatewayEndToEndAssemblySource

@@ -4,6 +4,8 @@ using System.Reflection;
 using System.Security.Cryptography;
 using RimWorldDevGateway.Contracts;
 using RimWorldDevGateway.EndToEndTesting;
+using RimWorldDevGateway.Performance;
+using RimWorldDevGateway.PerformanceTesting;
 
 namespace RimWorldDevGateway;
 
@@ -170,15 +172,27 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         var admitted = matchingTests.Select(test =>
         {
             var compiled = compiledById[test.Id];
-            return new GatewayEndToEndRuntimeTestDescriptor(
-                test.Id,
-                test.OwnerPackageId,
-                test.ActivePackageIds,
-                test.TypeName,
-                test.MaxFrames,
-                test.MaxGameTicks,
-                test.MaxWallClockSeconds,
-                compiled.TestType);
+            return compiled.PerformanceDescriptor is null
+                ? new GatewayEndToEndRuntimeTestDescriptor(
+                    test.Id,
+                    test.OwnerPackageId,
+                    test.ActivePackageIds,
+                    test.TypeName,
+                    test.MaxFrames,
+                    test.MaxGameTicks,
+                    test.MaxWallClockSeconds,
+                    compiled.TestType)
+                : new GatewayEndToEndRuntimeTestDescriptor(
+                    test.Id,
+                    test.OwnerPackageId,
+                    test.ActivePackageIds,
+                    test.TypeName,
+                    test.MaxFrames,
+                    test.MaxGameTicks,
+                    test.MaxWallClockSeconds,
+                    compiled.TestType,
+                    () => new GatewayPerformanceEndToEndAdapter(compiled.PerformanceDescriptor),
+                    compiled.PerformanceDescriptor);
         }).ToArray();
 
         return GatewayEndToEndBundleInspectionResult.Loaded(
@@ -285,8 +299,10 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
     {
         var owner = Normalize(test.OwnerPackageId);
         var packages = (test.ActivePackageIds ?? Array.Empty<string>()).Select(Normalize).ToArray();
+        var kind = string.IsNullOrWhiteSpace(test.Kind) ? EndToEndBundleTest.EndToEndKind : test.Kind;
         if (string.IsNullOrWhiteSpace(test.Id) ||
             string.IsNullOrWhiteSpace(test.TypeName) ||
+            (kind != EndToEndBundleTest.EndToEndKind && kind != EndToEndBundleTest.PerformanceKind) ||
             !StringComparer.OrdinalIgnoreCase.Equals(owner, containingPackageId) ||
             packages.Length == 0 ||
             !EndToEndTestContract.HasValidLaunchPrefix(packages) ||
@@ -300,6 +316,21 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             test.MaxWallClockSeconds <= 0)
         {
             throw Failure("manifest_tests_invalid", "A staged E2E test declaration is invalid.");
+        }
+
+        if (kind == EndToEndBundleTest.PerformanceKind &&
+            (string.IsNullOrWhiteSpace(test.MeasuredSubjectPackageId) ||
+             string.IsNullOrWhiteSpace(test.WorkloadVersion) ||
+             string.IsNullOrWhiteSpace(test.ComparisonId) ||
+             test.WarmUpTicks < 0 ||
+             test.SampleTicks <= 0 ||
+             test.GameSpeed is < 1 or > 4 ||
+             test.Repetitions <= 0 ||
+             test.EvidenceLens is < 0 or > 3 ||
+             test.MethodSelectors is null ||
+             test.ThroughputCheckpoints is null))
+        {
+            throw Failure("manifest_tests_invalid", "A staged performance declaration is incomplete.");
         }
     }
 
@@ -418,20 +449,39 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         var tests = new List<CompiledTest>();
         foreach (var type in types.OrderBy(type => type.FullName, StringComparer.Ordinal))
         {
-            var attributes = CustomAttributeData.GetCustomAttributes(type)
+            var customAttributes = CustomAttributeData.GetCustomAttributes(type);
+            var attributes = customAttributes
                 .Where(attribute => attribute.AttributeType == typeof(RimWorldEndToEndTestAttribute))
                 .ToArray();
-            if (attributes.Length == 0)
+            var performanceAttributes = customAttributes
+                .Where(attribute => attribute.AttributeType == typeof(RimWorldPerformanceTestAttribute))
+                .ToArray();
+            if (attributes.Length == 0 && performanceAttributes.Length == 0)
             {
                 continue;
             }
 
-            if (attributes.Length != 1)
+            if (attributes.Length > 0 && performanceAttributes.Length > 0)
+                throw Failure("compiled_test_manifest_mismatch", "A compiled type declares both E2E and performance contracts.");
+
+            if (attributes.Length > 0)
             {
-                throw Failure("compiled_test_manifest_mismatch", "A compiled E2E type has multiple test attributes.");
+                if (attributes.Length != 1)
+                    throw Failure("compiled_test_manifest_mismatch", "A compiled E2E type has multiple test attributes.");
+                tests.Add(ReadCompiledTest(type, attributes[0]));
+                continue;
             }
 
-            tests.Add(ReadCompiledTest(type, attributes[0]));
+            if (performanceAttributes.Length != 1)
+                throw Failure("compiled_test_manifest_mismatch", "A compiled performance type has multiple attributes.");
+            try
+            {
+                tests.Add(ReadCompiledPerformanceTest(PerformanceTestContract.Describe(type)));
+            }
+            catch
+            {
+                throw Failure("compiled_test_manifest_mismatch", "A compiled performance type violates its runtime contract.");
+            }
         }
 
         return tests.OrderBy(test => test.Id, StringComparer.Ordinal).ToArray();
@@ -478,7 +528,33 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             maxFrames,
             maxGameTicks,
             maxWallClockSeconds,
-            type);
+            type,
+            EndToEndBundleTest.EndToEndKind,
+            performanceDescriptor: null);
+    }
+
+    private static CompiledTest ReadCompiledPerformanceTest(PerformanceTestDescriptor descriptor)
+    {
+        var deadline = PerformanceDeadline(descriptor.WarmUpTicks, descriptor.SampleTicks);
+        return new CompiledTest(
+            descriptor.Id,
+            descriptor.StagingOwnerPackageId,
+            descriptor.ActivePackageIds,
+            descriptor.TestType.FullName ?? descriptor.TestType.Name,
+            deadline.MaxFrames,
+            deadline.MaxGameTicks,
+            deadline.MaxWallClockSeconds,
+            descriptor.TestType,
+            EndToEndBundleTest.PerformanceKind,
+            descriptor);
+    }
+
+    private static (int MaxFrames, int MaxGameTicks, int MaxWallClockSeconds) PerformanceDeadline(
+        int warmUpTicks,
+        int sampleTicks)
+    {
+        var deadline = PerformanceBundleDeadline.Calculate(warmUpTicks, sampleTicks);
+        return (deadline.MaxFrames, deadline.MaxGameTicks, deadline.MaxWallClockSeconds);
     }
 
     private static IReadOnlyList<string> ReadAttributeStringArray(CustomAttributeTypedArgument argument)
@@ -507,6 +583,10 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             var expected = orderedManifest[index];
             if (!StringComparer.Ordinal.Equals(actual.Id, expected.Id) ||
                 !StringComparer.Ordinal.Equals(actual.TypeName, expected.TypeName) ||
+                !StringComparer.Ordinal.Equals(actual.Kind,
+                    string.IsNullOrWhiteSpace(expected.Kind)
+                        ? EndToEndBundleTest.EndToEndKind
+                        : expected.Kind) ||
                 !StringComparer.OrdinalIgnoreCase.Equals(actual.OwnerPackageId, expected.OwnerPackageId) ||
                 !actual.ActivePackageIds.SequenceEqual(expected.ActivePackageIds, StringComparer.OrdinalIgnoreCase) ||
                 actual.MaxFrames != expected.MaxFrames ||
@@ -515,7 +595,45 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             {
                 throw Failure("compiled_test_manifest_mismatch", "The compiled E2E test metadata differs from discovery.");
             }
+
+            if (actual.PerformanceDescriptor is not null &&
+                !PerformanceManifestMatches(actual.PerformanceDescriptor, expected))
+            {
+                throw Failure(
+                    "compiled_test_manifest_mismatch",
+                    "The compiled performance metadata differs from discovery.");
+            }
         }
+    }
+
+    private static bool PerformanceManifestMatches(
+        PerformanceTestDescriptor actual,
+        EndToEndBundleTest expected)
+    {
+        var selectors = expected.MethodSelectors ?? Array.Empty<PerformanceBundleMethodSelector>();
+        var checkpoints = expected.ThroughputCheckpoints ?? Array.Empty<PerformanceBundleThroughputCheckpoint>();
+        return StringComparer.OrdinalIgnoreCase.Equals(
+                   actual.MeasuredSubjectPackageId,
+                   expected.MeasuredSubjectPackageId) &&
+               actual.DeterministicSeed == expected.DeterministicSeed &&
+               StringComparer.Ordinal.Equals(actual.WorkloadVersion, expected.WorkloadVersion) &&
+               StringComparer.Ordinal.Equals(actual.ComparisonId, expected.ComparisonId) &&
+               actual.WarmUpTicks == expected.WarmUpTicks &&
+               actual.SampleTicks == expected.SampleTicks &&
+               (int)actual.GameSpeed == expected.GameSpeed &&
+               actual.Repetitions == expected.Repetitions &&
+               (int)actual.EvidenceLens == expected.EvidenceLens &&
+               StringComparer.OrdinalIgnoreCase.Equals(
+                   actual.ProductAbsentControlId,
+                   expected.ProductAbsentControlId) &&
+               actual.MethodSelectors.Select(selector =>
+                       ((int)selector.Kind, selector.Value, selector.Category))
+                   .SequenceEqual(selectors.Select(selector =>
+                       (selector.Kind, selector.Value, selector.Category))) &&
+               actual.ThroughputCheckpoints.Select(checkpoint =>
+                       (checkpoint.Id, checkpoint.MinimumCount))
+                   .SequenceEqual(checkpoints.Select(checkpoint =>
+                       (checkpoint.Id, checkpoint.MinimumCount)));
     }
 
     private static void EnsureRegularFile(string path, string code, string message)
@@ -547,7 +665,9 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             int maxFrames,
             int maxGameTicks,
             int maxWallClockSeconds,
-            Type testType)
+            Type testType,
+            string kind,
+            PerformanceTestDescriptor? performanceDescriptor)
         {
             Id = id;
             OwnerPackageId = ownerPackageId;
@@ -557,6 +677,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             MaxGameTicks = maxGameTicks;
             MaxWallClockSeconds = maxWallClockSeconds;
             TestType = testType;
+            Kind = kind;
+            PerformanceDescriptor = performanceDescriptor;
         }
 
         public string Id { get; }
@@ -567,6 +689,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         public int MaxGameTicks { get; }
         public int MaxWallClockSeconds { get; }
         public Type TestType { get; }
+        public string Kind { get; }
+        public PerformanceTestDescriptor? PerformanceDescriptor { get; }
     }
 
     private sealed class GatewayEndToEndCatalogException : Exception

@@ -19,6 +19,7 @@
   <ItemGroup>
     <EndToEndCatalogFixtureProject Include="..\Fixtures\EndToEndHost.ValidFixtures\EndToEndHost.ValidFixtures.csproj" />
     <EndToEndCatalogFixtureProject Include="..\Fixtures\Circinus.ValidFixtures\Circinus.ValidFixtures.csproj" />
+    <EndToEndCatalogFixtureProject Include="..\RimWorldDevGateway.PerformanceTests\RimWorldDevGateway.PerformanceTests.csproj" />
   </ItemGroup>
 
   <Target Name="BuildEndToEndCatalogFixture" BeforeTargets="Build">

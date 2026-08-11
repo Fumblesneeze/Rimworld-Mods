@@ -20,6 +20,7 @@ public static class EndToEndHostCli
         root.Subcommands.Add(CreateStageCommand());
         root.Subcommands.Add(CreateCleanCommand());
         root.Subcommands.Add(CreatePerformancePlanCommand());
+        root.Subcommands.Add(CreatePerformanceStageCommand());
         return root;
     }
 
@@ -225,6 +226,63 @@ public static class EndToEndHostCli
         return command;
     }
 
+    private static Command CreatePerformanceStageCommand()
+    {
+        var common = CommonOptions.Create();
+        var leaseFile = new Option<string>("--lease-file")
+        {
+            Description = "Required JSON lease path used later by the clean command.",
+            Required = true
+        };
+        var command = new Command(
+            "performance-stage",
+            "Build marked performance fixtures and atomically publish their exact manifests for one run.");
+        common.AddTo(command);
+        command.Options.Add(leaseFile);
+        command.SetAction(parseResult => Execute(parseResult, () =>
+        {
+            var input = common.Read(parseResult);
+            var projects = PerformanceProjectDiscovery.Discover(input.RepositoryRoot);
+            var candidates = new EndToEndProjectBuilder().BuildPerformance(
+                projects,
+                input.Configuration,
+                TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
+            var plan = PerformanceBundlePlanner.Create(
+                candidates,
+                input.PackageIds,
+                input.ModsRoot,
+                input.RimWorldVersion);
+            var publisher = new EndToEndStagePublisher();
+            var leasePath = RequiredPath(parseResult.GetValue(leaseFile), "lease file");
+            var leases = PerformanceStageTransaction.PublishAll(
+                plan.OwnerStages,
+                publisher.Publish,
+                publisher.TryCleanup,
+                staged => WriteLeaseFile(leasePath, staged),
+                () => ClearLeaseFile(leasePath));
+
+            Write(parseResult, common.ReadOutput(parseResult), new
+            {
+                status = "staged",
+                groups = plan.Discovery.Groups.Select(group => new
+                {
+                    group.GroupId,
+                    activePackageIds = group.ActivePackageIds,
+                    benchmarks = group.Benchmarks.Select(item => item.Id).ToArray()
+                }).ToArray(),
+                owners = plan.OwnerStages.Select(owner => new
+                {
+                    owner.OwnerPackageId,
+                    owner.DestinationDirectory,
+                    bundles = owner.Bundles.Select(bundle => bundle.AssemblyFileName).ToArray()
+                }).ToArray(),
+                leases = leases.Select(LeaseRecord.From).ToArray()
+            });
+            return 0;
+        }));
+        return command;
+    }
+
     private static int Execute(ParseResult parseResult, Func<int> action)
     {
         try
@@ -383,6 +441,11 @@ public static class EndToEndHostCli
             temporary,
             JsonSerializer.Serialize(leases.Select(LeaseRecord.From).ToArray(), JsonOptions));
         File.Move(temporary, path, overwrite: true);
+    }
+
+    private static void ClearLeaseFile(string path)
+    {
+        if (File.Exists(path)) File.Delete(path);
     }
 
     private static string RequiredPath(string? value, string description) =>

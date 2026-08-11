@@ -218,8 +218,7 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
 
         try
         {
-            test = (IRimWorldEndToEndTest?)Activator.CreateInstance(descriptor!.TestType) ??
-                throw new InvalidOperationException("The admitted E2E test constructor returned null.");
+            test = descriptor!.CreateTest();
             test.Arrange(context);
             current!.Status = "running";
             phase = ExecutionPhase.StartingExecution;

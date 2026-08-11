@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using NUnit.Framework;
 using RimWorldDevGateway.Contracts;
 using RimWorldDevGateway.EndToEndTesting;
+using RimWorldDevGateway.PerformanceTesting;
 
 namespace RimWorldDevGateway.Tests;
 
@@ -48,6 +49,36 @@ public sealed class GatewayEndToEndBundleCatalogTests
             Assert.That(result.Source.AssemblyIdentity, Is.EqualTo(stage.Manifest.AssemblyIdentity));
             Assert.That(result.Source.AssemblySha256, Is.EqualTo(stage.Manifest.AssemblySha256));
             Assert.That(loader.LoadCount, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Exact_performance_bundle_is_admitted_as_a_lazy_E2E_adapter_with_full_descriptor()
+    {
+        using var stage = new PerformanceCatalogStage();
+        var result = new GatewayEndToEndBundleCatalog().Inspect(
+            stage.Candidate,
+            new[]
+            {
+                "brrainz.harmony",
+                "ludeon.rimworld",
+                PerformanceTestContract.CircinusPackageId,
+                EndToEndTestContract.GatewayPackageId
+            });
+
+        Assert.That(result.State, Is.EqualTo("loaded"), result.Failure?.Message);
+        var tests = result.Source!.Tests;
+        var instrumented = tests.Single(test => test.Id.EndsWith(".instrumented", StringComparison.Ordinal));
+        Assert.Multiple(() =>
+        {
+            Assert.That(tests, Has.Count.EqualTo(3));
+            Assert.That(tests, Has.All.Property(nameof(GatewayEndToEndRuntimeTestDescriptor.IsPerformance)).True);
+            Assert.That(instrumented.PerformanceDescriptor, Is.Not.Null);
+            Assert.That(instrumented.PerformanceDescriptor!.MeasuredSubjectPackageId,
+                Is.EqualTo(EndToEndTestContract.GatewayPackageId));
+            Assert.That(instrumented.PerformanceDescriptor.EvidenceLens,
+                Is.EqualTo(PerformanceEvidenceLens.ProductInstrumented));
+            Assert.That(instrumented.CreateTest(), Is.AssignableTo<IRimWorldEndToEndTest>());
         });
     }
 
@@ -201,6 +232,15 @@ public sealed class GatewayEndToEndBundleCatalogTests
         "net480",
         "EndToEndHost.ValidFixtures.dll");
 
+    private static string PerformanceFixtureAssemblyPath() => Path.Combine(
+        RepositoryRoot,
+        "tests",
+        "RimWorldDevGateway.PerformanceTests",
+        "bin",
+        Configuration,
+        "net480",
+        "RimWorldDevGateway.PerformanceTests.dll");
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
@@ -306,6 +346,113 @@ public sealed class GatewayEndToEndBundleCatalogTests
                         MaxWallClockSeconds = (int)test.Deadline.MaxWallClock.TotalSeconds
                     })
                     .ToArray()
+            };
+        }
+
+        private static string ComputeSha256(byte[] bytes)
+        {
+            using var sha256 = SHA256.Create();
+            return GatewayEndToEndAssemblyIdentity.FormatKey(sha256.ComputeHash(bytes));
+        }
+    }
+
+    private sealed class PerformanceCatalogStage : IDisposable
+    {
+        public PerformanceCatalogStage()
+        {
+            Root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "performance-catalog", Guid.NewGuid().ToString("N"));
+            var owner = EndToEndTestContract.GatewayPackageId;
+            var directory = Path.Combine(Root, owner, "1.6", "DevEndToEndTests");
+            Directory.CreateDirectory(directory);
+            var bytes = File.ReadAllBytes(PerformanceFixtureAssemblyPath());
+            var assembly = Assembly.Load(bytes);
+            const string assemblyFile = "RimWorldDevGateway.PerformanceTests.dll";
+            const string manifestFile = "RimWorldDevGateway.PerformanceTests.e2etests.json";
+            File.WriteAllBytes(Path.Combine(directory, assemblyFile), bytes);
+            var descriptors = assembly.GetTypes()
+                .Where(type => type.GetCustomAttributes(typeof(RimWorldPerformanceTestAttribute), false).Length == 1)
+                .Select(PerformanceTestContract.Describe)
+                .OrderBy(item => item.Id, StringComparer.Ordinal)
+                .ToArray();
+            var manifest = new EndToEndBundleManifest
+            {
+                OwnerPackageId = owner,
+                Assembly = assemblyFile,
+                AssemblyIdentity = GatewayEndToEndAssemblyIdentity.FormatDefinition(assembly.GetName()),
+                ModuleVersionId = assembly.ManifestModule.ModuleVersionId.ToString("D"),
+                AssemblyLength = bytes.LongLength,
+                AssemblySha256 = ComputeSha256(bytes),
+                Dependencies = assembly.GetReferencedAssemblies().OrderBy(reference => reference.Name, StringComparer.Ordinal)
+                    .ThenBy(reference => reference.Version)
+                    .Select(reference => new EndToEndBundleDependency
+                    {
+                        Name = reference.Name ?? string.Empty,
+                        Version = reference.Version?.ToString() ?? "0.0.0.0",
+                        Culture = string.IsNullOrWhiteSpace(reference.CultureName) ? "neutral" : reference.CultureName!,
+                        KeyKind = "PublicKeyToken",
+                        PublicKeyOrToken = GatewayEndToEndAssemblyIdentity.FormatKey(reference.GetPublicKeyToken()),
+                        Identity = GatewayEndToEndAssemblyIdentity.FormatReference(reference)
+                    }).ToArray(),
+                Tests = descriptors.Select(ToManifest).ToArray()
+            };
+            var manifestPath = Path.Combine(directory, manifestFile);
+            File.WriteAllText(manifestPath, GatewayContractJson.Write(manifest));
+            File.WriteAllText(Path.Combine(directory, EndToEndStageMarker.FileName), GatewayContractJson.Write(
+                new EndToEndStageMarker
+                {
+                    OwnerPackageId = owner,
+                    RimWorldVersion = "1.6",
+                    TransactionId = Guid.NewGuid().ToString("N"),
+                    Assemblies = new[] { assemblyFile },
+                    Manifests = new[] { manifestFile }
+                }));
+            Candidate = new GatewayEndToEndManifestCandidate(owner, manifestPath);
+        }
+
+        public string Root { get; }
+        public GatewayEndToEndManifestCandidate Candidate { get; }
+        public void Dispose()
+        {
+            if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true);
+        }
+
+        private static EndToEndBundleTest ToManifest(PerformanceTestDescriptor descriptor)
+        {
+            var deadline = PerformanceBundleDeadline.Calculate(
+                descriptor.WarmUpTicks,
+                descriptor.SampleTicks);
+            return new EndToEndBundleTest
+            {
+                Id = descriptor.Id,
+                TypeName = descriptor.TestType.FullName!,
+                OwnerPackageId = descriptor.StagingOwnerPackageId,
+                ActivePackageIds = descriptor.ActivePackageIds.ToArray(),
+                MaxFrames = deadline.MaxFrames,
+                MaxGameTicks = deadline.MaxGameTicks,
+                MaxWallClockSeconds = deadline.MaxWallClockSeconds,
+                Kind = EndToEndBundleTest.PerformanceKind,
+                MeasuredSubjectPackageId = descriptor.MeasuredSubjectPackageId,
+                DeterministicSeed = descriptor.DeterministicSeed,
+                WorkloadVersion = descriptor.WorkloadVersion,
+                ComparisonId = descriptor.ComparisonId,
+                WarmUpTicks = descriptor.WarmUpTicks,
+                SampleTicks = descriptor.SampleTicks,
+                GameSpeed = (int)descriptor.GameSpeed,
+                Repetitions = descriptor.Repetitions,
+                EvidenceLens = (int)descriptor.EvidenceLens,
+                ProductAbsentControlId = descriptor.ProductAbsentControlId,
+                MethodSelectors = descriptor.MethodSelectors.Select(selector => new PerformanceBundleMethodSelector
+                {
+                    Kind = (int)selector.Kind,
+                    Value = selector.Value,
+                    Category = selector.Category
+                }).ToArray(),
+                ThroughputCheckpoints = descriptor.ThroughputCheckpoints.Select(checkpoint =>
+                    new PerformanceBundleThroughputCheckpoint
+                    {
+                        Id = checkpoint.Id,
+                        MinimumCount = checkpoint.MinimumCount
+                    }).ToArray()
             };
         }
 

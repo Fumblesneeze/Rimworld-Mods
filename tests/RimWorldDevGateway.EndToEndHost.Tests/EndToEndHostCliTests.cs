@@ -19,7 +19,8 @@ public sealed class EndToEndHostCliTests
         {
             Assert.That(exitCode, Is.Zero);
             Assert.That(output.ToString(),
-                Does.Contain("plan").And.Contain("stage").And.Contain("clean").And.Contain("performance-plan"));
+                Does.Contain("plan").And.Contain("stage").And.Contain("clean")
+                    .And.Contain("performance-plan").And.Contain("performance-stage"));
             Assert.That(error.ToString(), Is.Empty);
         });
     }
