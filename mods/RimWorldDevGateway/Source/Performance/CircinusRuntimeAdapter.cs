@@ -759,6 +759,7 @@ internal enum CircinusRowKind
     Patch
 }
 
+[DataContract]
 internal sealed class CircinusProfilerSidecar
 {
     public CircinusProfilerSidecar(
@@ -787,17 +788,17 @@ internal sealed class CircinusProfilerSidecar
         NoRowReason = noRowReason;
     }
 
-    public string MethodIdentity { get; }
-    public CircinusRowKind RowKind { get; }
-    public string RowKey { get; }
-    public int AmbiguousTargetCount { get; }
-    public bool HandArmed { get; }
-    public int SampleShift { get; }
-    public long TotalCalls { get; }
-    public long TotalTimedCalls { get; }
-    public bool Empty { get; }
-    public int CyclesSeen { get; }
-    public string? NoRowReason { get; }
+    [DataMember(Name = "methodIdentity", Order = 1)] public string MethodIdentity { get; private set; }
+    [DataMember(Name = "rowKind", Order = 2)] public CircinusRowKind RowKind { get; private set; }
+    [DataMember(Name = "rowKey", Order = 3)] public string RowKey { get; private set; }
+    [DataMember(Name = "ambiguousTargetCount", Order = 4)] public int AmbiguousTargetCount { get; private set; }
+    [DataMember(Name = "handArmed", Order = 5)] public bool HandArmed { get; private set; }
+    [DataMember(Name = "sampleShift", Order = 6)] public int SampleShift { get; private set; }
+    [DataMember(Name = "totalCalls", Order = 7)] public long TotalCalls { get; private set; }
+    [DataMember(Name = "totalTimedCalls", Order = 8)] public long TotalTimedCalls { get; private set; }
+    [DataMember(Name = "empty", Order = 9)] public bool Empty { get; private set; }
+    [DataMember(Name = "cyclesSeen", Order = 10)] public int CyclesSeen { get; private set; }
+    [DataMember(Name = "noRowReason", EmitDefaultValue = false, Order = 11)] public string? NoRowReason { get; private set; }
 }
 
 internal sealed class CircinusRuntimeRun : IDisposable
@@ -1110,15 +1111,16 @@ internal sealed class CircinusRuntimeRun : IDisposable
     public void Dispose()
     {
         if (disposed) return;
-        disposed = true;
+        var failures = new List<Exception>();
         try
         {
             shape.RegistryRecording.SetValue(null, false);
             shape.RegistryEnabled.SetValue(null, false);
         }
-        catch
+        catch (Exception exception)
         {
-            // Best-effort isolation continues through all owned cleanup operations.
+            failures.Add(new InvalidOperationException(
+                "Circinus registry sampling could not be disabled.", exception));
         }
 
         if (!stopped)
@@ -1127,19 +1129,81 @@ internal sealed class CircinusRuntimeRun : IDisposable
             {
                 if ((bool)shape.RecorderRecording.GetValue(recorder))
                     shape.RecorderStop.Invoke(recorder, Array.Empty<object>());
+                if ((bool)shape.RecorderRecording.GetValue(recorder))
+                    throw new InvalidOperationException("Circinus recorder remained active after Stop().");
+                stopped = true;
             }
-            catch
+            catch (Exception exception)
             {
-                // Owned instrumentation still must be released.
+                failures.Add(new InvalidOperationException(
+                    "Circinus recorder could not be stopped.", exception));
             }
-            stopped = true;
         }
 
-        foreach (var method in individuallyArmedMethods) TryInvoke(shape.DisarmMethod, method);
-        foreach (var target in targets.Values) TryInvoke(shape.DisarmTarget, target);
+        foreach (var method in individuallyArmedMethods)
+        {
+            try
+            {
+                shape.DisarmMethod.Invoke(null, new object[] { method });
+            }
+            catch (Exception exception)
+            {
+                failures.Add(new InvalidOperationException(
+                    $"Circinus method '{MethodIdentity(method)}' could not be disarmed.", exception));
+            }
+        }
+        foreach (var pair in targets)
+        {
+            try
+            {
+                shape.DisarmTarget.Invoke(null, new[] { pair.Value });
+            }
+            catch (Exception exception)
+            {
+                failures.Add(new InvalidOperationException(
+                    $"Circinus target '{pair.Key}' could not be disarmed.", exception));
+            }
+            try
+            {
+                if ((int)shape.TargetMethodCount.GetValue(pair.Value) != 0)
+                    throw new InvalidOperationException(
+                        $"Circinus target '{pair.Key}' retained armed methods after cleanup.");
+            }
+            catch (Exception exception)
+            {
+                failures.Add(exception);
+            }
+        }
+
+        try
+        {
+            if ((bool)shape.RegistryRecording.GetValue(null) ||
+                (bool)shape.RegistryEnabled.GetValue(null))
+                throw new InvalidOperationException("Circinus registry remained enabled after cleanup.");
+            var registered = RegistryMethods();
+            foreach (var method in methods.Keys)
+            {
+                var patched = (bool)shape.IsPatched.Invoke(null, new object[] { method });
+                if (patched || registered.Contains(method))
+                    failures.Add(new InvalidOperationException(
+                        $"Circinus retained owned profiler '{MethodIdentity(method)}' after cleanup."));
+            }
+        }
+        catch (Exception exception)
+        {
+            failures.Add(new InvalidOperationException(
+                "Circinus owned-profiler cleanup could not be verified.", exception));
+        }
+
+        if (failures.Count > 0)
+            throw new AggregateException(
+                "Circinus run cleanup retained retryable recorder or profiler ownership.",
+                failures);
+
         individuallyArmedMethods.Clear();
         methods.Clear();
         targets.Clear();
+        disposed = true;
     }
 
     private bool CanMutate(out string reason)
@@ -1187,8 +1251,22 @@ internal sealed class CircinusRuntimeRun : IDisposable
             if (patchRefs is { Count: > 0 })
             {
                 kind = CircinusRowKind.Patch;
-                key = patchRefs[0] is null ? null : shape.PatchRefKey.GetValue(patchRefs[0]) as string;
                 ambiguousTargetCount = patchRefs.Count;
+                var firstPatchRef = patchRefs[0];
+                key = firstPatchRef is null ? null : shape.PatchRefKey.GetValue(firstPatchRef) as string;
+                if (string.IsNullOrWhiteSpace(key) || key!.Length > 256)
+                {
+                    identity = null;
+                    reason = $"Circinus patch row identity is missing or unbounded for '{MethodIdentity(method)}'.";
+                    return false;
+                }
+
+                // Circinus 1.15 emits one PatchStat under ForPatchMethod(method)[0] and records
+                // additional native attachments through AmbiguousTargets. Mirror that exact
+                // identity while retaining the complete native attachment count in the sidecar.
+                identity = new CircinusRowIdentity(kind, key, ambiguousTargetCount);
+                reason = string.Empty;
+                return true;
             }
             else
             {
@@ -1375,7 +1453,10 @@ internal sealed class CircinusRuntimeRun : IDisposable
 
     private sealed class CircinusRowIdentity
     {
-        public CircinusRowIdentity(CircinusRowKind kind, string key, int ambiguousTargetCount)
+        public CircinusRowIdentity(
+            CircinusRowKind kind,
+            string key,
+            int ambiguousTargetCount)
         {
             Kind = kind;
             Key = key;

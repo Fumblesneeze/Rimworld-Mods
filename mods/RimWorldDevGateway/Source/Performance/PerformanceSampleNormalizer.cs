@@ -99,6 +99,7 @@ internal sealed class PerformanceNormalizationContext
     public IReadOnlyDictionary<string, long> ThroughputCounts { get; }
 }
 
+[DataContract]
 internal sealed class PerformanceNormalizedSample
 {
     public PerformanceNormalizedSample(
@@ -119,24 +120,25 @@ internal sealed class PerformanceNormalizedSample
         EvidenceLens = evidenceLens;
         ControlMode = controlMode;
         ProfilerPolicy = profilerPolicy;
-        Metrics = metrics;
-        Samples = samples;
-        Checkpoints = checkpoints;
-        ProfilerSidecars = profilerSidecars;
+        Metrics = metrics.ToArray();
+        Samples = samples.ToArray();
+        Checkpoints = checkpoints.ToArray();
+        ProfilerSidecars = profilerSidecars.ToArray();
     }
 
-    public string RunId { get; }
+    [DataMember(Name = "runId", Order = 1)] public string RunId { get; private set; }
     public string RawCircinusJson { get; }
-    public string WorkloadVersion { get; }
-    public PerformanceEvidenceLens EvidenceLens { get; }
-    public string ControlMode { get; }
-    public PerformanceProfilerPolicy ProfilerPolicy { get; }
-    public IReadOnlyList<PerformanceNormalizedMetric> Metrics { get; }
-    public IReadOnlyList<PerformanceNativeSample> Samples { get; }
-    public IReadOnlyList<PerformanceControlCheckpoint> Checkpoints { get; }
-    public IReadOnlyList<CircinusProfilerSidecar> ProfilerSidecars { get; }
+    [DataMember(Name = "workloadVersion", Order = 2)] public string WorkloadVersion { get; private set; }
+    [DataMember(Name = "evidenceLens", Order = 3)] public PerformanceEvidenceLens EvidenceLens { get; private set; }
+    [DataMember(Name = "controlMode", Order = 4)] public string ControlMode { get; private set; }
+    [DataMember(Name = "profilerPolicy", Order = 5)] public PerformanceProfilerPolicy ProfilerPolicy { get; private set; }
+    [DataMember(Name = "metrics", Order = 6)] public PerformanceNormalizedMetric[] Metrics { get; private set; }
+    [DataMember(Name = "samples", Order = 7)] public PerformanceNativeSample[] Samples { get; private set; }
+    [DataMember(Name = "checkpoints", Order = 8)] public PerformanceControlCheckpoint[] Checkpoints { get; private set; }
+    [DataMember(Name = "profilerSidecars", Order = 9)] public CircinusProfilerSidecar[] ProfilerSidecars { get; private set; }
 }
 
+[DataContract]
 internal sealed class PerformanceProfilerPolicy
 {
     public PerformanceProfilerPolicy(
@@ -155,14 +157,15 @@ internal sealed class PerformanceProfilerPolicy
         DisarmedBelowFloor = disarmedBelowFloor;
     }
 
-    public int RecordedCycles { get; }
-    public double WindowMilliseconds { get; }
-    public long WindowTicks { get; }
-    public double DutyPercent { get; }
-    public bool Sampled { get; }
-    public int DisarmedBelowFloor { get; }
+    [DataMember(Name = "recordedCycles", Order = 1)] public int RecordedCycles { get; private set; }
+    [DataMember(Name = "windowMilliseconds", Order = 2)] public double WindowMilliseconds { get; private set; }
+    [DataMember(Name = "windowTicks", Order = 3)] public long WindowTicks { get; private set; }
+    [DataMember(Name = "dutyPercent", Order = 4)] public double DutyPercent { get; private set; }
+    [DataMember(Name = "sampled", Order = 5)] public bool Sampled { get; private set; }
+    [DataMember(Name = "disarmedBelowFloor", Order = 6)] public int DisarmedBelowFloor { get; private set; }
 }
 
+[DataContract]
 internal sealed class PerformanceNormalizedMetric
 {
     public PerformanceNormalizedMetric(
@@ -183,31 +186,33 @@ internal sealed class PerformanceNormalizedMetric
         Claim = claim;
     }
 
-    public string Scope { get; }
-    public string Key { get; }
-    public string Name { get; }
-    public double Value { get; }
-    public string Unit { get; }
-    public string Denominator { get; }
-    public string Claim { get; }
+    [DataMember(Name = "scope", Order = 1)] public string Scope { get; private set; }
+    [DataMember(Name = "key", Order = 2)] public string Key { get; private set; }
+    [DataMember(Name = "name", Order = 3)] public string Name { get; private set; }
+    [DataMember(Name = "value", Order = 4)] public double Value { get; private set; }
+    [DataMember(Name = "unit", Order = 5)] public string Unit { get; private set; }
+    [DataMember(Name = "denominator", Order = 6)] public string Denominator { get; private set; }
+    [DataMember(Name = "claim", Order = 7)] public string Claim { get; private set; }
 }
 
+[DataContract]
 internal sealed class PerformanceNativeSample
 {
-    public int GameTick { get; set; }
-    public double RealtimeSeconds { get; set; }
-    public int Tps { get; set; }
-    public int TargetTps { get; set; }
-    public int Fps { get; set; }
-    public double FrameMeanMilliseconds { get; set; }
-    public double FrameMaximumMilliseconds { get; set; }
-    public double FrameP95Milliseconds { get; set; }
-    public double TickMeanMilliseconds { get; set; }
-    public double TickMaximumMilliseconds { get; set; }
-    public int HeapKilobytes { get; set; }
-    public int PawnCount { get; set; }
+    [DataMember(Name = "gameTick", Order = 1)] public int GameTick { get; set; }
+    [DataMember(Name = "realtimeSeconds", Order = 2)] public double RealtimeSeconds { get; set; }
+    [DataMember(Name = "tps", Order = 3)] public int Tps { get; set; }
+    [DataMember(Name = "targetTps", Order = 4)] public int TargetTps { get; set; }
+    [DataMember(Name = "fps", Order = 5)] public int Fps { get; set; }
+    [DataMember(Name = "frameMeanMilliseconds", Order = 6)] public double FrameMeanMilliseconds { get; set; }
+    [DataMember(Name = "frameMaximumMilliseconds", Order = 7)] public double FrameMaximumMilliseconds { get; set; }
+    [DataMember(Name = "frameP95Milliseconds", Order = 8)] public double FrameP95Milliseconds { get; set; }
+    [DataMember(Name = "tickMeanMilliseconds", Order = 9)] public double TickMeanMilliseconds { get; set; }
+    [DataMember(Name = "tickMaximumMilliseconds", Order = 10)] public double TickMaximumMilliseconds { get; set; }
+    [DataMember(Name = "heapKilobytes", Order = 11)] public int HeapKilobytes { get; set; }
+    [DataMember(Name = "pawnCount", Order = 12)] public int PawnCount { get; set; }
 }
 
+[DataContract]
 internal sealed class PerformanceControlCheckpoint
 {
     public PerformanceControlCheckpoint(string id, double value, string unit)
@@ -217,9 +222,9 @@ internal sealed class PerformanceControlCheckpoint
         Unit = unit;
     }
 
-    public string Id { get; }
-    public double Value { get; }
-    public string Unit { get; }
+    [DataMember(Name = "id", Order = 1)] public string Id { get; private set; }
+    [DataMember(Name = "value", Order = 2)] public double Value { get; private set; }
+    [DataMember(Name = "unit", Order = 3)] public string Unit { get; private set; }
 }
 
 internal static class PerformanceSampleNormalizer
@@ -249,7 +254,7 @@ internal static class PerformanceSampleNormalizer
             AddTiming(metrics, "patch", key, row.Total, row.Mean, row.Maximum, row.CallCount, env);
             Add(metrics, "patch", key, "native-timed-calls", row.TimedCallCount, "calls",
                 "native-adaptive-sampling", "sampling-policy");
-            if (row.AmbiguousTargets == true)
+            if (row.AmbiguousTargets)
             {
                 Add(metrics, "patch", key, "ambiguous-targets", 1,
                     "boolean", "native-patch-identity", "sampling-policy");
@@ -292,7 +297,7 @@ internal static class PerformanceSampleNormalizer
                 "run-owned-profiler", "sampling-policy");
         }
 
-        var samples = ((IEnumerable<NativeSample>?)document.Samples ?? Enumerable.Empty<NativeSample>())
+        var samples = SamplesInsideGatewayWindow(document, context)
             .Select(item => new PerformanceNativeSample
             {
                 GameTick = item.GameTick,
@@ -365,33 +370,44 @@ internal static class PerformanceSampleNormalizer
             throw new PerformanceNormalizationException("Circinus native sample count exceeds its run ceiling.");
         if (document.Env is null)
             throw new PerformanceNormalizationException("Circinus has no valid profiler denominator.");
-        ValidateEnvironment(document.Env);
+        ValidateEnvironment(document.Env, context.EvidenceLens);
         ValidateMethodRows(document.Methods, document.Env);
         ValidatePatchRows(document.Patches);
         ValidateModRows(document.ModCosts);
         ValidateSamples(document.Samples);
+        _ = SamplesInsideGatewayWindow(document, context);
         ValidateSidecars(capture.Sidecars, document.Env, context.EvidenceLens, document);
     }
 
-    private static void ValidateEnvironment(NativeEnvironment env)
+    private static void ValidateEnvironment(NativeEnvironment env, PerformanceEvidenceLens evidenceLens)
     {
         if (env.ProfilerCycles is null || env.ProfilerWindowMs is null ||
             env.ProfilerWindowTicks is null || env.ProfilerDutyPct is null ||
             env.ProfilerSampled is null || env.ProfilerDisarmedBelowFloor is null)
             throw new PerformanceNormalizationException(
                 "Circinus native JSON is missing required profiler environment fields.");
-        if (env.ProfilerWindowMs.Value <= 0 || env.ProfilerCycles.Value <= 0 ||
-            env.ProfilerWindowTicks.Value <= 0 || !IsFinite(env.ProfilerWindowMs.Value))
-            throw new PerformanceNormalizationException("Circinus has no valid profiler denominator.");
-        if (env.ProfilerCycles.Value > MaximumProfilerCycles)
+        if (env.ProfilerCycles.Value < 0 || env.ProfilerWindowMs.Value < 0 ||
+            env.ProfilerWindowTicks.Value < 0 || !IsFinite(env.ProfilerWindowMs.Value))
+            throw new PerformanceNormalizationException("Circinus has an invalid profiler denominator.");
+        if (env.ProfilerCycles.Value >= MaximumProfilerCycles)
             throw new PerformanceNormalizationException("Circinus profiler cycles overflowed its retained frame ring.");
         if (!IsFinite(env.ProfilerDutyPct.Value) || env.ProfilerDutyPct.Value < 0 ||
             env.ProfilerDutyPct.Value > 100)
             throw new PerformanceNormalizationException("Circinus profiler duty percentage is outside 0..100.");
         if (env.ProfilerDisarmedBelowFloor.Value < 0)
             throw new PerformanceNormalizationException("Circinus disarmed-profiler count must be nonnegative.");
-        if (!env.ProfilerSampled.Value)
-            throw new PerformanceNormalizationException("Circinus did not mark the profiler window sampled.");
+        var activelyTimed = evidenceLens is PerformanceEvidenceLens.ProductInstrumented or
+            PerformanceEvidenceLens.ProductAbsentControl;
+        if (activelyTimed &&
+            (env.ProfilerWindowMs.Value <= 0 || env.ProfilerCycles.Value <= 0 ||
+             env.ProfilerWindowTicks.Value <= 0 || !env.ProfilerSampled.Value))
+            throw new PerformanceNormalizationException(
+                "Circinus did not retain a sampled profiler denominator for the active-timing lens.");
+        if (!activelyTimed &&
+            (env.ProfilerWindowMs.Value != 0 || env.ProfilerCycles.Value != 0 ||
+             env.ProfilerWindowTicks.Value != 0 || env.ProfilerSampled.Value))
+            throw new PerformanceNormalizationException(
+                "Circinus recorded active profiler timing in a disabled-control lens.");
     }
 
     private static void ValidateMethodRows(
@@ -424,10 +440,10 @@ internal static class PerformanceSampleNormalizer
             if (!keys.Add(key))
                 throw new PerformanceNormalizationException("Circinus emitted a duplicate patch row.");
             if (row.TotalMs is null || row.MeanMs is null || row.MaximumMs is null ||
-                row.Calls is null || row.TimedCalls is null || row.AmbiguousTargets is null ||
+                row.Calls is null || row.TimedCalls is null ||
                 row.Patch?.CanSkip is null)
                 throw new PerformanceNormalizationException(
-                    $"Circinus patch '{key}' is missing required measurements, canSkip, or ambiguousTargets.");
+                    $"Circinus patch '{key}' is missing required measurements or canSkip.");
             ValidateTiming(key, "patch", row.Total, row.Mean, row.Maximum, row.CallCount);
             if (row.TimedCallCount < 0 || row.TimedCallCount > row.CallCount)
                 throw new PerformanceNormalizationException(
@@ -472,10 +488,10 @@ internal static class PerformanceSampleNormalizer
                 throw new PerformanceNormalizationException(
                     "Circinus native sample is missing required measurements.");
             if (sample.GameTick < 0 || sample.RealtimeSeconds < 0 ||
-                sample.AchievedTps < 0 || sample.RequestedTps <= 0 || sample.AchievedFps < 0 ||
+                sample.AchievedTps < 0 || sample.RequestedTps < 0 || sample.AchievedFps < 0 ||
                 sample.ManagedHeapKilobytes < 0 || sample.ActivePawnCount < 0)
                 throw new PerformanceNormalizationException(
-                    "Circinus native sample counters must be nonnegative and target TPS must be positive.");
+                    "Circinus native sample counters and target TPS must be nonnegative.");
             RequireNonnegativeFinite(sample.RealtimeSeconds, "sample realtime");
             RequireNonnegativeFinite(sample.FrameMeanMilliseconds, "sample frame mean");
             RequireNonnegativeFinite(sample.FrameMaximumMilliseconds, "sample frame maximum");
@@ -507,6 +523,9 @@ internal static class PerformanceSampleNormalizer
         if (evidenceLens == PerformanceEvidenceLens.FullyDisarmed && sidecars.Count != 0)
             throw new PerformanceNormalizationException(
                 "A fully disarmed Circinus lens cannot retain any run-owned profiler sidecars.");
+        var nativePatchAmbiguity = (document.Patches ?? new List<NativePatchRow>())
+            .Where(row => !string.IsNullOrWhiteSpace(row.Patch?.Key))
+            .ToDictionary(row => row.Patch!.Key!, row => row.AmbiguousTargets, StringComparer.Ordinal);
         var keys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var sidecar in sidecars)
         {
@@ -524,7 +543,8 @@ internal static class PerformanceSampleNormalizer
                 throw new PerformanceNormalizationException(
                     $"Circinus profiler sidecar '{sidecar.RowKey}' has timed calls above total calls.");
             if ((evidenceLens == PerformanceEvidenceLens.ProductInstrumented ||
-                 evidenceLens == PerformanceEvidenceLens.ArmedDisabledWrapper) &&
+                 evidenceLens == PerformanceEvidenceLens.ArmedDisabledWrapper ||
+                 evidenceLens == PerformanceEvidenceLens.ProductAbsentControl) &&
                 !sidecar.HandArmed)
                 throw new PerformanceNormalizationException(
                     $"Circinus profiler sidecar '{sidecar.RowKey}' was not hand-armed for the instrumented lens.");
@@ -534,6 +554,11 @@ internal static class PerformanceSampleNormalizer
                     StringComparison.Ordinal))
                 throw new PerformanceNormalizationException(
                     $"Circinus profiler sidecar '{sidecar.RowKey}' has inconsistent empty-row state.");
+            if (!sidecar.Empty && sidecar.RowKind == CircinusRowKind.Patch &&
+                nativePatchAmbiguity.TryGetValue(sidecar.RowKey, out var nativeAmbiguous) &&
+                nativeAmbiguous != (sidecar.AmbiguousTargetCount > 1))
+                throw new PerformanceNormalizationException(
+                    $"Circinus patch '{sidecar.RowKey}' native ambiguity disagrees with its live attachment count.");
         }
 
         var nativeMethods = new HashSet<string>(
@@ -582,6 +607,46 @@ internal static class PerformanceSampleNormalizer
     }
 
     private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+
+    private static IReadOnlyList<NativeSample> SamplesInsideGatewayWindow(
+        NativeDocument document,
+        PerformanceNormalizationContext context)
+    {
+        var markers = document.Markers ?? new List<NativeMarker>();
+        var starts = markers.Where(item =>
+                string.Equals(item.Label, "gateway.sample-start", StringComparison.Ordinal))
+            .ToArray();
+        var ends = markers.Where(item =>
+                string.Equals(item.Label, "gateway.sample-end", StringComparison.Ordinal))
+            .ToArray();
+        if (starts.Length != 1 || ends.Length != 1)
+            throw new PerformanceNormalizationException(
+                "Circinus requires exactly one gateway sample-start and one gateway sample-end marker.");
+        var start = starts[0];
+        var end = ends[0];
+        if (start.Tick is null || start.Realtime is null || end.Tick is null || end.Realtime is null ||
+            start.Tick.Value < 0 || start.Realtime.Value < 0 || end.Tick.Value < start.Tick.Value ||
+            end.Realtime.Value < start.Realtime.Value ||
+            !IsFinite(start.Realtime.Value) || !IsFinite(end.Realtime.Value) ||
+            !string.Equals(start.Kind, context.WorkloadVersion, StringComparison.Ordinal) ||
+            !string.Equals(end.Kind, context.WorkloadVersion, StringComparison.Ordinal))
+            throw new PerformanceNormalizationException(
+                "Circinus gateway sample boundary markers are invalid or belong to another workload.");
+        if ((long)end.Tick.Value - start.Tick.Value != context.ElapsedGameTicks)
+            throw new PerformanceNormalizationException(
+                "Circinus marker tick span does not match the exact Gateway control window.");
+
+        var samples = (document.Samples ?? new List<NativeSample>())
+            .Where(item => item.Tick is not null && item.Realtime is not null &&
+                           item.GameTick >= start.Tick.Value && item.GameTick <= end.Tick.Value &&
+                           item.RealtimeSeconds > start.Realtime.Value &&
+                           item.RealtimeSeconds <= end.Realtime.Value)
+            .ToArray();
+        if (samples.Length == 0)
+            throw new PerformanceNormalizationException(
+                "Circinus retained no native samples inside the exact Gateway sample boundaries.");
+        return samples;
+    }
 
     private static NativeDocument Read(string json)
     {
@@ -680,9 +745,19 @@ internal static class PerformanceSampleNormalizer
         [DataMember(Name = "patchesDroppedMs")] public double? PatchesDroppedMs { get; set; }
         [DataMember(Name = "env")] public NativeEnvironment? Env { get; set; }
         [DataMember(Name = "samples")] public List<NativeSample>? Samples { get; set; }
+        [DataMember(Name = "markers")] public List<NativeMarker>? Markers { get; set; }
         [DataMember(Name = "methods")] public List<NativeMethodRow>? Methods { get; set; }
         [DataMember(Name = "patches")] public List<NativePatchRow>? Patches { get; set; }
         [DataMember(Name = "modCosts")] public List<NativeModRow>? ModCosts { get; set; }
+    }
+
+    [DataContract]
+    private sealed class NativeMarker
+    {
+        [DataMember(Name = "label")] public string? Label { get; set; }
+        [DataMember(Name = "tick")] public int? Tick { get; set; }
+        [DataMember(Name = "realtime")] public double? Realtime { get; set; }
+        [DataMember(Name = "kind")] public string? Kind { get; set; }
     }
 
     [DataContract]
@@ -728,7 +803,8 @@ internal static class PerformanceSampleNormalizer
         [DataMember(Name = "maxObservedMs")] public double? MaximumMs { get; set; }
         [DataMember(Name = "calls")] public long? Calls { get; set; }
         [DataMember(Name = "timedCalls")] public long? TimedCalls { get; set; }
-        [DataMember(Name = "ambiguousTargets")] public bool? AmbiguousTargets { get; set; }
+        // Circinus omits this default-valued field for an ordinary one-target patch.
+        [DataMember(Name = "ambiguousTargets", EmitDefaultValue = false)] public bool AmbiguousTargets { get; set; }
 
         public double Total => TotalMs!.Value;
         public double Mean => MeanMs!.Value;

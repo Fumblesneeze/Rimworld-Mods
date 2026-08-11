@@ -14,9 +14,14 @@ public sealed class GatewayEndToEndExecutionFactoryTests
         var driver = new PassingDriver();
         var isolation = new PassingIsolation();
         string? capturedDirectory = null;
+        string? contextDirectory = null;
         var factory = new GatewayEndToEndExecutionFactory(
             clock,
-            () => context,
+            directory =>
+            {
+                contextDirectory = directory;
+                return context;
+            },
             directory =>
             {
                 capturedDirectory = directory;
@@ -35,6 +40,10 @@ public sealed class GatewayEndToEndExecutionFactoryTests
             Assert.That(capturedDirectory, Is.EqualTo("exact-artifact-directory"));
             Assert.That(machine.Snapshot.GroupState, Is.EqualTo("pending"));
         });
+        machine.Advance();
+        machine.ConfirmPersisted(machine.Snapshot);
+        machine.Advance();
+        Assert.That(contextDirectory, Is.EqualTo("exact-artifact-directory"));
     }
 
     [Test]
@@ -42,7 +51,7 @@ public sealed class GatewayEndToEndExecutionFactoryTests
     {
         var factory = new GatewayEndToEndExecutionFactory(
             new FixedClock(),
-            () => new GatewayEndToEndTestContext(() => 0, () => 0, _ => null),
+            _ => new GatewayEndToEndTestContext(() => 0, () => 0, _ => null),
             _ => null!,
             new PassingIsolation());
 

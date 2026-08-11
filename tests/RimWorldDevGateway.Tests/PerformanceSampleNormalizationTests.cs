@@ -10,7 +10,7 @@ public sealed class PerformanceSampleNormalizationTests
     [Test]
     public void Native_rows_sidecars_time_series_and_control_checkpoints_keep_units_and_denominators()
     {
-        var raw = NativeJson();
+        var raw = NativeJson().Replace("\"kind\":\"v1\"", "\"kind\":\"kitchen-v3\"");
         var capture = Capture(raw);
         var context = new PerformanceNormalizationContext(
             workloadVersion: "kitchen-v3",
@@ -47,7 +47,7 @@ public sealed class PerformanceSampleNormalizationTests
             AssertMetric(normalized, "mod", "product.mod", "gross-profiler-window-share", 0.08d, "ratio", "profiler-window-ms");
             AssertMetric(normalized, "mod", "product.mod", "shared-profiler-window-share", 0.06d, "ratio", "profiler-window-ms");
             AssertMetric(normalized, "mod", "product.mod", "replacement-profiler-window-share", 0.02d, "ratio", "profiler-window-ms");
-            Assert.That(normalized.Samples, Has.Count.EqualTo(1));
+            Assert.That(normalized.Samples, Has.Length.EqualTo(1));
             Assert.That(normalized.Samples[0].Tps, Is.EqualTo(58));
             Assert.That(normalized.Samples[0].FrameMeanMilliseconds, Is.EqualTo(8.5d));
             Assert.That(normalized.Samples[0].HeapKilobytes, Is.EqualTo(512_000));
@@ -72,7 +72,7 @@ public sealed class PerformanceSampleNormalizationTests
     [TestCase("\"patchesDropped\":1", "dropped")]
     [TestCase("\"errorsDropped\":1", "errors")]
     [TestCase("\"profilerWindowMs\":0", "denominator")]
-    [TestCase("\"profilerCycles\":2001", "ring")]
+    [TestCase("\"profilerCycles\":2000", "ring")]
     public void Incomplete_truncated_or_denominatorless_native_run_is_rejected(
         string replacement,
         string expected)
@@ -144,6 +144,16 @@ public sealed class PerformanceSampleNormalizationTests
     }
 
     [Test]
+    public void Paused_terminal_native_sample_may_report_zero_target_tps()
+    {
+        var raw = NativeJson().Replace("\"tgt\":60", "\"tgt\":0");
+
+        var normalized = PerformanceSampleNormalizer.Normalize(Capture(raw), Context());
+
+        Assert.That(normalized.Samples.Single().TargetTps, Is.Zero);
+    }
+
+    [Test]
     public void Instrumented_evidence_rejects_non_hand_armed_or_inconsistent_sidecars()
     {
         var exception = Assert.Throws<PerformanceNormalizationException>(() =>
@@ -160,6 +170,61 @@ public sealed class PerformanceSampleNormalizationTests
     }
 
     [Test]
+    public void Product_absent_control_requires_every_owned_profiler_to_remain_hand_armed()
+    {
+        var context = new PerformanceNormalizationContext(
+            "v1", PerformanceEvidenceLens.ProductAbsentControl, "product-absent-control",
+            1_200, 1_000, 100, 200, new[] { 0, 0, 0 }, new[] { 0, 0, 0 },
+            new Dictionary<string, long>());
+
+        var exception = Assert.Throws<PerformanceNormalizationException>(() =>
+            PerformanceSampleNormalizer.Normalize(Capture(NativeJson(), patchHandArmed: false), context));
+
+        Assert.That(exception!.Message, Does.Contain("hand-armed").IgnoreCase);
+    }
+
+    [Test]
+    public void Only_native_samples_between_the_exact_gateway_boundary_markers_are_normalized()
+    {
+        const string sample =
+            "{\"t\":600,\"rt\":10,\"tps\":30,\"tgt\":60,\"fps\":60," +
+            "\"fmn\":10,\"fmx\":20,\"f95\":15,\"tmn\":10,\"tmx\":20," +
+            "\"heap\":500000,\"pw\":30},";
+        var raw = NativeJson().Replace("\"samples\":[", "\"samples\":[" + sample);
+
+        var normalized = PerformanceSampleNormalizer.Normalize(Capture(raw), Context());
+
+        Assert.That(normalized.Samples.Select(item => item.RealtimeSeconds), Is.EqualTo(new[] { 20d }));
+    }
+
+    [TestCase("\"markers\":[", "\"removedMarkers\":[", "marker")]
+    [TestCase("gateway.sample-end", "gateway.sample-start", "exactly one")]
+    public void Missing_or_ambiguous_gateway_sample_boundaries_fail_closed(
+        string original,
+        string replacement,
+        string expected)
+    {
+        var exception = Assert.Throws<PerformanceNormalizationException>(() =>
+            PerformanceSampleNormalizer.Normalize(Capture(NativeJson().Replace(original, replacement)), Context()));
+
+        Assert.That(exception!.Message, Does.Contain(expected).IgnoreCase);
+    }
+
+    [Test]
+    public void Gateway_and_Circinus_sample_tick_windows_must_be_identical()
+    {
+        var mismatched = new PerformanceNormalizationContext(
+            "v1", PerformanceEvidenceLens.ProductInstrumented, "instrumented",
+            1_199, 1_000, 100, 200, new[] { 0, 0, 0 }, new[] { 0, 0, 0 },
+            new Dictionary<string, long>());
+
+        var exception = Assert.Throws<PerformanceNormalizationException>(() =>
+            PerformanceSampleNormalizer.Normalize(Capture(NativeJson()), mismatched));
+
+        Assert.That(exception!.Message, Does.Contain("tick span").IgnoreCase);
+    }
+
+    [Test]
     public void Evidence_lens_requires_its_exact_control_mode_and_instrumentation_state()
     {
         Assert.That(() => new PerformanceNormalizationContext(
@@ -170,18 +235,68 @@ public sealed class PerformanceSampleNormalizationTests
 
         var context = new PerformanceNormalizationContext(
             "v1", PerformanceEvidenceLens.FullyDisarmed, "fully-disarmed",
-            1, 1, 1, 1, new[] { 0, 0, 0 }, new[] { 0, 0, 0 },
+            1_200, 1, 1, 1, new[] { 0, 0, 0 }, new[] { 0, 0, 0 },
             new Dictionary<string, long>());
+        var disabledRaw = DisabledNativeJson()
+            .ReplaceBetween("\"methods\":[", "],\"patches\"", string.Empty)
+            .ReplaceBetween("\"patches\":[", "],\"modCosts\"", string.Empty)
+            .ReplaceBetween("\"modCosts\":[", "]}", string.Empty);
         var exception = Assert.Throws<PerformanceNormalizationException>(() =>
-            PerformanceSampleNormalizer.Normalize(Capture(NativeJson()), context));
+            PerformanceSampleNormalizer.Normalize(
+                new CircinusCapture(
+                    "run-1", 1, 15, disabledRaw, disabledRaw, Capture(NativeJson()).Sidecars),
+                context));
         Assert.That(exception!.Message, Does.Contain("fully disarmed").IgnoreCase);
 
+        var unexpectedRowRaw = disabledRaw.Replace(
+            "\"methods\":[]",
+            "\"methods\":[{\"method\":{\"key\":\"unexpected\"},\"totalMs\":0," +
+            "\"meanMs\":0,\"maxMs\":0,\"calls\":0,\"samples\":0}]");
         var unexplainedRows = new CircinusCapture(
-            "run-1", 1, 15, NativeJson(), NativeJson(),
+            "run-1", 1, 15, unexpectedRowRaw, unexpectedRowRaw,
             Array.Empty<CircinusProfilerSidecar>());
         exception = Assert.Throws<PerformanceNormalizationException>(() =>
             PerformanceSampleNormalizer.Normalize(unexplainedRows, context));
         Assert.That(exception!.Message, Does.Contain("unexplained").IgnoreCase);
+    }
+
+    [TestCase(PerformanceEvidenceLens.ArmedDisabledWrapper, "armed-disabled-wrapper")]
+    [TestCase(PerformanceEvidenceLens.FullyDisarmed, "fully-disarmed")]
+    public void Disabled_control_lenses_accept_native_samples_but_require_zero_profiler_activity(
+        PerformanceEvidenceLens lens,
+        string controlMode)
+    {
+        var raw = DisabledNativeJson()
+            .ReplaceBetween("\"methods\":[", "],\"patches\"", string.Empty)
+            .ReplaceBetween("\"patches\":[", "],\"modCosts\"", string.Empty)
+            .ReplaceBetween("\"modCosts\":[", "]}", string.Empty);
+        var sidecars = lens == PerformanceEvidenceLens.ArmedDisabledWrapper
+            ? Capture(NativeJson()).Sidecars.Select(item => new CircinusProfilerSidecar(
+                item.MethodIdentity,
+                item.RowKind,
+                item.RowKey,
+                item.AmbiguousTargetCount,
+                true,
+                0,
+                0,
+                0,
+                true,
+                0,
+                "empty-or-uninvoked")).ToArray()
+            : Array.Empty<CircinusProfilerSidecar>();
+        var capture = new CircinusCapture("run-1", 1, 15, raw, raw, sidecars);
+        var context = new PerformanceNormalizationContext(
+            "v1", lens, controlMode, 1_200, 1000, 1, 1,
+            new[] { 0, 0, 0 }, new[] { 0, 0, 0 }, new Dictionary<string, long>());
+
+        var normalized = PerformanceSampleNormalizer.Normalize(capture, context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(normalized.Samples, Has.Length.EqualTo(1));
+            Assert.That(normalized.ProfilerPolicy.RecordedCycles, Is.Zero);
+            Assert.That(normalized.ProfilerPolicy.Sampled, Is.False);
+        });
     }
 
     [Test]
@@ -200,7 +315,6 @@ public sealed class PerformanceSampleNormalizationTests
     }
 
     [TestCase(",\"canSkip\":true", "", "canSkip")]
-    [TestCase("\"ambiguousTargets\":true", "", "ambiguousTargets")]
     public void Required_native_patch_flags_cannot_be_omitted(
         string original,
         string replacement,
@@ -214,6 +328,38 @@ public sealed class PerformanceSampleNormalizationTests
     }
 
     [Test]
+    public void Native_nonambiguous_patch_may_omit_its_false_ambiguity_flag()
+    {
+        var raw = NativeJson().Replace(",\"ambiguousTargets\":true", string.Empty);
+
+        var normalized = PerformanceSampleNormalizer.Normalize(
+            Capture(raw, patchTargetCount: 1),
+            Context());
+
+        Assert.That(normalized.Metrics.Any(item =>
+            item.Scope == "patch" && item.Key == "p1" && item.Name == "ambiguous-target-gross-share"),
+            Is.False);
+    }
+
+    [TestCase(1, true)]
+    [TestCase(2, false)]
+    public void Native_patch_ambiguity_must_match_the_live_attachment_count(
+        int targetCount,
+        bool nativeAmbiguous)
+    {
+        var raw = nativeAmbiguous
+            ? NativeJson()
+            : NativeJson().Replace(",\"ambiguousTargets\":true", string.Empty);
+
+        var exception = Assert.Throws<PerformanceNormalizationException>(() =>
+            PerformanceSampleNormalizer.Normalize(
+                Capture(raw, patchTargetCount: targetCount),
+                Context()));
+
+        Assert.That(exception!.Message, Does.Contain("ambiguity").IgnoreCase);
+    }
+
+    [Test]
     public void Frame_mean_may_exceed_p95_when_both_remain_below_the_maximum()
     {
         var raw = NativeJson().Replace("\"fmn\":8.5,\"fmx\":15,\"f95\":12", "\"fmn\":13,\"fmx\":15,\"f95\":12");
@@ -224,7 +370,7 @@ public sealed class PerformanceSampleNormalizationTests
         "v1",
         PerformanceEvidenceLens.ProductInstrumented,
         "instrumented",
-        100,
+        1_200,
         1_000,
         100,
         200,
@@ -235,7 +381,8 @@ public sealed class PerformanceSampleNormalizationTests
     private static CircinusCapture Capture(
         string raw,
         bool patchHandArmed = true,
-        long patchTimedCalls = 30) => new(
+        long patchTimedCalls = 30,
+        int patchTargetCount = 2) => new(
         "run-1",
         1,
         15,
@@ -247,7 +394,7 @@ public sealed class PerformanceSampleNormalizationTests
                 "patch-method",
                 CircinusRowKind.Patch,
                 "p1",
-                2,
+                patchTargetCount,
                 patchHandArmed,
                 2,
                 100,
@@ -298,6 +445,9 @@ public sealed class PerformanceSampleNormalizationTests
         "\"profilerDutyPct\":20,\"profilerSampled\":true,\"profilerDisarmedBelowFloor\":0}," +
         "\"samples\":[{\"t\":1200,\"rt\":20,\"tps\":58,\"tgt\":60,\"fps\":120," +
         "\"fmn\":8.5,\"fmx\":15,\"f95\":12,\"tmn\":9,\"tmx\":18,\"heap\":512000,\"pw\":36}]," +
+        "\"markers\":[{\"label\":\"gateway.sample-start\",\"tick\":0,\"realtime\":15," +
+        "\"kind\":\"v1\"},{\"label\":\"gateway.sample-end\",\"tick\":1200," +
+        "\"realtime\":20,\"kind\":\"v1\"}]," +
         "\"methods\":[{\"method\":{\"key\":\"m1\"},\"totalMs\":4,\"meanMs\":0.2," +
         "\"maxMs\":1,\"calls\":20,\"samples\":20}]," +
         "\"patches\":[{\"patch\":{\"key\":\"p1\",\"canSkip\":true},\"totalMs\":12," +
@@ -305,4 +455,22 @@ public sealed class PerformanceSampleNormalizationTests
         "\"ambiguousTargets\":true}]," +
         "\"modCosts\":[{\"packageId\":\"product.mod\",\"totalMs\":16,\"sharedMs\":12," +
         "\"replacementMs\":4,\"patchCount\":1,\"methodCount\":1,\"errorCount\":0}]}";
+
+    private static string DisabledNativeJson() => NativeJson()
+        .Replace("\"profilerCycles\":20", "\"profilerCycles\":0")
+        .Replace("\"profilerWindowMs\":200", "\"profilerWindowMs\":0")
+        .Replace("\"profilerWindowTicks\":1200", "\"profilerWindowTicks\":0")
+        .Replace("\"profilerDutyPct\":20", "\"profilerDutyPct\":0")
+        .Replace("\"profilerSampled\":true", "\"profilerSampled\":false");
+}
+
+internal static class PerformanceNormalizationStringExtensions
+{
+    public static string ReplaceBetween(this string value, string prefix, string suffix, string replacement)
+    {
+        var start = value.IndexOf(prefix, StringComparison.Ordinal) + prefix.Length;
+        var end = value.IndexOf(suffix, start, StringComparison.Ordinal);
+        if (start < prefix.Length || end < start) throw new InvalidOperationException("Fixture boundary missing.");
+        return value.Substring(0, start) + replacement + value.Substring(end);
+    }
 }

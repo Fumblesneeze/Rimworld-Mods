@@ -3,13 +3,13 @@ namespace RimWorldDevGateway;
 public sealed class GatewayEndToEndExecutionFactory : IGatewayEndToEndExecutionFactory
 {
     private readonly IGatewayEndToEndClock clock;
-    private readonly Func<GatewayEndToEndTestContext> contextFactory;
+    private readonly Func<string, GatewayEndToEndTestContext> contextFactory;
     private readonly Func<string, IGatewayEndToEndStepDriver> stepDriverFactory;
     private readonly IGatewayEndToEndTestIsolation isolation;
 
     public GatewayEndToEndExecutionFactory(
         IGatewayEndToEndClock clock,
-        Func<GatewayEndToEndTestContext> contextFactory,
+        Func<string, GatewayEndToEndTestContext> contextFactory,
         Func<string, IGatewayEndToEndStepDriver> stepDriverFactory,
         IGatewayEndToEndTestIsolation isolation)
     {
@@ -39,7 +39,7 @@ public sealed class GatewayEndToEndExecutionFactory : IGatewayEndToEndExecutionF
         return new GatewayEndToEndExecutionStateMachine(
             tests,
             clock,
-            contextFactory,
+            () => contextFactory(artifactDirectory),
             driver,
             isolation,
             sessionCredential);

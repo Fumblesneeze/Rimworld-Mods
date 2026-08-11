@@ -58,6 +58,38 @@ public sealed class CircinusInstalledShapeTests
         Assert.That(catalog, Is.Not.Null);
     }
 
+    [Test]
+    public void Installed_Harmony_shape_exposes_the_exact_temporary_tick_boundary_members()
+    {
+        var path = typeof(CircinusInstalledShapeTests).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .Single(attribute => attribute.Key == "HarmonyAssemblyPath")
+            .Value;
+        var assembly = Assembly.LoadFrom(path);
+        var harmony = assembly.GetType("HarmonyLib.Harmony", throwOnError: true)!;
+        var harmonyMethod = assembly.GetType("HarmonyLib.HarmonyMethod", throwOnError: true)!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(harmony.GetConstructor(new[] { typeof(string) }), Is.Not.Null);
+            Assert.That(harmonyMethod.GetConstructor(new[] { typeof(MethodInfo) }), Is.Not.Null);
+            Assert.That(harmony.GetMethod(
+                "Patch",
+                BindingFlags.Public | BindingFlags.Instance,
+                null,
+                new[]
+                {
+                    typeof(MethodBase), harmonyMethod, harmonyMethod, harmonyMethod, harmonyMethod
+                },
+                null)?.ReturnType, Is.EqualTo(typeof(MethodInfo)));
+            Assert.That(harmony.GetMethod(
+                "Unpatch",
+                BindingFlags.Public | BindingFlags.Instance,
+                null,
+                new[] { typeof(MethodBase), typeof(MethodInfo) },
+                null)?.ReturnType, Is.EqualTo(typeof(void)));
+        });
+    }
+
     private static string Sha256(string path)
     {
         using var stream = File.OpenRead(path);

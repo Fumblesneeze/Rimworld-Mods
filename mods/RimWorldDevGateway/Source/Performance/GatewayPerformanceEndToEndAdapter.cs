@@ -40,18 +40,3 @@ internal sealed class GatewayPerformanceEndToEndAdapter : IRimWorldEndToEndTest
         foreach (var step in service.CompleteSample(descriptor, context)) yield return step;
     }
 }
-
-internal abstract class GatewayPerformanceRunService
-{
-    public abstract void Prepare(PerformanceTestDescriptor descriptor, IEndToEndContext context);
-    public abstract IEnumerable<EndToEndStep> BeginWarmUp(
-        PerformanceTestDescriptor descriptor,
-        IEndToEndContext context);
-    public abstract IEnumerable<EndToEndStep> BeginSample(
-        PerformanceTestDescriptor descriptor,
-        IEndToEndContext context);
-    public abstract IEnumerable<EndToEndStep> CompleteSample(
-        PerformanceTestDescriptor descriptor,
-        IEndToEndContext context);
-    public abstract void Cleanup();
-}

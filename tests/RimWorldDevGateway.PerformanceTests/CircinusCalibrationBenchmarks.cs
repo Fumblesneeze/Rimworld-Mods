@@ -23,12 +23,17 @@ internal static class CalibrationContract
     ComparisonId = CalibrationContract.Comparison,
     WarmUpTicks = 120,
     SampleTicks = 600,
+    GameSpeed = PerformanceGameSpeed.Normal,
     Repetitions = 1,
     EvidenceLens = PerformanceEvidenceLens.ProductInstrumented)]
 [PerformanceMethodSelector(
     PerformanceMethodSelectorKind.Method,
-    "RimWorldDevGateway.GatewayApiRouter::Handle(RimWorldDevGateway.GatewayHttpRequest,System.String)",
-    "gateway-request")]
+    "RimWorldDevGateway.GatewayGameControlController::Capture()",
+    "gateway-game-control")]
+[PerformanceMethodSelector(
+    PerformanceMethodSelectorKind.HarmonyOwner,
+    CalibrationContract.Owner,
+    "exact-native-tick-window")]
 public sealed class InstrumentedCalibrationBenchmark : CalibrationBenchmark { }
 
 [RimWorldPerformanceTest(
@@ -43,12 +48,17 @@ public sealed class InstrumentedCalibrationBenchmark : CalibrationBenchmark { }
     ComparisonId = CalibrationContract.Comparison,
     WarmUpTicks = 120,
     SampleTicks = 600,
+    GameSpeed = PerformanceGameSpeed.Normal,
     Repetitions = 1,
     EvidenceLens = PerformanceEvidenceLens.ArmedDisabledWrapper)]
 [PerformanceMethodSelector(
     PerformanceMethodSelectorKind.Method,
-    "RimWorldDevGateway.GatewayApiRouter::Handle(RimWorldDevGateway.GatewayHttpRequest,System.String)",
-    "gateway-request")]
+    "RimWorldDevGateway.GatewayGameControlController::Capture()",
+    "gateway-game-control")]
+[PerformanceMethodSelector(
+    PerformanceMethodSelectorKind.HarmonyOwner,
+    CalibrationContract.Owner,
+    "exact-native-tick-window")]
 public sealed class ArmedDisabledCalibrationBenchmark : CalibrationBenchmark { }
 
 [RimWorldPerformanceTest(
@@ -63,12 +73,17 @@ public sealed class ArmedDisabledCalibrationBenchmark : CalibrationBenchmark { }
     ComparisonId = CalibrationContract.Comparison,
     WarmUpTicks = 120,
     SampleTicks = 600,
+    GameSpeed = PerformanceGameSpeed.Normal,
     Repetitions = 1,
     EvidenceLens = PerformanceEvidenceLens.FullyDisarmed)]
 [PerformanceMethodSelector(
     PerformanceMethodSelectorKind.Method,
-    "RimWorldDevGateway.GatewayApiRouter::Handle(RimWorldDevGateway.GatewayHttpRequest,System.String)",
-    "gateway-request")]
+    "RimWorldDevGateway.GatewayGameControlController::Capture()",
+    "gateway-game-control")]
+[PerformanceMethodSelector(
+    PerformanceMethodSelectorKind.HarmonyOwner,
+    CalibrationContract.Owner,
+    "exact-native-tick-window")]
 public sealed class DisarmedCalibrationBenchmark : CalibrationBenchmark { }
 
 public abstract class CalibrationBenchmark : IRimWorldPerformanceTest

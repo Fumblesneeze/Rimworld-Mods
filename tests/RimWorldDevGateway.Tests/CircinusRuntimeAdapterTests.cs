@@ -502,7 +502,7 @@ public sealed class CircinusRuntimeAdapterTests
         {
             Assert.That(activeRun.TryArmMethod(method, "fixture", out var armReason), Is.True, armReason);
             SeedProfiler(method, empty: false);
-            SetDocumentRows(string.Empty, PatchRow(firstPatchKey));
+            SetDocumentRows(string.Empty, PatchRow(firstPatchKey, ambiguousTargets: true));
 
             Assert.That(activeRun.TryStopAndCapture(
                 Persisted(activeRun),
@@ -510,7 +510,8 @@ public sealed class CircinusRuntimeAdapterTests
                 out var reason), Is.True, reason);
             Assert.Multiple(() =>
             {
-                Assert.That(capture!.Sidecars.Single().RowKey, Is.EqualTo(firstPatchKey));
+                Assert.That(capture!.Sidecars, Has.Count.EqualTo(1));
+                Assert.That(capture.Sidecars.Single().RowKey, Is.EqualTo(firstPatchKey));
                 Assert.That(capture.Sidecars.Single().AmbiguousTargetCount, Is.EqualTo(2));
             });
         }
@@ -533,6 +534,75 @@ public sealed class CircinusRuntimeAdapterTests
                     .EqualTo("empty-or-uninvoked"));
             });
         }
+    }
+
+    [Test]
+    public void Successful_backend_completion_releases_the_exact_owned_profiler_session()
+    {
+        var method = typeof(CircinusRuntimeAdapterTests).GetMethod(
+            nameof(ProfiledFixtureMethod),
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+        var binding = Bind();
+        Assert.That(binding.TryBeginRun("backend-success", out var run, out var startReason),
+            Is.True, startReason);
+        Assert.That(run!.TryArmMethod(method, "fixture", out var armReason), Is.True, armReason);
+        Assert.That(InvokeStatic<bool>(
+            "Circinus.Profiling.Instrumenter",
+            "IsPatched",
+            method), Is.True);
+
+        var result = GatewayCircinusPerformanceBackend.CompleteOwnedRun(ref run, _ => "complete");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.EqualTo("complete"));
+            Assert.That(run, Is.Null);
+            Assert.That(InvokeStatic<bool>(
+                "Circinus.Profiling.Instrumenter",
+                "IsPatched",
+                method), Is.False);
+            Assert.That(GetProperty<bool>(CurrentRecorder(), "Recording"), Is.False);
+        });
+    }
+
+    [Test]
+    public void Dispose_retries_failed_recorder_method_and_target_cleanup_until_all_are_inactive()
+    {
+        var method = typeof(CircinusRuntimeAdapterTests).GetMethod(
+            nameof(ProfiledFixtureMethod),
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+        var binding = Bind();
+        Assert.That(binding.TryBeginRun("retry-cleanup", out var run, out var startReason),
+            Is.True, startReason);
+        Assert.That(run!.TryArmMethod(method, "fixture", out var methodReason), Is.True, methodReason);
+        Assert.That(run.TryArmTarget("fixture.valid", out var targetReason), Is.True, targetReason);
+        SetRecorderField("ThrowOnStopForTests", true);
+        SetStaticField("Circinus.Profiling.Instrumenter", "ThrowOnDisarmMethodForTests", true);
+        SetStaticField("Circinus.Profiling.Instrumenter", "ThrowOnDisarmTargetForTests", true);
+
+        var failure = Assert.Throws<AggregateException>(() => run.Dispose());
+        Assert.Multiple(() =>
+        {
+            Assert.That(failure!.InnerExceptions, Has.Count.GreaterThanOrEqualTo(3));
+            Assert.That(GetProperty<bool>(CurrentRecorder(), "Recording"), Is.True);
+            Assert.That(InvokeStatic<bool>("Circinus.Profiling.Instrumenter", "IsPatched", method), Is.True);
+            Assert.That(GetStaticProperty<int>("Circinus.Profiling.Instrumenter", "ActiveTargetCountForTests"),
+                Is.EqualTo(1));
+        });
+
+        SetRecorderField("ThrowOnStopForTests", false);
+        SetStaticField("Circinus.Profiling.Instrumenter", "ThrowOnDisarmMethodForTests", false);
+        SetStaticField("Circinus.Profiling.Instrumenter", "ThrowOnDisarmTargetForTests", false);
+        Assert.DoesNotThrow(() => run.Dispose());
+        Assert.Multiple(() =>
+        {
+            Assert.That(GetProperty<bool>(CurrentRecorder(), "Recording"), Is.False);
+            Assert.That(InvokeStatic<bool>("Circinus.Profiling.Instrumenter", "IsPatched", method), Is.False);
+            Assert.That(GetStaticProperty<int>("Circinus.Profiling.Instrumenter", "ActiveTargetCountForTests"),
+                Is.Zero);
+            Assert.That(GetStaticField<bool>("Circinus.Profiling.ProfilerRegistry", "Enabled"), Is.False);
+            Assert.That(GetStaticField<bool>("Circinus.Profiling.ProfilerRegistry", "Recording"), Is.False);
+        });
     }
 
     private static CircinusRuntimeBinding Bind()
@@ -587,8 +657,9 @@ public sealed class CircinusRuntimeAdapterTests
     private static string MethodRow(string key) =>
         "{\"method\":{\"key\":\"" + key + "\"},\"totalMs\":1,\"calls\":12}";
 
-    private static string PatchRow(string key) =>
-        "{\"patch\":{\"key\":\"" + key + "\"},\"totalMs\":1,\"calls\":12,\"timedCalls\":7}";
+    private static string PatchRow(string key, bool ambiguousTargets = false) =>
+        "{\"patch\":{\"key\":\"" + key + "\"},\"totalMs\":1,\"calls\":12,\"timedCalls\":7" +
+        (ambiguousTargets ? ",\"ambiguousTargets\":true" : string.Empty) + "}";
 
     private static object CurrentRecorder() =>
         GetStaticProperty<object>("Circinus.Session.RunRecorder", "Current");

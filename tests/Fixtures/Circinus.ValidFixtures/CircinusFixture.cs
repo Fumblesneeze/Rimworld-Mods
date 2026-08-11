@@ -56,6 +56,7 @@ namespace Circinus.Session
         public int MarkerCount;
         public int StopCount;
         public bool ThrowOnActiveId;
+        public bool ThrowOnStopForTests;
         private int runSequence;
 
         public bool Start(string label)
@@ -75,6 +76,7 @@ namespace Circinus.Session
         public RunDocument Stop()
         {
             StopCount++;
+            if (ThrowOnStopForTests) throw new InvalidOperationException("stop failure");
             Recording = false;
             return Document;
         }
@@ -95,6 +97,7 @@ namespace Circinus.Session
             MarkerCount = 0;
             StopCount = 0;
             ThrowOnActiveId = false;
+            ThrowOnStopForTests = false;
             runSequence = 0;
         }
     }
@@ -157,6 +160,8 @@ namespace Circinus.Profiling
         public static bool ThrowBeforeArmMethodForTests;
         public static bool ThrowAfterArmMethodForTests;
         public static bool ThrowAfterArmTargetForTests;
+        public static bool ThrowOnDisarmMethodForTests;
+        public static bool ThrowOnDisarmTargetForTests;
         public static bool IgnoreTargetHandArmedForTests;
         public static int ActiveTargetCountForTests => Targets.Count;
 
@@ -186,9 +191,15 @@ namespace Circinus.Profiling
             if (ThrowAfterArmTargetForTests) throw new InvalidOperationException("arm target after failure");
             return target.ArmedMethods;
         }
-        public static bool DisarmMethod(MethodBase method) => Methods.Remove(method);
+        public static bool DisarmMethod(MethodBase method)
+        {
+            if (ThrowOnDisarmMethodForTests) throw new InvalidOperationException("disarm method failure");
+            ProfilerRegistry.RemoveForTests(method);
+            return Methods.Remove(method);
+        }
         public static int Disarm(ProfileTarget target)
         {
+            if (ThrowOnDisarmTargetForTests) throw new InvalidOperationException("disarm target failure");
             if (!Targets.Remove(target)) return 0;
             var count = target.ArmedMethods;
             foreach (var method in target.Methods) ProfilerRegistry.RemoveForTests(method);
@@ -210,6 +221,8 @@ namespace Circinus.Profiling
             ThrowBeforeArmMethodForTests = false;
             ThrowAfterArmMethodForTests = false;
             ThrowAfterArmTargetForTests = false;
+            ThrowOnDisarmMethodForTests = false;
+            ThrowOnDisarmTargetForTests = false;
             IgnoreTargetHandArmedForTests = false;
         }
 

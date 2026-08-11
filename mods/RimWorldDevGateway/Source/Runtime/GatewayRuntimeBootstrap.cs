@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Threading;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
+using RimWorldDevGateway.Performance;
 using UnityEngine;
 using Verse;
 
@@ -233,12 +234,25 @@ public static class GatewayRuntimeBootstrap
                         new VerseGatewayEndToEndExecutionReadiness(),
                         new GatewayEndToEndExecutionFactory(
                             clock,
-                            () => new GatewayEndToEndTestContext(
-                                () => clock.FrameCount,
-                                () => clock.GameTick,
-                                serviceType => contextServices.TryGetValue(serviceType, out var service)
-                                    ? service
-                                    : null),
+                            artifactDirectory =>
+                            {
+                                var testServices = new Dictionary<Type, object>(contextServices);
+                                var performanceBackend = new GatewayCircinusPerformanceBackend(
+                                    () => AppDomain.CurrentDomain.GetAssemblies(),
+                                    () => LoadedModManager.RunningModsListForReading
+                                        .Select(mod => mod.PackageId)
+                                        .ToArray(),
+                                    () => GenFilePaths.SaveDataFolderPath,
+                                    artifactDirectory);
+                                testServices[typeof(GatewayPerformanceRunService)] =
+                                    new CoordinatedGatewayPerformanceRunService(performanceBackend);
+                                return new GatewayEndToEndTestContext(
+                                    () => clock.FrameCount,
+                                    () => clock.GameTick,
+                                    serviceType => testServices.TryGetValue(serviceType, out var service)
+                                        ? service
+                                        : null);
+                            },
                             artifactDirectory => new GatewayEndToEndNativeStepDriver(
                                 new GatewayEndToEndNativeActions(
                                     new GatewayEndToEndGatewayBackend(

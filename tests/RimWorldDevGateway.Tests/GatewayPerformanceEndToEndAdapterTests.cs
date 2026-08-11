@@ -8,6 +8,120 @@ namespace RimWorldDevGateway.Tests;
 [TestFixture]
 public sealed class GatewayPerformanceEndToEndAdapterTests
 {
+    [TestCase(599, 600, true)]
+    [TestCase(600, 600, false)]
+    [TestCase(601, 600, false)]
+    [TestCase(601, -1, true)]
+    public void Tick_boundary_gate_allows_only_native_ticks_before_the_exact_target(
+        int current,
+        int target,
+        bool expected)
+    {
+        Assert.That(PerformanceTickBoundaryGate.ShouldRunTick(current, target), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void Coordinated_service_uses_native_time_steps_and_bounds_the_runtime_session_around_the_workload()
+    {
+        var calls = new List<string>();
+        var backend = new RecordingBackend(calls);
+        var timestamp = 1000L;
+        var memory = 2000L;
+        var collections = new[] { 1, 2, 3 };
+        var tick = 10;
+        var service = new CoordinatedGatewayPerformanceRunService(
+            backend,
+            () => timestamp,
+            () => memory,
+            generation => collections[generation]);
+        var context = new GatewayEndToEndTestContext(() => 0, () => tick, _ => null);
+        var descriptor = PerformanceTestContract.Describe(typeof(ShortFixtureBenchmark));
+
+        service.Prepare(descriptor, context);
+        using var warmup = service.BeginWarmUp(descriptor, context).GetEnumerator();
+        Assert.That(warmup.MoveNext(), Is.True);
+        Assert.That(warmup.Current, Is.TypeOf<TimeControlActionStep>());
+        Assert.That(calls, Is.EqualTo(new[] { "prepare", "arm:40" }));
+        Assert.That(warmup.MoveNext(), Is.True);
+        Assert.That(warmup.Current, Is.TypeOf<WaitUntilStep>());
+        tick = 40;
+        Assert.That(((WaitUntilStep)warmup.Current).Predicate(context), Is.True);
+        Assert.That(warmup.MoveNext(), Is.True);
+        Assert.That(warmup.Current, Is.TypeOf<TimeControlActionStep>());
+        Assert.That(warmup.MoveNext(), Is.False);
+        Assert.That(calls, Is.EqualTo(new[] { "prepare", "arm:40", "confirm:40", "disarm" }));
+
+        var begin = service.BeginSample(descriptor, context).GetEnumerator();
+        Assert.That(begin.MoveNext(), Is.True);
+        Assert.That(begin.Current, Is.TypeOf<ScreenshotStep>());
+        Assert.That(calls, Is.EqualTo(new[] { "prepare", "arm:40", "confirm:40", "disarm" }));
+        Assert.That(begin.MoveNext(), Is.True);
+        Assert.That(begin.Current, Is.TypeOf<TimeControlActionStep>());
+        Assert.That(calls, Is.EqualTo(new[]
+        {
+            "prepare", "arm:40", "confirm:40", "disarm", "start", "arm:100"
+        }));
+
+        tick = 100;
+        timestamp = 1600;
+        memory = 2600;
+        collections = new[] { 2, 4, 6 };
+        var complete = service.CompleteSample(descriptor, context).GetEnumerator();
+        Assert.That(complete.MoveNext(), Is.True);
+        Assert.That(complete.Current, Is.TypeOf<WaitUntilStep>());
+        Assert.That(((WaitUntilStep)complete.Current).Predicate(context), Is.True);
+        Assert.That(complete.MoveNext(), Is.True);
+        Assert.That(complete.Current, Is.TypeOf<TimeControlActionStep>());
+        Assert.That(calls.Last(), Is.EqualTo("arm:100"));
+        Assert.That(complete.MoveNext(), Is.True);
+        Assert.That(complete.Current, Is.TypeOf<CheckpointStep>());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(calls, Is.EqualTo(new[]
+            {
+                "prepare", "arm:40", "confirm:40", "disarm", "start", "arm:100",
+                "confirm:100", "disarm", "complete"
+            }));
+            Assert.That(backend.Window!.StartGameTick, Is.EqualTo(40));
+            Assert.That(backend.Window.EndGameTick, Is.EqualTo(100));
+            Assert.That(backend.Window.ManagedMemoryStartBytes, Is.EqualTo(2000));
+            Assert.That(backend.Window.ManagedMemoryEndBytes, Is.EqualTo(2600));
+            Assert.That(((CheckpointStep)complete.Current).Capture(context)["normalized"],
+                Is.EqualTo("normalized.json"));
+        });
+        Assert.That(complete.MoveNext(), Is.True);
+        Assert.That(complete.Current, Is.TypeOf<ScreenshotStep>());
+        Assert.That(complete.MoveNext(), Is.False);
+        service.Cleanup();
+        Assert.That(calls.Last(), Is.EqualTo("cleanup"));
+    }
+
+    [Test]
+    public void Coordinated_service_rejects_a_tick_window_that_overshoots_its_exact_boundary()
+    {
+        var backend = new RecordingBackend(new List<string>());
+        var tick = 10;
+        var service = new CoordinatedGatewayPerformanceRunService(backend, () => 0, () => 0, _ => 0);
+        var context = new GatewayEndToEndTestContext(() => 0, () => tick, _ => null);
+        var descriptor = PerformanceTestContract.Describe(typeof(ShortFixtureBenchmark));
+
+        service.Prepare(descriptor, context);
+        using var begin = service.BeginSample(descriptor, context).GetEnumerator();
+        Assert.That(begin.MoveNext(), Is.True);
+        Assert.That(begin.Current, Is.TypeOf<ScreenshotStep>());
+        Assert.That(begin.MoveNext(), Is.True);
+        tick = 71;
+        using var complete = service.CompleteSample(descriptor, context).GetEnumerator();
+        Assert.That(complete.MoveNext(), Is.True);
+        Assert.That(((WaitUntilStep)complete.Current).Predicate(context), Is.True);
+        Assert.That(complete.MoveNext(), Is.True);
+
+        var error = Assert.Throws<InvalidOperationException>(() => complete.MoveNext());
+        Assert.That(error!.Message, Does.Contain("exact tick boundary").And.Contain("70").And.Contain("71"));
+        service.Cleanup();
+    }
+
     [Test]
     public void Prepare_failure_still_registers_and_runs_performance_cleanup()
     {
@@ -26,6 +140,41 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
             Assert.That(context.RunDeferredCleanup(), Is.True);
             Assert.That(calls, Is.EqualTo(new[] { "prepare", "cleanup" }));
         });
+    }
+
+    [Test]
+    public void Throughput_is_measured_as_sample_delta_and_warmup_counts_cannot_satisfy_the_checkpoint()
+    {
+        var backend = new RecordingBackend(new List<string>());
+        var counter = new MutableCounter { Value = 100 };
+        var tick = 10;
+        var service = new CoordinatedGatewayPerformanceRunService(
+            backend,
+            () => 1_000,
+            () => 2_000,
+            _ => 0);
+        var context = new GatewayEndToEndTestContext(
+            () => 0,
+            () => tick,
+            type => type == typeof(IGatewayPerformanceThroughputCounter) ? counter : null);
+        var descriptor = PerformanceTestContract.Describe(typeof(ThroughputFixtureBenchmark));
+
+        service.Prepare(descriptor, context);
+        using var begin = service.BeginSample(descriptor, context).GetEnumerator();
+        Assert.That(begin.MoveNext(), Is.True);
+        Assert.That(begin.Current, Is.TypeOf<ScreenshotStep>());
+        Assert.That(begin.MoveNext(), Is.True);
+        tick = 70;
+        counter.Value = 104;
+        using var complete = service.CompleteSample(descriptor, context).GetEnumerator();
+        Assert.That(complete.MoveNext(), Is.True);
+        Assert.That(((WaitUntilStep)complete.Current).Predicate(context), Is.True);
+        Assert.That(complete.MoveNext(), Is.True);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => complete.MoveNext());
+        Assert.That(exception!.Message, Does.Contain("observed 4").And.Contain("at least 5"));
+        Assert.That(backend.ThroughputCounts, Is.Null);
+        service.Cleanup();
     }
 
     private sealed class FailingPrepareService : GatewayPerformanceRunService
@@ -55,6 +204,44 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         public override void Cleanup() => calls.Add("cleanup");
     }
 
+    private sealed class RecordingBackend : IGatewayPerformanceRuntimeBackend
+    {
+        private readonly IList<string> calls;
+        public RecordingBackend(IList<string> calls) => this.calls = calls;
+        public GatewayPerformanceControlWindow? Window { get; private set; }
+        public IReadOnlyDictionary<string, long>? ThroughputCounts { get; private set; }
+        public void Prepare(PerformanceTestDescriptor descriptor) => calls.Add("prepare");
+        public void Start(PerformanceTestDescriptor descriptor) => calls.Add("start");
+        public void ArmTickBoundary(int gameTick) => calls.Add("arm:" + gameTick);
+        public void ConfirmTickBoundary(int gameTick)
+        {
+            calls.Add("confirm:" + gameTick);
+            var arm = calls.Last(item => item.StartsWith("arm:", StringComparison.Ordinal));
+            var expected = int.Parse(arm.Substring(4));
+            if (gameTick != expected)
+                throw new InvalidOperationException(
+                    $"Performance window expected exact tick boundary {expected}, observed {gameTick}.");
+        }
+        public void DisarmTickBoundary() => calls.Add("disarm");
+        public IReadOnlyDictionary<string, string> Complete(
+            PerformanceTestDescriptor descriptor,
+            GatewayPerformanceControlWindow controlWindow,
+            IReadOnlyDictionary<string, long> throughputCounts)
+        {
+            calls.Add("complete");
+            Window = controlWindow;
+            ThroughputCounts = throughputCounts;
+            return new Dictionary<string, string> { ["normalized"] = "normalized.json" };
+        }
+        public void Cleanup() => calls.Add("cleanup");
+    }
+
+    private sealed class MutableCounter : IGatewayPerformanceThroughputCounter
+    {
+        public long Value { get; set; }
+        public long Read(string id) => Value;
+    }
+
     [RimWorldPerformanceTest(
         "gateway.adapter-fixture",
         EndToEndTestContract.GatewayPackageId,
@@ -64,6 +251,41 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         PerformanceTestContract.CircinusPackageId,
         ComparisonId = "gateway.adapter-fixture")]
     public sealed class FixtureBenchmark : IRimWorldPerformanceTest
+    {
+        public void Arrange(IEndToEndContext context) { }
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) =>
+            Enumerable.Empty<EndToEndStep>().GetEnumerator();
+    }
+
+    [RimWorldPerformanceTest(
+        "gateway.short-adapter-fixture",
+        EndToEndTestContract.GatewayPackageId,
+        EndToEndTestContract.GatewayPackageId,
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        PerformanceTestContract.CircinusPackageId,
+        ComparisonId = "gateway.short-adapter-fixture",
+        WarmUpTicks = 30,
+        SampleTicks = 60)]
+    public sealed class ShortFixtureBenchmark : IRimWorldPerformanceTest
+    {
+        public void Arrange(IEndToEndContext context) { }
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) =>
+            Enumerable.Empty<EndToEndStep>().GetEnumerator();
+    }
+
+    [RimWorldPerformanceTest(
+        "gateway.throughput-adapter-fixture",
+        EndToEndTestContract.GatewayPackageId,
+        EndToEndTestContract.GatewayPackageId,
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        PerformanceTestContract.CircinusPackageId,
+        ComparisonId = "gateway.throughput-adapter-fixture",
+        WarmUpTicks = 0,
+        SampleTicks = 60)]
+    [PerformanceThroughputCheckpoint("native-actions", 5)]
+    public sealed class ThroughputFixtureBenchmark : IRimWorldPerformanceTest
     {
         public void Arrange(IEndToEndContext context) { }
         public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) =>
