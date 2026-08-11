@@ -3,59 +3,107 @@
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: Performance fixtures declare exact reproducible groups
-Every performance fixture SHALL be a separately staged attributed type with a stable benchmark ID, owning package, complete ordered non-Gateway package sequence, deterministic seed, workload version, warm-up ticks, sample ticks, game speed, and repetition policy. DPA's package and Gateway SHALL be present in every launched group, while product and optional package order SHALL be exact and recorded.
+Every performance fixture SHALL be a separately staged attributed type with a stable benchmark ID, staging-owner package, measured-subject package, complete ordered non-Gateway package sequence, deterministic seed, workload version, warm-up ticks, sample ticks, game speed, repetition policy, and evidence lens. Harmony SHALL precede Core, and Circinus package `astryl.Circinus` plus Gateway SHALL be present in every canonical Circinus benchmark group while product and optional package order remains exact and recorded. Dubs Performance Analyzer SHALL NOT be present in a canonical Circinus benchmark group. The explicitly noncanonical DPA diagnostic command is exempt from the Circinus requirement and SHALL instead exclude Circinus. A product-absent control SHALL be staged under an active non-product owner, declare its absent measured subject and its own exact group, contain no product reference, and SHALL be comparable as a net system delta only when the same workload and throughput checkpoints remain semantically valid with and without the product.
 
 #### Scenario: Base and all-supported benchmarks are selected
 - **WHEN** the caller selects one base Immersive Chefs fixture and one all-supported fixture
 - **THEN** the host launches one fresh process for each distinct exact sequence and records every declared workload parameter before sampling
 
-### Requirement: Dubs Performance Analyzer is guarded and test-only
-The runtime SHALL activate performance collection only when package `Dubwise.DubsPerformanceAnalyzer.steam` is active and assembly `PerformanceAnalyzer` satisfies the exact validated 1.6 reflection shape. The result SHALL record package version metadata, assembly identity, MVID, length, and SHA-256. No shipping repository mod SHALL reference or bundle DPA, and an absent, inactive, or incompatible analyzer SHALL fail only the performance run.
+### Requirement: Circinus is guarded, local-only, and test-only
+The runtime SHALL activate performance collection only when package `astryl.Circinus` is active and assembly `Circinus` satisfies the exact validated RimWorld 1.6 reflection shape and readable run-document schema major. The result SHALL record package version metadata, product build, assembly identity, MVID, length, SHA-256, schema major/minor, and native profiler policy/caps. No shipping repository mod SHALL reference or bundle Circinus, and an absent, inactive, or incompatible analyzer SHALL fail only the performance run.
 
-#### Scenario: DPA updates incompatibly
-- **WHEN** its package is active but a required registration, recording, or result-store member differs in declaring type, signature, or accessibility
-- **THEN** the benchmark records the precise failed shape and executes no fuzzy lookalike or private timing replacement
-- **THEN** ordinary gameplay and E2E tests remain available without DPA
+Every isolated performance launch SHALL stage and live-verify Circinus settings with `autoStartProfiler=false`, `autoArmProfiler=false`, no `armedTargetKeys`, `autoProfile=false`, `autoProfileAsked` equal to the guarded current asked-version constant, `showWarmupWindow=false`, `warmupSeconds=0`, `ingestEnabled=false`, `consentVersion` equal to the guarded current disclosure-version constant, and `autoRecord=false`. It SHALL answer the current consent and auto-profile prompts without enabling sharing and SHALL NOT alter the user's normal Circinus settings.
+
+#### Scenario: Circinus updates incompatibly
+- **WHEN** its package is active but a required settings, arming, recording, marker, stop, JSON, persistence, or schema member differs in declaring type, signature, return shape, accessibility, or supported schema major
+- **THEN** the benchmark records the precise failed shape and executes no fuzzy lookalike, DPA fallback, or private timing replacement
+- **THEN** ordinary gameplay and E2E tests remain available without Circinus
+
+#### Scenario: Sharing or automatic profiling is enabled in the isolated run
+- **WHEN** the live Circinus settings permit ingest, an automatic window, automatic arming, or a consent/auto-profile modal to control the process
+- **THEN** sampling is refused before a benchmark run starts and no result is accepted
 
 ### Requirement: Relevant product methods are registered dynamically
-Before recording, the runtime SHALL deterministically register all attached Harmony patch methods owned by each selected product's exact Harmony ID, every selected product tick/component method named by the performance contract, and every explicit benchmark-manifest method/type selector. It SHALL retain each resolved declaring type, method, signature, module, assembly, category, and selection reason, reject unsupported or unresolved selectors, and avoid whole-assembly profiling unless explicitly requested.
+Before recording, the runtime SHALL deterministically hand-arm all attached runtime Harmony prefixes, postfixes, and finalizers owned by each selected product's exact Harmony ID, every selected product tick/component method named by the performance contract, selected Circinus curated system targets, and every explicit benchmark-manifest method/type selector. It SHALL retain each resolved declaring type, method, signature, module, assembly, category, selection reason, and hand-armed state; reject unsupported or unresolved selectors; and avoid whole-assembly profiling unless explicitly requested.
+
+The runtime SHALL also discover and retain every product-owned transpiler identity and patched target. It SHALL mark direct workload timing unsupported for transpiler methods rather than pretending their patch-time invocation is runtime cost. The separately automated DPA diagnostic MAY investigate transformed IL, but its result MUST NOT enter a Circinus baseline or satisfy a canonical performance group.
 
 #### Scenario: A product adds a new Harmony postfix
 - **WHEN** the reviewed build attaches that postfix under the product's Harmony owner and a benchmark group loads it
-- **THEN** runtime discovery registers the exact postfix automatically and the report attributes its calls and time to that build
+- **THEN** runtime discovery hand-arms the exact postfix automatically and the report attributes its calls and time to that build
 
 #### Scenario: A manifest selector becomes stale
 - **WHEN** an explicitly named work-giver or component method no longer resolves exactly after a game/mod update
 - **THEN** the benchmark fails before sampling rather than silently omitting the metric
 
-### Requirement: Sampling uses DPA and ordinary game progression
-The benchmark SHALL arrange its workload while paused, verify exact fixture counts, warm it through ordinary game frames/ticks, start DPA recording programmatically, run the declared sample through native game-speed progression, stop DPA recording, and collect a stable snapshot before cleanup. It MUST NOT call `DoSingleTick`, directly invoke profiled methods to inflate counts, or construct expected terminal metrics.
+#### Scenario: A product owns a transpiler
+- **WHEN** discovery finds the transpiler attached to an exact runtime target
+- **THEN** the report retains both identities and the direct-timing refusal
+- **THEN** the canonical run neither invokes the transpiler as workload nor imports a DPA measurement into its result
+
+### Requirement: DPA deep diagnostics are automated and noncanonical
+`scripts/Invoke-RimWorldPerformanceTests.ps1 -DiagnosticProfiler Dpa` SHALL launch a fresh exact process containing Harmony, Core, package `Dubwise.DubsPerformanceAnalyzer.steam`, the selected product/optional packages, and Gateway, without Circinus. A guarded test-only adapter SHALL record DPA's package/assembly identity and validate the exact installed registration, start, stop, snapshot, and cleanup member shape before registering only explicitly requested method, type, nested-type, mod, built-in category, internal-call, or transpiled-IL selectors. It SHALL drive DPA programmatically, retain raw diagnostic entries with the exact workload/checkpoint identity, and remove only run-owned state.
+
+DPA output SHALL be labeled diagnostic, SHALL NOT offer accepted-baseline creation or satisfy a canonical performance group, and SHALL NOT be combined or normalized as though it used Circinus' schema, duty cycle, or sampling policy. An absent, inactive, or changed-shape DPA SHALL fail only the requested diagnostic.
+
+#### Scenario: A Circinus regression needs transformed-IL diagnosis
+- **WHEN** the caller requests `-DiagnosticProfiler Dpa` with one exact transpiled target or internal-call selector
+- **THEN** the runner launches DPA without Circinus, exercises the same declared native workload, and returns a bounded raw diagnostic snapshot for that selector
+- **THEN** no DPA value is written to or compared with a Circinus baseline
+
+### Requirement: Sampling uses Circinus and ordinary game progression
+The benchmark SHALL arrange its workload while paused, verify exact fixture counts, warm it through ordinary game frames/ticks while Circinus recording is disabled, reset the controlled counters, start one labeled Circinus run, add sample-boundary markers, enable the exact hand-armed profiler set, and run the declared sample through native game-speed progression. It SHALL then disable profiling; snapshot `Method`, `HandArmed`, `SampleShift`, `TotalCalls`, `TotalTimedCalls`, `Empty`, and `CyclesSeen` from every exact run-owned live `DevProfiler`; stop Circinus; correlate each non-empty sidecar to its exact `PatchStat` or `MethodStat`; retain every empty/uninvoked sidecar with an explicit no-row reason; retain the stopped document and persisted isolated run JSON; and clean only run-owned instrumentation.
+
+It MUST NOT call `DoSingleTick`, directly invoke profiled methods to inflate counts, alter Circinus' native duty/adaptive sampling, construct expected terminal metrics, or accept a sample that silently overflowed Circinus' 2000-recorded-frame ring, 7200-sample run ceiling, or patch/method detail caps.
 
 #### Scenario: A normal sample completes
 - **WHEN** warm-up settles and the declared sample interval advances through the running game's normal tick manager
-- **THEN** DPA reports measurements caused by the active pawns, jobs, buildings, components, world objects, and UI/update cycles in that interval
+- **THEN** Circinus reports measurements caused by the active pawns, jobs, buildings, components, world objects, patches, and UI/update cycles in that interval
+- **THEN** the stopped in-memory JSON and Circinus-persisted JSON agree on schema and run identity
 
 #### Scenario: Gameplay stalls
 - **WHEN** expected meals, dish cycles, nursing, hauling, dining, pathing, or caravan activity does not reach its declared throughput checkpoint
 - **THEN** the sample is invalid even if its recorded CPU time is low
 
-### Requirement: Reports preserve direct and system-level metrics
-Every sample SHALL retain raw DPA entries for registered product methods and relevant built-in tick, update, pawn/thing tick, work giver, think tree, pathing, and frame categories. It SHALL also record calls, total, average, maximum, category/update basis and available distributions, achieved TPS/FPS, elapsed ticks/wall time, GC/memory checkpoints, errors, exact workload counts, and instrumentation/control phase identity. Normalized summaries MUST preserve units and denominators and MUST NOT compare tick metrics to frame metrics as though they share one basis.
+#### Scenario: A declared sample exceeds Circinus' retained window
+- **WHEN** the native recorded-frame ring or required patch/method-detail cap would omit an earlier required part of the sample
+- **THEN** the run fails or is split into explicitly declared compatible windows/repetitions rather than accepting only the retained tail
+
+### Requirement: Reports preserve direct, system-level, and sampling-policy metrics
+Every sample SHALL retain the untouched local Circinus JSON entries for product methods, Harmony patches, per-mod costs, relevant curated targets, timestamped samples, markers, and errors. Because ordinary Circinus `MethodStat` JSON does not persist timed-call or adaptive-sampling fields, every non-empty pre-stop run-owned `DevProfiler` sidecar SHALL correlate by exact identity to the stopped `PatchStat` used for a Harmony patch method or the stopped `MethodStat` used for an ordinary method. Every empty/uninvoked sidecar SHALL survive with `noRowReason=empty-or-uninvoked`, matching Circinus' intentional exclusion of empty profilers from stopped rows. A non-empty missing row, empty sidecar with a row, duplicate/ambiguous match, or unexplained trimmed required row SHALL invalidate the sample. The combined evidence SHALL record calls, patch-row timed calls where present, live method `TotalTimedCalls`, `SampleShift`, `HandArmed`, `Empty`, `CyclesSeen`, total, mean per recorded profiler cycle, maximum recorded-cycle time, derived gross time per estimated call, shared cost, skip-capable cost, ambiguous-target state, profiler cycles, profiler-window milliseconds/ticks, duty percentage, sampled state, auto-shed count, dropped-detail counters, achieved TPS/FPS, frame-time mean/max/P95, tick-time mean/max, heap, pawn count, elapsed ticks/wall time, GC/memory checkpoints, exact workload counts, evidence lens, and control-mode identity.
+
+Normalized summaries MUST preserve units, denominators, and the native sampling policy. They MUST label Circinus patch/mod timing as gross attribution rather than causal net impact and mean timing as per recorded profiler cycle rather than per call. They MUST NOT present adaptively estimated calls as continuously timed calls, compare tick metrics to frame metrics as though they share one basis, compare raw milliseconds across incompatible machines, subtract semantically different product-present/product-absent workloads, or silently accept a missing/duplicate sidecar correlation or Circinus refusal/incomplete/truncation state for a required metric.
+
+Every profiled workload SHALL run in fresh, compatible instrumented, armed-disabled, and fully disarmed processes while retaining the same active Circinus recorder/sample collection in all three. The armed-disabled process SHALL retain the same Circinus wrappers with `ProfilerRegistry.Enabled=false` and `Recording=false`; the fully disarmed process SHALL remove all run-owned Circinus wrappers before sampling. Reports SHALL label instrumented-minus-armed-disabled as active method-timing/sampling overhead, armed-disabled-minus-fully-disarmed as wrapper overhead, and instrumented-minus-fully-disarmed as total method-instrumentation overhead. No one of these controls SHALL be labeled analyzer-absent. Those estimates SHALL remain separate from gross code attribution and any paired product-present/product-absent net system delta.
 
 #### Scenario: A work giver regresses
-- **WHEN** its average and total CPU time rise while calls and sample ticks are comparable
+- **WHEN** its share, mean, or total CPU time rises while calls, timed calls, profiler window, workload, and sample policy remain compatible
 - **THEN** raw and normalized reports expose the exact work-giver entry alongside overall work-scan/TPS context
+
+#### Scenario: Instrumentation overhead is requested
+- **WHEN** compatible instrumented, armed-disabled, and fully disarmed samples complete in fresh processes
+- **THEN** the report exposes active method-timing/sampling, wrapper-only, and total method-instrumentation deltas separately
+- **THEN** disabling `ProfilerRegistry.Enabled` alone is never labeled fully disarmed or analyzer-absent
+
+#### Scenario: Net impact is requested
+- **WHEN** a product-present run has a product-absent control with the exact same neutral workload, checkpoints, hardware, and sampling policy
+- **THEN** the report may label the compatible system-metric delta as paired net impact
+- **THEN** Circinus' per-patch execution share remains separately labeled gross attribution
+
+#### Scenario: The product owns the workload semantics
+- **WHEN** removing the product removes or materially changes the jobs/buildings being measured
+- **THEN** the runner refuses a net subtraction and reports only gross attribution, separately measured active-timing/wrapper/total method-instrumentation overhead, and compatible version regression
 
 ### Requirement: Immersive Chefs has a substantial versioned workload
 The initial Immersive Chefs fixture SHALL build a deterministic multi-room, non-trivial-pathing colony with 36 human pawns across cooking, assistance, cleaning/hauling, nursing/patient, and dining roles; 24 animals; simultaneous recipe tiers; prep/support stations; domestic and industrial dishwashing; microwaves; separated storage; patients and nurses; and two caravans containing pawns, animals, meals, plates, and cutlery. Exact Defs, counts, layout version, jobs, and expected throughput SHALL be machine-verified before and after every sample. Optional groups SHALL activate the corresponding installed integrations without changing unrelated base identities.
 
 #### Scenario: Base Immersive Chefs performance run
-- **WHEN** Harmony, Core, Immersive Chefs, DPA, and Gateway form the exact active set
+- **WHEN** Harmony, Core, Circinus, Immersive Chefs, and Gateway form the exact active set in that order
 - **THEN** the workload continuously exercises cooking, assistance, dining, temperature, tableware, sanitation, washing, hauling, patient feeding, animal exclusion, and caravan state without requiring an optional mod
 
 #### Scenario: Processor and Dubs group runs
 - **WHEN** the exact supported Processor Framework and Dubs Bad Hygiene packages are added
-- **THEN** the same workload uses connected water-consuming Processor dishwashers and the report includes both integration adapter and built-in system metrics
+- **THEN** the same workload uses connected water-consuming Processor dishwashers and the report includes both integration adapter and Circinus/Gateway system metrics
 
 ### Requirement: Exact optional-mod matrices are reusable
 The host SHALL allow benchmark selection/filtering by benchmark ID and exact mod-group ID. Future repository mods SHALL be able to add performance fixtures and method selectors in separate test projects without editing Gateway runtime code. A group SHALL never inherit an optional package merely because it is downloaded locally.
@@ -65,25 +113,25 @@ The host SHALL allow benchmark selection/filtering by benchmark ID and exact mod
 - **THEN** host discovery builds, groups, stages, runs, and reports it through the same command surface
 
 ### Requirement: Historical comparison is explicit and compatible
-The runner SHALL emit raw JSON, normalized JSON, CSV, and a Markdown summary for every run and SHALL compare results only against a compatible accepted baseline by default. Compatibility SHALL include workload version, package order, game version, product/test/DPA identities, metric units, and relevant hardware/runtime fingerprint. Regression policies SHALL be tracked per selector with explicit relative and/or absolute thresholds. A missing metric, new runtime error, workload drift, or exceeded threshold SHALL fail comparison.
+The runner SHALL emit untouched Circinus JSON, normalized JSON, CSV, and a Markdown summary for every run and SHALL compare results only against a compatible accepted baseline by default. Compatibility SHALL include workload version, package order, game version, product/test/Circinus assembly and schema identities, profiling/sampling policy, evidence lens, metric units, and relevant hardware/runtime fingerprint. Regression policies SHALL be tracked per selector with explicit relative and/or absolute thresholds. A missing metric, new runtime error, workload drift, Circinus refusal/incomplete/truncation state, or exceeded threshold SHALL fail comparison.
 
 #### Scenario: A compatible regression exceeds policy
 - **WHEN** a selected product method exceeds its reviewed relative or absolute threshold across the configured samples
-- **THEN** the command exits nonzero and the report shows baseline, current samples, delta, threshold, and exact method identity
+- **THEN** the command exits nonzero and the report shows baseline, current samples, delta, threshold, calls/timed-calls/duty context, and exact method identity
 
 #### Scenario: A caller records a new baseline
 - **WHEN** baseline creation is explicitly requested after a reviewed run
 - **THEN** the runner writes a candidate without overwriting an accepted baseline and requires an ordinary repository review/commit to accept it
 
 ### Requirement: Performance commands are safe and automation-friendly
-`scripts/Invoke-RimWorldPerformanceTests.ps1` SHALL provide discoverable filters and path/sample overrides plus table and JSON console output. Exit code `0` SHALL mean all samples, cleanup, and requested comparisons passed; `1` SHALL mean a sample/runtime/comparison failure; `2` SHALL mean invalid usage or discovery. Every launch SHALL use isolated savedata, muted background preferences, exact PID ownership, controlled shutdown, credential/stage cleanup, final log scanning, and unchanged normal configuration hashes.
+`scripts/Invoke-RimWorldPerformanceTests.ps1` SHALL provide discoverable filters and path/sample overrides plus table and JSON console output. Exit code `0` SHALL mean all samples, cleanup, and requested comparisons passed; `1` SHALL mean a sample/runtime/comparison failure; `2` SHALL mean invalid usage or discovery. Every launch SHALL use isolated savedata, muted background preferences, local-only Circinus settings, exact PID ownership, controlled shutdown, credential/stage cleanup, final log scanning, and unchanged normal configuration/settings hashes.
 
 #### Scenario: Periodic benchmark automation succeeds
 - **WHEN** every selected group completes its declared repetitions without errors or threshold regressions
-- **THEN** the command exits `0` and the durable aggregate links every group, sample, raw report, summary, and cleanup record
+- **THEN** the command exits `0` and the durable aggregate links every group, sample, raw Circinus run, normalized report, summary, and cleanup record
 
 ### Requirement: Performance workflow is documented separately from correctness
-Repository documentation and the RimWorld development skill SHALL explain setup for DPA, benchmark discovery, exact matrix selection, raw versus normalized metrics, baseline review, limitations of live-game profiling, and how to add a future product fixture. Performance results MUST supplement rather than replace correctness/E2E acceptance.
+Repository documentation and the RimWorld development skill SHALL explain setup for Circinus, isolated local-only settings, benchmark discovery, exact matrix selection, raw versus normalized metrics, native duty/adaptive sampling and retained-window limits, baseline review, the automated noncanonical DPA diagnostic command, limitations of live-game profiling, and how to add a future product fixture. Performance results MUST supplement rather than replace correctness/E2E acceptance.
 
 #### Scenario: A mod update changes internals without breaking behavior
 - **WHEN** ordinary tests and E2E workflows still pass but the performance comparison fails

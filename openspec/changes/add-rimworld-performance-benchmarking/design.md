@@ -1,98 +1,167 @@
 ## Context
 
-The repository currently proves correctness but has no repeatable way to measure the cost of its Harmony patches, work scanners, jobs, ThingComps, map/world components, and ticks under load. Dubs Performance Analyzer (DPA) is installed locally at Workshop item `2038874626`, package ID `Dubwise.DubsPerformanceAnalyzer.steam`. The inspected RimWorld 1.6 assembly is `PerformanceAnalyzer.dll`, 238080 bytes, SHA-256 `A1758774137F5EFF19F6B98D8D29F46AE5F8247C3EADBF9F611D851568D471A8` as of 2026-08-05. Its documentation supports method/type/nested-type/mod profiling and pre-made tick/update categories, but its programmatic API is not a stable public compatibility contract.
+The repository currently proves correctness but has no repeatable way to measure the cost of its Harmony patches, work scanners, jobs, ThingComps, map/world components, and ticks under load. The original design selected Dubs Performance Analyzer (DPA), but implementation had not started. Circinus is now installed locally as Workshop item `3773680130`, package ID `astryl.Circinus`, and is purpose-built around timestamped, comparable run documents rather than an interactive profiling window.
 
-This capability is owned by RimWorld Dev Gateway and depends on the exact-mod grouping, dynamic test loading, reset, process safety, and artifact collection defined by `add-rimworld-e2e-harness`. DPA and benchmark fixtures are test-only dependencies. Gameplay mods never reference DPA or Gateway.
+The inspected RimWorld 1.6 Circinus assembly is `Circinus.dll`, assembly version `1.0.0.0`, product build `1.0.0+456db42b8b74de26f4d330f55d89f0a668fcee71`, MVID `397fdc63-4b94-4548-8990-c319d9c32484`, 381952 bytes, and SHA-256 `C597B6FC56E77E817E38AE63826F71FD7AC8830CFDE1AD32C59C15FACCDBAFA1` as of 2026-08-11. Its local run-document schema is `1.15`. The package requires Harmony and declares `loadAfter` for `brrainz.harmony` and `astryl.ModernDevTools`.
+
+For comparison, the inspected DPA 1.6 assembly remains `PerformanceAnalyzer.dll`, assembly version `1.0.0.0`, MVID `894501e4-b113-48af-9928-8da64293a38c`, 238080 bytes, and SHA-256 `A1758774137F5EFF19F6B98D8D29F46AE5F8247C3EADBF9F611D851568D471A8`. DPA's strength is interactive deep diagnosis: built-in category tabs, internal-call profiling, transpiled-IL investigation, and raw per-entry captures. Its weaknesses for this repository's canonical benchmark are UI-oriented lifecycle, private mutable result stores, per-entry binary saves, and no whole-run JSON carrying mod list, hardware, errors, frame/tick samples, and profiler policy together.
+
+The product-level comparison also used Circinus' published [run metadata](https://circinus.sh/api/v1/meta), [attribution guidance](https://circinus.sh/authors), and [local-versus-shared data policy](https://circinus.sh/privacy), plus DPA's official [profiling and `Analyzer.xml` documentation](https://github.com/Dubwise56/Dubs-Performance-Analyzer). Exact automation contracts below come from read-only inspection of the installed assemblies, not from assuming either UI is a stable API.
+
+Circinus is the better primary dependency for historical mod-impact measurement because it already records:
+
+- one versioned JSON run with mod/package identity, hardware, environment, errors, markers, and sample context;
+- roughly one-second TPS, target TPS, FPS, mean/max/P95 frame time, mean/max tick time, managed heap, and pawn-count samples;
+- exact Harmony patch identity and owner-package attribution plus per-mod, per-patch, and explicitly armed method costs;
+- patch-row calls/timed-calls and method-row calls/total/mean/max time in JSON, plus live per-method timed-call/adaptive state through `DevProfiler` before stop;
+- temp-file local persistence, a partial flush every 30 samples, and explicit incomplete recovery when a durable partial document survives an interrupted process;
+- native run comparison semantics that refuse incompatible or insufficient evidence.
+
+Circinus' limitations remain material. Its native profiler records a duty cycle of 60 frames on followed by roughly 240 frames off, adaptively times only a fraction of calls above 64 calls per recorded frame with `DevProfiler.MaxSampleShift=8`, retains a 2000-recorded-frame ring, auto-sheds non-hand-armed methods below its native `0.02%` floor, trims stopped run documents above 3000 patch rows or 1000 method rows, and automatically stops at 7200 samples (about two hours). It identifies transpilers but its ordinary per-mod target arms runtime prefixes, postfixes, and finalizers rather than attributing the cost of transformed IL. Those are framework facts to retain in every report, not limits invented by this repository.
+
+Circinus' attributed per-mod/per-patch time is gross execution cost, not a complete causal net-impact measurement. A skip-capable prefix can replace vanilla work, two targets may share one patch method, and another mod or a larger colony can induce work inside the measured code. The repository therefore keeps gross attribution, profiler overhead, paired product-present/product-absent deltas, and version-over-version regression as distinct claims.
+
+This capability is owned by RimWorld Dev Gateway and depends on the exact-mod grouping, dynamic test loading, reset, process safety, and artifact collection defined by `add-rimworld-e2e-harness`. Circinus and benchmark fixtures are test-only dependencies. Gameplay mods never reference Circinus or Gateway.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
 - Run a reproducible, substantial game workload under exact optional-mod combinations.
-- Profile the repository mod's attached Harmony patches and relevant hot runtime methods without manually clicking through DPA.
-- Retain raw DPA measurements and normalized summaries with enough environment/build identity for historical comparison.
+- Profile the repository mod's runtime Harmony patches and relevant hot runtime methods without manually operating a profiler UI.
+- Retain raw Circinus measurements and normalized summaries with enough environment/build identity for historical comparison.
 - Detect both direct mod-method regressions and broader TPS/frame/pathing/work-scan regressions.
 - Let future repository mods contribute their own benchmark scenarios and method selectors.
 
 **Non-Goals:**
 
 - Claiming laboratory-grade microbenchmark precision from a live Unity game.
-- Making DPA a shipping dependency or copying its assembly into a repository mod.
+- Making Circinus a shipping dependency, copying its assembly into a repository mod, or uploading benchmark runs to `circinus.sh`.
 - Automatically accepting a new baseline after a regression.
 - Profiling every method in every assembly by default; instrumentation overhead would dominate the workload.
-- Replacing external profilers when native/GC/rendering investigation requires them.
+- Replacing DPA or an external profiler when a regression needs internal-call, transpiled-IL, allocation, native, GC, or rendering diagnosis beyond Circinus' saved contract.
 
 ## Decisions
 
 ### 1. Performance runs extend E2E groups but use a separate command and contract
 
-Performance fixtures use the same complete ordered package-set declaration and one-process-per-group orchestration as E2E tests. A separate `RimWorldDevGateway.PerformanceTesting` contract marks benchmark scenarios, warm-up/sample phases, workload scale, method selectors, and comparison policy. `scripts/Invoke-RimWorldPerformanceTests.ps1` performs discovery, group launch, repeated samples, reports, and comparison. Normal E2E runs do not load DPA or performance assemblies.
+Performance fixtures use the same complete ordered package-set declaration and one-process-per-group orchestration as E2E tests. A separate `RimWorldDevGateway.PerformanceTesting` contract marks the staging owner, measured subject package, benchmark scenarios, warm-up/sample phases, workload scale, method selectors, evidence lens, and comparison policy. `scripts/Invoke-RimWorldPerformanceTests.ps1` performs discovery, group launch, repeated samples, reports, and comparison. Normal E2E runs do not load Circinus or performance assemblies.
 
 Keeping performance separate prevents slow, noisy benchmarks from becoming ordinary correctness tests and permits different repetition, timeout, and reporting semantics.
 
-### 2. DPA is controlled through one exact reflection adapter
+### 2. Circinus is controlled through one exact reflection and schema adapter
 
-The Gateway detects only active package ID `Dubwise.DubsPerformanceAnalyzer.steam`, resolves assembly `PerformanceAnalyzer`, records its full identity/MVID/hash, and validates the exact types, fields, methods, parameter types, and result stores used by the installed version before doing anything. The adapter calls the same internal registration/start/stop/snapshot paths used by DPA's UI. It does not call method-name lookalikes, patch DPA itself, or retain reflected objects across incompatible lifecycle phases.
+The Gateway detects only active package ID `astryl.Circinus`, resolves assembly `Circinus`, records its full identity/MVID/hash and local schema version, and validates the exact declaring types, member kinds, accessibility, parameter types, and return types used by the inspected build before doing anything. The initially supported shape is:
 
-The documented `Analyzer.xml` mechanism was considered. It is useful for static author-owned tabs but does not satisfy dynamic per-run selection, exact attached-Harmony discovery, or programmatic result collection. It may be used as a diagnostic cross-check, not as the primary automation path.
+- static property `Circinus.Session.RunRecorder.Current : RunRecorder`; instance methods `bool Start(string)`, `RunDocument Stop()`, and `void AddMarker(string,string)`; and instance properties `bool Recording`, `string ActiveId`, and `RunDocument Document`;
+- static methods `bool Circinus.Profiling.Instrumenter.ArmMethod(MethodBase,string)`, `int Arm(ProfileTarget,bool)`, `bool DisarmMethod(MethodBase)`, `int Disarm(ProfileTarget)`, `bool IsPatched(MethodBase)`, and `void DisarmAll()`;
+- public static volatile fields `bool Circinus.Profiling.ProfilerRegistry.Enabled` and `bool Recording`; static method `DevProfiler Find(MethodBase)` and `void ResetAll()`; and static properties `int CycleCount`, `int RecordedFrames`, `int SkippedFrames`, and `double DutyPct`;
+- public readonly field `MethodBase Circinus.Profiling.DevProfiler.Method`, public field `bool HandArmed`, and instance properties `int SampleShift`, `long TotalCalls`, `long TotalTimedCalls`, `bool Empty`, and `int CyclesSeen`;
+- static method `ProfileTarget Circinus.Profiling.TargetCatalogue.Get(string)` plus the resolved target's public instance fields `string Key` and `string Category`, and public getter-only instance property `int MethodCount`;
+- instance method `string Circinus.Contract.RunDocument.ToJson()` and public fields `string Id`, `int SchemaMajor`, and `int SchemaMinor`.
 
-When DPA updates and its guarded shape changes, the affected benchmark group fails with the observed package/assembly identity and missing member. Core E2E and gameplay remain unaffected. There is no silent fallback to invented timing code.
+The adapter uses Circinus' own recorder, instrumenter, profiler, attribution, and JSON writer. It does not reimplement its profiler, call name-only lookalikes, or depend on the hosted service. The stopped `RunDocument.ToJson()` value and the Circinus-persisted isolated `Circinus/Runs/<id>.json` file are both retained and must agree on schema/run identity. Circinus writes a temporary file, deletes an existing destination, and moves the temporary file into place; the repository does not mislabel that sequence as atomic replacement.
+
+Before launch, the host stages `Circinus.Bootstrap.CircinusSettings` with public fields `bool autoStartProfiler=false`, `bool autoArmProfiler=false`, `List<string> armedTargetKeys=[]`, `bool autoProfile=false`, `int autoProfileAsked=1`, `bool showWarmupWindow=false`, `int warmupSeconds=0`, `bool ingestEnabled=false`, `int consentVersion=2`, and `bool autoRecord=false`. Live access is guarded through public static field `Circinus.Bootstrap.CircinusMod.Settings : CircinusSettings`. The prompt versions are guarded against public constants `Circinus.UI.Window_Consent.DisclosureVersion=2` and `Circinus.UI.Window_AutoProfile.AskedVersion=1`. The live adapter revalidates those fields before arming. It never changes the user's normal Circinus settings and never enables the hosted ingest endpoint.
+
+When Circinus updates and its guarded shape or schema major changes, the affected benchmark group fails with the observed package/assembly/schema identity and missing member. Core E2E and gameplay remain unaffected. There is no silent fallback to DPA or invented timing code.
 
 ### 3. Method selection combines runtime discovery with an explicit manifest
 
 For each selected repository product assembly the benchmark adapter registers:
 
-- every currently attached Harmony prefix, postfix, transpiler, and finalizer owned by that package's exact Harmony ID;
-- product-declared `Tick`, `TickRare`, `TickLong`, `CompTick`, `MapComponentTick`, `WorldComponentTick`, and `GameComponentTick` overrides;
+- every currently attached runtime Harmony prefix, postfix, and finalizer owned by that package's exact Harmony ID;
+- every product-declared `Tick`, `TickRare`, `TickLong`, `CompTick`, `MapComponentTick`, `WorldComponentTick`, and `GameComponentTick` override;
 - product-owned work-giver, job-giver, think-node, alert/report, inspect-string, and map-query methods selected by the benchmark manifest;
-- explicitly named methods or types contributed by the benchmark fixture.
+- explicitly named methods or types contributed by the benchmark fixture;
+- selected Circinus curated system targets needed to explain overall tick, work, pathing, update, GUI, or rendering movement.
 
-Registration is deterministic and rejects unresolved, generic-open, duplicate, compiler-generated-only, or unsupported methods. The exact resolved method identities are retained. Profiling an entire product assembly is an explicit opt-in diagnostic because it can add excessive overhead.
+Every explicitly armed product method is marked `HandArmed` so Circinus' automatic below-floor shedding cannot silently remove it. Registration is deterministic and rejects unresolved, generic-open, duplicate, compiler-generated-only, or unsupported methods. The exact resolved method identities and selection reasons are retained.
 
-### 4. Capture both direct and system-level measurements
+Every attached transpiler is still discovered and retained with its target, owner, and unsupported-direct-timing reason. A transpiler method normally executes while patching rather than during the workload, so timing that method during play is meaningless. When transformed-IL attribution is necessary, the investigation uses a separate DPA diagnostic run; that run is never mixed into a Circinus baseline or canonical group.
 
-Raw output preserves DPA's calls, total, average, maximum, category/update basis, and any available distributions for every registered entry. The run also collects DPA's existing aggregate tick/update, pawn/thing tick, work giver, think tree, pathing, UI/update, and frame metrics that are active for the scenario, plus observed game ticks, wall time, achieved TPS/FPS, GC collection counts, managed-memory checkpoints, errors, and workload counts.
+Profiling an entire product assembly remains an explicit diagnostic opt-in because it can add excessive overhead.
 
-Reports never compare unlike bases as if they were the same. Tick-category measurements remain per tick/call; frame/update measurements remain per rendered update. Every normalized value identifies its denominator and unit.
+### 4. Capture Circinus' direct and system-level measurements without erasing its sampling semantics
+
+Raw output preserves Circinus' complete local JSON document: samples, patch rows, method rows, mod-cost rows, patch/method identities, calls, patch-row timed calls, total, mean per recorded profiler cycle, maximum recorded-cycle time, shared/skip-capable cost, ambiguous-target flags, profiler cycles, profiler-window milliseconds/ticks, duty percentage, sampled flag, auto-shed count, dropped-detail counters, markers, errors, and environment/context data. Circinus' ordinary `MethodStat` JSON does not contain `timedCalls` or adaptive-sampling state. Immediately before stopping or disarming, the Gateway therefore snapshots a run-owned sidecar for every exact armed `DevProfiler`: resolved `Method`, `HandArmed`, `SampleShift`, `TotalCalls`, `TotalTimedCalls`, `Empty`, and `CyclesSeen`.
+
+After stop, each non-empty sidecar is correlated by exact identity to either the `PatchStat` emitted for a Harmony patch method or the `MethodStat` emitted for an ordinary method. Every empty/uninvoked sidecar is retained with explicit `noRowReason=empty-or-uninvoked`, because Circinus intentionally omits it from `ProfilerRegistry.Active()` and therefore from the stopped rows. A non-empty sidecar with no matching row, an empty sidecar with a row, an ambiguous/duplicate match, or an unexplained trimmed required row invalidates the sample. The host derives normalized gross share of measured frame time only from each run's own denominator and records the formula. It does not relabel that share as causal net cost or mean-per-cycle as mean-per-call.
+
+The run also retains selected Circinus curated target metrics and its TPS/FPS/frame/tick/heap/pawn time series. Gateway-owned checkpoints add elapsed game ticks and wall time, GC collection counts, managed-memory checkpoints, workload counts, throughput assertions, errors, and control-mode measurements. Circinus' native patch-row `timedCalls`, live `DevProfiler.TotalTimedCalls`, `ProfilerDutyPct`, and adaptive sampling policy are never rewritten to look like continuously timed raw calls.
+
+Reports never compare unlike bases as if they were the same. Tick-category measurements remain distinct from rendered-frame/update measurements. Cross-machine share-of-frame data may be informative, but repository regression acceptance defaults to the same compatible hardware/runtime fingerprint.
+
+Every product benchmark distinguishes four evidence lenses, each in a fresh process with the same declared workload and checkpoints:
+
+- the Circinus-instrumented product workload has run-owned wrappers armed and `ProfilerRegistry.Enabled=true`, and reports gross attributable code cost plus system behavior;
+- the armed-disabled control keeps the same wrappers attached but holds `ProfilerRegistry.Enabled=false` and `Recording=false`, isolating the wrapper-only cost that remains even while method timing is disabled;
+- the fully disarmed control removes all run-owned Circinus wrappers before sampling while leaving the same recorder/sample collection active, providing an unwrapped recorder control;
+- a separately declared product-absent control may report a net system delta only when both groups run the same semantically valid workload and checkpoints.
+
+Instrumented minus armed-disabled estimates active method-timing/sampling overhead; armed-disabled minus fully disarmed estimates wrapper overhead; instrumented minus fully disarmed estimates total method-instrumentation overhead. Circinus recorder/sample collection remains common to all three, so none is mislabeled as analyzer-absent. These are noisy live-game deltas and remain separate from Circinus' gross code attribution and from any paired product-present/product-absent net system delta.
+
+An Immersive Chefs-specific cooking/dishwashing workload is not falsely subtracted from vanilla when the absent product cannot perform those jobs. A smaller Gateway-owned neutral colony fixture, which has no product reference and declares Immersive Chefs only as the measured subject, is paired present/absent for load-time Harmony and passive runtime overhead. Product-owned feature workloads remain present-only and measure feature-path version regressions.
 
 ### 5. The benchmark lifecycle has explicit calibrated phases
 
-Each scenario declares a deterministic seed, exact workload version, warm-up ticks, sample ticks, game speed, and repetition count. Defaults are stored in the scenario source and may be changed only as a versioned workload change; the CLI may override them and records every override. Warm-up builds caches and settles jobs before DPA recording begins. Sampling starts from a checkpoint, runs ordinary game frames/ticks without direct ticking, stops recording through DPA, and then captures results before cleanup.
+Each scenario declares a deterministic seed, exact workload version, warm-up ticks, sample ticks, game speed, and repetition count. Defaults are stored in the scenario source and may be changed only as a versioned workload change; the CLI may override them and records every override.
 
-The host launches a fresh process for every exact mod group and optionally repeats a group in fresh processes. Historical summaries report every repetition plus median and range; they do not hide outliers. Failures, exceptions, throttling, unfinished jobs, or workload-count drift invalidate the sample rather than becoming suspiciously fast results.
+The controlled lifecycle is:
+
+1. launch the exact ordered `brrainz.harmony`, `ludeon.rimworld`, `astryl.Circinus`, selected product/optional mods, and Gateway group in isolated savedata;
+2. verify Circinus' exact shape/schema and local-only settings, then disarm/reset stale profiler state;
+3. arrange the fixture while paused and warm it through ordinary frames/ticks with Circinus recording disabled;
+4. resolve and arm the exact hand-armed method set, reset counters after warm-up, start one labeled Circinus run, add a sample-start marker, and enable the profiler;
+5. advance ordinary game frames/ticks at the declared native speed while verifying throughput checkpoints;
+6. disable profiling, add a sample-end marker, snapshot every run-owned live `DevProfiler` sidecar before stop/disarm, stop Circinus, retain both raw JSON forms before cleanup, and collect Gateway control metrics;
+7. disarm only the run-owned methods, restore the captured isolated settings/control state, and shut down the exact process.
+
+The runner validates that the declared sample did not silently overflow Circinus' 2000-recorded-frame profiler ring, 7200-sample run ceiling, or output-detail caps. A longer workload is split into explicit compatible windows/repetitions instead of accepting only the tail. It does not call `DoSingleTick`, directly invoke profiled methods to inflate counts, construct expected terminal metrics, alter Circinus' duty cycle, or bypass its native recorder.
 
 ### 6. Immersive Chefs gets one large versioned workload
 
 The initial workload creates a deterministic multi-room colony with long corridors and separated storage/service areas; 36 human pawns distributed among cooking, assistance, cleaning/hauling, nursing/patient, and ordinary dining roles; 24 animals; multiple simultaneous simple/fine/lavish cooking bills; prep and four linked support station types; domestic and industrial dishwashers; microwaves; dirty/clean stockpiles; several patients and nurses; guest/service activity when the relevant package is active; and two world caravans with pawns, animals, meals, plates, and cutlery. Exact counts and Def identities live in a versioned manifest and the result verifies them before sampling.
 
-Optional-mod variants add only behavior owned by their exact group: Processor/Dubs dishwashing, Gastronomy/Hospitality service, Common Sense cleanup, variety/provenance, VNPE paste, Expanded Materials, Royalty/Biotech, and an all-supported matrix. The base workload remains useful with only Core, Harmony, Immersive Chefs, DPA, and Gateway.
+Optional-mod variants add only behavior owned by their exact group: Processor/Dubs dishwashing, Gastronomy/Hospitality service, Common Sense cleanup, variety/provenance, VNPE paste, Expanded Materials, Royalty/Biotech, and an all-supported matrix. The base workload remains useful with only Harmony, Core, Circinus, Immersive Chefs, and Gateway.
 
 ### 7. Historical comparison is explicit and reviewable
 
-Each report writes raw JSON, normalized JSON, CSV, and a human Markdown summary. A baseline is an immutable reviewed report named by workload version, game version, mod group, product commit/build hash, DPA identity, and relevant hardware/runtime fingerprint. The runner compares only compatible identities unless the caller explicitly requests a cross-version informational diff.
+Each report writes untouched Circinus JSON, normalized JSON, CSV, and a human Markdown summary. Every metric is labeled as gross attribution, instrumentation overhead, paired net system delta, or version regression. A baseline is an immutable reviewed report named by workload version, game version, exact package order, product commit/build hash, Circinus assembly/schema/profiling-policy identity, evidence lens, and relevant hardware/runtime fingerprint. The runner compares only compatible identities unless the caller explicitly requests a cross-version informational diff.
 
-Thresholds are configured per metric selector as absolute and/or relative limits in tracked baseline policy; the runner does not invent one global percentage. Missing metrics, workload drift, new exceptions, or incompatible units fail comparison. Creating or replacing a baseline requires an explicit command and writes a candidate for review; it never overwrites an accepted baseline silently.
+Thresholds are configured per metric selector as absolute and/or relative limits in tracked baseline policy; the runner does not invent one global percentage. Missing metrics, workload drift, new exceptions, incompatible units, profiler-policy drift, or Circinus refusal/incomplete status fail comparison. Creating or replacing a baseline requires an explicit command and writes a candidate for review; it never overwrites an accepted baseline silently.
+
+### 8. DPA is a separate diagnostic fallback, not a second benchmark backend
+
+DPA remains useful after a Circinus regression identifies a category, patch, or method. Its internal-method and transpiled-IL tools can answer a narrower diagnostic question that Circinus intentionally cannot. `scripts/Invoke-RimWorldPerformanceTests.ps1 -DiagnosticProfiler Dpa` therefore remains a bounded automated path rather than requiring manual operation of the DPA window.
+
+The diagnostic command launches a fresh exact `brrainz.harmony`, `ludeon.rimworld`, `Dubwise.DubsPerformanceAnalyzer.steam`, selected product/optional mods, and Gateway process without Circinus. A separate reflection adapter first records and guards DPA's package/assembly/MVID/hash and the exact installed registration, start, stop, snapshot, and cleanup member shape. It registers only the requested exact method, nested/type, mod, built-in category, internal-call, or transpiled-IL selectors; follows DPA's own programmatic lifecycle; retains its raw entries and Gateway workload/checkpoint identity; then unregisters only run-owned state. Absent, inactive, or changed-shape DPA fails the diagnostic only.
+
+DPA output is labeled diagnostic, has no accepted-baseline command, cannot create or satisfy a canonical performance result, and is never normalized as though it used Circinus' schema or sampling policy. Circinus and DPA are not loaded together for benchmark acceptance or diagnosis because double instrumentation would change the workload and denominator.
 
 ## Risks / Trade-offs
 
-- **DPA internal API changes** → Exact package/assembly/member guard, installed-shape tests, actionable failure, and no effect on product gameplay.
-- **Profiling overhead changes the result** → Register a bounded relevant method set, retain the exact set, run an uninstrumented control phase, and report DPA overhead/context rather than hiding it.
-- **Live-game noise obscures small regressions** → Deterministic workload/seed, warm-up, fresh-process repetitions, compatible-environment checks, medians/ranges, and per-metric thresholds.
+- **Circinus internal API or schema changes** → Exact package/assembly/member/schema guard, actionable failure, and no effect on product gameplay.
+- **Duty/adaptive sampling hides a rare regression** → Hand-arm every required method, retain the live pre-stop adaptive/timed-call sidecar, use repeated fresh processes and throughput checkpoints, and keep distinct armed-disabled and fully disarmed controls.
+- **Instrumentation changes the result** → Register a bounded relevant method set, retain the exact set, compare fresh instrumented, armed-disabled, and fully disarmed-recorder processes, and report active-timing, wrapper, and total method-instrumentation overhead separately without calling the recorder control analyzer-absent.
+- **Gross patch time is mistaken for net mod impact** → Label gross/shared/skip-capable/ambiguous costs, use a paired product-absent delta only for a semantically identical neutral workload, and never subtract unlike feature workloads.
+- **Automatic Circinus UI, recording, or sharing contaminates automation** → Pre-stage and live-verify isolated settings; fail if a consent/auto-profile window or automatic run remains; never enable ingest.
 - **A fast result is caused by stalled gameplay** → Assert actor/building/caravan/job throughput and absence of errors before accepting each sample.
+- **Transpiled code cannot be attributed directly by Circinus** → Retain transpiler identities and targets; use the separately guarded automated DPA diagnostic only when the product actually has a relevant transpiler or internal-call question.
 - **Optional mods change workload availability** → Exact group-specific fixture branches and expected workload counts; no inferred or downloaded-only activation.
-- **Performance artifacts become enormous** → Store raw data under ignored artifacts with stable summaries tracked only when explicitly accepted as baselines; do not truncate a method entry silently.
+- **Performance artifacts become enormous** → Store raw data under ignored artifacts with stable summaries tracked only when explicitly accepted as baselines; retain Circinus' native truncation counters and fail rather than silently accepting dropped required rows.
 
 ## Migration Plan
 
-1. Finish and accept the E2E harness.
-2. Add the performance contract and host discovery/report skeleton with a fake analyzer adapter for host tests.
-3. Inspect the installed DPA assembly metadata and add an exact reflection-shape integration test.
-4. Implement runtime registration, start/stop, raw snapshot capture, and one tiny calibration fixture.
+1. Keep the accepted E2E harness as the process/grouping substrate.
+2. Add the performance contract and host discovery/report skeleton with a fake Circinus adapter for host tests.
+3. Pin the inspected Circinus assembly/schema/member shape and add exact reflection-shape tests.
+4. Implement isolated local-only settings, runtime arming, start/mark/live-sidecar/stop, raw JSON capture, three instrumentation-control modes, and one tiny calibration fixture.
 5. Add the full versioned Immersive Chefs workload and base matrix.
-6. Add optional-mod groups incrementally, then baseline/diff commands and documentation.
+6. Add optional-mod groups incrementally, the separate guarded automated DPA diagnostic, then baseline/diff commands and documentation.
 
-Rollback is omission of the performance startup flag and removal of marker-owned staged performance bundles. Every process uses isolated savedata and an isolated mod list; the runner verifies the user's normal `ModsConfig.xml` and `Prefs.xml` hashes in `finally` and stops only the exact launched PID.
+Rollback is omission of the performance startup flag and removal of marker-owned staged performance bundles. Every process uses isolated savedata and an isolated mod list; the runner verifies the user's normal `ModsConfig.xml`, `Prefs.xml`, and Circinus settings hashes in `finally` and stops only the exact launched PID.
 
 ## Open Questions
 
-The exact DPA reflection member set will be named only after metadata inspection and one live shape probe of the installed 1.6 assembly. This is an implementation discovery task, not permission to use fuzzy reflection.
+The exact minimum sample duration and repetition count will be calibrated during the tiny live fixture rather than guessed in this design. The result must be long enough to exercise Circinus' native duty cycle and stable workload throughput, yet remain below its retained profiler-window caps. Any accepted defaults become part of the versioned workload contract.
