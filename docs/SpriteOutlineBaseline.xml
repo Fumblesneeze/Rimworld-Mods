@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Read-only measurements from the locally installed RimWorld Core resources. Extracted Core
+  textures remain ignored evidence and are never copied into the repository or mod package.
+
+  Measurement algorithm:
+  1. Resize portable samples to 64x64 with Pillow 12.2.0 Image.resize(...,
+     Image.Resampling.LANCZOS, box=fullCanvas, reducing_gap=None); keep 64-pixels-per-cell
+     workbenches native. Pillow converts RGBA to premultiplied RGBa, applies its separable
+     three-lobe/radius-3 Lanczos filter to stored 8-bit sRGB channel values without linear-light
+     conversion, then converts back to straight RGBA.
+  2. Classify foreground where alpha >= 96 and background where alpha < 96.
+  3. Flood-fill exterior background from every canvas-edge background pixel with 4-neighbor
+     connectivity. Enclosed holes and semantic gaps that do not reach the edge are not exterior.
+  4. Ring 1 is foreground with an 8-neighbor exterior-background pixel. Remove that ring,
+     repeat the exterior flood-fill, and take the next such boundary as each successive inward ring.
+  5. A pixel is dark when Rec.709 luma (0.2126R + 0.7152G + 0.0722B) <= 80.
+  Ring attributes below are the fraction of each ring classified dark.
+-->
+<spriteOutlineBaseline gameVersion="1.6.4871 rev590"
+                       source="RimWorldWin64_Data/resources.assets"
+                       sourceSha256="7C0C69BDE01910DDE60205BC1417CD56A39E27AFFD2DE36735DCEDD6FACD6155"
+                       measuredUtc="2026-08-11"
+                       foregroundAlphaThreshold="96"
+                       darkLumaThreshold="80"
+                       ringTopology="successive 8-neighbor foreground boundaries against 4-connected edge-flooded exterior background"
+                       resampler="Pillow 12.2.0 Image.Resampling.LANCZOS"
+                       resamplerSupportRadius="3"
+                       resamplerBox="full canvas"
+                       resamplerReducingGap="none"
+                       resamplerColorSpace="stored 8-bit sRGB; no linear-light conversion"
+                       resamplerAlpha="RGBA converted to premultiplied RGBa for resize, then back to straight RGBA"
+                       portableFinalCanvas="64x64"
+                       buildingPixelsPerCell="64"
+                       minimumTransparentEdgeClearance="2">
+  <acceptanceClasses>
+    <class id="portable-fine"
+           permittedAddedStrokeFinalPixels="1"
+           ring1MinimumDarkFraction="0.95"
+           ring2MinimumDarkFraction="0.40" />
+    <class id="portable-broad"
+           permittedAddedStrokeFinalPixels="1-2"
+           ring1MinimumDarkFraction="0.95"
+           ring2MinimumDarkFraction="0.75" />
+    <class id="building"
+           permittedAddedStrokeFinalPixels="1-2"
+           ring1MinimumDarkFraction="0.95"
+           ring2MinimumDarkFraction="0.95"
+           ring3MinimumDarkFraction="0.95" />
+  </acceptanceClasses>
+
+  <topologyContract foregroundConnectivity="8"
+                    backgroundConnectivity="4"
+                    minimumComponentAreaPixels="2"
+                    preserveForegroundComponentCount="true"
+                    preserveBackgroundHoleCount="true"
+                    addedContourRequiresOriginalAlpha="0"
+                    addedContourRequiresOriginalExteriorBackground="true"
+                    protectedGapRunAlphaMaximum="95"
+                    protectedGapRunMinimumTransparentPixels="approval-manifest exact value"
+                    approvalManifest="docs/SpriteOutlineApprovals.xml" />
+
+  <portableSamples>
+    <texture name="Beer_a" pathId="965" sourceCanvas="64x64" extractedSha256="9BDC8534C7B90B2BC9BAE37BB8BB76AFC66F0383A40788632947CFCF528F8F5C" ring1="1.000" ring2="1.000" ring3="0.000" />
+    <texture name="ComponentIndustrial" pathId="3099" sourceCanvas="64x64" extractedSha256="B62C138260143835E2F8F7F4BFB24967ADE62538BFACEFB785B493E5A6A04D68" ring1="1.000" ring2="0.815" ring3="0.124" />
+    <texture name="Gold_a" pathId="590" sourceCanvas="64x64" extractedSha256="B30AD1710F102A795BB6E7395580D9B006E2210F0395D2A1BB7369124A3CC444" ring1="1.000" ring2="0.840" ring3="0.036" />
+    <texture name="Knife" pathId="2918" sourceCanvas="128x128" measuredCanvas="64x64" extractedSha256="777BAB127BBBAAD4AD797F80468B02E1675BE3458D7D29AC9030995B2DA47127" ring1="0.989" ring2="0.443" ring3="0.061" />
+    <texture name="Medicine" pathId="2869" sourceCanvas="64x64" extractedSha256="37E0E35C92A3414DC0AC34525458A9A05339BD5961072F5C2239A649A0A45E9D" ring1="1.000" ring2="0.973" ring3="0.000" />
+    <texture name="Pemmican_a" pathId="2861" sourceCanvas="64x64" extractedSha256="3BB7D34C63D18EFC4AEFE391BE4B46D8696B4D573274E2F0C5244868AE4A127F" ring1="1.000" ring2="0.971" ring3="0.731" />
+    <texture name="Silver_a" pathId="1655" sourceCanvas="64x64" extractedSha256="DEB3FE0EC91030D7D0FC0431DF6D8A37DD09B7582C701CA5A5CE9F94F9F7CB18" ring1="1.000" ring2="0.911" ring3="0.196" />
+    <texture name="Simple_a" pathId="2821" sourceCanvas="128x128" measuredCanvas="64x64" extractedSha256="7E40E1CFA0231B65270E61D8CDADE937427555A2D5FD2C9D74ED74FFF79920A6" ring1="1.000" ring2="1.000" ring3="1.000" />
+    <texture name="Steel_a" pathId="3140" sourceCanvas="64x64" extractedSha256="461F3DE476126ACB5478BB9A39CDBFD15422A8953E40D7A2239BB244238F3E2D" ring1="1.000" ring2="0.955" ring3="0.550" />
+    <texture name="StoneBlocks_a" pathId="3450" sourceCanvas="64x64" extractedSha256="BEADC4C5E8BF5D2FC92088879647F26FBF639A1FA37AD323E2F367DB92B71D65" ring1="1.000" ring2="0.752" ring3="0.000" />
+    <texture name="WoodLog_a" pathId="2665" sourceCanvas="64x64" extractedSha256="45BA62C2D39681B197843C83ADA53A298F38C8D12CB5D88734E7CCB14678A5B7" ring1="1.000" ring2="0.920" ring3="0.724" />
+  </portableSamples>
+
+  <buildingSamples>
+    <texture name="TableButcher_north" pathId="1109" canvas="224x96" footprint="3x1" extractedSha256="C64F44063D45F4AE465EA3DCC33A453DB2631D98DC021C4E38872D29D68CCEE8" ring1="1.000" ring2="1.000" ring3="1.000" />
+    <texture name="TableMachining_north" pathId="1326" canvas="224x96" footprint="3x1" extractedSha256="C8AF04DB5880D2363E33467B2D96B04CEFADDE8D3A7AD3A85C1B5D8BE606B3CE" ring1="1.000" ring2="1.000" ring3="1.000" />
+    <texture name="TableStoveElectric_north" pathId="2508" canvas="224x96" footprint="3x1" extractedSha256="5D4A8E6FF37C0250D41CEC4540793E0D57D3B149B5C350A09DE8CA446B82B191" ring1="1.000" ring2="1.000" ring3="0.992" />
+    <texture name="TableTailorHand_north" pathId="474" canvas="224x96" footprint="3x1" extractedSha256="3CDCB80DBB725C848B3AEDE99EA11BFBBF6B8139A8A90FD5E51180416064DF61" ring1="1.000" ring2="1.000" ring3="1.000" />
+  </buildingSamples>
+</spriteOutlineBaseline>
