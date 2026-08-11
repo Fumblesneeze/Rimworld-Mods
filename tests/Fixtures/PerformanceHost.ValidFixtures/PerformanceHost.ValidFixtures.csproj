@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net480</TargetFramework>
+    <AssemblyName>PerformanceHost.ValidFixtures</AssemblyName>
+    <RootNamespace>PerformanceHost.ValidFixtures</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\RimWorldDevGateway.PerformanceTesting\RimWorldDevGateway.PerformanceTesting.csproj" />
+  </ItemGroup>
+</Project>

@@ -49,6 +49,10 @@ Performance fixtures use the same complete ordered package-set declaration and o
 
 Keeping performance separate prevents slow, noisy benchmarks from becoming ordinary correctness tests and permits different repetition, timeout, and reporting semantics.
 
+The host-safe declaration surface reuses existing repository ceilings: 1,024 discovered declarations, 64 packages in one exact matrix, 128 characters per ASCII package ID, 256 characters for ordinary identities, 1,024 characters for a method selector, 256 selectors, and 64 throughput checkpoints. These are repository validation bounds, not Circinus, Unity, or HTTP limits. They are public constants with exact/over tests. Package sequences are keyed by length-prefixed values before hashing so embedded delimiters cannot alias two exact groups.
+
+Each comparison ID owns exactly three profiler-overhead lenses—instrumented, armed-disabled-wrapper, and fully disarmed—and their complete workload/selector/checkpoint metadata plus staging owner must match. A net product-present/product-absent comparison is narrower: both sides come from the same Gateway-owned, product-reference-free fixture implementation, while only the exact active product package differs. Product-owned feature fixtures report gross attribution and historical regression but do not acquire a synthetic net-control claim by pointing at an unrelated Gateway fixture.
+
 ### 2. Circinus is controlled through one exact reflection and schema adapter
 
 The Gateway detects only active package ID `astryl.Circinus`, resolves assembly `Circinus`, records its full identity/MVID/hash and local schema version, and validates the exact declaring types, member kinds, accessibility, parameter types, and return types used by the inspected build before doing anything. The initially supported shape is:

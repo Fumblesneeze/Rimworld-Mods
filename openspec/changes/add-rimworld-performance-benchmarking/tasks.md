@@ -1,7 +1,7 @@
 ## 1. shared performance contract — TDD model and discovery
 
-- [ ] 1.1 TDD RED: Add failing tests for attributed benchmark IDs, staging-owner and measured-subject package IDs, exact package groups, deterministic seed, workload version, warm-up/sample ticks, speed, repetitions, evidence lens, optional semantically compatible product-absent control group, method selectors, throughput checkpoints, and invalid declarations.
-- [ ] 1.2 TDD GREEN: Implement the host-safe `RimWorldDevGateway.PerformanceTesting` contract and metadata discovery/grouping on top of the accepted E2E harness.
+- [x] 1.1 TDD RED: Add failing tests for attributed benchmark IDs, staging-owner and measured-subject package IDs, exact package groups, deterministic seed, workload version, warm-up/sample ticks, speed, repetitions, evidence lens, optional semantically compatible product-absent control group, method selectors, throughput checkpoints, and invalid declarations. Retained REDs: `20260811T141021937Z-34612-09f2b09b1323478b9ca9fbee34c14312` (missing contract) and `20260811-performance-host-total-red` (missing aggregate declaration ceiling); final focused GREEN: `20260811-performance-contract-final` (28/28).
+- [x] 1.2 TDD GREEN: Implement the host-safe `RimWorldDevGateway.PerformanceTesting` contract and metadata discovery/grouping on top of the accepted E2E harness. The reader discovers compiled attributes without loading the fixture assembly, exact package/lens/control semantics and published boundaries are enforced before launch, and `20260811-performance-host-final` passes 34/34 host tests.
 
 ## 2. mods/RimWorldDevGateway — Circinus compatibility adapter
 

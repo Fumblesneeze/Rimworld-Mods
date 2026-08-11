@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.PerformanceTesting\RimWorldDevGateway.PerformanceTesting.csproj" />
     <ProjectReference Include="..\..\mods\RimWorldDevGateway\RimWorldDevGateway.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.IntegrationTesting\RimWorldDevGateway.IntegrationTesting.csproj" />
