@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using System.IO;
+using Verse;
 
 namespace ImmersiveChefs.Tests;
 
@@ -156,6 +157,41 @@ public sealed class DishwasherCapacityTests
     }
 
     [Test]
+    public void Processor_string_field_materializes_translated_tagged_text()
+    {
+        TaggedString translated = "Wash steel plate";
+
+        Assert.That(
+            ProcessorFrameworkAdapter.CoerceFieldValue(typeof(string), translated),
+            Is.EqualTo("Wash steel plate"));
+    }
+
+    [Test]
+    public void Processor_field_coercion_rejects_unrelated_shape_drift()
+    {
+        Assert.That(
+            () => ProcessorFrameworkAdapter.CoerceFieldValue(typeof(int), "not an integer"),
+            Throws.ArgumentException);
+    }
+
+    [Test]
+    public void Processor_shape_guard_rejects_assignable_but_widened_fields()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                ProcessorFrameworkAdapter.HasExactFieldShape(
+                    typeof(ExactProcessorShape), nameof(ExactProcessorShape.label), typeof(string)),
+                Is.True);
+            Assert.That(
+                ProcessorFrameworkAdapter.HasExactFieldShape(
+                    typeof(WidenedProcessorShape), nameof(WidenedProcessorShape.label), typeof(string)),
+                Is.False,
+                "A widened object field must fail before the adapter mutates any Processor Def.");
+        });
+    }
+
+    [Test]
     public void Restart_capacity_scale_is_materialized_once_for_local_and_processor_paths()
     {
         Assert.Multiple(() =>
@@ -213,5 +249,19 @@ public sealed class DishwasherCapacityTests
 
         return current?.FullName ?? throw new DirectoryNotFoundException(
             "Could not locate repository root from the test directory.");
+    }
+
+    private sealed class ExactProcessorShape
+    {
+#pragma warning disable CS0649
+        public string? label;
+#pragma warning restore CS0649
+    }
+
+    private sealed class WidenedProcessorShape
+    {
+#pragma warning disable CS0649
+        public object? label;
+#pragma warning restore CS0649
     }
 }

@@ -125,29 +125,29 @@ internal static class ProcessorFrameworkAdapter
             AccessTools.Method(processorType, "DoTicks"),
             AccessTools.Method(activeProcessType, "CalcSpeedFactor")
         };
-        var requiredProcessFields = new[]
+        var requiredProcessFields = new Dictionary<string, Type>(StringComparer.Ordinal)
         {
-            "defName",
-            "label",
-            "thingDef",
-            "processDays",
-            "capacityFactor",
-            "efficiency",
-            "usesTemperature",
-            "unpoweredFactor",
-            "unfueledFactor",
-            "destroyChance",
-            "ingredientFilter"
+            ["defName"] = typeof(string),
+            ["label"] = typeof(string),
+            ["thingDef"] = typeof(ThingDef),
+            ["processDays"] = typeof(float),
+            ["capacityFactor"] = typeof(float),
+            ["efficiency"] = typeof(float),
+            ["usesTemperature"] = typeof(bool),
+            ["unpoweredFactor"] = typeof(float),
+            ["unfueledFactor"] = typeof(float),
+            ["destroyChance"] = typeof(float),
+            ["ingredientFilter"] = typeof(ThingFilter)
         };
-        var requiredProcessorPropertyFields = new[]
+        var requiredProcessorPropertyFields = new Dictionary<string, Type>(StringComparer.Ordinal)
         {
-            "capacity",
-            "independentProcesses",
-            "parallelProcesses",
-            "dropIngredients",
-            "showProductIcon",
-            "colorCoded",
-            "processes"
+            ["capacity"] = typeof(int),
+            ["independentProcesses"] = typeof(bool),
+            ["parallelProcesses"] = typeof(bool),
+            ["dropIngredients"] = typeof(bool),
+            ["showProductIcon"] = typeof(bool),
+            ["colorCoded"] = typeof(bool),
+            ["processes"] = typeof(List<>).MakeGenericType(processDefType)
         };
         if (processorInnerContainer is null || processorActiveProcesses is null ||
             processorEnabledProcesses is null ||
@@ -157,9 +157,10 @@ internal static class ProcessorFrameworkAdapter
             spaceLeftFor is null || graphicChange is null || enableAllProcesses is null ||
             findIngredient is null || resolveProcessReferences is null || addProcessDef is null ||
             recacheAll is null || requiredMethods.Any(method => method is null) ||
-            requiredProcessFields.Any(fieldName => AccessTools.Field(processDefType, fieldName) is null) ||
-            requiredProcessorPropertyFields.Any(fieldName =>
-                AccessTools.Field(processorPropertiesType, fieldName) is null))
+            requiredProcessFields.Any(field =>
+                !HasExactFieldShape(processDefType, field.Key, field.Value)) ||
+            requiredProcessorPropertyFields.Any(field =>
+                !HasExactFieldShape(processorPropertiesType, field.Key, field.Value)))
         {
             reason = "the installed Processor Framework process lifecycle no longer matches the validated 1.6 shape";
             return false;
@@ -557,6 +558,30 @@ internal static class ProcessorFrameworkAdapter
     {
         var field = AccessTools.Field(target.GetType(), fieldName)
                     ?? throw new MissingFieldException(target.GetType().FullName, fieldName);
-        field.SetValue(target, value);
+        field.SetValue(target, CoerceFieldValue(field.FieldType, value));
+    }
+
+    internal static object? CoerceFieldValue(Type fieldType, object? value)
+    {
+        if (fieldType == typeof(string) && value is TaggedString tagged)
+        {
+            return tagged.ToString();
+        }
+
+        if (value is null || fieldType.IsInstanceOfType(value))
+        {
+            return value;
+        }
+
+        throw new ArgumentException(
+            $"Value of type '{value.GetType().FullName}' cannot be assigned to '{fieldType.FullName}'.",
+            nameof(value));
+    }
+
+    internal static bool HasExactFieldShape(Type declaringType, string fieldName, Type expectedType)
+    {
+        return declaringType.GetField(
+                   fieldName,
+                   BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.FieldType == expectedType;
     }
 }
