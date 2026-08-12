@@ -72,7 +72,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
         var instrumented = tests.Single(test => test.Id.EndsWith(".instrumented", StringComparison.Ordinal));
         Assert.Multiple(() =>
         {
-            Assert.That(tests, Has.Count.EqualTo(3));
+            Assert.That(tests, Has.Count.EqualTo(4));
             Assert.That(tests, Has.All.Property(nameof(GatewayEndToEndRuntimeTestDescriptor.IsPerformance)).True);
             Assert.That(instrumented.PerformanceDescriptor, Is.Not.Null);
             Assert.That(instrumented.PerformanceDescriptor!.MeasuredSubjectPackageId,
@@ -80,6 +80,85 @@ public sealed class GatewayEndToEndBundleCatalogTests
             Assert.That(instrumented.PerformanceDescriptor.EvidenceLens,
                 Is.EqualTo(PerformanceEvidenceLens.ProductInstrumented));
             Assert.That(instrumented.CreateTest(), Is.AssignableTo<IRimWorldEndToEndTest>());
+        });
+    }
+
+    [Test]
+    public void Filtered_performance_manifest_admits_only_listed_compiled_benchmarks()
+    {
+        GC.KeepAlive(typeof(UnityEngine.Vector3).Assembly);
+        using var stage = new PerformanceCatalogStage(manifestFilter: test =>
+            test.Id.StartsWith("gateway.immersive-chefs-neutral-", StringComparison.Ordinal));
+        var result = new GatewayEndToEndBundleCatalog().Inspect(
+            stage.Candidate,
+            new[]
+            {
+                "brrainz.harmony",
+                "ludeon.rimworld",
+                PerformanceTestContract.CircinusPackageId,
+                EndToEndTestContract.GatewayPackageId
+            });
+
+        Assert.That(result.State, Is.EqualTo("loaded"), result.Failure?.Message);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Source!.Tests.Select(test => test.Id), Is.EqualTo(new[]
+            {
+                "gateway.immersive-chefs-neutral-control"
+            }));
+            Assert.That(result.Source.Tests, Has.All.Property(nameof(GatewayEndToEndRuntimeTestDescriptor.IsPerformance)).True);
+        });
+    }
+
+    [Test]
+    public void Filtered_performance_manifest_rejects_an_incomplete_evidence_lens_family()
+    {
+        GC.KeepAlive(typeof(UnityEngine.Vector3).Assembly);
+        using var stage = new PerformanceCatalogStage(manifestFilter: test =>
+            test.Id.StartsWith("gateway.immersive-chefs-neutral-", StringComparison.Ordinal) &&
+            !test.Id.EndsWith(".armed-disabled", StringComparison.Ordinal));
+
+        var result = new GatewayEndToEndBundleCatalog().Inspect(
+            stage.Candidate,
+            new[]
+            {
+                "brrainz.harmony",
+                "ludeon.rimworld",
+                PerformanceTestContract.CircinusPackageId,
+                EndToEndTestContract.GatewayPackageId
+            });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.State, Is.EqualTo("failed"));
+            Assert.That(result.Failure!.Code, Is.EqualTo("compiled_test_manifest_mismatch"));
+            Assert.That(result.Source, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Filtered_performance_manifest_rejects_a_missing_product_absent_control()
+    {
+        GC.KeepAlive(typeof(UnityEngine.Vector3).Assembly);
+        using var stage = new PerformanceCatalogStage(manifestFilter: test =>
+            test.Id.StartsWith("gateway.immersive-chefs-neutral-present", StringComparison.Ordinal));
+
+        var result = new GatewayEndToEndBundleCatalog().Inspect(
+            stage.Candidate,
+            new[]
+            {
+                "brrainz.harmony",
+                "ludeon.rimworld",
+                PerformanceTestContract.CircinusPackageId,
+                "fumblesneeze.immersivechefs",
+                EndToEndTestContract.GatewayPackageId
+            });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.State, Is.EqualTo("failed"));
+            Assert.That(result.Failure!.Code, Is.EqualTo("compiled_test_manifest_mismatch"));
+            Assert.That(result.Source, Is.Null);
         });
     }
 
@@ -102,7 +181,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
         Assert.That(result.State, Is.EqualTo("loaded"), result.Failure?.Message);
         Assert.Multiple(() =>
         {
-            Assert.That(result.Source!.Tests, Has.Count.EqualTo(3));
+            Assert.That(result.Source!.Tests, Has.Count.EqualTo(4));
             Assert.That(result.Source.Tests.Select(test => test.PerformanceDescriptor!.Profiler),
                 Is.All.EqualTo(PerformanceProfilerKind.DpaDiagnostic));
             Assert.That(result.Source.Tests.SelectMany(test => test.PerformanceDescriptor!.ActivePackageIds),
@@ -163,7 +242,6 @@ public sealed class GatewayEndToEndBundleCatalogTests
     [TestCase("identity", "assembly_identity_mismatch")]
     [TestCase("mvid", "assembly_mvid_mismatch")]
     [TestCase("dependency", "dependency_identity_mismatch")]
-    [TestCase("attribute", "compiled_test_manifest_mismatch")]
     public void Drift_is_rejected_before_any_test_can_be_instantiated(string drift, string expectedCode)
     {
         using var stage = new CatalogStage(manifest =>
@@ -182,9 +260,6 @@ public sealed class GatewayEndToEndBundleCatalogTests
                 case "dependency":
                     manifest.Dependencies[0].Identity += ".drift";
                     break;
-                case "attribute":
-                    manifest.Tests = manifest.Tests.Take(manifest.Tests.Length - 1).ToArray();
-                    break;
             }
         });
         var loader = new RecordingAssemblyLoader();
@@ -197,6 +272,55 @@ public sealed class GatewayEndToEndBundleCatalogTests
             Assert.That(result.Failure!.Code, Is.EqualTo(expectedCode));
             Assert.That(result.Source, Is.Null);
             Assert.That(result.AdmittedTestInstanceCount, Is.Zero);
+        });
+    }
+
+    [Test]
+    public void Ordinary_E2E_manifest_cannot_omit_a_compiled_test()
+    {
+        using var stage = new CatalogStage(manifest =>
+            manifest.Tests = manifest.Tests.Take(manifest.Tests.Length - 1).ToArray());
+        var loader = new RecordingAssemblyLoader();
+
+        var result = new GatewayEndToEndBundleCatalog(loader).Inspect(stage.Candidate, BaseActivePackages);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.State, Is.EqualTo("failed"));
+            Assert.That(result.Failure!.Code, Is.EqualTo("compiled_test_manifest_mismatch"));
+            Assert.That(result.Source, Is.Null);
+            Assert.That(result.AdmittedTestInstanceCount, Is.Zero);
+        });
+    }
+
+    [Test]
+    public void Compiled_test_discovery_enforces_the_published_exact_and_over_ceiling()
+    {
+        var attributedType = typeof(CatalogPerformanceBenchmark);
+        var exact = Enumerable.Repeat(attributedType, PerformanceTestContract.MaximumBenchmarks);
+        var over = Enumerable.Repeat(attributedType, PerformanceTestContract.MaximumBenchmarks + 1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(GatewayEndToEndBundleCatalog.BoundedCompiledTestTypes(exact),
+                Has.Count.EqualTo(PerformanceTestContract.MaximumBenchmarks));
+            Assert.That(() => GatewayEndToEndBundleCatalog.BoundedCompiledTestTypes(over),
+                Throws.Exception.With.Message.Contains(PerformanceTestContract.MaximumBenchmarks.ToString()));
+        });
+    }
+
+    [Test]
+    public void Compiled_performance_ids_reject_case_only_duplicates_without_changing_ordinary_ids()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => GatewayEndToEndBundleCatalog.ValidateCompiledTestIds(
+                new[] { "Ordinary", "ordinary" },
+                Array.Empty<string>()), Throws.Nothing);
+            Assert.That(() => GatewayEndToEndBundleCatalog.ValidateCompiledTestIds(
+                    new[] { "Benchmark", "benchmark" },
+                    new[] { "Benchmark", "benchmark" }),
+                Throws.Exception.With.Message.Contains("case-insensitive duplicate"));
         });
     }
 
@@ -390,7 +514,10 @@ public sealed class GatewayEndToEndBundleCatalogTests
 
     private sealed class PerformanceCatalogStage : IDisposable
     {
-        public PerformanceCatalogStage(bool dpaDiagnostic = false, string? diagnosticSelector = null)
+        public PerformanceCatalogStage(
+            bool dpaDiagnostic = false,
+            string? diagnosticSelector = null,
+            Func<EndToEndBundleTest, bool>? manifestFilter = null)
         {
             Root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "performance-catalog", Guid.NewGuid().ToString("N"));
             var owner = EndToEndTestContract.GatewayPackageId;
@@ -426,7 +553,9 @@ public sealed class GatewayEndToEndBundleCatalogTests
                         Identity = GatewayEndToEndAssemblyIdentity.FormatReference(reference)
                     }).ToArray(),
                 Tests = descriptors.Select(descriptor => ToManifest(
-                    descriptor, dpaDiagnostic, diagnosticSelector)).ToArray()
+                        descriptor, dpaDiagnostic, diagnosticSelector))
+                    .Where(manifestFilter ?? (_ => true))
+                    .ToArray()
             };
             var manifestPath = Path.Combine(directory, manifestFile);
             File.WriteAllText(manifestPath, GatewayContractJson.Write(manifest));
@@ -513,6 +642,23 @@ public sealed class GatewayEndToEndBundleCatalogTests
         {
             LoadCount++;
             return Assembly.Load(assemblyBytes);
+        }
+    }
+
+    [RimWorldPerformanceTest(
+        "gateway.catalog-boundary",
+        EndToEndTestContract.GatewayPackageId,
+        EndToEndTestContract.GatewayPackageId,
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        PerformanceTestContract.CircinusPackageId)]
+    private sealed class CatalogPerformanceBenchmark : IRimWorldPerformanceTest
+    {
+        public void Arrange(IEndToEndContext context) { }
+
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            yield break;
         }
     }
 

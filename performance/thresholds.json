@@ -40,6 +40,16 @@
       "unit": "ms",
       "absoluteIncrease": 1500.0,
       "relativeIncreasePercent": 20.0
+    },
+    {
+      "benchmarkId": "gateway.immersive-chefs-neutral-present.instrumented.paired-net",
+      "evidenceLens": "paired-net-system-delta",
+      "scope": "paired-net",
+      "selector": "paired-net:elapsed-wall-milliseconds",
+      "metricName": "elapsed-wall-milliseconds",
+      "unit": "ms",
+      "absoluteIncrease": 1000.0,
+      "relativeIncreasePercent": 25.0
     }
   ]
 }

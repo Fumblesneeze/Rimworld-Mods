@@ -158,17 +158,12 @@ public sealed class GatewayIntegrationTestSessionArtifactStore : IGatewayIntegra
             maxDepth: 8,
             maxNodes: 32 * 1024,
             maxUtf8Bytes: GatewayIntegrationTestSnapshot.MaximumSerializedUtf8Bytes);
-        var temporaryPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        string? temporaryPath = null;
         try
         {
-            using (var stream = new FileStream(
-                       temporaryPath,
-                       FileMode.CreateNew,
-                       FileAccess.Write,
-                       FileShare.None,
-                       bufferSize: 64 * 1024,
-                       FileOptions.WriteThrough))
+            using (var stream = GatewayTemporaryFile.CreateSibling(path, FileOptions.WriteThrough))
             {
+                temporaryPath = stream.Name;
                 stream.Write(bytes, 0, bytes.Length);
                 stream.Flush(flushToDisk: true);
             }
@@ -177,7 +172,7 @@ public sealed class GatewayIntegrationTestSessionArtifactStore : IGatewayIntegra
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            if (temporaryPath is not null && File.Exists(temporaryPath))
             {
                 File.Delete(temporaryPath);
             }

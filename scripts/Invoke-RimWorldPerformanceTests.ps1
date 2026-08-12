@@ -437,7 +437,8 @@ function Resolve-PerformanceMetricSidecar {
 function Get-PerformanceFixtureManifestIdentity {
     param(
         [Parameter(Mandatory)][object]$SmokeResult,
-        [Parameter(Mandatory)][string]$BenchmarkId
+        [Parameter(Mandatory)][string]$BenchmarkId,
+        [string]$NameSuffix = '-manifest'
     )
     $responsePath = [string]$SmokeResult.EndToEndTestsResponse
     if ([string]::IsNullOrWhiteSpace($responsePath) -or
@@ -454,10 +455,10 @@ function Get-PerformanceFixtureManifestIdentity {
     $manifestSteps = @($executions[0].Steps | Where-Object {
         [string]$_.Kind -ceq 'observe' -and
         [string]$_.Status -ceq 'passed' -and
-        ([string]$_.Name).EndsWith('-manifest', [StringComparison]::Ordinal)
+        ([string]$_.Name).EndsWith($NameSuffix, [StringComparison]::Ordinal)
     })
     if ($manifestSteps.Count -ne 1) {
-        throw "Benchmark '$BenchmarkId' resolved $($manifestSteps.Count) passed fixture-manifest observations."
+        throw "Benchmark '$BenchmarkId' resolved $($manifestSteps.Count) passed '$NameSuffix' observations."
     }
     $properties = @($manifestSteps[0].Artifacts.PSObject.Properties)
     if ($properties.Count -eq 0) {
@@ -498,6 +499,92 @@ function Get-PerformanceFixtureManifestIdentity {
     }
 }
 
+function New-PerformancePairedNetCases {
+    param(
+        [Parameter(Mandatory)][object[]]$Cases,
+        [Parameter(Mandatory)][object]$Plan
+    )
+    $result = [System.Collections.Generic.List[object]]::new()
+    $plannedProducts = @($Plan.processes | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_.productAbsentControlId) -and
+        [int]$_.evidenceLens -eq 0
+    } | Group-Object benchmarkId | ForEach-Object { $_.Group[0] })
+    foreach ($planned in $plannedProducts) {
+        $present = @($Cases | Where-Object {
+            [string]$_.Compatibility.BenchmarkId -ceq [string]$planned.benchmarkId
+        })
+        $absent = @($Cases | Where-Object {
+            [string]$_.Compatibility.BenchmarkId -ceq [string]$planned.productAbsentControlId
+        })
+        if ($present.Count -ne 1 -or $absent.Count -ne 1) {
+            throw "Paired net control '$([string]$planned.benchmarkId)' requires one exact present and absent case."
+        }
+        $present = $present[0]
+        $absent = $absent[0]
+        foreach ($field in @('WorkloadVersion','GameVersion','TestAssemblyIdentity',
+            'CircinusAssemblyIdentity','CircinusSchemaIdentity','SamplingPolicyIdentity',
+            'HardwareRuntimeFingerprint','FixtureManifestSha256','FixtureTerminalManifestSha256',
+            'DeterministicSeed','WarmUpTicks','SampleTicks','GameSpeed','RepetitionCount',
+            'AggregationPolicyIdentity')) {
+            if ([string]$present.Compatibility.$field -cne [string]$absent.Compatibility.$field) {
+                $label = if ($field -ceq 'FixtureTerminalManifestSha256') { 'terminal manifest drift' } else { "compatibility drift in $field" }
+                throw "Paired net control '$([string]$planned.benchmarkId)' has $label."
+            }
+        }
+        $expectedPresentPackages = @($absent.Compatibility.ActivePackageIds)
+        $subject = [string]$planned.measuredSubjectPackageId
+        $subjectIndex = [Array]::IndexOf([string[]]@($present.Compatibility.ActivePackageIds), $subject)
+        if ($subjectIndex -lt 0) {
+            throw "Paired net control '$([string]$planned.benchmarkId)' did not load measured subject '$subject'."
+        }
+        $withoutSubject = @($present.Compatibility.ActivePackageIds | Where-Object { [string]$_ -cne $subject })
+        if (($withoutSubject -join "`n") -cne ($expectedPresentPackages -join "`n")) {
+            throw "Paired net control '$([string]$planned.benchmarkId)' has package-order drift beyond the measured subject."
+        }
+        $presentMetrics = @($present.Measurements | Where-Object { [string]$_.Scope -ceq 'checkpoint' })
+        $absentMetrics = @($absent.Measurements | Where-Object { [string]$_.Scope -ceq 'checkpoint' })
+        $deltas = [System.Collections.Generic.List[object]]::new()
+        foreach ($metric in $presentMetrics) {
+            $match = @($absentMetrics | Where-Object {
+                [string]$_.Selector -ceq [string]$metric.Selector -and
+                [string]$_.MetricName -ceq [string]$metric.MetricName -and
+                [string]$_.Unit -ceq [string]$metric.Unit -and
+                [string]$_.Denominator -ceq [string]$metric.Denominator -and
+                [string]$_.Claim -ceq [string]$metric.Claim
+            })
+            if ($match.Count -ne 1) {
+                throw "Paired net control '$([string]$planned.benchmarkId)' has checkpoint schema drift for '$([string]$metric.MetricName)'."
+            }
+            if ([string]$metric.MetricName -notin @('elapsed-wall-milliseconds','managed-memory-start-bytes',
+                'managed-memory-end-bytes','managed-memory-delta-bytes',
+                'gc-generation-0','gc-generation-1','gc-generation-2')) {
+                if ([double]$metric.Value -ne [double]$match[0].Value) {
+                    throw "Paired net control '$([string]$planned.benchmarkId)' has semantic checkpoint drift for '$([string]$metric.MetricName)'."
+                }
+                continue
+            }
+            $deltas.Add([pscustomobject]@{
+                Scope='paired-net'; Selector="paired-net:$([string]$metric.MetricName)"
+                MetricName=[string]$metric.MetricName; Value=[double]$metric.Value-[double]$match[0].Value
+                Unit=[string]$metric.Unit; Denominator=[string]$metric.Denominator
+                Claim='paired-net-system-delta'; Calls=$null; TimedCalls=$null; DutyPercent=$null
+                SampleShift=$null; RecordedCycles=$null; ProfilerWindowMilliseconds=$null
+                ProfilerWindowTicks=$null; SamplingContextIdentity=''; ExactMethod=''
+            })
+        }
+        if (@($absentMetrics).Count -ne @($presentMetrics).Count) {
+            throw "Paired net control '$([string]$planned.benchmarkId)' has checkpoint schema drift."
+        }
+        $compatibility = $present.Compatibility.PSObject.Copy()
+        $compatibility.BenchmarkId = "$([string]$planned.benchmarkId).paired-net"
+        $compatibility.EvidenceLens = 'paired-net-system-delta'
+        $compatibility.ProductAssemblyIdentity = "present:$([string]$present.Compatibility.ProductAssemblyIdentity)|absent:$([string]$absent.Compatibility.ProductAssemblyIdentity)"
+        $compatibility.ProfilingPolicyIdentity = 'paired-present-minus-absent-system-controls/v1'
+        $result.Add([pscustomobject]@{ Compatibility=$compatibility; Measurements=@($deltas) })
+    }
+    return @($result)
+}
+
 function Assert-PerformanceFixtureManifestCompatibility {
     param([Parameter(Mandatory)][object[]]$Records)
     $resolved = @($Records)
@@ -530,6 +617,29 @@ function Assert-PerformanceFixtureManifestCompatibility {
         } | Sort-Object -Unique -CaseSensitive)
         if ($manifests.Count -ne 1) {
             throw "Benchmark '$([string]$product.BenchmarkId)' has product-absent manifest drift from '$controlId'."
+        }
+    }
+    $pairedRecords = @($resolved | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_.ProductAbsentControlId)
+    })
+    if ($pairedRecords.Count -gt 0) {
+        $requiredIds = @($pairedRecords.BenchmarkId + $pairedRecords.ProductAbsentControlId |
+            Sort-Object -Unique -CaseSensitive)
+        $terminalRecords = @($resolved | Where-Object { [string]$_.BenchmarkId -cin $requiredIds })
+        if ($terminalRecords.Count -eq 0 -or @($terminalRecords | Where-Object {
+            [string]::IsNullOrWhiteSpace([string]$_.TerminalManifestJson)
+        }).Count -gt 0) {
+            throw 'Paired product-present/product-absent controls require terminal manifests.'
+        }
+        foreach ($group in @($terminalRecords | Group-Object BenchmarkId)) {
+            $terminal = @($group.Group.TerminalManifestJson | Sort-Object -Unique -CaseSensitive)
+            if ($terminal.Count -ne 1) {
+                throw "Benchmark '$([string]$group.Name)' has repetition terminal manifest drift."
+            }
+        }
+        $allTerminal = @($terminalRecords.TerminalManifestJson | Sort-Object -Unique -CaseSensitive)
+        if ($allTerminal.Count -ne 1) {
+            throw 'Paired product-present/product-absent controls have terminal manifest drift.'
         }
     }
 }
@@ -627,11 +737,24 @@ function New-PerformanceCurrentSnapshot {
         $fixtureManifest = Get-PerformanceFixtureManifestIdentity `
             -SmokeResult $result.SmokeResult `
             -BenchmarkId ([string]$processPlan.benchmarkId)
+        $requiresTerminalManifest =
+            -not [string]::IsNullOrWhiteSpace([string]$processPlan.productAbsentControlId) -or
+            [int]$processPlan.evidenceLens -eq 3
+        $terminalManifest = if ($requiresTerminalManifest) {
+            Get-PerformanceFixtureManifestIdentity `
+                -SmokeResult $result.SmokeResult `
+                -BenchmarkId ([string]$processPlan.benchmarkId) `
+                -NameSuffix '-terminal-state'
+        }
+        else {
+            [pscustomobject]@{ Json='not-applicable'; Sha256='not-applicable' }
+        }
         $manifestRecords.Add([pscustomobject]@{
             BenchmarkId = [string]$processPlan.benchmarkId
             ComparisonId = [string]$processPlan.comparisonId
             ProductAbsentControlId = [string]$processPlan.productAbsentControlId
             ManifestJson = [string]$fixtureManifest.Json
+            TerminalManifestJson = [string]$terminalManifest.Json
         })
         $raw = Get-Content -LiteralPath ([string]$result.Raw.Path) -Raw | ConvertFrom-Json -ErrorAction Stop
         $normalized = Get-Content -LiteralPath ([string]$result.Normalized.Path) -Raw | ConvertFrom-Json -ErrorAction Stop
@@ -707,10 +830,15 @@ function New-PerformanceCurrentSnapshot {
             EvidenceLens = [string]$normalized.controlMode
             ActivePackageIds = @($processPlan.activePackageIds | ForEach-Object { [string]$_ })
             GameVersion = [string]$result.SmokeResult.LiveGameVersion
-            ProductAssemblyIdentity = Get-DeployedProductAssemblyIdentity `
-                -DeploymentEvidence $DeploymentEvidence `
-                -Projects $Projects `
-                -PackageId ([string]$processPlan.measuredSubjectPackageId)
+            ProductAssemblyIdentity = if ([int]$processPlan.evidenceLens -eq 3) {
+                'not-loaded'
+            }
+            else {
+                Get-DeployedProductAssemblyIdentity `
+                    -DeploymentEvidence $DeploymentEvidence `
+                    -Projects $Projects `
+                    -PackageId ([string]$processPlan.measuredSubjectPackageId)
+            }
             TestAssemblyIdentity = "$([string]$processPlan.assemblyIdentity)|mvid:$([string]$processPlan.moduleVersionId)|sha256:$([string]$processPlan.assemblySha256)"
             CircinusAssemblyIdentity = $CircinusAssemblyIdentity
             CircinusSchemaIdentity = "$([int]$raw.schemaMajor).$([int]$raw.schemaMinor)"
@@ -718,6 +846,7 @@ function New-PerformanceCurrentSnapshot {
             SamplingPolicyIdentity = "circinus-local-settings:$SettingsSha256|native-adaptive/v1"
             HardwareRuntimeFingerprint = $runtimeFingerprint
             FixtureManifestSha256 = [string]$fixtureManifest.Sha256
+            FixtureTerminalManifestSha256 = [string]$terminalManifest.Sha256
             DeterministicSeed = [int]$processPlan.deterministicSeed
             WarmUpTicks = [int]$processPlan.warmUpTicks
             SampleTicks = [int]$processPlan.sampleTicks
@@ -808,6 +937,9 @@ function New-PerformanceCurrentSnapshot {
             Compatibility = $compatibility
             Measurements = @($combined)
         })
+    }
+    foreach ($paired in @(New-PerformancePairedNetCases -Cases @($cases) -Plan $Plan)) {
+        $cases.Add($paired)
     }
     return [pscustomobject]@{
         SchemaVersion = 1

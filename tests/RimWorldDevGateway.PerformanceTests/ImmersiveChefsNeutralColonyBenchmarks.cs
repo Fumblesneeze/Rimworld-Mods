@@ -19,7 +19,7 @@ internal static class ImmersiveChefsNeutralContract
     public const string Subject = "fumblesneeze.immersivechefs";
     public const string PresentComparison = "gateway.immersive-chefs-neutral-present";
     public const string AbsentControl = "gateway.immersive-chefs-neutral-control";
-    public const string Workload = "immersive-chefs-neutral-colony/v1";
+    public const string Workload = "immersive-chefs-neutral-colony/v2";
     public const int Seed = 481516;
     public const int WarmUpTicks = 1_200;
     public const int SampleTicks = 6_000;
@@ -122,6 +122,8 @@ public sealed class ImmersiveChefsNeutralAbsentBenchmark : ImmersiveChefsNeutral
 public abstract class ImmersiveChefsNeutralColonyBenchmark :
     IRimWorldPerformanceTest,
     IPerformanceSamplePreparation,
+    IPerformanceSampleValidation,
+    IPerformancePostSampleEvidence,
     IPerformanceThroughputCounter
 {
     private Map? map;
@@ -129,6 +131,7 @@ public abstract class ImmersiveChefsNeutralColonyBenchmark :
     private readonly List<Thing> fixtures = new();
     private readonly Dictionary<Pawn, IntVec3> pawnStartCells = new();
     private readonly Dictionary<Thing, IntVec3> foodStartCells = new();
+    private readonly Dictionary<Pawn, Job> sampleWaitJobs = new();
     private string initialFingerprint = string.Empty;
 
     public void Arrange(IEndToEndContext context)
@@ -230,15 +233,16 @@ public abstract class ImmersiveChefsNeutralColonyBenchmark :
             }
         }
         AssertSpatialRegistration(pawns.Cast<Thing>().Concat(foodStartCells.Keys));
+        ResetIndexedUniqueIds(1_650_000, "activation");
+        StartDeterministicWaitJobs(pawns);
         SeedGlobalRand(ImmersiveChefsNeutralContract.Seed + 1);
         var uniqueIdState = ResetSampleUniqueIds();
         var randState = ((ulong)RequireRandStateProperty().GetValue(null, null)!).ToString();
         initialFingerprint = Fingerprint(pawns);
-        var workloadFingerprint = WorkloadFingerprint(
-            pawns,
-            foodStartCells.Keys,
-            randState,
-            uniqueIdState);
+        var workloadState = WorkloadState(pawns, foodStartCells.Keys)
+            .Concat(new[] { "rand|" + randState, "ids|" + uniqueIdState })
+            .ToArray();
+        var workloadFingerprint = PerformanceDeterminismGuard.CanonicalStateSha256(workloadState);
         yield return new CheckpointStep(
             "neutral-colony-manifest",
             _ => new Dictionary<string, string>(StringComparer.Ordinal)
@@ -249,6 +253,7 @@ public abstract class ImmersiveChefsNeutralColonyBenchmark :
                 ["animalCount"] = ImmersiveChefsNeutralContract.AnimalCount.ToString(),
                 ["pawnFingerprintSha256"] = initialFingerprint,
                 ["sampleStartStateSha256"] = workloadFingerprint,
+                ["sampleStartState"] = string.Join("\n", workloadState),
                 ["sampleRandState"] = randState,
                 ["sampleUniqueIdState"] = uniqueIdState,
                 ["dayOfYear"] = GenLocalDate.DayOfYear(map!).ToString(),
@@ -260,6 +265,51 @@ public abstract class ImmersiveChefsNeutralColonyBenchmark :
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
         yield break;
+    }
+
+    public void ValidateSample(IEndToEndContext context)
+    {
+        if (map is null || counter is null || !map.components.Contains(counter))
+            throw new InvalidOperationException("The neutral fixture lost its native map tick counter.");
+        var pawns = fixtures.OfType<Pawn>().OrderBy(pawn => pawn.ThingID, StringComparer.Ordinal).ToArray();
+        if (pawns.Length != ImmersiveChefsNeutralContract.HumanCount +
+            ImmersiveChefsNeutralContract.AnimalCount || pawns.Any(pawn => pawn.Destroyed || !pawn.Spawned))
+            throw new InvalidOperationException("The neutral fixture lost a retained pawn.");
+        if (foodStartCells.Keys.Any(food => food.Destroyed || !food.Spawned || food.stackCount < 0))
+            throw new InvalidOperationException("The neutral fixture lost a retained food stack.");
+        foreach (var pawn in pawns)
+        {
+            if (!sampleWaitJobs.TryGetValue(pawn, out var wait) ||
+                !ReferenceEquals(pawn.CurJob, wait) ||
+                wait.def != JobDefOf.Wait_MaintainPosture ||
+                !wait.playerForced ||
+                wait.expiryInterval != int.MaxValue ||
+                wait.checkOverrideOnExpire)
+                throw new InvalidOperationException(
+                    "A neutral fixture pawn did not retain its exact long-lived native wait job through sampling.");
+        }
+        AssertSpatialRegistration(pawns.Cast<Thing>().Concat(foodStartCells.Keys));
+    }
+
+    public IEnumerator<EndToEndStep> CapturePostSampleEvidence(IEndToEndContext context)
+    {
+        if (map is null) throw new InvalidOperationException("The neutral map is unavailable after sampling.");
+        var pawns = fixtures.OfType<Pawn>().OrderBy(pawn => pawn.ThingID, StringComparer.Ordinal).ToArray();
+        var foods = foodStartCells.Keys.OrderBy(food => food.ThingID, StringComparer.Ordinal).ToArray();
+        var terminalRows = WorkloadState(pawns, foods);
+        var terminalState = PerformanceDeterminismGuard.CanonicalStateSha256(terminalRows);
+        yield return new CheckpointStep(
+            "neutral-colony-terminal-state",
+            _ => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["workloadVersion"] = ImmersiveChefsNeutralContract.Workload,
+                ["humanCount"] = pawns.Count(pawn => pawn.RaceProps.Humanlike).ToString(),
+                ["animalCount"] = pawns.Count(pawn => pawn.RaceProps.Animal).ToString(),
+                ["foodStackUnits"] = foods.Sum(food => food.stackCount).ToString(),
+                ["nativeMapTicks"] = counter!.TickCount.ToString(),
+                ["terminalStateSha256"] = terminalState,
+                ["terminalState"] = string.Join("\n", terminalRows)
+            });
     }
 
     public long Read(string id)
@@ -412,9 +462,11 @@ public abstract class ImmersiveChefsNeutralColonyBenchmark :
         }
     }
 
-    private static string ResetSampleUniqueIds()
+    private static string ResetSampleUniqueIds() =>
+        ResetIndexedUniqueIds(1_700_000, "sample");
+
+    private static string ResetIndexedUniqueIds(int targetBase, string phase)
     {
-        const int sampleBase = 1_700_000;
         var manager = Find.UniqueIDsManager ??
             throw new InvalidOperationException("The neutral fixture requires RimWorld's unique-ID manager.");
         var fields = manager.GetType()
@@ -426,14 +478,48 @@ public abstract class ImmersiveChefsNeutralColonyBenchmark :
             throw new MissingMemberException(manager.GetType().FullName, "nextThingID");
         var currentValues = fields.Select(field => (int)field.GetValue(manager)!).ToArray();
         var exhaustedIndex = PerformanceDeterminismGuard.FirstCounterAtOrAboveIndexedTarget(
-            currentValues, sampleBase, 10_000);
+            currentValues, targetBase, 10_000);
         if (exhaustedIndex >= 0)
             throw new InvalidOperationException(
-                "Neutral warmup consumed the reserved deterministic sample ID range for " +
+                "Neutral warmup consumed the reserved deterministic " + phase + " ID range for " +
                 fields[exhaustedIndex].Name + ".");
         for (var index = 0; index < fields.Length; index++)
-            fields[index].SetValue(manager, sampleBase + index * 10_000);
+            fields[index].SetValue(manager, targetBase + index * 10_000);
         return string.Join(",", fields.Select(field => field.Name + "=" + field.GetValue(manager)));
+    }
+
+    private void StartDeterministicWaitJobs(IEnumerable<Pawn> pawns)
+    {
+        sampleWaitJobs.Clear();
+        foreach (var pawn in pawns)
+        {
+            var wait = JobMaker.MakeJob(JobDefOf.Wait_MaintainPosture);
+            wait.playerForced = true;
+            wait.expiryInterval = int.MaxValue;
+            wait.checkOverrideOnExpire = false;
+            pawn.jobs.StartJob(
+                wait,
+                JobCondition.InterruptForced,
+                null,
+                resumeCurJobAfterwards: false,
+                cancelBusyStances: true,
+                null,
+                JobTag.Misc);
+            if (pawn.CurJobDef != JobDefOf.Wait_MaintainPosture)
+                throw new InvalidOperationException("A neutral fixture pawn rejected its deterministic wait job.");
+            sampleWaitJobs.Add(pawn, wait);
+        }
+    }
+
+    private static string CurrentUniqueIdState()
+    {
+        var manager = Find.UniqueIDsManager ??
+            throw new InvalidOperationException("The neutral fixture requires RimWorld's unique-ID manager.");
+        return string.Join(",", manager.GetType()
+            .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+            .Where(field => field.FieldType == typeof(int) && field.Name.StartsWith("next", StringComparison.Ordinal))
+            .OrderBy(field => field.Name, StringComparer.Ordinal)
+            .Select(field => field.Name + "=" + field.GetValue(manager)));
     }
 
     private static PropertyInfo RequireRandStateProperty()
@@ -457,6 +543,7 @@ public abstract class ImmersiveChefsNeutralColonyBenchmark :
         fixtures.Clear();
         pawnStartCells.Clear();
         foodStartCells.Clear();
+        sampleWaitJobs.Clear();
         initialFingerprint = string.Empty;
         counter = null;
         map = null;
@@ -491,25 +578,22 @@ public abstract class ImmersiveChefsNeutralColonyBenchmark :
                     "Neutral sample-start spatial registration drifted for " + thing.ThingID + ".");
     }
 
-    private static string WorkloadFingerprint(
+    private static string[] WorkloadState(
         IEnumerable<Pawn> pawns,
-        IEnumerable<Thing> foods,
-        string randState,
-        string uniqueIdState)
+        IEnumerable<Thing> foods)
     {
-        var rows = pawns.OrderBy(pawn => pawn.ThingID, StringComparer.Ordinal).Select(pawn =>
-            "pawn|" + pawn.ThingID + "|" + pawn.Position + "|" +
+        return pawns.OrderBy(pawn => pawn.Position.z).ThenBy(pawn => pawn.Position.x)
+            .Select((pawn, index) =>
+            "pawn|" + index + "|" + pawn.kindDef.defName + "|" + pawn.Position + "|" +
             pawn.needs.food.CurLevelPercentage.ToString("R") + "|" +
             (pawn.needs.rest?.CurLevelPercentage.ToString("R") ?? "none") + "|" +
             (pawn.CurJobDef?.defName ?? "none") + "|" +
             (pawn.inventory?.innerContainer.Count ?? 0) + "|" +
             (pawn.RaceProps.Humanlike && pawn.drafter.Drafted))
-            .Concat(foods.OrderBy(thing => thing.ThingID, StringComparer.Ordinal).Select(food =>
-                "food|" + food.ThingID + "|" + food.Position + "|" + food.stackCount))
-            .Concat(new[] { "rand|" + randState, "ids|" + uniqueIdState });
-        using var sha = SHA256.Create();
-        return string.Concat(sha.ComputeHash(Encoding.UTF8.GetBytes(string.Join("\n", rows)))
-            .Select(value => value.ToString("x2")));
+            .Concat(foods.OrderBy(food => food.Position.z).ThenBy(food => food.Position.x)
+                .Select((food, index) =>
+                "food|" + index + "|" + food.def.defName + "|" + food.Position + "|" + food.stackCount))
+            .ToArray();
     }
 }
 

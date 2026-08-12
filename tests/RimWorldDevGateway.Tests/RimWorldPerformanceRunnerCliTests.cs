@@ -254,13 +254,13 @@ public sealed class RimWorldPerformanceRunnerCliTests
             "if($errors.Count -ne 0){throw 'parse failed'}; " +
             "$wanted=@('Assert-PerformanceFixtureManifestCompatibility'); " +
             "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
-            "$same='{\"pawn\":\"A\",\"layout\":\"L\"}'; $drift='{\"pawn\":\"B\",\"layout\":\"L\"}'; " +
+            "$same='{\"pawn\":\"A\",\"layout\":\"L\"}'; $drift='{\"pawn\":\"B\",\"layout\":\"L\"}'; $terminal='{\"terminal\":\"T\"}'; " +
             "$records=@(" +
-            "[pscustomobject]@{BenchmarkId='present.instrumented';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same}," +
-            "[pscustomobject]@{BenchmarkId='present.instrumented';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same}," +
-            "[pscustomobject]@{BenchmarkId='present.armed';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same}," +
-            "[pscustomobject]@{BenchmarkId='present.disarmed';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same}," +
-            "[pscustomobject]@{BenchmarkId='absent';ComparisonId='absent';ProductAbsentControlId='';ManifestJson=$same}); " +
+            "[pscustomobject]@{BenchmarkId='present.instrumented';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same;TerminalManifestJson=$terminal}," +
+            "[pscustomobject]@{BenchmarkId='present.instrumented';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same;TerminalManifestJson=$terminal}," +
+            "[pscustomobject]@{BenchmarkId='present.armed';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same;TerminalManifestJson=$terminal}," +
+            "[pscustomobject]@{BenchmarkId='present.disarmed';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same;TerminalManifestJson=$terminal}," +
+            "[pscustomobject]@{BenchmarkId='absent';ComparisonId='absent';ProductAbsentControlId='';ManifestJson=$same;TerminalManifestJson=$terminal}); " +
             "Assert-PerformanceFixtureManifestCompatibility -Records $records; " +
             "$records[1].ManifestJson=$drift; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 71 } catch { Write-Output ('repetition|' + $_.Exception.Message) }; " +
             "$records[1].ManifestJson=$same; $records[2].ManifestJson=$drift; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 72 } catch { Write-Output ('lens|' + $_.Exception.Message) }; " +
@@ -300,6 +300,35 @@ public sealed class RimWorldPerformanceRunnerCliTests
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
             Assert.That(run.StandardOutput, Does.Contain("weighted|True|16.666").And.Contain("|3|2|c0,c2,c4"));
             Assert.That(run.StandardOutput, Does.Contain("drift|Benchmark 'b' has repetition compatibility drift."));
+        });
+    }
+
+    [Test]
+    public void Runtime_snapshot_builds_only_semantically_compatible_present_minus_absent_system_deltas()
+    {
+        var source =
+            "$tokens=$null; $errors=$null; " +
+            "$ast=[System.Management.Automation.Language.Parser]::ParseFile(" + Literal(RunnerPath()) + ",[ref]$tokens,[ref]$errors); " +
+            "if($errors.Count -ne 0){throw 'parse failed'}; " +
+            "$wanted=@('New-PerformancePairedNetCases'); " +
+            "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
+            "$identity={param($id,$lens,$packages,$terminal) [pscustomobject]@{BenchmarkId=$id;GroupId='g';WorkloadVersion='w';EvidenceLens=$lens;ActivePackageIds=$packages;GameVersion='1.6';ProductAssemblyIdentity=if($lens -eq 'product-absent-control'){'not-loaded'}else{'product-sha'};TestAssemblyIdentity='test-sha';CircinusAssemblyIdentity='circinus-sha';CircinusSchemaIdentity='1.15';ProfilingPolicyIdentity='policy';SamplingPolicyIdentity='sampling';HardwareRuntimeFingerprint='host';FixtureManifestSha256='start';FixtureTerminalManifestSha256=$terminal;DeterministicSeed=7;WarmUpTicks=10;SampleTicks=20;GameSpeed=1;RepetitionCount=3;AggregationPolicyIdentity='arithmetic-mean-with-pooled-per-call/v2'}}; " +
+            "$measure={param($wall,$ticks) @([pscustomobject]@{Scope='checkpoint';Selector='checkpoint:elapsed-wall-milliseconds';MetricName='elapsed-wall-milliseconds';Value=$wall;Unit='ms';Denominator='sample-window';Claim='control'},[pscustomobject]@{Scope='checkpoint';Selector='checkpoint:neutral-native-map-ticks';MetricName='neutral-native-map-ticks';Value=$ticks;Unit='count';Denominator='sample-window';Claim='control'})}; " +
+            "$present=[pscustomobject]@{Compatibility=&$identity 'present' 'instrumented' @('harmony','core','circinus','product','gateway') 'terminal';Measurements=@(&$measure 120 20)}; " +
+            "$absent=[pscustomobject]@{Compatibility=&$identity 'absent' 'product-absent-control' @('harmony','core','circinus','gateway') 'terminal';Measurements=@(&$measure 100 20)}; " +
+            "$plan=[pscustomobject]@{processes=@([pscustomobject]@{benchmarkId='present';productAbsentControlId='absent';evidenceLens=0;measuredSubjectPackageId='product'},[pscustomobject]@{benchmarkId='absent';productAbsentControlId='';evidenceLens=3;measuredSubjectPackageId='product'})}; " +
+            "$net=@(New-PerformancePairedNetCases -Cases @($present,$absent) -Plan $plan); Write-Output ('net|' + $net.Count + '|' + $net[0].Measurements.Count + '|' + $net[0].Measurements[0].Value + '|' + $net[0].Compatibility.EvidenceLens); " +
+            "$absent.Compatibility.FixtureTerminalManifestSha256='drift'; try { New-PerformancePairedNetCases -Cases @($present,$absent) -Plan $plan | Out-Null; exit 71 } catch { Write-Output ('terminal|' + $_.Exception.Message) }; " +
+            "$absent.Compatibility.FixtureTerminalManifestSha256='terminal'; $absent.Measurements[1].Value=19; try { New-PerformancePairedNetCases -Cases @($present,$absent) -Plan $plan | Out-Null; exit 72 } catch { Write-Output ('throughput|' + $_.Exception.Message) }";
+
+        var run = InvokeScript(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput, Does.Contain("net|1|1|20|paired-net-system-delta"));
+            Assert.That(run.StandardOutput, Does.Contain("terminal|").And.Contain("terminal manifest drift"));
+            Assert.That(run.StandardOutput, Does.Contain("throughput|").And.Contain("semantic checkpoint drift"));
         });
     }
 

@@ -468,7 +468,7 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         }
 
         var tests = new List<CompiledTest>();
-        foreach (var type in types.OrderBy(type => type.FullName, StringComparer.Ordinal))
+        foreach (var type in BoundedCompiledTestTypes(types))
         {
             var customAttributes = CustomAttributeData.GetCustomAttributes(type);
             var attributes = customAttributes
@@ -506,6 +506,34 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         }
 
         return tests.OrderBy(test => test.Id, StringComparer.Ordinal).ToArray();
+    }
+
+    internal static IReadOnlyList<Type> BoundedCompiledTestTypes(IEnumerable<Type> types)
+    {
+        if (types is null) throw new ArgumentNullException(nameof(types));
+        var attributed = new List<Type>();
+        foreach (var type in types)
+        {
+            if (type is null) continue;
+            var metadata = CustomAttributeData.GetCustomAttributes(type);
+            if (!metadata.Any(attribute =>
+                    attribute.AttributeType == typeof(RimWorldEndToEndTestAttribute) ||
+                    attribute.AttributeType == typeof(RimWorldPerformanceTestAttribute)))
+            {
+                continue;
+            }
+
+            if (attributed.Count == PerformanceTestContract.MaximumBenchmarks)
+            {
+                throw Failure(
+                    "compiled_test_manifest_mismatch",
+                    $"The compiled test assembly exceeds the published {PerformanceTestContract.MaximumBenchmarks}-test ceiling.");
+            }
+
+            attributed.Add(type);
+        }
+
+        return attributed.OrderBy(type => type.FullName, StringComparer.Ordinal).ToArray();
     }
 
     private static CompiledTest ReadCompiledTest(Type type, CustomAttributeData attribute)
@@ -593,15 +621,33 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         IReadOnlyList<EndToEndBundleTest> manifest)
     {
         var orderedManifest = manifest.OrderBy(test => test.Id, StringComparer.Ordinal).ToArray();
-        if (compiled.Count != orderedManifest.Length)
+        var manifestIsPerformanceOnly = orderedManifest.All(test =>
+            StringComparer.Ordinal.Equals(
+                string.IsNullOrWhiteSpace(test.Kind) ? EndToEndBundleTest.EndToEndKind : test.Kind,
+                EndToEndBundleTest.PerformanceKind));
+        var compiledIsPerformanceOnly = compiled.All(test => test.PerformanceDescriptor is not null);
+        ValidateCompiledTestIds(
+            compiled.Select(test => test.Id),
+            compiled.Where(test => test.PerformanceDescriptor is not null).Select(test => test.Id));
+
+        if (!manifestIsPerformanceOnly || !compiledIsPerformanceOnly)
         {
-            throw Failure("compiled_test_manifest_mismatch", "The compiled E2E test list differs from discovery.");
+            if (compiled.Count != orderedManifest.Length)
+            {
+                throw Failure(
+                    "compiled_test_manifest_mismatch",
+                    "An ordinary or mixed E2E manifest must list every compiled test exactly once.");
+            }
         }
 
-        for (var index = 0; index < compiled.Count; index++)
+        var compiledById = compiled.ToDictionary(test => test.Id, StringComparer.Ordinal);
+        var effectivePerformanceDescriptors = new List<PerformanceTestDescriptor>();
+        foreach (var expected in orderedManifest)
         {
-            var actual = compiled[index];
-            var expected = orderedManifest[index];
+            if (!compiledById.TryGetValue(expected.Id, out var actual))
+            {
+                throw Failure("compiled_test_manifest_mismatch", "A staged E2E test is absent from the compiled assembly.");
+            }
             var effectiveDescriptor = EffectivePerformanceDescriptor(actual.PerformanceDescriptor, expected);
             var effectivePackages = effectiveDescriptor?.ActivePackageIds ?? actual.ActivePackageIds;
             if (!StringComparer.Ordinal.Equals(actual.Id, expected.Id) ||
@@ -626,6 +672,56 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
                     "compiled_test_manifest_mismatch",
                     "The compiled performance metadata differs from discovery.");
             }
+
+
+            if (manifestIsPerformanceOnly)
+            {
+                if (effectiveDescriptor is null)
+                {
+                    throw Failure(
+                        "compiled_test_manifest_mismatch",
+                        "A staged performance manifest resolves a non-performance compiled test.");
+                }
+
+                effectivePerformanceDescriptors.Add(effectiveDescriptor);
+            }
+        }
+
+        if (manifestIsPerformanceOnly)
+        {
+            try
+            {
+                PerformanceTestContract.ValidateAndGroupDescriptors(effectivePerformanceDescriptors);
+            }
+            catch (PerformanceContractException)
+            {
+                throw Failure(
+                    "compiled_test_manifest_mismatch",
+                    "A filtered performance manifest does not contain a complete compatible comparison family and required controls.");
+            }
+        }
+    }
+
+    internal static void ValidateCompiledTestIds(
+        IEnumerable<string> compiledIds,
+        IEnumerable<string> compiledPerformanceIds)
+    {
+        var duplicateCompiled = compiledIds
+            .GroupBy(id => id, StringComparer.Ordinal)
+            .FirstOrDefault(group => group.Count() > 1);
+        if (duplicateCompiled is not null)
+        {
+            throw Failure("compiled_test_manifest_mismatch", "The compiled E2E test list contains a duplicate ID.");
+        }
+
+        var duplicateCompiledPerformance = compiledPerformanceIds
+            .GroupBy(id => id, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(group => group.Count() > 1);
+        if (duplicateCompiledPerformance is not null)
+        {
+            throw Failure(
+                "compiled_test_manifest_mismatch",
+                "The compiled performance test list contains a case-insensitive duplicate ID.");
         }
     }
 

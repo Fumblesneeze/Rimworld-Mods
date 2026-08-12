@@ -34,6 +34,7 @@ public sealed class PerformanceCompatibilityIdentity
     public string SamplingPolicyIdentity { get; set; } = string.Empty;
     public string HardwareRuntimeFingerprint { get; set; } = string.Empty;
     public string FixtureManifestSha256 { get; set; } = string.Empty;
+    public string FixtureTerminalManifestSha256 { get; set; } = "not-applicable";
     public int DeterministicSeed { get; set; }
     public int WarmUpTicks { get; set; }
     public int SampleTicks { get; set; }
@@ -555,7 +556,8 @@ public static class PerformanceBaselineComparer
         var hasContext = metric.Calls is not null || metric.TimedCalls is not null || metric.DutyPercent is not null ||
                          metric.SampleShift is not null || metric.RecordedCycles is not null ||
                          metric.ProfilerWindowMilliseconds is not null || metric.ProfilerWindowTicks is not null;
-        if (string.Equals(metric.Scope, "checkpoint", StringComparison.Ordinal))
+        if (string.Equals(metric.Scope, "checkpoint", StringComparison.Ordinal) ||
+            string.Equals(metric.Scope, "paired-net", StringComparison.Ordinal))
         {
             if (hasContext) result.Add("checkpoint-context-unexpected");
             return result;
@@ -683,6 +685,8 @@ public static class PerformanceBaselineComparer
         Difference(result, "samplingPolicyIdentity", baseline.SamplingPolicyIdentity, current.SamplingPolicyIdentity);
         Difference(result, "hardwareRuntimeFingerprint", baseline.HardwareRuntimeFingerprint, current.HardwareRuntimeFingerprint);
         Difference(result, "fixtureManifestSha256", baseline.FixtureManifestSha256, current.FixtureManifestSha256);
+        Difference(result, "fixtureTerminalManifestSha256", baseline.FixtureTerminalManifestSha256,
+            current.FixtureTerminalManifestSha256);
         if (baseline.DeterministicSeed != current.DeterministicSeed) result.Add("deterministicSeed");
         if (baseline.WarmUpTicks != current.WarmUpTicks) result.Add("warmUpTicks");
         if (baseline.SampleTicks != current.SampleTicks) result.Add("sampleTicks");
@@ -723,6 +727,7 @@ public static class PerformanceBaselineComparer
                          identity.CircinusAssemblyIdentity, identity.CircinusSchemaIdentity,
                          identity.ProfilingPolicyIdentity, identity.SamplingPolicyIdentity,
                          identity.HardwareRuntimeFingerprint, identity.FixtureManifestSha256,
+                         identity.FixtureTerminalManifestSha256,
                          identity.AggregationPolicyIdentity
                      })
                 if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException($"The {owner} contains an empty compatibility identity.");

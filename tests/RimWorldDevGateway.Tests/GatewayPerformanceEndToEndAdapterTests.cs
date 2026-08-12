@@ -27,7 +27,7 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         Assert.That(PhaseFixtureBenchmark.Calls, Is.EqualTo(new[]
         {
             "arrange", "warmup", "prepare-sample", "begin-sample", "execute", "complete-sample",
-            "validate-sample"
+            "validate-sample", "post-sample-evidence"
         }));
     }
 
@@ -408,7 +408,8 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
     public sealed class PhaseFixtureBenchmark :
         IRimWorldPerformanceTest,
         IPerformanceSamplePreparation,
-        IPerformanceSampleValidation
+        IPerformanceSampleValidation,
+        IPerformancePostSampleEvidence
     {
         public static List<string> Calls { get; } = new();
 
@@ -427,6 +428,12 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         }
 
         public void ValidateSample(IEndToEndContext context) => Calls.Add("validate-sample");
+
+        public IEnumerator<EndToEndStep> CapturePostSampleEvidence(IEndToEndContext context)
+        {
+            Calls.Add("post-sample-evidence");
+            yield break;
+        }
     }
 
     [RimWorldPerformanceTest(

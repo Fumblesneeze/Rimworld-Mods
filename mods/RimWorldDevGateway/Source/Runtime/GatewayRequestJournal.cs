@@ -183,10 +183,15 @@ public sealed class GatewayRequestJournal
 
     private static void WriteAtomic(string path, string json)
     {
-        var temporaryPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        string? temporaryPath = null;
         try
         {
-            File.WriteAllText(temporaryPath, json, Utf8NoBom);
+            using (var stream = GatewayTemporaryFile.CreateSibling(path))
+            {
+                temporaryPath = stream.Name;
+                using var writer = new StreamWriter(stream, Utf8NoBom);
+                writer.Write(json);
+            }
             if (File.Exists(path))
             {
                 File.Replace(temporaryPath, path, null, ignoreMetadataErrors: true);
@@ -198,7 +203,7 @@ public sealed class GatewayRequestJournal
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            if (temporaryPath is not null && File.Exists(temporaryPath))
             {
                 File.Delete(temporaryPath);
             }

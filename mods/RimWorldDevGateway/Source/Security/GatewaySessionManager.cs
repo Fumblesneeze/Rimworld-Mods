@@ -528,10 +528,15 @@ public sealed class GatewaySessionManager
     {
         var directory = Path.GetDirectoryName(path) ?? throw new InvalidOperationException("Manifest path has no directory.");
         Directory.CreateDirectory(directory);
-        var temporaryPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        string? temporaryPath = null;
         try
         {
-            File.WriteAllText(temporaryPath, GatewayContractJson.Write(value), new System.Text.UTF8Encoding(false));
+            using (var stream = GatewayTemporaryFile.CreateSibling(path))
+            {
+                temporaryPath = stream.Name;
+                using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false));
+                writer.Write(GatewayContractJson.Write(value));
+            }
             if (File.Exists(path))
             {
                 File.Replace(temporaryPath, path, null, ignoreMetadataErrors: true);
@@ -543,7 +548,7 @@ public sealed class GatewaySessionManager
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            if (temporaryPath is not null && File.Exists(temporaryPath))
             {
                 File.Delete(temporaryPath);
             }

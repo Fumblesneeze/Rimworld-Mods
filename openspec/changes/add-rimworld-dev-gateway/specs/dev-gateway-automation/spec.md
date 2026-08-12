@@ -145,6 +145,17 @@ The attributed E2E contract SHALL expose a typed save-and-reload action that acc
 - **WHEN** a focused E2E test records a visible Thing, invokes the typed save-and-reload action, reacquires that Thing by stable game identity, and observes it after load
 - **THEN** the test continues only after the replacement game and playable map settle and can retain before/after screenshots and checkpoints for the same observable object
 
+### Requirement: Path-safe durable Gateway artifacts
+The Gateway SHALL atomically commit session manifests, request-journal snapshots, integration-test snapshots, and E2E snapshots without deriving the temporary leaf from the complete destination filename. Its short unique sibling temporary leaf SHALL keep the complete temporary path within the legacy Windows path limit whenever the final artifact path itself fits that limit. It SHALL establish exclusive ownership before cleanup, leave a colliding sibling untouched, and retry name collisions only for a bounded count. A failed E2E attachment SHALL remain retryable without discovery or execution, but a deterministic temporary-path overflow SHALL NOT trap a healthy run in an endless pending loop.
+
+#### Scenario: Deep isolated evidence root remains attachable
+- **WHEN** an isolated launcher places the session beneath a deep artifact root whose final Gateway artifact paths fit the legacy Windows path limit but appending a GUID suffix to their full filenames would exceed it
+- **THEN** each writer uses a shorter unique sibling temporary leaf, the session and initial E2E snapshot commit atomically, request journaling remains available, and the authenticated E2E endpoint advances beyond its retryable pending response
+
+#### Scenario: Temporary sibling collision is not ownership
+- **WHEN** a generated short temporary leaf already belongs to another file
+- **THEN** the writer leaves that file unchanged, selects another leaf within a bounded retry count, and removes only the sibling it exclusively created
+
 ### Requirement: Normal mod configuration preservation
 Automated launch SHALL use an isolated save-data folder and isolated `ModsConfig.xml`. If a future host operation is explicitly configured to modify the normal `ModsConfig.xml`, it SHALL back up and hash the exact file first, restore it in `finally`, and verify the restored hash before reporting success.
 

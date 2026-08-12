@@ -258,28 +258,20 @@ internal static class PerformanceSampleNormalizer
             {
                 Add(metrics, "patch", key, "ambiguous-targets", 1,
                     "boolean", "native-patch-identity", "sampling-policy");
-                Add(metrics, "patch", key, "shared-gross-share", row.Total / env.WindowMilliseconds,
-                    "ratio", "profiler-window-ms", "gross-attribution");
-                Add(metrics, "patch", key, "ambiguous-target-gross-share",
-                    row.Total / env.WindowMilliseconds,
-                    "ratio", "profiler-window-ms", "gross-attribution");
+                AddWindowShare(metrics, "patch", key, "shared-gross-share", row.Total, env);
+                AddWindowShare(metrics, "patch", key, "ambiguous-target-gross-share", row.Total, env);
             }
             if (row.Patch?.CanSkip == true)
-                Add(metrics, "patch", key, "skip-capable-gross-share", row.Total / env.WindowMilliseconds,
-                    "ratio", "profiler-window-ms", "gross-attribution");
+                AddWindowShare(metrics, "patch", key, "skip-capable-gross-share", row.Total, env);
         }
 
         foreach (var row in (IEnumerable<NativeModRow>?)document.ModCosts ?? Enumerable.Empty<NativeModRow>())
         {
             var key = RequiredKey(row.PackageId, "mod");
             Add(metrics, "mod", key, "total", row.Total, "ms", "profiler-window-ms", "gross-attribution");
-            Add(metrics, "mod", key, "gross-profiler-window-share", row.Total / env.WindowMilliseconds,
-                "ratio", "profiler-window-ms", "gross-attribution");
-            Add(metrics, "mod", key, "shared-profiler-window-share", row.Shared / env.WindowMilliseconds,
-                "ratio", "profiler-window-ms", "gross-attribution");
-            Add(metrics, "mod", key, "replacement-profiler-window-share",
-                row.Replacement / env.WindowMilliseconds,
-                "ratio", "profiler-window-ms", "gross-attribution");
+            AddWindowShare(metrics, "mod", key, "gross-profiler-window-share", row.Total, env);
+            AddWindowShare(metrics, "mod", key, "shared-profiler-window-share", row.Shared, env);
+            AddWindowShare(metrics, "mod", key, "replacement-profiler-window-share", row.Replacement, env);
         }
 
         var emittedSidecarMetrics = new HashSet<string>(StringComparer.Ordinal);
@@ -390,7 +382,7 @@ internal static class PerformanceSampleNormalizer
             throw new PerformanceNormalizationException("Circinus native sample count exceeds its run ceiling.");
         if (document.Env is null)
             throw new PerformanceNormalizationException("Circinus has no valid profiler denominator.");
-        ValidateEnvironment(document.Env, context.EvidenceLens);
+        ValidateEnvironment(document.Env, context.EvidenceLens, document);
         ValidateMethodRows(document.Methods, document.Env);
         ValidatePatchRows(document.Patches);
         ValidateModRows(document.ModCosts);
@@ -399,7 +391,10 @@ internal static class PerformanceSampleNormalizer
         ValidateSidecars(capture.Sidecars, document.Env, context.EvidenceLens, document);
     }
 
-    private static void ValidateEnvironment(NativeEnvironment env, PerformanceEvidenceLens evidenceLens)
+    private static void ValidateEnvironment(
+        NativeEnvironment env,
+        PerformanceEvidenceLens evidenceLens,
+        NativeDocument document)
     {
         if (env.ProfilerCycles is null || env.ProfilerWindowMs is null ||
             env.ProfilerWindowTicks is null || env.ProfilerDutyPct is null ||
@@ -428,6 +423,21 @@ internal static class PerformanceSampleNormalizer
              env.ProfilerWindowTicks.Value != 0 || env.ProfilerSampled.Value))
             throw new PerformanceNormalizationException(
                 "Circinus recorded active profiler timing in a disabled-control lens.");
+        if (env.ProfilerWindowMs.Value == 0)
+        {
+            var nonzeroMethod = (document.Methods ?? new List<NativeMethodRow>()).Any(row =>
+                (row.TotalMs ?? 0) != 0 || (row.MeanMs ?? 0) != 0 || (row.MaxMs ?? 0) != 0 ||
+                (row.Calls ?? 0) != 0);
+            var nonzeroPatch = (document.Patches ?? new List<NativePatchRow>()).Any(row =>
+                (row.TotalMs ?? 0) != 0 || (row.MeanMs ?? 0) != 0 || (row.MaximumMs ?? 0) != 0 ||
+                (row.Calls ?? 0) != 0 || (row.TimedCalls ?? 0) != 0);
+            var nonzeroMod = (document.ModCosts ?? new List<NativeModRow>()).Any(row =>
+                (row.TotalMs ?? 0) != 0 || (row.SharedMs ?? 0) != 0 ||
+                (row.ReplacementMs ?? 0) != 0);
+            if (nonzeroMethod || nonzeroPatch || nonzeroMod)
+                throw new PerformanceNormalizationException(
+                    "Circinus retained native timing or call activity against a zero profiler window.");
+        }
     }
 
     private static void ValidateMethodRows(
@@ -542,6 +552,10 @@ internal static class PerformanceSampleNormalizer
         if (evidenceLens == PerformanceEvidenceLens.FullyDisarmed && sidecars.Count != 0)
             throw new PerformanceNormalizationException(
                 "A fully disarmed Circinus lens cannot retain any run-owned profiler sidecars.");
+        if (env.WindowMilliseconds == 0 && sidecars.Any(sidecar =>
+                sidecar.TotalCalls != 0 || sidecar.TotalTimedCalls != 0 || sidecar.CyclesSeen != 0))
+            throw new PerformanceNormalizationException(
+                "Circinus retained live profiler sidecar activity against a zero profiler window.");
         var nativePatchAmbiguity = (document.Patches ?? new List<NativePatchRow>())
             .Where(row => !string.IsNullOrWhiteSpace(row.Patch?.Key))
             .ToDictionary(row => row.Patch!.Key!, row => row.AmbiguousTargets, StringComparer.Ordinal);
@@ -721,7 +735,19 @@ internal static class PerformanceSampleNormalizer
         if (calls > 0)
             Add(metrics, scope, key, "gross-ms-per-estimated-call", total / calls,
                 "ms/call", "native-estimated-calls", "gross-attribution");
-        Add(metrics, scope, key, "gross-profiler-window-share", total / env.WindowMilliseconds,
+        AddWindowShare(metrics, scope, key, "gross-profiler-window-share", total, env);
+    }
+
+    private static void AddWindowShare(
+        ICollection<PerformanceNormalizedMetric> metrics,
+        string scope,
+        string key,
+        string name,
+        double total,
+        NativeEnvironment env)
+    {
+        if (env.WindowMilliseconds <= 0) return;
+        Add(metrics, scope, key, name, total / env.WindowMilliseconds,
             "ratio", "profiler-window-ms", "gross-attribution");
     }
 
@@ -733,8 +759,13 @@ internal static class PerformanceSampleNormalizer
         double value,
         string unit,
         string denominator,
-        string claim) =>
+        string claim)
+    {
+        if (!IsFinite(value))
+            throw new PerformanceNormalizationException(
+                $"Normalized metric '{scope}/{key}/{name}' is not finite.");
         metrics.Add(new PerformanceNormalizedMetric(scope, key, name, value, unit, denominator, claim));
+    }
 
     private static IReadOnlyList<PerformanceControlCheckpoint> Checkpoints(
         PerformanceNormalizationContext context)

@@ -55,6 +55,16 @@ internal sealed class GatewayPerformanceEndToEndAdapter : IRimWorldEndToEndTest
         foreach (var step in service.CompleteSample(descriptor, performanceContext)) yield return step;
         if (benchmark is IPerformanceSampleValidation validation)
             validation.ValidateSample(context);
+        if (benchmark is IPerformancePostSampleEvidence evidence)
+        {
+            using var evidenceSteps = evidence.CapturePostSampleEvidence(context) ??
+                                      throw new InvalidOperationException(
+                                          "The performance fixture returned a null post-sample evidence iterator.");
+            while (evidenceSteps.MoveNext())
+                yield return evidenceSteps.Current ??
+                             throw new InvalidOperationException(
+                                 "The performance fixture yielded a null post-sample evidence step.");
+        }
     }
 
     private IEndToEndContext WithThroughputCounter(IEndToEndContext context) =>

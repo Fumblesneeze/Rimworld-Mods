@@ -142,6 +142,16 @@ public interface IPerformanceSampleValidation
 }
 
 /// <summary>
+/// Captures bounded terminal evidence after the profiler has stopped and terminal validation has
+/// passed. Implementations may emit ordinary E2E observation steps but must not mutate the
+/// measured outcome they describe.
+/// </summary>
+public interface IPerformancePostSampleEvidence
+{
+    IEnumerator<EndToEndStep> CapturePostSampleEvidence(IEndToEndContext context);
+}
+
+/// <summary>
 /// Supplies monotonically increasing native-work counters for a performance fixture's declared
 /// throughput checkpoints. The Gateway samples these counters immediately before and after the
 /// measured tick window; setup and warm-up work therefore cannot satisfy a checkpoint.
@@ -525,22 +535,33 @@ public static class PerformanceTestContract
             throw new ArgumentNullException(nameof(testTypes));
         }
 
-        var descriptors = MaterializeTypes(testTypes).Select(Describe).ToArray();
-        if (descriptors.Length == 0)
+        return ValidateAndGroupDescriptors(MaterializeTypes(testTypes).Select(Describe));
+    }
+
+    public static IReadOnlyList<PerformanceTestGroup> ValidateAndGroupDescriptors(
+        IEnumerable<PerformanceTestDescriptor> descriptors)
+    {
+        if (descriptors is null)
+        {
+            throw new ArgumentNullException(nameof(descriptors));
+        }
+
+        var materialized = MaterializeDescriptors(descriptors);
+        if (materialized.Length == 0)
         {
             throw new PerformanceContractException("Performance discovery selected zero benchmarks.");
         }
-        var duplicate = descriptors.GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
+        var duplicate = materialized.GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(group => group.Count() > 1);
         if (duplicate is not null)
         {
             throw new PerformanceContractException($"Duplicate benchmark ID '{duplicate.Key}'.");
         }
 
-        ValidateProductAbsentControls(descriptors);
-        ValidateEvidenceLensFamilies(descriptors);
+        ValidateProductAbsentControls(materialized);
+        ValidateEvidenceLensFamilies(materialized);
 
-        return descriptors
+        return materialized
             .GroupBy(item => PackageSequenceKey(item.ActivePackageIds), StringComparer.Ordinal)
             .Select(group =>
             {
@@ -553,6 +574,26 @@ public static class PerformanceTestContract
             })
             .OrderBy(group => group.GroupId, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static PerformanceTestDescriptor[] MaterializeDescriptors(
+        IEnumerable<PerformanceTestDescriptor> descriptors)
+    {
+        var result = new List<PerformanceTestDescriptor>();
+        using var enumerator = descriptors.GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            if (result.Count == MaximumBenchmarks)
+            {
+                throw new PerformanceContractException(
+                    $"Performance discovery exceeds the published {MaximumBenchmarks}-benchmark ceiling.");
+            }
+
+            result.Add(enumerator.Current ??
+                       throw new PerformanceContractException("Performance discovery contains a null benchmark descriptor."));
+        }
+
+        return result.ToArray();
     }
 
     private static Type[] MaterializeTypes(IEnumerable<Type> testTypes)
@@ -885,6 +926,51 @@ public static class PerformanceTestContract
 
 public static class PerformanceDeterminismGuard
 {
+    public const int MaximumStateRows = CheckpointStep.MaximumArtifactFields;
+    public const int MaximumStateRowUtf8Bytes = CheckpointStep.MaximumArtifactValueUtf8Bytes;
+    public const int MaximumStateAggregateUtf8Bytes = CheckpointStep.MaximumArtifactAggregateUtf8Bytes;
+
+    public static string CanonicalStateSha256(IEnumerable<string> stateRows)
+    {
+        if (stateRows is null) throw new ArgumentNullException(nameof(stateRows));
+        var rows = new List<string>();
+        var aggregateBytes = 0L;
+        foreach (var row in stateRows)
+        {
+            if (rows.Count == MaximumStateRows)
+                throw new ArgumentException(
+                    $"Deterministic state exceeds {MaximumStateRows} rows.", nameof(stateRows));
+            if (row is null)
+                throw new ArgumentException("A deterministic state row cannot be null.", nameof(stateRows));
+            var rowBytes = Encoding.UTF8.GetByteCount(row);
+            if (rowBytes > MaximumStateRowUtf8Bytes)
+                throw new ArgumentException(
+                    $"A deterministic state row exceeds {MaximumStateRowUtf8Bytes} UTF-8 bytes.", nameof(stateRows));
+            aggregateBytes += 4L + rowBytes;
+            if (aggregateBytes > MaximumStateAggregateUtf8Bytes)
+                throw new ArgumentException(
+                    $"Deterministic state exceeds {MaximumStateAggregateUtf8Bytes} aggregate UTF-8 bytes.", nameof(stateRows));
+            rows.Add(row);
+        }
+        using var sha = SHA256.Create();
+        foreach (var row in rows)
+        {
+            var bytes = Encoding.UTF8.GetBytes(row);
+            var length = bytes.Length;
+            var prefix = new[]
+            {
+                (byte)(length >> 24),
+                (byte)(length >> 16),
+                (byte)(length >> 8),
+                (byte)length
+            };
+            sha.TransformBlock(prefix, 0, prefix.Length, null, 0);
+            sha.TransformBlock(bytes, 0, bytes.Length, null, 0);
+        }
+        sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+        return string.Concat(sha.Hash.Select(value => value.ToString("x2")));
+    }
+
     public static int FirstCounterAtOrAboveIndexedTarget(
         IReadOnlyList<int> currentValues,
         int targetBase,

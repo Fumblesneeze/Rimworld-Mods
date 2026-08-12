@@ -151,6 +151,61 @@ public sealed class PerformanceBaselineTests
     }
 
     [Test]
+    public void Paired_net_system_delta_is_a_context_free_thresholdable_scope()
+    {
+        var metric = Measurement(20d) with
+        {
+            Scope = "paired-net",
+            Selector = "paired-net:elapsed-wall-milliseconds",
+            MetricName = "elapsed-wall-milliseconds",
+            Unit = "ms",
+            Denominator = "sample-window",
+            Claim = "paired-net-system-delta",
+            Calls = null,
+            TimedCalls = null,
+            DutyPercent = null,
+            SampleShift = null,
+            RecordedCycles = null,
+            ProfilerWindowMilliseconds = null,
+            ProfilerWindowTicks = null,
+            SamplingContextIdentity = string.Empty,
+            ExactMethod = string.Empty
+        };
+        var baseline = Snapshot("accepted", metric);
+        var current = Snapshot("current", metric with { Value = 22d });
+        foreach (var snapshot in new[] { baseline, current })
+        {
+            snapshot.Cases[0].Compatibility.BenchmarkId = "gateway.neutral-present.instrumented.paired-net";
+            snapshot.Cases[0].Compatibility.EvidenceLens = "paired-net-system-delta";
+        }
+        var policy = new PerformanceThresholdPolicy
+        {
+            Thresholds =
+            [
+                new PerformanceMetricThreshold
+                {
+                    BenchmarkId = "gateway.neutral-present.instrumented.paired-net",
+                    EvidenceLens = "paired-net-system-delta",
+                    Scope = "paired-net",
+                    Selector = "paired-net:elapsed-wall-milliseconds",
+                    MetricName = "elapsed-wall-milliseconds",
+                    Unit = "ms",
+                    AbsoluteIncrease = 5d
+                }
+            ]
+        };
+
+        var result = PerformanceBaselineComparer.Compare(current, [baseline], policy, false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Passed, Is.True);
+            Assert.That(result.Comparisons.Single().ThresholdsApplied, Is.True);
+            Assert.That(result.Failures, Is.Empty);
+        });
+    }
+
+    [Test]
     public void Averaged_native_sample_shifts_remain_valid_for_multi_repetition_snapshots()
     {
         var baseline = Snapshot("accepted", Measurement(100d) with
@@ -423,6 +478,7 @@ public sealed class PerformanceBaselineTests
                     SamplingPolicyIdentity = "native-adaptive/v1",
                     HardwareRuntimeFingerprint = "hardware-runtime-sha",
                     FixtureManifestSha256 = "fixture-manifest-sha",
+                    FixtureTerminalManifestSha256 = "not-applicable",
                     DeterministicSeed = 60161,
                     WarmUpTicks = 300,
                     SampleTicks = 3000,

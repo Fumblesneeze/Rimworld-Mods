@@ -32,6 +32,56 @@ public sealed class PerformanceTestingContractTests
     }
 
     [Test]
+    public void Determinism_guard_hashes_ordered_runtime_state_without_hiding_semantic_drift()
+    {
+        var baseline = new[] { "pawn|0|Wait|0.75", "pawn|1|Wait|0.80", "food|0|30" };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(PerformanceDeterminismGuard.CanonicalStateSha256(baseline),
+                Is.EqualTo(PerformanceDeterminismGuard.CanonicalStateSha256(baseline.ToArray())));
+            Assert.That(PerformanceDeterminismGuard.CanonicalStateSha256(baseline),
+                Is.Not.EqualTo(PerformanceDeterminismGuard.CanonicalStateSha256(
+                    new[] { "pawn|0|Wait|0.75", "pawn|1|Wait|0.79", "food|0|30" })));
+            Assert.That(PerformanceDeterminismGuard.CanonicalStateSha256(new[] { "a\nb" }),
+                Is.Not.EqualTo(PerformanceDeterminismGuard.CanonicalStateSha256(new[] { "a", "b" })));
+            Assert.That(PerformanceDeterminismGuard.CanonicalStateSha256(Array.Empty<string>()),
+                Is.Not.EqualTo(PerformanceDeterminismGuard.CanonicalStateSha256(new[] { string.Empty })));
+            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(
+                new string[] { "pawn", null! }), Throws.ArgumentException);
+        });
+    }
+
+    [Test]
+    public void Determinism_guard_enforces_the_published_checkpoint_evidence_boundaries()
+    {
+        var exactRows = Enumerable.Repeat("x", PerformanceDeterminismGuard.MaximumStateRows);
+        var overRows = Enumerable.Repeat("x", PerformanceDeterminismGuard.MaximumStateRows + 1);
+        var exactRow = new string('x', PerformanceDeterminismGuard.MaximumStateRowUtf8Bytes);
+        var overRow = exactRow + "x";
+        var exactAggregate = Enumerable
+            .Repeat(new string('x', PerformanceDeterminismGuard.MaximumStateRowUtf8Bytes), 16)
+            .ToArray();
+        exactAggregate[exactAggregate.Length - 1] = new string('x',
+            PerformanceDeterminismGuard.MaximumStateRowUtf8Bytes - exactAggregate.Length * 4);
+        var overAggregate = exactAggregate.ToArray();
+        overAggregate[overAggregate.Length - 1] += "x";
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(exactRows), Throws.Nothing);
+            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(overRows),
+                Throws.ArgumentException.With.Message.Contains("rows"));
+            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(new[] { exactRow }), Throws.Nothing);
+            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(new[] { overRow }),
+                Throws.ArgumentException.With.Message.Contains("UTF-8"));
+            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(exactAggregate), Throws.Nothing);
+            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(overAggregate),
+                Throws.ArgumentException.With.Message.Contains("aggregate"));
+        });
+    }
+
+    [Test]
     public void Describe_preserves_the_complete_reproducible_benchmark_contract()
     {
         var descriptor = PerformanceTestContract.Describe(typeof(ValidProductBenchmark));

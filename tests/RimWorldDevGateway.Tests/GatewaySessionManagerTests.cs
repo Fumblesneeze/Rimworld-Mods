@@ -8,6 +8,59 @@ namespace RimWorldDevGateway.Tests;
 public sealed class GatewaySessionManagerTests
 {
     [Test]
+    public void Deep_session_root_publishes_when_final_manifests_fit_but_destination_derived_guid_temporaries_would_not()
+    {
+        var baseRoot = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "gateway-deep-session-" + Guid.NewGuid().ToString("N"));
+        var runId = "deep-session";
+        var root = MakeLegacyPathBoundaryRoot(baseRoot, runId, "session.json", 259);
+        Directory.CreateDirectory(root);
+        GatewaySessionLease? lease = null;
+        try
+        {
+            var now = new DateTimeOffset(2026, 8, 12, 4, 30, 0, TimeSpan.Zero);
+            var manager = new GatewaySessionManager(
+                root,
+                () => Enumerable.Repeat((byte)3, 32).ToArray(),
+                () => now,
+                () => runId);
+            lease = manager.Prepare(9191, now.AddMinutes(-1), "1.6", "1.0");
+
+            var runPath = Path.Combine(root, "DevGateway", "Sessions", runId, "session.json");
+            Assert.Multiple(() =>
+            {
+                Assert.That(runPath.Length, Is.LessThan(260));
+                Assert.That((runPath + "." + new string('0', 32) + ".tmp").Length,
+                    Is.GreaterThanOrEqualTo(260));
+            });
+            var active = lease.Publish(40123);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.Exists(runPath), Is.True);
+                Assert.That(GatewayContractJson.ReadFile<GatewaySessionManifest>(runPath).Token,
+                    Is.EqualTo(active.Token));
+                Assert.That(Directory.GetFiles(Path.GetDirectoryName(runPath)!, "*.tmp"), Is.Empty);
+            });
+        }
+        finally
+        {
+            try
+            {
+                lease?.Stop();
+            }
+            finally
+            {
+                if (Directory.Exists(baseRoot))
+                {
+                    Directory.Delete(baseRoot, recursive: true);
+                }
+            }
+        }
+    }
+
+    [Test]
     public void Prepare_keeps_credentials_private_until_publish_then_stop_leaves_a_credential_free_tombstone()
     {
         var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "gateway-session-" + Guid.NewGuid().ToString("N"));
@@ -64,6 +117,34 @@ public sealed class GatewaySessionManagerTests
         {
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    private static string MakeLegacyPathBoundaryRoot(
+        string baseRoot,
+        string runId,
+        string artifactLeaf,
+        int desiredArtifactLength)
+    {
+        var fixedSuffixLength = Path.Combine("DevGateway", "Sessions", runId, artifactLeaf).Length + 1;
+        var remaining = desiredArtifactLength - baseRoot.Length - fixedSuffixLength;
+        if (remaining < 4)
+        {
+            throw new AssertionException("The test work directory is too deep for the legacy path fixture.");
+        }
+
+        var segments = new List<string>();
+        while (remaining > 0)
+        {
+            var length = Math.Min(remaining - 1, 40);
+            if (length <= 0)
+            {
+                throw new AssertionException("The requested legacy path length cannot be represented safely.");
+            }
+            segments.Add(new string('s', length));
+            remaining -= length + 1;
+        }
+
+        return segments.Aggregate(baseRoot, Path.Combine);
     }
 
     [Test]

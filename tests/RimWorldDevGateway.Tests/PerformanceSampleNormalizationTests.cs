@@ -296,7 +296,93 @@ public sealed class PerformanceSampleNormalizationTests
             Assert.That(normalized.Samples, Has.Length.EqualTo(1));
             Assert.That(normalized.ProfilerPolicy.RecordedCycles, Is.Zero);
             Assert.That(normalized.ProfilerPolicy.Sampled, Is.False);
+            Assert.That(normalized.Metrics.Any(item =>
+                item.Name == "gross-profiler-window-share"), Is.False);
+            Assert.That(normalized.Metrics.All(item =>
+                !double.IsNaN(item.Value) && !double.IsInfinity(item.Value)), Is.True);
         });
+    }
+
+    [Test]
+    public void Zero_profiler_window_rejects_nonzero_native_timing_instead_of_emitting_a_ratio()
+    {
+        var raw = DisabledNativeJson()
+            .ReplaceBetween("\"methods\":[", "],\"patches\"",
+                "{\"method\":{\"key\":\"unexpected\"},\"totalMs\":1," +
+                "\"meanMs\":1,\"maxMs\":1,\"calls\":1,\"samples\":0}")
+            .ReplaceBetween("\"patches\":[", "],\"modCosts\"", string.Empty)
+            .ReplaceBetween("\"modCosts\":[", "]}", string.Empty);
+        var capture = new CircinusCapture(
+            "run-1", 1, 15, raw, raw, Array.Empty<CircinusProfilerSidecar>());
+        var context = new PerformanceNormalizationContext(
+            "v1", PerformanceEvidenceLens.ArmedDisabledWrapper, "armed-disabled-wrapper",
+            1_200, 1000, 1, 1, new[] { 0, 0, 0 }, new[] { 0, 0, 0 },
+            new Dictionary<string, long>());
+
+        var exception = Assert.Throws<PerformanceNormalizationException>(() =>
+            PerformanceSampleNormalizer.Normalize(capture, context));
+
+        Assert.That(exception!.Message, Does.Contain("zero profiler window").IgnoreCase);
+    }
+
+    [TestCase(1, 0, 0)]
+    [TestCase(0, 1, 0)]
+    [TestCase(0, 0, 1)]
+    public void Zero_profiler_window_rejects_live_sidecar_activity(
+        long calls,
+        long timedCalls,
+        int cyclesSeen)
+    {
+        var raw = DisabledNativeJson()
+            .ReplaceBetween("\"methods\":[", "],\"patches\"", string.Empty)
+            .ReplaceBetween("\"patches\":[", "],\"modCosts\"", string.Empty)
+            .ReplaceBetween("\"modCosts\":[", "]}", string.Empty);
+        var sidecar = new CircinusProfilerSidecar(
+            "ordinary-method", CircinusRowKind.Method, "m1", 0,
+            true, 0, calls, timedCalls, calls == 0, cyclesSeen,
+            calls == 0 ? "empty-or-uninvoked" : null);
+        var capture = new CircinusCapture("run-1", 1, 15, raw, raw, new[] { sidecar });
+        var context = new PerformanceNormalizationContext(
+            "v1", PerformanceEvidenceLens.ArmedDisabledWrapper, "armed-disabled-wrapper",
+            1_200, 1000, 1, 1, new[] { 0, 0, 0 }, new[] { 0, 0, 0 },
+            new Dictionary<string, long>());
+
+        var exception = Assert.Throws<PerformanceNormalizationException>(() =>
+            PerformanceSampleNormalizer.Normalize(capture, context));
+
+        Assert.That(exception!.Message, Does.Contain("zero profiler window").IgnoreCase);
+    }
+
+    [TestCase("method")]
+    [TestCase("patch-calls")]
+    [TestCase("patch-timed-calls")]
+    public void Zero_profiler_window_rejects_native_call_activity(string variant)
+    {
+        var method = variant == "method"
+            ? "{\"method\":{\"key\":\"m1\"},\"totalMs\":0,\"meanMs\":0," +
+              "\"maxMs\":0,\"calls\":1,\"samples\":0}"
+            : string.Empty;
+        var patch = variant.StartsWith("patch", StringComparison.Ordinal)
+            ? "{\"patch\":{\"key\":\"p1\",\"canSkip\":false},\"totalMs\":0," +
+              "\"meanMs\":0,\"maxObservedMs\":0,\"calls\":" +
+              (variant == "patch-calls" ? "1" : "0") + ",\"timedCalls\":" +
+              (variant == "patch-timed-calls" ? "1" : "0") + ",\"ambiguousTargets\":false}"
+            : string.Empty;
+        var raw = DisabledNativeJson()
+            .ReplaceBetween("\"methods\":[", "],\"patches\"", method)
+            .ReplaceBetween("\"patches\":[", "],\"modCosts\"", patch)
+            .ReplaceBetween("\"modCosts\":[", "]}", string.Empty);
+        var capture = new CircinusCapture(
+            "run-1", 1, 15, raw, raw, Array.Empty<CircinusProfilerSidecar>());
+        var context = new PerformanceNormalizationContext(
+            "v1", PerformanceEvidenceLens.ArmedDisabledWrapper, "armed-disabled-wrapper",
+            1_200, 1000, 1, 1, new[] { 0, 0, 0 }, new[] { 0, 0, 0 },
+            new Dictionary<string, long>());
+
+        var exception = Assert.Throws<PerformanceNormalizationException>(() =>
+            PerformanceSampleNormalizer.Normalize(capture, context));
+
+        Assert.That(exception!.Message, Does.Contain("zero profiler window").IgnoreCase);
     }
 
     [Test]
