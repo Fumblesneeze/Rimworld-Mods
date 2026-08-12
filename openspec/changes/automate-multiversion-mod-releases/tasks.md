@@ -49,7 +49,7 @@
 
 ## 6. mods/RimWorldDevGateway — Presentation compiler TDD
 
-- [ ] 6.1 Add RED tests for structured Workshop content, BBCode/template separation from About copy, manifest-derived compatibility plus Required Mods and Optional Mods sections, explicit empty states, required fields, link/tag allowlists, and platform title/description limits.
+- [ ] 6.1 Add RED tests for structured Workshop content, BBCode/template separation from About copy, complete concise mechanics/things/buildings inventories, manifest-derived compatibility with per-integration expected behavior plus Required Mods and Optional Mods sections, explicit empty states, exact RimWorld-line copy, a truthful final-section AI disclosure, required fields, link/tag allowlists, and the installed Steamworks SDK title/description limits.
 - [ ] 6.2 Add RED renderer fixtures for sprite placement, missing/stale assets, fixed dimensions, offline-only loading, pinned fonts, and text-overflow bounds.
 - [ ] 6.3 Implement deterministic BBCode compilation and HTML/CSS/Playwright rendering with pinned Chromium, local fonts, viewport, scale, and disabled animation/network access.
 - [ ] 6.4 Make presentation validation green for deterministic rerenders, image dimensions/size, provenance hashes, local review HTML, and unchanged source art.
@@ -70,7 +70,7 @@
 - [ ] 8.2 Add RED tests for every setter failure, update-language/title/description/visibility/tags/content/metadata/preview mapping, authored change notes, and the guarantee that `CreateItem` is never called.
 - [ ] 8.3 Add RED tests for asynchronous progress, one-operation ownership, pre-submit cancellation, polling timeout, late callback, indeterminate submission, retry, and immutable-stage lifetime.
 - [ ] 8.4 Add RED tests for Steam authentication, connectivity, quota, legal-agreement, callback, wrong-item, and stale-remote-state failures with secret-free receipts.
-- [ ] 8.5 Add RED tests for post-submit remote metadata/preview/required-item comparison and reacquired content-manifest verification.
+- [ ] 8.5 Add RED tests for post-submit remote metadata/preview/required-item comparison, exact-item subscription/refresh, reacquired Workshop content-manifest verification, and refusal to substitute a repository-local package.
 - [ ] 8.6 Add RED tests for asynchronous required-item addition/removal, optional-item exclusion, partial graph success, remote-state query before retry, and stale dependency confirmation.
 
 ## 9. mods/RimWorldDevGateway — Publication GREEN and refactor
@@ -78,7 +78,7 @@
 - [ ] 9.1 Implement authenticated loopback-only versioned dry-run, confirm, and status contracts that validate the isolated RimWorld PID/start identity and bind the required-item graph into preflight hashes.
 - [ ] 9.2 Implement the main-thread SteamUGC update-only adapter with checked setter results and asynchronous callback state until mapping tests are green.
 - [ ] 9.3 Implement leased operation persistence, bounded progress, legal-agreement reporting, asynchronous required-item reconciliation, indeterminate recovery, and explicit remote-query-before-retry until lifecycle tests are green.
-- [ ] 9.4 Implement remote metadata/preview/required-item query and separate ignored Workshop-content reacquisition until verification tests are green.
+- [ ] 9.4 Implement remote metadata/preview/required-item query, exact-item subscription/refresh, separate Workshop-content reacquisition, and subscribed-path identity evidence until verification tests are green.
 - [ ] 9.5 Refactor publisher code so HTTP parsing, release policy, SteamUGC calls, and evidence serialization remain narrow and independently testable while the owning suite stays green.
 
 ## 10. mods/RimWorldDevGateway — Release CLI integration
@@ -100,8 +100,8 @@
 
 - [ ] 12.1 With explicit user authorization, launch a fresh isolated reviewed build against the dedicated unlisted Workshop item and bind Gateway discovery, actions, screenshots, diagnostics, and cleanup to its exact PID/start identity.
 - [ ] 12.2 Perform dry-run, personally inspect the exact package/presentation/required-item remote diff, and confirm only the bound hashes.
-- [ ] 12.3 Observe Steam progress and terminal callbacks, personally inspect the resulting Workshop metadata, required items, optional-mod presentation, and previews, reacquire the item, and compare its content manifest with the reviewed stage.
-- [ ] 12.4 Run each selected product mod's declared native player workflow on every claimed exact RimWorld target and personally inspect before/action/after screenshots.
+- [ ] 12.3 Observe Steam progress and terminal callbacks, personally inspect the resulting Workshop metadata, required items, optional-mod behavior descriptions, final AI disclosure, and previews; then subscribe/refresh the exact item, reacquire its Workshop copy, and compare its content manifest with the reviewed stage.
+- [ ] 12.4 Run each selected product mod's declared native player workflow on every claimed exact RimWorld target from the subscribed Workshop package path, never a local deployment, and personally inspect before/action/after screenshots.
 - [ ] 12.5 Complete at least one separate product-mod acceptance run without the Gateway and retain its native workflow evidence.
 - [ ] 12.6 Record source/build identities, target symbols, XML projection hashes, packaged and remote dependency graphs, ordered depot/mod lists, native actions, observable outcomes, screenshots, remote verification, normal-configuration hashes, and cleanup in one secret-free evidence directory.
 - [ ] 12.7 Check implementation tasks only after the reviewed revision's tests, package checks, live publication proof, per-target player acceptance, Gateway-free product proof, and cleanup evidence all exist.

@@ -106,6 +106,8 @@ The scenario and grouped E2E runners SHALL accept a declared RimWorld target, re
 ### Requirement: Workshop presentation is separate and generated
 The release system SHALL treat in-game `About/About.xml` metadata and the Steam Workshop presentation as separate outputs. It SHALL compile the Workshop description from a versioned text template and structured content, and SHALL render banners and explanatory graphics deterministically from versioned templates, authored text, and repository-owned sprites without overwriting source art.
 
+For each distributable mod, the structured Workshop content SHALL provide a concise overview plus separate complete inventories of implemented player-facing mechanics, portable things, and buildings, with one short behavior description for every entry. It SHALL provide a complete optional-compatibility inventory derived from the release manifest; every listed mod or ecosystem SHALL describe the expected ownership, extension, exclusion, or fallback behavior when its exact supported package chain is active. The description SHALL identify the exact supported RimWorld line, distinguish the sole required third-party dependency from optional integrations, and end with a clearly titled AI disclosure that truthfully identifies shipped pre-generated AI-assisted content and whether the mod performs live generation. No heading or authored content may follow the AI disclosure.
+
 #### Scenario: Content graphic is rendered from sprites and copy
 - **WHEN** a presentation definition names mod sprites, text blocks, and a graphic template
 - **THEN** the generated image contains those inputs at the template-defined layout and its source/template/font/hash provenance is recorded
@@ -113,6 +115,10 @@ The release system SHALL treat in-game `About/About.xml` metadata and the Steam 
 #### Scenario: About text cannot silently become Workshop copy
 - **WHEN** the in-game About description changes without a corresponding Workshop presentation change
 - **THEN** the presentation compiler keeps the distinct Workshop copy and reports both outputs during review
+
+#### Scenario: Immersive Chefs presentation is complete and candid
+- **WHEN** the RimWorld 1.6 Immersive Chefs Workshop description is compiled
+- **THEN** it includes every implemented mechanic, thing, building, and supported optional ecosystem with concise expected behavior, identifies Harmony as the only required third-party mod, and places its pre-generated-AI disclosure as the final section
 
 ### Requirement: Mod dependencies have one typed source of truth
 Each per-mod release manifest SHALL classify every declared mod relationship as required or optional and SHALL record its canonical package ID, display name, presentation text, and Workshop item identity when it is needed for Steam publication. Generated `About/About.xml` SHALL contain every required mod in RimWorld's required dependency metadata. The generated Workshop description SHALL contain explicit Required Mods and Optional Mods sections, including an explicit empty state, and SHALL render the declared identities without maintaining a second hand-authored dependency list. Optional mods MUST remain absent-safe and MUST NOT be promoted to RimWorld or Steam required dependencies.
@@ -157,6 +163,17 @@ The publication workflow SHALL fail closed on Steam authentication, legal-agreem
 #### Scenario: Steam requires a legal agreement
 - **WHEN** Steam rejects or withholds publication until the account accepts an updated Workshop agreement
 - **THEN** the operation reports the actionable agreement state, changes no alternate item, and leaves the same reviewed bundle available for explicit retry
+
+### Requirement: The subscribed Workshop copy receives final player acceptance
+After Steam reports a successful update and CDN propagation, the release workflow SHALL subscribe to or refresh the exact published item through the owning Steam client, reacquire it into the Steam Workshop content area, and compare its complete file manifest with the reviewed staged candidate. It SHALL then launch a fresh isolated RimWorld process using the subscribed Workshop package path rather than a repository-local or manually deployed copy, with the exact required dependencies and no Dev Gateway unless the verification profile explicitly tests it. The acting agent SHALL perform and personally inspect the mod's declared native player-workflow smoke test. Successful upload, remote metadata, subscription state, file presence, startup, logs, or diagnostics alone MUST NOT satisfy this final acceptance.
+
+#### Scenario: Published Immersive Chefs is verified as a subscriber receives it
+- **WHEN** the confirmed RimWorld 1.6 Immersive Chefs update reaches Steam
+- **THEN** the exact item is subscribed or refreshed, its reacquired files match the reviewed candidate, and a fresh game loads that Workshop copy and passes the declared observable native cooking/dining smoke workflow
+
+#### Scenario: Steam returns stale or different content
+- **WHEN** the subscribed Workshop directory is absent, has not reached the published manifest, or differs from the staged candidate
+- **THEN** release verification fails without substituting a local package or claiming the release accepted
 
 ### Requirement: Release evidence is complete and secret-free
 Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, verification results, presentation provenance, operator confirmation, Gateway process identity, Steam item/dependency results, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.
