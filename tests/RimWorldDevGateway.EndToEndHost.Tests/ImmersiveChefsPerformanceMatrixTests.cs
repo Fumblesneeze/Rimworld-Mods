@@ -84,8 +84,13 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
                         .Select(checkpoint => checkpoint.Id),
                     Does.Contain(item.Key + "-branch"), item.Key);
                 foreach (var benchmark in family)
+                {
                     Assert.That(benchmark.ThroughputCheckpoints.Select(checkpoint => checkpoint.Id),
                         Is.SupersetOf(BaseCheckpointIds), benchmark.Id);
+                    if (item.Key is "immersive-chefs.processor-dubs" or "immersive-chefs.all-supported")
+                        Assert.That(benchmark.ThroughputCheckpoints.Select(checkpoint => checkpoint.Id),
+                            Is.SupersetOf(ProcessorDubsCheckpointIds), benchmark.Id);
+                }
             });
         }
     }
@@ -96,6 +101,13 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
         "fine-meals-produced", "lavish-meals-produced", "assisted-cooking-sessions", "ware-cleaned",
         "domestic-dishwasher-cycles", "industrial-dishwasher-cycles", "map-meals-ingested",
         "animal-meals-ingested", "patients-fed", "caravan-meals-ingested", "microwave-reheats"
+    ];
+
+    private static readonly string[] ProcessorDubsCheckpointIds =
+    [
+        "processor-dubs-domestic-cycles",
+        "processor-dubs-industrial-cycles",
+        "processor-dubs-water-milliliters"
     ];
 
     private static PerformanceAssemblyCandidate BuildProductPerformanceCandidate()

@@ -40,6 +40,9 @@ internal static class OptionalColonyContract
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 1)]
 [PerformanceThroughputCheckpoint("immersive-chefs.processor-dubs-branch", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]
 public sealed class ProcessorDubsInstrumentedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.processor-dubs.armed-disabled", ColonyContract.Owner,
@@ -68,6 +71,9 @@ public sealed class ProcessorDubsInstrumentedBenchmark : ImmersiveChefsColonyBen
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 1)]
 [PerformanceThroughputCheckpoint("immersive-chefs.processor-dubs-branch", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]
 public sealed class ProcessorDubsArmedDisabledBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.processor-dubs.disarmed", ColonyContract.Owner,
@@ -96,6 +102,9 @@ public sealed class ProcessorDubsArmedDisabledBenchmark : ImmersiveChefsColonyBe
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 1)]
 [PerformanceThroughputCheckpoint("immersive-chefs.processor-dubs-branch", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]
 public sealed class ProcessorDubsDisarmedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.guest-service.instrumented", ColonyContract.Owner,
@@ -306,6 +315,9 @@ public sealed class VarietyVnpeMaterialDlcDisarmedBenchmark : ImmersiveChefsColo
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 4)]
 [PerformanceThroughputCheckpoint("immersive-chefs.all-supported-branch", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]
 public sealed class AllSupportedInstrumentedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.all-supported.armed-disabled", ColonyContract.Owner,
@@ -339,6 +351,9 @@ public sealed class AllSupportedInstrumentedBenchmark : ImmersiveChefsColonyBenc
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 4)]
 [PerformanceThroughputCheckpoint("immersive-chefs.all-supported-branch", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]
 public sealed class AllSupportedArmedDisabledBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.all-supported.disarmed", ColonyContract.Owner,
@@ -372,4 +387,7 @@ public sealed class AllSupportedArmedDisabledBenchmark : ImmersiveChefsColonyBen
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 4)]
 [PerformanceThroughputCheckpoint("immersive-chefs.all-supported-branch", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
+[PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]
 public sealed class AllSupportedDisarmedBenchmark : ImmersiveChefsColonyBenchmark { }

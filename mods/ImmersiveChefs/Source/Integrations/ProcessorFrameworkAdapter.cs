@@ -430,6 +430,18 @@ internal static class ProcessorFrameworkAdapter
             .Sum(ware => PlateEquivalentsPerItem(ware) * ware.stackCount);
     }
 
+    internal static IReadOnlyList<Thing> HeldWare(Thing thing)
+    {
+        var processor = ProcessorOf(thing);
+        return processor is null
+            ? Array.Empty<Thing>()
+            : ActiveProcesses(processor)
+                .Cast<object>()
+                .SelectMany(ProcessIngredients)
+                .Distinct()
+                .ToArray();
+    }
+
     internal static float ProgressPercent(Thing thing)
     {
         var processor = ProcessorOf(thing);

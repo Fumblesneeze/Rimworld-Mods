@@ -166,6 +166,9 @@ public abstract class ImmersiveChefsColonyBenchmark :
     private ThingWithComps? microwave;
     private ThingWithComps? domesticDishwasher;
     private ThingWithComps? industrialDishwasher;
+    private ThingWithComps? dubsWaterTower;
+    private float processorDubsInitialWater;
+    private bool processorDubsActive;
     private Pawn? microwaveDiner;
     private ThingWithComps? microwaveMeal;
     private string pawnFingerprint = string.Empty;
@@ -179,6 +182,7 @@ public abstract class ImmersiveChefsColonyBenchmark :
     private bool randSeeded;
     private IReadOnlyDictionary<FieldInfo, int>? priorUniqueIds;
     private string layoutFingerprint = string.Empty;
+    private string processorDubsStartFingerprint = string.Empty;
     private bool sampleActivated;
 
     public void Arrange(IEndToEndContext context)
@@ -194,6 +198,7 @@ public abstract class ImmersiveChefsColonyBenchmark :
 
         BuildRooms();
         BuildKitchenAndBills();
+        BuildProcessorDubsBranch();
         BuildDiningAndWard();
         CreateMapPopulation();
         CreateCaravans();
@@ -222,6 +227,7 @@ public abstract class ImmersiveChefsColonyBenchmark :
     public IEnumerator<EndToEndStep> PrepareSample(IEndToEndContext context)
     {
         NormalizeDeterministicSampleStart();
+        PrepareProcessorDubsBranch();
         ResetSampleDeterminism();
         ActivateNativeWorkload();
         // Activation constructs native jobs and is allowed to consume Rand. Re-anchor
@@ -290,7 +296,8 @@ public abstract class ImmersiveChefsColonyBenchmark :
                 .ThenBy(thing => thing.Position.x)
                 .ThenBy(thing => thing.Position.z)
                 .Select(thing => thing.def.defName + "@" + thing.Position.x + "," + thing.Position.z +
-                                 ":" + (thing.GetComp<CompPowerTrader>()?.PowerOn == true ? "on" : "off")))
+                                 ":" + (thing.GetComp<CompPowerTrader>()?.PowerOn == true ? "on" : "off"))),
+            "processorDubs=" + processorDubsStartFingerprint
         }));
     }
 
@@ -385,11 +392,19 @@ public abstract class ImmersiveChefsColonyBenchmark :
             "patients-fed" => current.PatientsFed,
             "caravan-meals-ingested" => current.CaravanMealsIngested,
             "microwave-reheats" => current.MicrowaveReheats,
+            "processor-dubs-domestic-cycles" => processorDubsActive ? current.DomesticDishwasherCycles : 0,
+            "processor-dubs-industrial-cycles" => processorDubsActive ? current.IndustrialDishwasherCycles : 0,
+            "processor-dubs-water-milliliters" => ProcessorDubsWaterMilliliters(),
+            "optional-group-branches" => ProcessorDubsCompleted(current) ? 1 : 0,
+            "immersive-chefs.processor-dubs-branch" => ProcessorDubsCompleted(current) ? 1 : 0,
+            "immersive-chefs.guest-service-branch" => 0,
+            "immersive-chefs.variety-vnpe-material-dlc-branch" => 0,
+            "immersive-chefs.all-supported-branch" => 0,
             _ => throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown colony throughput checkpoint.")
         };
     }
 
-    public void ValidateSample(IEndToEndContext context) => ValidateExactTopology();
+    public void ValidateSample(IEndToEndContext context) => ValidateExactTopology(requireSampleOutcomes: true);
 
     private void BuildRooms()
     {
@@ -497,6 +512,126 @@ public abstract class ImmersiveChefsColonyBenchmark :
         // conduits beneath ordinary equipment while leaving native power transmitters
         // to own their occupied cells.
         SpawnConduitGrid(kitchen, 10, 8);
+    }
+
+    private void BuildProcessorDubsBranch()
+    {
+        processorDubsActive = HasActivePackage("syrchalis.processor.framework") &&
+                              HasActivePackage("dubwise.dubsbadhygiene");
+        if (!processorDubsActive)
+            return;
+        if (domesticDishwasher is null || industrialDishwasher is null)
+            throw new InvalidOperationException("The Processor/Dubs branch requires both dishwashers.");
+
+        var kitchen = roomCenters[0];
+        dubsWaterTower = (ThingWithComps)SpawnBuilding(
+            "WaterTowerS", kitchen + new IntVec3(0, 0, 5), Rot4.North, ThingDefOf.Steel);
+        SetDubsStoredWater(dubsWaterTower, 30f);
+        var occupied = new HashSet<IntVec3>(domesticDishwasher.OccupiedRect().Cells
+            .Concat(industrialDishwasher.OccupiedRect().Cells)
+            .Concat(dubsWaterTower.OccupiedRect().Cells));
+        var pipeDef = DefDatabase<ThingDef>.GetNamed("sewagePipeHidden");
+        var minimumX = Math.Min(domesticDishwasher.OccupiedRect().minX, dubsWaterTower.OccupiedRect().minX);
+        var maximumX = Math.Max(industrialDishwasher.OccupiedRect().maxX, dubsWaterTower.OccupiedRect().maxX);
+        for (var x = minimumX; x <= maximumX; x++)
+        {
+            var cell = new IntVec3(x, 0, domesticDishwasher.Position.z);
+            if (occupied.Contains(cell)) continue;
+            SpawnBuilding(pipeDef.defName, cell, Rot4.North, ThingDefOf.Steel);
+        }
+    }
+
+    private void PrepareProcessorDubsBranch()
+    {
+        if (!processorDubsActive)
+            return;
+        if (domesticDishwasher is null || industrialDishwasher is null || dubsWaterTower is null ||
+            !ProcessorFrameworkAdapter.Controls(domesticDishwasher) ||
+            !ProcessorFrameworkAdapter.Controls(industrialDishwasher) ||
+            !DubsWaterAdapter.HasSuppliedConnection(domesticDishwasher) ||
+            !DubsWaterAdapter.HasSuppliedConnection(industrialDishwasher))
+            throw new InvalidOperationException(
+                "The Processor/Dubs performance branch did not establish two supplied native Processor dishwashers during warm-up.");
+        if (ProcessorFrameworkAdapter.HasContents(domesticDishwasher) ||
+            ProcessorFrameworkAdapter.HasContents(industrialDishwasher) ||
+            ProcessorFrameworkAdapter.ProgressPercent(domesticDishwasher) != 0f ||
+            ProcessorFrameworkAdapter.ProgressPercent(industrialDishwasher) != 0f)
+            throw new InvalidOperationException(
+                "The Processor/Dubs measured sample must begin with both native processors exactly empty and idle.");
+        var domesticNetwork = DubsNetwork(domesticDishwasher);
+        if (domesticNetwork is null || !ReferenceEquals(domesticNetwork, DubsNetwork(industrialDishwasher)) ||
+            !ReferenceEquals(domesticNetwork, DubsNetwork(dubsWaterTower)))
+            throw new InvalidOperationException(
+                "Both performance dishwashers and their water tower must share one exact Dubs network.");
+        processorDubsInitialWater = ReadDubsNetworkWater(domesticDishwasher);
+        if (processorDubsInitialWater < 1f)
+            throw new InvalidOperationException("The Processor/Dubs performance branch has insufficient supplied water.");
+        processorDubsStartFingerprint = HashRows(new[]
+        {
+            ProcessorDubsApplianceState("domestic", domesticDishwasher),
+            ProcessorDubsApplianceState("industrial", industrialDishwasher),
+            "network|shared=true|water=" + processorDubsInitialWater.ToString("R", CultureInfo.InvariantCulture)
+        }.Concat(dirtyWare
+            .OrderBy(ware => ware.def.defName, StringComparer.Ordinal)
+            .ThenBy(ware => ware.Position.x)
+            .ThenBy(ware => ware.Position.z)
+            .Select(ware => "ware|" + ware.def.defName + "|" +
+                            ware.Position.x + "," + ware.Position.z + "|spawned=" + ware.Spawned +
+                            "|dirty=" + (ware.GetComp<CompSanitation>()?.IsDirty == true))));
+    }
+
+    private bool ProcessorDubsCompleted(ColonyObserver current) =>
+        processorDubsActive && current.DomesticDishwasherCycles > 0 &&
+        current.IndustrialDishwasherCycles > 0 && ProcessorDubsWaterMilliliters() > 0;
+
+    private long ProcessorDubsWaterMilliliters()
+    {
+        if (!processorDubsActive || domesticDishwasher is null || processorDubsInitialWater <= 0f)
+            return 0;
+        return Math.Max(0L, (long)Math.Round(
+            (processorDubsInitialWater - ReadDubsNetworkWater(domesticDishwasher)) * 1000f));
+    }
+
+    private static bool HasActivePackage(string packageId) =>
+        LoadedModManager.RunningModsListForReading.Any(mod =>
+            string.Equals(mod.PackageIdPlayerFacing, packageId, StringComparison.OrdinalIgnoreCase));
+
+    private static string ProcessorDubsApplianceState(string role, ThingWithComps appliance) =>
+        role + "|" + appliance.def.defName + "|" +
+        appliance.Position.x + "," + appliance.Position.z + "|controls=" +
+        ProcessorFrameworkAdapter.Controls(appliance) + "|contents=" +
+        ProcessorFrameworkAdapter.HeldWare(appliance).Count + "|progress=" +
+        ProcessorFrameworkAdapter.ProgressPercent(appliance).ToString("R", CultureInfo.InvariantCulture) +
+        "|supplied=" + DubsWaterAdapter.HasSuppliedConnection(appliance);
+
+    private static void SetDubsStoredWater(ThingWithComps tower, float value)
+    {
+        var storage = tower.AllComps.SingleOrDefault(comp =>
+            string.Equals(comp.GetType().FullName, "DubsBadHygiene.CompWaterStorage", StringComparison.Ordinal));
+        var field = storage?.GetType().GetField("WaterStorage", BindingFlags.Public | BindingFlags.Instance);
+        if (field?.FieldType != typeof(float))
+            throw new MissingFieldException("DubsBadHygiene.CompWaterStorage", "WaterStorage:Single");
+        field.SetValue(storage, value);
+    }
+
+    private static object? DubsNetwork(ThingWithComps fixture)
+    {
+        var pipe = fixture.AllComps.SingleOrDefault(comp =>
+            string.Equals(comp.GetType().FullName, "DubsBadHygiene.CompPipe", StringComparison.Ordinal));
+        var property = pipe?.GetType().GetProperty("pipeNet", BindingFlags.Public | BindingFlags.Instance);
+        if (property is null)
+            throw new MissingMemberException("DubsBadHygiene.CompPipe.pipeNet");
+        return property.GetValue(pipe);
+    }
+
+    private static float ReadDubsNetworkWater(ThingWithComps fixture)
+    {
+        var network = DubsNetwork(fixture) ??
+                      throw new InvalidOperationException("The Dubs fixture is not connected.");
+        var property = network.GetType().GetProperty("WaterStorage", BindingFlags.Public | BindingFlags.Instance);
+        if (property?.PropertyType != typeof(float))
+            throw new MissingMemberException(network.GetType().FullName, "WaterStorage:Single");
+        return (float)property.GetValue(network)!;
     }
 
     private void BuildDiningAndWard()
@@ -656,10 +791,15 @@ public abstract class ImmersiveChefsColonyBenchmark :
         }
         for (var index = 0; index < 12; index++)
         {
+            var dirtyCell = processorDubsActive
+                ? index < 6
+                    ? domesticDishwasher!.Position + new IntVec3(-2 + index, 0, 2)
+                    : industrialDishwasher!.Position + new IntVec3(-2 + (index - 6), 0, 2)
+                : roomCenters[0] + new IntVec3(-8 + index, 0, 7);
             dirtyWare.Add(SpawnWare(
                 index % 3 == 0 ? "ImmersiveChefs_Cookware" :
                 index % 3 == 1 ? "ImmersiveChefs_Plate" : "ImmersiveChefs_Cutlery",
-                roomCenters[0] + new IntVec3(-8 + index, 0, 7),
+                dirtyCell,
                 true));
         }
 
@@ -995,12 +1135,15 @@ public abstract class ImmersiveChefsColonyBenchmark :
             ["supportStations"] = "prep,sauce,meat,vegetable,pastry",
             ["roles"] = "6-cooks,4-assistants,6-cleaners,4-nurses,4-patients,8-diners,4-travelers",
             ["dishwashers"] = "domestic,industrial",
+            ["optionalBranch"] = processorDubsActive ? "processor-dubs" : "base",
+            ["processorDubsInitialWater"] = processorDubsInitialWater.ToString("R", CultureInfo.InvariantCulture),
+            ["processorDubsStartSha256"] = processorDubsStartFingerprint,
             ["temperature"] = "countertop-microwave",
             ["care"] = "nurses,patients",
             ["travel"] = "two-caravans"
         };
 
-    private void ValidateExactTopology()
+    private void ValidateExactTopology(bool requireSampleOutcomes = false)
     {
         if (map is null || observer is null && humans.Count == 0) return;
         if (humans.Count != ColonyContract.HumanCount ||
@@ -1088,6 +1231,10 @@ public abstract class ImmersiveChefsColonyBenchmark :
                 fixture.AssertReturned();
             foreach (var fixture in animalDiningFixtures.Where(fixture => fixture.Meal.Destroyed))
                 fixture.AssertReturned();
+            if (requireSampleOutcomes && processorDubsActive &&
+                (observer is null || !ProcessorDubsCompleted(observer)))
+                throw new InvalidOperationException(
+                    "The measured Processor/Dubs branch did not complete both exact dishwasher cycles with water consumption.");
         }
     }
 
@@ -1124,6 +1271,7 @@ public abstract class ImmersiveChefsColonyBenchmark :
         caravanDiningFixtures.Clear(); animalDiningFixtures.Clear(); initialWareUnits.Clear();
         prepStation = null; microwaveSupportTable = null; microwave = null;
         domesticDishwasher = null; industrialDishwasher = null;
+        dubsWaterTower = null; processorDubsInitialWater = 0f; processorDubsActive = false;
         microwaveDiner = null; microwaveMeal = null;
         observer = null; map = null; pawnFingerprint = string.Empty;
         pawnDemographicsFingerprint = string.Empty;
@@ -1132,6 +1280,7 @@ public abstract class ImmersiveChefsColonyBenchmark :
         sampleStartFingerprint = string.Empty;
         sampleRandState = string.Empty;
         sampleUniqueIdState = string.Empty;
+        processorDubsStartFingerprint = string.Empty;
         layoutFingerprint = string.Empty;
         sampleActivated = false;
     }
@@ -1149,6 +1298,8 @@ public abstract class ImmersiveChefsColonyBenchmark :
         var maximumAssistants = settings.MaximumAssistants;
         var dishwashers = settings.PreferDishwashers;
         var temperature = settings.MealTemperatureEnabled;
+        var processorFramework = settings.ProcessorFramework;
+        var dubsBadHygiene = settings.DubsBadHygiene;
         context.DeferCleanup(() =>
         {
             settings.WareRequirementMode = mode;
@@ -1157,6 +1308,8 @@ public abstract class ImmersiveChefsColonyBenchmark :
             settings.MaximumAssistants = maximumAssistants;
             settings.PreferDishwashers = dishwashers;
             settings.MealTemperatureEnabled = temperature;
+            settings.ProcessorFramework = processorFramework;
+            settings.DubsBadHygiene = dubsBadHygiene;
         });
         settings.WareRequirementMode = WareRequirementMode.Strict;
         settings.DirtyWareFallback = DirtyWareFallback.UrgentOnly;
@@ -1164,6 +1317,8 @@ public abstract class ImmersiveChefsColonyBenchmark :
         settings.MaximumAssistants = 4;
         settings.PreferDishwashers = true;
         settings.MealTemperatureEnabled = true;
+        settings.ProcessorFramework = OptionalIntegrationMode.Auto;
+        settings.DubsBadHygiene = OptionalIntegrationMode.Auto;
     }
 
     private static void NormalizeDisposableMap(Map target)
@@ -1473,6 +1628,10 @@ public sealed class ColonyObserver : MapComponent
             patientNutrition[patient.ThingID] = patient.needs.food.CurLevel;
         foreach (var fixture in animalDiningFixtures)
             animalNutrition[fixture.Animal.ThingID] = fixture.Animal.needs.food.CurLevel;
+        domesticHeldDirtyWare.Clear();
+        industrialHeldDirtyWare.Clear();
+        domesticEjectedCleanWare.Clear();
+        industrialEjectedCleanWare.Clear();
     }
 
     public override void MapComponentTick()
@@ -1527,8 +1686,11 @@ public sealed class ColonyObserver : MapComponent
         ISet<string> heldDirty,
         ISet<string> ejectedClean)
     {
-        var held = dishwasher.GetComp<CompDishwasher>()?.GetDirectlyHeldThings()
-                       .Cast<Thing>()
+        var heldThings = ProcessorFrameworkAdapter.Controls(dishwasher)
+            ? ProcessorFrameworkAdapter.HeldWare(dishwasher)
+            : dishwasher.GetComp<CompDishwasher>()?.GetDirectlyHeldThings().Cast<Thing>() ??
+              throw new InvalidOperationException("A performance dishwasher lost its native holder.");
+        var held = heldThings
                        .ToDictionary(thing => thing.ThingID, StringComparer.Ordinal) ??
                    throw new InvalidOperationException("A performance dishwasher lost its native holder.");
         foreach (var thing in held.Values)
