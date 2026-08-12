@@ -1,0 +1,4 @@
+interface:
+  display_name: "Steam Workshop Feedback"
+  short_description: "Triage actionable mod comments into feedback"
+  default_prompt: "Use $steam-workshop-feedback to import and triage new Steam Workshop comments into feedback.md."

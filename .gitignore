@@ -74,6 +74,8 @@ docs/TddEvidence.md
 !.codex/skills/rimworld-game-balance/agents/openai.yaml
 !.codex/skills/release-rimworld-mods/
 !.codex/skills/release-rimworld-mods/**
+!.codex/skills/steam-workshop-feedback/
+!.codex/skills/steam-workshop-feedback/**
 !.codex/skills/rimworld-dev-gateway/
 !.codex/skills/rimworld-dev-gateway/**
 !.codex/skills/rimworld-performance-benchmarking/
