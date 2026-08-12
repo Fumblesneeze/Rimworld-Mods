@@ -117,6 +117,16 @@ The initial Immersive Chefs fixture SHALL build a deterministic multi-room, non-
 - **WHEN** the exact supported Processor Framework and Dubs Bad Hygiene packages are added
 - **THEN** the same workload uses connected water-consuming Processor dishwashers and the report includes both integration adapter and Circinus/Gateway system metrics
 
+#### Scenario: Optional performance matrices run
+- **WHEN** an optional Immersive Chefs performance family is selected
+- **THEN** it declares all three instrumentation lenses with one of these complete ordered non-Gateway package sequences after the mandatory Harmony/Core/Circinus prefix:
+  - Processor/Dubs: `syrchalis.processor.framework`, `Dubwise.DubsBadHygiene`, Immersive Chefs;
+  - guest service: `Orion.Hospitality`, `Orion.CashRegister`, `Orion.Gastronomy`, `avilmask.CommonSense`, Immersive Chefs;
+  - variety/VNPE/material/DLC: Royalty, Biotech, `Argon.CoreLib`, Vanilla Expanded Framework, Expanded Materials Masonry, Expanded Materials Metals, Variety Matters, Vanilla Food Variety Expanded, VNPE, Immersive Chefs;
+  - all-supported performance union: the DLC/framework/material/Processor/Dubs/guest-service/variety/VNPE packages above in their dependency-safe order, then Immersive Chefs
+- **THEN** every family retains a group-specific checkpoint caused during the measured native sample: both Processor dishwasher types admit and clean through a supplied Dubs network; a Hospitality guest receives colony cutlery through native Gastronomy waiter service while Common Sense does not steal Gastronomy-owned clearing; a native VNPE prepared-paste meal preserves public ingredient provenance while modded metal kitchenware and Royalty/Biotech expectation paths remain active; and the union family satisfies every constituent branch without duplicating ware or ownership
+- **AND** the all-supported performance union is not the release startup canary and does not inherit unrelated downloaded food ecosystems
+
 ### Requirement: Exact optional-mod matrices are reusable
 The host SHALL allow benchmark selection/filtering by benchmark ID and exact mod-group ID. A staged performance manifest MAY contain only the filtered comparison family and its required control from a larger compiled fixture assembly. The in-game catalog SHALL require every manifest entry to match exactly one compiled attributed type and SHALL admit only those listed entries; additional valid compiled benchmark types SHALL remain unlisted and uninstantiated rather than causing whole-assembly manifest mismatch. Future repository mods SHALL be able to add performance fixtures and method selectors in separate test projects without editing Gateway runtime code. A group SHALL never inherit an optional package merely because it is downloaded locally.
 
