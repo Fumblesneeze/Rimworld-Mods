@@ -19,6 +19,59 @@ public static class PerformanceDiscoveryValidator
     public const int MaximumThroughputCheckpoints = 64;
     public const int ExactMethodSelectorKind = 3;
 
+    public static IReadOnlyList<PerformanceAssemblyCandidate> SelectForFilters(
+        IEnumerable<PerformanceAssemblyCandidate> assemblyCandidates,
+        IEnumerable<string> benchmarkIds,
+        IEnumerable<string> groupIds)
+    {
+        if (assemblyCandidates is null) throw new ArgumentNullException(nameof(assemblyCandidates));
+        if (benchmarkIds is null) throw new ArgumentNullException(nameof(benchmarkIds));
+        if (groupIds is null) throw new ArgumentNullException(nameof(groupIds));
+        var candidates = MaterializeCandidates(assemblyCandidates);
+        var benchmarks = NormalizeFilters(benchmarkIds, "benchmark");
+        var groups = NormalizeFilters(groupIds, "group");
+        if (benchmarks.Count == 0 && groups.Count == 0) return candidates;
+
+        var declarations = candidates
+            .SelectMany(candidate => candidate.Metadata.Declarations.Select(declaration => (candidate, declaration)))
+            .ToArray();
+        var selected = declarations.Where(item =>
+                (benchmarks.Count == 0 || benchmarks.Contains(item.declaration.Id.Trim())) &&
+                (groups.Count == 0 || groups.Contains(GroupId(item.declaration.ActivePackageIds))))
+            .ToArray();
+        if (selected.Length == 0)
+            throw new EndToEndDiscoveryException(
+                "The performance filters selected zero benchmark declarations before package validation.");
+
+        var comparisonIds = selected.Select(item => item.declaration.ComparisonId?.Trim())
+            .Where(value => !string.IsNullOrEmpty(value))
+            .ToHashSet(StringComparer.Ordinal);
+        var included = declarations.Where(item => selected.Contains(item) ||
+                                                  comparisonIds.Contains(item.declaration.ComparisonId?.Trim()))
+            .ToList();
+        var controlIds = included.Select(item => item.declaration.ProductAbsentControlId?.Trim())
+            .Where(value => !string.IsNullOrEmpty(value))
+            .ToHashSet(StringComparer.Ordinal);
+        included.AddRange(declarations.Where(item => controlIds.Contains(item.declaration.Id.Trim())));
+        var includedDeclarations = included.Select(item => item.declaration).ToHashSet();
+
+        return candidates.Select(candidate =>
+            {
+                var retained = candidate.Metadata.Declarations
+                    .Where(includedDeclarations.Contains)
+                    .ToArray();
+                if (retained.Length == 0) return null;
+                return new PerformanceAssemblyCandidate(
+                    candidate.ProjectPath,
+                    candidate.ExpectedOwnerPackageId,
+                    candidate.ExpectedAssemblyName,
+                    new PerformanceAssemblyMetadata(candidate.Metadata.Assembly, retained));
+            })
+            .Where(candidate => candidate is not null)
+            .Cast<PerformanceAssemblyCandidate>()
+            .ToArray();
+    }
+
     public static PerformanceDiscoveryResult ValidateAndGroup(
         IEnumerable<PerformanceAssemblyCandidate> assemblyCandidates,
         IEnumerable<string> resolvablePackageIds,
@@ -162,6 +215,9 @@ public static class PerformanceDiscoveryValidator
         ValidateBoundedIdentity(declaration.Id, "benchmark ID", display, errors);
         if (!declaration.IsConcrete) errors.Add($"'{display}' must be a concrete class");
         if (!declaration.ImplementsContract) errors.Add($"'{display}' must implement IRimWorldPerformanceTest");
+        if (declaration.ThroughputCheckpoints.Count != 0 && !declaration.ImplementsThroughputCounter)
+            errors.Add($"'{display}' declares throughput checkpoints but must implement " +
+                       "IPerformanceThroughputCounter");
         if (!declaration.HasPublicParameterlessConstructor)
             errors.Add($"'{display}' must expose a public parameterless constructor");
 
@@ -376,9 +432,22 @@ public static class PerformanceDiscoveryValidator
     private static string Normalize(string? value) => value?.Trim().ToLowerInvariant() ?? string.Empty;
     private static string LengthPrefixed(string value) => value.Length + ":" + value;
     private static string PackageSequenceKey(IEnumerable<string> packages) => string.Concat(packages.Select(LengthPrefixed));
-    private static string GroupId(IEnumerable<string> packages)
+    internal static string GroupId(IEnumerable<string> packages)
     {
         var digest = SHA256.HashData(Encoding.UTF8.GetBytes(PackageSequenceKey(packages)));
         return "perf-" + Convert.ToHexString(digest.AsSpan(0, 12)).ToLowerInvariant();
+    }
+
+    private static HashSet<string> NormalizeFilters(IEnumerable<string> values, string description)
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var value in values)
+        {
+            var normalized = value?.Trim() ?? string.Empty;
+            if (normalized.Length == 0 || normalized.Length > MaximumIdentityCharacters)
+                throw new EndToEndDiscoveryException($"A performance {description} filter is invalid.");
+            result.Add(normalized);
+        }
+        return result;
     }
 }

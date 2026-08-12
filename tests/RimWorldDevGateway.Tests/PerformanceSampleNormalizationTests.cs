@@ -300,6 +300,94 @@ public sealed class PerformanceSampleNormalizationTests
     }
 
     [Test]
+    public void Distinct_empty_profilers_that_share_one_omitted_native_row_are_retained_without_duplicate_metrics()
+    {
+        var raw = DisabledNativeJson()
+            .ReplaceBetween("\"methods\":[", "],\"patches\"", string.Empty)
+            .ReplaceBetween("\"patches\":[", "],\"modCosts\"", string.Empty)
+            .ReplaceBetween("\"modCosts\":[", "]}", string.Empty);
+        var sidecars = new[]
+        {
+            new CircinusProfilerSidecar(
+                "Product.PatchA", CircinusRowKind.Patch, "shared-empty-row", 1,
+                true, 0, 0, 0, true, 0, "empty-or-uninvoked"),
+            new CircinusProfilerSidecar(
+                "Product.PatchB", CircinusRowKind.Patch, "shared-empty-row", 1,
+                true, 0, 0, 0, true, 0, "empty-or-uninvoked")
+        };
+        var capture = new CircinusCapture("run-1", 1, 15, raw, raw, sidecars);
+        var context = new PerformanceNormalizationContext(
+            "v1", PerformanceEvidenceLens.ArmedDisabledWrapper, "armed-disabled-wrapper",
+            1_200, 1000, 1, 1, new[] { 0, 0, 0 }, new[] { 0, 0, 0 },
+            new Dictionary<string, long>());
+
+        var normalized = PerformanceSampleNormalizer.Normalize(capture, context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(normalized.ProfilerSidecars.Select(item => item.MethodIdentity),
+                Is.EqualTo(new[] { "Product.PatchA", "Product.PatchB" }));
+            Assert.That(normalized.Metrics.Count(item =>
+                item.Scope == "patch" && item.Key == "shared-empty-row" && item.Name == "hand-armed"),
+                Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Armed_method_omitted_by_Circinus_at_zero_calls_keeps_the_timing_metric_schema()
+    {
+        var raw = NativeJson().ReplaceBetween("\"methods\":[", "],\"patches\"", string.Empty);
+        var baseline = Capture(NativeJson());
+        var sidecars = new[]
+        {
+            baseline.Sidecars.Single(item => item.RowKind == CircinusRowKind.Patch),
+            new CircinusProfilerSidecar(
+                "ordinary-method", CircinusRowKind.Method, "m1", 0,
+                true, 0, 0, 0, true, 20, "empty-or-uninvoked")
+        };
+        var capture = new CircinusCapture("run-1", 1, 15, raw, raw, sidecars);
+
+        var normalized = PerformanceSampleNormalizer.Normalize(capture, Context());
+
+        Assert.Multiple(() =>
+        {
+            AssertMetric(normalized, "method", "m1", "total", 0d, "ms", "profiler-window-ms");
+            AssertMetric(normalized, "method", "m1", "calls", 0d, "calls", "native-estimated-calls");
+            Assert.That(normalized.Metrics.Any(item => item.Scope == "method" && item.Key == "m1" &&
+                item.Name == "gross-ms-per-estimated-call"), Is.False);
+            AssertMetric(normalized, "method", "m1", "gross-profiler-window-share", 0d,
+                "ratio", "profiler-window-ms");
+        });
+    }
+
+    [Test]
+    public void Armed_patch_omitted_by_Circinus_at_zero_calls_keeps_the_timing_metric_schema()
+    {
+        var raw = NativeJson().ReplaceBetween("\"patches\":[", "],\"modCosts\"", string.Empty);
+        var baseline = Capture(NativeJson());
+        var sidecars = new[]
+        {
+            new CircinusProfilerSidecar(
+                "Product.Patch", CircinusRowKind.Patch, "p1", 1,
+                true, 0, 0, 0, true, 20, "empty-or-uninvoked"),
+            baseline.Sidecars.Single(item => item.RowKind == CircinusRowKind.Method)
+        };
+        var capture = new CircinusCapture("run-1", 1, 15, raw, raw, sidecars);
+
+        var normalized = PerformanceSampleNormalizer.Normalize(capture, Context());
+
+        Assert.Multiple(() =>
+        {
+            AssertMetric(normalized, "patch", "p1", "total", 0d, "ms", "profiler-window-ms");
+            AssertMetric(normalized, "patch", "p1", "calls", 0d, "calls", "native-estimated-calls");
+            Assert.That(normalized.Metrics.Any(item => item.Scope == "patch" && item.Key == "p1" &&
+                item.Name == "gross-ms-per-estimated-call"), Is.False);
+            AssertMetric(normalized, "patch", "p1", "gross-profiler-window-share", 0d,
+                "ratio", "profiler-window-ms");
+        });
+    }
+
+    [Test]
     public void Native_rows_must_exactly_match_nonempty_run_owned_sidecars()
     {
         const string firstMethod =
@@ -314,17 +402,16 @@ public sealed class PerformanceSampleNormalizationTests
         Assert.That(exception!.Message, Does.Contain("unexplained").IgnoreCase);
     }
 
-    [TestCase(",\"canSkip\":true", "", "canSkip")]
-    public void Required_native_patch_flags_cannot_be_omitted(
-        string original,
-        string replacement,
-        string expected)
+    [Test]
+    public void Native_non_skip_capable_patch_may_omit_its_false_can_skip_flag()
     {
-        var exception = Assert.Throws<PerformanceNormalizationException>(() =>
-            PerformanceSampleNormalizer.Normalize(
-                Capture(NativeJson().Replace(original, replacement)),
-                Context()));
-        Assert.That(exception!.Message, Does.Contain(expected).IgnoreCase);
+        var raw = NativeJson().Replace(",\"canSkip\":true", string.Empty);
+
+        var normalized = PerformanceSampleNormalizer.Normalize(Capture(raw), Context());
+
+        Assert.That(normalized.Metrics.Any(item =>
+            item.Scope == "patch" && item.Key == "p1" && item.Name == "skip-capable-gross-share"),
+            Is.False);
     }
 
     [Test]

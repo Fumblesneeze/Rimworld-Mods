@@ -123,6 +123,34 @@ public interface IRimWorldPerformanceTest
     IEnumerator<EndToEndStep> Execute(IEndToEndContext context);
 }
 
+/// <summary>
+/// Performs deterministic post-warm-up activation while the game remains paused and before the
+/// profiler, throughput baselines, wall clock, memory counters, or measured tick window start.
+/// </summary>
+public interface IPerformanceSamplePreparation
+{
+    IEnumerator<EndToEndStep> PrepareSample(IEndToEndContext context);
+}
+
+/// <summary>
+/// Validates terminal fixture invariants only after the profiler has stopped and its run-owned
+/// state has been captured, so expensive verification cannot contaminate the measured window.
+/// </summary>
+public interface IPerformanceSampleValidation
+{
+    void ValidateSample(IEndToEndContext context);
+}
+
+/// <summary>
+/// Supplies monotonically increasing native-work counters for a performance fixture's declared
+/// throughput checkpoints. The Gateway samples these counters immediately before and after the
+/// measured tick window; setup and warm-up work therefore cannot satisfy a checkpoint.
+/// </summary>
+public interface IPerformanceThroughputCounter
+{
+    long Read(string id);
+}
+
 public sealed class PerformanceMethodSelector
 {
     internal PerformanceMethodSelector(PerformanceMethodSelectorKind kind, string value, string category)
@@ -465,6 +493,12 @@ public static class PerformanceTestContract
 
         var selectors = ReadSelectors(testType);
         var checkpoints = ReadCheckpoints(testType);
+        if (checkpoints.Count != 0 &&
+            !typeof(IPerformanceThroughputCounter).IsAssignableFrom(testType))
+        {
+            throw Invalid(testType,
+                $"declares throughput checkpoints but does not implement {nameof(IPerformanceThroughputCounter)}");
+        }
         return new PerformanceTestDescriptor(
             testType,
             id,
@@ -847,4 +881,25 @@ public static class PerformanceTestContract
 
     private static PerformanceContractException Invalid(Type type, string reason) =>
         new PerformanceContractException($"Performance benchmark '{type.FullName ?? type.Name}' {reason}.");
+}
+
+public static class PerformanceDeterminismGuard
+{
+    public static int FirstCounterAtOrAboveIndexedTarget(
+        IReadOnlyList<int> currentValues,
+        int targetBase,
+        int targetStride)
+    {
+        if (currentValues is null) throw new ArgumentNullException(nameof(currentValues));
+        if (targetBase < 0) throw new ArgumentOutOfRangeException(nameof(targetBase));
+        if (targetStride <= 0) throw new ArgumentOutOfRangeException(nameof(targetStride));
+
+        for (var index = 0; index < currentValues.Count; index++)
+        {
+            var target = checked(targetBase + index * targetStride);
+            if (currentValues[index] >= target) return index;
+        }
+
+        return -1;
+    }
 }

@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using RimWorldDevGateway.IntegrationTesting;
+using RimWorldDevGateway.Performance;
 
 namespace RimWorldDevGateway.Tests;
 
@@ -65,6 +67,33 @@ public sealed class GatewayIntegrationTestExceptionFormatterTests
                 "RimWorld rejected the requested state for [REDACTED]."));
             Assert.That(details.Message, Does.Not.Contain(credential));
         });
+    }
+
+    [Test]
+    public void Gateway_owned_performance_normalization_failure_retains_its_bounded_reason()
+    {
+        var exception = new PerformanceNormalizationException(
+            "Circinus native rows disagree with retained run-owned evidence.");
+
+        var details = GatewayIntegrationTestExceptionFormatter.Format(exception);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(details.Type, Is.EqualTo(typeof(PerformanceNormalizationException).FullName));
+            Assert.That(details.Message, Is.EqualTo(exception.Message));
+            Assert.That(details.Message.Length, Is.LessThanOrEqualTo(256));
+        });
+    }
+
+    [Test]
+    public void Exact_directory_failure_retains_a_redacted_bounded_path_reason()
+    {
+        const string credential = "SESSION-CREDENTIAL-DO-NOT-RETAIN";
+        var exception = new DirectoryNotFoundException("Missing " + credential + " directory.");
+
+        var details = GatewayIntegrationTestExceptionFormatter.Format(exception, credential);
+
+        Assert.That(details.Message, Is.EqualTo("Missing [REDACTED] directory."));
     }
 
     [Test]

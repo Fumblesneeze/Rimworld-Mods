@@ -72,11 +72,6 @@ internal sealed class GatewayPerformanceControlWindow
     public IReadOnlyList<int> GarbageCollectionsEnd { get; }
 }
 
-internal interface IGatewayPerformanceThroughputCounter
-{
-    long Read(string id);
-}
-
 internal sealed class CoordinatedGatewayPerformanceRunService : GatewayPerformanceRunService
 {
     private readonly IGatewayPerformanceRuntimeBackend backend;
@@ -288,8 +283,8 @@ internal sealed class CoordinatedGatewayPerformanceRunService : GatewayPerforman
     {
         if (descriptor.ThroughputCheckpoints.Count == 0)
             return new Dictionary<string, long>(StringComparer.Ordinal);
-        var counter = context.GetService(typeof(IGatewayPerformanceThroughputCounter)) as
-                      IGatewayPerformanceThroughputCounter ??
+        var counter = context.GetService(typeof(IPerformanceThroughputCounter)) as
+                      IPerformanceThroughputCounter ??
                       throw new InvalidOperationException(
                           "The performance fixture declares throughput checkpoints but no counter is registered.");
         var result = new Dictionary<string, long>(StringComparer.Ordinal);

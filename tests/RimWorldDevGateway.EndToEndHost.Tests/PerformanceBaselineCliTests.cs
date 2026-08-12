@@ -144,6 +144,7 @@ public sealed class PerformanceBaselineCliTests
                         TestAssemblyIdentity = "tests-sha", CircinusAssemblyIdentity = "circinus-sha",
                         CircinusSchemaIdentity = "1.15", ProfilingPolicyIdentity = "hand-armed/v1",
                         SamplingPolicyIdentity = "native-adaptive/v1", HardwareRuntimeFingerprint = "hardware-sha",
+                        FixtureManifestSha256 = "fixture-manifest-sha",
                         DeterministicSeed = 60161, WarmUpTicks = 300, SampleTicks = 3000, GameSpeed = 3,
                         RepetitionCount = 1, AggregationPolicyIdentity = "arithmetic-mean/v1"
                     },

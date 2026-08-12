@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text;
 
 namespace RimWorldDevGateway.EndToEndTesting;
 
@@ -673,13 +674,51 @@ public sealed class ScreenshotStep : EndToEndStep
 
 public sealed class CheckpointStep : EndToEndStep
 {
+    public const int MaximumArtifactFields = 256;
+    public const int MaximumArtifactKeyUtf8Bytes = 1024;
+    public const int MaximumArtifactValueUtf8Bytes = 1024 * 1024;
+    public const int MaximumArtifactAggregateUtf8Bytes = 16 * 1024 * 1024;
+
     public CheckpointStep(string name, Func<IEndToEndContext, IReadOnlyDictionary<string, string>> capture)
         : base(name, EndToEndStepKind.Observe)
     {
-        Capture = capture ?? throw new ArgumentNullException(nameof(capture));
+        if (capture is null) throw new ArgumentNullException(nameof(capture));
+        Capture = context => CopyBounded(capture(context));
     }
 
     public Func<IEndToEndContext, IReadOnlyDictionary<string, string>> Capture { get; }
+
+    private static IReadOnlyDictionary<string, string> CopyBounded(
+        IReadOnlyDictionary<string, string>? source)
+    {
+        if (source is null) throw new InvalidOperationException("The E2E checkpoint returned null.");
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        var aggregateBytes = 0L;
+        foreach (var pair in source)
+        {
+            if (result.Count == MaximumArtifactFields)
+                throw new InvalidOperationException(
+                    $"An E2E checkpoint may contain at most {MaximumArtifactFields} artifact fields.");
+            if (string.IsNullOrWhiteSpace(pair.Key) || pair.Value is null)
+                throw new InvalidOperationException("E2E checkpoint artifact keys and values must be non-null and keys must be nonblank.");
+            var keyBytes = Encoding.UTF8.GetByteCount(pair.Key);
+            var valueBytes = Encoding.UTF8.GetByteCount(pair.Value);
+            if (keyBytes > MaximumArtifactKeyUtf8Bytes)
+                throw new InvalidOperationException(
+                    $"An E2E checkpoint artifact key exceeds {MaximumArtifactKeyUtf8Bytes} UTF-8 bytes.");
+            if (valueBytes > MaximumArtifactValueUtf8Bytes)
+                throw new InvalidOperationException(
+                    $"An E2E checkpoint artifact value exceeds {MaximumArtifactValueUtf8Bytes} UTF-8 bytes.");
+            aggregateBytes += keyBytes + valueBytes;
+            if (aggregateBytes > MaximumArtifactAggregateUtf8Bytes)
+                throw new InvalidOperationException(
+                    $"E2E checkpoint artifacts exceed {MaximumArtifactAggregateUtf8Bytes} aggregate UTF-8 bytes.");
+            if (result.ContainsKey(pair.Key))
+                throw new InvalidOperationException("E2E checkpoint artifact keys must be unique.");
+            result.Add(pair.Key, pair.Value);
+        }
+        return result;
+    }
 }
 
 internal static class StepValues

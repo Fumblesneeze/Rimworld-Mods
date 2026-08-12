@@ -8,6 +8,29 @@ namespace RimWorldDevGateway.Tests;
 [TestFixture]
 public sealed class GatewayPerformanceEndToEndAdapterTests
 {
+    [Test]
+    public void Adapter_completes_post_warmup_preparation_before_starting_the_measured_sample()
+    {
+        PhaseFixtureBenchmark.Calls.Clear();
+        var service = new PhaseRecordingService(PhaseFixtureBenchmark.Calls);
+        var context = new GatewayEndToEndTestContext(
+            () => 0,
+            () => 0,
+            type => type == typeof(GatewayPerformanceRunService) ? service : null);
+        var adapter = new GatewayPerformanceEndToEndAdapter(
+            PerformanceTestContract.Describe(typeof(PhaseFixtureBenchmark)));
+
+        adapter.Arrange(context);
+        using var execution = adapter.Execute(context);
+        while (execution.MoveNext()) { }
+
+        Assert.That(PhaseFixtureBenchmark.Calls, Is.EqualTo(new[]
+        {
+            "arrange", "warmup", "prepare-sample", "begin-sample", "execute", "complete-sample",
+            "validate-sample"
+        }));
+    }
+
     [TestCase(599, 600, true)]
     [TestCase(600, 600, false)]
     [TestCase(601, 600, false)]
@@ -156,22 +179,22 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
             () => 1_000,
             () => 2_000,
             _ => 0);
-        var context = new GatewayEndToEndTestContext(
-            () => 0,
-            () => tick,
-            type => type == typeof(IGatewayPerformanceThroughputCounter) ? counter : null);
         var descriptor = PerformanceTestContract.Describe(typeof(ThroughputFixtureBenchmark));
 
-        service.Prepare(descriptor, context);
-        using var begin = service.BeginSample(descriptor, context).GetEnumerator();
+        var contextWithCounter = new GatewayEndToEndTestContext(
+            () => 0,
+            () => tick,
+            type => type == typeof(IPerformanceThroughputCounter) ? counter : null);
+        service.Prepare(descriptor, contextWithCounter);
+        using var begin = service.BeginSample(descriptor, contextWithCounter).GetEnumerator();
         Assert.That(begin.MoveNext(), Is.True);
         Assert.That(begin.Current, Is.TypeOf<ScreenshotStep>());
         Assert.That(begin.MoveNext(), Is.True);
         tick = 70;
         counter.Value = 104;
-        using var complete = service.CompleteSample(descriptor, context).GetEnumerator();
+        using var complete = service.CompleteSample(descriptor, contextWithCounter).GetEnumerator();
         Assert.That(complete.MoveNext(), Is.True);
-        Assert.That(((WaitUntilStep)complete.Current).Predicate(context), Is.True);
+        Assert.That(((WaitUntilStep)complete.Current).Predicate(contextWithCounter), Is.True);
         Assert.That(complete.MoveNext(), Is.True);
 
         var exception = Assert.Throws<InvalidOperationException>(() => complete.MoveNext());
@@ -228,6 +251,41 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         public override void Cleanup() => calls.Add("cleanup");
     }
 
+    private sealed class PhaseRecordingService : GatewayPerformanceRunService
+    {
+        private readonly IList<string> calls;
+
+        public PhaseRecordingService(IList<string> calls) => this.calls = calls;
+
+        public override void Prepare(PerformanceTestDescriptor descriptor, IEndToEndContext context) { }
+
+        public override IEnumerable<EndToEndStep> BeginWarmUp(
+            PerformanceTestDescriptor descriptor,
+            IEndToEndContext context)
+        {
+            calls.Add("warmup");
+            yield break;
+        }
+
+        public override IEnumerable<EndToEndStep> BeginSample(
+            PerformanceTestDescriptor descriptor,
+            IEndToEndContext context)
+        {
+            calls.Add("begin-sample");
+            yield break;
+        }
+
+        public override IEnumerable<EndToEndStep> CompleteSample(
+            PerformanceTestDescriptor descriptor,
+            IEndToEndContext context)
+        {
+            calls.Add("complete-sample");
+            yield break;
+        }
+
+        public override void Cleanup() { }
+    }
+
     private sealed class RecordingBackend : IGatewayPerformanceRuntimeBackend
     {
         private readonly IList<string> calls;
@@ -265,7 +323,32 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         public void Cleanup() => calls.Add("cleanup");
     }
 
-    private sealed class MutableCounter : IGatewayPerformanceThroughputCounter
+    [Test]
+    public void Performance_adapter_supplies_the_dynamically_loaded_fixture_counter()
+    {
+        var service = new CoordinatedGatewayPerformanceRunService(
+            new RecordingBackend(new List<string>()),
+            () => 1_000,
+            () => 2_000,
+            _ => 0);
+        var context = new GatewayEndToEndTestContext(
+            () => 0,
+            () => 0,
+            type => type == typeof(GatewayPerformanceRunService) ? service : null);
+        var adapter = new GatewayPerformanceEndToEndAdapter(
+            PerformanceTestContract.Describe(typeof(SelfCountingFixtureBenchmark)));
+
+        adapter.Arrange(context);
+        using var execution = adapter.Execute(context);
+
+        Assert.That(execution.MoveNext(), Is.True);
+        Assert.That(execution.Current, Is.TypeOf<ScreenshotStep>());
+        Assert.That(() => execution.MoveNext(), Throws.Nothing,
+            "The adapter must make its dynamically loaded fixture counter available at sample start.");
+        Assert.That(execution.Current, Is.TypeOf<TimeControlActionStep>());
+    }
+
+    private sealed class MutableCounter : IPerformanceThroughputCounter
     {
         public long Value { get; set; }
         public long Read(string id) => Value;
@@ -315,6 +398,38 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
     }
 
     [RimWorldPerformanceTest(
+        "gateway.phase-adapter-fixture",
+        EndToEndTestContract.GatewayPackageId,
+        EndToEndTestContract.GatewayPackageId,
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        PerformanceTestContract.CircinusPackageId,
+        ComparisonId = "gateway.phase-adapter-fixture")]
+    public sealed class PhaseFixtureBenchmark :
+        IRimWorldPerformanceTest,
+        IPerformanceSamplePreparation,
+        IPerformanceSampleValidation
+    {
+        public static List<string> Calls { get; } = new();
+
+        public void Arrange(IEndToEndContext context) => Calls.Add("arrange");
+
+        public IEnumerator<EndToEndStep> PrepareSample(IEndToEndContext context)
+        {
+            Calls.Add("prepare-sample");
+            yield break;
+        }
+
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            Calls.Add("execute");
+            yield break;
+        }
+
+        public void ValidateSample(IEndToEndContext context) => Calls.Add("validate-sample");
+    }
+
+    [RimWorldPerformanceTest(
         "gateway.short-adapter-fixture",
         EndToEndTestContract.GatewayPackageId,
         EndToEndTestContract.GatewayPackageId,
@@ -342,10 +457,34 @@ public sealed class GatewayPerformanceEndToEndAdapterTests
         WarmUpTicks = 0,
         SampleTicks = 60)]
     [PerformanceThroughputCheckpoint("native-actions", 5)]
-    public sealed class ThroughputFixtureBenchmark : IRimWorldPerformanceTest
+    public sealed class ThroughputFixtureBenchmark :
+        IRimWorldPerformanceTest,
+        IPerformanceThroughputCounter
     {
         public void Arrange(IEndToEndContext context) { }
         public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) =>
             Enumerable.Empty<EndToEndStep>().GetEnumerator();
+        public long Read(string id) => 0;
+    }
+
+    [RimWorldPerformanceTest(
+        "gateway.self-counting-adapter-fixture",
+        EndToEndTestContract.GatewayPackageId,
+        EndToEndTestContract.GatewayPackageId,
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        PerformanceTestContract.CircinusPackageId,
+        ComparisonId = "gateway.self-counting-adapter-fixture",
+        WarmUpTicks = 0,
+        SampleTicks = 60)]
+    [PerformanceThroughputCheckpoint("native-actions", 5)]
+    public sealed class SelfCountingFixtureBenchmark :
+        IRimWorldPerformanceTest,
+        IPerformanceThroughputCounter
+    {
+        public void Arrange(IEndToEndContext context) { }
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) =>
+            Enumerable.Empty<EndToEndStep>().GetEnumerator();
+        public long Read(string id) => 7;
     }
 }

@@ -13,6 +13,25 @@ namespace RimWorldDevGateway.Tests;
 public sealed class PerformanceTestingContractTests
 {
     [Test]
+    public void Determinism_guard_compares_every_counter_with_its_indexed_target()
+    {
+        var current = Enumerable.Range(0, 24)
+            .Select(index => 1_700_000 + index * 10_000 - 1)
+            .ToArray();
+
+        Assert.That(
+            PerformanceDeterminismGuard.FirstCounterAtOrAboveIndexedTarget(
+                current, 1_700_000, 10_000),
+            Is.EqualTo(-1));
+
+        current[23]++;
+        Assert.That(
+            PerformanceDeterminismGuard.FirstCounterAtOrAboveIndexedTarget(
+                current, 1_700_000, 10_000),
+            Is.EqualTo(23));
+    }
+
+    [Test]
     public void Describe_preserves_the_complete_reproducible_benchmark_contract()
     {
         var descriptor = PerformanceTestContract.Describe(typeof(ValidProductBenchmark));
@@ -221,6 +240,7 @@ public sealed class PerformanceTestingContractTests
     [TestCase(typeof(InvalidSelectorBenchmark), "method selector")]
     [TestCase(typeof(DuplicateCheckpointBenchmark), "duplicate throughput checkpoint")]
     [TestCase(typeof(InvalidCheckpointBenchmark), "throughput checkpoint")]
+    [TestCase(typeof(MissingThroughputCounterBenchmark), "IPerformanceThroughputCounter")]
     [TestCase(typeof(InvalidAbsentControlBenchmark), "absent")]
     [TestCase(typeof(MissingHarmonyBenchmark), "brrainz.harmony")]
     [TestCase(typeof(CircinusAfterProductBenchmark), "astryl.circinus")]
@@ -631,6 +651,17 @@ public sealed class PerformanceTestingContractTests
     [PerformanceThroughputCheckpoint(" ", 0)]
     public sealed class InvalidCheckpointBenchmark : NoOpBenchmark { }
 
+    [RimWorldPerformanceTest("invalid.missing-throughput-counter", "owner", "owner", "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "owner")]
+    [PerformanceThroughputCheckpoint("native-work", 1)]
+    public sealed class MissingThroughputCounterBenchmark : IRimWorldPerformanceTest
+    {
+        public void Arrange(IEndToEndContext context) { }
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            yield break;
+        }
+    }
+
     [RimWorldPerformanceTest("invalid.absent", "owner", "owner", "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "owner", EvidenceLens = PerformanceEvidenceLens.ProductAbsentControl)]
     public sealed class InvalidAbsentControlBenchmark : NoOpBenchmark { }
 
@@ -643,7 +674,7 @@ public sealed class PerformanceTestingContractTests
     [RimWorldPerformanceTest("invalid.package-token", "owner", "owner", "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "bad\npackage", "owner")]
     public sealed class InvalidPackageTokenBenchmark : NoOpBenchmark { }
 
-    public abstract class NoOpBenchmark : IRimWorldPerformanceTest
+    public abstract class NoOpBenchmark : IRimWorldPerformanceTest, IPerformanceThroughputCounter
     {
         public void Arrange(IEndToEndContext context) { }
 
@@ -651,6 +682,8 @@ public sealed class PerformanceTestingContractTests
         {
             yield break;
         }
+
+        public long Read(string id) => 1;
     }
 
     public class DynamicNoOpBenchmark : NoOpBenchmark { }

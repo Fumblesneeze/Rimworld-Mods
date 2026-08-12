@@ -35,6 +35,30 @@ public static class PerformanceProjectDiscovery
                 record.AssemblyName,
                 record.TargetFramework))
             .ToArray());
+
+    public static IReadOnlyList<PerformanceProjectRecord> SelectExactProjects(
+        IEnumerable<PerformanceProjectRecord> projects,
+        IEnumerable<string> selectedProjectPaths)
+    {
+        if (projects is null) throw new ArgumentNullException(nameof(projects));
+        if (selectedProjectPaths is null) throw new ArgumentNullException(nameof(selectedProjectPaths));
+        var exactPaths = new HashSet<string>(
+            selectedProjectPaths.Select(Path.GetFullPath),
+            StringComparer.OrdinalIgnoreCase);
+        if (exactPaths.Count == 0)
+            throw new EndToEndDiscoveryException("Performance staging requires at least one exact selected project path.");
+        var selected = projects.Where(project => exactPaths.Contains(Path.GetFullPath(project.ProjectPath)))
+            .OrderBy(project => project.ProjectPath, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var resolved = new HashSet<string>(
+            selected.Select(project => Path.GetFullPath(project.ProjectPath)),
+            StringComparer.OrdinalIgnoreCase);
+        var missing = exactPaths.Where(path => !resolved.Contains(path)).ToArray();
+        if (missing.Length != 0)
+            throw new EndToEndDiscoveryException(
+                $"Performance staging could not resolve {missing.Length} selected project path(s)." );
+        return new ReadOnlyCollection<PerformanceProjectRecord>(selected);
+    }
 }
 
 internal sealed record MarkedProjectRecord(

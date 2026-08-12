@@ -63,9 +63,56 @@ public sealed class PerformanceMetadataDiscoveryTests
                 "washes"
             }));
             Assert.That(declaration.ImplementsContract, Is.True);
+            Assert.That(declaration.ImplementsThroughputCounter, Is.True,
+                "Inherited fixture counters must be discovered without loading the assembly.");
             Assert.That(declaration.IsConcrete, Is.True);
             Assert.That(declaration.HasPublicParameterlessConstructor, Is.True);
         });
+    }
+
+    [Test]
+    public void Validator_rejects_checkpoint_metadata_without_the_public_counter_contract()
+    {
+        var metadata = PerformanceAssemblyMetadataReader.Read(FixtureAssembly());
+        var original = metadata.Declarations.Single(item => item.Id == "alpha.base");
+        var invalid = new PerformanceMetadataDeclaration(
+            original.TypeName,
+            original.Id,
+            original.StagingOwnerPackageId,
+            original.MeasuredSubjectPackageId,
+            original.ActivePackageIds,
+            original.DeterministicSeed,
+            original.WorkloadVersion,
+            original.ComparisonId,
+            original.WarmUpTicks,
+            original.SampleTicks,
+            original.GameSpeed,
+            original.Repetitions,
+            original.EvidenceLens,
+            original.ProductAbsentControlId,
+            original.MethodSelectors,
+            original.ThroughputCheckpoints,
+            original.IsConcrete,
+            original.ImplementsContract,
+            implementsThroughputCounter: false,
+            hasPublicParameterlessConstructor: original.HasPublicParameterlessConstructor);
+        var invalidMetadata = new PerformanceAssemblyMetadata(metadata.Assembly, new[] { invalid });
+
+        var error = Assert.Throws<EndToEndDiscoveryException>(() =>
+            PerformanceDiscoveryValidator.ValidateAndGroup(
+                new[]
+                {
+                    new PerformanceAssemblyCandidate(
+                        FixtureProject(),
+                        "alpha.mod",
+                        "PerformanceHost.ValidFixtures",
+                        invalidMetadata)
+                },
+                PackageCatalog(),
+                requireResolvedControls: false));
+
+        Assert.That(error!.Message,
+            Does.Contain("IPerformanceThroughputCounter").And.Contain("alpha.base"));
     }
 
     [Test]
@@ -96,6 +143,29 @@ public sealed class PerformanceMetadataDiscoveryTests
             Assert.That(result.Groups.SelectMany(group => group.ActivePackageIds),
                 Does.Not.Contain("downloaded.but.inactive"));
             Assert.That(result.Groups.Select(group => group.GroupId), Is.Ordered);
+        });
+    }
+
+    [Test]
+    public void Prevalidation_filter_keeps_an_unrelated_selected_group_independent_of_unavailable_products()
+    {
+        var selected = PerformanceDiscoveryValidator.SelectForFilters(
+            ValidCandidatesForPlanning(),
+            new[] { "gateway.alpha-absent" },
+            Array.Empty<string>());
+
+        var result = PerformanceDiscoveryValidator.ValidateAndGroup(
+            selected,
+            new[] { "brrainz.harmony", "ludeon.rimworld", "astryl.circinus" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Groups, Has.Count.EqualTo(1));
+            Assert.That(result.Groups.Single().Benchmarks.Select(item => item.Id),
+                Is.EqualTo(new[] { "gateway.alpha-absent" }));
+            Assert.That(selected.SelectMany(candidate => candidate.Metadata.Declarations)
+                    .Any(declaration => declaration.ActivePackageIds.Contains("alpha.mod")),
+                Is.False);
         });
     }
 
@@ -171,6 +241,7 @@ public sealed class PerformanceMetadataDiscoveryTests
             original.ThroughputCheckpoints,
             original.IsConcrete,
             original.ImplementsContract,
+            original.ImplementsThroughputCounter,
             original.HasPublicParameterlessConstructor);
         var invalidMetadata = new PerformanceAssemblyMetadata(control.Assembly, new[] { invalid });
 

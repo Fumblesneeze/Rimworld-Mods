@@ -13,6 +13,45 @@ namespace ImmersiveChefs.InGame.IntegrationTests;
 
 public static class FinalizedImmersiveChefsIntegrationTests
 {
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void SpawnedReservedWareReleaseAndEmptyDishCarrierAreIdempotent()
+    {
+        var map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
+        var ware = ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware"),
+            ThingDefOf.Steel);
+        var cell = CellFinder.RandomClosewalkCellNear(map.Center, map, 8);
+        GenSpawn.Spawn(ware, cell, map);
+        Pawn? pawn = null;
+        try
+        {
+            var before = map.listerThings.ThingsOfDef(ware.def).Sum(thing => thing.stackCount);
+            IntegrationAssert.True(
+                CookingSession.TryReleaseExactThing(ware, map.Center, map),
+                "An already-spawned reserved ware portion must be accepted in place.");
+            IntegrationAssert.True(ware.Spawned && ware.stackCount == 1,
+                "The exact already-spawned ware Thing must remain one map unit.");
+            IntegrationAssert.Equal(before,
+                map.listerThings.ThingsOfDef(ware.def).Sum(thing => thing.stackCount),
+                "Releasing an already-spawned reservation must not duplicate or lose ware.");
+
+            pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+                PawnKindDefOf.Colonist,
+                Faction.OfPlayer,
+                canGeneratePawnRelations: false));
+            GenSpawn.Spawn(pawn, CellFinder.RandomClosewalkCellNear(cell, map, 4), map);
+            IntegrationAssert.True(pawn.carryTracker.CarriedThing is null,
+                "The empty-carrier regression fixture must begin empty.");
+            IntegrationAssert.True(!JobDriver_DoDishes.TryDropCarriedThingIfPresent(pawn),
+                "Finishing after admission consumed the carried Thing must be a safe no-op.");
+        }
+        finally
+        {
+            if (pawn is { Destroyed: false }) pawn.Destroy(DestroyMode.Vanish);
+            if (!ware.Destroyed) ware.Destroy(DestroyMode.Vanish);
+        }
+    }
+
     [IntegrationTest(RunAt.MainMenuLoaded)]
     public static void ImmersiveChefsModInitializedFromTheRealActiveSet()
     {

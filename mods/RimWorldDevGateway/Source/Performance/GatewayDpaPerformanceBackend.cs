@@ -205,11 +205,11 @@ internal static class DpaDiagnosticArtifactWriter
         var root = Path.GetFullPath(artifactRoot);
         Directory.CreateDirectory(root);
         if (capture is null) throw new ArgumentNullException(nameof(capture));
-        var destination = Path.Combine(root, "dpa-" + PerformanceArtifactWriter.HashArtifactIdentity(benchmarkId)
-            .Substring(0, 20));
+        var destination = Path.Combine(root, "d-" + PerformanceArtifactWriter.HashArtifactIdentity(benchmarkId)
+            .Substring(0, 12));
         if (Directory.Exists(destination))
             throw new IOException("The exact DPA diagnostic artifact directory already exists.");
-        var temporary = Path.Combine(root, ".tmp-dpa-" + Guid.NewGuid().ToString("N"));
+        var temporary = Path.Combine(root, "t-" + Guid.NewGuid().ToString("N").Substring(0, 12));
         try
         {
             Directory.CreateDirectory(temporary);

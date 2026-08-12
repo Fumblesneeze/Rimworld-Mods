@@ -119,7 +119,7 @@ public sealed class OptionalArmedDisabledBenchmark : NoOpBenchmark { }
     EvidenceLens = PerformanceEvidenceLens.FullyDisarmed)]
 public sealed class OptionalDisarmedBenchmark : NoOpBenchmark { }
 
-public abstract class NoOpBenchmark : IRimWorldPerformanceTest
+public abstract class NoOpBenchmark : IRimWorldPerformanceTest, IPerformanceThroughputCounter
 {
     public void Arrange(IEndToEndContext context) { }
 
@@ -127,4 +127,6 @@ public abstract class NoOpBenchmark : IRimWorldPerformanceTest
     {
         yield break;
     }
+
+    public long Read(string id) => 1;
 }

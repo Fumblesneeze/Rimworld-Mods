@@ -52,6 +52,7 @@ public sealed class PerformanceMetadataDeclaration
         IEnumerable<PerformanceMetadataCheckpoint> throughputCheckpoints,
         bool isConcrete,
         bool implementsContract,
+        bool implementsThroughputCounter,
         bool hasPublicParameterlessConstructor)
     {
         TypeName = typeName;
@@ -72,6 +73,7 @@ public sealed class PerformanceMetadataDeclaration
         ThroughputCheckpoints = Copy(throughputCheckpoints);
         IsConcrete = isConcrete;
         ImplementsContract = implementsContract;
+        ImplementsThroughputCounter = implementsThroughputCounter;
         HasPublicParameterlessConstructor = hasPublicParameterlessConstructor;
     }
 
@@ -93,6 +95,7 @@ public sealed class PerformanceMetadataDeclaration
     public IReadOnlyList<PerformanceMetadataCheckpoint> ThroughputCheckpoints { get; }
     public bool IsConcrete { get; }
     public bool ImplementsContract { get; }
+    public bool ImplementsThroughputCounter { get; }
     public bool HasPublicParameterlessConstructor { get; }
 
     private static IReadOnlyList<T> Copy<T>(IEnumerable<T> values) =>

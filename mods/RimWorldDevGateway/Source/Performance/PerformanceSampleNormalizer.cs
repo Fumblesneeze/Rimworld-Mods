@@ -282,9 +282,29 @@ internal static class PerformanceSampleNormalizer
                 "ratio", "profiler-window-ms", "gross-attribution");
         }
 
+        var emittedSidecarMetrics = new HashSet<string>(StringComparer.Ordinal);
+        var emittedTimingRows = new HashSet<string>(metrics
+            .Where(metric => metric.Name == "total" &&
+                             (metric.Scope == "method" || metric.Scope == "patch"))
+            .Select(metric => metric.Scope + "\0" + metric.Key), StringComparer.Ordinal);
         foreach (var sidecar in capture.Sidecars)
         {
             var scope = sidecar.RowKind == CircinusRowKind.Patch ? "patch" : "method";
+            if (!emittedSidecarMetrics.Add(scope + "\0" + sidecar.RowKey))
+            {
+                // Validation permits a shared key only for distinct empty profilers that
+                // Circinus omits from its native rows. Retain every raw sidecar below, but
+                // emit the identical zero-valued policy metric set only once.
+                continue;
+            }
+            if (!emittedTimingRows.Contains(scope + "\0" + sidecar.RowKey) &&
+                sidecar.TotalCalls == 0 && sidecar.TotalTimedCalls == 0)
+            {
+                // Circinus legitimately omits an armed profiler row that saw no
+                // invocation. Keep a stable explicit-zero gross schema so later
+                // repetitions do not confuse zero work with schema drift.
+                AddTiming(metrics, scope, sidecar.RowKey, 0, 0, 0, 0, env);
+            }
             Add(metrics, scope, sidecar.RowKey, "live-total-calls", sidecar.TotalCalls, "calls",
                 "native-adaptive-sampling", "sampling-policy");
             Add(metrics, scope, sidecar.RowKey, "live-total-timed-calls", sidecar.TotalTimedCalls, "calls",
@@ -440,8 +460,7 @@ internal static class PerformanceSampleNormalizer
             if (!keys.Add(key))
                 throw new PerformanceNormalizationException("Circinus emitted a duplicate patch row.");
             if (row.TotalMs is null || row.MeanMs is null || row.MaximumMs is null ||
-                row.Calls is null || row.TimedCalls is null ||
-                row.Patch?.CanSkip is null)
+                row.Calls is null || row.TimedCalls is null || row.Patch is null)
                 throw new PerformanceNormalizationException(
                     $"Circinus patch '{key}' is missing required measurements or canSkip.");
             ValidateTiming(key, "patch", row.Total, row.Mean, row.Maximum, row.CallCount);
@@ -526,14 +545,22 @@ internal static class PerformanceSampleNormalizer
         var nativePatchAmbiguity = (document.Patches ?? new List<NativePatchRow>())
             .Where(row => !string.IsNullOrWhiteSpace(row.Patch?.Key))
             .ToDictionary(row => row.Patch!.Key!, row => row.AmbiguousTargets, StringComparer.Ordinal);
-        var keys = new HashSet<string>(StringComparer.Ordinal);
+        var identities = new HashSet<string>(StringComparer.Ordinal);
+        var rowGroups = new Dictionary<string, List<CircinusProfilerSidecar>>(StringComparer.Ordinal);
         foreach (var sidecar in sidecars)
         {
             if (string.IsNullOrWhiteSpace(sidecar.MethodIdentity) ||
                 string.IsNullOrWhiteSpace(sidecar.RowKey) ||
-                !keys.Add(sidecar.RowKind + "\0" + sidecar.RowKey))
+                !identities.Add(sidecar.MethodIdentity))
                 throw new PerformanceNormalizationException(
-                    "Circinus profiler sidecar identity is missing or duplicated.");
+                    "Circinus profiler sidecar method identity is missing or duplicated.");
+            var groupKey = sidecar.RowKind + "\0" + sidecar.RowKey;
+            if (!rowGroups.TryGetValue(groupKey, out var group))
+            {
+                group = new List<CircinusProfilerSidecar>();
+                rowGroups.Add(groupKey, group);
+            }
+            group.Add(sidecar);
             if (sidecar.SampleShift is < 0 or > 8 || sidecar.AmbiguousTargetCount < 0 ||
                 sidecar.TotalCalls < 0 || sidecar.TotalTimedCalls < 0 || sidecar.CyclesSeen < 0 ||
                 sidecar.CyclesSeen > env.RecordedCycles)
@@ -559,6 +586,14 @@ internal static class PerformanceSampleNormalizer
                 nativeAmbiguous != (sidecar.AmbiguousTargetCount > 1))
                 throw new PerformanceNormalizationException(
                     $"Circinus patch '{sidecar.RowKey}' native ambiguity disagrees with its live attachment count.");
+        }
+
+        foreach (var group in rowGroups.Values.Where(group => group.Count > 1))
+        {
+            if (group.Any(sidecar => !sidecar.Empty))
+                throw new PerformanceNormalizationException(
+                    "Circinus non-empty profiler sidecar row identity is duplicated for bounded row '" +
+                    group[0].RowKey + "'.");
         }
 
         var nativeMethods = new HashSet<string>(
@@ -684,8 +719,8 @@ internal static class PerformanceSampleNormalizer
             "recorded-profiler-cycle", "gross-attribution");
         Add(metrics, scope, key, "calls", calls, "calls", "native-estimated-calls", "gross-attribution");
         if (calls > 0)
-            Add(metrics, scope, key, "gross-ms-per-estimated-call", total / calls, "ms/call",
-                "native-estimated-calls", "gross-attribution");
+            Add(metrics, scope, key, "gross-ms-per-estimated-call", total / calls,
+                "ms/call", "native-estimated-calls", "gross-attribution");
         Add(metrics, scope, key, "gross-profiler-window-share", total / env.WindowMilliseconds,
             "ratio", "profiler-window-ms", "gross-attribution");
     }
@@ -822,7 +857,8 @@ internal static class PerformanceSampleNormalizer
     [DataContract]
     private sealed class NativePatchReference : NativeReference
     {
-        [DataMember(Name = "canSkip")] public bool? CanSkip { get; set; }
+        // Circinus omits this default-valued field for an ordinary non-skip-capable patch.
+        [DataMember(Name = "canSkip", EmitDefaultValue = false)] public bool CanSkip { get; set; }
     }
 
     [DataContract]

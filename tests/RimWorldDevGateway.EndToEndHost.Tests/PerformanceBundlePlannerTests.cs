@@ -11,6 +11,42 @@ namespace RimWorldDevGateway.EndToEndHost.Tests;
 public sealed class PerformanceBundlePlannerTests
 {
     [Test]
+    public void Selected_stage_excludes_unrelated_product_bundles_and_package_requirements()
+    {
+        var root = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "performance-stage-selected",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var selected = PerformanceDiscoveryValidator.SelectForFilters(
+                PerformanceMetadataDiscoveryTests.ValidCandidatesForPlanning(),
+                new[] { "gateway.alpha-absent" },
+                Array.Empty<string>());
+
+            var plan = PerformanceBundlePlanner.Create(
+                selected,
+                new[] { "brrainz.harmony", "ludeon.rimworld", "astryl.circinus" },
+                root,
+                "1.6");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(plan.OwnerStages.Select(stage => stage.OwnerPackageId),
+                    Is.EqualTo(new[] { "fumblesneeze.rimworlddevgateway" }));
+                Assert.That(plan.Discovery.Groups.SelectMany(group => group.Benchmarks)
+                        .Select(benchmark => benchmark.Id),
+                    Is.EqualTo(new[] { "gateway.alpha-absent" }));
+            });
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
     public void Planner_stops_hostile_candidate_enumeration_at_the_published_ceiling()
     {
         var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "performance-stage-bounded", Guid.NewGuid().ToString("N"));
@@ -359,5 +395,6 @@ public sealed class PerformanceBundlePlannerTests
             source.ThroughputCheckpoints,
             source.IsConcrete,
             source.ImplementsContract,
+            source.ImplementsThroughputCounter,
             source.HasPublicParameterlessConstructor);
 }

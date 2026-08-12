@@ -91,6 +91,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RimWorldDevGateway.Circinus
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RimWorldDevGateway.PerformanceTests", "tests\RimWorldDevGateway.PerformanceTests\RimWorldDevGateway.PerformanceTests.csproj", "{878797F9-F7A9-433D-862E-860CDE2D2C38}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImmersiveChefs.PerformanceTests", "tests\ImmersiveChefs.PerformanceTests\ImmersiveChefs.PerformanceTests.csproj", "{7D965BE6-3FD1-4015-8125-B825D41925B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -256,6 +258,10 @@ Global
 		{878797F9-F7A9-433D-862E-860CDE2D2C38}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{878797F9-F7A9-433D-862E-860CDE2D2C38}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{878797F9-F7A9-433D-862E-860CDE2D2C38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D965BE6-3FD1-4015-8125-B825D41925B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D965BE6-3FD1-4015-8125-B825D41925B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D965BE6-3FD1-4015-8125-B825D41925B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D965BE6-3FD1-4015-8125-B825D41925B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{EBEF05F9-B027-44DA-8D85-CD4C6D3CBFF9} = {414D1254-A15A-4024-85AC-4424837ABA2D}
@@ -298,5 +304,6 @@ Global
 		{35BA454C-285C-48FA-8B42-FFF65DC78A1C} = {37313C62-C81E-442F-ADB3-000142184094}
 		{58562848-AB84-4F24-9513-DFAE26853EF7} = {57C1353C-978D-44F2-995F-A95307B3701E}
 		{878797F9-F7A9-433D-862E-860CDE2D2C38} = {57C1353C-978D-44F2-995F-A95307B3701E}
+		{7D965BE6-3FD1-4015-8125-B825D41925B5} = {57C1353C-978D-44F2-995F-A95307B3701E}
 	EndGlobalSection
 EndGlobal

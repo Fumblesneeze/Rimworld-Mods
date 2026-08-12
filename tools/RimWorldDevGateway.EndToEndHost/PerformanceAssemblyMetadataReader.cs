@@ -15,6 +15,8 @@ public static class PerformanceAssemblyMetadataReader
         "RimWorldDevGateway.PerformanceTesting.PerformanceThroughputCheckpointAttribute";
     private const string ContractTypeName =
         "RimWorldDevGateway.PerformanceTesting.IRimWorldPerformanceTest";
+    private const string ThroughputContractTypeName =
+        "RimWorldDevGateway.PerformanceTesting.IPerformanceThroughputCounter";
     private const string ContractAssemblyName = "RimWorldDevGateway.PerformanceTesting";
 
     public static PerformanceAssemblyMetadata Read(string assemblyPath)
@@ -164,7 +166,18 @@ public static class PerformanceAssemblyMetadataReader
             selectors.OrderBy(item => item.Kind).ThenBy(item => item.Value, StringComparer.Ordinal),
             checkpoints.OrderBy(item => item.Id, StringComparer.Ordinal),
             isConcrete,
-            ImplementsContract(reader, typeHandle, currentAssemblyName, new HashSet<TypeDefinitionHandle>()),
+            ImplementsInterface(
+                reader,
+                typeHandle,
+                currentAssemblyName,
+                ContractTypeName,
+                new HashSet<TypeDefinitionHandle>()),
+            ImplementsInterface(
+                reader,
+                typeHandle,
+                currentAssemblyName,
+                ThroughputContractTypeName,
+                new HashSet<TypeDefinitionHandle>()),
             HasPublicParameterlessConstructor(reader, definition));
     }
 
@@ -241,10 +254,11 @@ public static class PerformanceAssemblyMetadataReader
         return arguments.Select(String).ToArray();
     }
 
-    private static bool ImplementsContract(
+    private static bool ImplementsInterface(
         MetadataReader reader,
         TypeDefinitionHandle typeHandle,
         string currentAssemblyName,
+        string contractTypeName,
         ISet<TypeDefinitionHandle> visited)
     {
         if (!visited.Add(typeHandle))
@@ -257,7 +271,7 @@ public static class PerformanceAssemblyMetadataReader
         {
             var implementation = reader.GetInterfaceImplementation(implementationHandle);
             var identity = GetTypeIdentity(reader, implementation.Interface, currentAssemblyName);
-            if (StringComparer.Ordinal.Equals(identity.TypeName, ContractTypeName) &&
+            if (StringComparer.Ordinal.Equals(identity.TypeName, contractTypeName) &&
                 StringComparer.Ordinal.Equals(identity.AssemblyName, ContractAssemblyName))
             {
                 return true;
@@ -265,10 +279,11 @@ public static class PerformanceAssemblyMetadataReader
         }
 
         return definition.BaseType.Kind == HandleKind.TypeDefinition &&
-               ImplementsContract(
+               ImplementsInterface(
                    reader,
                    (TypeDefinitionHandle)definition.BaseType,
                    currentAssemblyName,
+                   contractTypeName,
                    visited);
     }
 

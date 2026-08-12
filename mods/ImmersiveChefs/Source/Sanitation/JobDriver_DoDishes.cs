@@ -48,7 +48,7 @@ public sealed class JobDriver_DoDishes : JobDriver
             {
                 if (!dishwasher.TryAcceptFrom(pawn))
                 {
-                    pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
+                    TryDropCarriedThingIfPresent(pawn);
                 }
             });
             yield break;
@@ -84,8 +84,21 @@ public sealed class JobDriver_DoDishes : JobDriver
                 ? WashProvenance.Safe
                 : WashProvenance.WildWater;
             (pawn.carryTracker.CarriedThing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean(provenance);
-            pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
+            TryDropCarriedThingIfPresent(pawn);
         });
+    }
+
+    internal static bool TryDropCarriedThingIfPresent(Pawn pawn)
+    {
+        if (pawn.carryTracker.CarriedThing is null)
+        {
+            return false;
+        }
+
+        return pawn.carryTracker.TryDropCarriedThing(
+            pawn.Position,
+            ThingPlaceMode.Near,
+            out _);
     }
 
     public override void ExposeData()

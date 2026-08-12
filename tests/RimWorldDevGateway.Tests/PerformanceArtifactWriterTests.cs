@@ -13,7 +13,10 @@ public sealed class PerformanceArtifactWriterTests
     public void Writer_keeps_transaction_sibling_short_enough_for_a_long_isolated_root()
     {
         var prefix = Path.Combine(Path.GetTempPath(), "rdg-performance-long-root");
-        var padding = new string('a', 180 - prefix.Length - 1);
+        // Matches the deeply nested isolated SavedData/DevGateway/Sessions root used by
+        // the real performance launcher closely enough to cross legacy MAX_PATH when a
+        // full GUID transaction sibling is appended.
+        var padding = new string('a', 198 - prefix.Length - 1);
         var root = Path.Combine(prefix, padding);
         Directory.CreateDirectory(root);
         try
@@ -56,6 +59,7 @@ public sealed class PerformanceArtifactWriterTests
                     Is.EqualTo(capture.PersistedJson));
                 Assert.That(Directory.EnumerateDirectories(root), Has.Exactly(1).Items);
                 Assert.That(Directory.EnumerateDirectories(root, "*.tmp.*"), Is.Empty);
+                Assert.That(Directory.EnumerateDirectories(root, "t-*"), Is.Empty);
             });
             using var stream = File.OpenRead(artifacts["performance.normalized"]);
             var roundTrip = (PerformanceNormalizedSample)new DataContractJsonSerializer(
@@ -107,6 +111,7 @@ public sealed class PerformanceArtifactWriterTests
                 Assert.That(Directory.EnumerateFiles(root, "performance.normalized.json", SearchOption.AllDirectories), Is.Empty);
                 Assert.That(Directory.EnumerateFiles(root, "circinus.*.json", SearchOption.AllDirectories), Is.Empty);
                 Assert.That(Directory.EnumerateDirectories(root, ".tmp-*", SearchOption.TopDirectoryOnly), Is.Empty);
+                Assert.That(Directory.EnumerateDirectories(root, "t-*", SearchOption.TopDirectoryOnly), Is.Empty);
             });
             using var stream = File.OpenRead(artifacts["performance.diagnostic.raw"]);
             var roundTrip = (DpaDiagnosticCapture)new DataContractJsonSerializer(

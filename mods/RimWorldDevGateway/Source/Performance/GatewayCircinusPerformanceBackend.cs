@@ -243,11 +243,14 @@ internal static class PerformanceArtifactWriter
         if (normalized is null) throw new ArgumentNullException(nameof(normalized));
         var root = Path.GetFullPath(artifactRoot);
         Directory.CreateDirectory(root);
-        var name = "performance-" + HashArtifactIdentity(benchmarkId).Substring(0, 20);
+        // Isolated SavedData session roots are already deep. Keep both the published and
+        // transactional siblings below legacy Mono/Windows MAX_PATH rather than relying
+        // on host long-path policy.
+        var name = "p-" + HashArtifactIdentity(benchmarkId).Substring(0, 12);
         var destination = Path.Combine(root, name);
         if (Directory.Exists(destination))
             throw new IOException("The exact performance artifact directory already exists.");
-        var temporary = Path.Combine(root, ".tmp-" + Guid.NewGuid().ToString("N"));
+        var temporary = Path.Combine(root, "t-" + Guid.NewGuid().ToString("N").Substring(0, 12));
         try
         {
             Directory.CreateDirectory(temporary);

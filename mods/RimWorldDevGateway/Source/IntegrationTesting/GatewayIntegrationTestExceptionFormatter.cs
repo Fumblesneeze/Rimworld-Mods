@@ -185,11 +185,13 @@ internal static class GatewayIntegrationTestExceptionFormatter
                type == typeof(EndToEndAssertionException) ||
                type == typeof(EndToEndContractException) ||
                type == typeof(GatewayGameControlException) ||
+               type == typeof(Performance.PerformanceNormalizationException) ||
                type == typeof(InvalidOperationException) ||
                type == typeof(ArgumentException) ||
                type == typeof(ArgumentNullException) ||
                type == typeof(ArgumentOutOfRangeException) ||
                type == typeof(IOException) ||
+               type == typeof(DirectoryNotFoundException) ||
                type == typeof(FileNotFoundException) ||
                type == typeof(FileLoadException) ||
                type == typeof(BadImageFormatException) ||

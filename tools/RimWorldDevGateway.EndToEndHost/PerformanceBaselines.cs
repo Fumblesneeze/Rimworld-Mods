@@ -33,6 +33,7 @@ public sealed class PerformanceCompatibilityIdentity
     public string ProfilingPolicyIdentity { get; set; } = string.Empty;
     public string SamplingPolicyIdentity { get; set; } = string.Empty;
     public string HardwareRuntimeFingerprint { get; set; } = string.Empty;
+    public string FixtureManifestSha256 { get; set; } = string.Empty;
     public int DeterministicSeed { get; set; }
     public int WarmUpTicks { get; set; }
     public int SampleTicks { get; set; }
@@ -681,6 +682,7 @@ public static class PerformanceBaselineComparer
         Difference(result, "profilingPolicyIdentity", baseline.ProfilingPolicyIdentity, current.ProfilingPolicyIdentity);
         Difference(result, "samplingPolicyIdentity", baseline.SamplingPolicyIdentity, current.SamplingPolicyIdentity);
         Difference(result, "hardwareRuntimeFingerprint", baseline.HardwareRuntimeFingerprint, current.HardwareRuntimeFingerprint);
+        Difference(result, "fixtureManifestSha256", baseline.FixtureManifestSha256, current.FixtureManifestSha256);
         if (baseline.DeterministicSeed != current.DeterministicSeed) result.Add("deterministicSeed");
         if (baseline.WarmUpTicks != current.WarmUpTicks) result.Add("warmUpTicks");
         if (baseline.SampleTicks != current.SampleTicks) result.Add("sampleTicks");
@@ -720,7 +722,8 @@ public static class PerformanceBaselineComparer
                          identity.GameVersion, identity.ProductAssemblyIdentity, identity.TestAssemblyIdentity,
                          identity.CircinusAssemblyIdentity, identity.CircinusSchemaIdentity,
                          identity.ProfilingPolicyIdentity, identity.SamplingPolicyIdentity,
-                         identity.HardwareRuntimeFingerprint, identity.AggregationPolicyIdentity
+                         identity.HardwareRuntimeFingerprint, identity.FixtureManifestSha256,
+                         identity.AggregationPolicyIdentity
                      })
                 if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException($"The {owner} contains an empty compatibility identity.");
             if (identity.ActivePackageIds.Length == 0 || identity.ActivePackageIds.Any(string.IsNullOrWhiteSpace))

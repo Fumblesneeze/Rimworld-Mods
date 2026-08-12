@@ -194,13 +194,13 @@ public static class EndToEndHostCli
             "Build marked performance fixtures and print fresh-process benchmark/repetition plans without staging or launching.");
         common.AddTo(command);
         command.Options.Add(artifactRoot);
-        command.Options.Add(benchmarkIds);
-        command.Options.Add(groupIds);
         command.Options.Add(warmUpTicks);
         command.Options.Add(sampleTicks);
         command.Options.Add(repetitions);
         command.Options.Add(diagnosticProfiler);
         command.Options.Add(diagnosticSelector);
+        command.Options.Add(benchmarkIds);
+        command.Options.Add(groupIds);
         command.SetAction(parseResult => Execute(parseResult, () =>
         {
             var input = common.Read(parseResult);
@@ -209,6 +209,13 @@ public static class EndToEndHostCli
                 projects,
                 input.Configuration,
                 TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
+            var requestedBenchmarks = parseResult.GetValue(benchmarkIds) ?? Array.Empty<string>();
+            var requestedGroups = parseResult.GetValue(groupIds) ?? Array.Empty<string>();
+            candidates = PerformanceDiscoveryValidator.SelectForFilters(
+                    candidates,
+                    requestedBenchmarks,
+                    requestedGroups)
+                .ToArray();
             var profiler = ReadProfiler(parseResult.GetValue(diagnosticProfiler));
             var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(
                 candidates,
@@ -216,8 +223,8 @@ public static class EndToEndHostCli
                 canonicalCircinusIsDeclarationOnly: profiler == PerformanceProfilerMode.DpaDiagnostic);
             var plan = PerformanceRunPlanBuilder.Create(
                 discovery,
-                parseResult.GetValue(benchmarkIds) ?? Array.Empty<string>(),
-                parseResult.GetValue(groupIds) ?? Array.Empty<string>(),
+                requestedBenchmarks,
+                requestedGroups,
                 parseResult.GetValue(warmUpTicks),
                 parseResult.GetValue(sampleTicks),
                 parseResult.GetValue(repetitions),
@@ -246,6 +253,22 @@ public static class EndToEndHostCli
         {
             Description = "Exact outer method selector required by the DPA internal-call diagnostic."
         };
+        var benchmarkIds = new Option<string[]>("--benchmark-id")
+        {
+            Description = "Exact benchmark ID filter for staged bundles.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var groupIds = new Option<string[]>("--group-id")
+        {
+            Description = "Exact performance group ID filter for staged bundles.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var projectPaths = new Option<string[]>("--project-path")
+        {
+            Description = "Exact performance fixture project allowlist selected by the prior run plan.",
+            AllowMultipleArgumentsPerToken = true,
+            Required = true
+        };
         var command = new Command(
             "performance-stage",
             "Build marked performance fixtures and atomically publish their exact manifests for one run.");
@@ -253,14 +276,24 @@ public static class EndToEndHostCli
         command.Options.Add(leaseFile);
         command.Options.Add(diagnosticProfiler);
         command.Options.Add(diagnosticSelector);
+        command.Options.Add(benchmarkIds);
+        command.Options.Add(groupIds);
+        command.Options.Add(projectPaths);
         command.SetAction(parseResult => Execute(parseResult, () =>
         {
             var input = common.Read(parseResult);
-            var projects = PerformanceProjectDiscovery.Discover(input.RepositoryRoot);
+            var projects = PerformanceProjectDiscovery.SelectExactProjects(
+                PerformanceProjectDiscovery.Discover(input.RepositoryRoot),
+                parseResult.GetValue(projectPaths) ?? Array.Empty<string>());
             var candidates = new EndToEndProjectBuilder().BuildPerformance(
                 projects,
                 input.Configuration,
                 TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
+            candidates = PerformanceDiscoveryValidator.SelectForFilters(
+                    candidates,
+                    parseResult.GetValue(benchmarkIds) ?? Array.Empty<string>(),
+                    parseResult.GetValue(groupIds) ?? Array.Empty<string>())
+                .ToArray();
             var plan = PerformanceBundlePlanner.Create(
                 candidates,
                 input.PackageIds,

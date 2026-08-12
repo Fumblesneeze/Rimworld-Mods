@@ -89,6 +89,33 @@ public sealed class PerformanceProjectHostTests
         });
     }
 
+    [Test]
+    public void Exact_stage_project_selection_excludes_unselected_projects_before_any_build()
+    {
+        var selected = Record();
+        var broken = new PerformanceProjectRecord(
+            Path.Combine(Path.GetTempPath(), "unselected-broken.csproj"),
+            "optional.broken", "Optional.Broken.PerformanceTests", "net480");
+        var projects = PerformanceProjectDiscovery.SelectExactProjects(
+            new[] { broken, selected },
+            new[] { selected.ProjectPath });
+        var runner = new RecordingCommandRunner(
+            new EndToEndBuildCommandResult(0, "build ok", string.Empty),
+            new EndToEndBuildCommandResult(0, PropertyOutput(), string.Empty));
+
+        var candidates = new EndToEndProjectBuilder(runner, "dotnet-test").BuildPerformance(
+            projects, Configuration, TimeSpan.FromSeconds(30));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(candidates, Has.Count.EqualTo(1));
+            Assert.That(candidates[0].ProjectPath, Is.EqualTo(selected.ProjectPath));
+            Assert.That(runner.Invocations, Has.Count.EqualTo(2));
+            Assert.That(runner.Invocations.SelectMany(item => item.Arguments),
+                Has.None.EqualTo(broken.ProjectPath));
+        });
+    }
+
     private static PerformanceProjectRecord Record() => new(
         ProjectPath(), "alpha.mod", "PerformanceHost.ValidFixtures", "net480");
 

@@ -57,7 +57,7 @@ public sealed class PresentDisarmedBenchmark : NoOpBenchmark { }
 [PerformanceThroughputCheckpoint("colonists-active", 1)]
 public sealed class AbsentBenchmark : NoOpBenchmark { }
 
-public abstract class NoOpBenchmark : IRimWorldPerformanceTest
+public abstract class NoOpBenchmark : IRimWorldPerformanceTest, IPerformanceThroughputCounter
 {
     public void Arrange(IEndToEndContext context) { }
 
@@ -65,4 +65,6 @@ public abstract class NoOpBenchmark : IRimWorldPerformanceTest
     {
         yield break;
     }
+
+    public long Read(string id) => 1;
 }

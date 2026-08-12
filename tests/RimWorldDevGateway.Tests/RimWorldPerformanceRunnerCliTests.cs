@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -218,6 +219,90 @@ public sealed class RimWorldPerformanceRunnerCliTests
         });
     }
 
+    [Test]
+    public void Runtime_snapshot_retains_distinct_shared_empty_sidecars_but_rejects_any_nonempty_duplicate()
+    {
+        var expectedHash = Sha256("Product.PatchA\nProduct.PatchB");
+        var source =
+            "$tokens=$null; $errors=$null; " +
+            "$ast=[System.Management.Automation.Language.Parser]::ParseFile(" + Literal(RunnerPath()) + ",[ref]$tokens,[ref]$errors); " +
+            "if($errors.Count -ne 0){throw 'parse failed'}; " +
+            "$wanted=@('Get-PerformanceTextSha256','Resolve-PerformanceMetricSidecar'); " +
+            "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
+            "$a=[pscustomobject]@{methodIdentity='Product.PatchA';empty=$true;noRowReason='empty-or-uninvoked'}; " +
+            "$b=[pscustomobject]@{methodIdentity='Product.PatchB';empty=$true;noRowReason='empty-or-uninvoked'}; " +
+            "$resolved=Resolve-PerformanceMetricSidecar -Sidecars @($b,$a) -MetricKey 'shared'; " +
+            "Write-Output $resolved.ExactMethod; " +
+            "$b.empty=$false; try { Resolve-PerformanceMetricSidecar -Sidecars @($a,$b) -MetricKey 'shared' | Out-Null; exit 71 } catch { Write-Output $_.Exception.Message }";
+
+        var run = InvokeScript(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput, Does.Contain("empty-sidecars-sha256:" + expectedHash));
+            Assert.That(run.StandardOutput, Does.Contain("including a non-empty profiler"));
+        });
+    }
+
+    [Test]
+    public void Runtime_snapshot_rejects_actual_fixture_manifest_drift_across_repetitions_lenses_and_absent_control()
+    {
+        var source =
+            "$tokens=$null; $errors=$null; " +
+            "$ast=[System.Management.Automation.Language.Parser]::ParseFile(" + Literal(RunnerPath()) + ",[ref]$tokens,[ref]$errors); " +
+            "if($errors.Count -ne 0){throw 'parse failed'}; " +
+            "$wanted=@('Assert-PerformanceFixtureManifestCompatibility'); " +
+            "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
+            "$same='{\"pawn\":\"A\",\"layout\":\"L\"}'; $drift='{\"pawn\":\"B\",\"layout\":\"L\"}'; " +
+            "$records=@(" +
+            "[pscustomobject]@{BenchmarkId='present.instrumented';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same}," +
+            "[pscustomobject]@{BenchmarkId='present.instrumented';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same}," +
+            "[pscustomobject]@{BenchmarkId='present.armed';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same}," +
+            "[pscustomobject]@{BenchmarkId='present.disarmed';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same}," +
+            "[pscustomobject]@{BenchmarkId='absent';ComparisonId='absent';ProductAbsentControlId='';ManifestJson=$same}); " +
+            "Assert-PerformanceFixtureManifestCompatibility -Records $records; " +
+            "$records[1].ManifestJson=$drift; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 71 } catch { Write-Output ('repetition|' + $_.Exception.Message) }; " +
+            "$records[1].ManifestJson=$same; $records[2].ManifestJson=$drift; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 72 } catch { Write-Output ('lens|' + $_.Exception.Message) }; " +
+            "$records[2].ManifestJson=$same; $records[4].ManifestJson=$drift; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 73 } catch { Write-Output ('control|' + $_.Exception.Message) }";
+
+        var run = InvokeScript(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput, Does.Contain("repetition|").And.Contain("repetition manifest drift"));
+            Assert.That(run.StandardOutput, Does.Contain("lens|").And.Contain("comparison manifest drift"));
+            Assert.That(run.StandardOutput, Does.Contain("control|").And.Contain("product-absent manifest drift"));
+        });
+    }
+
+    [Test]
+    public void Runtime_snapshot_rejects_nonmanifest_compatibility_drift_and_weights_only_observed_calls()
+    {
+        var source =
+            "$tokens=$null; $errors=$null; " +
+            "$ast=[System.Management.Automation.Language.Parser]::ParseFile(" + Literal(RunnerPath()) + ",[ref]$tokens,[ref]$errors); " +
+            "if($errors.Count -ne 0){throw 'parse failed'}; " +
+            "$wanted=@('Assert-PerformanceRepetitionCompatibility','Get-PerformancePerCallAggregate'); " +
+            "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
+            "$plan=[pscustomobject]@{processes=@([pscustomobject]@{benchmarkId='b'},[pscustomobject]@{benchmarkId='b'},[pscustomobject]@{benchmarkId='b'})}; " +
+            "$measure={param($calls,$value,$context) $rows=@([pscustomobject]@{Scope='method';Selector='m';MetricName='calls';Value=$calls;Calls=$calls;TimedCalls=$calls;SamplingContextIdentity=$context}); if($calls -gt 0){$rows+= [pscustomobject]@{Scope='method';Selector='m';MetricName='gross-ms-per-estimated-call';Value=$value;Calls=$calls;TimedCalls=$calls;SamplingContextIdentity=$context}}; return $rows}; " +
+            "$members=@([pscustomobject]@{IdentityJson='same';Compatibility=[pscustomobject]@{BenchmarkId='b'};Measurements=@(&$measure 0 0 'c0')},[pscustomobject]@{IdentityJson='same';Compatibility=[pscustomobject]@{BenchmarkId='b'};Measurements=@(&$measure 2 10 'c2')},[pscustomobject]@{IdentityJson='same';Compatibility=[pscustomobject]@{BenchmarkId='b'};Measurements=@(&$measure 4 20 'c4')}); " +
+            "Assert-PerformanceRepetitionCompatibility -Plan $plan -Observations $members; " +
+            "$weighted=Get-PerformancePerCallAggregate -Members $members -Scope 'method' -Selector 'm' -BenchmarkId 'b'; Write-Output ('weighted|' + $weighted.HasObservation + '|' + $weighted.Value + '|' + $weighted.ContextRows.Count + '|' + (($weighted.ContextRows|Measure-Object -Property Calls -Average).Average) + '|' + (($weighted.ContextRows.SamplingContextIdentity) -join ',')); " +
+            "$members[2].IdentityJson='drift'; try { Assert-PerformanceRepetitionCompatibility -Plan $plan -Observations $members; exit 71 } catch { Write-Output ('drift|' + $_.Exception.Message) }";
+
+        var run = InvokeScript(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput, Does.Contain("weighted|True|16.666").And.Contain("|3|2|c0,c2,c4"));
+            Assert.That(run.StandardOutput, Does.Contain("drift|Benchmark 'b' has repetition compatibility drift."));
+        });
+    }
+
     private static InvocationResult Invoke(params string[] arguments)
     {
         var temporaryRoot = Path.Combine(Path.GetTempPath(), "RimWorldPerformanceRunnerCliTests", Guid.NewGuid().ToString("N"));
@@ -246,6 +331,42 @@ public sealed class RimWorldPerformanceRunnerCliTests
             return new InvocationResult(process.ExitCode, output.Result, error.Result);
         }
         finally { Directory.Delete(temporaryRoot, recursive: true); }
+    }
+
+    private static InvocationResult InvokeScript(string source)
+    {
+        var temporaryRoot = Path.Combine(
+            Path.GetTempPath(), "RimWorldPerformanceRunnerCliTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryRoot);
+        try
+        {
+            var path = Path.Combine(temporaryRoot, "probe.ps1");
+            File.WriteAllText(path, "$ErrorActionPreference='Stop'" + Environment.NewLine + source,
+                new UTF8Encoding(false));
+            var info = new ProcessStartInfo
+            {
+                FileName = "pwsh.exe",
+                Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{path}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            using var process = Process.Start(info) ?? throw new InvalidOperationException("Could not start pwsh.");
+            var output = process.StandardOutput.ReadToEndAsync();
+            var error = process.StandardError.ReadToEndAsync();
+            if (!process.WaitForExit(30000)) { process.Kill(); throw new TimeoutException("Performance script probe timed out."); }
+            Task.WaitAll(output, error);
+            return new InvocationResult(process.ExitCode, output.Result, error.Result);
+        }
+        finally { Directory.Delete(temporaryRoot, recursive: true); }
+    }
+
+    private static string Sha256(string value)
+    {
+        using var algorithm = SHA256.Create();
+        return string.Concat(algorithm.ComputeHash(Encoding.UTF8.GetBytes(value))
+            .Select(item => item.ToString("x2")));
     }
 
     private static string Argument(string value) => value.StartsWith("-", StringComparison.Ordinal) ? value : Literal(value);

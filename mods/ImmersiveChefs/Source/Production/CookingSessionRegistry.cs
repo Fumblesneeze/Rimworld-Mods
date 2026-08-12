@@ -399,28 +399,7 @@ internal sealed class CookingSession
         var wasInPawnInventory = ReferenceEquals(
             thing.holdingOwner,
             Pawn.inventory?.innerContainer);
-        var placed = false;
-        if (thing.holdingOwner is { } owner)
-        {
-            placed = owner.TryDrop(thing, position, map, ThingPlaceMode.Near, out _);
-        }
-        else if (thing.Spawned)
-        {
-            if (thing.Position != position)
-            {
-                thing.DeSpawn(DestroyMode.Vanish);
-                placed = GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near);
-            }
-            else
-            {
-                placed = true;
-            }
-        }
-        else
-        {
-            placed = GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near);
-        }
-
+        var placed = TryReleaseExactThing(thing, position, map);
         if (placed)
         {
             (thing as ThingWithComps)?.GetComp<CompSanitation>()?.ClearSessionTransfer();
@@ -431,6 +410,28 @@ internal sealed class CookingSession
         {
             GameComponent_ImmersiveChefsRecovery.ScheduleWareRecovery(Pawn, thing);
         }
+    }
+
+    internal static bool TryReleaseExactThing(Thing thing, IntVec3 position, Map map)
+    {
+        var placed = false;
+        // A reservation may be released before this specific ware portion is picked up.
+        // Spawned ware is already safely on the map and must not be fed back through a
+        // ThingOwner drop path, which would attempt to spawn the same Thing twice.
+        if (thing.Spawned)
+        {
+            placed = true;
+        }
+        else if (thing.holdingOwner is { } owner)
+        {
+            placed = owner.TryDrop(thing, position, map, ThingPlaceMode.Near, out _);
+        }
+        else
+        {
+            placed = GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near);
+        }
+
+        return placed;
     }
 }
 
@@ -636,6 +637,18 @@ internal static class CookingSessionRegistry
         }
 
         return 0f;
+    }
+
+    internal static bool TryGetAssistantContribution(Pawn pawn, out float totalSpeedWork)
+    {
+        totalSpeedWork = 0f;
+        if (pawn.CurJob is not { } job || !Sessions.TryGetValue(job, out var session))
+        {
+            return false;
+        }
+
+        totalSpeedWork = session.AssistantContribution.TotalSpeedWork;
+        return totalSpeedWork > 0f;
     }
 
     internal static bool TryGetActiveWorkProp(

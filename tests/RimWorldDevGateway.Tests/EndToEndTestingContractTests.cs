@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using RimWorldDevGateway.EndToEndTesting;
 
@@ -163,6 +164,40 @@ public sealed class EndToEndTestingContractTests
             Assert.That(accept.Action, Is.EqualTo(EndToEndTradeDialogAction.Accept));
             Assert.That(accept.ThingRuntimeId, Is.Null);
         });
+    }
+
+    [Test]
+    public void Checkpoint_artifacts_enforce_exact_count_field_and_aggregate_utf8_boundaries()
+    {
+        var exactCount = Enumerable.Range(0, CheckpointStep.MaximumArtifactFields)
+            .ToDictionary(index => "k" + index, _ => "v");
+        Assert.That(new CheckpointStep("exact-count", _ => exactCount).Capture(null!),
+            Has.Count.EqualTo(CheckpointStep.MaximumArtifactFields));
+        var overCount = Enumerable.Range(0, CheckpointStep.MaximumArtifactFields + 1)
+            .ToDictionary(index => "k" + index, _ => "v");
+        Assert.That(() => new CheckpointStep("over-count", _ => overCount).Capture(null!),
+            Throws.InvalidOperationException.With.Message.Contains("at most"));
+
+        var exactKey = new string('k', CheckpointStep.MaximumArtifactKeyUtf8Bytes);
+        Assert.That(new CheckpointStep("exact-key", _ => new Dictionary<string, string>
+            { [exactKey] = "v" }).Capture(null!), Has.Count.EqualTo(1));
+        var overKey = exactKey + "k";
+        Assert.That(() => new CheckpointStep("over-key", _ => new Dictionary<string, string>
+            { [overKey] = "v" }).Capture(null!),
+            Throws.InvalidOperationException.With.Message.Contains("key exceeds"));
+
+        var exactValue = new string('v', CheckpointStep.MaximumArtifactValueUtf8Bytes);
+        Assert.That(new CheckpointStep("exact-value", _ => new Dictionary<string, string>
+            { ["k"] = exactValue }).Capture(null!), Has.Count.EqualTo(1));
+        Assert.That(() => new CheckpointStep("over-value", _ => new Dictionary<string, string>
+            { ["k"] = exactValue + "v" }).Capture(null!),
+            Throws.InvalidOperationException.With.Message.Contains("value exceeds"));
+
+        var aggregate = Enumerable.Range(0, 17).ToDictionary(
+            index => "aggregate-" + index,
+            _ => exactValue);
+        Assert.That(() => new CheckpointStep("over-aggregate", _ => aggregate).Capture(null!),
+            Throws.InvalidOperationException.With.Message.Contains("aggregate"));
     }
 
     [TestCase(0, 2)]

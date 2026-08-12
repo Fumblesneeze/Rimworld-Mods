@@ -192,6 +192,8 @@ function Invoke-PerformanceHostOperation {
         [Parameter(Mandatory)][string]$RepositoryRoot,
         [Parameter(Mandatory)][string]$ModsRoot,
         [Parameter(Mandatory)][string[]]$PackageIds,
+        [string[]]$SelectedBenchmarkIds = @(),
+        [string[]]$SelectedProjectPaths = @(),
         [Parameter(Mandatory)][string]$LeaseFile,
         [switch]$DpaDiagnostic,
         [string]$DiagnosticSelector
@@ -213,6 +215,14 @@ function Invoke-PerformanceHostOperation {
                 $packageFile, $PackageIds, [System.Text.UTF8Encoding]::new($false))
             $arguments.Add('--package-id-file')
             $arguments.Add($packageFile)
+            foreach ($benchmarkId in $SelectedBenchmarkIds) {
+                $arguments.Add('--benchmark-id')
+                $arguments.Add($benchmarkId)
+            }
+            foreach ($projectPath in $SelectedProjectPaths) {
+                $arguments.Add('--project-path')
+                $arguments.Add($projectPath)
+            }
             if ($DpaDiagnostic) {
                 $arguments.Add('--diagnostic-profiler')
                 $arguments.Add('dpa')
@@ -380,6 +390,211 @@ function Get-DeployedProductAssemblyIdentity {
     return "$assemblyName|sha256:$([string]$file[0].Sha256)"
 }
 
+function Get-PerformanceTextSha256 {
+    param([Parameter(Mandatory)][string]$Value)
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Value)
+        return -join @($algorithm.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') })
+    }
+    finally { $algorithm.Dispose() }
+}
+
+function Resolve-PerformanceMetricSidecar {
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Sidecars,
+        [Parameter(Mandatory)][string]$MetricKey
+    )
+    $resolved = @($Sidecars)
+    if ($resolved.Count -eq 0) {
+        return [pscustomobject]@{ Sidecar = $null; ExactMethod = '' }
+    }
+    if ($resolved.Count -eq 1) {
+        return [pscustomobject]@{
+            Sidecar = $resolved[0]
+            ExactMethod = [string]$resolved[0].methodIdentity
+        }
+    }
+
+    $invalid = @($resolved | Where-Object {
+        -not [bool]$_.empty -or [string]$_.noRowReason -cne 'empty-or-uninvoked'
+    })
+    if ($invalid.Count -gt 0) {
+        throw "Metric '$MetricKey' resolved multiple Circinus sidecars including a non-empty profiler."
+    }
+    $identities = @($resolved | ForEach-Object { [string]$_.methodIdentity } | Sort-Object -CaseSensitive)
+    if (@($identities | Select-Object -Unique).Count -ne $identities.Count -or
+        @($identities | Where-Object { [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+        throw "Metric '$MetricKey' resolved duplicate or missing empty-profiler identities."
+    }
+    $identityHash = Get-PerformanceTextSha256 -Value ($identities -join "`n")
+    return [pscustomobject]@{
+        Sidecar = @($resolved | Sort-Object -Property methodIdentity -CaseSensitive)[0]
+        ExactMethod = "empty-sidecars-sha256:$identityHash"
+    }
+}
+
+function Get-PerformanceFixtureManifestIdentity {
+    param(
+        [Parameter(Mandatory)][object]$SmokeResult,
+        [Parameter(Mandatory)][string]$BenchmarkId
+    )
+    $responsePath = [string]$SmokeResult.EndToEndTestsResponse
+    if ([string]::IsNullOrWhiteSpace($responsePath) -or
+        -not (Test-Path -LiteralPath $responsePath -PathType Leaf)) {
+        throw "Benchmark '$BenchmarkId' has no retained end-to-end response for its fixture manifest."
+    }
+    $response = Get-Content -LiteralPath $responsePath -Raw | ConvertFrom-Json -ErrorAction Stop
+    $executions = @($response.result.Execution.Results | Where-Object {
+        [string]$_.Id -ceq $BenchmarkId -and [string]$_.Status -ceq 'passed'
+    })
+    if ($executions.Count -ne 1) {
+        throw "Benchmark '$BenchmarkId' resolved $($executions.Count) passed end-to-end executions."
+    }
+    $manifestSteps = @($executions[0].Steps | Where-Object {
+        [string]$_.Kind -ceq 'observe' -and
+        [string]$_.Status -ceq 'passed' -and
+        ([string]$_.Name).EndsWith('-manifest', [StringComparison]::Ordinal)
+    })
+    if ($manifestSteps.Count -ne 1) {
+        throw "Benchmark '$BenchmarkId' resolved $($manifestSteps.Count) passed fixture-manifest observations."
+    }
+    $properties = @($manifestSteps[0].Artifacts.PSObject.Properties)
+    if ($properties.Count -eq 0) {
+        throw "Benchmark '$BenchmarkId' emitted an empty fixture manifest."
+    }
+    $maximumFields = 256
+    $maximumKeyBytes = 1024
+    $maximumValueBytes = 1024 * 1024
+    $maximumAggregateBytes = 16 * 1024 * 1024
+    if ($properties.Count -gt $maximumFields) {
+        throw "Benchmark '$BenchmarkId' fixture manifest exceeds $maximumFields fields."
+    }
+    $properties = @($properties | Sort-Object -Property Name -CaseSensitive)
+    $canonical = [ordered]@{}
+    $aggregateBytes = 0L
+    foreach ($property in $properties) {
+        $key = [string]$property.Name
+        $value = [string]$property.Value
+        if ([string]::IsNullOrWhiteSpace($key) -or [string]::IsNullOrWhiteSpace($value)) {
+            throw "Benchmark '$BenchmarkId' emitted a blank fixture-manifest field."
+        }
+        $keyBytes = [System.Text.Encoding]::UTF8.GetByteCount($key)
+        $valueBytes = [System.Text.Encoding]::UTF8.GetByteCount($value)
+        if ($keyBytes -gt $maximumKeyBytes -or $valueBytes -gt $maximumValueBytes) {
+            throw "Benchmark '$BenchmarkId' fixture manifest exceeds its UTF-8 field budget."
+        }
+        $aggregateBytes += $keyBytes + $valueBytes
+        if ($aggregateBytes -gt $maximumAggregateBytes) {
+            throw "Benchmark '$BenchmarkId' fixture manifest exceeds its aggregate UTF-8 budget."
+        }
+        $canonical[$key] = $value
+    }
+    $json = [pscustomobject]$canonical | ConvertTo-Json -Depth 4 -Compress
+    return [pscustomobject]@{
+        StepName = [string]$manifestSteps[0].Name
+        Json = $json
+        Sha256 = Get-PerformanceTextSha256 -Value $json
+    }
+}
+
+function Assert-PerformanceFixtureManifestCompatibility {
+    param([Parameter(Mandatory)][object[]]$Records)
+    $resolved = @($Records)
+    foreach ($group in @($resolved | Group-Object BenchmarkId)) {
+        $manifests = @($group.Group | ForEach-Object { [string]$_.ManifestJson } |
+            Sort-Object -Unique -CaseSensitive)
+        if ($manifests.Count -ne 1) {
+            throw "Benchmark '$([string]$group.Name)' has repetition manifest drift."
+        }
+    }
+    foreach ($group in @($resolved | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_.ComparisonId)
+    } | Group-Object ComparisonId)) {
+        $manifests = @($group.Group | ForEach-Object { [string]$_.ManifestJson } |
+            Sort-Object -Unique -CaseSensitive)
+        if ($manifests.Count -ne 1) {
+            throw "Performance comparison '$([string]$group.Name)' has comparison manifest drift."
+        }
+    }
+    foreach ($product in @($resolved | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_.ProductAbsentControlId)
+    })) {
+        $controlId = [string]$product.ProductAbsentControlId
+        $controls = @($resolved | Where-Object { [string]$_.BenchmarkId -ceq $controlId })
+        if ($controls.Count -eq 0) {
+            throw "Benchmark '$([string]$product.BenchmarkId)' has no runtime product-absent manifest '$controlId'."
+        }
+        $manifests = @(@($product) + $controls | ForEach-Object {
+            [string]$_.ManifestJson
+        } | Sort-Object -Unique -CaseSensitive)
+        if ($manifests.Count -ne 1) {
+            throw "Benchmark '$([string]$product.BenchmarkId)' has product-absent manifest drift from '$controlId'."
+        }
+    }
+}
+
+function Assert-PerformanceRepetitionCompatibility {
+    param(
+        [Parameter(Mandatory)][object]$Plan,
+        [Parameter(Mandatory)][object[]]$Observations
+    )
+    foreach ($planned in @($Plan.processes | Group-Object benchmarkId)) {
+        $members = @($Observations | Where-Object {
+            [string]$_.Compatibility.BenchmarkId -ceq [string]$planned.Name
+        })
+        if ($members.Count -ne $planned.Count) {
+            throw "Benchmark '$([string]$planned.Name)' produced $($members.Count) compatible observation(s); the exact plan requires $($planned.Count)."
+        }
+        $identities = @($members.IdentityJson | Sort-Object -Unique -CaseSensitive)
+        if ($identities.Count -ne 1) {
+            throw "Benchmark '$([string]$planned.Name)' has repetition compatibility drift."
+        }
+    }
+}
+
+function Get-PerformancePerCallAggregate {
+    param(
+        [Parameter(Mandatory)][object[]]$Members,
+        [Parameter(Mandatory)][string]$Scope,
+        [Parameter(Mandatory)][string]$Selector,
+        [Parameter(Mandatory)][string]$BenchmarkId
+    )
+    $weightedTotal = 0.0
+    $aggregateCalls = 0.0
+    $contexts = [System.Collections.Generic.List[object]]::new()
+    foreach ($member in $Members) {
+        $callRows = @($member.Measurements | Where-Object {
+            [string]$_.Scope -ceq $Scope -and
+            [string]$_.Selector -ceq $Selector -and
+            [string]$_.MetricName -ceq 'calls'
+        })
+        if ($callRows.Count -ne 1) {
+            throw "Benchmark '$BenchmarkId' lacks one exact call-count observation for '$Scope/$Selector'."
+        }
+        $contexts.Add($callRows[0])
+        $valueRows = @($member.Measurements | Where-Object {
+            [string]$_.Scope -ceq $Scope -and
+            [string]$_.Selector -ceq $Selector -and
+            [string]$_.MetricName -ceq 'gross-ms-per-estimated-call'
+        })
+        $calls = [double]$callRows[0].Value
+        $expectedValues = if ($calls -gt 0) { 1 } else { 0 }
+        if ($valueRows.Count -ne $expectedValues) {
+            throw "Benchmark '$BenchmarkId' has inconsistent per-call evidence for '$Scope/$Selector'."
+        }
+        if ($calls -gt 0) {
+            $weightedTotal += [double]$valueRows[0].Value * $calls
+            $aggregateCalls += $calls
+        }
+    }
+    return [pscustomobject]@{
+        HasObservation = $aggregateCalls -gt 0
+        Value = if ($aggregateCalls -gt 0) { $weightedTotal / $aggregateCalls } else { 0.0 }
+        ContextRows = @($contexts)
+    }
+}
+
 function New-PerformanceCurrentSnapshot {
     param(
         [Parameter(Mandatory)][object]$Plan,
@@ -400,6 +615,7 @@ function New-PerformanceCurrentSnapshot {
     }
 
     $observations = [System.Collections.Generic.List[object]]::new()
+    $manifestRecords = [System.Collections.Generic.List[object]]::new()
     foreach ($result in @($ProcessResults | Where-Object Status -eq 'passed')) {
         $processPlan = @($Plan.processes | Where-Object {
             [int]$_.sequence -eq [int]$result.Sequence
@@ -408,6 +624,15 @@ function New-PerformanceCurrentSnapshot {
             throw "Could not resolve exact performance plan sequence $([int]$result.Sequence)."
         }
         $processPlan = $processPlan[0]
+        $fixtureManifest = Get-PerformanceFixtureManifestIdentity `
+            -SmokeResult $result.SmokeResult `
+            -BenchmarkId ([string]$processPlan.benchmarkId)
+        $manifestRecords.Add([pscustomobject]@{
+            BenchmarkId = [string]$processPlan.benchmarkId
+            ComparisonId = [string]$processPlan.comparisonId
+            ProductAbsentControlId = [string]$processPlan.productAbsentControlId
+            ManifestJson = [string]$fixtureManifest.Json
+        })
         $raw = Get-Content -LiteralPath ([string]$result.Raw.Path) -Raw | ConvertFrom-Json -ErrorAction Stop
         $normalized = Get-Content -LiteralPath ([string]$result.Normalized.Path) -Raw | ConvertFrom-Json -ErrorAction Stop
         foreach ($problem in @(
@@ -438,11 +663,11 @@ function New-PerformanceCurrentSnapshot {
             $sidecars = @($normalized.profilerSidecars | Where-Object {
                 [string]$_.rowKey -ceq [string]$metric.Key
             })
-            if ($sidecars.Count -gt 1) {
-                throw "Metric '$([string]$metric.Key)' resolved multiple Circinus sidecars."
-            }
-            $sidecar = if ($sidecars.Count -eq 1) { $sidecars[0] } else { $null }
-            $exactMethod = if ($null -ne $sidecar) { [string]$sidecar.methodIdentity } else { '' }
+            $sidecarResolution = Resolve-PerformanceMetricSidecar `
+                -Sidecars $sidecars `
+                -MetricKey ([string]$metric.Key)
+            $sidecar = $sidecarResolution.Sidecar
+            $exactMethod = [string]$sidecarResolution.ExactMethod
             $selector = if (-not [string]::IsNullOrWhiteSpace($exactMethod)) {
                 $exactMethod
             }
@@ -492,12 +717,13 @@ function New-PerformanceCurrentSnapshot {
             ProfilingPolicyIdentity = $profilingPolicy
             SamplingPolicyIdentity = "circinus-local-settings:$SettingsSha256|native-adaptive/v1"
             HardwareRuntimeFingerprint = $runtimeFingerprint
+            FixtureManifestSha256 = [string]$fixtureManifest.Sha256
             DeterministicSeed = [int]$processPlan.deterministicSeed
             WarmUpTicks = [int]$processPlan.warmUpTicks
             SampleTicks = [int]$processPlan.sampleTicks
             GameSpeed = [int]$processPlan.gameSpeed
             RepetitionCount = 1
-            AggregationPolicyIdentity = 'arithmetic-mean/v1'
+            AggregationPolicyIdentity = 'arithmetic-mean-with-pooled-per-call/v2'
         }
         $identityJson = $compatibility | ConvertTo-Json -Depth 8 -Compress
         $observations.Add([pscustomobject]@{
@@ -506,6 +732,9 @@ function New-PerformanceCurrentSnapshot {
             Measurements = @($measurements)
         })
     }
+    Assert-PerformanceFixtureManifestCompatibility -Records @($manifestRecords)
+
+    Assert-PerformanceRepetitionCompatibility -Plan $Plan -Observations @($observations)
 
     $cases = [System.Collections.Generic.List[object]]::new()
     foreach ($group in @($observations | Group-Object IdentityJson)) {
@@ -517,7 +746,24 @@ function New-PerformanceCurrentSnapshot {
         })
         foreach ($metricGroup in $metricGroups) {
             $metrics = @($metricGroup.Group)
-            if ($metrics.Count -ne $expectedRepetitions) {
+            $perCall = [string]$metrics[0].MetricName -ceq 'gross-ms-per-estimated-call'
+            $perCallValue = $null
+            $contextMetrics = $metrics
+            if ($perCall) {
+                $scope = [string]$metrics[0].Scope
+                $selector = [string]$metrics[0].Selector
+                $aggregate = Get-PerformancePerCallAggregate `
+                    -Members $members `
+                    -Scope $scope `
+                    -Selector $selector `
+                    -BenchmarkId ([string]$members[0].Compatibility.BenchmarkId)
+                if (-not [bool]$aggregate.HasObservation) {
+                    continue
+                }
+                $perCallValue = [double]$aggregate.Value
+                $contextMetrics = @($aggregate.ContextRows)
+            }
+            elseif ($metrics.Count -ne $expectedRepetitions) {
                 $runtimeErrors.Add("$([string]$members[0].Compatibility.BenchmarkId): repetition metric set drifted for '$([string]$metricGroup.Name)'.")
                 continue
             }
@@ -529,18 +775,18 @@ function New-PerformanceCurrentSnapshot {
                 $runtimeErrors.Add("$([string]$members[0].Compatibility.BenchmarkId): repetition metadata drifted for '$([string]$metricGroup.Name)'.")
                 continue
             }
-            $calls = @($metrics | Where-Object { $null -ne $_.Calls } | ForEach-Object { [double]$_.Calls })
-            $timed = @($metrics | Where-Object { $null -ne $_.TimedCalls } | ForEach-Object { [double]$_.TimedCalls })
-            $duty = @($metrics | Where-Object { $null -ne $_.DutyPercent } | ForEach-Object { [double]$_.DutyPercent })
-            $shift = @($metrics | Where-Object { $null -ne $_.SampleShift } | ForEach-Object { [double]$_.SampleShift })
-            $cycles = @($metrics | Where-Object { $null -ne $_.RecordedCycles } | ForEach-Object { [double]$_.RecordedCycles })
-            $windowMilliseconds = @($metrics | Where-Object { $null -ne $_.ProfilerWindowMilliseconds } | ForEach-Object { [double]$_.ProfilerWindowMilliseconds })
-            $windowTicks = @($metrics | Where-Object { $null -ne $_.ProfilerWindowTicks } | ForEach-Object { [double]$_.ProfilerWindowTicks })
+            $calls = @($contextMetrics | Where-Object { $null -ne $_.Calls } | ForEach-Object { [double]$_.Calls })
+            $timed = @($contextMetrics | Where-Object { $null -ne $_.TimedCalls } | ForEach-Object { [double]$_.TimedCalls })
+            $duty = @($contextMetrics | Where-Object { $null -ne $_.DutyPercent } | ForEach-Object { [double]$_.DutyPercent })
+            $shift = @($contextMetrics | Where-Object { $null -ne $_.SampleShift } | ForEach-Object { [double]$_.SampleShift })
+            $cycles = @($contextMetrics | Where-Object { $null -ne $_.RecordedCycles } | ForEach-Object { [double]$_.RecordedCycles })
+            $windowMilliseconds = @($contextMetrics | Where-Object { $null -ne $_.ProfilerWindowMilliseconds } | ForEach-Object { [double]$_.ProfilerWindowMilliseconds })
+            $windowTicks = @($contextMetrics | Where-Object { $null -ne $_.ProfilerWindowTicks } | ForEach-Object { [double]$_.ProfilerWindowTicks })
             $combined.Add([pscustomobject]@{
                 Scope = [string]$metrics[0].Scope
                 Selector = [string]$metrics[0].Selector
                 MetricName = [string]$metrics[0].MetricName
-                Value = [double](($metrics | Measure-Object -Property Value -Average).Average)
+                Value = if ($perCall) { [double]$perCallValue } else { [double](($metrics | Measure-Object -Property Value -Average).Average) }
                 Unit = [string]$units[0]
                 Denominator = [string]$denominators[0]
                 Claim = [string]$claims[0]
@@ -551,13 +797,13 @@ function New-PerformanceCurrentSnapshot {
                 RecordedCycles = if ($cycles.Count -eq $expectedRepetitions) { [double](($cycles | Measure-Object -Average).Average) } else { $null }
                 ProfilerWindowMilliseconds = if ($windowMilliseconds.Count -eq $expectedRepetitions) { [double](($windowMilliseconds | Measure-Object -Average).Average) } else { $null }
                 ProfilerWindowTicks = if ($windowTicks.Count -eq $expectedRepetitions) { [double](($windowTicks | Measure-Object -Average).Average) } else { $null }
-                SamplingContextIdentity = @($metrics | ForEach-Object { [string]$_.SamplingContextIdentity }) -join '||'
+                SamplingContextIdentity = @($contextMetrics | ForEach-Object { [string]$_.SamplingContextIdentity }) -join '||'
                 ExactMethod = [string]$methods[0]
             })
         }
         $compatibility = $members[0].Compatibility
         $compatibility.RepetitionCount = $expectedRepetitions
-        $compatibility.AggregationPolicyIdentity = 'arithmetic-mean/v1'
+        $compatibility.AggregationPolicyIdentity = 'arithmetic-mean-with-pooled-per-call/v2'
         $cases.Add([pscustomobject]@{
             Compatibility = $compatibility
             Measurements = @($combined)
@@ -828,6 +1074,8 @@ try {
         -RepositoryRoot $repositoryRoot `
         -ModsRoot $modsRoot `
         -PackageIds $packages `
+        -SelectedBenchmarkIds @($plan.processes | ForEach-Object { [string]$_.benchmarkId } | Sort-Object -Unique) `
+        -SelectedProjectPaths @($plan.processes | ForEach-Object { [string]$_.projectPath } | Sort-Object -Unique) `
         -LeaseFile $leaseFile `
         -DpaDiagnostic:$isDpaDiagnostic `
         -DiagnosticSelector $DiagnosticSelector
