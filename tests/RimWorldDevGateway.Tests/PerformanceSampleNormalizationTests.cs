@@ -455,7 +455,7 @@ public sealed class PerformanceSampleNormalizationTests
         {
             new CircinusProfilerSidecar(
                 "Product.Patch", CircinusRowKind.Patch, "p1", 1,
-                true, 0, 0, 0, true, 20, "empty-or-uninvoked"),
+                true, 0, 0, 0, true, 20, "empty-or-uninvoked", canSkip: true),
             baseline.Sidecars.Single(item => item.RowKind == CircinusRowKind.Method)
         };
         var capture = new CircinusCapture("run-1", 1, 15, raw, raw, sidecars);
@@ -469,6 +469,10 @@ public sealed class PerformanceSampleNormalizationTests
             Assert.That(normalized.Metrics.Any(item => item.Scope == "patch" && item.Key == "p1" &&
                 item.Name == "gross-ms-per-estimated-call"), Is.False);
             AssertMetric(normalized, "patch", "p1", "gross-profiler-window-share", 0d,
+                "ratio", "profiler-window-ms");
+            AssertMetric(normalized, "patch", "p1", "native-timed-calls", 0d,
+                "calls", "native-adaptive-sampling", "sampling-policy");
+            AssertMetric(normalized, "patch", "p1", "skip-capable-gross-share", 0d,
                 "ratio", "profiler-window-ms");
         });
     }
@@ -493,7 +497,9 @@ public sealed class PerformanceSampleNormalizationTests
     {
         var raw = NativeJson().Replace(",\"canSkip\":true", string.Empty);
 
-        var normalized = PerformanceSampleNormalizer.Normalize(Capture(raw), Context());
+        var normalized = PerformanceSampleNormalizer.Normalize(
+            Capture(raw, patchCanSkip: false),
+            Context());
 
         Assert.That(normalized.Metrics.Any(item =>
             item.Scope == "patch" && item.Key == "p1" && item.Name == "skip-capable-gross-share"),
@@ -555,7 +561,8 @@ public sealed class PerformanceSampleNormalizationTests
         string raw,
         bool patchHandArmed = true,
         long patchTimedCalls = 30,
-        int patchTargetCount = 2) => new(
+        int patchTargetCount = 2,
+        bool patchCanSkip = true) => new(
         "run-1",
         1,
         15,
@@ -574,7 +581,8 @@ public sealed class PerformanceSampleNormalizationTests
                 patchTimedCalls,
                 false,
                 20,
-                null),
+                null,
+                canSkip: patchCanSkip),
             new CircinusProfilerSidecar(
                 "ordinary-method",
                 CircinusRowKind.Method,

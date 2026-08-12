@@ -296,6 +296,20 @@ internal static class PerformanceSampleNormalizer
                 // invocation. Keep a stable explicit-zero gross schema so later
                 // repetitions do not confuse zero work with schema drift.
                 AddTiming(metrics, scope, sidecar.RowKey, 0, 0, 0, 0, env);
+                if (sidecar.RowKind == CircinusRowKind.Patch)
+                {
+                    Add(metrics, scope, sidecar.RowKey, "native-timed-calls", 0, "calls",
+                        "native-adaptive-sampling", "sampling-policy");
+                    if (sidecar.AmbiguousTargetCount > 1)
+                    {
+                        Add(metrics, scope, sidecar.RowKey, "ambiguous-targets", 1,
+                            "boolean", "native-patch-identity", "sampling-policy");
+                        AddWindowShare(metrics, scope, sidecar.RowKey, "shared-gross-share", 0, env);
+                        AddWindowShare(metrics, scope, sidecar.RowKey, "ambiguous-target-gross-share", 0, env);
+                    }
+                    if (sidecar.CanSkip)
+                        AddWindowShare(metrics, scope, sidecar.RowKey, "skip-capable-gross-share", 0, env);
+                }
             }
             Add(metrics, scope, sidecar.RowKey, "live-total-calls", sidecar.TotalCalls, "calls",
                 "native-adaptive-sampling", "sampling-policy");
@@ -559,6 +573,9 @@ internal static class PerformanceSampleNormalizer
         var nativePatchAmbiguity = (document.Patches ?? new List<NativePatchRow>())
             .Where(row => !string.IsNullOrWhiteSpace(row.Patch?.Key))
             .ToDictionary(row => row.Patch!.Key!, row => row.AmbiguousTargets, StringComparer.Ordinal);
+        var nativePatchCanSkip = (document.Patches ?? new List<NativePatchRow>())
+            .Where(row => !string.IsNullOrWhiteSpace(row.Patch?.Key))
+            .ToDictionary(row => row.Patch!.Key!, row => row.Patch!.CanSkip, StringComparer.Ordinal);
         var identities = new HashSet<string>(StringComparer.Ordinal);
         var rowGroups = new Dictionary<string, List<CircinusProfilerSidecar>>(StringComparer.Ordinal);
         foreach (var sidecar in sidecars)
@@ -600,6 +617,11 @@ internal static class PerformanceSampleNormalizer
                 nativeAmbiguous != (sidecar.AmbiguousTargetCount > 1))
                 throw new PerformanceNormalizationException(
                     $"Circinus patch '{sidecar.RowKey}' native ambiguity disagrees with its live attachment count.");
+            if (!sidecar.Empty && sidecar.RowKind == CircinusRowKind.Patch &&
+                nativePatchCanSkip.TryGetValue(sidecar.RowKey, out var nativeCanSkip) &&
+                nativeCanSkip != sidecar.CanSkip)
+                throw new PerformanceNormalizationException(
+                    $"Circinus patch '{sidecar.RowKey}' native skip capability disagrees with its live attachment.");
         }
 
         foreach (var group in rowGroups.Values.Where(group => group.Count > 1))

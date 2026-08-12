@@ -29,6 +29,7 @@ namespace Circinus.Contract
     public sealed class PatchRef
     {
         public string Key = string.Empty;
+        public bool CanSkip;
     }
 }
 
@@ -316,14 +317,14 @@ namespace Circinus.Identity
 
         public static void RegisterPatchForTests(MethodBase method, string key)
         {
-            Patches[method] = new List<PatchRef> { new PatchRef { Key = key } };
+            Patches[method] = new List<PatchRef> { new PatchRef { Key = key, CanSkip = true } };
         }
 
         public static void RegisterPatchPairForTests(MethodBase method, string firstKey, string secondKey)
         {
             Patches[method] = new List<PatchRef>
             {
-                new PatchRef { Key = firstKey },
+                new PatchRef { Key = firstKey, CanSkip = true },
                 new PatchRef { Key = secondKey }
             };
         }

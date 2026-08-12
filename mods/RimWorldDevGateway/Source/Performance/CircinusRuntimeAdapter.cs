@@ -233,6 +233,7 @@ internal static class CircinusShapeBinder
             var targetMethodCount = GetterOnlyProperty(profileTarget, "MethodCount", typeof(int));
             var methodRefKey = Field(methodRef, "Key", false, typeof(string));
             var patchRefKey = Field(patchRef, "Key", false, typeof(string));
+            var patchRefCanSkip = Field(patchRef, "CanSkip", false, typeof(bool));
             var patchRefsType = typeof(List<>).MakeGenericType(patchRef);
             var harmonyForPatchMethod = Method(
                 harmonyIndex,
@@ -300,6 +301,7 @@ internal static class CircinusShapeBinder
                 targetMethodCount,
                 methodRefKey,
                 patchRefKey,
+                patchRefCanSkip,
                 harmonyForPatchMethod,
                 harmonyRefOf,
                 liveSettings,
@@ -460,6 +462,7 @@ internal sealed class CircinusShape
         PropertyInfo targetMethodCount,
         FieldInfo methodRefKey,
         FieldInfo patchRefKey,
+        FieldInfo patchRefCanSkip,
         MethodInfo harmonyForPatchMethod,
         MethodInfo harmonyRefOf,
         FieldInfo liveSettings,
@@ -505,6 +508,7 @@ internal sealed class CircinusShape
         TargetMethodCount = targetMethodCount;
         MethodRefKey = methodRefKey;
         PatchRefKey = patchRefKey;
+        PatchRefCanSkip = patchRefCanSkip;
         HarmonyForPatchMethod = harmonyForPatchMethod;
         HarmonyRefOf = harmonyRefOf;
         LiveSettings = liveSettings;
@@ -551,6 +555,7 @@ internal sealed class CircinusShape
     public PropertyInfo TargetMethodCount { get; }
     public FieldInfo MethodRefKey { get; }
     public FieldInfo PatchRefKey { get; }
+    public FieldInfo PatchRefCanSkip { get; }
     public MethodInfo HarmonyForPatchMethod { get; }
     public MethodInfo HarmonyRefOf { get; }
     public FieldInfo LiveSettings { get; }
@@ -773,7 +778,8 @@ internal sealed class CircinusProfilerSidecar
         long totalTimedCalls,
         bool empty,
         int cyclesSeen,
-        string? noRowReason)
+        string? noRowReason,
+        bool canSkip = false)
     {
         MethodIdentity = methodIdentity;
         RowKind = rowKind;
@@ -786,6 +792,7 @@ internal sealed class CircinusProfilerSidecar
         Empty = empty;
         CyclesSeen = cyclesSeen;
         NoRowReason = noRowReason;
+        CanSkip = canSkip;
     }
 
     [DataMember(Name = "methodIdentity", Order = 1)] public string MethodIdentity { get; private set; }
@@ -799,6 +806,7 @@ internal sealed class CircinusProfilerSidecar
     [DataMember(Name = "empty", Order = 9)] public bool Empty { get; private set; }
     [DataMember(Name = "cyclesSeen", Order = 10)] public int CyclesSeen { get; private set; }
     [DataMember(Name = "noRowReason", EmitDefaultValue = false, Order = 11)] public string? NoRowReason { get; private set; }
+    [DataMember(Name = "canSkip", EmitDefaultValue = false, Order = 12)] public bool CanSkip { get; private set; }
 }
 
 internal sealed class CircinusRuntimeRun : IDisposable
@@ -1264,7 +1272,11 @@ internal sealed class CircinusRuntimeRun : IDisposable
                 // Circinus 1.15 emits one PatchStat under ForPatchMethod(method)[0] and records
                 // additional native attachments through AmbiguousTargets. Mirror that exact
                 // identity while retaining the complete native attachment count in the sidecar.
-                identity = new CircinusRowIdentity(kind, key, ambiguousTargetCount);
+                identity = new CircinusRowIdentity(
+                    kind,
+                    key,
+                    ambiguousTargetCount,
+                    (bool)shape.PatchRefCanSkip.GetValue(firstPatchRef));
                 reason = string.Empty;
                 return true;
             }
@@ -1282,7 +1294,7 @@ internal sealed class CircinusRuntimeRun : IDisposable
                 return false;
             }
 
-            identity = new CircinusRowIdentity(kind, key, ambiguousTargetCount);
+            identity = new CircinusRowIdentity(kind, key, ambiguousTargetCount, canSkip: false);
             reason = string.Empty;
             return true;
         }
@@ -1347,7 +1359,8 @@ internal sealed class CircinusRuntimeRun : IDisposable
                     (long)shape.ProfilerTimedCalls.GetValue(profiler),
                     empty,
                     (int)shape.ProfilerCyclesSeen.GetValue(profiler),
-                    empty ? "empty-or-uninvoked" : null));
+                    empty ? "empty-or-uninvoked" : null,
+                    owned.Row.CanSkip));
             }
             catch (Exception exception)
             {
@@ -1456,16 +1469,19 @@ internal sealed class CircinusRuntimeRun : IDisposable
         public CircinusRowIdentity(
             CircinusRowKind kind,
             string key,
-            int ambiguousTargetCount)
+            int ambiguousTargetCount,
+            bool canSkip)
         {
             Kind = kind;
             Key = key;
             AmbiguousTargetCount = ambiguousTargetCount;
+            CanSkip = canSkip;
         }
 
         public CircinusRowKind Kind { get; }
         public string Key { get; }
         public int AmbiguousTargetCount { get; }
+        public bool CanSkip { get; }
     }
 
     private void ThrowIfStopped()

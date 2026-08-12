@@ -478,6 +478,7 @@ public sealed class CircinusRuntimeAdapterTests
             {
                 Assert.That(capture!.Sidecars.Single().RowKind, Is.EqualTo(CircinusRowKind.Patch));
                 Assert.That(capture.Sidecars.Single().RowKey, Is.EqualTo(patchKey));
+                Assert.That(capture.Sidecars.Single().CanSkip, Is.True);
             });
         }
     }
