@@ -80,7 +80,7 @@ Read only the references needed for the asset:
 Run the bundled read-only helper from the repository root:
 
 ```powershell
-& .\.codex\skills\rimworld-asset-generation\scripts\Measure-RimWorldSprite.ps1 `
+& .\.agents\skills\rimworld-asset-generation\scripts\Measure-RimWorldSprite.ps1 `
   -Path .\mods\Example\Textures\Example\Things\Building\Bench_north.png `
   -Output table
 ```
@@ -96,7 +96,7 @@ manifest. It requires Python 3 and exactly Pillow 12.2.0 so its final-scale prox
 recorded Core baseline. The command never overwrites inputs or occupied outputs:
 
 ```powershell
-& .\.codex\skills\rimworld-asset-generation\scripts\Add-RimWorldSpriteOutline.ps1 `
+& .\.agents\skills\rimworld-asset-generation\scripts\Add-RimWorldSpriteOutline.ps1 `
   -InputPath .\mods\Example\Textures\Example\Things\Plate.png `
   -OutputPath .\artifacts\VisualAssets\Plate.stroke4.png `
   -StrokePixels 4 `

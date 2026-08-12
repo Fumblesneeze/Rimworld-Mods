@@ -35,14 +35,14 @@ controls, or baseline policy.
 ## Measure an ordinary workload
 
 1. Declare a stable benchmark ID, staging owner, measured subject, complete exact package order,
-   deterministic seed, workload version, warm-up/sample ticks, speed, repetitions, evidence lens,
+   representative workload version, warm-up/sample ticks, speed, repetitions, evidence lens,
    method selectors, and throughput checkpoints.
 2. Arrange the fixture while paused. Warm it through ordinary game frames/ticks with recording off.
    Never call `DoSingleTick` or directly invoke measured methods to inflate counters.
 3. Resolve and hand-arm the exact product Harmony prefix/postfix/finalizer methods, selected product
    tick/component methods, explicit selectors, and relevant curated targets. Record full identities
    and reject unresolved/ambiguous/duplicate/open-generic selectors.
-4. Reset controlled counters after warm-up, start one labeled Circinus run, add boundary markers,
+4. Reset only profiler and throughput counters after warm-up, start one labeled Circinus run, add boundary markers,
    enable profiling, and progress the native workload at the declared game speed.
 5. Disable profiling, snapshot every run-owned live `DevProfiler` before stop/disarm, stop the run,
    retain both in-memory and persisted raw JSON, then clean only run-owned instrumentation.
@@ -52,8 +52,8 @@ controls, or baseline policy.
 ## Keep claims distinct
 
 - Circinus per-patch/per-mod time is **gross attribution**, not causal net impact.
-- Product-present minus semantically identical product-absent workloads is a **net system delta** only
-  when throughput and fixture meaning remain comparable.
+- Product-present and product-absent workloads are independent stochastic diagnostics. Keep both
+  distributions; do not pair repetitions by process order or call the result a matched net delta.
 - Instrumented minus armed-disabled estimates active timing/sampling overhead; armed-disabled minus
   fully disarmed estimates wrapper overhead; instrumented minus fully disarmed estimates total method
   instrumentation overhead. None is an analyzer-absent control.
@@ -62,7 +62,24 @@ controls, or baseline policy.
 - Preserve raw units and denominators. Do not relabel per-recorded-cycle means as per-call means or
   adaptive estimated calls as continuously timed calls.
 
-Use explicit per-selector absolute/relative thresholds. Missing metrics, workload drift, profiler
+Treat repetitions as ordinary stochastic RimWorld samples. Do not seed global `Rand`, reset
+`UniqueIDsManager`, teleport actors back into identical post-warm-up state, or reject healthy differences
+in jobs, positions, needs, inventories, weather, or outcomes. Retain the raw repetitions and report count,
+mean, minimum, maximum, and sample standard deviation. Calibration lenses and product-absent controls are
+optional diagnostic tools, not a mandatory cost paid by every historical trend run.
+For per-call metrics, keep zero-call repetitions as explicit unobserved/null samples with zero weight.
+Pool total time over total calls for the aggregate; never fabricate `0 ms/call` or silently drop the run.
+Retain an explicit 0/1 observation-rate vector as well, so a selector that is uncalled in every repetition
+does not vanish from historical reports.
+The runner therefore defaults to instrumented benchmarks only. Pass `-IncludeProfilerControls` only
+for an explicit overhead-calibration run; an exact `-BenchmarkId` may also select one control directly.
+
+Product-present and product-absent simulations are independent stochastic samples. Do not subtract
+repetitions by array index or present that arbitrary ordering as a delta distribution. Keep both source
+distributions and compare their averages descriptively unless a real statistical design is added.
+
+Use explicit per-selector absolute/relative thresholds when a trend is mature enough to gate. With no
+reviewed threshold, retain a compatible historical delta as informational. Missing metrics, workload drift, profiler
 refusal/incomplete/truncation, identity drift, new runtime errors, or incompatible units fail a
 comparison. Baseline creation must produce a review candidate; never overwrite an accepted baseline.
 

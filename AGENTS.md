@@ -15,7 +15,7 @@ This is a RimWorld 1.6 mod monorepo:
 - Optional integrations must be package-ID/Def-resolved, absent-safe, shape-guarded, and isolated behind narrow adapters.
 - Food preservation and food waste are future scope. Do not implement them as part of the current Immersive Chefs gameplay change.
 
-Before changing RimWorld C#, XML, Defs, Harmony patches, compatibility adapters, tests, packaging, smoke tooling, or the gateway, read and follow `.codex/skills/rimworld-mod-development/SKILL.md` and its routed references. Use the installed `tdd` and `code-review` skills when they apply.
+Before changing RimWorld C#, XML, Defs, Harmony patches, compatibility adapters, tests, packaging, smoke tooling, or the gateway, read and follow `.agents/skills/rimworld-mod-development/SKILL.md` and its routed references. Use the repository's `tdd` and `code-review` skills when they apply.
 
 ## Non-negotiable acceptance gate
 

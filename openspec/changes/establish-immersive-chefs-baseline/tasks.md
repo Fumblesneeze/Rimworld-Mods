@@ -37,7 +37,7 @@
 
 ## 6. mods/ImmersiveChefs - Repo-local development skill
 
-- [x] 6.1 Initialize `.codex/skills/rimworld-mod-development` with skill-creator and focused reference resources.
+- [x] 6.1 Initialize `.agents/skills/rimworld-mod-development` with skill-creator and focused reference resources.
 - [x] 6.2 Write only the proven build/test/FlaUI workflow plus Harmony compatibility and Def/XML patching guidance.
 - [x] 6.3 Validate the skill package and run a context-minimal forward test with an independent agent.
 

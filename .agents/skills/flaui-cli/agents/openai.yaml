@@ -1,0 +1,5 @@
+interface:
+  display_name: "FlaUI CLI"
+  short_description: "Automate and verify Windows desktop UI workflows"
+  icon_small: "./assets/flaui-cli-small.svg"
+  icon_large: "./assets/flaui-cli.png"

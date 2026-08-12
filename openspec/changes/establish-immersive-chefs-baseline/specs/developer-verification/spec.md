@@ -56,12 +56,12 @@ The repository SHALL expose documented commands for restore, build, test, deploy
 - **THEN** each verification tier can be run independently and produces a clear pass or actionable failure
 
 ### Requirement: Repo-local RimWorld development skill
-After the workflow is proven, the repository SHALL contain a validated `.codex/skills/rimworld-mod-development` skill that routes future work through OpenSpec and TDD and documents the verified C# build, Harmony patching, compatibility, Def/XML, non-destructive patch XML, testing, and FlaUI smoke procedures.
+After the workflow is proven, the repository SHALL contain a validated `.agents/skills/rimworld-mod-development` skill that routes future work through OpenSpec and TDD and documents the verified C# build, Harmony patching, compatibility, Def/XML, non-destructive patch XML, testing, and FlaUI smoke procedures.
 
 #### Scenario: Future Codex task changes Immersive Chefs
 - **WHEN** a task involves RimWorld C# code, Harmony, Defs, XML patches, optional-mod compatibility, tests, or game verification in this repository
 - **THEN** the skill supplies concise workflow instructions and points to focused reference files and tested repository scripts
 
 #### Scenario: Validate the local skill package
-- **WHEN** the skill-creator validation command runs against `.codex/skills/rimworld-mod-development`
+- **WHEN** the skill-creator validation command runs against `.agents/skills/rimworld-mod-development`
 - **THEN** its name, trigger description, frontmatter, agent metadata, and referenced resources pass validation

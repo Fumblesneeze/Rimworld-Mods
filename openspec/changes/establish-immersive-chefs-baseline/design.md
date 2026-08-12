@@ -80,7 +80,7 @@ The OpenSpec dependency contract is authoritative. Machine-specific inventories 
 
 ### Generate the skill only after verification
 
-The skill-creator scaffold produces `.codex/skills/rimworld-mod-development` with a concise `SKILL.md`, agent metadata, and three focused references: Harmony/compatibility, Def/XML authoring and patching, and testing/in-game verification. It links to repository scripts instead of duplicating their implementations. `quick_validate.py` and a context-minimal forward test validate the result.
+The skill-creator scaffold produces `.agents/skills/rimworld-mod-development` with a concise `SKILL.md`, agent metadata, and three focused references: Harmony/compatibility, Def/XML authoring and patching, and testing/in-game verification. It links to repository scripts instead of duplicating their implementations. `quick_validate.py` and a context-minimal forward test validate the result.
 
 ## Risks / Trade-offs
 

@@ -80,7 +80,7 @@ The test wrapper also accepts `-HarmonyAssemblyPath` when Harmony cannot be foun
 
 ## Configure Codex-assisted development
 
-The repository commits its purpose-built skills under `.codex/skills/`:
+The repository commits its complete agent skill set under the cross-client `.agents/skills/` location:
 
 - `rimworld-mod-development` routes OpenSpec, TDD, Harmony/XML, compatibility, localization, testing,
   packaging, and native acceptance work;
@@ -89,20 +89,22 @@ The repository commits its purpose-built skills under `.codex/skills/`:
 - `rimworld-performance-benchmarking` records the Circinus-first benchmark contract and separate DPA
   diagnostic boundary, while requiring agents to check unfinished OpenSpec tasks before naming commands;
 - `rimworld-asset-generation`, `rimworld-game-balance`, and `release-rimworld-mods` cover their
-  specialized workflows and route back to the common acceptance gate.
+  specialized workflows and route back to the common acceptance gate;
+- `steam-workshop-feedback` maintains the human-reviewed player-feedback ledger;
+- `tdd`, `code-review`, `flaui-cli`, and the OpenSpec workflow skills make the full development
+  process reproducible without a separately installed project skill library.
 
-Generic or downloaded skills are deliberately local and ignored. For Codex-assisted changes, make
-`tdd`, `code-review`, `flaui-cli`, and the OpenSpec skills available from the user's trusted Codex
-skill library under `.codex/skills/`; `openspec update` refreshes OpenSpec's supported assistant
-instructions.
+Agent clients that support the `.agents/skills/` convention discover these packages directly from
+the checkout. `openspec update` refreshes OpenSpec's supported assistant instructions when needed.
 
 The optional skill check is available when Codex's `skill-creator` package is installed:
 
 ```powershell
 $validator = 'C:\Users\<you>\.codex\skills\.system\skill-creator\scripts\quick_validate.py'
-@('rimworld-mod-development','rimworld-dev-gateway','rimworld-performance-benchmarking',
-  'rimworld-asset-generation','rimworld-game-balance','release-rimworld-mods') |
-  ForEach-Object { python $validator ".\.codex\skills\$_" }
+Get-ChildItem .\.agents\skills -Directory | ForEach-Object {
+  python $validator $_.FullName
+  if ($LASTEXITCODE -ne 0) { throw "Skill validation failed: $($_.Name)" }
+}
 ```
 
 Read [AGENTS.md](AGENTS.md) before changing game-facing code. TDD, code review, logs, API responses, and in-game integration tests are supporting checks; accepting RimWorld behavior additionally requires the acting agent to perform a player workflow and personally observe the resulting behavior in the running game.

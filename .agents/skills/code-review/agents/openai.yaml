@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review"
+  short_description: "Review code for design, simplicity, and risk"
+  default_prompt: "Use $code-review to review or refactor this change for correctness, simplicity, SOLID boundaries, composition, locality, duplication, and maintainability."

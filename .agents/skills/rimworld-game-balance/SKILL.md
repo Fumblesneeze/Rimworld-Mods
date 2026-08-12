@@ -9,7 +9,7 @@ Use measured finalized Defs and native player workflows. Never invent a value me
 
 ## Establish the contract
 
-1. Read the owning OpenSpec requirement and `.codex/skills/rimworld-mod-development/SKILL.md`.
+1. Read the owning OpenSpec requirement and `.agents/skills/rimworld-mod-development/SKILL.md`.
 2. Identify the gameplay abstraction: one physical item, one place setting, one cookware set, one batch, or one building. Do not compare quantities before normalizing the output unit.
 3. Record the intended tech level, availability, durability, labor, quality range, and niche. Treat balance constants as provisional unless the contract fixes them.
 4. Preserve Stuff categories where the design intends modded materials. Prefer finalized category membership over enumerating known material Def names.

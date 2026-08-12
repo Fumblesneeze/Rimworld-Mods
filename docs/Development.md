@@ -126,7 +126,7 @@ The historical combined gateway-control record is `artifacts\GatewaySmoke\202608
 
 ## Repository-local skills
 
-Start with `.codex/skills/rimworld-mod-development/SKILL.md`; it routes Harmony/XML, compatibility,
+Start with `.agents/skills/rimworld-mod-development/SKILL.md`; it routes Harmony/XML, compatibility,
 player-facing UI, localization, TDD, and live verification. Use `rimworld-dev-gateway` for launcher,
 REPL, semantic/input control, scenarios, screenshots, or gateway failure diagnosis;
 `rimworld-performance-benchmarking` for Circinus/DPA work; and the asset, balance, or release skill for
@@ -134,8 +134,10 @@ those specialized workflows. Validate changed skills with the installed skill-cr
 
 ```powershell
 $validator = 'C:\Users\<you>\.codex\skills\.system\skill-creator\scripts\quick_validate.py'
-@('rimworld-mod-development','rimworld-dev-gateway','rimworld-performance-benchmarking') |
-  ForEach-Object { python $validator ".\.codex\skills\$_" }
+Get-ChildItem .\.agents\skills -Directory | ForEach-Object {
+  python $validator $_.FullName
+  if ($LASTEXITCODE -ne 0) { throw "Skill validation failed: $($_.Name)" }
+}
 ```
 
 For distributable-mod language layout, contextual terminology, focused localization checks, and the six-language live release gate, see [Localization.md](Localization.md).

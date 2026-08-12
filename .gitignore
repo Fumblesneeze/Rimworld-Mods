@@ -63,33 +63,7 @@ docs/LocalDependencies.md
 docs/RequirementsGaps.md
 docs/TddEvidence.md
 
-# Downloaded/local Codex skills. Explicitly allowlisted repository skills are source.
-.codex/skills/*
-!.codex/skills/rimworld-mod-development/
-!.codex/skills/rimworld-mod-development/**
-!.codex/skills/rimworld-game-balance/
-.codex/skills/rimworld-game-balance/**
-!.codex/skills/rimworld-game-balance/SKILL.md
-!.codex/skills/rimworld-game-balance/agents/
-!.codex/skills/rimworld-game-balance/agents/openai.yaml
-!.codex/skills/release-rimworld-mods/
-!.codex/skills/release-rimworld-mods/**
-!.codex/skills/steam-workshop-feedback/
-!.codex/skills/steam-workshop-feedback/**
-!.codex/skills/rimworld-dev-gateway/
-!.codex/skills/rimworld-dev-gateway/**
-!.codex/skills/rimworld-performance-benchmarking/
-!.codex/skills/rimworld-performance-benchmarking/**
-!.codex/skills/rimworld-asset-generation/
-.codex/skills/rimworld-asset-generation/**
-!.codex/skills/rimworld-asset-generation/SKILL.md
-!.codex/skills/rimworld-asset-generation/agents/
-!.codex/skills/rimworld-asset-generation/agents/openai.yaml
-!.codex/skills/rimworld-asset-generation/references/
-!.codex/skills/rimworld-asset-generation/references/*.md
-!.codex/skills/rimworld-asset-generation/scripts/
-!.codex/skills/rimworld-asset-generation/scripts/*.ps1
-!.codex/skills/rimworld-asset-generation/scripts/*.py
+# Local Codex runtime state. Repository skills are committed under .agents/skills.
 .codex/cache/
 .codex/tmp/
 .codex/state/
