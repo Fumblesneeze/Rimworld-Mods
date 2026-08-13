@@ -162,9 +162,15 @@ The publication workflow SHALL fail closed on Steam authentication, legal-agreem
 
 One cross-process lease SHALL cover identity recovery, mutation admission, remote reconciliation, dependency reconciliation, subscription, and receipt creation. Before an ID-less first publication, a bounded native query of every item published by the owning account SHALL prove that no exact-title RimWorld item exists; an incomplete query, one exact-title item, or more than one exact-title item SHALL fail before `CreateItem`. Every async Steam call MUST reject an invalid handle and correlate callback parent/child/item identities with the admitted request. A duplicate-create callback carrying one nonzero identity SHALL be treated as an already-created identity and persisted, not as permission for another create. Steam's legal-agreement flag SHALL stop before submission on creation as well as after submission. Definite callback failures MAY be retried from a fresh reviewed invocation; I/O failure, a timeout after admission, or a completed upload whose subscription/smoke/receipt phase did not finish is indeterminate and MUST block a different plan until the exact prior plan is reconciled. Existing receipts participate in identity recovery and conflicting identities fail closed. Remote acceptance SHALL require exact title, owner, app, visibility, description hash, metadata, tags, dependency set, and downloaded preview hash before subscription.
 
+A clean committed descendant release-tool revision MAY reconcile an older immutable plan only when that exact plan has persisted a post-submit state whose nonzero Workshop identity exactly matches the recovered package/release identity. This recovery path MUST remain query/reconciliation-only: it MUST NOT call `CreateItem`, submit content, or admit a different or divergent plan. Its receipt SHALL identify both the immutable candidate source revision and the recovery-tool revision.
+
 #### Scenario: Indeterminate update cannot be skipped by a newer plan
 - **WHEN** a submit or dependency operation was admitted but its callback outcome is indeterminate
 - **THEN** a release invocation for a different plan fails before mutation and identifies the exact prior plan that must be reconciled
+
+#### Scenario: A release-tool fix completes an exact submitted plan
+- **WHEN** an immutable plan has a persisted post-submit state and nonzero item identity but its original release tool failed during downstream reconciliation
+- **THEN** a newer clean committed release tool may query and finish that exact plan without creating or resubmitting content, and the receipt records both revisions
 
 #### Scenario: Concurrent release attempts cannot both mutate Steam
 - **WHEN** two processes attempt to publish Immersive Chefs concurrently

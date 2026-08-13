@@ -177,6 +177,71 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         });
     }
 
+    [Test]
+    public void Atomic_text_writer_replaces_an_existing_durable_publication_state()
+    {
+        using var fixture = Fixture.Create();
+        var statePath = Path.Combine(fixture.Root, "publication-state.txt");
+        var sentinelBackup = statePath + ".bak";
+        File.WriteAllText(statePath, "submitted|plan|123", new UTF8Encoding(false));
+        File.WriteAllText(sentinelBackup, "retained recovery evidence", new UTF8Encoding(false));
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Write-TextAtomically" },
+            "Write-TextAtomically -Path " + Ps(statePath) + " -Value 'succeeded|plan|123'; Write-Output (Get-Content -LiteralPath " + Ps(statePath) + " -Raw)");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("succeeded|plan|123"));
+            Assert.That(File.ReadAllText(sentinelBackup), Is.EqualTo("retained recovery evidence"));
+            Assert.That(
+                Directory.GetFiles(fixture.Root).Where(path =>
+                    !string.Equals(path, statePath, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(path, sentinelBackup, StringComparison.OrdinalIgnoreCase) &&
+                    Path.GetFileName(path).StartsWith("publication-state.txt.", StringComparison.OrdinalIgnoreCase)),
+                Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Newer_release_tool_revision_is_allowed_only_for_exact_post_submit_reconciliation()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-ReleaseSourceRevisionAllowed" },
+            "$same=Test-ReleaseSourceRevisionAllowed 'candidate' 'candidate' $false 0 $false; " +
+            "$recovery=Test-ReleaseSourceRevisionAllowed 'tool-fix' 'candidate' $true 3782589902 $true; " +
+            "$differentPlan=Test-ReleaseSourceRevisionAllowed 'tool-fix' 'candidate' $false 3782589902 $true; " +
+            "$idless=Test-ReleaseSourceRevisionAllowed 'tool-fix' 'candidate' $true 0 $true; " +
+            "$divergent=Test-ReleaseSourceRevisionAllowed 'divergent' 'candidate' $true 3782589902 $false; " +
+            "Write-Output ($same.ToString()+'|'+$recovery.ToString()+'|'+$differentPlan.ToString()+'|'+$idless.ToString()+'|'+$divergent.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|True|False|False|False"));
+        });
+    }
+
+    [Test]
+    public void Reconciliation_requires_the_exact_nonzero_item_identity_from_durable_state()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-ReconciliationStateIdentity" },
+            "$exact=Test-ReconciliationStateIdentity 'submitted' 3782589902 3782589902; " +
+            "$conflict=Test-ReconciliationStateIdentity 'submitted' 111 222; " +
+            "$missing=Test-ReconciliationStateIdentity 'submitted' 0 3782589902; " +
+            "$preSubmit=Test-ReconciliationStateIdentity 'create-admitted' 0 0; " +
+            "Write-Output ($exact.ToString()+'|'+$conflict.ToString()+'|'+$missing.ToString()+'|'+$preSubmit.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False|True"));
+        });
+    }
+
     private static string Ps(string value) => "'" + value.Replace("'", "''") + "'";
 
     private sealed class Fixture : IDisposable

@@ -35,6 +35,16 @@ function Exit-InvalidInput([string]$Message) {
     exit 2
 }
 
+function Test-ReleaseSourceRevisionAllowed([string]$CurrentRevision, [string]$PlanRevision, [bool]$ReconcileOnly, [System.UInt64]$PublishedFileId, [bool]$PlanIsAncestor) {
+    return $CurrentRevision -ceq $PlanRevision -or ($ReconcileOnly -and $PublishedFileId -ne 0 -and $PlanIsAncestor)
+}
+
+function Test-ReconciliationStateIdentity([string]$State, [System.UInt64]$StateItemId, [System.UInt64]$PublishedFileId) {
+    $reconciliationStates = @('submit-admitted', 'submitted', 'submit-indeterminate', 'dependency-indeterminate', 'succeeded')
+    return $reconciliationStates -cnotcontains $State -or
+        ($StateItemId -ne 0 -and $PublishedFileId -ne 0 -and $StateItemId -eq $PublishedFileId)
+}
+
 function Read-Json([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "JSON file does not exist: $Path" }
     return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -50,7 +60,9 @@ function Write-TextAtomically([string]$Path, [string]$Value) {
     try {
         [IO.File]::WriteAllText($temporary, $Value, [Text.UTF8Encoding]::new($false))
         if (Test-Path -LiteralPath $Path -PathType Leaf) {
-            [IO.File]::Replace($temporary, $Path, $null)
+            $backup = $Path + '.' + [guid]::NewGuid().ToString('N') + '.bak'
+            try { [IO.File]::Replace($temporary, $Path, $backup) }
+            finally { if (Test-Path -LiteralPath $backup -PathType Leaf) { Remove-Item -LiteralPath $backup -Force } }
         } else {
             [IO.File]::Move($temporary, $Path)
         }
@@ -258,7 +270,6 @@ if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
 $dirty = @(& git -C $repositoryRoot status --porcelain)
 if ($LASTEXITCODE -ne 0 -or $dirty.Count -ne 0) { Exit-InvalidInput 'Steam publication requires the exact clean committed release revision.' }
 $revision = (& git -C $repositoryRoot rev-parse HEAD).Trim()
-if ($revision -cne [string]$plan.sourceRevision) { Exit-InvalidInput 'The publication plan was not built from the current committed revision.' }
 $descriptorPath = Join-Path $repositoryRoot 'mods\ImmersiveChefs\Release\release.json'
 if ((Get-FileHash -LiteralPath $descriptorPath -Algorithm SHA256).Hash -cne [string]$plan.releaseDescriptorSha256) {
     Exit-InvalidInput 'The release descriptor changed after the publication plan was reviewed.'
@@ -339,6 +350,7 @@ if ($publishedFileId -eq 0 -and $receiptIds.Count -eq 1) {
 $resumeState = $null
 $priorState = $null
 $priorStatePlan = $null
+$priorStateItemId = [System.UInt64]0
 if (Test-Path -LiteralPath $statePath -PathType Leaf) {
     $stateParts = @((Get-Content -LiteralPath $statePath -Raw).Trim().Split([char]'|'))
     if ($stateParts.Count -ne 3 -or $stateParts[1] -notmatch '^[A-Fa-f0-9]{64}$') {
@@ -346,6 +358,9 @@ if (Test-Path -LiteralPath $statePath -PathType Leaf) {
     }
     $priorState = $stateParts[0]
     $priorStatePlan = $stateParts[1]
+    if (-not [ulong]::TryParse($stateParts[2], [ref]$priorStateItemId)) {
+        Exit-InvalidInput 'The durable publication state has an invalid item identity.'
+    }
     if ($stateParts[1] -ceq $actualPlanHash) { $resumeState = $priorState }
 }
 if ($publishedFileId -eq 0 -and $null -ne $priorState -and $priorState -notin @('create-failed-definite')) {
@@ -358,6 +373,22 @@ if ($null -ne $priorStatePlan -and $priorStatePlan -cne $actualPlanHash -and
     Exit-InvalidInput "Publication plan $priorStatePlan remains indeterminate at '$priorState'; reconcile that exact plan before any new Steam mutation."
 }
 $reconcileOnly = @('submit-admitted', 'submitted', 'submit-indeterminate', 'dependency-indeterminate', 'succeeded') -ccontains [string]$resumeState
+$stateIdentityMatches = Test-ReconciliationStateIdentity -State ([string]$resumeState) `
+    -StateItemId $priorStateItemId -PublishedFileId $publishedFileId
+if (-not $stateIdentityMatches) {
+    Exit-InvalidInput 'The durable publication state item identity conflicts with the recovered Workshop identity.'
+}
+$planIsAncestor = $revision -ceq [string]$plan.sourceRevision
+if (-not $planIsAncestor) {
+    & git -C $repositoryRoot merge-base --is-ancestor ([string]$plan.sourceRevision) $revision
+    $ancestorExitCode = $LASTEXITCODE
+    if ($ancestorExitCode -gt 1) { Exit-InvalidInput 'Could not validate the publication plan ancestry.' }
+    $planIsAncestor = $ancestorExitCode -eq 0
+}
+if (-not (Test-ReleaseSourceRevisionAllowed -CurrentRevision $revision -PlanRevision ([string]$plan.sourceRevision) `
+        -ReconcileOnly $reconcileOnly -PublishedFileId $publishedFileId -PlanIsAncestor $planIsAncestor)) {
+    Exit-InvalidInput 'The publication plan was not built from the current committed revision, and no exact descendant post-submit reconciliation is eligible.'
+}
 $attemptId = [datetime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ', [Globalization.CultureInfo]::InvariantCulture)
 $runRoot = Join-Path $publicationRoot $attemptId
 $null = New-Item -ItemType Directory -Path $runRoot
@@ -678,7 +709,8 @@ try {
     $receipt = [pscustomobject][ordered]@{
         schema = 'ImmersiveChefs/WorkshopPublicationReceipt/v1'
         publishedUtc = [datetime]::UtcNow.ToString('O')
-        sourceRevision = $revision
+        sourceRevision = [string]$plan.sourceRevision
+        publisherSourceRevision = $revision
         publicationPlan = $planPath
         publicationPlanSha256 = $actualPlanHash
         candidateSha256 = [string]$plan.candidateSha256
@@ -699,7 +731,8 @@ try {
         workshopUrl = $receipt.workshopUrl
         receipt = $receiptPath
         installedPackagePath = $expectedInstallPath
-        sourceRevision = $revision
+        sourceRevision = [string]$plan.sourceRevision
+        publisherSourceRevision = $revision
         candidateSha256 = [string]$plan.candidateSha256
     }
 }
