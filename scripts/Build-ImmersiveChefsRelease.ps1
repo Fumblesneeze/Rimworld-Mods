@@ -74,7 +74,7 @@ if ($release.schema -cne 'ImmersiveChefs/Release/v1' -or
 $resolvedRimWorldPath = [IO.Path]::GetFullPath($RimWorldPath)
 $versionPath = Join-Path $resolvedRimWorldPath 'Version.txt'
 $managedAssemblyPath = Join-Path $resolvedRimWorldPath 'RimWorldWin64_Data\Managed\Assembly-CSharp.dll'
-$steamManifestPath = Join-Path ([IO.DirectoryInfo]::new($resolvedRimWorldPath).Parent.FullName) 'appmanifest_294100.acf'
+$steamManifestPath = Join-Path ([IO.DirectoryInfo]::new($resolvedRimWorldPath).Parent.Parent.FullName) 'appmanifest_294100.acf'
 if (-not (Test-Path -LiteralPath $versionPath -PathType Leaf) -or
     -not (Test-Path -LiteralPath $managedAssemblyPath -PathType Leaf) -or
     -not (Test-Path -LiteralPath $steamManifestPath -PathType Leaf)) {
