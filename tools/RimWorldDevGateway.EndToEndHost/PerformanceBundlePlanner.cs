@@ -144,7 +144,6 @@ public static class PerformanceBundlePlanner
             MaxWallClockSeconds = deadline.MaxWallClockSeconds,
             Kind = EndToEndBundleTest.PerformanceKind,
             MeasuredSubjectPackageId = test.MeasuredSubjectPackageId.Trim().ToLowerInvariant(),
-            DeterministicSeed = test.DeterministicSeed,
             WorkloadVersion = test.WorkloadVersion,
             ComparisonId = test.ComparisonId,
             WarmUpTicks = test.WarmUpTicks,

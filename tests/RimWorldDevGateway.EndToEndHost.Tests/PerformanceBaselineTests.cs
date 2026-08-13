@@ -126,7 +126,15 @@ public sealed class PerformanceBaselineTests
             SampleShift = null, ExactMethod = string.Empty,
             SamplingContextIdentity = "cycles=100|windowMs=4000|windowTicks=3000|duty=25"
         };
-        var currentMetric = baselineMetric with { Value = 0.11d, RecordedCycles = 120, ProfilerWindowMilliseconds = 5000d };
+        var currentMetric = baselineMetric with
+        {
+            Value = 0.11d,
+            Minimum = 0.11d,
+            Maximum = 0.11d,
+            RepetitionValues = [0.11d],
+            RecordedCycles = 120,
+            ProfilerWindowMilliseconds = 5000d
+        };
         var policy = new PerformanceThresholdPolicy
         {
             Thresholds =
@@ -151,7 +159,7 @@ public sealed class PerformanceBaselineTests
     }
 
     [Test]
-    public void Paired_net_system_delta_is_a_context_free_thresholdable_scope()
+    public void Legacy_paired_net_system_delta_is_rejected_from_the_canonical_baseline()
     {
         var metric = Measurement(20d) with
         {
@@ -172,37 +180,23 @@ public sealed class PerformanceBaselineTests
             ExactMethod = string.Empty
         };
         var baseline = Snapshot("accepted", metric);
-        var current = Snapshot("current", metric with { Value = 22d });
+        var current = Snapshot("current", metric with
+        {
+            Value = 22d,
+            Minimum = 22d,
+            Maximum = 22d,
+            RepetitionValues = [22d]
+        });
         foreach (var snapshot in new[] { baseline, current })
         {
             snapshot.Cases[0].Compatibility.BenchmarkId = "gateway.neutral-present.instrumented.paired-net";
             snapshot.Cases[0].Compatibility.EvidenceLens = "paired-net-system-delta";
         }
-        var policy = new PerformanceThresholdPolicy
-        {
-            Thresholds =
-            [
-                new PerformanceMetricThreshold
-                {
-                    BenchmarkId = "gateway.neutral-present.instrumented.paired-net",
-                    EvidenceLens = "paired-net-system-delta",
-                    Scope = "paired-net",
-                    Selector = "paired-net:elapsed-wall-milliseconds",
-                    MetricName = "elapsed-wall-milliseconds",
-                    Unit = "ms",
-                    AbsoluteIncrease = 5d
-                }
-            ]
-        };
+        var exception = Assert.Throws<ArgumentException>(() =>
+            PerformanceBaselineComparer.Compare(
+                current, [baseline], new PerformanceThresholdPolicy(), false));
 
-        var result = PerformanceBaselineComparer.Compare(current, [baseline], policy, false);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.Passed, Is.True);
-            Assert.That(result.Comparisons.Single().ThresholdsApplied, Is.True);
-            Assert.That(result.Failures, Is.Empty);
-        });
+        Assert.That(exception!.Message, Does.Contain("invalid measurement"));
     }
 
     [Test]
@@ -214,12 +208,28 @@ public sealed class PerformanceBaselineTests
             SamplingContextIdentity = "shift=2||shift=3"
         });
         baseline.Cases[0].Compatibility.RepetitionCount = 2;
+        baseline.Cases[0].Measurements[0] = baseline.Cases[0].Measurements[0] with
+        {
+            SampleCount = 2,
+            Minimum = 100d,
+            Maximum = 100d,
+            SampleStandardDeviation = 0d,
+            RepetitionValues = [100d, 100d]
+        };
         var current = Snapshot("current", Measurement(105d) with
         {
             SampleShift = 3.5,
             SamplingContextIdentity = "shift=3||shift=4"
         });
         current.Cases[0].Compatibility.RepetitionCount = 2;
+        current.Cases[0].Measurements[0] = current.Cases[0].Measurements[0] with
+        {
+            SampleCount = 2,
+            Minimum = 105d,
+            Maximum = 105d,
+            SampleStandardDeviation = 0d,
+            RepetitionValues = [105d, 105d]
+        };
 
         var result = PerformanceBaselineComparer.Compare(current, [baseline], Policy(), false);
 
@@ -253,7 +263,7 @@ public sealed class PerformanceBaselineTests
     }
 
     [Test]
-    public void Compatible_case_without_an_applicable_threshold_fails_and_does_not_claim_application()
+    public void Compatible_case_without_an_applicable_threshold_is_informational()
     {
         var result = PerformanceBaselineComparer.Compare(
             Snapshot("current", Measurement(100d)),
@@ -263,8 +273,9 @@ public sealed class PerformanceBaselineTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Passed, Is.False);
-            Assert.That(Codes(result), Does.Contain("threshold-policy-missing"));
+            Assert.That(result.Passed, Is.True);
+            Assert.That(result.Failures, Is.Empty);
+            Assert.That(result.Comparisons.Single().Status, Is.EqualTo("informational-no-threshold"));
             Assert.That(result.Comparisons.Single().ThresholdsApplied, Is.False);
         });
     }
@@ -371,6 +382,125 @@ public sealed class PerformanceBaselineTests
     }
 
     [Test]
+    public void Candidate_round_trip_retains_the_raw_stochastic_repetitions_and_distribution()
+    {
+        var root = Path.Combine(Path.GetTempPath(), nameof(PerformanceBaselineTests), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var path = Path.Combine(root, "distribution.candidate.json");
+            var measurement = Measurement(20d) with
+            {
+                SampleCount = 3,
+                Minimum = 10d,
+                Maximum = 30d,
+                SampleStandardDeviation = 10d,
+                RepetitionValues = [10d, 20d, 30d]
+            };
+
+            var snapshot = Snapshot("current", measurement);
+            snapshot.Cases[0].Compatibility.RepetitionCount = 3;
+            PerformanceBaselineStore.WriteCandidate(path, snapshot, DateTimeOffset.UtcNow);
+            var persisted = JsonSerializer.Deserialize<PerformanceBaselineSnapshot>(File.ReadAllText(path), JsonOptions())!;
+            var actual = persisted.Cases.Single().Measurements.Single();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(actual.Value, Is.EqualTo(20d));
+                Assert.That(actual.SampleCount, Is.EqualTo(3));
+                Assert.That(actual.Minimum, Is.EqualTo(10d));
+                Assert.That(actual.Maximum, Is.EqualTo(30d));
+                Assert.That(actual.SampleStandardDeviation, Is.EqualTo(10d));
+                Assert.That(actual.RepetitionValues, Is.EqualTo(new[] { 10d, 20d, 30d }));
+            });
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    [Test]
+    public void Snapshot_validation_rejects_inconsistent_stochastic_distributions()
+    {
+        var snapshot = Snapshot("current", Measurement(20d) with
+        {
+            SampleCount = 3,
+            Minimum = 10d,
+            Maximum = 30d,
+            SampleStandardDeviation = 10d,
+            RepetitionValues = [10d, 20d, 30d]
+        });
+        snapshot.Cases[0].Compatibility.RepetitionCount = 3;
+        var accepted = Snapshot("accepted", snapshot.Cases[0].Measurements[0] with
+        {
+            RepetitionValues = snapshot.Cases[0].Measurements[0].RepetitionValues.ToArray()
+        });
+        accepted.Cases[0].Compatibility.RepetitionCount = 3;
+        Assert.That(() => PerformanceBaselineComparer.Compare(snapshot, [accepted], Policy(), false),
+            Throws.Nothing);
+
+        foreach (var mutation in new Action<PerformanceMetricMeasurement>[]
+                 {
+                     metric => metric.SampleCount = 2,
+                     metric => metric.Minimum = 31d,
+                     metric => metric.Maximum = 19d,
+                     metric => metric.SampleStandardDeviation = 999d,
+                     metric => metric.RepetitionValues = [10d, 20d],
+                     metric => metric.RepetitionValues = null!,
+                     metric => metric.RepetitionWeights = null!
+                 })
+        {
+            var invalid = snapshot.Cases[0].Measurements[0] with
+            {
+                RepetitionValues = snapshot.Cases[0].Measurements[0].RepetitionValues.ToArray()
+            };
+            mutation(invalid);
+            var current = Snapshot("current", invalid);
+            current.Cases[0].Compatibility.RepetitionCount = 3;
+            Assert.That(() => PerformanceBaselineComparer.Compare(
+                current, [accepted], Policy(), false),
+                Throws.ArgumentException.With.Message.Contains("invalid measurement"));
+        }
+    }
+
+    [Test]
+    public void Call_weighted_distribution_retains_zero_call_repetitions_without_inventing_a_per_call_value()
+    {
+        var weighted = Measurement(50d / 3d) with
+        {
+            MetricName = "gross-ms-per-estimated-call",
+            SampleCount = 3,
+            Minimum = 10d,
+            Maximum = 20d,
+            SampleStandardDeviation = Math.Sqrt(50d),
+            RepetitionValues = [null, 10d, 20d],
+            RepetitionWeights = [0d, 2d, 4d],
+            AggregationKind = "call-weighted-mean"
+        };
+        var current = Snapshot("current", weighted);
+        var accepted = Snapshot("accepted", weighted with
+        {
+            RepetitionValues = weighted.RepetitionValues.ToArray(),
+            RepetitionWeights = weighted.RepetitionWeights.ToArray()
+        });
+        current.Cases[0].Compatibility.RepetitionCount = 3;
+        accepted.Cases[0].Compatibility.RepetitionCount = 3;
+
+        Assert.That(() => PerformanceBaselineComparer.Compare(current, [accepted], Policy(), false),
+            Throws.Nothing);
+
+        var fabricated = Snapshot("current", weighted with
+        {
+            RepetitionValues = [0d, 10d, 20d],
+            RepetitionWeights = [0d, 2d, 4d]
+        });
+        fabricated.Cases[0].Compatibility.RepetitionCount = 3;
+        Assert.That(() => PerformanceBaselineComparer.Compare(fabricated, [accepted], Policy(), false),
+            Throws.ArgumentException.With.Message.Contains("invalid measurement"));
+    }
+
+    [Test]
     public void Candidate_creation_refuses_a_run_with_runtime_errors()
     {
         var root = Path.Combine(Path.GetTempPath(), nameof(PerformanceBaselineTests), Guid.NewGuid().ToString("N"));
@@ -408,8 +538,6 @@ public sealed class PerformanceBaselineTests
             value => value.ProfilingPolicyIdentity = "other-profiler-policy",
             value => value.SamplingPolicyIdentity = "other-sampling-policy",
             value => value.HardwareRuntimeFingerprint = "other-hardware-runtime",
-            value => value.FixtureManifestSha256 = "other-fixture-manifest",
-            value => value.DeterministicSeed = 7,
             value => value.WarmUpTicks = 301,
             value => value.SampleTicks = 3001,
             value => value.GameSpeed = 2,
@@ -421,6 +549,15 @@ public sealed class PerformanceBaselineTests
         {
             var current = Snapshot("current", Measurement(100d));
             mutate(current.Cases[0].Compatibility);
+            if (current.Cases[0].Compatibility.RepetitionCount != 1)
+            {
+                var repetitions = current.Cases[0].Compatibility.RepetitionCount;
+                current.Cases[0].Measurements[0] = current.Cases[0].Measurements[0] with
+                {
+                    SampleCount = repetitions,
+                    RepetitionValues = Enumerable.Repeat<double?>(100d, repetitions).ToArray()
+                };
+            }
             var result = PerformanceBaselineComparer.Compare(current, [baseline], Policy(), false);
             Assert.That(Codes(result), Does.Contain("workload-drift"));
         }
@@ -477,14 +614,11 @@ public sealed class PerformanceBaselineTests
                     ProfilingPolicyIdentity = "hand-armed/v1",
                     SamplingPolicyIdentity = "native-adaptive/v1",
                     HardwareRuntimeFingerprint = "hardware-runtime-sha",
-                    FixtureManifestSha256 = "fixture-manifest-sha",
-                    FixtureTerminalManifestSha256 = "not-applicable",
-                    DeterministicSeed = 60161,
                     WarmUpTicks = 300,
                     SampleTicks = 3000,
                     GameSpeed = 3,
                     RepetitionCount = 1,
-                    AggregationPolicyIdentity = "arithmetic-mean/v1"
+                    AggregationPolicyIdentity = "stochastic-mean-with-pooled-per-call/v3"
                 },
                 Measurements = measurements.ToList()
             }
@@ -497,6 +631,10 @@ public sealed class PerformanceBaselineTests
         Selector = "Example.Tick()",
         MetricName = "exclusive-time",
         Value = value,
+        Minimum = value,
+        Maximum = value,
+        SampleStandardDeviation = 0d,
+        RepetitionValues = [value],
         Unit = "ms",
         Denominator = "recorded-profiler-cycle",
         Claim = "gross-attribution",

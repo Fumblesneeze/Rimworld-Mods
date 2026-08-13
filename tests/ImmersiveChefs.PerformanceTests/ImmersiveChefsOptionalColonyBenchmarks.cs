@@ -17,7 +17,7 @@ internal static class OptionalColonyContract
 [RimWorldPerformanceTest("immersive-chefs.processor-dubs.instrumented", ColonyContract.Owner,
     ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
     "syrchalis.processor.framework", "Dubwise.DubsBadHygiene", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
+    WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
     ComparisonId = OptionalColonyContract.ProcessorDubs, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.ProductInstrumented)]
@@ -48,7 +48,7 @@ public sealed class ProcessorDubsInstrumentedBenchmark : ImmersiveChefsColonyBen
 [RimWorldPerformanceTest("immersive-chefs.processor-dubs.armed-disabled", ColonyContract.Owner,
     ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
     "syrchalis.processor.framework", "Dubwise.DubsBadHygiene", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
+    WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
     ComparisonId = OptionalColonyContract.ProcessorDubs, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.ArmedDisabledWrapper)]
@@ -79,7 +79,7 @@ public sealed class ProcessorDubsArmedDisabledBenchmark : ImmersiveChefsColonyBe
 [RimWorldPerformanceTest("immersive-chefs.processor-dubs.disarmed", ColonyContract.Owner,
     ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
     "syrchalis.processor.framework", "Dubwise.DubsBadHygiene", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
+    WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
     ComparisonId = OptionalColonyContract.ProcessorDubs, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.FullyDisarmed)]
@@ -110,7 +110,7 @@ public sealed class ProcessorDubsDisarmedBenchmark : ImmersiveChefsColonyBenchma
 [RimWorldPerformanceTest("immersive-chefs.guest-service.instrumented", ColonyContract.Owner,
     ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
+    WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
     ComparisonId = OptionalColonyContract.GuestService, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.ProductInstrumented)]
@@ -133,12 +133,15 @@ public sealed class ProcessorDubsDisarmedBenchmark : ImmersiveChefsColonyBenchma
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 1)]
 [PerformanceThroughputCheckpoint("immersive-chefs.guest-service-branch", 1)]
+[PerformanceThroughputCheckpoint("guest-service-orders-served", 1)]
+[PerformanceThroughputCheckpoint("guest-service-colony-settings-returned", 1)]
+[PerformanceThroughputCheckpoint("guest-service-gastronomy-clearing-owned", 1)]
 public sealed class GuestServiceInstrumentedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.guest-service.armed-disabled", ColonyContract.Owner,
     ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
+    WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
     ComparisonId = OptionalColonyContract.GuestService, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.ArmedDisabledWrapper)]
@@ -161,12 +164,15 @@ public sealed class GuestServiceInstrumentedBenchmark : ImmersiveChefsColonyBenc
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 1)]
 [PerformanceThroughputCheckpoint("immersive-chefs.guest-service-branch", 1)]
+[PerformanceThroughputCheckpoint("guest-service-orders-served", 1)]
+[PerformanceThroughputCheckpoint("guest-service-colony-settings-returned", 1)]
+[PerformanceThroughputCheckpoint("guest-service-gastronomy-clearing-owned", 1)]
 public sealed class GuestServiceArmedDisabledBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.guest-service.disarmed", ColonyContract.Owner,
     ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
+    WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
     ComparisonId = OptionalColonyContract.GuestService, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.FullyDisarmed)]
@@ -189,6 +195,9 @@ public sealed class GuestServiceArmedDisabledBenchmark : ImmersiveChefsColonyBen
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 1)]
 [PerformanceThroughputCheckpoint("immersive-chefs.guest-service-branch", 1)]
+[PerformanceThroughputCheckpoint("guest-service-orders-served", 1)]
+[PerformanceThroughputCheckpoint("guest-service-colony-settings-returned", 1)]
+[PerformanceThroughputCheckpoint("guest-service-gastronomy-clearing-owned", 1)]
 public sealed class GuestServiceDisarmedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.variety-vnpe-material-dlc.instrumented", ColonyContract.Owner,
@@ -197,7 +206,7 @@ public sealed class GuestServiceDisarmedBenchmark : ImmersiveChefsColonyBenchmar
     "OskarPotocki.VanillaFactionsExpanded.Core", "Argon.ExpandedMaterials.Masonry",
     "Argon.ExpandedMaterials.Metals", "Evyatar108.VarietyMattersImprovedRedux",
     "VanillaExpanded.VanillaFoodVarietyExpanded", "VanillaExpanded.VNutrientE", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/variety-vnpe-material-dlc/v1",
+    WorkloadVersion = "immersive-chefs-colony/variety-vnpe-material-dlc/v1",
     ComparisonId = OptionalColonyContract.VarietyVnpeMaterialDlc, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.ProductInstrumented)]
@@ -228,7 +237,7 @@ public sealed class VarietyVnpeMaterialDlcInstrumentedBenchmark : ImmersiveChefs
     "OskarPotocki.VanillaFactionsExpanded.Core", "Argon.ExpandedMaterials.Masonry",
     "Argon.ExpandedMaterials.Metals", "Evyatar108.VarietyMattersImprovedRedux",
     "VanillaExpanded.VanillaFoodVarietyExpanded", "VanillaExpanded.VNutrientE", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/variety-vnpe-material-dlc/v1",
+    WorkloadVersion = "immersive-chefs-colony/variety-vnpe-material-dlc/v1",
     ComparisonId = OptionalColonyContract.VarietyVnpeMaterialDlc, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.ArmedDisabledWrapper)]
@@ -259,7 +268,7 @@ public sealed class VarietyVnpeMaterialDlcArmedDisabledBenchmark : ImmersiveChef
     "OskarPotocki.VanillaFactionsExpanded.Core", "Argon.ExpandedMaterials.Masonry",
     "Argon.ExpandedMaterials.Metals", "Evyatar108.VarietyMattersImprovedRedux",
     "VanillaExpanded.VanillaFoodVarietyExpanded", "VanillaExpanded.VNutrientE", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/variety-vnpe-material-dlc/v1",
+    WorkloadVersion = "immersive-chefs-colony/variety-vnpe-material-dlc/v1",
     ComparisonId = OptionalColonyContract.VarietyVnpeMaterialDlc, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.FullyDisarmed)]
@@ -292,7 +301,7 @@ public sealed class VarietyVnpeMaterialDlcDisarmedBenchmark : ImmersiveChefsColo
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense",
     "Evyatar108.VarietyMattersImprovedRedux", "VanillaExpanded.VanillaFoodVarietyExpanded",
     "VanillaExpanded.VNutrientE", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/all-supported/v1",
+    WorkloadVersion = "immersive-chefs-colony/all-supported/v1",
     ComparisonId = OptionalColonyContract.AllSupported, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.ProductInstrumented)]
@@ -315,6 +324,9 @@ public sealed class VarietyVnpeMaterialDlcDisarmedBenchmark : ImmersiveChefsColo
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 4)]
 [PerformanceThroughputCheckpoint("immersive-chefs.all-supported-branch", 1)]
+[PerformanceThroughputCheckpoint("guest-service-orders-served", 1)]
+[PerformanceThroughputCheckpoint("guest-service-colony-settings-returned", 1)]
+[PerformanceThroughputCheckpoint("guest-service-gastronomy-clearing-owned", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]
@@ -328,7 +340,7 @@ public sealed class AllSupportedInstrumentedBenchmark : ImmersiveChefsColonyBenc
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense",
     "Evyatar108.VarietyMattersImprovedRedux", "VanillaExpanded.VanillaFoodVarietyExpanded",
     "VanillaExpanded.VNutrientE", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/all-supported/v1",
+    WorkloadVersion = "immersive-chefs-colony/all-supported/v1",
     ComparisonId = OptionalColonyContract.AllSupported, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.ArmedDisabledWrapper)]
@@ -351,6 +363,9 @@ public sealed class AllSupportedInstrumentedBenchmark : ImmersiveChefsColonyBenc
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 4)]
 [PerformanceThroughputCheckpoint("immersive-chefs.all-supported-branch", 1)]
+[PerformanceThroughputCheckpoint("guest-service-orders-served", 1)]
+[PerformanceThroughputCheckpoint("guest-service-colony-settings-returned", 1)]
+[PerformanceThroughputCheckpoint("guest-service-gastronomy-clearing-owned", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]
@@ -364,7 +379,7 @@ public sealed class AllSupportedArmedDisabledBenchmark : ImmersiveChefsColonyBen
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense",
     "Evyatar108.VarietyMattersImprovedRedux", "VanillaExpanded.VanillaFoodVarietyExpanded",
     "VanillaExpanded.VNutrientE", ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed, WorkloadVersion = "immersive-chefs-colony/all-supported/v1",
+    WorkloadVersion = "immersive-chefs-colony/all-supported/v1",
     ComparisonId = OptionalColonyContract.AllSupported, WarmUpTicks = ColonyContract.WarmUpTicks,
     SampleTicks = ColonyContract.SampleTicks, Repetitions = 3,
     EvidenceLens = PerformanceEvidenceLens.FullyDisarmed)]
@@ -387,6 +402,9 @@ public sealed class AllSupportedArmedDisabledBenchmark : ImmersiveChefsColonyBen
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 [PerformanceThroughputCheckpoint("optional-group-branches", 4)]
 [PerformanceThroughputCheckpoint("immersive-chefs.all-supported-branch", 1)]
+[PerformanceThroughputCheckpoint("guest-service-orders-served", 1)]
+[PerformanceThroughputCheckpoint("guest-service-colony-settings-returned", 1)]
+[PerformanceThroughputCheckpoint("guest-service-gastronomy-clearing-owned", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-domestic-cycles", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-industrial-cycles", 1)]
 [PerformanceThroughputCheckpoint("processor-dubs-water-milliliters", 1)]

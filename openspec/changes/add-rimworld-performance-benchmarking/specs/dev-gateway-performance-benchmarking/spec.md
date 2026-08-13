@@ -2,10 +2,10 @@
 
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
-### Requirement: Performance fixtures declare exact reproducible groups
-Every performance fixture SHALL be a separately staged attributed type with a stable benchmark ID, comparison ID, staging-owner package, measured-subject package, complete ordered non-Gateway package sequence, deterministic seed, workload version, warm-up ticks, sample ticks, game speed, repetition policy, and evidence lens. Every canonical sequence SHALL begin exactly `brrainz.harmony`, `ludeon.rimworld`, `astryl.Circinus`; product and optional packages follow in their declared order, and Gateway is appended last by the host. Dubs Performance Analyzer SHALL NOT be present in a canonical Circinus benchmark group. The explicitly noncanonical DPA diagnostic command is exempt from the Circinus requirement and SHALL instead exclude Circinus.
+### Requirement: Performance fixtures declare comparable representative groups
+Every performance fixture SHALL be a separately staged attributed type with a stable benchmark ID, comparison ID, staging-owner package, measured-subject package, complete ordered non-Gateway package sequence, workload version, warm-up ticks, sample ticks, game speed, repetition policy, and evidence lens. Every canonical sequence SHALL begin exactly `brrainz.harmony`, `ludeon.rimworld`, `astryl.Circinus`; product and optional packages follow in their declared order, and Gateway is appended last by the host. Dubs Performance Analyzer SHALL NOT be present in a canonical Circinus benchmark group. The explicitly noncanonical DPA diagnostic command is exempt from the Circinus requirement and SHALL instead exclude Circinus.
 
-One comparison SHALL declare exactly one instrumented, armed-disabled-wrapper, and fully-disarmed lens under the same staging owner with identical subject, package order, seed, workload, timing, speed, repetitions, selectors, throughput checkpoints, and optional control identity. A product-absent control SHALL be staged under the same active non-product owner as its product-present neutral fixture, declare its absent measured subject and its own exact group, contain no product reference, and SHALL be comparable as a net system delta only when that shared fixture implementation, workload, and throughput checkpoints remain semantically valid with and without the product. Product-owned feature fixtures SHALL NOT claim a product-absent net control merely by copying metadata strings into a different implementation.
+The ordinary historical benchmark SHALL be the instrumented representative workload repeated in fresh processes and aggregated statistically. Armed-disabled-wrapper, fully-disarmed, and product-absent controls MAY be declared and run when calibrating profiler overhead or investigating passive load-time impact, but they SHALL NOT be required for every product or optional-mod performance run. A control comparison SHALL share the same broad scenario definition, package policy, workload version, timing, speed, selectors, and throughput checkpoints; it SHALL NOT require equal generated pawns, random-number state, unique IDs, jobs, positions, inventories, or terminal world state.
 
 Host-safe discovery SHALL reject more than 1,024 benchmark declarations, 64 active packages, 256 method selectors, or 64 throughput checkpoints per declaration. Package IDs SHALL use at most 128 ASCII package-token characters; benchmark/workload/comparison/category/checkpoint/control identities SHALL use at most 256 characters; and an explicit method selector SHALL use at most 1,024 characters. These reuse the repository's established Gateway integration-matrix and identity ceilings rather than Circinus or HTTP limits, are published contract values with exact/over boundary tests, and SHALL be changed only as a reviewed contract revision. Exact-group identities SHALL use unambiguous length-prefixed package sequences rather than delimiter joining.
 
@@ -58,9 +58,9 @@ DPA output SHALL be labeled diagnostic, SHALL NOT offer accepted-baseline creati
 - **THEN** no DPA value is written to or compared with a Circinus baseline
 
 ### Requirement: Sampling uses Circinus and ordinary game progression
-The benchmark SHALL arrange its workload while paused, verify exact fixture counts, warm it through ordinary game frames/ticks while Circinus recording is disabled, reset the controlled counters, start one labeled Circinus run, add sample-boundary markers, enable the exact hand-armed profiler set, and run the declared sample through native game-speed progression. It SHALL then disable profiling; snapshot `Method`, `HandArmed`, `SampleShift`, `TotalCalls`, `TotalTimedCalls`, `Empty`, and `CyclesSeen` from every exact run-owned live `DevProfiler`; stop Circinus; correlate each non-empty sidecar to its exact `PatchStat` or `MethodStat`; retain every empty/uninvoked sidecar with an explicit no-row reason; retain the stopped document and persisted isolated run JSON; and clean only run-owned instrumentation.
+The benchmark SHALL arrange its representative workload while paused, verify coarse fixture counts and required facilities, warm it through ordinary game frames/ticks while Circinus recording is disabled, reset only benchmark-owned measurement counters, start one labeled Circinus run, add sample-boundary markers, enable the exact hand-armed profiler set, and run the declared sample through native game-speed progression. It SHALL then disable profiling; snapshot `Method`, `HandArmed`, `SampleShift`, `TotalCalls`, `TotalTimedCalls`, `Empty`, and `CyclesSeen` from every exact run-owned live `DevProfiler`; stop Circinus; correlate each non-empty sidecar to its exact `PatchStat` or `MethodStat`; retain every empty/uninvoked sidecar with an explicit no-row reason; retain the stopped document and persisted isolated run JSON; and clean only run-owned instrumentation.
 
-It MUST NOT call `DoSingleTick`, directly invoke profiled methods to inflate counts, alter Circinus' native duty/adaptive sampling, construct expected terminal metrics, or accept a sample that silently overflowed Circinus' 2000-recorded-frame ring, 7200-sample run ceiling, or patch/method detail caps.
+It MUST NOT seed or reset RimWorld's global random state or unique-ID manager, freeze ordinary actors into identical jobs, normalize the colony back to an exact post-warm-up state, reject a repetition because generated IDs or start/terminal state hashes differ, call `DoSingleTick`, directly invoke profiled methods to inflate counts, alter Circinus' native duty/adaptive sampling, construct expected terminal metrics, or accept a sample that silently overflowed Circinus' 2000-recorded-frame ring, 7200-sample run ceiling, or patch/method detail caps.
 
 #### Scenario: A normal sample completes
 - **WHEN** warm-up settles and the declared sample interval advances through the running game's normal tick manager
@@ -71,6 +71,11 @@ It MUST NOT call `DoSingleTick`, directly invoke profiled methods to inflate cou
 - **WHEN** expected meals, dish cycles, nursing, hauling, dining, pathing, or caravan activity does not reach its declared throughput checkpoint
 - **THEN** the sample is invalid even if its recorded CPU time is low
 
+#### Scenario: Ordinary repetitions diverge
+- **WHEN** fresh repetitions generate different pawns, jobs, paths, IDs, inventories, or terminal layouts while the declared scenario remains healthy
+- **THEN** every repetition remains valid and its raw result is retained
+- **THEN** the report aggregates the compatible measurements rather than trying to force or prove identical game state
+
 #### Scenario: A declared sample exceeds Circinus' retained window
 - **WHEN** the native recorded-frame ring or required patch/method-detail cap would omit an earlier required part of the sample
 - **THEN** the run fails or is split into explicitly declared compatible windows/repetitions rather than accepting only the retained tail
@@ -80,7 +85,9 @@ Every sample SHALL retain the untouched local Circinus JSON entries for product 
 
 Normalized summaries MUST preserve units, denominators, and the native sampling policy. They MUST label Circinus patch/mod timing as gross attribution rather than causal net impact and mean timing as per recorded profiler cycle rather than per call. Every emitted numeric metric MUST be finite. A share or rate whose native denominator is zero SHALL be omitted as unobserved rather than fabricated as zero or emitted as a non-finite value; a nonzero numerator against that denominator SHALL fail normalization. They MUST NOT present adaptively estimated calls as continuously timed calls, compare tick metrics to frame metrics as though they share one basis, compare raw milliseconds across incompatible machines, subtract semantically different product-present/product-absent workloads, or silently accept a missing/duplicate sidecar correlation or Circinus refusal/incomplete/truncation state for a required metric.
 
-Every profiled workload SHALL run in fresh, compatible instrumented, armed-disabled, and fully disarmed processes while retaining the same active Circinus recorder/sample collection in all three. The armed-disabled process SHALL retain the same Circinus wrappers with `ProfilerRegistry.Enabled=false` and `Recording=false`; the fully disarmed process SHALL remove all run-owned Circinus wrappers before sampling. Reports SHALL label instrumented-minus-armed-disabled as active method-timing/sampling overhead, armed-disabled-minus-fully-disarmed as wrapper overhead, and instrumented-minus-fully-disarmed as total method-instrumentation overhead. No one of these controls SHALL be labeled analyzer-absent. Those estimates SHALL remain separate from gross code attribution and any paired product-present/product-absent net system delta.
+Every ordinary benchmark SHALL run at least three fresh instrumented repetitions by default. The report SHALL retain every raw repetition and aggregate compatible metric values with sample count, arithmetic mean, minimum, maximum, and sample standard deviation. A later workload may use more repetitions when observed variance warrants it. The runner SHALL NOT discard a healthy repetition merely because it is an outlier.
+
+When specifically requested, a workload MAY additionally run compatible armed-disabled and fully-disarmed processes while retaining the same active Circinus recorder/sample collection. The armed-disabled process SHALL retain the same Circinus wrappers with `ProfilerRegistry.Enabled=false` and `Recording=false`; the fully disarmed process SHALL remove all run-owned Circinus wrappers before sampling. Reports SHALL label instrumented-minus-armed-disabled as active method-timing/sampling overhead, armed-disabled-minus-fully-disarmed as wrapper overhead, and instrumented-minus-fully-disarmed as total method-instrumentation overhead. No one of these controls SHALL be labeled analyzer-absent. Those calibration estimates SHALL remain separate from gross code attribution and independently reported product-present/product-absent samples.
 
 #### Scenario: A work giver regresses
 - **WHEN** its share, mean, or total CPU time rises while calls, timed calls, profiler window, workload, and sample policy remain compatible
@@ -92,22 +99,22 @@ Every profiled workload SHALL run in fresh, compatible instrumented, armed-disab
 - **THEN** disabling `ProfilerRegistry.Enabled` alone is never labeled fully disarmed or analyzer-absent
 
 #### Scenario: Net impact is requested
-- **WHEN** a product-present run has a product-absent control with the exact same neutral workload, checkpoints, hardware, and sampling policy
-- **THEN** the report may label the compatible system-metric delta as paired net impact
+- **WHEN** repeated product-present and product-absent controls use the same broad neutral scenario, checkpoints, hardware, timing, and sampling policy
+- **THEN** the runner SHALL retain and report both independent distributions without pairing repetitions by index or fabricating a delta distribution
+- **THEN** a descriptive difference between their aggregate means MAY be calculated outside the canonical baseline only when it is labeled as an independent-sample estimate
 - **THEN** Circinus' per-patch execution share remains separately labeled gross attribution
 
-#### Scenario: The passive neutral workload is repeated
-- **WHEN** the same Gateway-owned neutral comparison runs across repetitions, instrumentation lenses, and product-present/product-absent groups
-- **THEN** every retained pawn runs the same native long-lived wait job through the sample while map, pawn, animal, need, health, and loaded-patch ticking continue normally
-- **THEN** semantic start and terminal rows, their SHA-256 identities, throughput counts, and exact active packages are retained and compared instead of using generated Thing IDs or frame-scheduled autonomous job choices as workload identity
-- **AND** exact global Rand and unique-ID anchors are retained at sample start, while frame-rate-dependent terminal consumption of those process-global counters is not misclassified as retained workload-state drift
+#### Scenario: A stochastic historical run is repeated
+- **WHEN** the same workload version runs in multiple fresh processes
+- **THEN** RimWorld's ordinary random, ID, think-tree, pathing, and job systems remain untouched
+- **THEN** coarse health checkpoints prove that the intended gameplay systems were exercised, while ordinary state variation is represented by the retained distribution
 
 #### Scenario: The product owns the workload semantics
 - **WHEN** removing the product removes or materially changes the jobs/buildings being measured
 - **THEN** the runner refuses a net subtraction and reports only gross attribution, separately measured active-timing/wrapper/total method-instrumentation overhead, and compatible version regression
 
 ### Requirement: Immersive Chefs has a substantial versioned workload
-The initial Immersive Chefs fixture SHALL build a deterministic multi-room, non-trivial-pathing colony with 36 human pawns across cooking, assistance, cleaning/hauling, nursing/patient, and dining roles; 24 animals; simultaneous recipe tiers; prep/support stations; domestic and industrial dishwashing; microwaves; separated storage; patients and nurses; and two caravans containing pawns, animals, meals, plates, and cutlery. Exact Defs, counts, layout version, jobs, and expected throughput SHALL be machine-verified before and after every sample. Optional groups SHALL activate the corresponding installed integrations without changing unrelated base identities.
+The initial Immersive Chefs fixture SHALL build a representative multi-room, non-trivial-pathing colony with roughly 36 human pawns across cooking, assistance, cleaning/hauling, nursing/patient, and dining roles; roughly 24 animals; simultaneous recipe tiers; prep/support stations; domestic and industrial dishwashing; microwaves; separated storage; patients and nurses; and caravans containing pawns, animals, meals, plates, and cutlery. The layout version, broad population/facility envelope, required active systems, and minimum successful outcomes SHALL be machine-verified. Exact pawn identities, paths, jobs, generated IDs, and terminal object locations SHALL be allowed to vary normally. Optional groups SHALL activate the corresponding installed integrations without changing unrelated package or workload identities.
 
 #### Scenario: Base Immersive Chefs performance run
 - **WHEN** Harmony, Core, Circinus, Immersive Chefs, and Gateway form the exact active set in that order
@@ -119,7 +126,7 @@ The initial Immersive Chefs fixture SHALL build a deterministic multi-room, non-
 
 #### Scenario: Optional performance matrices run
 - **WHEN** an optional Immersive Chefs performance family is selected
-- **THEN** it declares all three instrumentation lenses with one of these complete ordered non-Gateway package sequences after the mandatory Harmony/Core/Circinus prefix:
+- **THEN** it declares an instrumented repeated benchmark, with optional calibration lenses when requested, using one of these complete ordered non-Gateway package sequences after the mandatory Harmony/Core/Circinus prefix:
   - Processor/Dubs: `syrchalis.processor.framework`, `Dubwise.DubsBadHygiene`, Immersive Chefs;
   - guest service: `Orion.Hospitality`, `Orion.CashRegister`, `Orion.Gastronomy`, `avilmask.CommonSense`, Immersive Chefs;
   - variety/VNPE/material/DLC: Royalty, Biotech, `Argon.CoreLib`, Vanilla Expanded Framework, Expanded Materials Masonry, Expanded Materials Metals, Variety Matters, Vanilla Food Variety Expanded, VNPE, Immersive Chefs;
@@ -139,7 +146,7 @@ The host SHALL allow benchmark selection/filtering by benchmark ID and exact mod
 - **THEN** staging lists only the filtered family and control, the in-game catalog verifies those exact entries against compiled types, and no unrelated compiled benchmark is admitted or instantiated
 
 ### Requirement: Historical comparison is explicit and compatible
-The runner SHALL emit untouched Circinus JSON, normalized JSON, CSV, and a Markdown summary for every run and SHALL compare results only against a compatible accepted baseline by default. Compatibility SHALL include workload version, package order, game version, product/test/Circinus assembly and schema identities, profiling/sampling policy, evidence lens, metric units, and relevant hardware/runtime fingerprint. Regression policies SHALL be tracked per selector with explicit relative and/or absolute thresholds. A missing metric, new runtime error, workload drift, Circinus refusal/incomplete/truncation state, or exceeded threshold SHALL fail comparison.
+The runner SHALL emit untouched Circinus JSON, normalized JSON, CSV, and a Markdown summary for every run and SHALL compare aggregate results only against a compatible accepted baseline by default. Compatibility SHALL include workload version, package order, game version, product/test/Circinus assembly and schema identities, profiling/sampling policy, evidence lens, metric units, relevant hardware/runtime fingerprint, duration, and repetition policy. It SHALL NOT include an applied random seed, global random state, generated IDs, or exact start/terminal fixture hashes. Every aggregate SHALL retain every repetition as an observed value or an explicit unobserved/null value, sample count, aggregation kind, minimum, maximum, and sample standard deviation so historical trends and noise are visible. Ordinary metrics SHALL use an arithmetic mean. Per-call metrics SHALL use total measured time divided by total calls, retain the matching per-repetition call weights, and MUST NOT fabricate a zero per-call value for a repetition with no calls. Every method/patch SHALL additionally retain a bounded per-repetition observation indicator, including an all-zero vector when no repetition observed a call. Regression policies MAY be tracked per selector with explicit relative and/or absolute thresholds; absent an explicit reviewed policy, historical deltas are informational. A new runtime error, missing required profiler data, failed coarse scenario-health checkpoint, Circinus refusal/incomplete/truncation state, or exceeded explicit threshold SHALL fail comparison.
 
 #### Scenario: A compatible regression exceeds policy
 - **WHEN** a selected product method exceeds its reviewed relative or absolute threshold across the configured samples

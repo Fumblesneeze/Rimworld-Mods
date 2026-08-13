@@ -6,7 +6,7 @@ Plans or runs isolated RimWorld performance benchmarks.
 Discovers marked performance fixture projects through the host metadata reader, validates exact
 mod/lens families, and expands every benchmark repetition into its own fresh-process plan.
 
--DryRun builds and validates fixture assemblies and prints deterministic process/report paths. It
+-DryRun builds and validates fixture assemblies and prints stable process/report paths. It
 does not stage a bundle, write artifacts, alter game settings, or launch RimWorld.
 
 Exit codes: 0 success, 1 execution/infrastructure failure, 2 invalid usage or discovery.
@@ -55,6 +55,8 @@ param(
 
     [switch]$InformationalCrossVersion,
 
+    [switch]$IncludeProfilerControls,
+
     [ValidateRange(60, [int]::MaxValue)]
     [int]$TimeoutSeconds = 600,
 
@@ -79,6 +81,43 @@ function Test-PackageId {
     return -not [string]::IsNullOrWhiteSpace($Value) -and
         $Value.Length -le 128 -and
         $Value -cmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$'
+}
+
+function Select-OrdinaryPerformancePlan {
+    param(
+        [Parameter(Mandatory)][object]$Plan,
+        [string[]]$ExplicitBenchmarkIds = @(),
+        [switch]$IncludeControls
+    )
+    if (@($ExplicitBenchmarkIds).Count -gt 0) { return $Plan }
+
+    $ordinary = if ($IncludeControls) {
+        @($Plan.processes | Where-Object { [int]$_.evidenceLens -in @(0, 1, 2) })
+    }
+    else {
+        @($Plan.processes | Where-Object { [int]$_.evidenceLens -eq 0 } |
+            Group-Object benchmarkId |
+            Where-Object { $_.Count -ge 3 } |
+            ForEach-Object { @($_.Group) })
+    }
+    if ($ordinary.Count -eq 0) {
+        throw 'The ordinary performance plan contains no instrumented benchmarks.'
+    }
+    $ordinaryIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($process in $ordinary) { $null = $ordinaryIds.Add([string]$process.benchmarkId) }
+    $groups = foreach ($group in @($Plan.groups)) {
+        $benchmarks = @($group.benchmarks | Where-Object { $ordinaryIds.Contains([string]$_) })
+        if ($benchmarks.Count -gt 0) {
+            [pscustomobject]@{
+                groupId = [string]$group.groupId
+                activePackageIds = @($group.activePackageIds)
+                benchmarks = $benchmarks
+            }
+        }
+    }
+    $Plan.processes = $ordinary
+    $Plan.groups = @($groups)
+    return $Plan
 }
 
 function Get-InstalledPackageIds {
@@ -499,109 +538,12 @@ function Get-PerformanceFixtureManifestIdentity {
     }
 }
 
-function New-PerformancePairedNetCases {
-    param(
-        [Parameter(Mandatory)][object[]]$Cases,
-        [Parameter(Mandatory)][object]$Plan
-    )
-    $result = [System.Collections.Generic.List[object]]::new()
-    $plannedProducts = @($Plan.processes | Where-Object {
-        -not [string]::IsNullOrWhiteSpace([string]$_.productAbsentControlId) -and
-        [int]$_.evidenceLens -eq 0
-    } | Group-Object benchmarkId | ForEach-Object { $_.Group[0] })
-    foreach ($planned in $plannedProducts) {
-        $present = @($Cases | Where-Object {
-            [string]$_.Compatibility.BenchmarkId -ceq [string]$planned.benchmarkId
-        })
-        $absent = @($Cases | Where-Object {
-            [string]$_.Compatibility.BenchmarkId -ceq [string]$planned.productAbsentControlId
-        })
-        if ($present.Count -ne 1 -or $absent.Count -ne 1) {
-            throw "Paired net control '$([string]$planned.benchmarkId)' requires one exact present and absent case."
-        }
-        $present = $present[0]
-        $absent = $absent[0]
-        foreach ($field in @('WorkloadVersion','GameVersion','TestAssemblyIdentity',
-            'CircinusAssemblyIdentity','CircinusSchemaIdentity','SamplingPolicyIdentity',
-            'HardwareRuntimeFingerprint','FixtureManifestSha256','FixtureTerminalManifestSha256',
-            'DeterministicSeed','WarmUpTicks','SampleTicks','GameSpeed','RepetitionCount',
-            'AggregationPolicyIdentity')) {
-            if ([string]$present.Compatibility.$field -cne [string]$absent.Compatibility.$field) {
-                $label = if ($field -ceq 'FixtureTerminalManifestSha256') { 'terminal manifest drift' } else { "compatibility drift in $field" }
-                throw "Paired net control '$([string]$planned.benchmarkId)' has $label."
-            }
-        }
-        $expectedPresentPackages = @($absent.Compatibility.ActivePackageIds)
-        $subject = [string]$planned.measuredSubjectPackageId
-        $subjectIndex = [Array]::IndexOf([string[]]@($present.Compatibility.ActivePackageIds), $subject)
-        if ($subjectIndex -lt 0) {
-            throw "Paired net control '$([string]$planned.benchmarkId)' did not load measured subject '$subject'."
-        }
-        $withoutSubject = @($present.Compatibility.ActivePackageIds | Where-Object { [string]$_ -cne $subject })
-        if (($withoutSubject -join "`n") -cne ($expectedPresentPackages -join "`n")) {
-            throw "Paired net control '$([string]$planned.benchmarkId)' has package-order drift beyond the measured subject."
-        }
-        $presentMetrics = @($present.Measurements | Where-Object { [string]$_.Scope -ceq 'checkpoint' })
-        $absentMetrics = @($absent.Measurements | Where-Object { [string]$_.Scope -ceq 'checkpoint' })
-        $deltas = [System.Collections.Generic.List[object]]::new()
-        foreach ($metric in $presentMetrics) {
-            $match = @($absentMetrics | Where-Object {
-                [string]$_.Selector -ceq [string]$metric.Selector -and
-                [string]$_.MetricName -ceq [string]$metric.MetricName -and
-                [string]$_.Unit -ceq [string]$metric.Unit -and
-                [string]$_.Denominator -ceq [string]$metric.Denominator -and
-                [string]$_.Claim -ceq [string]$metric.Claim
-            })
-            if ($match.Count -ne 1) {
-                throw "Paired net control '$([string]$planned.benchmarkId)' has checkpoint schema drift for '$([string]$metric.MetricName)'."
-            }
-            if ([string]$metric.MetricName -notin @('elapsed-wall-milliseconds','managed-memory-start-bytes',
-                'managed-memory-end-bytes','managed-memory-delta-bytes',
-                'gc-generation-0','gc-generation-1','gc-generation-2')) {
-                if ([double]$metric.Value -ne [double]$match[0].Value) {
-                    throw "Paired net control '$([string]$planned.benchmarkId)' has semantic checkpoint drift for '$([string]$metric.MetricName)'."
-                }
-                continue
-            }
-            $deltas.Add([pscustomobject]@{
-                Scope='paired-net'; Selector="paired-net:$([string]$metric.MetricName)"
-                MetricName=[string]$metric.MetricName; Value=[double]$metric.Value-[double]$match[0].Value
-                Unit=[string]$metric.Unit; Denominator=[string]$metric.Denominator
-                Claim='paired-net-system-delta'; Calls=$null; TimedCalls=$null; DutyPercent=$null
-                SampleShift=$null; RecordedCycles=$null; ProfilerWindowMilliseconds=$null
-                ProfilerWindowTicks=$null; SamplingContextIdentity=''; ExactMethod=''
-            })
-        }
-        if (@($absentMetrics).Count -ne @($presentMetrics).Count) {
-            throw "Paired net control '$([string]$planned.benchmarkId)' has checkpoint schema drift."
-        }
-        $compatibility = $present.Compatibility.PSObject.Copy()
-        $compatibility.BenchmarkId = "$([string]$planned.benchmarkId).paired-net"
-        $compatibility.EvidenceLens = 'paired-net-system-delta'
-        $compatibility.ProductAssemblyIdentity = "present:$([string]$present.Compatibility.ProductAssemblyIdentity)|absent:$([string]$absent.Compatibility.ProductAssemblyIdentity)"
-        $compatibility.ProfilingPolicyIdentity = 'paired-present-minus-absent-system-controls/v1'
-        $result.Add([pscustomobject]@{ Compatibility=$compatibility; Measurements=@($deltas) })
-    }
-    return @($result)
-}
-
 function Assert-PerformanceFixtureManifestCompatibility {
     param([Parameter(Mandatory)][object[]]$Records)
     $resolved = @($Records)
-    foreach ($group in @($resolved | Group-Object BenchmarkId)) {
-        $manifests = @($group.Group | ForEach-Object { [string]$_.ManifestJson } |
-            Sort-Object -Unique -CaseSensitive)
-        if ($manifests.Count -ne 1) {
-            throw "Benchmark '$([string]$group.Name)' has repetition manifest drift."
-        }
-    }
-    foreach ($group in @($resolved | Where-Object {
-        -not [string]::IsNullOrWhiteSpace([string]$_.ComparisonId)
-    } | Group-Object ComparisonId)) {
-        $manifests = @($group.Group | ForEach-Object { [string]$_.ManifestJson } |
-            Sort-Object -Unique -CaseSensitive)
-        if ($manifests.Count -ne 1) {
-            throw "Performance comparison '$([string]$group.Name)' has comparison manifest drift."
+    foreach ($record in $resolved) {
+        if ([string]::IsNullOrWhiteSpace([string]$record.ManifestJson)) {
+            throw "Benchmark '$([string]$record.BenchmarkId)' has a missing fixture health manifest."
         }
     }
     foreach ($product in @($resolved | Where-Object {
@@ -612,35 +554,31 @@ function Assert-PerformanceFixtureManifestCompatibility {
         if ($controls.Count -eq 0) {
             throw "Benchmark '$([string]$product.BenchmarkId)' has no runtime product-absent manifest '$controlId'."
         }
-        $manifests = @(@($product) + $controls | ForEach-Object {
-            [string]$_.ManifestJson
-        } | Sort-Object -Unique -CaseSensitive)
-        if ($manifests.Count -ne 1) {
-            throw "Benchmark '$([string]$product.BenchmarkId)' has product-absent manifest drift from '$controlId'."
-        }
     }
-    $pairedRecords = @($resolved | Where-Object {
-        -not [string]::IsNullOrWhiteSpace([string]$_.ProductAbsentControlId)
-    })
-    if ($pairedRecords.Count -gt 0) {
-        $requiredIds = @($pairedRecords.BenchmarkId + $pairedRecords.ProductAbsentControlId |
-            Sort-Object -Unique -CaseSensitive)
-        $terminalRecords = @($resolved | Where-Object { [string]$_.BenchmarkId -cin $requiredIds })
-        if ($terminalRecords.Count -eq 0 -or @($terminalRecords | Where-Object {
-            [string]::IsNullOrWhiteSpace([string]$_.TerminalManifestJson)
-        }).Count -gt 0) {
-            throw 'Paired product-present/product-absent controls require terminal manifests.'
-        }
-        foreach ($group in @($terminalRecords | Group-Object BenchmarkId)) {
-            $terminal = @($group.Group.TerminalManifestJson | Sort-Object -Unique -CaseSensitive)
-            if ($terminal.Count -ne 1) {
-                throw "Benchmark '$([string]$group.Name)' has repetition terminal manifest drift."
-            }
-        }
-        $allTerminal = @($terminalRecords.TerminalManifestJson | Sort-Object -Unique -CaseSensitive)
-        if ($allTerminal.Count -ne 1) {
-            throw 'Paired product-present/product-absent controls have terminal manifest drift.'
-        }
+}
+
+function Get-PerformanceMetricDistribution {
+    # Binding a typed object[] that begins with `$null` through PowerShell's
+    # collection binder is misclassified as a null argument. Accept the array
+    # object itself, then preserve its elements (including leading nulls).
+    param([Parameter(Mandatory)][AllowNull()][object]$Values)
+    $Values = @($Values)
+    if ($Values.Count -eq 0) { throw 'A performance metric distribution requires at least one value.' }
+    $observed = @($Values | Where-Object { $null -ne $_ } | ForEach-Object { [double]$_ })
+    if ($observed.Count -eq 0) { throw 'A performance metric distribution requires at least one observation.' }
+    $mean = [double](($observed | Measure-Object -Average).Average)
+    $sumSquares = 0.0
+    foreach ($value in $observed) { $sumSquares += ([double]$value - $mean) * ([double]$value - $mean) }
+    $sampleStandardDeviation = if ($observed.Count -gt 1) {
+        [Math]::Sqrt($sumSquares / ($observed.Count - 1))
+    } else { 0.0 }
+    return [pscustomobject]@{
+        Count = $Values.Count
+        Mean = $mean
+        Minimum = [double](($observed | Measure-Object -Minimum).Minimum)
+        Maximum = [double](($observed | Measure-Object -Maximum).Maximum)
+        SampleStandardDeviation = [double]$sampleStandardDeviation
+        Values = $Values
     }
 }
 
@@ -673,7 +611,10 @@ function Get-PerformancePerCallAggregate {
     $weightedTotal = 0.0
     $aggregateCalls = 0.0
     $contexts = [System.Collections.Generic.List[object]]::new()
-    foreach ($member in $Members) {
+    $repetitionValues = [System.Array]::CreateInstance([object], $Members.Count)
+    $repetitionWeights = [System.Array]::CreateInstance([double], $Members.Count)
+    for ($memberIndex = 0; $memberIndex -lt $Members.Count; $memberIndex++) {
+        $member = $Members[$memberIndex]
         $callRows = @($member.Measurements | Where-Object {
             [string]$_.Scope -ceq $Scope -and
             [string]$_.Selector -ceq $Selector -and
@@ -694,15 +635,32 @@ function Get-PerformancePerCallAggregate {
             throw "Benchmark '$BenchmarkId' has inconsistent per-call evidence for '$Scope/$Selector'."
         }
         if ($calls -gt 0) {
-            $weightedTotal += [double]$valueRows[0].Value * $calls
+            $repetitionValue = [double]$valueRows[0].Value
+            $weightedTotal += $repetitionValue * $calls
             $aggregateCalls += $calls
+            $repetitionValues[$memberIndex] = $repetitionValue
+            $repetitionWeights[$memberIndex] = $calls
+        }
+        else {
+            $repetitionValues[$memberIndex] = $null
+            $repetitionWeights[$memberIndex] = 0.0
         }
     }
     return [pscustomobject]@{
         HasObservation = $aggregateCalls -gt 0
         Value = if ($aggregateCalls -gt 0) { $weightedTotal / $aggregateCalls } else { 0.0 }
         ContextRows = @($contexts)
+        RepetitionValues = $repetitionValues
+        RepetitionWeights = $repetitionWeights
     }
+}
+
+function Get-PerformancePerCallObservationDistribution {
+    param([Parameter(Mandatory)][object]$Aggregate)
+    $observations = [object[]]@($Aggregate.RepetitionWeights | ForEach-Object {
+        if ([double]$_ -gt 0.0) { 1.0 } else { 0.0 }
+    })
+    return Get-PerformanceMetricDistribution -Values $observations
 }
 
 function New-PerformanceCurrentSnapshot {
@@ -737,24 +695,11 @@ function New-PerformanceCurrentSnapshot {
         $fixtureManifest = Get-PerformanceFixtureManifestIdentity `
             -SmokeResult $result.SmokeResult `
             -BenchmarkId ([string]$processPlan.benchmarkId)
-        $requiresTerminalManifest =
-            -not [string]::IsNullOrWhiteSpace([string]$processPlan.productAbsentControlId) -or
-            [int]$processPlan.evidenceLens -eq 3
-        $terminalManifest = if ($requiresTerminalManifest) {
-            Get-PerformanceFixtureManifestIdentity `
-                -SmokeResult $result.SmokeResult `
-                -BenchmarkId ([string]$processPlan.benchmarkId) `
-                -NameSuffix '-terminal-state'
-        }
-        else {
-            [pscustomobject]@{ Json='not-applicable'; Sha256='not-applicable' }
-        }
         $manifestRecords.Add([pscustomobject]@{
             BenchmarkId = [string]$processPlan.benchmarkId
             ComparisonId = [string]$processPlan.comparisonId
             ProductAbsentControlId = [string]$processPlan.productAbsentControlId
             ManifestJson = [string]$fixtureManifest.Json
-            TerminalManifestJson = [string]$terminalManifest.Json
         })
         $raw = Get-Content -LiteralPath ([string]$result.Raw.Path) -Raw | ConvertFrom-Json -ErrorAction Stop
         $normalized = Get-Content -LiteralPath ([string]$result.Normalized.Path) -Raw | ConvertFrom-Json -ErrorAction Stop
@@ -845,14 +790,11 @@ function New-PerformanceCurrentSnapshot {
             ProfilingPolicyIdentity = $profilingPolicy
             SamplingPolicyIdentity = "circinus-local-settings:$SettingsSha256|native-adaptive/v1"
             HardwareRuntimeFingerprint = $runtimeFingerprint
-            FixtureManifestSha256 = [string]$fixtureManifest.Sha256
-            FixtureTerminalManifestSha256 = [string]$terminalManifest.Sha256
-            DeterministicSeed = [int]$processPlan.deterministicSeed
             WarmUpTicks = [int]$processPlan.warmUpTicks
             SampleTicks = [int]$processPlan.sampleTicks
             GameSpeed = [int]$processPlan.gameSpeed
             RepetitionCount = 1
-            AggregationPolicyIdentity = 'arithmetic-mean-with-pooled-per-call/v2'
+            AggregationPolicyIdentity = 'stochastic-mean-with-pooled-per-call/v4'
         }
         $identityJson = $compatibility | ConvertTo-Json -Depth 8 -Compress
         $observations.Add([pscustomobject]@{
@@ -911,11 +853,26 @@ function New-PerformanceCurrentSnapshot {
             $cycles = @($contextMetrics | Where-Object { $null -ne $_.RecordedCycles } | ForEach-Object { [double]$_.RecordedCycles })
             $windowMilliseconds = @($contextMetrics | Where-Object { $null -ne $_.ProfilerWindowMilliseconds } | ForEach-Object { [double]$_.ProfilerWindowMilliseconds })
             $windowTicks = @($contextMetrics | Where-Object { $null -ne $_.ProfilerWindowTicks } | ForEach-Object { [double]$_.ProfilerWindowTicks })
+            $distributionValues = if ($perCall) { $aggregate.RepetitionValues } else {
+                [object[]]@($metrics | ForEach-Object { [double]$_.Value })
+            }
+            $distribution = Get-PerformanceMetricDistribution -Values $distributionValues
             $combined.Add([pscustomobject]@{
                 Scope = [string]$metrics[0].Scope
                 Selector = [string]$metrics[0].Selector
                 MetricName = [string]$metrics[0].MetricName
                 Value = if ($perCall) { [double]$perCallValue } else { [double](($metrics | Measure-Object -Property Value -Average).Average) }
+                SampleCount = $expectedRepetitions
+                Minimum = [double]$distribution.Minimum
+                Maximum = [double]$distribution.Maximum
+                SampleStandardDeviation = [double]$distribution.SampleStandardDeviation
+                RepetitionValues = $distribution.Values
+                RepetitionWeights = if ($perCall) {
+                    $aggregate.RepetitionWeights
+                } else {
+                    [System.Array]::CreateInstance([double], 0)
+                }
+                AggregationKind = if ($perCall) { 'call-weighted-mean' } else { 'arithmetic-mean' }
                 Unit = [string]$units[0]
                 Denominator = [string]$denominators[0]
                 Claim = [string]$claims[0]
@@ -929,17 +886,49 @@ function New-PerformanceCurrentSnapshot {
                 SamplingContextIdentity = @($contextMetrics | ForEach-Object { [string]$_.SamplingContextIdentity }) -join '||'
                 ExactMethod = [string]$methods[0]
             })
+            if ([string]$metrics[0].MetricName -ceq 'calls' -and
+                [string]$metrics[0].Scope -in @('method', 'patch')) {
+                $availabilityAggregate = Get-PerformancePerCallAggregate `
+                    -Members $members `
+                    -Scope ([string]$metrics[0].Scope) `
+                    -Selector ([string]$metrics[0].Selector) `
+                    -BenchmarkId ([string]$members[0].Compatibility.BenchmarkId)
+                $availability = Get-PerformancePerCallObservationDistribution `
+                    -Aggregate $availabilityAggregate
+                $combined.Add([pscustomobject]@{
+                    Scope = [string]$metrics[0].Scope
+                    Selector = [string]$metrics[0].Selector
+                    MetricName = 'gross-ms-per-estimated-call-observation-rate'
+                    Value = [double]$availability.Mean
+                    SampleCount = $expectedRepetitions
+                    Minimum = [double]$availability.Minimum
+                    Maximum = [double]$availability.Maximum
+                    SampleStandardDeviation = [double]$availability.SampleStandardDeviation
+                    RepetitionValues = $availability.Values
+                    RepetitionWeights = [System.Array]::CreateInstance([double], 0)
+                    AggregationKind = 'arithmetic-mean'
+                    Unit = 'ratio'
+                    Denominator = 'repetition'
+                    Claim = 'per-call-observation-availability'
+                    Calls = if ($calls.Count -eq $expectedRepetitions) { [double](($calls | Measure-Object -Average).Average) } else { $null }
+                    TimedCalls = if ($timed.Count -eq $expectedRepetitions) { [double](($timed | Measure-Object -Average).Average) } else { $null }
+                    DutyPercent = if ($duty.Count -eq $expectedRepetitions) { [double](($duty | Measure-Object -Average).Average) } else { $null }
+                    SampleShift = if ($shift.Count -eq $expectedRepetitions) { [double](($shift | Measure-Object -Average).Average) } else { $null }
+                    RecordedCycles = if ($cycles.Count -eq $expectedRepetitions) { [double](($cycles | Measure-Object -Average).Average) } else { $null }
+                    ProfilerWindowMilliseconds = if ($windowMilliseconds.Count -eq $expectedRepetitions) { [double](($windowMilliseconds | Measure-Object -Average).Average) } else { $null }
+                    ProfilerWindowTicks = if ($windowTicks.Count -eq $expectedRepetitions) { [double](($windowTicks | Measure-Object -Average).Average) } else { $null }
+                    SamplingContextIdentity = @($contextMetrics | ForEach-Object { [string]$_.SamplingContextIdentity }) -join '||'
+                    ExactMethod = [string]$methods[0]
+                })
+            }
         }
         $compatibility = $members[0].Compatibility
         $compatibility.RepetitionCount = $expectedRepetitions
-        $compatibility.AggregationPolicyIdentity = 'arithmetic-mean-with-pooled-per-call/v2'
+        $compatibility.AggregationPolicyIdentity = 'stochastic-mean-with-pooled-per-call/v4'
         $cases.Add([pscustomobject]@{
             Compatibility = $compatibility
             Measurements = @($combined)
         })
-    }
-    foreach ($paired in @(New-PerformancePairedNetCases -Cases @($cases) -Plan $Plan)) {
-        $cases.Add($paired)
     }
     return [pscustomobject]@{
         SchemaVersion = 1
@@ -1099,7 +1088,13 @@ if ($hostResult.ExitCode -ne 0) {
     [Console]::Error.WriteLine($hostResult.StandardError.Trim())
     exit $(if ($hostResult.ExitCode -eq 2) { 2 } else { 1 })
 }
-try { $plan = $hostResult.StandardOutput | ConvertFrom-Json -ErrorAction Stop }
+try {
+    $plan = $hostResult.StandardOutput | ConvertFrom-Json -ErrorAction Stop
+    $plan = Select-OrdinaryPerformancePlan `
+        -Plan $plan `
+        -ExplicitBenchmarkIds @($BenchmarkId) `
+        -IncludeControls:$IncludeProfilerControls
+}
 catch { [Console]::Error.WriteLine("Performance host returned invalid JSON: $($_.Exception.Message)"); exit 1 }
 
 if ($DryRun) {

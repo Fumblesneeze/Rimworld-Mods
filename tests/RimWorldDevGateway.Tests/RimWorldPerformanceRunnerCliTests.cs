@@ -54,7 +54,6 @@ public sealed class RimWorldPerformanceRunnerCliTests
             Assert.That(processes.Select(item => item.SampleTicks), Is.All.EqualTo(120));
             Assert.That(processes.Select(item => item.GameSpeed), Is.All.EqualTo(3),
                 "The dense calibration must run uncapped so wrapper and timing costs clear the normal-speed floor.");
-            Assert.That(processes.Select(item => item.DeterministicSeed), Is.All.EqualTo(60161));
             Assert.That(processes.Select(item => item.WorkloadVersion), Is.All.EqualTo("gateway-calibration/v4"));
             Assert.That(processes.Select(item => item.Repetition), Is.EqualTo(new[] { 1, 2 }));
             Assert.That(processes[0].RawCircinusJsonPath, Does.EndWith("circinus.raw.json"));
@@ -246,7 +245,7 @@ public sealed class RimWorldPerformanceRunnerCliTests
     }
 
     [Test]
-    public void Runtime_snapshot_rejects_actual_fixture_manifest_drift_across_repetitions_lenses_and_absent_control()
+    public void Runtime_snapshot_accepts_ordinary_fixture_state_drift_and_rejects_only_missing_health_manifests()
     {
         var source =
             "$tokens=$null; $errors=$null; " +
@@ -261,19 +260,17 @@ public sealed class RimWorldPerformanceRunnerCliTests
             "[pscustomobject]@{BenchmarkId='present.armed';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same;TerminalManifestJson=$terminal}," +
             "[pscustomobject]@{BenchmarkId='present.disarmed';ComparisonId='present';ProductAbsentControlId='absent';ManifestJson=$same;TerminalManifestJson=$terminal}," +
             "[pscustomobject]@{BenchmarkId='absent';ComparisonId='absent';ProductAbsentControlId='';ManifestJson=$same;TerminalManifestJson=$terminal}); " +
-            "Assert-PerformanceFixtureManifestCompatibility -Records $records; " +
-            "$records[1].ManifestJson=$drift; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 71 } catch { Write-Output ('repetition|' + $_.Exception.Message) }; " +
-            "$records[1].ManifestJson=$same; $records[2].ManifestJson=$drift; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 72 } catch { Write-Output ('lens|' + $_.Exception.Message) }; " +
-            "$records[2].ManifestJson=$same; $records[4].ManifestJson=$drift; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 73 } catch { Write-Output ('control|' + $_.Exception.Message) }";
+            "$records[1].ManifestJson=$drift; $records[2].ManifestJson=$drift; $records[4].ManifestJson='{\"pawn\":\"C\"}'; " +
+            "Assert-PerformanceFixtureManifestCompatibility -Records $records; Write-Output 'ordinary-drift-accepted'; " +
+            "$records[3].ManifestJson=''; try { Assert-PerformanceFixtureManifestCompatibility -Records $records; exit 71 } catch { Write-Output ('missing|' + $_.Exception.Message) }";
 
         var run = InvokeScript(source);
 
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
-            Assert.That(run.StandardOutput, Does.Contain("repetition|").And.Contain("repetition manifest drift"));
-            Assert.That(run.StandardOutput, Does.Contain("lens|").And.Contain("comparison manifest drift"));
-            Assert.That(run.StandardOutput, Does.Contain("control|").And.Contain("product-absent manifest drift"));
+            Assert.That(run.StandardOutput, Does.Contain("ordinary-drift-accepted"));
+            Assert.That(run.StandardOutput, Does.Contain("missing|").And.Contain("missing fixture health manifest"));
         });
     }
 
@@ -284,13 +281,13 @@ public sealed class RimWorldPerformanceRunnerCliTests
             "$tokens=$null; $errors=$null; " +
             "$ast=[System.Management.Automation.Language.Parser]::ParseFile(" + Literal(RunnerPath()) + ",[ref]$tokens,[ref]$errors); " +
             "if($errors.Count -ne 0){throw 'parse failed'}; " +
-            "$wanted=@('Assert-PerformanceRepetitionCompatibility','Get-PerformancePerCallAggregate'); " +
+            "$wanted=@('Assert-PerformanceRepetitionCompatibility','Get-PerformanceMetricDistribution','Get-PerformancePerCallAggregate'); " +
             "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
             "$plan=[pscustomobject]@{processes=@([pscustomobject]@{benchmarkId='b'},[pscustomobject]@{benchmarkId='b'},[pscustomobject]@{benchmarkId='b'})}; " +
             "$measure={param($calls,$value,$context) $rows=@([pscustomobject]@{Scope='method';Selector='m';MetricName='calls';Value=$calls;Calls=$calls;TimedCalls=$calls;SamplingContextIdentity=$context}); if($calls -gt 0){$rows+= [pscustomobject]@{Scope='method';Selector='m';MetricName='gross-ms-per-estimated-call';Value=$value;Calls=$calls;TimedCalls=$calls;SamplingContextIdentity=$context}}; return $rows}; " +
             "$members=@([pscustomobject]@{IdentityJson='same';Compatibility=[pscustomobject]@{BenchmarkId='b'};Measurements=@(&$measure 0 0 'c0')},[pscustomobject]@{IdentityJson='same';Compatibility=[pscustomobject]@{BenchmarkId='b'};Measurements=@(&$measure 2 10 'c2')},[pscustomobject]@{IdentityJson='same';Compatibility=[pscustomobject]@{BenchmarkId='b'};Measurements=@(&$measure 4 20 'c4')}); " +
             "Assert-PerformanceRepetitionCompatibility -Plan $plan -Observations $members; " +
-            "$weighted=Get-PerformancePerCallAggregate -Members $members -Scope 'method' -Selector 'm' -BenchmarkId 'b'; Write-Output ('weighted|' + $weighted.HasObservation + '|' + $weighted.Value + '|' + $weighted.ContextRows.Count + '|' + (($weighted.ContextRows|Measure-Object -Property Calls -Average).Average) + '|' + (($weighted.ContextRows.SamplingContextIdentity) -join ',')); " +
+            "$weighted=Get-PerformancePerCallAggregate -Members $members -Scope 'method' -Selector 'm' -BenchmarkId 'b'; $distribution=Get-PerformanceMetricDistribution -Values $weighted.RepetitionValues; Write-Output ('weighted|' + $weighted.HasObservation + '|' + $weighted.Value + '|' + $weighted.ContextRows.Count + '|' + (($weighted.ContextRows|Measure-Object -Property Calls -Average).Average) + '|' + (($weighted.ContextRows.SamplingContextIdentity) -join ',') + '|values=' + (($distribution.Values | ForEach-Object { if($null -eq $_){'null'}else{[string]$_} }) -join ',') + '|count=' + $distribution.Count + '|weights=' + ($weighted.RepetitionWeights -join ',')); " +
             "$members[2].IdentityJson='drift'; try { Assert-PerformanceRepetitionCompatibility -Plan $plan -Observations $members; exit 71 } catch { Write-Output ('drift|' + $_.Exception.Message) }";
 
         var run = InvokeScript(source);
@@ -298,37 +295,83 @@ public sealed class RimWorldPerformanceRunnerCliTests
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
-            Assert.That(run.StandardOutput, Does.Contain("weighted|True|16.666").And.Contain("|3|2|c0,c2,c4"));
+            Assert.That(run.StandardOutput, Does.Contain("weighted|True|16.666").And.Contain("|3|2|c0,c2,c4|values=null,10,20|count=3|weights=0,2,4"));
             Assert.That(run.StandardOutput, Does.Contain("drift|Benchmark 'b' has repetition compatibility drift."));
         });
     }
 
     [Test]
-    public void Runtime_snapshot_builds_only_semantically_compatible_present_minus_absent_system_deltas()
+    public void Runtime_snapshot_retains_an_explicit_observation_rate_when_every_per_call_sample_is_unobserved()
     {
         var source =
             "$tokens=$null; $errors=$null; " +
             "$ast=[System.Management.Automation.Language.Parser]::ParseFile(" + Literal(RunnerPath()) + ",[ref]$tokens,[ref]$errors); " +
             "if($errors.Count -ne 0){throw 'parse failed'}; " +
-            "$wanted=@('New-PerformancePairedNetCases'); " +
+            "$wanted=@('Get-PerformanceMetricDistribution','Get-PerformancePerCallAggregate','Get-PerformancePerCallObservationDistribution'); " +
             "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
-            "$identity={param($id,$lens,$packages,$terminal) [pscustomobject]@{BenchmarkId=$id;GroupId='g';WorkloadVersion='w';EvidenceLens=$lens;ActivePackageIds=$packages;GameVersion='1.6';ProductAssemblyIdentity=if($lens -eq 'product-absent-control'){'not-loaded'}else{'product-sha'};TestAssemblyIdentity='test-sha';CircinusAssemblyIdentity='circinus-sha';CircinusSchemaIdentity='1.15';ProfilingPolicyIdentity='policy';SamplingPolicyIdentity='sampling';HardwareRuntimeFingerprint='host';FixtureManifestSha256='start';FixtureTerminalManifestSha256=$terminal;DeterministicSeed=7;WarmUpTicks=10;SampleTicks=20;GameSpeed=1;RepetitionCount=3;AggregationPolicyIdentity='arithmetic-mean-with-pooled-per-call/v2'}}; " +
-            "$measure={param($wall,$ticks) @([pscustomobject]@{Scope='checkpoint';Selector='checkpoint:elapsed-wall-milliseconds';MetricName='elapsed-wall-milliseconds';Value=$wall;Unit='ms';Denominator='sample-window';Claim='control'},[pscustomobject]@{Scope='checkpoint';Selector='checkpoint:neutral-native-map-ticks';MetricName='neutral-native-map-ticks';Value=$ticks;Unit='count';Denominator='sample-window';Claim='control'})}; " +
-            "$present=[pscustomobject]@{Compatibility=&$identity 'present' 'instrumented' @('harmony','core','circinus','product','gateway') 'terminal';Measurements=@(&$measure 120 20)}; " +
-            "$absent=[pscustomobject]@{Compatibility=&$identity 'absent' 'product-absent-control' @('harmony','core','circinus','gateway') 'terminal';Measurements=@(&$measure 100 20)}; " +
-            "$plan=[pscustomobject]@{processes=@([pscustomobject]@{benchmarkId='present';productAbsentControlId='absent';evidenceLens=0;measuredSubjectPackageId='product'},[pscustomobject]@{benchmarkId='absent';productAbsentControlId='';evidenceLens=3;measuredSubjectPackageId='product'})}; " +
-            "$net=@(New-PerformancePairedNetCases -Cases @($present,$absent) -Plan $plan); Write-Output ('net|' + $net.Count + '|' + $net[0].Measurements.Count + '|' + $net[0].Measurements[0].Value + '|' + $net[0].Compatibility.EvidenceLens); " +
-            "$absent.Compatibility.FixtureTerminalManifestSha256='drift'; try { New-PerformancePairedNetCases -Cases @($present,$absent) -Plan $plan | Out-Null; exit 71 } catch { Write-Output ('terminal|' + $_.Exception.Message) }; " +
-            "$absent.Compatibility.FixtureTerminalManifestSha256='terminal'; $absent.Measurements[1].Value=19; try { New-PerformancePairedNetCases -Cases @($present,$absent) -Plan $plan | Out-Null; exit 72 } catch { Write-Output ('throughput|' + $_.Exception.Message) }";
+            "$row={param($context) [pscustomobject]@{Scope='method';Selector='m';MetricName='calls';Value=0;Calls=0;TimedCalls=0;SamplingContextIdentity=$context}}; " +
+            "$members=@([pscustomobject]@{Measurements=@(&$row 'c1')},[pscustomobject]@{Measurements=@(&$row 'c2')},[pscustomobject]@{Measurements=@(&$row 'c3')}); " +
+            "$aggregate=Get-PerformancePerCallAggregate -Members $members -Scope 'method' -Selector 'm' -BenchmarkId 'b'; " +
+            "$availability=Get-PerformancePerCallObservationDistribution -Aggregate $aggregate; " +
+            "Write-Output ('unobserved|' + $aggregate.HasObservation + '|' + $availability.Mean + '|' + $availability.Count + '|' + ($availability.Values -join ','))";
 
         var run = InvokeScript(source);
 
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
-            Assert.That(run.StandardOutput, Does.Contain("net|1|1|20|paired-net-system-delta"));
-            Assert.That(run.StandardOutput, Does.Contain("terminal|").And.Contain("terminal manifest drift"));
-            Assert.That(run.StandardOutput, Does.Contain("throughput|").And.Contain("semantic checkpoint drift"));
+            Assert.That(run.StandardOutput, Does.Contain("unobserved|False|0|3|0,0,0"));
+        });
+    }
+
+    [Test]
+    public void Runtime_snapshot_reports_the_distribution_of_ordinary_repetitions()
+    {
+        var source =
+            "$tokens=$null; $errors=$null; " +
+            "$ast=[System.Management.Automation.Language.Parser]::ParseFile(" + Literal(RunnerPath()) + ",[ref]$tokens,[ref]$errors); " +
+            "if($errors.Count -ne 0){throw 'parse failed'}; " +
+            "$wanted=@('Get-PerformanceMetricDistribution'); " +
+            "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
+            "$d=Get-PerformanceMetricDistribution -Values @(10.0,20.0,30.0); " +
+            "Write-Output ($d.Count.ToString()+'|'+$d.Mean.ToString()+'|'+$d.Minimum.ToString()+'|'+$d.Maximum.ToString()+'|'+$d.SampleStandardDeviation.ToString('F6')+'|'+($d.Values -join ','))";
+
+        var run = InvokeScript(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Replace(',', '.'), Does.Contain("3|20|10|30|10.000000|10.20.30"));
+        });
+    }
+
+    [Test]
+    public void Default_plan_runs_only_instrumented_averages_while_controls_are_opt_in()
+    {
+        var source =
+            "$tokens=$null; $errors=$null; " +
+            "$ast=[System.Management.Automation.Language.Parser]::ParseFile(" + Literal(RunnerPath()) + ",[ref]$tokens,[ref]$errors); " +
+            "if($errors.Count -ne 0){throw 'parse failed'}; " +
+            "$wanted=@('Select-OrdinaryPerformancePlan'); " +
+            "$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $wanted},$true) | ForEach-Object { Invoke-Expression $_.Extent.Text }; " +
+            "$processes=@(" +
+            "[pscustomobject]@{benchmarkId='calibration';evidenceLens=0}," +
+            "[pscustomobject]@{benchmarkId='base';evidenceLens=0},[pscustomobject]@{benchmarkId='base';evidenceLens=0},[pscustomobject]@{benchmarkId='base';evidenceLens=0}," +
+            "[pscustomobject]@{benchmarkId='present';evidenceLens=0;productAbsentControlId='absent'},[pscustomobject]@{benchmarkId='present';evidenceLens=0;productAbsentControlId='absent'},[pscustomobject]@{benchmarkId='present';evidenceLens=0;productAbsentControlId='absent'}," +
+            "[pscustomobject]@{benchmarkId='armed';evidenceLens=1},[pscustomobject]@{benchmarkId='disarmed';evidenceLens=2},[pscustomobject]@{benchmarkId='absent';evidenceLens=3}); " +
+            "$group=[pscustomobject]@{groupId='g';activePackageIds=@('core');benchmarks=@('calibration','base','present','armed','disarmed','absent')}; " +
+            "$ordinary=Select-OrdinaryPerformancePlan -Plan ([pscustomobject]@{processes=$processes;groups=@($group)}); " +
+            "Write-Output ('ordinary|' + (($ordinary.processes.benchmarkId | Select-Object -Unique) -join ',') + '|' + ($ordinary.groups[0].benchmarks -join ',')); " +
+            "$all=Select-OrdinaryPerformancePlan -Plan ([pscustomobject]@{processes=$processes;groups=@($group)}) -IncludeControls; " +
+            "Write-Output ('controls|' + (($all.processes.benchmarkId | Select-Object -Unique) -join ','))";
+
+        var run = InvokeScript(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput, Does.Contain("ordinary|base,present|base,present"));
+            Assert.That(run.StandardOutput, Does.Contain("controls|calibration,base,present,armed,disarmed"));
         });
     }
 
@@ -436,7 +479,6 @@ public sealed class RimWorldPerformanceRunnerCliTests
         [DataMember(Name = "warmUpTicks")] public int WarmUpTicks { get; set; }
         [DataMember(Name = "sampleTicks")] public int SampleTicks { get; set; }
         [DataMember(Name = "gameSpeed")] public int GameSpeed { get; set; }
-        [DataMember(Name = "deterministicSeed")] public int DeterministicSeed { get; set; }
         [DataMember(Name = "workloadVersion")] public string WorkloadVersion { get; set; } = string.Empty;
         [DataMember(Name = "repetition")] public int Repetition { get; set; }
         [DataMember(Name = "profiler")] public string Profiler { get; set; } = string.Empty;

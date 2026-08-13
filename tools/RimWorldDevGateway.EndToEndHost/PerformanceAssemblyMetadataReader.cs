@@ -119,7 +119,6 @@ public static class PerformanceAssemblyMetadataReader
         var owner = String(value.FixedArguments[1]);
         var subject = String(value.FixedArguments[2]);
         var packages = DecodeStringArray(value.FixedArguments[3].Value);
-        var seed = 1;
         var workload = "v1";
         string? comparisonId = null;
         var warmUp = 2500;
@@ -132,7 +131,6 @@ public static class PerformanceAssemblyMetadataReader
         {
             switch (named.Name)
             {
-                case "DeterministicSeed": seed = Int32(named.Value); break;
                 case "WorkloadVersion": workload = named.Value as string ?? string.Empty; break;
                 case "ComparisonId": comparisonId = named.Value as string; break;
                 case "WarmUpTicks": warmUp = Int32(named.Value); break;
@@ -154,7 +152,6 @@ public static class PerformanceAssemblyMetadataReader
             owner,
             subject,
             packages,
-            seed,
             workload,
             string.IsNullOrWhiteSpace(comparisonId) ? id : comparisonId!,
             warmUp,

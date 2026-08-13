@@ -33,9 +33,6 @@ public sealed class PerformanceCompatibilityIdentity
     public string ProfilingPolicyIdentity { get; set; } = string.Empty;
     public string SamplingPolicyIdentity { get; set; } = string.Empty;
     public string HardwareRuntimeFingerprint { get; set; } = string.Empty;
-    public string FixtureManifestSha256 { get; set; } = string.Empty;
-    public string FixtureTerminalManifestSha256 { get; set; } = "not-applicable";
-    public int DeterministicSeed { get; set; }
     public int WarmUpTicks { get; set; }
     public int SampleTicks { get; set; }
     public int GameSpeed { get; set; }
@@ -49,6 +46,13 @@ public sealed record PerformanceMetricMeasurement
     public string Selector { get; set; } = string.Empty;
     public string MetricName { get; set; } = string.Empty;
     public double Value { get; set; }
+    public int SampleCount { get; set; } = 1;
+    public double? Minimum { get; set; }
+    public double? Maximum { get; set; }
+    public double? SampleStandardDeviation { get; set; }
+    public double?[] RepetitionValues { get; set; } = [];
+    public double[] RepetitionWeights { get; set; } = [];
+    public string AggregationKind { get; set; } = "arithmetic-mean";
     public string Unit { get; set; } = string.Empty;
     public string Denominator { get; set; } = string.Empty;
     public string Claim { get; set; } = string.Empty;
@@ -274,11 +278,12 @@ public static class PerformanceBaselineComparer
         var evaluations = CompareMetrics(exact[0], current, policy, result);
         if (evaluations.Count == 0)
         {
-            AddIdentityFailure(
-                result,
+            result.Comparisons.Add(CaseResult(
                 identity,
-                "threshold-policy-missing",
-                "No reviewed threshold could be applied to this compatible performance case.");
+                "informational-no-threshold",
+                false,
+                informationalMetrics: InformationalDeltas(exact[0], current)));
+            return;
         }
         result.Comparisons.Add(CaseResult(
             identity,
@@ -556,8 +561,7 @@ public static class PerformanceBaselineComparer
         var hasContext = metric.Calls is not null || metric.TimedCalls is not null || metric.DutyPercent is not null ||
                          metric.SampleShift is not null || metric.RecordedCycles is not null ||
                          metric.ProfilerWindowMilliseconds is not null || metric.ProfilerWindowTicks is not null;
-        if (string.Equals(metric.Scope, "checkpoint", StringComparison.Ordinal) ||
-            string.Equals(metric.Scope, "paired-net", StringComparison.Ordinal))
+        if (string.Equals(metric.Scope, "checkpoint", StringComparison.Ordinal))
         {
             if (hasContext) result.Add("checkpoint-context-unexpected");
             return result;
@@ -684,10 +688,6 @@ public static class PerformanceBaselineComparer
         Difference(result, "profilingPolicyIdentity", baseline.ProfilingPolicyIdentity, current.ProfilingPolicyIdentity);
         Difference(result, "samplingPolicyIdentity", baseline.SamplingPolicyIdentity, current.SamplingPolicyIdentity);
         Difference(result, "hardwareRuntimeFingerprint", baseline.HardwareRuntimeFingerprint, current.HardwareRuntimeFingerprint);
-        Difference(result, "fixtureManifestSha256", baseline.FixtureManifestSha256, current.FixtureManifestSha256);
-        Difference(result, "fixtureTerminalManifestSha256", baseline.FixtureTerminalManifestSha256,
-            current.FixtureTerminalManifestSha256);
-        if (baseline.DeterministicSeed != current.DeterministicSeed) result.Add("deterministicSeed");
         if (baseline.WarmUpTicks != current.WarmUpTicks) result.Add("warmUpTicks");
         if (baseline.SampleTicks != current.SampleTicks) result.Add("sampleTicks");
         if (baseline.GameSpeed != current.GameSpeed) result.Add("gameSpeed");
@@ -726,8 +726,7 @@ public static class PerformanceBaselineComparer
                          identity.GameVersion, identity.ProductAssemblyIdentity, identity.TestAssemblyIdentity,
                          identity.CircinusAssemblyIdentity, identity.CircinusSchemaIdentity,
                          identity.ProfilingPolicyIdentity, identity.SamplingPolicyIdentity,
-                         identity.HardwareRuntimeFingerprint, identity.FixtureManifestSha256,
-                         identity.FixtureTerminalManifestSha256,
+                         identity.HardwareRuntimeFingerprint,
                          identity.AggregationPolicyIdentity
                      })
                 if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException($"The {owner} contains an empty compatibility identity.");
@@ -737,9 +736,12 @@ public static class PerformanceBaselineComparer
                 throw new ArgumentException($"The {owner} contains an invalid repetition count.");
             foreach (var metric in item.Measurements)
             {
-                if (string.IsNullOrWhiteSpace(metric.Selector) || string.IsNullOrWhiteSpace(metric.MetricName) ||
-                    string.IsNullOrWhiteSpace(metric.Unit) || string.IsNullOrWhiteSpace(metric.Denominator) ||
-                    string.IsNullOrWhiteSpace(metric.Claim) || !Finite(metric.Value) ||
+                if (string.Equals(metric.Scope, "paired-net", StringComparison.Ordinal) ||
+                    string.Equals(identity.EvidenceLens, "paired-net-system-delta", StringComparison.Ordinal) ||
+                    string.IsNullOrWhiteSpace(metric.Selector) || string.IsNullOrWhiteSpace(metric.MetricName) ||
+                     string.IsNullOrWhiteSpace(metric.Unit) || string.IsNullOrWhiteSpace(metric.Denominator) ||
+                     string.IsNullOrWhiteSpace(metric.Claim) || !Finite(metric.Value) ||
+                     !ValidDistribution(metric, identity.RepetitionCount) ||
                     metric.Calls is < 0 || metric.TimedCalls is < 0 ||
                     metric.Calls is not null && metric.TimedCalls > metric.Calls ||
                     metric.DutyPercent is < 0d or > 100d ||
@@ -772,6 +774,59 @@ public static class PerformanceBaselineComparer
 
     private static bool Finite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
     private static bool Finite(double? value) => value is null || Finite(value.Value);
+
+    private static bool ValidDistribution(PerformanceMetricMeasurement metric, int repetitionCount)
+    {
+        if (metric.RepetitionValues is null || metric.RepetitionWeights is null ||
+            metric.SampleCount <= 0 || metric.SampleCount != repetitionCount ||
+            metric.RepetitionValues.Length != repetitionCount ||
+            metric.RepetitionWeights.Length != 0 && metric.RepetitionWeights.Length != repetitionCount ||
+            metric.RepetitionValues.Any(value => value is not null && !Finite(value.Value)) ||
+            metric.RepetitionWeights.Any(value => !Finite(value) || value < 0d) ||
+            metric.Minimum is not null && !Finite(metric.Minimum) ||
+            metric.Maximum is not null && !Finite(metric.Maximum) ||
+            metric.SampleStandardDeviation is < 0d || !Finite(metric.SampleStandardDeviation)) return false;
+
+        var observed = metric.RepetitionValues.Where(value => value is not null)
+            .Select(value => value!.Value).ToArray();
+        if (string.Equals(metric.AggregationKind, "arithmetic-mean", StringComparison.Ordinal))
+        {
+            if (observed.Length != repetitionCount || metric.RepetitionWeights.Length != 0) return false;
+            return DistributionMatches(metric, observed, observed.Average());
+        }
+
+        if (!string.Equals(metric.AggregationKind, "call-weighted-mean", StringComparison.Ordinal) ||
+            metric.RepetitionWeights.Length != repetitionCount) return false;
+        for (var index = 0; index < repetitionCount; index++)
+        {
+            if (metric.RepetitionWeights[index] == 0d != (metric.RepetitionValues[index] is null)) return false;
+        }
+        if (observed.Length == 0) return false;
+        var weightSum = metric.RepetitionWeights.Sum();
+        if (weightSum <= 0d) return false;
+        var weightedMean = metric.RepetitionValues.Select((value, index) =>
+            (value ?? 0d) * metric.RepetitionWeights[index]).Sum() / weightSum;
+        return DistributionMatches(metric, observed, weightedMean);
+    }
+
+    private static bool DistributionMatches(
+        PerformanceMetricMeasurement metric,
+        double[] observed,
+        double expectedValue)
+    {
+        var mean = observed.Average();
+        var sampleDeviation = observed.Length > 1
+            ? Math.Sqrt(observed.Sum(value => (value - mean) * (value - mean)) / (observed.Length - 1))
+            : 0d;
+        return NearlyEqual(metric.Value, expectedValue) &&
+               NearlyEqual(metric.Minimum, observed.Min()) &&
+               NearlyEqual(metric.Maximum, observed.Max()) &&
+               NearlyEqual(metric.SampleStandardDeviation, sampleDeviation);
+    }
+
+    private static bool NearlyEqual(double? actual, double expected) =>
+        actual is not null && Math.Abs(actual.Value - expected) <=
+        1e-9 * Math.Max(1d, Math.Max(Math.Abs(actual.Value), Math.Abs(expected)));
 }
 
 public static class PerformanceBaselineStore

@@ -223,7 +223,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
         MinifiedThing? recovered = null;
 
         var clearCandidates = map.AllCells
-            .Where(cell => CellRect.CenteredOn(cell, 4).Cells.All(candidate =>
+            .Where(cell => CellRect.CenteredOn(cell, 2).Cells.All(candidate =>
                 candidate.InBounds(map) && candidate.Standable(map) &&
                 candidate.GetThingList(map).Count == 0))
             .OrderBy(cell => cell.DistanceToSquared(map.Center))
@@ -231,7 +231,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var separatedFixtureCells = new List<IntVec3>();
         foreach (var candidate in clearCandidates)
         {
-            if (separatedFixtureCells.All(existing => existing.DistanceToSquared(candidate) > 100))
+            if (separatedFixtureCells.All(existing => existing.DistanceToSquared(candidate) > 36))
             {
                 separatedFixtureCells.Add(candidate);
             }
@@ -1133,8 +1133,11 @@ public static class FinalizedImmersiveChefsIntegrationTests
                     value.CraftsmanshipScore == 31));
             IntegrationAssert.True(Math.Abs(loadedRottable!.RotProgress - 1234.5f) < 0.01f);
             IntegrationAssert.True(
-                loadedPrepared.CompInspectStringExtra().Contains("Source: nutrient paste"),
-                "The reconstructed hidden-source stack must remain opaque in ordinary inspection.");
+                loadedPrepared.CompInspectStringExtra().IndexOf(
+                    "ImmersiveChefs_PreparedSource_NutrientPaste".Translate().ToString(),
+                    StringComparison.OrdinalIgnoreCase) >= 0,
+                "The reconstructed hidden-source stack must remain opaque in ordinary inspection. " +
+                "Actual: " + loadedPrepared.CompInspectStringExtra());
         }
         finally
         {
@@ -2364,6 +2367,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
 
         var settings = ImmersiveChefsMod.Settings;
         var originalWareRequirementMode = settings.WareRequirementMode;
+        var originalMealTemperatureEnabled = settings.MealTemperatureEnabled;
+        var originalAutoMicrowaveBelow = settings.AutoMicrowaveBelow;
         var preexistingCutlery = map.listerThings.AllThings
             .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product ==
                             KitchenwareProduct.Cutlery)
@@ -2378,6 +2383,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
         try
         {
             settings.WareRequirementMode = WareRequirementMode.Prefer;
+            settings.MealTemperatureEnabled = true;
+            settings.AutoMicrowaveBelow = 10f;
             foreach (var existing in preexistingCutlery)
             {
                 existing.Thing.SetForbidden(true, warnOnFail: false);
@@ -2462,8 +2469,13 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 .Cell;
             var microwave = ThingMaker.MakeThing(
                 DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Microwave"));
+            var microwaveSupport = ThingMaker.MakeThing(
+                DefDatabase<ThingDef>.GetNamed("Table1x2c"),
+                ThingDefOf.Steel);
+            GenSpawn.Spawn(microwaveSupport, microwaveCell, map, Rot4.North);
             GenSpawn.Spawn(microwave, microwaveCell, map, Rot4.North);
             microwave.TryGetComp<CompPowerTrader>().PowerOn = true;
+            createdThings.Add(microwaveSupport);
             createdThings.Add(microwave);
 
             var microwaveMeal = CreatePatientMeal(out var microwavePlate);
@@ -2485,9 +2497,18 @@ public static class FinalizedImmersiveChefsIntegrationTests
             microwaveJob.SetTarget(TargetIndex.C, feeder);
             feeder.jobs.StartJob(microwaveJob, JobCondition.InterruptForced);
             var microwaveSession = DiningSessionRegistry.Current(patient);
+            var microwaveComp = microwave.TryGetComp<CompMicrowave>();
             IntegrationAssert.True(
                 ReferenceEquals(microwaveSession?.Microwave, microwave),
-                "The cold assisted meal must select the real powered microwave.");
+                "The cold assisted meal must select the real powered microwave. " +
+                $"Session={microwaveSession is not null}; operational={microwaveComp?.Operational}; " +
+                $"support={MicrowaveSupportRuntime.FindAt(microwave.Position, map, microwave)?.Label}; " +
+                $"reachable={feeder.CanReach(microwave, PathEndMode.InteractionCell, Danger.Some)}; " +
+                $"reserved={map.reservationManager.IsReserved(microwave)}; " +
+                $"temperatureEnabled={settings.MealTemperatureEnabled}; " +
+                $"autoMicrowaveBelow={settings.AutoMicrowaveBelow}; " +
+                $"ownership={TemperatureOwnership.ImmersiveChefsFeaturesActive}; " +
+                $"serving={microwaveMeal.GetComp<CompCulinaryState>().PeekCurrentServing()?.TemperatureCelsius}.");
 
             var microwaveDriver = feeder.jobs.curDriver;
             var microwaveToils = microwaveDriver is null
@@ -2630,6 +2651,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
         finally
         {
             settings.WareRequirementMode = originalWareRequirementMode;
+            settings.MealTemperatureEnabled = originalMealTemperatureEnabled;
+            settings.AutoMicrowaveBelow = originalAutoMicrowaveBelow;
             foreach (var existing in preexistingCutlery)
             {
                 if (!existing.Thing.Destroyed)

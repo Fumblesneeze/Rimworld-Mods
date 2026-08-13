@@ -137,7 +137,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
     }
 
     [Test]
-    public void Filtered_performance_manifest_rejects_a_missing_product_absent_control()
+    public void Filtered_ordinary_product_family_does_not_require_the_explicit_absent_diagnostic()
     {
         GC.KeepAlive(typeof(UnityEngine.Vector3).Assembly);
         using var stage = new PerformanceCatalogStage(manifestFilter: test =>
@@ -154,11 +154,18 @@ public sealed class GatewayEndToEndBundleCatalogTests
                 EndToEndTestContract.GatewayPackageId
             });
 
+        Assert.That(result.State, Is.EqualTo("loaded"), result.Failure?.Message);
         Assert.Multiple(() =>
         {
-            Assert.That(result.State, Is.EqualTo("failed"));
-            Assert.That(result.Failure!.Code, Is.EqualTo("compiled_test_manifest_mismatch"));
-            Assert.That(result.Source, Is.Null);
+            Assert.That(result.Source, Is.Not.Null);
+            Assert.That(result.Source!.Tests.Select(test => test.Id), Is.EqualTo(new[]
+            {
+                "gateway.immersive-chefs-neutral-present.armed-disabled",
+                "gateway.immersive-chefs-neutral-present.disarmed",
+                "gateway.immersive-chefs-neutral-present.instrumented"
+            }));
+            Assert.That(result.Source.Tests, Has.All.Property(
+                nameof(GatewayEndToEndRuntimeTestDescriptor.IsPerformance)).True);
         });
     }
 
@@ -599,7 +606,6 @@ public sealed class GatewayEndToEndBundleCatalogTests
                 MaxWallClockSeconds = deadline.MaxWallClockSeconds,
                 Kind = EndToEndBundleTest.PerformanceKind,
                 MeasuredSubjectPackageId = descriptor.MeasuredSubjectPackageId,
-                DeterministicSeed = descriptor.DeterministicSeed,
                 WorkloadVersion = descriptor.WorkloadVersion,
                 ComparisonId = descriptor.ComparisonId,
                 WarmUpTicks = descriptor.WarmUpTicks,

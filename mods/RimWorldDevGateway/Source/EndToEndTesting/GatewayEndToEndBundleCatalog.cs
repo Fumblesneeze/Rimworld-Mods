@@ -749,7 +749,6 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         return StringComparer.OrdinalIgnoreCase.Equals(
                    actual.MeasuredSubjectPackageId,
                    expected.MeasuredSubjectPackageId) &&
-               actual.DeterministicSeed == expected.DeterministicSeed &&
                StringComparer.Ordinal.Equals(actual.WorkloadVersion, expected.WorkloadVersion) &&
                StringComparer.Ordinal.Equals(actual.ComparisonId, expected.ComparisonId) &&
                actual.WarmUpTicks == expected.WarmUpTicks &&

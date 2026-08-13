@@ -144,9 +144,7 @@ public sealed class PerformanceBaselineCliTests
                         TestAssemblyIdentity = "tests-sha", CircinusAssemblyIdentity = "circinus-sha",
                         CircinusSchemaIdentity = "1.15", ProfilingPolicyIdentity = "hand-armed/v1",
                         SamplingPolicyIdentity = "native-adaptive/v1", HardwareRuntimeFingerprint = "hardware-sha",
-                        FixtureManifestSha256 = "fixture-manifest-sha",
-                        FixtureTerminalManifestSha256 = "not-applicable",
-                        DeterministicSeed = 60161, WarmUpTicks = 300, SampleTicks = 3000, GameSpeed = 3,
+                        WarmUpTicks = 300, SampleTicks = 3000, GameSpeed = 3,
                         RepetitionCount = 1, AggregationPolicyIdentity = "arithmetic-mean/v1"
                     },
                     Measurements =
@@ -154,7 +152,9 @@ public sealed class PerformanceBaselineCliTests
                         new PerformanceMetricMeasurement
                         {
                             Scope = "method", Selector = "Example.Tick()", MetricName = "exclusive-time",
-                            Value = value, Unit = "ms", Denominator = "recorded-profiler-cycle",
+                            Value = value, SampleCount = 1, Minimum = value, Maximum = value,
+                            SampleStandardDeviation = 0, RepetitionValues = [value],
+                            Unit = "ms", Denominator = "recorded-profiler-cycle",
                             Claim = "gross-attribution", Calls = 1200, TimedCalls = 300,
                             DutyPercent = 25d, SampleShift = 2, RecordedCycles = 100,
                             ProfilerWindowMilliseconds = 4000, ProfilerWindowTicks = 3000,

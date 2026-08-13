@@ -63,8 +63,6 @@ public sealed class RimWorldPerformanceTestAttribute : Attribute
 
     public string[] ActivePackageIds { get; }
 
-    public int DeterministicSeed { get; set; } = 1;
-
     public string WorkloadVersion { get; set; } = "v1";
 
     public string? ComparisonId { get; set; }
@@ -124,7 +122,7 @@ public interface IRimWorldPerformanceTest
 }
 
 /// <summary>
-/// Performs deterministic post-warm-up activation while the game remains paused and before the
+/// Performs scenario-specific post-warm-up activation while the game remains paused and before the
 /// profiler, throughput baselines, wall clock, memory counters, or measured tick window start.
 /// </summary>
 public interface IPerformanceSamplePreparation
@@ -198,7 +196,6 @@ public sealed class PerformanceTestDescriptor
         string stagingOwnerPackageId,
         string measuredSubjectPackageId,
         IReadOnlyList<string> activePackageIds,
-        int deterministicSeed,
         string workloadVersion,
         string comparisonId,
         int warmUpTicks,
@@ -210,7 +207,7 @@ public sealed class PerformanceTestDescriptor
         IReadOnlyList<PerformanceMethodSelector> methodSelectors,
         IReadOnlyList<PerformanceThroughputCheckpoint> throughputCheckpoints)
         : this(testType, id, stagingOwnerPackageId, measuredSubjectPackageId, activePackageIds,
-            deterministicSeed, workloadVersion, comparisonId, warmUpTicks, sampleTicks, gameSpeed,
+            workloadVersion, comparisonId, warmUpTicks, sampleTicks, gameSpeed,
             repetitions, evidenceLens, productAbsentControlId, methodSelectors, throughputCheckpoints,
             PerformanceProfilerKind.Circinus)
     {
@@ -222,7 +219,6 @@ public sealed class PerformanceTestDescriptor
         string stagingOwnerPackageId,
         string measuredSubjectPackageId,
         IReadOnlyList<string> activePackageIds,
-        int deterministicSeed,
         string workloadVersion,
         string comparisonId,
         int warmUpTicks,
@@ -240,7 +236,6 @@ public sealed class PerformanceTestDescriptor
         StagingOwnerPackageId = stagingOwnerPackageId;
         MeasuredSubjectPackageId = measuredSubjectPackageId;
         ActivePackageIds = activePackageIds;
-        DeterministicSeed = deterministicSeed;
         WorkloadVersion = workloadVersion;
         ComparisonId = comparisonId;
         WarmUpTicks = warmUpTicks;
@@ -268,8 +263,6 @@ public sealed class PerformanceTestDescriptor
     public IReadOnlyList<string> ActivePackageIds { get; }
 
     public IReadOnlyList<string> LaunchedPackageIds { get; }
-
-    public int DeterministicSeed { get; }
 
     public string WorkloadVersion { get; }
 
@@ -354,7 +347,6 @@ public static class PerformanceTestContract
             canonical.StagingOwnerPackageId,
             canonical.MeasuredSubjectPackageId,
             Array.AsReadOnly(packages),
-            canonical.DeterministicSeed,
             canonical.WorkloadVersion,
             canonical.ComparisonId,
             canonical.WarmUpTicks,
@@ -515,7 +507,6 @@ public static class PerformanceTestContract
             owner,
             subject,
             Array.AsReadOnly(packages),
-            attribute.DeterministicSeed,
             workloadVersion,
             comparisonId,
             attribute.WarmUpTicks,
@@ -625,9 +616,28 @@ public static class PerformanceTestContract
                      StringComparer.Ordinal))
         {
             var ordered = family.OrderBy(item => item.EvidenceLens).ToArray();
+            var instrumented = ordered.Count(item =>
+                item.EvidenceLens == PerformanceEvidenceLens.ProductInstrumented);
+            if (instrumented != 1)
+            {
+                throw new PerformanceContractException(
+                    $"Performance comparison '{ordered[0].ComparisonId}' must declare exactly one {PerformanceEvidenceLens.ProductInstrumented} evidence lens; observed {instrumented}.");
+            }
+
+            if (ordered.Length == 1)
+            {
+                // Ordinary historical runs need only the real instrumented workload. The two
+                // disabled lenses are an optional, complete calibration trio.
+                if (ordered[0].Repetitions < 3)
+                {
+                    throw new PerformanceContractException(
+                        $"Ordinary instrumented comparison '{ordered[0].ComparisonId}' must declare at least three repetitions.");
+                }
+                continue;
+            }
+
             foreach (var required in new[]
                      {
-                         PerformanceEvidenceLens.ProductInstrumented,
                          PerformanceEvidenceLens.ArmedDisabledWrapper,
                          PerformanceEvidenceLens.FullyDisarmed
                      })
@@ -649,7 +659,6 @@ public static class PerformanceTestContract
                     !StringComparer.OrdinalIgnoreCase.Equals(
                         baseline.MeasuredSubjectPackageId,
                         companion.MeasuredSubjectPackageId) ||
-                    baseline.DeterministicSeed != companion.DeterministicSeed ||
                     !string.Equals(baseline.WorkloadVersion, companion.WorkloadVersion, StringComparison.Ordinal) ||
                     baseline.WarmUpTicks != companion.WarmUpTicks ||
                     baseline.SampleTicks != companion.SampleTicks ||
@@ -719,8 +728,7 @@ public static class PerformanceTestContract
                     $"Benchmark '{product.Id}' and product-absent control '{control.Id}' do not retain the same exact non-subject package order.");
             }
 
-            if (product.DeterministicSeed != control.DeterministicSeed ||
-                !string.Equals(product.WorkloadVersion, control.WorkloadVersion, StringComparison.Ordinal) ||
+            if (!string.Equals(product.WorkloadVersion, control.WorkloadVersion, StringComparison.Ordinal) ||
                 product.WarmUpTicks != control.WarmUpTicks ||
                 product.SampleTicks != control.SampleTicks ||
                 product.GameSpeed != control.GameSpeed ||
@@ -922,70 +930,4 @@ public static class PerformanceTestContract
 
     private static PerformanceContractException Invalid(Type type, string reason) =>
         new PerformanceContractException($"Performance benchmark '{type.FullName ?? type.Name}' {reason}.");
-}
-
-public static class PerformanceDeterminismGuard
-{
-    public const int MaximumStateRows = CheckpointStep.MaximumArtifactFields;
-    public const int MaximumStateRowUtf8Bytes = CheckpointStep.MaximumArtifactValueUtf8Bytes;
-    public const int MaximumStateAggregateUtf8Bytes = CheckpointStep.MaximumArtifactAggregateUtf8Bytes;
-
-    public static string CanonicalStateSha256(IEnumerable<string> stateRows)
-    {
-        if (stateRows is null) throw new ArgumentNullException(nameof(stateRows));
-        var rows = new List<string>();
-        var aggregateBytes = 0L;
-        foreach (var row in stateRows)
-        {
-            if (rows.Count == MaximumStateRows)
-                throw new ArgumentException(
-                    $"Deterministic state exceeds {MaximumStateRows} rows.", nameof(stateRows));
-            if (row is null)
-                throw new ArgumentException("A deterministic state row cannot be null.", nameof(stateRows));
-            var rowBytes = Encoding.UTF8.GetByteCount(row);
-            if (rowBytes > MaximumStateRowUtf8Bytes)
-                throw new ArgumentException(
-                    $"A deterministic state row exceeds {MaximumStateRowUtf8Bytes} UTF-8 bytes.", nameof(stateRows));
-            aggregateBytes += 4L + rowBytes;
-            if (aggregateBytes > MaximumStateAggregateUtf8Bytes)
-                throw new ArgumentException(
-                    $"Deterministic state exceeds {MaximumStateAggregateUtf8Bytes} aggregate UTF-8 bytes.", nameof(stateRows));
-            rows.Add(row);
-        }
-        using var sha = SHA256.Create();
-        foreach (var row in rows)
-        {
-            var bytes = Encoding.UTF8.GetBytes(row);
-            var length = bytes.Length;
-            var prefix = new[]
-            {
-                (byte)(length >> 24),
-                (byte)(length >> 16),
-                (byte)(length >> 8),
-                (byte)length
-            };
-            sha.TransformBlock(prefix, 0, prefix.Length, null, 0);
-            sha.TransformBlock(bytes, 0, bytes.Length, null, 0);
-        }
-        sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-        return string.Concat(sha.Hash.Select(value => value.ToString("x2")));
-    }
-
-    public static int FirstCounterAtOrAboveIndexedTarget(
-        IReadOnlyList<int> currentValues,
-        int targetBase,
-        int targetStride)
-    {
-        if (currentValues is null) throw new ArgumentNullException(nameof(currentValues));
-        if (targetBase < 0) throw new ArgumentOutOfRangeException(nameof(targetBase));
-        if (targetStride <= 0) throw new ArgumentOutOfRangeException(nameof(targetStride));
-
-        for (var index = 0; index < currentValues.Count; index++)
-        {
-            var target = checked(targetBase + index * targetStride);
-            if (currentValues[index] >= target) return index;
-        }
-
-        return -1;
-    }
 }

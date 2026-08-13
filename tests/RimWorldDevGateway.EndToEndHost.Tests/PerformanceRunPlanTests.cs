@@ -46,7 +46,6 @@ public sealed class PerformanceRunPlanTests
             Assert.That(plan.Processes[0].TypeName, Does.EndWith("BaseInstrumentedBenchmark"));
             Assert.That(plan.Processes[0].AssemblyIdentity, Does.StartWith("PerformanceHost.ValidFixtures,"));
             Assert.That(plan.Processes[0].AssemblySha256, Has.Length.EqualTo(64));
-            Assert.That(plan.Processes[0].DeterministicSeed, Is.EqualTo(7123));
             Assert.That(plan.Processes[0].WorkloadVersion, Is.EqualTo("alpha/v2"));
             Assert.That(plan.Processes[0].ComparisonId, Is.EqualTo("alpha.base"));
             Assert.That(plan.Processes[0].MethodSelectors, Has.Count.EqualTo(2));
@@ -208,5 +207,30 @@ public sealed class PerformanceRunPlanTests
             Path.GetTempPath()));
 
         Assert.That(exception!.Message, Does.Contain(expected).IgnoreCase);
+    }
+
+    [Test]
+    public void Ordinary_instrumented_plan_requires_three_runs_but_a_calibration_member_may_be_focused_once()
+    {
+        var discovery = PerformanceDiscoveryValidator.ValidateAndGroup(
+            PerformanceMetadataDiscoveryTests.ValidCandidatesForPlanning(),
+            new[]
+            {
+                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus",
+                "alpha.mod", "optional.mod", "fumblesneeze.rimworlddevgateway"
+            },
+            requireResolvedControls: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => PerformanceRunPlanBuilder.Create(
+                    discovery, new[] { "alpha.optional" }, Array.Empty<string>(),
+                    null, null, 2, Path.GetTempPath()),
+                Throws.TypeOf<ArgumentException>().With.Message.Contains("at least three"));
+            Assert.That(() => PerformanceRunPlanBuilder.Create(
+                    discovery, new[] { "alpha.base-instrumented" }, Array.Empty<string>(),
+                    null, null, 1, Path.GetTempPath()),
+                Throws.Nothing);
+        });
     }
 }

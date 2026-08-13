@@ -20,7 +20,6 @@ internal static class ColonyContract
     public const string Owner = "fumblesneeze.immersivechefs";
     public const string Comparison = "immersive-chefs.base-colony";
     public const string Workload = "immersive-chefs-colony/v1";
-    public const int Seed = 481516;
     public const int WarmUpTicks = 300;
     public const int SampleTicks = 12_000;
     public const int HumanCount = 36;
@@ -38,7 +37,6 @@ internal static class ColonyContract
     "ludeon.rimworld",
     PerformanceTestContract.CircinusPackageId,
     ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed,
     WorkloadVersion = ColonyContract.Workload,
     ComparisonId = ColonyContract.Comparison,
     WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -72,7 +70,6 @@ public sealed class BaseColonyInstrumentedBenchmark : ImmersiveChefsColonyBenchm
     "ludeon.rimworld",
     PerformanceTestContract.CircinusPackageId,
     ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed,
     WorkloadVersion = ColonyContract.Workload,
     ComparisonId = ColonyContract.Comparison,
     WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -106,7 +103,6 @@ public sealed class BaseColonyArmedDisabledBenchmark : ImmersiveChefsColonyBench
     "ludeon.rimworld",
     PerformanceTestContract.CircinusPackageId,
     ColonyContract.Owner,
-    DeterministicSeed = ColonyContract.Seed,
     WorkloadVersion = ColonyContract.Workload,
     ComparisonId = ColonyContract.Comparison,
     WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -132,7 +128,7 @@ public sealed class BaseColonyArmedDisabledBenchmark : ImmersiveChefsColonyBench
 [PerformanceThroughputCheckpoint("microwave-reheats", 1)]
 public sealed class BaseColonyDisarmedBenchmark : ImmersiveChefsColonyBenchmark { }
 
-public abstract class ImmersiveChefsColonyBenchmark :
+public abstract partial class ImmersiveChefsColonyBenchmark :
     IRimWorldPerformanceTest,
     IPerformanceSamplePreparation,
     IPerformanceSampleValidation,
@@ -155,7 +151,6 @@ public abstract class ImmersiveChefsColonyBenchmark :
     private readonly List<BuildingFixtureSpec> buildingFixtures = new();
     private readonly List<(Building_WorkTable Table, RecipeDef Recipe)> cookingTables = new();
     private readonly Dictionary<Pawn, string> pawnRoles = new();
-    private readonly Dictionary<Pawn, IntVec3> mapPawnStartCells = new();
     private readonly List<CaravanDiningFixture> caravanDiningFixtures = new();
     private readonly List<AnimalDiningFixture> animalDiningFixtures = new();
     private readonly Dictionary<string, int> initialWareUnits = new(StringComparer.Ordinal);
@@ -171,16 +166,6 @@ public abstract class ImmersiveChefsColonyBenchmark :
     private bool processorDubsActive;
     private Pawn? microwaveDiner;
     private ThingWithComps? microwaveMeal;
-    private string pawnFingerprint = string.Empty;
-    private string pawnDemographicsFingerprint = string.Empty;
-    private string pawnSkillsFingerprint = string.Empty;
-    private string pawnHealthFingerprint = string.Empty;
-    private string sampleStartFingerprint = string.Empty;
-    private string sampleRandState = string.Empty;
-    private string sampleUniqueIdState = string.Empty;
-    private ulong priorRandState;
-    private bool randSeeded;
-    private IReadOnlyDictionary<FieldInfo, int>? priorUniqueIds;
     private string layoutFingerprint = string.Empty;
     private string processorDubsStartFingerprint = string.Empty;
     private bool sampleActivated;
@@ -191,18 +176,18 @@ public abstract class ImmersiveChefsColonyBenchmark :
             "The Immersive Chefs performance fixture requires one playable map.");
         context.DeferCleanup(Cleanup);
         NormalizeDisposableMap(map);
-        priorUniqueIds = SeedUniqueIds();
-        priorRandState = SeedGlobalRand(ColonyContract.Seed);
-        randSeeded = true;
         PreserveSettings(context);
+        DetectGuestServiceBranch(context);
 
         BuildRooms();
         BuildKitchenAndBills();
         BuildProcessorDubsBranch();
         BuildDiningAndWard();
+        BuildGuestServiceInfrastructure();
         CreateMapPopulation();
         CreateCaravans();
         SeedFoodAndWare();
+        BuildGuestServiceFixtures(context);
         CaptureInitialWareUnits();
         layoutFingerprint = CurrentLayoutFingerprint();
 
@@ -226,16 +211,10 @@ public abstract class ImmersiveChefsColonyBenchmark :
 
     public IEnumerator<EndToEndStep> PrepareSample(IEndToEndContext context)
     {
-        NormalizeDeterministicSampleStart();
         PrepareProcessorDubsBranch();
-        ResetSampleDeterminism();
+        PrepareGuestServiceBranch();
         ActivateNativeWorkload();
-        // Activation constructs native jobs and is allowed to consume Rand. Re-anchor
-        // the stochastic state after that deterministic setup so the measured window
-        // begins from the exact same random sequence in every fresh process/lens.
-        SeedGlobalRand(ColonyContract.Seed + 2);
         sampleActivated = true;
-        CaptureDeterministicSampleStart();
         ValidateExactTopology();
         yield return new CheckpointStep(
             "immersive-chefs-colony-manifest",
@@ -245,131 +224,6 @@ public abstract class ImmersiveChefsColonyBenchmark :
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
         yield break;
-    }
-
-    private void CaptureDeterministicSampleStart()
-    {
-        pawnFingerprint = Fingerprint(humans.Concat(animals));
-        pawnDemographicsFingerprint = HashRows(humans.Concat(animals).Select((pawn, index) =>
-            index + "|" + pawn.kindDef.defName + "|" + pawn.gender + "|" +
-            pawn.ageTracker.AgeBiologicalTicks + "|" + pawn.ageTracker.AgeChronologicalTicks));
-        pawnSkillsFingerprint = HashRows(humans.Concat(animals).Select((pawn, index) =>
-            index + "|" + string.Join(",", pawn.skills?.skills.OrderBy(skill => skill.def.defName)
-                .Select(skill => skill.def.defName + ":" + skill.Level + ":" + skill.passion) ??
-                Enumerable.Empty<string>())));
-        pawnHealthFingerprint = HashRows(humans.Concat(animals).Select((pawn, index) =>
-            index + "|" + string.Join(",", pawn.health.hediffSet.hediffs
-                .OrderBy(hediff => hediff.def.defName)
-                .Select(hediff => hediff.def.defName + ":" +
-                                  hediff.Severity.ToString("R", CultureInfo.InvariantCulture)))));
-        sampleRandState = ((ulong)RequireRandStateProperty().GetValue(null, null)!).ToString();
-        sampleUniqueIdState = CurrentUniqueIdState();
-        sampleStartFingerprint = HashRows(humans.Concat(animals).Select((pawn, index) =>
-        {
-            var caravanIndex = caravans.FindIndex(caravan => caravan.PawnsListForReading.Contains(pawn));
-            var holder = pawn.Spawned ? "map:" + pawn.Position.x + "," + pawn.Position.z :
-                caravanIndex >= 0 ? "caravan:" + caravanIndex : "world";
-            var inventory = string.Join(",", pawn.inventory?.innerContainer
-                .OrderBy(thing => thing.def.defName, StringComparer.Ordinal)
-                .ThenBy(thing => thing.stackCount)
-                .Select(thing => thing.def.defName + ":" + thing.stackCount) ??
-                Enumerable.Empty<string>());
-            var targetThing = pawn.CurJob?.GetTarget(TargetIndex.A).Thing;
-            var targetIndex = animalDiningFixtures.FindIndex(fixture =>
-                ReferenceEquals(fixture.Meal, targetThing));
-            var target = targetIndex >= 0 ? "animal-meal:" + targetIndex :
-                targetThing is null ? string.Empty :
-                targetThing.def.defName + "@" + targetThing.PositionHeld.x + "," + targetThing.PositionHeld.z;
-            var role = pawnRoles.TryGetValue(pawn, out var assignedRole)
-                ? assignedRole
-                : pawn.RaceProps.Animal ? "animal" : "unknown";
-            return index + "|" + role + "|" + pawn.kindDef.defName + "|" + holder + "|" +
-                   pawn.needs.food.CurLevelPercentage.ToString("R", CultureInfo.InvariantCulture) + "|" +
-                   (pawn.needs.rest?.CurLevelPercentage ?? -1f).ToString("R", CultureInfo.InvariantCulture) + "|" +
-                   (pawn.CurJobDef?.defName ?? string.Empty) + "|" + target + "|" + inventory;
-        }).Concat(new[]
-        {
-            "rand=" + sampleRandState,
-            "ids=" + sampleUniqueIdState,
-            "power=" + string.Join(",", poweredBuildings
-                .OrderBy(thing => thing.def.defName, StringComparer.Ordinal)
-                .ThenBy(thing => thing.Position.x)
-                .ThenBy(thing => thing.Position.z)
-                .Select(thing => thing.def.defName + "@" + thing.Position.x + "," + thing.Position.z +
-                                 ":" + (thing.GetComp<CompPowerTrader>()?.PowerOn == true ? "on" : "off"))),
-            "processorDubs=" + processorDubsStartFingerprint
-        }));
-    }
-
-    private void NormalizeDeterministicSampleStart()
-    {
-        foreach (var pawn in humans.Concat(animals))
-        {
-            foreach (var hediff in pawn.health.hediffSet.hediffs.ToArray())
-                pawn.health.RemoveHediff(hediff);
-            pawn.ageTracker.AgeBiologicalTicks = (pawn.RaceProps.Humanlike ? 30L : 5L) * GenDate.TicksPerYear;
-            pawn.ageTracker.AgeChronologicalTicks = (pawn.RaceProps.Humanlike ? 30L : 5L) * GenDate.TicksPerYear;
-            pawn.needs.food.CurLevelPercentage = 0.8f;
-            if (pawn.needs.rest is { } normalizedRest) normalizedRest.CurLevelPercentage = 0.95f;
-            if (pawn.Spawned)
-            {
-                pawn.jobs.EndCurrentJob(JobCondition.InterruptForced, startNewJob: false);
-                pawn.pather.StopDead();
-                var start = mapPawnStartCells[pawn];
-                if (pawn.Position != start)
-                {
-                    pawn.DeSpawn(DestroyMode.Vanish);
-                    GenSpawn.Spawn(pawn, start, map!);
-                }
-                if (!map!.thingGrid.ThingsListAtFast(start).Contains(pawn))
-                    throw new InvalidOperationException("Sample-start pawn was not registered at " + start + ".");
-            }
-        }
-        foreach (var patient in patients)
-        {
-            var anesthetic = HediffMaker.MakeHediff(HediffDefOf.Anesthetic, patient);
-            anesthetic.Severity = 0.8f;
-            patient.health.AddHediff(anesthetic);
-        }
-    }
-
-    private void ResetSampleDeterminism()
-    {
-        SeedGlobalRand(ColonyContract.Seed + 1);
-        const int sampleBase = 2_000_000;
-        var manager = Find.UniqueIDsManager ??
-            throw new InvalidOperationException("The performance fixture requires RimWorld's unique-ID manager.");
-        var fields = UniqueIdFields(manager);
-        var current = fields.Select(field => (int)field.GetValue(manager)!).ToArray();
-        var exhausted = PerformanceDeterminismGuard.FirstCounterAtOrAboveIndexedTarget(
-            current, sampleBase, 10_000);
-        if (exhausted >= 0)
-            throw new InvalidOperationException(
-                "Performance warmup consumed the deterministic sample ID range for " +
-                fields[exhausted].Name + ".");
-        for (var index = 0; index < fields.Length; index++)
-            fields[index].SetValue(manager, sampleBase + index * 10_000);
-    }
-
-    private static string CurrentUniqueIdState()
-    {
-        var manager = Find.UniqueIDsManager ??
-            throw new InvalidOperationException("The performance fixture requires RimWorld's unique-ID manager.");
-        return string.Join(",", UniqueIdFields(manager)
-            .Select(field => field.Name + "=" + field.GetValue(manager)));
-    }
-
-    private static FieldInfo[] UniqueIdFields(object manager)
-    {
-        var fields = manager.GetType()
-            .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-            .Where(field => field.FieldType == typeof(int) &&
-                            field.Name.StartsWith("next", StringComparison.Ordinal))
-            .OrderBy(field => field.Name, StringComparer.Ordinal)
-            .ToArray();
-        if (fields.Length == 0 || fields.All(field => field.Name != "nextThingID"))
-            throw new MissingMemberException(manager.GetType().FullName, "nextThingID");
-        return fields;
     }
 
     public long Read(string id)
@@ -395,9 +249,12 @@ public abstract class ImmersiveChefsColonyBenchmark :
             "processor-dubs-domestic-cycles" => processorDubsActive ? current.DomesticDishwasherCycles : 0,
             "processor-dubs-industrial-cycles" => processorDubsActive ? current.IndustrialDishwasherCycles : 0,
             "processor-dubs-water-milliliters" => ProcessorDubsWaterMilliliters(),
-            "optional-group-branches" => ProcessorDubsCompleted(current) ? 1 : 0,
+            "guest-service-orders-served" => guestServiceObserver?.OrdersServed ?? 0,
+            "guest-service-colony-settings-returned" => guestServiceObserver?.ColonySettingsReturned ?? 0,
+            "guest-service-gastronomy-clearing-owned" => guestServiceObserver?.GastronomyClearingOwned ?? 0,
+            "optional-group-branches" => CompletedOptionalBranchCount(current),
             "immersive-chefs.processor-dubs-branch" => ProcessorDubsCompleted(current) ? 1 : 0,
-            "immersive-chefs.guest-service-branch" => 0,
+            "immersive-chefs.guest-service-branch" => GuestServiceCompleted() ? 1 : 0,
             "immersive-chefs.variety-vnpe-material-dlc-branch" => 0,
             "immersive-chefs.all-supported-branch" => 0,
             _ => throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown colony throughput checkpoint.")
@@ -666,7 +523,9 @@ public abstract class ImmersiveChefsColonyBenchmark :
             var role = index < 6 ? "cook" : index < 10 ? "assistant" :
                 index < 16 ? "cleaner" : index < 20 ? "nurse" :
                 index < 24 ? "patient" : "diner";
-            var pawn = CreateCapableColonist(role, index);
+            var pawn = guestServiceActive && index == ColonyContract.MapHumanCount - 1
+                ? CreateGuestServicePawn(role, index)
+                : CreateCapableColonist(role, index);
             humans.Add(pawn);
             pawnRoles.Add(pawn, role);
             mapFixtures.Add(GenSpawn.Spawn(
@@ -675,7 +534,6 @@ public abstract class ImmersiveChefsColonyBenchmark :
                     ? ward + new IntVec3(-7 + (index - 20) * 5, 0, 0)
                     : kitchen + new IntVec3(-8 + (index % 6) * 3, 0, -9 - (index / 6) * 2),
                 map!));
-            mapPawnStartCells.Add(pawn, pawn.Position);
             if (role == "patient")
             {
                 patients.Add(pawn);
@@ -684,12 +542,12 @@ public abstract class ImmersiveChefsColonyBenchmark :
                 pawn.health.AddHediff(anesthetic);
                 pawn.needs.food.CurLevelPercentage = 0.9f;
             }
-            else
+            else if (!ReferenceEquals(pawn, guestServiceGuest))
             {
                 workersToActivate.Add(pawn);
                 pawn.drafter.Drafted = true;
             }
-            if (role == "diner") dinersToActivate.Add(pawn);
+            if (role == "diner" && !ReferenceEquals(pawn, guestServiceGuest)) dinersToActivate.Add(pawn);
             ConfigureWork(pawn, role);
         }
         var cooks = pawnRoles.Where(pair => pair.Value == "cook").Select(pair => pair.Key).ToArray();
@@ -713,7 +571,6 @@ public abstract class ImmersiveChefsColonyBenchmark :
                 pawn,
                 pen + new IntVec3(-7 + (index % 5) * 3, 0, -5 + (index / 5) * 3),
                 map!));
-            mapPawnStartCells.Add(pawn, pawn.Position);
             pawn.needs.food.CurLevelPercentage = 0.8f;
         }
     }
@@ -845,8 +702,19 @@ public abstract class ImmersiveChefsColonyBenchmark :
 
     private void ActivateNativeWorkload()
     {
+        // Arm exact optional service ownership before ordinary workers resume job
+        // search; otherwise another Gastronomy-capable colonist can claim the same
+        // restaurant order between undrafting and the intended waiter StartJob.
+        if (guestServiceActive && guestServiceWaiter?.drafter.Drafted == true)
+            guestServiceWaiter.drafter.Drafted = false;
+        ActivateGuestServiceBranch();
         foreach (var pawn in workersToActivate)
         {
+            if (guestServiceActive && ReferenceEquals(pawn, guestServiceWaiter))
+            {
+                if (pawn.drafter.Drafted) pawn.drafter.Drafted = false;
+                continue;
+            }
             if (pawn.drafter.Drafted) pawn.drafter.Drafted = false;
             pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
         }
@@ -1112,21 +980,13 @@ public abstract class ImmersiveChefsColonyBenchmark :
     private IReadOnlyDictionary<string, string> ManifestCheckpoint() =>
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["workloadVersion"] = ColonyContract.Workload,
-            ["deterministicSeed"] = ColonyContract.Seed.ToString(),
+            ["workloadVersion"] = ActiveWorkloadVersion(),
             ["humans"] = humans.Count.ToString(),
             ["animals"] = animals.Count.ToString(),
             ["mapHumans"] = humans.Count(pawn => pawn.Spawned).ToString(),
             ["mapAnimals"] = animals.Count(pawn => pawn.Spawned).ToString(),
             ["caravans"] = caravans.Count.ToString(),
             ["rooms"] = roomCenters.Count.ToString(),
-            ["pawnFingerprintSha256"] = pawnFingerprint,
-            ["pawnDemographicsSha256"] = pawnDemographicsFingerprint,
-            ["pawnSkillsSha256"] = pawnSkillsFingerprint,
-            ["pawnHealthSha256"] = pawnHealthFingerprint,
-            ["sampleStartStateSha256"] = sampleStartFingerprint,
-            ["sampleRandState"] = sampleRandState,
-            ["sampleUniqueIdState"] = sampleUniqueIdState,
             ["layoutSha256"] = layoutFingerprint,
             ["cookwareUnits"] = initialWareUnits["ImmersiveChefs_Cookware"].ToString(),
             ["plateUnits"] = initialWareUnits["ImmersiveChefs_Plate"].ToString(),
@@ -1135,9 +995,17 @@ public abstract class ImmersiveChefsColonyBenchmark :
             ["supportStations"] = "prep,sauce,meat,vegetable,pastry",
             ["roles"] = "6-cooks,4-assistants,6-cleaners,4-nurses,4-patients,8-diners,4-travelers",
             ["dishwashers"] = "domestic,industrial",
-            ["optionalBranch"] = processorDubsActive ? "processor-dubs" : "base",
+            ["optionalBranch"] = OptionalBranchName(),
             ["processorDubsInitialWater"] = processorDubsInitialWater.ToString("R", CultureInfo.InvariantCulture),
-            ["processorDubsStartSha256"] = processorDubsStartFingerprint,
+            ["processorDubsStartSha256"] = string.IsNullOrWhiteSpace(processorDubsStartFingerprint)
+                ? "not-active"
+                : processorDubsStartFingerprint,
+            ["guestServiceStartSha256"] = string.IsNullOrWhiteSpace(guestServiceStartFingerprint)
+                ? "not-active"
+                : guestServiceStartFingerprint,
+            ["guestServiceStartState"] = string.IsNullOrWhiteSpace(guestServiceStartState)
+                ? "not-active"
+                : guestServiceStartState,
             ["temperature"] = "countertop-microwave",
             ["care"] = "nurses,patients",
             ["travel"] = "two-caravans"
@@ -1235,6 +1103,9 @@ public abstract class ImmersiveChefsColonyBenchmark :
                 (observer is null || !ProcessorDubsCompleted(observer)))
                 throw new InvalidOperationException(
                     "The measured Processor/Dubs branch did not complete both exact dishwasher cycles with water consumption.");
+            if (requireSampleOutcomes && guestServiceActive && !GuestServiceCompleted())
+                throw new InvalidOperationException(
+                    "The measured guest-service branch did not complete exact native waiter service and Gastronomy-owned clearing.");
         }
     }
 
@@ -1254,33 +1125,20 @@ public abstract class ImmersiveChefsColonyBenchmark :
             if (!mapFixtures[index].Destroyed) mapFixtures[index].Destroy(DestroyMode.Vanish);
         foreach (var pawn in humans.Concat(animals))
             if (!pawn.Destroyed) pawn.Destroy(DestroyMode.Vanish);
-        RestoreUniqueIdsWithoutReuse(priorUniqueIds);
-        priorUniqueIds = null;
-        if (randSeeded)
-        {
-            RestoreGlobalRand(priorRandState);
-            randSeeded = false;
-        }
         mapFixtures.Clear(); humans.Clear(); animals.Clear(); workersToActivate.Clear();
         dinersToActivate.Clear(); patients.Clear(); caravans.Clear(); dirtyWare.Clear();
         mapDiningMeals.Clear(); animalMeals.Clear(); caravanMeals.Clear();
         poweredBuildings.Clear(); roomCenters.Clear();
         nativePowerTransmitterCells.Clear();
         buildingFixtures.Clear(); cookingTables.Clear(); pawnRoles.Clear();
-        mapPawnStartCells.Clear();
         caravanDiningFixtures.Clear(); animalDiningFixtures.Clear(); initialWareUnits.Clear();
         prepStation = null; microwaveSupportTable = null; microwave = null;
         domesticDishwasher = null; industrialDishwasher = null;
         dubsWaterTower = null; processorDubsInitialWater = 0f; processorDubsActive = false;
         microwaveDiner = null; microwaveMeal = null;
-        observer = null; map = null; pawnFingerprint = string.Empty;
-        pawnDemographicsFingerprint = string.Empty;
-        pawnSkillsFingerprint = string.Empty;
-        pawnHealthFingerprint = string.Empty;
-        sampleStartFingerprint = string.Empty;
-        sampleRandState = string.Empty;
-        sampleUniqueIdState = string.Empty;
+        observer = null; map = null;
         processorDubsStartFingerprint = string.Empty;
+        CleanupGuestServiceBranch();
         layoutFingerprint = string.Empty;
         sampleActivated = false;
     }
@@ -1358,74 +1216,6 @@ public abstract class ImmersiveChefsColonyBenchmark :
         target.weatherManager.currSkyTargetLerp = 1f;
         target.weatherManager.ResetSkyTargetLerpCache();
         target.mapDrawer.RegenerateEverythingNow();
-    }
-
-    private static ulong SeedGlobalRand(int seed)
-    {
-        var property = RequireRandStateProperty();
-        var prior = (ulong)property.GetValue(null, null)!;
-        ulong seeded;
-        Rand.PushState(seed);
-        try { seeded = (ulong)property.GetValue(null, null)!; }
-        finally { Rand.PopState(); }
-        property.SetValue(null, seeded, null);
-        return prior;
-    }
-
-    private static void RestoreGlobalRand(ulong state) =>
-        RequireRandStateProperty().SetValue(null, state, null);
-
-    private static IReadOnlyDictionary<FieldInfo, int> SeedUniqueIds()
-    {
-        const int deterministicBase = 1_500_000;
-        var manager = Find.UniqueIDsManager ??
-            throw new InvalidOperationException("The performance fixture requires RimWorld's unique-ID manager.");
-        var fields = manager.GetType()
-            .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-            .Where(field => field.FieldType == typeof(int) && field.Name.StartsWith("next", StringComparison.Ordinal))
-            .OrderBy(field => field.Name, StringComparer.Ordinal)
-            .ToArray();
-        if (fields.Length == 0 || fields.All(field => field.Name != "nextThingID"))
-            throw new MissingMemberException(manager.GetType().FullName, "nextThingID");
-        var prior = fields.ToDictionary(field => field, field => (int)field.GetValue(manager)!);
-        if (prior.Values.Any(value => value >= deterministicBase))
-            throw new InvalidOperationException(
-                "The disposable performance process has already consumed the reserved deterministic ID range.");
-        for (var index = 0; index < fields.Length; index++)
-            fields[index].SetValue(manager, deterministicBase + index * 10_000);
-        return prior;
-    }
-
-    private static void RestoreUniqueIdsWithoutReuse(IReadOnlyDictionary<FieldInfo, int>? prior)
-    {
-        if (prior is null) return;
-        var manager = Find.UniqueIDsManager;
-        if (manager is null) return;
-        foreach (var entry in prior)
-        {
-            var current = (int)entry.Key.GetValue(manager)!;
-            entry.Key.SetValue(manager, Math.Max(entry.Value, current));
-        }
-    }
-
-    private static PropertyInfo RequireRandStateProperty()
-    {
-        var property = typeof(Rand).GetProperty(
-            "StateCompressed", BindingFlags.Static | BindingFlags.NonPublic);
-        if (property is null || property.PropertyType != typeof(ulong) ||
-            property.GetMethod is null || property.SetMethod is null)
-            throw new MissingMemberException(typeof(Rand).FullName, "StateCompressed");
-        return property;
-    }
-
-    private static string Fingerprint(IEnumerable<Pawn> pawns)
-    {
-        var rows = pawns.Select((pawn, index) => index + "|" + pawn.kindDef.defName + "|" +
-            pawn.gender + "|" + pawn.ageTracker.AgeBiologicalTicks + "|" +
-            string.Join(",", pawn.skills?.skills.OrderBy(skill => skill.def.defName)
-                .Select(skill => skill.def.defName + ":" + skill.Level + ":" + skill.passion) ??
-                Enumerable.Empty<string>()));
-        return HashRows(rows);
     }
 
     private static string HashRows(IEnumerable<string> rows)

@@ -180,7 +180,6 @@ public sealed class PerformanceBundlePlannerTests
                 Assert.That(benchmark.Kind, Is.EqualTo(EndToEndBundleTest.PerformanceKind));
                 Assert.That(benchmark.OwnerPackageId, Is.EqualTo("alpha.mod"));
                 Assert.That(benchmark.MeasuredSubjectPackageId, Is.EqualTo("alpha.mod"));
-                Assert.That(benchmark.DeterministicSeed, Is.EqualTo(7123));
                 Assert.That(benchmark.WorkloadVersion, Is.EqualTo("alpha/v2"));
                 Assert.That(benchmark.ComparisonId, Is.EqualTo("alpha.base"));
                 Assert.That(benchmark.WarmUpTicks, Is.EqualTo(900));
@@ -382,7 +381,6 @@ public sealed class PerformanceBundlePlannerTests
             source.StagingOwnerPackageId,
             source.MeasuredSubjectPackageId,
             source.ActivePackageIds,
-            source.DeterministicSeed,
             source.WorkloadVersion,
             comparisonId,
             warmUpTicks,

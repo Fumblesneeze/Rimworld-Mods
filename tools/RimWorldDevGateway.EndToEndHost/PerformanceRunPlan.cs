@@ -50,7 +50,6 @@ public sealed class PerformanceProcessPlan
         AssemblySha256 = benchmark.AssemblySha256;
         StagingOwnerPackageId = benchmark.StagingOwnerPackageId;
         MeasuredSubjectPackageId = benchmark.MeasuredSubjectPackageId;
-        DeterministicSeed = benchmark.DeterministicSeed;
         WorkloadVersion = benchmark.WorkloadVersion;
         ComparisonId = benchmark.ComparisonId;
         ProductAbsentControlId = benchmark.ProductAbsentControlId;
@@ -99,7 +98,6 @@ public sealed class PerformanceProcessPlan
     public string AssemblySha256 { get; }
     public string StagingOwnerPackageId { get; }
     public string MeasuredSubjectPackageId { get; }
-    public int DeterministicSeed { get; }
     public string WorkloadVersion { get; }
     public string ComparisonId { get; }
     public string? ProductAbsentControlId { get; }
@@ -224,6 +222,23 @@ public static class PerformanceRunPlanBuilder
                 if (repetitions is <= 0 or > MaximumRepetitions)
                     throw new ArgumentException(
                         $"Benchmark '{benchmark.Id}' repetitions must be between 1 and {MaximumRepetitions}.");
+                // A focused benchmark filter may retain only the instrumented member in the
+                // process plan. Classify calibration families from the complete discovered
+                // group so their deliberately small diagnostic runs remain valid.
+                var completeFamily = matchingGroups
+                    .Where(item => string.Equals(item.GroupId, group.GroupId, StringComparison.Ordinal))
+                    .SelectMany(item => item.Benchmarks)
+                    .Where(item => string.Equals(
+                        item.ComparisonId, benchmark.ComparisonId, StringComparison.Ordinal))
+                    .ToArray();
+                var calibrationFamily = completeFamily.Length == 3 &&
+                                        completeFamily.Select(item => item.EvidenceLens)
+                                            .OrderBy(item => item).SequenceEqual(new[] { 0, 1, 2 }) &&
+                                        completeFamily.All(item => item.Repetitions < 3);
+                if (profiler == PerformanceProfilerMode.Circinus && benchmark.EvidenceLens == 0 &&
+                    !calibrationFamily && repetitions < 3)
+                    throw new ArgumentException(
+                        $"Ordinary instrumented benchmark '{benchmark.Id}' requires at least three repetitions.");
                 for (var repetition = 1; repetition <= repetitions; repetition++)
                 {
                     if (processes.Count == MaximumPlannedProcesses)

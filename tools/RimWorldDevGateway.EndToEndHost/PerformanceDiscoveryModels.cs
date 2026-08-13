@@ -39,7 +39,6 @@ public sealed class PerformanceMetadataDeclaration
         string stagingOwnerPackageId,
         string measuredSubjectPackageId,
         IEnumerable<string> activePackageIds,
-        int deterministicSeed,
         string workloadVersion,
         string comparisonId,
         int warmUpTicks,
@@ -60,7 +59,6 @@ public sealed class PerformanceMetadataDeclaration
         StagingOwnerPackageId = stagingOwnerPackageId;
         MeasuredSubjectPackageId = measuredSubjectPackageId;
         ActivePackageIds = Copy(activePackageIds);
-        DeterministicSeed = deterministicSeed;
         WorkloadVersion = workloadVersion;
         ComparisonId = comparisonId;
         WarmUpTicks = warmUpTicks;
@@ -82,7 +80,6 @@ public sealed class PerformanceMetadataDeclaration
     public string StagingOwnerPackageId { get; }
     public string MeasuredSubjectPackageId { get; }
     public IReadOnlyList<string> ActivePackageIds { get; }
-    public int DeterministicSeed { get; }
     public string WorkloadVersion { get; }
     public string ComparisonId { get; }
     public int WarmUpTicks { get; }
@@ -187,7 +184,6 @@ public sealed class PerformanceDiscoveredBenchmark
     public string StagingOwnerPackageId { get; }
     public string MeasuredSubjectPackageId { get; }
     public IReadOnlyList<string> ActivePackageIds { get; }
-    public int DeterministicSeed => Declaration.DeterministicSeed;
     public string WorkloadVersion => Declaration.WorkloadVersion;
     public string ComparisonId => Declaration.ComparisonId;
     public int WarmUpTicks => Declaration.WarmUpTicks;

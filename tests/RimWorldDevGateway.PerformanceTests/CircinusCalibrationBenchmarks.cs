@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using RimWorld;
 using RimWorld.Planet;
 using RimWorldDevGateway.EndToEndTesting;
@@ -15,7 +14,6 @@ internal static class CalibrationContract
     public const string Owner = "fumblesneeze.rimworlddevgateway";
     public const string Subject = "fumblesneeze.rimworlddevgateway";
     public const string Comparison = "gateway.circinus-calibration";
-    public const int Seed = 60161;
     public const int NativeTickComponentCount = 32_768;
 }
 
@@ -26,7 +24,6 @@ internal static class CalibrationContract
     "brrainz.harmony",
     "ludeon.rimworld",
     PerformanceTestContract.CircinusPackageId,
-    DeterministicSeed = CalibrationContract.Seed,
     WorkloadVersion = "gateway-calibration/v4",
     ComparisonId = CalibrationContract.Comparison,
     WarmUpTicks = 300,
@@ -55,7 +52,6 @@ public sealed class InstrumentedCalibrationBenchmark : CalibrationBenchmark { }
     "brrainz.harmony",
     "ludeon.rimworld",
     PerformanceTestContract.CircinusPackageId,
-    DeterministicSeed = CalibrationContract.Seed,
     WorkloadVersion = "gateway-calibration/v4",
     ComparisonId = CalibrationContract.Comparison,
     WarmUpTicks = 300,
@@ -84,7 +80,6 @@ public sealed class ArmedDisabledCalibrationBenchmark : CalibrationBenchmark { }
     "brrainz.harmony",
     "ludeon.rimworld",
     PerformanceTestContract.CircinusPackageId,
-    DeterministicSeed = CalibrationContract.Seed,
     WorkloadVersion = "gateway-calibration/v4",
     ComparisonId = CalibrationContract.Comparison,
     WarmUpTicks = 300,
@@ -164,12 +159,8 @@ public abstract class CalibrationBenchmark : IRimWorldPerformanceTest
         map.mapDrawer.RegenerateEverythingNow();
         Find.CameraDriver.SetRootPosAndSize(map.Center.ToVector3Shifted(), 42f);
 
-        // Establish the declared seed as the actual global game RNG state immediately before
-        // warm-up, after all generated-world cleanup has finished. The repeated no-op component
-        // calls then arrive through Map.MapPreTick's native MapComponentTick loop; the fixture
-        // never invokes the profiled method directly merely to manufacture adaptive counts.
-        var priorRandState = SeedGlobalRand(CalibrationContract.Seed);
-        context.DeferCleanup(() => RestoreGlobalRand(priorRandState));
+        // Repeated no-op component calls arrive through Map.MapPreTick's native
+        // MapComponentTick loop; the fixture never invokes the profiled method directly.
         var calibrationComponents = new List<CalibrationTickComponent>(
             CalibrationContract.NativeTickComponentCount);
         for (var index = 0; index < CalibrationContract.NativeTickComponentCount; index++)
@@ -190,37 +181,6 @@ public abstract class CalibrationBenchmark : IRimWorldPerformanceTest
         yield break;
     }
 
-    private static ulong SeedGlobalRand(int seed)
-    {
-        var stateProperty = RequireRandStateProperty();
-        var prior = (ulong)stateProperty.GetValue(null, null)!;
-        ulong seeded;
-        Rand.PushState(seed);
-        try
-        {
-            seeded = (ulong)stateProperty.GetValue(null, null)!;
-        }
-        finally
-        {
-            Rand.PopState();
-        }
-
-        stateProperty.SetValue(null, seeded, null);
-        return prior;
-    }
-
-    private static void RestoreGlobalRand(ulong state) =>
-        RequireRandStateProperty().SetValue(null, state, null);
-
-    private static PropertyInfo RequireRandStateProperty()
-    {
-        var property = typeof(Rand).GetProperty(
-            "StateCompressed", BindingFlags.Static | BindingFlags.NonPublic);
-        if (property is null || property.PropertyType != typeof(ulong) ||
-            property.GetMethod is null || property.SetMethod is null)
-            throw new MissingMemberException(typeof(Rand).FullName, "StateCompressed");
-        return property;
-    }
 }
 
 public sealed class CalibrationTickComponent : MapComponent

@@ -44,7 +44,6 @@ public sealed class PerformanceMetadataDiscoveryTests
                 "astryl.circinus",
                 "alpha.mod"
             }));
-            Assert.That(declaration.DeterministicSeed, Is.EqualTo(7123));
             Assert.That(declaration.WorkloadVersion, Is.EqualTo("alpha/v2"));
             Assert.That(declaration.WarmUpTicks, Is.EqualTo(900));
             Assert.That(declaration.SampleTicks, Is.EqualTo(3600));
@@ -81,7 +80,6 @@ public sealed class PerformanceMetadataDiscoveryTests
             original.StagingOwnerPackageId,
             original.MeasuredSubjectPackageId,
             original.ActivePackageIds,
-            original.DeterministicSeed,
             original.WorkloadVersion,
             original.ComparisonId,
             original.WarmUpTicks,
@@ -228,7 +226,6 @@ public sealed class PerformanceMetadataDiscoveryTests
             original.StagingOwnerPackageId,
             original.MeasuredSubjectPackageId,
             original.ActivePackageIds,
-            original.DeterministicSeed,
             original.WorkloadVersion,
             original.ComparisonId,
             original.WarmUpTicks,

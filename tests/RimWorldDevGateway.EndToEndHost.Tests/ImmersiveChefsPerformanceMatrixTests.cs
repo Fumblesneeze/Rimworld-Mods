@@ -90,6 +90,9 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
                     if (item.Key is "immersive-chefs.processor-dubs" or "immersive-chefs.all-supported")
                         Assert.That(benchmark.ThroughputCheckpoints.Select(checkpoint => checkpoint.Id),
                             Is.SupersetOf(ProcessorDubsCheckpointIds), benchmark.Id);
+                    if (item.Key is "immersive-chefs.guest-service" or "immersive-chefs.all-supported")
+                        Assert.That(benchmark.ThroughputCheckpoints.Select(checkpoint => checkpoint.Id),
+                            Is.SupersetOf(GuestServiceCheckpointIds), benchmark.Id);
                 }
             });
         }
@@ -108,6 +111,13 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
         "processor-dubs-domestic-cycles",
         "processor-dubs-industrial-cycles",
         "processor-dubs-water-milliliters"
+    ];
+
+    private static readonly string[] GuestServiceCheckpointIds =
+    [
+        "guest-service-orders-served",
+        "guest-service-colony-settings-returned",
+        "guest-service-gastronomy-clearing-owned"
     ];
 
     private static PerformanceAssemblyCandidate BuildProductPerformanceCandidate()

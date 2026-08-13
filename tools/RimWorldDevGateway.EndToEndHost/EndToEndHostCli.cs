@@ -156,7 +156,7 @@ public static class EndToEndHostCli
         var common = CommonOptions.Create();
         var artifactRoot = new Option<string>("--artifact-root")
         {
-            Description = "Root for deterministic raw, normalized, CSV, Markdown, and aggregate report paths.",
+            Description = "Root for raw stochastic repetitions, normalized data, CSV, Markdown, and aggregate report paths.",
             Required = true
         };
         var benchmarkIds = new Option<string[]>("--benchmark-id")
@@ -531,7 +531,6 @@ public static class EndToEndHostCli
                 process.AssemblySha256,
                 process.StagingOwnerPackageId,
                 process.MeasuredSubjectPackageId,
-                process.DeterministicSeed,
                 process.WorkloadVersion,
                 process.ComparisonId,
                 process.ProductAbsentControlId,

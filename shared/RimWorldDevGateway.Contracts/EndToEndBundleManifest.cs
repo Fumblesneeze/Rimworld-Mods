@@ -91,9 +91,6 @@ public sealed class EndToEndBundleTest
     [DataMember(Name = "measuredSubjectPackageId", EmitDefaultValue = false, Order = 9)]
     public string? MeasuredSubjectPackageId { get; set; }
 
-    [DataMember(Name = "deterministicSeed", EmitDefaultValue = false, Order = 10)]
-    public int DeterministicSeed { get; set; }
-
     [DataMember(Name = "workloadVersion", EmitDefaultValue = false, Order = 11)]
     public string? WorkloadVersion { get; set; }
 

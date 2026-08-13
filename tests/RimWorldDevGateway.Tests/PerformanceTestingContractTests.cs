@@ -13,75 +13,6 @@ namespace RimWorldDevGateway.Tests;
 public sealed class PerformanceTestingContractTests
 {
     [Test]
-    public void Determinism_guard_compares_every_counter_with_its_indexed_target()
-    {
-        var current = Enumerable.Range(0, 24)
-            .Select(index => 1_700_000 + index * 10_000 - 1)
-            .ToArray();
-
-        Assert.That(
-            PerformanceDeterminismGuard.FirstCounterAtOrAboveIndexedTarget(
-                current, 1_700_000, 10_000),
-            Is.EqualTo(-1));
-
-        current[23]++;
-        Assert.That(
-            PerformanceDeterminismGuard.FirstCounterAtOrAboveIndexedTarget(
-                current, 1_700_000, 10_000),
-            Is.EqualTo(23));
-    }
-
-    [Test]
-    public void Determinism_guard_hashes_ordered_runtime_state_without_hiding_semantic_drift()
-    {
-        var baseline = new[] { "pawn|0|Wait|0.75", "pawn|1|Wait|0.80", "food|0|30" };
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(PerformanceDeterminismGuard.CanonicalStateSha256(baseline),
-                Is.EqualTo(PerformanceDeterminismGuard.CanonicalStateSha256(baseline.ToArray())));
-            Assert.That(PerformanceDeterminismGuard.CanonicalStateSha256(baseline),
-                Is.Not.EqualTo(PerformanceDeterminismGuard.CanonicalStateSha256(
-                    new[] { "pawn|0|Wait|0.75", "pawn|1|Wait|0.79", "food|0|30" })));
-            Assert.That(PerformanceDeterminismGuard.CanonicalStateSha256(new[] { "a\nb" }),
-                Is.Not.EqualTo(PerformanceDeterminismGuard.CanonicalStateSha256(new[] { "a", "b" })));
-            Assert.That(PerformanceDeterminismGuard.CanonicalStateSha256(Array.Empty<string>()),
-                Is.Not.EqualTo(PerformanceDeterminismGuard.CanonicalStateSha256(new[] { string.Empty })));
-            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(
-                new string[] { "pawn", null! }), Throws.ArgumentException);
-        });
-    }
-
-    [Test]
-    public void Determinism_guard_enforces_the_published_checkpoint_evidence_boundaries()
-    {
-        var exactRows = Enumerable.Repeat("x", PerformanceDeterminismGuard.MaximumStateRows);
-        var overRows = Enumerable.Repeat("x", PerformanceDeterminismGuard.MaximumStateRows + 1);
-        var exactRow = new string('x', PerformanceDeterminismGuard.MaximumStateRowUtf8Bytes);
-        var overRow = exactRow + "x";
-        var exactAggregate = Enumerable
-            .Repeat(new string('x', PerformanceDeterminismGuard.MaximumStateRowUtf8Bytes), 16)
-            .ToArray();
-        exactAggregate[exactAggregate.Length - 1] = new string('x',
-            PerformanceDeterminismGuard.MaximumStateRowUtf8Bytes - exactAggregate.Length * 4);
-        var overAggregate = exactAggregate.ToArray();
-        overAggregate[overAggregate.Length - 1] += "x";
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(exactRows), Throws.Nothing);
-            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(overRows),
-                Throws.ArgumentException.With.Message.Contains("rows"));
-            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(new[] { exactRow }), Throws.Nothing);
-            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(new[] { overRow }),
-                Throws.ArgumentException.With.Message.Contains("UTF-8"));
-            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(exactAggregate), Throws.Nothing);
-            Assert.That(() => PerformanceDeterminismGuard.CanonicalStateSha256(overAggregate),
-                Throws.ArgumentException.With.Message.Contains("aggregate"));
-        });
-    }
-
-    [Test]
     public void Describe_preserves_the_complete_reproducible_benchmark_contract()
     {
         var descriptor = PerformanceTestContract.Describe(typeof(ValidProductBenchmark));
@@ -99,7 +30,6 @@ public sealed class PerformanceTestingContractTests
                 "fumblesneeze.immersivechefs"
             }));
             Assert.That(descriptor.LaunchedPackageIds.Last(), Is.EqualTo(EndToEndTestContract.GatewayPackageId));
-            Assert.That(descriptor.DeterministicSeed, Is.EqualTo(481516));
             Assert.That(descriptor.WorkloadVersion, Is.EqualTo("immersive-chefs-colony/v1"));
             Assert.That(descriptor.ComparisonId, Is.EqualTo("immersive-chefs.base-colony"));
             Assert.That(descriptor.WarmUpTicks, Is.EqualTo(2_500));
@@ -251,9 +181,14 @@ public sealed class PerformanceTestingContractTests
     }
 
     [Test]
-    public void Grouping_requires_a_semantically_identical_profiler_overhead_lens_trio()
+    public void Grouping_accepts_an_ordinary_instrumented_run_but_requires_complete_optional_calibration()
     {
-        var missing = Assert.Throws<PerformanceContractException>(() =>
+        Assert.That(() => PerformanceTestContract.DescribeAndGroup(new[]
+        {
+            typeof(ValidOptionalBenchmark)
+        }), Throws.Nothing);
+
+        var partial = Assert.Throws<PerformanceContractException>(() =>
             PerformanceTestContract.DescribeAndGroup(new[]
             {
                 typeof(ValidOptionalBenchmark),
@@ -269,7 +204,7 @@ public sealed class PerformanceTestingContractTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(missing!.Message, Does.Contain("ArmedDisabledWrapper"));
+            Assert.That(partial!.Message, Does.Contain("ArmedDisabledWrapper"));
             Assert.That(drift!.Message, Does.Contain("incompatible").And.Contain("lens"));
         });
     }
@@ -405,7 +340,6 @@ public sealed class PerformanceTestingContractTests
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-colony/v1",
         WarmUpTicks = 2_500,
         SampleTicks = 12_000,
@@ -430,7 +364,6 @@ public sealed class PerformanceTestingContractTests
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-colony/v1",
         ComparisonId = "immersive-chefs.base-colony",
         WarmUpTicks = 2_500,
@@ -455,7 +388,6 @@ public sealed class PerformanceTestingContractTests
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-colony/v1",
         ComparisonId = "immersive-chefs.base-colony",
         WarmUpTicks = 2500,
@@ -479,7 +411,6 @@ public sealed class PerformanceTestingContractTests
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-neutral/v1",
         ComparisonId = "gateway.immersive-chefs-neutral-present",
         WarmUpTicks = 2500,
@@ -498,7 +429,6 @@ public sealed class PerformanceTestingContractTests
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-neutral/v1",
         ComparisonId = "gateway.immersive-chefs-neutral-present",
         WarmUpTicks = 2500,
@@ -517,7 +447,6 @@ public sealed class PerformanceTestingContractTests
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-neutral/v1",
         ComparisonId = "gateway.immersive-chefs-neutral-present",
         WarmUpTicks = 2500,
@@ -537,7 +466,6 @@ public sealed class PerformanceTestingContractTests
         PerformanceTestContract.CircinusPackageId,
         "dubwise.dubsbadhygiene",
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-colony/v1-dubs",
         ComparisonId = "immersive-chefs.dubs-colony",
         WarmUpTicks = 2500,
@@ -555,7 +483,6 @@ public sealed class PerformanceTestingContractTests
         PerformanceTestContract.CircinusPackageId,
         "dubwise.dubsbadhygiene",
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-colony/v1-dubs",
         ComparisonId = "immersive-chefs.dubs-colony",
         WarmUpTicks = 2500,
@@ -574,7 +501,6 @@ public sealed class PerformanceTestingContractTests
         PerformanceTestContract.CircinusPackageId,
         "dubwise.dubsbadhygiene",
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-colony/v1-dubs",
         ComparisonId = "immersive-chefs.dubs-colony",
         WarmUpTicks = 2500,
@@ -593,7 +519,6 @@ public sealed class PerformanceTestingContractTests
         PerformanceTestContract.CircinusPackageId,
         "dubwise.dubsbadhygiene",
         "fumblesneeze.immersivechefs",
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-colony/v1-dubs",
         ComparisonId = "immersive-chefs.dubs-colony",
         WarmUpTicks = 2500,
@@ -610,7 +535,6 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
-        DeterministicSeed = 481516,
         WorkloadVersion = "immersive-chefs-neutral/v1",
         WarmUpTicks = 2500,
         SampleTicks = 12000,
@@ -628,7 +552,6 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
-        DeterministicSeed = 481516,
         WorkloadVersion = "drifted/v2",
         WarmUpTicks = 2500,
         SampleTicks = 12000,

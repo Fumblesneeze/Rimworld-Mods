@@ -335,7 +335,18 @@ public static class PerformanceDiscoveryValidator
                      StringComparer.Ordinal))
         {
             var items = family.ToArray();
-            foreach (var lens in new[] { 0, 1, 2 })
+            var instrumented = items.Count(item => item.EvidenceLens == 0);
+            if (instrumented != 1)
+                errors.Add($"performance comparison '{items[0].ComparisonId}' must declare exactly one evidence lens 0");
+
+            if (items.Length == 1)
+            {
+                if (items[0].Repetitions < 3)
+                    errors.Add($"ordinary instrumented comparison '{items[0].ComparisonId}' must declare at least three repetitions");
+                continue;
+            }
+
+            foreach (var lens in new[] { 1, 2 })
             {
                 if (items.Count(item => item.EvidenceLens == lens) != 1)
                     errors.Add($"performance comparison '{items[0].ComparisonId}' must declare exactly one evidence lens {lens}");
@@ -347,7 +358,6 @@ public static class PerformanceDiscoveryValidator
             {
                 if (!StringComparer.OrdinalIgnoreCase.Equals(baseline.StagingOwnerPackageId, companion.StagingOwnerPackageId) ||
                     !StringComparer.OrdinalIgnoreCase.Equals(baseline.MeasuredSubjectPackageId, companion.MeasuredSubjectPackageId) ||
-                    baseline.DeterministicSeed != companion.DeterministicSeed ||
                     !string.Equals(baseline.WorkloadVersion, companion.WorkloadVersion, StringComparison.Ordinal) ||
                     baseline.WarmUpTicks != companion.WarmUpTicks || baseline.SampleTicks != companion.SampleTicks ||
                     baseline.GameSpeed != companion.GameSpeed || baseline.Repetitions != companion.Repetitions ||
@@ -382,7 +392,6 @@ public static class PerformanceDiscoveryValidator
                 !StringComparer.OrdinalIgnoreCase.Equals(control.StagingOwnerPackageId, product.StagingOwnerPackageId) ||
                 !StringComparer.OrdinalIgnoreCase.Equals(control.MeasuredSubjectPackageId, product.MeasuredSubjectPackageId) ||
                 !nonSubjectPackages.SequenceEqual(control.ActivePackageIds, StringComparer.OrdinalIgnoreCase) ||
-                product.DeterministicSeed != control.DeterministicSeed ||
                 !string.Equals(product.WorkloadVersion, control.WorkloadVersion, StringComparison.Ordinal) ||
                 product.WarmUpTicks != control.WarmUpTicks || product.SampleTicks != control.SampleTicks ||
                 product.GameSpeed != control.GameSpeed || product.Repetitions != control.Repetitions ||
