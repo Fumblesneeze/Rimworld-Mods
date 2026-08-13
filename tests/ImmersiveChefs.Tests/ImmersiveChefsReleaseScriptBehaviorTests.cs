@@ -242,6 +242,27 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         });
     }
 
+    [Test]
+    public void Subscribed_smoke_selects_the_session_copy_that_owns_the_screenshots()
+    {
+        using var fixture = Fixture.Create();
+        var runnerEvidence = Path.Combine(fixture.Root, "smoke-001", "run", "end-to-end-tests.json");
+        var persistedEvidence = Path.Combine(fixture.Root, "smoke-001", "run", "SavedData", "DevGateway", "Sessions", "one", "end-to-end-tests.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(runnerEvidence)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(persistedEvidence)!);
+        File.WriteAllText(runnerEvidence, "{}", new UTF8Encoding(false));
+        File.WriteAllText(persistedEvidence, "{}", new UTF8Encoding(false));
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsSubscribedSmoke.ps1",
+            new[] { "Get-SubscribedSmokeEvidenceFile" },
+            "Write-Output ((Get-SubscribedSmokeEvidenceFile -RunRoot " + Ps(fixture.Root) + ").FullName)");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo(persistedEvidence));
+        });
+    }
+
     private static string Ps(string value) => "'" + value.Replace("'", "''") + "'";
 
     private sealed class Fixture : IDisposable

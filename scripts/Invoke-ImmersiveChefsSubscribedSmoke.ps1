@@ -26,6 +26,14 @@ function Read-Json([string]$Path) {
     return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
 }
 
+function Get-SubscribedSmokeEvidenceFile([string]$RunRoot) {
+    $files = @(Get-ChildItem -LiteralPath $RunRoot -Recurse -Filter end-to-end-tests.json -File | Where-Object {
+        $_.FullName -match '[\\/]SavedData[\\/]DevGateway[\\/]Sessions[\\/]'
+    })
+    if ($files.Count -ne 1) { throw 'The subscribed Workshop E2E evidence is missing or ambiguous.' }
+    return $files[0]
+}
+
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $resolvedGame = [IO.Path]::GetFullPath($RimWorldPath).TrimEnd('\')
 $resolvedWorkshop = [IO.Path]::GetFullPath($SteamModContentFolder).TrimEnd('\')
@@ -87,9 +95,8 @@ try {
         throw 'The subscribed Workshop E2E group did not pass exactly once.'
     }
 
-    $evidenceFiles = @(Get-ChildItem -LiteralPath $runRoot -Recurse -Filter end-to-end-tests.json -File)
-    if ($evidenceFiles.Count -ne 1) { throw 'The subscribed Workshop E2E evidence is missing or ambiguous.' }
-    $evidence = Read-Json $evidenceFiles[0].FullName
+    $evidenceFile = Get-SubscribedSmokeEvidenceFile -RunRoot $runRoot
+    $evidence = Read-Json $evidenceFile.FullName
     $testResult = @($evidence.result.Execution.Results | Where-Object {
         [string]$_.Id -ceq 'release.immersive-chefs-subscribed-native-cooking-dining'
     })
@@ -105,7 +112,7 @@ try {
     if (-not [string]::Equals([IO.Path]::GetFullPath($loadedRoot).TrimEnd('\'), $expectedInstall, [StringComparison]::OrdinalIgnoreCase)) {
         throw "RimWorld loaded Immersive Chefs from '$loadedRoot', not the subscribed Workshop directory."
     }
-    $screenshots = @(Get-ChildItem -LiteralPath $evidenceFiles[0].Directory.FullName -Filter 'e2e-screenshot-*.png' -File |
+    $screenshots = @(Get-ChildItem -LiteralPath $evidenceFile.Directory.FullName -Filter 'e2e-screenshot-*.png' -File |
         Sort-Object Name | ForEach-Object { $_.FullName })
     if ($screenshots.Count -lt 3) { throw 'The subscribed player workflow did not retain before/action/after screenshots.' }
 
@@ -116,7 +123,7 @@ try {
         playerAction = 'native Prioritize and Consume float-menu callbacks'
         observedResult = 'one plated simple meal cooked and eaten, with plate, cutlery, and cookware returned dirty'
         screenshots = $screenshots
-        gatewayEvidence = $evidenceFiles[0].Directory.FullName
+        gatewayEvidence = $evidenceFile.Directory.FullName
         localProductRestored = $false
     }
 }
