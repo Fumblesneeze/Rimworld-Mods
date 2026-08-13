@@ -27,6 +27,9 @@ Read only the references needed for the asset:
      Stuff colors, optional graphic owner, and every required filename.
    - For About/Workshop art, inspect the consumer's real dimension/file-size contract and locally
      installed comparators before composing; do not assume one Steam image size is mandated.
+   - For Workshop-page cards, inspect successful contemporary mod pages as layout comparators. Use
+     wide sections that remain legible around the page's displayed width; the proven Immersive Chefs
+     template is 1164×655 and its Steam additional-preview upload must remain below 1 MiB.
    - Inspect active optional mods and finalized Defs when another mod can replace graphic ownership.
    - For a building family, measure several comparable Core textures rather than guessing from one.
      Extract Core art read-only into ignored evidence; never redistribute it.
@@ -62,6 +65,10 @@ Read only the references needed for the asset:
      cardinal world-space order, and apparent tabletop/underframe proportions.
    - Copy only selected final PNGs into the mod. Keep raw generations, rejected candidates,
      extracted Core textures, and transient processing files ignored.
+   - For Workshop feature cards, keep a mod-owned ordered manifest with token, alt text, source
+     sprites and copy; keep the reusable frame and licensed font under `release/templates/workshop/`.
+     Render deterministically, inspect a page-scale contact sheet and important full-size cards, and
+     reject fallback fonts, cropped headlines, art/text collisions, or unreadable small copy.
 
 6. Verify the reviewed build in game.
    - Build/package after review changes.

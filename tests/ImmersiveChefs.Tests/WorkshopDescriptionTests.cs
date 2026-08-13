@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Web.Script.Serialization;
 using NUnit.Framework;
 
 namespace ImmersiveChefs.Tests;
@@ -101,7 +102,7 @@ public sealed class WorkshopDescriptionTests
         };
 
     [Test]
-    public void Description_covers_the_release_and_ends_with_an_AI_disclosure_within_Steams_exact_limit()
+    public void Description_is_an_illustrated_player_showcase_and_ends_with_the_authors_note_within_Steams_exact_limit()
     {
         var root = FindRepositoryRoot();
         var path = Path.Combine(
@@ -110,8 +111,8 @@ public sealed class WorkshopDescriptionTests
             "ImmersiveChefs",
             "Release",
             "workshop",
-            "description.bbcode");
-        Assert.That(File.Exists(path), Is.True, "The authored Workshop description is missing.");
+            "description.template.bbcode");
+        Assert.That(File.Exists(path), Is.True, "The authored Workshop description template is missing.");
 
         var descriptionBytes = File.ReadAllBytes(path);
         var description = new UTF8Encoding(false, true).GetString(descriptionBytes);
@@ -131,16 +132,25 @@ public sealed class WorkshopDescriptionTests
             Assert.That(normalized, Does.Contain("[b]Biotech[/b] - "));
             Assert.That(normalized, Does.Not.Contain("TODO"));
             Assert.That(normalized, Does.Not.Contain("planned"));
+            Assert.That(Regex.Matches(normalized, @"\[img\]\{\{image:[a-z0-9-]+\}\}\[/img\]").Count,
+                Is.EqualTo(7),
+                "The Workshop template must place every reviewed title and feature graphic.");
+            Assert.That(normalized, Does.Not.Contain("package-gated"));
+            Assert.That(normalized, Does.Not.Contain("absent-safe"));
+            Assert.That(normalized, Does.Not.Contain("Exclusively owns"));
+            Assert.That(normalized, Does.Not.Contain("adapter"));
+            Assert.That(normalized, Does.Not.Contain("implementation seam"));
+            Assert.That(normalized, Does.Not.Contain("provenance"));
             Assert.That(
                 Regex.Matches(normalized, @"\[(?<tag>/?[A-Za-z0-9]+)(?:=[^\]]+)?\]")
                     .Cast<Match>()
                     .Select(match => match.Groups["tag"].Value.TrimStart('/'))
-                    .Where(tag => tag is not "h1" and not "b" and not "list" and not "url")
+                    .Where(tag => tag is not "h1" and not "b" and not "list" and not "url" and not "img")
                     .ToArray(),
                 Is.Empty,
                 "The authored description contains a Steam BBCode tag outside the reviewed allowlist.");
-            Assert.That(Regex.Matches(normalized, @"\[(?:h1|b|list|url)(?:=[^\]]+)?\]").Count,
-                Is.EqualTo(Regex.Matches(normalized, @"\[/(?:h1|b|list|url)\]").Count),
+            Assert.That(Regex.Matches(normalized, @"\[(?:h1|b|list|url|img)(?:=[^\]]+)?\]").Count,
+                Is.EqualTo(Regex.Matches(normalized, @"\[/(?:h1|b|list|url|img)\]").Count),
                 "The authored Steam BBCode has an unbalanced supported tag.");
         });
 
@@ -172,7 +182,7 @@ public sealed class WorkshopDescriptionTests
                 chain.Key + " dependency-chain guidance");
         }
 
-        const string disclosureHeading = "[h1]AI disclosure[/h1]";
+        const string disclosureHeading = "[h1]Author's Note[/h1]";
         var disclosureIndex = normalized.LastIndexOf(disclosureHeading, StringComparison.Ordinal);
         var disclosureBody = disclosureIndex < 0
             ? string.Empty
@@ -186,17 +196,63 @@ public sealed class WorkshopDescriptionTests
         {
             Assert.That(disclosureIndex, Is.GreaterThan(0));
             Assert.That(normalized.IndexOf(disclosureHeading, StringComparison.Ordinal), Is.EqualTo(disclosureIndex),
-                "The AI disclosure must occur exactly once.");
+                "The Author's Note must occur exactly once.");
+            Assert.That(disclosureBody, Does.Contain("completely developed by AI"));
+            Assert.That(disclosureBody, Does.Contain("professional software developer"));
+            Assert.That(disclosureBody, Does.Contain("agentic engineering"));
+            Assert.That(disclosureBody, Does.Contain("maintainability"));
+            Assert.That(disclosureBody, Does.Contain("testability"));
+            Assert.That(disclosureBody, Does.Contain("performance testing"));
+            Assert.That(disclosureBody, Does.Contain("open-source").IgnoreCase);
+            Assert.That(disclosureBody, Does.Contain("proving ground"));
+            Assert.That(disclosureBody, Does.Contain("playtesting"));
+            Assert.That(disclosureBody, Does.Contain("comment"));
             Assert.That(disclosureBody, Does.Contain("artwork"));
             Assert.That(disclosureBody, Does.Contain("localization"));
-            Assert.That(disclosureBody, Does.Contain("pre-generated").IgnoreCase);
             Assert.That(disclosureBody, Does.Contain("does not generate AI content while RimWorld is running"));
-            Assert.That(disclosureParagraphs, Has.Exactly(1).Items,
-                "The final AI disclosure must contain exactly one authored paragraph and nothing after it.");
-            Assert.That(disclosureBody, Does.Not.Contain("[h1]"), "The AI disclosure must be the last section.");
+            Assert.That(disclosureParagraphs, Has.Exactly(2).Items,
+                "The final Author's Note must contain exactly the two reviewed paragraphs and nothing after them.");
+            Assert.That(disclosureBody, Does.Not.Contain("[h1]"), "The Author's Note must be the last section.");
             Assert.That(disclosureBody, Does.Not.Match(@"(?m)^\[(?!/?(?:b|url)\b)"),
                 "No list or section content may follow the final AI disclosure heading.");
         });
+    }
+
+    [Test]
+    public void Feature_art_has_versioned_templates_local_font_and_six_reviewable_wide_outputs()
+    {
+        var root = FindRepositoryRoot();
+        var workshopRoot = Path.Combine(root, "mods", "ImmersiveChefs", "Release", "workshop");
+        var manifestPath = Path.Combine(workshopRoot, "presentation.json");
+        var templatePath = Path.Combine(root, "release", "templates", "workshop", "feature-card.svg");
+        var fontPath = Path.Combine(root, "release", "templates", "workshop", "fonts", "Oswald-SemiBold.ttf");
+        var licensePath = Path.Combine(root, "release", "templates", "workshop", "fonts", "OFL.txt");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(manifestPath), Is.True, "The mod-owned presentation manifest is missing.");
+            Assert.That(File.Exists(templatePath), Is.True, "The reusable feature-card template is missing.");
+            Assert.That(File.Exists(fontPath), Is.True, "Workshop rendering must use a repository-local font.");
+            Assert.That(File.Exists(licensePath), Is.True, "The local font license is missing.");
+        });
+
+        var manifest = new JavaScriptSerializer().Deserialize<PresentationManifest>(File.ReadAllText(manifestPath));
+        Assert.That(manifest, Is.Not.Null);
+        Assert.That(manifest!.schema, Is.EqualTo("ImmersiveChefs/WorkshopPresentation/v1"));
+        Assert.That(manifest.cards, Has.Exactly(7).Items);
+        Assert.That(manifest.cards.Select(card => card.token), Is.Unique);
+
+        foreach (var card in manifest.cards)
+        {
+            var path = Path.Combine(workshopRoot, card.path.Replace('/', Path.DirectorySeparatorChar));
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.Exists(path), Is.True, card.token + " generated image");
+                Assert.That(ReadPngDimensions(path), Is.EqualTo((1164, 655)), card.token + " dimensions");
+                Assert.That(new FileInfo(path).Length, Is.LessThanOrEqualTo(2 * 1024 * 1024), card.token + " Steam payload");
+                Assert.That(card.alt, Is.Not.Null.And.Not.Empty, card.token + " accessibility copy");
+            });
+        }
     }
 
     private static void AssertEntryHasDescription(string description, string label)
@@ -225,6 +281,28 @@ public sealed class WorkshopDescriptionTests
             BindingFlags.Public | BindingFlags.Static);
         Assert.That(field, Is.Not.Null, "The installed Steamworks SDK description-limit constant is missing.");
         return (int)field!.GetValue(null)!;
+    }
+
+    private static (int Width, int Height) ReadPngDimensions(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        Assert.That(bytes.Take(8).ToArray(), Is.EqualTo(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }), path);
+        return (
+            (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19],
+            (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23]);
+    }
+
+    private sealed class PresentationManifest
+    {
+        public string schema { get; set; } = string.Empty;
+        public PresentationCard[] cards { get; set; } = Array.Empty<PresentationCard>();
+    }
+
+    private sealed class PresentationCard
+    {
+        public string token { get; set; } = string.Empty;
+        public string path { get; set; } = string.Empty;
+        public string alt { get; set; } = string.Empty;
     }
 
     private static string FindRepositoryRoot()

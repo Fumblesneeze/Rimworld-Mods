@@ -1,0 +1,118 @@
+{
+  "schema": "ImmersiveChefs/WorkshopPresentation/v1",
+  "cards": [
+    {
+      "token": "hero",
+      "path": "assets/workshop-hero.png",
+      "alt": "Immersive Chefs title art with a RimWorld chef shouting You Donkey",
+      "layout": "hero",
+      "source": "preview-main.png"
+    },
+    {
+      "token": "kitchenware",
+      "path": "assets/feature-kitchenware.png",
+      "alt": "Cookware, plates, cutlery and a chef's knife from Immersive Chefs",
+      "kicker": "MATERIAL • QUALITY • CLEANLINESS",
+      "title": "KITCHEN TOOLS MATTER",
+      "lines": [
+        "Cookware shapes every recipe",
+        "Plates & cutlery return dirty",
+        "Chef's knives belong to the cook"
+      ],
+      "art": [
+        { "source": "Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware.png", "x": 610, "y": 100, "width": 250 },
+        { "source": "Things/Item/Kitchenware/Cookware/Cookware.png", "x": 835, "y": 90, "width": 265 },
+        { "source": "Things/Item/Kitchenware/Plate/Plate.png", "x": 580, "y": 350, "width": 215 },
+        { "source": "Things/Item/Kitchenware/Cutlery/Cutlery.png", "x": 770, "y": 365, "width": 200 },
+        { "source": "Things/Item/Kitchenware/ChefsKnife/ChefsKnife.png", "x": 940, "y": 355, "width": 190 }
+      ]
+    },
+    {
+      "token": "teamwork",
+      "path": "assets/feature-teamwork.png",
+      "alt": "Ingredient prep and specialist cooking stations working together",
+      "kicker": "PREP • SUPPORT • FINISH",
+      "title": "COOK AS A TEAM",
+      "lines": [
+        "Prep ingredients ahead of time",
+        "Linked cooks boost speed & quality",
+        "Better meals demand more effort"
+      ],
+      "art": [
+        { "source": "Things/Building/KitchenStation/PrepStation_south.png", "x": 545, "y": 80, "width": 590 },
+        { "source": "Things/Building/KitchenStation/SauceStation_south.png", "x": 590, "y": 350, "width": 260 },
+        { "source": "Things/Building/KitchenStation/MeatStation_south.png", "x": 840, "y": 350, "width": 285 }
+      ]
+    },
+    {
+      "token": "dishwashing",
+      "path": "assets/feature-dishwashing.png",
+      "alt": "Domestic and industrial dishwashers cleaning dirty tableware",
+      "kicker": "HAUL • WASH • REUSE",
+      "title": "DISHES NEED WASHING",
+      "lines": [
+        "Every returned setting gets cleaned",
+        "Dishwashers handle whole batches",
+        "Sinks and wild water are fallbacks"
+      ],
+      "art": [
+        { "source": "Things/Building/Dishwasher/Dishwasher_south.png", "x": 580, "y": 70, "width": 500 },
+        { "source": "Things/Building/Dishwasher/IndustrialDishwasher_south.png", "x": 570, "y": 330, "width": 560 },
+        { "source": "Things/Item/Kitchenware/Plate/Plate_Dirty.png", "x": 970, "y": 70, "width": 140 }
+      ]
+    },
+    {
+      "token": "meals",
+      "path": "assets/feature-meals.png",
+      "alt": "Prepared ingredients, a microwave and a complete place setting",
+      "kicker": "INGREDIENTS • HEAT • SERVICE",
+      "title": "MEALS REMEMBER",
+      "lines": [
+        "Quality follows every serving",
+        "Cold food gets reheated before dining",
+        "Caravans & patients keep their dishes"
+      ],
+      "art": [
+        { "source": "Things/Item/Food/PreparedIngredients/PreparedIngredients.png", "x": 580, "y": 110, "width": 225 },
+        { "source": "Things/Building/Appliance/Microwave_south.png", "x": 790, "y": 60, "width": 320 },
+        { "source": "Things/Item/Kitchenware/Plate/Plate.png", "x": 600, "y": 380, "width": 190 },
+        { "source": "Things/Item/Kitchenware/Cutlery/Cutlery.png", "x": 790, "y": 390, "width": 175 },
+        { "source": "Things/Item/Kitchenware/Cookware/Cookware_Dirty.png", "x": 945, "y": 380, "width": 175 }
+      ]
+    },
+    {
+      "token": "colony",
+      "path": "assets/feature-colony.png",
+      "alt": "Kitchen stations and tableware supporting colony life away from the stove",
+      "kicker": "HOME • HOSPITAL • CARAVAN",
+      "title": "THE COLONY EATS",
+      "lines": [
+        "Guests can use colony tableware",
+        "Nurses collect cutlery for patients",
+        "Travelers clean dishes on the road"
+      ],
+      "art": [
+        { "source": "Things/Building/KitchenStation/VegetableStation_south.png", "x": 550, "y": 80, "width": 560 },
+        { "source": "Things/Building/KitchenStation/PastryStation_south.png", "x": 610, "y": 350, "width": 480 },
+        { "source": "Things/Item/Kitchenware/GlitterCookware/GlitterCookware.png", "x": 940, "y": 75, "width": 180 }
+      ]
+    },
+    {
+      "token": "compatibility",
+      "path": "assets/feature-compatibility.png",
+      "alt": "A complete Immersive Chefs kitchen designed for large food-focused mod lists",
+      "kicker": "FOOD MODS • GUESTS • FRIDGES",
+      "title": "BUILT FOR MOD LISTS",
+      "lines": [
+        "Optional mods blend into the same loop",
+        "Specialized systems take over gracefully",
+        "Every integration stays optional"
+      ],
+      "art": [
+        { "source": "Things/Building/KitchenStation/PrepStation_north.png", "x": 530, "y": 50, "width": 500 },
+        { "source": "Things/Building/Dishwasher/IndustrialDishwasher_north.png", "x": 690, "y": 300, "width": 430 },
+        { "source": "Things/Item/Kitchenware/ChefsKnife/ChefsKnife.png", "x": 970, "y": 110, "width": 150 }
+      ]
+    }
+  ]
+}

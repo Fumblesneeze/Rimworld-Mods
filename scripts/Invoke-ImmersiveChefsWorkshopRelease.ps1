@@ -23,6 +23,7 @@ param(
     [string]$RimWorldPath = 'F:\Steam\steamapps\common\RimWorld',
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
     [ValidateRange(120, 1800)][int]$TimeoutSeconds = 900,
+    [switch]$PreviewSyncOnly,
     [ValidateSet('table', 'json')][string]$Output = 'table'
 )
 
@@ -43,6 +44,15 @@ function Test-ReconciliationStateIdentity([string]$State, [System.UInt64]$StateI
     $reconciliationStates = @('submit-admitted', 'submitted', 'submit-indeterminate', 'dependency-indeterminate', 'succeeded')
     return $reconciliationStates -cnotcontains $State -or
         ($StateItemId -ne 0 -and $PublishedFileId -ne 0 -and $StateItemId -eq $PublishedFileId)
+}
+
+function Get-ExpectedRemoteVisibility([string]$PlanVisibility) {
+    switch ($PlanVisibility) {
+        'Private' { return 'k_ERemoteStoragePublishedFileVisibilityPrivate' }
+        'Public' { return 'k_ERemoteStoragePublishedFileVisibilityPublic' }
+        'Unlisted' { return 'k_ERemoteStoragePublishedFileVisibilityUnlisted' }
+        default { throw "Unsupported reviewed Workshop visibility: $PlanVisibility" }
+    }
 }
 
 function Read-Json([string]$Path) {
@@ -252,6 +262,7 @@ $planPath = [IO.Path]::GetFullPath($PublicationPlan)
 $actualPlanHash = (Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash
 if ($actualPlanHash -cne $PublicationPlanSha256.ToUpperInvariant()) { Exit-InvalidInput 'The supplied publication-plan hash does not match the exact file.' }
 $plan = Read-Json $planPath
+$expectedPlanVisibility = if ($null -eq $plan.publishedFileId) { 'Private' } else { 'Public' }
 if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [string]$plan.packageId -cne 'fumblesneeze.immersivechefs' -or
     [string]$plan.title -cne 'Immersive Chefs' -or
@@ -263,7 +274,7 @@ if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [string]$plan.managedAssemblySha256 -cne '5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A' -or
     [int]$plan.steamAppId -ne 294100 -or
     [string]$plan.steamUserId -cne '76561198077136238' -or
-    [string]$plan.visibility -cne 'Public' -or
+    [string]$plan.visibility -cne $expectedPlanVisibility -or
     [bool]$plan.mutatesSteam) {
     Exit-InvalidInput 'The publication plan identity or dry-run contract is invalid.'
 }
@@ -278,6 +289,17 @@ if ((Get-FileHash -LiteralPath ([string]$plan.descriptionPath) -Algorithm SHA256
     (Get-FileHash -LiteralPath ([string]$plan.previewPath) -Algorithm SHA256).Hash -cne [string]$plan.previewSha256) {
     Exit-InvalidInput 'The Workshop presentation changed after the publication plan was reviewed.'
 }
+foreach ($additionalPreview in @($plan.additionalPreviews)) {
+    $path = [IO.Path]::GetFullPath([string]$additionalPreview.path)
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or
+        (Get-Item -LiteralPath $path).Length -ne [long]$additionalPreview.bytes -or
+        (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -cne [string]$additionalPreview.sha256) {
+        Exit-InvalidInput "An additional Workshop preview changed after review: $path"
+    }
+}
+if (-not $PreviewSyncOnly -and -not [bool]$plan.presentationResolved) {
+    Exit-InvalidInput 'The final Workshop description has not been resolved against the reviewed Steam image inventory.'
+}
 $releaseStateRoot = Join-Path $repositoryRoot 'artifacts\Releases\fumblesneeze.immersivechefs'
 $null = New-Item -ItemType Directory -Path $releaseStateRoot -Force
 $leaseName = 'Local\Fumblesneeze.ImmersiveChefs.SteamWorkshopRelease'
@@ -288,6 +310,7 @@ if (-not $leaseAcquired) { Exit-InvalidInput 'Another Immersive Chefs Workshop r
 $releaseIdentityPath = Join-Path $releaseStateRoot 'PublishedFileId.txt'
 $packageIdentityPath = Join-Path ([string]$plan.packagePath) 'About\PublishedFileId.txt'
 $statePath = Join-Path $releaseStateRoot 'publication-state.txt'
+$presentationStatePath = Join-Path $releaseStateRoot 'presentation-preview-state.txt'
 $publishedFileId = if ($null -eq $plan.publishedFileId) { [System.UInt64]0 } else { [System.UInt64]$plan.publishedFileId }
 if (Test-Path -LiteralPath $releaseIdentityPath -PathType Leaf) {
     $persistedIdentity = (Get-Content -LiteralPath $releaseIdentityPath -Raw).Trim()
@@ -509,6 +532,111 @@ try {
         }
     }
 
+    if ($PreviewSyncOnly) {
+        if ($publishedFileId -eq 0) { throw 'Additional previews may be synchronized only after a private first publication has a retained identity.' }
+        $previewResumeState = ''
+        $previewResumePlan = ''
+        $previewResumeItemId = [ulong]0
+        if (Test-Path -LiteralPath $presentationStatePath -PathType Leaf) {
+            $previewParts = (Get-Content -LiteralPath $presentationStatePath -Raw).Trim().Split('|')
+            if ($previewParts.Count -ne 3 -or -not [ulong]::TryParse($previewParts[2], [ref]$previewResumeItemId)) {
+                throw 'The durable presentation-preview state is malformed.'
+            }
+            $previewResumeState = $previewParts[0]
+            $previewResumePlan = $previewParts[1]
+            if ($previewResumeItemId -ne $publishedFileId) { throw 'The durable presentation-preview state targets a different Workshop item.' }
+            if ($previewResumePlan -cne $actualPlanHash) {
+                if ($previewResumeState -cne 'succeeded') { throw 'A different preview plan may not bypass an admitted Workshop preview update.' }
+                $previewResumeState = ''
+                $previewResumePlan = ''
+            }
+        }
+        $previewNeedsMutation = $previewResumeState -notin @('preview-submit-admitted', 'preview-submitted', 'preview-submit-indeterminate', 'succeeded')
+        if (-not $previewNeedsMutation) {
+            $alreadyConverged = @($preflightRemote.RemoteAdditionalPreviews).Count -eq @($plan.additionalPreviews).Count -and
+                @($preflightRemote.RemoteAdditionalPreviews | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.Url) }).Count -eq 0
+            if (-not $alreadyConverged) { throw 'The admitted Workshop preview update is indeterminate and has not converged; refusing to resubmit.' }
+        }
+        if ($previewNeedsMutation) {
+        $null = Invoke-WorkshopAutomation -Client $client -Manifest $manifestPath -ProcessId $gameProcessId -Arguments @{
+            operation = 'preview-sync'
+            planSha256 = $actualPlanHash
+            confirmation = $exactConfirmation
+            publishedFileId = [string]$publishedFileId
+            identityPath = $releaseIdentityPath
+            statePath = $presentationStatePath
+            title = [string]$plan.title
+            changeNote = 'Add illustrated Workshop feature cards.'
+            additionalPreviewPaths = @($plan.additionalPreviews | ForEach-Object { [string]$_.path })
+        }
+        $previewSync = Wait-WorkshopTerminal -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
+            -PlanSha256 $actualPlanHash -Deadline $deadline -TerminalStatuses @('succeeded', 'failed', 'legal-agreement-required')
+        if ([string]$previewSync.Status -cne 'succeeded') { throw "Workshop preview synchronization failed: $($previewSync | ConvertTo-Json -Compress)" }
+        }
+
+        $remotePreviewInventory = $null
+        do {
+            $candidate = & $queryRemote
+            $candidatePreviews = @($candidate.RemoteAdditionalPreviews)
+            if ([string]$candidate.Status -ceq 'queried' -and
+                $candidatePreviews.Count -eq @($plan.additionalPreviews).Count -and
+                @($candidatePreviews | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.Url) }).Count -eq 0) {
+                $remotePreviewInventory = $candidatePreviews
+                break
+            }
+            Start-Sleep -Seconds 2
+        } while ([datetime]::UtcNow -lt $deadline)
+        if ($null -eq $remotePreviewInventory) { throw 'Steam did not expose the complete additional-preview inventory before the bounded deadline.' }
+
+        $resolved = @(
+            for ($index = 0; $index -lt @($plan.additionalPreviews).Count; $index++) {
+                $remotePreview = $remotePreviewInventory[$index]
+                $remoteUrl = [string]$remotePreview.Url
+                if ([int]$remotePreview.Index -ne $index -or
+                    [string]$remotePreview.Type -cne 'k_EItemPreviewType_Image' -or
+                    -not [Uri]::IsWellFormedUriString($remoteUrl, [UriKind]::Absolute) -or
+                    [Uri]::new($remoteUrl).Scheme -cne 'https' -or
+                    [Uri]::new($remoteUrl).Host -cne 'images.steamusercontent.com') {
+                    throw "Steam returned an unexpected additional-preview identity at slot $index."
+                }
+                $downloadPath = Join-Path $runRoot ("remote-additional-preview-{0:D2}.png" -f $index)
+                Save-RemoteFile -Uri $remoteUrl -Path $downloadPath
+                $remoteHash = (Get-FileHash -LiteralPath $downloadPath -Algorithm SHA256).Hash
+                if ($remoteHash -cne [string]$plan.additionalPreviews[$index].sha256) {
+                    throw "Steam additional preview $index differs from the reviewed local image."
+                }
+                [pscustomobject][ordered]@{
+                    token = [string]$plan.additionalPreviews[$index].token
+                    localPath = [string]$plan.additionalPreviews[$index].path
+                    localSha256 = [string]$plan.additionalPreviews[$index].sha256
+                    remoteIndex = [int]$remotePreview.Index
+                    remoteUrl = $remoteUrl
+                    remoteOriginalFileName = [string]$remotePreview.OriginalFileName
+                    remoteType = [string]$remotePreview.Type
+                    remoteDownloadedPath = $downloadPath
+                    remoteSha256 = $remoteHash
+                }
+            }
+        )
+        $inventoryPath = Join-Path $runRoot 'presentation-preview-inventory.json'
+        Write-JsonUtf8 -Path $inventoryPath -Value ([pscustomobject][ordered]@{
+            schema = 'ImmersiveChefs/WorkshopRemotePreviewInventory/v1'
+            publishedFileId = [string]$publishedFileId
+            publicationPlanSha256 = $actualPlanHash
+            previews = $resolved
+        })
+        Write-TextAtomically -Path $presentationStatePath -Value ("succeeded|$actualPlanHash|$publishedFileId")
+        $previewOnlyResult = [pscustomobject][ordered]@{
+            status = 'additional-previews-synchronized'
+            publishedFileId = [string]$publishedFileId
+            workshopUrl = "https://steamcommunity.com/sharedfiles/filedetails/?id=$publishedFileId"
+            inventory = $inventoryPath
+            previewCount = $resolved.Count
+        }
+        if ($Output -eq 'json') { $previewOnlyResult | ConvertTo-Json -Compress } else { $previewOnlyResult | Format-List }
+        return
+    }
+
     $remote = $null
     if ($reconcileOnly) {
         if ($publishedFileId -eq 0) { throw 'An indeterminate submit cannot be reconciled without a durable Workshop identity.' }
@@ -555,7 +683,7 @@ try {
             [string]$remoteCandidate.RemoteDescriptionSha256 -ceq [string]$plan.descriptionSha256 -and
             [string]$remoteCandidate.RemoteMetadata -ceq $actualPlanHash -and
             [string]$remoteCandidate.RemoteOwnerSteamId -ceq [string]$plan.steamUserId -and
-            [string]$remoteCandidate.RemoteVisibility -ceq 'k_ERemoteStoragePublishedFileVisibilityPublic' -and
+            [string]$remoteCandidate.RemoteVisibility -ceq (Get-ExpectedRemoteVisibility ([string]$plan.visibility)) -and
             -not [string]::IsNullOrWhiteSpace([string]$remoteCandidate.RemotePreviewUrl) -and
             $tagsMatch) {
             $remote = $remoteCandidate
@@ -611,7 +739,7 @@ try {
                 [string]$remoteCandidate.RemoteDescriptionSha256 -ceq [string]$plan.descriptionSha256 -and
                 [string]$remoteCandidate.RemoteMetadata -ceq $actualPlanHash -and
                 [string]$remoteCandidate.RemoteOwnerSteamId -ceq [string]$plan.steamUserId -and
-                [string]$remoteCandidate.RemoteVisibility -ceq 'k_ERemoteStoragePublishedFileVisibilityPublic' -and
+                [string]$remoteCandidate.RemoteVisibility -ceq (Get-ExpectedRemoteVisibility ([string]$plan.visibility)) -and
                 -not [string]::IsNullOrWhiteSpace([string]$remoteCandidate.RemotePreviewUrl) -and
                 $tagsMatch -and
                 $candidateDependencies.Count -eq $expectedDependencies.Count -and

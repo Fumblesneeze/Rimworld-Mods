@@ -32,6 +32,16 @@
 - Steam Workshop preview upload has a file-size ceiling; it does not mandate this repository's
   1280×720 authoring master. Keep the reviewed upload below the current proven limit and derive the
   About image deterministically from the same owned source.
+- Steam's `AddItemPreviewFile` and `UpdateItemPreviewFile` image contract requires each additional
+  preview below 1 MiB. A proven inline-card size in this repository is 1164×655: it scales cleanly
+  on the Workshop page and stays useful in the preview carousel. Record exact dimensions and bytes.
+- A dense feature page normally needs a hero plus several wide cards, not one tall wall of text.
+  Keep headings short enough for the reserved lane, separate copy from sprite silhouettes, and use
+  benefit-led player language. The card art may reuse shipped sprites, but it does not replace live
+  in-game rendering acceptance for those sprites.
+- Steam-hosted inline URLs are outputs, not source art. Upload/reconcile the exact reviewed cards as
+  ordered additional previews, query their URL and original-name inventory, and replace authored
+  tokens only after every slot is nonempty and correlated. Never ship placeholder tokens.
 - Render banners and speech-bubble text in a deterministic build script, not by repeatedly editing
   generated PNG pixels. Center text against the measured visible bubble/banner bounds at every output
   size and test cropping/file size.

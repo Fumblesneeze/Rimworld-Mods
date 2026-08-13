@@ -63,7 +63,10 @@ A publishable candidate has all of the following:
 
 ## Publication gates
 
-- Existing Workshop ID by default; never create implicitly. First publication requires an explicit manifest flag, an ID-less reviewed dry-run, exact user confirmation, no prior identity/receipt, a complete native owner scan proving exact-title absence, and durable persistence of Steam's returned ID before upload continuation.
+- Existing Workshop ID by default; never create implicitly. First publication requires an explicit manifest flag, an ID-less reviewed dry-run, exact user confirmation, no prior identity/receipt, a complete native owner scan proving exact-title absence, Private visibility for the first submission, and durable persistence of Steam's returned ID before upload continuation. Public/Friends/Unlisted promotion is a later reviewed update.
+- Workshop copy is a player-facing showcase, never a pasted technical design. Keep complete mechanics/things/buildings/compatibility coverage, but describe visible behavior and benefits in plain language.
+- Wide inline cards use versioned templates, local licensed fonts, shipped sprites, fixed dimensions, sub-1-MiB files, and a personally inspected contact sheet. Reconcile them as additional previews, query Steam URLs, then resolve the final BBCode. Retain local hash ↔ remote index/URL evidence.
+- Put any author-requested AI/process disclosure in the final `Author's Note`; no content follows it. Be candid about playtesting limits and live-AI behavior.
 - Fresh isolated exact-PID RimWorld + Gateway process with initialized Steam.
 - Mutation-free dry-run and explicit user confirmation bound to exact hashes.
 - One update operation at a time; no blind retry after submission uncertainty.

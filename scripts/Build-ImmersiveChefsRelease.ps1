@@ -186,6 +186,35 @@ $descriptionSource = Join-Path $releaseRoot ([string]$release.description)
 $previewSource = Join-Path $releaseRoot ([string]$release.preview)
 Copy-Item -LiteralPath $descriptionSource -Destination (Join-Path $presentationRoot 'description.bbcode')
 Copy-Item -LiteralPath $previewSource -Destination (Join-Path $presentationRoot 'preview-main.png')
+$presentationDefinitionPath = Join-Path $releaseRoot 'workshop\presentation.json'
+$presentationDefinition = Get-Content -LiteralPath $presentationDefinitionPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ([string]$presentationDefinition.schema -cne 'ImmersiveChefs/WorkshopPresentation/v1') {
+    Exit-InvalidInput 'The Workshop presentation definition is invalid.'
+}
+$additionalPreviewRoot = Join-Path $presentationRoot 'additional-previews'
+$null = New-Item -ItemType Directory -Path $additionalPreviewRoot
+$additionalPreviews = @($presentationDefinition.cards | ForEach-Object {
+    $token = [string]$_.token
+    if ($token -notmatch '^[a-z0-9-]{1,32}$') { Exit-InvalidInput "Workshop preview token is invalid: $token" }
+    $sourcePath = Join-Path $releaseRoot ('workshop\' + ([string]$_.path).Replace('/', '\'))
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) { Exit-InvalidInput "Workshop preview is missing: $sourcePath" }
+    $destinationPath = Join-Path $additionalPreviewRoot ([IO.Path]::GetFileName($sourcePath))
+    Copy-Item -LiteralPath $sourcePath -Destination $destinationPath
+    $item = Get-Item -LiteralPath $destinationPath
+    if ($item.Length -le 0 -or $item.Length -ge 1MB) { Exit-InvalidInput "Workshop preview must be nonempty and under Steam's 1 MiB limit: $token" }
+    [pscustomobject][ordered]@{
+        token = $token
+        path = $destinationPath
+        bytes = [long]$item.Length
+        sha256 = (Get-FileHash -LiteralPath $destinationPath -Algorithm SHA256).Hash
+        width = 1164
+        height = 655
+        alt = [string]$_.alt
+    }
+})
+if ($additionalPreviews.Count -ne 7 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 7) {
+    Exit-InvalidInput 'The Workshop presentation must declare exactly seven unique additional previews.'
+}
 
 $files = @(Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Sort-Object FullName | ForEach-Object {
     [pscustomobject][ordered]@{
@@ -207,6 +236,9 @@ Write-JsonUtf8 -Path $manifestPath -Value ([pscustomobject][ordered]@{
 
 $descriptionPath = Join-Path $presentationRoot 'description.bbcode'
 $previewPath = Join-Path $presentationRoot 'preview-main.png'
+$descriptionText = Get-Content -LiteralPath $descriptionPath -Raw -Encoding UTF8
+$resolvedImageCount = [regex]::Matches($descriptionText, '\[img\]https://images\.steamusercontent\.com/.+?\[/img\]').Count
+$presentationResolved = $resolvedImageCount -eq 7 -and $descriptionText -notmatch '\{\{image:[^}]+\}\}'
 $plan = [pscustomobject][ordered]@{
     schema = 'ImmersiveChefs/WorkshopPublicationPlan/v1'
     sourceRevision = $revision
@@ -223,7 +255,7 @@ $plan = [pscustomobject][ordered]@{
     rimWorldRuntimeBuild = [string]$release.rimWorldRuntimeBuild
     steamBuildId = [string]$release.steamBuildId
     managedAssemblySha256 = [string]$release.managedAssemblySha256
-    visibility = [string]$release.visibility
+    visibility = if ($effectivePublishedFileId -eq 0) { 'Private' } else { [string]$release.visibility }
     tags = @($release.tags)
     requiredWorkshopItems = @($release.requiredWorkshopItems)
     changeNote = [string]$release.changeNote
@@ -236,9 +268,11 @@ $plan = [pscustomobject][ordered]@{
     descriptionPath = $descriptionPath
     descriptionBytes = (Get-Item -LiteralPath $descriptionPath).Length
     descriptionSha256 = (Get-FileHash -LiteralPath $descriptionPath -Algorithm SHA256).Hash
+    presentationResolved = $presentationResolved
     previewPath = $previewPath
     previewBytes = (Get-Item -LiteralPath $previewPath).Length
     previewSha256 = (Get-FileHash -LiteralPath $previewPath -Algorithm SHA256).Hash
+    additionalPreviews = $additionalPreviews
     mutatesSteam = $false
 }
 $planPath = Join-Path $evidenceRoot 'publication-plan.json'

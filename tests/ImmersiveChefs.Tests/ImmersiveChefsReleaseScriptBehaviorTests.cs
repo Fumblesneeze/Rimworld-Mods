@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Reflection;
 using NUnit.Framework;
 
 namespace ImmersiveChefs.Tests;
@@ -89,6 +91,60 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             var parsed = fixture.ParseWithWindowsPowerShell(script);
             Assert.That(parsed.ExitCode, Is.Zero, script + Environment.NewLine + parsed.StandardError);
         }
+    }
+
+    [Test]
+    public void Workshop_description_resolver_replaces_each_reviewed_image_token_and_rejects_unresolved_copy()
+    {
+        using var fixture = Fixture.Create();
+        var repositoryRoot = fixture.RepositoryRoot;
+        var inventoryPath = Path.Combine(fixture.Root, "preview-inventory.json");
+        var outputPath = Path.Combine(fixture.Root, "description.bbcode");
+        var tokens = new[] { "hero", "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" };
+        File.WriteAllText(
+            inventoryPath,
+            "{\"schema\":\"ImmersiveChefs/WorkshopRemotePreviewInventory/v1\",\"previews\":[" +
+            string.Join(",", tokens.Select((token, index) =>
+                "{\"token\":\"" + token + "\",\"remoteIndex\":" + index + ",\"remoteUrl\":\"https://images.steamusercontent.com/ugc/" + (1000 + index) + "/card.png\"}")) +
+            "]}",
+            new UTF8Encoding(false));
+        var rimWorldPath = typeof(ImmersiveChefsReleaseScriptBehaviorTests).Assembly
+            .GetCustomAttributes<System.Reflection.AssemblyMetadataAttribute>()
+            .Single(attribute => attribute.Key == "RimWorldPath")
+            .Value!;
+        var script = Path.Combine(repositoryRoot, "scripts", "Resolve-ImmersiveChefsWorkshopDescription.ps1");
+        var template = Path.Combine(repositoryRoot, "mods", "ImmersiveChefs", "Release", "workshop", "description.template.bbcode");
+        var run = Fixture.RunProcess(
+            "pwsh.exe",
+            "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"" + script + "\"" +
+            " -InventoryPath \"" + inventoryPath + "\"" +
+            " -TemplatePath \"" + template + "\"" +
+            " -DestinationPath \"" + outputPath + "\"" +
+            " -RimWorldPath \"" + rimWorldPath + "\" -Output json");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(File.Exists(outputPath), Is.True);
+            var resolved = File.ReadAllText(outputPath);
+            Assert.That(resolved, Does.Not.Contain("{{image:"));
+            Assert.That(Regex.Matches(resolved, @"\[img\]https://images\.steamusercontent\.com/.+?\[/img\]").Count, Is.EqualTo(7));
+            Assert.That(new FileInfo(outputPath).Length + 1, Is.LessThanOrEqualTo(8000));
+        });
+    }
+
+    [Test]
+    public void Remote_visibility_mapping_accepts_private_first_publication_and_public_updates()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Get-ExpectedRemoteVisibility" },
+            "$private=Get-ExpectedRemoteVisibility 'Private';$public=Get-ExpectedRemoteVisibility 'Public';Write-Output ($private+'|'+$public)");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("k_ERemoteStoragePublishedFileVisibilityPrivate|k_ERemoteStoragePublishedFileVisibilityPublic"));
+        });
     }
 
     [Test]
@@ -359,6 +415,8 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             Task.WaitAll(stdout, stderr);
             return new Invocation(process.ExitCode, stdout.Result, stderr.Result);
         }
+
+        public static Invocation RunProcess(string file, string arguments) => Run(file, arguments);
 
         private static string FindRepositoryRoot()
         {

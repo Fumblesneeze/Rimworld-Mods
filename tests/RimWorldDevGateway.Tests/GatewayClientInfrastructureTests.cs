@@ -177,6 +177,27 @@ public static class TestSnippet
                 typeof(GatewaySessionManifest).Assembly.Location));
             var assembly = Assembly.Load(bytes);
             var safety = assembly.GetType("GatewaySteamWorkshopPublisher.PublisherSafety", throwOnError: true)!;
+            var visibility = safety.GetMethod("EffectiveVisibility", BindingFlags.Public | BindingFlags.Static)!;
+            var previewOperations = safety.GetMethod("PreviewOperations", BindingFlags.Public | BindingFlags.Static)!;
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    visibility.Invoke(null, new object[] { true, "Public" }),
+                    Is.EqualTo("Private"),
+                    "A newly created item must stay private for its first human review.");
+                Assert.That(
+                    visibility.Invoke(null, new object[] { false, "Public" }),
+                    Is.EqualTo("Public"),
+                    "An existing item update must retain the reviewed release visibility.");
+                Assert.That(
+                    (string[])previewOperations.Invoke(null, new object[] { 2u, 3 })!,
+                    Is.EqualTo(new[] { "update:0", "update:1", "add:2" }),
+                    "Preview reconciliation must update retained slots before adding missing art.");
+                Assert.That(
+                    (string[])previewOperations.Invoke(null, new object[] { 4u, 2 })!,
+                    Is.EqualTo(new[] { "update:0", "update:1", "remove:3", "remove:2" }),
+                    "Stale preview slots must be removed from the end so indexes stay stable.");
+            });
             var failure = safety.GetMethod("DurableFailureStage", BindingFlags.Public | BindingFlags.Static)!;
             var correlation = safety.GetMethod("CallbackIdsMatch", BindingFlags.Public | BindingFlags.Static)!;
             var invalid = safety.GetMethod("IsInvalidCallHandle", BindingFlags.Public | BindingFlags.Static)!;
@@ -187,6 +208,7 @@ public static class TestSnippet
                 Assert.That(failure.Invoke(null, new object[] { "create", true }), Is.EqualTo("create-indeterminate"));
                 Assert.That(failure.Invoke(null, new object[] { "create", false }), Is.EqualTo("create-failed-definite"));
                 Assert.That(failure.Invoke(null, new object[] { "submit", true }), Is.EqualTo("submit-indeterminate"));
+                Assert.That(failure.Invoke(null, new object[] { "preview-submit", true }), Is.EqualTo("preview-submit-indeterminate"));
                 Assert.That(failure.Invoke(null, new object[] { "dependency-remove", false }), Is.EqualTo("dependency-failed-definite"));
                 Assert.That(correlation.Invoke(null, new object[] { 17UL, 23UL, 17UL, 23UL }), Is.True);
                 Assert.That(correlation.Invoke(null, new object[] { 17UL, 23UL, 17UL, 99UL }), Is.False);

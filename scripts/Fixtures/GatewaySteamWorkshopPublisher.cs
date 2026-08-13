@@ -16,11 +16,16 @@ namespace GatewaySteamWorkshopPublisher;
 
 public static class PublisherSafety
 {
+    public static string EffectiveVisibility(bool firstPublication, string declaredVisibility) =>
+        firstPublication ? "Private" : declaredVisibility;
+
     public static string DurableFailureStage(string stage, bool ioFailure)
     {
         if (string.IsNullOrWhiteSpace(stage)) throw new ArgumentException("A failure stage is required.", nameof(stage));
         var family = stage.StartsWith("create", StringComparison.Ordinal)
             ? "create"
+            : stage.StartsWith("preview-", StringComparison.Ordinal)
+                ? "preview-submit"
             : stage.StartsWith("dependency-", StringComparison.Ordinal)
                 ? "dependency"
                 : "submit";
@@ -34,6 +39,17 @@ public static class PublisherSafety
 
     public static bool OwnerScanProvesAbsence(uint total, uint returned, int exactTitleMatches) =>
         total == returned && exactTitleMatches == 0;
+
+    public static string[] PreviewOperations(uint existingCount, int desiredCount)
+    {
+        if (desiredCount < 1 || desiredCount > 10) throw new ArgumentOutOfRangeException(nameof(desiredCount));
+        var operations = new List<string>();
+        var shared = Math.Min(existingCount, (uint)desiredCount);
+        for (uint index = 0; index < shared; index++) operations.Add("update:" + index);
+        for (var index = (int)shared; index < desiredCount; index++) operations.Add("add:" + index);
+        for (var index = (int)existingCount - 1; index >= desiredCount; index--) operations.Add("remove:" + index);
+        return operations.ToArray();
+    }
 }
 
 public static class Entry
@@ -49,7 +65,7 @@ public static class Entry
                 true,
                 new Dictionary<string, string>
                 {
-                    ["operation"] = "status|publish|owner-scan|query|dependency-add|dependency-remove|subscribe|install-status",
+                    ["operation"] = "status|publish|preview-sync|owner-scan|query|dependency-add|dependency-remove|subscribe|install-status",
                     ["planSha256"] = "Exact reviewed publication-plan SHA-256.",
                     ["confirmation"] = "Exact operator confirmation phrase for publish."
                 },
@@ -77,6 +93,7 @@ internal static class Publisher
     private static ulong lastQueriedOwner;
     private static uint lastQueriedAppId;
     private static string lastQueriedTitle = "";
+    private static uint lastQueriedAdditionalPreviewCount;
 
     public static void Register()
     {
@@ -244,6 +261,17 @@ internal static class Publisher
                 return snapshot.ToJson();
             }
 
+            if (request.Operation == "preview-sync")
+            {
+                EnsureIdle();
+                request.ValidatePreviewSync(Confirmation);
+                RequireExactIdentity(request.IdentityPath, request.PublishedFileId, "durable identity");
+                RequireExistingPreflight(request);
+                activeRequest = request;
+                BeginPreviewSync(request.PublishedFileId);
+                return snapshot.ToJson();
+            }
+
             if (request.Operation != "publish") throw new InvalidOperationException("Unsupported operation.");
             EnsureIdle();
             request.ValidatePublish(Confirmation);
@@ -339,6 +367,35 @@ internal static class Publisher
         submitResult.Set(call);
     }
 
+    private static void BeginPreviewSync(ulong publishedFileId)
+    {
+        var request = RequiredRequest();
+        var handle = SteamUGC.StartItemUpdate(new AppId_t(294100), new PublishedFileId_t(publishedFileId));
+        foreach (var operation in PublisherSafety.PreviewOperations(lastQueriedAdditionalPreviewCount, request.AdditionalPreviewPaths.Count))
+        {
+            var parts = operation.Split(':');
+            var index = uint.Parse(parts[1]);
+            var accepted = parts[0] == "update"
+                ? SteamUGC.UpdateItemPreviewFile(handle, index, request.AdditionalPreviewPaths[(int)index])
+                : parts[0] == "add"
+                    ? SteamUGC.AddItemPreviewFile(handle, request.AdditionalPreviewPaths[(int)index], EItemPreviewType.k_EItemPreviewType_Image)
+                    : SteamUGC.RemoveItemPreview(handle, index);
+            if (!AcceptSetter(accepted, "Preview-" + operation)) return;
+        }
+
+        snapshot = Snapshot.Pending("preview-submitting", request.PlanSha256, publishedFileId);
+        WriteStateAtomically(request.StatePath, "preview-submit-admitted|" + request.PlanSha256 + "|" + publishedFileId);
+        submitResult = CallResult<SubmitItemUpdateResult_t>.Create(OnSubmitted);
+        var call = SteamUGC.SubmitItemUpdate(handle, request.ChangeNote);
+        if (IsInvalid(call))
+        {
+            submitResult = null;
+            FailMutation("preview-submit", EResult.k_EResultFail, ioFailure: false);
+            return;
+        }
+        submitResult.Set(call);
+    }
+
     private static void OnSubmitted(SubmitItemUpdateResult_t result, bool ioFailure)
     {
         lock (Gate)
@@ -357,7 +414,8 @@ internal static class Publisher
                 FailMutation("submit-id-mismatch", EResult.k_EResultFail, ioFailure: true);
                 return;
             }
-            WriteStateAtomically(request.StatePath, "submitted|" + request.PlanSha256 + "|" + id);
+            var submittedStage = request.Operation == "preview-sync" ? "preview-submitted" : "submitted";
+            WriteStateAtomically(request.StatePath, submittedStage + "|" + request.PlanSha256 + "|" + id);
             if (result.m_bUserNeedsToAcceptWorkshopLegalAgreement)
             {
                 snapshot = Snapshot.LegalAgreementRequired(request.PlanSha256, id);
@@ -507,16 +565,48 @@ internal static class Publisher
                     return;
                 }
 
+                var additionalCount = Math.Min(SteamUGC.GetQueryUGCNumAdditionalPreviews(queryHandle, 0u), 10u);
+                var additionalPreviews = new List<RemoteAdditionalPreview>((int)additionalCount);
+                for (uint index = 0; index < additionalCount; index++)
+                {
+                    string additionalUrl;
+                    string originalFileName;
+                    EItemPreviewType previewType;
+                    if (!SteamUGC.GetQueryUGCAdditionalPreview(
+                            queryHandle,
+                            0u,
+                            index,
+                            out additionalUrl,
+                            4097u,
+                            out originalFileName,
+                            1025u,
+                            out previewType))
+                    {
+                        snapshot = Snapshot.Failed(request.PlanSha256, request.PublishedFileId, "Steam did not return the additional preview inventory.");
+                        activeRequest = null;
+                        return;
+                    }
+                    additionalPreviews.Add(new RemoteAdditionalPreview
+                    {
+                        Index = index,
+                        Url = additionalUrl ?? "",
+                        OriginalFileName = originalFileName ?? "",
+                        Type = previewType.ToString()
+                    });
+                }
+
                 snapshot = Snapshot.Queried(
                     request.PlanSha256,
                     details,
                     metadata,
                     previewUrl,
+                    additionalPreviews.ToArray(),
                     children.Select(child => child.m_PublishedFileId).ToArray());
                 lastQueriedId = details.m_nPublishedFileId.m_PublishedFileId;
                 lastQueriedOwner = details.m_ulSteamIDOwner;
                 lastQueriedAppId = details.m_nConsumerAppID.m_AppId;
                 lastQueriedTitle = details.m_rgchTitle ?? "";
+                lastQueriedAdditionalPreviewCount = additionalCount;
                 activeRequest = null;
             }
             finally
@@ -737,6 +827,7 @@ internal static class Publisher
         public string ChangeNote = "";
         public ulong RequiredWorkshopItemId;
         public List<string> Tags = new();
+        public List<string> AdditionalPreviewPaths = new();
         public ERemoteStoragePublishedFileVisibility Visibility;
 
         public static Request Parse(string json)
@@ -763,9 +854,10 @@ internal static class Publisher
                 ChangeNote = objectValue.changeNote ?? "",
                 RequiredWorkshopItemId = ParseId(objectValue.requiredWorkshopItemId, allowEmpty: true),
                 Tags = (objectValue.tags ?? Array.Empty<string>()).ToList(),
-                Visibility = string.IsNullOrWhiteSpace(objectValue.visibility)
-                    ? ERemoteStoragePublishedFileVisibility.k_ERemoteStoragePublishedFileVisibilityPrivate
-                    : ParseVisibility(objectValue.visibility)
+                AdditionalPreviewPaths = (objectValue.additionalPreviewPaths ?? Array.Empty<string>()).ToList(),
+                Visibility = ParseVisibility(PublisherSafety.EffectiveVisibility(
+                    ParseId(objectValue.publishedFileId, allowEmpty: true) == 0,
+                    string.IsNullOrWhiteSpace(objectValue.visibility) ? "Private" : objectValue.visibility!))
             };
             if (string.IsNullOrWhiteSpace(request.Operation)) throw new InvalidOperationException("operation is required.");
             return request;
@@ -784,6 +876,31 @@ internal static class Publisher
             if (string.IsNullOrWhiteSpace(StatePath) || Path.GetFileName(StatePath) != "publication-state.txt") throw new InvalidOperationException("statePath is invalid.");
             if (RequiredWorkshopItemId == 0) throw new InvalidOperationException("requiredWorkshopItemId is invalid.");
             if (Tags.Count == 0 || Tags.Count > 16 || Tags.Any(string.IsNullOrWhiteSpace)) throw new InvalidOperationException("tags are invalid.");
+        }
+
+        public void ValidatePreviewSync(string exactConfirmation)
+        {
+            if (Confirmation != exactConfirmation) throw new InvalidOperationException("Exact publish confirmation is required.");
+            if (PlanSha256.Length != 64 || PlanSha256.Any(c => !Uri.IsHexDigit(c))) throw new InvalidOperationException("planSha256 is invalid.");
+            if (PublishedFileId == 0) throw new InvalidOperationException("preview-sync requires an existing Workshop identity.");
+            if (string.IsNullOrWhiteSpace(Title) || Title.Length > 128) throw new InvalidOperationException("title is invalid.");
+            if (string.IsNullOrWhiteSpace(IdentityPath) || Path.GetFileName(IdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("identityPath is invalid.");
+            if (string.IsNullOrWhiteSpace(StatePath) || Path.GetFileName(StatePath) != "presentation-preview-state.txt") throw new InvalidOperationException("statePath is invalid.");
+            if (AdditionalPreviewPaths.Count < 1 || AdditionalPreviewPaths.Count > 10) throw new InvalidOperationException("additionalPreviewPaths count is invalid.");
+            var normalized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var path in AdditionalPreviewPaths)
+            {
+                RequireFile(path, "additionalPreviewPaths");
+                var info = new FileInfo(path);
+                if (info.Length <= 0 || info.Length >= 1024 * 1024) throw new InvalidOperationException("Every additional preview must be nonempty and under Steam's 1 MiB limit.");
+                var extension = Path.GetExtension(path);
+                if (!string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(extension, ".jpg", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(extension, ".gif", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("An additional preview has an unsupported image extension.");
+                if (!normalized.Add(Path.GetFullPath(path))) throw new InvalidOperationException("additionalPreviewPaths contains a duplicate file.");
+            }
         }
 
         private static ulong ParseId(string? value, bool allowEmpty)
@@ -847,6 +964,21 @@ internal static class Publisher
         public string[]? tags;
         [DataMember(Name = "visibility")]
         public string? visibility;
+        [DataMember(Name = "additionalPreviewPaths")]
+        public string[]? additionalPreviewPaths;
+    }
+
+    [DataContract]
+    internal sealed class RemoteAdditionalPreview
+    {
+        [DataMember]
+        public uint Index;
+        [DataMember]
+        public string Url = "";
+        [DataMember]
+        public string OriginalFileName = "";
+        [DataMember]
+        public string Type = "";
     }
 
     [DataContract]
@@ -892,6 +1024,8 @@ internal static class Publisher
         public uint RemoteConsumerAppId;
         [DataMember]
         public ulong[] RemoteDependencies = Array.Empty<ulong>();
+        [DataMember]
+        public RemoteAdditionalPreview[] RemoteAdditionalPreviews = Array.Empty<RemoteAdditionalPreview>();
 
         public string ToJson() => Json.Write(this);
         public static Snapshot Idle() => new();
@@ -901,7 +1035,7 @@ internal static class Publisher
         public static Snapshot Failed(string plan, ulong id, string error) => new() { Status = "failed", Stage = "failed", PlanSha256 = plan, PublishedFileId = id, Error = error };
         public static Snapshot Installed(ulong id, string folder, ulong bytes, uint state) => new() { Status = "installed", Stage = "installed", PublishedFileId = id, InstallFolder = folder, InstallBytes = bytes, ItemState = state.ToString() };
         public static Snapshot OwnerScan(string plan, ulong id) => new() { Status = id == 0 ? "owner-scan-complete" : "owner-scan-found", Stage = "owner-scan", PlanSha256 = plan, PublishedFileId = id };
-        public static Snapshot Queried(string plan, SteamUGCDetails_t details, string metadata, string previewUrl, ulong[] dependencies)
+        public static Snapshot Queried(string plan, SteamUGCDetails_t details, string metadata, string previewUrl, RemoteAdditionalPreview[] additionalPreviews, ulong[] dependencies)
         {
             var description = details.m_rgchDescription ?? "";
             var bytes = Encoding.UTF8.GetBytes(description);
@@ -920,6 +1054,7 @@ internal static class Publisher
                 RemoteMetadata = metadata ?? "",
                 RemoteVisibility = details.m_eVisibility.ToString(),
                 RemotePreviewUrl = previewUrl ?? "",
+                RemoteAdditionalPreviews = additionalPreviews ?? Array.Empty<RemoteAdditionalPreview>(),
                 RemoteOwnerSteamId = details.m_ulSteamIDOwner,
                 RemoteConsumerAppId = details.m_nConsumerAppID.m_AppId,
                 RemoteDependencies = dependencies
