@@ -159,6 +159,24 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         }
     }
 
+    [Test]
+    public void Publisher_process_lease_is_null_while_the_launcher_has_not_created_any_artifact()
+    {
+        using var fixture = Fixture.Create();
+        var gatewayRoot = Path.Combine(fixture.Root, "not-created-yet");
+        var leasePath = Path.Combine(gatewayRoot, "publisher-process-lease.json");
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Read-Json", "Assert-RetainedProcessIdentity", "Get-ExactProcessStartUtcFromManifest", "Get-PublisherProcessLease" },
+            "Set-StrictMode -Version Latest; $lease=Get-PublisherProcessLease -GatewayRoot " + Ps(gatewayRoot) + " -ProcessLeasePath " + Ps(leasePath) +
+            "; if($null -ne $lease){throw 'unexpected lease'}; Write-Output 'waiting'");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("waiting"));
+        });
+    }
+
     private static string Ps(string value) => "'" + value.Replace("'", "''") + "'";
 
     private sealed class Fixture : IDisposable

@@ -116,10 +116,13 @@ function Get-ExactProcessStartUtcFromManifest([string]$ManifestPath) {
 }
 
 function Get-PublisherProcessLease([string]$GatewayRoot, [string]$ProcessLeasePath) {
-    $leaseFiles = if (Test-Path -LiteralPath $ProcessLeasePath -PathType Leaf) {
-        @([IO.FileInfo]::new([IO.Path]::GetFullPath($ProcessLeasePath)))
+    $leaseFiles = [System.Collections.Generic.List[IO.FileInfo]]::new()
+    if (Test-Path -LiteralPath $ProcessLeasePath -PathType Leaf) {
+        $leaseFiles.Add([IO.FileInfo]::new([IO.Path]::GetFullPath($ProcessLeasePath)))
     } else {
-        @(Get-ChildItem -LiteralPath $GatewayRoot -Recurse -Filter 'current.json' -File -ErrorAction SilentlyContinue)
+        foreach ($manifestFile in @(Get-ChildItem -LiteralPath $GatewayRoot -Recurse -Filter 'current.json' -File -ErrorAction SilentlyContinue)) {
+            $leaseFiles.Add($manifestFile)
+        }
     }
     if ($leaseFiles.Count -eq 0) { return $null }
     if ($leaseFiles.Count -ne 1) { throw 'More than one Gateway process lease appeared for this release.' }
