@@ -208,11 +208,11 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         var run = fixture.InvokeFunctions(
             "Build-ImmersiveChefsRelease.ps1",
             new[] { "Test-WorkshopPreviewProvenance" },
-            "$current=@([pscustomobject]@{token='hero';sha256='AAAA'},[pscustomobject]@{token='meals';sha256='BBBB'});" +
-            "$exact=@([pscustomobject]@{token='hero';remoteIndex=0;localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA'}," +
-            "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='BBBB';remoteSha256='BBBB'});" +
-            "$drift=@([pscustomobject]@{token='hero';remoteIndex=0;localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA'}," +
-            "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='CCCC';remoteSha256='CCCC'});" +
+            "$current=@([pscustomobject]@{token='hero';path='hero.png';sha256='AAAA'},[pscustomobject]@{token='meals';path='meals.png';sha256='BBBB'});" +
+            "$exact=@([pscustomobject]@{token='hero';remoteIndex=0;localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA';remoteType='k_EItemPreviewType_Image'}," +
+            "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='BBBB';remoteSha256='BBBB';remoteType='k_EItemPreviewType_Image'});" +
+            "$drift=@([pscustomobject]@{token='hero';remoteIndex=0;localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA';remoteType='k_EItemPreviewType_Image'}," +
+            "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='CCCC';remoteSha256='CCCC';remoteType='k_EItemPreviewType_Image'});" +
             "$ok=Test-WorkshopPreviewProvenance $current $exact; $bad=Test-WorkshopPreviewProvenance $current $drift;" +
             "Write-Output ($ok.ToString()+'|'+$bad.ToString())");
         Assert.Multiple(() =>

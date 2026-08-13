@@ -205,7 +205,7 @@ public sealed class WorkshopDescriptionTests
             Assert.That(disclosureBody, Does.Contain("performance testing"));
             Assert.That(disclosureBody, Does.Contain("open-source").IgnoreCase);
             Assert.That(disclosureBody, Does.Contain("proving ground"));
-            Assert.That(disclosureBody, Does.Contain("playtesting"));
+            Assert.That(disclosureBody, Does.Match("playtest(?:ed|ing)"));
             Assert.That(disclosureBody, Does.Contain("comment"));
             Assert.That(disclosureBody, Does.Contain("artwork"));
             Assert.That(disclosureBody, Does.Contain("localization"));

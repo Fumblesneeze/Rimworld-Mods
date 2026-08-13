@@ -98,8 +98,10 @@ function Test-WorkshopPreviewProvenance {
         if ([string]$provenance.token -cne [string]$current.token -or
             [int]$provenance.remoteIndex -ne $index -or
             [string]::IsNullOrWhiteSpace([string]$provenance.localPath) -or
+            [IO.Path]::GetFileName([string]$provenance.localPath) -cne [IO.Path]::GetFileName([string]$current.path) -or
             [string]$provenance.localSha256 -cne [string]$current.sha256 -or
-            [string]$provenance.remoteSha256 -cne [string]$current.sha256) {
+            [string]$provenance.remoteSha256 -cne [string]$current.sha256 -or
+            [string]$provenance.remoteType -cne 'k_EItemPreviewType_Image') {
             return $false
         }
     }

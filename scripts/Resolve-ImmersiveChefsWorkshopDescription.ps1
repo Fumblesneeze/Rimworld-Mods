@@ -121,9 +121,10 @@ $provenance = [pscustomobject][ordered]@{
             token = [string]$_.token
             remoteIndex = [int]$_.remoteIndex
             remoteUrl = [string]$_.remoteUrl
-            localPath = [IO.Path]::GetFullPath([string]$_.localPath)
+            localPath = [IO.Path]::GetFileName([string]$_.localPath)
             localSha256 = [string]$_.localSha256
             remoteSha256 = [string]$_.remoteSha256
+            remoteType = [string]$_.remoteType
         }
     })
 }
