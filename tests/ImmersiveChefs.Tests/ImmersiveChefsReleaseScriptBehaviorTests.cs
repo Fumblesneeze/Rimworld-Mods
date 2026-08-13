@@ -263,6 +263,23 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         });
     }
 
+    [Test]
+    public void Subscribed_smoke_normalizes_host_envelope_and_persisted_session_evidence()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsSubscribedSmoke.ps1",
+            new[] { "Get-SubscribedSmokeEvidencePayload" },
+            "$hostPayload=Get-SubscribedSmokeEvidencePayload ([pscustomobject]@{result=[pscustomobject]@{Execution='host'}}); " +
+            "$session=Get-SubscribedSmokeEvidencePayload ([pscustomobject]@{Execution='session'}); " +
+            "Write-Output ($hostPayload.Execution+'|'+$session.Execution)");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("host|session"));
+        });
+    }
+
     private static string Ps(string value) => "'" + value.Replace("'", "''") + "'";
 
     private sealed class Fixture : IDisposable

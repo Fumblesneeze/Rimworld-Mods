@@ -34,6 +34,12 @@ function Get-SubscribedSmokeEvidenceFile([string]$RunRoot) {
     return $files[0]
 }
 
+function Get-SubscribedSmokeEvidencePayload([object]$Document) {
+    if ($null -ne $Document.PSObject.Properties['result']) { return $Document.result }
+    if ($null -ne $Document.PSObject.Properties['Execution']) { return $Document }
+    throw 'The subscribed Workshop E2E evidence has an unsupported schema.'
+}
+
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $resolvedGame = [IO.Path]::GetFullPath($RimWorldPath).TrimEnd('\')
 $resolvedWorkshop = [IO.Path]::GetFullPath($SteamModContentFolder).TrimEnd('\')
@@ -97,7 +103,8 @@ try {
 
     $evidenceFile = Get-SubscribedSmokeEvidenceFile -RunRoot $runRoot
     $evidence = Read-Json $evidenceFile.FullName
-    $testResult = @($evidence.result.Execution.Results | Where-Object {
+    $evidencePayload = Get-SubscribedSmokeEvidencePayload -Document $evidence
+    $testResult = @($evidencePayload.Execution.Results | Where-Object {
         [string]$_.Id -ceq 'release.immersive-chefs-subscribed-native-cooking-dining'
     })
     if ($testResult.Count -ne 1 -or [string]$testResult[0].Status -cne 'passed' -or
