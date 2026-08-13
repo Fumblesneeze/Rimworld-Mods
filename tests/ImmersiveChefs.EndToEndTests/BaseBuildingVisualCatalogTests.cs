@@ -427,7 +427,6 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                             fixture.Support,
                             MicrowaveSupportRuntime.FindAt(fixture.Support.Position, fixture.Support.Map, placed)),
                         "The " + direction + "-facing microwave must remain visibly supported by its exact table.");
-                    AssertMicrowaveInteractionSide(placed, requestedRotation);
                 });
         }
 
@@ -601,23 +600,6 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         }
 
         throw new ArgumentOutOfRangeException(nameof(rotation), rotation, "Only cardinal placement rotations are supported.");
-    }
-
-    private static void AssertMicrowaveInteractionSide(Building microwave, Rot4 rotation)
-    {
-        var occupied = microwave.OccupiedRect();
-        var interaction = microwave.InteractionCell;
-        var correctSide = rotation == Rot4.North
-            ? interaction.z < occupied.minZ
-            : rotation == Rot4.South
-                ? interaction.z > occupied.maxZ
-                : rotation == Rot4.East
-                    ? interaction.x < occupied.minX
-                    : interaction.x > occupied.maxX;
-        EndToEndAssert.True(
-            correctSide,
-            "The " + RotationName(rotation)
-            + " microwave must expose its interaction cell on the same reviewed side as its door and controls.");
     }
 
     private static string VanillaReferenceDefName(string customDefName) => customDefName switch

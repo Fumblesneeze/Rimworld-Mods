@@ -34,9 +34,10 @@ On the independently reviewed Release package:
 4. For a cardinal building, place north/east/south/west copies beside same-facing Core workbenches.
 5. Capture before placement, the player action, and close after views at one comparable zoom.
 6. Select each result and inspect the actual texture/material state. Explicitly inspect the
-   north-interaction (`Rot4.South`) view for a screen-bottom underframe and interaction-facing
-   doors/controls on the screen-top edge. The fixed camera and the rotated interaction side are
-   separate contracts.
+   `Rot4.South` view for a screen-bottom underframe and player-facing doors/controls on the
+   screen-bottom edge. The fixed camera, visible appliance face, and native interaction side are
+   separate contracts: verify each from the authored Def and observed player workflow, and do not
+   silently change an already-published interaction offset merely to match a redrawn front face.
    Frame multiple comparison objects through the camera first, then select only the target whose
    single-Thing inspect panel is evidence; a multi-selection screenshot does not show that panel.
 7. For Stuff masks, observe wood/stone/metal or other materially distinct Things; verify fixed

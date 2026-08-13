@@ -1133,21 +1133,34 @@ public sealed class VisualAssetPackageTests
             Assert.Multiple(() =>
             {
                 Assert.That((string?)approvedFrames[family + "_north.png"].Attribute("visibleFace"),
-                    Is.EqualTo("interaction-bottom"), family + " north must put its door beside the south interaction cell.");
+                    Is.EqualTo("door-top"), family + " north must expose the reviewed top-facing door.");
                 Assert.That((string?)approvedFrames[family + "_south.png"].Attribute("visibleFace"),
-                    Is.EqualTo("interaction-top"), family + " south must put its door beside the north interaction cell.");
+                    Is.EqualTo("door-bottom"), family + " south must expose the player-facing door at screen bottom.");
                 Assert.That((string?)approvedFrames[family + "_east.png"].Attribute("visibleFace"),
-                    Is.EqualTo("interaction-left"), family + " east must put its door beside the west interaction cell.");
+                    Is.EqualTo("door-right"), family + " east must expose the reviewed right-facing door.");
                 Assert.That((string?)approvedFrames[family + "_west.png"].Attribute("visibleFace"),
-                    Is.EqualTo("interaction-right"), family + " west must put its door beside the east interaction cell.");
+                    Is.EqualTo("door-left"), family + " west must expose the reviewed left-facing door.");
             });
         }
     }
 
     [Test]
-    public void Microwave_door_and_controls_follow_the_rotated_interaction_side_in_real_pixels()
+    public void Microwave_door_and_controls_follow_the_reviewed_cardinal_face_in_real_pixels()
     {
         var root = FindRepositoryRoot();
+        var defPatch = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Patches",
+            "Compatibility",
+            "ThermodynamicsHotMeals.xml"));
+        var microwaveDef = defPatch.Descendants("ThingDef")
+            .Single(element => (string?)element.Element("defName") == "ImmersiveChefs_Microwave");
+        Assert.That(
+            (string?)microwaveDef.Element("interactionCellOffset"),
+            Is.EqualTo("(0,0,-1)"),
+            "The visual correction must preserve the published interaction convention and existing-save rotation semantics.");
         var textureRoot = Path.Combine(
             root,
             "mods",
@@ -1169,7 +1182,7 @@ public sealed class VisualAssetPackageTests
                     interactionDarkPixels,
                     Is.GreaterThan(oppositeDarkPixels * 1.35),
                     family + "_" + direction
-                    + " must place its dark door/control landmarks beside its rotated interaction cell, not on the opposite casing.");
+                    + " must place its dark door/control landmarks on the reviewed visible face, not on the opposite casing.");
             }
         }
     }
@@ -2513,10 +2526,10 @@ public sealed class VisualAssetPackageTests
     {
         var (minimumX, maximumX, minimumY, maximumY) = direction switch
         {
-            "north" => (0.15, 0.85, 0.55, 0.92),
-            "south" => (0.15, 0.85, 0.08, 0.45),
-            "east" => (0.08, 0.45, 0.15, 0.85),
-            "west" => (0.55, 0.92, 0.15, 0.85),
+            "north" => (0.15, 0.85, 0.08, 0.45),
+            "south" => (0.15, 0.85, 0.55, 0.92),
+            "east" => (0.55, 0.92, 0.15, 0.85),
+            "west" => (0.08, 0.45, 0.15, 0.85),
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
         var count = 0;

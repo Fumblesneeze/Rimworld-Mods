@@ -5,14 +5,14 @@
   that pass preserves every pre-existing nontransparent pixel, canvas, and equipment order.
 -->
 <directionalSpriteApprovals reviewed="2026-08-13" camera="fixed-map-camera" geometryContract="docs/WorkbenchSpriteGeometry.xml">
-  <frame path="Appliance/Microwave_east.png" sha256="c5f93d3d2ed62dacfba0ba33cc74ceb6b5d4447bcbac4589d0d6b836e409490a" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="interaction-left" />
-  <frame path="Appliance/Microwave_north.png" sha256="ddaf10523668c78857ece09659b852fc3c2493a5dd4c5037422846c376bd9f2c" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="interaction-bottom" />
-  <frame path="Appliance/Microwave_south.png" sha256="83d8bd208beded1beb997d9b97e98da23a7329e92a252f96bd440b2b8028f96f" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="interaction-top" />
-  <frame path="Appliance/Microwave_Variant01_east.png" sha256="0f67de27d94d6604ce517e41abb20846c792c900d8b2804c19370fee80ba5c65" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="interaction-left" />
-  <frame path="Appliance/Microwave_Variant01_north.png" sha256="4796578d06639e6a7d77124b122dcf5611b99bcb12f8e70d6699f589da606326" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="interaction-bottom" />
-  <frame path="Appliance/Microwave_Variant01_south.png" sha256="a01dd107abd8a5e8193b8614d133bc4c7cacc2588d7b9beb353059f4c159ac33" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="interaction-top" />
-  <frame path="Appliance/Microwave_Variant01_west.png" sha256="7a4a977bb30cadef3b56c18f60332fbe880cb8ec36cf893a85282adc59d75581" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="interaction-right" />
-  <frame path="Appliance/Microwave_west.png" sha256="8edbb15262a297ff0fb41a4557578cf1b12b112b0797044c9edcb7caad534f27" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="interaction-right" />
+  <frame path="Appliance/Microwave_east.png" sha256="8edbb15262a297ff0fb41a4557578cf1b12b112b0797044c9edcb7caad534f27" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="door-right" />
+  <frame path="Appliance/Microwave_north.png" sha256="83d8bd208beded1beb997d9b97e98da23a7329e92a252f96bd440b2b8028f96f" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="door-top" />
+  <frame path="Appliance/Microwave_south.png" sha256="ddaf10523668c78857ece09659b852fc3c2493a5dd4c5037422846c376bd9f2c" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="door-bottom" />
+  <frame path="Appliance/Microwave_Variant01_east.png" sha256="7a4a977bb30cadef3b56c18f60332fbe880cb8ec36cf893a85282adc59d75581" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="door-right" />
+  <frame path="Appliance/Microwave_Variant01_north.png" sha256="a01dd107abd8a5e8193b8614d133bc4c7cacc2588d7b9beb353059f4c159ac33" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="door-top" />
+  <frame path="Appliance/Microwave_Variant01_south.png" sha256="4796578d06639e6a7d77124b122dcf5611b99bcb12f8e70d6699f589da606326" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="door-bottom" />
+  <frame path="Appliance/Microwave_Variant01_west.png" sha256="0f67de27d94d6604ce517e41abb20846c792c900d8b2804c19370fee80ba5c65" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="door-left" />
+  <frame path="Appliance/Microwave_west.png" sha256="c5f93d3d2ed62dacfba0ba33cc74ceb6b5d4447bcbac4589d0d6b836e409490a" landmarks="fixed-camera cardinal projection; countertop body" visibleFace="door-left" />
   <frame path="Dishwasher/Dishwasher_east.png" sha256="0c65f87e2b147c8f067e0199db0f3ae6b3e08aa14934bccd0f2ba41f19ecceea" landmarks="fixed-camera cardinal projection; screen-bottom underframe" equipmentOrder="lid|rack" />
   <frame path="Dishwasher/Dishwasher_north.png" sha256="37997d2037ea733ac3690d26086f80554954774e6c62735ea92b279c8748310a" landmarks="fixed-camera cardinal projection; screen-bottom underframe" equipmentOrder="lid|rack" />
   <frame path="Dishwasher/Dishwasher_south.png" sha256="a7629a815af18ada046cf9d3d55fa0879ef4118fa3e066b3954a7ac6b2c0e59d" landmarks="fixed-camera cardinal projection; screen-bottom underframe" equipmentOrder="rack|lid" />
