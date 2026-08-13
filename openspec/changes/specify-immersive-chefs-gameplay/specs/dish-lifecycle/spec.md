@@ -118,13 +118,29 @@ Hand-washing duration SHALL scale with the physical abstraction represented by t
 
 ### Requirement: Optional nearby dish batching preserves individual work
 
-When the validated Pick Up And Haul integration is active, a hand-washing job SHALL use its tracked pawn-inventory and native unload system to collect a bounded nearby batch, travel to the selected source once, wash each admitted physical unit separately, and return the resulting batch together. Batch admission MUST preserve the ordinary dirty-ware, forbiddance, reachability, reservation, source, capacity, and pawn-encumbrance rules. It MUST NOT multiply one representative item's duration over mixed products or mark the whole batch clean atomically: every plate, cutlery setting, and cookware set SHALL consume its own configured work and source use before its sanitation transition commits.
+When the validated Pick Up And Haul integration is active, an ordinary `Doing dishes` job SHALL use its tracked pawn-inventory system to collect a bounded nearby batch for either one exact hand-washing source or one exact dishwasher. Batch admission MUST preserve the ordinary dirty-ware, forbiddance, reachability, reservation, destination, appliance-capacity, and pawn-encumbrance rules.
+
+For hand washing, the pawn SHALL travel to the selected source once, wash each admitted physical unit separately, and return the resulting clean batch together through Pick Up And Haul's native unload workflow. The job MUST NOT multiply one representative item's duration over mixed products or mark the whole batch clean atomically: every plate, cutlery setting, and cookware set SHALL consume its own configured work and source use before its sanitation transition commits.
+
+For a dishwasher, the pawn SHALL travel to that appliance once and admit each tracked physical unit separately through the appliance owner's validated admission seam. Admission SHALL preserve each exact Thing identity, SHALL stop before the appliance's remaining capacity is exceeded, and SHALL remove an admitted unit from Pick Up And Haul tracking because the dishwasher now owns its lifecycle. Interruption before admission SHALL return the still-carried dirty units through Pick Up And Haul's native unload workflow; interruption after admission SHALL leave those exact units owned by the dishwasher and governed by its ordinary pause, completion, ejection, and hauling behavior. The completed appliance output SHALL remain ordinary clean haulable ware, allowing Pick Up And Haul's normal hauling work to collect nearby outputs together for clean storage without a second Immersive Chefs unloading system.
 
 #### Scenario: Mixed batch retains per-item washing time
 
 - **WHEN** one plate, one cutlery setting, and one cookware set form a Pick Up And Haul hand-washing batch at default work scale
 - **THEN** the pawn completes separate 250-, 125-, and 1,000-tick wash phases at the selected source
 - **THEN** each exact unit becomes clean only after its own phase and the tracked batch is subsequently unloaded through Pick Up And Haul
+
+#### Scenario: One trip fills a dishwasher with a nearby dirty batch
+
+- **WHEN** a cleaner with Pick Up And Haul active finds nearby dirty plates, cutlery, and cookware that all fit one reachable accepting dishwasher and the pawn's remaining carrying capacity
+- **THEN** one ordinary `Doing dishes` job collects the bounded exact batch, travels to that dishwasher once, and admits each physical unit separately without exceeding its remaining capacity
+- **AND** the appliance, rather than the pawn inventory, owns every admitted exact unit through its normal cycle
+
+#### Scenario: Dishwasher admission is interrupted partway through a batch
+
+- **WHEN** the pawn is interrupted after some collected units enter the selected dishwasher but before all collected units are admitted
+- **THEN** admitted units remain in that exact dishwasher while every unadmitted dirty unit returns through Pick Up And Haul's native unload workflow
+- **AND** no unit remains simultaneously tracked by Pick Up And Haul and owned by the appliance
 
 ### Requirement: A blocked cook may clean required cookware
 When a covered cooking bill would otherwise be runnable but no permitted clean cookware set exists, the bill-owning Cooking work path SHALL look for an eligible dirty cookware set before reporting a permanent wait. If the cook can reserve that exact set and an eligible dishwasher or hand-washing source, the cook SHALL perform the ordinary identity-preserving washing job and then reconsider the original bill. This prerequisite wash belongs to the cook's attempt to satisfy the bill and SHALL be available even when that pawn has ordinary Cleaning work disabled; it MUST still honor forbiddance, reachability, reservations, source operation, water consumption, and dishwasher capacity. It SHALL not fabricate cookware, clean it instantly, or bypass the normal washing toils.

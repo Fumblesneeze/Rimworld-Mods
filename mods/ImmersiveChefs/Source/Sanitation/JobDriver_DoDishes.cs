@@ -9,6 +9,7 @@ public sealed class JobDriver_DoDishes : JobDriver
     private int washIndex;
     private int washTicks;
     private bool waterDebited;
+    private int admissionTicks;
 
     public override bool TryMakePreToilReservations(bool errorOnFailed)
     {
@@ -108,6 +109,7 @@ public sealed class JobDriver_DoDishes : JobDriver
         Scribe_Values.Look(ref washIndex, "immersiveChefsWashIndex");
         Scribe_Values.Look(ref washTicks, "immersiveChefsWashTicks");
         Scribe_Values.Look(ref waterDebited, "immersiveChefsWaterDebited");
+        Scribe_Values.Look(ref admissionTicks, "immersiveChefsAdmissionTicks");
         collectedWare ??= new List<Thing>();
     }
 
@@ -124,6 +126,19 @@ public sealed class JobDriver_DoDishes : JobDriver
         yield return Toils_Jump.JumpIf(extractNext, () => !job.targetQueueA.NullOrEmpty());
         yield return Toils_Goto.Goto(TargetIndex.B, PathEndMode.Touch);
 
+        if (TargetThingB is ThingWithComps dishwasher &&
+            dishwasher.GetComp<CompDishwasher>() is not null)
+        {
+            var admit = new Toil
+            {
+                defaultCompleteMode = ToilCompleteMode.Never,
+                tickAction = TickBatchDishwasherAdmission
+            };
+            admit.WithProgressBar(TargetIndex.B, CurrentAdmissionProgress);
+            yield return admit;
+            yield break;
+        }
+
         var wash = new Toil
         {
             defaultCompleteMode = ToilCompleteMode.Never,
@@ -132,6 +147,48 @@ public sealed class JobDriver_DoDishes : JobDriver
         wash.WithProgressBar(TargetIndex.B, CurrentWashProgress);
         yield return wash;
     }
+
+    private void TickBatchDishwasherAdmission()
+    {
+        while (washIndex < collectedWare.Count && !IsTrackedInInventory(collectedWare[washIndex]))
+        {
+            washIndex++;
+            admissionTicks = 0;
+        }
+
+        if (washIndex >= collectedWare.Count)
+        {
+            ReadyForNextToil();
+            return;
+        }
+
+        admissionTicks++;
+        if (admissionTicks < 200)
+        {
+            return;
+        }
+
+        var ware = collectedWare[washIndex];
+        var accepted = TargetThingB is ThingWithComps dishwasher &&
+                       (ProcessorFrameworkAdapter.Controls(dishwasher)
+                           ? ProcessorFrameworkAdapter.TryAcceptTrackedWare(pawn, dishwasher, ware, out _)
+                           : dishwasher.GetComp<CompDishwasher>()?.TryAcceptTrackedWare(pawn, ware) == true);
+        if (!accepted)
+        {
+            EndBatchIncompletable();
+            return;
+        }
+
+        washIndex++;
+        admissionTicks = 0;
+    }
+
+    private float CurrentAdmissionProgress() =>
+        washIndex >= collectedWare.Count ? 1f : Math.Min(1f, admissionTicks / 200f);
+
+    private bool IsTrackedInInventory(Thing thing) =>
+        thing is { Destroyed: false } &&
+        ReferenceEquals(thing.holdingOwner, pawn.inventory?.innerContainer);
 
     private void CollectCurrentStack()
     {
@@ -263,7 +320,10 @@ public sealed class JobDriver_DoDishes : JobDriver
 
     private void ReturnBatchThroughPickUpAndHaul()
     {
-        if (collectedWare.Count == 0)
+        var inventory = pawn.inventory?.innerContainer;
+        if (collectedWare.Count == 0 || inventory is null ||
+            !collectedWare.Any(thing => thing is { Destroyed: false } &&
+                                        ReferenceEquals(thing.holdingOwner, inventory)))
         {
             return;
         }
@@ -274,7 +334,6 @@ public sealed class JobDriver_DoDishes : JobDriver
         }
 
         OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.PickUpAndHaul, reason);
-        var inventory = pawn.inventory?.innerContainer;
         if (inventory is null || pawn.MapHeld is null)
         {
             return;
@@ -285,7 +344,7 @@ public sealed class JobDriver_DoDishes : JobDriver
         {
             if (inventory.TryDrop(ware, pawn.PositionHeld, pawn.MapHeld, ThingPlaceMode.Near, out _))
             {
-                PickUpAndHaulAdapter.RemoveTracked(pawn, ware);
+                PickUpAndHaulAdapter.TryRemoveTracked(pawn, ware, out _);
             }
         }
     }

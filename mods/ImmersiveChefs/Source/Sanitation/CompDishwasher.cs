@@ -192,6 +192,40 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         return transferred > 0;
     }
 
+    internal bool TryAcceptTrackedWare(Pawn pawn, Thing ware)
+    {
+        var inventory = pawn.inventory?.innerContainer;
+        if (inventory is null || !ReferenceEquals(ware.holdingOwner, inventory) || !CanAccept(ware) ||
+            !PickUpAndHaulAdapter.TryResolveTrackedItems(pawn, ware, out var tracked, out _))
+        {
+            return false;
+        }
+
+        if (!PickUpAndHaulAdapter.TryRemoveResolvedTrackedItem(tracked!, ware, out _))
+        {
+            return false;
+        }
+
+        var transferred = inventory.TryTransferToContainer(ware, Contents, 1);
+        if (transferred <= 0)
+        {
+            if (!PickUpAndHaulAdapter.TryRegister(pawn, ware, out _) && pawn.MapHeld is { } map)
+            {
+                inventory.TryDrop(ware, pawn.PositionHeld, map, ThingPlaceMode.Near, out _);
+            }
+            return false;
+        }
+
+        if (capturedCycleTicks <= 0)
+        {
+            capturedCycleTicks = Math.Max(1, (int)Math.Round(
+                Props.baseCycleTicks * ImmersiveChefsMod.Settings.DishwashingWorkScale));
+        }
+
+        loadingTicksRemaining = DishwasherCyclePolicy.ResetLoadingWindow(Props.baseLoadingTicks);
+        return true;
+    }
+
     public override void CompTickRare()
     {
         base.CompTickRare();

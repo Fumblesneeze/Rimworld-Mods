@@ -55,7 +55,8 @@ internal readonly struct DishwashingBatchCandidate
         int count,
         float unitMass,
         bool sameSource,
-        bool eligible)
+        bool eligible,
+        float unitPlateEquivalent = 1f)
     {
         Id = id;
         DistanceSquared = distanceSquared;
@@ -63,6 +64,7 @@ internal readonly struct DishwashingBatchCandidate
         UnitMass = unitMass;
         SameSource = sameSource;
         Eligible = eligible;
+        UnitPlateEquivalent = unitPlateEquivalent;
     }
 
     internal string Id { get; }
@@ -71,6 +73,7 @@ internal readonly struct DishwashingBatchCandidate
     internal float UnitMass { get; }
     internal bool SameSource { get; }
     internal bool Eligible { get; }
+    internal float UnitPlateEquivalent { get; }
 }
 
 internal readonly struct DishwashingBatchSelection : IEquatable<DishwashingBatchSelection>
@@ -96,17 +99,21 @@ internal static class DishwashingBatchPolicy
 
     internal static IReadOnlyList<DishwashingBatchSelection> Select(
         IEnumerable<DishwashingBatchCandidate> candidates,
-        float availableMass)
+        float availableMass,
+        float availablePlateEquivalentCapacity = float.MaxValue)
     {
         var candidateList = candidates.ToList();
         var remainingMass = Math.Max(0f, availableMass);
+        var remainingCapacity = Math.Max(0f, availablePlateEquivalentCapacity);
         if (candidateList.Count == 0 ||
             !candidateList[0].Eligible ||
             !candidateList[0].SameSource ||
             candidateList[0].DistanceSquared > SearchRadiusSquared ||
             candidateList[0].Count <= 0 ||
             candidateList[0].UnitMass <= 0f ||
-            remainingMass < candidateList[0].UnitMass)
+            candidateList[0].UnitPlateEquivalent <= 0f ||
+            remainingMass < candidateList[0].UnitMass ||
+            remainingCapacity + 0.0001f < candidateList[0].UnitPlateEquivalent)
         {
             return Array.Empty<DishwashingBatchSelection>();
         }
@@ -117,12 +124,18 @@ internal static class DishwashingBatchPolicy
                      .Where(candidate => candidate.DistanceSquared <= SearchRadiusSquared)
                      .OrderBy(candidate => candidate.DistanceSquared))
         {
-            if (candidate.Count <= 0 || candidate.UnitMass <= 0f || remainingMass < candidate.UnitMass)
+            if (candidate.Count <= 0 || candidate.UnitMass <= 0f ||
+                candidate.UnitPlateEquivalent <= 0f || remainingMass < candidate.UnitMass ||
+                remainingCapacity + 0.0001f < candidate.UnitPlateEquivalent)
             {
                 continue;
             }
 
-            var count = Math.Min(candidate.Count, (int)Math.Floor(remainingMass / candidate.UnitMass));
+            var massCount = (int)Math.Floor(remainingMass / candidate.UnitMass);
+            var capacityCount = remainingCapacity == float.MaxValue
+                ? candidate.Count
+                : (int)Math.Floor((remainingCapacity + 0.0001f) / candidate.UnitPlateEquivalent);
+            var count = Math.Min(candidate.Count, Math.Min(massCount, capacityCount));
             if (count <= 0)
             {
                 continue;
@@ -130,6 +143,10 @@ internal static class DishwashingBatchPolicy
 
             selected.Add(new DishwashingBatchSelection(candidate.Id, count));
             remainingMass -= count * candidate.UnitMass;
+            if (remainingCapacity != float.MaxValue)
+            {
+                remainingCapacity -= count * candidate.UnitPlateEquivalent;
+            }
         }
 
         return selected;
@@ -240,7 +257,7 @@ internal static class PickUpAndHaulAdapter
         unloadJobDef = unloadJob;
         Enabled = true;
         reason = string.Empty;
-        Log.Message("[ImmersiveChefs] Pick Up And Haul adapter active; nearby hand-washed ware uses its tracked inventory and native unload job.");
+        Log.Message("[ImmersiveChefs] Pick Up And Haul adapter active; nearby dishwashing batches use its tracked inventory and native unload job.");
         return true;
     }
 
@@ -279,6 +296,13 @@ internal static class PickUpAndHaulAdapter
         try
         {
             registerMethod.Invoke(tracker, new object[] { thing });
+            if (trackedThingsMethod?.Invoke(tracker, null) is not ICollection<Thing> tracked ||
+                !tracked.Contains(thing))
+            {
+                reason = "Pick Up And Haul did not confirm its tracked ownership";
+                return false;
+            }
+
             reason = string.Empty;
             return true;
         }
@@ -289,25 +313,61 @@ internal static class PickUpAndHaulAdapter
         }
     }
 
-    internal static void RemoveTracked(Pawn pawn, Thing thing)
+    internal static bool TryResolveTrackedItems(
+        Pawn pawn,
+        Thing thing,
+        out ICollection<Thing>? tracked,
+        out string reason)
     {
+        tracked = null;
         var tracker = FindTracker(pawn);
         if (tracker is null || trackedThingsMethod is null)
         {
-            return;
+            reason = "the pawn's validated Pick Up And Haul tracker is no longer available";
+            return false;
         }
 
         try
         {
-            if (trackedThingsMethod.Invoke(tracker, null) is ICollection<Thing> tracked)
+            tracked = trackedThingsMethod.Invoke(tracker, null) as ICollection<Thing>;
+            if (tracked is null || !tracked.Contains(thing))
             {
-                tracked.Remove(thing);
+                reason = "the kitchenware is no longer owned by Pick Up And Haul tracking";
+                tracked = null;
+                return false;
             }
+
+            reason = string.Empty;
+            return true;
         }
         catch (Exception exception)
         {
-            Disable(InvocationFailure("tracked-item cleanup", exception));
+            reason = InvocationFailure("tracked-item ownership lookup", exception);
+            Disable(reason);
+            tracked = null;
+            return false;
         }
+    }
+
+    internal static bool TryRemoveResolvedTrackedItem(
+        ICollection<Thing> tracked,
+        Thing thing,
+        out string reason)
+    {
+        if (!tracked.Remove(thing) || tracked.Contains(thing))
+        {
+            reason = "Pick Up And Haul did not release its tracked ownership";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    internal static bool TryRemoveTracked(Pawn pawn, Thing thing, out string reason)
+    {
+        return TryResolveTrackedItems(pawn, thing, out var tracked, out reason) &&
+               TryRemoveResolvedTrackedItem(tracked!, thing, out reason);
     }
 
     internal static bool TryQueueUnload(Pawn pawn, out string reason)

@@ -21,6 +21,7 @@ internal static class ProcessorFrameworkAdapter
     private static FieldInfo? processorActiveProcesses;
     private static FieldInfo? processorEnabledProcesses;
     private static FieldInfo? activeProcessIngredients;
+    private static FieldInfo? activeProcessIngredientCount;
     private static FieldInfo? activeProcessProcessor;
     private static FieldInfo? processIngredientFilter;
     private static FieldInfo? processorEmptyNow;
@@ -29,6 +30,7 @@ internal static class ProcessorFrameworkAdapter
     private static MethodInfo? spaceLeftFor;
     private static MethodInfo? graphicChange;
     private static MethodInfo? enableAllProcesses;
+    private static MethodInfo? addIngredient;
     private static MethodInfo? findIngredient;
     private static MethodInfo? resolveProcessReferences;
     private static MethodInfo? addProcessDef;
@@ -99,6 +101,7 @@ internal static class ProcessorFrameworkAdapter
         processorActiveProcesses = AccessTools.Field(processorType, "activeProcesses");
         processorEnabledProcesses = AccessTools.Field(processorType, "enabledProcesses");
         activeProcessIngredients = AccessTools.Field(activeProcessType, "ingredientThings");
+        activeProcessIngredientCount = AccessTools.Field(activeProcessType, "ingredientCount");
         activeProcessProcessor = AccessTools.Field(activeProcessType, "processor");
         processIngredientFilter = AccessTools.Field(processDefType, "ingredientFilter");
         processorEmptyNow = AccessTools.Field(processorType, "emptyNow");
@@ -107,6 +110,12 @@ internal static class ProcessorFrameworkAdapter
         spaceLeftFor = AccessTools.Method(processorType, "SpaceLeftFor");
         graphicChange = AccessTools.Method(processorType, "GraphicChange");
         enableAllProcesses = AccessTools.Method(processorType, "EnableAllProcesses");
+        addIngredient = processorType.GetMethod(
+            "AddIngredient",
+            BindingFlags.Public | BindingFlags.Instance,
+            binder: null,
+            types: new[] { typeof(Thing), processDefType },
+            modifiers: null);
         var workGiverType = AccessTools.TypeByName("ProcessorFramework.WorkGiver_FillProcessor");
         findIngredient = workGiverType is null ? null : AccessTools.Method(workGiverType, "FindIngredient");
         resolveProcessReferences = AccessTools.Method(processDefType, "ResolveReferences");
@@ -151,10 +160,13 @@ internal static class ProcessorFrameworkAdapter
         };
         if (processorInnerContainer is null || processorActiveProcesses is null ||
             processorEnabledProcesses is null ||
-            activeProcessIngredients is null || activeProcessProcessor is null ||
+            activeProcessIngredients is null || activeProcessIngredientCount is not { FieldType: { } ingredientCountType } ||
+            ingredientCountType != typeof(int) || activeProcessProcessor is null ||
             processIngredientFilter is null || processorEmptyNow is null ||
             activeProcessComplete is null || activeProcessPercent is null ||
             spaceLeftFor is null || graphicChange is null || enableAllProcesses is null ||
+            addIngredient is not { ReturnType: { } addIngredientReturn } ||
+            addIngredientReturn != typeof(void) || addIngredient.DeclaringType != processorType ||
             findIngredient is null || resolveProcessReferences is null || addProcessDef is null ||
             recacheAll is null || requiredMethods.Any(method => method is null) ||
             requiredProcessFields.Any(field =>
@@ -428,6 +440,141 @@ internal static class ProcessorFrameworkAdapter
             .Cast<object>()
             .SelectMany(ProcessIngredients)
             .Sum(ware => PlateEquivalentsPerItem(ware) * ware.stackCount);
+    }
+
+    internal static float AvailablePlateEquivalentCapacity(Thing thing)
+    {
+        var dishwasher = (thing as ThingWithComps)?.GetComp<CompDishwasher>();
+        return dishwasher is null
+            ? 0f
+            : Math.Max(0f, dishwasher.Capacity - UsedPlateEquivalentCapacity(thing));
+    }
+
+    internal static bool CanAcceptTrackedWare(Thing dishwasherThing, Thing ware)
+    {
+        var processor = ProcessorOf(dishwasherThing);
+        var dishwasher = (dishwasherThing as ThingWithComps)?.GetComp<CompDishwasher>();
+        return processor is not null && dishwasher is not null && IsDirtyWare(ware) &&
+               dishwasher.CanAcceptProcessorWare(HasContents(dishwasherThing)) &&
+               ProcessorHasSpaceFor(processor, ware.def) &&
+               AvailablePlateEquivalentCapacity(dishwasherThing) + 0.0001f >=
+               PlateEquivalentsPerItem(ware);
+    }
+
+    internal static bool TryAcceptTrackedWare(Pawn pawn, Thing dishwasherThing, Thing ware, out string reason)
+    {
+        var processor = ProcessorOf(dishwasherThing);
+        var inventory = pawn.inventory?.innerContainer;
+        if (processor is null || inventory is null ||
+            !ReferenceEquals(ware.holdingOwner, inventory) ||
+            !CanAcceptTrackedWare(dishwasherThing, ware) || addIngredient is null)
+        {
+            reason = "the tracked kitchenware can no longer enter the selected Processor dishwasher";
+            return false;
+        }
+
+        var enabled = processorEnabledProcesses!.GetValue(processor) as IDictionary;
+        var process = enabled?.Keys.Cast<object>().FirstOrDefault(candidate =>
+            (processIngredientFilter!.GetValue(candidate) as ThingFilter)?.Allows(ware.def) == true);
+        if (process is null)
+        {
+            reason = "Processor Framework no longer exposes an enabled process for the tracked kitchenware";
+            return false;
+        }
+
+        if (!PickUpAndHaulAdapter.TryResolveTrackedItems(pawn, ware, out var tracked, out reason) ||
+            !PickUpAndHaulAdapter.TryRemoveResolvedTrackedItem(tracked!, ware, out reason))
+        {
+            return false;
+        }
+
+        try
+        {
+            addIngredient.Invoke(processor, new[] { ware, process });
+            if (ReferenceEquals(ware.holdingOwner, inventory) ||
+                !IsOwnedByProcessor(processor, ware) ||
+                !HeldWare(dishwasherThing).Any(item => ReferenceEquals(item, ware)))
+            {
+                RemoveDanglingProcessorReference(processor, ware);
+                RestoreTrackingOrDrop(pawn, ware, inventory, out _);
+                reason = "Processor Framework declined the tracked kitchenware admission";
+                return false;
+            }
+
+            reason = string.Empty;
+            return true;
+        }
+        catch (Exception exception)
+        {
+            var root = exception is TargetInvocationException { InnerException: { } inner }
+                ? inner
+                : exception;
+            if (IsOwnedByProcessor(processor, ware) &&
+                HeldWare(dishwasherThing).Any(item => ReferenceEquals(item, ware)))
+            {
+                reason = string.Empty;
+                return true;
+            }
+
+            RemoveDanglingProcessorReference(processor, ware);
+            RestoreTrackingOrDrop(pawn, ware, inventory, out _);
+            reason = $"Processor tracked admission failed ({root.GetType().Name}: {root.Message})";
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.ProcessorFramework, reason);
+            return false;
+        }
+    }
+
+    private static bool IsOwnedByProcessor(object processor, Thing ware)
+    {
+        return processorInnerContainer!.GetValue(processor) is ThingOwner owner &&
+               ReferenceEquals(ware.holdingOwner, owner);
+    }
+
+    private static void RemoveDanglingProcessorReference(object processor, Thing ware)
+    {
+        var processes = ActiveProcesses(processor);
+        for (var index = processes.Count - 1; index >= 0; index--)
+        {
+            var active = processes[index]!;
+            if (activeProcessIngredients!.GetValue(active) is not IList ingredients ||
+                !ingredients.Contains(ware))
+            {
+                continue;
+            }
+
+            ingredients.Remove(ware);
+            var remaining = Math.Max(0,
+                Convert.ToInt32(activeProcessIngredientCount!.GetValue(active)) - ware.stackCount);
+            activeProcessIngredientCount.SetValue(active, remaining);
+            if (ingredients.Count == 0 || remaining == 0)
+            {
+                processes.RemoveAt(index);
+            }
+        }
+    }
+
+    private static bool RestoreTrackingOrDrop(
+        Pawn pawn,
+        Thing ware,
+        ThingOwner inventory,
+        out string reason)
+    {
+        if (ReferenceEquals(ware.holdingOwner, inventory) &&
+            PickUpAndHaulAdapter.TryRegister(pawn, ware, out reason))
+        {
+            return true;
+        }
+
+        if (ReferenceEquals(ware.holdingOwner, inventory) && pawn.MapHeld is { } map &&
+            inventory.TryDrop(ware, pawn.PositionHeld, map, ThingPlaceMode.Near, out var dropped) &&
+            dropped is { Spawned: true })
+        {
+            reason = "Pick Up And Haul could not retake ownership; the unadmitted unit was returned to the map";
+            return true;
+        }
+
+        reason = "the unadmitted kitchenware could neither be retracked nor returned to the map";
+        return false;
     }
 
     internal static IReadOnlyList<Thing> HeldWare(Thing thing)

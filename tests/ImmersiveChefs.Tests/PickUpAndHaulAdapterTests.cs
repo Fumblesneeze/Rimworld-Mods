@@ -128,6 +128,53 @@ public sealed class PickUpAndHaulAdapterTests
         Assert.That(selected, Is.Empty);
     }
 
+    [Test]
+    public void Dishwasher_batch_policy_stops_before_remaining_plate_equivalent_capacity()
+    {
+        var selected = DishwashingBatchPolicy.Select(
+            new[]
+            {
+                new DishwashingBatchCandidate("plate", 0, 2, 0.2f, true, true, 1f),
+                new DishwashingBatchCandidate("cutlery", 1, 2, 0.1f, true, true, 0.25f),
+                new DishwashingBatchCandidate("cookware", 4, 1, 0.5f, true, true, 4f)
+            },
+            availableMass: 10f,
+            availablePlateEquivalentCapacity: 1.25f);
+
+        Assert.That(selected, Is.EqualTo(new[]
+        {
+            new DishwashingBatchSelection("plate", 1),
+            new DishwashingBatchSelection("cutlery", 1)
+        }));
+    }
+
+    [Test]
+    public void Resolved_tracking_release_is_verified_before_holder_transfer()
+    {
+        var tracked = new HashSet<Verse.Thing>(ReferenceComparer.Instance);
+        var thing = new Verse.Thing();
+        tracked.Add(thing);
+
+        Assert.That(
+            PickUpAndHaulAdapter.TryRemoveResolvedTrackedItem(tracked, thing, out var reason),
+            Is.True,
+            reason);
+        Assert.That(tracked, Does.Not.Contain(thing));
+        Assert.That(
+            PickUpAndHaulAdapter.TryRemoveResolvedTrackedItem(tracked, thing, out reason),
+            Is.False);
+        Assert.That(reason, Does.Contain("did not release"));
+    }
+
+    private sealed class ReferenceComparer : IEqualityComparer<Verse.Thing>
+    {
+        internal static readonly ReferenceComparer Instance = new();
+
+        public bool Equals(Verse.Thing? x, Verse.Thing? y) => ReferenceEquals(x, y);
+
+        public int GetHashCode(Verse.Thing obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+    }
+
     [TestCase(true, 0)]
     [TestCase(false, 1)]
     [TestCase(true, 3)]

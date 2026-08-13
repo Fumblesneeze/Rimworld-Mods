@@ -134,9 +134,11 @@ When `avilmask.CommonSense` is active and the locally supported `CommonSense` as
 - **WHEN** `avilmask.CommonSense` is active but the expected public settings surface is absent or incompatible
 - **THEN** one actionable warning disables only opportunistic post-dining cleanup and ordinary Immersive Chefs sanitation continues
 
-### Requirement: Pick Up And Haul transports a hand-washed batch
+### Requirement: Pick Up And Haul transports a dishwashing batch
 
-When exact package `Mehni.PickUpAndHaul` is active and assembly `PickUpAndHaul, Version=1.0.0.0` exposes the validated public hauled-inventory component, `RegisterHauledItem(Verse.Thing)`, `CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and native `UnloadYourHauledInventory` JobDef/driver shape, an ordinary `Doing dishes` hand-washing job SHALL collect a bounded nearby batch before visiting its chosen source. It SHALL reserve only dirty eligible ware within 12 cells of the first item that can use the same exact hand-washing source, stop before the pawn would become over-encumbered, register each collected physical unit immediately in Pick Up And Haul's tracked inventory, wash units one by one with their own duration and water use, and invoke the upstream native unload workflow once for the return trip. Cleaned ware SHALL travel back together in the tracked inventory and enter ordinary valid clean storage through Pick Up And Haul rather than a parallel Immersive Chefs unloading implementation.
+When exact package `Mehni.PickUpAndHaul` is active and assembly `PickUpAndHaul, Version=1.0.0.0` exposes the validated public hauled-inventory component, `RegisterHauledItem(Verse.Thing)`, `CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and native `UnloadYourHauledInventory` JobDef/driver shape, an ordinary `Doing dishes` job SHALL collect a bounded nearby batch before visiting its one chosen hand-washing source or dishwasher. It SHALL reserve only dirty eligible ware within 12 cells of the first item that can use the same exact destination and stop before either pawn encumbrance or appliance capacity is exceeded.
+
+At a hand-washing source it SHALL wash units one by one with their own duration and water use, then invoke the upstream native unload workflow once so the clean batch enters ordinary valid storage together. At a dishwasher it SHALL admit each tracked unit through the validated local or Processor Framework appliance seam, immediately remove each admitted unit from upstream tracking, and leave the dishwasher to own the cycle. Still-carried units SHALL use upstream unloading on interruption. Clean dishwasher outputs SHALL remain ordinary haulable ware so Pick Up And Haul may batch their later stockpiling through its own normal hauling behavior.
 
 Immersive Chefs SHALL retain ownership of sanitation, source priority, water provenance, per-item work, reservations, and exact identity. Pre-existing inventory and previously tracked hauling items SHALL not be washed or claimed. If the batch is interrupted, completed units remain clean, unwashed units remain dirty, and every collected unit remains registered for upstream unloading. Package absence, `Off`, incomplete dependency state, or any changed member/JobDef shape SHALL select the ordinary one-target dishwashing path without a hard reference or missing-assembly error.
 
@@ -144,6 +146,12 @@ Immersive Chefs SHALL retain ownership of sanitation, source priority, water pro
 
 - **WHEN** one plate, one cutlery setting, and one cookware set are dirty near each other, share one eligible sink, fit the cleaner's remaining carrying capacity, and Pick Up And Haul is active
 - **THEN** the pawn reserves and collects the three exact units before going to the sink, visibly washes them one at a time using their individual work durations, and Pick Up And Haul returns the completed clean batch through one native unload workflow
+
+#### Scenario: Pick Up And Haul batches admission to Processor Framework
+
+- **WHEN** Pick Up And Haul and the supported Processor Framework are active and one powered dishwasher has room for the selected nearby dirty ware
+- **THEN** the cleaner collects the bounded batch, walks to the appliance once, and admits each exact unit through Processor Framework's validated `CompProcessor.AddIngredient(Thing, ProcessDef)` lifecycle
+- **AND** every admitted unit leaves Pick Up And Haul tracking before the Processor-owned cycle begins
 
 #### Scenario: Batched washing is interrupted
 
@@ -486,6 +494,7 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 9. Adaptive Storage Framework; [sbz] Fridge; Immersive Chefs; and Gateway for native holder transfer, save/load, fallback temperature, and power-loss behavior.
 10. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
 11. Pick Up And Haul; Immersive Chefs; and Gateway for native tracked-inventory batch collection, sequential hand washing, interruption, and batch unloading.
+12. Processor Framework; Dubs Bad Hygiene; Pick Up And Haul; Immersive Chefs; and Gateway for one-trip tracked dishwasher loading, per-unit Processor admission, cycle completion, and later native clean-output hauling.
 12. Harmony; Core; Cook for Yourself; Immersive Chefs; and Gateway for one-off self-cooking, exact ware/session lifecycle, native self-ingestion, patient delivery, interruption, and an `Off`-setting run in which the upstream one-off job still completes unchanged.
 13. Harmony; Core; Biotech; Cook for Yourself; Immersive Chefs; and Gateway for native baby-food cooking and bottle feeding that remain entirely upstream-owned and kitchenware-free under strict ware settings. Package absence and changed-shape behavior remain host/base-process fail-closed gates rather than claims of either active-mod group.
 

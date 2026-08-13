@@ -123,7 +123,7 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
         DishwashingDestination destination,
         Job job)
     {
-        if (!destination.IsHandwashing || !PickUpAndHaulAdapter.CanTrack(pawn))
+        if (!PickUpAndHaulAdapter.CanTrack(pawn))
         {
             return;
         }
@@ -143,7 +143,6 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
                            pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some);
             var sameSource = eligible &&
                              TryFindDestination(pawn, thing, out var candidateDestination) &&
-                             candidateDestination.IsHandwashing &&
                              SameTarget(candidateDestination.Target, destination.Target);
             return new DishwashingBatchCandidate(
                 thing.ThingID,
@@ -151,11 +150,18 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
                 thing.stackCount,
                 Math.Max(0.001f, thing.GetStatValue(StatDefOf.Mass)),
                 sameSource,
-                eligible);
+                eligible,
+                thing.def.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f);
         }).ToList();
         var capacity = MassUtility.Capacity(pawn);
         var availableMass = Math.Max(0f, capacity * (1f - MassUtility.EncumbrancePercent(pawn)));
-        var selection = DishwashingBatchPolicy.Select(descriptors, availableMass);
+        var availableDishwasherCapacity = destination.IsHandwashing
+            ? float.MaxValue
+            : AvailableDishwasherCapacity(destination.Target.Thing);
+        var selection = DishwashingBatchPolicy.Select(
+            descriptors,
+            availableMass,
+            availableDishwasherCapacity);
         if (selection.Count == 0 || selection.All(item => item.Id != primary.ThingID))
         {
             return;
@@ -166,6 +172,19 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
         job.targetQueueA = selection.Select(item => (LocalTargetInfo)byId[item.Id]).ToList();
         job.countQueue = selection.Select(item => item.Count).ToList();
         job.count = 1;
+    }
+
+    private static float AvailableDishwasherCapacity(Thing? dishwasher)
+    {
+        if (dishwasher is not ThingWithComps building ||
+            building.GetComp<CompDishwasher>() is not { } local)
+        {
+            return 0f;
+        }
+
+        return ProcessorFrameworkAdapter.Controls(building)
+            ? ProcessorFrameworkAdapter.AvailablePlateEquivalentCapacity(building)
+            : Math.Max(0f, local.Capacity - local.UsedCapacity);
     }
 
     private static bool SameTarget(LocalTargetInfo left, LocalTargetInfo right)
@@ -180,7 +199,11 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
 
     internal static bool TryFindDestination(Pawn pawn, Thing dirtyWare, out DishwashingDestination destination)
     {
-        var dishwashers = FindAcceptingDishwashers(pawn, new[] { dirtyWare }, dirtyWare.Position)
+        var dishwashers = FindAcceptingDishwashers(
+                pawn,
+                new[] { dirtyWare },
+                dirtyWare.Position,
+                includeProcessor: PickUpAndHaulAdapter.CanTrack(pawn))
             .ToList();
         if (dishwashers.Count > 0 && ImmersiveChefsMod.Settings.PreferDishwashers)
         {
@@ -218,7 +241,11 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
         }
 
         var origin = exactWare[0].Position;
-        var dishwashers = FindAcceptingDishwashers(pawn, exactWare, origin).ToList();
+        var dishwashers = FindAcceptingDishwashers(
+            pawn,
+            exactWare,
+            origin,
+            includeProcessor: false).ToList();
         if (dishwashers.Count > 0 && ImmersiveChefsMod.Settings.PreferDishwashers)
         {
             destination = DishwashingDestination.ForDishwasher(dishwashers[0]);
@@ -263,7 +290,8 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
     private static IEnumerable<Thing> FindAcceptingDishwashers(
         Pawn pawn,
         IReadOnlyList<Thing> exactWare,
-        IntVec3 origin)
+        IntVec3 origin,
+        bool includeProcessor)
     {
         var requiredCapacity = exactWare.Sum(thing =>
             thing.def.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f);
@@ -273,10 +301,20 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
             .Where(thing =>
                 !thing.IsForbidden(pawn) &&
                 pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some))
-            .Where(thing => !ProcessorFrameworkAdapter.Controls(thing))
-            .Where(thing => (thing as ThingWithComps)?.GetComp<CompDishwasher>() is { } comp &&
-                            exactWare.All(comp.CanAccept) &&
-                            comp.Capacity - comp.UsedCapacity + 0.0001f >= requiredCapacity)
+            .Where(thing =>
+            {
+                if (ProcessorFrameworkAdapter.Controls(thing))
+                {
+                    return includeProcessor &&
+                           exactWare.All(ware => ProcessorFrameworkAdapter.CanAcceptTrackedWare(thing, ware)) &&
+                           ProcessorFrameworkAdapter.AvailablePlateEquivalentCapacity(thing) + 0.0001f >=
+                           requiredCapacity;
+                }
+
+                return (thing as ThingWithComps)?.GetComp<CompDishwasher>() is { } comp &&
+                       exactWare.All(comp.CanAccept) &&
+                       comp.Capacity - comp.UsedCapacity + 0.0001f >= requiredCapacity;
+            })
             .OrderBy(thing => thing.Position.DistanceToSquared(origin));
     }
 }
