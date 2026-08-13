@@ -1,4 +1,4 @@
-using HarmonyLib;
+using System.Reflection;
 using Verse;
 
 namespace ImmersiveChefs;
@@ -6,8 +6,11 @@ namespace ImmersiveChefs;
 internal static class OptionalMaterialAdapter
 {
     private static readonly System.Reflection.FieldInfo CachedLabelCapField =
-        AccessTools.Field(typeof(Def), "cachedLabelCap") ??
+        typeof(Def).GetField("cachedLabelCap", BindingFlags.Instance | BindingFlags.NonPublic) ??
         throw new MissingFieldException(typeof(Def).FullName, "cachedLabelCap");
+
+    private static readonly FieldInfo? AllRecipesCachedField =
+        typeof(ThingDef).GetField("allRecipesCached", BindingFlags.Instance | BindingFlags.NonPublic);
 
     private static readonly string[] ExpandedMetalDefs =
     {
@@ -92,7 +95,7 @@ internal static class OptionalMaterialAdapter
         foreach (var def in DefDatabase<ThingDef>.AllDefsListForReading)
         {
             def.recipes?.Remove(adobeRecipe);
-            AccessTools.Field(typeof(ThingDef), "allRecipesCached")?.SetValue(def, null);
+            AllRecipesCachedField?.SetValue(def, null);
         }
     }
 }

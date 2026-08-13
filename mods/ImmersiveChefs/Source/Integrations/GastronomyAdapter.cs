@@ -327,7 +327,7 @@ internal static class GastronomyAdapter
 
 internal sealed class MapComponent_GastronomyDishClearing : MapComponent
 {
-    private readonly List<ClearingRequest> requests = new();
+    private List<ClearingRequest> requests = new();
 
     public MapComponent_GastronomyDishClearing(Map map) : base(map)
     {
@@ -345,14 +345,128 @@ internal sealed class MapComponent_GastronomyDishClearing : MapComponent
             return;
         }
 
-        var existing = requests.FirstOrDefault(request => request.Server == server);
+        var existing = requests.FirstOrDefault(request => request.Server == server && !request.Dispatched);
         if (existing is not null)
         {
             existing.AddExactWare(exactWare, Find.TickManager.TicksGame + 5000);
             return;
         }
 
-        requests.Add(new ClearingRequest(server, exactWare, Find.TickManager.TicksGame + 5000));
+        var request = new ClearingRequest(server, Find.TickManager.TicksGame + 5000);
+        request.AddExactWare(exactWare, Find.TickManager.TicksGame + 5000);
+        if (request.ExactWare.Count > 0)
+        {
+            requests.Add(request);
+        }
+    }
+
+    internal bool IsClaimedByAnotherServer(Pawn pawn, Thing thing) =>
+        requests.Any(request => !ReferenceEquals(request.Server, pawn) &&
+                                request.OwnsClaimFor(thing, Find.TickManager.TicksGame));
+
+    internal bool IsClaimed(Thing thing) =>
+        requests.Any(request => request.OwnsClaimFor(thing, Find.TickManager.TicksGame));
+
+    internal bool OwnsExactWare(Pawn server, Thing thing) =>
+        requests.Any(request => ReferenceEquals(request.Server, server) &&
+                                request.OwnsClaimFor(thing, Find.TickManager.TicksGame));
+
+    internal void ReleaseClaimFor(Thing thing)
+    {
+        for (var index = requests.Count - 1; index >= 0; index--)
+        {
+            var request = requests[index];
+            request.ReleaseWare(thing);
+            if (request.ExactWare.Count == 0)
+            {
+                request.ReleaseAllReservations();
+                requests.RemoveAt(index);
+            }
+        }
+    }
+
+    internal void ProcessPendingClearing()
+    {
+        for (var index = requests.Count - 1; index >= 0; index--)
+        {
+            var request = requests[index];
+            if (request.Server.DestroyedOrNull() || request.Server.Map != map ||
+                (!request.Dispatched && Find.TickManager.TicksGame > request.ExpiresAt) ||
+                IsUnavailableForClearing(request.Server))
+            {
+                request.ReleaseAllReservations();
+                requests.RemoveAt(index);
+                continue;
+            }
+
+            request.RemoveCompletedWare();
+            if (request.ExactWare.Count == 0)
+            {
+                request.ReleaseAllReservations();
+                requests.RemoveAt(index);
+                continue;
+            }
+
+            if (request.Dispatched)
+            {
+                request.ReleaseCancelledWare();
+                if (request.ExactWare.Count == 0)
+                {
+                    request.ReleaseAllReservations();
+                    requests.RemoveAt(index);
+                }
+
+                continue;
+            }
+
+            if (!CanInterruptForClearing(request.Server))
+            {
+                continue;
+            }
+
+            if (!WorkGiver_DoDishes.TryFindSharedDestination(
+                    request.Server,
+                    request.ExactWare,
+                    out var destination))
+            {
+                if (!request.CanRemainPending() ||
+                    !WorkGiver_DoDishes.HasReachablePotentialSharedDestination(
+                        request.Server,
+                        request.ExactWare))
+                {
+                    request.ReleaseAllReservations();
+                    requests.RemoveAt(index);
+                }
+
+                continue;
+            }
+
+            var exactJobs = request.ExactWare
+                .Select(thing => WorkGiver_DoDishes.CreateExactWareJob(thing, destination))
+                .ToArray();
+            if (!request.TransferReservationsTo(exactJobs))
+            {
+                continue;
+            }
+
+            request.Server.jobs.StartJob(
+                exactJobs[0],
+                JobCondition.InterruptForced,
+                tag: JobTag.Misc,
+                resumeCurJobAfterwards: true);
+            for (var jobIndex = exactJobs.Length - 1; jobIndex >= 1; jobIndex--)
+            {
+                request.Server.jobs.jobQueue.EnqueueFirst(exactJobs[jobIndex], tag: JobTag.Misc);
+            }
+
+            request.MarkDispatched();
+            request.ReleaseCancelledWare();
+            if (request.ExactWare.Count == 0)
+            {
+                request.ReleaseAllReservations();
+                requests.RemoveAt(index);
+            }
+        }
     }
 
     public override void MapComponentTick()
@@ -363,54 +477,38 @@ internal sealed class MapComponent_GastronomyDishClearing : MapComponent
             return;
         }
 
-        for (var index = requests.Count - 1; index >= 0; index--)
+        ProcessPendingClearing();
+    }
+
+    public override void ExposeData()
+    {
+        base.ExposeData();
+        Scribe_Collections.Look(ref requests, "immersiveChefsGastronomyClearing", LookMode.Deep);
+        requests ??= new List<ClearingRequest>();
+        if (Scribe.mode == LoadSaveMode.PostLoadInit)
         {
-            var request = requests[index];
-            if (request.Server.DestroyedOrNull() || request.Server.Map != map ||
-                Find.TickManager.TicksGame > request.ExpiresAt)
+            foreach (var request in requests)
             {
-                requests.RemoveAt(index);
-                continue;
+                request.RestoreReservationOwnership();
             }
-
-            if (!CanInterruptForClearing(request.Server))
-            {
-                continue;
-            }
-
-            request.RemoveUnavailableWare();
-            if (request.ExactWare.Count == 0)
-            {
-                requests.RemoveAt(index);
-                continue;
-            }
-
-            var jobs = request.ExactWare
-                .Select(thing => new WorkGiver_DoDishes().JobOnThing(request.Server, thing))
-                .ToArray();
-            if (jobs.Any(job => job is null))
-            {
-                continue;
-            }
-
-            var exactJobs = jobs.Cast<Job>().ToArray();
-            request.Server.jobs.StartJob(
-                exactJobs[0],
-                JobCondition.InterruptOptional,
-                tag: JobTag.Misc,
-                resumeCurJobAfterwards: true);
-            for (var jobIndex = exactJobs.Length - 1; jobIndex >= 1; jobIndex--)
-            {
-                request.Server.jobs.jobQueue.EnqueueFirst(exactJobs[jobIndex], tag: JobTag.Misc);
-            }
-
-            requests.RemoveAt(index);
         }
     }
 
+    private static bool IsUnavailableForClearing(Pawn pawn) =>
+        pawn.Drafted || pawn.Downed || pawn.InMentalState || pawn.CurJob?.playerForced == true;
+
+    private static bool IsPendingGastronomyService(Pawn pawn)
+    {
+        var current = pawn.CurJobDef?.defName ?? string.Empty;
+        return current.StartsWith("Gastronomy_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsExecutingDishClearing(Pawn pawn) =>
+        pawn.CurJobDef == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes;
+
     private static bool CanInterruptForClearing(Pawn pawn)
     {
-        if (pawn.Drafted || pawn.Downed || pawn.InMentalState || pawn.CurJob?.playerForced == true)
+        if (IsUnavailableForClearing(pawn))
         {
             return false;
         }
@@ -428,24 +526,37 @@ internal sealed class MapComponent_GastronomyDishClearing : MapComponent
                    KitchenwareProduct.Plate or KitchenwareProduct.Cutlery;
     }
 
-    private sealed class ClearingRequest
+    private sealed class ClearingRequest : IExposable
     {
-        internal ClearingRequest(Pawn server, IEnumerable<Thing> exactWare, int expiresAt)
+        private Job? pendingReservationJob;
+        private readonly Dictionary<Thing, Job> dispatchedReservationJobs = new();
+
+        public ClearingRequest()
         {
-            Server = server;
-            ExactWare = exactWare.Distinct().ToList();
-            ExpiresAt = expiresAt;
+            Server = null!;
+            ExactWare = new List<Thing>();
         }
 
-        internal Pawn Server { get; }
-        internal List<Thing> ExactWare { get; }
+        internal ClearingRequest(Pawn server, int expiresAt)
+        {
+            Server = server;
+            ExactWare = new List<Thing>();
+            ExpiresAt = expiresAt;
+            pendingReservationJob = NewPendingReservationJob();
+        }
+
+        internal Pawn Server { get; private set; }
+        internal List<Thing> ExactWare { get; private set; }
         internal int ExpiresAt { get; private set; }
+        internal bool Dispatched { get; private set; }
 
         internal void AddExactWare(IEnumerable<Thing> exactWare, int expiresAt)
         {
+            pendingReservationJob ??= NewPendingReservationJob();
             foreach (var thing in exactWare)
             {
-                if (!ExactWare.Contains(thing))
+                if (!ExactWare.Contains(thing) &&
+                    Server.Reserve(thing, pendingReservationJob, 1, 1))
                 {
                     ExactWare.Add(thing);
                 }
@@ -454,7 +565,208 @@ internal sealed class MapComponent_GastronomyDishClearing : MapComponent
             ExpiresAt = Math.Max(ExpiresAt, expiresAt);
         }
 
-        internal void RemoveUnavailableWare() =>
-            ExactWare.RemoveAll(thing => !IsSpawnedDirtyWare(thing, Server));
+        internal void MarkDispatched() => Dispatched = true;
+
+        internal bool TransferReservationsTo(IReadOnlyList<Job> jobs)
+        {
+            if (jobs.Count != ExactWare.Count)
+            {
+                return false;
+            }
+
+            var admitted = new List<(Thing Thing, Job Job)>();
+            for (var index = 0; index < ExactWare.Count; index++)
+            {
+                var thing = ExactWare[index];
+                var job = jobs[index];
+                if (!Server.Reserve(thing, job, 1, 1))
+                {
+                    foreach (var pair in admitted)
+                    {
+                        ReleaseIfOwned(pair.Thing, pair.Job);
+                    }
+
+                    return false;
+                }
+
+                admitted.Add((thing, job));
+            }
+
+            foreach (var pair in admitted)
+            {
+                dispatchedReservationJobs[pair.Thing] = pair.Job;
+            }
+
+            ReleasePendingReservations();
+            return true;
+        }
+
+        internal bool CanRemainPending() =>
+            ExactWare.All(thing =>
+                IsSpawnedDirtyWare(thing, Server) &&
+                !thing.IsForbidden(Server) &&
+                Server.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some));
+
+        internal void ReleasePendingReservations()
+        {
+            if (pendingReservationJob is not null)
+            {
+                Server.ClearReservationsForJob(pendingReservationJob);
+            }
+        }
+
+        internal void ReleaseAllReservations()
+        {
+            ReleasePendingReservations();
+            foreach (var pair in dispatchedReservationJobs.ToArray())
+            {
+                ReleaseDispatchedReservation(pair.Key);
+            }
+        }
+
+        internal bool OwnsClaimFor(Thing thing, int currentTick)
+        {
+            if ((!Dispatched && currentTick > ExpiresAt) || Server.DestroyedOrNull() ||
+                Server.Drafted || Server.Downed || Server.InMentalState ||
+                Server.CurJob?.playerForced == true || !ExactWare.Contains(thing))
+            {
+                return false;
+            }
+
+            return !Dispatched || OwnsExactWareJob(thing) ||
+                   ReferenceEquals(Server.carryTracker?.CarriedThing, thing);
+        }
+
+        internal void RemoveCompletedWare() => RemoveWareWhere(thing =>
+            thing.Destroyed ||
+            (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty != true ||
+            (!thing.Spawned && !OwnsExactWareJob(thing) &&
+             !ReferenceEquals(Server.carryTracker?.CarriedThing, thing)));
+
+        internal void ReleaseCancelledWare() => RemoveWareWhere(thing =>
+            !OwnsExactWareJob(thing) && !ReferenceEquals(Server.carryTracker?.CarriedThing, thing));
+
+        internal void ReleaseWare(Thing thing) =>
+            RemoveWareWhere(candidate => ReferenceEquals(candidate, thing));
+
+        private void RemoveWareWhere(Predicate<Thing> predicate)
+        {
+            for (var index = ExactWare.Count - 1; index >= 0; index--)
+            {
+                var thing = ExactWare[index];
+                if (!predicate(thing))
+                {
+                    continue;
+                }
+
+                if (!thing.Destroyed && pendingReservationJob is not null)
+                {
+                    ReleaseIfOwned(thing, pendingReservationJob);
+                }
+
+                ReleaseDispatchedReservation(thing);
+                ExactWare.RemoveAt(index);
+            }
+        }
+
+        private void ReleaseDispatchedReservation(Thing thing)
+        {
+            if (!dispatchedReservationJobs.TryGetValue(thing, out var reservationJob))
+            {
+                return;
+            }
+
+            if (!thing.Destroyed)
+            {
+                ReleaseIfOwned(thing, reservationJob);
+            }
+
+            dispatchedReservationJobs.Remove(thing);
+        }
+
+        private void ReleaseIfOwned(Thing thing, Job reservationJob)
+        {
+            var reservationManager = Server.Map?.reservationManager;
+            if (reservationManager?.ReservedBy(thing, Server, reservationJob) == true)
+            {
+                reservationManager.Release(thing, Server, reservationJob);
+            }
+        }
+
+        private bool OwnsExactWareJob(Thing thing) =>
+            IsExactCleaningJob(Server.CurJob, thing) ||
+            Server.jobs.jobQueue.Any(queued => IsExactCleaningJob(queued.job, thing));
+
+        private static bool IsExactCleaningJob(Job? job, Thing thing) =>
+            job?.def == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+            (ReferenceEquals(job.targetA.Thing, thing) ||
+             job.targetQueueA?.Any(target => ReferenceEquals(target.Thing, thing)) == true);
+
+        public void ExposeData()
+        {
+            var server = Server;
+            Scribe_References.Look(ref server, "server");
+            Server = server!;
+            var exactWare = ExactWare;
+            Scribe_Collections.Look(ref exactWare, "exactWare", LookMode.Reference);
+            ExactWare = exactWare ?? new List<Thing>();
+            var expiresAt = ExpiresAt;
+            Scribe_Values.Look(ref expiresAt, "expiresAt");
+            ExpiresAt = expiresAt;
+            var dispatched = Dispatched;
+            Scribe_Values.Look(ref dispatched, "dispatched");
+            Dispatched = dispatched;
+        }
+
+        internal void RestoreReservationOwnership()
+        {
+            dispatchedReservationJobs.Clear();
+            if (Server.DestroyedOrNull() || Server.Map is null)
+            {
+                return;
+            }
+
+            var activeJobs = new[] { Server.CurJob }
+                .Concat(Server.jobs.jobQueue.Select(queued => queued.job))
+                .Where(job => job is not null)
+                .Cast<Job>()
+                .ToArray();
+            foreach (var thing in ExactWare.Where(thing => !thing.Destroyed))
+            {
+                var exactJob = activeJobs.FirstOrDefault(job => IsExactCleaningJob(job, thing));
+                foreach (var stale in Server.Map.reservationManager.ReservationsReadOnly
+                             .Where(reservation => ReferenceEquals(reservation.Claimant, Server) &&
+                                                   ReferenceEquals(reservation.Target.Thing, thing) &&
+                                                   reservation.Job.def == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+                                                   !ReferenceEquals(reservation.Job, exactJob))
+                             .ToArray())
+                {
+                    Server.Map.reservationManager.Release(thing, Server, stale.Job);
+                }
+
+                if (Dispatched && exactJob is not null)
+                {
+                    dispatchedReservationJobs[thing] = exactJob;
+                    if (!Server.Map.reservationManager.ReservedBy(thing, Server, exactJob))
+                    {
+                        Server.Reserve(thing, exactJob, 1, 1);
+                    }
+                }
+            }
+
+            if (Dispatched)
+            {
+                return;
+            }
+
+            pendingReservationJob = NewPendingReservationJob();
+            foreach (var thing in ExactWare.Where(thing => !thing.Destroyed))
+            {
+                Server.Reserve(thing, pendingReservationJob, 1, 1);
+            }
+        }
+
+        private static Job NewPendingReservationJob() =>
+            JobMaker.MakeJob(ImmersiveChefsDefOf.ImmersiveChefs_DoDishes);
     }
 }

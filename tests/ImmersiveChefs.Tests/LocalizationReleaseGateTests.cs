@@ -327,7 +327,7 @@ public sealed class LocalizationReleaseGateTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(source, Does.Contain("AccessTools.Field(typeof(Def), \"cachedLabelCap\")"),
+            Assert.That(source, Does.Contain("typeof(Def).GetField(\"cachedLabelCap\", BindingFlags.Instance | BindingFlags.NonPublic)"),
                 "The exact RimWorld 1.6 label cache must be resolved explicitly.");
             Assert.That(labelAssignment, Is.GreaterThanOrEqualTo(0));
             Assert.That(cacheReset, Is.GreaterThan(labelAssignment),

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -832,11 +833,12 @@ public sealed class MealPrinterFineDiningTest : IRimWorldEndToEndTest
     "Orion.CashRegister",
     "Orion.Gastronomy",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 12_000,
-    MaxGameTicks = 48_000,
-    MaxWallClockSeconds = 300)]
+    MaxFrames = 14_400,
+    MaxGameTicks = 56_000,
+    MaxWallClockSeconds = 360)]
 public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTest
 {
+    private const string SaveName = "ImmersiveChefs_MealPrinterGastronomyClearing";
     private Map map = null!;
     private Pawn producer = null!;
     private Pawn guest = null!;
@@ -861,10 +863,27 @@ public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTes
     private bool dirtyReturnObserved;
     private bool waiterCleanupObserved;
     private bool waiterQueuedSecondWareObserved;
+    private bool waiterClearingPersistenceObserved;
     private int nativeServeStartedTick = -1;
+    private string producerId = string.Empty;
+    private string guestId = string.Empty;
+    private string waiterId = string.Empty;
+    private string dishwasherId = string.Empty;
+    private string plateId = string.Empty;
+    private string cutleryId = string.Empty;
+    private string personalCutleryId = string.Empty;
 
     public void Arrange(IEndToEndContext context)
     {
+        var savePath = GenFilePaths.FilePathForSavedGame(SaveName);
+        context.DeferCleanup(() =>
+        {
+            if (File.Exists(savePath))
+            {
+                File.Delete(savePath);
+            }
+        });
+
         var printerFixture = DispenserE2EFixture.CreateMealPrinterFixture(
             "MealFine",
             "Printer service cook");
@@ -904,6 +923,14 @@ public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTes
         FoodSearchE2EFixture.SetHunger(waiter, 1f);
         FoodSearchE2EFixture.SetHunger(producer, 0.10f);
         FoodSearchE2EFixture.UseStrictNonEmergencyDining(context);
+
+        producerId = producer.ThingID;
+        guestId = guest.ThingID;
+        waiterId = waiter.ThingID;
+        dishwasherId = dishwasher.ThingID;
+        plateId = plate.ThingID;
+        cutleryId = cutlery.ThingID;
+        personalCutleryId = personalCutlery.ThingID;
 
         var gizmos = context.GetRequiredService<IEndToEndGizmoCatalog>()
             .Query(new[] { producer.ThingID }, Array.Empty<string>());
@@ -1048,6 +1075,28 @@ public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTes
             "observe waiter carrying and queuing returned ware",
             Array.Empty<string>(),
             0);
+        yield return new SaveLoadActionStep(
+            "save and load while the waiter carries one returned item and owns the queued second item",
+            SaveName);
+        yield return new AssertionStep(
+            "resolve the loaded waiter setting and restore exact clearing ownership",
+            _ =>
+            {
+                ResolveLoadedClearingFixture();
+                AssertLoadedClearingOwnership();
+            });
+        yield return new SelectionActionStep(
+            "select loaded waiter retaining the exact returned setting",
+            new[] { waiterId },
+            false);
+        yield return new CameraActionStep(
+            "frame loaded waiter and dishwasher after native persistence",
+            new[] { waiterId, dishwasherId },
+            200);
+        yield return new ScreenshotStep(
+            "observe loaded waiter retaining active and queued dish clearing",
+            Array.Empty<string>(),
+            0);
         yield return new TimeControlActionStep(
             "finish waiter dishwasher admission",
             paused: false,
@@ -1083,6 +1132,7 @@ public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTes
                 ["dirtyReturnObserved"] = dirtyReturnObserved.ToString(),
                 ["waiterCleanupObserved"] = waiterCleanupObserved.ToString(),
                 ["waiterQueuedSecondWareObserved"] = waiterQueuedSecondWareObserved.ToString(),
+                ["waiterClearingPersistenceObserved"] = waiterClearingPersistenceObserved.ToString(),
                 ["dishwasherUsedCapacity"] =
                     dishwasher.GetComp<CompDishwasher>()?.UsedCapacity.ToString("R") ?? "missing",
                 ["guestPersonalCutleryDirty"] =
@@ -1316,12 +1366,101 @@ public sealed class MealPrinterGastronomyGuestServiceTest : IRimWorldEndToEndTes
         return contents is not null && contents.Contains(plate) && contents.Contains(cutlery);
     }
 
+    private void ResolveLoadedClearingFixture()
+    {
+        map = Current.Game.CurrentMap;
+        producer = ResolveLoadedPawn(producerId);
+        guest = ResolveLoadedPawn(guestId);
+        waiter = ResolveLoadedPawn(waiterId);
+        dishwasher = ResolveLoadedSpawnedThing<ThingWithComps>(dishwasherId);
+        plate = ResolveLoadedWare(plateId);
+        cutlery = ResolveLoadedWare(cutleryId);
+        personalCutlery = ResolveLoadedWare(personalCutleryId);
+    }
+
+    private Pawn ResolveLoadedPawn(string thingId) =>
+        map.mapPawns.AllPawns.SingleOrDefault(pawn => pawn.ThingID == thingId) ??
+        throw new EndToEndAssertionException(
+            "Native save/load lost exact pawn " + thingId + ".");
+
+    private T ResolveLoadedSpawnedThing<T>(string thingId) where T : Thing =>
+        map.listerThings.AllThings.OfType<T>()
+            .SingleOrDefault(thing => thing.ThingID == thingId) ??
+        throw new EndToEndAssertionException(
+            "Native save/load lost exact spawned Thing " + thingId + ".");
+
+    private ThingWithComps ResolveLoadedWare(string thingId)
+    {
+        var spawned = map.listerThings.AllThings.OfType<ThingWithComps>()
+            .SingleOrDefault(thing => thing.ThingID == thingId);
+        if (spawned is not null)
+        {
+            return spawned;
+        }
+
+        foreach (var pawn in map.mapPawns.AllPawns)
+        {
+            if (pawn.carryTracker?.CarriedThing is ThingWithComps carried &&
+                carried.ThingID == thingId)
+            {
+                return carried;
+            }
+
+            var inventoryThing = pawn.inventory?.innerContainer.OfType<ThingWithComps>()
+                .SingleOrDefault(thing => thing.ThingID == thingId);
+            if (inventoryThing is not null)
+            {
+                return inventoryThing;
+            }
+        }
+
+        var dishwasherThing = dishwasher.GetComp<CompDishwasher>()?.GetDirectlyHeldThings()
+            .OfType<ThingWithComps>()
+            .SingleOrDefault(thing => thing.ThingID == thingId);
+        return dishwasherThing ?? throw new EndToEndAssertionException(
+            "Native save/load lost exact returned ware " + thingId + ".");
+    }
+
+    private void AssertLoadedClearingOwnership()
+    {
+        EndToEndAssert.True(
+            plate.GetComp<CompSanitation>()?.IsDirty == true &&
+            cutlery.GetComp<CompSanitation>()?.IsDirty == true,
+            "Native save/load must preserve both returned items as dirty.");
+        EndToEndAssert.True(
+            waiter.CurJobDef == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+            ReferenceEquals(waiter.CurJob?.targetB.Thing, dishwasher),
+            "Native save/load must preserve the waiter's active exact dishwasher job.");
+
+        var currentWare = waiter.CurJob?.targetA.Thing;
+        EndToEndAssert.True(
+            ReferenceEquals(currentWare, plate) || ReferenceEquals(currentWare, cutlery),
+            "The loaded active dish job must retain one exact returned item.");
+        var queuedWare = ReferenceEquals(currentWare, plate) ? cutlery : plate;
+        EndToEndAssert.Equal(
+            1,
+            waiter.jobs.jobQueue.Count(queued =>
+                queued.job.def == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+                ReferenceEquals(queued.job.targetA.Thing, queuedWare) &&
+                ReferenceEquals(queued.job.targetB.Thing, dishwasher)),
+            "Native save/load must retain exactly one queued job for the other returned item.");
+        EndToEndAssert.True(
+            map.reservationManager.ReservedBy(plate, waiter) &&
+            map.reservationManager.ReservedBy(cutlery, waiter),
+            "Native save/load must retain native waiter reservations for both exact returned items.");
+        EndToEndAssert.True(
+            map.GetComponent<MapComponent_GastronomyDishClearing>().OwnsExactWare(waiter, plate) &&
+            map.GetComponent<MapComponent_GastronomyDishClearing>().OwnsExactWare(waiter, cutlery),
+            "Native save/load must restore both Gastronomy clearing claims.");
+        waiterClearingPersistenceObserved = true;
+    }
+
     private void AssertCompleted()
     {
         EndToEndAssert.True(
             printerWareObserved && printedMealReleased && nativeDineObserved && nativeServeObserved &&
             serviceSessionObserved && dirtyReturnObserved && waiterCleanupObserved &&
-            waiterQueuedSecondWareObserved,
+            waiterQueuedSecondWareObserved && waiterClearingPersistenceObserved,
             "The test must observe each native printer, guest, waiter, and clearing boundary.");
         EndToEndAssert.True(
             DishwasherContainsExactSetting() &&

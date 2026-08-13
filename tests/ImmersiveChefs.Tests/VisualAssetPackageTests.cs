@@ -109,7 +109,7 @@ public sealed class VisualAssetPackageTests
         var root = FindRepositoryRoot();
         var scriptPath = Path.Combine(
             root,
-            ".codex",
+            ".agents",
             "skills",
             "rimworld-asset-generation",
             "scripts",
@@ -479,7 +479,7 @@ public sealed class VisualAssetPackageTests
         var root = FindRepositoryRoot();
         var scriptPath = Path.Combine(
             root,
-            ".codex",
+            ".agents",
             "skills",
             "rimworld-asset-generation",
             "scripts",

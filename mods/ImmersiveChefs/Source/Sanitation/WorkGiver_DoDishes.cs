@@ -1,8 +1,56 @@
+using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
 
 namespace ImmersiveChefs;
+
+[HarmonyPatch(
+    typeof(WorkGiver_HaulGeneral),
+    nameof(WorkGiver_HaulGeneral.JobOnThing),
+    typeof(Pawn),
+    typeof(Thing),
+    typeof(bool))]
+internal static class GastronomyClaimedWareHaulGeneralPatch
+{
+    [HarmonyPrefix]
+    private static bool Prefix(Pawn pawn, Thing t, bool forced, ref Job? __result)
+    {
+        if (forced || pawn.Map?.GetComponent<MapComponent_GastronomyDishClearing>()?.IsClaimed(t) != true)
+        {
+            return true;
+        }
+
+        __result = null;
+        return false;
+    }
+}
+
+[HarmonyPatch(
+    typeof(Pawn_JobTracker),
+    nameof(Pawn_JobTracker.TryTakeOrderedJobPrioritizedWork),
+    typeof(Job),
+    typeof(WorkGiver),
+    typeof(IntVec3))]
+internal static class GastronomyClaimedWareForcedHaulPatch
+{
+    [HarmonyPostfix]
+    private static void Postfix(
+        Pawn ___pawn,
+        Job job,
+        WorkGiver giver,
+        bool __result)
+    {
+        if (!__result || !job.playerForced || giver is not WorkGiver_HaulGeneral ||
+            job.targetA.Thing is not { } claimedWare)
+        {
+            return;
+        }
+
+        ___pawn.Map?.GetComponent<MapComponent_GastronomyDishClearing>()
+            ?.ReleaseClaimFor(claimedWare);
+    }
+}
 
 public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
 {
@@ -13,10 +61,15 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
     public override bool HasJobOnThing(Pawn pawn, Thing thing, bool forced = false)
     {
         return IsDirtyWare(thing) &&
+               (forced || !IsClaimedByGastronomy(pawn, thing)) &&
                !thing.IsForbidden(pawn) &&
                pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some) &&
                TryFindDestination(pawn, thing, out _);
     }
+
+    private static bool IsClaimedByGastronomy(Pawn pawn, Thing thing) =>
+        pawn.Map?.GetComponent<MapComponent_GastronomyDishClearing>()
+            ?.IsClaimed(thing) == true;
 
     public override Job? JobOnThing(Pawn pawn, Thing thing, bool forced = false)
     {
@@ -47,6 +100,13 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
             job.count = thing.stackCount;
         }
 
+        return job;
+    }
+
+    internal static Job CreateExactWareJob(Thing thing, DishwashingDestination destination)
+    {
+        var job = CreateJob(thing, destination);
+        job.count = 1;
         return job;
     }
 
@@ -120,15 +180,7 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
 
     internal static bool TryFindDestination(Pawn pawn, Thing dirtyWare, out DishwashingDestination destination)
     {
-        var dishwashers = pawn.Map.listerThings.AllThings
-            .Where(thing => thing.def == ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher ||
-                            thing.def == ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher)
-            .Where(thing =>
-                !thing.IsForbidden(pawn) &&
-                pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some))
-            .Where(thing => !ProcessorFrameworkAdapter.Controls(thing))
-            .Where(thing => (thing as ThingWithComps)?.GetComp<CompDishwasher>()?.CanAccept(dirtyWare) == true)
-            .OrderBy(thing => thing.Position.DistanceToSquared(dirtyWare.Position))
+        var dishwashers = FindAcceptingDishwashers(pawn, new[] { dirtyWare }, dirtyWare.Position)
             .ToList();
         if (dishwashers.Count > 0 && ImmersiveChefsMod.Settings.PreferDishwashers)
         {
@@ -149,6 +201,83 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
 
         destination = DishwashingDestination.Invalid;
         return false;
+    }
+
+    internal static bool TryFindSharedDestination(
+        Pawn pawn,
+        IReadOnlyList<Thing> exactWare,
+        out DishwashingDestination destination)
+    {
+        if (exactWare.Count == 0 || exactWare.Any(thing =>
+                !IsDirtyWare(thing) ||
+                thing.IsForbidden(pawn) ||
+                !pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some)))
+        {
+            destination = DishwashingDestination.Invalid;
+            return false;
+        }
+
+        var origin = exactWare[0].Position;
+        var dishwashers = FindAcceptingDishwashers(pawn, exactWare, origin).ToList();
+        if (dishwashers.Count > 0 && ImmersiveChefsMod.Settings.PreferDishwashers)
+        {
+            destination = DishwashingDestination.ForDishwasher(dishwashers[0]);
+            return true;
+        }
+
+        if (HandwashingSourceFinder.TryFind(pawn, origin, out destination))
+        {
+            return true;
+        }
+
+        if (dishwashers.Count > 0)
+        {
+            destination = DishwashingDestination.ForDishwasher(dishwashers[0]);
+            return true;
+        }
+
+        destination = DishwashingDestination.Invalid;
+        return false;
+    }
+
+    internal static bool HasReachablePotentialSharedDestination(
+        Pawn pawn,
+        IReadOnlyList<Thing> exactWare)
+    {
+        if (pawn.Map.listerThings.AllThings.Any(thing =>
+                (thing.def == ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher ||
+                 thing.def == ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher) &&
+                !thing.IsForbidden(pawn) &&
+                pawn.CanReach(thing, PathEndMode.Touch, Danger.Some) &&
+                !ProcessorFrameworkAdapter.Controls(thing)))
+        {
+            return true;
+        }
+
+        return exactWare.Count > 0 &&
+               HandwashingSourceFinder.HasReachablePotentialSource(
+                   pawn,
+                   exactWare[0].Position);
+    }
+
+    private static IEnumerable<Thing> FindAcceptingDishwashers(
+        Pawn pawn,
+        IReadOnlyList<Thing> exactWare,
+        IntVec3 origin)
+    {
+        var requiredCapacity = exactWare.Sum(thing =>
+            thing.def.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f);
+        return pawn.Map.listerThings.AllThings
+            .Where(thing => thing.def == ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher ||
+                            thing.def == ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher)
+            .Where(thing =>
+                !thing.IsForbidden(pawn) &&
+                pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some))
+            .Where(thing => !ProcessorFrameworkAdapter.Controls(thing))
+            .Where(thing => (thing as ThingWithComps)?.GetComp<CompDishwasher>() is { } comp &&
+                            exactWare.All(comp.CanAccept) &&
+                            comp.Capacity - comp.UsedCapacity + 0.0001f >= requiredCapacity)
+            .OrderBy(thing => thing.Position.DistanceToSquared(origin));
     }
 }
 
@@ -217,6 +346,44 @@ internal static class HandwashingSourceFinder
 
         destination = DishwashingDestination.Invalid;
         return false;
+    }
+
+    internal static bool HasReachablePotentialSource(Pawn pawn, IntVec3 origin)
+    {
+        if (pawn.Map.listerThings.AllThings.Any(thing =>
+                IsPotentialObjectSource(pawn, thing) &&
+                !thing.IsForbidden(pawn) &&
+                pawn.CanReach(thing, PathEndMode.Touch, Danger.Some)))
+        {
+            return true;
+        }
+
+        if (!ImmersiveChefsMod.Settings.AllowTerrainHandwashing)
+        {
+            return false;
+        }
+
+        return GenRadial.RadialCellsAround(origin, 40f, useCenter: true).Any(cell =>
+            cell.InBounds(pawn.Map) &&
+            pawn.Map.terrainGrid.TerrainAt(cell).IsWater &&
+            pawn.CanReach(cell, PathEndMode.OnCell, Danger.Some));
+    }
+
+    private static bool IsPotentialObjectSource(Pawn pawn, Thing thing)
+    {
+        if (!IsFromDubsBadHygiene(thing))
+        {
+            return IsNamedWaterSource(thing);
+        }
+
+        return DubsWaterAdapter.TryClassifyHandwashingSource(
+                   pawn,
+                   thing,
+                   out _,
+                   out var pawnAllowed,
+                   out _,
+                   out _) &&
+               pawnAllowed;
     }
 
     private static HandwashingObjectSource? ClassifyObjectSource(Pawn pawn, Thing thing)

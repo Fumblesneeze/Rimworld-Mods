@@ -285,6 +285,20 @@ When Gastronomy integration is active, waiters and servers SHALL collect the req
 - **WHEN** a waiter-held clearing job is cancelled or becomes unreachable
 - **THEN** its ware reservations are released and the `Doing dishes` workflow can collect the dirty items
 
+#### Scenario: Pending service ware is not split by ordinary hauling
+- **WHEN** a waiter has claimed an exact dirty plate and cutlery setting but has not yet dispatched its clearing jobs
+- **THEN** non-forced `HaulGeneral` scans by that waiter or another pawn do not move either claimed item
+- **AND** a player-forced haul order remains outside this ordinary-work exclusion
+
+#### Scenario: Hard-unreachable washing releases the setting promptly
+- **WHEN** the exact ware remains reachable but every configured dishwasher and hand-washing source is forbidden or unreachable to the waiter
+- **THEN** the pending service claim and native reservations are released without waiting for their normal expiry
+- **AND** a temporarily full but reachable dishwasher remains a retryable destination rather than cancelling the setting
+
+#### Scenario: Active and queued clearing survive save and load
+- **WHEN** the waiter is carrying one exact returned item with the other exact `Doing dishes` job queued and the game is saved and loaded
+- **THEN** the same waiter, ware identities, jobs, shared dishwasher target, service claims, and native reservations are restored exactly once
+
 ### Requirement: Dishwashing settings are bounded and have explicit application timing
 Immersive Chefs SHALL expose `PreferDishwashers` (default `On`), `AllowTerrainHandwashing` (default `On`), `DishwashingWorkScale` (default `1.0`, range `0.25`-`4.0`), and `DishwasherCapacityScale` (default `1.0`, range `0.5`-`4.0`). The two toggles SHALL apply live to newly selected work. `DishwashingWorkScale` SHALL multiply the base work required by hand-washing jobs and new appliance cycles, SHALL apply live when a new job or cycle starts, and SHALL not recalculate progress or duration already captured by an active job or cycle. `DishwasherCapacityScale` SHALL multiply the base 16/64 plate-equivalent capacities, SHALL be labeled restart-required because it changes appliance component properties, and SHALL take effect only after Def databases are rebuilt.
 
