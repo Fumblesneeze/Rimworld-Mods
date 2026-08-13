@@ -160,6 +160,16 @@ The Dev Gateway SHALL expose an authenticated, loopback-only typed publication o
 ### Requirement: Publication failure is retryable and cannot target another item
 The publication workflow SHALL fail closed on Steam authentication, legal-agreement, connectivity, quota, callback, ownership, or item-identity errors. It MUST NOT create a new Workshop item implicitly or change a different item. It MAY create exactly one item when the reviewed manifest explicitly opts into first publication, the mutation-free dry-run declared no item ID, the user confirms that exact create operation, and no prior publication receipt or local item identity exists. The returned nonzero identity MUST be persisted before upload continuation and every later release MUST be update-only. The workflow SHALL preserve the reviewed local bundle plus diagnostic state for an explicit retry without claiming rollback of an already accepted Steam update.
 
+One cross-process lease SHALL cover identity recovery, mutation admission, remote reconciliation, dependency reconciliation, subscription, and receipt creation. Before an ID-less first publication, a bounded native query of every item published by the owning account SHALL prove that no exact-title RimWorld item exists; an incomplete query, one exact-title item, or more than one exact-title item SHALL fail before `CreateItem`. Every async Steam call MUST reject an invalid handle and correlate callback parent/child/item identities with the admitted request. A duplicate-create callback carrying one nonzero identity SHALL be treated as an already-created identity and persisted, not as permission for another create. Steam's legal-agreement flag SHALL stop before submission on creation as well as after submission. Definite callback failures MAY be retried from a fresh reviewed invocation; I/O failure, a timeout after admission, or a completed upload whose subscription/smoke/receipt phase did not finish is indeterminate and MUST block a different plan until the exact prior plan is reconciled. Existing receipts participate in identity recovery and conflicting identities fail closed. Remote acceptance SHALL require exact title, owner, app, visibility, description hash, metadata, tags, dependency set, and downloaded preview hash before subscription.
+
+#### Scenario: Indeterminate update cannot be skipped by a newer plan
+- **WHEN** a submit or dependency operation was admitted but its callback outcome is indeterminate
+- **THEN** a release invocation for a different plan fails before mutation and identifies the exact prior plan that must be reconciled
+
+#### Scenario: Concurrent release attempts cannot both mutate Steam
+- **WHEN** two processes attempt to publish Immersive Chefs concurrently
+- **THEN** exactly one acquires the release lease and the other fails before identity discovery or Steam mutation
+
 #### Scenario: Steam requires a legal agreement
 - **WHEN** Steam rejects or withholds publication until the account accepts an updated Workshop agreement
 - **THEN** the operation reports the actionable agreement state, changes no alternate item, and leaves the same reviewed bundle available for explicit retry

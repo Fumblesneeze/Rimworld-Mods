@@ -34,6 +34,8 @@ param(
 
     [string[]]$TestId = @(),
 
+    [string[]]$ProjectPath = @(),
+
     [string]$ArtifactsPath,
 
     [ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')]
@@ -230,6 +232,7 @@ function Invoke-HostTool {
         [Parameter(Mandatory)][string]$RepositoryRoot,
         [Parameter(Mandatory)][string]$ModsRoot,
         [Parameter(Mandatory)][string[]]$ResolvablePackageIds,
+        [string[]]$ProjectPaths = @(),
         [AllowNull()][string]$LeaseFile
     )
 
@@ -259,6 +262,10 @@ function Invoke-HostTool {
         if (-not [string]::IsNullOrWhiteSpace($LeaseFile)) {
             $arguments.Add('--lease-file')
             $arguments.Add($LeaseFile)
+        }
+        foreach ($project in $ProjectPaths) {
+            $arguments.Add('--project-path')
+            $arguments.Add([IO.Path]::GetFullPath($project))
         }
         $arguments.Add('--output')
         $arguments.Add('json')
@@ -362,6 +369,7 @@ $planInvocation = Invoke-HostTool `
     -RepositoryRoot $repositoryRoot `
     -ModsRoot $modsRoot `
     -ResolvablePackageIds $packageIds `
+    -ProjectPaths $ProjectPath `
     -LeaseFile $null
 if ($planInvocation.ExitCode -ne 0) {
     [Console]::Error.WriteLine($planInvocation.StandardError.Trim())
@@ -524,6 +532,7 @@ try {
         -RepositoryRoot $repositoryRoot `
         -ModsRoot $modsRoot `
         -ResolvablePackageIds $packageIds `
+        -ProjectPaths $ProjectPath `
         -LeaseFile $leaseFile
     [System.IO.File]::WriteAllText(
         $stageOutputPath,

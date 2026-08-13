@@ -32,7 +32,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["title"], Is.EqualTo("Immersive Chefs"));
             Assert.That(release["author"], Is.EqualTo("Fumblesneeze"));
             Assert.That(release["rimWorldVersion"], Is.EqualTo("1.6"));
-            Assert.That(release["rimWorldBuild"], Is.EqualTo("1.6.4871 rev591"));
+            Assert.That(release["rimWorldBuild"], Is.EqualTo("1.6.4871 rev590"));
+            Assert.That(release["rimWorldRuntimeBuild"], Is.EqualTo("1.6.4871 rev591"));
             Assert.That(release["steamBuildId"], Is.EqualTo("23969874"));
             Assert.That(release["managedAssemblySha256"], Is.EqualTo("5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A"));
             Assert.That(release["steamUserId"], Is.EqualTo("76561198077136238"));
@@ -78,6 +79,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(publisherFixture, Does.Contain("SteamUGC.CreateItem"));
             Assert.That(publisherFixture, Does.Contain("SteamUGC.SubmitItemUpdate"));
             Assert.That(publisherFixture, Does.Contain("SteamUGC.AddDependency"));
+            Assert.That(publisherFixture, Does.Contain("SteamUGC.RemoveDependency"));
             Assert.That(publisherFixture, Does.Contain("SteamUGC.SubscribeItem"));
             Assert.That(publisherFixture, Does.Contain("SteamUGC.GetQueryUGCResult"));
             Assert.That(publisherFixture, Does.Contain("RequireExistingPreflight"));
@@ -88,11 +90,9 @@ public sealed class ImmersiveChefsReleaseCandidateTests
         var subscribedSmoke = File.ReadAllText(subscribedSmokePath);
         Assert.Multiple(() =>
         {
-            Assert.That(subscribedSmoke, Does.Contain("LoadedModManager.RunningModsListForReading.Single"));
-            Assert.That(subscribedSmoke, Does.Contain("product.RootDir"));
-            Assert.That(subscribedSmoke, Does.Contain("immersive-chefs-kitchenware-fabrication"));
-            Assert.That(subscribedSmoke, Does.Contain("action game.speed"));
-            Assert.That(subscribedSmoke, Does.Contain("action game.pause"));
+            Assert.That(subscribedSmoke, Does.Contain("release.immersive-chefs-subscribed-native-cooking-dining"));
+            Assert.That(subscribedSmoke, Does.Contain("RimWorldDevGateway.ReleaseSmoke.EndToEndTests.csproj"));
+            Assert.That(subscribedSmoke, Does.Contain("native Prioritize and Consume float-menu callbacks"));
             Assert.That(subscribedSmoke, Does.Contain("Move-Item -LiteralPath $backupProduct -Destination $localProduct"));
         });
     }

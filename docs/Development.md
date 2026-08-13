@@ -11,6 +11,10 @@ first-publication/submission state, preflights an existing item before mutation,
 subscribed bytes, and runs `scripts/Invoke-ImmersiveChefsSubscribedSmoke.ps1` from the exact Workshop
 root before retaining its receipt. Never call the publisher without first reviewing its exact
 `publication-plan.json`, and never delete durable state to force a retry after an indeterminate callback.
+An ID-less first publication also requires a complete native exact-title scan of the owning Steam
+account. After the first release succeeds, commit the returned `publishedFileId` to
+`mods/ImmersiveChefs/Release/release.json` and set `allowFirstPublication` to `false`; ignored local
+state is recovery evidence, not the cross-machine source of truth.
 
 The checked-in defaults expect:
 

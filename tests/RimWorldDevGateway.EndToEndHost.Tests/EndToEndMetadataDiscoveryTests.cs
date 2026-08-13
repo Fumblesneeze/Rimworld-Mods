@@ -204,6 +204,37 @@ public sealed class EndToEndMetadataDiscoveryTests
     }
 
     [Test]
+    public void Exact_project_selection_excludes_unselected_E2E_projects_and_rejects_unknown_paths()
+    {
+        var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "project-selection", Guid.NewGuid().ToString("N"));
+        var selectedDirectory = Path.Combine(root, "selected");
+        var unselectedDirectory = Path.Combine(root, "unselected");
+        Directory.CreateDirectory(selectedDirectory);
+        Directory.CreateDirectory(unselectedDirectory);
+        var selectedPath = Path.Combine(selectedDirectory, "Selected.csproj");
+        var unselectedPath = Path.Combine(unselectedDirectory, "BrokenButUnselected.csproj");
+        File.WriteAllText(selectedPath, MarkedProject("selected.mod"));
+        File.WriteAllText(unselectedPath, MarkedProject("unselected.mod"));
+        try
+        {
+            var discovered = EndToEndProjectDiscovery.Discover(root);
+            var selected = EndToEndProjectDiscovery.SelectExactProjects(discovered, new[] { selectedPath });
+            var error = Assert.Throws<EndToEndDiscoveryException>(() =>
+                EndToEndProjectDiscovery.SelectExactProjects(discovered, new[] { Path.Combine(root, "missing.csproj") }));
+            Assert.Multiple(() =>
+            {
+                Assert.That(selected.Count, Is.EqualTo(1));
+                Assert.That(selected[0].ProjectPath, Is.EqualTo(Path.GetFullPath(selectedPath)));
+                Assert.That(error!.Message, Does.Contain("could not resolve 1 selected project"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
     public void Validator_rejects_zero_selected_assemblies()
     {
         var error = Assert.Throws<EndToEndDiscoveryException>(() =>

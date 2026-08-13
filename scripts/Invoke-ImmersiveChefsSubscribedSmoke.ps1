@@ -1,13 +1,12 @@
 <#
 .SYNOPSIS
-Runs the final native Immersive Chefs smoke from one exact subscribed Workshop directory.
+Runs the final player-workflow smoke from one exact subscribed Immersive Chefs Workshop directory.
 
 .DESCRIPTION
-Temporarily moves the repository-local product mod outside RimWorld's Mods directory, launches a
-fresh isolated minimized Gateway quicktest with the exact subscribed item, runs the checked-in
-kitchenware-fabrication scenario, resumes its two vanilla DoBill jobs through the native speed
-action, and captures the resulting primitive and modern kitchenware inspectors. The local mod is
-restored in guaranteed cleanup. The Workshop directory is read-only.
+Temporarily removes any repository-local product copy, leaves the subscribed package read-only,
+and runs a Gateway-owned dynamic E2E test. The test verifies the exact loaded mod root, invokes
+RimWorld's native Prioritize and Consume float-menu callbacks, and visibly observes plated cooking,
+dining, and dirty service-ware return. The original local-mod presence or absence is restored in guaranteed cleanup.
 #>
 [CmdletBinding()]
 param(
@@ -25,35 +24,6 @@ $ErrorActionPreference = 'Stop'
 
 function Read-Json([string]$Path) {
     return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
-}
-
-function Invoke-GatewayText {
-    param([string]$Uri, [string]$Token, [string]$RequestId, [string]$Source)
-    $response = Invoke-WebRequest -Uri $Uri -Method Post -Headers @{
-        Authorization = "Bearer $Token"
-        'X-Request-Id' = $RequestId
-    } -ContentType 'text/plain; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($Source)) `
-      -TimeoutSec 60 -SkipHttpErrorCheck
-    $envelope = [string]$response.Content | ConvertFrom-Json
-    if ([int]$response.StatusCode -ne 200 -or -not [bool]$envelope.ok -or
-        -not [bool]$envelope.result.Succeeded) {
-        throw "Gateway C# observation failed ($RequestId): $($response.Content)"
-    }
-    return [string]$envelope.result.Value
-}
-
-function Invoke-GatewayJson {
-    param([string]$Uri, [string]$Token, [string]$RequestId, [object]$Body)
-    $response = Invoke-WebRequest -Uri $Uri -Method Post -Headers @{
-        Authorization = "Bearer $Token"
-        'X-Request-Id' = $RequestId
-    } -ContentType 'application/json' -Body ($Body | ConvertTo-Json -Depth 8 -Compress) `
-      -TimeoutSec 60 -SkipHttpErrorCheck
-    $envelope = [string]$response.Content | ConvertFrom-Json
-    if ([int]$response.StatusCode -ne 200 -or -not [bool]$envelope.ok) {
-        throw "Gateway operation failed ($RequestId): $($response.Content)"
-    }
-    return $envelope
 }
 
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -77,21 +47,17 @@ if ([string]::IsNullOrWhiteSpace($ArtifactsPath)) {
 }
 $runRoot = [IO.Path]::GetFullPath($ArtifactsPath)
 if (Test-Path -LiteralPath $runRoot) { throw "Subscribed-smoke output already exists: $runRoot" }
-$null = New-Item -ItemType Directory -Path $runRoot
 
 $localProduct = Join-Path $resolvedGame 'Mods\fumblesneeze.immersivechefs'
 $backupProduct = Join-Path $resolvedGame ".immersive-chefs-subscribed-smoke-$runId"
-$completionFile = Join-Path $runRoot 'smoke-complete.signal'
-$gatewayRoot = Join-Path $runRoot 'gateway'
-$launcherOut = Join-Path $runRoot 'launcher.out.log'
-$launcherErr = Join-Path $runRoot 'launcher.err.log'
-$launcherProcess = $null
+$localProductInitiallyPresent = Test-Path -LiteralPath $localProduct -PathType Container
 $movedLocalProduct = $false
+$priorExpectedRoot = [Environment]::GetEnvironmentVariable('IMMERSIVE_CHEFS_RELEASE_EXPECTED_ROOT', 'Process')
 $primaryError = $null
-$cleanupFailures = [Collections.Generic.List[string]]::new()
+$cleanupFailures = [System.Collections.Generic.List[string]]::new()
 
 try {
-    if (Test-Path -LiteralPath $localProduct) {
+    if ($localProductInitiallyPresent) {
         if (Test-Path -LiteralPath $backupProduct) { throw 'The exact local-mod backup path already exists.' }
         [xml]$localAbout = Get-Content -LiteralPath (Join-Path $localProduct 'About\About.xml') -Raw
         if ([string]$localAbout.ModMetaData.packageId -cne 'fumblesneeze.immersivechefs') {
@@ -101,133 +67,62 @@ try {
         $movedLocalProduct = $true
     }
 
-    $shell = (Get-Process -Id $PID).Path
-    $launcher = Join-Path $repositoryRoot 'scripts\Invoke-GatewaySmoke.ps1'
-    $activeModIdsFile = Join-Path $runRoot 'active-mod-ids.txt'
-    [IO.File]::WriteAllLines(
-        $activeModIdsFile,
-        @('brrainz.harmony', 'fumblesneeze.immersivechefs'),
-        [Text.UTF8Encoding]::new($false))
-    $launcherArguments = @(
-        '-NoProfile', '-File', $launcher,
-        '-RimWorldPath', $resolvedGame,
-        '-SteamModContentFolder', $resolvedWorkshop,
-        '-ArtifactsPath', $gatewayRoot,
-        '-Quicktest',
-        '-Scenario', 'immersive-chefs-kitchenware-fabrication',
-        '-AdditionalModIdsFile', $activeModIdsFile,
-        '-InteractiveHoldSeconds', [string]$TimeoutSeconds,
-        '-InteractiveCompletionFile', $completionFile,
-        '-TimeoutSeconds', '300',
-        '-Output', 'json')
-    $launcherProcess = Start-Process -FilePath $shell -ArgumentList $launcherArguments -PassThru `
-        -WindowStyle Hidden -RedirectStandardOutput $launcherOut -RedirectStandardError $launcherErr
+    [Environment]::SetEnvironmentVariable('IMMERSIVE_CHEFS_RELEASE_EXPECTED_ROOT', $expectedInstall, 'Process')
+    $runner = Join-Path $repositoryRoot 'scripts\Invoke-RimWorldEndToEndTests.ps1'
+    $releaseSmokeProject = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.ReleaseSmoke.EndToEndTests\RimWorldDevGateway.ReleaseSmoke.EndToEndTests.csproj'
+    $runnerOutput = @(& $runner `
+        -RimWorldPath $resolvedGame `
+        -SteamModContentFolder $resolvedWorkshop `
+        -TestId 'release.immersive-chefs-subscribed-native-cooking-dining' `
+        -ProjectPath $releaseSmokeProject `
+        -ArtifactsPath $runRoot `
+        -TimeoutSeconds ([Math]::Min(600, $TimeoutSeconds)) `
+        -Output json 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Subscribed Workshop E2E runner failed: $($runnerOutput -join [Environment]::NewLine)"
+    }
+    try { $runnerResult = ($runnerOutput -join [Environment]::NewLine).Trim() | ConvertFrom-Json }
+    catch { throw "Subscribed Workshop E2E runner returned invalid JSON: $($runnerOutput -join [Environment]::NewLine)" }
+    if ([string]$runnerResult.Status -cne 'passed' -or [int]$runnerResult.CompletedGroupCount -ne 1) {
+        throw 'The subscribed Workshop E2E group did not pass exactly once.'
+    }
 
-    $deadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
-    $hold = $null
-    do {
-        $launcherProcess.Refresh()
-        if ($launcherProcess.HasExited) { throw "Subscribed smoke exited before hold: $(Get-Content $launcherErr -Raw -ErrorAction SilentlyContinue)" }
-        $holdFiles = @(Get-ChildItem -LiteralPath $gatewayRoot -Recurse -Filter interactive-hold.json -File -ErrorAction SilentlyContinue)
-        if ($holdFiles.Count -gt 1) { throw 'More than one subscribed-smoke Gateway hold appeared.' }
-        if ($holdFiles.Count -eq 1) {
-            $candidate = Read-Json $holdFiles[0].FullName
-            if ([string]$candidate.Status -ceq 'active') { $hold = $candidate }
-        }
-        if ($null -eq $hold) { Start-Sleep -Milliseconds 500 }
-    } while ($null -eq $hold -and [datetime]::UtcNow -lt $deadline)
-    if ($null -eq $hold) { throw 'The subscribed-smoke process did not reach its bounded hold.' }
-
-    $manifest = Read-Json ([string]$hold.Manifest)
-    $baseUrl = [string]$manifest.baseUrl
-    $token = [string]$manifest.token
-    $gamePid = [int]$hold.ProcessId
-    $client = Join-Path $repositoryRoot 'artifacts\HostTools\Release\net480\RimWorldDevGateway.Client.exe'
-    $rootSource = @'
-var product = LoadedModManager.RunningModsListForReading.Single(mod =>
-    string.Equals(mod.PackageId, "fumblesneeze.immersivechefs", System.StringComparison.OrdinalIgnoreCase));
-product.RootDir
-'@
-    $loadedRoot = Invoke-GatewayText -Uri "$baseUrl/executions/csharp" -Token $token `
-        -RequestId 'release-subscribed-root' -Source $rootSource
+    $evidenceFiles = @(Get-ChildItem -LiteralPath $runRoot -Recurse -Filter end-to-end-tests.json -File)
+    if ($evidenceFiles.Count -ne 1) { throw 'The subscribed Workshop E2E evidence is missing or ambiguous.' }
+    $evidence = Read-Json $evidenceFiles[0].FullName
+    $testResult = @($evidence.result.Execution.Results | Where-Object {
+        [string]$_.Id -ceq 'release.immersive-chefs-subscribed-native-cooking-dining'
+    })
+    if ($testResult.Count -ne 1 -or [string]$testResult[0].Status -cne 'passed' -or
+        [string]$testResult[0].CleanupState -cne 'passed') {
+        throw 'The exact subscribed Workshop native cooking/dining result did not pass and clean up.'
+    }
+    $checkpoint = @($testResult[0].Steps | Where-Object {
+        [string]$_.Name -ceq 'subscribed Workshop native cooking and dining result'
+    })
+    if ($checkpoint.Count -ne 1) { throw 'The subscribed player-workflow checkpoint is missing.' }
+    $loadedRoot = [string]$checkpoint[0].Artifacts.loadedRoot
     if (-not [string]::Equals([IO.Path]::GetFullPath($loadedRoot).TrimEnd('\'), $expectedInstall, [StringComparison]::OrdinalIgnoreCase)) {
         throw "RimWorld loaded Immersive Chefs from '$loadedRoot', not the subscribed Workshop directory."
     }
-
-    $actionOutput = @(& $client action game.speed --arguments '{"speed":"normal"}' `
-        --manifest ([string]$hold.Manifest) --pid $gamePid -o json 2>&1)
-    if ($LASTEXITCODE -ne 0) { throw "Native game-speed action failed: $($actionOutput -join [Environment]::NewLine)" }
-
-    $productSource = @'
-var products = Find.CurrentMap.listerThings.AllThings
-    .Where(thing => thing.def.defName == "ImmersiveChefs_PrimitiveCookware" ||
-                    thing.def.defName == "ImmersiveChefs_Cookware")
-    .OrderBy(thing => thing.def.defName)
-    .ThenBy(thing => thing.ThingID)
-    .ToList();
-products.Count >= 2 ? string.Join("|", products.Select(thing => thing.ThingID).ToArray()) : "pending"
-'@
-    $productHandles = $null
-    do {
-        $observed = Invoke-GatewayText -Uri "$baseUrl/executions/csharp" -Token $token `
-            -RequestId ('release-products-' + [guid]::NewGuid().ToString('N')) -Source $productSource
-        if ($observed -cne 'pending') { $productHandles = @($observed.Split([char]'|')) }
-        if ($null -eq $productHandles) { Start-Sleep -Seconds 1 }
-    } while ($null -eq $productHandles -and [datetime]::UtcNow -lt $deadline)
-    if ($null -eq $productHandles -or $productHandles.Count -lt 2) {
-        throw 'The native fabrication jobs did not visibly produce both kitchenware sets before the deadline.'
-    }
-
-    $pauseOutput = @(& $client action game.pause --arguments '{"paused":true}' `
-        --manifest ([string]$hold.Manifest) --pid $gamePid -o json 2>&1)
-    if ($LASTEXITCODE -ne 0) { throw "Native pause action failed: $($pauseOutput -join [Environment]::NewLine)" }
-
-    $screenshots = [Collections.Generic.List[string]]::new()
-    for ($index = 0; $index -lt 2; $index++) {
-        $handle = $productHandles[$index]
-        $null = Invoke-GatewayJson -Uri "$baseUrl/selection" -Token $token `
-            -RequestId "release-select-$index" -Body @{ operation = 'replace'; handles = @($handle) }
-        $path = Join-Path $runRoot "subscribed-product-$index.png"
-        $shotOutput = @(& $client screenshot --file $path --manifest ([string]$hold.Manifest) --pid $gamePid -o json 2>&1)
-        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            throw "Subscribed product screenshot failed: $($shotOutput -join [Environment]::NewLine)"
-        }
-        $screenshots.Add($path)
-    }
-
-    $scenarioFiles = @(Get-ChildItem -LiteralPath $gatewayRoot -Recurse -Filter scenario.json -File)
-    if ($scenarioFiles.Count -ne 1) { throw 'The subscribed native scenario result is missing or ambiguous.' }
-    $scenario = Read-Json $scenarioFiles[0].FullName
-    if ([string]$scenario.Status -cne 'completed') { throw 'The subscribed native scenario did not complete.' }
+    $screenshots = @(Get-ChildItem -LiteralPath $evidenceFiles[0].Directory.FullName -Filter 'e2e-screenshot-*.png' -File |
+        Sort-Object Name | ForEach-Object { $_.FullName })
+    if ($screenshots.Count -lt 3) { throw 'The subscribed player workflow did not retain before/action/after screenshots.' }
 
     $result = [pscustomobject][ordered]@{
         status = 'passed'
         publishedFileId = $PublishedFileId
         loadedPackagePath = $loadedRoot
-        processId = $gamePid
-        playerAction = 'native game.speed Normal after two vanilla WorkGiver_DoBill jobs were accepted'
-        observedResult = 'primitive and modern kitchenware products spawned from completed native bills'
-        productHandles = $productHandles
-        screenshots = @($screenshots)
-        gatewayEvidence = [IO.DirectoryInfo]::new($scenarioFiles[0].FullName).Parent.FullName
+        playerAction = 'native Prioritize and Consume float-menu callbacks'
+        observedResult = 'one plated simple meal cooked and eaten, with plate, cutlery, and cookware returned dirty'
+        screenshots = $screenshots
+        gatewayEvidence = $evidenceFiles[0].Directory.FullName
         localProductRestored = $false
     }
 }
 catch { $primaryError = $_ }
 finally {
-    try { [IO.File]::WriteAllText($completionFile, [datetime]::UtcNow.ToString('O'), [Text.UTF8Encoding]::new($false)) }
-    catch { $cleanupFailures.Add("Could not signal smoke completion: $($_.Exception.Message)") }
-    if ($null -ne $launcherProcess) {
-        try {
-            if (-not $launcherProcess.WaitForExit(120000)) {
-                $launcherProcess.Kill()
-                $launcherProcess.WaitForExit()
-                throw 'The subscribed-smoke launcher required exact-process force cleanup.'
-            }
-            if ($launcherProcess.ExitCode -ne 0) { throw "Subscribed-smoke launcher failed: $(Get-Content $launcherErr -Raw -ErrorAction SilentlyContinue)" }
-        }
-        catch { $cleanupFailures.Add($_.Exception.Message) }
-    }
+    [Environment]::SetEnvironmentVariable('IMMERSIVE_CHEFS_RELEASE_EXPECTED_ROOT', $priorExpectedRoot, 'Process')
     if ($movedLocalProduct) {
         try {
             if (Test-Path -LiteralPath $localProduct) { throw 'The local product path reappeared before restoration.' }
@@ -242,6 +137,8 @@ if ($null -ne $primaryError) {
     throw $primaryError
 }
 if ($cleanupFailures.Count -ne 0) { throw ($cleanupFailures -join '; ') }
-$result.localProductRestored = -not (Test-Path -LiteralPath $backupProduct) -and
-    (Test-Path -LiteralPath $localProduct -PathType Container)
+$localProductFinallyPresent = Test-Path -LiteralPath $localProduct -PathType Container
+$result.localProductRestored = $localProductFinallyPresent -eq $localProductInitiallyPresent -and
+    -not (Test-Path -LiteralPath $backupProduct)
+if (-not $result.localProductRestored) { throw 'The local product presence/absence was not restored exactly.' }
 if ($Output -eq 'json') { $result | ConvertTo-Json -Depth 8 -Compress } else { $result | Format-List }

@@ -9,9 +9,32 @@ using System.Text;
 using System.Threading;
 using RimWorldDevGateway.Contracts;
 using Steamworks;
+using UnityEngine;
 using Verse.Steam;
 
 namespace GatewaySteamWorkshopPublisher;
+
+public static class PublisherSafety
+{
+    public static string DurableFailureStage(string stage, bool ioFailure)
+    {
+        if (string.IsNullOrWhiteSpace(stage)) throw new ArgumentException("A failure stage is required.", nameof(stage));
+        var family = stage.StartsWith("create", StringComparison.Ordinal)
+            ? "create"
+            : stage.StartsWith("dependency-", StringComparison.Ordinal)
+                ? "dependency"
+                : "submit";
+        return family + (ioFailure ? "-indeterminate" : "-failed-definite");
+    }
+
+    public static bool CallbackIdsMatch(ulong expectedParent, ulong expectedChild, ulong actualParent, ulong actualChild) =>
+        expectedParent != 0 && expectedChild != 0 && expectedParent == actualParent && expectedChild == actualChild;
+
+    public static bool IsInvalidCallHandle(ulong value) => value == 0;
+
+    public static bool OwnerScanProvesAbsence(uint total, uint returned, int exactTitleMatches) =>
+        total == returned && exactTitleMatches == 0;
+}
 
 public static class Entry
 {
@@ -26,7 +49,7 @@ public static class Entry
                 true,
                 new Dictionary<string, string>
                 {
-                    ["operation"] = "status|publish|query|subscribe|install-status",
+                    ["operation"] = "status|publish|owner-scan|query|dependency-add|dependency-remove|subscribe|install-status",
                     ["planSha256"] = "Exact reviewed publication-plan SHA-256.",
                     ["confirmation"] = "Exact operator confirmation phrase for publish."
                 },
@@ -44,6 +67,7 @@ internal static class Publisher
     private static CallResult<CreateItemResult_t>? createResult;
     private static CallResult<SubmitItemUpdateResult_t>? submitResult;
     private static CallResult<AddUGCDependencyResult_t>? dependencyResult;
+    private static CallResult<RemoveUGCDependencyResult_t>? removeDependencyResult;
     private static CallResult<RemoteStorageSubscribePublishedFileResult_t>? subscribeResult;
     private static CallResult<SteamUGCQueryCompleted_t>? queryResult;
     private static UGCQueryHandle_t queryHandle;
@@ -94,7 +118,15 @@ internal static class Publisher
                 activeRequest = request;
                 snapshot = Snapshot.Pending("subscribing", request.PlanSha256, request.PublishedFileId);
                 subscribeResult = CallResult<RemoteStorageSubscribePublishedFileResult_t>.Create(OnSubscribed);
-                subscribeResult.Set(SteamUGC.SubscribeItem(new PublishedFileId_t(request.PublishedFileId)));
+                var call = SteamUGC.SubscribeItem(new PublishedFileId_t(request.PublishedFileId));
+                if (IsInvalid(call))
+                {
+                    subscribeResult = null;
+                    snapshot = Snapshot.Failed(request.PlanSha256, request.PublishedFileId, "SubscribeItem returned an invalid call handle.");
+                    activeRequest = null;
+                    return snapshot.ToJson();
+                }
+                subscribeResult.Set(call);
                 return snapshot.ToJson();
             }
 
@@ -107,6 +139,12 @@ internal static class Publisher
                 queryHandle = SteamUGC.CreateQueryUGCDetailsRequest(
                     new[] { new PublishedFileId_t(request.PublishedFileId) },
                     1u);
+                if (queryHandle.m_UGCQueryHandle == ulong.MaxValue)
+                {
+                    snapshot = Snapshot.Failed(request.PlanSha256, request.PublishedFileId, "CreateQueryUGCDetailsRequest returned an invalid handle.");
+                    activeRequest = null;
+                    return snapshot.ToJson();
+                }
                 if (!SteamUGC.SetReturnLongDescription(queryHandle, true) ||
                     !SteamUGC.SetReturnMetadata(queryHandle, true) ||
                     !SteamUGC.SetReturnChildren(queryHandle, true) ||
@@ -119,22 +157,90 @@ internal static class Publisher
                 }
 
                 queryResult = CallResult<SteamUGCQueryCompleted_t>.Create(OnQueried);
-                queryResult.Set(SteamUGC.SendQueryUGCRequest(queryHandle));
+                var call = SteamUGC.SendQueryUGCRequest(queryHandle);
+                if (IsInvalid(call))
+                {
+                    ReleaseQuery();
+                    queryResult = null;
+                    snapshot = Snapshot.Failed(request.PlanSha256, request.PublishedFileId, "SendQueryUGCRequest returned an invalid call handle.");
+                    activeRequest = null;
+                    return snapshot.ToJson();
+                }
+                queryResult.Set(call);
                 return snapshot.ToJson();
             }
 
-            if (request.Operation == "dependency")
+            if (request.Operation == "owner-scan")
+            {
+                EnsureIdle();
+                if (string.IsNullOrWhiteSpace(request.Title)) throw new InvalidOperationException("owner-scan requires the exact title.");
+                activeRequest = request;
+                snapshot = Snapshot.Pending("owner-scan", request.PlanSha256, 0);
+                queryHandle = SteamUGC.CreateQueryUserUGCRequest(
+                    SteamUser.GetSteamID().GetAccountID(),
+                    EUserUGCList.k_EUserUGCList_Published,
+                    EUGCMatchingUGCType.k_EUGCMatchingUGCType_Items,
+                    EUserUGCListSortOrder.k_EUserUGCListSortOrder_CreationOrderDesc,
+                    new AppId_t(294100),
+                    new AppId_t(294100),
+                    1u);
+                if (queryHandle.m_UGCQueryHandle == ulong.MaxValue)
+                {
+                    snapshot = Snapshot.Failed(request.PlanSha256, 0, "CreateQueryUserUGCRequest returned an invalid handle.");
+                    activeRequest = null;
+                    return snapshot.ToJson();
+                }
+                queryResult = CallResult<SteamUGCQueryCompleted_t>.Create(OnOwnerScanned);
+                var call = SteamUGC.SendQueryUGCRequest(queryHandle);
+                if (IsInvalid(call))
+                {
+                    ReleaseQuery();
+                    queryResult = null;
+                    snapshot = Snapshot.Failed(request.PlanSha256, 0, "Owner scan returned an invalid call handle.");
+                    activeRequest = null;
+                    return snapshot.ToJson();
+                }
+                queryResult.Set(call);
+                return snapshot.ToJson();
+            }
+
+            if (request.Operation == "dependency-add" || request.Operation == "dependency-remove")
             {
                 EnsureIdle();
                 if (request.PublishedFileId == 0 || request.RequiredWorkshopItemId == 0)
                     throw new InvalidOperationException("dependency requires both Workshop item IDs.");
                 RequireExistingPreflight(request);
                 activeRequest = request;
-                snapshot = Snapshot.Pending("dependency", request.PlanSha256, request.PublishedFileId);
-                dependencyResult = CallResult<AddUGCDependencyResult_t>.Create(OnDependencyAdded);
-                dependencyResult.Set(SteamUGC.AddDependency(
-                    new PublishedFileId_t(request.PublishedFileId),
-                    new PublishedFileId_t(request.RequiredWorkshopItemId)));
+                if (request.Operation == "dependency-add")
+                {
+                    snapshot = Snapshot.Pending("dependency-add", request.PlanSha256, request.PublishedFileId);
+                    dependencyResult = CallResult<AddUGCDependencyResult_t>.Create(OnDependencyAdded);
+                    var call = SteamUGC.AddDependency(
+                        new PublishedFileId_t(request.PublishedFileId),
+                        new PublishedFileId_t(request.RequiredWorkshopItemId));
+                    if (IsInvalid(call))
+                    {
+                        dependencyResult = null;
+                        FailMutation("dependency-add", EResult.k_EResultFail, ioFailure: false);
+                        return snapshot.ToJson();
+                    }
+                    dependencyResult.Set(call);
+                }
+                else
+                {
+                    snapshot = Snapshot.Pending("dependency-remove", request.PlanSha256, request.PublishedFileId);
+                    removeDependencyResult = CallResult<RemoveUGCDependencyResult_t>.Create(OnDependencyRemoved);
+                    var call = SteamUGC.RemoveDependency(
+                        new PublishedFileId_t(request.PublishedFileId),
+                        new PublishedFileId_t(request.RequiredWorkshopItemId));
+                    if (IsInvalid(call))
+                    {
+                        removeDependencyResult = null;
+                        FailMutation("dependency-remove", EResult.k_EResultFail, ioFailure: false);
+                        return snapshot.ToJson();
+                    }
+                    removeDependencyResult.Set(call);
+                }
                 return snapshot.ToJson();
             }
 
@@ -152,7 +258,14 @@ internal static class Publisher
                 if (File.Exists(request.IdentityPath)) throw new InvalidOperationException("A local Workshop identity already exists; refusing a second item.");
                 WriteStateAtomically(request.StatePath, "create-admitted|" + request.PlanSha256 + "|0");
                 createResult = CallResult<CreateItemResult_t>.Create(OnCreated);
-                createResult.Set(SteamUGC.CreateItem(new AppId_t(294100), EWorkshopFileType.k_EWorkshopFileTypeFirst));
+                var call = SteamUGC.CreateItem(new AppId_t(294100), EWorkshopFileType.k_EWorkshopFileTypeFirst);
+                if (IsInvalid(call))
+                {
+                    createResult = null;
+                    FailMutation("create", EResult.k_EResultFail, ioFailure: false);
+                    return snapshot.ToJson();
+                }
+                createResult.Set(call);
             }
             else
             {
@@ -171,20 +284,29 @@ internal static class Publisher
         lock (Gate)
         {
             createResult = null;
-            if (ioFailure || result.m_eResult != EResult.k_EResultOK || result.m_nPublishedFileId.m_PublishedFileId == 0)
+            if (ioFailure ||
+                (result.m_eResult != EResult.k_EResultOK && result.m_eResult != EResult.k_EResultDuplicateRequest) ||
+                result.m_nPublishedFileId.m_PublishedFileId == 0)
             {
-                Fail("create", result.m_eResult, ioFailure);
+                FailMutation("create", result.m_eResult, ioFailure);
                 return;
             }
 
             var request = RequiredRequest();
             var id = result.m_nPublishedFileId.m_PublishedFileId;
+            request.PublishedFileId = id;
             Directory.CreateDirectory(Path.GetDirectoryName(request.IdentityPath)!);
             WriteIdentityAtomically(request.IdentityPath, id.ToString());
             Directory.CreateDirectory(Path.GetDirectoryName(request.PackageIdentityPath)!);
             WriteIdentityAtomically(request.PackageIdentityPath, id.ToString());
             WriteStateAtomically(request.StatePath, "created|" + request.PlanSha256 + "|" + id);
             snapshot = Snapshot.Pending("created", request.PlanSha256, id, result.m_bUserNeedsToAcceptWorkshopLegalAgreement);
+            if (result.m_bUserNeedsToAcceptWorkshopLegalAgreement)
+            {
+                snapshot = Snapshot.LegalAgreementRequired(request.PlanSha256, id);
+                activeRequest = null;
+                return;
+            }
             BeginUpdate(id);
         }
     }
@@ -207,7 +329,14 @@ internal static class Publisher
         snapshot = Snapshot.Pending("submitting", request.PlanSha256, publishedFileId);
         WriteStateAtomically(request.StatePath, "submit-admitted|" + request.PlanSha256 + "|" + publishedFileId);
         submitResult = CallResult<SubmitItemUpdateResult_t>.Create(OnSubmitted);
-        submitResult.Set(SteamUGC.SubmitItemUpdate(handle, request.ChangeNote));
+        var call = SteamUGC.SubmitItemUpdate(handle, request.ChangeNote);
+        if (IsInvalid(call))
+        {
+            submitResult = null;
+            FailMutation("submit", EResult.k_EResultFail, ioFailure: false);
+            return;
+        }
+        submitResult.Set(call);
     }
 
     private static void OnSubmitted(SubmitItemUpdateResult_t result, bool ioFailure)
@@ -217,12 +346,17 @@ internal static class Publisher
             submitResult = null;
             if (ioFailure || result.m_eResult != EResult.k_EResultOK)
             {
-                Fail("submit", result.m_eResult, ioFailure);
+                FailMutation("submit", result.m_eResult, ioFailure);
                 return;
             }
 
             var request = RequiredRequest();
             var id = result.m_nPublishedFileId.m_PublishedFileId;
+            if (id != request.PublishedFileId)
+            {
+                FailMutation("submit-id-mismatch", EResult.k_EResultFail, ioFailure: true);
+                return;
+            }
             WriteStateAtomically(request.StatePath, "submitted|" + request.PlanSha256 + "|" + id);
             if (result.m_bUserNeedsToAcceptWorkshopLegalAgreement)
             {
@@ -231,9 +365,8 @@ internal static class Publisher
                 return;
             }
 
-            snapshot = Snapshot.Pending("dependency", request.PlanSha256, id, result.m_bUserNeedsToAcceptWorkshopLegalAgreement);
-            dependencyResult = CallResult<AddUGCDependencyResult_t>.Create(OnDependencyAdded);
-            dependencyResult.Set(SteamUGC.AddDependency(new PublishedFileId_t(id), new PublishedFileId_t(request.RequiredWorkshopItemId)));
+            snapshot = Snapshot.Succeeded(request.PlanSha256, id);
+            activeRequest = null;
         }
     }
 
@@ -244,13 +377,47 @@ internal static class Publisher
             dependencyResult = null;
             if (ioFailure || (result.m_eResult != EResult.k_EResultOK && result.m_eResult != EResult.k_EResultDuplicateRequest))
             {
-                Fail("dependency", result.m_eResult, ioFailure);
+                FailMutation("dependency-add", result.m_eResult, ioFailure);
                 return;
             }
 
             var request = RequiredRequest();
-            WriteStateAtomically(request.StatePath, "succeeded|" + request.PlanSha256 + "|" + result.m_nPublishedFileId.m_PublishedFileId);
-            snapshot = Snapshot.Succeeded(request.PlanSha256, result.m_nPublishedFileId.m_PublishedFileId);
+            if (!PublisherSafety.CallbackIdsMatch(
+                    request.PublishedFileId,
+                    request.RequiredWorkshopItemId,
+                    result.m_nPublishedFileId.m_PublishedFileId,
+                    result.m_nChildPublishedFileId.m_PublishedFileId))
+            {
+                FailMutation("dependency-add-id-mismatch", EResult.k_EResultFail, ioFailure: true);
+                return;
+            }
+            snapshot = Snapshot.Succeeded(request.PlanSha256, request.PublishedFileId);
+            activeRequest = null;
+        }
+    }
+
+    private static void OnDependencyRemoved(RemoveUGCDependencyResult_t result, bool ioFailure)
+    {
+        lock (Gate)
+        {
+            removeDependencyResult = null;
+            if (ioFailure || result.m_eResult != EResult.k_EResultOK)
+            {
+                FailMutation("dependency-remove", result.m_eResult, ioFailure);
+                return;
+            }
+
+            var request = RequiredRequest();
+            if (!PublisherSafety.CallbackIdsMatch(
+                    request.PublishedFileId,
+                    request.RequiredWorkshopItemId,
+                    result.m_nPublishedFileId.m_PublishedFileId,
+                    result.m_nChildPublishedFileId.m_PublishedFileId))
+            {
+                FailMutation("dependency-remove-id-mismatch", EResult.k_EResultFail, ioFailure: true);
+                return;
+            }
+            snapshot = Snapshot.Succeeded(request.PlanSha256, request.PublishedFileId);
             activeRequest = null;
         }
     }
@@ -268,6 +435,12 @@ internal static class Publisher
 
             var request = RequiredRequest();
             var id = result.m_nPublishedFileId.m_PublishedFileId;
+            if (id != request.PublishedFileId)
+            {
+                snapshot = Snapshot.Failed(request.PlanSha256, request.PublishedFileId, "Subscribe callback returned a different item ID.");
+                activeRequest = null;
+                return;
+            }
             snapshot = Snapshot.Pending("downloading", request.PlanSha256, id);
             if (!SteamUGC.DownloadItem(new PublishedFileId_t(id), true))
             {
@@ -314,6 +487,12 @@ internal static class Publisher
                     activeRequest = null;
                     return;
                 }
+                if (details.m_nPublishedFileId.m_PublishedFileId != request.PublishedFileId)
+                {
+                    snapshot = Snapshot.Failed(request.PlanSha256, request.PublishedFileId, "Steam query returned a different item ID.");
+                    activeRequest = null;
+                    return;
+                }
 
                 string metadata;
                 if (!SteamUGC.GetQueryUGCMetadata(queryHandle, 0u, out metadata, 4097u)) metadata = "";
@@ -347,6 +526,73 @@ internal static class Publisher
         }
     }
 
+    private static void OnOwnerScanned(SteamUGCQueryCompleted_t result, bool ioFailure)
+    {
+        lock (Gate)
+        {
+            queryResult = null;
+            try
+            {
+                var request = RequiredRequest();
+                if (ioFailure || result.m_eResult != EResult.k_EResultOK)
+                {
+                    Fail("owner-scan", result.m_eResult, ioFailure);
+                    return;
+                }
+                if (result.m_unTotalMatchingResults != result.m_unNumResultsReturned)
+                {
+                    snapshot = Snapshot.Failed(request.PlanSha256, 0,
+                        "The bounded owner scan did not return every published item; refusing first publication.");
+                    activeRequest = null;
+                    return;
+                }
+
+                var exactIds = new List<ulong>();
+                for (uint index = 0; index < result.m_unNumResultsReturned; index++)
+                {
+                    SteamUGCDetails_t details;
+                    if (!SteamUGC.GetQueryUGCResult(queryHandle, index, out details) || details.m_eResult != EResult.k_EResultOK)
+                    {
+                        snapshot = Snapshot.Failed(request.PlanSha256, 0, "The owner scan returned an unreadable item.");
+                        activeRequest = null;
+                        return;
+                    }
+                    if (details.m_nConsumerAppID.m_AppId == 294100u &&
+                        string.Equals(details.m_rgchTitle ?? "", request.Title, StringComparison.Ordinal))
+                    {
+                        exactIds.Add(details.m_nPublishedFileId.m_PublishedFileId);
+                    }
+                }
+
+                if (exactIds.Count > 1)
+                {
+                    snapshot = Snapshot.Failed(request.PlanSha256, 0,
+                        "More than one owned RimWorld Workshop item has the exact release title.");
+                }
+                else if (exactIds.Count == 1)
+                {
+                    snapshot = Snapshot.OwnerScan(request.PlanSha256, exactIds[0]);
+                }
+                else if (PublisherSafety.OwnerScanProvesAbsence(
+                             result.m_unTotalMatchingResults,
+                             result.m_unNumResultsReturned,
+                             exactIds.Count))
+                {
+                    snapshot = Snapshot.OwnerScan(request.PlanSha256, 0);
+                }
+                else
+                {
+                    snapshot = Snapshot.Failed(request.PlanSha256, 0, "The owner scan could not prove title absence.");
+                }
+                activeRequest = null;
+            }
+            finally
+            {
+                ReleaseQuery();
+            }
+        }
+    }
+
     private static Snapshot InstallStatus(ulong id)
     {
         if (id == 0) return Snapshot.Failed("", 0, "install-status requires a nonzero publishedFileId.");
@@ -364,8 +610,7 @@ internal static class Publisher
     {
         if (accepted) return true;
         var request = RequiredRequest();
-        snapshot = Snapshot.Failed(request.PlanSha256, snapshot.PublishedFileId, name + " returned false.");
-        activeRequest = null;
+        FailMutation("submit-setter-" + name, EResult.k_EResultFail, ioFailure: false);
         return false;
     }
 
@@ -388,6 +633,22 @@ internal static class Publisher
         snapshot = Snapshot.Failed(request?.PlanSha256 ?? "", snapshot.PublishedFileId, stage + " failed: " + result + "; ioFailure=" + ioFailure);
         activeRequest = null;
     }
+
+    private static void FailMutation(string stage, EResult result, bool ioFailure)
+    {
+        var request = RequiredRequest();
+        var durableStage = PublisherSafety.DurableFailureStage(stage, ioFailure);
+        WriteStateAtomically(
+            request.StatePath,
+            durableStage + "|" + request.PlanSha256 + "|" + snapshot.PublishedFileId);
+        snapshot = Snapshot.Failed(
+            request.PlanSha256,
+            snapshot.PublishedFileId,
+            stage + " failed: " + result + "; ioFailure=" + ioFailure + "; durableStage=" + durableStage);
+        if (!ioFailure) activeRequest = null;
+    }
+
+    private static bool IsInvalid(SteamAPICall_t call) => PublisherSafety.IsInvalidCallHandle(call.m_SteamAPICall);
 
     private static void WriteIdentityAtomically(string path, string value)
     {
@@ -639,6 +900,7 @@ internal static class Publisher
         public static Snapshot LegalAgreementRequired(string plan, ulong id) => new() { Status = "legal-agreement-required", Stage = "legal-agreement-required", PlanSha256 = plan, PublishedFileId = id, UserNeedsLegalAgreement = true, Error = "Accept the Steam Workshop legal agreement, then rerun the exact reviewed update." };
         public static Snapshot Failed(string plan, ulong id, string error) => new() { Status = "failed", Stage = "failed", PlanSha256 = plan, PublishedFileId = id, Error = error };
         public static Snapshot Installed(ulong id, string folder, ulong bytes, uint state) => new() { Status = "installed", Stage = "installed", PublishedFileId = id, InstallFolder = folder, InstallBytes = bytes, ItemState = state.ToString() };
+        public static Snapshot OwnerScan(string plan, ulong id) => new() { Status = id == 0 ? "owner-scan-complete" : "owner-scan-found", Stage = "owner-scan", PlanSha256 = plan, PublishedFileId = id };
         public static Snapshot Queried(string plan, SteamUGCDetails_t details, string metadata, string previewUrl, ulong[] dependencies)
         {
             var description = details.m_rgchDescription ?? "";

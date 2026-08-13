@@ -63,7 +63,7 @@ A publishable candidate has all of the following:
 
 ## Publication gates
 
-- Existing Workshop ID by default; never create implicitly. First publication requires an explicit manifest flag, an ID-less reviewed dry-run, exact user confirmation, no prior identity/receipt, and durable persistence of Steam's returned ID before upload continuation.
+- Existing Workshop ID by default; never create implicitly. First publication requires an explicit manifest flag, an ID-less reviewed dry-run, exact user confirmation, no prior identity/receipt, a complete native owner scan proving exact-title absence, and durable persistence of Steam's returned ID before upload continuation.
 - Fresh isolated exact-PID RimWorld + Gateway process with initialized Steam.
 - Mutation-free dry-run and explicit user confirmation bound to exact hashes.
 - One update operation at a time; no blind retry after submission uncertainty.
@@ -75,6 +75,7 @@ A publishable candidate has all of the following:
 - Run the declared native workflow from the exact subscribed Workshop root while every local copy
   of the product is absent from RimWorld discovery; restore local state in guaranteed cleanup.
 - Preserve a secret-free receipt and exact cleanup outcome.
+- After a verified first publication, commit the returned ID to the mod's release descriptor and disable first publication. Ignored artifacts are recovery evidence, never the cross-clone identity authority.
 
 ## Current implementation status
 

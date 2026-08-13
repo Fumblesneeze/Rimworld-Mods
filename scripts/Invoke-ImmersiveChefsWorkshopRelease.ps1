@@ -45,6 +45,102 @@ function Write-JsonUtf8([string]$Path, [object]$Value) {
     [IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 }
 
+function Write-TextAtomically([string]$Path, [string]$Value) {
+    $temporary = $Path + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
+    try {
+        [IO.File]::WriteAllText($temporary, $Value, [Text.UTF8Encoding]::new($false))
+        if (Test-Path -LiteralPath $Path -PathType Leaf) {
+            [IO.File]::Replace($temporary, $Path, $null)
+        } else {
+            [IO.File]::Move($temporary, $Path)
+        }
+    } finally {
+        if (Test-Path -LiteralPath $temporary -PathType Leaf) { Remove-Item -LiteralPath $temporary -Force }
+    }
+}
+
+function Save-RemoteFile([string]$Uri, [string]$Path) {
+    $request = [Net.HttpWebRequest]::CreateHttp($Uri)
+    $request.Timeout = 30000
+    $request.ReadWriteTimeout = 30000
+    $response = $request.GetResponse()
+    try {
+        $input = $response.GetResponseStream()
+        try {
+            $output = [IO.File]::Open($Path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+            try { $input.CopyTo($output) }
+            finally { $output.Dispose() }
+        }
+        finally { $input.Dispose() }
+    }
+    finally { $response.Dispose() }
+}
+
+function Stop-RetainedProcess([Diagnostics.Process]$Process, [int]$GraceMilliseconds = 15000) {
+    if ($null -eq $Process) { return $false }
+    $Process.Refresh()
+    if ($Process.HasExited) { return $false }
+    $null = $Process.CloseMainWindow()
+    if (-not $Process.WaitForExit($GraceMilliseconds)) {
+        $Process.Kill()
+        $Process.WaitForExit()
+        return $true
+    }
+    return $false
+}
+
+function Assert-RetainedProcessIdentity([Diagnostics.Process]$Process, [datetimeoffset]$ExpectedStartUtc) {
+    if ($null -eq $Process) { throw 'The retained publisher process is missing.' }
+    $Process.Refresh()
+    if ($Process.HasExited) { return }
+    $actual = [datetimeoffset]::new($Process.StartTime.ToUniversalTime(), [timespan]::Zero)
+    if ($actual.ToUniversalTime().Ticks -ne $ExpectedStartUtc.ToUniversalTime().Ticks) {
+        throw "The retained publisher PID was reused by a different process (expected $($ExpectedStartUtc.ToString('O')); actual $($actual.ToString('O')))."
+    }
+}
+
+function Get-ExactProcessStartUtcFromManifest([string]$ManifestPath) {
+    $raw = Get-Content -LiteralPath $ManifestPath -Raw -Encoding UTF8
+    $match = [regex]::Match($raw, '"processStartUtc"\s*:\s*"(?<value>[^"]+)"', [Text.RegularExpressions.RegexOptions]::CultureInvariant)
+    if (-not $match.Success) { throw 'The Gateway manifest has no exact process-start timestamp.' }
+    [datetimeoffset]$parsed = [datetimeoffset]::MinValue
+    if (-not [datetimeoffset]::TryParseExact(
+        $match.Groups['value'].Value,
+        'O',
+        [Globalization.CultureInfo]::InvariantCulture,
+        [Globalization.DateTimeStyles]::AssumeUniversal -bor [Globalization.DateTimeStyles]::AdjustToUniversal,
+        [ref]$parsed)) {
+        throw 'The Gateway manifest process-start timestamp is not exact round-trip UTC.'
+    }
+    return $parsed
+}
+
+function Get-PublisherProcessLease([string]$GatewayRoot, [string]$ProcessLeasePath) {
+    $leaseFiles = if (Test-Path -LiteralPath $ProcessLeasePath -PathType Leaf) {
+        @([IO.FileInfo]::new([IO.Path]::GetFullPath($ProcessLeasePath)))
+    } else {
+        @(Get-ChildItem -LiteralPath $GatewayRoot -Recurse -Filter 'current.json' -File -ErrorAction SilentlyContinue)
+    }
+    if ($leaseFiles.Count -eq 0) { return $null }
+    if ($leaseFiles.Count -ne 1) { throw 'More than one Gateway process lease appeared for this release.' }
+
+    $manifest = Read-Json $leaseFiles[0].FullName
+    if ($leaseFiles[0].Name -cne 'current.json' -and
+        [string]$manifest.schema -cne 'RimWorldDevGateway/ProcessLease/v1') {
+        throw 'The Gateway launcher process lease has the wrong schema.'
+    }
+    $processId = [int]$manifest.processId
+    $processStartUtc = Get-ExactProcessStartUtcFromManifest -ManifestPath $leaseFiles[0].FullName
+    $process = Get-Process -Id $processId -ErrorAction Stop
+    Assert-RetainedProcessIdentity -Process $process -ExpectedStartUtc $processStartUtc
+    return [pscustomobject][ordered]@{
+        ManifestPath = $leaseFiles[0].FullName
+        Process = $process
+        ProcessId = $processId
+        ProcessStartUtc = $processStartUtc
+    }
+}
+
 function Get-RelativePath([string]$Root, [string]$Path) {
     $rootUri = [Uri]::new($Root.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar)
     return [Uri]::UnescapeDataString($rootUri.MakeRelativeUri([Uri]::new($Path)).ToString()).Replace('/', '\')
@@ -117,7 +213,7 @@ function Assert-StagedCandidate([object]$Plan) {
         }
         $expected[[string]$entry.path] = $true
     }
-    $generated = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $generated = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in @($Plan.generatedAtPublication)) { $null = $generated.Add([string]$entry) }
     $actual = @(Get-ChildItem -LiteralPath $root -Recurse -File)
     foreach ($item in $actual) {
@@ -127,7 +223,8 @@ function Assert-StagedCandidate([object]$Plan) {
         }
     }
     $generatedPresent = @($actual | Where-Object {
-        $generated.Contains((Get-RelativePath -Root $root -Path $_.FullName))
+        $relative = Get-RelativePath -Root $root -Path $_.FullName
+        -not $expected.ContainsKey($relative) -and $generated.Contains($relative)
     }).Count
     if ($actual.Count -ne $expected.Count + $generatedPresent) {
         throw 'Staged package inventory changed after its reviewed plan was written.'
@@ -145,7 +242,8 @@ if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [string]$plan.title -cne 'Immersive Chefs' -or
     [string]$plan.author -cne 'Fumblesneeze' -or
     [string]$plan.rimWorldVersion -cne '1.6' -or
-    [string]$plan.rimWorldBuild -cne '1.6.4871 rev591' -or
+    [string]$plan.rimWorldBuild -cne '1.6.4871 rev590' -or
+    [string]$plan.rimWorldRuntimeBuild -cne '1.6.4871 rev591' -or
     [string]$plan.steamBuildId -cne '23969874' -or
     [string]$plan.managedAssemblySha256 -cne '5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A' -or
     [int]$plan.steamAppId -ne 294100 -or
@@ -168,13 +266,18 @@ if ((Get-FileHash -LiteralPath ([string]$plan.descriptionPath) -Algorithm SHA256
 }
 $releaseStateRoot = Join-Path $repositoryRoot 'artifacts\Releases\fumblesneeze.immersivechefs'
 $null = New-Item -ItemType Directory -Path $releaseStateRoot -Force
+$leaseName = 'Local\Fumblesneeze.ImmersiveChefs.SteamWorkshopRelease'
+$releaseLease = [Threading.Mutex]::new($false, $leaseName)
+try { $leaseAcquired = $releaseLease.WaitOne(0) }
+catch [Threading.AbandonedMutexException] { $leaseAcquired = $true }
+if (-not $leaseAcquired) { Exit-InvalidInput 'Another Immersive Chefs Workshop release operation owns the exclusive lease.' }
 $releaseIdentityPath = Join-Path $releaseStateRoot 'PublishedFileId.txt'
 $packageIdentityPath = Join-Path ([string]$plan.packagePath) 'About\PublishedFileId.txt'
 $statePath = Join-Path $releaseStateRoot 'publication-state.txt'
-$publishedFileId = if ($null -eq $plan.publishedFileId) { 0UL } else { [ulong]$plan.publishedFileId }
+$publishedFileId = if ($null -eq $plan.publishedFileId) { [System.UInt64]0 } else { [System.UInt64]$plan.publishedFileId }
 if (Test-Path -LiteralPath $releaseIdentityPath -PathType Leaf) {
     $persistedIdentity = (Get-Content -LiteralPath $releaseIdentityPath -Raw).Trim()
-    $durableId = 0UL
+    [System.UInt64]$durableId = 0
     if (-not [ulong]::TryParse($persistedIdentity, [ref]$durableId) -or $durableId -eq 0 -or
         ($publishedFileId -ne 0 -and $publishedFileId -ne $durableId)) {
         Exit-InvalidInput 'The durable release Workshop identity is invalid or conflicts with the plan.'
@@ -206,27 +309,52 @@ Assert-StagedCandidate $plan
 $publicationRoot = Join-Path $releaseStateRoot 'publication'
 $null = New-Item -ItemType Directory -Path $publicationRoot -Force
 $existingReceipts = @(Get-ChildItem -LiteralPath $publicationRoot -Recurse -Filter 'publication-receipt.json' -File -ErrorAction SilentlyContinue)
+$receiptIds = [System.Collections.Generic.HashSet[System.UInt64]]::new()
+$completedReceiptPlans = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 foreach ($receiptPath in $existingReceipts) {
     try { $existingReceipt = Read-Json $receiptPath.FullName }
     catch { Exit-InvalidInput "An existing publication receipt is unreadable: $($receiptPath.FullName)" }
     if ([string]$existingReceipt.publicationPlanSha256 -ceq $actualPlanHash) {
         Exit-InvalidInput 'This reviewed plan already has a successful publication receipt.'
     }
+    [System.UInt64]$receiptId = 0
+    if ([string]$existingReceipt.schema -cne 'ImmersiveChefs/WorkshopPublicationReceipt/v1' -or
+        -not [ulong]::TryParse([string]$existingReceipt.publishedFileId, [ref]$receiptId) -or $receiptId -eq 0) {
+        Exit-InvalidInput "An existing publication receipt has an invalid Workshop identity: $($receiptPath.FullName)"
+    }
+    $null = $receiptIds.Add($receiptId)
+    if ([string]$existingReceipt.publicationPlanSha256 -match '^[A-Fa-f0-9]{64}$') {
+        $null = $completedReceiptPlans.Add([string]$existingReceipt.publicationPlanSha256)
+    }
+}
+if ($receiptIds.Count -gt 1 -or ($receiptIds.Count -eq 1 -and $publishedFileId -ne 0 -and -not $receiptIds.Contains($publishedFileId))) {
+    Exit-InvalidInput 'Workshop receipt identities conflict with the reviewed candidate.'
+}
+if ($publishedFileId -eq 0 -and $receiptIds.Count -eq 1) {
+    Exit-InvalidInput 'A prior successful receipt proves an existing Workshop item; rebuild the candidate so its immutable package includes that identity.'
 }
 $resumeState = $null
 $priorState = $null
+$priorStatePlan = $null
 if (Test-Path -LiteralPath $statePath -PathType Leaf) {
     $stateParts = @((Get-Content -LiteralPath $statePath -Raw).Trim().Split([char]'|'))
     if ($stateParts.Count -ne 3 -or $stateParts[1] -notmatch '^[A-Fa-f0-9]{64}$') {
         Exit-InvalidInput 'The durable publication state is invalid.'
     }
     $priorState = $stateParts[0]
+    $priorStatePlan = $stateParts[1]
     if ($stateParts[1] -ceq $actualPlanHash) { $resumeState = $priorState }
 }
-if ($publishedFileId -eq 0 -and $null -ne $priorState) {
+if ($publishedFileId -eq 0 -and $null -ne $priorState -and $priorState -notin @('create-failed-definite')) {
     Exit-InvalidInput 'A prior first-publication attempt is indeterminate and has no durable item ID; refusing to create another item.'
 }
-$reconcileOnly = @('submit-admitted', 'submitted', 'succeeded') -ccontains [string]$resumeState
+$indeterminateStates = @('create-admitted', 'create-indeterminate', 'created', 'submit-admitted', 'submitted', 'submit-indeterminate', 'dependency-indeterminate', 'succeeded')
+if ($null -ne $priorStatePlan -and $priorStatePlan -cne $actualPlanHash -and
+    $indeterminateStates -ccontains [string]$priorState -and
+    -not $completedReceiptPlans.Contains([string]$priorStatePlan)) {
+    Exit-InvalidInput "Publication plan $priorStatePlan remains indeterminate at '$priorState'; reconcile that exact plan before any new Steam mutation."
+}
+$reconcileOnly = @('submit-admitted', 'submitted', 'submit-indeterminate', 'dependency-indeterminate', 'succeeded') -ccontains [string]$resumeState
 $attemptId = [datetime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ', [Globalization.CultureInfo]::InvariantCulture)
 $runRoot = Join-Path $publicationRoot $attemptId
 $null = New-Item -ItemType Directory -Path $runRoot
@@ -239,6 +367,7 @@ Write-JsonUtf8 -Path (Join-Path $runRoot 'attempt-plan.json') -Value ([pscustomo
     startedUtc = [datetime]::UtcNow.ToString('O')
 })
 $gatewayRoot = Join-Path $runRoot 'gateway'
+$publisherProcessLeaseFile = Join-Path $gatewayRoot 'publisher-process-lease.json'
 $completionFile = Join-Path $runRoot 'publisher-complete.signal'
 $launcherOut = Join-Path $runRoot 'gateway-launcher.out.log'
 $launcherErr = Join-Path $runRoot 'gateway-launcher.err.log'
@@ -251,12 +380,15 @@ $launcherArguments = @(
     '-ArtifactsPath', $gatewayRoot,
     '-InteractiveHoldSeconds', [string]$TimeoutSeconds,
     '-InteractiveCompletionFile', $completionFile,
+    '-ProcessLeaseFile', $publisherProcessLeaseFile,
     '-TimeoutSeconds', '300',
     '-Output', 'json'
 )
 $launcherProcess = Start-Process -FilePath $shell -ArgumentList $launcherArguments -PassThru -WindowStyle Hidden `
     -RedirectStandardOutput $launcherOut -RedirectStandardError $launcherErr
 $publisherLauncherCompleted = $false
+$publisherGameProcess = $null
+$publisherGameProcessStartUtc = $null
 
 $primaryError = $null
 $cleanupError = $null
@@ -267,6 +399,13 @@ try {
         $launcherProcess.Refresh()
         if ($launcherProcess.HasExited) {
             throw "Gateway launcher exited before the publisher hold: $((Get-Content $launcherErr -Raw -ErrorAction SilentlyContinue))"
+        }
+        if ($null -eq $publisherGameProcess) {
+            $publisherLease = Get-PublisherProcessLease -GatewayRoot $gatewayRoot -ProcessLeasePath $publisherProcessLeaseFile
+            if ($null -ne $publisherLease) {
+                $publisherGameProcess = $publisherLease.Process
+                $publisherGameProcessStartUtc = $publisherLease.ProcessStartUtc
+            }
         }
         $holdFiles = @(Get-ChildItem -LiteralPath $gatewayRoot -Recurse -Filter 'interactive-hold.json' -File -ErrorAction SilentlyContinue)
         if ($holdFiles.Count -gt 1) { throw 'More than one Gateway interactive hold appeared for this release.' }
@@ -280,6 +419,16 @@ try {
 
     $manifestPath = [string]$hold.Manifest
     $gameProcessId = [int]$hold.ProcessId
+    $publisherManifest = Read-Json $manifestPath
+    $holdProcessStartUtc = Get-ExactProcessStartUtcFromManifest -ManifestPath $manifestPath
+    if ($null -eq $publisherGameProcess) {
+        $publisherGameProcess = Get-Process -Id $gameProcessId -ErrorAction Stop
+        $publisherGameProcessStartUtc = $holdProcessStartUtc
+    }
+    if ($publisherGameProcess.Id -ne $gameProcessId -or $publisherGameProcessStartUtc -ne $holdProcessStartUtc) {
+        throw 'The interactive hold does not match the process identity retained from this exact Gateway run.'
+    }
+    Assert-RetainedProcessIdentity -Process $publisherGameProcess -ExpectedStartUtc $publisherGameProcessStartUtc
     $client = Join-Path $repositoryRoot 'artifacts\HostTools\Release\net480\RimWorldDevGateway.Client.exe'
     $managed = Join-Path $RimWorldPath 'RimWorldWin64_Data\Managed'
     $contract = Join-Path $repositoryRoot 'artifacts\HostTools\Release\net480\RimWorldDevGateway.Contracts.dll'
@@ -292,6 +441,19 @@ try {
     $status = Invoke-WorkshopAutomation -Client $client -Manifest $manifestPath -ProcessId $gameProcessId -Arguments @{ operation = 'status' }
     if ([string]$status.CurrentUserSteamId -cne [string]$plan.steamUserId) {
         throw "RimWorld is logged into Steam user $($status.CurrentUserSteamId), not the reviewed owner $($plan.steamUserId)."
+    }
+
+    if ($publishedFileId -eq 0) {
+        $null = Invoke-WorkshopAutomation -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
+            -Arguments @{ operation = 'owner-scan'; planSha256 = $actualPlanHash; title = [string]$plan.title }
+        $ownerScan = Wait-WorkshopTerminal -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
+            -PlanSha256 $actualPlanHash -Deadline $deadline -TerminalStatuses @('owner-scan-complete', 'owner-scan-found', 'failed')
+        if ([string]$ownerScan.Status -eq 'owner-scan-found') {
+            throw "The owning Steam account already publishes an exact-title Immersive Chefs item ($($ownerScan.PublishedFileId)); record that ID before any update."
+        }
+        if ([string]$ownerScan.Status -ne 'owner-scan-complete') {
+            throw "Steam did not prove exact-title absence before first publication: $($ownerScan | ConvertTo-Json -Compress)"
+        }
     }
 
     $queryRemote = {
@@ -316,7 +478,6 @@ try {
     $remote = $null
     if ($reconcileOnly) {
         if ($publishedFileId -eq 0) { throw 'An indeterminate submit cannot be reconciled without a durable Workshop identity.' }
-        $remote = $preflightRemote
     }
     else {
         $request = @{
@@ -362,9 +523,7 @@ try {
             [string]$remoteCandidate.RemoteOwnerSteamId -ceq [string]$plan.steamUserId -and
             [string]$remoteCandidate.RemoteVisibility -ceq 'k_ERemoteStoragePublishedFileVisibilityPublic' -and
             -not [string]::IsNullOrWhiteSpace([string]$remoteCandidate.RemotePreviewUrl) -and
-            $tagsMatch -and
-            ($reconcileOnly -or
-             @($remoteCandidate.RemoteDependencies | ForEach-Object { [string]$_ }) -ccontains [string]@($plan.requiredWorkshopItems)[0])) {
+            $tagsMatch) {
             $remote = $remoteCandidate
             break
         }
@@ -374,30 +533,72 @@ try {
         throw "Remote Workshop metadata did not converge to the reviewed plan: $($remoteCandidate | ConvertTo-Json -Depth 8 -Compress)"
     }
 
-    if ($reconcileOnly -and
-        @($remote.RemoteDependencies | ForEach-Object { [string]$_ }) -cnotcontains [string]@($plan.requiredWorkshopItems)[0]) {
+    $expectedDependencies = @($plan.requiredWorkshopItems | ForEach-Object { [string]$_ } | Sort-Object -Unique)
+    $actualDependencies = @($remote.RemoteDependencies | ForEach-Object { [string]$_ } | Sort-Object -Unique)
+    $dependencyOperations = @()
+    $dependencyOperations += @($actualDependencies | Where-Object { $expectedDependencies -cnotcontains $_ } | ForEach-Object {
+        [pscustomobject]@{ Operation = 'dependency-remove'; ItemId = $_ }
+    })
+    $dependencyOperations += @($expectedDependencies | Where-Object { $actualDependencies -cnotcontains $_ } | ForEach-Object {
+        [pscustomobject]@{ Operation = 'dependency-add'; ItemId = $_ }
+    })
+    foreach ($dependencyOperation in $dependencyOperations) {
+        # The immediately preceding exact query owns the in-process ID/owner/app/title preflight.
+        $dependencyPreflight = & $queryRemote
+        if ([string]$dependencyPreflight.Status -cne 'queried' -or
+            [string]$dependencyPreflight.PublishedFileId -cne [string]$publishedFileId -or
+            [string]$dependencyPreflight.RemoteOwnerSteamId -cne [string]$plan.steamUserId -or
+            [int]$dependencyPreflight.RemoteConsumerAppId -ne 294100 -or
+            [string]$dependencyPreflight.RemoteTitle -cne [string]$plan.title) {
+            throw 'The Workshop item failed exact preflight immediately before dependency mutation.'
+        }
         $null = Invoke-WorkshopAutomation -Client $client -Manifest $manifestPath -ProcessId $gameProcessId -Arguments @{
-            operation = 'dependency'
+            operation = [string]$dependencyOperation.Operation
             planSha256 = $actualPlanHash
             publishedFileId = [string]$publishedFileId
-            requiredWorkshopItemId = [string]@($plan.requiredWorkshopItems)[0]
+            requiredWorkshopItemId = [string]$dependencyOperation.ItemId
             title = [string]$plan.title
+            statePath = $statePath
         }
         $dependency = Wait-WorkshopTerminal -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
             -PlanSha256 $actualPlanHash -Deadline $deadline -TerminalStatuses @('succeeded', 'failed')
-        if ([string]$dependency.Status -cne 'succeeded') { throw 'Required-item reconciliation failed.' }
+        if ([string]$dependency.Status -cne 'succeeded') { throw "Workshop dependency operation failed: $($dependencyOperation.Operation) $($dependencyOperation.ItemId)" }
+    }
+    if ($dependencyOperations.Count -gt 0) {
         $remote = $null
         do {
             $remoteCandidate = & $queryRemote
+            $candidateDependencies = @($remoteCandidate.RemoteDependencies | ForEach-Object { [string]$_ } | Sort-Object -Unique)
+            $remoteTags = @(([string]$remoteCandidate.RemoteTags).Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+            $tagsMatch = $remoteTags.Count -eq $expectedTags.Count -and
+                @($remoteTags | Where-Object { $expectedTags -cnotcontains $_ }).Count -eq 0
             if ([string]$remoteCandidate.Status -ceq 'queried' -and
-                @($remoteCandidate.RemoteDependencies | ForEach-Object { [string]$_ }) -ccontains [string]@($plan.requiredWorkshopItems)[0]) {
+                [string]$remoteCandidate.RemoteTitle -ceq [string]$plan.title -and
+                [string]$remoteCandidate.RemoteDescriptionSha256 -ceq [string]$plan.descriptionSha256 -and
+                [string]$remoteCandidate.RemoteMetadata -ceq $actualPlanHash -and
+                [string]$remoteCandidate.RemoteOwnerSteamId -ceq [string]$plan.steamUserId -and
+                [string]$remoteCandidate.RemoteVisibility -ceq 'k_ERemoteStoragePublishedFileVisibilityPublic' -and
+                -not [string]::IsNullOrWhiteSpace([string]$remoteCandidate.RemotePreviewUrl) -and
+                $tagsMatch -and
+                $candidateDependencies.Count -eq $expectedDependencies.Count -and
+                @($candidateDependencies | Where-Object { $expectedDependencies -cnotcontains $_ }).Count -eq 0) {
                 $remote = $remoteCandidate
                 break
             }
             Start-Sleep -Seconds 2
         } while ([datetime]::UtcNow -lt $deadline)
-        if ($null -eq $remote) { throw 'The required Workshop dependency did not propagate.' }
+        if ($null -eq $remote) { throw 'The exact Workshop dependency graph did not propagate.' }
+    } elseif ($actualDependencies.Count -ne $expectedDependencies.Count -or
+              @($actualDependencies | Where-Object { $expectedDependencies -cnotcontains $_ }).Count -ne 0) {
+        throw 'The exact Workshop dependency graph was not established.'
     }
+
+    $remotePreviewPath = Join-Path $runRoot 'remote-preview.png'
+    Save-RemoteFile -Uri ([string]$remote.RemotePreviewUrl) -Path $remotePreviewPath
+    if ((Get-FileHash -LiteralPath $remotePreviewPath -Algorithm SHA256).Hash -cne [string]$plan.previewSha256) {
+        throw 'Steam serves a preview image that differs from the reviewed preview bytes.'
+    }
+    Write-TextAtomically -Path $statePath -Value ("succeeded|$actualPlanHash|$publishedFileId")
 
     $null = Invoke-WorkshopAutomation -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
         -Arguments @{ operation = 'subscribe'; planSha256 = $actualPlanHash; publishedFileId = [string]$publishedFileId }
@@ -419,7 +620,7 @@ try {
     if ((Get-Content -LiteralPath (Join-Path $expectedInstallPath 'About\PublishedFileId.txt') -Raw).Trim() -cne [string]$publishedFileId) {
         throw 'Subscribed Workshop package has the wrong identity file.'
     }
-    $expectedInstalledPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $expectedInstalledPaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in @($manifest.files)) { $null = $expectedInstalledPaths.Add([string]$entry.path) }
     $null = $expectedInstalledPaths.Add('About\PublishedFileId.txt')
     $actualInstalledPaths = @(Get-ChildItem -LiteralPath $expectedInstallPath -Recurse -File | ForEach-Object {
@@ -434,10 +635,16 @@ try {
     if (-not $launcherProcess.WaitForExit(120000)) {
         $launcherProcess.Kill()
         $launcherProcess.WaitForExit()
+        Assert-RetainedProcessIdentity -Process $publisherGameProcess -ExpectedStartUtc $publisherGameProcessStartUtc
+        $null = Stop-RetainedProcess -Process $publisherGameProcess
         throw 'The exact Gateway publisher launcher did not clean up before subscribed verification.'
     }
     if ($launcherProcess.ExitCode -ne 0) {
         throw "Gateway publisher cleanup failed before subscribed verification: $((Get-Content $launcherErr -Raw -ErrorAction SilentlyContinue))"
+    }
+    Assert-RetainedProcessIdentity -Process $publisherGameProcess -ExpectedStartUtc $publisherGameProcessStartUtc
+    if (Stop-RetainedProcess -Process $publisherGameProcess) {
+        throw 'The exact Gateway publisher RimWorld process required force cleanup before subscribed verification.'
     }
     $publisherLauncherCompleted = $true
 
@@ -499,20 +706,43 @@ catch {
 finally {
     try {
         if (-not $publisherLauncherCompleted) {
-            [IO.File]::WriteAllText($completionFile, [datetime]::UtcNow.ToString('O'), [Text.UTF8Encoding]::new($false))
+            $cleanupSignalError = $null
+            if ($null -eq $publisherGameProcess) {
+                $publisherLease = Get-PublisherProcessLease -GatewayRoot $gatewayRoot -ProcessLeasePath $publisherProcessLeaseFile
+                if ($null -ne $publisherLease) {
+                    $publisherGameProcess = $publisherLease.Process
+                    $publisherGameProcessStartUtc = $publisherLease.ProcessStartUtc
+                }
+            }
+            try { [IO.File]::WriteAllText($completionFile, [datetime]::UtcNow.ToString('O'), [Text.UTF8Encoding]::new($false)) }
+            catch { $cleanupSignalError = $_ }
             if (-not $launcherProcess.WaitForExit(120000)) {
                 $launcherProcess.Kill()
                 $launcherProcess.WaitForExit()
+                Assert-RetainedProcessIdentity -Process $publisherGameProcess -ExpectedStartUtc $publisherGameProcessStartUtc
+                $null = Stop-RetainedProcess -Process $publisherGameProcess
                 throw 'The exact Gateway publisher launcher did not clean up within two minutes.'
+            }
+            Assert-RetainedProcessIdentity -Process $publisherGameProcess -ExpectedStartUtc $publisherGameProcessStartUtc
+            if (Stop-RetainedProcess -Process $publisherGameProcess) {
+                throw 'The exact Gateway publisher RimWorld process required force cleanup.'
             }
             if ($launcherProcess.ExitCode -ne 0) {
                 throw "Gateway publisher cleanup failed: $((Get-Content $launcherErr -Raw -ErrorAction SilentlyContinue))"
             }
             $publisherLauncherCompleted = $true
+            if ($null -ne $cleanupSignalError) { throw $cleanupSignalError }
         }
     }
     catch {
         $cleanupError = $_
+    }
+    try {
+        if ($leaseAcquired) { $releaseLease.ReleaseMutex() }
+        $releaseLease.Dispose()
+    }
+    catch {
+        if ($null -eq $cleanupError) { $cleanupError = $_ }
     }
 }
 

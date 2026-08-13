@@ -49,6 +49,43 @@ function Write-JsonUtf8 {
     [IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 }
 
+function Resolve-ExistingWorkshopIdentity {
+    param(
+        [object]$DeclaredId,
+        [Parameter(Mandatory)][string]$StateRoot
+    )
+    $identities = [System.Collections.Generic.List[System.UInt64]]::new()
+    if ($null -ne $DeclaredId) {
+        [System.UInt64]$parsed = 0
+        if (-not [ulong]::TryParse([string]$DeclaredId, [ref]$parsed) -or $parsed -eq 0) {
+            throw 'The release descriptor Workshop identity is invalid.'
+        }
+        $identities.Add($parsed)
+    }
+    $identityPath = Join-Path $StateRoot 'PublishedFileId.txt'
+    if (Test-Path -LiteralPath $identityPath -PathType Leaf) {
+        [System.UInt64]$parsed = 0
+        if (-not [ulong]::TryParse((Get-Content -LiteralPath $identityPath -Raw).Trim(), [ref]$parsed) -or $parsed -eq 0) {
+            throw 'The durable Workshop identity is invalid.'
+        }
+        $identities.Add($parsed)
+    }
+    $publicationRoot = Join-Path $StateRoot 'publication'
+    foreach ($receiptPath in @(Get-ChildItem -LiteralPath $publicationRoot -Recurse -Filter publication-receipt.json -File -ErrorAction SilentlyContinue)) {
+        try { $receipt = Get-Content -LiteralPath $receiptPath.FullName -Raw -Encoding UTF8 | ConvertFrom-Json }
+        catch { throw "A Workshop publication receipt is unreadable: $($receiptPath.FullName)" }
+        [System.UInt64]$parsed = 0
+        if ([string]$receipt.schema -cne 'ImmersiveChefs/WorkshopPublicationReceipt/v1' -or
+            -not [ulong]::TryParse([string]$receipt.publishedFileId, [ref]$parsed) -or $parsed -eq 0) {
+            throw "A Workshop publication receipt has an invalid identity: $($receiptPath.FullName)"
+        }
+        $identities.Add($parsed)
+    }
+    $distinct = @($identities | Sort-Object -Unique)
+    if ($distinct.Count -gt 1) { throw 'Workshop identity evidence conflicts; refusing to stage a release.' }
+    return $(if ($distinct.Count -eq 1) { [System.UInt64]$distinct[0] } else { [System.UInt64]0 })
+}
+
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $releaseRoot = Join-Path $repositoryRoot 'mods\ImmersiveChefs\Release'
 $descriptorPath = Join-Path $releaseRoot 'release.json'
@@ -90,16 +127,16 @@ $actualRimWorldBuild = '{0}.{1}.{2} rev{3}' -f `
 $actualManagedHash = (Get-FileHash -LiteralPath $managedAssemblyPath -Algorithm SHA256).Hash
 $steamManifestText = Get-Content -LiteralPath $steamManifestPath -Raw
 $buildMatch = [regex]::Match($steamManifestText, '"buildid"\s+"(?<id>\d+)"')
-if ($actualRimWorldBuild -cne [string]$release.rimWorldBuild -or
+if ($rawRimWorldBuild -cne [string]$release.rimWorldBuild -or
+    $actualRimWorldBuild -cne [string]$release.rimWorldRuntimeBuild -or
     -not $buildMatch.Success -or
     $buildMatch.Groups['id'].Value -cne [string]$release.steamBuildId -or
     $actualManagedHash -cne [string]$release.managedAssemblySha256) {
     Exit-InvalidInput 'The installed RimWorld build does not match the pinned release inputs.'
 }
-if (-not $rawRimWorldBuild.StartsWith('1.6.4871 rev', [StringComparison]::Ordinal)) {
-    Exit-InvalidInput 'Version.txt does not identify the pinned RimWorld 1.6.4871 build line.'
-}
-if ($null -eq $release.publishedFileId -and -not [bool]$release.allowFirstPublication) {
+$releaseStateRoot = Join-Path $repositoryRoot 'artifacts\Releases\fumblesneeze.immersivechefs'
+$effectivePublishedFileId = Resolve-ExistingWorkshopIdentity -DeclaredId $release.publishedFileId -StateRoot $releaseStateRoot
+if ($effectivePublishedFileId -eq 0 -and -not [bool]$release.allowFirstPublication) {
     Exit-InvalidInput 'The descriptor has no Workshop item and does not allow first publication.'
 }
 
@@ -127,12 +164,8 @@ $null = New-Item -ItemType Directory -Path (Join-Path $packageRoot 'About'),(Joi
 
 Copy-Item -LiteralPath (Join-Path $builtRoot 'About\About.xml') -Destination (Join-Path $packageRoot 'About\About.xml')
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'mods\ImmersiveChefs\About\Preview.png') -Destination (Join-Path $packageRoot 'About\Preview.png')
-if ($null -ne $release.publishedFileId) {
-    $publishedIdentity = [string]$release.publishedFileId
-    $parsedIdentity = 0UL
-    if (-not [ulong]::TryParse($publishedIdentity, [ref]$parsedIdentity) -or $parsedIdentity -eq 0) {
-        Exit-InvalidInput 'The release descriptor Workshop identity is invalid.'
-    }
+if ($effectivePublishedFileId -ne 0) {
+    $publishedIdentity = [string]$effectivePublishedFileId
     [IO.File]::WriteAllText(
         (Join-Path $packageRoot 'About\PublishedFileId.txt'),
         $publishedIdentity,
@@ -180,13 +213,14 @@ $plan = [pscustomobject][ordered]@{
     releaseDescriptorSha256 = (Get-FileHash -LiteralPath $descriptorPath -Algorithm SHA256).Hash
     steamAppId = 294100
     steamUserId = [string]$release.steamUserId
-    publishedFileId = $release.publishedFileId
-    allowFirstPublication = [bool]$release.allowFirstPublication
+    publishedFileId = if ($effectivePublishedFileId -eq 0) { $null } else { [string]$effectivePublishedFileId }
+    allowFirstPublication = [bool]$release.allowFirstPublication -and $effectivePublishedFileId -eq 0
     packageId = [string]$release.packageId
     title = [string]$release.title
     author = [string]$release.author
     rimWorldVersion = [string]$release.rimWorldVersion
     rimWorldBuild = [string]$release.rimWorldBuild
+    rimWorldRuntimeBuild = [string]$release.rimWorldRuntimeBuild
     steamBuildId = [string]$release.steamBuildId
     managedAssemblySha256 = [string]$release.managedAssemblySha256
     visibility = [string]$release.visibility
@@ -198,7 +232,7 @@ $plan = [pscustomobject][ordered]@{
     candidateSha256 = $candidateDigest
     packageFileCount = $files.Count
     packageBytes = [long](($files | Measure-Object bytes -Sum).Sum)
-    generatedAtPublication = @('About\PublishedFileId.txt')
+    generatedAtPublication = if ($effectivePublishedFileId -eq 0) { @('About\PublishedFileId.txt') } else { @() }
     descriptionPath = $descriptionPath
     descriptionBytes = (Get-Item -LiteralPath $descriptionPath).Length
     descriptionSha256 = (Get-FileHash -LiteralPath $descriptionPath -Algorithm SHA256).Hash

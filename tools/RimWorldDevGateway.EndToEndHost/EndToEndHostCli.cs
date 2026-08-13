@@ -468,7 +468,9 @@ public static class EndToEndHostCli
 
     private static EndToEndBundlePlan BuildPlan(CommonInputs input)
     {
-        var projects = EndToEndProjectDiscovery.Discover(input.RepositoryRoot);
+        var projects = EndToEndProjectDiscovery.SelectExactProjects(
+            EndToEndProjectDiscovery.Discover(input.RepositoryRoot),
+            input.ProjectPaths);
         var assemblies = new EndToEndProjectBuilder().Build(
             projects,
             input.Configuration,
@@ -689,6 +691,12 @@ public static class EndToEndHostCli
             DefaultValueFactory = _ => "Release"
         };
 
+        public Option<string[]> ProjectPaths { get; } = new("--project-path")
+        {
+            Description = "Optional exact E2E fixture project allowlist.",
+            AllowMultipleArgumentsPerToken = true
+        };
+
         public Option<int> BuildTimeoutSeconds { get; } = new("--build-timeout-seconds")
         {
             Description = "Per build/property-query timeout.",
@@ -707,6 +715,7 @@ public static class EndToEndHostCli
             command.Options.Add(PackageIds);
             command.Options.Add(PackageIdFile);
             command.Options.Add(Configuration);
+            command.Options.Add(ProjectPaths);
             command.Options.Add(BuildTimeoutSeconds);
             command.Options.Add(Output);
         }
@@ -741,6 +750,7 @@ public static class EndToEndHostCli
                 RequiredToken(result.GetValue(RimWorldVersion), "RimWorld version"),
                 packageIds,
                 RequiredToken(result.GetValue(Configuration), "configuration"),
+                (result.GetValue(ProjectPaths) ?? Array.Empty<string>()).Select(Path.GetFullPath).ToArray(),
                 timeout);
         }
 
@@ -764,6 +774,7 @@ public static class EndToEndHostCli
         string RimWorldVersion,
         IReadOnlyList<string> PackageIds,
         string Configuration,
+        IReadOnlyList<string> ProjectPaths,
         int BuildTimeoutSeconds);
 
     private sealed record LeaseRecord(

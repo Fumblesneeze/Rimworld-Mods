@@ -53,7 +53,7 @@ Read [references/release-checklist.md](references/release-checklist.md) before c
 ## Publish deliberately
 
 1. Use the implemented Gateway publisher as the primary path only from a fresh isolated RimWorld process with Steam initialized. SteamCMD may be a documented recovery path, but it is not equivalent Gateway evidence.
-2. Address an existing declared Workshop item by default. A first publication is allowed only when the manifest explicitly opts in, the mutation-free dry-run has no item ID, the user confirms that exact creation, and no prior receipt or local identity exists; persist the returned nonzero ID before continuing and make every later release update-only.
+2. Address an existing declared Workshop item by default. A first publication is allowed only when the manifest explicitly opts in, the mutation-free dry-run has no item ID, the user confirms that exact creation, no prior receipt or local identity exists, and one bounded native query proves the owning account has no exact-title item. Persist the returned nonzero ID before continuing; immediately after a successful first release, commit it to the release descriptor and disable first publication so every clone and later release is update-only. Never delete ignored release state as a substitute for that tracked transition.
 3. Run a mutation-free dry-run and show the exact remote item, metadata diff, content/presentation digests, and change note to the user.
 4. Obtain explicit user confirmation for that dry-run. Confirm using its bound nonce/digests; changed files, presentation, or remote state require a new dry-run and review.
 5. Observe progress and the terminal Steam callback. Report legal-agreement, authentication, quota, connectivity, and indeterminate-callback states without blind retries or false rollback claims.
@@ -63,14 +63,17 @@ For the current Immersive Chefs 1.6 bootstrap, stage the clean committed candida
 `.\scripts\Build-ImmersiveChefsRelease.ps1 -Output json`. After personally reviewing the emitted
 `publication-plan.json`, invoke `.\scripts\Invoke-ImmersiveChefsWorkshopRelease.ps1` only with that
 file's exact SHA-256 and the exact confirmation phrase printed by its help. The publisher revalidates
-the source and presentation, uploads through RimWorld's initialized Steamworks session, queries the
+the source and presentation, proves exact-title absence on the owning account before first creation, uploads through RimWorld's initialized Steamworks session, queries the
 remote title/description/tags/preview/owner/dependency graph, subscribes the exact item, and compares
 the downloaded package. It then removes the repository-local product from RimWorld's discovery path
-under a recoverable exact-path move, launches the subscribed Workshop copy, resumes the checked-in
-native fabrication scenario, captures the two produced kitchenware inspectors, restores the local
+under a recoverable exact-path move, launches the subscribed Workshop copy, invokes the checked-in
+native Prioritize and Consume float-menu workflow, captures before/cooking/plated/dining/dirty-ware evidence, restores the local
 mod, and only then retains a token-free receipt. The publisher durably records creation/submission
 admission and reconciles an indeterminate submit by querying Steam; never delete that ignored state
-to force a second CreateItem.
+to force a second CreateItem. After successful first-publication verification, update
+`mods/ImmersiveChefs/Release/release.json` with the returned `publishedFileId`, set
+`allowFirstPublication` to `false`, rerun its focused descriptor checks, and commit that tracked
+identity before declaring release administration complete.
 
 ## Preserve evidence and clean up
 

@@ -18,6 +18,27 @@ public static class EndToEndProjectDiscovery
                 record.AssemblyName,
                 record.TargetFramework))
             .ToArray());
+
+    public static IReadOnlyList<EndToEndProjectRecord> SelectExactProjects(
+        IEnumerable<EndToEndProjectRecord> projects,
+        IEnumerable<string> selectedProjectPaths)
+    {
+        if (projects is null) throw new ArgumentNullException(nameof(projects));
+        if (selectedProjectPaths is null) throw new ArgumentNullException(nameof(selectedProjectPaths));
+        var all = projects.ToArray();
+        var exactPaths = new HashSet<string>(
+            selectedProjectPaths.Select(Path.GetFullPath),
+            StringComparer.OrdinalIgnoreCase);
+        if (exactPaths.Count == 0) return new ReadOnlyCollection<EndToEndProjectRecord>(all);
+        var selected = all.Where(project => exactPaths.Contains(Path.GetFullPath(project.ProjectPath)))
+            .OrderBy(project => project.ProjectPath, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var resolved = new HashSet<string>(selected.Select(project => Path.GetFullPath(project.ProjectPath)), StringComparer.OrdinalIgnoreCase);
+        var missing = exactPaths.Where(path => !resolved.Contains(path)).ToArray();
+        if (missing.Length != 0)
+            throw new EndToEndDiscoveryException($"E2E staging could not resolve {missing.Length} selected project path(s)." );
+        return new ReadOnlyCollection<EndToEndProjectRecord>(selected);
+    }
 }
 
 public static class PerformanceProjectDiscovery

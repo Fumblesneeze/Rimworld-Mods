@@ -108,7 +108,7 @@
 
 ## 13. mods/RimWorldDevGateway — Immersive Chefs 1.6 release bootstrap
 
-- [ ] 13.1 TDD: define and validate the clean committed single-target release descriptor, positive-allowlist staging, sorted SHA-256 package manifest, presentation hashes, and mutation-free first-publication plan.
+- [x] 13.1 TDD: define and validate the clean committed single-target release descriptor, positive-allowlist staging, sorted SHA-256 package manifest, presentation hashes, and mutation-free first-publication plan. The release hardening additionally behavior-tests existing-ID inventory, receipt identity recovery/conflict, exact project staging, callback failure classes, callback identity correlation, and invalid-call rejection.
 - [ ] 13.2 REVIEW/GATE: independently review the bootstrap, run the complete release gates, inspect the staged package and presentation, and obtain explicit confirmation bound to the exact candidate and presentation hashes.
 - [ ] 13.3 STEAM: create the first item through RimWorld's initialized Steam session, persist its returned identity before submission, check every setter/callback and Harmony dependency result, and retain a secret-free receipt.
 - [ ] 13.4 SUBSCRIBER: subscribe/reacquire the exact item, compare its downloaded file manifest with the reviewed candidate, then launch RimWorld 1.6 with the subscribed copy and personally observe the declared native smoke workflow.

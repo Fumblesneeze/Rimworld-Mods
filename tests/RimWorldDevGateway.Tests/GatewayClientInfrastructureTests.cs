@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
 using RimWorldDevGateway.Client;
 using RimWorldDevGateway.Contracts;
 using NUnit.Framework;
@@ -159,6 +160,46 @@ public static class TestSnippet
             {
                 Directory.Delete(compilerRoot, true);
             }
+        }
+    }
+
+    [Test]
+    public void Checked_in_Steam_publisher_safety_classifies_failures_and_correlates_callback_IDs()
+    {
+        var root = FindRepositoryRoot();
+        var compilerRoot = Path.Combine(Path.GetTempPath(), "gateway-release-safety-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var compiler = new DotNetGatewaySourceCompiler(temporaryRoot: compilerRoot);
+            var bytes = compiler.Compile(new GatewaySourceCompilationRequest(
+                Path.Combine(root, "scripts", "Fixtures", "GatewaySteamWorkshopPublisher.cs"),
+                Path.GetDirectoryName(typeof(Pawn).Assembly.Location)!,
+                typeof(GatewaySessionManifest).Assembly.Location));
+            var assembly = Assembly.Load(bytes);
+            var safety = assembly.GetType("GatewaySteamWorkshopPublisher.PublisherSafety", throwOnError: true)!;
+            var failure = safety.GetMethod("DurableFailureStage", BindingFlags.Public | BindingFlags.Static)!;
+            var correlation = safety.GetMethod("CallbackIdsMatch", BindingFlags.Public | BindingFlags.Static)!;
+            var invalid = safety.GetMethod("IsInvalidCallHandle", BindingFlags.Public | BindingFlags.Static)!;
+            var ownerAbsence = safety.GetMethod("OwnerScanProvesAbsence", BindingFlags.Public | BindingFlags.Static)!;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(failure.Invoke(null, new object[] { "create", true }), Is.EqualTo("create-indeterminate"));
+                Assert.That(failure.Invoke(null, new object[] { "create", false }), Is.EqualTo("create-failed-definite"));
+                Assert.That(failure.Invoke(null, new object[] { "submit", true }), Is.EqualTo("submit-indeterminate"));
+                Assert.That(failure.Invoke(null, new object[] { "dependency-remove", false }), Is.EqualTo("dependency-failed-definite"));
+                Assert.That(correlation.Invoke(null, new object[] { 17UL, 23UL, 17UL, 23UL }), Is.True);
+                Assert.That(correlation.Invoke(null, new object[] { 17UL, 23UL, 17UL, 99UL }), Is.False);
+                Assert.That(invalid.Invoke(null, new object[] { 0UL }), Is.True);
+                Assert.That(invalid.Invoke(null, new object[] { 1UL }), Is.False);
+                Assert.That(ownerAbsence.Invoke(null, new object[] { 0u, 0u, 0 }), Is.True);
+                Assert.That(ownerAbsence.Invoke(null, new object[] { 2u, 1u, 0 }), Is.False);
+                Assert.That(ownerAbsence.Invoke(null, new object[] { 1u, 1u, 1 }), Is.False);
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(compilerRoot)) Directory.Delete(compilerRoot, true);
         }
     }
 

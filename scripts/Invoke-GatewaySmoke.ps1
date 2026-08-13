@@ -88,6 +88,8 @@ param(
 
     [string]$InteractiveCompletionFile,
 
+    [string]$ProcessLeaseFile,
+
     [switch]$Quicktest,
 
     [string]$Scenario,
@@ -5990,6 +5992,32 @@ try {
     $launchedProcessStartUtc = [datetimeoffset]::new(
         $launchedProcess.StartTime.ToUniversalTime(),
         [timespan]::Zero)
+    if (-not [string]::IsNullOrWhiteSpace($ProcessLeaseFile)) {
+        $resolvedProcessLeaseFile = [IO.Path]::GetFullPath($ProcessLeaseFile)
+        $processLeaseDirectory = [IO.Path]::GetDirectoryName($resolvedProcessLeaseFile)
+        if ([string]::IsNullOrWhiteSpace($processLeaseDirectory) -or
+            -not [IO.Path]::GetFullPath($processLeaseDirectory).StartsWith(
+                [IO.Path]::GetFullPath($artifactRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar,
+                [StringComparison]::OrdinalIgnoreCase)) {
+            throw '-ProcessLeaseFile must be inside this exact Gateway artifact root.'
+        }
+        $leaseTemporary = $resolvedProcessLeaseFile + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
+        try {
+            [IO.Directory]::CreateDirectory($processLeaseDirectory) | Out-Null
+            [IO.File]::WriteAllText(
+                $leaseTemporary,
+                ([pscustomobject][ordered]@{
+                    schema = 'RimWorldDevGateway/ProcessLease/v1'
+                    processId = $launchedProcess.Id
+                    processStartUtc = $launchedProcessStartUtc.ToUniversalTime().ToString('O')
+                } | ConvertTo-Json -Compress),
+                [Text.UTF8Encoding]::new($false))
+            [IO.File]::Move($leaseTemporary, $resolvedProcessLeaseFile)
+        }
+        finally {
+            if (Test-Path -LiteralPath $leaseTemporary -PathType Leaf) { Remove-Item -LiteralPath $leaseTemporary -Force }
+        }
+    }
     $deadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
     while ([datetime]::UtcNow -lt $deadline) {
         $launchedProcess.Refresh()
