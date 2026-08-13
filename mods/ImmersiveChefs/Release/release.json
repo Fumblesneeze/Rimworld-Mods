@@ -20,7 +20,7 @@
   "requiredWorkshopItems": [
     "2009463077"
   ],
-  "description": "workshop/description.bbcode",
+  "description": "workshop/description.template.bbcode",
   "preview": "workshop/preview-main.png",
-  "changeNote": "New illustrated Workshop page with a clearer feature and compatibility guide."
+  "changeNote": "Corrected the microwave direction art and improved the illustrated feature guide."
 }

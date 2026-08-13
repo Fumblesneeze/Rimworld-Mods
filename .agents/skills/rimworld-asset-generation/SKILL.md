@@ -69,6 +69,11 @@ Read only the references needed for the asset:
      sprites and copy; keep the reusable frame and licensed font under `release/templates/workshop/`.
      Render deterministically, inspect a page-scale contact sheet and important full-size cards, and
      reject fallback fonts, cropped headlines, art/text collisions, or unreadable small copy.
+   - Map every card's pictured subject to its actual headline and bullet claims before promotion.
+     Reject a visually attractive but generic sprite collage when it does not depict the promised
+     behavior. If a directional building appears in Workshop art, use only a cardinal frame whose
+     rotated interaction-facing side has been inspected in game; never infer direction from a
+     filename or assume that `South` means a front elevation toward the camera.
 
 6. Verify the reviewed build in game.
    - Build/package after review changes.

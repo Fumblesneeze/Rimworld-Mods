@@ -47,7 +47,13 @@ try {
         $index = 0
         foreach ($art in @($card.art)) {
             $index++
-            $artPath = Join-Path $textureRoot ([string]$art.source).Replace('/', '\')
+            $source = [string]$art.source
+            $artPath = if ($source.StartsWith('workshop:', [StringComparison]::Ordinal)) {
+                Join-Path $workshopRoot $source.Substring('workshop:'.Length).Replace('/', '\')
+            }
+            else {
+                Join-Path $textureRoot $source.Replace('/', '\')
+            }
             if (-not (Test-Path -LiteralPath $artPath -PathType Leaf)) { throw "Missing presentation sprite: $artPath" }
             $resizedPath = Join-Path $temporaryRoot (([string]$card.token) + "-art-$index.png")
             $nextPath = Join-Path $temporaryRoot (([string]$card.token) + "-$index.png")

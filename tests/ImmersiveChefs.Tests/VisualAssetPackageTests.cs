@@ -1047,7 +1047,8 @@ public sealed class VisualAssetPackageTests
             ("KitchenStation", "SauceStation"),
             ("KitchenStation", "MeatStation"),
             ("KitchenStation", "VegetableStation"),
-            ("KitchenStation", "PastryStation")
+            ("KitchenStation", "PastryStation"),
+            ("Appliance", "Microwave")
         }
             .SelectMany(family => new[] { string.Empty, "_Variant01" }
                 .SelectMany(variant => new[] { "north", "east", "south", "west" }
@@ -1074,6 +1075,7 @@ public sealed class VisualAssetPackageTests
             var approval = approvedFrames[path];
             var landmarks = (string?)approval.Attribute("landmarks") ?? string.Empty;
             var equipmentOrder = (string?)approval.Attribute("equipmentOrder") ?? string.Empty;
+            var isMicrowave = path.StartsWith("Appliance/Microwave", StringComparison.Ordinal);
             var expectedHash = (string?)approval.Attribute("sha256") ?? string.Empty;
             var texturePath = Path.Combine(
                 textureRoot,
@@ -1084,12 +1086,15 @@ public sealed class VisualAssetPackageTests
                 Assert.That(File.Exists(texturePath), Is.True, path);
                 Assert.That(
                     landmarks,
-                    Does.Contain("screen-bottom underframe"),
+                    Does.Contain(isMicrowave ? "countertop body" : "screen-bottom underframe"),
                     path + " must record the fixed-camera body landmark.");
-                Assert.That(
-                    equipmentOrder.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Length,
-                    Is.GreaterThanOrEqualTo(2),
-                    path + " must record its direction-specific world-space equipment order.");
+                if (!isMicrowave)
+                {
+                    Assert.That(
+                        equipmentOrder.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Length,
+                        Is.GreaterThanOrEqualTo(2),
+                        path + " must record its direction-specific world-space equipment order.");
+                }
                 Assert.That(
                     expectedHash,
                     Does.Match("^[0-9a-f]{64}$"),
@@ -1108,7 +1113,8 @@ public sealed class VisualAssetPackageTests
 
         foreach (var family in expectedPaths
                      .Select(path => path.Substring(0, path.LastIndexOf('_')))
-                     .Distinct(StringComparer.Ordinal))
+                     .Distinct(StringComparer.Ordinal)
+                     .Where(family => !family.StartsWith("Appliance/Microwave", StringComparison.Ordinal)))
         {
             var north = EquipmentOrder(approvedFrames[family + "_north.png"]);
             var east = EquipmentOrder(approvedFrames[family + "_east.png"]);
@@ -1120,6 +1126,51 @@ public sealed class VisualAssetPackageTests
                 Assert.That(south, Is.EqualTo(north.Reverse()), family + " south must reverse north's order.");
                 Assert.That(west, Is.EqualTo(north.Reverse()), family + " west must rotate north's order counter-clockwise.");
             });
+        }
+
+        foreach (var family in new[] { "Appliance/Microwave", "Appliance/Microwave_Variant01" })
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That((string?)approvedFrames[family + "_north.png"].Attribute("visibleFace"),
+                    Is.EqualTo("interaction-bottom"), family + " north must put its door beside the south interaction cell.");
+                Assert.That((string?)approvedFrames[family + "_south.png"].Attribute("visibleFace"),
+                    Is.EqualTo("interaction-top"), family + " south must put its door beside the north interaction cell.");
+                Assert.That((string?)approvedFrames[family + "_east.png"].Attribute("visibleFace"),
+                    Is.EqualTo("interaction-left"), family + " east must put its door beside the west interaction cell.");
+                Assert.That((string?)approvedFrames[family + "_west.png"].Attribute("visibleFace"),
+                    Is.EqualTo("interaction-right"), family + " west must put its door beside the east interaction cell.");
+            });
+        }
+    }
+
+    [Test]
+    public void Microwave_door_and_controls_follow_the_rotated_interaction_side_in_real_pixels()
+    {
+        var root = FindRepositoryRoot();
+        var textureRoot = Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Textures",
+            "ImmersiveChefs",
+            "Things",
+            "Building",
+            "Appliance");
+
+        foreach (var family in new[] { "Microwave", "Microwave_Variant01" })
+        {
+            foreach (var direction in new[] { "north", "east", "south", "west" })
+            {
+                using var bitmap = new Bitmap(Path.Combine(textureRoot, family + "_" + direction + ".png"));
+                var interactionDarkPixels = CountDarkInteractionSidePixels(bitmap, direction);
+                var oppositeDarkPixels = CountDarkInteractionSidePixels(bitmap, Opposite(direction));
+                Assert.That(
+                    interactionDarkPixels,
+                    Is.GreaterThan(oppositeDarkPixels * 1.35),
+                    family + "_" + direction
+                    + " must place its dark door/control landmarks beside its rotated interaction cell, not on the opposite casing.");
+            }
         }
     }
 
@@ -2457,6 +2508,39 @@ public sealed class VisualAssetPackageTests
         Task.WaitAll(standardOutput, standardError);
         return (process.ExitCode, standardOutput.Result, standardError.Result);
     }
+
+    private static int CountDarkInteractionSidePixels(Bitmap bitmap, string direction)
+    {
+        var (minimumX, maximumX, minimumY, maximumY) = direction switch
+        {
+            "north" => (0.15, 0.85, 0.55, 0.92),
+            "south" => (0.15, 0.85, 0.08, 0.45),
+            "east" => (0.08, 0.45, 0.15, 0.85),
+            "west" => (0.55, 0.92, 0.15, 0.85),
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+        };
+        var count = 0;
+        for (var y = (int)(bitmap.Height * minimumY); y < (int)(bitmap.Height * maximumY); y++)
+        for (var x = (int)(bitmap.Width * minimumX); x < (int)(bitmap.Width * maximumX); x++)
+        {
+            var pixel = bitmap.GetPixel(x, y);
+            if (pixel.A > 180 && (pixel.R + pixel.G + pixel.B) / 3 < 65)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static string Opposite(string direction) => direction switch
+    {
+        "north" => "south",
+        "south" => "north",
+        "east" => "west",
+        "west" => "east",
+        _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+    };
 
     private static string Quote(string value) => "\"" + value.Replace("\"", "\\\"") + "\"";
 

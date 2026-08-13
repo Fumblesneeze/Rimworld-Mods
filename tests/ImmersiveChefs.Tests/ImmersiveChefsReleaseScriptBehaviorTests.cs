@@ -101,7 +101,7 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         var inventoryPath = Path.Combine(fixture.Root, "preview-inventory.json");
         var outputPath = Path.Combine(fixture.Root, "description.bbcode");
         var provenancePath = Path.Combine(fixture.Root, "description.provenance.json");
-        var tokens = new[] { "hero", "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" };
+        var tokens = new[] { "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" };
         var previewPlan = new string('A', 64);
         var previewEntries = tokens.Select((token, index) =>
         {
@@ -141,7 +141,7 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             Assert.That(File.Exists(provenancePath), Is.True);
             var resolved = File.ReadAllText(outputPath);
             Assert.That(resolved, Does.Not.Contain("{{image:"));
-            Assert.That(Regex.Matches(resolved, @"\[img\]https://images\.steamusercontent\.com/.+?\[/img\]").Count, Is.EqualTo(7));
+            Assert.That(Regex.Matches(resolved, @"\[img\]https://images\.steamusercontent\.com/.+?\[/img\]").Count, Is.EqualTo(6));
             Assert.That(new FileInfo(outputPath).Length + 1, Is.LessThanOrEqualTo(8000));
             var provenance = File.ReadAllText(provenancePath);
             Assert.That(provenance, Does.Contain("3782589902"));

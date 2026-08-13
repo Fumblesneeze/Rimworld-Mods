@@ -2,13 +2,6 @@
   "schema": "ImmersiveChefs/WorkshopPresentation/v1",
   "cards": [
     {
-      "token": "hero",
-      "path": "assets/workshop-hero.png",
-      "alt": "Immersive Chefs title art with a RimWorld chef shouting You Donkey",
-      "layout": "hero",
-      "source": "preview-main.png"
-    },
-    {
       "token": "kitchenware",
       "path": "assets/feature-kitchenware.png",
       "alt": "Cookware, plates, cutlery and a chef's knife from Immersive Chefs",
@@ -92,9 +85,7 @@
         "Travelers clean dishes on the road"
       ],
       "art": [
-        { "source": "Things/Building/KitchenStation/VegetableStation_south.png", "x": 550, "y": 80, "width": 560 },
-        { "source": "Things/Building/KitchenStation/PastryStation_south.png", "x": 610, "y": 350, "width": 480 },
-        { "source": "Things/Item/Kitchenware/GlitterCookware/GlitterCookware.png", "x": 940, "y": 75, "width": 180 }
+        { "source": "workshop:illustrations/colony-service.png", "x": 535, "y": 120, "width": 600 }
       ]
     },
     {
@@ -109,9 +100,7 @@
         "Every integration stays optional"
       ],
       "art": [
-        { "source": "Things/Building/KitchenStation/PrepStation_north.png", "x": 530, "y": 50, "width": 500 },
-        { "source": "Things/Building/Dishwasher/IndustrialDishwasher_north.png", "x": 690, "y": 300, "width": 430 },
-        { "source": "Things/Item/Kitchenware/ChefsKnife/ChefsKnife.png", "x": 970, "y": 110, "width": 150 }
+        { "source": "workshop:illustrations/compatibility-loop.png", "x": 650, "y": 70, "width": 430 }
       ]
     }
   ]

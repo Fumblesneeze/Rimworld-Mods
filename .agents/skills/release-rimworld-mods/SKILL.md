@@ -48,10 +48,14 @@ Read [references/release-checklist.md](references/release-checklist.md) before c
 2. Render description BBCode, banners, primary preview, and feature/mechanics graphics only from versioned templates, local fonts, authored content, and repository-owned sprites.
 3. Require offline deterministic rerendering, text-overflow checks, link/BBCode policy, image dimension/file-size validation, provenance hashes, and a local preview.
 4. Personally inspect copy, layout, sprites, cropping, readability, and image order. Publication consumes only the exact reviewed presentation digest.
+   Each feature card must visually communicate the behavior named by its headline and bullets;
+   decorative but unrelated assets are a release defect. For directional game sprites, require the
+   reviewed player-facing orientation instead of trusting a cardinal suffix.
 5. Write for players browsing a mod page, not developers reviewing a patch. Lead with the fantasy and visible behavior; use concrete verbs such as cooks gather, diners fetch, dishes return dirty, and waiters clear. Keep terms such as adapter, package-gated, absent-safe, ownership, provenance, seam, reflection, and state machine in technical docs. Compatibility entries must say what the player will notice and any exact load-chain requirement in plain language.
 6. Use wide visual headers/feature cards to break up dense inventories. For the proven Immersive Chefs layout, author 1164×655 cards and keep every Steam additional preview below 1 MiB. Use a checked-in card manifest, reusable template, repository-local licensed font, and actual shipped sprites; review one contact sheet plus every important full-resolution card.
 7. Treat image hosting as a reviewed identity problem. Synchronize ordered additional previews first, query the resulting Steam URLs/original names, resolve only those URLs into the final BBCode, then publish metadata/content. Bind local hashes, remote indices, and URLs in evidence. Never put unresolved tokens on the live page or silently use an anonymous/ad-supported image host.
 8. End distributable-mod copy with the user-reviewed `Author's Note` when requested. It may disclose AI-supervised development, frameworks, testing, playtesting limits, and feedback expectations in the author's voice; nothing follows it. State whether the shipped mod performs live AI generation.
+9. When a mod distinguishes especially valuable optional integrations, put a concise `Recommended Mods` section immediately before the full optional catalog. Link exact Workshop pages when the description budget permits, state any framework chain in player language, and remove those entries from the optional list instead of repeating them.
 
 ## Publish deliberately
 

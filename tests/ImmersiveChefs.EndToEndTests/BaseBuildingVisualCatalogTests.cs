@@ -37,12 +37,15 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
     private readonly Dictionary<Rot4, List<string>> rotationReferenceRows = new();
     private readonly Dictionary<(string DefName, int Rotation), string> vanillaComparisonIds = new();
     private readonly Dictionary<int, NativePlacementFixture> nativePlacements = new();
+    private readonly Dictionary<int, NativeMicrowavePlacementFixture> nativeMicrowavePlacements = new();
     private Building tableSupport = null!;
     private Building workbenchSupport = null!;
     private Building tableMicrowave = null!;
     private Building workbenchMicrowave = null!;
     private string nativePlacementGizmoType = null!;
     private string nativePlacementStableId = null!;
+    private string nativeMicrowaveGizmoType = null!;
+    private string nativeMicrowaveStableId = null!;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -146,6 +149,15 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 new NativePlacementFixture(rotation, cell, referenceWorkbench));
         }
 
+        foreach (var (rotation, cell) in FindNativeMicrowavePlacementCells(map, center))
+        {
+            var support = SpawnBuilding(map, cell, "Table1x2c", rotation, ThingDefOf.Steel);
+            supports.Add(support);
+            nativeMicrowavePlacements.Add(
+                rotation.AsInt,
+                new NativeMicrowavePlacementFixture(rotation, support));
+        }
+
         var buildOptions = context.GetRequiredService<IEndToEndGizmoCatalog>()
             .Query(Array.Empty<string>(), new[] { "Production" })
             .Where(option => option.Interaction == EndToEndGizmoInteraction.Place)
@@ -170,6 +182,15 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
             "The native dishwasher place designator must be enabled for the visual acceptance action.");
         nativePlacementGizmoType = placement.RuntimeType;
         nativePlacementStableId = placement.StableId;
+        var microwavePlacement = buildOptions.Single(option =>
+            string.Equals(
+                option.BuildableDefName,
+                "ImmersiveChefs_Microwave",
+                StringComparison.Ordinal));
+        EndToEndAssert.True(!microwavePlacement.Disabled,
+            "The native microwave place designator must be enabled for the cardinal visual acceptance action.");
+        nativeMicrowaveGizmoType = microwavePlacement.RuntimeType;
+        nativeMicrowaveStableId = microwavePlacement.StableId;
     }
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
@@ -349,6 +370,67 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 });
         }
 
+        foreach (var requestedRotation in new[] { Rot4.North, Rot4.East, Rot4.South, Rot4.West })
+        {
+            var fixture = nativeMicrowavePlacements[requestedRotation.AsInt];
+            var direction = RotationName(requestedRotation);
+            yield return new SelectionActionStep(
+                "select the real table before the " + direction + " microwave player action",
+                new[] { fixture.Support.ThingID },
+                additive: false);
+            yield return new CameraActionStep(
+                "frame the empty " + direction + " microwave support",
+                new[] { fixture.Support.ThingID },
+                paddingPixels: 280);
+            yield return new ScreenshotStep(
+                "before native " + direction + "-facing microwave placement",
+                Array.Empty<string>(),
+                0);
+            yield return new GizmoActionStep(
+                "place a " + direction + "-facing microwave through the native Production designator",
+                Array.Empty<string>(),
+                nativeMicrowaveGizmoType,
+                EndToEndGizmoInteraction.Place,
+                stableGizmoId: nativeMicrowaveStableId,
+                startCell: new EndToEndMapCell(fixture.Support.Position.x, fixture.Support.Position.z),
+                architectCategoryDefNames: new[] { "Production" },
+                rotation: EndToEndRotation(requestedRotation));
+            yield return new WaitUntilStep(
+                "wait for the native " + direction + "-facing microwave to appear",
+                _ => FindNativeMicrowave(fixture) is { Rotation: var rotation } &&
+                     rotation == requestedRotation,
+                new EndToEndDeadline(180, 600, TimeSpan.FromSeconds(10)));
+            var placed = FindNativeMicrowave(fixture) ?? throw new EndToEndAssertionException(
+                "The native " + direction + " microwave placement completed without a player-visible building.");
+            yield return new SelectionActionStep(
+                "select the player-placed " + direction + "-facing microwave",
+                new[] { placed.ThingID },
+                additive: false);
+            yield return new CameraActionStep(
+                "frame the player-placed " + direction + "-facing microwave on its table",
+                new[] { fixture.Support.ThingID, placed.ThingID },
+                paddingPixels: 280);
+            yield return new ScreenshotStep(
+                "after native " + direction + "-facing microwave placement",
+                new[] { fixture.Support.ThingID, placed.ThingID },
+                280);
+            yield return new AssertionStep(
+                "observe the exact native " + direction + " microwave orientation",
+                _ =>
+                {
+                    EndToEndAssert.Equal(
+                        requestedRotation.AsInt,
+                        placed.Rotation.AsInt,
+                        "The native player placement must create a " + direction + "-facing microwave.");
+                    EndToEndAssert.True(
+                        ReferenceEquals(
+                            fixture.Support,
+                            MicrowaveSupportRuntime.FindAt(fixture.Support.Position, fixture.Support.Map, placed)),
+                        "The " + direction + "-facing microwave must remain visibly supported by its exact table.");
+                    AssertMicrowaveInteractionSide(placed, requestedRotation);
+                });
+        }
+
         yield return new CheckpointStep(
             "base building visual catalog",
             _ => customBuildings
@@ -385,6 +467,13 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
             .OfType<Building>()
             .SingleOrDefault(building =>
                 building.def.defName == "ImmersiveChefs_Dishwasher" &&
+                building.Faction == Faction.OfPlayer);
+
+    private static Building? FindNativeMicrowave(NativeMicrowavePlacementFixture fixture) =>
+        fixture.Support.Position.GetThingList(Current.Game.CurrentMap)
+            .OfType<Building>()
+            .SingleOrDefault(building =>
+                building.def.defName == "ImmersiveChefs_Microwave" &&
                 building.Faction == Faction.OfPlayer);
 
     private static IReadOnlyList<(Rot4 Rotation, IntVec3 Cell)> FindNativePlacementCells(
@@ -440,6 +529,55 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         return placements;
     }
 
+    private static IReadOnlyList<(Rot4 Rotation, IntVec3 Cell)> FindNativeMicrowavePlacementCells(
+        Map map,
+        IntVec3 center)
+    {
+        var microwave = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Microwave");
+        var table = DefDatabase<ThingDef>.GetNamed("Table1x2c");
+        var rotations = new[] { Rot4.North, Rot4.East, Rot4.South, Rot4.West };
+        var placements = new List<(Rot4 Rotation, IntVec3 Cell)>();
+        foreach (var rotation in rotations)
+        {
+            var found = false;
+            foreach (var cell in GenRadial.RadialCellsAround(center, 55f, useCenter: true))
+            {
+                if (!cell.InBounds(map) ||
+                    placements.Any(existing => existing.Cell.DistanceToSquared(cell) < 64) ||
+                    !GenConstruct.CanPlaceBlueprintAt(table, cell, rotation, map, godMode: true).Accepted)
+                {
+                    continue;
+                }
+
+                var support = (Building)ThingMaker.MakeThing(table, ThingDefOf.Steel);
+                support.SetFactionDirect(Faction.OfPlayer);
+                GenSpawn.Spawn(support, cell, map, rotation);
+                var accepted = GenConstruct.CanPlaceBlueprintAt(
+                    microwave,
+                    support.Position,
+                    rotation,
+                    map,
+                    godMode: true).Accepted;
+                support.Destroy(DestroyMode.Vanish);
+                if (!accepted)
+                {
+                    continue;
+                }
+
+                placements.Add((rotation, cell));
+                found = true;
+                break;
+            }
+
+            EndToEndAssert.True(
+                found,
+                "A bounded green real table cell must accept the native " +
+                RotationName(rotation) + " microwave designator.");
+        }
+
+        return placements;
+    }
+
     private static EndToEndCardinalRotation EndToEndRotation(Rot4 rotation)
     {
         if (rotation == Rot4.North)
@@ -463,6 +601,23 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         }
 
         throw new ArgumentOutOfRangeException(nameof(rotation), rotation, "Only cardinal placement rotations are supported.");
+    }
+
+    private static void AssertMicrowaveInteractionSide(Building microwave, Rot4 rotation)
+    {
+        var occupied = microwave.OccupiedRect();
+        var interaction = microwave.InteractionCell;
+        var correctSide = rotation == Rot4.North
+            ? interaction.z < occupied.minZ
+            : rotation == Rot4.South
+                ? interaction.z > occupied.maxZ
+                : rotation == Rot4.East
+                    ? interaction.x < occupied.minX
+                    : interaction.x > occupied.maxX;
+        EndToEndAssert.True(
+            correctSide,
+            "The " + RotationName(rotation)
+            + " microwave must expose its interaction cell on the same reviewed side as its door and controls.");
     }
 
     private static string VanillaReferenceDefName(string customDefName) => customDefName switch
@@ -624,5 +779,18 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         internal IntVec3 Cell { get; }
 
         internal Building ReferenceWorkbench { get; }
+    }
+
+    private sealed class NativeMicrowavePlacementFixture
+    {
+        internal NativeMicrowavePlacementFixture(Rot4 rotation, Building support)
+        {
+            Rotation = rotation;
+            Support = support;
+        }
+
+        internal Rot4 Rotation { get; }
+
+        internal Building Support { get; }
     }
 }

@@ -9,6 +9,8 @@ Primitive stone cookware SHALL use its own selected silhouette rather than tinti
 
 When its fallback Def is active, the microwave artwork SHALL depict only a compact countertop appliance with no cabinet, legs, pedestal, full-height base, or baked counter surface. Its draw size and transparent padding SHALL visibly sit on a real table/workbench cell at `BuildingOnTop` without swallowing the support sprite, appearing to float, or obscuring adjacent workbench details and interaction cues. When `Mlie.DThermodynamicsHotMeals` is active, the Immersive Chefs microwave Def SHALL be removed before Def deserialization, its texture SHALL never be resolved or rendered, and Thermodynamics' own `DMicrowave` art remains untouched.
 
+The fallback microwave's four cardinal sprites SHALL preserve the fixed RimWorld camera rather than rotate one raster. Its front door and controls SHALL face the Def's rotated interaction cell: screen-bottom for `North`, screen-top for `South`, screen-left for `East`, and screen-right for `West`. Workshop art that depicts the fallback microwave SHALL use the reviewed `South` frame and preserve its screen-top interaction-side front rather than presenting a front elevation toward the camera.
+
 #### Scenario: Countertop microwave is rendered on two supports
 - **WHEN** the real Immersive Chefs fallback microwave Def is rendered on one dining-table cell and one production-workbench cell
 - **THEN** it reads as the same compact appliance resting on each existing surface, with the underlying table/workbench still plainly visible and selectable

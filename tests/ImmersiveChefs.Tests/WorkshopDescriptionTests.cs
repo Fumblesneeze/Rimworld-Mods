@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -13,6 +14,16 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class WorkshopDescriptionTests
 {
+    private static readonly IReadOnlyDictionary<string, string> RecommendedMods =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Dubs Bad Hygiene"] = "836308268",
+            ["Processor Framework"] = "3210544395",
+            ["Common Sense"] = "1561769193",
+            ["Pick Up And Haul"] = "1279012058",
+            ["SBZ Fridge"] = "3486264784"
+        };
+
     private static readonly string[] RequiredMechanics =
     {
         "Stuff-aware kitchenware",
@@ -127,14 +138,17 @@ public sealed class WorkshopDescriptionTests
             Assert.That(normalized, Does.Contain("RimWorld 1.6"));
             Assert.That(normalized, Does.Contain("[h1]Required Mods[/h1]"));
             Assert.That(normalized, Does.Contain("Harmony"));
+            Assert.That(normalized, Does.Contain("[h1]Recommended Mods[/h1]"));
             Assert.That(normalized, Does.Contain("[h1]Optional Mods[/h1]"));
             Assert.That(normalized, Does.Contain("[b]Royalty[/b] - "));
             Assert.That(normalized, Does.Contain("[b]Biotech[/b] - "));
             Assert.That(normalized, Does.Not.Contain("TODO"));
             Assert.That(normalized, Does.Not.Contain("planned"));
             Assert.That(Regex.Matches(normalized, @"\[img\]\{\{image:[a-z0-9-]+\}\}\[/img\]").Count,
-                Is.EqualTo(7),
-                "The Workshop template must place every reviewed title and feature graphic.");
+                Is.EqualTo(6),
+                "The Workshop template must place every reviewed feature graphic.");
+            Assert.That(normalized, Does.Not.Contain("{{image:hero}}"),
+                "Steam's primary preview already carries the title art; the description must not repeat it.");
             Assert.That(normalized, Does.Not.Contain("package-gated"));
             Assert.That(normalized, Does.Not.Contain("absent-safe"));
             Assert.That(normalized, Does.Not.Contain("Exclusively owns"));
@@ -174,11 +188,37 @@ public sealed class WorkshopDescriptionTests
             AssertEntryHasDescription(normalized, integration);
         }
 
+        var recommendedBody = GetSectionBody(normalized, "Recommended Mods");
+        var optionalBody = GetSectionBody(normalized, "Optional Mods");
+        Assert.That(
+            normalized.IndexOf("[h1]Recommended Mods[/h1]", StringComparison.Ordinal),
+            Is.LessThan(normalized.IndexOf("[h1]Optional Mods[/h1]", StringComparison.Ordinal)),
+            "Recommended Mods must appear immediately before the broader Optional Mods catalog.");
+        foreach (var recommendation in RecommendedMods)
+        {
+            var linkedLabel = "[b][url=https://steamcommunity.com/sharedfiles/filedetails/?id="
+                + recommendation.Value + "]" + recommendation.Key + "[/url][/b]";
+            Assert.Multiple(() =>
+            {
+                Assert.That(recommendedBody, Does.Contain(linkedLabel + " - "),
+                    recommendation.Key + " must be linked in Recommended Mods.");
+                Assert.That(optionalBody, Does.Not.Match(EntryPattern(recommendation.Key)),
+                    recommendation.Key + " must not be duplicated under Optional Mods.");
+                Assert.That(Regex.Matches(normalized, EntryPattern(recommendation.Key)).Count, Is.EqualTo(1),
+                    recommendation.Key + " must have exactly one list entry in the Workshop description.");
+            });
+        }
+        Assert.That(
+            recommendedBody,
+            Does.Contain("Adaptive Storage Framework ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=3033901359]Workshop page[/url])"),
+            "The SBZ Fridge recommendation must link its required storage framework.");
+
         foreach (var chain in RequiredCompatibilityChains)
         {
             Assert.That(
                 normalized,
-                Does.Contain("[b]" + chain.Key + "[/b] - " + chain.Value),
+                Does.Match(@"(?m)^\[\*\]\[b\](?:\[url=[^\]]+\])?" + Regex.Escape(chain.Key)
+                    + @"(?:\[/url\])?\[/b\] - .*" + Regex.Escape(chain.Value) + @".*$"),
                 chain.Key + " dependency-chain guidance");
         }
 
@@ -207,8 +247,7 @@ public sealed class WorkshopDescriptionTests
             Assert.That(disclosureBody, Does.Contain("proving ground"));
             Assert.That(disclosureBody, Does.Match("playtest(?:ed|ing)"));
             Assert.That(disclosureBody, Does.Contain("comment"));
-            Assert.That(disclosureBody, Does.Contain("artwork"));
-            Assert.That(disclosureBody, Does.Contain("localization"));
+            Assert.That(disclosureBody, Does.Not.Contain("Pre-generated AI tools helped"));
             Assert.That(disclosureBody, Does.Contain("does not generate AI content while RimWorld is running"));
             Assert.That(disclosureParagraphs, Has.Exactly(2).Items,
                 "The final Author's Note must contain exactly the two reviewed paragraphs and nothing after them.");
@@ -227,6 +266,7 @@ public sealed class WorkshopDescriptionTests
         var templatePath = Path.Combine(root, "release", "templates", "workshop", "feature-card.svg");
         var fontPath = Path.Combine(root, "release", "templates", "workshop", "fonts", "Oswald-SemiBold.ttf");
         var licensePath = Path.Combine(root, "release", "templates", "workshop", "fonts", "OFL.txt");
+        var illustrationRoot = Path.Combine(workshopRoot, "illustrations");
 
         Assert.Multiple(() =>
         {
@@ -234,13 +274,43 @@ public sealed class WorkshopDescriptionTests
             Assert.That(File.Exists(templatePath), Is.True, "The reusable feature-card template is missing.");
             Assert.That(File.Exists(fontPath), Is.True, "Workshop rendering must use a repository-local font.");
             Assert.That(File.Exists(licensePath), Is.True, "The local font license is missing.");
+            Assert.That(File.Exists(Path.Combine(illustrationRoot, "colony-service.png")), Is.True,
+                "The colony-life card needs its owned home/hospital/caravan illustration.");
+            Assert.That(File.Exists(Path.Combine(illustrationRoot, "compatibility-loop.png")), Is.True,
+                "The compatibility card needs its owned food/service/storage illustration.");
         });
+
+        foreach (var illustration in new[] { "colony-service.png", "compatibility-loop.png" })
+        {
+            using var bitmap = new Bitmap(Path.Combine(illustrationRoot, illustration));
+            var transparentPixels = 0L;
+            var visiblePixels = 0L;
+            for (var y = 0; y < bitmap.Height; y++)
+            for (var x = 0; x < bitmap.Width; x++)
+            {
+                var alpha = bitmap.GetPixel(x, y).A;
+                if (alpha == 0) transparentPixels++;
+                if (alpha > 0) visiblePixels++;
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(bitmap.GetPixel(0, 0).A, Is.Zero,
+                    illustration + " must not carry an opaque background rectangle.");
+                Assert.That(transparentPixels, Is.GreaterThan(bitmap.Width * bitmap.Height / 4L),
+                    illustration + " needs a materially transparent background.");
+                Assert.That(visiblePixels, Is.GreaterThan(bitmap.Width * bitmap.Height / 20L),
+                    illustration + " lost its visible illustrated subjects.");
+            });
+        }
 
         var manifest = new JavaScriptSerializer().Deserialize<PresentationManifest>(File.ReadAllText(manifestPath));
         Assert.That(manifest, Is.Not.Null);
         Assert.That(manifest!.schema, Is.EqualTo("ImmersiveChefs/WorkshopPresentation/v1"));
-        Assert.That(manifest.cards, Has.Exactly(7).Items);
+        Assert.That(manifest.cards, Has.Exactly(6).Items);
         Assert.That(manifest.cards.Select(card => card.token), Is.Unique);
+        Assert.That(manifest.cards.Select(card => card.token), Does.Not.Contain("hero"),
+            "The primary Workshop preview must not be duplicated as an additional preview.");
 
         foreach (var card in manifest.cards)
         {
@@ -253,14 +323,48 @@ public sealed class WorkshopDescriptionTests
                 Assert.That(card.alt, Is.Not.Null.And.Not.Empty, card.token + " accessibility copy");
             });
         }
+
+
+        var colonyCard = manifest.cards.Single(card => card.token == "colony");
+        var compatibilityCard = manifest.cards.Single(card => card.token == "compatibility");
+        var mealsCard = manifest.cards.Single(card => card.token == "meals");
+        Assert.Multiple(() =>
+        {
+            Assert.That(colonyCard.art.Select(art => art.source),
+                Is.EqualTo(new[] { "workshop:illustrations/colony-service.png" }));
+            Assert.That(compatibilityCard.art.Select(art => art.source),
+                Is.EqualTo(new[] { "workshop:illustrations/compatibility-loop.png" }));
+            Assert.That(mealsCard.art.Select(art => art.source),
+                Does.Contain("Things/Building/Appliance/Microwave_south.png"),
+                "The Workshop meal card must use the reviewed South-placement microwave frame.");
+            Assert.That(mealsCard.art.Select(art => art.source),
+                Does.Not.Contain("Things/Building/Appliance/Microwave_north.png"),
+                "The Workshop meal card must not silently replace South placement with its opposite frame.");
+        });
     }
 
     private static void AssertEntryHasDescription(string description, string label)
     {
         Assert.That(
             description,
-            Does.Match(@"(?m)^\[\*\]\[b\]" + Regex.Escape(label) + @"\[/b\] - \S.+$"),
+            Does.Match(EntryPattern(label) + @" - \S.+$"),
             label + " must have a short nonempty behavior description.");
+    }
+
+    private static string EntryPattern(string label)
+    {
+        return @"(?m)^\[\*\]\[b\](?:\[url=[^\]]+\])?" + Regex.Escape(label)
+            + @"(?:\[/url\])?\[/b\]";
+    }
+
+    private static string GetSectionBody(string description, string heading)
+    {
+        var marker = "[h1]" + heading + "[/h1]";
+        var start = description.IndexOf(marker, StringComparison.Ordinal);
+        Assert.That(start, Is.GreaterThanOrEqualTo(0), heading + " section is missing.");
+        start += marker.Length;
+        var end = description.IndexOf("[h1]", start, StringComparison.Ordinal);
+        return end < 0 ? description.Substring(start) : description.Substring(start, end - start);
     }
 
     private static int ReadSteamDescriptionLimit()
@@ -303,6 +407,12 @@ public sealed class WorkshopDescriptionTests
         public string token { get; set; } = string.Empty;
         public string path { get; set; } = string.Empty;
         public string alt { get; set; } = string.Empty;
+        public PresentationArt[] art { get; set; } = Array.Empty<PresentationArt>();
+    }
+
+    private sealed class PresentationArt
+    {
+        public string source { get; set; } = string.Empty;
     }
 
     private static string FindRepositoryRoot()

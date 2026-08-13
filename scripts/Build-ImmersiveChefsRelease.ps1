@@ -238,8 +238,8 @@ $additionalPreviews = @($presentationDefinition.cards | ForEach-Object {
         alt = [string]$_.alt
     }
 })
-if ($additionalPreviews.Count -ne 7 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 7) {
-    Exit-InvalidInput 'The Workshop presentation must declare exactly seven unique additional previews.'
+if ($additionalPreviews.Count -ne 6 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 6) {
+    Exit-InvalidInput 'The Workshop presentation must declare exactly six unique additional previews.'
 }
 
 $files = @(Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Sort-Object FullName | ForEach-Object {
@@ -265,7 +265,7 @@ $previewPath = Join-Path $presentationRoot 'preview-main.png'
 $descriptionText = Get-Content -LiteralPath $descriptionPath -Raw -Encoding UTF8
 $hasUnresolvedImageTokens = $descriptionText -match '\{\{image:[^}]+\}\}'
 $resolvedImageCount = [regex]::Matches($descriptionText, '\[img\]https://images\.steamusercontent\.com/.+?\[/img\]').Count
-$presentationResolved = $resolvedImageCount -eq 7 -and -not $hasUnresolvedImageTokens
+$presentationResolved = $resolvedImageCount -eq 6 -and -not $hasUnresolvedImageTokens
 $descriptionProvenancePath = Join-Path $presentationRoot 'description.provenance.json'
 $descriptionProvenance = $null
 if ($presentationResolved -and (Test-Path -LiteralPath $descriptionProvenancePath -PathType Leaf)) {

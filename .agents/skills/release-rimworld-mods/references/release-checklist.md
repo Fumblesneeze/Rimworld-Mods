@@ -65,6 +65,7 @@ A publishable candidate has all of the following:
 
 - Existing Workshop ID by default; never create implicitly. First publication requires an explicit manifest flag, an ID-less reviewed dry-run, exact user confirmation, no prior identity/receipt, a complete native owner scan proving exact-title absence, Private visibility for the first submission, and durable persistence of Steam's returned ID before upload continuation. Public/Friends/Unlisted promotion is a later reviewed update.
 - Workshop copy is a player-facing showcase, never a pasted technical design. Keep complete mechanics/things/buildings/compatibility coverage, but describe visible behavior and benefits in plain language.
+- A `Recommended Mods` tier is still optional metadata: put it immediately above the broader optional list, link exact Workshop items when bytes permit, retain prerequisite guidance, and do not duplicate its entries below.
 - Wide inline cards use versioned templates, local licensed fonts, shipped sprites, fixed dimensions, sub-1-MiB files, and a personally inspected contact sheet. Reconcile them as additional previews, query Steam URLs, then resolve the final BBCode. Retain local hash ↔ remote index/URL evidence.
 - Put any author-requested AI/process disclosure in the final `Author's Note`; no content follows it. Be candid about playtesting limits and live-AI behavior.
 - Fresh isolated exact-PID RimWorld + Gateway process with initialized Steam.

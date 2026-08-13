@@ -3,7 +3,7 @@
 Resolves reviewed Steam additional-preview URLs into the Immersive Chefs Workshop template.
 
 .DESCRIPTION
-Requires the exact seven-token Steam inventory, rejects unexpected hosts/tokens/indexes, writes a
+Requires the exact six-token Steam inventory, rejects unexpected hosts/tokens/indexes, writes a
 new UTF-8 BBCode file, and enforces Steamworks' installed exact description byte ceiling.
 
 .EXAMPLE
@@ -47,9 +47,9 @@ if (-not [ulong]::TryParse([string]$inventory.publishedFileId, [ref]$publishedFi
     $previewPlanSha256 -notmatch '^[A-Fa-f0-9]{64}$') {
     Exit-InvalidInput 'The remote preview inventory item/plan identity is invalid.'
 }
-$expectedTokens = @('hero', 'kitchenware', 'teamwork', 'dishwashing', 'meals', 'colony', 'compatibility')
+$expectedTokens = @('kitchenware', 'teamwork', 'dishwashing', 'meals', 'colony', 'compatibility')
 $previews = @($inventory.previews)
-if ($previews.Count -ne $expectedTokens.Count) { Exit-InvalidInput 'The remote preview inventory must contain exactly seven images.' }
+if ($previews.Count -ne $expectedTokens.Count) { Exit-InvalidInput 'The remote preview inventory must contain exactly six images.' }
 
 $template = Get-Content -LiteralPath $TemplatePath -Raw -Encoding UTF8
 for ($index = 0; $index -lt $expectedTokens.Count; $index++) {
