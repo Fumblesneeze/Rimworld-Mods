@@ -160,11 +160,16 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         var screenshotPath = Path.Combine(assetRoot, "service.png");
         var gifPath = Path.Combine(assetRoot, "service.gif");
         var framePath = Path.Combine(frameRoot, "frame-0001.png");
-        var reviewedProductAssembly = Path.Combine(assetRoot, "ImmersiveChefs.dll");
+        var reviewedProductRoot = Path.Combine(fixture.Root, "reviewed-product");
+        var reviewedProductAssembly = Path.Combine(reviewedProductRoot, "1.6", "Assemblies", "ImmersiveChefs.dll");
+        var reviewedProductDef = Path.Combine(reviewedProductRoot, "1.6", "Defs", "ThingDefs.xml");
+        Directory.CreateDirectory(Path.GetDirectoryName(reviewedProductAssembly));
+        Directory.CreateDirectory(Path.GetDirectoryName(reviewedProductDef));
         var png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
         File.WriteAllBytes(screenshotPath, png);
         File.WriteAllBytes(framePath, png);
         File.WriteAllBytes(reviewedProductAssembly, new byte[] { 1, 2, 3, 4 });
+        File.WriteAllText(reviewedProductDef, "<Defs />", new UTF8Encoding(false));
         string Sha(string path)
         {
             using var sha = System.Security.Cryptography.SHA256.Create();
@@ -188,7 +193,9 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             "\"orderedPackageIds\":[\"ludeon.rimworld\",\"fumblesneeze.immersivechefs\",\"fumblesneeze.rimworlddevgateway\"]," +
             "\"orderedPackageIdentities\":[" +
             "{\"index\":0,\"packageId\":\"ludeon.rimworld\",\"name\":\"Core\",\"rootDir\":\"C:/Core\",\"files\":[{\"path\":\"About/About.xml\",\"bytes\":1,\"sha256\":\"" + new string('A', 64) + "\"}]}," +
-            "{\"index\":1,\"packageId\":\"fumblesneeze.immersivechefs\",\"name\":\"Immersive Chefs\",\"rootDir\":\"C:/Product\",\"files\":[{\"path\":\"1.6/Assemblies/ImmersiveChefs.dll\",\"bytes\":4,\"sha256\":\"" + Sha(reviewedProductAssembly) + "\"}]}," +
+            "{\"index\":1,\"packageId\":\"fumblesneeze.immersivechefs\",\"name\":\"Immersive Chefs\",\"rootDir\":\"C:/Product\",\"files\":[" +
+            "{\"path\":\"1.6/Assemblies/ImmersiveChefs.dll\",\"bytes\":4,\"sha256\":\"" + Sha(reviewedProductAssembly) + "\"}," +
+            "{\"path\":\"1.6/Defs/ThingDefs.xml\",\"bytes\":" + new FileInfo(reviewedProductDef).Length + ",\"sha256\":\"" + Sha(reviewedProductDef) + "\"}]}," +
             "{\"index\":2,\"packageId\":\"fumblesneeze.rimworlddevgateway\",\"name\":\"Gateway\",\"rootDir\":\"C:/Gateway\",\"files\":[{\"path\":\"About/About.xml\",\"bytes\":1,\"sha256\":\"" + new string('B', 64) + "\"}]}]," +
             "\"observedBeats\":[\"order\"],\"reviewObservation\":\"The native order is visible.\"," +
             "\"stateBefore\":{\"camera\":{\"x\":1},\"selectedThings\":[],\"uiSelection\":[]}," +
@@ -219,21 +226,32 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             .Replace("\"probeArguments\":[]", "\"probeArguments\":" + new JavaScriptSerializer().Serialize(probeArgs));
         File.WriteAllText(evidencePath, evidenceText, new UTF8Encoding(false));
         var operation = "$s=Get-Content -LiteralPath " + Ps(showcasePath) + " -Raw | ConvertFrom-Json;" +
-                        "$e=Get-WorkshopShowcaseEvidence -Showcase $s -ReleaseRoot " + Ps(releaseRoot) + " -ReviewedProductAssemblyPath " + Ps(reviewedProductAssembly) + ";" +
+                        "$e=Get-WorkshopShowcaseEvidence -Showcase $s -ReleaseRoot " + Ps(releaseRoot) + " -ReviewedProductRoot " + Ps(reviewedProductRoot) + ";" +
                         "Write-Output ($e.showcaseId+'|'+$e.outputs.Count+'|'+$e.provenance.sha256.Length)";
         var accepted = fixture.InvokeFunctions(
             "Build-ImmersiveChefsRelease.ps1",
-            new[] { "Get-CanonicalJson", "Invoke-ShowcaseMediaTool", "Get-RasterImageInfo", "Get-WorkshopShowcaseEvidence" }, operation);
+            new[] { "Get-RelativePath", "Get-CanonicalJson", "Invoke-ShowcaseMediaTool", "Get-RasterImageInfo", "Get-WorkshopShowcaseEvidence" }, operation);
         Assert.Multiple(() =>
         {
             Assert.That(accepted.ExitCode, Is.Zero, accepted.StandardError);
             Assert.That(accepted.StandardOutput.Trim(), Is.EqualTo("service|2|64"));
         });
 
+        File.AppendAllText(reviewedProductDef, "<!-- stale -->", new UTF8Encoding(false));
+        var staleProductRejected = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Get-RelativePath", "Get-CanonicalJson", "Invoke-ShowcaseMediaTool", "Get-RasterImageInfo", "Get-WorkshopShowcaseEvidence" }, operation);
+        Assert.Multiple(() =>
+        {
+            Assert.That(staleProductRejected.ExitCode, Is.EqualTo(1));
+            Assert.That(staleProductRejected.StandardError, Does.Contain("complete reviewed Immersive Chefs package"));
+        });
+        File.WriteAllText(reviewedProductDef, "<Defs />", new UTF8Encoding(false));
+
         File.AppendAllText(gifPath, "tampered", new UTF8Encoding(false));
         var rejected = fixture.InvokeFunctions(
             "Build-ImmersiveChefsRelease.ps1",
-            new[] { "Get-CanonicalJson", "Invoke-ShowcaseMediaTool", "Get-RasterImageInfo", "Get-WorkshopShowcaseEvidence" }, operation);
+            new[] { "Get-RelativePath", "Get-CanonicalJson", "Invoke-ShowcaseMediaTool", "Get-RasterImageInfo", "Get-WorkshopShowcaseEvidence" }, operation);
         Assert.Multiple(() =>
         {
             Assert.That(rejected.ExitCode, Is.EqualTo(1));
@@ -411,6 +429,48 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
             Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|True"));
+        });
+    }
+
+    [Test]
+    public void Retained_memories_showcase_matches_its_declared_crop_and_native_workflow()
+    {
+        using var fixture = Fixture.Create();
+        var root = fixture.RepositoryRoot;
+        var releaseRoot = Path.Combine(root, "mods", "ImmersiveChefs", "Release", "workshop");
+        var serializer = new JavaScriptSerializer();
+        var manifest = (Dictionary<string, object>)serializer.DeserializeObject(
+            File.ReadAllText(Path.Combine(releaseRoot, "showcases.json")));
+        var declared = ((object[])manifest["showcases"])
+            .Cast<Dictionary<string, object>>()
+            .Single(item => (string)item["id"] == "dining-memories");
+        var crop = (Dictionary<string, object>)declared["crop"];
+        var evidencePath = Path.Combine(releaseRoot, "assets", "showcases", "dining-memories", "dining-memories.capture.json");
+        var evidence = (Dictionary<string, object>)serializer.DeserializeObject(File.ReadAllText(evidencePath));
+        var plan = (Dictionary<string, object>)evidence["plan"];
+        var firstFrame = (Dictionary<string, object>)((object[])evidence["frames"]).Single();
+        var applied = (Dictionary<string, object>)firstFrame["crop"];
+        var framePath = Path.Combine(Path.GetDirectoryName(evidencePath)!, ((string)firstFrame["path"]).Replace('/', Path.DirectorySeparatorChar));
+        var screenshotPath = Path.Combine(Path.GetDirectoryName(evidencePath)!, "dining-memories.png");
+        string Sha(string path)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            return BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(path))).Replace("-", string.Empty);
+        }
+
+        Assert.Multiple(() =>
+        {
+            foreach (var field in new[] { "width", "height", "offsetX", "offsetY" })
+            {
+                Assert.That(Convert.ToInt32(plan[field]), Is.EqualTo(Convert.ToInt32(crop[field])), field);
+            }
+            Assert.That(Convert.ToInt32(applied["width"]), Is.EqualTo(Convert.ToInt32(crop["width"])));
+            Assert.That(Convert.ToInt32(applied["height"]), Is.EqualTo(Convert.ToInt32(crop["height"])));
+            Assert.That(File.Exists(framePath), Is.True);
+            Assert.That(Sha(framePath), Is.EqualTo(((string)firstFrame["sha256"]).ToUpperInvariant()));
+            Assert.That(Sha(screenshotPath), Is.EqualTo(Sha(framePath)));
+            Assert.That(File.ReadAllText(Path.Combine(root, "scripts", "Scenarios", "immersive-chefs-showcase-memories-setup.csx")), Does.Not.Contain("TryGainMemory"));
+            Assert.That(File.ReadAllText(Path.Combine(root, "scripts", "Scenarios", "immersive-chefs-showcase-memories-arm.csx")), Does.Contain("consume.Chosen(true, null)"));
         });
     }
 

@@ -1,10 +1,10 @@
 {
   "schema": "RimWorldDevGateway/ShowcaseCaptureEvidence/v1",
   "showcaseId": "dining-memories",
-  "capturedUtc": "2026-08-13T14:58:11.6282986Z",
-  "processId": 56880,
-  "processStartUtc": "2026-08-13T14:56:53.6024765+00:00",
-  "runId": "fd55e99bd7844a1dbc60f7690a01fcdd",
+  "capturedUtc": "2026-08-13T16:07:04.2337502Z",
+  "processId": 61648,
+  "processStartUtc": "2026-08-13T16:06:13.0003893+00:00",
+  "runId": "bbd6c606f205429582af6c89d5723ecd",
   "orderedPackageIds": [
     "brrainz.harmony",
     "ludeon.rimworld",
@@ -85,14 +85,864 @@
       "rootDir": "F:\\Steam\\steamapps\\common\\RimWorld\\Mods\\fumblesneeze.immersivechefs",
       "files": [
         {
+          "path": "1.6/Assemblies/ImmersiveChefs.dll",
+          "bytes": 422912,
+          "sha256": "6F6949D3DA25B503B0ABABC52E1CCEF4D97F6F3B461135DA09AB5B6D93AB9DFF"
+        },
+        {
+          "path": "1.6/Defs/JobDefs/AssistantJobs.xml",
+          "bytes": 364,
+          "sha256": "059739DFC907242E23D387BF3CBCD4F46338156639F6FD297BC973B647CB698E"
+        },
+        {
+          "path": "1.6/Defs/JobDefs/PlatingJobs.xml",
+          "bytes": 294,
+          "sha256": "E8313207098C88589E1E860E3A76033FAAC735689E437685B0C853861ACFEFEC"
+        },
+        {
+          "path": "1.6/Defs/JobDefs/PreparedPasteJobs.xml",
+          "bytes": 336,
+          "sha256": "FACAEE7113580AB0F808FB438B6A87413AB16E722B790E1829D36867361D7EEE"
+        },
+        {
+          "path": "1.6/Defs/JobDefs/SanitationJobs.xml",
+          "bytes": 289,
+          "sha256": "79E07C951A3B866A3BF9146436198E28152BD9031224AC47B724E76A9DE1B0BA"
+        },
+        {
+          "path": "1.6/Defs/RecipeDefs/KitchenwareRecipes.xml",
+          "bytes": 9285,
+          "sha256": "98CBC6F9488266C985BC5E0CCABA534E0024A37C0874D524A322B04065B34820"
+        },
+        {
+          "path": "1.6/Defs/RecipeDefs/PreparedFoodRecipes.xml",
+          "bytes": 1154,
+          "sha256": "7F0B715D363EA6AE16BE99775D3F7E2A3BCE115A2A8D3456298D80FF97C89B98"
+        },
+        {
+          "path": "1.6/Defs/ResearchProjectDefs/KitchenResearch.xml",
+          "bytes": 989,
+          "sha256": "1A91C62CB48A1DDDFCBB38CD4BAEB4F85B2AD46D204888956F08DE84BFFFDC84"
+        },
+        {
+          "path": "1.6/Defs/SpecialThingFilterDefs/KitchenwareSanitationFilters.xml",
+          "bytes": 1083,
+          "sha256": "5724041F8668D8BAF69AE373D2E76E38903D1D8D7D328A04A495643D428FD198"
+        },
+        {
+          "path": "1.6/Defs/ThingCategoryDefs/KitchenwareCategories.xml",
+          "bytes": 206,
+          "sha256": "72BCD43A99F932FE8B75949100D6065656E86493B170687AD3C6A88D58AA1577"
+        },
+        {
+          "path": "1.6/Defs/ThingDefs/AssistantStations.xml",
+          "bytes": 3957,
+          "sha256": "56E63059A8F6D6400C9C34C3F664AF31FD31E903A718208D21671778FF1D7C4C"
+        },
+        {
+          "path": "1.6/Defs/ThingDefs/KitchenBuildings.xml",
+          "bytes": 2836,
+          "sha256": "1A9AAC62BEA3B8DE093E801838AF85C2C67F882C75D6DCC991572660E05C2ECB"
+        },
+        {
+          "path": "1.6/Defs/ThingDefs/Kitchenware.xml",
+          "bytes": 9046,
+          "sha256": "AF9B3BFDF6D35F5B7FC0D9D85057AF4B2AF5BFB9697D9557104630983F1C5871"
+        },
+        {
+          "path": "1.6/Defs/ThingDefs/PreparedFoodAndStation.xml",
+          "bytes": 3275,
+          "sha256": "168122106B04DC05FFAC0BEF81023E5ACFD4D08B6CA1F70A95962BF0D11EEA8E"
+        },
+        {
+          "path": "1.6/Defs/ThoughtDefs/DiningThoughts.xml",
+          "bytes": 3875,
+          "sha256": "AD5A2CF88F285793E0021CEE6D947C1325F167B14FE576BCAA73BD61572C0B45"
+        },
+        {
+          "path": "1.6/Defs/WorkGiverDefs/AssistantWorkGiver.xml",
+          "bytes": 428,
+          "sha256": "DD26DADB9B6FFA1D6A8BB986C3AE3834B26291259DFE673195675C08997D23AB"
+        },
+        {
+          "path": "1.6/Defs/WorkGiverDefs/PlatingWorkGivers.xml",
+          "bytes": 500,
+          "sha256": "EDD713EE7D506CFCA219A402FBF6BB885524E24EC3D4279DBFB01B8C95EF6E9B"
+        },
+        {
+          "path": "1.6/Defs/WorkGiverDefs/PreparedFoodWorkGiver.xml",
+          "bytes": 573,
+          "sha256": "A6D99CD25062BAF7773746E67FCF90A623B371416F9A3693A28FC2FF43767AB7"
+        },
+        {
+          "path": "1.6/Defs/WorkGiverDefs/SanitationWorkGivers.xml",
+          "bytes": 492,
+          "sha256": "EC6AEED1A494A82DCBEB0BE5268999AA2A47AD068DC5AB162712927B489F33AE"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/DefInjected/JobDef/ImmersiveChefs.xml",
+          "bytes": 535,
+          "sha256": "87A1D945C5E190EFD8F9C26BBC49DE768D37332F849FBA6DAB4898707EFCED57"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/DefInjected/RecipeDef/ImmersiveChefs.xml",
+          "bytes": 4478,
+          "sha256": "12FB43C120CC34F76402EB4FE53A5C2F02AF5FA848A248DAD31AD53B8B9CFEF7"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/DefInjected/ResearchProjectDef/ImmersiveChefs.xml",
+          "bytes": 558,
+          "sha256": "FA59F4C1D11747DEB351EFD26712422A437F3782950D587418ACA62E60CE2B4D"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/DefInjected/SpecialThingFilterDef/ImmersiveChefs.xml",
+          "bytes": 635,
+          "sha256": "BA447125380ADEAE59F5CF2EABBF4B9767E1C9111D13ABE05305305B6EDEA76E"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/DefInjected/ThingCategoryDef/ImmersiveChefs.xml",
+          "bytes": 149,
+          "sha256": "70C669951FD1720861239AF53356A5FA6742A1A91DA428DAA59F41865AF3128F"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/DefInjected/ThingDef/ImmersiveChefs.xml",
+          "bytes": 4442,
+          "sha256": "E1979EEC5BD81C4B73034035765FC4B726FE16D2C9C0A6CFAB33DB06B6FBF841"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/DefInjected/ThoughtDef/ImmersiveChefs.xml",
+          "bytes": 5769,
+          "sha256": "0BB540532700FB8DDCFBEF324670A3834CE58613FE99741F7E6C5FB701411FCB"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/DefInjected/WorkGiverDef/ImmersiveChefs.xml",
+          "bytes": 1107,
+          "sha256": "B2A1482EC8528FA671348DB16667280CB7F24591EF24F07E6A9A07014A387200"
+        },
+        {
+          "path": "1.6/Languages/ChineseSimplified/Keyed/ImmersiveChefs.xml",
+          "bytes": 16745,
+          "sha256": "8112259DD09C35958683EA7AB9ADB68CFF82402250D8A403937B11C87A66E1C9"
+        },
+        {
+          "path": "1.6/Languages/English/Keyed/ImmersiveChefs.xml",
+          "bytes": 16866,
+          "sha256": "922B911EC2CC6947F4ABE3E0038673017789ABC509E710282CD4C8FB62A58A5D"
+        },
+        {
+          "path": "1.6/Languages/French/DefInjected/JobDef/ImmersiveChefs.xml",
+          "bytes": 539,
+          "sha256": "FC3FAEF1A3E7121219D267067B417FF9A690AE5F0EC1776F0A710D4DD2B3FE43"
+        },
+        {
+          "path": "1.6/Languages/French/DefInjected/RecipeDef/ImmersiveChefs.xml",
+          "bytes": 4930,
+          "sha256": "D7543009E4E454F07B16825115834829A117EC0EFA7C7308413C3F60963556C2"
+        },
+        {
+          "path": "1.6/Languages/French/DefInjected/ResearchProjectDef/ImmersiveChefs.xml",
+          "bytes": 618,
+          "sha256": "6E20D1EEA26A446E5A9DE6BC2CF3E68FBA1731E2BD6D31EBDE9C7726698DB69A"
+        },
+        {
+          "path": "1.6/Languages/French/DefInjected/SpecialThingFilterDef/ImmersiveChefs.xml",
+          "bytes": 679,
+          "sha256": "8A9C0499F5002F2AE6919A47562628B22CEE7B759195E0D789118E2AD6C6A3BF"
+        },
+        {
+          "path": "1.6/Languages/French/DefInjected/ThingCategoryDef/ImmersiveChefs.xml",
+          "bytes": 157,
+          "sha256": "60F5F797F70B34BF741F6811A20587E8752EF34FF86EBF93670C6F93E91F891F"
+        },
+        {
+          "path": "1.6/Languages/French/DefInjected/ThingDef/ImmersiveChefs.xml",
+          "bytes": 4991,
+          "sha256": "883035D85918938D4B00524BE02FC1B48E1552B410221A38797A2EDB7E434AD1"
+        },
+        {
+          "path": "1.6/Languages/French/DefInjected/ThoughtDef/ImmersiveChefs.xml",
+          "bytes": 5951,
+          "sha256": "37689A94846366FA9DB0CF7548019D02FC30E42BA52A69CEA4FCB715D9322A8A"
+        },
+        {
+          "path": "1.6/Languages/French/DefInjected/WorkGiverDef/ImmersiveChefs.xml",
+          "bytes": 1159,
+          "sha256": "B2283476F1E74147EF1EA33197F06242F55DD65387D987F835C890D17EA748E8"
+        },
+        {
+          "path": "1.6/Languages/French/Keyed/ImmersiveChefs.xml",
+          "bytes": 17749,
+          "sha256": "B2CD7ABE7A3E714D7926A0247D8D07B049BF139C1C41F80DDD07EA7E9FEB1408"
+        },
+        {
+          "path": "1.6/Languages/German/DefInjected/JobDef/ImmersiveChefs.xml",
+          "bytes": 551,
+          "sha256": "CB998E9FEC988EAEAC1E1673393D8C2F879CD0B19C61AE5192A5C5B3BFED9E7E"
+        },
+        {
+          "path": "1.6/Languages/German/DefInjected/RecipeDef/ImmersiveChefs.xml",
+          "bytes": 4862,
+          "sha256": "E831272830DAA69284E2FC196C04749C6E7FD36C618625B6B985C0FC73C6354A"
+        },
+        {
+          "path": "1.6/Languages/German/DefInjected/ResearchProjectDef/ImmersiveChefs.xml",
+          "bytes": 628,
+          "sha256": "A0E198503BCEED321C3D8BBD738B3C013DB1E04374DF6F73BA727B26B6680B16"
+        },
+        {
+          "path": "1.6/Languages/German/DefInjected/SpecialThingFilterDef/ImmersiveChefs.xml",
+          "bytes": 707,
+          "sha256": "6C46D6FB9F309A9BBE6ED9AE921B5ADFEF13F848D1B27BB344554DA09327182B"
+        },
+        {
+          "path": "1.6/Languages/German/DefInjected/ThingCategoryDef/ImmersiveChefs.xml",
+          "bytes": 159,
+          "sha256": "F1000C54FBD9C876AC269596BFC69DE1AC7A192E12153F54895036737BB360D0"
+        },
+        {
+          "path": "1.6/Languages/German/DefInjected/ThingDef/ImmersiveChefs.xml",
+          "bytes": 4946,
+          "sha256": "23ABE5304E77566B1D0EBCE7891ADD8F7CEA673E8A2A3B2921A0ED935BFD28F9"
+        },
+        {
+          "path": "1.6/Languages/German/DefInjected/ThoughtDef/ImmersiveChefs.xml",
+          "bytes": 6080,
+          "sha256": "9C1925889BE205C34571615B1DC1CC83B490F45F61A563921B8DA6D11B46CDEE"
+        },
+        {
+          "path": "1.6/Languages/German/DefInjected/WorkGiverDef/ImmersiveChefs.xml",
+          "bytes": 1175,
+          "sha256": "03C144C5680F37E065A327171FAE3E57FB8B37775155C8E7FA264B9DCB508FC0"
+        },
+        {
+          "path": "1.6/Languages/German/Keyed/ImmersiveChefs.xml",
+          "bytes": 17608,
+          "sha256": "7B495DC8D06D3A18C801E850DDE13FDAD7B52982E076EA72A94DF46F696F6468"
+        },
+        {
+          "path": "1.6/Languages/Russian/DefInjected/JobDef/ImmersiveChefs.xml",
+          "bytes": 661,
+          "sha256": "D422DEDB5B26BB18EBEBABFD0D70FECA91645E403C9A4B5432AC10263A5CD396"
+        },
+        {
+          "path": "1.6/Languages/Russian/DefInjected/RecipeDef/ImmersiveChefs.xml",
+          "bytes": 6322,
+          "sha256": "D31F0FAE13D56A481C690035E38CDC7110FE55301F58CECE004A888CCDE412AA"
+        },
+        {
+          "path": "1.6/Languages/Russian/DefInjected/ResearchProjectDef/ImmersiveChefs.xml",
+          "bytes": 781,
+          "sha256": "8DB72D91B98AB2CF21BC7A4FD8B7CE334A294BF1BEE560035D136044F4DF89CD"
+        },
+        {
+          "path": "1.6/Languages/Russian/DefInjected/SpecialThingFilterDef/ImmersiveChefs.xml",
+          "bytes": 848,
+          "sha256": "4053CABC65CD58DEA8ADE2691078577F63B56459ADBC2ADC0C2D20F395991A7B"
+        },
+        {
+          "path": "1.6/Languages/Russian/DefInjected/ThingCategoryDef/ImmersiveChefs.xml",
+          "bytes": 166,
+          "sha256": "9437F3F0A080E632C787D3877C00D97DF63995CCE44D70532C07A39330A7FE35"
+        },
+        {
+          "path": "1.6/Languages/Russian/DefInjected/ThingDef/ImmersiveChefs.xml",
+          "bytes": 6700,
+          "sha256": "EE69766E99BF2496AF2B0D7BAA047C822FC6E7C4525F9D9AD72CDC66C4B81D89"
+        },
+        {
+          "path": "1.6/Languages/Russian/DefInjected/ThoughtDef/ImmersiveChefs.xml",
+          "bytes": 6903,
+          "sha256": "EA2EE5CF0E33522C6D21C77ADA31F19990CB85ECB1374A023E1D3F043843673C"
+        },
+        {
+          "path": "1.6/Languages/Russian/DefInjected/WorkGiverDef/ImmersiveChefs.xml",
+          "bytes": 1341,
+          "sha256": "0751000666020D38A4D2F69FC4BD9217885C4A5806DBBBB31CD6683D8E1E96E5"
+        },
+        {
+          "path": "1.6/Languages/Russian/Keyed/ImmersiveChefs.xml",
+          "bytes": 20805,
+          "sha256": "B77485D18E22D356C82030A9A5BEB2C99A3E4BC073D78AC41C9B5DE9BB783FF7"
+        },
+        {
+          "path": "1.6/Languages/Spanish/DefInjected/JobDef/ImmersiveChefs.xml",
+          "bytes": 547,
+          "sha256": "BE8F491EDF74D39093F43F0E1182B324FCA313FFD465A740B5D89DBAFEFD627F"
+        },
+        {
+          "path": "1.6/Languages/Spanish/DefInjected/RecipeDef/ImmersiveChefs.xml",
+          "bytes": 4849,
+          "sha256": "C67E9C9E83155AD47731B872B3B427BC746E6A2275A74432C43E4D337538AE66"
+        },
+        {
+          "path": "1.6/Languages/Spanish/DefInjected/ResearchProjectDef/ImmersiveChefs.xml",
+          "bytes": 597,
+          "sha256": "5532B01EB0DF648604AF714497FAA039E7A74191861793D195C9104B97F31D7B"
+        },
+        {
+          "path": "1.6/Languages/Spanish/DefInjected/SpecialThingFilterDef/ImmersiveChefs.xml",
+          "bytes": 683,
+          "sha256": "5EDA34FF9DCC466841C6844C24F5991C3D9762F886ED3A2332788D0D4DF089CF"
+        },
+        {
+          "path": "1.6/Languages/Spanish/DefInjected/ThingCategoryDef/ImmersiveChefs.xml",
+          "bytes": 158,
+          "sha256": "885A01E89B7C402E3304A46417FE7B95E521AEC0ED4722938EC2166FBE073426"
+        },
+        {
+          "path": "1.6/Languages/Spanish/DefInjected/ThingDef/ImmersiveChefs.xml",
+          "bytes": 4915,
+          "sha256": "98C0C6E5FE019663642A616EEAF96AEE9FBF3EC8CFAA64C735CECCD08AD7B75F"
+        },
+        {
+          "path": "1.6/Languages/Spanish/DefInjected/ThoughtDef/ImmersiveChefs.xml",
+          "bytes": 5890,
+          "sha256": "CD59FB0E05A7382C18B38566377E1E747D45968529A0714664810727F3EB1DA2"
+        },
+        {
+          "path": "1.6/Languages/Spanish/DefInjected/WorkGiverDef/ImmersiveChefs.xml",
+          "bytes": 1148,
+          "sha256": "8E1ECE3DC33BC5EDD587678145FB687221C1AFE4F305D11CF3C7517FFA8B5F78"
+        },
+        {
+          "path": "1.6/Languages/Spanish/Keyed/ImmersiveChefs.xml",
+          "bytes": 17532,
+          "sha256": "DB985F78BCB1A67DDEFAD8D84D7FDE0B42CF461E7CA451AD0DC69A6E747214CB"
+        },
+        {
+          "path": "1.6/Patches/Compatibility/ThermodynamicsHotMeals.xml",
+          "bytes": 3566,
+          "sha256": "4BC0B908DC9BD933327A3417EDD671B15EA6F60FA2E91D2A0BCAED327CDA59A7"
+        },
+        {
+          "path": "1.6/Patches/ExpandedMasonryPatches.xml",
+          "bytes": 1196,
+          "sha256": "67991C905675E481627DA52C6393F35EBC047C428D5D6F1F8FF94C6C57FDC50A"
+        },
+        {
+          "path": "1.6/Patches/KitchenwareTraderStock.xml",
+          "bytes": 3685,
+          "sha256": "5C587B08A700DE6B642A9FBA1634934F072F6D939C4C5B7D3C9685A036C212E8"
+        },
+        {
+          "path": "1.6/Patches/MealStatePatches.xml",
+          "bytes": 1279,
+          "sha256": "0C3596D221826BB461BC7A589A9710542C7EEDC0091210BDAAB58031F7DD10C1"
+        },
+        {
+          "path": "1.6/Patches/StoveFacilityPatches.xml",
+          "bytes": 931,
+          "sha256": "72DB64D35144599DC7593592F54E96382FD1514427A921DE49DE456CBECABE03"
+        },
+        {
+          "path": "1.6/Patches/TextureVariations.xml",
+          "bytes": 6005,
+          "sha256": "1EEB96A2D383811031AC646A3D1F51925AEF7DE56A7848ED04EB122AD65C910B"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Appliance/Microwave_east.png",
+          "bytes": 144171,
+          "sha256": "8EDBB15262A297FF0FB41A4557578CF1B12B112B0797044C9EDCB7CAAD534F27"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Appliance/Microwave_north.png",
+          "bytes": 157814,
+          "sha256": "83D8BD208BEDED1BEB997D9B97E98DA23A7329E92A252F96BD440B2B8028F96F"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Appliance/Microwave_south.png",
+          "bytes": 149381,
+          "sha256": "DDAF10523668C78857ECE09659B852FC3C2493A5DD4C5037422846C376BD9F2C"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Appliance/Microwave_Variant01_east.png",
+          "bytes": 142495,
+          "sha256": "7A4A977BB30CADEF3B56C18F60332FBE880CB8EC36CF893A85282ADC59D75581"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Appliance/Microwave_Variant01_north.png",
+          "bytes": 170188,
+          "sha256": "A01DD107ABD8A5E8193B8614D133BC4C7CACC2588D7B9BEB353059F4C159AC33"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Appliance/Microwave_Variant01_south.png",
+          "bytes": 176319,
+          "sha256": "4796578D06639E6A7D77124B122DCF5611B99BCB12F8E70D6699F589DA606326"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Appliance/Microwave_Variant01_west.png",
+          "bytes": 180880,
+          "sha256": "0F67DE27D94D6604CE517E41ABB20846C792C900D8B2804C19370FEE80BA5C65"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Appliance/Microwave_west.png",
+          "bytes": 171799,
+          "sha256": "C5F93D3D2ED62DACFBA0BA33CC74CEB6B5D4447BCBAC4589D0D6B836E409490A"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_east.png",
+          "bytes": 178677,
+          "sha256": "0C65F87E2B147C8F067E0199DB0F3AE6B3E08AA14934BCCD0F2BA41F19ECCEEA"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_north.png",
+          "bytes": 196801,
+          "sha256": "37997D2037EA733AC3690D26086F80554954774E6C62735EA92B279C8748310A"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_south.png",
+          "bytes": 196142,
+          "sha256": "A7629A815AF18ADA046CF9D3D55FA0879EF4118FA3E066B3954A7AC6B2C0E59D"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_Variant01_east.png",
+          "bytes": 173502,
+          "sha256": "E82124E256F078F447236BB50F0853A696F8CFEF1D03CDFD23C33C168A39755B"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_Variant01_north.png",
+          "bytes": 194547,
+          "sha256": "B34204924EF1FAC874CD4569656F80E082C80DBC826C9885D4130DEDF48FEE06"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_Variant01_south.png",
+          "bytes": 192570,
+          "sha256": "B3223328EF5D0B16B6E15130E680BD6083C2547F9B492296DF328B7F52D397B0"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_Variant01_west.png",
+          "bytes": 167944,
+          "sha256": "D7524293BDC5D064A07C207E4AD0C2D759224E3757907518163E8C1694C6C90E"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/Dishwasher_west.png",
+          "bytes": 180950,
+          "sha256": "483AE264C1061F3188DF03F685A26AB3F39BC1E35F88701BDC85B0A284EA3FD1"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_east.png",
+          "bytes": 277857,
+          "sha256": "CA95A59C491A5E1964417C1BF6D9EB6C426F4863EB20EEE50D6930CF1E0CA01F"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_north.png",
+          "bytes": 291980,
+          "sha256": "F23A92B9F3968D1599EC34339643684CB86380BC513C6B4CFFB7B43A5A2BA190"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_south.png",
+          "bytes": 294874,
+          "sha256": "C6671E4CC5E76F7E80BC48260E1D84B0D5054502C6E66BAD6C8D101920BE9FD0"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_Variant01_east.png",
+          "bytes": 247834,
+          "sha256": "4CDFB0482DAAB2776672EBFCFA9E2A5BB015F35961FA744C01A6B585D3821BCF"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_Variant01_north.png",
+          "bytes": 270569,
+          "sha256": "D4056ED9300D6EFFDA360206A3105BFFFCCCD0DF96F178188AE9918ABF280D06"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_Variant01_south.png",
+          "bytes": 270695,
+          "sha256": "9EF5B5EC566CFC4EB5974571F289C9301C5CF766B47D341D6606BA5196AC9E1C"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_Variant01_west.png",
+          "bytes": 246181,
+          "sha256": "93C532BC3E007B79FEABEB619D516C4FAD6CCE23AB8B4ACCEF1A93E34F8FF8E0"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/Dishwasher/IndustrialDishwasher_west.png",
+          "bytes": 279599,
+          "sha256": "CF8490123530CE45A704035484C6F235E8F43E3EAFE84453BD76207C8D70E62A"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/MeatStation_east.png",
+          "bytes": 175811,
+          "sha256": "A41D131CF6744E6672DBA411CA58E4D6E1CF3ACAEC0861E257CCF7E2609BF6B3"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/MeatStation_north.png",
+          "bytes": 194137,
+          "sha256": "20E4A6E2070D76FC33931F836B41F8BDB1F9105081CD4DDF21A85563BFEA25EA"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/MeatStation_south.png",
+          "bytes": 193470,
+          "sha256": "4F2F11617C3A5F95235EDFF978091E1EE426F0806D8B8759CE873FD763CDF481"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/MeatStation_Variant01_east.png",
+          "bytes": 173426,
+          "sha256": "AF61A6268A02E1B029B7D83D3A01EC9E8F81AEADE903992F3D016D886299CC96"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/MeatStation_Variant01_north.png",
+          "bytes": 187138,
+          "sha256": "AB1461BC85FD14CDB51F747739EBFF466574BDAB076405108585147010C1161B"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/MeatStation_Variant01_south.png",
+          "bytes": 187194,
+          "sha256": "67B63A655263FF3ABB2E8C5FAD18CADDD7B4B6474265FB81626EB39E467604C1"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/MeatStation_Variant01_west.png",
+          "bytes": 168755,
+          "sha256": "E3D09540A3DD0ECD4E115758F2A0BF4C383A2871A36595472DF235AF44B33A72"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/MeatStation_west.png",
+          "bytes": 173648,
+          "sha256": "9A58266102E5FD1EA8F97CB6BFA01A4884EDC56547F45FBC1A72D88CAFD43288"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PastryStation_east.png",
+          "bytes": 180276,
+          "sha256": "0715B5775C156609D4B866DE33A07C366280669D6E442AE0286D475C0AB19872"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PastryStation_north.png",
+          "bytes": 195392,
+          "sha256": "5CE49661F91FA7874BA3358BE99F7313353E4C30063714612E9B07F0AA07A7D4"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PastryStation_south.png",
+          "bytes": 193830,
+          "sha256": "0904F4A89F8D4D509EB9F5056ABDAC83C9C670247B05D968CE80F6568FD4EB57"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PastryStation_Variant01_east.png",
+          "bytes": 150061,
+          "sha256": "A6A78DD646C62D8323CB41630253C6682A5FB2481CF25EAE23C50831995FB99F"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PastryStation_Variant01_north.png",
+          "bytes": 168547,
+          "sha256": "8CFE99A86F008F48F78D8A71570CC81C26178E68CB7E44AA29AEFC6B8260482D"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PastryStation_Variant01_south.png",
+          "bytes": 166756,
+          "sha256": "F7BAD97BA59015B96E19E64BD9DB1D63F41839FB45BE9563096D1C3A6BF83DE8"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PastryStation_Variant01_west.png",
+          "bytes": 152681,
+          "sha256": "07F927E40367EAF03BD2302C5E35E8564C19D244677D5B333643E01BBFE49D3C"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PastryStation_west.png",
+          "bytes": 181041,
+          "sha256": "D564CD972EEF61B88ABC2AA8EC4B1BF1200576EC2F6E0418B14BFF132462BFC0"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PrepStation_east.png",
+          "bytes": 249468,
+          "sha256": "716A41EBB7873B009397C56273DD5B83873F56F771C0C8425087FB1092BAA6CF"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PrepStation_north.png",
+          "bytes": 258068,
+          "sha256": "CB64097B39B41212EA034691D1EF3C85A254001EA805A9F4242DE76F3F158C13"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PrepStation_south.png",
+          "bytes": 256289,
+          "sha256": "76A81CB6E200DFDB28EA9DC60DC24E37D36A1CD480447AB8948197AC148DCAC7"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PrepStation_Variant01_east.png",
+          "bytes": 242332,
+          "sha256": "DFF2A9B7BE72AEDCDF8FAC5A35C8118669FBB11C2FDB24ED5E9D5B69E5E53CC7"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PrepStation_Variant01_north.png",
+          "bytes": 272285,
+          "sha256": "CD68D69BF198551A01E8762BAD08D56DE277EE4B30BD02BE49780EB6C0E9E8FD"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PrepStation_Variant01_south.png",
+          "bytes": 265197,
+          "sha256": "5ABD297223A2F9FB35CD237EA1CBB5F471298BA956F16A96269E0A0F83B1D33B"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PrepStation_Variant01_west.png",
+          "bytes": 245237,
+          "sha256": "D933FE51AC0F1103BE89FCA3AF2CF30D492251AED8CB5F347256C7E6E26DF0F7"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/PrepStation_west.png",
+          "bytes": 247363,
+          "sha256": "E51236024BEFCB045D8AD14178979017EFB6E306F8CC4F48E85BBE74E6D75036"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/SauceStation_east.png",
+          "bytes": 221121,
+          "sha256": "95CEFC440F5C5DC168390F7D17774760D9412F4FC37D95F5878DC90F7ED8CCDD"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/SauceStation_north.png",
+          "bytes": 223730,
+          "sha256": "BE6E41D584BD488BE4CBB71355B5B16A9500D2595E85CB127CCD1DCFD0717BD3"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/SauceStation_south.png",
+          "bytes": 219706,
+          "sha256": "1DC957D0182542844D40931332D1698811109AE0B396CC56F95A535E2840B3CC"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/SauceStation_Variant01_east.png",
+          "bytes": 195092,
+          "sha256": "C5823DFB48AE50F4740BDCE9CDF58B4E5DB924D50DF9860E55B83C032708DE0E"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/SauceStation_Variant01_north.png",
+          "bytes": 209133,
+          "sha256": "3E1322A690920644DA15A013F95153AF65E0DAD03E8BA02DFE1FB9F87CC0CC93"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/SauceStation_Variant01_south.png",
+          "bytes": 208912,
+          "sha256": "D2108C4D0A6F06B5F69120EC9BD3D4F0076206072E8B4D357BF8B421364F5C85"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/SauceStation_Variant01_west.png",
+          "bytes": 195347,
+          "sha256": "CA2C6ADCC21E4311334E1BBF9902D12C6A053255720967BE41DFAA6E6E19BFB5"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/SauceStation_west.png",
+          "bytes": 219776,
+          "sha256": "FF19035BC90AD1ED89AC7159A3C07773D4CED1B0D188AF51F0EB2F8ACADE1CEF"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_east.png",
+          "bytes": 188887,
+          "sha256": "E4B46DC398603EB7A192FF989E0E6A704644CE307A616246B3AFF7F009AAFF18"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_north.png",
+          "bytes": 208748,
+          "sha256": "C7A677651AC9E04CFF7B7ABBEF71B5D881592BA874A7DDC59945D731866A44F2"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_south.png",
+          "bytes": 209675,
+          "sha256": "A9724919148A14F2AE485196596B77B18F38BBD47E82814CB1C86710384FD9D2"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_Variant01_east.png",
+          "bytes": 165395,
+          "sha256": "AAFCCC17674A19DC8830D8535A849B8EE5AB2EDBCCAEA2421CECBE4ED61698F1"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_Variant01_north.png",
+          "bytes": 180302,
+          "sha256": "C1E5D77DB64A4F7B37A6E6A2B1202430BC276F5E59B949095EF6007C159183F4"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_Variant01_south.png",
+          "bytes": 178895,
+          "sha256": "E11C8BFAD8439340675C4C732049B59B1D2F0A14DE09EB6ED58E227F628282D2"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_Variant01_west.png",
+          "bytes": 169162,
+          "sha256": "0BD12425D074EB2B7A7055D12C91B3B4D3BABAE0361995B30352F0E3C9E52BD2"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Building/KitchenStation/VegetableStation_west.png",
+          "bytes": 188004,
+          "sha256": "E56B405FBABCFCC57BFCDAD71EAD964F1469215C1B2DDBF2E2001BF8197FA692"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Food/PreparedIngredients/PreparedIngredients.png",
+          "bytes": 67350,
+          "sha256": "B2CFD12BB8D15B595E1832CCBF7D0B7BC4C248B2FFDFFB1D98FC1051A5484FA2"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/ChefsKnife/ChefsKnife_m.png",
+          "bytes": 5283,
+          "sha256": "5EBC58369604A907D0FA55892C7F394B868032BBC49594EE06DC746DDB2A8CCF"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/ChefsKnife/ChefsKnife.png",
+          "bytes": 49595,
+          "sha256": "8E3A39B88AB98B9EB17107E5BF0A33567629268A4BCEE687C1D0B143874CAA35"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware_Dirty_m.png",
+          "bytes": 3444,
+          "sha256": "E65CFA4C757FC56C7EB3D41768FFE21806BCC232044E157B9C267654E736803E"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware_Dirty.png",
+          "bytes": 67921,
+          "sha256": "691FBA1C398194196FB7CDC5471D885CC4310C7AD82044BFC5442BF4B50003A0"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware_m.png",
+          "bytes": 3444,
+          "sha256": "E65CFA4C757FC56C7EB3D41768FFE21806BCC232044E157B9C267654E736803E"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware_Stone_m.png",
+          "bytes": 5760,
+          "sha256": "D0A6304227BCFEADBDF470A6F01A0E7A136576C99A389B76D64A22D98C4040FF"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware_Stone.png",
+          "bytes": 74105,
+          "sha256": "2E9906D928A4B25C472AC3B1475993181150000A89DB41F69103AD4DBEB9BA4C"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware_StoneDirty_m.png",
+          "bytes": 5760,
+          "sha256": "D0A6304227BCFEADBDF470A6F01A0E7A136576C99A389B76D64A22D98C4040FF"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware_StoneDirty.png",
+          "bytes": 76671,
+          "sha256": "18E1B98B8B500026C2F372070AE40A0DF136D7C5A00D65F2D6C6F725922E70F7"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware.png",
+          "bytes": 65636,
+          "sha256": "F79A7A84430E86E9464E28B74A03F219BCB559F0672A8A92397A8CBC648DB896"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery_Dirty_m.png",
+          "bytes": 8963,
+          "sha256": "D52A0DD8FCE4AEEEAFB9A7030F98D5684E879AF711D38BADAE0830CD7C3DC5F3"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery_Dirty.png",
+          "bytes": 49667,
+          "sha256": "48E337EB5FFC48D52D779AFD924C50BC64219B2B7755B6FC4D259C35BA83A04A"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery_m.png",
+          "bytes": 8912,
+          "sha256": "0DF972CFFCA03260890022A351D44C29207D78767A31748E2EA836F8FC1C6F5E"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery_Wood_m.png",
+          "bytes": 8682,
+          "sha256": "DAF828F3FE8396B2C405ABD269E8EE819D44B3DCFA0E472769AA9E91748CCAE4"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery_Wood.png",
+          "bytes": 50171,
+          "sha256": "F7CFB259BC7E180A35D8DF8FA87CF16888FD6EC6D6B3444D6A8417E34168CC61"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery_WoodDirty_m.png",
+          "bytes": 8779,
+          "sha256": "013E1B5F969586834F2537CB16A9D4586A5B0FA2AB35F17B9F01C64D08469CAE"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery_WoodDirty.png",
+          "bytes": 50824,
+          "sha256": "C11A023B73E84A6B139F073AB0421DEC0FA7A523F8DE02888E3FF3AE884E1C61"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery.png",
+          "bytes": 47444,
+          "sha256": "21E99BF1ED75D1DAF59F3E566D7C6E76014BB6E9E40BF1903D5D02A41313048A"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/GlitterCookware/GlitterCookware.png",
+          "bytes": 69206,
+          "sha256": "A57C98CFED41FEE91C4886839D141ADCA4BF490FD194764107149969FED9E14C"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_Dirty_m.png",
+          "bytes": 4704,
+          "sha256": "998BE2F4504ACC44CB89084EA6A314FD30937D0694EDFE2342AC871D100E63F4"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_Dirty.png",
+          "bytes": 52434,
+          "sha256": "D1457B4D043183036DE945BAFB88ACCA5B2EFD94DB8EEF33EF7F4664C20558B3"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_m.png",
+          "bytes": 4704,
+          "sha256": "998BE2F4504ACC44CB89084EA6A314FD30937D0694EDFE2342AC871D100E63F4"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_Stone_m.png",
+          "bytes": 4710,
+          "sha256": "90FD40A3362B6EC51BAB4FA53E884B6EAF7AE2F09C7702A3194CB9E7E0CE2504"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_Stone.png",
+          "bytes": 63789,
+          "sha256": "604AD5CEC11E32A09CE39E51106E16086519529E05AAD84869470B9A154C71EE"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_StoneDirty_m.png",
+          "bytes": 4710,
+          "sha256": "90FD40A3362B6EC51BAB4FA53E884B6EAF7AE2F09C7702A3194CB9E7E0CE2504"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_StoneDirty.png",
+          "bytes": 69915,
+          "sha256": "EF6C0CC2830E3953FE3BBB010EA9192E22099EDE5D0DF20152E375903DDCE904"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_Wood_m.png",
+          "bytes": 4673,
+          "sha256": "2CD669C99F75538AC0B71361AFEDCF3992CFB3DD5312096B0713FEB52D1FAFD2"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_Wood.png",
+          "bytes": 64271,
+          "sha256": "923C2DF3D232F623282925BF8F654745D2504E72C4F6FA14F9A3E397120C76D9"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_WoodDirty_m.png",
+          "bytes": 4673,
+          "sha256": "2CD669C99F75538AC0B71361AFEDCF3992CFB3DD5312096B0713FEB52D1FAFD2"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate_WoodDirty.png",
+          "bytes": 68383,
+          "sha256": "BDA6B5645867CE3F044BA329F4F0AE67C3448944BCC89DE6CC603F03E1A54E64"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate.png",
+          "bytes": 43127,
+          "sha256": "B6CFB92360C64D1038B064D53015FC4A0AB98B4F9319572565C623BD474D14B7"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware_Dirty_m.png",
+          "bytes": 3753,
+          "sha256": "66B590BCE618053BCA3A61BF865F28244D15B54FFCA958AFAE4292780CBBA705"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware_Dirty.png",
+          "bytes": 83516,
+          "sha256": "A7DBAB79655C4EA09F0DD0F9934B8610E3E5E310DE570BA1DEDF22878064D01A"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware_m.png",
+          "bytes": 3753,
+          "sha256": "66B590BCE618053BCA3A61BF865F28244D15B54FFCA958AFAE4292780CBBA705"
+        },
+        {
+          "path": "1.6/Textures/ImmersiveChefs/Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware.png",
+          "bytes": 83764,
+          "sha256": "566B4A31DB722091395961D3C9305A89FF375B21CBCE97B4D65B0C647E3B4D20"
+        },
+        {
           "path": "About/About.xml",
           "bytes": 2278,
           "sha256": "D37DA7C8B775E8932D5C49E2FD568DC0DD3DC98A80639C6283307D848C2BDB3B"
-        },
-        {
-          "path": "1.6/Assemblies/ImmersiveChefs.dll",
-          "bytes": 422912,
-          "sha256": "70C8BC02AFAECE1253FA21F6E082FB159C9F789F0D4194FB1AB54E1FF12B3137"
         }
       ]
     },
@@ -120,27 +970,27 @@
         {
           "path": "1.6/Assemblies/RimWorldDevGateway.Contracts.dll",
           "bytes": 39936,
-          "sha256": "51C0C649A2203A92F5FD5E7F718DE559BBFC86554A887BE957B7964C4F8B708E"
+          "sha256": "E06AD55E02B38CD44E0FE66084EF6397F6E36E47B279D7947680EA359F9D3BCF"
         },
         {
           "path": "1.6/Assemblies/RimWorldDevGateway.dll",
           "bytes": 815104,
-          "sha256": "1BE0384BEC089415EA2FCE3CE818B0FD401D26992DF3BD080EAB24A7C9002118"
+          "sha256": "F920F9C28A624D3A5A23D0F8D7F2826CF4ACDEAC92CF4C39EE809C9E77A939B0"
         },
         {
           "path": "1.6/Assemblies/RimWorldDevGateway.EndToEndTesting.dll",
           "bytes": 34304,
-          "sha256": "86E040B03483FD0C79E3DBF3B82080A1B00D563E0A9252D14D889CDD9740A58F"
+          "sha256": "849CF1A5601674F9DAE6D47230997313E15DF991D253383B65AE289810F74C6E"
         },
         {
           "path": "1.6/Assemblies/RimWorldDevGateway.IntegrationTesting.dll",
           "bytes": 7168,
-          "sha256": "FF18C6F7DCB70E772B998BE7538D00DEAF79D67F0DEAA18FE6B89514D306B680"
+          "sha256": "CAF404749571CF05327101BFEB359C2B6E84C801399481100CCB65FC3DA9A48A"
         },
         {
           "path": "1.6/Assemblies/RimWorldDevGateway.PerformanceTesting.dll",
           "bytes": 34304,
-          "sha256": "D17931956F9E1CBA23FDA3B39A6FD6BDFC9092FEA341F8C0B7955172CDFFEA85"
+          "sha256": "2DCFB83C08BA5422083C9C24B7DC78F73453991F82E5E3A1D53E060DAE2A7EE9"
         },
         {
           "path": "1.6/Assemblies/Swan.Lite.dll",
@@ -158,27 +1008,27 @@
   "observedBeats": [
     "thoughts-pane"
   ],
-  "reviewObservation": "The native Needs panel visibly shows Ate without table, Ate without cutlery, and Cold meal together for the selected conscious colonist.",
-  "manifestPath": "%REPOSITORY_ROOT%\\artifacts\\ShowcaseRuns\\memories-20260813T145644596Z\\20260813T145645359Z\\SavedData\\DevGateway\\current.json",
+  "reviewObservation": "The exact colonist used the native right-click Consume action. Her native Needs pane visibly shows Ate without a table, Ate without cutlery and Cold meal together over the finished dining room, with no selection bracket in the retained crop.",
+  "manifestPath": "%REPOSITORY_ROOT%\\artifacts\\ShowcaseRuns\\memories-accepted-20260813T160603838Z\\20260813T160604564Z\\SavedData\\DevGateway\\current.json",
   "stateBefore": {
     "camera": {
       "Center": {
-        "X": 143,
-        "Z": 112
+        "X": 131,
+        "Z": 126
       },
       "MapHandle": "map-0",
       "MapHeight": 250,
       "MapWidth": 250,
       "MaximumRootSize": 60,
       "MinimumRootSize": 11,
-      "RootSize": 12,
+      "RootSize": 17,
       "ViewRect": {
-        "MaxX": 165,
-        "MaxZ": 125,
-        "MinX": 121,
-        "MinZ": 99
+        "MaxX": 162,
+        "MaxZ": 144,
+        "MinX": 100,
+        "MinZ": 108
       },
-      "Zoom": "Close"
+      "Zoom": "Middle"
     },
     "selectedThings": [
       {
@@ -190,17 +1040,17 @@
         },
         "Fogged": false,
         "Forbidden": false,
-        "Handle": "Human244",
+        "Handle": "Human37600",
         "HitPoints": null,
         "Kind": "pawn",
-        "Label": "Steele<color=#999999FF>, Recruiter</color>",
-        "LoadId": "Thing_Human244",
+        "Label": "Nora Pike<color=#999999FF>, Marine</color>",
+        "LoadId": "Thing_Human37600",
         "MapHandle": "map-0",
         "OccupiedRect": {
-          "MaxX": 143,
-          "MaxZ": 112,
-          "MinX": 143,
-          "MinZ": 112
+          "MaxX": 122,
+          "MaxZ": 127,
+          "MinX": 122,
+          "MinZ": 127
         },
         "PawnFlags": {
           "Animal": false,
@@ -210,11 +1060,11 @@
           "Prisoner": false
         },
         "Position": {
-          "X": 143,
-          "Z": 112
+          "X": 122,
+          "Z": 127
         },
         "Quality": null,
-        "Rotation": "3",
+        "Rotation": "0",
         "RuntimeType": "Verse.Pawn",
         "Selected": true,
         "StackCount": 1,
@@ -223,30 +1073,30 @@
     ],
     "uiSelection": [
       {
-        "Handle": "Human244",
-        "Label": "Steele<color=#999999FF>, Recruiter</color>"
+        "Handle": "Human37600",
+        "Label": "Nora Pike<color=#999999FF>, Marine</color>"
       }
     ]
   },
   "stateAfter": {
     "camera": {
       "Center": {
-        "X": 143,
-        "Z": 112
+        "X": 131,
+        "Z": 126
       },
       "MapHandle": "map-0",
       "MapHeight": 250,
       "MapWidth": 250,
       "MaximumRootSize": 60,
       "MinimumRootSize": 11,
-      "RootSize": 12,
+      "RootSize": 17,
       "ViewRect": {
-        "MaxX": 165,
-        "MaxZ": 125,
-        "MinX": 121,
-        "MinZ": 99
+        "MaxX": 162,
+        "MaxZ": 144,
+        "MinX": 100,
+        "MinZ": 108
       },
-      "Zoom": "Close"
+      "Zoom": "Middle"
     },
     "selectedThings": [
       {
@@ -258,17 +1108,17 @@
         },
         "Fogged": false,
         "Forbidden": false,
-        "Handle": "Human244",
+        "Handle": "Human37600",
         "HitPoints": null,
         "Kind": "pawn",
-        "Label": "Steele<color=#999999FF>, Recruiter</color>",
-        "LoadId": "Thing_Human244",
+        "Label": "Nora Pike<color=#999999FF>, Marine</color>",
+        "LoadId": "Thing_Human37600",
         "MapHandle": "map-0",
         "OccupiedRect": {
-          "MaxX": 143,
-          "MaxZ": 112,
-          "MinX": 143,
-          "MinZ": 112
+          "MaxX": 122,
+          "MaxZ": 127,
+          "MinX": 122,
+          "MinZ": 127
         },
         "PawnFlags": {
           "Animal": false,
@@ -278,11 +1128,11 @@
           "Prisoner": false
         },
         "Position": {
-          "X": 143,
-          "Z": 112
+          "X": 122,
+          "Z": 127
         },
         "Quality": null,
-        "Rotation": "3",
+        "Rotation": "0",
         "RuntimeType": "Verse.Pawn",
         "Selected": true,
         "StackCount": 1,
@@ -291,8 +1141,8 @@
     ],
     "uiSelection": [
       {
-        "Handle": "Human244",
-        "Label": "Steele<color=#999999FF>, Recruiter</color>"
+        "Handle": "Human37600",
+        "Label": "Nora Pike<color=#999999FF>, Marine</color>"
       }
     ]
   },
@@ -300,8 +1150,8 @@
   "cameraMutated": false,
   "plan": {
     "schema": "RimWorldDevGateway/ShowcaseCapturePlan/v1",
-    "processId": 56880,
-    "outputDirectory": "%REPOSITORY_ROOT%\\mods\\ImmersiveChefs\\Release\\workshop\\assets\\showcases\\dining-memories",
+    "processId": 61648,
+    "outputDirectory": "%REPOSITORY_ROOT%\\artifacts\\ShowcaseRuns\\memories-accepted-20260813T160603838Z\\capture-final",
     "frameCount": 1,
     "framesPerSecond": 1,
     "durationSeconds": 1.0,
@@ -317,14 +1167,14 @@
     "mutatesGameState": false,
     "selectsThings": false
   },
-  "actualCaptureDurationMilliseconds": 331,
+  "actualCaptureDurationMilliseconds": 324,
   "frames": [
     {
       "index": 1,
-      "elapsedMilliseconds": 325,
+      "elapsedMilliseconds": 319,
       "path": "frames/frame-0001.png",
-      "bytes": 395605,
-      "sha256": "AD59AA5C822C9AE15A189C70B0305925E52C419E387552D2C39F1B5F4D3B9D36",
+      "bytes": 334311,
+      "sha256": "C4BB32309E4A87ED28366F16EC90A7DC2698639DFF8DCE13BE644CB0E77E8953",
       "crop": {
         "frameHeight": 900,
         "frameWidth": 1600,
@@ -351,8 +1201,8 @@
   },
   "still": {
     "path": "dining-memories.png",
-    "bytes": 395605,
-    "sha256": "AD59AA5C822C9AE15A189C70B0305925E52C419E387552D2C39F1B5F4D3B9D36"
+    "bytes": 334311,
+    "sha256": "C4BB32309E4A87ED28366F16EC90A7DC2698639DFF8DCE13BE644CB0E77E8953"
   },
   "gif": null,
   "bearerTokenRetained": false

@@ -172,14 +172,28 @@ function Get-LivePackageIdentities([object[]]$Packages) {
     return @($Packages | ForEach-Object {
         $root = [IO.Path]::GetFullPath([string]$_.RootDir)
         $identityFiles = [System.Collections.Generic.List[IO.FileInfo]]::new()
-        foreach ($relative in @('About\About.xml','About\Manifest.xml','LoadFolders.xml')) {
-            $candidate = Join-Path $root $relative
-            if (Test-Path -LiteralPath $candidate -PathType Leaf) { $identityFiles.Add([IO.FileInfo]::new($candidate)) }
+        if ([string]$_.PackageId -ceq 'fumblesneeze.immersivechefs') {
+            $loadableProductFiles = @(Get-ChildItem -LiteralPath $root -File -Recurse -ErrorAction Stop | Where-Object {
+                $relative = (Get-RelativePath -Root $root -Path $_.FullName).Replace('\', '/')
+                $relative -ceq 'About/About.xml' -or
+                    $relative -ceq 'LoadFolders.xml' -or
+                    ($relative.StartsWith('1.6/', [StringComparison]::Ordinal) -and
+                        -not $relative.EndsWith('.pdb', [StringComparison]::OrdinalIgnoreCase) -and
+                        $relative -cne '1.6/Patches/ImmersiveChefsIntegrationProbePatch.xml')
+            } | Sort-Object { (Get-RelativePath -Root $root -Path $_.FullName).Replace('\', '/') })
+            if ($loadableProductFiles.Count -lt 1 -or $loadableProductFiles.Count -gt 8192) {
+                throw "Loaded Immersive Chefs package has an invalid loadable-file inventory."
+            }
+            foreach ($file in $loadableProductFiles) { $identityFiles.Add($file) }
         }
-        $assemblies = @(Get-ChildItem -LiteralPath $root -Filter '*.dll' -File -Recurse -ErrorAction Stop | Sort-Object FullName)
-        if ($assemblies.Count -gt 512) { throw "Loaded package '$([string]$_.PackageId)' exceeds the 512-assembly identity ceiling." }
-        foreach ($assembly in $assemblies) {
-            $identityFiles.Add($assembly)
+        else {
+            foreach ($relative in @('About\About.xml','About\Manifest.xml','LoadFolders.xml')) {
+                $candidate = Join-Path $root $relative
+                if (Test-Path -LiteralPath $candidate -PathType Leaf) { $identityFiles.Add([IO.FileInfo]::new($candidate)) }
+            }
+            $assemblies = @(Get-ChildItem -LiteralPath $root -Filter '*.dll' -File -Recurse -ErrorAction Stop | Sort-Object FullName)
+            if ($assemblies.Count -gt 512) { throw "Loaded package '$([string]$_.PackageId)' exceeds the 512-assembly identity ceiling." }
+            foreach ($assembly in $assemblies) { $identityFiles.Add($assembly) }
         }
         if ($identityFiles.Count -lt 1) { throw "Loaded package '$([string]$_.PackageId)' exposes no identity file." }
         [pscustomobject][ordered]@{

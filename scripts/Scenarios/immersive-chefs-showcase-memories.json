@@ -9,12 +9,7 @@
     {
       "id": "setup",
       "kind": "csharp",
-      "sourceFile": "immersive-chefs-showcase-memories-setup.csx"
-    },
-    {
-      "id": "ready",
-      "kind": "screenshot",
-      "fileName": "scenario-showcase-memories-ready.png"
+      "sourceFile": "immersive-chefs-showcase-bootstrap.csx"
     }
   ]
 }

@@ -106,9 +106,9 @@
         "fumblesneeze.immersivechefs"
       ],
       "scene": "A named conscious colonist in an ordinary lived-in dining area immediately after eating a cold plated meal without cutlery and without a usable table.",
-      "workflow": "Open the native Needs > Mood > Thoughts pane for that exact colonist and capture one readable, unselected frame containing Ate without a table, Ate without cutlery and the cold-food memory together.",
+      "workflow": "Open the native Needs > Mood > Thoughts pane for that exact colonist and frame the room so no selection bracket is visible while Ate without a table, Ate without cutlery and the cold-food memory remain readable together.",
       "beats": [ "thoughts-pane" ],
-      "crop": { "width": 1280, "height": 720, "offsetX": 0, "offsetY": 0 },
+      "crop": { "width": 1280, "height": 720, "offsetX": -160, "offsetY": 60 },
       "outputs": {
         "screenshot": "assets/showcases/dining-memories/dining-memories.png"
       },

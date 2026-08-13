@@ -25,6 +25,31 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Memories_showcase_arranges_only_preconditions_and_uses_native_ingestion_for_visible_thoughts()
+    {
+        var scenarioDirectory = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Scenarios");
+        var setup = File.ReadAllText(Path.Combine(scenarioDirectory, "immersive-chefs-showcase-memories-setup.csx"));
+        var arm = File.ReadAllText(Path.Combine(scenarioDirectory, "immersive-chefs-showcase-memories-arm.csx"));
+        var finish = File.ReadAllText(Path.Combine(scenarioDirectory, "immersive-chefs-showcase-memories-finish.csx"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(setup, Does.Contain("TryEmbedPlate(plate)"));
+            Assert.That(setup, Does.Contain("WoodPlankFloor"));
+            Assert.That(setup, Does.Contain("DiningChair"));
+            Assert.That(setup, Does.Not.Contain("Table2x2c"));
+            Assert.That(setup, Does.Not.Contain("TryGainMemory"));
+            Assert.That(setup, Does.Not.Contain("StartJob"));
+            Assert.That(arm, Does.Contain("FloatMenuMakerMap.GetOptions"));
+            Assert.That(arm, Does.Contain("consume.Chosen(true, null)"));
+            Assert.That(finish, Does.Contain("AteWithoutTable"));
+            Assert.That(finish, Does.Contain("CurStageIndex != 1"));
+            Assert.That(finish, Does.Contain("CurStageIndex != 3"));
+            Assert.That(finish, Does.Not.Contain("TryGainMemory"));
+        });
+    }
+
+    [Test]
     public void Scenario_package_requirements_are_checked_against_the_supplied_package_state()
     {
         var script =

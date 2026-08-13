@@ -133,7 +133,7 @@ function Get-WorkshopShowcaseEvidence {
     param(
         [Parameter(Mandatory)][object]$Showcase,
         [Parameter(Mandatory)][string]$ReleaseRoot,
-        [Parameter(Mandatory)][string]$ReviewedProductAssemblyPath
+        [Parameter(Mandatory)][string]$ReviewedProductRoot
     )
 
     $showcaseId = [string]$Showcase.id
@@ -236,7 +236,9 @@ function Get-WorkshopShowcaseEvidence {
             [string]$identity.packageId -cne $capturePackages[$identityIndex] -or
             [string]::IsNullOrWhiteSpace([string]$identity.name) -or
             [string]::IsNullOrWhiteSpace([string]$identity.rootDir) -or
-            $identityFiles.Count -lt 1 -or $identityFiles.Count -gt 515) {
+            $identityFiles.Count -lt 1 -or
+            ($capturePackages[$identityIndex] -ceq 'fumblesneeze.immersivechefs' -and $identityFiles.Count -gt 8192) -or
+            ($capturePackages[$identityIndex] -cne 'fumblesneeze.immersivechefs' -and $identityFiles.Count -gt 515)) {
             throw "Workshop showcase '$showcaseId' has an invalid package identity at position $identityIndex."
         }
         foreach ($identityFile in $identityFiles) {
@@ -250,12 +252,35 @@ function Get-WorkshopShowcaseEvidence {
         }
     }
     $productIdentity = @($evidence.orderedPackageIdentities | Where-Object { [string]$_.packageId -ceq 'fumblesneeze.immersivechefs' })
-    $productAssemblyIdentity = @($productIdentity.files | Where-Object { ([string]$_.path).Replace('\', '/') -ceq '1.6/Assemblies/ImmersiveChefs.dll' })
-    if ($productIdentity.Count -ne 1 -or $productAssemblyIdentity.Count -ne 1 -or
-        -not (Test-Path -LiteralPath $ReviewedProductAssemblyPath -PathType Leaf) -or
-        [long]$productAssemblyIdentity[0].bytes -ne (Get-Item -LiteralPath $ReviewedProductAssemblyPath).Length -or
-        [string]$productAssemblyIdentity[0].sha256 -cne (Get-FileHash -LiteralPath $ReviewedProductAssemblyPath -Algorithm SHA256).Hash) {
-        throw "Workshop showcase '$showcaseId' was not captured from the reviewed Immersive Chefs assembly."
+    if ($productIdentity.Count -ne 1 -or -not (Test-Path -LiteralPath $ReviewedProductRoot -PathType Container)) {
+        throw "Workshop showcase '$showcaseId' was not captured from a reviewed Immersive Chefs package."
+    }
+    $reviewedProductRoot = [IO.Path]::GetFullPath($ReviewedProductRoot)
+    $reviewedProductFiles = @(Get-ChildItem -LiteralPath $reviewedProductRoot -File -Recurse -ErrorAction Stop | Where-Object {
+        $relative = (Get-RelativePath -Root $reviewedProductRoot -Path $_.FullName).Replace('\', '/')
+        $relative -ceq 'About/About.xml' -or
+            $relative -ceq 'LoadFolders.xml' -or
+            ($relative.StartsWith('1.6/', [StringComparison]::Ordinal) -and
+                -not $relative.EndsWith('.pdb', [StringComparison]::OrdinalIgnoreCase) -and
+                $relative -cne '1.6/Patches/ImmersiveChefsIntegrationProbePatch.xml' -and
+                $relative -cne 'About/PublishedFileId.txt')
+    } | Sort-Object { (Get-RelativePath -Root $reviewedProductRoot -Path $_.FullName).Replace('\', '/') } | ForEach-Object {
+        [pscustomobject][ordered]@{
+            path = (Get-RelativePath -Root $reviewedProductRoot -Path $_.FullName).Replace('\', '/')
+            bytes = [long]$_.Length
+            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+        }
+    })
+    $capturedProductFiles = @($productIdentity[0].files | ForEach-Object {
+        [pscustomobject][ordered]@{
+            path = ([string]$_.path).Replace('\', '/')
+            bytes = [long]$_.bytes
+            sha256 = ([string]$_.sha256).ToUpperInvariant()
+        }
+    } | Sort-Object path)
+    if ($reviewedProductFiles.Count -lt 1 -or
+        (Get-CanonicalJson $capturedProductFiles) -cne (Get-CanonicalJson $reviewedProductFiles)) {
+        throw "Workshop showcase '$showcaseId' was not captured from the complete reviewed Immersive Chefs package."
     }
     $previousElapsed = -1L
     $frameHashes = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -616,7 +641,7 @@ if (@($showcasePreviews.slot | Sort-Object) -join ',' -cne '5,6,7,8,9' -or
     Exit-InvalidInput 'The five Workshop showcases must own exact unique carousel slots 5 through 9.'
 }
 $showcaseEvidence = @($showcaseDefinition.showcases | ForEach-Object {
-    try { Get-WorkshopShowcaseEvidence -Showcase $_ -ReleaseRoot $releaseRoot -ReviewedProductAssemblyPath (Join-Path $builtRoot '1.6\Assemblies\ImmersiveChefs.dll') }
+    try { Get-WorkshopShowcaseEvidence -Showcase $_ -ReleaseRoot $releaseRoot -ReviewedProductRoot $packageRoot }
     catch { Exit-InvalidInput $_.Exception.Message }
 })
 if ($showcaseEvidence.Count -ne 5 -or @($showcaseEvidence.showcaseId | Sort-Object -Unique).Count -ne 5) {
