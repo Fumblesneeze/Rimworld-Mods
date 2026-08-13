@@ -274,6 +274,10 @@ public sealed class WorkshopDescriptionTests
             Assert.That(File.Exists(templatePath), Is.True, "The reusable feature-card template is missing.");
             Assert.That(File.Exists(fontPath), Is.True, "Workshop rendering must use a repository-local font.");
             Assert.That(File.Exists(licensePath), Is.True, "The local font license is missing.");
+            Assert.That(
+                File.ReadAllText(templatePath),
+                Does.Not.Contain("<circle cx=\"1095\"").And.Not.Contain("M1087 75L1093 81L1104 68"),
+                "Feature cards must not imply a completion/status state with decorative checkmark badges.");
             Assert.That(File.Exists(Path.Combine(illustrationRoot, "colony-service.png")), Is.True,
                 "The colony-life card needs its owned home/hospital/caravan illustration.");
             Assert.That(File.Exists(Path.Combine(illustrationRoot, "compatibility-loop.png")), Is.True,
