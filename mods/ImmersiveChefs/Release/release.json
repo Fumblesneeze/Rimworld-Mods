@@ -10,8 +10,8 @@
   "managedAssemblySha256": "5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A",
   "steamAppId": 294100,
   "steamUserId": "76561198077136238",
-  "publishedFileId": null,
-  "allowFirstPublication": true,
+  "publishedFileId": "3782589902",
+  "allowFirstPublication": false,
   "visibility": "Public",
   "tags": [
     "Mod",

@@ -9,7 +9,7 @@ namespace ImmersiveChefs.Tests;
 public sealed class ImmersiveChefsReleaseCandidateTests
 {
     [Test]
-    public void Release_descriptor_and_stager_define_a_public_RimWorld_1_6_first_release()
+    public void Release_descriptor_and_stager_define_the_published_public_RimWorld_1_6_release()
     {
         var root = FindRepositoryRoot();
         var manifestPath = Path.Combine(root, "mods", "ImmersiveChefs", "Release", "release.json");
@@ -38,8 +38,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["managedAssemblySha256"], Is.EqualTo("5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A"));
             Assert.That(release["steamUserId"], Is.EqualTo("76561198077136238"));
             Assert.That(release["visibility"], Is.EqualTo("Public"));
-            Assert.That(release["allowFirstPublication"], Is.True);
-            Assert.That(release["publishedFileId"], Is.Null);
+            Assert.That(release["allowFirstPublication"], Is.False);
+            Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));
