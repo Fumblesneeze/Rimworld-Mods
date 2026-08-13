@@ -2,6 +2,16 @@
 
 This repository is a RimWorld 1.6 mod monorepo. OpenSpec changes live at the repository root, playable mods live under `mods/`, shared host-safe contracts under `shared/`, companion tools under `tools/`, and NUnit projects under `tests/`. Re-inspect installed dependency assemblies and finalized Defs before changing optional-mod integration code; machine-local dependency audits are deliberately ignored. Downloaded Workshop content is read-only inspection input and must remain unmodified. See [Gateway.md](Gateway.md) for the developer gateway's security model and command/API reference.
 
+The current Immersive Chefs release bootstrap is documented by the repo-local
+`release-rimworld-mods` skill. `scripts/Build-ImmersiveChefsRelease.ps1` creates a mutation-free,
+positive-allowlist 1.6 candidate from a clean commit. Publication is a separate explicitly confirmed
+operation through `scripts/Invoke-ImmersiveChefsWorkshopRelease.ps1`; it validates the exact plan
+hash and pinned RimWorld managed identity, uses a fresh isolated RimWorld Steam session, persists
+first-publication/submission state, preflights an existing item before mutation, verifies the
+subscribed bytes, and runs `scripts/Invoke-ImmersiveChefsSubscribedSmoke.ps1` from the exact Workshop
+root before retaining its receipt. Never call the publisher without first reviewing its exact
+`publication-plan.json`, and never delete durable state to force a retry after an indeterminate callback.
+
 The checked-in defaults expect:
 
 - RimWorld: `F:\Steam\steamapps\common\RimWorld`

@@ -120,6 +120,11 @@ public sealed class DotNetGatewaySourceCompiler : IGatewaySourceCompiler
         var references = new List<string>();
         references.AddRange(Directory.EnumerateFiles(managedPath, "Assembly-CSharp*.dll"));
         references.AddRange(Directory.EnumerateFiles(managedPath, "Unity*.dll"));
+        var steamworks = Path.Combine(managedPath, "com.rlabrecque.steamworks.net.dll");
+        if (File.Exists(steamworks))
+        {
+            references.Add(steamworks);
+        }
         references.Add(contractPath);
 
         var project = new StringBuilder();

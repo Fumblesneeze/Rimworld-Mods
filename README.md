@@ -4,7 +4,7 @@ This repository is the RimWorld 1.6 development workspace for **Immersive Chefs*
 
 | Mod | Package ID | Current state |
 | --- | --- | --- |
-| Immersive Chefs | `fumblesneeze.immersivechefs` | Playable pre-release implementation with Stuff-aware kitchenware, meal service, sanitation, preparation, cooperative stations, culinary quality/temperature, dining standards, and guarded optional integrations. |
+| Immersive Chefs | `fumblesneeze.immersivechefs` | Playable RimWorld 1.6 release with Stuff-aware kitchenware, meal service, sanitation, preparation, cooperative stations, culinary quality/temperature, dining standards, and guarded optional integrations. |
 | RimWorld Dev Gateway | `fumblesneeze.rimworlddevgateway` | Authenticated loopback development API, in-game integration-test runner, and unrestricted in-process C# REPL. Never enable it for ordinary or untrusted play. |
 
 Immersive Chefs does not reference or ship the gateway. Harmony is its only required gameplay dependency; all other mod integrations are optional and resolved at runtime.
@@ -19,7 +19,7 @@ The supported exact-package food ecosystem includes Adaptive Meal Bill, Meals on
 
 Active cooking, dining, service, and assistant jobs safely restart after loading a save. RimWorld persists the exact physical ware; Immersive Chefs returns any session-carried items and retries the interrupted job so process-local coordination state cannot duplicate or strand them.
 
-This is still pre-release. Current-schema saves are supported, but migration from older development builds and uninstall cleanup are not. Ceramic/porcelain content, food preservation, and food waste are deliberately deferred.
+Current-schema saves are supported, but migration from older development builds and uninstall cleanup are not. Ceramic/porcelain content, food preservation, and food waste are deliberately deferred.
 
 ## Install the toolchain
 

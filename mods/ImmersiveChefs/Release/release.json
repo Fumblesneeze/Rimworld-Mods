@@ -1,0 +1,25 @@
+{
+  "schema": "ImmersiveChefs/Release/v1",
+  "packageId": "fumblesneeze.immersivechefs",
+  "title": "Immersive Chefs",
+  "author": "Fumblesneeze",
+  "rimWorldVersion": "1.6",
+  "rimWorldBuild": "1.6.4871 rev591",
+  "steamBuildId": "23969874",
+  "managedAssemblySha256": "5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A",
+  "steamAppId": 294100,
+  "steamUserId": "76561198077136238",
+  "publishedFileId": null,
+  "allowFirstPublication": true,
+  "visibility": "Public",
+  "tags": [
+    "Mod",
+    "1.6"
+  ],
+  "requiredWorkshopItems": [
+    "2009463077"
+  ],
+  "description": "workshop/description.bbcode",
+  "preview": "workshop/preview-main.png",
+  "changeNote": "Initial RimWorld 1.6 release."
+}

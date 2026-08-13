@@ -67,7 +67,7 @@
 ## 8. mods/RimWorldDevGateway — Publication state-machine RED tests
 
 - [ ] 8.1 Define a narrow SteamUGC adapter and add RED tests for existing-item ownership, invalid/zero IDs, dry-run with no mutation, bounded metadata/content/required-item diffs, and nonce/hash binding.
-- [ ] 8.2 Add RED tests for every setter failure, update-language/title/description/visibility/tags/content/metadata/preview mapping, authored change notes, and the guarantee that `CreateItem` is never called.
+- [ ] 8.2 Add RED tests for every setter failure, update-language/title/description/visibility/tags/content/metadata/preview mapping, authored change notes, update-only identity safety, and the guarantee that `CreateItem` is called only by an explicitly confirmed one-time bootstrap.
 - [ ] 8.3 Add RED tests for asynchronous progress, one-operation ownership, pre-submit cancellation, polling timeout, late callback, indeterminate submission, retry, and immutable-stage lifetime.
 - [ ] 8.4 Add RED tests for Steam authentication, connectivity, quota, legal-agreement, callback, wrong-item, and stale-remote-state failures with secret-free receipts.
 - [ ] 8.5 Add RED tests for post-submit remote metadata/preview/required-item comparison, exact-item subscription/refresh, reacquired Workshop content-manifest verification, and refusal to substitute a repository-local package.
@@ -105,3 +105,10 @@
 - [ ] 12.5 Complete at least one separate product-mod acceptance run without the Gateway and retain its native workflow evidence.
 - [ ] 12.6 Record source/build identities, target symbols, XML projection hashes, packaged and remote dependency graphs, ordered depot/mod lists, native actions, observable outcomes, screenshots, remote verification, normal-configuration hashes, and cleanup in one secret-free evidence directory.
 - [ ] 12.7 Check implementation tasks only after the reviewed revision's tests, package checks, live publication proof, per-target player acceptance, Gateway-free product proof, and cleanup evidence all exist.
+
+## 13. mods/RimWorldDevGateway — Immersive Chefs 1.6 release bootstrap
+
+- [ ] 13.1 TDD: define and validate the clean committed single-target release descriptor, positive-allowlist staging, sorted SHA-256 package manifest, presentation hashes, and mutation-free first-publication plan.
+- [ ] 13.2 REVIEW/GATE: independently review the bootstrap, run the complete release gates, inspect the staged package and presentation, and obtain explicit confirmation bound to the exact candidate and presentation hashes.
+- [ ] 13.3 STEAM: create the first item through RimWorld's initialized Steam session, persist its returned identity before submission, check every setter/callback and Harmony dependency result, and retain a secret-free receipt.
+- [ ] 13.4 SUBSCRIBER: subscribe/reacquire the exact item, compare its downloaded file manifest with the reviewed candidate, then launch RimWorld 1.6 with the subscribed copy and personally observe the declared native smoke workflow.

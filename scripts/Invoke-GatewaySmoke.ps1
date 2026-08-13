@@ -86,6 +86,8 @@ param(
     [ValidateRange(0, 3600)]
     [int]$InteractiveHoldSeconds = 0,
 
+    [string]$InteractiveCompletionFile,
+
     [switch]$Quicktest,
 
     [string]$Scenario,
@@ -4323,7 +4325,7 @@ function Test-FileContainsBearerToken {
             foreach ($pattern in $tokenPatterns) {
                 $candidateIndex = 0
                 while ($candidateIndex -le $combined.Length - $pattern.Length) {
-                    $candidateIndex = [System.Array]::IndexOf[byte](
+                    $candidateIndex = [System.Array]::IndexOf(
                         $combined,
                         $pattern[0],
                         $candidateIndex)
@@ -5391,6 +5393,14 @@ catch {
     Exit-InvalidInput $_.Exception.Message
 }
 $runGatewayRegressionScenario = [bool]$scenarioPlan.RunsGatewayRegression
+if (-not [string]::IsNullOrWhiteSpace($InteractiveCompletionFile) -and $InteractiveHoldSeconds -le 0) {
+    Exit-InvalidInput '-InteractiveCompletionFile requires -InteractiveHoldSeconds.'
+}
+$resolvedInteractiveCompletionFile = if ([string]::IsNullOrWhiteSpace($InteractiveCompletionFile)) {
+    $null
+} else {
+    [IO.Path]::GetFullPath($InteractiveCompletionFile)
+}
 if ($RequireRawClick -and -not $runGatewayRegressionScenario) {
     Exit-InvalidInput '-RequireRawClick is only valid with -Scenario gateway-regression.'
 }
@@ -5608,6 +5618,7 @@ if ($DryRun) {
         })
         RequireRawClick = [bool]$RequireRawClick
         InteractiveHoldSeconds = [int]$InteractiveHoldSeconds
+        InteractiveCompletionFile = $resolvedInteractiveCompletionFile
         ModsConfig = $modsConfigPath
         Prefs = $prefsPath
         PrelaunchConfigFiles = @($prelaunchConfigFiles)
@@ -7815,10 +7826,15 @@ try {
             StartedUtc = $holdStartedUtc.ToString('O')
             UntilUtc = $holdDeadline.ToString('O')
             Manifest = $manifestPath
+            CompletionFile = $resolvedInteractiveCompletionFile
         } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $interactiveHoldPath -Encoding UTF8
 
         Write-Host "Interactive verification hold active until $($holdDeadline.ToLocalTime().ToString('T')); state: $interactiveHoldPath"
         while ([datetime]::UtcNow -lt $holdDeadline) {
+            if ($null -ne $resolvedInteractiveCompletionFile -and
+                (Test-Path -LiteralPath $resolvedInteractiveCompletionFile -PathType Leaf)) {
+                break
+            }
             $launchedProcess.Refresh()
             if ($launchedProcess.HasExited) {
                 throw "RimWorld exited during the interactive verification hold. See $playerLogPath"
@@ -7833,6 +7849,7 @@ try {
             StartedUtc = $holdStartedUtc.ToString('O')
             CompletedUtc = [datetime]::UtcNow.ToString('O')
             Manifest = $manifestPath
+            CompletionFile = $resolvedInteractiveCompletionFile
         } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $interactiveHoldPath -Encoding UTF8
     }
 
@@ -7875,6 +7892,7 @@ try {
         GatewayModVersion = [string]$manifest.modVersion
         ProcessId = $launchedProcess.Id
         InteractiveHoldSeconds = [int]$InteractiveHoldSeconds
+        InteractiveCompletionFile = $resolvedInteractiveCompletionFile
         ActiveMods = $activeModIds
         LoadedMods = $loadedModIds
         ExpectedLogMarkers = @($validatedLogMarkers)

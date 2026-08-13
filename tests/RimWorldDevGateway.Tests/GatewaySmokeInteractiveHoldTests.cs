@@ -19,9 +19,12 @@ public sealed class GatewaySmokeInteractiveHoldTests
         {
             Assert.That(source, Does.Contain("[ValidateRange(0, 3600)]"));
             Assert.That(source, Does.Contain("[int]$InteractiveHoldSeconds = 0"));
+            Assert.That(source, Does.Contain("[string]$InteractiveCompletionFile"));
+            Assert.That(source, Does.Contain("-InteractiveCompletionFile requires -InteractiveHoldSeconds."));
             Assert.That(source, Does.Contain("interactive-hold.json"));
             Assert.That(source, Does.Contain("$holdDeadline"));
             Assert.That(source, Does.Contain("$launchedProcess.HasExited"));
+            Assert.That(source, Does.Contain("Test-Path -LiteralPath $resolvedInteractiveCompletionFile -PathType Leaf"));
             Assert.That(source, Does.Contain("InteractiveHoldSeconds = [int]$InteractiveHoldSeconds"));
         });
     }

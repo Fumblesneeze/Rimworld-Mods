@@ -96,13 +96,14 @@ public sealed class GatewayClientInfrastructureTests
         Directory.CreateDirectory(fixtureRoot);
         File.WriteAllText(sourcePath, @"
 using RimWorldDevGateway.Contracts;
+using Steamworks;
 using Verse;
 
 public static class TestSnippet
 {
     public static string Execute(string requestJson)
     {
-        return typeof(Pawn).Name + new GatewaySessionManifest().ApiVersion + requestJson;
+        return typeof(Pawn).Name + typeof(SteamUGC).Name + new GatewaySessionManifest().ApiVersion + requestJson;
     }
 }");
 
@@ -130,5 +131,50 @@ public static class TestSnippet
                 Directory.Delete(fixtureRoot, true);
             }
         }
+    }
+
+    [Test]
+    public void Source_compiler_builds_the_checked_in_Steam_Workshop_publisher()
+    {
+        var root = FindRepositoryRoot();
+        var compilerRoot = Path.Combine(Path.GetTempPath(), "gateway-release-compiler-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var compiler = new DotNetGatewaySourceCompiler(temporaryRoot: compilerRoot);
+            var assembly = compiler.Compile(new GatewaySourceCompilationRequest(
+                Path.Combine(root, "scripts", "Fixtures", "GatewaySteamWorkshopPublisher.cs"),
+                Path.GetDirectoryName(typeof(Pawn).Assembly.Location)!,
+                typeof(GatewaySessionManifest).Assembly.Location));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(assembly.Length, Is.GreaterThan(128));
+                Assert.That(assembly[0], Is.EqualTo((byte)'M'));
+                Assert.That(assembly[1], Is.EqualTo((byte)'Z'));
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(compilerRoot))
+            {
+                Directory.Delete(compilerRoot, true);
+            }
+        }
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "ImmersiveChefs.sln")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not find repository root.");
     }
 }

@@ -63,14 +63,25 @@ A publishable candidate has all of the following:
 
 ## Publication gates
 
-- Existing Workshop ID only; never create implicitly.
+- Existing Workshop ID by default; never create implicitly. First publication requires an explicit manifest flag, an ID-less reviewed dry-run, exact user confirmation, no prior identity/receipt, and durable persistence of Steam's returned ID before upload continuation.
 - Fresh isolated exact-PID RimWorld + Gateway process with initialized Steam.
 - Mutation-free dry-run and explicit user confirmation bound to exact hashes.
 - One update operation at a time; no blind retry after submission uncertainty.
+- A first-publication ID is durable across candidates, every existing-item update passes an exact
+  Steam ID/owner/app/title query first, and an admitted-but-indeterminate submit is query-reconciled
+  before any further mutation.
 - Check every SteamUGC setter, submit result, legal-agreement flag, and remote identity.
 - Verify remote metadata/previews and reacquired package contents after propagation.
+- Run the declared native workflow from the exact subscribed Workshop root while every local copy
+  of the product is absent from RimWorld discovery; restore local state in guaranteed cleanup.
 - Preserve a secret-free receipt and exact cleanup outcome.
 
 ## Current implementation status
 
-The architecture is specified under `openspec/changes/automate-multiversion-mod-releases/`. Until its unchecked tasks implement and test a phase, this skill is planning/guardrail documentation for that phase—not evidence that a release CLI or Gateway publishing endpoint exists. Inspect `tasks.md`, repository scripts, and command help on every invocation.
+The architecture is specified under `openspec/changes/automate-multiversion-mod-releases/`. The
+Immersive Chefs 1.6 bootstrap currently implements clean positive-allowlist staging with
+`scripts/Build-ImmersiveChefsRelease.ps1` and a guarded Steamworks publish/query/subscribe flow with
+`scripts/Invoke-ImmersiveChefsWorkshopRelease.ps1`. Broader target-catalog, historical-build,
+presentation-compiler, and reusable multi-mod release tasks remain unchecked; do not imply that this
+one-mod bootstrap implements them. Inspect `tasks.md`, repository scripts, and command help on every
+invocation.
