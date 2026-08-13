@@ -86,6 +86,26 @@ function Resolve-ExistingWorkshopIdentity {
     return $(if ($distinct.Count -eq 1) { [System.UInt64]$distinct[0] } else { [System.UInt64]0 })
 }
 
+function Test-WorkshopPreviewProvenance {
+    param(
+        [Parameter(Mandatory)][object[]]$CurrentPreviews,
+        [Parameter(Mandatory)][object[]]$ProvenancePreviews
+    )
+    if ($CurrentPreviews.Count -ne $ProvenancePreviews.Count) { return $false }
+    for ($index = 0; $index -lt $CurrentPreviews.Count; $index++) {
+        $current = $CurrentPreviews[$index]
+        $provenance = $ProvenancePreviews[$index]
+        if ([string]$provenance.token -cne [string]$current.token -or
+            [int]$provenance.remoteIndex -ne $index -or
+            [string]::IsNullOrWhiteSpace([string]$provenance.localPath) -or
+            [string]$provenance.localSha256 -cne [string]$current.sha256 -or
+            [string]$provenance.remoteSha256 -cne [string]$current.sha256) {
+            return $false
+        }
+    }
+    return $true
+}
+
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $releaseRoot = Join-Path $repositoryRoot 'mods\ImmersiveChefs\Release'
 $descriptorPath = Join-Path $releaseRoot 'release.json'
@@ -183,8 +203,12 @@ if (Test-Path -LiteralPath (Join-Path $packageRoot '1.6\Assemblies\ImmersiveChef
 }
 
 $descriptionSource = Join-Path $releaseRoot ([string]$release.description)
+$descriptionProvenanceSource = [IO.Path]::ChangeExtension($descriptionSource, '.provenance.json')
 $previewSource = Join-Path $releaseRoot ([string]$release.preview)
 Copy-Item -LiteralPath $descriptionSource -Destination (Join-Path $presentationRoot 'description.bbcode')
+if (Test-Path -LiteralPath $descriptionProvenanceSource -PathType Leaf) {
+    Copy-Item -LiteralPath $descriptionProvenanceSource -Destination (Join-Path $presentationRoot 'description.provenance.json')
+}
 Copy-Item -LiteralPath $previewSource -Destination (Join-Path $presentationRoot 'preview-main.png')
 $presentationDefinitionPath = Join-Path $releaseRoot 'workshop\presentation.json'
 $presentationDefinition = Get-Content -LiteralPath $presentationDefinitionPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -237,8 +261,21 @@ Write-JsonUtf8 -Path $manifestPath -Value ([pscustomobject][ordered]@{
 $descriptionPath = Join-Path $presentationRoot 'description.bbcode'
 $previewPath = Join-Path $presentationRoot 'preview-main.png'
 $descriptionText = Get-Content -LiteralPath $descriptionPath -Raw -Encoding UTF8
+$hasUnresolvedImageTokens = $descriptionText -match '\{\{image:[^}]+\}\}'
 $resolvedImageCount = [regex]::Matches($descriptionText, '\[img\]https://images\.steamusercontent\.com/.+?\[/img\]').Count
-$presentationResolved = $resolvedImageCount -eq 7 -and $descriptionText -notmatch '\{\{image:[^}]+\}\}'
+$presentationResolved = $resolvedImageCount -eq 7 -and -not $hasUnresolvedImageTokens
+$descriptionProvenancePath = Join-Path $presentationRoot 'description.provenance.json'
+$descriptionProvenance = $null
+if ($presentationResolved -and (Test-Path -LiteralPath $descriptionProvenancePath -PathType Leaf)) {
+    $descriptionProvenance = Get-Content -LiteralPath $descriptionProvenancePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ([string]$descriptionProvenance.schema -cne 'ImmersiveChefs/WorkshopDescriptionProvenance/v1' -or
+        [string]$descriptionProvenance.publishedFileId -cne [string]$effectivePublishedFileId -or
+        [string]$descriptionProvenance.descriptionSha256 -cne (Get-FileHash -LiteralPath $descriptionPath -Algorithm SHA256).Hash -or
+        -not (Test-WorkshopPreviewProvenance -CurrentPreviews $additionalPreviews -ProvenancePreviews @($descriptionProvenance.previews))) {
+        Exit-InvalidInput 'The resolved Workshop description provenance does not match this release.'
+    }
+}
+elseif ($presentationResolved) { Exit-InvalidInput 'The resolved Workshop description provenance is missing.' }
 $plan = [pscustomobject][ordered]@{
     schema = 'ImmersiveChefs/WorkshopPublicationPlan/v1'
     sourceRevision = $revision
@@ -269,6 +306,10 @@ $plan = [pscustomobject][ordered]@{
     descriptionBytes = (Get-Item -LiteralPath $descriptionPath).Length
     descriptionSha256 = (Get-FileHash -LiteralPath $descriptionPath -Algorithm SHA256).Hash
     presentationResolved = $presentationResolved
+    hasUnresolvedImageTokens = $hasUnresolvedImageTokens
+    descriptionProvenancePath = if ($presentationResolved) { $descriptionProvenancePath } else { $null }
+    previewPublicationPlanSha256 = if ($presentationResolved) { [string]$descriptionProvenance.previewPublicationPlanSha256 } else { $null }
+    resolvedPreviews = if ($presentationResolved) { @($descriptionProvenance.previews) } else { @() }
     previewPath = $previewPath
     previewBytes = (Get-Item -LiteralPath $previewPath).Length
     previewSha256 = (Get-FileHash -LiteralPath $previewPath -Algorithm SHA256).Hash

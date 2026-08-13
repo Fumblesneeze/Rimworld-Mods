@@ -100,12 +100,25 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         var repositoryRoot = fixture.RepositoryRoot;
         var inventoryPath = Path.Combine(fixture.Root, "preview-inventory.json");
         var outputPath = Path.Combine(fixture.Root, "description.bbcode");
+        var provenancePath = Path.Combine(fixture.Root, "description.provenance.json");
         var tokens = new[] { "hero", "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" };
+        var previewPlan = new string('A', 64);
+        var previewEntries = tokens.Select((token, index) =>
+        {
+            var localPath = Path.Combine(fixture.Root, token + ".png");
+            File.WriteAllText(localPath, "card-" + token, new UTF8Encoding(false));
+            string hash;
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+                hash = BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(localPath))).Replace("-", string.Empty);
+            return "{\"token\":\"" + token + "\",\"localPath\":\"" + localPath.Replace("\\", "\\\\") +
+                   "\",\"localSha256\":\"" + hash + "\",\"remoteSha256\":\"" + hash +
+                   "\",\"remoteIndex\":" + index + ",\"remoteUrl\":\"https://images.steamusercontent.com/ugc/" +
+                   (1000 + index) + "/card.png\",\"remoteType\":\"k_EItemPreviewType_Image\"}";
+        }).ToArray();
         File.WriteAllText(
             inventoryPath,
-            "{\"schema\":\"ImmersiveChefs/WorkshopRemotePreviewInventory/v1\",\"previews\":[" +
-            string.Join(",", tokens.Select((token, index) =>
-                "{\"token\":\"" + token + "\",\"remoteIndex\":" + index + ",\"remoteUrl\":\"https://images.steamusercontent.com/ugc/" + (1000 + index) + "/card.png\"}")) +
+            "{\"schema\":\"ImmersiveChefs/WorkshopRemotePreviewInventory/v1\",\"publishedFileId\":\"3782589902\",\"publicationPlanSha256\":\"" +
+            previewPlan + "\",\"previews\":[" + string.Join(",", previewEntries) +
             "]}",
             new UTF8Encoding(false));
         var rimWorldPath = typeof(ImmersiveChefsReleaseScriptBehaviorTests).Assembly
@@ -125,10 +138,14 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
             Assert.That(File.Exists(outputPath), Is.True);
+            Assert.That(File.Exists(provenancePath), Is.True);
             var resolved = File.ReadAllText(outputPath);
             Assert.That(resolved, Does.Not.Contain("{{image:"));
             Assert.That(Regex.Matches(resolved, @"\[img\]https://images\.steamusercontent\.com/.+?\[/img\]").Count, Is.EqualTo(7));
             Assert.That(new FileInfo(outputPath).Length + 1, Is.LessThanOrEqualTo(8000));
+            var provenance = File.ReadAllText(provenancePath);
+            Assert.That(provenance, Does.Contain("3782589902"));
+            Assert.That(provenance, Does.Contain(previewPlan));
         });
     }
 
@@ -144,6 +161,86 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
             Assert.That(run.StandardOutput.Trim(), Is.EqualTo("k_ERemoteStoragePublishedFileVisibilityPrivate|k_ERemoteStoragePublishedFileVisibilityPublic"));
+        });
+    }
+
+    [Test]
+    public void Final_publication_requires_the_exact_terminal_preview_state_identity()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-PresentationPreviewStateAllowsPublication" },
+            "$ok=Test-PresentationPreviewStateAllowsPublication 'succeeded' 'PREVIEW' 3782589902 'PREVIEW' 3782589902;" +
+            "$pending=Test-PresentationPreviewStateAllowsPublication 'preview-submit-admitted' 'PREVIEW' 3782589902 'PREVIEW' 3782589902;" +
+            "$wrong=Test-PresentationPreviewStateAllowsPublication 'succeeded' 'OTHER' 3782589902 'PREVIEW' 3782589902;" +
+            "Write-Output ($ok.ToString()+'|'+$pending.ToString()+'|'+$wrong.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False"));
+        });
+    }
+
+    [Test]
+    public void First_publication_may_bootstrap_only_private_copy_without_unresolved_image_tokens()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-WorkshopPresentationAllowsPublication" },
+            "$resolved=Test-WorkshopPresentationAllowsPublication $true $false 3782589902 $false 'Public';" +
+            "$bootstrap=Test-WorkshopPresentationAllowsPublication $false $false 0 $true 'Private';" +
+            "$tokens=Test-WorkshopPresentationAllowsPublication $false $true 0 $true 'Private';" +
+            "$public=Test-WorkshopPresentationAllowsPublication $false $false 0 $true 'Public';" +
+            "Write-Output ($resolved.ToString()+'|'+$bootstrap.ToString()+'|'+$tokens.ToString()+'|'+$public.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|True|False|False"));
+        });
+    }
+
+    [Test]
+    public void Resolved_description_provenance_must_match_every_current_preview_hash_and_slot()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Test-WorkshopPreviewProvenance" },
+            "$current=@([pscustomobject]@{token='hero';sha256='AAAA'},[pscustomobject]@{token='meals';sha256='BBBB'});" +
+            "$exact=@([pscustomobject]@{token='hero';remoteIndex=0;localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA'}," +
+            "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='BBBB';remoteSha256='BBBB'});" +
+            "$drift=@([pscustomobject]@{token='hero';remoteIndex=0;localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA'}," +
+            "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='CCCC';remoteSha256='CCCC'});" +
+            "$ok=Test-WorkshopPreviewProvenance $current $exact; $bad=Test-WorkshopPreviewProvenance $current $drift;" +
+            "Write-Output ($ok.ToString()+'|'+$bad.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False"));
+        });
+    }
+
+    [Test]
+    public void Final_remote_preview_slots_must_match_the_urls_embedded_in_the_description()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-RemoteWorkshopPreviewsMatchResolvedDescription" },
+            "$resolved=@([pscustomobject]@{remoteIndex=0;remoteUrl='https://images.steamusercontent.com/a.png';remoteType='k_EItemPreviewType_Image'}," +
+            "[pscustomobject]@{remoteIndex=1;remoteUrl='https://images.steamusercontent.com/b.png';remoteType='k_EItemPreviewType_Image'});" +
+            "$remote=@([pscustomobject]@{Index=0;Url='https://images.steamusercontent.com/a.png';Type='k_EItemPreviewType_Image'}," +
+            "[pscustomobject]@{Index=1;Url='https://images.steamusercontent.com/b.png';Type='k_EItemPreviewType_Image'});" +
+            "$reordered=@($remote[1],$remote[0]);" +
+            "$ok=Test-RemoteWorkshopPreviewsMatchResolvedDescription $remote $resolved;" +
+            "$bad=Test-RemoteWorkshopPreviewsMatchResolvedDescription $reordered $resolved;" +
+            "Write-Output ($ok.ToString()+'|'+$bad.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False"));
         });
     }
 

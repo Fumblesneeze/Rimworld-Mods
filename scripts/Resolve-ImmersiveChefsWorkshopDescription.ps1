@@ -41,6 +41,12 @@ catch { Exit-InvalidInput "The remote preview inventory is invalid JSON: $($_.Ex
 if ([string]$inventory.schema -cne 'ImmersiveChefs/WorkshopRemotePreviewInventory/v1') {
     Exit-InvalidInput 'The remote preview inventory schema is invalid.'
 }
+[ulong]$publishedFileId = 0
+$previewPlanSha256 = [string]$inventory.publicationPlanSha256
+if (-not [ulong]::TryParse([string]$inventory.publishedFileId, [ref]$publishedFileId) -or $publishedFileId -eq 0 -or
+    $previewPlanSha256 -notmatch '^[A-Fa-f0-9]{64}$') {
+    Exit-InvalidInput 'The remote preview inventory item/plan identity is invalid.'
+}
 $expectedTokens = @('hero', 'kitchenware', 'teamwork', 'dishwashing', 'meals', 'colony', 'compatibility')
 $previews = @($inventory.previews)
 if ($previews.Count -ne $expectedTokens.Count) { Exit-InvalidInput 'The remote preview inventory must contain exactly seven images.' }
@@ -50,10 +56,17 @@ for ($index = 0; $index -lt $expectedTokens.Count; $index++) {
     $preview = $previews[$index]
     $token = [string]$preview.token
     $urlText = [string]$preview.remoteUrl
+    $localPath = [IO.Path]::GetFullPath([string]$preview.localPath)
+    $localHash = [string]$preview.localSha256
+    $remoteHash = [string]$preview.remoteSha256
     [Uri]$url = $null
     if ($token -cne $expectedTokens[$index] -or [int]$preview.remoteIndex -ne $index -or
         -not [Uri]::TryCreate($urlText, [UriKind]::Absolute, [ref]$url) -or
-        $url.Scheme -cne 'https' -or $url.Host -cne 'images.steamusercontent.com') {
+        $url.Scheme -cne 'https' -or $url.Host -cne 'images.steamusercontent.com' -or
+        [string]$preview.remoteType -cne 'k_EItemPreviewType_Image' -or
+        -not (Test-Path -LiteralPath $localPath -PathType Leaf) -or
+        $localHash -notmatch '^[A-Fa-f0-9]{64}$' -or $remoteHash -cne $localHash -or
+        (Get-FileHash -LiteralPath $localPath -Algorithm SHA256).Hash -cne $localHash) {
         Exit-InvalidInput "Remote preview slot $index does not match its reviewed token and Steam URL."
     }
     $placeholder = '{{image:' + $token + '}}'
@@ -97,4 +110,23 @@ $result = [pscustomobject][ordered]@{
     steamLimitIncludingTerminator = $limit
     sha256 = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash
 }
+$provenancePath = [IO.Path]::ChangeExtension($destination, '.provenance.json')
+$provenance = [pscustomobject][ordered]@{
+    schema = 'ImmersiveChefs/WorkshopDescriptionProvenance/v1'
+    publishedFileId = [string]$publishedFileId
+    previewPublicationPlanSha256 = $previewPlanSha256.ToUpperInvariant()
+    descriptionSha256 = [string]$result.sha256
+    previews = @($previews | ForEach-Object {
+        [pscustomobject][ordered]@{
+            token = [string]$_.token
+            remoteIndex = [int]$_.remoteIndex
+            remoteUrl = [string]$_.remoteUrl
+            localPath = [IO.Path]::GetFullPath([string]$_.localPath)
+            localSha256 = [string]$_.localSha256
+            remoteSha256 = [string]$_.remoteSha256
+        }
+    })
+}
+[IO.File]::WriteAllText($provenancePath, ($provenance | ConvertTo-Json -Depth 6) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+$result | Add-Member -NotePropertyName provenancePath -NotePropertyValue $provenancePath
 if ($Output -eq 'json') { $result | ConvertTo-Json -Compress } else { $result | Format-List }

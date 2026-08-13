@@ -55,6 +55,43 @@ function Get-ExpectedRemoteVisibility([string]$PlanVisibility) {
     }
 }
 
+function Test-PresentationPreviewStateAllowsPublication(
+    [string]$State,
+    [string]$StatePlan,
+    [System.UInt64]$StateItemId,
+    [string]$ExpectedPreviewPlan,
+    [System.UInt64]$ExpectedItemId) {
+    return $State -ceq 'succeeded' -and $StatePlan -ceq $ExpectedPreviewPlan -and
+        $StateItemId -ne 0 -and $StateItemId -eq $ExpectedItemId
+}
+
+function Test-WorkshopPresentationAllowsPublication(
+    [bool]$PresentationResolved,
+    [bool]$HasUnresolvedImageTokens,
+    [System.UInt64]$PlannedPublishedFileId,
+    [bool]$AllowFirstPublication,
+    [string]$Visibility) {
+    return $PresentationResolved -or
+        ($PlannedPublishedFileId -eq 0 -and $AllowFirstPublication -and
+         $Visibility -ceq 'Private' -and -not $HasUnresolvedImageTokens)
+}
+
+function Test-RemoteWorkshopPreviewsMatchResolvedDescription(
+    [object[]]$RemotePreviews,
+    [object[]]$ResolvedPreviews) {
+    if ($RemotePreviews.Count -ne $ResolvedPreviews.Count) { return $false }
+    for ($index = 0; $index -lt $ResolvedPreviews.Count; $index++) {
+        $remote = $RemotePreviews[$index]
+        $resolved = $ResolvedPreviews[$index]
+        if ([int]$remote.Index -ne $index -or [int]$resolved.remoteIndex -ne $index -or
+            [string]$remote.Url -cne [string]$resolved.remoteUrl -or
+            [string]$remote.Type -cne [string]$resolved.remoteType) {
+            return $false
+        }
+    }
+    return $true
+}
+
 function Read-Json([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "JSON file does not exist: $Path" }
     return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -297,7 +334,15 @@ foreach ($additionalPreview in @($plan.additionalPreviews)) {
         Exit-InvalidInput "An additional Workshop preview changed after review: $path"
     }
 }
-if (-not $PreviewSyncOnly -and -not [bool]$plan.presentationResolved) {
+$plannedPublishedFileId = if ($null -eq $plan.publishedFileId) { [System.UInt64]0 } else { [System.UInt64]$plan.publishedFileId }
+$bootstrapPresentation = -not [bool]$plan.presentationResolved -and
+    (Test-WorkshopPresentationAllowsPublication `
+        -PresentationResolved ([bool]$plan.presentationResolved) `
+        -HasUnresolvedImageTokens ([bool]$plan.hasUnresolvedImageTokens) `
+        -PlannedPublishedFileId $plannedPublishedFileId `
+        -AllowFirstPublication ([bool]$plan.allowFirstPublication) `
+        -Visibility ([string]$plan.visibility))
+if (-not $PreviewSyncOnly -and -not $bootstrapPresentation -and -not [bool]$plan.presentationResolved) {
     Exit-InvalidInput 'The final Workshop description has not been resolved against the reviewed Steam image inventory.'
 }
 $releaseStateRoot = Join-Path $repositoryRoot 'artifacts\Releases\fumblesneeze.immersivechefs'
@@ -336,6 +381,17 @@ if ($publishedFileId -ne 0) {
             (Get-Content -LiteralPath $path -Raw).Trim() -cne [string]$publishedFileId) {
             Exit-InvalidInput "Workshop identity is missing or inconsistent: $path"
         }
+    }
+}
+if (-not $PreviewSyncOnly -and -not $bootstrapPresentation) {
+    if (-not (Test-Path -LiteralPath $presentationStatePath -PathType Leaf)) { Exit-InvalidInput 'The reviewed Steam preview synchronization has no durable terminal state.' }
+    $finalPreviewParts = (Get-Content -LiteralPath $presentationStatePath -Raw).Trim().Split('|')
+    [ulong]$finalPreviewItemId = 0
+    if ($finalPreviewParts.Count -ne 3 -or -not [ulong]::TryParse($finalPreviewParts[2], [ref]$finalPreviewItemId) -or
+        -not (Test-PresentationPreviewStateAllowsPublication `
+            -State $finalPreviewParts[0] -StatePlan $finalPreviewParts[1] -StateItemId $finalPreviewItemId `
+            -ExpectedPreviewPlan ([string]$plan.previewPublicationPlanSha256) -ExpectedItemId $publishedFileId)) {
+        Exit-InvalidInput 'The final Workshop update is not bound to one terminal preview synchronization for this item.'
     }
 }
 if ($publishedFileId -eq 0 -and -not [bool]$plan.allowFirstPublication) {
@@ -685,6 +741,10 @@ try {
             [string]$remoteCandidate.RemoteOwnerSteamId -ceq [string]$plan.steamUserId -and
             [string]$remoteCandidate.RemoteVisibility -ceq (Get-ExpectedRemoteVisibility ([string]$plan.visibility)) -and
             -not [string]::IsNullOrWhiteSpace([string]$remoteCandidate.RemotePreviewUrl) -and
+            ($bootstrapPresentation -or
+             (Test-RemoteWorkshopPreviewsMatchResolvedDescription `
+                 -RemotePreviews @($remoteCandidate.RemoteAdditionalPreviews) `
+                 -ResolvedPreviews @($plan.resolvedPreviews))) -and
             $tagsMatch) {
             $remote = $remoteCandidate
             break
