@@ -144,9 +144,36 @@ Each per-mod release manifest SHALL classify every declared mod relationship as 
 ### Requirement: Presentation outputs are validated before upload
 The presentation compiler SHALL validate required fields, BBCode/link policy, generated asset dimensions and file limits, missing or stale sprite references, text overflow, deterministic rendering, and a locally reviewable preview. Publication MUST consume only the reviewed presentation bundle identified by hash.
 
+Each distributable mod MAY additionally declare an ordered gameplay-showcase inventory. Every showcase SHALL name its required active package chain, scene purpose, native player workflow, observable beats, capture crop and final Steam preview order. When a showcase requests both formats, one reviewed in-game screenshot and one reviewed GIF SHALL be produced from the same declared scene family. The screenshot SHALL retain readable gameplay detail. The GIF SHALL be no longer than five seconds, SHALL prefer hard cuts over camera panning or long walking, and SHALL remain under Steam's one-MiB additional-preview limit. Both SHALL depict believable gameplay rooms and colonists rather than a cleared-map test fixture.
+
+Gateway-assisted presentation capture SHALL support cropping a rendered frame around projected Things without selecting them, and SHALL support a camera-center crop with pixel width, height and X/Y offset. Capture MUST preserve the caller's selection, camera and visible UI state and MUST NOT add selection brackets, test overlays, debug windows, or direct state mutations to the recorded result. A bounded frame-sequence capture SHALL record source-frame identities and timing so a repository tool can encode a reviewed GIF reproducibly.
+
 #### Scenario: Banner text overflows its template
 - **WHEN** generated text exceeds the template's declared safe region
 - **THEN** presentation validation fails with the template, field, and overflow bounds and no upload is attempted
+
+#### Scenario: Thing-framed showcase does not select its subjects
+- **WHEN** a presentation capture frames a cook, workbench and meal by their current handles
+- **THEN** the crop contains their projected visible union while the game's pre-capture selection remains unchanged and no selection brackets appear in the output
+
+#### Scenario: Camera-centered crop composes a fixed scene
+- **WHEN** a showcase requests a fixed-width and fixed-height crop with a camera-centered X/Y pixel offset
+- **THEN** the Gateway clamps that rectangle to the rendered frame, captures it at end-of-frame without moving the camera, and reports the exact applied rectangle
+
+#### Scenario: Short gameplay GIF is ready for Steam
+- **WHEN** a declared showcase records native gameplay beats for motion preview
+- **THEN** the encoder uses only retained in-game frames, produces a GIF of at most five seconds and under one MiB, records its frame timing and palette/encoder provenance, and rejects unreadable output
+
+### Requirement: Incremental releases publish meaningful change notes
+Every update to an existing Workshop item SHALL provide a nonempty authored change note in player-facing language. The dry-run SHALL show the exact note, bind its UTF-8 bytes into the immutable publication plan, and distinguish it from the previous verified note. The publisher SHALL pass that exact note to Steam's item-update submission and SHALL retain the resulting change-note identity or remotely observed entry in the credential-free receipt. It MUST reject blank, whitespace-only, generic, automatically generated commit/file lists, and unchanged copied notes before mutation.
+
+#### Scenario: Existing Workshop item receives an authored change note
+- **WHEN** a reviewed incremental release is confirmed for a retained nonzero Workshop identity
+- **THEN** its exact player-facing change note is submitted with the content update, appears in the Steam change history, and is recorded in the publication receipt
+
+#### Scenario: Incremental release reuses a stale note
+- **WHEN** the candidate's change note is empty, generic, or identical to the last verified published note
+- **THEN** release validation fails before starting a Steam item update and identifies the required authored note
 
 ### Requirement: Steam publication is typed, guarded, and observable
 The Dev Gateway SHALL expose an authenticated, loopback-only typed publication operation that runs only in a fresh isolated RimWorld process with Steam initialized. It SHALL bind one validated staged package, presentation bundle, and required-item graph to one declared Workshop item, use the native RimWorld/Steam publication path without relying on hidden UI options, expose bounded progress and terminal failure details, and require a separate explicit publish confirmation after dry-run inspection.
