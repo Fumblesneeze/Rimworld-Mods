@@ -1,0 +1,62 @@
+{
+  "schema": "ImmersiveChefs/WorkshopDescriptionProvenance/v1",
+  "publishedFileId": "3782589902",
+  "previewPublicationPlanSha256": "05FBBC7A7DEE343EEDCB242FF26591374C5470A12C798FF26F7E12438B375DF9",
+  "descriptionSha256": "B08944A0204012D736B83067326478832C418C19A69AD74217A23880B825F10F",
+  "previews": [
+    {
+      "token": "kitchenware",
+      "remoteIndex": 0,
+      "remoteUrl": "https://images.steamusercontent.com/ugc/13785489756626981307/2225E32D652BA7D4674943FA6D5DF3697B8A35CC/",
+      "localPath": "feature-kitchenware.png",
+      "localSha256": "37B81FDD74A1FBFA6D48525B0E54C57E31223C111B75B777883AE60BB701F33D",
+      "remoteSha256": "37B81FDD74A1FBFA6D48525B0E54C57E31223C111B75B777883AE60BB701F33D",
+      "remoteType": "k_EItemPreviewType_Image"
+    },
+    {
+      "token": "teamwork",
+      "remoteIndex": 1,
+      "remoteUrl": "https://images.steamusercontent.com/ugc/16808769564828884342/1E5EB59F2FA8D0E8C91EBE8CBB0EE11468189BD7/",
+      "localPath": "feature-teamwork.png",
+      "localSha256": "2CC8F2BC34607AA9CCB2E8AB96288582D5E86F9942DA2E9B647B5073382E78A0",
+      "remoteSha256": "2CC8F2BC34607AA9CCB2E8AB96288582D5E86F9942DA2E9B647B5073382E78A0",
+      "remoteType": "k_EItemPreviewType_Image"
+    },
+    {
+      "token": "dishwashing",
+      "remoteIndex": 2,
+      "remoteUrl": "https://images.steamusercontent.com/ugc/9512165763522300684/FE7D39F39F8859BF7F8A74F3A74E2877EC13E958/",
+      "localPath": "feature-dishwashing.png",
+      "localSha256": "07EA0793163B19E3494EFFEDD39205C68A7E0873FC3ECBCD570C2A0D3BCA7E44",
+      "remoteSha256": "07EA0793163B19E3494EFFEDD39205C68A7E0873FC3ECBCD570C2A0D3BCA7E44",
+      "remoteType": "k_EItemPreviewType_Image"
+    },
+    {
+      "token": "meals",
+      "remoteIndex": 3,
+      "remoteUrl": "https://images.steamusercontent.com/ugc/15646578289576063237/B89BA32D77662D1F70B3145F2DEBCFDC40E8A150/",
+      "localPath": "feature-meals.png",
+      "localSha256": "A48D5BB183C79B3C32C0360AD76813064869E7AD5092053E0711319F870E0EF5",
+      "remoteSha256": "A48D5BB183C79B3C32C0360AD76813064869E7AD5092053E0711319F870E0EF5",
+      "remoteType": "k_EItemPreviewType_Image"
+    },
+    {
+      "token": "colony",
+      "remoteIndex": 4,
+      "remoteUrl": "https://images.steamusercontent.com/ugc/18238852168907370776/891BE5A5A144BF3EB34A8106005A87C3612D481F/",
+      "localPath": "feature-colony.png",
+      "localSha256": "4A515D2C611D9F4E7F6C04F7725BDDA4684DABBA465B922AE3E2B59793C1FAA4",
+      "remoteSha256": "4A515D2C611D9F4E7F6C04F7725BDDA4684DABBA465B922AE3E2B59793C1FAA4",
+      "remoteType": "k_EItemPreviewType_Image"
+    },
+    {
+      "token": "compatibility",
+      "remoteIndex": 5,
+      "remoteUrl": "https://images.steamusercontent.com/ugc/14305264188788800044/973DE8C9B73D7E370488A1A004450C64A83A9C9F/",
+      "localPath": "feature-compatibility.png",
+      "localSha256": "8B3BDC4C141186EC3477D7263D0B5B3416478FEBC0716AEF61281E003D574925",
+      "remoteSha256": "8B3BDC4C141186EC3477D7263D0B5B3416478FEBC0716AEF61281E003D574925",
+      "remoteType": "k_EItemPreviewType_Image"
+    }
+  ]
+}
