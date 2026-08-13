@@ -135,6 +135,107 @@ function Save-RemoteFile([string]$Uri, [string]$Path) {
     finally { $response.Dispose() }
 }
 
+function ConvertFrom-WorkshopChangeHistoryHtml([string]$Html, [string]$Uri) {
+    if ([Text.Encoding]::UTF8.GetByteCount($Html) -gt 2MB) { throw 'The Steam change-history response exceeds the reviewed limit.' }
+    $matches = [regex]::Matches(
+        $Html,
+        '<div class="changelog headline">(?<headline>.*?)</div>.*?<p id="(?<id>\d+)">(?<note>.*?)</p>',
+        [Text.RegularExpressions.RegexOptions]::Singleline -bor [Text.RegularExpressions.RegexOptions]::CultureInvariant)
+    $notes = [System.Collections.Generic.List[object]]::new()
+    foreach ($match in $matches) {
+        $headline = [Net.WebUtility]::HtmlDecode(([regex]::Replace($match.Groups['headline'].Value, '<[^>]+>', ' '))).Trim()
+        $note = [Net.WebUtility]::HtmlDecode(([regex]::Replace($match.Groups['note'].Value, '<br\s*/?>', "`n", [Text.RegularExpressions.RegexOptions]::IgnoreCase)))
+        $note = [Net.WebUtility]::HtmlDecode(([regex]::Replace($note, '<[^>]+>', ''))).Trim()
+        if ($note.Length -gt 8000) { throw 'Steam returned an over-limit Workshop change note.' }
+        $notes.Add([pscustomobject][ordered]@{
+            id = $match.Groups['id'].Value
+            headline = $headline
+            note = $note
+            url = $uri + '?snr=1_5_9__408#' + $match.Groups['id'].Value
+        })
+        if ($notes.Count -ge 100) { break }
+    }
+    return @($notes)
+}
+
+function Get-WorkshopChangeNotes([System.UInt64]$PublishedFileId) {
+    if ($PublishedFileId -eq 0) { return @() }
+    $uri = "https://steamcommunity.com/sharedfiles/filedetails/changelog/$PublishedFileId"
+    $request = [Net.HttpWebRequest]::CreateHttp($uri)
+    $request.Timeout = 30000
+    $request.ReadWriteTimeout = 30000
+    $request.UserAgent = 'ImmersiveChefsReleaseVerifier/1.0'
+    $response = $request.GetResponse()
+    try {
+        if ([long]$response.ContentLength -gt 2MB) { throw 'The Steam change-history response exceeds the reviewed limit.' }
+        $stream = $response.GetResponseStream()
+        try {
+            $reader = [IO.StreamReader]::new($stream, [Text.Encoding]::UTF8, $true, 4096, $true)
+            try { $html = $reader.ReadToEnd() }
+            finally { $reader.Dispose() }
+        }
+        finally { $stream.Dispose() }
+    }
+    finally { $response.Dispose() }
+    return @(ConvertFrom-WorkshopChangeHistoryHtml -Html $html -Uri $uri)
+}
+
+function Test-WorkshopChangeHistoryRequired([bool]$FirstPublicationPlan, [bool]$PreviewOnly) {
+    return -not $FirstPublicationPlan -and -not $PreviewOnly
+}
+
+function Test-WorkshopChangeNotePreflight(
+    [object[]]$RemoteNotes,
+    [string]$ExpectedPreviousNote,
+    [string]$NewNote) {
+    if ([string]::IsNullOrWhiteSpace($NewNote)) { return $false }
+    if ([string]::IsNullOrWhiteSpace($ExpectedPreviousNote)) {
+        return $RemoteNotes.Count -eq 0
+    }
+    if ($RemoteNotes.Count -eq 0) { return $false }
+    return [string]$RemoteNotes[0].note -ceq $ExpectedPreviousNote.Trim() -and
+        @($RemoteNotes | Where-Object { [string]$_.note -ceq $NewNote.Trim() }).Count -eq 0
+}
+
+function Test-WorkshopShowcasePlanEvidence([object[]]$Evidence, [object[]]$AdditionalPreviews) {
+    $expected = [ordered]@{
+        'gastronomy-service' = 'gif'
+        'dishwasher-turnaround' = 'gif'
+        'nutrient-paste-prison-line' = 'gif'
+        'professional-prep-line' = 'gif'
+        'dining-memories' = 'screenshot'
+    }
+    $distinctEvidenceIds = @($Evidence | ForEach-Object { [string]$_.showcaseId } | Sort-Object -Unique)
+    if ($Evidence.Count -ne 5 -or $AdditionalPreviews.Count -ne 10 -or
+        $distinctEvidenceIds.Count -ne 5) { return $false }
+    foreach ($expectedId in @(
+        'gastronomy-service',
+        'dishwasher-turnaround',
+        'nutrient-paste-prison-line',
+        'professional-prep-line',
+        'dining-memories')) {
+        $expectedFormat = [string]$expected[$expectedId]
+        $evidenceMatches = @($Evidence | Where-Object { ([string]$_.showcaseId) -ceq ([string]$expectedId) })
+        $previewMatches = @($AdditionalPreviews | Where-Object { ([string]$_.showcaseId) -ceq ([string]$expectedId) })
+        if ($evidenceMatches.Count -ne 1 -or $previewMatches.Count -ne 1 -or
+            ([string]$previewMatches[0].format) -cne $expectedFormat -or
+            ([string]$evidenceMatches[0].provenance.sha256) -notmatch '^[A-Fa-f0-9]{64}$') { return $false }
+        $outputs = @($evidenceMatches[0].outputs)
+        [int]$expectedFormatCount = 1
+        if ($expectedFormat -ceq 'gif') { $expectedFormatCount = 2 }
+        $actualFormatList = @($outputs | ForEach-Object { [string]$_.format } | Sort-Object) -join ','
+        $expectedFormatList = if ($expectedFormat -ceq 'gif') { 'gif,screenshot' } else { 'screenshot' }
+        if ($outputs.Count -ne $expectedFormatCount) { return $false }
+        if ($actualFormatList -cne $expectedFormatList) { return $false }
+        $carouselOutput = @($outputs | Where-Object { ([string]$_.format) -ceq $expectedFormat })
+        if ($carouselOutput.Count -ne 1) { return $false }
+        if (([string]$carouselOutput[0].sha256) -cne ([string]$previewMatches[0].sha256)) { return $false }
+    }
+    $cardPreviews = @($AdditionalPreviews | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.showcaseId) })
+    if ($cardPreviews.Count -ne 5) { return $false }
+    return $true
+}
+
 function Stop-RetainedProcess([Diagnostics.Process]$Process, [int]$GraceMilliseconds = 15000) {
     if ($null -eq $Process) { return $false }
     $Process.Refresh()
@@ -299,6 +400,8 @@ $planPath = [IO.Path]::GetFullPath($PublicationPlan)
 $actualPlanHash = (Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash
 if ($actualPlanHash -cne $PublicationPlanSha256.ToUpperInvariant()) { Exit-InvalidInput 'The supplied publication-plan hash does not match the exact file.' }
 $plan = Read-Json $planPath
+$firstPublicationPlan = $null -eq $plan.publishedFileId -and [bool]$plan.allowFirstPublication
+$changeHistoryRequired = Test-WorkshopChangeHistoryRequired -FirstPublicationPlan $firstPublicationPlan -PreviewOnly ([bool]$PreviewSyncOnly)
 $expectedPlanVisibility = if ($null -eq $plan.publishedFileId) { 'Private' } else { 'Public' }
 if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [string]$plan.packageId -cne 'fumblesneeze.immersivechefs' -or
@@ -314,6 +417,9 @@ if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [string]$plan.visibility -cne $expectedPlanVisibility -or
     [bool]$plan.mutatesSteam) {
     Exit-InvalidInput 'The publication plan identity or dry-run contract is invalid.'
+}
+if (-not (Test-WorkshopShowcasePlanEvidence -Evidence @($plan.showcaseEvidence) -AdditionalPreviews @($plan.additionalPreviews))) {
+    Exit-InvalidInput 'The publication plan does not contain the exact five cross-bound Workshop showcase evidence records.'
 }
 $dirty = @(& git -C $repositoryRoot status --porcelain)
 if ($LASTEXITCODE -ne 0 -or $dirty.Count -ne 0) { Exit-InvalidInput 'Steam publication requires the exact clean committed release revision.' }
@@ -332,6 +438,22 @@ foreach ($additionalPreview in @($plan.additionalPreviews)) {
         (Get-Item -LiteralPath $path).Length -ne [long]$additionalPreview.bytes -or
         (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -cne [string]$additionalPreview.sha256) {
         Exit-InvalidInput "An additional Workshop preview changed after review: $path"
+    }
+}
+foreach ($showcaseEvidence in @($plan.showcaseEvidence)) {
+    foreach ($output in @($showcaseEvidence.outputs)) {
+        $path = [IO.Path]::GetFullPath([string]$output.path)
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or
+            (Get-Item -LiteralPath $path).Length -ne [long]$output.bytes -or
+            (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -cne [string]$output.sha256) {
+            Exit-InvalidInput "A declared Workshop showcase output changed after review: $path"
+        }
+    }
+    $provenancePath = [IO.Path]::GetFullPath([string]$showcaseEvidence.provenance.path)
+    if (-not (Test-Path -LiteralPath $provenancePath -PathType Leaf) -or
+        (Get-Item -LiteralPath $provenancePath).Length -ne [long]$showcaseEvidence.provenance.bytes -or
+        (Get-FileHash -LiteralPath $provenancePath -Algorithm SHA256).Hash -cne [string]$showcaseEvidence.provenance.sha256) {
+        Exit-InvalidInput "Workshop showcase capture evidence changed after review: $provenancePath"
     }
 }
 $plannedPublishedFileId = if ($null -eq $plan.publishedFileId) { [System.UInt64]0 } else { [System.UInt64]$plan.publishedFileId }
@@ -452,6 +574,28 @@ if ($null -ne $priorStatePlan -and $priorStatePlan -cne $actualPlanHash -and
     Exit-InvalidInput "Publication plan $priorStatePlan remains indeterminate at '$priorState'; reconcile that exact plan before any new Steam mutation."
 }
 $reconcileOnly = @('submit-admitted', 'submitted', 'submit-indeterminate', 'dependency-indeterminate', 'succeeded') -ccontains [string]$resumeState
+$changeNotesBefore = @()
+if ($publishedFileId -ne 0 -and $changeHistoryRequired) {
+    $changeNotesBefore = @(Get-WorkshopChangeNotes -PublishedFileId $publishedFileId)
+    if ($reconcileOnly) {
+        $previousMatches = if ([string]::IsNullOrWhiteSpace([string]$plan.previousChangeNote)) {
+            $changeNotesBefore.Count -eq 0
+        }
+        else {
+            $changeNotesBefore.Count -gt 0 -and [string]$changeNotesBefore[0].note -ceq ([string]$plan.previousChangeNote).Trim()
+        }
+        $newMatches = $changeNotesBefore.Count -gt 0 -and [string]$changeNotesBefore[0].note -ceq ([string]$plan.changeNote).Trim()
+        if (-not $previousMatches -and -not $newMatches) {
+            Exit-InvalidInput 'Steam change history cannot reconcile this admitted publication.'
+        }
+    }
+    elseif (-not (Test-WorkshopChangeNotePreflight `
+        -RemoteNotes $changeNotesBefore `
+        -ExpectedPreviousNote ([string]$plan.previousChangeNote) `
+        -NewNote ([string]$plan.changeNote))) {
+        Exit-InvalidInput 'Steam change history does not match the reviewed previous note, or the new note was already used.'
+    }
+}
 $stateIdentityMatches = Test-ReconciliationStateIdentity -State ([string]$resumeState) `
     -StateItemId $priorStateItemId -PublishedFileId $publishedFileId
 if (-not $stateIdentityMatches) {
@@ -622,7 +766,7 @@ try {
             identityPath = $releaseIdentityPath
             statePath = $presentationStatePath
             title = [string]$plan.title
-            changeNote = 'Add illustrated Workshop feature cards.'
+            changeNote = ''
             additionalPreviewPaths = @($plan.additionalPreviews | ForEach-Object { [string]$_.path })
         }
         $previewSync = Wait-WorkshopTerminal -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
@@ -753,6 +897,29 @@ try {
     } while ([datetime]::UtcNow -lt $deadline)
     if ($null -eq $remote) {
         throw "Remote Workshop metadata did not converge to the reviewed plan: $($remoteCandidate | ConvertTo-Json -Depth 8 -Compress)"
+    }
+
+    $verifiedChangeNote = $null
+    if (-not $changeHistoryRequired) {
+        $verifiedChangeNote = $null
+    }
+    elseif ($reconcileOnly -and $changeNotesBefore.Count -gt 0 -and
+            [string]$changeNotesBefore[0].note -ceq ([string]$plan.changeNote).Trim()) {
+        $verifiedChangeNote = $changeNotesBefore[0]
+    }
+    else {
+        do {
+            $currentNotes = @(Get-WorkshopChangeNotes -PublishedFileId $publishedFileId)
+            if ($currentNotes.Count -gt 0 -and
+                [string]$currentNotes[0].note -ceq ([string]$plan.changeNote).Trim() -and
+                ($reconcileOnly -or
+                 @($changeNotesBefore | Where-Object { [string]$_.id -ceq [string]$currentNotes[0].id }).Count -eq 0)) {
+                $verifiedChangeNote = $currentNotes[0]
+                break
+            }
+            Start-Sleep -Seconds 2
+        } while ([datetime]::UtcNow -lt $deadline)
+        if ($null -eq $verifiedChangeNote) { throw 'Steam change history did not expose the exact new player-facing note.' }
     }
 
     $expectedDependencies = @($plan.requiredWorkshopItems | ForEach-Object { [string]$_ } | Sort-Object -Unique)
@@ -902,6 +1069,8 @@ try {
         publicationPlan = $planPath
         publicationPlanSha256 = $actualPlanHash
         candidateSha256 = [string]$plan.candidateSha256
+        changeNote = [string]$plan.changeNote
+        remoteChangeNote = $verifiedChangeNote
         publishedFileId = [string]$publishedFileId
         workshopUrl = "https://steamcommunity.com/sharedfiles/filedetails/?id=$publishedFileId"
         remote = $remote

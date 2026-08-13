@@ -295,7 +295,7 @@ public sealed class GatewayEndToEndGatewayBackend :
                     "e2e-" + fileName + "-attempt-" + attempt,
                     request,
                     TimeSpan.FromSeconds(30));
-                png = await capture.Completion.ConfigureAwait(false);
+                png = (await capture.Completion.ConfigureAwait(false)).Png;
                 break;
             }
             catch (Exception exception) when (

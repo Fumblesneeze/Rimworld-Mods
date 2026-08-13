@@ -67,9 +67,11 @@ A publishable candidate has all of the following:
 - Workshop copy is a player-facing showcase, never a pasted technical design. Keep complete mechanics/things/buildings/compatibility coverage, but describe visible behavior and benefits in plain language.
 - A `Recommended Mods` tier is still optional metadata: put it immediately above the broader optional list, link exact Workshop items when bytes permit, retain prerequisite guidance, and do not duplicate its entries below.
 - Wide inline cards use versioned templates, local licensed fonts, shipped sprites, fixed dimensions, sub-1-MiB files, and a personally inspected contact sheet. Reconcile them as additional previews, query Steam URLs, then resolve the final BBCode. Retain local hash ↔ remote index/URL evidence.
+- Per-mod gameplay showcase declarations identify exact optional presentation packages, natural scene art direction, ordinary player workflows, visible beats, formats, and order. Capture without selecting subjects; retain one high-detail still plus raw frame/timing/crop evidence for each requested GIF. Keep GIFs at most five seconds and under 1 MiB, use fixed views and hard cuts, and reject synthetic test-fixture presentation.
 - Put any author-requested AI/process disclosure in the final `Author's Note`; no content follows it. Be candid about playtesting limits and live-AI behavior.
 - Fresh isolated exact-PID RimWorld + Gateway process with initialized Steam.
 - Mutation-free dry-run and explicit user confirmation bound to exact hashes.
+- A non-initial update has one specific player-facing change note bound to the plan, submitted through Steam's change-note parameter, retained in the receipt, and checked on the remote change history. Blank, generic, synthesized, or recycled notes are rejected.
 - One update operation at a time; no blind retry after submission uncertainty.
 - A first-publication ID is durable across candidates, every existing-item update passes an exact
   Steam ID/owner/app/title query first, and an admitted-but-indeterminate submit is query-reconciled

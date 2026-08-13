@@ -57,7 +57,14 @@ public sealed class GatewayHttpResponse
     private Action? transportCompleted;
 
     public GatewayHttpResponse(int statusCode, string reasonPhrase, string contentType, byte[] body)
-        : this(statusCode, reasonPhrase, contentType, body, transportCompleted: null)
+        : this(
+            statusCode,
+            reasonPhrase,
+            contentType,
+            body,
+            new ReadOnlyDictionary<string, string>(
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)),
+            transportCompleted: null)
     {
     }
 
@@ -66,12 +73,14 @@ public sealed class GatewayHttpResponse
         string reasonPhrase,
         string contentType,
         byte[] body,
+        IReadOnlyDictionary<string, string> headers,
         Action? transportCompleted)
     {
         StatusCode = statusCode;
         ReasonPhrase = reasonPhrase ?? throw new ArgumentNullException(nameof(reasonPhrase));
         ContentType = contentType ?? throw new ArgumentNullException(nameof(contentType));
         Body = body ?? throw new ArgumentNullException(nameof(body));
+        Headers = headers ?? throw new ArgumentNullException(nameof(headers));
         this.transportCompleted = transportCompleted;
     }
 
@@ -83,6 +92,30 @@ public sealed class GatewayHttpResponse
 
     public byte[] Body { get; }
 
+    public IReadOnlyDictionary<string, string> Headers { get; }
+
+    public GatewayHttpResponse WithHeaders(IReadOnlyDictionary<string, string> headers)
+    {
+        if (headers is null)
+        {
+            throw new ArgumentNullException(nameof(headers));
+        }
+
+        var copy = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var header in headers)
+        {
+            copy.Add(header.Key, header.Value);
+        }
+
+        return new GatewayHttpResponse(
+            StatusCode,
+            ReasonPhrase,
+            ContentType,
+            Body,
+            new ReadOnlyDictionary<string, string>(copy),
+            transportCompleted);
+    }
+
     internal GatewayHttpResponse WithTransportCompletion(Action completion)
     {
         if (completion is null)
@@ -90,7 +123,7 @@ public sealed class GatewayHttpResponse
             throw new ArgumentNullException(nameof(completion));
         }
 
-        return new GatewayHttpResponse(StatusCode, ReasonPhrase, ContentType, Body, completion);
+        return new GatewayHttpResponse(StatusCode, ReasonPhrase, ContentType, Body, Headers, completion);
     }
 
     internal GatewayHttpResponse TransferTransportCompletionTo(GatewayHttpResponse replacement)

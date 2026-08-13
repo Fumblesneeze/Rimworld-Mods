@@ -22,5 +22,6 @@
   ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
-  "changeNote": "Corrected the microwave direction art and improved the illustrated feature guide."
+  "previousChangeNote": "Corrected the microwave direction art and improved the illustrated feature guide.",
+  "changeNote": "Added clearer in-game Workshop previews for restaurant service, dishwashing, nutrient-paste dining and professional meal preparation."
 }

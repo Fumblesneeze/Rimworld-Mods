@@ -60,10 +60,24 @@ public sealed class GatewayClientHttpRequest
 public sealed class GatewayClientHttpResponse
 {
     public GatewayClientHttpResponse(int statusCode, string contentType, byte[] body)
+        : this(
+            statusCode,
+            contentType,
+            body,
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase))
+    {
+    }
+
+    public GatewayClientHttpResponse(
+        int statusCode,
+        string contentType,
+        byte[] body,
+        IReadOnlyDictionary<string, string> headers)
     {
         StatusCode = statusCode;
         ContentType = contentType;
         Body = body;
+        Headers = headers ?? throw new ArgumentNullException(nameof(headers));
     }
 
     public int StatusCode { get; }
@@ -71,6 +85,8 @@ public sealed class GatewayClientHttpResponse
     public string ContentType { get; }
 
     public byte[] Body { get; }
+
+    public IReadOnlyDictionary<string, string> Headers { get; }
 }
 
 public interface IGatewayHttpTransport

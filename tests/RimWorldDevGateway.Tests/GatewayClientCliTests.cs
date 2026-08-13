@@ -103,6 +103,56 @@ public sealed class GatewayClientCliTests
     }
 
     [Test]
+    public void Screenshot_with_camera_crop_posts_size_and_offset_without_thing_handles()
+    {
+        var fixture = new CliFixture();
+        var png = new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+        fixture.Transport.Response = new GatewayClientHttpResponse(
+            200,
+            "image/png",
+            png,
+            new Dictionary<string, string>
+            {
+                ["X-Gateway-Frame-Width"] = "1600",
+                ["X-Gateway-Frame-Height"] = "900",
+                ["X-Gateway-Crop-X"] = "320",
+                ["X-Gateway-Crop-Y"] = "180",
+                ["X-Gateway-Crop-Width"] = "960",
+                ["X-Gateway-Crop-Height"] = "540"
+            });
+
+        var exitCode = fixture.App.Run(
+            new[]
+            {
+                "screenshot",
+                "--file", "presentation.png",
+                "--width", "960",
+                "--height", "540",
+                "--offset-x", "120",
+                "--offset-y", "-40",
+                "-o", "json"
+            },
+            fixture.Output,
+            fixture.Error);
+
+        var posted = GatewayContractJson.Read<GatewayScreenshotRequest>(
+            Encoding.UTF8.GetString(fixture.Transport.Request!.Body));
+        Assert.Multiple(() =>
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(posted.ThingHandles, Is.Empty);
+            Assert.That(posted.WidthPixels, Is.EqualTo(960));
+            Assert.That(posted.HeightPixels, Is.EqualTo(540));
+            Assert.That(posted.OffsetXPixels, Is.EqualTo(120));
+            Assert.That(posted.OffsetYPixels, Is.EqualTo(-40));
+            Assert.That(fixture.Files.BinaryFiles["presentation.png"], Is.EqualTo(png));
+            Assert.That(fixture.Output.ToString(), Does.Contain("\"x\":320"));
+            Assert.That(fixture.Output.ToString(), Does.Contain("\"frameWidth\":1600"));
+            Assert.That(fixture.Error.ToString(), Is.Empty);
+        });
+    }
+
+    [Test]
     public void Execute_source_compiles_before_upload_and_posts_the_compiled_assembly_contract()
     {
         var fixture = new CliFixture();

@@ -386,7 +386,7 @@ internal static class Publisher
         snapshot = Snapshot.Pending("preview-submitting", request.PlanSha256, publishedFileId);
         WriteStateAtomically(request.StatePath, "preview-submit-admitted|" + request.PlanSha256 + "|" + publishedFileId);
         submitResult = CallResult<SubmitItemUpdateResult_t>.Create(OnSubmitted);
-        var call = SteamUGC.SubmitItemUpdate(handle, request.ChangeNote);
+        var call = SteamUGC.SubmitItemUpdate(handle, null);
         if (IsInvalid(call))
         {
             submitResult = null;
@@ -886,6 +886,7 @@ internal static class Publisher
             if (string.IsNullOrWhiteSpace(Title) || Title.Length > 128) throw new InvalidOperationException("title is invalid.");
             if (string.IsNullOrWhiteSpace(IdentityPath) || Path.GetFileName(IdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("identityPath is invalid.");
             if (string.IsNullOrWhiteSpace(StatePath) || Path.GetFileName(StatePath) != "presentation-preview-state.txt") throw new InvalidOperationException("statePath is invalid.");
+            if (!string.IsNullOrEmpty(ChangeNote)) throw new InvalidOperationException("preview-sync must not consume a player-facing change note.");
             if (AdditionalPreviewPaths.Count < 1 || AdditionalPreviewPaths.Count > 10) throw new InvalidOperationException("additionalPreviewPaths count is invalid.");
             var normalized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var path in AdditionalPreviewPaths)

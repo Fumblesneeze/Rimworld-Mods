@@ -66,4 +66,24 @@ public sealed class GatewayScreenshotCropPlannerTests
             Assert.That(crop.Height, Is.EqualTo(300));
         });
     }
+
+    [Test]
+    public void Plan_centered_preserves_the_requested_size_and_clamps_offset_to_the_frame()
+    {
+        var crop = GatewayScreenshotCropPlanner.PlanCentered(
+            frameWidth: 1920,
+            frameHeight: 1080,
+            widthPixels: 960,
+            heightPixels: 540,
+            offsetXPixels: 800,
+            offsetYPixels: -400);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(crop.X, Is.EqualTo(960));
+            Assert.That(crop.Y, Is.Zero);
+            Assert.That(crop.Width, Is.EqualTo(960));
+            Assert.That(crop.Height, Is.EqualTo(540));
+        });
+    }
 }

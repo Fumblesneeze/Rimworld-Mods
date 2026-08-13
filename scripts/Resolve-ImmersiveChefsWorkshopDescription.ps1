@@ -3,7 +3,7 @@
 Resolves reviewed Steam additional-preview URLs into the Immersive Chefs Workshop template.
 
 .DESCRIPTION
-Requires the exact six-token Steam inventory, rejects unexpected hosts/tokens/indexes, writes a
+Requires the exact reviewed Steam inventory, rejects unexpected hosts/tokens/indexes, writes a
 new UTF-8 BBCode file, and enforces Steamworks' installed exact description byte ceiling.
 
 .EXAMPLE
@@ -47,12 +47,18 @@ if (-not [ulong]::TryParse([string]$inventory.publishedFileId, [ref]$publishedFi
     $previewPlanSha256 -notmatch '^[A-Fa-f0-9]{64}$') {
     Exit-InvalidInput 'The remote preview inventory item/plan identity is invalid.'
 }
-$expectedTokens = @('kitchenware', 'teamwork', 'dishwashing', 'meals', 'colony', 'compatibility')
 $previews = @($inventory.previews)
-if ($previews.Count -ne $expectedTokens.Count) { Exit-InvalidInput 'The remote preview inventory must contain exactly six images.' }
+if ($previews.Count -lt 1 -or $previews.Count -gt 10 -or
+    @($previews.token | Sort-Object -Unique).Count -ne $previews.Count) {
+    Exit-InvalidInput 'The remote preview inventory must contain one to ten unique reviewed images.'
+}
 
 $template = Get-Content -LiteralPath $TemplatePath -Raw -Encoding UTF8
-for ($index = 0; $index -lt $expectedTokens.Count; $index++) {
+$templateTokens = @([regex]::Matches($template, '\{\{image:(?<token>[a-z0-9-]{1,32})\}\}') | ForEach-Object { $_.Groups['token'].Value })
+if ($templateTokens.Count -lt 1 -or @($templateTokens | Sort-Object -Unique).Count -ne $templateTokens.Count) {
+    Exit-InvalidInput 'The Workshop template image tokens are missing or duplicated.'
+}
+for ($index = 0; $index -lt $previews.Count; $index++) {
     $preview = $previews[$index]
     $token = [string]$preview.token
     $urlText = [string]$preview.remoteUrl
@@ -60,7 +66,7 @@ for ($index = 0; $index -lt $expectedTokens.Count; $index++) {
     $localHash = [string]$preview.localSha256
     $remoteHash = [string]$preview.remoteSha256
     [Uri]$url = $null
-    if ($token -cne $expectedTokens[$index] -or [int]$preview.remoteIndex -ne $index -or
+    if ($token -notmatch '^[a-z0-9-]{1,32}$' -or [int]$preview.remoteIndex -ne $index -or
         -not [Uri]::TryCreate($urlText, [UriKind]::Absolute, [ref]$url) -or
         $url.Scheme -cne 'https' -or $url.Host -cne 'images.steamusercontent.com' -or
         [string]$preview.remoteType -cne 'k_EItemPreviewType_Image' -or
@@ -69,11 +75,13 @@ for ($index = 0; $index -lt $expectedTokens.Count; $index++) {
         (Get-FileHash -LiteralPath $localPath -Algorithm SHA256).Hash -cne $localHash) {
         Exit-InvalidInput "Remote preview slot $index does not match its reviewed token and Steam URL."
     }
-    $placeholder = '{{image:' + $token + '}}'
-    if ([regex]::Matches($template, [regex]::Escape($placeholder)).Count -ne 1) {
-        Exit-InvalidInput "The Workshop template must contain token '$token' exactly once."
+    if ($templateTokens -ccontains $token) {
+        $placeholder = '{{image:' + $token + '}}'
+        if ([regex]::Matches($template, [regex]::Escape($placeholder)).Count -ne 1) {
+            Exit-InvalidInput "The Workshop template must contain token '$token' exactly once."
+        }
+        $template = $template.Replace($placeholder, $url.AbsoluteUri)
     }
-    $template = $template.Replace($placeholder, $url.AbsoluteUri)
 }
 if ($template -match '\{\{image:[^}]+\}\}') { Exit-InvalidInput 'The resolved Workshop description still contains an image token.' }
 
@@ -105,7 +113,7 @@ finally { if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $tem
 $result = [pscustomobject][ordered]@{
     status = 'resolved'
     destinationPath = $destination
-    imageCount = $expectedTokens.Count
+    imageCount = $templateTokens.Count
     utf8Bytes = $bytes.Length
     steamLimitIncludingTerminator = $limit
     sha256 = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash

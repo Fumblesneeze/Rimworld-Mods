@@ -471,11 +471,30 @@ public sealed class GatewayApiRouter
                     return timeoutResponse;
                 }
 
-                return new GatewayHttpResponse(
+                var completedCapture = capture.Completion.GetAwaiter().GetResult();
+                var response = new GatewayHttpResponse(
                     200,
                     "OK",
                     "image/png",
-                    capture.Completion.GetAwaiter().GetResult());
+                    completedCapture.Png);
+                if (completedCapture.Crop is not null &&
+                    completedCapture.FrameWidth.HasValue &&
+                    completedCapture.FrameHeight.HasValue)
+                {
+                    response = response.WithHeaders(new Dictionary<string, string>(StringComparer.Ordinal)
+                    {
+                        ["X-Gateway-Frame-Width"] = completedCapture.FrameWidth.Value.ToString(
+                            CultureInfo.InvariantCulture),
+                        ["X-Gateway-Frame-Height"] = completedCapture.FrameHeight.Value.ToString(
+                            CultureInfo.InvariantCulture),
+                        ["X-Gateway-Crop-X"] = completedCapture.Crop.X.ToString(CultureInfo.InvariantCulture),
+                        ["X-Gateway-Crop-Y"] = completedCapture.Crop.Y.ToString(CultureInfo.InvariantCulture),
+                        ["X-Gateway-Crop-Width"] = completedCapture.Crop.Width.ToString(CultureInfo.InvariantCulture),
+                        ["X-Gateway-Crop-Height"] = completedCapture.Crop.Height.ToString(CultureInfo.InvariantCulture)
+                    });
+                }
+
+                return response;
             }
 
             if (request.Method == "POST" && request.Path == "/api/v1/input/click")

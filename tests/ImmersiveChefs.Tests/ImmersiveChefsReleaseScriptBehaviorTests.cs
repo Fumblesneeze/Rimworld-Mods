@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.Web.Script.Serialization;
 using NUnit.Framework;
 
 namespace ImmersiveChefs.Tests;
@@ -86,11 +87,158 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     public void Release_scripts_parse_under_the_installed_Windows_PowerShell_host()
     {
         using var fixture = Fixture.Create();
-        foreach (var script in new[] { "Build-ImmersiveChefsRelease.ps1", "Invoke-ImmersiveChefsWorkshopRelease.ps1" })
+        foreach (var script in new[] { "Build-ImmersiveChefsRelease.ps1", "Invoke-ImmersiveChefsWorkshopRelease.ps1", "Invoke-RimWorldShowcaseCapture.ps1" })
         {
             var parsed = fixture.ParseWithWindowsPowerShell(script);
             Assert.That(parsed.ExitCode, Is.Zero, script + Environment.NewLine + parsed.StandardError);
         }
+    }
+
+    [Test]
+    public void Showcase_capture_owns_a_hard_five_second_deadline_and_exact_encoder_provenance()
+    {
+        using var fixture = Fixture.Create();
+        var source = File.ReadAllText(Path.Combine(fixture.RepositoryRoot, "scripts", "Invoke-RimWorldShowcaseCapture.ps1"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(source, Does.Contain("$captureDeadlineMilliseconds = 5000"));
+            Assert.That(source, Does.Contain("Invoke-BoundedChildProcess"));
+            Assert.That(source, Does.Contain("actualCaptureDurationMilliseconds"));
+            Assert.That(source, Does.Contain("actualDurationSeconds"));
+            Assert.That(source, Does.Contain("processStartUtc"));
+            Assert.That(source, Does.Contain("stateBefore"));
+            Assert.That(source, Does.Contain("stateAfter"));
+            Assert.That(source, Does.Contain("encoderArguments"));
+            Assert.That(source, Does.Contain("encoderVersion"));
+            Assert.That(source, Does.Contain("ffprobe duration query"));
+        });
+    }
+
+    [Test]
+    public void Showcase_capture_terminates_the_exact_owned_child_after_a_timeout()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-RimWorldShowcaseCapture.ps1",
+            new[] { "ConvertTo-QuotedProcessArgument", "Invoke-BoundedChildProcess" },
+            "try { $null=Invoke-BoundedChildProcess -FilePath 'pwsh.exe' -Arguments @('-NoProfile','-NonInteractive','-Command','Start-Sleep -Seconds 30') -TimeoutMilliseconds 100 -Label 'hung fixture'; throw 'expected timeout' } " +
+            "catch { Write-Output $_.Exception.Message }");
+        Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+        var match = Regex.Match(run.StandardOutput, @"terminated owned PID (?<pid>\d+)");
+        Assert.That(match.Success, Is.True, run.StandardOutput);
+        Assert.That(Process.GetProcesses().Any(process => process.Id == int.Parse(match.Groups["pid"].Value)), Is.False,
+            "The timed-out exact child remained alive after the capture command returned.");
+    }
+
+    [Test]
+    public void Change_history_is_required_for_updates_but_not_for_first_publication_or_preview_sync()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-WorkshopChangeHistoryRequired" },
+            "$update=Test-WorkshopChangeHistoryRequired $false $false;" +
+            "$first=Test-WorkshopChangeHistoryRequired $true $false;" +
+            "$preview=Test-WorkshopChangeHistoryRequired $false $true;" +
+            "Write-Output ($update.ToString()+'|'+$first.ToString()+'|'+$preview.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False"));
+        });
+    }
+
+    [Test]
+    public void Showcase_release_evidence_binds_every_declared_output_and_rejects_tampering()
+    {
+        using var fixture = Fixture.Create();
+        var releaseRoot = Path.Combine(fixture.Root, "release");
+        var assetRoot = Path.Combine(releaseRoot, "workshop", "assets", "showcases");
+        var frameRoot = Path.Combine(assetRoot, "frames");
+        Directory.CreateDirectory(assetRoot);
+        Directory.CreateDirectory(frameRoot);
+        var screenshotPath = Path.Combine(assetRoot, "service.png");
+        var gifPath = Path.Combine(assetRoot, "service.gif");
+        var framePath = Path.Combine(frameRoot, "frame-0001.png");
+        var reviewedProductAssembly = Path.Combine(assetRoot, "ImmersiveChefs.dll");
+        var png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        File.WriteAllBytes(screenshotPath, png);
+        File.WriteAllBytes(framePath, png);
+        File.WriteAllBytes(reviewedProductAssembly, new byte[] { 1, 2, 3, 4 });
+        string Sha(string path)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            return BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(path))).Replace("-", string.Empty);
+        }
+        var screenshotHash = Sha(screenshotPath);
+        var ffmpegPath = fixture.ResolveCommand("ffmpeg.exe");
+        var ffprobePath = fixture.ResolveCommand("ffprobe.exe");
+        var magickPath = fixture.ResolveCommand("magick.exe");
+        var ffmpegVersion = Fixture.RunProcess(ffmpegPath, "-version").StandardOutput.Split('\n')[0].TrimEnd('\r');
+        var ffprobeVersion = Fixture.RunProcess(ffprobePath, "-version").StandardOutput.Split('\n')[0].TrimEnd('\r');
+        var filter = "fps=1,scale=1:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle";
+        var encode = Fixture.RunProcess(ffmpegPath,
+            "-hide_banner -loglevel error -y -framerate 1 -i \"" + Path.Combine(assetRoot, "frames", "frame-%04d.png") + "\" -filter_complex \"" + filter + "\" -loop 0 \"" + gifPath + "\"");
+        Assert.That(encode.ExitCode, Is.Zero, encode.StandardError);
+        var gifHash = Sha(gifPath);
+        var evidencePath = Path.Combine(assetRoot, "service.capture.json");
+        File.WriteAllText(evidencePath,
+            "{\"schema\":\"RimWorldDevGateway/ShowcaseCaptureEvidence/v1\",\"showcaseId\":\"service\",\"capturedUtc\":\"2026-08-13T12:00:00Z\"," +
+            "\"processId\":123,\"processStartUtc\":\"2026-08-13T11:59:00Z\",\"runId\":\"0123456789abcdef0123456789abcdef\"," +
+            "\"orderedPackageIds\":[\"ludeon.rimworld\",\"fumblesneeze.immersivechefs\",\"fumblesneeze.rimworlddevgateway\"]," +
+            "\"orderedPackageIdentities\":[" +
+            "{\"index\":0,\"packageId\":\"ludeon.rimworld\",\"name\":\"Core\",\"rootDir\":\"C:/Core\",\"files\":[{\"path\":\"About/About.xml\",\"bytes\":1,\"sha256\":\"" + new string('A', 64) + "\"}]}," +
+            "{\"index\":1,\"packageId\":\"fumblesneeze.immersivechefs\",\"name\":\"Immersive Chefs\",\"rootDir\":\"C:/Product\",\"files\":[{\"path\":\"1.6/Assemblies/ImmersiveChefs.dll\",\"bytes\":4,\"sha256\":\"" + Sha(reviewedProductAssembly) + "\"}]}," +
+            "{\"index\":2,\"packageId\":\"fumblesneeze.rimworlddevgateway\",\"name\":\"Gateway\",\"rootDir\":\"C:/Gateway\",\"files\":[{\"path\":\"About/About.xml\",\"bytes\":1,\"sha256\":\"" + new string('B', 64) + "\"}]}]," +
+            "\"observedBeats\":[\"order\"],\"reviewObservation\":\"The native order is visible.\"," +
+            "\"stateBefore\":{\"camera\":{\"x\":1},\"selectedThings\":[],\"uiSelection\":[]}," +
+            "\"stateAfter\":{\"camera\":{\"x\":1},\"selectedThings\":[],\"uiSelection\":[]}," +
+            "\"selectionMutated\":false,\"cameraMutated\":false," +
+            "\"plan\":{\"schema\":\"RimWorldDevGateway/ShowcaseCapturePlan/v1\",\"frameCount\":1,\"framesPerSecond\":1,\"durationSeconds\":1," +
+            "\"width\":1,\"height\":1,\"offsetX\":0,\"offsetY\":0,\"gifWidth\":1,\"gifColors\":96,\"mutatesGameState\":false,\"selectsThings\":false}," +
+            "\"actualCaptureDurationMilliseconds\":900," +
+            "\"frames\":[{\"index\":1,\"elapsedMilliseconds\":700,\"path\":\"frames/frame-0001.png\",\"bytes\":" + png.Length + "," +
+            "\"sha256\":\"" + screenshotHash + "\",\"crop\":{\"frameWidth\":1,\"frameHeight\":1,\"x\":0,\"y\":0,\"height\":1,\"width\":1}}]," +
+            "\"pngOptimizer\":{\"name\":\"magick.exe\",\"sha256\":\"" + Sha(magickPath) + "\",\"version\":" + new JavaScriptSerializer().Serialize(Fixture.RunProcess(magickPath, "-version").StandardOutput.Split('\n')[0].TrimEnd('\r')) + ",\"arguments\":[\"-strip\",\"-colors\",\"256\",\"-define\",\"png:compression-level=9\",\"-define\",\"png:compression-filter=5\"]}," +
+            "\"still\":{\"path\":\"service.png\",\"bytes\":" + new FileInfo(screenshotPath).Length + ",\"sha256\":\"" + screenshotHash + "\"}," +
+            "\"gif\":{\"path\":\"service.gif\",\"bytes\":" + new FileInfo(gifPath).Length + ",\"sha256\":\"" + gifHash +
+            "\",\"actualDurationSeconds\":1,\"encoderName\":\"ffmpeg.exe\",\"encoderSha256\":\"" + Sha(ffmpegPath) + "\",\"encoderVersion\":" + new JavaScriptSerializer().Serialize(ffmpegVersion) + "," +
+            "\"encoderArguments\":[],\"encoderFilter\":\"\",\"probeName\":\"ffprobe.exe\",\"probeSha256\":\"" + Sha(ffprobePath) + "\",\"probeVersion\":" + new JavaScriptSerializer().Serialize(ffprobeVersion) + ",\"probeArguments\":[]}," +
+            "\"bearerTokenRetained\":false}", new UTF8Encoding(false));
+        var showcasePath = Path.Combine(fixture.Root, "showcase.json");
+        File.WriteAllText(showcasePath,
+            "{\"id\":\"service\",\"formats\":[\"screenshot\",\"gif\"],\"requiredPackageIds\":[\"ludeon.rimworld\",\"fumblesneeze.immersivechefs\"],\"beats\":[\"order\"],\"crop\":{\"width\":1,\"height\":1,\"offsetX\":0,\"offsetY\":0}," +
+            "\"outputs\":{\"screenshot\":\"assets/showcases/service.png\",\"gif\":\"assets/showcases/service.gif\"}}",
+            new UTF8Encoding(false));
+
+        var encoderArgs = new[] { "-hide_banner", "-loglevel", "error", "-y", "-framerate", "1", "-i", "frames/frame-%04d.png", "-filter_complex", filter, "-loop", "0", "service.gif" };
+        var probeArgs = new[] { "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", "service.gif" };
+        var evidenceText = File.ReadAllText(evidencePath)
+            .Replace("\"encoderArguments\":[]", "\"encoderArguments\":" + new JavaScriptSerializer().Serialize(encoderArgs))
+            .Replace("\"encoderFilter\":\"\"", "\"encoderFilter\":" + new JavaScriptSerializer().Serialize(filter))
+            .Replace("\"probeArguments\":[]", "\"probeArguments\":" + new JavaScriptSerializer().Serialize(probeArgs));
+        File.WriteAllText(evidencePath, evidenceText, new UTF8Encoding(false));
+        var operation = "$s=Get-Content -LiteralPath " + Ps(showcasePath) + " -Raw | ConvertFrom-Json;" +
+                        "$e=Get-WorkshopShowcaseEvidence -Showcase $s -ReleaseRoot " + Ps(releaseRoot) + " -ReviewedProductAssemblyPath " + Ps(reviewedProductAssembly) + ";" +
+                        "Write-Output ($e.showcaseId+'|'+$e.outputs.Count+'|'+$e.provenance.sha256.Length)";
+        var accepted = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Get-CanonicalJson", "Invoke-ShowcaseMediaTool", "Get-RasterImageInfo", "Get-WorkshopShowcaseEvidence" }, operation);
+        Assert.Multiple(() =>
+        {
+            Assert.That(accepted.ExitCode, Is.Zero, accepted.StandardError);
+            Assert.That(accepted.StandardOutput.Trim(), Is.EqualTo("service|2|64"));
+        });
+
+        File.AppendAllText(gifPath, "tampered", new UTF8Encoding(false));
+        var rejected = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Get-CanonicalJson", "Invoke-ShowcaseMediaTool", "Get-RasterImageInfo", "Get-WorkshopShowcaseEvidence" }, operation);
+        Assert.Multiple(() =>
+        {
+            Assert.That(rejected.ExitCode, Is.EqualTo(1));
+            Assert.That(rejected.StandardError, Does.Contain("does not match its capture evidence"));
+        });
     }
 
     [Test]
@@ -101,7 +249,11 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         var inventoryPath = Path.Combine(fixture.Root, "preview-inventory.json");
         var outputPath = Path.Combine(fixture.Root, "description.bbcode");
         var provenancePath = Path.Combine(fixture.Root, "description.provenance.json");
-        var tokens = new[] { "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" };
+        var tokens = new[]
+        {
+            "kitchenware", "teamwork", "meals", "colony", "compatibility",
+            "showcase-gastronomy", "dishwashing", "showcase-nutrient-paste", "showcase-professional-prep", "showcase-memories"
+        };
         var previewPlan = new string('A', 64);
         var previewEntries = tokens.Select((token, index) =>
         {
@@ -215,6 +367,69 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='CCCC';remoteSha256='CCCC';remoteType='k_EItemPreviewType_Image'});" +
             "$ok=Test-WorkshopPreviewProvenance $current $exact; $bad=Test-WorkshopPreviewProvenance $current $drift;" +
             "Write-Output ($ok.ToString()+'|'+$bad.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False"));
+        });
+    }
+
+    [Test]
+    public void Workshop_change_history_is_parsed_in_remote_order_and_rejects_reused_notes()
+    {
+        using var fixture = Fixture.Create();
+        var html = "<div class=\"detailBox changeLogCtn\"><div class=\"changelog headline\">Update: now</div>" +
+                   "<p id=\"22\">Newest &amp; specific.</p></div>" +
+                   "<div class=\"detailBox changeLogCtn\"><div class=\"changelog headline\">Update: before</div>" +
+                   "<p id=\"11\">Previous note.</p></div>";
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "ConvertFrom-WorkshopChangeHistoryHtml", "Test-WorkshopChangeNotePreflight" },
+            "$notes=@(ConvertFrom-WorkshopChangeHistoryHtml -Html " + Ps(html) + " -Uri 'https://steam/changelog/7');" +
+            "$ok=Test-WorkshopChangeNotePreflight -RemoteNotes $notes -ExpectedPreviousNote 'Newest & specific.' -NewNote 'A different player-facing note.';" +
+            "$reuse=Test-WorkshopChangeNotePreflight -RemoteNotes $notes -ExpectedPreviousNote 'Newest & specific.' -NewNote 'Previous note.';" +
+            "Write-Output ($notes[0].id+'|'+$notes[0].note+'|'+$ok.ToString()+'|'+$reuse.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("22|Newest & specific.|True|False"));
+        });
+    }
+
+    [Test]
+    public void Workshop_change_history_allows_one_first_update_after_a_noted_or_unnoted_private_bootstrap()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-WorkshopChangeNotePreflight" },
+            "$empty=Test-WorkshopChangeNotePreflight -RemoteNotes @() -ExpectedPreviousNote '' -NewNote 'A specific first public update note.';" +
+            "$unexpected=Test-WorkshopChangeNotePreflight -RemoteNotes @([pscustomobject]@{note='unexpected'}) -ExpectedPreviousNote '' -NewNote 'A specific first public update note.';" +
+            "$tracked=Test-WorkshopChangeNotePreflight -RemoteNotes @([pscustomobject]@{note='private bootstrap'}) -ExpectedPreviousNote 'private bootstrap' -NewNote 'A specific first public update note.';" +
+            "Write-Output ($empty.ToString()+'|'+$unexpected.ToString()+'|'+$tracked.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|True"));
+        });
+    }
+
+    [Test]
+    public void Publisher_requires_five_complete_showcase_evidence_records_cross_bound_to_the_carousel()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-WorkshopShowcasePlanEvidence" },
+            "$ids=@('gastronomy-service','dishwasher-turnaround','nutrient-paste-prison-line','professional-prep-line','dining-memories');" +
+            "$e=@();$p=@();$slot=5;foreach($id in $ids){$fmt=if($id -ceq 'dining-memories'){'screenshot'}else{'gif'};" +
+            "$a='A'.PadRight(64,'A');$b='B'.PadRight(64,'B');$c='C'.PadRight(64,'C');" +
+            "$outs=@([pscustomobject]@{format='screenshot';sha256=$a});if($fmt -ceq 'gif'){$outs+=([pscustomobject]@{format='gif';sha256=$b})};" +
+            "$e+=([pscustomobject]@{showcaseId=$id;outputs=$outs;provenance=[pscustomobject]@{sha256=$c}});" +
+            "$carouselHash=if($fmt -ceq 'gif'){$b}else{$a};$p+=([pscustomobject]@{showcaseId=$id;format=$fmt;sha256=$carouselHash});$slot++};" +
+            "$p=@([pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card1'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card2'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card3'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card4'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card5'})+$p;" +
+            "$ok=Test-WorkshopShowcasePlanEvidence -Evidence @($e) -AdditionalPreviews @($p);$missing=Test-WorkshopShowcasePlanEvidence -Evidence @($e|Select-Object -First 4) -AdditionalPreviews @($p);" +
+            "Write-Output ($ok.ToString()+'|'+$missing.ToString())");
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
@@ -464,6 +679,13 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             var root = Path.Combine(Path.GetTempPath(), nameof(ImmersiveChefsReleaseScriptBehaviorTests), Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             return new Fixture(root, FindRepositoryRoot());
+        }
+
+        public string ResolveCommand(string name)
+        {
+            var invocation = Run("pwsh.exe", "-NoProfile -NonInteractive -Command \"(Get-Command '" + name + "').Source\"");
+            if (invocation.ExitCode != 0) throw new InvalidOperationException(invocation.StandardError);
+            return invocation.StandardOutput.Trim();
         }
 
         public Invocation InvokeFunctions(string scriptName, IReadOnlyList<string> functionNames, string operation)

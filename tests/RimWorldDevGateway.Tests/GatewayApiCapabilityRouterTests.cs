@@ -349,6 +349,44 @@ public sealed class GatewayApiCapabilityRouterTests
     }
 
     [Test]
+    public void Camera_crop_endpoint_returns_the_exact_applied_rectangle_without_target_projection()
+    {
+        var dispatcher = new GatewayDispatcher();
+        var png = new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+        var screenshot = new GatewayScreenshotService(
+            dispatcher,
+            new DescribedScreenshotBackend(png),
+            maximumPngBytes: 1024);
+        var router = new GatewayApiRouter(
+            dispatcher,
+            new StubStateProvider(),
+            new GatewayLogBuffer(),
+            new GatewayApiServices(screenshotService: screenshot),
+            responseTimeout: TimeSpan.FromSeconds(2));
+
+        var responseTask = Task.Run(() => router.Handle(
+            Post(
+                "/api/v1/screenshots",
+                "{\"widthPixels\":960,\"heightPixels\":540,\"offsetXPixels\":120,\"offsetYPixels\":-40}"),
+            "screenshot-camera-route"));
+        Assert.That(SpinWait.SpinUntil(() => dispatcher.PendingCount == 1, 1000), Is.True);
+        dispatcher.Drain(DispatchPhase.EndOfFrame);
+        var response = responseTask.GetAwaiter().GetResult();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(200));
+            Assert.That(response.Body, Is.EqualTo(png));
+            Assert.That(response.Headers["X-Gateway-Frame-Width"], Is.EqualTo("1600"));
+            Assert.That(response.Headers["X-Gateway-Frame-Height"], Is.EqualTo("900"));
+            Assert.That(response.Headers["X-Gateway-Crop-X"], Is.EqualTo("320"));
+            Assert.That(response.Headers["X-Gateway-Crop-Y"], Is.EqualTo("180"));
+            Assert.That(response.Headers["X-Gateway-Crop-Width"], Is.EqualTo("960"));
+            Assert.That(response.Headers["X-Gateway-Crop-Height"], Is.EqualTo("540"));
+        });
+    }
+
+    [Test]
     public void Screenshot_endpoint_rejects_invalid_target_padding_as_a_client_error_without_dispatch()
     {
         var dispatcher = new GatewayDispatcher();
@@ -832,6 +870,32 @@ public sealed class GatewayApiCapabilityRouterTests
         {
             Request = request;
             return Capture();
+        }
+
+        public byte[] EncodePng(object resource) => png;
+
+        public void Destroy(object resource)
+        {
+        }
+    }
+
+    private sealed class DescribedScreenshotBackend : IGatewayScreenshotBackend, IGatewayDescribedScreenshotBackend
+    {
+        private readonly byte[] png;
+
+        public DescribedScreenshotBackend(byte[] png) => this.png = png;
+
+        public object Capture() => throw new AssertionException("The described capture seam was bypassed.");
+
+        public GatewayScreenshotResource CaptureDescribed(GatewayScreenshotRequest request)
+        {
+            Assert.That(request.ThingHandles, Is.Empty);
+            Assert.That(request.WidthPixels, Is.EqualTo(960));
+            return new GatewayScreenshotResource(
+                new object(),
+                frameWidth: 1600,
+                frameHeight: 900,
+                crop: new GatewayScreenshotCrop(320, 180, 960, 540));
         }
 
         public byte[] EncodePng(object resource) => png;

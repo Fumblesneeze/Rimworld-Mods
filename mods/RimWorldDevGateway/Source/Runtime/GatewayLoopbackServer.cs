@@ -519,6 +519,10 @@ public sealed class GatewayLoopbackServer : IGatewayTransport, IGatewayTransport
         context.Response.KeepAlive = false;
         context.Response.SendChunked = false;
         context.Response.Headers["X-Request-Id"] = requestId;
+        foreach (var header in response.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value;
+        }
         if (response.Body.Length > 0)
         {
             await context.Response.OutputStream

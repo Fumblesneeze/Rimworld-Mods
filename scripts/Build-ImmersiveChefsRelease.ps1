@@ -43,6 +43,345 @@ function Get-Sha256Text {
     finally { $sha.Dispose() }
 }
 
+function Get-CanonicalJson([object]$Value) {
+    return $Value | ConvertTo-Json -Depth 20 -Compress
+}
+
+function Invoke-ShowcaseMediaTool {
+    param(
+        [Parameter(Mandatory)][string]$FilePath,
+        [Parameter(Mandatory)][string[]]$Arguments,
+        [Parameter(Mandatory)][string]$WorkingDirectory,
+        [Parameter(Mandatory)][int]$TimeoutMilliseconds
+    )
+    $start = [Diagnostics.ProcessStartInfo]::new()
+    $start.FileName = $FilePath
+    $start.Arguments = ($Arguments | ForEach-Object { '"' + ([string]$_).Replace('"', '\"') + '"' }) -join ' '
+    $start.WorkingDirectory = $WorkingDirectory
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = $start
+    try {
+        if (-not $process.Start()) { throw "Could not start showcase media tool: $FilePath" }
+        $standardOutput = $process.StandardOutput.ReadToEndAsync()
+        $standardError = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit($TimeoutMilliseconds)) {
+            $process.Kill()
+            if (-not $process.WaitForExit(10000)) { throw "Showcase media tool did not exit after bounded termination: $FilePath" }
+            throw "Showcase media tool exceeded its bounded timeout: $FilePath"
+        }
+        return [pscustomobject]@{
+            ExitCode = [int]$process.ExitCode
+            StandardOutput = $standardOutput.GetAwaiter().GetResult()
+            StandardError = $standardError.GetAwaiter().GetResult()
+        }
+    }
+    finally { $process.Dispose() }
+}
+
+function Get-RasterImageInfo([string]$Path) {
+    $bytes = [IO.File]::ReadAllBytes($Path)
+    Add-Type -AssemblyName System.Drawing
+    if ($bytes.Length -ge 24 -and
+        $bytes[0] -eq 0x89 -and $bytes[1] -eq 0x50 -and $bytes[2] -eq 0x4E -and $bytes[3] -eq 0x47 -and
+        $bytes[4] -eq 0x0D -and $bytes[5] -eq 0x0A -and $bytes[6] -eq 0x1A -and $bytes[7] -eq 0x0A -and
+        [Text.Encoding]::ASCII.GetString($bytes, 12, 4) -ceq 'IHDR') {
+        $width = ($bytes[16] -shl 24) -bor ($bytes[17] -shl 16) -bor ($bytes[18] -shl 8) -bor $bytes[19]
+        $height = ($bytes[20] -shl 24) -bor ($bytes[21] -shl 16) -bor ($bytes[22] -shl 8) -bor $bytes[23]
+        if ($width -le 0 -or $height -le 0) { throw "PNG has invalid dimensions: $Path" }
+        $image = $null
+        try {
+            $image = [Drawing.Image]::FromFile($Path)
+            if ($image.RawFormat.Guid -ne [Drawing.Imaging.ImageFormat]::Png.Guid -or
+                $image.Width -ne $width -or $image.Height -ne $height) {
+                throw "PNG decoder rejected the recorded format or dimensions: $Path"
+            }
+        }
+        finally { if ($null -ne $image) { $image.Dispose() } }
+        return [pscustomobject][ordered]@{ format = 'png'; width = [int]$width; height = [int]$height; frameCount = 1; durationSeconds = $null }
+    }
+    if ($bytes.Length -ge 13 -and
+        ([Text.Encoding]::ASCII.GetString($bytes, 0, 6) -in @('GIF87a', 'GIF89a'))) {
+        $width = [int]$bytes[6] -bor ([int]$bytes[7] -shl 8)
+        $height = [int]$bytes[8] -bor ([int]$bytes[9] -shl 8)
+        if ($width -le 0 -or $height -le 0) { throw "GIF has invalid dimensions: $Path" }
+        $image = $null
+        try {
+            $image = [Drawing.Image]::FromFile($Path)
+            if ($image.RawFormat.Guid -ne [Drawing.Imaging.ImageFormat]::Gif.Guid -or
+                $image.Width -ne $width -or $image.Height -ne $height) {
+                throw "GIF decoder rejected the recorded format or dimensions: $Path"
+            }
+            $frameCount = $image.GetFrameCount([Drawing.Imaging.FrameDimension]::Time)
+            $delayProperty = $image.GetPropertyItem(0x5100)
+            $delayCentiseconds = 0L
+            for ($index = 0; $index -lt $frameCount; $index++) {
+                $delayCentiseconds += [BitConverter]::ToInt32($delayProperty.Value, $index * 4)
+            }
+        }
+        finally { if ($null -ne $image) { $image.Dispose() } }
+        if ($frameCount -lt 1 -or $delayCentiseconds -le 0) { throw "GIF has no timed image frames: $Path" }
+        return [pscustomobject][ordered]@{ format = 'gif'; width = $width; height = $height; frameCount = $frameCount; durationSeconds = $delayCentiseconds / 100.0 }
+    }
+    throw "Showcase media has an unsupported or invalid image signature: $Path"
+}
+
+function Get-WorkshopShowcaseEvidence {
+    param(
+        [Parameter(Mandatory)][object]$Showcase,
+        [Parameter(Mandatory)][string]$ReleaseRoot,
+        [Parameter(Mandatory)][string]$ReviewedProductAssemblyPath
+    )
+
+    $showcaseId = [string]$Showcase.id
+    $formats = @($Showcase.formats | ForEach-Object { [string]$_ })
+    $screenshotRelativePath = [string]$Showcase.outputs.screenshot
+    $declared = @([pscustomobject]@{ format = 'screenshot'; relativePath = $screenshotRelativePath })
+    if ($formats -ccontains 'gif') {
+        $declared += [pscustomobject]@{ format = 'gif'; relativePath = [string]$Showcase.outputs.gif }
+    }
+    $outputs = @($declared | ForEach-Object {
+        if ([IO.Path]::IsPathRooted([string]$_.relativePath) -or
+            [string]$_.relativePath -match '(^|[\\/])\.\.([\\/]|$)') {
+            throw "Workshop showcase '$showcaseId' has an unsafe output path."
+        }
+        $path = [IO.Path]::GetFullPath((Join-Path $ReleaseRoot ('workshop\' + ([string]$_.relativePath).Replace('/', '\'))))
+        $expectedRoot = [IO.Path]::GetFullPath((Join-Path $ReleaseRoot 'workshop')).TrimEnd('\') + '\'
+        if (-not $path.StartsWith($expectedRoot, [StringComparison]::OrdinalIgnoreCase) -or
+            -not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Workshop showcase output is missing or outside the release root: $path"
+        }
+        $item = Get-Item -LiteralPath $path
+        if ($item.Length -le 0 -or $item.Length -ge 1MB) {
+            throw "Workshop showcase output must be nonempty and under Steam's 1 MiB limit: $path"
+        }
+        $image = Get-RasterImageInfo $path
+        [pscustomobject][ordered]@{
+            format = [string]$_.format
+            path = $path
+            bytes = [long]$item.Length
+            sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+            width = [int]$image.width
+            height = [int]$image.height
+            frameCount = [int]$image.frameCount
+            durationSeconds = $image.durationSeconds
+        }
+    })
+
+    $screenshot = @($outputs | Where-Object format -CEQ 'screenshot')[0]
+    $evidencePath = [IO.Path]::ChangeExtension([string]$screenshot.path, '.capture.json')
+    if (-not (Test-Path -LiteralPath $evidencePath -PathType Leaf)) {
+        throw "Workshop showcase capture evidence is missing: $evidencePath"
+    }
+    try { $evidence = Get-Content -LiteralPath $evidencePath -Raw -Encoding UTF8 | ConvertFrom-Json }
+    catch { throw "Workshop showcase capture evidence is unreadable: $evidencePath" }
+    [datetimeoffset]$capturedUtc = [datetimeoffset]::MinValue
+    [datetimeoffset]$processStartUtc = [datetimeoffset]::MinValue
+    $stateBeforeSelection = (Get-CanonicalJson @($evidence.stateBefore.selectedThings)) + '|' + (Get-CanonicalJson @($evidence.stateBefore.uiSelection))
+    $stateAfterSelection = (Get-CanonicalJson @($evidence.stateAfter.selectedThings)) + '|' + (Get-CanonicalJson @($evidence.stateAfter.uiSelection))
+    $declaredPackages = @($Showcase.requiredPackageIds | ForEach-Object { [string]$_ })
+    $capturePackages = @($declaredPackages) + 'fumblesneeze.rimworlddevgateway'
+    $declaredBeats = @($Showcase.beats | ForEach-Object { [string]$_ })
+    if ([string]$evidence.schema -cne 'RimWorldDevGateway/ShowcaseCaptureEvidence/v1' -or
+        [string]$evidence.showcaseId -cne $showcaseId -or
+        -not [datetimeoffset]::TryParse([string]$evidence.capturedUtc, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::RoundtripKind, [ref]$capturedUtc) -or
+        [int]$evidence.processId -le 0 -or
+        -not [datetimeoffset]::TryParse([string]$evidence.processStartUtc, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::RoundtripKind, [ref]$processStartUtc) -or
+        [string]$evidence.runId -notmatch '^[a-f0-9]{32}$' -or
+        $declaredPackages -ccontains 'fumblesneeze.rimworlddevgateway' -or
+        (Get-CanonicalJson @($evidence.orderedPackageIds)) -cne (Get-CanonicalJson $capturePackages) -or
+        @($evidence.orderedPackageIdentities).Count -ne $capturePackages.Count -or
+        (Get-CanonicalJson @($evidence.observedBeats)) -cne (Get-CanonicalJson $declaredBeats) -or
+        [string]::IsNullOrWhiteSpace([string]$evidence.reviewObservation) -or
+        [bool]$evidence.bearerTokenRetained -or
+        [bool]$evidence.selectionMutated -or [bool]$evidence.cameraMutated -or
+        $stateBeforeSelection -cne $stateAfterSelection -or
+        (Get-CanonicalJson $evidence.stateBefore.camera) -cne (Get-CanonicalJson $evidence.stateAfter.camera) -or
+        [string]$evidence.plan.schema -cne 'RimWorldDevGateway/ShowcaseCapturePlan/v1' -or
+        [bool]$evidence.plan.mutatesGameState -or [bool]$evidence.plan.selectsThings -or
+        ([bool]$evidence.plan.stillOnly -ne ($formats -cnotcontains 'gif')) -or
+        [int]$evidence.plan.width -ne [int]$Showcase.crop.width -or
+        [int]$evidence.plan.height -ne [int]$Showcase.crop.height -or
+        [int]$evidence.plan.offsetX -ne [int]$Showcase.crop.offsetX -or
+        [int]$evidence.plan.offsetY -ne [int]$Showcase.crop.offsetY -or
+        [int]$evidence.plan.frameCount -lt 1 -or [int]$evidence.plan.framesPerSecond -lt 1 -or
+        [double]$evidence.plan.durationSeconds -le 0 -or [double]$evidence.plan.durationSeconds -gt 5 -or
+        [long]$evidence.actualCaptureDurationMilliseconds -le 0 -or [long]$evidence.actualCaptureDurationMilliseconds -gt 5000 -or
+        @($evidence.frames).Count -ne [int]$evidence.plan.frameCount) {
+        throw "Workshop showcase '$showcaseId' has invalid or mutated capture evidence."
+    }
+    $evidenceDirectory = [IO.Path]::GetFullPath((Split-Path -Parent $evidencePath))
+    $optimizerCommand = Get-Command ([string]$evidence.pngOptimizer.name) -ErrorAction SilentlyContinue
+    $optimizerItem = if ($null -eq $optimizerCommand) { $null } else { Get-Item -LiteralPath $optimizerCommand.Source -ErrorAction SilentlyContinue }
+    $expectedOptimizerArguments = @('-strip','-colors','256','-define','png:compression-level=9','-define','png:compression-filter=5')
+    if ($null -eq $optimizerItem -or
+        [string]$evidence.pngOptimizer.sha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+        (Get-FileHash -LiteralPath $optimizerItem.FullName -Algorithm SHA256).Hash -cne [string]$evidence.pngOptimizer.sha256 -or
+        [string]::IsNullOrWhiteSpace([string]$evidence.pngOptimizer.version) -or
+        (Get-CanonicalJson @($evidence.pngOptimizer.arguments)) -cne (Get-CanonicalJson $expectedOptimizerArguments)) {
+        throw "Workshop showcase '$showcaseId' PNG optimizer provenance is invalid."
+    }
+    $optimizerVersion = Invoke-ShowcaseMediaTool -FilePath $optimizerItem.FullName -Arguments @('-version') -WorkingDirectory $evidenceDirectory -TimeoutMilliseconds 10000
+    if ($optimizerVersion.ExitCode -ne 0 -or (([string]$optimizerVersion.StandardOutput -split "`r?`n")[0]) -cne [string]$evidence.pngOptimizer.version) {
+        throw "Workshop showcase '$showcaseId' PNG optimizer version is not the recorded reviewed tool."
+    }
+    for ($identityIndex = 0; $identityIndex -lt $capturePackages.Count; $identityIndex++) {
+        $identity = @($evidence.orderedPackageIdentities)[$identityIndex]
+        $identityFiles = @($identity.files)
+        $seenIdentityPaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        if ([int]$identity.index -ne $identityIndex -or
+            [string]$identity.packageId -cne $capturePackages[$identityIndex] -or
+            [string]::IsNullOrWhiteSpace([string]$identity.name) -or
+            [string]::IsNullOrWhiteSpace([string]$identity.rootDir) -or
+            $identityFiles.Count -lt 1 -or $identityFiles.Count -gt 515) {
+            throw "Workshop showcase '$showcaseId' has an invalid package identity at position $identityIndex."
+        }
+        foreach ($identityFile in $identityFiles) {
+            $identityPath = ([string]$identityFile.path).Replace('\', '/')
+            if ([string]::IsNullOrWhiteSpace($identityPath) -or [IO.Path]::IsPathRooted($identityPath) -or
+                $identityPath -match '(^|/)\.\.(/|$)' -or
+                -not $seenIdentityPaths.Add($identityPath) -or
+                [long]$identityFile.bytes -le 0 -or [string]$identityFile.sha256 -notmatch '^[A-Fa-f0-9]{64}$') {
+                throw "Workshop showcase '$showcaseId' has invalid package identity-file evidence."
+            }
+        }
+    }
+    $productIdentity = @($evidence.orderedPackageIdentities | Where-Object { [string]$_.packageId -ceq 'fumblesneeze.immersivechefs' })
+    $productAssemblyIdentity = @($productIdentity.files | Where-Object { ([string]$_.path).Replace('\', '/') -ceq '1.6/Assemblies/ImmersiveChefs.dll' })
+    if ($productIdentity.Count -ne 1 -or $productAssemblyIdentity.Count -ne 1 -or
+        -not (Test-Path -LiteralPath $ReviewedProductAssemblyPath -PathType Leaf) -or
+        [long]$productAssemblyIdentity[0].bytes -ne (Get-Item -LiteralPath $ReviewedProductAssemblyPath).Length -or
+        [string]$productAssemblyIdentity[0].sha256 -cne (Get-FileHash -LiteralPath $ReviewedProductAssemblyPath -Algorithm SHA256).Hash) {
+        throw "Workshop showcase '$showcaseId' was not captured from the reviewed Immersive Chefs assembly."
+    }
+    $previousElapsed = -1L
+    $frameHashes = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $frameRoot = [IO.Path]::GetFullPath((Join-Path $evidenceDirectory 'frames')).TrimEnd('\') + '\'
+    for ($index = 0; $index -lt @($evidence.frames).Count; $index++) {
+        $frame = @($evidence.frames)[$index]
+        $framePath = [IO.Path]::GetFullPath((Join-Path $evidenceDirectory ([string]$frame.path).Replace('/', '\')))
+        $expectedFrameWidth = [int]$frame.crop.frameWidth
+        $expectedFrameHeight = [int]$frame.crop.frameHeight
+        $expectedX = [int][Math]::Min([Math]::Max(0, [Math]::Floor(($expectedFrameWidth - [int]$Showcase.crop.width) / 2.0) + [int]$Showcase.crop.offsetX), $expectedFrameWidth - [int]$Showcase.crop.width)
+        $expectedY = [int][Math]::Min([Math]::Max(0, [Math]::Floor(($expectedFrameHeight - [int]$Showcase.crop.height) / 2.0) + [int]$Showcase.crop.offsetY), $expectedFrameHeight - [int]$Showcase.crop.height)
+        if ([int]$frame.index -ne ($index + 1) -or
+            [long]$frame.elapsedMilliseconds -le $previousElapsed -or [long]$frame.elapsedMilliseconds -gt 5000 -or
+            [long]$frame.bytes -le 0 -or [string]$frame.sha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+            [int]$frame.crop.width -ne [int]$Showcase.crop.width -or
+            [int]$frame.crop.height -ne [int]$Showcase.crop.height -or
+            $expectedFrameWidth -lt [int]$Showcase.crop.width -or $expectedFrameHeight -lt [int]$Showcase.crop.height -or
+            [int]$frame.crop.x -ne $expectedX -or [int]$frame.crop.y -ne $expectedY -or
+            -not $framePath.StartsWith($frameRoot, [StringComparison]::OrdinalIgnoreCase) -or
+            -not (Test-Path -LiteralPath $framePath -PathType Leaf) -or
+            (Get-Item -LiteralPath $framePath).Length -ne [long]$frame.bytes -or
+            (Get-FileHash -LiteralPath $framePath -Algorithm SHA256).Hash -cne [string]$frame.sha256) {
+            throw "Workshop showcase '$showcaseId' has invalid bounded source-frame evidence."
+        }
+        $frameImage = Get-RasterImageInfo $framePath
+        if ([string]$frameImage.format -cne 'png' -or
+            [int]$frameImage.width -ne [int]$Showcase.crop.width -or
+            [int]$frameImage.height -ne [int]$Showcase.crop.height) {
+            throw "Workshop showcase '$showcaseId' has a non-PNG or dimensionally inconsistent source frame."
+        }
+        $null = $frameHashes.Add([string]$frame.sha256)
+        $previousElapsed = [long]$frame.elapsedMilliseconds
+    }
+    if ([string]$screenshot.format -cne 'screenshot' -or [int]$screenshot.width -ne [int]$Showcase.crop.width -or
+        [int]$screenshot.height -ne [int]$Showcase.crop.height -or
+        [IO.Path]::GetFileName([string]$evidence.still.path) -cne [IO.Path]::GetFileName([string]$screenshot.path) -or
+        [long]$evidence.still.bytes -ne [long]$screenshot.bytes -or
+        [string]$evidence.still.sha256 -cne [string]$screenshot.sha256 -or
+        -not $frameHashes.Contains([string]$screenshot.sha256)) {
+        throw "Workshop showcase '$showcaseId' screenshot does not match its capture evidence."
+    }
+    if ($formats -ccontains 'gif') {
+        $gif = @($outputs | Where-Object format -CEQ 'gif')[0]
+        if ([IO.Path]::GetFileName([string]$evidence.gif.path) -cne [IO.Path]::GetFileName([string]$gif.path) -or
+            [long]$evidence.gif.bytes -ne [long]$gif.bytes -or
+            [string]$evidence.gif.sha256 -cne [string]$gif.sha256 -or
+            [string]$gif.format -cne 'gif' -or [int]$gif.width -ne [int]$evidence.plan.gifWidth -or
+            [int]$gif.frameCount -ne [int]$evidence.plan.frameCount -or
+            [double]$gif.durationSeconds -le 0 -or [double]$gif.durationSeconds -gt 5 -or
+            [Math]::Abs([double]$gif.durationSeconds - [double]$evidence.gif.actualDurationSeconds) -gt 0.011 -or
+            [double]$evidence.gif.actualDurationSeconds -le 0 -or [double]$evidence.gif.actualDurationSeconds -gt 5 -or
+            [string]$evidence.gif.encoderName -notmatch '^[A-Za-z0-9._-]{1,64}$' -or
+            [string]$evidence.gif.encoderSha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+            [string]::IsNullOrWhiteSpace([string]$evidence.gif.encoderVersion) -or
+            @($evidence.gif.encoderArguments).Count -lt 1 -or
+            [string]::IsNullOrWhiteSpace([string]$evidence.gif.encoderFilter) -or
+            [string]$evidence.gif.probeName -notmatch '^[A-Za-z0-9._-]{1,64}$' -or
+            [string]$evidence.gif.probeSha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+            [string]::IsNullOrWhiteSpace([string]$evidence.gif.probeVersion) -or
+            @($evidence.gif.probeArguments).Count -lt 1) {
+            throw "Workshop showcase '$showcaseId' GIF does not match its capture evidence."
+        }
+        $expectedInputPattern = 'frames/frame-%04d.png'
+        $expectedFilter = "fps=$([int]$evidence.plan.framesPerSecond),scale=$([int]$evidence.plan.gifWidth)`:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=$([int]$evidence.plan.gifColors)`:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer`:bayer_scale=5`:diff_mode=rectangle"
+        $expectedEncoderArguments = @('-hide_banner','-loglevel','error','-y','-framerate',[string][int]$evidence.plan.framesPerSecond,'-i',$expectedInputPattern,'-filter_complex',$expectedFilter,'-loop','0',[IO.Path]::GetFileName([string]$gif.path))
+        if ((Get-CanonicalJson @($evidence.gif.encoderArguments)) -cne (Get-CanonicalJson $expectedEncoderArguments) -or
+            [string]$evidence.gif.encoderFilter -cne $expectedFilter) {
+            throw "Workshop showcase '$showcaseId' GIF encoder recipe does not bind the retained source frames."
+        }
+        $encoderCommand = Get-Command ([string]$evidence.gif.encoderName) -ErrorAction SilentlyContinue
+        $encoderItem = if ($null -eq $encoderCommand) { $null } else { Get-Item -LiteralPath $encoderCommand.Source -ErrorAction SilentlyContinue }
+        if ($null -eq $encoderItem -or @($evidence.gif.encoderArguments | Where-Object { [string]$_ -ceq $expectedInputPattern }).Count -ne 1) {
+            throw "Workshop showcase '$showcaseId' GIF encoder identity or retained-frame input is invalid."
+        }
+        $versionResult = Invoke-ShowcaseMediaTool -FilePath $encoderItem.FullName -Arguments @('-version') -WorkingDirectory $evidenceDirectory -TimeoutMilliseconds 10000
+        $currentEncoderVersion = ([string]$versionResult.StandardOutput -split "`r?`n")[0]
+        if ($versionResult.ExitCode -ne 0 -or
+            (Get-FileHash -LiteralPath $encoderItem.FullName -Algorithm SHA256).Hash -cne [string]$evidence.gif.encoderSha256 -or
+            $currentEncoderVersion -cne [string]$evidence.gif.encoderVersion) {
+            throw "Workshop showcase '$showcaseId' GIF encoder version is not the recorded reviewed tool."
+        }
+        $reencodedPath = Join-Path ([IO.Path]::GetTempPath()) ("immersive-chefs-showcase-" + [guid]::NewGuid().ToString('N') + '.gif')
+        try {
+            $reencode = Invoke-ShowcaseMediaTool -FilePath $encoderItem.FullName -Arguments (@($expectedEncoderArguments[0..($expectedEncoderArguments.Count - 2)]) + $reencodedPath) -WorkingDirectory $evidenceDirectory -TimeoutMilliseconds 60000
+            if ($reencode.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $reencodedPath -PathType Leaf) -or
+                (Get-FileHash -LiteralPath $reencodedPath -Algorithm SHA256).Hash -cne [string]$gif.sha256) {
+                throw "Workshop showcase '$showcaseId' GIF cannot be reproduced from its retained source frames."
+            }
+        }
+        finally {
+            if (Test-Path -LiteralPath $reencodedPath -PathType Leaf) { Remove-Item -LiteralPath $reencodedPath -Force }
+        }
+        $probeCommand = Get-Command ([string]$evidence.gif.probeName) -ErrorAction SilentlyContinue
+        $probeItem = if ($null -eq $probeCommand) { $null } else { Get-Item -LiteralPath $probeCommand.Source -ErrorAction SilentlyContinue }
+        $expectedProbeArguments = @('-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',[IO.Path]::GetFileName([string]$gif.path))
+        if ($null -eq $probeItem -or
+            (Get-FileHash -LiteralPath $probeItem.FullName -Algorithm SHA256).Hash -cne [string]$evidence.gif.probeSha256 -or
+            (Get-CanonicalJson @($evidence.gif.probeArguments)) -cne (Get-CanonicalJson $expectedProbeArguments)) {
+            throw "Workshop showcase '$showcaseId' GIF probe identity or recipe is invalid."
+        }
+        $probeVersion = Invoke-ShowcaseMediaTool -FilePath $probeItem.FullName -Arguments @('-version') -WorkingDirectory $evidenceDirectory -TimeoutMilliseconds 10000
+        $probeDuration = Invoke-ShowcaseMediaTool -FilePath $probeItem.FullName -Arguments $expectedProbeArguments -WorkingDirectory $evidenceDirectory -TimeoutMilliseconds 10000
+        [double]$observedProbeDuration = 0
+        if ($probeVersion.ExitCode -ne 0 -or (([string]$probeVersion.StandardOutput -split "`r?`n")[0]) -cne [string]$evidence.gif.probeVersion -or
+            $probeDuration.ExitCode -ne 0 -or
+            -not [double]::TryParse(([string]$probeDuration.StandardOutput).Trim(), [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$observedProbeDuration) -or
+            [Math]::Abs($observedProbeDuration - [double]$evidence.gif.actualDurationSeconds) -gt 0.011) {
+            throw "Workshop showcase '$showcaseId' GIF probe result does not match the recorded reviewed media."
+        }
+    }
+    $evidenceItem = Get-Item -LiteralPath $evidencePath
+    return [pscustomobject][ordered]@{
+        showcaseId = $showcaseId
+        outputs = $outputs
+        provenance = [pscustomobject][ordered]@{
+            path = $evidencePath
+            bytes = [long]$evidenceItem.Length
+            sha256 = (Get-FileHash -LiteralPath $evidencePath -Algorithm SHA256).Hash
+            processId = [int]$evidence.processId
+            processStartUtc = [string]$evidence.processStartUtc
+            runId = [string]$evidence.runId
+            capturedUtc = [string]$evidence.capturedUtc
+        }
+    }
+}
+
 function Write-JsonUtf8 {
     param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][object]$Value)
     $json = $Value | ConvertTo-Json -Depth 12
@@ -161,6 +500,20 @@ $effectivePublishedFileId = Resolve-ExistingWorkshopIdentity -DeclaredId $releas
 if ($effectivePublishedFileId -eq 0 -and -not [bool]$release.allowFirstPublication) {
     Exit-InvalidInput 'The descriptor has no Workshop item and does not allow first publication.'
 }
+$changeNote = [string]$release.changeNote
+$previousChangeNote = [string]$release.previousChangeNote
+if ($effectivePublishedFileId -ne 0 -and
+    ([string]::IsNullOrWhiteSpace($changeNote) -or
+     $changeNote.Length -lt 24 -or
+     $changeNote.Length -gt 8000 -or
+     $changeNote.Trim() -match '^(update|updated|fix|fixes|bug fixes|various changes|miscellaneous changes)[.!]?$' -or
+     (-not [string]::IsNullOrWhiteSpace($previousChangeNote) -and
+      $changeNote.Trim() -ceq $previousChangeNote.Trim()))) {
+    Exit-InvalidInput 'An existing Workshop item requires one new, specific player-facing change note.'
+}
+if ($effectivePublishedFileId -eq 0 -and $changeNote.Length -gt 8000) {
+    Exit-InvalidInput 'The optional first-publication change note exceeds Steam limits.'
+}
 
 if ([string]::IsNullOrWhiteSpace($ArtifactsPath)) {
     $runId = [datetime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ', [Globalization.CultureInfo]::InvariantCulture)
@@ -219,10 +572,75 @@ if ([string]$presentationDefinition.schema -cne 'ImmersiveChefs/WorkshopPresenta
 }
 $additionalPreviewRoot = Join-Path $presentationRoot 'additional-previews'
 $null = New-Item -ItemType Directory -Path $additionalPreviewRoot
-$additionalPreviews = @($presentationDefinition.cards | ForEach-Object {
+$showcaseDefinitionPath = Join-Path $releaseRoot 'workshop\showcases.json'
+$showcaseDefinition = Get-Content -LiteralPath $showcaseDefinitionPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ([string]$showcaseDefinition.schema -cne 'ImmersiveChefs/WorkshopShowcases/v1' -or
+    @($showcaseDefinition.showcases).Count -ne 5 -or
+    @($showcaseDefinition.showcases.id | Sort-Object -Unique).Count -ne 5) {
+    Exit-InvalidInput 'The Workshop showcase definition is invalid.'
+}
+$showcasePreviews = @($showcaseDefinition.showcases | ForEach-Object {
+    $showcase = $_
+    $formats = @($showcase.formats | ForEach-Object { [string]$_ })
+    $carouselFormat = [string]$showcase.carousel.format
+    $relativePath = if ($carouselFormat -ceq 'gif') { [string]$showcase.outputs.gif } else { [string]$showcase.outputs.screenshot }
+    if ([string]$showcase.id -notmatch '^[a-z0-9-]{1,48}$' -or
+        [string]$showcase.carousel.token -notmatch '^[a-z0-9-]{1,32}$' -or
+        [int]$showcase.carousel.slot -lt 5 -or [int]$showcase.carousel.slot -gt 9 -or
+        $formats -cnotcontains 'screenshot' -or
+        $carouselFormat -notin @('gif', 'screenshot') -or
+        ($carouselFormat -ceq 'gif' -and $formats -cnotcontains 'gif') -or
+        [int]$showcase.crop.width -lt 1 -or [int]$showcase.crop.width -gt 16384 -or
+        [int]$showcase.crop.height -lt 1 -or [int]$showcase.crop.height -gt 16384 -or
+        @($showcase.beats).Count -lt 1 -or
+        @($showcase.requiredPackageIds | Where-Object { [string]$_ -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$' }).Count -ne 0 -or
+        [IO.Path]::IsPathRooted($relativePath) -or
+        $relativePath -match '(^|[\\/])\.\.([\\/]|$)' -or
+        ($carouselFormat -ceq 'gif' -and [IO.Path]::GetExtension($relativePath) -cne '.gif') -or
+        ($carouselFormat -ceq 'screenshot' -and [IO.Path]::GetExtension($relativePath) -cne '.png')) {
+        Exit-InvalidInput "Workshop showcase '$($showcase.id)' has an invalid capture/publication contract."
+    }
+    [pscustomobject][ordered]@{
+        token = [string]$showcase.carousel.token
+        slot = [int]$showcase.carousel.slot
+        relativePath = $relativePath
+        screenshotRelativePath = [string]$showcase.outputs.screenshot
+        gifRelativePath = if ($formats -ccontains 'gif') { [string]$showcase.outputs.gif } else { $null }
+        alt = [string]$showcase.title
+        showcaseId = [string]$showcase.id
+        format = $carouselFormat
+    }
+})
+if (@($showcasePreviews.slot | Sort-Object) -join ',' -cne '5,6,7,8,9' -or
+    @($showcasePreviews.token | Sort-Object -Unique).Count -ne 5) {
+    Exit-InvalidInput 'The five Workshop showcases must own exact unique carousel slots 5 through 9.'
+}
+$showcaseEvidence = @($showcaseDefinition.showcases | ForEach-Object {
+    try { Get-WorkshopShowcaseEvidence -Showcase $_ -ReleaseRoot $releaseRoot -ReviewedProductAssemblyPath (Join-Path $builtRoot '1.6\Assemblies\ImmersiveChefs.dll') }
+    catch { Exit-InvalidInput $_.Exception.Message }
+})
+if ($showcaseEvidence.Count -ne 5 -or @($showcaseEvidence.showcaseId | Sort-Object -Unique).Count -ne 5) {
+    Exit-InvalidInput 'Every declared Workshop showcase must have one exact reviewed capture-evidence record.'
+}
+$cardTokens = @($presentationDefinition.carouselCards | ForEach-Object { [string]$_ })
+if ($cardTokens.Count -ne 5 -or @($cardTokens | Sort-Object -Unique).Count -ne 5) {
+    Exit-InvalidInput 'The Workshop presentation must select exactly five unique illustrated carousel cards.'
+}
+$selectedCards = @($cardTokens | ForEach-Object {
+    $token = $_
+    $matches = @($presentationDefinition.cards | Where-Object { [string]$_.token -ceq $token })
+    if ($matches.Count -ne 1) { Exit-InvalidInput "Illustrated carousel card '$token' is missing or duplicated." }
+    $matches[0]
+})
+$previewDeclarations = @()
+$previewDeclarations += @($selectedCards | ForEach-Object {
+    [pscustomobject][ordered]@{ token = [string]$_.token; slot = [array]::IndexOf($cardTokens, [string]$_.token); relativePath = [string]$_.path; alt = [string]$_.alt; showcaseId = $null; format = 'screenshot' }
+})
+$previewDeclarations += $showcasePreviews
+$additionalPreviews = @($previewDeclarations | Sort-Object slot | ForEach-Object {
     $token = [string]$_.token
     if ($token -notmatch '^[a-z0-9-]{1,32}$') { Exit-InvalidInput "Workshop preview token is invalid: $token" }
-    $sourcePath = Join-Path $releaseRoot ('workshop\' + ([string]$_.path).Replace('/', '\'))
+    $sourcePath = Join-Path $releaseRoot ('workshop\' + ([string]$_.relativePath).Replace('/', '\'))
     if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) { Exit-InvalidInput "Workshop preview is missing: $sourcePath" }
     $destinationPath = Join-Path $additionalPreviewRoot ([IO.Path]::GetFileName($sourcePath))
     Copy-Item -LiteralPath $sourcePath -Destination $destinationPath
@@ -233,13 +651,15 @@ $additionalPreviews = @($presentationDefinition.cards | ForEach-Object {
         path = $destinationPath
         bytes = [long]$item.Length
         sha256 = (Get-FileHash -LiteralPath $destinationPath -Algorithm SHA256).Hash
-        width = 1164
-        height = 655
+        width = if ([string]$_.format -ceq 'screenshot' -and $null -eq $_.showcaseId) { 1164 } else { $null }
+        height = if ([string]$_.format -ceq 'screenshot' -and $null -eq $_.showcaseId) { 655 } else { $null }
         alt = [string]$_.alt
+        showcaseId = $_.showcaseId
+        format = [string]$_.format
     }
 })
-if ($additionalPreviews.Count -ne 6 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 6) {
-    Exit-InvalidInput 'The Workshop presentation must declare exactly six unique additional previews.'
+if ($additionalPreviews.Count -ne 10 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 10) {
+    Exit-InvalidInput 'The Workshop presentation must declare exactly ten unique additional previews.'
 }
 
 $files = @(Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Sort-Object FullName | ForEach-Object {
@@ -274,10 +694,11 @@ if ($presentationResolved -and (Test-Path -LiteralPath $descriptionProvenancePat
         [string]$descriptionProvenance.publishedFileId -cne [string]$effectivePublishedFileId -or
         [string]$descriptionProvenance.descriptionSha256 -cne (Get-FileHash -LiteralPath $descriptionPath -Algorithm SHA256).Hash -or
         -not (Test-WorkshopPreviewProvenance -CurrentPreviews $additionalPreviews -ProvenancePreviews @($descriptionProvenance.previews))) {
-        Exit-InvalidInput 'The resolved Workshop description provenance does not match this release.'
+        $presentationResolved = $false
+        $descriptionProvenance = $null
     }
 }
-elseif ($presentationResolved) { Exit-InvalidInput 'The resolved Workshop description provenance is missing.' }
+elseif ($presentationResolved) { $presentationResolved = $false }
 $plan = [pscustomobject][ordered]@{
     schema = 'ImmersiveChefs/WorkshopPublicationPlan/v1'
     sourceRevision = $revision
@@ -297,7 +718,8 @@ $plan = [pscustomobject][ordered]@{
     visibility = if ($effectivePublishedFileId -eq 0) { 'Private' } else { [string]$release.visibility }
     tags = @($release.tags)
     requiredWorkshopItems = @($release.requiredWorkshopItems)
-    changeNote = [string]$release.changeNote
+    previousChangeNote = if ($effectivePublishedFileId -eq 0) { $null } else { $previousChangeNote }
+    changeNote = $changeNote
     packagePath = $packageRoot
     packageManifestPath = $manifestPath
     candidateSha256 = $candidateDigest
@@ -316,6 +738,7 @@ $plan = [pscustomobject][ordered]@{
     previewBytes = (Get-Item -LiteralPath $previewPath).Length
     previewSha256 = (Get-FileHash -LiteralPath $previewPath -Algorithm SHA256).Hash
     additionalPreviews = $additionalPreviews
+    showcaseEvidence = $showcaseEvidence
     mutatesSteam = $false
 }
 $planPath = Join-Path $evidenceRoot 'publication-plan.json'

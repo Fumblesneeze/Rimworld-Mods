@@ -30,7 +30,8 @@ public interface IGatewayScreenshotTargetProjector
 
 public sealed class UnityGatewayScreenshotBackend :
     IGatewayScreenshotBackend,
-    IGatewayTargetedScreenshotBackend
+    IGatewayTargetedScreenshotBackend,
+    IGatewayDescribedScreenshotBackend
 {
     private readonly IGatewayScreenshotTextureOperations textures;
     private readonly IGatewayScreenshotTargetProjector targets;
@@ -52,7 +53,10 @@ public sealed class UnityGatewayScreenshotBackend :
 
     public object Capture() => textures.Capture();
 
-    public object Capture(GatewayScreenshotRequest request)
+    public object Capture(GatewayScreenshotRequest request) =>
+        CaptureDescribed(request).Resource;
+
+    public GatewayScreenshotResource CaptureDescribed(GatewayScreenshotRequest request)
     {
         if (request is null)
         {
@@ -64,17 +68,37 @@ public sealed class UnityGatewayScreenshotBackend :
         {
             var width = textures.Width(fullFrame);
             var height = textures.Height(fullFrame);
-            var projected = targets.Project(request.ThingHandles, width, height);
-            var crop = GatewayScreenshotCropPlanner.Plan(
-                width,
-                height,
-                projected,
-                request.PaddingPixels ?? 32);
-            return textures.CropTexture(fullFrame, crop);
+            var crop = request.ThingHandles.Count == 0 && !request.WidthPixels.HasValue
+                ? new GatewayScreenshotCrop(0, 0, width, height)
+                : request.WidthPixels.HasValue
+                ? GatewayScreenshotCropPlanner.PlanCentered(
+                    width,
+                    height,
+                    request.WidthPixels.Value,
+                    request.HeightPixels!.Value,
+                    request.OffsetXPixels ?? 0,
+                    request.OffsetYPixels ?? 0)
+                : GatewayScreenshotCropPlanner.Plan(
+                    width,
+                    height,
+                    targets.Project(request.ThingHandles, width, height),
+                    request.PaddingPixels ?? 32);
+            var cropped = crop.X == 0 && crop.Y == 0 && crop.Width == width && crop.Height == height
+                ? fullFrame
+                : textures.CropTexture(fullFrame, crop);
+            if (ReferenceEquals(cropped, fullFrame))
+            {
+                fullFrame = null!;
+            }
+
+            return new GatewayScreenshotResource(cropped, width, height, crop);
         }
         finally
         {
-            textures.Destroy(fullFrame);
+            if (fullFrame is not null)
+            {
+                textures.Destroy(fullFrame);
+            }
         }
     }
 

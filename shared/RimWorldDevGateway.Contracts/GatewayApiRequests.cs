@@ -47,6 +47,18 @@ public sealed class GatewayScreenshotRequest
     [DataMember(Name = "paddingPixels", Order = 2, EmitDefaultValue = false)]
     public int? PaddingPixels { get; set; }
 
+    [DataMember(Name = "widthPixels", Order = 3, EmitDefaultValue = false)]
+    public int? WidthPixels { get; set; }
+
+    [DataMember(Name = "heightPixels", Order = 4, EmitDefaultValue = false)]
+    public int? HeightPixels { get; set; }
+
+    [DataMember(Name = "offsetXPixels", Order = 5, EmitDefaultValue = false)]
+    public int? OffsetXPixels { get; set; }
+
+    [DataMember(Name = "offsetYPixels", Order = 6, EmitDefaultValue = false)]
+    public int? OffsetYPixels { get; set; }
+
     [OnDeserializing]
     private void ApplyDefaults(StreamingContext context)
     {

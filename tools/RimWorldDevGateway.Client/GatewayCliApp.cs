@@ -11,6 +11,7 @@ namespace RimWorldDevGateway.Client;
 public sealed class GatewayCliApp
 {
     private const int MaximumDiagnosticLength = 4096;
+    private const int MaximumScreenshotCropDimensionPixels = 16384;
 
     private readonly IGatewaySessionProvider sessions;
     private readonly IGatewayHttpTransport transport;
@@ -159,15 +160,33 @@ public sealed class GatewayCliApp
             "screenshot",
             tail,
             Array.Empty<string>(),
-            new[] { "file", "things", "padding" },
+            new[] { "file", "things", "padding", "width", "height", "offset-x", "offset-y" },
             0,
             0);
         var path = options.Required("file");
         var thingsText = options.Value("things");
         var paddingText = options.Value("padding");
+        var widthText = options.Value("width");
+        var heightText = options.Value("height");
+        var offsetXText = options.Value("offset-x");
+        var offsetYText = options.Value("offset-y");
+        var hasCameraCrop = widthText is not null || heightText is not null ||
+                            offsetXText is not null || offsetYText is not null;
         if (thingsText is null && paddingText is not null)
         {
             throw new GatewayCliUsageException("--padding requires --things HANDLE[,HANDLE...].");
+        }
+
+        if (thingsText is not null && hasCameraCrop)
+        {
+            throw new GatewayCliUsageException(
+                "--things cannot be combined with --width, --height, --offset-x, or --offset-y.");
+        }
+
+        if (hasCameraCrop && (widthText is null || heightText is null))
+        {
+            throw new GatewayCliUsageException(
+                "--width and --height must be supplied together for a camera-centered crop.");
         }
 
         var body = "{}";
@@ -191,18 +210,75 @@ public sealed class GatewayCliApp
                     : options.Int("padding", 32, 0, int.MaxValue)
             });
         }
+        else if (hasCameraCrop)
+        {
+            body = GatewayContractJson.Write(new GatewayScreenshotRequest
+            {
+                WidthPixels = options.Int(
+                    "width",
+                    1,
+                    1,
+                    MaximumScreenshotCropDimensionPixels),
+                HeightPixels = options.Int(
+                    "height",
+                    1,
+                    1,
+                    MaximumScreenshotCropDimensionPixels),
+                OffsetXPixels = offsetXText is null
+                    ? 0
+                    : options.SignedInt("offset-x", 0, int.MinValue, int.MaxValue),
+                OffsetYPixels = offsetYText is null
+                    ? 0
+                    : options.SignedInt("offset-y", 0, int.MinValue, int.MaxValue)
+            });
+        }
 
         var response = Send(LoadSession(globals), "POST", "/screenshots", body);
         files.WriteAllBytes(path, response.Body);
+        var crop = TryReadScreenshotCrop(response.Headers);
         WriteValue(
             new Dictionary<string, object?>
             {
                 ["bytes"] = response.Body.Length,
                 ["contentType"] = response.ContentType,
+                ["crop"] = crop,
                 ["file"] = path
             },
             globals.Output,
             output);
+    }
+
+    private static object? TryReadScreenshotCrop(IReadOnlyDictionary<string, string> headers)
+    {
+        if (!TryReadHeaderInt(headers, "X-Gateway-Frame-Width", out var frameWidth) ||
+            !TryReadHeaderInt(headers, "X-Gateway-Frame-Height", out var frameHeight) ||
+            !TryReadHeaderInt(headers, "X-Gateway-Crop-X", out var x) ||
+            !TryReadHeaderInt(headers, "X-Gateway-Crop-Y", out var y) ||
+            !TryReadHeaderInt(headers, "X-Gateway-Crop-Width", out var width) ||
+            !TryReadHeaderInt(headers, "X-Gateway-Crop-Height", out var height))
+        {
+            return null;
+        }
+
+        return new Dictionary<string, object?>
+        {
+            ["frameHeight"] = frameHeight,
+            ["frameWidth"] = frameWidth,
+            ["height"] = height,
+            ["width"] = width,
+            ["x"] = x,
+            ["y"] = y
+        };
+    }
+
+    private static bool TryReadHeaderInt(
+        IReadOnlyDictionary<string, string> headers,
+        string name,
+        out int value)
+    {
+        value = 0;
+        return headers.TryGetValue(name, out var text) &&
+               int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value);
     }
 
     private void RunClick(GlobalOptions globals, string[] tail, TextWriter output)
@@ -463,7 +539,8 @@ public sealed class GatewayCliApp
         output.WriteLine("  discover                         Validate and show the live session (token is redacted)");
         output.WriteLine("  status | ui-state                Read game or UI state");
         output.WriteLine("  logs [--after N] [--limit N]     Read structured logs");
-        output.WriteLine("  screenshot --file PATH [--things HANDLE[,HANDLE...]] [--padding PIXELS]");
+        output.WriteLine("  screenshot --file PATH [--things HANDLE[,HANDLE...] --padding PIXELS]");
+        output.WriteLine("                         [--width PX --height PX --offset-x PX --offset-y PX]");
         output.WriteLine("  click --x N --y N [--button B]   Send a process-scoped click");
         output.WriteLine("  drag --start-x N --start-y N --end-x N --end-y N");
         output.WriteLine("  keys (--key K|--text TEXT) [--modifiers Ctrl,Shift]");
@@ -481,6 +558,7 @@ public sealed class GatewayCliApp
         output.WriteLine("Examples:");
         output.WriteLine("  RimWorldDevGateway.Client status --pid 1234 -o json");
         output.WriteLine("  RimWorldDevGateway.Client screenshot --file crop.png --things Pawn_42,Building_9 --padding 24");
+        output.WriteLine("  RimWorldDevGateway.Client screenshot --file scene.png --width 960 --height 540 --offset-y -40");
         output.WriteLine("  RimWorldDevGateway.Client execute-source inspect.cs --managed F:\\...\\Managed --contract RimWorldDevGateway.Contracts.dll --entry-type Inspect.Entry");
     }
 
@@ -706,6 +784,22 @@ public sealed class GatewayCliApp
             }
 
             if (!int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var value) || value < minimum || value > maximum)
+            {
+                throw new GatewayCliUsageException($"--{name} must be an integer from {minimum} through {maximum}.");
+            }
+
+            return value;
+        }
+
+        public int SignedInt(string name, int defaultValue, int minimum, int maximum)
+        {
+            var text = Value(name);
+            if (text is null)
+            {
+                return defaultValue;
+            }
+
+            if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) || value < minimum || value > maximum)
             {
                 throw new GatewayCliUsageException($"--{name} must be an integer from {minimum} through {maximum}.");
             }

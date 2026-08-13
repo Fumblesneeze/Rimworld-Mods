@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using RimWorldDevGateway.Client;
 using RimWorldDevGateway.Contracts;
 using NUnit.Framework;
@@ -179,6 +180,7 @@ public static class TestSnippet
             var safety = assembly.GetType("GatewaySteamWorkshopPublisher.PublisherSafety", throwOnError: true)!;
             var visibility = safety.GetMethod("EffectiveVisibility", BindingFlags.Public | BindingFlags.Static)!;
             var previewOperations = safety.GetMethod("PreviewOperations", BindingFlags.Public | BindingFlags.Static)!;
+            var publisherSource = File.ReadAllText(Path.Combine(root, "scripts", "Fixtures", "GatewaySteamWorkshopPublisher.cs"));
             Assert.Multiple(() =>
             {
                 Assert.That(
@@ -197,6 +199,14 @@ public static class TestSnippet
                     (string[])previewOperations.Invoke(null, new object[] { 4u, 2 })!,
                     Is.EqualTo(new[] { "update:0", "update:1", "remove:3", "remove:2" }),
                     "Stale preview slots must be removed from the end so indexes stay stable.");
+                Assert.That(
+                    Regex.Matches(publisherSource, @"SteamUGC\.SubmitItemUpdate\(handle, request\.ChangeNote\)").Count,
+                    Is.EqualTo(1),
+                    "Only the final content publication may consume the authored player-facing change note.");
+                Assert.That(
+                    publisherSource,
+                    Does.Contain("SteamUGC.SubmitItemUpdate(handle, null)"),
+                    "Preview-only synchronization must disable Steam change-note creation.");
             });
             var failure = safety.GetMethod("DurableFailureStage", BindingFlags.Public | BindingFlags.Static)!;
             var correlation = safety.GetMethod("CallbackIdsMatch", BindingFlags.Public | BindingFlags.Static)!;

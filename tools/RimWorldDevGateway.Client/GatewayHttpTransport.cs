@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 
 namespace RimWorldDevGateway.Client;
@@ -110,7 +111,13 @@ public sealed class GatewayHttpTransport : IGatewayHttpTransport
         return new GatewayClientHttpResponse(
             (int)response.StatusCode,
             response.ContentType ?? string.Empty,
-            body.ToArray());
+            body.ToArray(),
+            response.Headers.AllKeys
+                .Where(name => name != null)
+                .ToDictionary(
+                    name => name!,
+                    name => response.Headers[name!] ?? string.Empty,
+                    StringComparer.OrdinalIgnoreCase));
     }
 
     private static string Bound(string value, int maximumCharacters) =>

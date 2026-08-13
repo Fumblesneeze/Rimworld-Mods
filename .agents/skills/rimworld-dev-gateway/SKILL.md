@@ -52,6 +52,12 @@ construction, trade, or other native player path.
   focus, maximize the window, or treat the user manually resizing/maximizing it as a failure.
 - Bind screenshots and raw input to the exact launched PID and current client bounds. Re-query bounds
   before input; release every pressed key/button in cleanup.
+- For presentation capture, prefer a camera-centered pixel crop with X/Y offset when subjects fit
+  one view. It must not select Things, change the camera, or add UI. Use Thing-bounded crops only
+  when a dynamic projected union is genuinely wanted; never add selection brackets to compute one.
+- Capture GIF source frames as a bounded host-side sequence of ordinary end-of-frame screenshot
+  requests. Retain exact applied rectangles and timing, allow no more than five seconds for Steam
+  previews, and keep raw frames so hard cuts and compression can be reviewed without rerunning play.
 - Request graceful shutdown, then use only an exact-PID bounded fallback. Restore preferences,
   control state, staging, credentials, and only run-owned objects.
 

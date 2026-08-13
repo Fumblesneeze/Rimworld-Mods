@@ -1,0 +1,359 @@
+{
+  "schema": "RimWorldDevGateway/ShowcaseCaptureEvidence/v1",
+  "showcaseId": "dining-memories",
+  "capturedUtc": "2026-08-13T14:58:11.6282986Z",
+  "processId": 56880,
+  "processStartUtc": "2026-08-13T14:56:53.6024765+00:00",
+  "runId": "fd55e99bd7844a1dbc60f7690a01fcdd",
+  "orderedPackageIds": [
+    "brrainz.harmony",
+    "ludeon.rimworld",
+    "fumblesneeze.immersivechefs",
+    "fumblesneeze.rimworlddevgateway"
+  ],
+  "orderedPackageIdentities": [
+    {
+      "index": 0,
+      "packageId": "brrainz.harmony",
+      "name": "Harmony",
+      "rootDir": "F:\\Steam\\steamapps\\workshop\\content\\294100\\2009463077",
+      "files": [
+        {
+          "path": "About/About.xml",
+          "bytes": 504,
+          "sha256": "280984AC4A391C12288D670B7F37DCEBBE8D0BD9FA2F576FC3B2424FED911A0A"
+        },
+        {
+          "path": "About/Manifest.xml",
+          "bytes": 686,
+          "sha256": "D794B8E057E6125588EAB3D89B6D033A1807BF3E6276F5FF1F25306D04266370"
+        },
+        {
+          "path": "LoadFolders.xml",
+          "bytes": 308,
+          "sha256": "684C732A1893DE35FF9919A0454A429E77FCA645D448A44FEEAECF2765E2227B"
+        },
+        {
+          "path": "1.4/Assemblies/0Harmony.dll",
+          "bytes": 931840,
+          "sha256": "D04EC5B2590DD1BBB57F0F11DC417B1A5BEBBB36B1F97006D35F2D87C3A2A69F"
+        },
+        {
+          "path": "1.4/Assemblies/HarmonyMod.dll",
+          "bytes": 5120,
+          "sha256": "F85DA924641422A297CE5F2F4B81C0E68363DFE8AB7A951B0EABE25982E5A13E"
+        },
+        {
+          "path": "1.5/Assemblies/0Harmony.dll",
+          "bytes": 2195456,
+          "sha256": "E96FC01100B6BBDC094B900EFE47850CF97AA9DF7C6A78CBE723B1DECF5A506A"
+        },
+        {
+          "path": "1.5/Assemblies/HarmonyMod.dll",
+          "bytes": 12288,
+          "sha256": "4BF6174E5F80CB1866A791CABAEB463F2E6B31E61E703E6676FCAF6030ADD625"
+        },
+        {
+          "path": "Current/Assemblies/0Harmony.dll",
+          "bytes": 2456064,
+          "sha256": "353DAAFEC180BB8E7BBE4DA78F2A7CDC78067392E3A4E79DC8E7AF295F2371E6"
+        },
+        {
+          "path": "Current/Assemblies/HarmonyMod.dll",
+          "bytes": 17920,
+          "sha256": "408C2CD72B45DA8C70C0C538B2B346C8DCBB5BDED066373F6A3EB8B26615A2E7"
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "packageId": "ludeon.rimworld",
+      "name": "Core",
+      "rootDir": "F:\\Steam\\steamapps\\common\\RimWorld\\Data\\Core",
+      "files": [
+        {
+          "path": "About/About.xml",
+          "bytes": 269,
+          "sha256": "62C5B721F0A562075A0109BA558AF22791D2B20B7A5E677592C1E7C138A21336"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "packageId": "fumblesneeze.immersivechefs",
+      "name": "Immersive Chefs",
+      "rootDir": "F:\\Steam\\steamapps\\common\\RimWorld\\Mods\\fumblesneeze.immersivechefs",
+      "files": [
+        {
+          "path": "About/About.xml",
+          "bytes": 2278,
+          "sha256": "D37DA7C8B775E8932D5C49E2FD568DC0DD3DC98A80639C6283307D848C2BDB3B"
+        },
+        {
+          "path": "1.6/Assemblies/ImmersiveChefs.dll",
+          "bytes": 422912,
+          "sha256": "70C8BC02AFAECE1253FA21F6E082FB159C9F789F0D4194FB1AB54E1FF12B3137"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "packageId": "fumblesneeze.rimworlddevgateway",
+      "name": "RimWorld Dev Gateway",
+      "rootDir": "F:\\Steam\\steamapps\\common\\RimWorld\\Mods\\fumblesneeze.rimworlddevgateway",
+      "files": [
+        {
+          "path": "About/About.xml",
+          "bytes": 587,
+          "sha256": "371FA5E507905AB6D2717652297B7AA414D0B171B408ED4B3C28FBC4F985DA0C"
+        },
+        {
+          "path": "1.6/Assemblies/EmbedIO.dll",
+          "bytes": 356352,
+          "sha256": "652807CC55278507A00080698872D0A03EF2A38076D91F5D4333C57C9E223EBC"
+        },
+        {
+          "path": "1.6/Assemblies/Mono.CSharp.dll",
+          "bytes": 1340416,
+          "sha256": "80C8ECC58E3140F0EE336292165BF2B887A000014C7DE420B70EEFE4D5E68BCC"
+        },
+        {
+          "path": "1.6/Assemblies/RimWorldDevGateway.Contracts.dll",
+          "bytes": 39936,
+          "sha256": "51C0C649A2203A92F5FD5E7F718DE559BBFC86554A887BE957B7964C4F8B708E"
+        },
+        {
+          "path": "1.6/Assemblies/RimWorldDevGateway.dll",
+          "bytes": 815104,
+          "sha256": "1BE0384BEC089415EA2FCE3CE818B0FD401D26992DF3BD080EAB24A7C9002118"
+        },
+        {
+          "path": "1.6/Assemblies/RimWorldDevGateway.EndToEndTesting.dll",
+          "bytes": 34304,
+          "sha256": "86E040B03483FD0C79E3DBF3B82080A1B00D563E0A9252D14D889CDD9740A58F"
+        },
+        {
+          "path": "1.6/Assemblies/RimWorldDevGateway.IntegrationTesting.dll",
+          "bytes": 7168,
+          "sha256": "FF18C6F7DCB70E772B998BE7538D00DEAF79D67F0DEAA18FE6B89514D306B680"
+        },
+        {
+          "path": "1.6/Assemblies/RimWorldDevGateway.PerformanceTesting.dll",
+          "bytes": 34304,
+          "sha256": "D17931956F9E1CBA23FDA3B39A6FD6BDFC9092FEA341F8C0B7955172CDFFEA85"
+        },
+        {
+          "path": "1.6/Assemblies/Swan.Lite.dll",
+          "bytes": 193536,
+          "sha256": "D64F1473F5EBC729F59CC663AEAC73AE2CFC9C4DB4825AFD3E9094CFB8DC1BCA"
+        },
+        {
+          "path": "1.6/Assemblies/System.ValueTuple.dll",
+          "bytes": 25232,
+          "sha256": "E905D102585B22C6DF04F219AF5CBDBFA7BC165979E9788B62DF6DCC165E10F4"
+        }
+      ]
+    }
+  ],
+  "observedBeats": [
+    "thoughts-pane"
+  ],
+  "reviewObservation": "The native Needs panel visibly shows Ate without table, Ate without cutlery, and Cold meal together for the selected conscious colonist.",
+  "manifestPath": "%REPOSITORY_ROOT%\\artifacts\\ShowcaseRuns\\memories-20260813T145644596Z\\20260813T145645359Z\\SavedData\\DevGateway\\current.json",
+  "stateBefore": {
+    "camera": {
+      "Center": {
+        "X": 143,
+        "Z": 112
+      },
+      "MapHandle": "map-0",
+      "MapHeight": 250,
+      "MapWidth": 250,
+      "MaximumRootSize": 60,
+      "MinimumRootSize": 11,
+      "RootSize": 12,
+      "ViewRect": {
+        "MaxX": 165,
+        "MaxZ": 125,
+        "MinX": 121,
+        "MinZ": 99
+      },
+      "Zoom": "Close"
+    },
+    "selectedThings": [
+      {
+        "DefName": "Human",
+        "Faction": {
+          "DefName": "PlayerColony",
+          "Name": "New Arrivals",
+          "Relation": "Player"
+        },
+        "Fogged": false,
+        "Forbidden": false,
+        "Handle": "Human244",
+        "HitPoints": null,
+        "Kind": "pawn",
+        "Label": "Steele<color=#999999FF>, Recruiter</color>",
+        "LoadId": "Thing_Human244",
+        "MapHandle": "map-0",
+        "OccupiedRect": {
+          "MaxX": 143,
+          "MaxZ": 112,
+          "MinX": 143,
+          "MinZ": 112
+        },
+        "PawnFlags": {
+          "Animal": false,
+          "Colonist": true,
+          "Humanlike": true,
+          "Mechanoid": false,
+          "Prisoner": false
+        },
+        "Position": {
+          "X": 143,
+          "Z": 112
+        },
+        "Quality": null,
+        "Rotation": "3",
+        "RuntimeType": "Verse.Pawn",
+        "Selected": true,
+        "StackCount": 1,
+        "StuffDefName": null
+      }
+    ],
+    "uiSelection": [
+      {
+        "Handle": "Human244",
+        "Label": "Steele<color=#999999FF>, Recruiter</color>"
+      }
+    ]
+  },
+  "stateAfter": {
+    "camera": {
+      "Center": {
+        "X": 143,
+        "Z": 112
+      },
+      "MapHandle": "map-0",
+      "MapHeight": 250,
+      "MapWidth": 250,
+      "MaximumRootSize": 60,
+      "MinimumRootSize": 11,
+      "RootSize": 12,
+      "ViewRect": {
+        "MaxX": 165,
+        "MaxZ": 125,
+        "MinX": 121,
+        "MinZ": 99
+      },
+      "Zoom": "Close"
+    },
+    "selectedThings": [
+      {
+        "DefName": "Human",
+        "Faction": {
+          "DefName": "PlayerColony",
+          "Name": "New Arrivals",
+          "Relation": "Player"
+        },
+        "Fogged": false,
+        "Forbidden": false,
+        "Handle": "Human244",
+        "HitPoints": null,
+        "Kind": "pawn",
+        "Label": "Steele<color=#999999FF>, Recruiter</color>",
+        "LoadId": "Thing_Human244",
+        "MapHandle": "map-0",
+        "OccupiedRect": {
+          "MaxX": 143,
+          "MaxZ": 112,
+          "MinX": 143,
+          "MinZ": 112
+        },
+        "PawnFlags": {
+          "Animal": false,
+          "Colonist": true,
+          "Humanlike": true,
+          "Mechanoid": false,
+          "Prisoner": false
+        },
+        "Position": {
+          "X": 143,
+          "Z": 112
+        },
+        "Quality": null,
+        "Rotation": "3",
+        "RuntimeType": "Verse.Pawn",
+        "Selected": true,
+        "StackCount": 1,
+        "StuffDefName": null
+      }
+    ],
+    "uiSelection": [
+      {
+        "Handle": "Human244",
+        "Label": "Steele<color=#999999FF>, Recruiter</color>"
+      }
+    ]
+  },
+  "selectionMutated": false,
+  "cameraMutated": false,
+  "plan": {
+    "schema": "RimWorldDevGateway/ShowcaseCapturePlan/v1",
+    "processId": 56880,
+    "outputDirectory": "%REPOSITORY_ROOT%\\mods\\ImmersiveChefs\\Release\\workshop\\assets\\showcases\\dining-memories",
+    "frameCount": 1,
+    "framesPerSecond": 1,
+    "durationSeconds": 1.0,
+    "width": 1280,
+    "height": 720,
+    "offsetX": -160,
+    "offsetY": 60,
+    "stillFrameIndex": 1,
+    "gifWidth": 960,
+    "gifColors": 96,
+    "maximumGifBytes": 1048575,
+    "stillOnly": true,
+    "mutatesGameState": false,
+    "selectsThings": false
+  },
+  "actualCaptureDurationMilliseconds": 331,
+  "frames": [
+    {
+      "index": 1,
+      "elapsedMilliseconds": 325,
+      "path": "frames/frame-0001.png",
+      "bytes": 395605,
+      "sha256": "AD59AA5C822C9AE15A189C70B0305925E52C419E387552D2C39F1B5F4D3B9D36",
+      "crop": {
+        "frameHeight": 900,
+        "frameWidth": 1600,
+        "height": 720,
+        "width": 1280,
+        "x": 0,
+        "y": 150
+      }
+    }
+  ],
+  "pngOptimizer": {
+    "name": "magick.exe",
+    "sha256": "AE05A32B5F47614FAF9EFB48BD5A8D76A71EDC93A56A7E17A2384FB1074BABCD",
+    "version": "Version: ImageMagick 7.1.2-18 Q16-HDRI x64 d4e4b2b:20260322 https://imagemagick.org",
+    "arguments": [
+      "-strip",
+      "-colors",
+      "256",
+      "-define",
+      "png:compression-level=9",
+      "-define",
+      "png:compression-filter=5"
+    ]
+  },
+  "still": {
+    "path": "dining-memories.png",
+    "bytes": 395605,
+    "sha256": "AD59AA5C822C9AE15A189C70B0305925E52C419E387552D2C39F1B5F4D3B9D36"
+  },
+  "gif": null,
+  "bearerTokenRetained": false
+}

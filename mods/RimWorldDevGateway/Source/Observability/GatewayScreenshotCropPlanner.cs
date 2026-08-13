@@ -50,6 +50,37 @@ public sealed class GatewayScreenshotCrop
 
 public static class GatewayScreenshotCropPlanner
 {
+    public static GatewayScreenshotCrop PlanCentered(
+        int frameWidth,
+        int frameHeight,
+        int widthPixels,
+        int heightPixels,
+        int offsetXPixels,
+        int offsetYPixels)
+    {
+        if (frameWidth <= 0 || frameHeight <= 0)
+        {
+            throw new GatewayScreenshotException(
+                "capture_failed",
+                "The captured screenshot has invalid dimensions.");
+        }
+
+        if (widthPixels <= 0 || heightPixels <= 0)
+        {
+            throw new GatewayScreenshotException(
+                "invalid_screenshot_request",
+                "A centered crop requires positive widthPixels and heightPixels.");
+        }
+
+        var width = Math.Min(frameWidth, widthPixels);
+        var height = Math.Min(frameHeight, heightPixels);
+        var centeredX = ((long)frameWidth - width) / 2L;
+        var centeredY = ((long)frameHeight - height) / 2L;
+        var x = (int)Math.Min(frameWidth - width, Math.Max(0L, centeredX + offsetXPixels));
+        var y = (int)Math.Min(frameHeight - height, Math.Max(0L, centeredY + offsetYPixels));
+        return new GatewayScreenshotCrop(x, y, width, height);
+    }
+
     public static GatewayScreenshotCrop Plan(
         int frameWidth,
         int frameHeight,

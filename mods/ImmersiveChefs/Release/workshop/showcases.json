@@ -1,0 +1,118 @@
+{
+  "schema": "ImmersiveChefs/WorkshopShowcases/v1",
+  "captureDefaults": {
+    "width": 1280,
+    "height": 720,
+    "gifWidth": 960,
+    "framesPerSecond": 5,
+    "maximumDurationSeconds": 5,
+    "maximumGifBytes": 1048575,
+    "cameraMotion": "fixed-with-hard-cuts",
+    "thingSelection": false
+  },
+  "showcases": [
+    {
+      "id": "gastronomy-service",
+      "title": "Dinner service, from order to table",
+      "formats": [ "screenshot", "gif" ],
+      "requiredPackageIds": [
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        "orion.hospitality",
+        "orion.cashregister",
+        "orion.gastronomy",
+        "fumblesneeze.immersivechefs"
+      ],
+      "scene": "A warmly lit restaurant beside a complete, powered professional kitchen. Use named colonists, one named guest, wood-and-steel furnishings, finished floors, dining decoration, stocked shelves, a stove linked to prep, sauce, meat, vegetable and pastry stations, and a short service path.",
+      "workflow": "Use Gastronomy's ordinary order and waiter jobs. The waiter takes the guest's order and brings cutlery; hard-cut to the linked kitchen as the lead chef and full support roster work; hard-cut back as the same waiter serves the completed meal.",
+      "beats": [ "order", "cutlery", "full-kitchen-roster", "meal-delivery" ],
+      "crop": { "width": 1280, "height": 720, "offsetX": 0, "offsetY": 0 },
+      "outputs": {
+        "screenshot": "assets/showcases/gastronomy-service/gastronomy-service.png",
+        "gif": "assets/showcases/gastronomy-service/gastronomy-service.gif"
+      },
+      "carousel": { "token": "showcase-gastronomy", "slot": 5, "format": "gif" }
+    },
+    {
+      "id": "dishwasher-turnaround",
+      "title": "From a mountain of dishes to a tidy kitchen",
+      "formats": [ "screenshot", "gif" ],
+      "requiredPackageIds": [
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        "syrchalis.processor.framework",
+        "dubwise.dubsbadhygiene",
+        "mehni.pickupandhaul",
+        "fumblesneeze.immersivechefs"
+      ],
+      "scene": "A lived-in small colony kitchen after a rush: used dining tables, dirty plates, cutlery and cookware around a powered and plumbed dishwasher, with believable counters, shelves, flooring, light, water fixtures, ingredients and a nearby clean-kitchenware storage shelf.",
+      "workflow": "Use the ordinary Doing dishes job with Pick Up And Haul's tracked inventory so one named colonist collects nearby dirty ware in a batch and loads the dishwasher; hard-cut after the native cycle completes; show the same colonist unloading the clean batch to its kitchen shelf.",
+      "beats": [ "dirty-kitchen", "batch-collection", "dishwasher-load", "clean-cycle-finished", "shelf-return" ],
+      "crop": { "width": 1280, "height": 720, "offsetX": 0, "offsetY": 0 },
+      "outputs": {
+        "screenshot": "assets/showcases/dishwasher-turnaround/dishwasher-turnaround.png",
+        "gif": "assets/showcases/dishwasher-turnaround/dishwasher-turnaround.gif"
+      },
+      "carousel": { "token": "dishwashing", "slot": 6, "format": "gif" }
+    },
+    {
+      "id": "nutrient-paste-prison-line",
+      "title": "Prison chow still needs a plate",
+      "formats": [ "screenshot", "gif" ],
+      "requiredPackageIds": [
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        "ocarina.prisonerjumpsuits",
+        "fumblesneeze.immersivechefs"
+      ],
+      "presentationWorkshopItems": [ "3402467889" ],
+      "scene": "A credible prison dining room with several named prisoners wearing low-, medium- or high-risk Prisoner Jumpsuits, a powered nutrient paste dispenser and connected hoppers, a plate shelf beside the queue, tables deliberately unavailable for the featured diner, prison flooring, lamps, doors and modest decoration.",
+      "workflow": "Let prisoners use their ordinary food search. They take plates, queue naturally at the nutrient paste dispenser, receive plated paste without cutlery, and eat. Hard-cut to the featured conscious prisoner's native Needs > Mood > Thoughts view and hold long enough to read Ate without cutlery.",
+      "beats": [ "plate-pickup", "paste-queue", "dispense", "eat-without-cutlery", "negative-thought" ],
+      "crop": { "width": 1280, "height": 720, "offsetX": 0, "offsetY": 0 },
+      "outputs": {
+        "screenshot": "assets/showcases/nutrient-paste-prison-line/nutrient-paste-prison-line.png",
+        "gif": "assets/showcases/nutrient-paste-prison-line/nutrient-paste-prison-line.gif"
+      },
+      "carousel": { "token": "showcase-nutrient-paste", "slot": 7, "format": "gif" }
+    },
+    {
+      "id": "professional-prep-line",
+      "title": "Prep ahead, cook fast, keep it hot",
+      "formats": [ "screenshot", "gif" ],
+      "requiredPackageIds": [
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        "mlie.dthermodynamicshotmeals",
+        "fumblesneeze.immersivechefs"
+      ],
+      "scene": "A compact professional kitchen with a visible freezer, named prep cook and line cook, an ingredient prep station, powered stove, linked support stations, prepared ingredients and meat in cold storage, fine-meal serving shelf, and Thermodynamics' heat lamp beside the pass. Use finished floors, realistic materials, lighting, decor and short paths.",
+      "workflow": "Use ordinary bills so the prep cook continuously prepares ingredients while the line cook takes prepared ingredients and meat from the freezer, cooks fine meals through the normal bill, and carries the result to the Thermodynamics heat-lamp area. Use hard cuts between prep, fast cooking and the hot pass.",
+      "beats": [ "continuous-prep", "freezer-ingredients", "fine-meal-cooking", "hot-pass" ],
+      "crop": { "width": 1280, "height": 720, "offsetX": 0, "offsetY": 0 },
+      "outputs": {
+        "screenshot": "assets/showcases/professional-prep-line/professional-prep-line.png",
+        "gif": "assets/showcases/professional-prep-line/professional-prep-line.gif"
+      },
+      "carousel": { "token": "showcase-professional-prep", "slot": 8, "format": "gif" }
+    },
+    {
+      "id": "dining-memories",
+      "title": "Dining mistakes linger",
+      "formats": [ "screenshot" ],
+      "requiredPackageIds": [
+        "brrainz.harmony",
+        "ludeon.rimworld",
+        "fumblesneeze.immersivechefs"
+      ],
+      "scene": "A named conscious colonist in an ordinary lived-in dining area immediately after eating a cold plated meal without cutlery and without a usable table.",
+      "workflow": "Open the native Needs > Mood > Thoughts pane for that exact colonist and capture one readable, unselected frame containing Ate without a table, Ate without cutlery and the cold-food memory together.",
+      "beats": [ "thoughts-pane" ],
+      "crop": { "width": 1280, "height": 720, "offsetX": 0, "offsetY": 0 },
+      "outputs": {
+        "screenshot": "assets/showcases/dining-memories/dining-memories.png"
+      },
+      "carousel": { "token": "showcase-memories", "slot": 9, "format": "screenshot" }
+    }
+  ]
+}

@@ -97,7 +97,7 @@ All routes are below the manifest's `/api/v1` `baseUrl`.
 | `GET /things/{handle}` | direct HTTP | Bounded thing/building/item/pawn inspection |
 | `POST /selection` | direct HTTP | Atomic replace/add/remove/toggle/clear selection |
 | `GET /logs?after=N&limit=N` | `logs --after N --limit N` | Cursor-based structured Unity/RimWorld logs |
-| `POST /screenshots` | `screenshot --file PATH [--things H1,H2] [--padding N]` | End-of-frame full PNG or object-bounded crop |
+| `POST /screenshots` | `screenshot --file PATH [--things H1,H2 --padding N] [--width N --height N --offset-x N --offset-y N]` | End-of-frame full PNG, object crop, or non-selecting camera crop |
 | `POST /input/click` | `click --x N --y N [--button left|right|middle]` | Process-scoped screen-local client-coordinate click |
 | `POST /input/drag` | `drag --start-x N --start-y N --end-x N --end-y N` | Process-scoped interpolated drag |
 | `POST /input/keys` | `keys (--key K\|--text TEXT) [--modifiers Ctrl,Shift]` | Chord or Unicode text input |
@@ -126,7 +126,7 @@ The version-one status result remains intentionally narrow: `developerOnly`, nul
 
 Use the raw C# endpoint or a named automation when a verification needs state outside those stable DTOs. That escape hatch does not promote the returned data into the API contract; adding a new stable snapshot field requires an OpenSpec/API change.
 
-`POST /screenshots` keeps `{}` as the full-frame request. An object-bounded request supplies `thingHandles` and optional `paddingPixels` (default 32), for example `{"thingHandles":["Pawn_42","Building_9"],"paddingPixels":24}`. At one end-of-frame main-thread operation, the Gateway enumerates the current map once, resolves every distinct exact handle, projects each complete occupied-cell footprint, unions the bounds, applies padding, clamps to the captured frame, and returns only that PNG crop. Resolution is atomic: malformed, stale, camera-unavailable, or wholly off-screen targets return a stable error without a partial image. The implementation captures only one full frame and destroys both full and partial textures on every success or failure path.
+`POST /screenshots` keeps `{}` as the full-frame request. An object-bounded request supplies `thingHandles` and optional `paddingPixels` (default 32), for example `{"thingHandles":["Pawn_42","Building_9"],"paddingPixels":24}`. A presentation crop instead supplies `widthPixels`, `heightPixels`, and optional signed `offsetXPixels`/`offsetYPixels`, for example `{"widthPixels":1280,"heightPixels":720,"offsetYPixels":-40}`. The requested size is centered in the rendered client frame, then the offset is clamped while preserving the requested dimensions when they fit. The two crop modes are mutually exclusive. Neither selects a Thing or changes camera/UI state. One end-of-frame operation captures and crops one frame, then returns the PNG with exact `X-Gateway-Frame-*` and `X-Gateway-Crop-*` headers. Object resolution is atomic: malformed, stale, camera-unavailable, or wholly off-screen targets return a stable error without a partial image. Full and partial textures are destroyed on every success or failure path.
 
 Log results contain `Entries`, `OldestCursor`, `NewestCursor`, `HistoryEvicted`, and `PageTruncated`. Entries contain `Sequence`, `TimestampUtc`, `Severity`, `Message`, optional `Stack`, `Thread`, and optional `RequestId`. `HistoryEvicted` means the requested cursor is older than retained history. `PageTruncated` means more matching retained entries exist than fit the 500-entry or 3 MiB serialized-entry page. Resume a truncated read with the final returned entry's `Sequence` as `--after`; do not use the ring-wide `NewestCursor`, which could skip entries.
 
@@ -137,11 +137,14 @@ Useful client examples:
 & $gatewayClient logs --after 0 --limit 100 --manifest $manifest --pid $pidExpected -o json
 & $gatewayClient screenshot --file '.\artifacts\manual-gateway.png' --manifest $manifest --pid $pidExpected
 & $gatewayClient screenshot --file '.\artifacts\two-targets.png' --things 'Pawn_42,Building_9' --padding 24 --manifest $manifest --pid $pidExpected
+& $gatewayClient screenshot --file '.\artifacts\scene.png' --width 1280 --height 720 --offset-y -40 --manifest $manifest --pid $pidExpected -o json
 & $gatewayClient action game.pause --arguments '{"paused":true}' --manifest $manifest --pid $pidExpected -o json
 & $gatewayClient action game.speed --arguments '{"speed":"fast"}' --manifest $manifest --pid $pidExpected -o json
 & $gatewayClient click --x 1000 --y 100 --manifest $manifest --pid $pidExpected -o json
 & $gatewayClient keys --key Escape --manifest $manifest --pid $pidExpected -o json
 ```
+
+For a bounded gameplay preview sequence, run `scripts\Invoke-RimWorldShowcaseCapture.ps1` against the exact held session. It captures at most five seconds of fixed-view PNG frames, retains timing and applied-rectangle provenance, copies one full-detail still, and encodes a sub-1-MiB GIF candidate with ffmpeg. It does not select Things, pan the camera, or arrange the scene; the caller starts the native gameplay workflow first.
 
 Initial semantic actions are `game.pause` (optional boolean `paused`, omitted to toggle), `game.speed` (`paused`, `normal`, `fast`, `superfast`, or `ultrafast`), `window.accept`, `window.cancel`, and `debug.tool.cancel`. The last action is available only while a native `DebugTool` pointer action is active and clears that exact native tool instead of cancelling an unrelated window. Discovery is authoritative: an action may be present but unavailable at the current menu/window/game state. Prefer `GET/POST /game-state` for deterministic pause/speed control and use raw keyboard input when the native keybinding itself is the behavior under test. Raw input is Windows-only, revalidates the RimWorld PID/window/client bounds, and can optionally skip activation with `--no-activate`.
 

@@ -311,6 +311,7 @@ public sealed class WorkshopDescriptionTests
         var manifest = new JavaScriptSerializer().Deserialize<PresentationManifest>(File.ReadAllText(manifestPath));
         Assert.That(manifest, Is.Not.Null);
         Assert.That(manifest!.schema, Is.EqualTo("ImmersiveChefs/WorkshopPresentation/v1"));
+        Assert.That(manifest.carouselCards, Is.EqualTo(new[] { "kitchenware", "teamwork", "meals", "colony", "compatibility" }));
         Assert.That(manifest.cards, Has.Exactly(6).Items);
         Assert.That(manifest.cards.Select(card => card.token), Is.Unique);
         Assert.That(manifest.cards.Select(card => card.token), Does.Not.Contain("hero"),
@@ -325,6 +326,14 @@ public sealed class WorkshopDescriptionTests
                 Assert.That(ReadPngDimensions(path), Is.EqualTo((1164, 655)), card.token + " dimensions");
                 Assert.That(new FileInfo(path).Length, Is.LessThanOrEqualTo(2 * 1024 * 1024), card.token + " Steam payload");
                 Assert.That(card.alt, Is.Not.Null.And.Not.Empty, card.token + " accessibility copy");
+                using var bitmap = new Bitmap(path);
+                Assert.That(bitmap.GetPixel(0, 0).A, Is.Zero,
+                    card.token + " must retain transparent rounded corners.");
+                Assert.That(card.lines.All(line => !line.TrimStart().StartsWith("✓", StringComparison.Ordinal) &&
+                                                  !line.TrimStart().StartsWith("✔", StringComparison.Ordinal) &&
+                                                  !line.TrimStart().StartsWith("☑", StringComparison.Ordinal)),
+                    Is.True,
+                    card.token + " must not use completion/status marks in its feature copy.");
             });
         }
 
@@ -344,6 +353,39 @@ public sealed class WorkshopDescriptionTests
             Assert.That(mealsCard.art.Select(art => art.source),
                 Does.Not.Contain("Things/Building/Appliance/Microwave_north.png"),
                 "The Workshop meal card must not silently replace South placement with its opposite frame.");
+        });
+    }
+
+    [Test]
+    public void Showcase_manifest_defines_exact_natural_workflows_crops_and_carousel_slots()
+    {
+        var root = FindRepositoryRoot();
+        var workshopRoot = Path.Combine(root, "mods", "ImmersiveChefs", "Release", "workshop");
+        var path = Path.Combine(workshopRoot, "showcases.json");
+        var manifest = new JavaScriptSerializer().Deserialize<ShowcaseManifest>(File.ReadAllText(path));
+        Assert.That(manifest, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(manifest!.schema, Is.EqualTo("ImmersiveChefs/WorkshopShowcases/v1"));
+            Assert.That(manifest.showcases, Has.Exactly(5).Items);
+            Assert.That(manifest.showcases.Select(showcase => showcase.id), Is.Unique);
+            Assert.That(manifest.showcases.Select(showcase => showcase.carousel.slot).OrderBy(value => value),
+                Is.EqualTo(new[] { 5, 6, 7, 8, 9 }));
+            Assert.That(manifest.showcases.All(showcase => showcase.formats.Contains("screenshot")), Is.True);
+            Assert.That(manifest.showcases.Count(showcase => showcase.formats.Contains("gif")), Is.EqualTo(4));
+            Assert.That(manifest.showcases.All(showcase => showcase.crop.width == 1280 && showcase.crop.height == 720), Is.True);
+            Assert.That(manifest.captureDefaults.maximumDurationSeconds, Is.EqualTo(5));
+            Assert.That(manifest.captureDefaults.maximumGifBytes, Is.EqualTo(1048575));
+            Assert.That(manifest.captureDefaults.thingSelection, Is.False);
+        });
+
+        var gastronomy = manifest!.showcases.Single(showcase => showcase.id == "gastronomy-service");
+        Assert.Multiple(() =>
+        {
+            Assert.That(gastronomy.requiredPackageIds, Does.Contain("orion.hospitality"));
+            Assert.That(gastronomy.requiredPackageIds, Does.Contain("orion.cashregister"));
+            Assert.That(gastronomy.requiredPackageIds, Does.Contain("orion.gastronomy"));
+            Assert.That(gastronomy.beats, Is.EqualTo(new[] { "order", "cutlery", "full-kitchen-roster", "meal-delivery" }));
         });
     }
 
@@ -403,6 +445,7 @@ public sealed class WorkshopDescriptionTests
     private sealed class PresentationManifest
     {
         public string schema { get; set; } = string.Empty;
+        public string[] carouselCards { get; set; } = Array.Empty<string>();
         public PresentationCard[] cards { get; set; } = Array.Empty<PresentationCard>();
     }
 
@@ -411,12 +454,48 @@ public sealed class WorkshopDescriptionTests
         public string token { get; set; } = string.Empty;
         public string path { get; set; } = string.Empty;
         public string alt { get; set; } = string.Empty;
+        public string[] lines { get; set; } = Array.Empty<string>();
         public PresentationArt[] art { get; set; } = Array.Empty<PresentationArt>();
     }
 
     private sealed class PresentationArt
     {
         public string source { get; set; } = string.Empty;
+    }
+
+    private sealed class ShowcaseManifest
+    {
+        public string schema { get; set; } = string.Empty;
+        public ShowcaseCaptureDefaults captureDefaults { get; set; } = new();
+        public Showcase[] showcases { get; set; } = Array.Empty<Showcase>();
+    }
+
+    private sealed class ShowcaseCaptureDefaults
+    {
+        public int maximumDurationSeconds { get; set; }
+        public int maximumGifBytes { get; set; }
+        public bool thingSelection { get; set; }
+    }
+
+    private sealed class Showcase
+    {
+        public string id { get; set; } = string.Empty;
+        public string[] formats { get; set; } = Array.Empty<string>();
+        public string[] requiredPackageIds { get; set; } = Array.Empty<string>();
+        public string[] beats { get; set; } = Array.Empty<string>();
+        public ShowcaseCrop crop { get; set; } = new();
+        public ShowcaseCarousel carousel { get; set; } = new();
+    }
+
+    private sealed class ShowcaseCrop
+    {
+        public int width { get; set; }
+        public int height { get; set; }
+    }
+
+    private sealed class ShowcaseCarousel
+    {
+        public int slot { get; set; }
     }
 
     private static string FindRepositoryRoot()

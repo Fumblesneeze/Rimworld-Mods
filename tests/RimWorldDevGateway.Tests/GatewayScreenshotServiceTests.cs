@@ -7,6 +7,38 @@ namespace RimWorldDevGateway.Tests;
 public sealed class GatewayScreenshotServiceTests
 {
     [Test]
+    public void Capture_forwards_a_camera_centered_crop_without_thing_handles()
+    {
+        var dispatcher = new GatewayDispatcher(capacity: 4);
+        var backend = new RecordingScreenshotBackend(ValidPng());
+        var service = new GatewayScreenshotService(dispatcher, backend, maximumPngBytes: 1024);
+        var request = new GatewayScreenshotRequest
+        {
+            WidthPixels = 960,
+            HeightPixels = 540,
+            OffsetXPixels = 120,
+            OffsetYPixels = -40
+        };
+
+        var capture = service.CaptureAsync(
+            "screenshot-centered",
+            request,
+            TimeSpan.FromSeconds(5));
+        dispatcher.Drain(DispatchPhase.EndOfFrame);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(capture.GetAwaiter().GetResult(), Is.EqualTo(ValidPng()));
+            Assert.That(backend.Request, Is.Not.Null);
+            Assert.That(backend.Request!.ThingHandles, Is.Empty);
+            Assert.That(backend.Request.WidthPixels, Is.EqualTo(960));
+            Assert.That(backend.Request.HeightPixels, Is.EqualTo(540));
+            Assert.That(backend.Request.OffsetXPixels, Is.EqualTo(120));
+            Assert.That(backend.Request.OffsetYPixels, Is.EqualTo(-40));
+        });
+    }
+
+    [Test]
     public void Target_handles_and_padding_are_forwarded_to_one_end_of_frame_capture()
     {
         var dispatcher = new GatewayDispatcher(capacity: 4);

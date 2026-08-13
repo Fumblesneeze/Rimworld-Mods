@@ -16,6 +16,20 @@ account. After the first release succeeds, commit the returned `publishedFileId`
 `mods/ImmersiveChefs/Release/release.json` and set `allowFirstPublication` to `false`; ignored local
 state is recovery evidence, not the cross-machine source of truth.
 
+Each publishable mod may declare ordered gameplay showcases under its release presentation folder.
+Immersive Chefs uses `mods\ImmersiveChefs\Release\workshop\showcases.json` for exact optional-mod
+groups, natural scene direction, native player workflows, beats, and screenshot/GIF output. Capture
+reviewed scenes directly into their versioned per-showcase directories under
+`mods\ImmersiveChefs\Release\workshop\assets\showcases\<showcase-id>` with
+`scripts\Invoke-RimWorldShowcaseCapture.ps1`; commit the selected PNG/GIF, adjacent `.capture.json`,
+and its referenced `frames/` PNGs. The release builder replays the relocatable encoder recipe and
+binds the exact loaded packages and product DLL. Keep unrelated exploratory captures in ignored
+artifacts. Personally review every crop; each must remain under five seconds and Steam's 1 MiB
+additional-preview limit. Use fixed cameras and hard cuts instead of
+panning across walking time. Every non-initial release supplies a concise player-facing Steam change
+note that says what visibly changed; blank, generic, auto-generated, or recycled notes are not useful
+release notes and must not be published.
+
 The checked-in defaults expect:
 
 - RimWorld: `F:\Steam\steamapps\common\RimWorld`

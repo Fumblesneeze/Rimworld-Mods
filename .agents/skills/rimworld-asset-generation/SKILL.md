@@ -74,6 +74,14 @@ Read only the references needed for the asset:
      behavior. If a directional building appears in Workshop art, use only a cardinal frame whose
      rotated interaction-facing side has been inspected in game; never infer direction from a
      filename or assume that `South` means a front elevation toward the camera.
+   - For in-game Workshop showcases, author a per-mod scene declaration before capture. Dress it as
+     a plausible colony with finished rooms, appropriate materials, lighting, decor, storage,
+     plumbing/power, linked benches, named pawns and short natural paths. Do not promote sterile
+     cleared-map fixtures, test labels, selection brackets, learning helpers or debug UI.
+   - Capture one high-detail still and, when motion matters, a raw-frame GIF candidate. Steam GIFs
+     must remain below 1 MiB and at most five seconds; use fixed views and hard cuts between beats,
+     never slow pans. Inspect the compressed GIF at page scale. If the limit destroys readability,
+     keep the screenshot as the additional preview and retain the GIF only as a rejected candidate.
 
 6. Verify the reviewed build in game.
    - Build/package after review changes.

@@ -43,7 +43,7 @@ try {
         }
 
         $currentPath = Join-Path $temporaryRoot (([string]$card.token) + '-0.png')
-        Invoke-Magick @($templatePath, '-background', 'none', '-strip', $currentPath)
+        Invoke-Magick @('-background', 'none', $templatePath, '-strip', $currentPath)
         $index = 0
         foreach ($art in @($card.art)) {
             $index++
@@ -73,7 +73,7 @@ try {
             '-stroke', 'none', '-fill', '#ead7b5', '-pointsize', '29')) { $args.Add([string]$arg) }
         $lineY = 242
         foreach ($line in @($card.lines)) {
-            foreach ($arg in @('-fill', '#d85a36', '-pointsize', '34', '-annotate', ('+70+' + $lineY), '•', '-fill', '#ead7b5', '-pointsize', '29', '-annotate', ('+105+' + $lineY), [string]$line)) { $args.Add([string]$arg) }
+            foreach ($arg in @('-fill', '#ead7b5', '-pointsize', '29', '-annotate', ('+70+' + $lineY), [string]$line)) { $args.Add([string]$arg) }
             $lineY += 64
         }
         foreach ($arg in @('-strip', '-define', 'png:compression-level=9', $textPath)) { $args.Add([string]$arg) }
