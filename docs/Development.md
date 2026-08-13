@@ -158,7 +158,10 @@ Start with `.agents/skills/rimworld-mod-development/SKILL.md`; it routes Harmony
 player-facing UI, localization, TDD, and live verification. Use `rimworld-dev-gateway` for launcher,
 REPL, semantic/input control, scenarios, screenshots, or gateway failure diagnosis;
 `rimworld-performance-benchmarking` for Circinus/DPA work; and the asset, balance, or release skill for
-those specialized workflows. Validate changed skills with the installed skill-creator validator:
+those specialized workflows. Use `rimworld-realistic-base-generation` before arranging a colony,
+presentation showcase, or lived-in gameplay fixture so room geometry and optional-mod placement come from
+inspected player references and mechanics rather than improvised test-map decoration. Validate changed skills
+with the installed skill-creator validator:
 
 ```powershell
 $validator = 'C:\Users\<you>\.codex\skills\.system\skill-creator\scripts\quick_validate.py'

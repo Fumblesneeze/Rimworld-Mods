@@ -17,6 +17,8 @@ This is a RimWorld 1.6 mod monorepo:
 
 Before changing RimWorld C#, XML, Defs, Harmony patches, compatibility adapters, tests, packaging, smoke tooling, or the gateway, read and follow `.agents/skills/rimworld-mod-development/SKILL.md` and its routed references. Use the repository's `tdd` and `code-review` skills when they apply.
 
+Before arranging a colony, gameplay showcase, or lived-in fixture whose visual credibility matters, read and follow `.agents/skills/rimworld-realistic-base-generation/SKILL.md`. Ground room geometry, materials, traffic, decor, and optional-mod placement in its inspected player-reference catalog and exact game contracts; do not improvise a decorated cleared-map box and call it a colony.
+
 ## Non-negotiable acceptance gate
 
 TDD and code review are necessary, but they are never sufficient to accept RimWorld behavior.

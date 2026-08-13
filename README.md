@@ -88,8 +88,8 @@ The repository commits its complete agent skill set under the cross-client `.age
   failure diagnosis, and safe Gateway extension;
 - `rimworld-performance-benchmarking` records the Circinus-first benchmark contract and separate DPA
   diagnostic boundary, while requiring agents to check unfinished OpenSpec tasks before naming commands;
-- `rimworld-asset-generation`, `rimworld-game-balance`, and `release-rimworld-mods` cover their
-  specialized workflows and route back to the common acceptance gate;
+- `rimworld-asset-generation`, `rimworld-game-balance`, `rimworld-realistic-base-generation`, and
+  `release-rimworld-mods` cover their specialized workflows and route back to the common acceptance gate;
 - `steam-workshop-feedback` maintains the human-reviewed player-feedback ledger;
 - `tdd`, `code-review`, `flaui-cli`, and the OpenSpec workflow skills make the full development
   process reproducible without a separately installed project skill library.
