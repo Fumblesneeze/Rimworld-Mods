@@ -3059,6 +3059,27 @@ function Start-GatewayRimWorldProcess {
         -PassThru
 }
 
+function Resolve-GatewaySmokeProcessLeasePath {
+    param(
+        [Parameter(Mandatory)][string]$ArtifactRoot,
+        [Parameter(Mandatory)][string]$ProcessLeaseFile
+    )
+
+    $resolvedArtifactRoot = [IO.Path]::GetFullPath($ArtifactRoot).TrimEnd(
+        [IO.Path]::DirectorySeparatorChar,
+        [IO.Path]::AltDirectorySeparatorChar)
+    $resolvedProcessLeaseFile = [IO.Path]::GetFullPath($ProcessLeaseFile)
+    $processLeaseDirectory = [IO.Path]::GetFullPath([IO.Path]::GetDirectoryName($resolvedProcessLeaseFile)).TrimEnd(
+        [IO.Path]::DirectorySeparatorChar,
+        [IO.Path]::AltDirectorySeparatorChar)
+    $requiredPrefix = $resolvedArtifactRoot + [IO.Path]::DirectorySeparatorChar
+    if (-not $processLeaseDirectory.Equals($resolvedArtifactRoot, [StringComparison]::OrdinalIgnoreCase) -and
+        -not $processLeaseDirectory.StartsWith($requiredPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw '-ProcessLeaseFile must be inside this exact Gateway artifact root.'
+    }
+    return $resolvedProcessLeaseFile
+}
+
 function Invoke-GatewaySmokeBoundedProcess {
     param(
         [Parameter(Mandatory)][string]$ExecutablePath,
@@ -5993,14 +6014,10 @@ try {
         $launchedProcess.StartTime.ToUniversalTime(),
         [timespan]::Zero)
     if (-not [string]::IsNullOrWhiteSpace($ProcessLeaseFile)) {
-        $resolvedProcessLeaseFile = [IO.Path]::GetFullPath($ProcessLeaseFile)
+        $resolvedProcessLeaseFile = Resolve-GatewaySmokeProcessLeasePath `
+            -ArtifactRoot $artifactRoot `
+            -ProcessLeaseFile $ProcessLeaseFile
         $processLeaseDirectory = [IO.Path]::GetDirectoryName($resolvedProcessLeaseFile)
-        if ([string]::IsNullOrWhiteSpace($processLeaseDirectory) -or
-            -not [IO.Path]::GetFullPath($processLeaseDirectory).StartsWith(
-                [IO.Path]::GetFullPath($artifactRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar,
-                [StringComparison]::OrdinalIgnoreCase)) {
-            throw '-ProcessLeaseFile must be inside this exact Gateway artifact root.'
-        }
         $leaseTemporary = $resolvedProcessLeaseFile + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
         try {
             [IO.Directory]::CreateDirectory($processLeaseDirectory) | Out-Null

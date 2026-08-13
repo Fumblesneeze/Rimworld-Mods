@@ -300,6 +300,33 @@ public sealed class GatewaySmokeBackgroundLaunchTests
     }
 
     [Test]
+    public void Process_lease_may_be_an_exact_child_of_the_gateway_artifact_root()
+    {
+        var root = Path.Combine(Path.GetTempPath(), nameof(GatewaySmokeBackgroundLaunchTests), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var lease = Path.Combine(root, "publisher-process-lease.json");
+            var script =
+                "$ErrorActionPreference = 'Stop'\n" +
+                LoadFunction("Resolve-GatewaySmokeProcessLeasePath") +
+                "$resolved = Resolve-GatewaySmokeProcessLeasePath -ArtifactRoot " + Ps(root.ToUpperInvariant()) + " -ProcessLeaseFile " + Ps(lease) + "\n" +
+                "Write-Output $resolved\n";
+
+            var result = RunPowerShellScript(script);
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.Zero, result.StandardError);
+                Assert.That(result.StandardOutput.Trim(), Is.EqualTo(Path.GetFullPath(lease)));
+            });
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
     public void Launcher_does_not_monitor_window_state_after_process_start()
     {
         var smokePath = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Invoke-GatewaySmoke.ps1");
@@ -424,6 +451,8 @@ public sealed class GatewaySmokeBackgroundLaunchTests
             $"if ($null -eq $functionAst) {{ throw 'Function was not found: {functionName}' }}\n" +
             "Invoke-Expression $functionAst.Extent.Text\n";
     }
+
+    private static string Ps(string value) => "'" + value.Replace("'", "''") + "'";
 
     private static InvocationResult RunPowerShellScript(string script)
     {
