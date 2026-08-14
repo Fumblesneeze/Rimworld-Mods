@@ -309,8 +309,11 @@ public sealed class WorkshopDescriptionTests
         }
 
         var manifest = new JavaScriptSerializer().Deserialize<PresentationManifest>(File.ReadAllText(manifestPath));
+        var featureCardTemplate = File.ReadAllText(Path.Combine(root, "release", "templates", "workshop", "feature-card.svg"));
         Assert.That(manifest, Is.Not.Null);
         Assert.That(manifest!.schema, Is.EqualTo("ImmersiveChefs/WorkshopPresentation/v1"));
+        Assert.That(featureCardTemplate, Does.Contain("Steam Workshop page background observed 2026-08-14: #1b2838"),
+            "The versioned card template must retain the measured Steam matte and observation date.");
         Assert.That(manifest.carouselCards, Is.EqualTo(new[] { "kitchenware", "teamwork", "meals", "colony", "compatibility" }));
         Assert.That(manifest.cards, Has.Exactly(6).Items);
         Assert.That(manifest.cards.Select(card => card.token), Is.Unique);
@@ -327,8 +330,16 @@ public sealed class WorkshopDescriptionTests
                 Assert.That(new FileInfo(path).Length, Is.LessThanOrEqualTo(2 * 1024 * 1024), card.token + " Steam payload");
                 Assert.That(card.alt, Is.Not.Null.And.Not.Empty, card.token + " accessibility copy");
                 using var bitmap = new Bitmap(path);
-                Assert.That(bitmap.GetPixel(0, 0).A, Is.Zero,
-                    card.token + " must retain transparent rounded corners.");
+                var steamMatte = Color.FromArgb(255, 27, 40, 56).ToArgb();
+                Assert.That(new[]
+                    {
+                        bitmap.GetPixel(0, 0).ToArgb(),
+                        bitmap.GetPixel(bitmap.Width - 1, 0).ToArgb(),
+                        bitmap.GetPixel(0, bitmap.Height - 1).ToArgb(),
+                        bitmap.GetPixel(bitmap.Width - 1, bitmap.Height - 1).ToArgb()
+                    },
+                    Is.All.EqualTo(steamMatte),
+                    card.token + " corners must be composited to Steam Workshop #1b2838 rather than alpha-matted white.");
                 Assert.That(card.lines.All(line => !line.TrimStart().StartsWith("✓", StringComparison.Ordinal) &&
                                                   !line.TrimStart().StartsWith("✔", StringComparison.Ordinal) &&
                                                   !line.TrimStart().StartsWith("☑", StringComparison.Ordinal)),
