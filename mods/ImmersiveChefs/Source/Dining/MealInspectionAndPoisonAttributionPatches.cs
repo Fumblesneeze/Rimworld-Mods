@@ -10,6 +10,15 @@ internal static class FoodPoisonInspectPrivacyPatch
 {
     private static void Postfix(ThingComp __instance, ref string __result)
     {
+        if (DishwasherInspectPolicy.ShouldSuppressOptionalDiagnostic(
+                __instance.parent?.def?.defName,
+                __instance.GetType().Assembly.GetName().Name,
+                __instance.GetType().FullName))
+        {
+            __result = string.Empty;
+            return;
+        }
+
         if (__instance is CompFoodPoisonable &&
             MealCoveragePolicy.IsCovered(__instance.parent?.def))
         {

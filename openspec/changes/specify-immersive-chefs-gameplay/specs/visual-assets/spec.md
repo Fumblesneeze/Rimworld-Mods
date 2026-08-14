@@ -111,6 +111,20 @@ Stuffable cookware, plates, cutlery, and chef's knives SHALL use neutral value s
 - **WHEN** the same masked cookware texture is rendered once from granite and once from steel
 - **THEN** the pot, pan, and lid surfaces take their respective Stuff colors while the abstracted wooden handles and dark readable outlines remain deliberate non-Stuff accents
 
+#### Scenario: Core steel kitchenware is compared at the same lighting
+- **WHEN** a steel plate, cutlery setting, and cookware set are rendered beside representative Core steel Things at the same map zoom, terrain, lighting, and Stuff color
+- **THEN** the intended metal-bearing surfaces read as comparably light steel rather than near-black or muddy gray
+- **THEN** the matching `CutoutComplex` masks tint every intended metal surface while keeping only handles, sanitation details, highlights that are deliberately fixed, and the comic outline outside the Stuff region
+- **THEN** no base Def silently ignores a packaged mask that is required for this material response
+
+### Requirement: Chef's knives are simple at map scale
+The chef's-knife set SHALL use a compact, low-detail silhouette that is immediately recognizable as a cook's personal knife roll at ordinary map zoom. Its visible blades, handles, roll, and straps SHALL use a small number of broad shapes rather than realistic micro-detail, tiny rivets, bevels, stitching, or specular texture that collapses under mipmapping. The exterior contour SHALL satisfy the `portable-fine` Core-relative outline contract without turning blade gaps or handles into a blob. Its Stuff mask SHALL tint the blade-bearing material regions deliberately while preserving the roll, handles, straps, and dark outline as fixed accents.
+
+#### Scenario: Chef's knives are reviewed at 64 pixels and in context
+- **WHEN** at least two simplified candidates are compared at 64 pixels and beside other carried kitchenware on the live map
+- **THEN** the selected candidate remains readable without relying on fine rivets, stitching, tiny blade reflections, or full-resolution detail
+- **THEN** its outline remains comic-like and its protected inter-knife gaps stay open
+
 ### Requirement: Vanilla Textures Expanded - Variations is an absent-safe cosmetic integration
 The optional texture-variation integration SHALL key to exact package ID `VanillaExpanded.VTEXVariations` and SHALL load after that package and `OskarPotocki.VanillaFactionsExpanded.Core` without making either a required dependency. With the inspected compatible RimWorld 1.6 shape active, supported Immersive Chefs appliances and stations SHALL use the real `VEF.Buildings.CompProperties_RandomBuildingGraphic` contract for randomized/player-cyclable building families. Because that upstream contract is building-only, portable cookware, plates, cutlery, and chef's knives SHALL instead use a reflection-free Immersive Chefs selector activated by the same exact package gate. The portable selector SHALL choose only cosmetic variants compatible with product kind, Stuff material class, and sanitation state; it MUST NOT alter gameplay stats, identity, stack admission, save semantics, or cleaning ownership.
 

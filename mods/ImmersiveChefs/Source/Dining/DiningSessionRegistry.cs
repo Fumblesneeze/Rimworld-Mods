@@ -357,6 +357,9 @@ internal sealed class DiningSession : IThingHolder
         }
 
         var clearingOrigin = Pawn.PositionHeld;
+        var usedTableTarget = Pawn.MapHeld is { } currentMap
+            ? ResolveUsedTableTarget(currentMap)
+            : null;
         if (DiningDirtPolicy.ShouldCreate(
                 coveredMeal: true,
                 humanlikeDiner: DiningPawnPolicy.AppliesDiningConsequences(Pawn.RaceProps.Humanlike),
@@ -376,7 +379,18 @@ internal sealed class DiningSession : IThingHolder
             (embeddedPlate as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
             if (!returnPlateToPersonalInventory || !TryReturnPersonalPlate(embeddedPlate))
             {
-                dirtyPlate = DropAt(embeddedPlate, clearingOrigin, plateMap);
+                var plateCell = usedTableTarget.HasValue
+                    ? ResolveAvailableTableCell(
+                        plateMap,
+                        usedTableTarget.Value,
+                        embeddedPlate)
+                    : null;
+                dirtyPlate = DropUsedWareAt(
+                    embeddedPlate,
+                    plateCell ?? clearingOrigin,
+                    clearingOrigin,
+                    plateMap,
+                    plateCell.HasValue);
                 if (returnPlateToPersonalInventory && dirtyPlate is not null)
                 {
                     Log.Error(
@@ -401,7 +415,16 @@ internal sealed class DiningSession : IThingHolder
             }
             else
             {
-                dirtyCutlery = DropCarried(Pawn);
+                var cutleryCell = usedTableTarget.HasValue && Pawn.MapHeld is { } cutleryMap
+                    ? ResolveAvailableTableCell(
+                        cutleryMap,
+                        usedTableTarget.Value,
+                        usedCutlery)
+                    : null;
+                dirtyCutlery = DropCarried(
+                    Pawn,
+                    cutleryCell ?? clearingOrigin,
+                    requireExactCell: cutleryCell.HasValue);
             }
         }
 
@@ -672,7 +695,10 @@ internal sealed class DiningSession : IThingHolder
         }
     }
 
-    private Thing? DropCarried(Pawn dropPawn)
+    private Thing? DropCarried(
+        Pawn dropPawn,
+        IntVec3? preferredCell = null,
+        bool requireExactCell = false)
     {
         if (CarriedCutlery is null)
         {
@@ -685,7 +711,14 @@ internal sealed class DiningSession : IThingHolder
             return null;
         }
 
-        var dropped = DropAt(CarriedCutlery, dropPawn.PositionHeld, map);
+        var dropped = preferredCell.HasValue
+            ? DropUsedWareAt(
+                CarriedCutlery,
+                preferredCell.Value,
+                dropPawn.PositionHeld,
+                map,
+                requireExactCell)
+            : DropAt(CarriedCutlery, dropPawn.PositionHeld, map);
         if (dropped is not null)
         {
             ClearTemporaryWareProvenance(CarriedCutlery);
@@ -697,6 +730,66 @@ internal sealed class DiningSession : IThingHolder
         }
 
         return dropped;
+    }
+
+    private IntVec3? ResolveUsedTableTarget(Map map)
+    {
+        if (Job is null)
+        {
+            return null;
+        }
+
+        var tableCell = Job.GetTarget(TargetIndex.B).Cell;
+        return tableCell.IsValid &&
+               tableCell.InBounds(map) &&
+               tableCell.HasEatSurface(map)
+            ? tableCell
+            : null;
+    }
+
+    private static IntVec3? ResolveAvailableTableCell(
+        Map map,
+        IntVec3 selectedTableCell,
+        Thing ware)
+    {
+        var table = selectedTableCell.GetThingList(map)
+            .FirstOrDefault(thing =>
+                thing.def.surfaceType == SurfaceType.Eat &&
+                thing.OccupiedRect().Contains(selectedTableCell));
+        if (table is null)
+        {
+            return null;
+        }
+
+        return table.OccupiedRect().Cells
+            .Where(cell =>
+                cell.InBounds(map) &&
+                cell.HasEatSurface(map) &&
+                cell.GetItemCount(map) < cell.GetMaxItemsAllowedInCell(map) &&
+                cell.GetThingList(map).All(existing =>
+                    existing.def.category != ThingCategory.Item ||
+                    !existing.CanStackWith(ware)))
+            .OrderBy(cell => cell == selectedTableCell ? 0 : 1)
+            .ThenBy(cell => cell.DistanceToSquared(selectedTableCell))
+            .Cast<IntVec3?>()
+            .FirstOrDefault();
+    }
+
+    private static Thing? DropUsedWareAt(
+        Thing thing,
+        IntVec3 preferredCell,
+        IntVec3 fallbackCell,
+        Map map,
+        bool requireExactCell)
+    {
+        var placed = DropAt(
+            thing,
+            preferredCell,
+            map,
+            requireExactCell ? ThingPlaceMode.Direct : ThingPlaceMode.Near);
+        return placed ?? (requireExactCell
+            ? DropAt(thing, fallbackCell, map, ThingPlaceMode.Near)
+            : null);
     }
 
     private static void ClearTemporaryWareProvenance(Thing? thing)
@@ -716,11 +809,15 @@ internal sealed class DiningSession : IThingHolder
         }
     }
 
-    private static Thing? DropAt(Thing thing, IntVec3 position, Map map)
+    private static Thing? DropAt(
+        Thing thing,
+        IntVec3 position,
+        Map map,
+        ThingPlaceMode mode = ThingPlaceMode.Near)
     {
         if (thing.holdingOwner is { } owner)
         {
-            return owner.TryDrop(thing, position, map, ThingPlaceMode.Near, out var dropped)
+            return owner.TryDrop(thing, position, map, mode, out var dropped)
                 ? dropped
                 : null;
         }
@@ -730,7 +827,7 @@ internal sealed class DiningSession : IThingHolder
             return thing;
         }
 
-        return GenPlace.TryPlaceThing(thing, position, map, ThingPlaceMode.Near, out var placed)
+        return GenPlace.TryPlaceThing(thing, position, map, mode, out var placed)
             ? placed
             : null;
     }

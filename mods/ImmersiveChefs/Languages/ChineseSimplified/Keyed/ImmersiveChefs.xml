@@ -140,8 +140,8 @@
   <ImmersiveChefs_Dishwasher_StatusLoading>装载中</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>清洗中（{0}%）</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>已暂停：{0}</ImmersiveChefs_Dishwasher_StatusPaused>
-  <ImmersiveChefs_Dishwasher_PauseNoPower>没有电力</ImmersiveChefs_Dishwasher_PauseNoPower>
-  <ImmersiveChefs_Dishwasher_PauseNoWater>没有可用水源</ImmersiveChefs_Dishwasher_PauseNoWater>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>电力不足</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoWater>无供水</ImmersiveChefs_Dishwasher_PauseNoWater>
   <ImmersiveChefs_Dishwasher_Inspect>洗碗机：{0}\n容量：{1}/{2}套餐具</ImmersiveChefs_Dishwasher_Inspect>
   <ImmersiveChefs_Dishwasher_EjectLabel>取出餐具</ImmersiveChefs_Dishwasher_EjectLabel>
   <ImmersiveChefs_Dishwasher_EjectDescription>取消本次清洗，并将原有餐具原样退回而不清洁。</ImmersiveChefs_Dishwasher_EjectDescription>

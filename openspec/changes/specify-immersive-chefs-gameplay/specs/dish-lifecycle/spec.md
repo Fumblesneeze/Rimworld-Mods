@@ -252,6 +252,11 @@ When the supported Processor Framework is active and its expected shape validate
 - **WHEN** the supported Processor Framework is active and its stock completion would replace a Stuff-made dirty item with a fixed Stuff-less clean output
 - **THEN** the adapter suppresses that replacement and returns the original clean item with its material, quality, hit points, and components intact
 
+#### Scenario: A queued fill job outlives the dirty state it selected
+- **WHEN** Processor Framework queued a dishwasher fill job while a ware item was dirty but that exact item has become clean before the job reserves or carries it
+- **THEN** the fill job fails before reserving or hauling the clean item
+- **THEN** the clean item remains available for ordinary kitchen storage and cannot be fed back into the dishwasher by that stale job
+
 #### Scenario: Processor Framework is unavailable or incompatible
 - **WHEN** Processor Framework is absent, disabled in settings, or fails its expected-shape guard
 - **THEN** the local identity-preserving cycle supplies the same capacity, interruption, sanitation, and output behavior without a missing dependency
@@ -334,3 +339,22 @@ Immersive Chefs SHALL expose `PreferDishwashers` (default `On`), `AllowTerrainHa
 - **WHEN** the player saves `DishwasherCapacityScale` as `2.0` during a running game
 - **THEN** the settings UI reports that a restart is required and current capacities remain unchanged
 - **THEN** after restart the domestic and industrial capacities are `32` and `128` plate-equivalents
+
+### Requirement: Dishwasher utility state is real and player-readable
+An Immersive Chefs dishwasher SHALL advance a captured washing cycle only while its native power trader is actually powered for the appliance's active draw. Merely being connected to a power net SHALL NOT count as sufficient power. If the active load exceeds current generation and stored-energy delivery, cycle progress SHALL remain unchanged until the network can supply it, including after a charged battery or additional generation becomes available. The same captured batch SHALL resume without a second water debit.
+
+When Dubs Bad Hygiene is active, a connected pipe with an empty or otherwise unusable upstream water supply SHALL NOT count as supplied water. Loading MAY retain the batch, but washing SHALL not begin or advance until the exact load-scaled water charge is available and the supported Dubs fixture/network reports operational supply. The dishwasher's ordinary inspect pane SHALL explain actionable states such as `Not enough power` and `No supplied water` in player-facing language. It SHALL NOT expose raw pipe-network, sewage-network, grid, object, reflection, or implementation identifiers. Optional integration components attached to an Immersive Chefs dishwasher SHALL contribute no diagnostic-only inspect strings; useful operational state remains owned by the Immersive Chefs status line.
+
+#### Scenario: A connected water tower is empty
+- **WHEN** Dubs Bad Hygiene is active, the dishwasher is connected through supported plumbing, but the connected tower/network cannot supply the captured cycle charge
+- **THEN** the exact batch remains retained with unchanged washing progress and the inspect pane says that supplied water is unavailable
+- **THEN** no pipe-net ID, sewage ID, grid ID, component name, or other diagnostic identifier is visible
+
+#### Scenario: Active draw exceeds the power network
+- **WHEN** the dishwasher is connected to a network whose lone generator can cover idle draw but not the appliance's active washing draw
+- **THEN** the retained batch does not become clean and cycle progress remains unchanged while the inspect pane reports insufficient power
+- **THEN** after adequate generation or a charged battery is added, the same batch resumes rather than restarting or consuming water twice
+
+#### Scenario: The appliance is fully supplied
+- **WHEN** both the active native power draw and the exact Dubs water charge are available
+- **THEN** the dishwasher advances through its ordinary cycle and ejects the exact clean ware identities

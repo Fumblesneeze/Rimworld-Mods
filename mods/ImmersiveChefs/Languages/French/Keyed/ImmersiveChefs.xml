@@ -140,8 +140,8 @@
   <ImmersiveChefs_Dishwasher_StatusLoading>chargement</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>lavage ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>en pause : {0}</ImmersiveChefs_Dishwasher_StatusPaused>
-  <ImmersiveChefs_Dishwasher_PauseNoPower>sans électricité</ImmersiveChefs_Dishwasher_PauseNoPower>
-  <ImmersiveChefs_Dishwasher_PauseNoWater>alimentation en eau indisponible</ImmersiveChefs_Dishwasher_PauseNoWater>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>alimentation électrique insuffisante</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoWater>pas d'alimentation en eau</ImmersiveChefs_Dishwasher_PauseNoWater>
   <ImmersiveChefs_Dishwasher_Inspect>Lave-vaisselle : {0}\nCapacité : {1}/{2} couverts</ImmersiveChefs_Dishwasher_Inspect>
   <ImmersiveChefs_Dishwasher_EjectLabel>Éjecter la vaisselle</ImmersiveChefs_Dishwasher_EjectLabel>
   <ImmersiveChefs_Dishwasher_EjectDescription>Annule ce cycle et rend exactement cette vaisselle sans la nettoyer.</ImmersiveChefs_Dishwasher_EjectDescription>

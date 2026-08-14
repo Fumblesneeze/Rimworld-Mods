@@ -284,7 +284,8 @@ internal sealed class CookingSession
             DropExact(
                 cookware,
                 WorkStarted && BillGiver.Spawned ? BillGiver.Position : Pawn.PositionHeld,
-                map);
+                map,
+                preferExactCell: WorkStarted && BillGiver.Spawned);
         }
 
         foreach (var plate in Plates.Where(portion =>
@@ -394,12 +395,19 @@ internal sealed class CookingSession
         };
     }
 
-    private void DropExact(Thing thing, IntVec3 position, Map map)
+    private void DropExact(
+        Thing thing,
+        IntVec3 position,
+        Map map,
+        bool preferExactCell = false)
     {
         var wasInPawnInventory = ReferenceEquals(
             thing.holdingOwner,
             Pawn.inventory?.innerContainer);
-        var placed = TryReleaseExactThing(thing, position, map);
+        var placed = preferExactCell && !thing.Spawned
+            ? TryReleaseExactThingDirect(thing, position, map) ||
+              TryReleaseExactThing(thing, position, map)
+            : TryReleaseExactThing(thing, position, map);
         if (placed)
         {
             (thing as ThingWithComps)?.GetComp<CompSanitation>()?.ClearSessionTransfer();
@@ -432,6 +440,25 @@ internal sealed class CookingSession
         }
 
         return placed;
+    }
+
+    private static bool TryReleaseExactThingDirect(Thing thing, IntVec3 position, Map map)
+    {
+        if (thing.holdingOwner is { } owner)
+        {
+            return owner.TryDrop(
+                thing,
+                position,
+                map,
+                ThingPlaceMode.Direct,
+                out _);
+        }
+
+        return GenPlace.TryPlaceThing(
+            thing,
+            position,
+            map,
+            ThingPlaceMode.Direct);
     }
 }
 
@@ -502,6 +529,7 @@ internal static class CookingSessionRegistry
         var settings = ImmersiveChefsMod.Settings;
         if (settings.WareRequirementMode == WareRequirementMode.Off)
         {
+            MoveDirtyCookwareOffSurface(billGiver);
             AddSession(
                 pawn,
                 job,
@@ -551,6 +579,7 @@ internal static class CookingSessionRegistry
             var selectedCookware = cookware.FirstOrDefault();
             var emergencyMissing = emergency &&
                                    (selectedCookware is null || plates.Sum(portion => portion.Count) < requiredPlates);
+            MoveDirtyCookwareOffSurface(billGiver);
             AddSession(
                 pawn,
                 job,
@@ -565,6 +594,63 @@ internal static class CookingSessionRegistry
             ReleaseReservations(pawn, job, plates);
             AbortAdmission(pawn, job);
             throw;
+        }
+    }
+
+    private static void MoveDirtyCookwareOffSurface(Thing billGiver)
+    {
+        if (!billGiver.Spawned || billGiver.MapHeld is not { } map)
+        {
+            return;
+        }
+
+        var occupied = billGiver.OccupiedRect();
+        var cookware = occupied.Cells
+            .SelectMany(cell => cell.GetThingList(map))
+            .Where(thing =>
+                thing.Spawned &&
+                !thing.Destroyed &&
+                thing.def.GetModExtension<KitchenwareExtension>()?.product ==
+                    KitchenwareProduct.Cookware &&
+                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true)
+            .Distinct()
+            .OrderBy(thing => thing.ThingID, StringComparer.Ordinal)
+            .ToList();
+        foreach (var thing in cookware)
+        {
+            if (map.reservationManager.IsReserved(thing))
+            {
+                continue;
+            }
+
+            var originalCell = thing.Position;
+            bool ValidDestination(IntVec3 cell) =>
+                !occupied.Contains(cell) &&
+                cell.GetThingList(map).All(existing =>
+                    existing.def.category != ThingCategory.Item ||
+                    !existing.CanStackWith(thing));
+
+            thing.DeSpawn(DestroyMode.Vanish);
+            if (GenPlace.TryPlaceThing(
+                    thing,
+                    billGiver.InteractionCell,
+                    map,
+                    ThingPlaceMode.Near,
+                    extraValidator: ValidDestination))
+            {
+                continue;
+            }
+
+            if (!GenPlace.TryPlaceThing(
+                    thing,
+                    originalCell,
+                    map,
+                    ThingPlaceMode.Direct))
+            {
+                Log.Error(
+                    $"[ImmersiveChefs] Could not preserve {thing.LabelCap} while clearing " +
+                    $"the work surface at {billGiver.LabelCap}.");
+            }
         }
     }
 

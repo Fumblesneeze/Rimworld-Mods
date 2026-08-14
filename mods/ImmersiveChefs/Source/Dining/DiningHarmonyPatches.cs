@@ -5,6 +5,18 @@ using Verse.AI;
 
 namespace ImmersiveChefs;
 
+[HarmonyPatch(typeof(Building), nameof(Building.MaxItemsInCell), MethodType.Getter)]
+internal static class DiningSurfaceItemCapacityPatch
+{
+    private static void Postfix(Building __instance, ref int __result)
+    {
+        if (__result < 2 && __instance.def.surfaceType == SurfaceType.Eat)
+        {
+            __result = 2;
+        }
+    }
+}
+
 [HarmonyPatch(typeof(Thing), nameof(Thing.Ingested), typeof(Pawn), typeof(float))]
 internal static class DiningIngestionOutcomePatch
 {

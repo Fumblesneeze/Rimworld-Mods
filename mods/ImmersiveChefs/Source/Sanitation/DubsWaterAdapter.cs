@@ -1,4 +1,5 @@
 using System.Reflection;
+using HarmonyLib;
 using Verse;
 
 namespace ImmersiveChefs;
@@ -7,6 +8,7 @@ internal static class DubsWaterAdapter
 {
     private static bool shapeInspected;
     private static Type? pipeCompType;
+    private static MethodInfo? pipeInspectMethod;
     private static PropertyInfo? pipeNetProperty;
     private static MethodInfo? pullWaterMethod;
     private static PropertyInfo? waterStorageProperty;
@@ -21,13 +23,15 @@ internal static class DubsWaterAdapter
     private static MethodInfo? useBucketMethod;
     private static FieldInfo? waterUsesRemainingField;
     private static bool dishwasherDefsInitialized;
+    private static bool pipeInspectPatched;
 
     internal static bool TryInitializeDishwasherDefs(out string reason)
     {
         InspectShape();
         if (pipeCompType is null || pipeNetProperty is null || pullWaterMethod is null ||
             waterStorageProperty is null || waterTowersField is null ||
-            pipePropertiesType is null || pipeModeField is null)
+            pipePropertiesType is null || pipeModeField is null || pipeInspectMethod is null ||
+            ImmersiveChefsMod.HarmonyInstance is null)
         {
             reason = "the installed Dubs plumbing API no longer matches the validated 1.6 shape";
             return false;
@@ -43,6 +47,7 @@ internal static class DubsWaterAdapter
         {
             AddPipeComp(ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher);
             AddPipeComp(ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher);
+            PatchPipeInspect(ImmersiveChefsMod.HarmonyInstance);
             dishwasherDefsInitialized = true;
             reason = string.Empty;
             Log.Message("[ImmersiveChefs] Dubs Bad Hygiene adapter active; dishwashers require supplied plumbing.");
@@ -299,6 +304,7 @@ internal static class DubsWaterAdapter
             }
 
             pipeNetProperty = pipeCompType?.GetProperty("pipeNet", BindingFlags.Public | BindingFlags.Instance);
+            pipeInspectMethod = FindPipeInspectOverride(pipeCompType!);
             waterStorageProperty = pipeNetType.GetProperty("WaterStorage", BindingFlags.Public | BindingFlags.Instance);
             waterTowersField = pipeNetType.GetField(
                 "WaterTowers",
@@ -360,10 +366,52 @@ internal static class DubsWaterAdapter
             }
             if (pipeCompType is not null && pipeNetProperty is not null && pullWaterMethod is not null &&
                 waterStorageProperty is not null && waterTowersField is not null &&
-                pipePropertiesType is not null && pipeModeField is not null)
+                pipePropertiesType is not null && pipeModeField is not null && pipeInspectMethod is not null)
             {
                 return;
             }
+        }
+    }
+
+    internal static MethodInfo? FindPipeInspectOverride(Type type)
+    {
+        var method = type.GetMethod(
+            nameof(ThingComp.CompInspectStringExtra),
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
+            binder: null,
+            types: Type.EmptyTypes,
+            modifiers: null);
+        return method is { ReturnType: not null } &&
+               method.ReturnType == typeof(string) &&
+               method.IsVirtual &&
+               method.GetBaseDefinition().DeclaringType == typeof(ThingComp)
+            ? method
+            : null;
+    }
+
+    private static void PatchPipeInspect(Harmony harmony)
+    {
+        if (pipeInspectPatched)
+        {
+            return;
+        }
+
+        var postfix = typeof(DubsWaterAdapter).GetMethod(
+            nameof(SuppressDishwasherPipeInspect),
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new MissingMethodException(typeof(DubsWaterAdapter).FullName, nameof(SuppressDishwasherPipeInspect));
+        harmony.Patch(pipeInspectMethod!, postfix: new HarmonyMethod(postfix));
+        pipeInspectPatched = true;
+    }
+
+    private static void SuppressDishwasherPipeInspect(ThingComp __instance, ref string __result)
+    {
+        if (DishwasherInspectPolicy.ShouldSuppressOptionalDiagnostic(
+                __instance.parent?.def?.defName,
+                __instance.GetType().Assembly.GetName().Name,
+                __instance.GetType().FullName))
+        {
+            __result = string.Empty;
         }
     }
 

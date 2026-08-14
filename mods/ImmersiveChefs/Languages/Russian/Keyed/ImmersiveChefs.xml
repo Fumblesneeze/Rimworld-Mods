@@ -140,7 +140,7 @@
   <ImmersiveChefs_Dishwasher_StatusLoading>загрузка</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>моет ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>приостановлено: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
-  <ImmersiveChefs_Dishwasher_PauseNoPower>нет электричества</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>недостаточно электроэнергии</ImmersiveChefs_Dishwasher_PauseNoPower>
   <ImmersiveChefs_Dishwasher_PauseNoWater>нет подачи воды</ImmersiveChefs_Dishwasher_PauseNoWater>
   <ImmersiveChefs_Dishwasher_Inspect>Посудомойка: {0}\nВместимость: {1}/{2} комплектов</ImmersiveChefs_Dishwasher_Inspect>
   <ImmersiveChefs_Dishwasher_EjectLabel>Выгрузить посуду</ImmersiveChefs_Dishwasher_EjectLabel>

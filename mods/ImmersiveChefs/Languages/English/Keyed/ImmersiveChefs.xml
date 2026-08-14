@@ -140,8 +140,8 @@
   <ImmersiveChefs_Dishwasher_StatusLoading>loading</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>washing ({0}%)</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>paused: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
-  <ImmersiveChefs_Dishwasher_PauseNoPower>no power</ImmersiveChefs_Dishwasher_PauseNoPower>
-  <ImmersiveChefs_Dishwasher_PauseNoWater>water supply unavailable</ImmersiveChefs_Dishwasher_PauseNoWater>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>not enough power</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoWater>no water supply</ImmersiveChefs_Dishwasher_PauseNoWater>
   <ImmersiveChefs_Dishwasher_Inspect>Dishwasher: {0}\nCapacity: {1}/{2} place settings</ImmersiveChefs_Dishwasher_Inspect>
   <ImmersiveChefs_Dishwasher_EjectLabel>Eject dishes</ImmersiveChefs_Dishwasher_EjectLabel>
   <ImmersiveChefs_Dishwasher_EjectDescription>Cancel this cycle and return the exact dishes without cleaning them.</ImmersiveChefs_Dishwasher_EjectDescription>

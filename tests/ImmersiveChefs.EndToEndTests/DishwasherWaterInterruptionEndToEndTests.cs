@@ -16,12 +16,13 @@ namespace ImmersiveChefs.EndToEndTests;
     "syrchalis.processor.framework",
     "Dubwise.DubsBadHygiene",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 12_000,
-    MaxGameTicks = 40_000,
-    MaxWallClockSeconds = 480)]
+    MaxFrames = 14_000,
+    MaxGameTicks = 48_000,
+    MaxWallClockSeconds = 540)]
 public sealed class DubsProcessorDishwasherWaterInterruptionTest : IRimWorldEndToEndTest
 {
     private Map map = null!;
+    private IntVec3 center;
     private Pawn hauler = null!;
     private ThingWithComps dishwasher = null!;
     private ThingWithComps tower = null!;
@@ -33,12 +34,17 @@ public sealed class DubsProcessorDishwasherWaterInterruptionTest : IRimWorldEndT
     private float waterAfterDebit;
     private float progressBeforeLoss;
     private int lossTick;
+    private ThingWithComps? powerLoad;
+    private ThingWithComps? battery;
+    private float progressBeforePowerLoss;
+    private int powerLossTick;
+    private int powerLoadSpawnTick;
 
     public void Arrange(IEndToEndContext context)
     {
         map = Current.Game.CurrentMap;
         HandwashingE2EFixture.PreserveSettings(context);
-        var center = FoodSearchE2EFixture.FindRoomCenter(map);
+        center = FoodSearchE2EFixture.FindRoomCenter(map);
         FoodSearchE2EFixture.BuildSealedRoom(map, center);
         DispenserE2EFixture.SpawnConduitGrid(map, center, 7, 5);
         DispenserE2EFixture.SpawnPowerSources(map, center + new IntVec3(5, 0, 3), 1);
@@ -83,6 +89,32 @@ public sealed class DubsProcessorDishwasherWaterInterruptionTest : IRimWorldEndT
             paddingPixels: 0);
 
         ActivateHauler(hauler);
+        var fillOptions = context.GetRequiredService<IEndToEndFloatMenuCatalog>()
+            .Query(hauler.ThingID, dishwasher.ThingID);
+        var prioritizeFill = fillOptions.Where(option =>
+                !option.Disabled &&
+                option.Label.IndexOf("prioritize", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                (option.Label.IndexOf("fill", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 option.Label.IndexOf("dishwasher", StringComparison.OrdinalIgnoreCase) >= 0))
+            .ToArray();
+        if (prioritizeFill.Length == 1)
+        {
+            yield return new FloatMenuActionStep(
+                "prioritize native Processor dishwasher loading",
+                hauler.ThingID,
+                dishwasher.ThingID,
+                prioritizeFill[0].StableId);
+        }
+        else
+        {
+            EndToEndAssert.True(
+                prioritizeFill.Length == 0 && fillOptions.Any(option =>
+                    option.Disabled &&
+                    option.Label.IndexOf("already filling", StringComparison.OrdinalIgnoreCase) >= 0),
+                "Expected one enabled native Processor fill command or the same native work already active; observed " +
+                string.Join(", ", fillOptions.Select(option =>
+                    $"'{option.Label}' (disabled={option.Disabled})")));
+        }
         yield return new TimeControlActionStep(
             "run ordinary hauling into the Processor dishwasher",
             paused: false,
@@ -94,7 +126,7 @@ public sealed class DubsProcessorDishwasherWaterInterruptionTest : IRimWorldEndT
                  HandwashingE2EFixture.Nearly(
                      HandwashingE2EFixture.ReadDubsNetworkWater(dishwasher),
                      2f),
-            new EndToEndDeadline(1_500, 6_000, TimeSpan.FromSeconds(60)));
+            new EndToEndDeadline(3_000, 6_000, TimeSpan.FromSeconds(90)));
         yield return new WaitUntilStep(
             "the captured Processor cycle starts after one load-scaled water debit",
             _ => ProcessorFrameworkAdapter.ProgressPercent(dishwasher) >= 8f &&
@@ -157,7 +189,7 @@ public sealed class DubsProcessorDishwasherWaterInterruptionTest : IRimWorldEndT
             "the active batch reports its unavailable water supply",
             _ => EndToEndAssert.True(
                 dishwasher.GetComp<CompDishwasher>()!.CompInspectStringExtra()
-                    .IndexOf("paused: water supply unavailable", StringComparison.Ordinal) >= 0,
+                    .IndexOf("no water supply", StringComparison.OrdinalIgnoreCase) >= 0,
                 "The ordinary dishwasher inspector must report the water-loss pause."));
         yield return new SelectionActionStep(
             "select the dishwasher paused by water loss",
@@ -202,6 +234,122 @@ public sealed class DubsProcessorDishwasherWaterInterruptionTest : IRimWorldEndT
             additive: false);
         yield return new ScreenshotStep(
             "same Processor dishwasher visibly washing again after water restoration",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new AssertionStep(
+            "add a native high-draw appliance to exhaust the generator headroom",
+            _ =>
+            {
+                var loadCells = new[]
+                {
+                    center + new IntVec3(-3, 0, -3),
+                    center + new IntVec3(0, 0, -3),
+                    center + new IntVec3(3, 0, -3),
+                    center + new IntVec3(-3, 0, 0),
+                    center,
+                    center + new IntVec3(3, 0, 0),
+                    center + new IntVec3(-3, 0, 3),
+                    center + new IntVec3(0, 0, 3)
+                };
+                var loads = loadCells.Select(cell =>
+                        DispenserE2EFixture.SpawnBuilding(
+                            map,
+                            "ElectricStove",
+                            cell))
+                    .ToArray();
+                powerLoad = loads[0];
+                foreach (var existingBattery in map.listerThings.AllThings
+                             .OfType<ThingWithComps>()
+                             .Select(thing => thing.GetComp<CompPowerBattery>())
+                             .Where(comp => comp is not null))
+                {
+                    existingBattery!.SetStoredEnergyPct(0f);
+                }
+                powerLoadSpawnTick = Find.TickManager.TicksGame;
+            });
+        yield return new TimeControlActionStep(
+            "let the overloaded native power net propagate",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the active dishwasher observes a negative power balance with no stored energy",
+            _ => CapturePowerLoss(),
+            new EndToEndDeadline(600, 2_000, TimeSpan.FromSeconds(30)));
+        yield return new WaitUntilStep(
+            "the dishwasher remains paused at unchanged progress for one thousand underpowered ticks",
+            _ => Find.TickManager.TicksGame >= powerLossTick + 1_000 &&
+                 HandwashingE2EFixture.Nearly(
+                     ProcessorFrameworkAdapter.ProgressPercent(dishwasher),
+                     progressBeforePowerLoss),
+            new EndToEndDeadline(1_200, 3_000, TimeSpan.FromSeconds(45)));
+        yield return new TimeControlActionStep(
+            "pause on the under-capacity power interruption",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "the dishwasher reports only actionable utility status",
+            _ =>
+            {
+                var inspect = dishwasher.GetComp<CompDishwasher>()!.CompInspectStringExtra();
+                EndToEndAssert.True(
+                    inspect.IndexOf("not enough power", StringComparison.OrdinalIgnoreCase) >= 0,
+                    "The active dishwasher inspector must explain its power pause.");
+                EndToEndAssert.True(
+                    inspect.IndexOf("sewage", StringComparison.OrdinalIgnoreCase) < 0 &&
+                    inspect.IndexOf("network id", StringComparison.OrdinalIgnoreCase) < 0 &&
+                    inspect.IndexOf("ip", StringComparison.OrdinalIgnoreCase) < 0,
+                    "The dishwasher inspector must not expose optional plumbing diagnostics: " + inspect);
+            });
+        yield return new SelectionActionStep(
+            "select the dishwasher paused by insufficient power",
+            new[] { dishwasher.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the underpowered dishwasher and competing appliance",
+            new[] { dishwasher.ThingID, powerLoad!.ThingID },
+            paddingPixels: 180);
+        yield return new ScreenshotStep(
+            "active dishwasher visibly pauses when the native power net lacks capacity",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new AssertionStep(
+            "add one fully charged native battery to the same conduit network",
+            _ =>
+            {
+                battery = DispenserE2EFixture.SpawnBuilding(
+                    map,
+                    "Battery",
+                    center + new IntVec3(3, 0, 3));
+                battery.GetComp<CompPowerBattery>()?.SetStoredEnergyPct(1f);
+            });
+        yield return new TimeControlActionStep(
+            "let the charged battery join the native power net",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the same batch resumes from battery-backed power without another water debit",
+            _ => ProcessorFrameworkAdapter.ProgressPercent(dishwasher) >= progressBeforePowerLoss + 8f &&
+                 dishwasher.GetComp<CompPowerTrader>()?.PowerNet?.CurrentStoredEnergy() > 0.001f &&
+                 HandwashingE2EFixture.Nearly(
+                     HandwashingE2EFixture.ReadDubsNetworkWater(dishwasher),
+                     waterAfterDebit),
+            new EndToEndDeadline(1_500, 6_000, TimeSpan.FromSeconds(60)));
+        yield return new TimeControlActionStep(
+            "pause on battery-backed dishwasher progress",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the resumed dishwasher beside its battery",
+            new[] { dishwasher.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame battery-backed dishwasher progress",
+            new[] { dishwasher.ThingID, battery!.ThingID },
+            paddingPixels: 180);
+        yield return new ScreenshotStep(
+            "charged battery visibly restores the same dishwasher cycle",
             Array.Empty<string>(),
             paddingPixels: 0);
 
@@ -251,8 +399,50 @@ public sealed class DubsProcessorDishwasherWaterInterruptionTest : IRimWorldEndT
                 ["dishwasher"] = dishwasher.ThingID,
                 ["waterAfterDebit"] = waterAfterDebit.ToString("R"),
                 ["pausedProgress"] = progressBeforeLoss.ToString("R"),
+                ["powerPausedProgress"] = progressBeforePowerLoss.ToString("R"),
                 ["finalWater"] = HandwashingE2EFixture.ReadDubsNetworkWater(dishwasher).ToString("R")
             });
+    }
+
+    private bool CapturePowerLoss()
+    {
+        var dishwasherPower = dishwasher.GetComp<CompPowerTrader>();
+        var net = dishwasherPower?.PowerNet;
+        var loadPower = powerLoad?.GetComp<CompPowerTrader>();
+        var unpoweredDesiredLoads = net?.powerComps.Count(candidate =>
+            candidate != dishwasherPower &&
+            !candidate.PowerOn &&
+            candidate.Props.PowerConsumption > 0f &&
+            candidate.parent.Spawned &&
+            !candidate.parent.IsBrokenDown() &&
+            FlickUtility.WantsToBeOn(candidate.parent)) ?? 0;
+        var hasNativePowerShortage = dishwasherPower is not null &&
+                                     net is not null &&
+                                     !DishwasherUtilityPolicy.HasActivePower(
+                                         dishwasherPower.PowerOn,
+                                         net.CurrentEnergyGainRate(),
+                                         net.CurrentStoredEnergy(),
+                                         unpoweredDesiredLoads > 0);
+        if (net is null || !hasNativePowerShortage || net.CurrentStoredEnergy() > 0.001f)
+        {
+            if (Find.TickManager.TicksGame >= powerLoadSpawnTick + 250)
+            {
+                throw new EndToEndAssertionException(
+                    "The native overload did not establish the required no-storage power shortage: " +
+                    $"gain={net?.CurrentEnergyGainRate().ToString("R") ?? "missing"}; " +
+                    $"stored={net?.CurrentStoredEnergy().ToString("R") ?? "missing"}; " +
+                    $"dishwasherPowerOn={dishwasherPower?.PowerOn.ToString() ?? "missing"}; " +
+                    $"unpoweredDesiredLoads={unpoweredDesiredLoads}; " +
+                    $"loadOutput={loadPower?.PowerOutput.ToString("R") ?? "missing"}; " +
+                    $"sameNet={ReferenceEquals(net, loadPower?.PowerNet)}.");
+            }
+
+            return false;
+        }
+
+        progressBeforePowerLoss = ProcessorFrameworkAdapter.ProgressPercent(dishwasher);
+        powerLossTick = Find.TickManager.TicksGame;
+        return progressBeforePowerLoss > 0f;
     }
 
     private void ResolveLoadedFixtures()

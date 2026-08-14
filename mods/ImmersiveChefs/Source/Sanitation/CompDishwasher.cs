@@ -89,6 +89,82 @@ public static class DishwasherCyclePolicy
     }
 }
 
+public enum DishwasherUtilityBlocker
+{
+    None,
+    NoPower,
+    NoWater
+}
+
+public static class DishwasherUtilityPolicy
+{
+    public static bool HasActivePower(
+        bool powerOn,
+        float currentEnergyGainRate,
+        float currentStoredEnergy)
+    {
+        return HasActivePower(
+            powerOn,
+            currentEnergyGainRate,
+            currentStoredEnergy,
+            hasUnpoweredDesiredLoad: false);
+    }
+
+    public static bool HasActivePower(
+        bool powerOn,
+        float currentEnergyGainRate,
+        float currentStoredEnergy,
+        bool hasUnpoweredDesiredLoad)
+    {
+        if (!powerOn)
+        {
+            return false;
+        }
+
+        if (currentStoredEnergy > 0.0001f)
+        {
+            return true;
+        }
+
+        return currentEnergyGainRate >= -0.0001f && !hasUnpoweredDesiredLoad;
+    }
+
+    public static DishwasherUtilityBlocker Resolve(
+        bool powerOn,
+        bool activePowerAvailable,
+        bool requiresDubsWater,
+        bool waterDebited,
+        bool hasSuppliedConnection,
+        bool hasCycleWater)
+    {
+        if (!powerOn || !activePowerAvailable)
+        {
+            return DishwasherUtilityBlocker.NoPower;
+        }
+
+        if (requiresDubsWater &&
+            (!hasSuppliedConnection || (!waterDebited && !hasCycleWater)))
+        {
+            return DishwasherUtilityBlocker.NoWater;
+        }
+
+        return DishwasherUtilityBlocker.None;
+    }
+}
+
+public static class DishwasherInspectPolicy
+{
+    public static bool ShouldSuppressOptionalDiagnostic(
+        string? parentDefName,
+        string? assemblyName,
+        string? compTypeName)
+    {
+        return parentDefName is "ImmersiveChefs_Dishwasher" or "ImmersiveChefs_IndustrialDishwasher" &&
+               assemblyName?.IndexOf("BadHygiene", StringComparison.OrdinalIgnoreCase) >= 0 &&
+               compTypeName?.StartsWith("DubsBadHygiene.", StringComparison.Ordinal) == true;
+    }
+}
+
 public sealed class CompDishwasher : ThingComp, IThingHolder
 {
     private ThingOwner<Thing>? contents;
@@ -143,7 +219,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
         return thing is ThingWithComps withComps &&
                withComps.GetComp<CompSanitation>()?.IsDirty == true &&
-               parent.TryGetComp<CompPowerTrader>()?.PowerOn != false &&
+               HasActivePower() &&
                DishwasherCyclePolicy.CanAcceptAdditionalWare(
                    progressTicks,
                    waterDebitedForCycle,
@@ -285,10 +361,13 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     public override string CompInspectStringExtra()
     {
+        var utilityBlocker = InspectUtilityBlocker();
         if (ProcessorFrameworkAdapter.Controls(parent))
         {
             var processorLoad = ProcessorFrameworkAdapter.UsedPlateEquivalentCapacity(parent);
-            var processorStatus = processorLoad <= 0f
+            var processorStatus = utilityBlocker != DishwasherUtilityBlocker.None
+                ? TranslateUtilityBlocker(utilityBlocker)
+                : processorLoad <= 0f
                 ? "ImmersiveChefs_Dishwasher_StatusIdle".Translate()
                 : loadingTicksRemaining > 0
                     ? "ImmersiveChefs_Dishwasher_StatusLoading".Translate()
@@ -302,7 +381,9 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
                 Capacity.ToString("0.##"));
         }
 
-        var status = !Contents.Any
+        var status = utilityBlocker != DishwasherUtilityBlocker.None
+            ? TranslateUtilityBlocker(utilityBlocker)
+            : !Contents.Any
             ? "ImmersiveChefs_Dishwasher_StatusIdle".Translate()
             : loadingTicksRemaining > 0
                 ? "ImmersiveChefs_Dishwasher_StatusLoading".Translate()
@@ -353,6 +434,13 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             : "ImmersiveChefs_Dishwasher_PauseNoWater".Translate();
     }
 
+    private static TaggedString TranslateUtilityBlocker(DishwasherUtilityBlocker blocker)
+    {
+        return blocker == DishwasherUtilityBlocker.NoPower
+            ? "ImmersiveChefs_Dishwasher_PauseNoPower".Translate()
+            : "ImmersiveChefs_Dishwasher_PauseNoWater".Translate();
+    }
+
     public override void PostExposeData()
     {
         base.PostExposeData();
@@ -385,7 +473,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     internal bool CanAcceptProcessorWare(bool hasProcessorContents)
     {
-        if (parent.TryGetComp<CompPowerTrader>()?.PowerOn == false)
+        if (!HasActivePower())
         {
             return false;
         }
@@ -420,8 +508,15 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             return false;
         }
 
-        if (parent.TryGetComp<CompPowerTrader>()?.PowerOn == false)
+        var blocker = CurrentUtilityBlocker(
+            cycleWaterAvailable: !RequiresDubsWater ||
+                                 waterDebitedForCycle ||
+                                 DubsWaterAdapter.CanSupplyCycleWater(parent, capturedWaterCharge));
+        if (blocker != DishwasherUtilityBlocker.None)
         {
+            pauseReason = blocker == DishwasherUtilityBlocker.NoPower
+                ? "no power"
+                : "water supply unavailable";
             return false;
         }
 
@@ -440,10 +535,19 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     private bool CanProgress(out string reason)
     {
-        var power = parent.GetComp<CompPowerTrader>();
-        if (power is not null && !power.PowerOn)
+        var blocker = CurrentUtilityBlocker(
+            cycleWaterAvailable: !RequiresDubsWater ||
+                                 waterDebitedForCycle ||
+                                 DubsWaterAdapter.CanSupplyCycleWater(parent, capturedWaterCharge));
+        if (blocker == DishwasherUtilityBlocker.NoPower)
         {
             reason = "no power";
+            return false;
+        }
+
+        if (blocker == DishwasherUtilityBlocker.NoWater)
+        {
+            reason = "water supply unavailable";
             return false;
         }
 
@@ -510,7 +614,7 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
                 Props.waterPerPlateEquivalent);
         }
 
-        if (parent.TryGetComp<CompPowerTrader>()?.PowerOn == false)
+        if (!HasActivePower())
         {
             pauseReason = "no power";
             return;
@@ -544,6 +648,63 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         }
 
         pauseReason = string.Empty;
+    }
+
+    private DishwasherUtilityBlocker InspectUtilityBlocker()
+    {
+        var requiredWater = batchCaptured && !waterDebitedForCycle
+            ? Math.Max(0.001f, capturedWaterCharge)
+            : 0.001f;
+        return CurrentUtilityBlocker(
+            cycleWaterAvailable: !RequiresDubsWater ||
+                                 DubsWaterAdapter.CanSupplyCycleWater(parent, requiredWater));
+    }
+
+    private DishwasherUtilityBlocker CurrentUtilityBlocker(bool cycleWaterAvailable)
+    {
+        var power = parent.TryGetComp<CompPowerTrader>();
+        return DishwasherUtilityPolicy.Resolve(
+            powerOn: power?.PowerOn == true,
+            activePowerAvailable: HasActivePower(power),
+            requiresDubsWater: RequiresDubsWater,
+            waterDebited: waterDebitedForCycle,
+            hasSuppliedConnection: !RequiresDubsWater || DubsWaterAdapter.HasSuppliedConnection(parent),
+            hasCycleWater: cycleWaterAvailable);
+    }
+
+    private bool HasActivePower()
+    {
+        return HasActivePower(parent.TryGetComp<CompPowerTrader>());
+    }
+
+    private static bool HasActivePower(CompPowerTrader? power)
+    {
+        var net = power?.PowerNet;
+        return power is not null && net is not null && DishwasherUtilityPolicy.HasActivePower(
+            power.PowerOn,
+            net.CurrentEnergyGainRate(),
+            net.CurrentStoredEnergy(),
+            HasUnpoweredDesiredLoad(net, power));
+    }
+
+    private static bool HasUnpoweredDesiredLoad(PowerNet net, CompPowerTrader dishwasherPower)
+    {
+        foreach (var candidate in net.powerComps)
+        {
+            if (ReferenceEquals(candidate, dishwasherPower) ||
+                candidate.PowerOn ||
+                candidate.Props.PowerConsumption <= 0f ||
+                !candidate.parent.Spawned ||
+                candidate.parent.IsBrokenDown() ||
+                !FlickUtility.WantsToBeOn(candidate.parent))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private void EjectAll()

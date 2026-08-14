@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using RimWorld.Planet;
@@ -13,6 +14,212 @@ namespace ImmersiveChefs.InGame.IntegrationTests;
 
 public static class FinalizedImmersiveChefsIntegrationTests
 {
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CompletedDiningLeavesExactDirtySettingOnNativeTableCell()
+    {
+        var map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
+        var fixture = map.AllCells
+            .Where(cell => CellRect.CenteredOn(cell, 3).Cells.All(candidate =>
+                candidate.InBounds(map) && candidate.Standable(map) &&
+                candidate.GetThingList(map).Count == 0))
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .First();
+        var table = ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("Table1x2c"),
+            ThingDefOf.Steel);
+        var pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var plate = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var cutlery = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cutlery"),
+            ThingDefOf.Steel);
+        DiningSession? session = null;
+
+        try
+        {
+            GenSpawn.Spawn(table, fixture, map, Rot4.North);
+            var tableCell = table.OccupiedRect().Cells.First(cell => cell.HasEatSurface(map));
+            var diningCell = GenAdj.CellsAdjacentCardinal(table)
+                .First(cell => cell.InBounds(map) && cell.Standable(map));
+            GenSpawn.Spawn(pawn, diningCell, map);
+            plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
+            var job = JobMaker.MakeJob(JobDefOf.Ingest);
+            job.SetTarget(TargetIndex.B, tableCell);
+            session = new DiningSession(
+                pawn,
+                job,
+                cutlery,
+                null,
+                null,
+                DiningCutlerySource.Colony);
+            session.PickupCutlery();
+            session.CapturePlate(plate);
+
+            session.Finish();
+
+            IntegrationAssert.True(
+                plate.Spawned && plate.Position == tableCell,
+                "The exact used plate must remain on the native ingest job's selected table cell.");
+            IntegrationAssert.True(
+                cutlery.Spawned && cutlery.Position == tableCell,
+                "The exact used cutlery must remain beside the plate on the native selected table cell.");
+            IntegrationAssert.True(
+                table is Building { MaxItemsInCell: 2 } && tableCell.GetItemCount(map) == 2,
+                "A dining surface must use the native two-item cell capacity without merging the exact setting.");
+            IntegrationAssert.True(
+                plate.DrawPos != cutlery.DrawPos,
+                "RimWorld's native multiple-items-per-cell rendering must offset the plate and cutlery visibly.");
+            IntegrationAssert.True(
+                plate.GetComp<CompSanitation>().IsDirty &&
+                cutlery.GetComp<CompSanitation>().IsDirty,
+                "Both exact table-setting Things must become dirty only after completed dining.");
+        }
+        finally
+        {
+            foreach (var thing in new Thing[] { cutlery, plate, pawn, table })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void LaterCoveredCookingAdmissionMovesDirtySurfaceCookwareAsideIntact()
+    {
+        var map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
+        var fixture = map.AllCells
+            .Where(cell => CellRect.CenteredOn(cell, 3).Cells.All(candidate =>
+                candidate.InBounds(map) && candidate.Standable(map) &&
+                candidate.GetThingList(map).Count == 0))
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .First();
+        var stove = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("FueledStove"));
+        var pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var cookware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware"),
+            ThingDefOf.Steel);
+        var job = JobMaker.MakeJob(JobDefOf.DoBill, stove);
+        var priorMode = ImmersiveChefsMod.Settings.WareRequirementMode;
+
+        try
+        {
+            GenSpawn.Spawn(stove, fixture, map, Rot4.North);
+            GenSpawn.Spawn(pawn, stove.InteractionCell, map);
+            GenSpawn.Spawn(cookware, stove.Position, map);
+            cookware.GetComp<CompSanitation>().MarkDirty();
+            cookware.SetForbidden(true, warnOnFail: false);
+            var thingId = cookware.ThingID;
+            var hitPoints = cookware.HitPoints;
+            var quality = cookware.TryGetComp<CompQuality>()?.Quality;
+            ImmersiveChefsMod.Settings.WareRequirementMode = WareRequirementMode.Off;
+
+            IntegrationAssert.True(
+                CookingSessionRegistry.TryAttach(
+                    pawn,
+                    job,
+                    stove,
+                    DefDatabase<RecipeDef>.GetNamed("CookMealSimple"),
+                    emergency: false,
+                    out var missingReason),
+                "A covered ware-exempt cooking attempt must be admitted: " + missingReason);
+
+            IntegrationAssert.True(
+                cookware.Spawned && !stove.OccupiedRect().Contains(cookware.Position),
+                "Admitting the later cooking attempt must move prior dirty cookware off the stove surface.");
+            IntegrationAssert.True(
+                cookware.ThingID == thingId && cookware.stackCount == 1 &&
+                cookware.HitPoints == hitPoints &&
+                cookware.TryGetComp<CompQuality>()?.Quality == quality &&
+                cookware.GetComp<CompSanitation>().IsDirty && cookware.IsForbidden(Faction.OfPlayer),
+                "Moving cookware aside must preserve exact identity, unit count, condition, quality, sanitation and forbiddance.");
+        }
+        finally
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = priorMode;
+            CookingSessionRegistry.Cleanup(pawn, job);
+            foreach (var thing in new Thing[] { cookware, pawn, stove })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CompletedCookingLeavesExactDirtyCookwareOnBillGiverSurface()
+    {
+        var map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
+        var fixture = map.AllCells
+            .Where(cell => CellRect.CenteredOn(cell, 3).Cells.All(candidate =>
+                candidate.InBounds(map) && candidate.Standable(map) &&
+                candidate.GetThingList(map).Count == 0))
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .First();
+        var stove = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("FueledStove"));
+        var pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var cookware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware"),
+            ThingDefOf.Steel);
+        var job = JobMaker.MakeJob(JobDefOf.DoBill, stove);
+
+        try
+        {
+            GenSpawn.Spawn(stove, fixture, map, Rot4.North);
+            GenSpawn.Spawn(pawn, stove.InteractionCell, map);
+            IntegrationAssert.True(
+                pawn.inventory.innerContainer.TryAdd(cookware, canMergeWithExistingStacks: false),
+                "The active-cooking fixture must retain the exact cookware in the cook inventory.");
+            var session = new CookingSession(
+                pawn,
+                job,
+                DefDatabase<RecipeDef>.GetNamed("CookMealSimple"),
+                stove,
+                new ReservedWarePortion(cookware, 1),
+                Array.Empty<ReservedWarePortion>(),
+                emergencyMissingWare: false,
+                wareExempt: false);
+
+            session.NotifyWorkTick();
+            session.ReleaseAtEnd();
+
+            IntegrationAssert.True(
+                cookware.Spawned && stove.OccupiedRect().Contains(cookware.Position),
+                "Active cooking completion must return the exact cookware to the stove surface.");
+            IntegrationAssert.True(
+                cookware.stackCount == 1 && cookware.GetComp<CompSanitation>().IsDirty,
+                "The one exact returned cookware set must remain dirty and unconsumed.");
+        }
+        finally
+        {
+            foreach (var thing in new Thing[] { cookware, pawn, stove })
+            {
+                if (!thing.Destroyed)
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
     [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void SpawnedReservedWareReleaseAndEmptyDishCarrierAreIdempotent()
     {
@@ -751,6 +958,74 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 patch.owner == ImmersiveChefsMod.PackageId &&
                 patch.PatchMethod?.DeclaringType?.Name == "PlatedMealFoodOptimalityPatch") == true,
             "Immersive Chefs must install the finalized plated-meal tie breaker.");
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void ImportedMealScannerDoesNotAdvertiseAnUnavailablePlatingJob()
+    {
+        var map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
+        var worker = map.mapPawns.FreeColonistsSpawned.First();
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        var mealCell = CellFinder.RandomClosewalkCellNear(worker.Position, map, 4);
+        var priorMode = ImmersiveChefsMod.Settings.WareRequirementMode;
+        var priorFallback = ImmersiveChefsMod.Settings.DirtyWareFallback;
+        var plateStates = map.listerThings.AllThings
+            .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == KitchenwareProduct.Plate)
+            .Select(thing => (Thing: thing, Forbidden: thing.IsForbidden(worker)))
+            .ToList();
+        var hungerStates = map.mapPawns.FreeColonistsSpawned
+            .Where(pawn => pawn.needs?.food is not null)
+            .Select(pawn => (Pawn: pawn, Level: pawn.needs.food.CurLevel))
+            .ToList();
+
+        try
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = WareRequirementMode.Prefer;
+            ImmersiveChefsMod.Settings.DirtyWareFallback = DirtyWareFallback.Never;
+            foreach (var state in plateStates)
+            {
+                state.Thing.SetForbidden(true, warnOnFail: false);
+            }
+
+            foreach (var state in hungerStates)
+            {
+                state.Pawn.needs.food.CurLevel = state.Pawn.needs.food.MaxLevel;
+            }
+
+            GenSpawn.Spawn(meal, mealCell, map);
+            var scanner = new WorkGiver_PlateMeals();
+            var hasJob = scanner.HasJobOnThing(worker, meal);
+            var job = scanner.JobOnThing(worker, meal);
+
+            IntegrationAssert.True(!hasJob,
+                "The scanner must not advertise an imported-meal target when no permitted plate is available.");
+            IntegrationAssert.Null(job,
+                "The paired JobOnThing call must agree with the scanner instead of triggering RimWorld's no-actual-job error.");
+            IntegrationAssert.True(meal.GetComp<CompEmbeddedWare>().PlatingOpportunityFailed,
+                "Prefer mode must still remember the failed real plating opportunity.");
+        }
+        finally
+        {
+            foreach (var state in hungerStates)
+            {
+                if (!state.Pawn.Destroyed)
+                {
+                    state.Pawn.needs.food.CurLevel = state.Level;
+                }
+            }
+
+            foreach (var state in plateStates)
+            {
+                if (!state.Thing.Destroyed)
+                {
+                    state.Thing.SetForbidden(state.Forbidden, warnOnFail: false);
+                }
+            }
+
+            ImmersiveChefsMod.Settings.WareRequirementMode = priorMode;
+            ImmersiveChefsMod.Settings.DirtyWareFallback = priorFallback;
+            if (!meal.Destroyed) meal.Destroy(DestroyMode.Vanish);
+        }
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
@@ -3053,6 +3328,15 @@ public static class FinalizedImmersiveChefsIntegrationTests
                     ReferenceEquals(processorJob.GetTarget(TargetIndex.A).Thing, dishwasher) &&
                     ReferenceEquals(processorJob.GetTarget(TargetIndex.B).Thing, plate),
                     "The Processor job must persist the exact powered dishwasher and dirty ware targets.");
+                var staleDriver = processorJob!.MakeDriver(pawn);
+                sanitation.MarkClean(WashProvenance.Safe);
+                IntegrationAssert.False(
+                    staleDriver.TryMakePreToilReservations(errorOnFailed: true),
+                    "A queued Processor fill job must fail before reserving or hauling ware that has since become clean.");
+                IntegrationAssert.True(
+                    plate.Spawned && !pawn.Map.reservationManager.IsReservedByAnyoneOf(plate, Faction.OfPlayer),
+                    "Rejecting stale Processor work must leave the exact clean ware spawned and unreserved for storage.");
+                sanitation.MarkDirty();
             }
             else
             {
@@ -3691,6 +3975,13 @@ public static class FinalizedImmersiveChefsIntegrationTests
         var initialize = AccessTools.Method(processorType, "Initialize");
         var addIngredient = AccessTools.Method(processorType, "AddIngredient");
         var takeOut = AccessTools.Method(processorType, "TakeOutProduct");
+        var fillDriverType = AccessTools.TypeByName("ProcessorFramework.JobDriver_FillProcessor");
+        var fillReservations = fillDriverType?.GetMethod(
+            nameof(JobDriver.TryMakePreToilReservations),
+            BindingFlags.Public | BindingFlags.Instance,
+            binder: null,
+            types: new[] { typeof(bool) },
+            modifiers: null);
         var addIngredientPatches = Harmony.GetPatchInfo(addIngredient);
         var owners = Harmony.GetPatchInfo(takeOut)?.Owners
             .Count(owner => owner == ImmersiveChefsMod.PackageId) ?? 0;
@@ -3704,6 +3995,9 @@ public static class FinalizedImmersiveChefsIntegrationTests
             .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
             "New dishwashers must have one Immersive Chefs process-enablement postfix.");
         IntegrationAssert.Equal(1, owners, "Processor completion must have one Immersive Chefs identity bridge.");
+        IntegrationAssert.Equal(1, Harmony.GetPatchInfo(fillReservations)?.Prefixes
+            .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
+            "Processor fill jobs must have one Immersive Chefs stale-clean reservation guard.");
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]

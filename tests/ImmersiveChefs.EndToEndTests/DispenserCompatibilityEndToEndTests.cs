@@ -27,6 +27,10 @@ namespace ImmersiveChefs.EndToEndTests;
     MaxWallClockSeconds = 270)]
 public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
 {
+    private const string EvidenceHarmonyOwner =
+        "fumblesneeze.immersivechefs.e2e.replimat-table-evidence";
+    private static ReplimatNativeDiningTest? activeEvidenceTest;
+
     private Map map = null!;
     private Pawn diner = null!;
     private ThingWithComps terminal = null!;
@@ -34,6 +38,8 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
     private ThingWithComps computer = null!;
     private ThingWithComps dishwasher = null!;
     private ThingWithComps waterTower = null!;
+    private Thing table = null!;
+    private Thing chair = null!;
     private ThingWithComps plate = null!;
     private ThingWithComps cutlery = null!;
     private ThingWithComps? dispensedMeal;
@@ -45,9 +51,25 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
     private bool dirtyReturnObserved;
     private bool commonSenseCleanupJobObserved;
     private bool commonSenseQueuedSecondWareObserved;
+    private IntVec3 usedTableCell = IntVec3.Invalid;
 
     public void Arrange(IEndToEndContext context)
     {
+        var evidenceHarmony = new Harmony(EvidenceHarmonyOwner);
+        evidenceHarmony.Patch(
+            AccessTools.Method(
+                typeof(CommonSenseAdapter),
+                nameof(CommonSenseAdapter.TryQueueCommittedHandoff)),
+            prefix: new HarmonyMethod(
+                typeof(ReplimatNativeDiningTest),
+                nameof(PauseOnNaturalTableReturn)));
+        activeEvidenceTest = this;
+        context.DeferCleanup(() =>
+        {
+            evidenceHarmony.UnpatchAll(EvidenceHarmonyOwner);
+            activeEvidenceTest = null;
+        });
+
         map = Current.Game.CurrentMap;
         var center = FoodSearchE2EFixture.FindRoomCenter(map);
         FoodSearchE2EFixture.BuildSealedRoom(map, center);
@@ -63,6 +85,16 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
             "ImmersiveChefs_Dishwasher",
             center + new IntVec3(3, 0, 3));
         waterTower = DispenserE2EFixture.SpawnDubsWaterSupply(map, dishwasher, 10f);
+        table = SpawnFurniture(
+            "Table1x2c",
+            center + new IntVec3(0, 0, 3),
+            Rot4.North,
+            ThingDefOf.WoodLog);
+        chair = SpawnFurniture(
+            "DiningChair",
+            center + new IntVec3(0, 0, 2),
+            Rot4.North,
+            ThingDefOf.WoodLog);
         DispenserE2EFixture.SettlePower(map, new[] { terminal, tank, computer, dishwasher }, 600);
 
         EndToEndAssert.True(
@@ -111,10 +143,22 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
+        if (Find.WindowStack.Windows.Any(window =>
+                string.Equals(
+                    window.GetType().FullName,
+                    "LudeonTK.EditWindow_Log",
+                    StringComparison.Ordinal)))
+        {
+            yield return new WindowCancelActionStep(
+                "close the startup developer log before observing gameplay",
+                "LudeonTK.EditWindow_Log");
+        }
+
         var fixture = new[]
         {
             diner.ThingID, terminal.ThingID, tank.ThingID, computer.ThingID,
-            dishwasher.ThingID, waterTower.ThingID, plate.ThingID, cutlery.ThingID
+            dishwasher.ThingID, waterTower.ThingID, table.ThingID,
+            plate.ThingID, cutlery.ThingID
         };
         yield return new SelectionActionStep("select the native Replimat fixture", fixture, additive: false);
         yield return new CameraActionStep("frame the native Replimat fixture", fixture, paddingPixels: 220);
@@ -160,7 +204,11 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
             paused: false,
             EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
-            "Replimat meal returns the same dirty setting",
+            "the Replimat diner uses a native table cell",
+            _ => ObserveNativeTableDining(),
+            new EndToEndDeadline(1_800, 6_000, TimeSpan.FromSeconds(60)));
+        yield return new WaitUntilStep(
+            "Replimat meal returns the same dirty setting to the used table cell",
             _ => ObserveDirtyReturn(),
             new EndToEndDeadline(3_600, 16_000, TimeSpan.FromSeconds(105)));
         yield return new TimeControlActionStep(
@@ -168,6 +216,18 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
             paused: true,
             EndToEndGameSpeed.Normal);
         yield return new AssertionStep("Replimat native lifecycle completes once", _ => AssertCompleted());
+        yield return new CameraActionStep(
+            "frame the exact dirty setting on its used table cell",
+            new[] { table.ThingID, plate.ThingID, cutlery.ThingID },
+            paddingPixels: 70);
+        yield return new SelectionActionStep(
+            "keep the returned table setting unobscured",
+            Array.Empty<string>(),
+            additive: false);
+        yield return new ScreenshotStep(
+            "exact Replimat plate and cutlery visibly share their used table cell",
+            Array.Empty<string>(),
+            paddingPixels: 0);
         yield return new TimeControlActionStep(
             "resume Common Sense returned-setting cleanup",
             paused: false,
@@ -228,6 +288,8 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
                 ["cutleryThingId"] = cutlery.ThingID,
                 ["dishwasherThingId"] = dishwasher.ThingID,
                 ["waterTowerThingId"] = waterTower.ThingID,
+                ["tableThingId"] = table.ThingID,
+                ["usedTableCell"] = usedTableCell.ToString(),
                 ["dirtyReturnObserved"] = dirtyReturnObserved.ToString(),
                 ["commonSenseCleanupJobObserved"] = commonSenseCleanupJobObserved.ToString(),
                 ["commonSenseQueuedSecondWareObserved"] = commonSenseQueuedSecondWareObserved.ToString(),
@@ -309,13 +371,54 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
     {
         if (dispensedMeal?.Destroyed != true ||
             !plate.Spawned || plate.GetComp<CompSanitation>()?.IsDirty != true ||
-            !cutlery.Spawned || cutlery.GetComp<CompSanitation>()?.IsDirty != true)
+            !cutlery.Spawned || cutlery.GetComp<CompSanitation>()?.IsDirty != true ||
+            !usedTableCell.IsValid ||
+            plate.Position != usedTableCell ||
+            cutlery.Position != usedTableCell)
         {
             return false;
         }
 
         dirtyReturnObserved = true;
         return true;
+    }
+
+    private static void PauseOnNaturalTableReturn(Pawn responsiblePawn, Job? diningJob)
+    {
+        var test = activeEvidenceTest;
+        if (test is null ||
+            !ReferenceEquals(responsiblePawn, test.diner) ||
+            !ReferenceEquals(diningJob, test.diner.CurJob) ||
+            !test.usedTableCell.IsValid ||
+            !test.plate.Spawned ||
+            !test.cutlery.Spawned ||
+            test.plate.Position != test.usedTableCell ||
+            test.cutlery.Position != test.usedTableCell ||
+            test.plate.GetComp<CompSanitation>()?.IsDirty != true ||
+            test.cutlery.GetComp<CompSanitation>()?.IsDirty != true)
+        {
+            return;
+        }
+
+        test.dirtyReturnObserved = true;
+        Find.TickManager.Pause();
+    }
+
+    private bool ObserveNativeTableDining()
+    {
+        if (diner.CurJobDef != JobDefOf.Ingest || diner.CurJob is null)
+        {
+            return false;
+        }
+
+        var target = diner.CurJob.GetTarget(TargetIndex.B).Cell;
+        if (!target.IsValid || !target.InBounds(map) || !target.HasEatSurface(map))
+        {
+            return false;
+        }
+
+        usedTableCell = target;
+        return table.OccupiedRect().Contains(target);
     }
 
     private bool ObserveCommonSenseCleanupJob()
@@ -381,6 +484,17 @@ public sealed class ReplimatNativeDiningTest : IRimWorldEndToEndTest
 
     private static bool IsReplimatMeal(Thing thing) =>
         MealClassificationCatalog.ReplimatMealDefNames.Contains(thing.def.defName);
+
+    private static Thing SpawnFurniture(
+        string defName,
+        IntVec3 cell,
+        Rot4 rotation,
+        ThingDef stuff)
+    {
+        var furniture = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed(defName), stuff);
+        furniture.SetFactionDirect(Faction.OfPlayer);
+        return GenSpawn.Spawn(furniture, cell, Current.Game.CurrentMap, rotation);
+    }
 }
 
 [RimWorldEndToEndTest(

@@ -140,7 +140,7 @@
   <ImmersiveChefs_Dishwasher_StatusLoading>cargando</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>lavando ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>en pausa: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
-  <ImmersiveChefs_Dishwasher_PauseNoPower>sin electricidad</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>energía insuficiente</ImmersiveChefs_Dishwasher_PauseNoPower>
   <ImmersiveChefs_Dishwasher_PauseNoWater>sin suministro de agua</ImmersiveChefs_Dishwasher_PauseNoWater>
   <ImmersiveChefs_Dishwasher_Inspect>Lavavajillas: {0}\nCapacidad: {1}/{2} servicios</ImmersiveChefs_Dishwasher_Inspect>
   <ImmersiveChefs_Dishwasher_EjectLabel>Expulsar vajilla</ImmersiveChefs_Dishwasher_EjectLabel>

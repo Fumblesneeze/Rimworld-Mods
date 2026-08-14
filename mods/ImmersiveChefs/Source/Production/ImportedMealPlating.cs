@@ -7,6 +7,13 @@ namespace ImmersiveChefs;
 
 public sealed class WorkGiver_PlateMeals : WorkGiver_Scanner
 {
+    private Pawn? cachedPawn;
+    private Thing? cachedThing;
+    private Job? cachedJob;
+    private int cachedTick = -1;
+    private bool cachedForced;
+    private bool hasCachedResult;
+
     public override ThingRequest PotentialWorkThingRequest =>
         ThingRequest.ForGroup(ThingRequestGroup.HaulableEver);
 
@@ -14,19 +21,42 @@ public sealed class WorkGiver_PlateMeals : WorkGiver_Scanner
 
     public override bool HasJobOnThing(Pawn pawn, Thing thing, bool forced = false)
     {
-        if (!ImportedMealPlatingRuntime.NeedsPlating(thing) ||
-            thing.IsForbidden(pawn) ||
-            !pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some))
-        {
-            return false;
-        }
-
-        return ImmersiveChefsMod.Settings.WareRequirementMode != WareRequirementMode.Off;
+        cachedPawn = pawn;
+        cachedThing = thing;
+        cachedForced = forced;
+        cachedTick = Find.TickManager?.TicksGame ?? -1;
+        cachedJob = TryCreateJob(pawn, thing, recordFailedOpportunity: true);
+        hasCachedResult = true;
+        return cachedJob is not null;
     }
 
     public override Job? JobOnThing(Pawn pawn, Thing thing, bool forced = false)
     {
-        if (!HasJobOnThing(pawn, thing, forced))
+        var tick = Find.TickManager?.TicksGame ?? -1;
+        if (hasCachedResult &&
+            ReferenceEquals(cachedPawn, pawn) &&
+            ReferenceEquals(cachedThing, thing) &&
+            cachedForced == forced &&
+            cachedTick == tick)
+        {
+            var result = cachedJob;
+            ClearCachedResult();
+            return result;
+        }
+
+        ClearCachedResult();
+        return TryCreateJob(pawn, thing, recordFailedOpportunity: true);
+    }
+
+    private static Job? TryCreateJob(
+        Pawn pawn,
+        Thing thing,
+        bool recordFailedOpportunity)
+    {
+        if (ImmersiveChefsMod.Settings.WareRequirementMode == WareRequirementMode.Off ||
+            !ImportedMealPlatingRuntime.NeedsPlating(thing) ||
+            thing.IsForbidden(pawn) ||
+            !pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some))
         {
             return null;
         }
@@ -36,7 +66,11 @@ public sealed class WorkGiver_PlateMeals : WorkGiver_Scanner
             !TryFindSurface(pawn, thing, out var surface) ||
             !TryFindPlate(pawn, thing, embedded, out var plate, out var count))
         {
-            ImportedMealPlatingRuntime.RecordFailedOpportunity(pawn, thing, embedded);
+            if (recordFailedOpportunity)
+            {
+                ImportedMealPlatingRuntime.RecordFailedOpportunity(pawn, thing, embedded);
+            }
+
             return null;
         }
 
@@ -47,6 +81,16 @@ public sealed class WorkGiver_PlateMeals : WorkGiver_Scanner
             surface);
         job.count = count;
         return job;
+    }
+
+    private void ClearCachedResult()
+    {
+        cachedPawn = null;
+        cachedThing = null;
+        cachedJob = null;
+        cachedTick = -1;
+        cachedForced = false;
+        hasCachedResult = false;
     }
 
     private static bool TryFindSurface(Pawn pawn, Thing meal, out Thing surface)

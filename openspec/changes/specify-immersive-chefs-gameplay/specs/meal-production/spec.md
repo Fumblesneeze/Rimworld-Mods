@@ -65,6 +65,23 @@ Once the lead pawn begins the recipe's active cooking toil, the exact reserved c
 - **THEN** that exact set is visibly centered between pawn and work surface with its material treatment
 - **THEN** completion or interruption removes the work prop and releases the same physical set under the sanitation lifecycle
 
+### Requirement: Used cookware remains on its cooking station
+
+After active work begins, completion or interruption SHALL return the exact reserved cookware dirty to an occupied surface cell of the bill giver rather than placing it arbitrarily nearby. The physical Thing, Stuff, quality, hit points, sanitation, forbiddance and reservation semantics SHALL be preserved. When a later covered cooking attempt is admitted at that bill giver, each unheld dirty cookware set still occupying its surface SHALL be moved intact to a valid nearby non-station cell before the new active cooking toil begins, making room for the current work without deleting, duplicating, merging, or cosmetically replacing the previous set. A job cancelled before active work SHALL retain its existing clean recovery behavior and SHALL NOT create dirty stove clutter.
+
+#### Scenario: Cook finishes at a stove
+- **WHEN** a covered cooking job performed active work with one exact reserved cookware set
+- **THEN** that same set is dirty and remains visibly on an occupied stove cell after the job ends
+
+#### Scenario: The next cook needs the occupied work surface
+- **WHEN** a later covered cooking attempt is admitted while one or more dirty cookware sets remain on the bill giver surface
+- **THEN** those exact dirty sets are moved to valid nearby non-station cells before the new active work begins
+- **THEN** their sanitation, material, quality, hit points, forbidden state and physical unit count remain unchanged
+
+#### Scenario: Cooking stops before work begins
+- **WHEN** a reserved cooking job is interrupted during hauling before its active cooking toil starts
+- **THEN** its exact cookware remains clean and follows ordinary recovery rather than being presented as used cookware on the stove
+
 ### Requirement: Meal complexity sets the minimum plate material
 Plate eligibility SHALL use an explicit minimum material tier independently from crafting quality and sanitation. A `Simple` recipe or covered meal SHALL accept any registered plate material, including wood, adobe, and stone. An `Advanced`/Fine recipe or meal SHALL accept metal, registered plastic, or registered ceramic/porcelain and SHALL reject wood, adobe, and stone. An `Elaborate`/Lavish recipe or meal SHALL accept only silver, gold, or registered ceramic/porcelain. An unclassified covered mod recipe or meal SHALL default to the Simple plate tier unless compatibility XML explicitly supplies a minimum plate tier. Clean-first and dirty-fallback rules SHALL operate only within the eligible material set; an emergency MAY produce an explicitly unplated serving but MUST NOT silently downgrade to an ineligible plate material.
 

@@ -112,12 +112,17 @@ When `Orion.Hospitality` is active and the locally supported `Hospitality.Utilit
 
 ### Requirement: Common Sense assigns opportunistic post-dining cleanup
 
-When `avilmask.CommonSense` is active and the locally supported `CommonSense` assembly exposes public `CommonSense.Settings.adv_cleaning_ingest : bool` plus public static `CommonSense.Utility.IncapableOfCleaning(Verse.Pawn) : bool`, Immersive Chefs SHALL extend completed map dining with one opportunistic cleanup handoff. After self-eating, the diner SHALL claim the exact dirty plate and cutlery released by that serving; after `FeedPatient`, the nurse SHALL claim them instead of the patient. The responsible pawn SHALL prefer hauling the ware to a reachable, reservable, accepting dishwasher and SHALL otherwise use the ordinary Immersive Chefs hand-washing source order. This handoff SHALL start only after eating or feeding has committed, SHALL preserve exact Thing identity and sanitation state, and SHALL NOT delay ingestion, duplicate a Gastronomy-owned clearing job, apply on caravans, retain reservations when no path is viable, or retry indefinitely. If the package is absent, disabled, or shape-incompatible, ordinary Immersive Chefs cleaning remains available and only this adapter is disabled.
+When `avilmask.CommonSense` is active and the locally supported `CommonSense` assembly exposes public `CommonSense.Settings.adv_cleaning_ingest : bool` plus public static `CommonSense.Utility.IncapableOfCleaning(Verse.Pawn) : bool`, Immersive Chefs SHALL extend completed map dining with one opportunistic cleanup handoff. After self-eating, the diner SHALL claim the exact dirty plate and cutlery released by that serving from the exact used table cell when vanilla dining selected one, or from the normal near-diner fallback otherwise; after `FeedPatient`, the nurse SHALL claim them instead of the patient. The responsible pawn SHALL prefer hauling the ware to a reachable, reservable, accepting dishwasher and SHALL otherwise use the ordinary Immersive Chefs hand-washing source order. This handoff SHALL start only after eating or feeding has committed, SHALL preserve exact Thing identity and sanitation state, and SHALL NOT delay ingestion, duplicate a Gastronomy-owned clearing job, apply on caravans, retain reservations when no path is viable, or retry indefinitely. If the package is absent, disabled, or shape-incompatible, ordinary Immersive Chefs cleaning remains available and only this adapter is disabled.
 
 #### Scenario: Diner brings used service ware to a dishwasher
 
 - **WHEN** a self-diner completes an eligible meal with Common Sense active and the exact resulting dirty plate and cutlery can enter an accepting dishwasher
 - **THEN** that diner claims both items after eating and hauls them to the dishwasher before considering a hand-washing source
+
+#### Scenario: Diner clears the exact table setting
+
+- **WHEN** native dining left the exact dirty plate and cutlery on its selected table cell and Common Sense cleanup is eligible
+- **THEN** the responsible diner claims those same table Things and begins dishwasher-first cleanup without creating substitute ware or bypassing the visible table state
 
 #### Scenario: Nurse clears after assisted feeding
 

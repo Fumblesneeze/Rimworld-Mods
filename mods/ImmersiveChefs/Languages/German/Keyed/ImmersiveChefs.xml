@@ -140,7 +140,7 @@
   <ImmersiveChefs_Dishwasher_StatusLoading>wird beladen</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>spült ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>pausiert: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
-  <ImmersiveChefs_Dishwasher_PauseNoPower>kein Strom</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>nicht genug Strom</ImmersiveChefs_Dishwasher_PauseNoPower>
   <ImmersiveChefs_Dishwasher_PauseNoWater>keine Wasserversorgung</ImmersiveChefs_Dishwasher_PauseNoWater>
   <ImmersiveChefs_Dishwasher_Inspect>Spülmaschine: {0}\nKapazität: {1}/{2} Gedecke</ImmersiveChefs_Dishwasher_Inspect>
   <ImmersiveChefs_Dishwasher_EjectLabel>Geschirr auswerfen</ImmersiveChefs_Dishwasher_EjectLabel>

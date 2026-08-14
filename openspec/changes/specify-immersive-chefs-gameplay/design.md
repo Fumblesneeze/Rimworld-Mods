@@ -198,6 +198,14 @@ Package absence and an `Off` setting silently leave the adapter inactive. Drift 
 
 Verification keeps ordinary covered workflows in the exact Harmony/Core/Cook for Yourself/Immersive Chefs group. The excluded-food proof uses a distinct Harmony/Core/Biotech/Cook for Yourself/Immersive Chefs group so a real baby triggers the upstream `Make_BabyFood` recipe and native `BottleFeedBaby` job under strict ware settings with no kitchenware present. This makes a false adapter admission fail visibly while leaving Biotech and Cook for Yourself authoritative for the complete excluded lifecycle.
 
+### 16. Physical ware stays where players expect to see it
+
+The vanilla ingest job already records its actually selected eat-surface cell in `TargetIndex.B`; table retention uses that exact cell after successful ingestion instead of searching for a plausible nearby table. This preserves no-table dining, assisted feeding, personal visitor ownership and caravan inventory semantics while making ordinary colony dining leave a visible dirty setting on the table. Common Sense and Gastronomy receive the same physical returned Things only after that visible placement, so their cleanup remains an observable hauling workflow rather than an invisible state transfer.
+
+Active cooking keeps the reserved cookware as its existing work prop. Once real cooking work has begun, cleanup returns that exact Thing to an occupied bill-giver cell with direct placement so it reads as used equipment on the stove. A later admitted cooking attempt clears only dirty cookware occupying that same station footprint, moving each exact unit to ordinary nearby placement before the new active toil. The move preserves Thing identity and player state; it does not run for pre-work cancellation and does not manufacture showcase clutter.
+
+The dishwasher showcase uses this lifecycle as its source of visible overflow. It must show at least five genuinely used cookware sets on or beside the stove and genuinely returned table settings, then follow ordinary collection, dishwasher processing and storage. Capture uses tight, fixed action views—wide colony framing remains contextual reference only.
+
 ## Risks / Trade-offs
 
 - **[Stack metadata causes fragmentation]** → Quantize culinary quality and temperature for stack compatibility, preserve exact plate counts, and prefer correctness over forced merging.
@@ -212,6 +220,7 @@ Verification keeps ordinary covered workflows in the exact Harmony/Core/Cook for
 - **[A batched wash is interrupted with ware in inventory]** → Register each collected unit with Pick Up And Haul immediately, preserve its current sanitation state, and delegate cleanup to the validated native unload path.
 - **[Translation catalogs silently drift]** → Derive one canonical player-text inventory during tests and require exact six-language coverage plus placeholder parity before a distributable package can pass release checks.
 - **[A one-off cooking mod bypasses bills]** → Attach only after its own job giver has selected the full job, decorate its validated custom driver, and reuse the existing product/cleanup boundaries without duplicating upstream meal planning.
+- **[Surface placement hides items or blocks later work]** → Give dining surfaces a two-item cell capacity without making them storage, use RimWorld's native multi-item display offsets for the exact plate and cutlery on the pawn's selected eat cell, retain a safe same-table/nearby fallback, clear prior dirty cookware at the next admitted job boundary, and accept the behavior only after close live rendering and real job-path observation.
 
 ## Implementation Rollout
 

@@ -1352,7 +1352,7 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
-    public void Plate_family_uses_full_surface_stuff_tint_and_packages_optional_variation_mask()
+    public void Plate_family_uses_its_packaged_stuff_mask_in_base_and_optional_variation_graphics()
     {
         var root = FindRepositoryRoot();
         var document = XDocument.Load(Path.Combine(
@@ -1374,14 +1374,14 @@ public sealed class VisualAssetPackageTests
         {
             Assert.That((string?)plateGraphic.Element("texPath"), Is.EqualTo(PlateTexturePath));
             Assert.That((string?)plateGraphic.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
-            Assert.That((string?)plateGraphic.Element("shaderType"), Is.EqualTo("Cutout"));
+            Assert.That((string?)plateGraphic.Element("shaderType"), Is.EqualTo("CutoutComplex"));
             Assert.That((string?)adobeGraphic.Element("texPath"), Is.EqualTo(PlateTexturePath));
             Assert.That((string?)adobeGraphic.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(
                 File.Exists(optionalVariationMaskPath),
                 Is.True,
-                "The VTEX-gated CutoutComplex selector owns the packaged plate mask.");
+                "Base and VTEX graphics share the packaged Stuff mask.");
             Assert.That(File.Exists(PackagedTextureFile(root, PlateTexturePath + ".png")), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, PlateTexturePath + "_m.png")), Is.True);
         });

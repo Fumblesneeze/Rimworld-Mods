@@ -171,8 +171,8 @@ public sealed class PickUpAndHaulProcessorDishwasherBatchTest : IRimWorldEndToEn
             _ => fixture.ObserveCycleProgress(),
             new EndToEndDeadline(1_500, 8_000, TimeSpan.FromSeconds(65)));
         yield return new AssertionStep(
-            "enable ordinary hauling for clean output removal",
-            _ => fixture.ActivateHauling());
+            "enable ordinary hauling while cleaning remains available",
+            _ => fixture.ActivateHaulingWhileCleaningRemainsEnabled());
         yield return new WaitUntilStep(
             "native Processor emptying returns every exact unit clean to the map",
             _ => fixture.AllCleanOutputsAwaitStorage(),
@@ -456,9 +456,9 @@ internal sealed class PickUpAndHaulDishwasherFixture
         Cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
     }
 
-    internal void ActivateHauling()
+    internal void ActivateHaulingWhileCleaningRemainsEnabled()
     {
-        Cleaner.workSettings.SetPriority(WorkTypeDefOf.Cleaning, 0);
+        Cleaner.workSettings.SetPriority(WorkTypeDefOf.Cleaning, 1);
         Cleaner.workSettings.SetPriority(WorkTypeDefOf.Hauling, 1);
         Cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
     }

@@ -12,6 +12,7 @@ internal static class ProcessorFrameworkAdapter
     private const string ProcessorPropertiesTypeName = "ProcessorFramework.CompProperties_Processor";
     private const string ProcessDefTypeName = "ProcessorFramework.ProcessDef";
     private const string ActiveProcessTypeName = "ProcessorFramework.ActiveProcess";
+    private const string FillProcessorJobDriverTypeName = "ProcessorFramework.JobDriver_FillProcessor";
 
     private static Type? processorType;
     private static Type? processorPropertiesType;
@@ -32,6 +33,7 @@ internal static class ProcessorFrameworkAdapter
     private static MethodInfo? enableAllProcesses;
     private static MethodInfo? addIngredient;
     private static MethodInfo? findIngredient;
+    private static MethodInfo? fillProcessorTryMakeReservations;
     private static MethodInfo? resolveProcessReferences;
     private static MethodInfo? addProcessDef;
     private static MethodInfo? recacheAll;
@@ -118,6 +120,13 @@ internal static class ProcessorFrameworkAdapter
             modifiers: null);
         var workGiverType = AccessTools.TypeByName("ProcessorFramework.WorkGiver_FillProcessor");
         findIngredient = workGiverType is null ? null : AccessTools.Method(workGiverType, "FindIngredient");
+        var fillProcessorJobDriverType = AccessTools.TypeByName(FillProcessorJobDriverTypeName);
+        fillProcessorTryMakeReservations = fillProcessorJobDriverType?.GetMethod(
+            nameof(JobDriver.TryMakePreToilReservations),
+            BindingFlags.Public | BindingFlags.Instance,
+            binder: null,
+            types: new[] { typeof(bool) },
+            modifiers: null);
         resolveProcessReferences = AccessTools.Method(processDefType, "ResolveReferences");
         recacheAll = AccessTools.Method(
             AccessTools.TypeByName("ProcessorFramework.ProcessorFramework_Utility"),
@@ -167,7 +176,12 @@ internal static class ProcessorFrameworkAdapter
             spaceLeftFor is null || graphicChange is null || enableAllProcesses is null ||
             addIngredient is not { ReturnType: { } addIngredientReturn } ||
             addIngredientReturn != typeof(void) || addIngredient.DeclaringType != processorType ||
-            findIngredient is null || resolveProcessReferences is null || addProcessDef is null ||
+            findIngredient is null || fillProcessorJobDriverType is null ||
+            !typeof(JobDriver).IsAssignableFrom(fillProcessorJobDriverType) ||
+            fillProcessorTryMakeReservations is not { ReturnType: { } fillReservationReturn } ||
+            fillReservationReturn != typeof(bool) ||
+            fillProcessorTryMakeReservations.DeclaringType != fillProcessorJobDriverType ||
+            resolveProcessReferences is null || addProcessDef is null ||
             recacheAll is null || requiredMethods.Any(method => method is null) ||
             requiredProcessFields.Any(field =>
                 !HasExactFieldShape(processDefType, field.Key, field.Value)) ||
@@ -278,6 +292,33 @@ internal static class ProcessorFrameworkAdapter
         harmony.Patch(
             findIngredient!,
             postfix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(FindIngredientPostfix)));
+        harmony.Patch(
+            fillProcessorTryMakeReservations!,
+            prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(FillProcessorReservationsPrefix)));
+    }
+
+    internal static bool AllowsFillReservation(bool isDishwasher, bool isDirtyWare)
+    {
+        return !isDishwasher || isDirtyWare;
+    }
+
+    private static bool FillProcessorReservationsPrefix(JobDriver __instance, ref bool __result)
+    {
+        var job = __instance.job;
+        var processor = job?.GetTarget(TargetIndex.A).Thing;
+        if (job is null || processor is null)
+        {
+            return true;
+        }
+
+        var ingredient = job.GetTarget(TargetIndex.B).Thing;
+        if (AllowsFillReservation(IsDishwasher(processor), ingredient is not null && IsDirtyWare(ingredient)))
+        {
+            return true;
+        }
+
+        __result = false;
+        return false;
     }
 
     private static bool AddIngredientPrefix(object __instance, Thing __0, ref int __state)

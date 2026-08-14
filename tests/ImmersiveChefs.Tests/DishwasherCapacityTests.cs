@@ -156,6 +156,20 @@ public sealed class DishwasherCapacityTests
             Is.EqualTo(expectedCapacityFactor).Within(0.0001f));
     }
 
+    [TestCase(false, false, true)]
+    [TestCase(false, true, true)]
+    [TestCase(true, true, true)]
+    [TestCase(true, false, false)]
+    public void Processor_fill_reservation_rejects_only_clean_dishwasher_ware(
+        bool isDishwasher,
+        bool isDirtyWare,
+        bool expected)
+    {
+        Assert.That(
+            ProcessorFrameworkAdapter.AllowsFillReservation(isDishwasher, isDirtyWare),
+            Is.EqualTo(expected));
+    }
+
     [Test]
     public void Processor_string_field_materializes_translated_tagged_text()
     {

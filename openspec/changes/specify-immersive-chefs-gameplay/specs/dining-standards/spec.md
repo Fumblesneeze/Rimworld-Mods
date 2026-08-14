@@ -45,6 +45,23 @@ The mod SHALL calculate plate and cutlery cleanliness, material comfort, and cra
 - **WHEN** an eligible pawn consumes a meal from a dirty wooden plate with dirty wooden cutlery
 - **THEN** the ingestion outcome includes their bounded cleanliness and comfort penalties and at most one unmet-dining-standard thought
 
+### Requirement: Used tableware remains at the dining place
+
+When an eligible humanlike pawn completes map dining at a vanilla-resolved eat surface, the exact used colony plate and cutlery SHALL be returned dirty together to the same selected table cell identified by the native ingest job's `TargetIndex.B`. Immersive Chefs SHALL raise only dining-surface item capacity to two and SHALL retain plate and cutlery as separate physical Things; RimWorld's native multiple-items-per-cell rendering SHALL provide their distinct shelf-like offsets. Dining tables MUST NOT become storage destinations. Both Things SHALL remain physically at that dining place until a pawn claims them for clearing. If the selected table cell cannot retain either exact item, that item MAY use another occupied cell of the same physical table and then the immediate near-diner fallback rather than bypassing RimWorld placement rules. Immersive Chefs MUST NOT infer a different nearby table after ingestion, fabricate a visual substitute, merge away either exact unit, or place used ware on a table when vanilla selected no eat surface. No-table dining and assisted feeding SHALL retain the existing near-diner/patient release behavior. Caravan dining SHALL retain exact inventory return, and personally owned visitor or trader ware SHALL retain personal-inventory return. Gastronomy ownership SHALL still hand the same table setting to its waiter clearing workflow.
+
+#### Scenario: Colonist finishes a meal at a table
+- **WHEN** vanilla dining selected a valid table cell in `TargetIndex.B` and an eligible colonist completes ingestion using a colony plate and cutlery
+- **THEN** the exact dirty plate and cutlery occupy the selected table cell together as two separately rendered Things, or use another cell of that same table and finally the immediate near-diner fallback only when exact placement is unavailable
+- **THEN** they remain there until an ordinary cleaning, hauling, Common Sense, or Gastronomy workflow claims them
+
+#### Scenario: Colonist eats without a table
+- **WHEN** vanilla dining leaves `TargetIndex.B` invalid or without an eat surface
+- **THEN** the exact dirty plate and cutlery are released near the dining pawn and are not moved onto an unrelated nearby table
+
+#### Scenario: Personal and caravan ownership override map-table retention
+- **WHEN** a visiting pawn consumes its personally owned setting or a caravan pawn completes world-holder ingestion
+- **THEN** the exact ware follows its personal-inventory or caravan-inventory return contract instead of remaining on a colony table
+
 ### Requirement: Guests use colony service before personal fallback
 
 An eligible map guest SHALL search reachable, allowed colony cutlery before cutlery in the guest's own inventory. This behavior SHALL apply to ordinary non-hostile guests and, when `Orion.Hospitality` is active and its adapter validates, pawns recognized by Hospitality as arrived guests. Inventory fallback SHALL preserve the same clean-first and dirty-fallback policy. Colony ware SHALL remain colony property, and cancellation before eating SHALL return it without changing sanitation.

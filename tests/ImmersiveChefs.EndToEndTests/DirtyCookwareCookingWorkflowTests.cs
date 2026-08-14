@@ -261,6 +261,9 @@ public sealed class DirtyCookwareCookingWorkflowTest : IRimWorldEndToEndTest
                         automaticProduct.GetComp<CompEmbeddedWare>()!.PeekPlateThing(),
                         automatic.Plate),
                     "The ordinary bill must embed its exact clean plate.");
+                EndToEndAssert.True(
+                    automatic.Stove.OccupiedRect().Contains(automatic.Cookware.Position),
+                    "The exact used cookware must remain visibly on the stove surface after native cooking.");
             });
 
         yield return new AssertionStep(
@@ -472,6 +475,9 @@ public sealed class DirtyCookwareCookingWorkflowTest : IRimWorldEndToEndTest
                 EndToEndAssert.True(forced.Cookware.Spawned &&
                                     forced.Cookware.GetComp<CompSanitation>()!.IsDirty,
                     "The exact dirty cookware must return once after forced cooking.");
+                EndToEndAssert.True(
+                    forced.Stove.OccupiedRect().Contains(forced.Cookware.Position),
+                    "The one-job override must return its exact cookware to the stove surface.");
             });
         yield return new SelectionActionStep(
             "select the forced meal after the one-job override",
