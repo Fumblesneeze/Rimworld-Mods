@@ -234,6 +234,12 @@ public sealed class GatewayEndToEndGatewayBackend :
             step,
             new VerseGatewayEndToEndInspectionRuntime());
 
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyWindowAccept(
+        WindowAcceptActionStep step) =>
+        VerseGatewayEndToEndInspectionActions.Apply(
+            step,
+            new VerseGatewayEndToEndInspectionRuntime());
+
     GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyModSettings(
         ModSettingsActionStep step) =>
         VerseGatewayEndToEndInspectionActions.Apply(

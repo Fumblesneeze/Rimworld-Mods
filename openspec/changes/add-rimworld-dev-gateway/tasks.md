@@ -227,3 +227,8 @@
 - [x] 30.1 SPEC/TDD RED: define and reproduce an optional exact cardinal rotation on cell-shaped native placement, including rejection for invalid values, other shapes, non-place designators, and non-rotatable placing Defs.
 - [x] 30.2 GREEN: configure the revalidated `Designator_Place` before its native preflight/designation path without editing the resulting Thing or synthesizing input events.
 - [x] 30.3 E2E/IN-GAME: place an Immersive Chefs building through the native Production designator with a requested non-default rotation and retain before/action/after evidence that the resulting player-visible building faces that direction.
+
+## 31. mods/RimWorldDevGateway — Exact native window acceptance
+
+- [x] 31.1 SPEC/TDD: Add a typed exact-window accept action that uses the native Unity-thread accept-key path, restores the prior event, fails closed on absent/ambiguous runtime identity, and remains independent of desktop focus.
+- [x] 31.2 IN-GAME: From the minimized exact Adaptive Storage/[sbz] Fridge E2E group, accept the native power-designation message box, then observe the pawn complete the resulting Flick job and the stored meal begin warming after cooling stops. Evidence: current reviewed Gateway/product group `20260814T053531416Z`.

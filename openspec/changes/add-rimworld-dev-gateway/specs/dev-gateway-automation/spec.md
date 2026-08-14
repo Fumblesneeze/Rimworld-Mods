@@ -145,6 +145,17 @@ The attributed E2E contract SHALL expose a typed save-and-reload action that acc
 - **WHEN** a focused E2E test records a visible Thing, invokes the typed save-and-reload action, reacquires that Thing by stable game identity, and observes it after load
 - **THEN** the test continues only after the replacement game and playable map settle and can retain before/after screenshots and checkpoints for the same observable object
 
+### Requirement: Exact native E2E window acceptance
+The attributed E2E contract SHALL expose a typed exact-window accept action that requires player control and exactly one open window with the declared runtime type. The Gateway SHALL invoke that window's native `OnAcceptKeyPressed` path on the Unity thread under an accept-key event, restore the prior Unity event in guaranteed cleanup, and report success only after the exact window closes. It SHALL remain usable from a minimized background launch without process-scoped keyboard injection.
+
+#### Scenario: Background E2E confirms a native message box
+- **WHEN** a minimized E2E run names the sole open `Verse.Dialog_MessageBox` and requests exact-window acceptance
+- **THEN** the native accept callback runs, the dialog closes, foreground focus is unchanged, and the action records the accepted runtime type
+
+#### Scenario: Exact accept target is absent or ambiguous
+- **WHEN** no open window or more than one open window has the declared runtime type
+- **THEN** the action fails before invoking any window callback
+
 ### Requirement: Path-safe durable Gateway artifacts
 The Gateway SHALL atomically commit session manifests, request-journal snapshots, integration-test snapshots, and E2E snapshots without deriving the temporary leaf from the complete destination filename. Its short unique sibling temporary leaf SHALL keep the complete temporary path within the legacy Windows path limit whenever the final artifact path itself fits that limit. It SHALL establish exclusive ownership before cleanup, leave a colliding sibling untouched, and retry name collisions only for a bounded count. A failed E2E attachment SHALL remain retryable without discovery or execution, but a deterministic temporary-path overflow SHALL NOT trap a healthy run in an endless pending loop.
 

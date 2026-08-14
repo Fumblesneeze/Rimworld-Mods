@@ -117,6 +117,8 @@ internal interface IGatewayEndToEndInspectionBackend
 
     GatewayEndToEndStepOutcome ApplyWindowCancel(WindowCancelActionStep step);
 
+    GatewayEndToEndStepOutcome ApplyWindowAccept(WindowAcceptActionStep step);
+
     GatewayEndToEndStepOutcome ApplyModSettings(ModSettingsActionStep step);
 }
 
@@ -397,6 +399,19 @@ public sealed class GatewayEndToEndNativeActions :
             : Fail(
                 "unsupported_e2e_step",
                 "The configured E2E backend does not support exact-window cancel actions.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndInspectionNativeActions.Apply(
+        WindowAcceptActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndInspectionBackend inspectionBackend
+            ? inspectionBackend.ApplyWindowAccept(step) ??
+              throw new InvalidOperationException("The exact-window accept backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support exact-window accept actions.");
     }
 
     GatewayEndToEndStepOutcome IGatewayEndToEndInspectionNativeActions.Apply(

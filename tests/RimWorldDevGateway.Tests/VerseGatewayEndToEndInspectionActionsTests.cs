@@ -265,6 +265,68 @@ public sealed class VerseGatewayEndToEndInspectionActionsTests
     }
 
     [Test]
+    public void Window_accept_invokes_only_one_exact_native_window_then_verifies_removal()
+    {
+        var runtime = new RecordingRuntime { ExactWindowOpen = true };
+
+        var outcome = VerseGatewayEndToEndInspectionActions.Apply(
+            new WindowAcceptActionStep("accept dialog", "Verse.Dialog_MessageBox"),
+            runtime);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(runtime.Calls, Is.EqualTo(new[]
+            {
+                "is-window-open:Verse.Dialog_MessageBox",
+                "accept-window:Verse.Dialog_MessageBox",
+                "is-window-open:Verse.Dialog_MessageBox"
+            }));
+        });
+    }
+
+    [Test]
+    public void Window_accept_fails_before_mutation_without_one_exact_window()
+    {
+        var runtime = new RecordingRuntime { ExactWindowOpen = false };
+
+        var outcome = VerseGatewayEndToEndInspectionActions.Apply(
+            new WindowAcceptActionStep("accept dialog", "Verse.Dialog_MessageBox"),
+            runtime);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.False);
+            Assert.That(outcome.FailureCode, Is.EqualTo("window_accept_identity_mismatch"));
+            Assert.That(runtime.Calls, Is.EqualTo(new[]
+            {
+                "is-window-open:Verse.Dialog_MessageBox"
+            }));
+        });
+    }
+
+    [Test]
+    public void Window_accept_key_invocation_restores_the_prior_Unity_event()
+    {
+        var prior = new object();
+        var syntheticReturn = new object();
+        object current = prior;
+        var acceptedUnderTemporaryState = false;
+
+        VerseGatewayEndToEndInspectionRuntime.InvokeWithTemporaryState(
+            () => acceptedUnderTemporaryState = ReferenceEquals(current, syntheticReturn),
+            () => current,
+            value => current = value,
+            syntheticReturn);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(acceptedUnderTemporaryState, Is.True);
+            Assert.That(current, Is.SameAs(prior));
+        });
+    }
+
+    [Test]
     public void Mod_settings_opens_and_verifies_the_exact_active_package()
     {
         var runtime = new RecordingRuntime();
@@ -403,6 +465,13 @@ public sealed class VerseGatewayEndToEndInspectionActionsTests
         public bool CancelExactWindow(string expectedWindowRuntimeType)
         {
             Calls.Add("cancel-window:" + expectedWindowRuntimeType);
+            ExactWindowOpen = false;
+            return true;
+        }
+
+        public bool AcceptExactWindow(string expectedWindowRuntimeType)
+        {
+            Calls.Add("accept-window:" + expectedWindowRuntimeType);
             ExactWindowOpen = false;
             return true;
         }

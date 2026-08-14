@@ -32,6 +32,8 @@ internal interface IGatewayEndToEndInspectionRuntime
 
     bool CancelExactWindow(string expectedWindowRuntimeType);
 
+    bool AcceptExactWindow(string expectedWindowRuntimeType);
+
     bool OpenModSettings(string packageId);
 
     bool IsExactModSettingsOpen(string packageId);
@@ -324,6 +326,55 @@ internal static class VerseGatewayEndToEndInspectionActions
             return Fail(
                 "window_cancel_action_failed",
                 "The native exact-window cancel action threw " + exception.GetType().Name + ".");
+        }
+    }
+
+    internal static GatewayEndToEndStepOutcome Apply(
+        WindowAcceptActionStep step,
+        IGatewayEndToEndInspectionRuntime runtime)
+    {
+        if (step is null)
+        {
+            throw new ArgumentNullException(nameof(step));
+        }
+
+        if (runtime is null)
+        {
+            throw new ArgumentNullException(nameof(runtime));
+        }
+
+        if (!runtime.PlayerHasControl)
+        {
+            return Fail(
+                "window_accept_player_control_required",
+                "Native player control is required to accept a window.");
+        }
+
+        try
+        {
+            if (!runtime.IsExactWindowOpen(step.ExpectedWindowRuntimeType))
+            {
+                return Fail(
+                    "window_accept_identity_mismatch",
+                    "Exactly one open window did not match the requested runtime type.");
+            }
+
+            return runtime.AcceptExactWindow(step.ExpectedWindowRuntimeType) &&
+                   !runtime.IsExactWindowOpen(step.ExpectedWindowRuntimeType)
+                ? GatewayEndToEndStepOutcome.Pass(
+                    new Dictionary<string, string>
+                    {
+                        ["acceptedWindowRuntimeType"] = step.ExpectedWindowRuntimeType
+                    })
+                : Fail(
+                    "window_accept_failed",
+                    "RimWorld did not accept the requested exact window.");
+        }
+        catch (Exception exception)
+        {
+            return Fail(
+                "window_accept_action_failed",
+                "The native exact-window accept action threw " + exception.GetType().Name + ".");
         }
     }
 
@@ -686,6 +737,53 @@ internal sealed class VerseGatewayEndToEndInspectionRuntime : IGatewayEndToEndIn
             Event.current = currentEvent;
         }
         return true;
+    }
+
+    public bool AcceptExactWindow(string expectedWindowRuntimeType)
+    {
+        var matches = ExactWindows(expectedWindowRuntimeType);
+        if (matches.Length != 1)
+        {
+            return false;
+        }
+
+        var currentEvent = Event.current;
+        if (currentEvent?.type == EventType.KeyDown &&
+            (currentEvent.keyCode == KeyCode.Return || currentEvent.keyCode == KeyCode.KeypadEnter))
+        {
+            matches[0].OnAcceptKeyPressed();
+            return true;
+        }
+
+        var syntheticAcceptEvent = new Event
+        {
+            type = EventType.KeyDown,
+            keyCode = KeyCode.Return
+        };
+        InvokeWithTemporaryState(
+            matches[0].OnAcceptKeyPressed,
+            () => Event.current,
+            value => Event.current = value,
+            syntheticAcceptEvent);
+        return true;
+    }
+
+    internal static void InvokeWithTemporaryState<T>(
+        Action action,
+        Func<T> readCurrent,
+        Action<T> writeCurrent,
+        T temporaryState)
+    {
+        var priorState = readCurrent();
+        try
+        {
+            writeCurrent(temporaryState);
+            action();
+        }
+        finally
+        {
+            writeCurrent(priorState);
+        }
     }
 
     public bool OpenModSettings(string packageId)

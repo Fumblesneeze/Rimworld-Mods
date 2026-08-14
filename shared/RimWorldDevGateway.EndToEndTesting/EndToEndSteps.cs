@@ -444,6 +444,19 @@ public sealed class WindowCancelActionStep : EndToEndStep
     public string ExpectedWindowRuntimeType { get; }
 }
 
+public sealed class WindowAcceptActionStep : EndToEndStep
+{
+    public WindowAcceptActionStep(string name, string expectedWindowRuntimeType)
+        : base(name, EndToEndStepKind.Act)
+    {
+        ExpectedWindowRuntimeType = StepValues.Required(
+            expectedWindowRuntimeType,
+            nameof(expectedWindowRuntimeType));
+    }
+
+    public string ExpectedWindowRuntimeType { get; }
+}
+
 public sealed class ModSettingsActionStep : EndToEndStep
 {
     public ModSettingsActionStep(string name, string packageId)
