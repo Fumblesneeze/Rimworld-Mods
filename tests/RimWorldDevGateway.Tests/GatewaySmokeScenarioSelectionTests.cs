@@ -90,6 +90,27 @@ public sealed class GatewaySmokeScenarioSelectionTests
     }
 
     [Test]
+    public void Named_scenarios_support_bounded_host_side_native_tick_advancement()
+    {
+        var smokePath = Path.Combine(FindSourceRepositoryRoot(), "scripts", "Invoke-GatewaySmoke.ps1");
+        var source = File.ReadAllText(smokePath);
+        const string descriptor =
+            "{\"schemaVersion\":1,\"name\":\"native-tick-fixture\",\"requiredPackageIds\":[],\"steps\":[" +
+            "{\"id\":\"settle-power\",\"kind\":\"native-ticks\",\"ticks\":180}]}";
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor, Does.Contain("\"kind\":\"native-ticks\""));
+            Assert.That(descriptor, Does.Contain("\"ticks\":180"));
+            Assert.That(source, Does.Contain("'native-ticks' {"));
+            Assert.That(source, Does.Contain("-Uri \"$baseUrl/game-state\""));
+            Assert.That(source, Does.Contain("$nativeTickTarget"));
+            Assert.That(source, Does.Contain("Start-Sleep -Milliseconds 50"));
+            Assert.That(source, Does.Not.Contain("System.Threading.Thread.Sleep(16)"));
+        });
+    }
+
+    [Test]
     public void Missing_final_player_log_is_rejected()
     {
         var missingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "Player.log");

@@ -11,6 +11,9 @@ for the current routes and command syntax. Read
 input, diagnosing a live failure, or retaining live evidence; a route-only code change does not need
 that operational reference.
 
+Read [references/operator-handoffs.md](references/operator-handoffs.md) whenever a parent agent delegates live
+game interaction to an operator agent or governs several parallel presentation/verification tasks.
+
 ## Preserve the boundary
 
 - Keep the Gateway development-only, authenticated, IPv4-loopback-bound, and unrestricted whenever
@@ -58,6 +61,10 @@ construction, trade, or other native player path.
 - Capture GIF source frames as a bounded host-side sequence of ordinary end-of-frame screenshot
   requests. Retain exact applied rectangles and timing, allow no more than five seconds for Steam
   previews, and keep raw frames so hard cuts and compression can be reviewed without rerunning play.
+  If a story needs multiple fixed views, keep the same held game process, capture stable v1 segments
+  beneath the final showcase's `segments/` directory, and call
+  `scripts/Invoke-RimWorldShowcaseAssembly.ps1`. Its PID/start/run, package-identity, source-hash and
+  ordered-beat checks are part of the evidence contract; it is not a general video editor.
 - Request graceful shutdown, then use only an exact-PID bounded fallback. Restore preferences,
   control state, staging, credentials, and only run-owned objects.
 

@@ -17,6 +17,37 @@ namespace ImmersiveChefs.Tests;
 public sealed class ImmersiveChefsReleaseScriptBehaviorTests
 {
     [Test]
+    public void Published_identity_is_checked_in_and_matches_the_release_descriptor()
+    {
+        using var fixture = Fixture.Create();
+        var root = fixture.RepositoryRoot;
+        var aboutIdentityPath = Path.Combine(root, "mods", "ImmersiveChefs", "About", "PublishedFileId.txt");
+        var releasePath = Path.Combine(root, "mods", "ImmersiveChefs", "Release", "release.json");
+        var release = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(releasePath));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(aboutIdentityPath), Is.True,
+                "An already published mod must retain its Workshop identity in the checked-in About directory.");
+            Assert.That(File.ReadAllText(aboutIdentityPath).Trim(), Is.EqualTo("3782589902"));
+            Assert.That(Convert.ToString(release["publishedFileId"]), Is.EqualTo("3782589902"));
+        });
+    }
+
+    [Test]
+    public void Release_tests_do_not_launch_unrelated_visible_desktop_applications()
+    {
+        using var fixture = Fixture.Create();
+        var source = File.ReadAllText(Path.Combine(
+            fixture.RepositoryRoot,
+            "tests", "ImmersiveChefs.Tests", "ImmersiveChefsReleaseScriptBehaviorTests.cs"));
+
+        var visibleEditorExecutable = "note" + "pad.exe";
+        Assert.That(source, Does.Not.Contain(visibleEditorExecutable).IgnoreCase,
+            "Process-lease fixtures must use an owned hidden noninteractive child, not flash Notepad on the desktop.");
+    }
+
+    [Test]
     public void Staged_inventory_accepts_an_identity_already_in_the_manifest_without_double_counting_it()
     {
         using var fixture = Fixture.Create();
@@ -84,10 +115,37 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     [Test]
+    public void Checked_in_Workshop_identity_participates_in_conflict_detection()
+    {
+        using var fixture = Fixture.Create();
+        var stateRoot = Path.Combine(fixture.Root, "state");
+        Directory.CreateDirectory(stateRoot);
+        var checkedInIdentity = Path.Combine(fixture.Root, "PublishedFileId.txt");
+        File.WriteAllText(checkedInIdentity, "123456789", new UTF8Encoding(false));
+
+        var accepted = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Resolve-ExistingWorkshopIdentity" },
+            $"Write-Output (Resolve-ExistingWorkshopIdentity -DeclaredId '123456789' -StateRoot {Ps(stateRoot)} -SourceIdentityPath {Ps(checkedInIdentity)})");
+        var rejected = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Resolve-ExistingWorkshopIdentity" },
+            $"Write-Output (Resolve-ExistingWorkshopIdentity -DeclaredId '987654321' -StateRoot {Ps(stateRoot)} -SourceIdentityPath {Ps(checkedInIdentity)})");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(accepted.ExitCode, Is.Zero, accepted.StandardError);
+            Assert.That(accepted.StandardOutput.Trim(), Is.EqualTo("123456789"));
+            Assert.That(rejected.ExitCode, Is.EqualTo(1));
+            Assert.That(rejected.StandardError, Does.Contain("identity evidence conflicts"));
+        });
+    }
+
+    [Test]
     public void Release_scripts_parse_under_the_installed_Windows_PowerShell_host()
     {
         using var fixture = Fixture.Create();
-        foreach (var script in new[] { "Build-ImmersiveChefsRelease.ps1", "Invoke-ImmersiveChefsWorkshopRelease.ps1", "Invoke-RimWorldShowcaseCapture.ps1" })
+        foreach (var script in new[] { "Build-ImmersiveChefsRelease.ps1", "Invoke-ImmersiveChefsWorkshopRelease.ps1", "Invoke-RimWorldShowcaseCapture.ps1", "Invoke-RimWorldShowcaseAssembly.ps1" })
         {
             var parsed = fixture.ParseWithWindowsPowerShell(script);
             Assert.That(parsed.ExitCode, Is.Zero, script + Environment.NewLine + parsed.StandardError);
@@ -128,6 +186,22 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         Assert.That(match.Success, Is.True, run.StandardOutput);
         Assert.That(Process.GetProcesses().Any(process => process.Id == int.Parse(match.Groups["pid"].Value)), Is.False,
             "The timed-out exact child remained alive after the capture command returned.");
+    }
+
+    [Test]
+    public void Showcase_hard_cut_assembly_requires_same_process_and_preserves_every_segment_beat()
+    {
+        using var fixture = Fixture.Create();
+        var source = File.ReadAllText(Path.Combine(fixture.RepositoryRoot, "scripts", "Invoke-RimWorldShowcaseAssembly.ps1"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(source, Does.Contain("RimWorldDevGateway/ShowcaseCaptureAssemblyEvidence/v1"));
+            Assert.That(source, Does.Contain("processStartUtc"));
+            Assert.That(source, Does.Contain("orderedPackageIdentities"));
+            Assert.That(source, Does.Contain("observedBeats"));
+            Assert.That(source, Does.Contain("segmentCaptureSha256"));
+            Assert.That(source, Does.Contain("maximumDurationSeconds = 5"));
+        });
     }
 
     [Test]
@@ -256,6 +330,86 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         {
             Assert.That(rejected.ExitCode, Is.EqualTo(1));
             Assert.That(rejected.StandardError, Does.Contain("does not match its capture evidence"));
+        });
+    }
+
+    [Test]
+    public void Showcase_design_evidence_binds_live_reviewed_references_rules_placements_and_packages()
+    {
+        using var fixture = Fixture.Create();
+        var releaseRoot = Path.Combine(fixture.Root, "mods", "ImmersiveChefs", "Release");
+        var designRoot = Path.Combine(releaseRoot, "workshop", "designs");
+        Directory.CreateDirectory(designRoot);
+        var designPath = Path.Combine(designRoot, "service.md");
+        File.WriteAllText(designPath,
+            "# Restaurant service\n\n" +
+            "- Showcase ID: `service`\n" +
+            "- Design-record version: `1`\n" +
+            "- Owner: `fumblesneeze.immersivechefs`\n" +
+            "- Status: `live-reviewed`\n" +
+            "- Intended crop: `1280x720, fixed view`\n" +
+            "- Colony brief: `Established temperate restaurant beside its working kitchen.`\n" +
+            "- Exact presentation packages: `ludeon.rimworld -> fumblesneeze.immersivechefs`\n" +
+            "- Native workflow: `guest orders -> cooks work -> waiter serves`\n\n" +
+            "## References\n\n" +
+            "| ID | Role in this scene | Inspected evidence | Eligible class |\n" +
+            "|---|---|---|---|\n" +
+            "| R01 | dining | formal hall | recurrent |\n" +
+            "| R02 | kitchen | worker island | recurrent |\n" +
+            "| R07 | restaurant | service rhythm | recurrent |\n\n" +
+            "## Applied rules\n\n" +
+            "| Rule ID | Class | Sources/contract | Decision in this scene |\n" +
+            "|---|---|---|---|\n" +
+            "| public-edge | recurrent | R01/R07 | dining faces the approach |\n" +
+            "| kitchen-buffer | mechanical | Core jobs | service shelf borders kitchen |\n" +
+            "| clear-lane | mechanical | work cells | interaction cells stay open |\n\n" +
+            "## Adjacency graph\n\n" +
+            "`freezer --high-frequency--> stove --service--> dining`\n\n" +
+            "## Planned zones and placements\n\n" +
+            "| Zone/object | Bounds or relation | Exact Def/rotation/material | Rule IDs | Rationale |\n" +
+            "|---|---|---|---|---|\n" +
+            "| kitchen | west room | Stove_Electric/south/steel | clear-lane | readable cooking |\n" +
+            "| pass | shared wall | Shelf/east/wood | kitchen-buffer | short waiter path |\n" +
+            "| dining | east room | Table2x2c/wood | public-edge | guest context |\n\n" +
+            "## Variation and history\n\nMixed stone and wood show an expanded colony.\n\n" +
+            "## Rejected drafts and deviations\n\n" +
+            "| Draft/evidence | Rejection or deviation | Resulting rule/change |\n" +
+            "|---|---|---|\n" +
+            "| first frame | pass was hidden | moved shelf beside doorway |\n\n" +
+            "## Live review\n\n" +
+            "- Exact build/package identity: `ABC123`\n" +
+            "- Exact process/evidence directory: `run/service`\n" +
+            "- Player action observed: `A guest placed an order.`\n" +
+            "- Visible result observed: `The waiter delivered the cooked meal.`\n" +
+            "- Geometry/material/traffic observations at final crop size: `Kitchen and dining room remained legible.`\n" +
+            "- Remaining caveats: `No camera cut was needed.`\n",
+            new UTF8Encoding(false));
+        var catalogPath = Path.Combine(fixture.Root, "source-catalog.md");
+        File.WriteAllText(catalogPath, "| R01 | one |\n| R02 | two |\n| R07 | seven |\n", new UTF8Encoding(false));
+        var showcasePath = Path.Combine(fixture.Root, "showcase.json");
+        File.WriteAllText(showcasePath,
+            "{\"id\":\"service\",\"designRecord\":\"designs/service.md\",\"requiredPackageIds\":[\"ludeon.rimworld\",\"fumblesneeze.immersivechefs\"]}",
+            new UTF8Encoding(false));
+        var operation = "$s=Get-Content -LiteralPath " + Ps(showcasePath) + " -Raw | ConvertFrom-Json;" +
+                        "$e=Get-WorkshopShowcaseDesignEvidence -Showcase $s -ReleaseRoot " + Ps(releaseRoot) + " -SourceCatalogPath " + Ps(catalogPath) + ";" +
+                        "Write-Output ($e.showcaseId+'|'+$e.referenceIds.Count+'|'+$e.ruleCount+'|'+$e.placementCount+'|'+$e.sha256.Length)";
+        var accepted = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Get-WorkshopShowcaseDesignEvidence" }, operation);
+        Assert.Multiple(() =>
+        {
+            Assert.That(accepted.ExitCode, Is.Zero, accepted.StandardError);
+            Assert.That(accepted.StandardOutput.Trim(), Is.EqualTo("service|3|3|3|64"));
+        });
+
+        File.WriteAllText(designPath, File.ReadAllText(designPath).Replace("`live-reviewed`", "`draft`"), new UTF8Encoding(false));
+        var rejected = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Get-WorkshopShowcaseDesignEvidence" }, operation);
+        Assert.Multiple(() =>
+        {
+            Assert.That(rejected.ExitCode, Is.EqualTo(1));
+            Assert.That(rejected.StandardError, Does.Contain("live-reviewed"));
         });
     }
 
@@ -482,18 +636,19 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             "Invoke-ImmersiveChefsWorkshopRelease.ps1",
             new[] { "Test-WorkshopShowcasePlanEvidence" },
             "$ids=@('gastronomy-service','dishwasher-turnaround','nutrient-paste-prison-line','professional-prep-line','dining-memories');" +
-            "$e=@();$p=@();$slot=5;foreach($id in $ids){$fmt=if($id -ceq 'dining-memories'){'screenshot'}else{'gif'};" +
+            "$e=@();$d=@();$p=@();$slot=5;foreach($id in $ids){$fmt=if($id -ceq 'dining-memories'){'screenshot'}else{'gif'};" +
             "$a='A'.PadRight(64,'A');$b='B'.PadRight(64,'B');$c='C'.PadRight(64,'C');" +
             "$outs=@([pscustomobject]@{format='screenshot';sha256=$a});if($fmt -ceq 'gif'){$outs+=([pscustomobject]@{format='gif';sha256=$b})};" +
             "$e+=([pscustomobject]@{showcaseId=$id;outputs=$outs;provenance=[pscustomobject]@{sha256=$c}});" +
+            "$d+=([pscustomobject]@{showcaseId=$id;sha256='D'.PadRight(64,'D');status='live-reviewed'});" +
             "$carouselHash=if($fmt -ceq 'gif'){$b}else{$a};$p+=([pscustomobject]@{showcaseId=$id;format=$fmt;sha256=$carouselHash});$slot++};" +
             "$p=@([pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card1'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card2'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card3'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card4'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card5'})+$p;" +
-            "$ok=Test-WorkshopShowcasePlanEvidence -Evidence @($e) -AdditionalPreviews @($p);$missing=Test-WorkshopShowcasePlanEvidence -Evidence @($e|Select-Object -First 4) -AdditionalPreviews @($p);" +
-            "Write-Output ($ok.ToString()+'|'+$missing.ToString())");
+            "$ok=Test-WorkshopShowcasePlanEvidence -Evidence @($e) -DesignEvidence @($d) -AdditionalPreviews @($p);$missing=Test-WorkshopShowcasePlanEvidence -Evidence @($e|Select-Object -First 4) -DesignEvidence @($d) -AdditionalPreviews @($p);$missingDesign=Test-WorkshopShowcasePlanEvidence -Evidence @($e) -DesignEvidence @($d|Select-Object -First 4) -AdditionalPreviews @($p);" +
+            "Write-Output ($ok.ToString()+'|'+$missing.ToString()+'|'+$missingDesign.ToString())");
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
-            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False"));
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False"));
         });
     }
 
@@ -526,7 +681,7 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         var gatewayRoot = Path.Combine(fixture.Root, "gateway");
         var manifestDirectory = Path.Combine(gatewayRoot, "one", "SavedData", "DevGateway");
         Directory.CreateDirectory(manifestDirectory);
-        using var retained = Process.Start(new ProcessStartInfo("notepad.exe") { UseShellExecute = false })
+        using var retained = StartHiddenRetainedProcess()
             ?? throw new InvalidOperationException("Could not start the retained-process fixture.");
         try
         {
@@ -561,7 +716,7 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     public void Publisher_process_lease_rejects_even_a_subsecond_start_identity_mismatch()
     {
         using var fixture = Fixture.Create();
-        using var retained = Process.Start(new ProcessStartInfo("notepad.exe") { UseShellExecute = false })
+        using var retained = StartHiddenRetainedProcess()
             ?? throw new InvalidOperationException("Could not start the retained-process fixture.");
         try
         {
@@ -709,6 +864,20 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     private static string Ps(string value) => "'" + value.Replace("'", "''") + "'";
+
+    private static Process StartHiddenRetainedProcess()
+    {
+        var start = new ProcessStartInfo(
+            "powershell.exe",
+            "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -Command \"Start-Sleep -Seconds 120\"")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden
+        };
+        return Process.Start(start)
+            ?? throw new InvalidOperationException("Could not start the hidden retained-process fixture.");
+    }
 
     private sealed class Fixture : IDisposable
     {

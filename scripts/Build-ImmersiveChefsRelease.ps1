@@ -47,6 +47,98 @@ function Get-CanonicalJson([object]$Value) {
     return $Value | ConvertTo-Json -Depth 20 -Compress
 }
 
+function Get-WorkshopShowcaseDesignEvidence {
+    param(
+        [Parameter(Mandatory)][object]$Showcase,
+        [Parameter(Mandatory)][string]$ReleaseRoot,
+        [Parameter(Mandatory)][string]$SourceCatalogPath
+    )
+
+    $showcaseId = [string]$Showcase.id
+    $relativePath = [string]$Showcase.designRecord
+    if ($showcaseId -notmatch '^[a-z0-9-]{1,48}$' -or
+        $relativePath -cne "designs/$showcaseId.md" -or
+        [IO.Path]::IsPathRooted($relativePath) -or
+        $relativePath -match '(^|[\/])\.\.([\/]|$)') {
+        throw "Workshop showcase '$showcaseId' has an invalid design-record path."
+    }
+    $workshopRoot = [IO.Path]::GetFullPath((Join-Path $ReleaseRoot 'workshop')).TrimEnd('\') + '\'
+    $path = [IO.Path]::GetFullPath((Join-Path $workshopRoot $relativePath.Replace('/', '\')))
+    if (-not $path.StartsWith($workshopRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        -not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        throw "Workshop showcase '$showcaseId' design record is missing or outside the release root."
+    }
+    $item = Get-Item -LiteralPath $path
+    if ($item.Length -le 0 -or $item.Length -gt 256KB) {
+        throw "Workshop showcase '$showcaseId' design record must be nonempty and at most 256 KiB."
+    }
+    $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+    if ($text.IndexOf([char]0) -ge 0) { throw "Workshop showcase '$showcaseId' design record contains a NUL character." }
+    function Read-DesignField([string]$Name) {
+        $match = [regex]::Match($text, '(?m)^- ' + [regex]::Escape($Name) + ': `([^`]+)`\s*$')
+        if (-not $match.Success -or [string]::IsNullOrWhiteSpace($match.Groups[1].Value)) {
+            throw "Workshop showcase '$showcaseId' design record is missing '$Name'."
+        }
+        return $match.Groups[1].Value.Trim()
+    }
+    $recordId = Read-DesignField 'Showcase ID'
+    $version = Read-DesignField 'Design-record version'
+    $owner = Read-DesignField 'Owner'
+    $status = Read-DesignField 'Status'
+    $packages = Read-DesignField 'Exact presentation packages'
+    $nativeWorkflow = Read-DesignField 'Native workflow'
+    $expectedPackages = @($Showcase.requiredPackageIds | ForEach-Object { [string]$_ }) -join ' -> '
+    if ($recordId -cne $showcaseId -or $version -cne '1' -or
+        $owner -cne 'fumblesneeze.immersivechefs' -or $status -cne 'live-reviewed' -or
+        $packages -cne $expectedPackages) {
+        throw "Workshop showcase '$showcaseId' design record is not an exact live-reviewed package-bound record."
+    }
+    $sectionPattern = '(?ms)^## {0}\s*$(.*?)(?=^## |\z)'
+    function Read-DesignSection([string]$Name) {
+        $match = [regex]::Match($text, ($sectionPattern -f [regex]::Escape($Name)))
+        if (-not $match.Success) { throw "Workshop showcase '$showcaseId' design record is missing section '$Name'." }
+        return $match.Groups[1].Value
+    }
+    $references = Read-DesignSection 'References'
+    $referenceIds = @([regex]::Matches($references, '(?m)^\|\s*(R\d{2})\s*\|') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    if ($referenceIds.Count -lt 3 -or -not (Test-Path -LiteralPath $SourceCatalogPath -PathType Leaf)) {
+        throw "Workshop showcase '$showcaseId' design record needs at least three catalogued references."
+    }
+    $catalog = Get-Content -LiteralPath $SourceCatalogPath -Raw -Encoding UTF8
+    foreach ($referenceId in $referenceIds) {
+        if ($catalog -notmatch ('(?m)^\|\s*' + [regex]::Escape($referenceId) + '\s*\|')) {
+            throw "Workshop showcase '$showcaseId' design record cites unknown reference '$referenceId'."
+        }
+    }
+    $rules = Read-DesignSection 'Applied rules'
+    $ruleRows = @([regex]::Matches($rules, '(?m)^\|\s*([a-z0-9][a-z0-9-]{0,63})\s*\|') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -cne 'rule-id' })
+    $placements = Read-DesignSection 'Planned zones and placements'
+    $placementRows = @([regex]::Matches($placements, '(?m)^\|\s*([^|]+?)\s*\|') | ForEach-Object { $_.Groups[1].Value.Trim() } | Where-Object { $_ -cne 'Zone/object' -and $_ -notmatch '^-+$' })
+    $adjacency = Read-DesignSection 'Adjacency graph'
+    if ($ruleRows.Count -lt 3 -or $placementRows.Count -lt 3 -or $adjacency -notmatch '--[a-z0-9 -]+-->') {
+        throw "Workshop showcase '$showcaseId' design record needs at least three applied rules, three placements, and a directed adjacency graph."
+    }
+    $liveReview = Read-DesignSection 'Live review'
+    foreach ($field in @('Exact build/package identity','Exact process/evidence directory','Player action observed','Visible result observed','Geometry/material/traffic observations at final crop size','Remaining caveats')) {
+        $match = [regex]::Match($liveReview, '(?m)^- ' + [regex]::Escape($field) + ':\s*(.+?)\s*$')
+        if (-not $match.Success -or [string]::IsNullOrWhiteSpace($match.Groups[1].Value)) {
+            throw "Workshop showcase '$showcaseId' design record is not live-reviewed; '$field' is empty."
+        }
+    }
+    return [pscustomobject][ordered]@{
+        showcaseId = $showcaseId
+        path = $path
+        bytes = [long]$item.Length
+        sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+        status = $status
+        exactPresentationPackages = @($Showcase.requiredPackageIds | ForEach-Object { [string]$_ })
+        nativeWorkflow = $nativeWorkflow
+        referenceIds = $referenceIds
+        ruleCount = $ruleRows.Count
+        placementCount = $placementRows.Count
+    }
+}
+
 function Invoke-ShowcaseMediaTool {
     param(
         [Parameter(Mandatory)][string]$FilePath,
@@ -178,6 +270,7 @@ function Get-WorkshopShowcaseEvidence {
     }
     try { $evidence = Get-Content -LiteralPath $evidencePath -Raw -Encoding UTF8 | ConvertFrom-Json }
     catch { throw "Workshop showcase capture evidence is unreadable: $evidencePath" }
+    $isAssembly = [string]$evidence.schema -ceq 'RimWorldDevGateway/ShowcaseCaptureAssemblyEvidence/v1'
     [datetimeoffset]$capturedUtc = [datetimeoffset]::MinValue
     [datetimeoffset]$processStartUtc = [datetimeoffset]::MinValue
     $stateBeforeSelection = (Get-CanonicalJson @($evidence.stateBefore.selectedThings)) + '|' + (Get-CanonicalJson @($evidence.stateBefore.uiSelection))
@@ -185,7 +278,7 @@ function Get-WorkshopShowcaseEvidence {
     $declaredPackages = @($Showcase.requiredPackageIds | ForEach-Object { [string]$_ })
     $capturePackages = @($declaredPackages) + 'fumblesneeze.rimworlddevgateway'
     $declaredBeats = @($Showcase.beats | ForEach-Object { [string]$_ })
-    if ([string]$evidence.schema -cne 'RimWorldDevGateway/ShowcaseCaptureEvidence/v1' -or
+    if ((-not $isAssembly -and [string]$evidence.schema -cne 'RimWorldDevGateway/ShowcaseCaptureEvidence/v1') -or
         [string]$evidence.showcaseId -cne $showcaseId -or
         -not [datetimeoffset]::TryParse([string]$evidence.capturedUtc, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::RoundtripKind, [ref]$capturedUtc) -or
         [int]$evidence.processId -le 0 -or
@@ -197,10 +290,10 @@ function Get-WorkshopShowcaseEvidence {
         (Get-CanonicalJson @($evidence.observedBeats)) -cne (Get-CanonicalJson $declaredBeats) -or
         [string]::IsNullOrWhiteSpace([string]$evidence.reviewObservation) -or
         [bool]$evidence.bearerTokenRetained -or
-        [bool]$evidence.selectionMutated -or [bool]$evidence.cameraMutated -or
-        $stateBeforeSelection -cne $stateAfterSelection -or
-        (Get-CanonicalJson $evidence.stateBefore.camera) -cne (Get-CanonicalJson $evidence.stateAfter.camera) -or
-        [string]$evidence.plan.schema -cne 'RimWorldDevGateway/ShowcaseCapturePlan/v1' -or
+        (-not $isAssembly -and ([bool]$evidence.selectionMutated -or [bool]$evidence.cameraMutated -or
+            $stateBeforeSelection -cne $stateAfterSelection -or
+            (Get-CanonicalJson $evidence.stateBefore.camera) -cne (Get-CanonicalJson $evidence.stateAfter.camera))) -or
+        [string]$evidence.plan.schema -cne $(if ($isAssembly) { 'RimWorldDevGateway/ShowcaseCaptureAssemblyPlan/v1' } else { 'RimWorldDevGateway/ShowcaseCapturePlan/v1' }) -or
         [bool]$evidence.plan.mutatesGameState -or [bool]$evidence.plan.selectsThings -or
         ([bool]$evidence.plan.stillOnly -ne ($formats -cnotcontains 'gif')) -or
         [int]$evidence.plan.width -ne [int]$Showcase.crop.width -or
@@ -214,19 +307,54 @@ function Get-WorkshopShowcaseEvidence {
         throw "Workshop showcase '$showcaseId' has invalid or mutated capture evidence."
     }
     $evidenceDirectory = [IO.Path]::GetFullPath((Split-Path -Parent $evidencePath))
-    $optimizerCommand = Get-Command ([string]$evidence.pngOptimizer.name) -ErrorAction SilentlyContinue
-    $optimizerItem = if ($null -eq $optimizerCommand) { $null } else { Get-Item -LiteralPath $optimizerCommand.Source -ErrorAction SilentlyContinue }
     $expectedOptimizerArguments = @('-strip','-colors','256','-define','png:compression-level=9','-define','png:compression-filter=5')
-    if ($null -eq $optimizerItem -or
-        [string]$evidence.pngOptimizer.sha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
-        (Get-FileHash -LiteralPath $optimizerItem.FullName -Algorithm SHA256).Hash -cne [string]$evidence.pngOptimizer.sha256 -or
-        [string]::IsNullOrWhiteSpace([string]$evidence.pngOptimizer.version) -or
-        (Get-CanonicalJson @($evidence.pngOptimizer.arguments)) -cne (Get-CanonicalJson $expectedOptimizerArguments)) {
-        throw "Workshop showcase '$showcaseId' PNG optimizer provenance is invalid."
+    if (-not $isAssembly) {
+        $optimizerCommand = Get-Command ([string]$evidence.pngOptimizer.name) -ErrorAction SilentlyContinue
+        $optimizerItem = if ($null -eq $optimizerCommand) { $null } else { Get-Item -LiteralPath $optimizerCommand.Source -ErrorAction SilentlyContinue }
+        if ($null -eq $optimizerItem -or
+            [string]$evidence.pngOptimizer.sha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+            (Get-FileHash -LiteralPath $optimizerItem.FullName -Algorithm SHA256).Hash -cne [string]$evidence.pngOptimizer.sha256 -or
+            [string]::IsNullOrWhiteSpace([string]$evidence.pngOptimizer.version) -or
+            (Get-CanonicalJson @($evidence.pngOptimizer.arguments)) -cne (Get-CanonicalJson $expectedOptimizerArguments)) {
+            throw "Workshop showcase '$showcaseId' PNG optimizer provenance is invalid."
+        }
+        $optimizerVersion = Invoke-ShowcaseMediaTool -FilePath $optimizerItem.FullName -Arguments @('-version') -WorkingDirectory $evidenceDirectory -TimeoutMilliseconds 10000
+        if ($optimizerVersion.ExitCode -ne 0 -or (([string]$optimizerVersion.StandardOutput -split "`r?`n")[0]) -cne [string]$evidence.pngOptimizer.version) {
+            throw "Workshop showcase '$showcaseId' PNG optimizer version is not the recorded reviewed tool."
+        }
     }
-    $optimizerVersion = Invoke-ShowcaseMediaTool -FilePath $optimizerItem.FullName -Arguments @('-version') -WorkingDirectory $evidenceDirectory -TimeoutMilliseconds 10000
-    if ($optimizerVersion.ExitCode -ne 0 -or (([string]$optimizerVersion.StandardOutput -split "`r?`n")[0]) -cne [string]$evidence.pngOptimizer.version) {
-        throw "Workshop showcase '$showcaseId' PNG optimizer version is not the recorded reviewed tool."
+    else {
+        $segments = @($evidence.sourceSegments)
+        $segmentRoot = [IO.Path]::GetFullPath((Join-Path $evidenceDirectory 'segments')).TrimEnd('\') + '\'
+        $segmentBeats = [System.Collections.Generic.List[string]]::new()
+        if ($segments.Count -lt 2 -or $segments.Count -gt 12) { throw "Workshop showcase '$showcaseId' has an invalid hard-cut segment count." }
+        for ($segmentIndex = 0; $segmentIndex -lt $segments.Count; $segmentIndex++) {
+            $segment = $segments[$segmentIndex]
+            $segmentPath = [IO.Path]::GetFullPath((Join-Path $evidenceDirectory ([string]$segment.capturePath).Replace('/', '\')))
+            if ([int]$segment.index -ne ($segmentIndex + 1) -or
+                -not $segmentPath.StartsWith($segmentRoot, [StringComparison]::OrdinalIgnoreCase) -or
+                -not (Test-Path -LiteralPath $segmentPath -PathType Leaf) -or
+                [string]$segment.segmentCaptureSha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+                (Get-FileHash -LiteralPath $segmentPath -Algorithm SHA256).Hash -cne [string]$segment.segmentCaptureSha256) {
+                throw "Workshop showcase '$showcaseId' has invalid hard-cut source evidence."
+            }
+            $source = Get-Content -LiteralPath $segmentPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ([string]$source.schema -cne 'RimWorldDevGateway/ShowcaseCaptureEvidence/v1' -or
+                [string]$source.showcaseId -cne $showcaseId -or
+                [int]$source.processId -ne [int]$evidence.processId -or
+                [string]$source.processStartUtc -cne [string]$evidence.processStartUtc -or
+                [string]$source.runId -cne [string]$evidence.runId -or
+                (Get-CanonicalJson @($source.orderedPackageIds)) -cne (Get-CanonicalJson @($evidence.orderedPackageIds)) -or
+                (Get-CanonicalJson @($source.orderedPackageIdentities)) -cne (Get-CanonicalJson @($evidence.orderedPackageIdentities)) -or
+                [bool]$source.selectionMutated -or [bool]$source.cameraMutated -or [bool]$source.bearerTokenRetained -or
+                (Get-CanonicalJson @($source.observedBeats)) -cne (Get-CanonicalJson @($segment.observedBeats))) {
+                throw "Workshop showcase '$showcaseId' hard-cut segment is not one immutable same-process capture."
+            }
+            foreach ($beat in @($source.observedBeats)) { $segmentBeats.Add([string]$beat) }
+        }
+        if ((Get-CanonicalJson @($segmentBeats)) -cne (Get-CanonicalJson $declaredBeats)) {
+            throw "Workshop showcase '$showcaseId' hard-cut segment beats do not match the declaration."
+        }
     }
     for ($identityIndex = 0; $identityIndex -lt $capturePackages.Count; $identityIndex++) {
         $identity = @($evidence.orderedPackageIdentities)[$identityIndex]
@@ -259,11 +387,11 @@ function Get-WorkshopShowcaseEvidence {
     $reviewedProductFiles = @(Get-ChildItem -LiteralPath $reviewedProductRoot -File -Recurse -ErrorAction Stop | Where-Object {
         $relative = (Get-RelativePath -Root $reviewedProductRoot -Path $_.FullName).Replace('\', '/')
         $relative -ceq 'About/About.xml' -or
+            $relative -ceq 'About/PublishedFileId.txt' -or
             $relative -ceq 'LoadFolders.xml' -or
             ($relative.StartsWith('1.6/', [StringComparison]::Ordinal) -and
                 -not $relative.EndsWith('.pdb', [StringComparison]::OrdinalIgnoreCase) -and
-                $relative -cne '1.6/Patches/ImmersiveChefsIntegrationProbePatch.xml' -and
-                $relative -cne 'About/PublishedFileId.txt')
+                $relative -cne '1.6/Patches/ImmersiveChefsIntegrationProbePatch.xml')
     } | Sort-Object { (Get-RelativePath -Root $reviewedProductRoot -Path $_.FullName).Replace('\', '/') } | ForEach-Object {
         [pscustomobject][ordered]@{
             path = (Get-RelativePath -Root $reviewedProductRoot -Path $_.FullName).Replace('\', '/')
@@ -392,9 +520,21 @@ function Get-WorkshopShowcaseEvidence {
         }
     }
     $evidenceItem = Get-Item -LiteralPath $evidencePath
+    $sourceSegmentEvidence = @()
+    if ($isAssembly) {
+        $sourceSegmentEvidence = @($evidence.sourceSegments | ForEach-Object {
+            $segmentPath = [IO.Path]::GetFullPath((Join-Path $evidenceDirectory ([string]$_.capturePath).Replace('/', '\')))
+            [pscustomobject][ordered]@{
+                path = $segmentPath
+                bytes = (Get-Item -LiteralPath $segmentPath).Length
+                sha256 = (Get-FileHash -LiteralPath $segmentPath -Algorithm SHA256).Hash
+            }
+        })
+    }
     return [pscustomobject][ordered]@{
         showcaseId = $showcaseId
         outputs = $outputs
+        sourceSegments = $sourceSegmentEvidence
         provenance = [pscustomobject][ordered]@{
             path = $evidencePath
             bytes = [long]$evidenceItem.Length
@@ -416,7 +556,8 @@ function Write-JsonUtf8 {
 function Resolve-ExistingWorkshopIdentity {
     param(
         [object]$DeclaredId,
-        [Parameter(Mandatory)][string]$StateRoot
+        [Parameter(Mandatory)][string]$StateRoot,
+        [string]$SourceIdentityPath
     )
     $identities = [System.Collections.Generic.List[System.UInt64]]::new()
     if ($null -ne $DeclaredId) {
@@ -425,6 +566,20 @@ function Resolve-ExistingWorkshopIdentity {
             throw 'The release descriptor Workshop identity is invalid.'
         }
         $identities.Add($parsed)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SourceIdentityPath)) {
+        if (-not (Test-Path -LiteralPath $SourceIdentityPath -PathType Leaf)) {
+            if ($null -ne $DeclaredId) {
+                throw 'The checked-in About/PublishedFileId.txt identity is missing for this published mod.'
+            }
+        }
+        else {
+            [System.UInt64]$parsed = 0
+            if (-not [ulong]::TryParse((Get-Content -LiteralPath $SourceIdentityPath -Raw).Trim(), [ref]$parsed) -or $parsed -eq 0) {
+                throw 'The checked-in About/PublishedFileId.txt identity is invalid.'
+            }
+            $identities.Add($parsed)
+        }
     }
     $identityPath = Join-Path $StateRoot 'PublishedFileId.txt'
     if (Test-Path -LiteralPath $identityPath -PathType Leaf) {
@@ -521,7 +676,11 @@ if ($rawRimWorldBuild -cne [string]$release.rimWorldBuild -or
     Exit-InvalidInput 'The installed RimWorld build does not match the pinned release inputs.'
 }
 $releaseStateRoot = Join-Path $repositoryRoot 'artifacts\Releases\fumblesneeze.immersivechefs'
-$effectivePublishedFileId = Resolve-ExistingWorkshopIdentity -DeclaredId $release.publishedFileId -StateRoot $releaseStateRoot
+$sourcePublishedFileIdPath = Join-Path $repositoryRoot 'mods\ImmersiveChefs\About\PublishedFileId.txt'
+$effectivePublishedFileId = Resolve-ExistingWorkshopIdentity `
+    -DeclaredId $release.publishedFileId `
+    -StateRoot $releaseStateRoot `
+    -SourceIdentityPath $sourcePublishedFileIdPath
 if ($effectivePublishedFileId -eq 0 -and -not [bool]$release.allowFirstPublication) {
     Exit-InvalidInput 'The descriptor has no Workshop item and does not allow first publication.'
 }
@@ -565,11 +724,7 @@ $null = New-Item -ItemType Directory -Path (Join-Path $packageRoot 'About'),(Joi
 Copy-Item -LiteralPath (Join-Path $builtRoot 'About\About.xml') -Destination (Join-Path $packageRoot 'About\About.xml')
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'mods\ImmersiveChefs\About\Preview.png') -Destination (Join-Path $packageRoot 'About\Preview.png')
 if ($effectivePublishedFileId -ne 0) {
-    $publishedIdentity = [string]$effectivePublishedFileId
-    [IO.File]::WriteAllText(
-        (Join-Path $packageRoot 'About\PublishedFileId.txt'),
-        $publishedIdentity,
-        [Text.UTF8Encoding]::new($false))
+    Copy-Item -LiteralPath $sourcePublishedFileIdPath -Destination (Join-Path $packageRoot 'About\PublishedFileId.txt')
 }
 Copy-Item -LiteralPath (Join-Path $builtRoot '1.6\Assemblies\ImmersiveChefs.dll') -Destination (Join-Path $packageRoot '1.6\Assemblies\ImmersiveChefs.dll')
 foreach ($directory in @('Defs', 'Languages', 'Patches', 'Textures')) {
@@ -611,6 +766,7 @@ $showcasePreviews = @($showcaseDefinition.showcases | ForEach-Object {
     $relativePath = if ($carouselFormat -ceq 'gif') { [string]$showcase.outputs.gif } else { [string]$showcase.outputs.screenshot }
     if ([string]$showcase.id -notmatch '^[a-z0-9-]{1,48}$' -or
         [string]$showcase.carousel.token -notmatch '^[a-z0-9-]{1,32}$' -or
+        [string]$showcase.designRecord -cne "designs/$($showcase.id).md" -or
         [int]$showcase.carousel.slot -lt 5 -or [int]$showcase.carousel.slot -gt 9 -or
         $formats -cnotcontains 'screenshot' -or
         $carouselFormat -notin @('gif', 'screenshot') -or
@@ -646,6 +802,14 @@ $showcaseEvidence = @($showcaseDefinition.showcases | ForEach-Object {
 })
 if ($showcaseEvidence.Count -ne 5 -or @($showcaseEvidence.showcaseId | Sort-Object -Unique).Count -ne 5) {
     Exit-InvalidInput 'Every declared Workshop showcase must have one exact reviewed capture-evidence record.'
+}
+$sourceCatalogPath = Join-Path $repositoryRoot '.agents\skills\rimworld-realistic-base-generation\references\source-catalog.md'
+$showcaseDesignEvidence = @($showcaseDefinition.showcases | ForEach-Object {
+    try { Get-WorkshopShowcaseDesignEvidence -Showcase $_ -ReleaseRoot $releaseRoot -SourceCatalogPath $sourceCatalogPath }
+    catch { Exit-InvalidInput $_.Exception.Message }
+})
+if ($showcaseDesignEvidence.Count -ne 5 -or @($showcaseDesignEvidence.showcaseId | Sort-Object -Unique).Count -ne 5) {
+    Exit-InvalidInput 'Every declared Workshop showcase must have one exact live-reviewed design-evidence record.'
 }
 $cardTokens = @($presentationDefinition.carouselCards | ForEach-Object { [string]$_ })
 if ($cardTokens.Count -ne 5 -or @($cardTokens | Sort-Object -Unique).Count -ne 5) {
@@ -764,6 +928,7 @@ $plan = [pscustomobject][ordered]@{
     previewSha256 = (Get-FileHash -LiteralPath $previewPath -Algorithm SHA256).Hash
     additionalPreviews = $additionalPreviews
     showcaseEvidence = $showcaseEvidence
+    showcaseDesignEvidence = $showcaseDesignEvidence
     mutatesSteam = $false
 }
 $planPath = Join-Path $evidenceRoot 'publication-plan.json'

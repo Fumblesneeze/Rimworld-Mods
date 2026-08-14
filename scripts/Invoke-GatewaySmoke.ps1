@@ -358,8 +358,8 @@ function Copy-GatewayPrelaunchConfig {
             throw "Prelaunch config target already exists: $target"
         }
         [System.IO.File]::Copy($entry.FullName, $target, $false)
-        $sourceHash = (Get-FileHash -LiteralPath $entry.FullName -Algorithm SHA256).Hash
-        $targetHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
+        $sourceHash = Get-GatewaySmokeFileSha256 -Path $entry.FullName
+        $targetHash = Get-GatewaySmokeFileSha256 -Path $target
         if ($sourceHash -cne $targetHash) {
             throw "Prelaunch config copy hash mismatch for '$($entry.Name)'."
         }
@@ -962,7 +962,7 @@ function Get-GatewaySmokeAssemblyEvidence {
             FileName = $assemblyName
             AssemblyIdentity = $identity
             Length = [long]$item.Length
-            Sha256 = (Get-FileHash -LiteralPath $assemblyPath -Algorithm SHA256).Hash
+            Sha256 = Get-GatewaySmokeFileSha256 -Path $assemblyPath
         }
     }
 }
@@ -983,7 +983,7 @@ function Get-GatewaySmokeFileEvidence {
     return [pscustomobject]@{
         RelativePath = $RelativePath.Replace('\', '/')
         Length = [long]$item.Length
-        Sha256 = (Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash
+        Sha256 = Get-GatewaySmokeFileSha256 -Path $item.FullName
     }
 }
 
@@ -1108,6 +1108,37 @@ function Get-GatewaySmokeManagedAssemblyEvidence {
     }
 }
 
+function Get-GatewaySmokeFileSha256 {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $resolvedPath = [System.IO.Path]::GetFullPath($Path)
+    $stream = [System.IO.File]::OpenRead($resolvedPath)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return [System.BitConverter]::ToString($sha256.ComputeHash($stream)).Replace('-', '')
+    }
+    finally {
+        $sha256.Dispose()
+        $stream.Dispose()
+    }
+}
+
+function Get-GatewaySmokeRelativePath {
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $resolvedRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+    $resolvedPath = [System.IO.Path]::GetFullPath($Path)
+    $rootUri = [Uri]::new($resolvedRoot)
+    $pathUri = [Uri]::new($resolvedPath)
+    if (-not [string]::Equals($rootUri.Scheme, $pathUri.Scheme, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Relative path roots use different URI schemes: '$resolvedRoot' and '$resolvedPath'."
+    }
+    return [Uri]::UnescapeDataString($rootUri.MakeRelativeUri($pathUri).ToString()).Replace('\', '/')
+}
+
 function Get-GatewaySmokeAdditionalModProject {
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
@@ -1191,7 +1222,7 @@ function Get-GatewaySmokeAdditionalModProject {
             }
             if (-not $entry.PSIsContainer -and $entry.Extension -ieq '.xml') {
                 $sourcePatchFiles.Add([pscustomobject]@{
-                    RelativePath = [System.IO.Path]::GetRelativePath($patchRoot, $entry.FullName).Replace('\', '/')
+                    RelativePath = Get-GatewaySmokeRelativePath -Root $patchRoot -Path $entry.FullName
                     SourcePath = $entry.FullName
                 })
             }
@@ -1202,7 +1233,7 @@ function Get-GatewaySmokeAdditionalModProject {
         PackageId = $packageId
         AssemblyName = $assemblyName
         ProjectPath = $resolvedProjectPath
-        RelativeProjectPath = [System.IO.Path]::GetRelativePath($root, $resolvedProjectPath).Replace('\', '/')
+        RelativeProjectPath = Get-GatewaySmokeRelativePath -Root $root -Path $resolvedProjectPath
         SourcePatchFiles = @($sourcePatchFiles | Sort-Object RelativePath)
     }
 }
@@ -1243,15 +1274,13 @@ function Get-GatewaySmokeProductPackageEvidence {
     $managedAssembliesByPath = [System.Collections.Generic.SortedDictionary[string, object]]::new(
         [System.StringComparer]::Ordinal)
     foreach ($packageFile in @($packageEntries | Where-Object { -not $_.PSIsContainer })) {
-        $relativePath = [System.IO.Path]::GetRelativePath(
-            $packageRoot,
-            $packageFile.FullName).Replace('\', '/')
+        $relativePath = Get-GatewaySmokeRelativePath -Root $packageRoot -Path $packageFile.FullName
         $filesByPath.Add(
             $relativePath,
             [pscustomobject]@{
                 RelativePath = $relativePath
                 Length = [long]$packageFile.Length
-                Sha256 = (Get-FileHash -LiteralPath $packageFile.FullName -Algorithm SHA256).Hash
+                Sha256 = Get-GatewaySmokeFileSha256 -Path $packageFile.FullName
             })
 
         if ($packageFile.Extension -ieq '.dll') {
@@ -1317,7 +1346,7 @@ function Get-GatewaySmokeProductPackageEvidence {
     }
     $sourceRelativePaths = @($sourcePatches | ForEach-Object { [string]$_.RelativePath } | Sort-Object)
     $deployedRelativePaths = @($deployedPatchFiles | ForEach-Object {
-            [System.IO.Path]::GetRelativePath($deployedPatchRoot, $_.FullName).Replace('\', '/')
+            Get-GatewaySmokeRelativePath -Root $deployedPatchRoot -Path $_.FullName
         } | Sort-Object)
     $patchSetsDiffer = $sourceRelativePaths.Count -ne $deployedRelativePaths.Count
     if (-not $patchSetsDiffer -and $sourceRelativePaths.Count -gt 0) {
@@ -2735,7 +2764,7 @@ function Get-OptionalFileHash {
         return $null
     }
 
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+    return Get-GatewaySmokeFileSha256 -Path $Path
 }
 
 function Write-MinimalModsConfig {
@@ -3025,7 +3054,7 @@ function Remove-GatewaySmokeLanguageProvider {
 
     if ([bool]$Record.CreatedFile -and (Test-Path -LiteralPath $targetPath -PathType Leaf)) {
         if (-not [string]::IsNullOrWhiteSpace([string]$Record.TargetSha256) -and
-            (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash -cne [string]$Record.TargetSha256) {
+            (Get-GatewaySmokeFileSha256 -Path $targetPath) -cne [string]$Record.TargetSha256) {
             throw "Refusing to remove changed language-provider metadata: $targetPath"
         }
         Remove-Item -LiteralPath $targetPath -Force
@@ -4447,7 +4476,7 @@ function Assert-GatewayHangDumpProbeOutcome {
         Status = 'passed'
         DumpPath = $resolvedExpectedDumpPath
         DumpLength = [long](Get-Item -LiteralPath $resolvedExpectedDumpPath).Length
-        DumpSha256 = (Get-FileHash -LiteralPath $resolvedExpectedDumpPath -Algorithm SHA256).Hash
+        DumpSha256 = Get-GatewaySmokeFileSha256 -Path $resolvedExpectedDumpPath
         ProcessMethod = [string]$ProcessCleanup.Method
         ProcessId = [int]$ProcessCleanup.Dump.TargetProcessId
         ProcessStartUtc = [string]$ProcessCleanup.Dump.TargetProcessStartUtc
@@ -7824,6 +7853,79 @@ try {
                         -Token $manifest.token `
                         -RequestId $scenarioRequestId `
                         -ArtifactPath $stepArtifactPath
+                    $scenarioStepResults.Add([pscustomobject]@{
+                        Id = $stepId
+                        Kind = $kind
+                        Artifact = $stepArtifactPath
+                    })
+                }
+                'native-ticks' {
+                    $nativeTickCount = [int]$step.ticks
+                    if ($nativeTickCount -lt 1 -or $nativeTickCount -gt 60000) {
+                        throw "Gateway scenario '$($scenarioPlan.Name)' step '$stepId' must request 1..60000 native ticks."
+                    }
+
+                    $stepArtifactPath = Join-Path $runDirectory "scenario-$scenarioStepIndex-$stepId.json"
+                    $beforeResponse = Invoke-GatewayGet `
+                        -Uri "$baseUrl/status" `
+                        -Token $manifest.token `
+                        -RequestId (New-GatewayScenarioRequestId -ScenarioName ([string]$scenarioPlan.Name) -StepId "$stepId-before")
+                    $beforeEnvelope = $beforeResponse.Content | ConvertFrom-Json -ErrorAction Stop
+                    if ([int]$beforeResponse.StatusCode -ne 200 -or
+                        -not $beforeEnvelope.ok -or
+                        $null -eq $beforeEnvelope.result.tick) {
+                        throw "Gateway scenario '$($scenarioPlan.Name)' could not observe the pre-tick state for '$stepId'."
+                    }
+                    $nativeTickStart = [long]$beforeEnvelope.result.tick
+                    $nativeTickTarget = [long]($nativeTickStart + $nativeTickCount)
+                    $resumeResponse = Invoke-GatewayJsonPost `
+                        -Uri "$baseUrl/game-state" `
+                        -Token $manifest.token `
+                        -RequestId (New-GatewayScenarioRequestId -ScenarioName ([string]$scenarioPlan.Name) -StepId "$stepId-resume") `
+                        -Body ([ordered]@{ speed = 'Normal' })
+                    if ([int]$resumeResponse.StatusCode -lt 200 -or [int]$resumeResponse.StatusCode -ge 300) {
+                        throw "Gateway scenario '$($scenarioPlan.Name)' could not resume native game time for '$stepId'."
+                    }
+
+                    $nativeTickDeadline = [datetime]::UtcNow.AddSeconds(30)
+                    $nativeTickObserved = $nativeTickStart
+                    while ([datetime]::UtcNow -lt $nativeTickDeadline -and $nativeTickObserved -lt $nativeTickTarget) {
+                        Start-Sleep -Milliseconds 50
+                        $pollResponse = Invoke-GatewayGet `
+                            -Uri "$baseUrl/status" `
+                            -Token $manifest.token `
+                            -RequestId (New-GatewayScenarioRequestId -ScenarioName ([string]$scenarioPlan.Name) -StepId "$stepId-poll-$nativeTickObserved")
+                        $pollEnvelope = $pollResponse.Content | ConvertFrom-Json -ErrorAction Stop
+                        if ([int]$pollResponse.StatusCode -eq 200 -and
+                            $pollEnvelope.ok -and
+                            $null -ne $pollEnvelope.result.tick) {
+                            $nativeTickObserved = [long]$pollEnvelope.result.tick
+                        }
+                    }
+
+                    $pauseResponse = Invoke-GatewayJsonPost `
+                        -Uri "$baseUrl/game-state" `
+                        -Token $manifest.token `
+                        -RequestId (New-GatewayScenarioRequestId -ScenarioName ([string]$scenarioPlan.Name) -StepId "$stepId-pause") `
+                        -Body ([ordered]@{ paused = $true })
+                    $pauseEnvelope = $pauseResponse.Content | ConvertFrom-Json -ErrorAction Stop
+                    if ([int]$pauseResponse.StatusCode -lt 200 -or
+                        [int]$pauseResponse.StatusCode -ge 300 -or
+                        -not $pauseEnvelope.ok -or
+                        -not $pauseEnvelope.result.After.Paused) {
+                        throw "Gateway scenario '$($scenarioPlan.Name)' could not pause after native ticks for '$stepId'."
+                    }
+                    if ($nativeTickObserved -lt $nativeTickTarget) {
+                        throw "Gateway scenario '$($scenarioPlan.Name)' timed out before '$stepId' reached $nativeTickTarget ticks."
+                    }
+
+                    [pscustomobject][ordered]@{
+                        StartedTick = $nativeTickStart
+                        RequestedTicks = $nativeTickCount
+                        TargetTick = $nativeTickTarget
+                        ObservedTick = $nativeTickObserved
+                        PausedAfter = $true
+                    } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $stepArtifactPath -Encoding UTF8
                     $scenarioStepResults.Add([pscustomobject]@{
                         Id = $stepId
                         Kind = $kind

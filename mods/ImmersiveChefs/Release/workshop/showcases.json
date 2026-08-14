@@ -13,6 +13,7 @@
   "showcases": [
     {
       "id": "gastronomy-service",
+      "designRecord": "designs/gastronomy-service.md",
       "title": "Dinner service, from order to table",
       "formats": [ "screenshot", "gif" ],
       "requiredPackageIds": [
@@ -35,6 +36,7 @@
     },
     {
       "id": "dishwasher-turnaround",
+      "designRecord": "designs/dishwasher-turnaround.md",
       "title": "From a mountain of dishes to a tidy kitchen",
       "formats": [ "screenshot", "gif" ],
       "requiredPackageIds": [
@@ -57,6 +59,7 @@
     },
     {
       "id": "nutrient-paste-prison-line",
+      "designRecord": "designs/nutrient-paste-prison-line.md",
       "title": "Prison chow still needs a plate",
       "formats": [ "screenshot", "gif" ],
       "requiredPackageIds": [
@@ -78,6 +81,7 @@
     },
     {
       "id": "professional-prep-line",
+      "designRecord": "designs/professional-prep-line.md",
       "title": "Prep ahead, cook fast, keep it hot",
       "formats": [ "screenshot", "gif" ],
       "requiredPackageIds": [
@@ -98,6 +102,7 @@
     },
     {
       "id": "dining-memories",
+      "designRecord": "designs/dining-memories.md",
       "title": "Dining mistakes linger",
       "formats": [ "screenshot" ],
       "requiredPackageIds": [

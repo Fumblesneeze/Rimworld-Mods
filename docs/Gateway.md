@@ -146,6 +146,15 @@ Useful client examples:
 
 For a bounded gameplay preview sequence, run `scripts\Invoke-RimWorldShowcaseCapture.ps1` against the exact held session. It captures at most five seconds of fixed-view PNG frames, retains timing and applied-rectangle provenance, copies one full-detail still, and encodes a sub-1-MiB GIF candidate with ffmpeg. It does not select Things, pan the camera, or arrange the scene; the caller starts the native gameplay workflow first.
 
+When a showcase needs more than one fixed view, capture each beat group into
+`<showcase>/segments/<segment>` without ending the held process, keeping the same `ShowcaseId` and
+using each segment's exact beat subset. Assemble those source records with
+`scripts\Invoke-RimWorldShowcaseAssembly.ps1`. It accepts only two to twelve captures from the same
+PID/start/run and ordered package identities, verifies every source frame, requires their ordered
+beat union to match the final manifest, and re-encodes only the retained frames. Hard cuts may change
+camera framing between stable source captures; no pan, recreated outcome, cross-process splice, or
+unrecorded frame is acceptable.
+
 Initial semantic actions are `game.pause` (optional boolean `paused`, omitted to toggle), `game.speed` (`paused`, `normal`, `fast`, `superfast`, or `ultrafast`), `window.accept`, `window.cancel`, and `debug.tool.cancel`. The last action is available only while a native `DebugTool` pointer action is active and clears that exact native tool instead of cancelling an unrelated window. Discovery is authoritative: an action may be present but unavailable at the current menu/window/game state. Prefer `GET/POST /game-state` for deterministic pause/speed control and use raw keyboard input when the native keybinding itself is the behavior under test. Raw input is Windows-only, revalidates the RimWorld PID/window/client bounds, and can optionally skip activation with `--no-activate`.
 
 All raw click, drag, chord, and text injection runs on HTTP workers through one serialized input lane, not Unity's main thread. Windows activation temporarily joins the worker, prior-foreground, and exact RimWorld window input queues and retains that lease until the gesture finishes; cleanup always detaches them. A click may reacquire focus once if the first transition is lost before mouse-down, records `focus_reacquire` in its event ledger, and never retries after a button was pressed. A click cannot interleave with an active drag, and request/server cancellation interrupts timed drag waits while retaining the lane through best-effort mouse/key release. This lets RimWorld process injected events without a long gesture freezing the game; live Verse and Unity state operations still go through the bounded dispatcher.

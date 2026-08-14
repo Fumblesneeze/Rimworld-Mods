@@ -26,7 +26,13 @@ and its referenced `frames/` PNGs. The release builder replays the relocatable e
 binds the exact loaded packages and product DLL. Keep unrelated exploratory captures in ignored
 artifacts. Personally review every crop; each must remain under five seconds and Steam's 1 MiB
 additional-preview limit. Use fixed cameras and hard cuts instead of
-panning across walking time. Every non-initial release supplies a concise player-facing Steam change
+panning across walking time. For a multi-view sequence, capture two or more individually stable
+segments from the same exact held process beneath the final showcase's `segments/` directory, then
+run `scripts\Invoke-RimWorldShowcaseAssembly.ps1`. The assembler preserves each source capture/hash,
+requires one process and package build, requires the exact ordered beat union, copies only retained
+game frames, and emits the final screenshot, sub-five-second GIF, and assembly provenance. Do not
+splice frames from separate launches or use an editor-generated transition as gameplay evidence.
+Every non-initial release supplies a concise player-facing Steam change
 note that says what visibly changed; blank, generic, auto-generated, or recycled notes are not useful
 release notes and must not be published.
 

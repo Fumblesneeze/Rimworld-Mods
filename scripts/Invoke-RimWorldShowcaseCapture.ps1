@@ -176,6 +176,7 @@ function Get-LivePackageIdentities([object[]]$Packages) {
             $loadableProductFiles = @(Get-ChildItem -LiteralPath $root -File -Recurse -ErrorAction Stop | Where-Object {
                 $relative = (Get-RelativePath -Root $root -Path $_.FullName).Replace('\', '/')
                 $relative -ceq 'About/About.xml' -or
+                    $relative -ceq 'About/PublishedFileId.txt' -or
                     $relative -ceq 'LoadFolders.xml' -or
                     ($relative.StartsWith('1.6/', [StringComparison]::Ordinal) -and
                         -not $relative.EndsWith('.pdb', [StringComparison]::OrdinalIgnoreCase) -and

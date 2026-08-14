@@ -144,11 +144,15 @@ Each per-mod release manifest SHALL classify every declared mod relationship as 
 ### Requirement: Presentation outputs are validated before upload
 The presentation compiler SHALL validate required fields, BBCode/link policy, generated asset dimensions and file limits, missing or stale sprite references, text overflow, deterministic rendering, and a locally reviewable preview. Publication MUST consume only the reviewed presentation bundle identified by hash.
 
-Each distributable mod MAY additionally declare an ordered gameplay-showcase inventory. Every showcase SHALL name its required active package chain, scene purpose, native player workflow, observable beats, capture crop and final Steam preview order. When a showcase requests both formats, one reviewed in-game screenshot and one reviewed GIF SHALL be produced from the same declared scene family. The screenshot SHALL retain readable gameplay detail. The GIF SHALL be no longer than five seconds, SHALL prefer hard cuts over camera panning or long walking, and SHALL remain under Steam's one-MiB additional-preview limit. Both SHALL depict believable gameplay rooms and colonists rather than a cleared-map test fixture.
+Each distributable mod MAY additionally declare an ordered gameplay-showcase inventory. Every showcase SHALL name its required active package chain, scene purpose, native player workflow, observable beats, capture crop and final Steam preview order. When a showcase requests both formats, one reviewed in-game screenshot and one reviewed GIF SHALL be produced from the same declared scene family. The screenshot SHALL retain readable gameplay detail. Each action beat SHALL use the closest fixed camera and crop that still includes the acting pawn, manipulated Things, destination and necessary immediate context; a whole-room or whole-colony overview SHALL NOT substitute for a legible action view. The GIF SHALL be no longer than five seconds, SHALL prefer tight hard-cut action views over camera panning, wide compound views, or long walking, and SHALL remain under Steam's one-MiB additional-preview limit. Both SHALL depict believable gameplay rooms and colonists rather than a cleared-map test fixture.
 
-Before arranging a new showcase archetype, the repository workflow SHALL inspect and catalog a varied player-built visual corpus with whole-colony, close-workflow, optional-mod and contrasting examples. Scene rules SHALL identify whether they are mechanical, recurrent across independent colonies, archetype-specific, or unconfirmed candidates. Every arranged showcase SHALL retain a design record containing its brief, eligible reference IDs, applied classified rules, adjacency graph, placement rationale, rejected drafts and live visual observations. A remote Real Ruins database MAY be sampled only through a bounded untrusted-input path derived from the current open-source client; local caches SHALL be preferred, raw blueprints and downloaded reference images SHALL remain ignored research inputs, and no player blueprint SHALL be republished as release art.
+Before arranging a new showcase archetype, the repository workflow SHALL inspect and catalog a varied player-built visual corpus with whole-colony, close-workflow, optional-mod and contrasting examples. Scene rules SHALL identify whether they are mechanical, recurrent across independent colonies, archetype-specific, or unconfirmed candidates. Every arranged showcase SHALL retain a design record containing its brief, eligible reference IDs, applied classified rules, adjacency graph, placement rationale, rejected drafts and live visual observations. Real Ruins evidence SHALL use a reproducible bounded bulk-corpus operation derived from the current open-source client rather than a token handful of blueprints: it SHALL retain the complete metadata cohort, safely parse enough blueprint bodies to support the claimed placement statistics, report failures and unresolved modded Defs, and bind every promoted quantitative rule to its exact sample size and corpus identity. Local caches SHALL be preferred when populated; raw blueprints and downloaded reference images SHALL remain ignored research inputs, and no player blueprint SHALL be republished as release art.
+
+The corpus analyzer SHALL treat every metadata response and compressed blueprint as untrusted input. It SHALL impose explicit request, compressed-byte, expanded-byte, XML depth/cell/item, concurrency and total-operation bounds; prohibit DTDs and external entity resolution; use independently generated local paths; resume without duplicating accepted bodies; and produce stable machine-readable summaries. It SHALL distinguish exact resolved Def contracts from unresolved names. A showcase SHALL NOT be arranged until the corpus has produced measured rules for its relevant geometry and the acting agent has visually inspected a stratified set of matching real layouts.
 
 Gateway-assisted presentation capture SHALL support cropping a rendered frame around projected Things without selecting them, and SHALL support a camera-center crop with pixel width, height and X/Y offset. Capture MUST preserve the caller's selection, camera and visible UI state and MUST NOT add selection brackets, test overlays, debug windows, or direct state mutations to the recorded result. A bounded frame-sequence capture SHALL record source-frame identities and timing so a repository tool can encode a reviewed GIF reproducibly.
+
+When a declared GIF uses hard cuts, every source segment SHALL be a complete capture record from the same exact held process, process-start identity, run and ordered package/build identity. The assembler SHALL consume only verified retained frames, SHALL hash and retain every segment record, SHALL require the ordered union of segment beats to equal the declared showcase beats, and SHALL reject cross-process splicing, unrecorded frames, synthetic transitions and a final duration above five seconds.
 
 #### Scenario: Banner text overflows its template
 - **WHEN** generated text exceeds the template's declared safe region
@@ -165,6 +169,10 @@ Gateway-assisted presentation capture SHALL support cropping a rendered frame ar
 #### Scenario: Short gameplay GIF is ready for Steam
 - **WHEN** a declared showcase records native gameplay beats for motion preview
 - **THEN** the encoder uses only retained in-game frames, produces a GIF of at most five seconds and under one MiB, records its frame timing and palette/encoder provenance, and rejects unreadable output
+
+#### Scenario: Hard cuts retain one causal game process
+- **WHEN** an order, kitchen and delivery story needs several fixed camera views
+- **THEN** each segment comes from the same exact held game process and reviewed package build, the segments preserve the declared beat order, and the final GIF contains only their verified native-game frames
 
 ### Requirement: Incremental releases publish meaningful change notes
 Every update to an existing Workshop item SHALL provide a nonempty authored change note in player-facing language. The dry-run SHALL show the exact note, bind its UTF-8 bytes into the immutable publication plan, and distinguish it from the previous verified note. The publisher SHALL pass that exact note to Steam's item-update submission and SHALL retain the resulting change-note identity or remotely observed entry in the credential-free receipt. It MUST reject blank, whitespace-only, generic, automatically generated commit/file lists, and unchanged copied notes before mutation.
@@ -236,3 +244,28 @@ Each release attempt SHALL record source revision and dirty-state policy, releas
 #### Scenario: Release receipt is audited
 - **WHEN** a publication attempt reaches a terminal state
 - **THEN** its evidence connects the exact reviewed source, dependencies, tests, package, presentation, target item, result, and cleanup without containing reusable credentials
+
+### Requirement: Published Workshop identity is repository durable
+After a mod receives a nonzero Steam Workshop identity, the distributable source tree SHALL check in `About/PublishedFileId.txt` and the release manifest SHALL declare the same exact value. Candidate staging SHALL require both identities, byte-for-byte package the checked-in About file, and fail before publication when either is absent, zero, malformed, or disagrees with the other, a retained receipt, or the remotely owned item. Later releases SHALL be update-only. A generated-at-publication identity is permitted only during the one explicitly confirmed first-publication transaction and MUST be promoted into the repository before any subsequent release plan is accepted.
+
+#### Scenario: A published mod is cloned to another machine
+- **WHEN** a clean checkout prepares an update for an already published mod without access to prior ignored artifacts
+- **THEN** the checked-in `About/PublishedFileId.txt` and matching release manifest resolve the existing Workshop item and prevent accidental creation of a second item
+
+#### Scenario: Repository identity is missing or inconsistent
+- **WHEN** an existing-item release lacks the checked-in About identity or it differs from the release manifest, receipt, staged candidate, or remote item
+- **THEN** release validation fails before any Steam mutation
+
+### Requirement: Release and test tooling is noninteractive
+Automated release, package, and regression tests SHALL NOT launch Notepad, a default file association, a browser, or any other unrelated visible desktop application as a dummy process. Process-identity fixtures SHALL use an owned hidden noninteractive child with redirected or suppressed shell UI, bind it by retained process/start identity, and terminate only that exact child in cleanup.
+
+#### Scenario: Process-lease tests run on a developer desktop
+- **WHEN** the focused release-tool tests exercise a retained process and PID/start-identity mismatch
+- **THEN** no Notepad or other unrelated application window appears and the exact hidden fixture process is cleaned up
+
+### Requirement: Workshop cards composite safely on Steam
+Workshop feature-card sources SHALL retain their rounded card composition, but the uploaded raster's outer corner pixels SHALL be deliberately composited to the measured Steam Workshop page background color when Steam displays transparent PNG corners against an opaque white matte. The selected background color and observation date SHALL live in the versioned presentation template, and generated-card tests SHALL require that exact opaque corner color instead of accepting alpha that renders white on the published page. Illustrations inside the card MAY remain transparently composited before the final card render.
+
+#### Scenario: A generated card is viewed on the Workshop page
+- **WHEN** Steam renders an uploaded feature card in the description and preview carousel
+- **THEN** its rounded outer corners visually blend into the surrounding dark Workshop page rather than appearing as white wedges or a white rectangle

@@ -57,6 +57,11 @@ Read only the references needed for the asset:
      whole sheet or use canvas aspect alone as a proxy for correct projection.
    - Create `_m` masks only for a `CutoutComplex` path that consumes them. Match diffuse dimensions
      and alpha exactly.
+   - Treat a Stuff diffuse as neutral illumination, not as the finished material color. RimWorld
+     multiplies red/green mask regions by the Stuff color; a mid-gray metal diffuse multiplied by
+     Core Steel's already-gray color becomes nearly black. Measure masked-pixel luminance, brighten
+     only the material-bearing region, and simulate at least Core Steel before promotion. Keep
+     fixed-black handles, grime, accents, alpha and outline pixels unchanged.
 
 5. Review and package.
    - Create a contact sheet on both light and dark backgrounds and a map-scale comparison beside the
@@ -69,6 +74,10 @@ Read only the references needed for the asset:
      sprites and copy; keep the reusable frame and licensed font under `release/templates/workshop/`.
      Render deterministically, inspect a page-scale contact sheet and important full-size cards, and
      reject fallback fonts, cropped headlines, art/text collisions, or unreadable small copy.
+     Do not assume Steam will preserve PNG transparency: inspect the uploaded page. If alpha corners
+     are matted white, composite the full canvas onto the measured Steam Workshop page background
+     (currently `#1b2838` for the reviewed Immersive Chefs cards) before drawing rounded panels, and
+     pin the exact opaque corner color in the presentation gate.
    - Map every card's pictured subject to its actual headline and bullet claims before promotion.
      Reject a visually attractive but generic sprite collage when it does not depict the promised
      behavior. If a directional building appears in Workshop art, use only a cardinal frame whose

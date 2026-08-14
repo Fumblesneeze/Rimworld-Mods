@@ -197,7 +197,7 @@ function Test-WorkshopChangeNotePreflight(
         @($RemoteNotes | Where-Object { [string]$_.note -ceq $NewNote.Trim() }).Count -eq 0
 }
 
-function Test-WorkshopShowcasePlanEvidence([object[]]$Evidence, [object[]]$AdditionalPreviews) {
+function Test-WorkshopShowcasePlanEvidence([object[]]$Evidence, [object[]]$DesignEvidence, [object[]]$AdditionalPreviews) {
     $expected = [ordered]@{
         'gastronomy-service' = 'gif'
         'dishwasher-turnaround' = 'gif'
@@ -206,8 +206,9 @@ function Test-WorkshopShowcasePlanEvidence([object[]]$Evidence, [object[]]$Addit
         'dining-memories' = 'screenshot'
     }
     $distinctEvidenceIds = @($Evidence | ForEach-Object { [string]$_.showcaseId } | Sort-Object -Unique)
-    if ($Evidence.Count -ne 5 -or $AdditionalPreviews.Count -ne 10 -or
-        $distinctEvidenceIds.Count -ne 5) { return $false }
+    $distinctDesignIds = @($DesignEvidence | ForEach-Object { [string]$_.showcaseId } | Sort-Object -Unique)
+    if ($Evidence.Count -ne 5 -or $DesignEvidence.Count -ne 5 -or $AdditionalPreviews.Count -ne 10 -or
+        $distinctEvidenceIds.Count -ne 5 -or $distinctDesignIds.Count -ne 5) { return $false }
     foreach ($expectedId in @(
         'gastronomy-service',
         'dishwasher-turnaround',
@@ -216,8 +217,11 @@ function Test-WorkshopShowcasePlanEvidence([object[]]$Evidence, [object[]]$Addit
         'dining-memories')) {
         $expectedFormat = [string]$expected[$expectedId]
         $evidenceMatches = @($Evidence | Where-Object { ([string]$_.showcaseId) -ceq ([string]$expectedId) })
+        $designMatches = @($DesignEvidence | Where-Object { ([string]$_.showcaseId) -ceq ([string]$expectedId) })
         $previewMatches = @($AdditionalPreviews | Where-Object { ([string]$_.showcaseId) -ceq ([string]$expectedId) })
-        if ($evidenceMatches.Count -ne 1 -or $previewMatches.Count -ne 1 -or
+        if ($evidenceMatches.Count -ne 1 -or $designMatches.Count -ne 1 -or $previewMatches.Count -ne 1 -or
+            [string]$designMatches[0].status -cne 'live-reviewed' -or
+            [string]$designMatches[0].sha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
             ([string]$previewMatches[0].format) -cne $expectedFormat -or
             ([string]$evidenceMatches[0].provenance.sha256) -notmatch '^[A-Fa-f0-9]{64}$') { return $false }
         $outputs = @($evidenceMatches[0].outputs)
@@ -418,7 +422,7 @@ if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [bool]$plan.mutatesSteam) {
     Exit-InvalidInput 'The publication plan identity or dry-run contract is invalid.'
 }
-if (-not (Test-WorkshopShowcasePlanEvidence -Evidence @($plan.showcaseEvidence) -AdditionalPreviews @($plan.additionalPreviews))) {
+if (-not (Test-WorkshopShowcasePlanEvidence -Evidence @($plan.showcaseEvidence) -DesignEvidence @($plan.showcaseDesignEvidence) -AdditionalPreviews @($plan.additionalPreviews))) {
     Exit-InvalidInput 'The publication plan does not contain the exact five cross-bound Workshop showcase evidence records.'
 }
 $dirty = @(& git -C $repositoryRoot status --porcelain)
@@ -441,6 +445,14 @@ foreach ($additionalPreview in @($plan.additionalPreviews)) {
     }
 }
 foreach ($showcaseEvidence in @($plan.showcaseEvidence)) {
+    foreach ($segment in @($showcaseEvidence.sourceSegments)) {
+        $segmentPath = [IO.Path]::GetFullPath([string]$segment.path)
+        if (-not (Test-Path -LiteralPath $segmentPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $segmentPath).Length -ne [long]$segment.bytes -or
+            (Get-FileHash -LiteralPath $segmentPath -Algorithm SHA256).Hash -cne [string]$segment.sha256) {
+            Exit-InvalidInput "A hard-cut Workshop showcase segment changed after review: $segmentPath"
+        }
+    }
     foreach ($output in @($showcaseEvidence.outputs)) {
         $path = [IO.Path]::GetFullPath([string]$output.path)
         if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or
@@ -454,6 +466,14 @@ foreach ($showcaseEvidence in @($plan.showcaseEvidence)) {
         (Get-Item -LiteralPath $provenancePath).Length -ne [long]$showcaseEvidence.provenance.bytes -or
         (Get-FileHash -LiteralPath $provenancePath -Algorithm SHA256).Hash -cne [string]$showcaseEvidence.provenance.sha256) {
         Exit-InvalidInput "Workshop showcase capture evidence changed after review: $provenancePath"
+    }
+}
+foreach ($designEvidence in @($plan.showcaseDesignEvidence)) {
+    $designPath = [IO.Path]::GetFullPath([string]$designEvidence.path)
+    if (-not (Test-Path -LiteralPath $designPath -PathType Leaf) -or
+        (Get-Item -LiteralPath $designPath).Length -ne [long]$designEvidence.bytes -or
+        (Get-FileHash -LiteralPath $designPath -Algorithm SHA256).Hash -cne [string]$designEvidence.sha256) {
+        Exit-InvalidInput "Workshop showcase design evidence changed after review: $designPath"
     }
 }
 $plannedPublishedFileId = if ($null -eq $plan.publishedFileId) { [System.UInt64]0 } else { [System.UInt64]$plan.publishedFileId }
@@ -475,6 +495,7 @@ try { $leaseAcquired = $releaseLease.WaitOne(0) }
 catch [Threading.AbandonedMutexException] { $leaseAcquired = $true }
 if (-not $leaseAcquired) { Exit-InvalidInput 'Another Immersive Chefs Workshop release operation owns the exclusive lease.' }
 $releaseIdentityPath = Join-Path $releaseStateRoot 'PublishedFileId.txt'
+$repositoryIdentityPath = Join-Path $repositoryRoot 'mods\ImmersiveChefs\About\PublishedFileId.txt'
 $packageIdentityPath = Join-Path ([string]$plan.packagePath) 'About\PublishedFileId.txt'
 $statePath = Join-Path $releaseStateRoot 'publication-state.txt'
 $presentationStatePath = Join-Path $releaseStateRoot 'presentation-preview-state.txt'
@@ -495,6 +516,10 @@ if ($publishedFileId -eq 0 -and (Test-Path -LiteralPath $packageIdentityPath -Pa
     }
 }
 if ($publishedFileId -ne 0) {
+    if (-not (Test-Path -LiteralPath $repositoryIdentityPath -PathType Leaf) -or
+        (Get-Content -LiteralPath $repositoryIdentityPath -Raw).Trim() -cne [string]$publishedFileId) {
+        Exit-InvalidInput "The checked-in Workshop identity is missing or conflicts with the release plan: $repositoryIdentityPath"
+    }
     if (-not (Test-Path -LiteralPath $releaseIdentityPath -PathType Leaf)) {
         [IO.File]::WriteAllText($releaseIdentityPath, [string]$publishedFileId, [Text.UTF8Encoding]::new($false))
     }
@@ -849,6 +874,7 @@ try {
             publishedFileId = if ($publishedFileId -eq 0) { '' } else { [string]$publishedFileId }
             allowFirstPublication = [bool]$plan.allowFirstPublication -and $publishedFileId -eq 0
             identityPath = $releaseIdentityPath
+            repositoryIdentityPath = $repositoryIdentityPath
             packageIdentityPath = $packageIdentityPath
             statePath = $statePath
             title = [string]$plan.title
@@ -865,7 +891,7 @@ try {
             -PlanSha256 $actualPlanHash -Deadline $deadline -TerminalStatuses @('succeeded', 'failed', 'legal-agreement-required')
         if ([string]$publish.Status -cne 'succeeded') { throw "Steam publication did not complete: $($publish | ConvertTo-Json -Compress)" }
         $publishedFileId = [ulong]$publish.PublishedFileId
-        foreach ($path in @($releaseIdentityPath, $packageIdentityPath)) {
+        foreach ($path in @($repositoryIdentityPath, $releaseIdentityPath, $packageIdentityPath)) {
             if ((Get-Content -LiteralPath $path -Raw).Trim() -cne [string]$publishedFileId) {
                 throw "The Workshop identity was not persisted before publication continued: $path"
             }

@@ -283,7 +283,8 @@ internal static class Publisher
             if (request.PublishedFileId == 0)
             {
                 if (!request.AllowFirstPublication) throw new InvalidOperationException("First publication is not allowed by this plan.");
-                if (File.Exists(request.IdentityPath)) throw new InvalidOperationException("A local Workshop identity already exists; refusing a second item.");
+                if (File.Exists(request.IdentityPath) || File.Exists(request.RepositoryIdentityPath) || File.Exists(request.PackageIdentityPath))
+                    throw new InvalidOperationException("A local Workshop identity already exists; refusing a second item.");
                 WriteStateAtomically(request.StatePath, "create-admitted|" + request.PlanSha256 + "|0");
                 createResult = CallResult<CreateItemResult_t>.Create(OnCreated);
                 var call = SteamUGC.CreateItem(new AppId_t(294100), EWorkshopFileType.k_EWorkshopFileTypeFirst);
@@ -298,6 +299,7 @@ internal static class Publisher
             else
             {
                 RequireExactIdentity(request.IdentityPath, request.PublishedFileId, "durable identity");
+                RequireExactIdentity(request.RepositoryIdentityPath, request.PublishedFileId, "checked-in identity");
                 RequireExactIdentity(request.PackageIdentityPath, request.PublishedFileId, "package identity");
                 RequireExistingPreflight(request);
                 BeginUpdate(request.PublishedFileId);
@@ -325,6 +327,8 @@ internal static class Publisher
             request.PublishedFileId = id;
             Directory.CreateDirectory(Path.GetDirectoryName(request.IdentityPath)!);
             WriteIdentityAtomically(request.IdentityPath, id.ToString());
+            Directory.CreateDirectory(Path.GetDirectoryName(request.RepositoryIdentityPath)!);
+            WriteIdentityAtomically(request.RepositoryIdentityPath, id.ToString());
             Directory.CreateDirectory(Path.GetDirectoryName(request.PackageIdentityPath)!);
             WriteIdentityAtomically(request.PackageIdentityPath, id.ToString());
             WriteStateAtomically(request.StatePath, "created|" + request.PlanSha256 + "|" + id);
@@ -818,6 +822,7 @@ internal static class Publisher
         public ulong PublishedFileId;
         public bool AllowFirstPublication;
         public string IdentityPath = "";
+        public string RepositoryIdentityPath = "";
         public string PackageIdentityPath = "";
         public string StatePath = "";
         public string Title = "";
@@ -845,6 +850,7 @@ internal static class Publisher
                 PublishedFileId = ParseId(objectValue.publishedFileId, allowEmpty: true),
                 AllowFirstPublication = objectValue.allowFirstPublication,
                 IdentityPath = objectValue.identityPath ?? "",
+                RepositoryIdentityPath = objectValue.repositoryIdentityPath ?? "",
                 PackageIdentityPath = objectValue.packageIdentityPath ?? "",
                 StatePath = objectValue.statePath ?? "",
                 Title = objectValue.title ?? "",
@@ -872,6 +878,7 @@ internal static class Publisher
             RequireFile(PreviewPath, "previewPath");
             RequireDirectory(PackagePath, "packagePath");
             if (string.IsNullOrWhiteSpace(IdentityPath) || Path.GetFileName(IdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("identityPath is invalid.");
+            if (string.IsNullOrWhiteSpace(RepositoryIdentityPath) || Path.GetFileName(RepositoryIdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("repositoryIdentityPath is invalid.");
             if (string.IsNullOrWhiteSpace(PackageIdentityPath) || Path.GetFileName(PackageIdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("packageIdentityPath is invalid.");
             if (string.IsNullOrWhiteSpace(StatePath) || Path.GetFileName(StatePath) != "publication-state.txt") throw new InvalidOperationException("statePath is invalid.");
             if (RequiredWorkshopItemId == 0) throw new InvalidOperationException("requiredWorkshopItemId is invalid.");
@@ -945,6 +952,8 @@ internal static class Publisher
         public bool allowFirstPublication;
         [DataMember(Name = "identityPath")]
         public string? identityPath;
+        [DataMember(Name = "repositoryIdentityPath")]
+        public string? repositoryIdentityPath;
         [DataMember(Name = "packageIdentityPath")]
         public string? packageIdentityPath;
         [DataMember(Name = "statePath")]
