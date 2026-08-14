@@ -1,100 +1,85 @@
 # Using Real Ruins as design evidence
 
-Real Ruins periodically uploads player maps and downloads other players' compressed blueprints. Its open-source
-1.6 client is at [woolstrand/RealRuins](https://github.com/woolstrand/RealRuins). It is useful for aggregate
-footprints and real mod-Def combinations, but it is not a curated gallery or a stable public design API.
+Real Ruins provides thousands of player-created base snapshots. Use it as a measured placement corpus, not a
+four-image mood board and not a blueprint generator. Its open-source 1.6 client is
+[woolstrand/RealRuins](https://github.com/woolstrand/RealRuins).
 
-## Source hierarchy
+## Reproducible workflow
 
-1. Prefer a user's already-populated local cache at
-   `%USERPROFILE%/AppData/LocalLow/Ludeon Studios/RimWorld by Ludeon Studios/RealRuins/`.
-2. Prefer an explicitly exported local/offline blueprint supplied for research.
-3. Only when fresh remote evidence materially helps, make one bounded read-only request through the exact
-   open-source client endpoint, with a small limit (12 or fewer). Do not loop, crawl, enumerate seeds, upload,
-   or treat server availability as required for development.
+Use the repository CLI; never reimplement ad-hoc download/parsing in a shell:
 
-The public client obtains a random metadata list, then downloads named `.bp` objects from its bucket. These
-details can change without notice. Re-read the current client source before any remote call and stop on rate
-limits, access errors, or a changed contract.
+```powershell
+dotnet run --project tools/RealRuinsCorpus/RealRuinsCorpus.csproj -c Release -- `
+  analyze --metadata-limit 5000 --blueprint-limit 2000 --concurrency 16 `
+  --output-directory artifacts/BaseDesignResearch/<run-id> -o table
+```
 
-## Treat remote blueprints as untrusted input
+The operation first prefers an existing `metadata.json` and `.bp` bodies in its ignored run directory, so it is
+safe to resume. It downloads metadata from the current client endpoint and bodies from the current bucket. It
+sorts the cohort by canonical GUID before choosing bodies, records every parsed/rejected object and hash, and
+writes `summary.json`. Raw blueprints and the full summary stay ignored because they contain player layouts.
 
-The following are repository research-tool budgets, not limits promised by Real Ruins. They were chosen with
-substantial headroom over the 2026-08-13 sample and must be reviewed deliberately if a legitimate blueprint is
-rejected; do not silently raise them:
+Render a safely parsed body for review:
 
-- at most 12 metadata entries and 12 object downloads in one invocation;
-- a 30-second request deadline, redirects disabled or restricted to the same HTTPS host, and at most 8 MiB
-  compressed per object / 48 MiB compressed for the invocation;
-- current remote object names must be canonical GUIDs; generate local filenames independently and never join an
-  untrusted object name directly to a directory. For an existing legacy local cache, require a leaf-only name,
-  reject separators, rooted paths, `..`, control characters, and names over 128 characters;
-- stream GZip decompression into a counting stream; stop above 64 MiB expanded per blueprint or 100:1 expansion,
-  whichever occurs first. Never call `ReadToEnd`, `[xml]`, or an equivalent eager parser on remote bytes;
-- parse with DTD processing prohibited, external entity resolution disabled, a 64-MiB character ceiling, and a
-  maximum XML depth of 32;
-- reject dimensions above 500x500, more than 250,000 serialized cells, more than 1,000,000 item nodes, more than
-  64 attributes on one element, or more than 1 MiB of UTF-8 text/attribute content for one field;
-- accept only the expected blueprint root and known structural elements for aggregation. Unknown Def names are
-  data, not types or paths; never instantiate them during offline analysis.
+```powershell
+dotnet run --project tools/RealRuinsCorpus/RealRuinsCorpus.csproj -c Release -- `
+  render --blueprint artifacts/BaseDesignResearch/<run-id>/blueprints/<guid>.bp `
+  --output-file artifacts/BaseDesignResearch/<run-id>/visual-review/<guid>.svg --scale 4
+```
 
-Write into a newly created ignored run directory, keep a manifest of requested URL host, response byte count,
-expanded byte count, hash, and rejection reason, and clean only files owned by that invocation. A partial or
-rejected sample is still useful evidence; do not retry in a loop to fill the quota.
+Select a stratified review set: compact/sprawling, mountain/open, high/low table count, high/low workstation
+count, relevant optional Defs, and counterexamples. Inspect at least 20 schematics for an initial rule family.
+Aggregate statistics identify candidates; schematics determine whether a statistic reflects coherent layouts.
 
-## Blueprint contract
+## Untrusted-input contract
 
-- `.bp` is GZip-compressed XML.
-- The snapshot root includes captured bounds, biome, map size and in-game year.
-- Each serialized cell may carry constructed terrain/floor, roof, one or more items, rotation, Stuff, stack
-  count, wall/door flags and some contained/pawn data.
-- Modded buildings remain exact Def names. Missing mods mean the visual/functional meaning may be unknown.
-- Natural terrain, mountain shape, water and the player's full visual context are not a faithful colony render.
-  Bounds may contain empty or cropped space, frames, clutter and unfinished construction.
+The analyzer enforces these repository budgets:
 
-Never spawn an untrusted blueprint into a normal save. Analyze copies beneath ignored artifacts. Never commit or
-redistribute raw player blueprints. The exploratory 2026-08-13 sample predates this hardened parser contract and
-must not be reused as parser-safety evidence.
+- metadata 1..10,000; requested bodies 1..5,000; concurrency 1..24;
+- 30-second request timeout, exact HTTPS hosts, redirects disabled;
+- 8 MiB compressed per object and 4 GiB compressed per operation;
+- 64 MiB expanded per blueprint, XML depth 32, 500x500 bounds, 250,000 cells, 1,000,000 item nodes and
+  64 attributes per element;
+- DTDs prohibited and external entities disabled;
+- canonical GUID object names mapped to independently constructed local paths;
+- atomic writes, safe resume and explicit failure records.
 
-## Safe aggregate analysis
+Unknown Def names remain data. The analyzer never loads assemblies or instantiates snapshot types. Promote only
+statistics based on exact resolved footprints/semantics; keep unresolved/modded Def discovery separate.
 
-For each blueprint, record:
+## 2026-08-14 benchmark cohort
 
-- width, height, biome and year;
-- constructed floor, roof, wall and door counts;
-- wall/floor Stuff and Def frequency;
-- room/connected-component dimensions where they can be derived without guessing missing Def shapes;
-- known kitchen, cold-storage, dining, bedroom, workshop, sanitation and storage Defs;
-- relative positions and nearest-path/door adjacency for exact resolved Defs;
-- unresolved Def names separately, never silently classified by substring.
+Ignored run: `artifacts/BaseDesignResearch/20260814-real-ruins-corpus/`.
 
-Use the active mod library to resolve known Defs and footprints. A keyword scan is discovery only: for example,
-`HydroponicsBasin` is not a kitchen sink. Validate every promoted example against the source mod's actual Def.
+- metadata: 5,000 rows; SHA-256
+  `D2297942477AAFDC44A78A31C2A73B478F9219A44AC0A90DCE634A6C0363FF91`;
+- attempted bodies: 2,200; parsed: 2,199; rejected: 1; compressed bytes: 115,207,808;
+- resolved dining tables: 4,869; resolved Core workstations: 6,049; resolved conduit cells: 904,440;
+- 20 stratified schematics were inspected from compact, sprawling, mountain, town-grid and fragmented colonies.
 
-## 2026-08-13 bounded sample
+Promoted evidence from this cohort:
 
-A one-shot random sample of 12 blueprints was retained only under ignored
-`artifacts/BaseDesignResearch/20260813-reference-pass/real-ruins-sample/`:
+- **recurrent:** 4,735/6,049 resolved Core workstations (78.3%) touch a wall. Use a wall run by default; a central
+  island needs a coherent workflow/storage reason and clear interaction aisle.
+- **recurrent:** 598,238/904,440 conduit cells (66.1%) share a wall cell; 681,913 (75.4%) are under or cardinally
+  adjacent to a wall. Median per-blueprint shares are 70.8% and 82.5%. Route presentation wiring through walls
+  or service corridors.
+- **recurrent:** dining seats follow actual table perimeter. Median adjacent chairs are 2 for 1x2 tables, 4 for
+  2x2, 7 for 2x4 and 6 for 3x3. Size the table for the chairs rather than spacing chairs around an imagined center.
+- **archetype (Dubs):** 322/459 resolved `WaterTowerS` instances (70.2%) are unroofed. Combined with the utility
+  role and inspected schematics, prefer an exterior service yard, never an occupied kitchen/dining room.
+- **mechanical:** Core `ChemfuelPoweredGenerator` is 2x2, `Graphic_Single`, and non-rotatable. The corpus roof
+  statistic is not permission to rotate or place it among workstations.
 
-- captured bounds ranged from 75x64 to 253x240;
-- biomes included temperate forest, tropical rainforest, boreal forest and ice sheet;
-- capture years ranged from 5500 to 5512;
-- 860 distinct item Def names appeared, illustrating how modded real colonies mix ecosystems;
-- exact discovered kitchen-adjacent Defs included Core stoves/butchery/coolers, Dubs sinks/basins,
-  several RimFridge sizes, kitchen cupboards, an electric oven, a canning stove and a freezer unit.
-
-All 12 had broad keyword signals for food, storage, dining and sleeping, but the scan also produced false
-positives and the endpoint is not statistically representative. The useful conclusion is qualitative: real
-colonies commonly combine Core and modded service buildings, varied ages/materials and large ranges of footprint.
-Do not infer a canonical room size, popularity ranking or compatibility promise from this sample.
+Do not copy a blueprint, infer intent from one placement, or claim these resolved Core/Dubs results cover unknown
+modded Defs. Re-run the corpus when the endpoint/client contract or the relevant Def inventory materially changes.
 
 ## What Real Ruins cannot prove
 
 - that a room looked good or was finished;
-- that a building was functional with the source mod list;
-- why the player placed something;
-- which pawns or traffic patterns used the room;
-- that the random sample represents all colonies;
-- that a blueprint may be republished as a showcase.
+- that every serialized building was functional with its original mod list;
+- why a player chose a placement;
+- the pawn traffic at capture time;
+- permission to republish a player's base.
 
-Pair every promoted design rule with inspected screenshots or an exact gameplay/mechanics contract.
+Pair promoted rules with exact game mechanics and live visual review.

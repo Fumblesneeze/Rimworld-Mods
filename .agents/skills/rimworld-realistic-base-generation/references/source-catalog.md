@@ -1,6 +1,6 @@
 # Base-design reference catalog
 
-Accessed 2026-08-13. These links are research references, not reusable art assets. Keep downloaded copies and
+Accessed 2026-08-14. These links are research references, not reusable art assets. Keep downloaded copies and
 contact sheets under ignored `artifacts/BaseDesignResearch/`; do not commit or republish player screenshots.
 
 ## Functional room and workflow references
@@ -35,6 +35,13 @@ contact sheets under ignored `artifacts/BaseDesignResearch/`; do not commit or r
 | R21 | [Valkyrie Goods Headquarters](https://www.reddit.com/r/RimWorldPorn/comments/13od1n3/valkyrie_goods_headquarters_the_largest_colony/) | Large alcohol-economy colony with a Hospitality/Gastronomy restaurant, guest shopping and industrial districts. | Modded district integration and visible colony economy. |
 
 ## Mechanics references
+
+- **RR-20260814 Real Ruins corpus:** 5,000 metadata records and 2,199 safely parsed blueprint bodies from the
+  current client endpoints; metadata SHA-256
+  `D2297942477AAFDC44A78A31C2A73B478F9219A44AC0A90DCE634A6C0363FF91`. The acting agent inspected a
+  20-blueprint stratified schematic sheet covering compact, sprawling, mountain, grid-town and fragmented base
+  forms. Raw bodies/schematics remain ignored under `artifacts/BaseDesignResearch/20260814-real-ruins-corpus/`.
+  Use only the sample-sized resolved-Def rules documented in `real-ruins.md`.
 
 - [RimWorld Wiki colony building guide](https://rimworldwiki.com/wiki/Colony_Building_Guide): kitchen
   cleanliness, short work paths, kitchen/freezer adjacency, separate butchery, ingredient shelves, meal buffer,

@@ -37,6 +37,14 @@ These are evidence-grounded scene grammars. Adapt footprints to exact loaded Def
 - **Mechanical (Immersive Chefs + Pick Up And Haul):** For the Pick Up And Haul beat, keep the dirty cluster
   dense enough for nearby collection, then hard-cut from
   loading/processing to ejected clean ware and final shelf haul.
+- **Recurrent/mechanical (RR-20260814; Core/Dubs Defs):** Use table footprints that fit every visible chair;
+  wall-align the stove/prep/dishwashing run or form one justified island; conceal power and plumbing in the
+  shared service wall; place the water tower and non-rotatable chemfuel generator in an exterior service yard.
+  Let native power/plumbing settle for several ticks before evaluating the appliance.
+- **Mechanical (loaded 1.6 Defs):** The current domestic dishwasher is 2x1, Dubs `KitchenSink` is 3x1, the prep
+  station is 3x1, and the electric stove is 3x1. A single straight run therefore needs eleven interior cells
+  before gaps. In a compact nine-cell interior, use eight cells for dishwasher/sink/prep and turn the stove onto
+  the adjacent wall with a clear inward-facing interaction cell. Do not embed any of these roots in the wall.
 
 ## Prison nutrient-paste dining
 

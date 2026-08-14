@@ -1,6 +1,6 @@
 ---
 name: rimworld-realistic-base-generation
-description: Research, design, arrange, and review believable RimWorld colonies and presentation scenes from player-built visual references, gameplay constraints, installed-mod Defs, and optional Real Ruins blueprint samples. Use when creating showcase colonies, E2E/performance fixtures meant to look lived-in, room layouts, kitchens, restaurants, prisons, workshops, settlements, or reusable base-generation rules; use it before writing scene setup code instead of guessing room shapes, placement, materials, decor, or traffic flow.
+description: Research, design, arrange, and review believable RimWorld colonies and presentation scenes from player-built visual references, gameplay constraints, installed-mod Defs, and large Real Ruins blueprint corpora. Use when creating showcase colonies, E2E/performance fixtures meant to look lived-in, room layouts, kitchens, restaurants, prisons, workshops, settlements, or reusable base-generation rules; use it before writing scene setup code instead of guessing room shapes, placement, materials, decor, utilities, or traffic flow.
 ---
 
 # RimWorld Realistic Base Generation
@@ -19,8 +19,8 @@ waive native-action or live-observation requirements.
 - Read [references/source-catalog.md](references/source-catalog.md) before collecting or citing visual references.
 - Read [references/showcase-archetypes.md](references/showcase-archetypes.md) for kitchens, restaurants,
   dishwashing, prison dining, or production-chain scenes.
-- Read [references/real-ruins.md](references/real-ruins.md) only when a Real Ruins cache or bounded blueprint
-  sample could add evidence about footprints, materials, or installed-mod buildings.
+- Read [references/real-ruins.md](references/real-ruins.md) whenever a new layout or placement rule could be
+  measured from the Real Ruins corpus. Do not substitute a token sample for the bulk workflow.
 - Read [references/design-record.md](references/design-record.md) and create its per-scene record before writing
   setup code for a showcase or other presentation fixture.
 
@@ -44,6 +44,10 @@ waive native-action or live-observation requirements.
 6. Create `mods/<ModName>/Release/workshop/designs/<showcase-id>.md` from the design-record template. Bind every
    placement decision to a mechanics contract or eligible reference ID. Do not count unattributed supplemental
    images as support for recurrent rules.
+7. For a new layout family, run the corpus analyzer against at least 5,000 metadata rows and safely parse at least
+   2,000 blueprint bodies. Retain the corpus identity and rejection count, then inspect a stratified schematic
+   subset before promoting aggregate measurements. The checked-in 2026-08-14 benchmark cohort is documented in
+   [references/real-ruins.md](references/real-ruins.md).
 
 ## Convert evidence into a plan
 
@@ -67,11 +71,49 @@ is the reviewable bridge between the research corpus and executable cell coordin
 
 For presentation scenarios, place the complete action geography inside one stable camera view or two deliberate
 hard-cut views. Preserve enough surrounding colony to make the room credible without burying the subject.
+Before every retained segment, reapply and read back the exact camera center/root size immediately before the
+capture call. Background/minimized RimWorld can edge-scroll between setup and capture even when the capture
+route itself correctly leaves the camera unchanged. Reject any segment whose retained crop does not contain the
+declared action geography; never trust a center copied from notes when the live camera state can be read.
+
+After the first playable draft exists, keep one persistent RimWorld process as the authoring source of truth.
+Inspect the rendered map, correct individual buildings/floors/utilities through typed Gateway and native player
+controls, let systems settle, and create named native save checkpoints. Do not repeatedly regenerate the whole
+colony from a setup script to fix a misplaced shelf, fence, conduit, door, or decoration; return to scripted setup
+only when the live state is genuinely unrecoverable or the fixture itself is the product under test.
 
 ## Arrange through exact game contracts
 
 - Resolve exact active-mod Defs, sizes, rotations, interaction cells, link facilities, support requirements,
   storage settings, research, power, plumbing, and faction/access rules before placement.
+- Persist the chosen scene origin as immutable scenario state. Never recompute later furnishings, camera targets,
+  utility checks, or captures from a pawn position: pawns are mobile even when setup initially drafted them.
+- Never treat a `Thing.Position`/spawn root as its visual center or occupied footprint. Before spawning, call
+  RimWorld's finalized `GenAdj.OccupiedRect(root, rotation, def.size)` and, where applicable,
+  `ThingUtility.InteractionCellWhenAt(def, root, rotation, map)`. Even-sized Defs shift asymmetrically with
+  rotation; a root that looks centered in source can occupy a wall or neighboring fixture.
+- Derive the required room interior from the sum and orientation of actual loaded footprints. If a proposed wall
+  run does not fit, turn a fixture onto a second wall or redesign the room; never shrink the Defs mentally or
+  allow spawning to replace walls.
+- Derive seating from the actual table footprint. Never place chairs from a guessed visual center.
+- Treat `<rotatable>false</rotatable>` as an asset contract. Do not rotate a Graphic_Single object to make it fit.
+- Route visible conduits and plumbing through wall cells or service corridors unless an inspected reference and
+  functional constraint justify a crossing.
+- Put large water storage and noisy/fueled utilities in an exterior service yard unless an exact building contract
+  requires indoor placement. A roofed technical enclosure is not the same as a dining/kitchen room.
+- Align production benches to a wall run or a coherent shared island, and retain every interaction cell and aisle.
+  Scattered independent benches are a rejected presentation grammar.
+- Validate the complete backing wall for every wall-run footprint, not only the root or one bounding edge. Reserve
+  both the interaction cell and at least one inward approach cell for each bench; two benches that merely avoid
+  physical overlap can still form an unusable or visually cramped corner when their worker approaches collide.
+- Distinguish **against a wall** from **in a wall**. Ordinary worktables belong wholly inside the room with one
+  occupied edge adjacent to the wall. Only an exact `canPlaceOverWall` appliance may replace a wall cell.
+- For two-sided wall appliances, validate both functional sides. A Core cooler's cold cell is
+  `root + South.RotatedBy(rotation)` and its exhaust is `root + North.RotatedBy(rotation)`; the former must be in
+  the roofed cold room and the latter unobstructed in a different room or outdoors. Keep the layout's reserved
+  opening and furnishing spawn cell as one shared value.
+- Validate decorative furniture through the same occupied-rect preflight. A plant pot or lamp is not harmless
+  clutter when its root is a boundary cell, doorway, freezer wall, interaction spot, or hauling aisle.
 - Use materials and furniture consistent with one colony stage and local palette. A polished restaurant beside
   raw dirt, temporary sleeping spots, and random crash supplies is usually a contradiction unless the scene
   explicitly tells that story.
@@ -90,6 +132,10 @@ Reject a scene when any answer is no:
 - Can a viewer tell where inputs come from, where work happens, and where outputs go?
 - Are room sizes, doors, work cells, paths, and storage plausible for the visible population?
 - Are material and floor changes deliberate rather than a uniform fill or random patchwork?
+- Are chairs attached to the real occupied cells of a sufficiently large table, with believable circulation?
+- Are fixed-orientation utilities using their native sprite direction, and are tanks/generators in a plausible
+  service location rather than dropped into an occupied public room?
+- Do cables and pipes follow walls/service runs instead of crossing open floors without a reason?
 - Are the required mod buildings used in the way their own gameplay expects?
 - Is there a believable amount of lighting, decor, wear, stored goods, and empty circulation space?
 - Are debug UI, learning helper, test labels, selection brackets, fixture names, and manufactured outcomes absent?
