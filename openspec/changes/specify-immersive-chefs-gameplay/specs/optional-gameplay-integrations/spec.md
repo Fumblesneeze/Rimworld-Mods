@@ -330,12 +330,18 @@ When `Mlie.MealPrinter` is active, vanilla meal Defs remain finalized, and the e
 
 ### Requirement: RimFridge preserves ware while owning storage temperature
 
-When `rimfridge.kv.rw` is active, its storage and `CompRefrigerator` behavior plus its `Thing.AmbientTemperature` patch SHALL remain authoritative. Immersive Chefs SHALL preserve embedded plate, culinary, ingredient, and sanitation components through storage and retrieval. If Thermodynamics - Hot Meals is also active, Thermodynamics SHALL remain the sole meal-temperature provider and Immersive Chefs SHALL not double-apply refrigerator or freezer cooling.
+When `rimfridge.kv.rw` is active, its storage and `CompRefrigerator` behavior plus its `Thing.AmbientTemperature` patch SHALL remain authoritative. Immersive Chefs SHALL preserve embedded plate, culinary, ingredient, and sanitation components through storage and retrieval. While Immersive Chefs owns temperature, a meal SHALL rapidly approach RimFridge's actual current internal temperature: a player-configured above-freezing target uses the refrigerator rate and a target/current temperature at or below `0°C` uses the freezer rate. After retrieval, a Frozen meal SHALL use the slow-thaw rule until microwaved or naturally thawed. If Thermodynamics - Hot Meals is also active, Thermodynamics SHALL remain the sole meal-temperature provider and Immersive Chefs SHALL not double-apply refrigerator or freezer cooling, thawing, eating-duration, mood, or reheat-quality effects.
 
 #### Scenario: Plated meal is stored in a powered fridge
 
 - **WHEN** a plated meal enters and later leaves a working RimFridge building
 - **THEN** its exact ware and non-temperature culinary state survive while the active upstream temperature owner alone observes the fridge environment
+
+#### Scenario: RimFridge target distinguishes refrigeration from freezing
+
+- **WHEN** two otherwise identical RimFridges are operating with actual internal temperatures of `5°C` and `-5°C` and each stores one hot plated meal
+- **THEN** Immersive Chefs uses the upstream-reported `5°C` and `-5°C` environments as the respective targets without a second storage patch
+- **THEN** the freezer meal cools faster, and once retrieved it thaws more slowly than it cooled unless a pawn uses a microwave
 
 ### Requirement: [sbz] Fridge and Adaptive Storage preserve complete meal state
 
@@ -351,7 +357,9 @@ per-serving culinary state, embedded plate identity and sanitation while the mea
 rendered, saved, loaded, and retrieved through an [sbz] fridge. While Immersive Chefs owns
 temperature, its existing lazy thermal calculation SHALL consume the meal's upstream-adjusted
 `AmbientTemperature` and SHALL not apply a second refrigerator multiplier beyond the ordinary
-temperature bands. While Thermodynamics - Hot Meals is active, its complete temperature exclusion
+temperature bands. The inspected [sbz] `coolingMin=-10` environment is a freezer target: a meal SHALL
+approach it at the freezer rate, remain Frozen after retrieval until the slow-thaw calculation crosses
+`0°C`, and take the temperature-depth quality loss if microwaved while still cold. While Thermodynamics - Hot Meals is active, its complete temperature exclusion
 still applies and Immersive Chefs SHALL not read the Adaptive Storage temperature for thermal state.
 Powering or switching the fridge off SHALL stop Adaptive Storage's cooling without changing any
 non-temperature meal or ware state.
@@ -363,7 +371,8 @@ cause a missing-assembly failure.
 #### Scenario: Powered [sbz] fridge cools an intact plated meal
 
 - **WHEN** a pawn hauls one plated meal into a powered, switched-on [sbz] fridge through the native storage job, the player saves and reloads, and a pawn later retrieves that meal
-- **THEN** Adaptive Storage owns the physical holder and reports its adjusted environment while the same meal, serving records, provenance, plate identity, and sanitation survive exactly once
+- **THEN** Adaptive Storage owns the physical holder and reports its adjusted `-10°C` environment while the same meal, serving records, provenance, plate identity, and sanitation survive exactly once
+- **THEN** Immersive Chefs approaches that upstream target at the freezer rate and applies no additional storage-specific cooling multiplier
 
 #### Scenario: [sbz] fridge loses power
 

@@ -115,10 +115,13 @@ public sealed class CulinaryServingRecord
             snapshot.CookwareMaterial);
     }
 
-    public void Reheat(float targetTemperature, int qualityLoss, int currentTick)
+    public void Reheat(float targetTemperature, int baseQualityLoss, int currentTick)
     {
+        var qualityLoss = ThermalCalculator.MicrowaveQualityLoss(
+            baseQualityLoss,
+            TemperatureCelsius);
         TemperatureCelsius = targetTemperature;
-        QualityScore = Math.Max(0, QualityScore - Math.Max(0, qualityLoss));
+        QualityScore = Math.Max(0, QualityScore - qualityLoss);
         MicrowaveReheatCount++;
         LastThermalTick = Math.Max(0, currentTick);
     }

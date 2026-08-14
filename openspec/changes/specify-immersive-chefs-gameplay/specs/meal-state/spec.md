@@ -54,7 +54,7 @@ The quality gauge SHALL label scores `0`–`19` Awful, `20`–`34` Poor, `35`–
 - **THEN** the pawn has one current culinary-quality thought representing the newly eaten serving rather than multiple copies of that thought
 
 ### Requirement: Meals have physical temperature and defined thermal bands under the fallback provider
-When Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, a serving completed by an actual cooking recipe SHALL start at `70°C`. Its gauge SHALL display Steaming Hot at `55°C` or above, Warm from `35°C` through `54.9°C`, Room Temperature from `15°C` through `34.9°C`, Cold above `0°C` through `14.9°C`, and Frozen at `0°C` or below. Between updates, temperature SHALL move exponentially toward the containing cell's ambient temperature using `ambient + (old - ambient) * 2^(-elapsed / effective half-life)`. The base half-life SHALL be `ThermalHalfLifeHours`; ambient temperatures above `0°C` and at most `10°C` SHALL cool at twice the normal rate, and ambient temperatures at or below `0°C` SHALL cool at four times the normal rate.
+When Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, a serving completed by an actual cooking recipe SHALL start at `70°C`. Its gauge SHALL display Steaming Hot at `55°C` or above, Warm from `35°C` through `54.9°C`, Room Temperature from `15°C` through `34.9°C`, Cold above `0°C` through `14.9°C`, and Frozen at `0°C` or below. Between updates, temperature SHALL move exponentially toward the containing cell's ambient temperature using `ambient + (old - ambient) * 2^(-elapsed / effective half-life)`. The base half-life SHALL be `ThermalHalfLifeHours`; ambient temperatures above `0°C` and at most `10°C` SHALL cool at twice the normal rate, and ambient temperatures at or below `0°C` SHALL cool at four times the normal rate. A serving that is already Frozen and is later exposed to an ambient temperature above `0°C` SHALL thaw at half the normal rate, using twice the base effective half-life, until it crosses above `0°C`. Microwave reheating is the only supported fast-thaw path.
 
 #### Scenario: Freshly cooked meal is steaming hot
 - **WHEN** a cook completes an affected meal recipe
@@ -64,16 +64,22 @@ When Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, 
 - **WHEN** otherwise identical hot servings spend the same duration at `21°C`, `5°C`, and `-5°C`
 - **THEN** the serving at `5°C` uses half the base effective half-life, the serving at `-5°C` uses one quarter of it, and both approach their ambient temperatures faster than the serving at `21°C`
 
+#### Scenario: Frozen meal thaws slowly outside storage
+- **WHEN** a serving at `-10°C` leaves a working freezer for a `21°C` room without being microwaved
+- **THEN** it approaches room temperature using twice the base effective half-life until it is no longer Frozen
+- **THEN** it does not jump directly to the room temperature or forget the freezer state
+
 #### Scenario: Temperature crosses a gauge boundary
 - **WHEN** a serving cools from `15.1°C` to `14.9°C`
 - **THEN** its displayed thermal band changes from Room Temperature to Cold
 
 ### Requirement: Fallback temperature changes the eating experience
-When Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, Steaming Hot, Warm, Room Temperature, Cold, and Frozen servings SHALL produce temperature mood offsets `+2`, `+1`, `0`, `-3`, and `-6`, respectively, as one non-stacking temperature thought lasting one in-game day. Cold and Frozen SHALL also add their specified food-poisoning modifiers. The temperature used MUST be the consumed serving's current value, not the stack's average or the temperature when the eating job began.
+When Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, Steaming Hot, Warm, Room Temperature, Cold, and Frozen servings SHALL produce temperature mood offsets `+2`, `+1`, `0`, `-3`, and `-10`, respectively, as one non-stacking temperature thought lasting one in-game day. Cold and Frozen SHALL also add their specified food-poisoning modifiers. Eating a Frozen serving SHALL multiply the native chewing duration by `1.5`; this multiplier SHALL combine with rather than replace the plate's eating-speed factor. The temperature used MUST be the consumed serving's current value, not the stack's average or the temperature when the eating job began. Animals and every path excluded from humanlike dining consequences SHALL receive neither the duration multiplier nor the thought.
 
 #### Scenario: Frozen serving is unpleasant and risky
 - **WHEN** a pawn ingests an affected serving at `-2°C`
-- **THEN** the pawn receives the Frozen temperature thought with mood `-6`
+- **THEN** the pawn takes `1.5` times the ordinary temperature-independent chewing duration after the plate factor is applied
+- **THEN** the pawn receives the Frozen temperature thought with mood `-10`
 - **THEN** the poisoning calculation includes the Frozen temperature modifier
 
 #### Scenario: Meal cools while being carried
@@ -134,7 +140,7 @@ When Thermodynamics - Hot Meals is absent, the mod SHALL provide a powered one-c
 
 The microwave SHALL retain its own power trader, flick, breakdown, reservation, interaction-cell, and heating state independently of the support. It MUST NOT block ordinary bills, interaction cells, dining use, or facility links of a multi-cell supporting table/workbench merely by sharing one surface cell. If the support becomes invalid through destruction, deconstruction, replacement, or another mod, any active heating job SHALL cancel without applying a completed-reheat mutation: it SHALL NOT set the microwave target temperature, subtract quality, increment the reheat count, add contamination, or replace/remove the embedded plate, while ordinary elapsed-time ambient temperature progression remains valid. The microwave SHALL become a recoverable minified building at that cell or the nearest valid standable cell rather than remain floating, disappear, or duplicate.
 
-When meal temperature is enabled, a pawn intending to eat a serving below `AutoMicrowaveBelow` SHALL prefer a reachable, allowed, powered, and reservable microwave before ingesting it. A completed cycle SHALL set that serving to `60°C`, subtract `MicrowaveQualityLoss` from its culinary score without going below zero, increment its reheat count, and add the per-reheat poisoning delta at eventual ingestion. If no usable microwave exists, reheating MUST remain optional and MUST NOT prevent eating. Recipes excluded by the meal-production contract MUST remain excluded from automatic microwave jobs.
+When meal temperature is enabled, a pawn intending to eat a serving below `AutoMicrowaveBelow` SHALL prefer a reachable, allowed, powered, and reservable microwave before ingesting it. A completed cycle SHALL set that serving to `60°C`, increment its reheat count, and add the per-reheat poisoning delta at eventual ingestion. Its culinary-quality loss SHALL be `MicrowaveQualityLoss + clamp(ceil((15 - sourceTemperatureCelsius) / 5), 0, 10)`, without reducing quality below zero. This makes a refrigerated `5°C` serving lose the configured base plus `2`, while a frozen `-10°C` serving loses the base plus `5`. The source temperature SHALL be advanced to the completion tick before calculating the loss, and an interrupted cycle SHALL apply neither the base nor temperature-depth loss. If no usable microwave exists, reheating MUST remain optional and MUST NOT prevent eating. Recipes excluded by the meal-production contract MUST remain excluded from automatic microwave jobs.
 
 #### Scenario: Electricity makes microwave reheating available
 - **WHEN** vanilla `Electricity` is complete but neither Immersive Chefs research project is complete
@@ -155,7 +161,12 @@ When meal temperature is enabled, a pawn intending to eat a serving below `AutoM
 #### Scenario: Pawn reheats a cold meal
 - **WHEN** a pawn selects an eligible serving at `5°C`, the threshold is `10°C`, and a powered reachable microwave is available
 - **THEN** the pawn heats the serving before eating it
-- **THEN** completion sets it to `60°C`, reduces its score by the configured quality loss, and increments its reheat count once
+- **THEN** completion sets it to `60°C`, reduces its score by the configured base quality loss plus `2`, and increments its reheat count once
+
+#### Scenario: Frozen reheating costs more quality than refrigerated reheating
+- **WHEN** otherwise identical servings at `5°C` and `-10°C` complete one microwave cycle with the same configured base quality loss
+- **THEN** the refrigerated serving loses the base plus `2` quality and the frozen serving loses the base plus `5`
+- **THEN** both reach `60°C` and increment their own reheat count exactly once
 
 #### Scenario: Microwave is unavailable
 - **WHEN** a hungry pawn selects a serving below the threshold but every microwave is unpowered, forbidden, unreachable, or reserved

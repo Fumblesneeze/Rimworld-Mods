@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using Verse;
@@ -17,9 +18,9 @@ namespace ImmersiveChefs.EndToEndTests;
     "adaptive.storage.framework",
     "sbz.NeatStorageFridge",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 11_000,
-    MaxGameTicks = 36_000,
-    MaxWallClockSeconds = 450)]
+    MaxFrames = 13_000,
+    MaxGameTicks = 52_000,
+    MaxWallClockSeconds = 520)]
 public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
 {
     private const string SaveName = "ImmersiveChefsSbzFridgeCompatibility";
@@ -43,6 +44,11 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
     private bool exactCutleryObserved;
     private float poweredAmbient;
     private float unpoweredAmbient;
+    private float thawStartTemperature;
+    private int thawStartTick;
+    private int thawElapsedTicks;
+    private int ordinaryChewDuration;
+    private int frozenChewDuration;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -198,9 +204,9 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
             paused: false,
             EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
-            "the serving cools toward Adaptive Storage's ambient floor",
-            _ => CurrentTemperature() <= 2f,
-            new EndToEndDeadline(1_800, 7_000, TimeSpan.FromSeconds(75)));
+            "the serving freezes toward Adaptive Storage's ambient floor",
+            _ => CurrentTemperature() <= -5f,
+            new EndToEndDeadline(3_600, 14_000, TimeSpan.FromSeconds(145)));
         yield return new TimeControlActionStep(
             "pause on the upstream-cooled serving",
             paused: true,
@@ -268,8 +274,8 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
             "close Adaptive Storage's force-pausing contents tab after designation",
             fridgeId,
             "AdaptiveStorage.ContentsITab");
-        yield return new WindowCancelActionStep(
-            "cancel the exact native power-designation message box",
+        yield return new WindowAcceptActionStep(
+            "confirm the exact native power-designation message box",
             "Verse.Dialog_MessageBox");
         yield return new AssertionStep(
             "enable only the native basic work needed to execute the flick designation",
@@ -315,19 +321,28 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
         yield return new TimeControlActionStep(
             "let the native [sbz] appliance process its power-off command",
             paused: false,
-            EndToEndGameSpeed.Normal);
+            EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
             "the native [sbz] power toggle disables upstream cooling",
             _ => ObserveUnpoweredAmbient(),
             new EndToEndDeadline(600, 2_000, TimeSpan.FromSeconds(30)));
+        yield return new AssertionStep(
+            "capture the frozen serving at the start of natural thawing",
+            _ =>
+            {
+                thawStartTemperature = CurrentTemperature();
+                thawStartTick = Find.TickManager.TicksGame;
+                EndToEndAssert.True(thawStartTemperature <= -5f,
+                    "The [sbz] serving must still be deeply Frozen when upstream cooling stops.");
+            });
         yield return new TimeControlActionStep(
-            "run the serving after upstream cooling is disabled",
+            "run a bounded natural-thaw interval after upstream cooling is disabled",
             paused: false,
             EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
-            "the serving warms after [sbz] relinquishes ambient control",
-            _ => CurrentTemperature() >= cooledServing.TemperatureCelsius + 5f,
-            new EndToEndDeadline(1_800, 7_000, TimeSpan.FromSeconds(75)));
+            "one thousand game ticks elapse without a microwave",
+            _ => Find.TickManager.TicksGame >= thawStartTick + 1_000,
+            new EndToEndDeadline(600, 1_200, TimeSpan.FromSeconds(40)));
         yield return new TimeControlActionStep(
             "pause on the unpowered warmed serving",
             paused: true,
@@ -337,7 +352,13 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
             _ =>
             {
                 warmedServing = CurrentServing();
+                thawElapsedTicks = Find.TickManager.TicksGame - thawStartTick;
                 AssertStableState(seededServing, "unpowered [sbz] warming");
+                EndToEndAssert.True(
+                    warmedServing.TemperatureCelsius > thawStartTemperature &&
+                    warmedServing.TemperatureCelsius <= 0f,
+                    "A naturally thawing [sbz] meal must warm but remain Frozen during the bounded interval; " +
+                    "observed " + warmedServing.TemperatureCelsius.ToString("0.###") + " C.");
             });
         yield return new SelectionActionStep(
             "select the warmed serving after native [sbz] power-off",
@@ -376,6 +397,10 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
             "the diner retrieves the exact meal and cutlery",
             _ => ObserveNativeRetrieval(),
             new EndToEndDeadline(1_200, 4_000, TimeSpan.FromSeconds(55)));
+        yield return new WaitUntilStep(
+            "the diner reaches the temperature-extended Frozen chewing toil",
+            _ => ObserveFrozenChewing(),
+            new EndToEndDeadline(900, 3_000, TimeSpan.FromSeconds(40)));
         yield return new SelectionActionStep(
             "select diner during native [sbz] meal ingestion",
             new[] { dinerId },
@@ -399,6 +424,18 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
         yield return new AssertionStep(
             "assert passive [sbz] lifecycle conservation",
             _ => AssertDiningResult());
+        yield return new SelectionActionStep(
+            "select the [sbz] diner after eating frozen food",
+            new[] { dinerId },
+            additive: false);
+        yield return new PawnInspectTabActionStep(
+            "open the native Needs tab for the frozen-food thought",
+            dinerId,
+            EndToEndPawnInspectTab.Needs);
+        yield return new ScreenshotStep(
+            "visible stronger Frozen meal memory after [sbz] dining",
+            Array.Empty<string>(),
+            0);
         yield return new SelectionActionStep(
             "select exact dirty plate and cutlery returned from [sbz] meal",
             new[] { plateId, cutleryId },
@@ -439,6 +476,11 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
                 ["unpoweredAmbient"] = unpoweredAmbient.ToString("0.###"),
                 ["cooledTemperature"] = cooledServing.TemperatureCelsius.ToString("0.###"),
                 ["warmedTemperature"] = warmedServing.TemperatureCelsius.ToString("0.###"),
+                ["naturalThawTicks"] = thawElapsedTicks.ToString(),
+                ["ordinaryChewDuration"] = ordinaryChewDuration.ToString(),
+                ["frozenChewDuration"] = frozenChewDuration.ToString(),
+                ["frozenThoughtStage"] = FrozenTemperatureMemory()?.CurStageIndex.ToString() ?? "missing",
+                ["frozenMoodOffset"] = FrozenTemperatureMemory()?.MoodOffset().ToString("0.###") ?? "missing",
                 ["plate"] = plateId,
                 ["cutlery"] = cutleryId
             });
@@ -489,6 +531,37 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
         return mealAcquired && exactCutleryObserved;
     }
 
+    private bool ObserveFrozenChewing()
+    {
+        if (meal.Destroyed || diner.CurJobDef != JobDefOf.Ingest ||
+            CurrentToil(diner) is not { defaultCompleteMode: ToilCompleteMode.Delay } current)
+        {
+            return false;
+        }
+
+        var plateSpeed = plate.GetComp<CompKitchenwareStats>()?.CurrentStats.CookingSpeedFactor ?? 1f;
+        var nativeMultiplier = meal.def.ingestible.useEatingSpeedStat
+            ? 1f / Math.Max(0.01f, diner.GetStatValue(StatDefOf.EatingSpeed))
+            : 1f;
+        ordinaryChewDuration = (int)Math.Round(
+            meal.def.ingestible.baseIngestTicks * nativeMultiplier /
+            Math.Max(0.1f, plateSpeed),
+            MidpointRounding.AwayFromZero);
+        var expectedFrozenDuration = (int)Math.Round(
+            ordinaryChewDuration * 1.5f,
+            MidpointRounding.AwayFromZero);
+        frozenChewDuration = diner.jobs.curDriver.ticksLeftThisToil;
+        EndToEndAssert.True(
+            ordinaryChewDuration > 0 &&
+            frozenChewDuration >= expectedFrozenDuration - 4 &&
+            frozenChewDuration <= expectedFrozenDuration,
+            "The real Frozen chewing toil must be approximately 1.5 times the plate-adjusted " +
+            "ordinary duration; observed ordinary=" + ordinaryChewDuration +
+            ", expected frozen=" + expectedFrozenDuration +
+            ", observed frozen ticks remaining=" + frozenChewDuration + ".");
+        return true;
+    }
+
     private bool DiningCompleted()
     {
         if (!meal.Destroyed)
@@ -530,6 +603,28 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
             "The exact returned plate must be dirty after eating.");
         EndToEndAssert.True(cutlery.GetComp<CompSanitation>()!.IsDirty,
             "The exact returned cutlery must be dirty after eating.");
+        var frozenMemory = FrozenTemperatureMemory();
+        EndToEndAssert.NotNull(frozenMemory,
+            "Native ingestion of the still-Frozen [sbz] meal must create the temperature memory.");
+        EndToEndAssert.Equal(4, frozenMemory!.CurStageIndex,
+            "Native ingestion must select the Frozen temperature thought stage.");
+        EndToEndAssert.Equal(-10f, frozenMemory.MoodOffset(),
+            "The visible Frozen meal memory must have the stronger -10 mood effect.");
+    }
+
+    private Thought_Memory? FrozenTemperatureMemory() =>
+        diner.needs?.mood?.thoughts?.memories.GetFirstMemoryOfDef(
+            DefDatabase<ThoughtDef>.GetNamed("ImmersiveChefs_MealTemperature"));
+
+    private static Toil? CurrentToil(Pawn pawn)
+    {
+        var driver = pawn.jobs.curDriver;
+        return driver is null
+            ? null
+            : typeof(JobDriver).GetProperty(
+                    "CurToil",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                ?.GetValue(driver) as Toil;
     }
 
     private void ResolveLoadedThings()
@@ -698,7 +793,7 @@ public sealed class SbzFridgeCompatibilityTest : IRimWorldEndToEndTest
         });
         settings.WareRequirementMode = WareRequirementMode.Strict;
         settings.MealTemperatureEnabled = true;
-        settings.ThermalHalfLifeHours = 0.1f;
+        settings.ThermalHalfLifeHours = 2f;
         settings.AutoMicrowaveBelow = -10f;
         settings.ColonyDiningStandards = false;
         DebugSettings.godMode = true;

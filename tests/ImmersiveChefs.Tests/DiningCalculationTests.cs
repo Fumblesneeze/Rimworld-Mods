@@ -41,7 +41,10 @@ public sealed class DiningCalculationTests
         Assert.Multiple(() =>
         {
             Assert.That(DiningOutcomeCalculator.QualityMoodOffset(72), Is.EqualTo(4));
-            Assert.That(DiningOutcomeCalculator.TemperatureMoodOffset(ThermalBand.Frozen), Is.EqualTo(-6));
+            Assert.That(DiningOutcomeCalculator.TemperatureMoodOffset(ThermalBand.Cold), Is.EqualTo(-3));
+            Assert.That(DiningOutcomeCalculator.TemperatureMoodOffset(ThermalBand.Frozen), Is.EqualTo(-10));
+            Assert.That(ThermalCalculator.EatingDurationMultiplier(ThermalBand.Cold), Is.EqualTo(1f));
+            Assert.That(ThermalCalculator.EatingDurationMultiplier(ThermalBand.Frozen), Is.EqualTo(1.5f));
             Assert.That(DiningOutcomeCalculator.ServiceScore(80, 60), Is.EqualTo(75f));
             Assert.That(DiningOutcomeCalculator.HasDirtyWare(
                 ContaminationSources.DirtyPlate | ContaminationSources.DirtyCutlery), Is.True);

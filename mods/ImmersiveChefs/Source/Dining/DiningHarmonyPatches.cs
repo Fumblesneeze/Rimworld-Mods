@@ -135,15 +135,58 @@ internal static class PlateEatingSpeedPatch
         }
 
         var meal = chewer.CurJob?.GetTarget(ingestibleInd).Thing;
-        var plate = (meal as ThingWithComps)?.GetComp<CompEmbeddedWare>()?.PeekPlateThing();
-        if (plate is null)
+        if (meal is not ThingWithComps mealWithComps)
         {
             return;
         }
 
-        var speed = (plate as ThingWithComps)?.GetComp<CompKitchenwareStats>()?
-            .CurrentStats.CookingSpeedFactor ?? 1f;
-        durationMultiplier /= Math.Max(0.1f, speed);
+        var plate = mealWithComps.GetComp<CompEmbeddedWare>()?.PeekPlateThing();
+        if (plate is not null)
+        {
+            var speed = (plate as ThingWithComps)?.GetComp<CompKitchenwareStats>()?
+                .CurrentStats.CookingSpeedFactor ?? 1f;
+            durationMultiplier /= Math.Max(0.1f, speed);
+        }
+    }
+
+    private static void Postfix(Pawn chewer, TargetIndex ingestibleInd, Toil __result)
+    {
+        if (!DiningPawnPolicy.AppliesPlateEatingSpeed(chewer.RaceProps.Humanlike))
+        {
+            return;
+        }
+
+        var originalInitAction = __result.initAction;
+        __result.initAction = () =>
+        {
+            originalInitAction?.Invoke();
+            ApplyCurrentTemperatureDuration(chewer, ingestibleInd);
+        };
+    }
+
+    private static void ApplyCurrentTemperatureDuration(Pawn chewer, TargetIndex ingestibleInd)
+    {
+        var meal = chewer.CurJob?.GetTarget(ingestibleInd).Thing as ThingWithComps;
+        if (meal is null)
+        {
+            return;
+        }
+
+        if (TemperatureOwnership.ImmersiveChefsFeaturesActive &&
+            ImmersiveChefsMod.Settings.MealTemperatureEnabled &&
+            meal.GetComp<CompCulinaryState>()?.PeekCurrentServing() is { } serving)
+        {
+            var multiplier = ThermalCalculator.EatingDurationMultiplier(
+                ThermalCalculator.BandFor(serving.TemperatureCelsius));
+            if (multiplier > 1f && chewer.jobs.curDriver is { } driver)
+            {
+                driver.ticksLeftThisToil = Math.Max(
+                    1,
+                    (int)Math.Round(
+                        driver.ticksLeftThisToil * multiplier,
+                        MidpointRounding.AwayFromZero));
+            }
+        }
     }
 }
 

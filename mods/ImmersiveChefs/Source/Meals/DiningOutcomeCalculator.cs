@@ -239,14 +239,7 @@ public static class DiningOutcomeCalculator
 
     public static int TemperatureMoodOffset(ThermalBand band)
     {
-        return band switch
-        {
-            ThermalBand.SteamingHot => 2,
-            ThermalBand.Warm => 1,
-            ThermalBand.Cold => -3,
-            ThermalBand.Frozen => -6,
-            _ => 0
-        };
+        return ThermalCalculator.MoodOffsetFor(band);
     }
 
     public static float ServiceScore(float craftsmanshipScore, float materialCleanliness)

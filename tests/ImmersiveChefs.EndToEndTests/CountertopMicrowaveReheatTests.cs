@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using Verse;
@@ -52,7 +53,7 @@ public sealed class CountertopMicrowaveNativeReheatTest : IRimWorldEndToEndTest
             paddingPixels: 140);
         yield return new WaitUntilStep(
             "countertop microwave completes exactly one reheat",
-            _ => fixture.CurrentServing is { MicrowaveReheatCount: 1, QualityScore: 75 } serving &&
+            _ => fixture.CurrentServingWithoutThermalUpdate is { MicrowaveReheatCount: 1, QualityScore: 71 } serving &&
                  Math.Abs(serving.TemperatureCelsius - 60f) < 0.01f,
             new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(35)));
         yield return new TimeControlActionStep(
@@ -63,6 +64,22 @@ public sealed class CountertopMicrowaveNativeReheatTest : IRimWorldEndToEndTest
             "observe steaming reheated meal before dining",
             new[] { fixture.Diner.ThingID },
             paddingPixels: 160);
+        yield return new TimeControlActionStep(
+            "run into chewing after countertop reheating",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the reheated serving uses ordinary rather than frozen chewing time",
+            _ => fixture.ObserveReheatedChewing(),
+            new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(35)));
+        yield return new TimeControlActionStep(
+            "pause on ordinary post-reheat chewing",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new ScreenshotStep(
+            "observe ordinary chewing after the frozen meal was reheated",
+            new[] { fixture.Diner.ThingID, fixture.Microwave.ThingID },
+            paddingPixels: 150);
         yield return new TimeControlActionStep(
             "finish ordinary dining after reheating",
             paused: false,
@@ -88,6 +105,8 @@ public sealed class CountertopMicrowaveNativeReheatTest : IRimWorldEndToEndTest
             _ => new Dictionary<string, string>
             {
                 ["mealDestroyed"] = fixture.Meal.Destroyed.ToString(),
+                ["frozenReheatQuality"] = "71",
+                ["postReheatChewDuration"] = fixture.PostReheatChewDuration.ToString(),
                 ["plateDirty"] = fixture.Plate.GetComp<CompSanitation>().IsDirty.ToString(),
                 ["cutleryDirty"] = fixture.Cutlery.GetComp<CompSanitation>().IsDirty.ToString(),
                 ["microwaveStillSupported"] = fixture.Microwave.GetComp<CompMicrowave>().Operational.ToString()
@@ -319,6 +338,7 @@ internal sealed class CountertopMicrowaveDiningFixture
     internal ThingWithComps Plate { get; }
     internal ThingWithComps Cutlery { get; }
     internal IntVec3 SupportPosition { get; }
+    internal int PostReheatChewDuration { get; private set; }
 
     internal bool IsActivelyHeating =>
         Diner.CurJob is { } job &&
@@ -341,6 +361,44 @@ internal sealed class CountertopMicrowaveDiningFixture
         Cutlery.Spawned &&
         Plate.GetComp<CompSanitation>().IsDirty &&
         Cutlery.GetComp<CompSanitation>().IsDirty;
+
+    internal bool ObserveReheatedChewing()
+    {
+        if (Meal.Destroyed || Diner.CurJobDef != JobDefOf.Ingest ||
+            CurrentServingWithoutThermalUpdate.MicrowaveReheatCount != 1 ||
+            CurrentToil(Diner) is not { defaultCompleteMode: ToilCompleteMode.Delay })
+        {
+            return false;
+        }
+
+        var plateSpeed = Plate.GetComp<CompKitchenwareStats>()?.CurrentStats.CookingSpeedFactor ?? 1f;
+        var nativeMultiplier = Meal.def.ingestible.useEatingSpeedStat
+            ? 1f / Math.Max(0.01f, Diner.GetStatValue(StatDefOf.EatingSpeed))
+            : 1f;
+        var ordinaryDuration = (int)Math.Round(
+            Meal.def.ingestible.baseIngestTicks * nativeMultiplier /
+            Math.Max(0.1f, plateSpeed),
+            MidpointRounding.AwayFromZero);
+        PostReheatChewDuration = Diner.jobs.curDriver.ticksLeftThisToil;
+        EndToEndAssert.True(
+            PostReheatChewDuration >= ordinaryDuration - 4 &&
+            PostReheatChewDuration <= ordinaryDuration,
+            "A meal reheated from Frozen to 60 C must sample temperature when chewing begins " +
+            "and use ordinary plate-adjusted chewing time; expected about " + ordinaryDuration +
+            ", observed " + PostReheatChewDuration + ".");
+        return true;
+    }
+
+    private static Toil? CurrentToil(Pawn pawn)
+    {
+        var driver = pawn.jobs.curDriver;
+        return driver is null
+            ? null
+            : typeof(JobDriver).GetProperty(
+                    "CurToil",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                ?.GetValue(driver) as Toil;
+    }
 
     internal void BlockLocalRecoveryCells(IEndToEndContext context)
     {
