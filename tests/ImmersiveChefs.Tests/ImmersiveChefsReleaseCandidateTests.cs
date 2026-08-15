@@ -41,7 +41,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
             Assert.That(release["previousChangeNote"], Is.EqualTo("Corrected the microwave direction art and improved the illustrated feature guide."));
-            Assert.That(release["changeNote"], Is.EqualTo("Added clearer in-game Workshop previews for restaurant service, dishwashing, nutrient-paste dining and professional meal preparation."));
+            Assert.That(release["changeNote"], Is.EqualTo("Dishwashers now stop without enough water or power, used dishes stay visible where they were used, steel kitchenware is brighter, the chef's knife is easier to read, and Workshop card backgrounds are fixed."));
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));

@@ -59,9 +59,8 @@ public sealed class GatewaySmokePackageEvidenceTests
             "Set-StrictMode -Version Latest\n" +
             "$tokens = $null; $parseErrors = $null\n" +
             $"$ast = [System.Management.Automation.Language.Parser]::ParseFile({PowerShellLiteral(smokePath)}, [ref]$tokens, [ref]$parseErrors)\n" +
-            "$functionAst = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Get-GatewaySmokeAssemblyEvidence' }, $true)\n" +
-            "if ($null -eq $functionAst) { throw 'Function was not found: Get-GatewaySmokeAssemblyEvidence' }\n" +
-            "Invoke-Expression $functionAst.Extent.Text\n" +
+            "$functionNames = @('Get-GatewaySmokeFileSha256','Get-GatewaySmokeAssemblyEvidence')\n" +
+            "foreach ($functionName in $functionNames) { $functionAst = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $functionName }, $true); if ($null -eq $functionAst) { throw ('Function was not found: ' + $functionName) }; Invoke-Expression $functionAst.Extent.Text }\n" +
             $"$assembliesPath = {PowerShellLiteral(assembliesPath)}\n" +
             "try {\n" + operation + "\nexit 0\n}\n" +
             "catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }\n";

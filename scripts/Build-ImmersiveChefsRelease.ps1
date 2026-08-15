@@ -755,11 +755,12 @@ $null = New-Item -ItemType Directory -Path $additionalPreviewRoot
 $showcaseDefinitionPath = Join-Path $releaseRoot 'workshop\showcases.json'
 $showcaseDefinition = Get-Content -LiteralPath $showcaseDefinitionPath -Raw -Encoding UTF8 | ConvertFrom-Json
 if ([string]$showcaseDefinition.schema -cne 'ImmersiveChefs/WorkshopShowcases/v1' -or
+    [string]$showcaseDefinition.publicationStatus -cne 'human-deferred' -or
     @($showcaseDefinition.showcases).Count -ne 5 -or
     @($showcaseDefinition.showcases.id | Sort-Object -Unique).Count -ne 5) {
     Exit-InvalidInput 'The Workshop showcase definition is invalid.'
 }
-$showcasePreviews = @($showcaseDefinition.showcases | ForEach-Object {
+$declaredShowcasePreviews = @($showcaseDefinition.showcases | ForEach-Object {
     $showcase = $_
     $formats = @($showcase.formats | ForEach-Object { [string]$_ })
     $carouselFormat = [string]$showcase.carousel.format
@@ -792,28 +793,16 @@ $showcasePreviews = @($showcaseDefinition.showcases | ForEach-Object {
         format = $carouselFormat
     }
 })
-if (@($showcasePreviews.slot | Sort-Object) -join ',' -cne '5,6,7,8,9' -or
-    @($showcasePreviews.token | Sort-Object -Unique).Count -ne 5) {
+if (@($declaredShowcasePreviews.slot | Sort-Object) -join ',' -cne '5,6,7,8,9' -or
+    @($declaredShowcasePreviews.token | Sort-Object -Unique).Count -ne 5) {
     Exit-InvalidInput 'The five Workshop showcases must own exact unique carousel slots 5 through 9.'
 }
-$showcaseEvidence = @($showcaseDefinition.showcases | ForEach-Object {
-    try { Get-WorkshopShowcaseEvidence -Showcase $_ -ReleaseRoot $releaseRoot -ReviewedProductRoot $packageRoot }
-    catch { Exit-InvalidInput $_.Exception.Message }
-})
-if ($showcaseEvidence.Count -ne 5 -or @($showcaseEvidence.showcaseId | Sort-Object -Unique).Count -ne 5) {
-    Exit-InvalidInput 'Every declared Workshop showcase must have one exact reviewed capture-evidence record.'
-}
-$sourceCatalogPath = Join-Path $repositoryRoot '.agents\skills\rimworld-realistic-base-generation\references\source-catalog.md'
-$showcaseDesignEvidence = @($showcaseDefinition.showcases | ForEach-Object {
-    try { Get-WorkshopShowcaseDesignEvidence -Showcase $_ -ReleaseRoot $releaseRoot -SourceCatalogPath $sourceCatalogPath }
-    catch { Exit-InvalidInput $_.Exception.Message }
-})
-if ($showcaseDesignEvidence.Count -ne 5 -or @($showcaseDesignEvidence.showcaseId | Sort-Object -Unique).Count -ne 5) {
-    Exit-InvalidInput 'Every declared Workshop showcase must have one exact live-reviewed design-evidence record.'
-}
+$showcasePreviews = @()
+$showcaseEvidence = @()
+$showcaseDesignEvidence = @()
 $cardTokens = @($presentationDefinition.carouselCards | ForEach-Object { [string]$_ })
-if ($cardTokens.Count -ne 5 -or @($cardTokens | Sort-Object -Unique).Count -ne 5) {
-    Exit-InvalidInput 'The Workshop presentation must select exactly five unique illustrated carousel cards.'
+if ($cardTokens.Count -ne 6 -or @($cardTokens | Sort-Object -Unique).Count -ne 6) {
+    Exit-InvalidInput 'The Workshop presentation must select exactly six unique illustrated carousel cards.'
 }
 $selectedCards = @($cardTokens | ForEach-Object {
     $token = $_
@@ -847,8 +836,9 @@ $additionalPreviews = @($previewDeclarations | Sort-Object slot | ForEach-Object
         format = [string]$_.format
     }
 })
-if ($additionalPreviews.Count -ne 10 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 10) {
-    Exit-InvalidInput 'The Workshop presentation must declare exactly ten unique additional previews.'
+if ($additionalPreviews.Count -ne 6 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 6 -or
+    @($additionalPreviews | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.showcaseId) }).Count -ne 0) {
+    Exit-InvalidInput 'The human-deferred Workshop presentation must declare exactly six non-showcase additional previews.'
 }
 
 $files = @(Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Sort-Object FullName | ForEach-Object {
@@ -927,6 +917,7 @@ $plan = [pscustomobject][ordered]@{
     previewBytes = (Get-Item -LiteralPath $previewPath).Length
     previewSha256 = (Get-FileHash -LiteralPath $previewPath -Algorithm SHA256).Hash
     additionalPreviews = $additionalPreviews
+    showcasePublicationStatus = [string]$showcaseDefinition.publicationStatus
     showcaseEvidence = $showcaseEvidence
     showcaseDesignEvidence = $showcaseDesignEvidence
     mutatesSteam = $false

@@ -443,7 +443,7 @@ public sealed class GatewaySmokeProcessDumpTests
                 "$ErrorActionPreference = 'Stop'\n" +
                 "$tokens = $null; $parseErrors = $null\n" +
                 $"$ast = [Management.Automation.Language.Parser]::ParseFile({PowerShellLiteral(smokePath)}, [ref]$tokens, [ref]$parseErrors)\n" +
-                "$functionNames = @('Test-FileContainsBearerToken','Assert-GatewayHangDumpProbeOutcome')\n" +
+                "$functionNames = @('Get-GatewaySmokeFileSha256','Test-FileContainsBearerToken','Assert-GatewayHangDumpProbeOutcome')\n" +
                 "foreach ($functionName in $functionNames) { $functionAst = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $functionName }, $true); Invoke-Expression $functionAst.Extent.Text }\n" +
                 $"$cleanup = [pscustomobject]@{{ Method='force-fallback'; Dump=[pscustomobject]@{{ Status='captured'; Path={PowerShellLiteral(dumpPath)}; TargetProcessId=42; TargetProcessStartUtc='2026-08-11T12:00:00Z' }} }}\n" +
                 $"$outcome = Assert-GatewayHangDumpProbeOutcome -ExpectedTransitionObserved $true -ProcessCleanup $cleanup -ProcessCleanupStatus completed -CredentialCleanupStatus completed -ExpectedDumpPath {PowerShellLiteral(dumpPath)} -BearerToken 'secret-token'\n" +

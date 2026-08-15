@@ -197,46 +197,16 @@ function Test-WorkshopChangeNotePreflight(
         @($RemoteNotes | Where-Object { [string]$_.note -ceq $NewNote.Trim() }).Count -eq 0
 }
 
-function Test-WorkshopShowcasePlanEvidence([object[]]$Evidence, [object[]]$DesignEvidence, [object[]]$AdditionalPreviews) {
-    $expected = [ordered]@{
-        'gastronomy-service' = 'gif'
-        'dishwasher-turnaround' = 'gif'
-        'nutrient-paste-prison-line' = 'gif'
-        'professional-prep-line' = 'gif'
-        'dining-memories' = 'screenshot'
-    }
-    $distinctEvidenceIds = @($Evidence | ForEach-Object { [string]$_.showcaseId } | Sort-Object -Unique)
-    $distinctDesignIds = @($DesignEvidence | ForEach-Object { [string]$_.showcaseId } | Sort-Object -Unique)
-    if ($Evidence.Count -ne 5 -or $DesignEvidence.Count -ne 5 -or $AdditionalPreviews.Count -ne 10 -or
-        $distinctEvidenceIds.Count -ne 5 -or $distinctDesignIds.Count -ne 5) { return $false }
-    foreach ($expectedId in @(
-        'gastronomy-service',
-        'dishwasher-turnaround',
-        'nutrient-paste-prison-line',
-        'professional-prep-line',
-        'dining-memories')) {
-        $expectedFormat = [string]$expected[$expectedId]
-        $evidenceMatches = @($Evidence | Where-Object { ([string]$_.showcaseId) -ceq ([string]$expectedId) })
-        $designMatches = @($DesignEvidence | Where-Object { ([string]$_.showcaseId) -ceq ([string]$expectedId) })
-        $previewMatches = @($AdditionalPreviews | Where-Object { ([string]$_.showcaseId) -ceq ([string]$expectedId) })
-        if ($evidenceMatches.Count -ne 1 -or $designMatches.Count -ne 1 -or $previewMatches.Count -ne 1 -or
-            [string]$designMatches[0].status -cne 'live-reviewed' -or
-            [string]$designMatches[0].sha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
-            ([string]$previewMatches[0].format) -cne $expectedFormat -or
-            ([string]$evidenceMatches[0].provenance.sha256) -notmatch '^[A-Fa-f0-9]{64}$') { return $false }
-        $outputs = @($evidenceMatches[0].outputs)
-        [int]$expectedFormatCount = 1
-        if ($expectedFormat -ceq 'gif') { $expectedFormatCount = 2 }
-        $actualFormatList = @($outputs | ForEach-Object { [string]$_.format } | Sort-Object) -join ','
-        $expectedFormatList = if ($expectedFormat -ceq 'gif') { 'gif,screenshot' } else { 'screenshot' }
-        if ($outputs.Count -ne $expectedFormatCount) { return $false }
-        if ($actualFormatList -cne $expectedFormatList) { return $false }
-        $carouselOutput = @($outputs | Where-Object { ([string]$_.format) -ceq $expectedFormat })
-        if ($carouselOutput.Count -ne 1) { return $false }
-        if (([string]$carouselOutput[0].sha256) -cne ([string]$previewMatches[0].sha256)) { return $false }
-    }
+function Test-WorkshopShowcasePlanEvidence([string]$PublicationStatus, [object[]]$Evidence, [object[]]$DesignEvidence, [object[]]$AdditionalPreviews) {
+    if ($PublicationStatus -cne 'human-deferred') { return $false }
     $cardPreviews = @($AdditionalPreviews | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.showcaseId) })
-    if ($cardPreviews.Count -ne 5) { return $false }
+    $expectedTokens = @('kitchenware','teamwork','dishwashing','meals','colony','compatibility')
+    if ($Evidence.Count -ne 0 -or $DesignEvidence.Count -ne 0 -or
+        $AdditionalPreviews.Count -ne 6 -or $cardPreviews.Count -ne 6) { return $false }
+    for ($index = 0; $index -lt $expectedTokens.Count; $index++) {
+        if ([string]$cardPreviews[$index].token -cne $expectedTokens[$index] -or
+            [string]$cardPreviews[$index].format -cne 'screenshot') { return $false }
+    }
     return $true
 }
 
@@ -422,8 +392,8 @@ if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [bool]$plan.mutatesSteam) {
     Exit-InvalidInput 'The publication plan identity or dry-run contract is invalid.'
 }
-if (-not (Test-WorkshopShowcasePlanEvidence -Evidence @($plan.showcaseEvidence) -DesignEvidence @($plan.showcaseDesignEvidence) -AdditionalPreviews @($plan.additionalPreviews))) {
-    Exit-InvalidInput 'The publication plan does not contain the exact five cross-bound Workshop showcase evidence records.'
+if (-not (Test-WorkshopShowcasePlanEvidence -PublicationStatus ([string]$plan.showcasePublicationStatus) -Evidence @($plan.showcaseEvidence) -DesignEvidence @($plan.showcaseDesignEvidence) -AdditionalPreviews @($plan.additionalPreviews))) {
+    Exit-InvalidInput 'The publication plan showcase policy and presentation evidence are inconsistent.'
 }
 $dirty = @(& git -C $repositoryRoot status --porcelain)
 if ($LASTEXITCODE -ne 0 -or $dirty.Count -ne 0) { Exit-InvalidInput 'Steam publication requires the exact clean committed release revision.' }

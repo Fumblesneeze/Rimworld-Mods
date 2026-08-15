@@ -1,5 +1,6 @@
 {
   "schema": "ImmersiveChefs/WorkshopShowcases/v1",
+  "publicationStatus": "human-deferred",
   "captureDefaults": {
     "width": 1280,
     "height": 720,

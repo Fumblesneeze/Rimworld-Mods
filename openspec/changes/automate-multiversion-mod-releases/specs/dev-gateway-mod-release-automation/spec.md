@@ -146,6 +146,20 @@ The presentation compiler SHALL validate required fields, BBCode/link policy, ge
 
 Each distributable mod MAY additionally declare an ordered gameplay-showcase inventory. Every showcase SHALL name its required active package chain, scene purpose, native player workflow, observable beats, capture crop and final Steam preview order. When a showcase requests both formats, one reviewed in-game screenshot and one reviewed GIF SHALL be produced from the same declared scene family. The screenshot SHALL retain readable gameplay detail. Each action beat SHALL use the closest fixed camera and crop that still includes the acting pawn, manipulated Things, destination and necessary immediate context; a whole-room or whole-colony overview SHALL NOT substitute for a legible action view. The GIF SHALL be no longer than five seconds, SHALL prefer tight hard-cut action views over camera panning, wide compound views, or long walking, and SHALL remain under Steam's one-MiB additional-preview limit. Both SHALL depict believable gameplay rooms and colonists rather than a cleared-map test fixture.
 
+A mod MAY mark its whole showcase inventory `human-deferred`. While that state is active, agents MUST
+NOT arrange, capture, synthesize, repair, promote, validate as live-reviewed, or publish any declared
+showcase. The declarations and design records remain human briefs. A publishable automated plan SHALL
+record the deferral, contain no showcase design/capture evidence, and contain no showcase additional-
+preview slots. This deferral does not remove independently reviewed feature cards or other ordinary
+Workshop presentation assets. Human-produced showcase media may enter a later release only after an
+explicit user decision changes the policy and the ordinary review/provenance gates are completed.
+
+#### Scenario: Human-deferred showcases are excluded from an incremental update
+- **GIVEN** a distributable mod retains showcase briefs marked `human-deferred`
+- **WHEN** an agent builds an immutable incremental publication plan
+- **THEN** the plan retains the deferral state, has empty showcase evidence inventories, and publishes only the reviewed non-showcase presentation assets
+- **AND** missing, partial, or stale showcase media does not block that update and cannot silently enter it
+
 Before arranging a new showcase archetype, the repository workflow SHALL inspect and catalog a varied player-built visual corpus with whole-colony, close-workflow, optional-mod and contrasting examples. Scene rules SHALL identify whether they are mechanical, recurrent across independent colonies, archetype-specific, or unconfirmed candidates. Every arranged showcase SHALL retain a design record containing its brief, eligible reference IDs, applied classified rules, adjacency graph, placement rationale, rejected drafts and live visual observations. Real Ruins evidence SHALL use a reproducible bounded bulk-corpus operation derived from the current open-source client rather than a token handful of blueprints: it SHALL retain the complete metadata cohort, safely parse enough blueprint bodies to support the claimed placement statistics, report failures and unresolved modded Defs, and bind every promoted quantitative rule to its exact sample size and corpus identity. Local caches SHALL be preferred when populated; raw blueprints and downloaded reference images SHALL remain ignored research inputs, and no player blueprint SHALL be republished as release art.
 
 The corpus analyzer SHALL treat every metadata response and compressed blueprint as untrusted input. It SHALL impose explicit request, compressed-byte, expanded-byte, XML depth/cell/item, concurrency and total-operation bounds; prohibit DTDs and external entity resolution; use independently generated local paths; resume without duplicating accepted bodies; and produce stable machine-readable summaries. It SHALL distinguish exact resolved Def contracts from unresolved names. A showcase SHALL NOT be arranged until the corpus has produced measured rules for its relevant geometry and the acting agent has visually inspected a stratified set of matching real layouts.

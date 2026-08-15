@@ -1,6 +1,6 @@
 {
   "schema": "ImmersiveChefs/WorkshopPresentation/v1",
-  "carouselCards": [ "kitchenware", "teamwork", "meals", "colony", "compatibility" ],
+  "carouselCards": [ "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" ],
   "cards": [
     {
       "token": "kitchenware",

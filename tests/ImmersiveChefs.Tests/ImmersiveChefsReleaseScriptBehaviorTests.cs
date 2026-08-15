@@ -629,22 +629,17 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     [Test]
-    public void Publisher_requires_five_complete_showcase_evidence_records_cross_bound_to_the_carousel()
+    public void Publisher_accepts_only_six_feature_cards_when_showcases_are_human_deferred()
     {
         using var fixture = Fixture.Create();
         var run = fixture.InvokeFunctions(
             "Invoke-ImmersiveChefsWorkshopRelease.ps1",
             new[] { "Test-WorkshopShowcasePlanEvidence" },
-            "$ids=@('gastronomy-service','dishwasher-turnaround','nutrient-paste-prison-line','professional-prep-line','dining-memories');" +
-            "$e=@();$d=@();$p=@();$slot=5;foreach($id in $ids){$fmt=if($id -ceq 'dining-memories'){'screenshot'}else{'gif'};" +
-            "$a='A'.PadRight(64,'A');$b='B'.PadRight(64,'B');$c='C'.PadRight(64,'C');" +
-            "$outs=@([pscustomobject]@{format='screenshot';sha256=$a});if($fmt -ceq 'gif'){$outs+=([pscustomobject]@{format='gif';sha256=$b})};" +
-            "$e+=([pscustomobject]@{showcaseId=$id;outputs=$outs;provenance=[pscustomobject]@{sha256=$c}});" +
-            "$d+=([pscustomobject]@{showcaseId=$id;sha256='D'.PadRight(64,'D');status='live-reviewed'});" +
-            "$carouselHash=if($fmt -ceq 'gif'){$b}else{$a};$p+=([pscustomobject]@{showcaseId=$id;format=$fmt;sha256=$carouselHash});$slot++};" +
-            "$p=@([pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card1'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card2'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card3'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card4'},[pscustomobject]@{showcaseId=$null;format='screenshot';sha256='card5'})+$p;" +
-            "$ok=Test-WorkshopShowcasePlanEvidence -Evidence @($e) -DesignEvidence @($d) -AdditionalPreviews @($p);$missing=Test-WorkshopShowcasePlanEvidence -Evidence @($e|Select-Object -First 4) -DesignEvidence @($d) -AdditionalPreviews @($p);$missingDesign=Test-WorkshopShowcasePlanEvidence -Evidence @($e) -DesignEvidence @($d|Select-Object -First 4) -AdditionalPreviews @($p);" +
-            "Write-Output ($ok.ToString()+'|'+$missing.ToString()+'|'+$missingDesign.ToString())");
+            "$tokens=@('kitchenware','teamwork','dishwashing','meals','colony','compatibility');$p=$tokens|ForEach-Object{[pscustomobject]@{token=$_;showcaseId=$null;format='screenshot';sha256=('card-'+$_)}};" +
+            "$ok=Test-WorkshopShowcasePlanEvidence -PublicationStatus 'human-deferred' -Evidence @() -DesignEvidence @() -AdditionalPreviews @($p);" +
+            "$leaked=Test-WorkshopShowcasePlanEvidence -PublicationStatus 'human-deferred' -Evidence @([pscustomobject]@{showcaseId='dishwasher-turnaround'}) -DesignEvidence @() -AdditionalPreviews @($p);" +
+            "$missing=Test-WorkshopShowcasePlanEvidence -PublicationStatus 'human-deferred' -Evidence @() -DesignEvidence @() -AdditionalPreviews @($p|Select-Object -First 5);" +
+            "Write-Output ($ok.ToString()+'|'+$leaked.ToString()+'|'+$missing.ToString())");
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);

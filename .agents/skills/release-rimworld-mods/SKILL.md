@@ -60,6 +60,15 @@ Read [references/release-checklist.md](references/release-checklist.md) before c
 11. Before drafting showcase geometry, use the repo-local `rimworld-realistic-base-generation` skill and create `Release/workshop/designs/<showcase-id>.md`. Record the brief, eligible visual/mechanical reference IDs, classified rules, adjacency graph and placement rationale that justify the colony form, room grammar, and optional-mod placement. Build scenes like believable colonies: use named pawns, sensible materials, finished rooms, floors, lighting, decor, power/plumbing, stocked storage, linked workbenches, short paths, and incidental clutter. Do not show test labels, debug windows, selection brackets, learning-helper overlays, sterile empty boxes, or fixture names. Use the Gateway's camera-centered crop so framing does not select the subjects.
 12. Capture both a lossless full-detail still and raw PNG frames for a GIF candidate when requested. Keep GIFs at most five seconds; prefer a fixed camera and hard cuts between useful beats over panning or showing dead walking time. For hard cuts, retain every v1 segment under `<showcase>/segments/`, capture all segments from the same exact held PID/start/run and package build, and assemble with `scripts/Invoke-RimWorldShowcaseAssembly.ps1`; the exact ordered segment-beat union must equal the showcase declaration. Never splice different launches, invented transition frames, or direct-state outcomes. Encode below Steam's 1 MiB preview ceiling, retain source-frame timing/crop hashes, and compare the still and GIF at actual Workshop display size. A GIF that becomes illegible under the limit should not replace the clearer screenshot.
 
+### Human-deferred showcases
+
+When a mod's showcase manifest says `human-deferred`, agents must stop at the authored brief. Do not
+arrange scenes, capture frames, repair partial showcase media, promote earlier agent captures, or include
+showcase slots in a publication plan. The release plan must carry the deferral state, empty showcase
+design/capture evidence arrays, and only the independently reviewed non-showcase presentation inventory.
+Human-produced media can enter a later release only after the user explicitly lifts the deferral and the
+normal review/provenance gates are satisfied. Immersive Chefs is currently human-deferred.
+
 ## Publish deliberately
 
 1. Use the implemented Gateway publisher as the primary path only from a fresh isolated RimWorld process with Steam initialized. SteamCMD may be a documented recovery path, but it is not equivalent Gateway evidence.

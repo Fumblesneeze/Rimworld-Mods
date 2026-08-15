@@ -204,7 +204,7 @@ The vanilla ingest job already records its actually selected eat-surface cell in
 
 Active cooking keeps the reserved cookware as its existing work prop. Once real cooking work has begun, cleanup returns that exact Thing to an occupied bill-giver cell with direct placement so it reads as used equipment on the stove. A later admitted cooking attempt clears only dirty cookware occupying that same station footprint, moving each exact unit to ordinary nearby placement before the new active toil. The move preserves Thing identity and player state; it does not run for pre-work cancellation and does not manufacture showcase clutter.
 
-The dishwasher showcase uses this lifecycle as its source of visible overflow. It must show at least five genuinely used cookware sets on or beside the stove and genuinely returned table settings, then follow ordinary collection, dishwasher processing and storage. Capture uses tight, fixed action views—wide colony framing remains contextual reference only.
+The human-deferred dishwasher showcase may eventually use this lifecycle as its source of visible overflow. If a human produces it, it must show at least five genuinely used cookware sets on or beside the stove and genuinely returned table settings, then follow ordinary collection, dishwasher processing and storage. Agents must not arrange, capture, repair, promote, or publish this showcase. Its deferral does not affect the implemented runtime lifecycle or its existing native player-workflow evidence.
 
 ## Risks / Trade-offs
 

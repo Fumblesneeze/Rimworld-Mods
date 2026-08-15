@@ -19,6 +19,12 @@ Before changing RimWorld C#, XML, Defs, Harmony patches, compatibility adapters,
 
 Before arranging a colony, gameplay showcase, or lived-in fixture whose visual credibility matters, read and follow `.agents/skills/rimworld-realistic-base-generation/SKILL.md`. Ground room geometry, materials, traffic, decor, and optional-mod placement in its inspected player-reference catalog and exact game contracts; do not improvise a decorated cleared-map box and call it a colony.
 
+Immersive Chefs gameplay showcases are human-deferred. Agents MUST NOT arrange, capture, synthesize,
+promote, or publish those showcases. Their checked-in declarations and design records are human briefs,
+not agent work queues or release inputs. Agents may publish Immersive Chefs updates only when the
+immutable release plan explicitly excludes all gameplay-showcase media and evidence; the ordinary
+reviewed feature cards remain separate Workshop presentation assets.
+
 ## Non-negotiable acceptance gate
 
 TDD and code review are necessary, but they are never sufficient to accept RimWorld behavior.

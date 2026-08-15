@@ -314,7 +314,7 @@ public sealed class WorkshopDescriptionTests
         Assert.That(manifest!.schema, Is.EqualTo("ImmersiveChefs/WorkshopPresentation/v1"));
         Assert.That(featureCardTemplate, Does.Contain("Steam Workshop page background observed 2026-08-14: #1b2838"),
             "The versioned card template must retain the measured Steam matte and observation date.");
-        Assert.That(manifest.carouselCards, Is.EqualTo(new[] { "kitchenware", "teamwork", "meals", "colony", "compatibility" }));
+        Assert.That(manifest.carouselCards, Is.EqualTo(new[] { "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" }));
         Assert.That(manifest.cards, Has.Exactly(6).Items);
         Assert.That(manifest.cards.Select(card => card.token), Is.Unique);
         Assert.That(manifest.cards.Select(card => card.token), Does.Not.Contain("hero"),
@@ -378,6 +378,7 @@ public sealed class WorkshopDescriptionTests
         Assert.Multiple(() =>
         {
             Assert.That(manifest!.schema, Is.EqualTo("ImmersiveChefs/WorkshopShowcases/v1"));
+            Assert.That(manifest.publicationStatus, Is.EqualTo("human-deferred"));
             Assert.That(manifest.showcases, Has.Exactly(5).Items);
             Assert.That(manifest.showcases.Select(showcase => showcase.id), Is.Unique);
             Assert.That(manifest.showcases.Select(showcase => showcase.carousel.slot).OrderBy(value => value),
@@ -477,6 +478,7 @@ public sealed class WorkshopDescriptionTests
     private sealed class ShowcaseManifest
     {
         public string schema { get; set; } = string.Empty;
+        public string publicationStatus { get; set; } = string.Empty;
         public ShowcaseCaptureDefaults captureDefaults { get; set; } = new();
         public Showcase[] showcases { get; set; } = Array.Empty<Showcase>();
     }
