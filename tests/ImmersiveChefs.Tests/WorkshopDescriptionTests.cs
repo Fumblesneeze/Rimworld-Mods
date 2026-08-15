@@ -212,6 +212,12 @@ public sealed class WorkshopDescriptionTests
             recommendedBody,
             Does.Contain("Adaptive Storage Framework ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=3033901359]Workshop page[/url])"),
             "The SBZ Fridge recommendation must link its required storage framework.");
+        Assert.That(
+            Regex.Matches(normalized, "meals chill or freeze quickly, thaw slowly, and lose more quality after freezing", RegexOptions.IgnoreCase).Count,
+            Is.EqualTo(2),
+            "Both supported fridge integrations must explain the fast chilling/freezing, slow thaw, and deeper frozen-quality loss.");
+        Assert.That(normalized, Does.Contain("plates stay attached"),
+            "The RimFridge entry must explain that attached tableware remains with the stored meal.");
 
         foreach (var chain in RequiredCompatibilityChains)
         {
