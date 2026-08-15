@@ -25,9 +25,16 @@ public sealed class TextureVariationPatchTests
     }
 
     [Test]
-    public void Portable_selector_patch_is_bounded_to_the_five_supported_defs()
+    public void Sanitation_selector_is_base_owned_and_optional_patch_only_adds_variations()
     {
         var root = FindRepositoryRoot();
+        var kitchenware = XDocument.Load(Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Defs",
+            "ThingDefs",
+            "Kitchenware.xml"));
         var document = XDocument.Load(Path.Combine(
             root,
             "mods",
@@ -45,13 +52,13 @@ public sealed class TextureVariationPatchTests
                 "/graphicData/graphicClass",
                 StringComparison.Ordinal) == true)
             .ToList();
-        var expectedDefNames = new[]
+        var baseDirtyDefNames = new[]
         {
             "ImmersiveChefs_PrimitiveCookware",
             "ImmersiveChefs_Cookware",
             "ImmersiveChefs_Plate",
-            "ImmersiveChefs_Cutlery",
-            "ImmersiveChefs_ChefsKnife"
+            "ImmersiveChefs_AdobePlate",
+            "ImmersiveChefs_Cutlery"
         };
 
         Assert.Multiple(() =>
@@ -59,22 +66,20 @@ public sealed class TextureVariationPatchTests
             Assert.That(
                 (string?)operation.Attribute("Class"),
                 Is.EqualTo("ImmersiveChefs.PatchOperationTextureVariations"));
-            Assert.That(graphicReplacements, Has.Count.EqualTo(expectedDefNames.Length));
-            foreach (var defName in expectedDefNames)
+            Assert.That(graphicReplacements, Is.Empty,
+                "Dirty rendering is base behavior and must not depend on the optional VTEX patch.");
+            foreach (var defName in baseDirtyDefNames)
             {
-                var replacement = graphicReplacements.Single(element =>
-                    ((string?)element.Element("xpath"))?.Contains(defName) == true);
                 Assert.That(
-                    (string?)replacement.Element("value")?.Element("graphicClass"),
-                    Is.EqualTo("ImmersiveChefs.Graphic_PortableKitchenwareVariation"));
+                    (string?)kitchenware.Descendants("ThingDef")
+                        .Single(definition => (string?)definition.Element("defName") == defName)
+                        .Element("graphicData")?
+                        .Element("graphicClass"),
+                    Is.EqualTo("ImmersiveChefs.Graphic_PortableKitchenwareVariation"),
+                    defName + " must select its dirty sibling without an optional mod.");
             }
-            var plateShader = replacements.Single(element =>
-                ((string?)element.Element("xpath"))?.EndsWith(
-                    "ThingDef[defName=\"ImmersiveChefs_Plate\"]/graphicData/shaderType",
-                    StringComparison.Ordinal) == true);
-            Assert.That(
-                (string?)plateShader.Element("value")?.Element("shaderType"),
-                Is.EqualTo("CutoutComplex"));
+            Assert.That(replacements, Is.Empty,
+                "The optional VTEX patch should add only the optional building variation comps.");
         });
     }
 

@@ -326,6 +326,34 @@ public sealed class WorkshopDescriptionTests
         Assert.That(manifest.cards.Select(card => card.token), Does.Not.Contain("hero"),
             "The primary Workshop preview must not be duplicated as an additional preview.");
 
+        var steelKitchenwareArt = manifest.cards
+            .SelectMany(card => card.art)
+            .Where(art => Regex.IsMatch(
+                art.source,
+                @"Things/Item/Kitchenware/(?:Cookware/Cookware|Plate/Plate|Cutlery/Cutlery|ChefsKnife/ChefsKnife)(?:_Dirty)?\.png$",
+                RegexOptions.CultureInvariant))
+            .ToArray();
+        Assert.That(steelKitchenwareArt, Is.Not.Empty, "The feature cards lost their Stuff-colored kitchenware art.");
+        foreach (var art in steelKitchenwareArt)
+        {
+            var maskSource = art.source.Substring(0, art.source.Length - ".png".Length) + "_m.png";
+            Assert.Multiple(() =>
+            {
+                Assert.That(art.stuffColor, Is.EqualTo("#696969"),
+                    art.source + " must be rendered with Core Steel's exact Stuff color.");
+                Assert.That(
+                    File.Exists(Path.Combine(
+                        root,
+                        "mods",
+                        "ImmersiveChefs",
+                        "Textures",
+                        "ImmersiveChefs",
+                        maskSource.Replace('/', Path.DirectorySeparatorChar))),
+                    Is.True,
+                    art.source + " must have a shipped mask before Workshop tinting.");
+            });
+        }
+
         foreach (var card in manifest.cards)
         {
             var path = Path.Combine(workshopRoot, card.path.Replace('/', Path.DirectorySeparatorChar));
@@ -479,6 +507,7 @@ public sealed class WorkshopDescriptionTests
     private sealed class PresentationArt
     {
         public string source { get; set; } = string.Empty;
+        public string stuffColor { get; set; } = string.Empty;
     }
 
     private sealed class ShowcaseManifest

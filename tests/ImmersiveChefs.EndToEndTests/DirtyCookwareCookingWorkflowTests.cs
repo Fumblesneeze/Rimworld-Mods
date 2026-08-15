@@ -497,6 +497,22 @@ public sealed class DirtyCookwareCookingWorkflowTest : IRimWorldEndToEndTest
             "forced meal exists beside the exact returned dirty cookware",
             Array.Empty<string>(),
             paddingPixels: 0);
+        yield return new SelectionActionStep(
+            "clear selection to inspect the returned dirty cookware at ordinary map zoom",
+            Array.Empty<string>(),
+            additive: false);
+        yield return new ScreenshotStep(
+            "returned dirty cookware is unmistakable without selection brackets",
+            new[] { forced.Cookware.ThingID, forced.Stove.ThingID },
+            paddingPixels: 170);
+        yield return new SelectionActionStep(
+            "select the exact returned dirty cookware for its native inspector",
+            new[] { forced.Cookware.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "selected returned cookware keeps its exaggerated grime visible",
+            Array.Empty<string>(),
+            paddingPixels: 0);
         yield return new CheckpointStep(
             "dirty cookware cooking workflow result",
             _ => new Dictionary<string, string>

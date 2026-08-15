@@ -55,9 +55,42 @@ try {
                 Join-Path $textureRoot $source.Replace('/', '\')
             }
             if (-not (Test-Path -LiteralPath $artPath -PathType Leaf)) { throw "Missing presentation sprite: $artPath" }
+            $renderSourcePath = $artPath
+            $stuffColorProperty = $art.PSObject.Properties['stuffColor']
+            if ($null -ne $stuffColorProperty -and -not [string]::IsNullOrWhiteSpace([string]$art.stuffColor)) {
+                $stuffColor = [string]$art.stuffColor
+                if ($stuffColor -cnotmatch '^#[0-9A-Fa-f]{6}$') { throw "Invalid Stuff color '$stuffColor' for $source" }
+                if ($source.StartsWith('workshop:', [StringComparison]::Ordinal)) {
+                    throw "Workshop illustrations cannot use a RimWorld Stuff mask: $source"
+                }
+
+                $maskPath = [IO.Path]::Combine(
+                    [IO.Path]::GetDirectoryName($artPath),
+                    [IO.Path]::GetFileNameWithoutExtension($artPath) + '_m.png')
+                if (-not (Test-Path -LiteralPath $maskPath -PathType Leaf)) { throw "Missing presentation Stuff mask: $maskPath" }
+
+                $red = [Convert]::ToInt32($stuffColor.Substring(1, 2), 16) / 255.0
+                $green = [Convert]::ToInt32($stuffColor.Substring(3, 2), 16) / 255.0
+                $blue = [Convert]::ToInt32($stuffColor.Substring(5, 2), 16) / 255.0
+                $tintedLayerPath = Join-Path $temporaryRoot (([string]$card.token) + "-stuff-layer-$index.png")
+                $maskChannelPath = Join-Path $temporaryRoot (([string]$card.token) + "-stuff-mask-$index.png")
+                $compositedRgbPath = Join-Path $temporaryRoot (([string]$card.token) + "-stuff-rgb-$index.png")
+                $sourceAlphaPath = Join-Path $temporaryRoot (([string]$card.token) + "-stuff-alpha-$index.png")
+                $renderSourcePath = Join-Path $temporaryRoot (([string]$card.token) + "-stuff-$index.png")
+                Invoke-Magick @(
+                    $artPath,
+                    '-channel', 'R', '-evaluate', 'multiply', $red.ToString('0.########', [Globalization.CultureInfo]::InvariantCulture), '+channel',
+                    '-channel', 'G', '-evaluate', 'multiply', $green.ToString('0.########', [Globalization.CultureInfo]::InvariantCulture), '+channel',
+                    '-channel', 'B', '-evaluate', 'multiply', $blue.ToString('0.########', [Globalization.CultureInfo]::InvariantCulture), '+channel',
+                    $tintedLayerPath)
+                Invoke-Magick @($maskPath, '-alpha', 'off', '-channel', 'R', '-separate', $maskChannelPath)
+                Invoke-Magick @($artPath, $tintedLayerPath, $maskChannelPath, '-composite', $compositedRgbPath)
+                Invoke-Magick @($artPath, '-alpha', 'extract', $sourceAlphaPath)
+                Invoke-Magick @($compositedRgbPath, $sourceAlphaPath, '-alpha', 'off', '-compose', 'CopyOpacity', '-composite', $renderSourcePath)
+            }
             $resizedPath = Join-Path $temporaryRoot (([string]$card.token) + "-art-$index.png")
             $nextPath = Join-Path $temporaryRoot (([string]$card.token) + "-$index.png")
-            Invoke-Magick @($artPath, '-filter', 'Lanczos', '-resize', ([string]$art.width + 'x'), '-trim', '+repage', $resizedPath)
+            Invoke-Magick @($renderSourcePath, '-filter', 'Lanczos', '-resize', ([string]$art.width + 'x'), '-trim', '+repage', $resizedPath)
             Invoke-Magick @($currentPath, $resizedPath, '-geometry', ('+' + [int]$art.x + '+' + [int]$art.y), '-composite', $nextPath)
             $currentPath = $nextPath
         }

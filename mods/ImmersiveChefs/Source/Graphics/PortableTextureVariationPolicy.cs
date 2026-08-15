@@ -19,12 +19,14 @@ internal static class PortableTextureVariationPolicy
         KitchenMaterialKind material,
         bool dirty)
     {
-        if (!integrationEnabled || product == KitchenwareProduct.ChefsKnife)
+        if (product == KitchenwareProduct.ChefsKnife)
         {
             return PortableTextureFamily.Base;
         }
 
-        var cleanFamily = material switch
+        var cleanFamily = !integrationEnabled
+            ? PortableTextureFamily.Base
+            : material switch
         {
             KitchenMaterialKind.Wood when product is
                 KitchenwareProduct.Plate or KitchenwareProduct.Cutlery =>
@@ -32,8 +34,8 @@ internal static class PortableTextureVariationPolicy
             KitchenMaterialKind.PrimitiveStone when product is
                 KitchenwareProduct.Cookware or KitchenwareProduct.Plate =>
                 PortableTextureFamily.Stone,
-            _ => PortableTextureFamily.Base
-        };
+                _ => PortableTextureFamily.Base
+            };
         if (!dirty || !showDirtyTextures)
         {
             return cleanFamily;

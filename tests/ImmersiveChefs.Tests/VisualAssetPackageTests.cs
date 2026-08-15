@@ -780,6 +780,30 @@ public sealed class VisualAssetPackageTests
     }
 
     [Test]
+    public void Dirty_portable_families_have_conspicuous_fixed_color_grime_after_steel_tint()
+    {
+        var root = FindRepositoryRoot();
+        foreach (var (clean, dirty) in new[]
+                 {
+                     (CookwareTexturePath, CookwareTexturePath + "_Dirty"),
+                     (CookwareTexturePath + "_Stone", CookwareTexturePath + "_StoneDirty"),
+                     (PlateTexturePath, PlateTexturePath + "_Dirty"),
+                     (PlateTexturePath + "_Wood", PlateTexturePath + "_WoodDirty"),
+                     (PlateTexturePath + "_Stone", PlateTexturePath + "_StoneDirty"),
+                     (CutleryTexturePath, CutleryTexturePath + "_Dirty"),
+                     (CutleryTexturePath + "_Wood", CutleryTexturePath + "_WoodDirty"),
+                     (PrimitiveCookwareTexturePath, PrimitiveCookwareTexturePath + "_Dirty")
+                 })
+        {
+            AssertDirtySpriteHasConspicuousFixedGrime(
+                TextureFile(root, clean + ".png"),
+                TextureFile(root, dirty + ".png"),
+                TextureFile(root, clean + "_m.png"),
+                TextureFile(root, dirty + "_m.png"));
+        }
+    }
+
+    [Test]
     public void Building_texture_variation_family_is_complete_distinct_and_chroma_free()
     {
         var root = FindRepositoryRoot();
@@ -1208,7 +1232,7 @@ public sealed class VisualAssetPackageTests
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(CookwareTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("ImmersiveChefs.Graphic_PortableKitchenwareVariation"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("CutoutComplex"));
             Assert.That(File.Exists(diffusePath), Is.True, "The selected cookware source sprite must exist.");
             Assert.That(File.Exists(maskPath), Is.True, "Stuffable cookware needs a source RimWorld mask.");
@@ -1253,6 +1277,7 @@ public sealed class VisualAssetPackageTests
             Assert.That(
                 (string?)graphicData.Element("texPath"),
                 Is.EqualTo(PrimitiveCookwareTexturePath));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("ImmersiveChefs.Graphic_PortableKitchenwareVariation"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("CutoutComplex"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(maskPath), Is.True);
@@ -1373,10 +1398,11 @@ public sealed class VisualAssetPackageTests
         Assert.Multiple(() =>
         {
             Assert.That((string?)plateGraphic.Element("texPath"), Is.EqualTo(PlateTexturePath));
-            Assert.That((string?)plateGraphic.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)plateGraphic.Element("graphicClass"), Is.EqualTo("ImmersiveChefs.Graphic_PortableKitchenwareVariation"));
             Assert.That((string?)plateGraphic.Element("shaderType"), Is.EqualTo("CutoutComplex"));
             Assert.That((string?)adobeGraphic.Element("texPath"), Is.EqualTo(PlateTexturePath));
-            Assert.That((string?)adobeGraphic.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)adobeGraphic.Element("graphicClass"), Is.EqualTo("ImmersiveChefs.Graphic_PortableKitchenwareVariation"));
+            Assert.That((string?)adobeGraphic.Element("shaderType"), Is.EqualTo("CutoutComplex"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(
                 File.Exists(optionalVariationMaskPath),
@@ -1410,7 +1436,7 @@ public sealed class VisualAssetPackageTests
         Assert.Multiple(() =>
         {
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(CutleryTexturePath));
-            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Single"));
+            Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("ImmersiveChefs.Graphic_PortableKitchenwareVariation"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("CutoutComplex"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(maskPath), Is.True);
@@ -2112,6 +2138,75 @@ public sealed class VisualAssetPackageTests
             mismatches,
             Is.GreaterThan(visiblePixels / 100),
             "A selected variation must differ in more than PNG encoding or transparent-pixel metadata.");
+    }
+
+    private static void AssertDirtySpriteHasConspicuousFixedGrime(
+        string cleanDiffusePath,
+        string dirtyDiffusePath,
+        string cleanMaskPath,
+        string dirtyMaskPath)
+    {
+        using var clean = new Bitmap(cleanDiffusePath);
+        using var dirty = new Bitmap(dirtyDiffusePath);
+        using var cleanMask = new Bitmap(cleanMaskPath);
+        using var dirtyMask = new Bitmap(dirtyMaskPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(dirty.Size, Is.EqualTo(clean.Size), dirtyDiffusePath);
+            Assert.That(cleanMask.Size, Is.EqualTo(clean.Size), cleanMaskPath);
+            Assert.That(dirtyMask.Size, Is.EqualTo(clean.Size), dirtyMaskPath);
+        });
+
+        var materialSurfacePixels = 0;
+        var fixedGrimePixels = 0;
+        var highContrastGrimePixels = 0;
+        for (var y = 0; y < clean.Height; y++)
+        for (var x = 0; x < clean.Width; x++)
+        {
+            var cleanPixel = clean.GetPixel(x, y);
+            var dirtyPixel = dirty.GetPixel(x, y);
+            var cleanMaskPixel = cleanMask.GetPixel(x, y);
+            var dirtyMaskPixel = dirtyMask.GetPixel(x, y);
+            if (cleanPixel.A < 96 || cleanMaskPixel.R < 240 || cleanMaskPixel.G > 15 || cleanMaskPixel.B > 15)
+            {
+                continue;
+            }
+
+            materialSurfacePixels++;
+            if (dirtyPixel.A < 96 || dirtyMaskPixel.R > 15 || dirtyMaskPixel.G > 15 || dirtyMaskPixel.B > 15)
+            {
+                continue;
+            }
+
+            fixedGrimePixels++;
+            var cleanAfterSteelTint = Color.FromArgb(
+                cleanPixel.A,
+                cleanPixel.R * 105 / 255,
+                cleanPixel.G * 105 / 255,
+                cleanPixel.B * 105 / 255);
+            var maximumChannelDifference = Math.Max(
+                Math.Abs(dirtyPixel.R - cleanAfterSteelTint.R),
+                Math.Max(
+                    Math.Abs(dirtyPixel.G - cleanAfterSteelTint.G),
+                    Math.Abs(dirtyPixel.B - cleanAfterSteelTint.B)));
+            if (maximumChannelDifference >= 45)
+            {
+                highContrastGrimePixels++;
+            }
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(materialSurfacePixels, Is.GreaterThan(100), cleanDiffusePath + " has no measurable Stuff surface.");
+            Assert.That(
+                fixedGrimePixels,
+                Is.GreaterThanOrEqualTo((int)Math.Ceiling(materialSurfacePixels * 0.12)),
+                dirtyDiffusePath + " must reserve at least 12% of its Stuff surface for fixed-color grime.");
+            Assert.That(
+                highContrastGrimePixels,
+                Is.GreaterThanOrEqualTo((int)Math.Ceiling(materialSurfacePixels * 0.10)),
+                dirtyDiffusePath + " must remain unmistakably dirty after the Core Steel tint is applied.");
+        });
     }
 
     private static void AssertNotExactHalfTurn(string sourcePath, string oppositePath)

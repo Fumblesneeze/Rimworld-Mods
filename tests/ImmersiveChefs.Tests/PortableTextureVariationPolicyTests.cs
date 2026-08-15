@@ -103,7 +103,7 @@ public sealed class PortableTextureVariationPolicyTests
     }
 
     [Test]
-    public void Off_and_hidden_dirty_settings_have_exact_cosmetic_fallbacks()
+    public void Dirty_sanitation_is_base_behavior_while_optional_material_variants_can_be_hidden()
     {
         Assert.Multiple(() =>
         {
@@ -114,7 +114,7 @@ public sealed class PortableTextureVariationPolicyTests
                     KitchenwareProduct.Plate,
                     KitchenMaterialKind.Wood,
                     dirty: true),
-                Is.EqualTo(PortableTextureFamily.Base));
+                Is.EqualTo(PortableTextureFamily.BaseDirty));
             Assert.That(
                 PortableTextureVariationPolicy.Select(
                     integrationEnabled: true,

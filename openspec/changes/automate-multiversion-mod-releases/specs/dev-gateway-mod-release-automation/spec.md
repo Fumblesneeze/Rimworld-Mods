@@ -110,6 +110,8 @@ For each distributable mod, the structured Workshop content SHALL provide a conc
 
 The page SHALL use reviewed visual headers and explanatory feature images between the major text sections. Each image SHALL directly depict the behavior described by its adjacent heading and copy while retaining asset-led cards that show real shipped sprites. The primary Workshop preview SHALL NOT be repeated inside the description or as an additional preview. Directional shipped sprites used in presentation art SHALL use their reviewed player-facing orientation. Their versioned source templates, authored copy, repository-owned sprites, generated files, remote image identities, dimensions, and hashes SHALL remain reviewable. It SHALL end with a clearly titled `Author's Note` that candidly describes the AI-supervised development experiment, its maintainability/testability/performance-testing focus, the mod's role as a proving ground, its comparatively limited broad playtesting, and the invitation for player feedback. The note SHALL also truthfully identify shipped pre-generated AI-assisted content and whether the mod performs live generation. No heading or authored content may follow the Author's Note.
 
+When an asset-led feature card depicts a Stuff-colored Thing, its structured art entry SHALL name the intended real Stuff color and the deterministic renderer SHALL apply that color through the shipped diffuse's matching Stuff mask before resizing/compositing. Fixed handles, food, sanitation grime, highlights, and the comic outline SHALL retain their authored colors. A raw neutral diffuse SHALL NOT be presented as the finished steel, wood, stone, silver, or gold item merely because it is bright and readable outside RimWorld.
+
 #### Scenario: Content graphic is rendered from sprites and copy
 - **WHEN** a presentation definition names mod sprites, text blocks, and a graphic template
 - **THEN** the generated image contains those inputs at the template-defined layout and its source/template/font/hash provenance is recorded
@@ -117,6 +119,11 @@ The page SHALL use reviewed visual headers and explanatory feature images betwee
 #### Scenario: Feature image explains the adjacent behavior
 - **WHEN** a reviewer compares an explanatory image with its adjacent heading and bullets
 - **THEN** its subjects depict those claims, real shipped assets remain showcased across the page, and the primary preview is not duplicated inline
+
+#### Scenario: A feature card depicts steel kitchenware
+- **WHEN** the presentation definition places Stuffable cookware, plates, cutlery, or chef's knives on an ordinary feature card as steel examples
+- **THEN** each art entry declares Core Steel's reviewed Stuff color and resolves its matching shipped mask
+- **THEN** the generated card shows the same masked steel response as the game while fixed handles, grime, and outlines remain untinted
 
 #### Scenario: About text cannot silently become Workshop copy
 - **WHEN** the in-game About description changes without a corresponding Workshop presentation change

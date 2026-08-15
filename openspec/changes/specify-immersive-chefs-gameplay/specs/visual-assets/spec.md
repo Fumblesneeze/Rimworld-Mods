@@ -125,22 +125,37 @@ The chef's-knife set SHALL use a compact, low-detail silhouette that is immediat
 - **THEN** the selected candidate remains readable without relying on fine rivets, stitching, tiny blade reflections, or full-resolution detail
 - **THEN** its outline remains comic-like and its protected inter-knife gaps stay open
 
+### Requirement: Dirty kitchenware is unmistakable at map scale
+When dirty-texture rendering is enabled, every dirty cookware, primitive cookware, plate, and cutlery family SHALL use a deliberately exaggerated fixed-color grime treatment that is immediately distinguishable from its clean sibling at ordinary map zoom. The treatment SHALL favor broad low-frequency grease, sauce, crust, rings, crumbs, and smears over realistic fine speckles. It SHALL cover enough of the usable surface to remain obvious after mipmapping while preserving the product silhouette, handles, utensil separation, exterior comic outline, and enough clean material surface to identify the underlying Stuff.
+
+Every grime-bearing coordinate SHALL be fixed black in the matching `CutoutComplex` mask rather than part of the red or green Stuff regions. The same strongly visible sanitation treatment SHALL therefore survive Steel, wood, stone, silver, gold, and registered optional-material tinting without becoming muddy, disappearing into the Stuff color, or changing sanitation state or gameplay identity. At the 64x64 package proxy, each dirty family SHALL retain multiple connected high-contrast grime marks, including at least one broad mark rather than only isolated one-pixel flecks; package tests SHALL compare the simulated material render rather than accepting byte inequality alone.
+
+#### Scenario: Steel ware returns dirty after ordinary use
+- **WHEN** a steel cookware set becomes dirty through native cooking and a steel plate and cutlery setting become dirty through native dining
+- **THEN** their map sprites show bold brown/yellow fixed-color grime that is immediately visible without selecting the items or reading the inspector
+- **THEN** the remaining metal surfaces still read as Core-relative steel and the exterior outline remains unchanged
+
+#### Scenario: Dirty variants are tinted from several materials
+- **WHEN** clean and dirty steel, wood, and stone families are rendered at the same map zoom and lighting
+- **THEN** every dirty sibling remains conspicuously different after its actual Stuff color is applied
+- **THEN** the grime retains its fixed authored color while only the intended material-bearing surface changes with Stuff
+
 ### Requirement: Vanilla Textures Expanded - Variations is an absent-safe cosmetic integration
-The optional texture-variation integration SHALL key to exact package ID `VanillaExpanded.VTEXVariations` and SHALL load after that package and `OskarPotocki.VanillaFactionsExpanded.Core` without making either a required dependency. With the inspected compatible RimWorld 1.6 shape active, supported Immersive Chefs appliances and stations SHALL use the real `VEF.Buildings.CompProperties_RandomBuildingGraphic` contract for randomized/player-cyclable building families. Because that upstream contract is building-only, portable cookware, plates, cutlery, and chef's knives SHALL instead use a reflection-free Immersive Chefs selector activated by the same exact package gate. The portable selector SHALL choose only cosmetic variants compatible with product kind, Stuff material class, and sanitation state; it MUST NOT alter gameplay stats, identity, stack admission, save semantics, or cleaning ownership.
+The optional texture-variation integration SHALL key to exact package ID `VanillaExpanded.VTEXVariations` and SHALL load after that package and `OskarPotocki.VanillaFactionsExpanded.Core` without making either a required dependency. With the inspected compatible RimWorld 1.6 shape active, supported Immersive Chefs appliances and stations SHALL use the real `VEF.Buildings.CompProperties_RandomBuildingGraphic` contract for randomized/player-cyclable building families. Because that upstream contract is building-only, portable cookware, plates, and cutlery SHALL always use a reflection-free Immersive Chefs selector for their base-owned sanitation-state rendering. The exact VTEX package gate SHALL enable only the selector's optional wood/stone material-family choices; dirty base-family selection MUST remain available when VTEX and VEF are absent. The portable selector SHALL choose only cosmetic variants compatible with product kind, Stuff material class, and sanitation state; it MUST NOT alter gameplay stats, identity, stack admission, save semantics, or cleaning ownership.
 
 Every base and optional building path supplied to the upstream component SHALL name a complete four-direction family satisfying the same authored-horizontal/authored-vertical contract as the fallback. Cycling variants MUST NOT revert a building to a single raster or a mechanically rotated front view.
 
 The active integration SHALL provide visibly appropriate wood and registered-stone families for each eligible portable product rather than presenting those materials as merely brown or gray metal. Ordinary metal/plastic art SHALL remain a sensible fallback for unclassified materials. A dirty state SHALL be visibly distinguishable through a bounded dirt overlay or dirty texture family when one exists, while clean and dirty renderings preserve the actual Stuff tint through their masks. Cosmetic choices SHALL remain stable across an ordinary save/load and SHALL not fabricate sanitation state.
 
-Immersive Chefs SHALL expose `TextureVariationIntegration` as `Auto` or `Off`, defaulting to `Auto`, and `ShowDirtyWareTextures` as a boolean defaulting to `true`. Changing either setting SHALL require restart because it changes finalized graphic ownership or cached graphics. `Off` SHALL retain the same complete masked base artwork and SHALL add no VEF comp, portable selector, or dirt variant even when the optional packages remain active.
+Immersive Chefs SHALL expose `TextureVariationIntegration` as `Auto` or `Off`, defaulting to `Auto`, and `ShowDirtyWareTextures` as a boolean defaulting to `true`. Changing either setting SHALL require restart because it changes finalized graphic ownership or cached graphics. `TextureVariationIntegration=Off` SHALL retain the same complete masked base artwork and base-owned sanitation selector while adding no VEF comp and selecting no optional wood/stone family even when the optional packages remain active. `ShowDirtyWareTextures=false` SHALL keep the same base or optional clean material family while suppressing only its dirty sibling.
 
 #### Scenario: The optional package is absent
 - **WHEN** Core, Harmony, and Immersive Chefs load without VTEX Variations or Vanilla Expanded Framework
-- **THEN** every item and building resolves its complete base custom texture, no optional type is referenced by a finalized Def, and no texture or XML error is logged
+- **THEN** every item and building resolves its complete base custom texture, dirty cookware/plates/cutlery still select their base dirty siblings, no optional type is referenced by a finalized Def, and no texture or XML error is logged
 
 #### Scenario: The player disables cosmetic variation
 - **WHEN** VTEX Variations is installed but `TextureVariationIntegration` is `Off` after restart
-- **THEN** every Thing uses its complete base artwork and Immersive Chefs installs no upstream building variation comp or portable variation selector
+- **THEN** every Thing uses its complete base material artwork, dirty cookware/plates/cutlery still select the base dirty family, and Immersive Chefs installs no upstream building variation comp or optional wood/stone variation
 
 #### Scenario: Material and sanitation variants are active
 - **WHEN** VTEX Variations and its compatible VEF dependency load with wooden and granite plates, wooden cutlery, granite cookware, and matched clean/dirty ware

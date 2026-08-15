@@ -185,6 +185,22 @@ public sealed class VisibleTablewareLifecycleTest : IRimWorldEndToEndTest
             "used plate and cutlery visibly remain on the dining table",
             new[] { plate.ThingID, cutlery.ThingID, table.ThingID },
             paddingPixels: 72);
+        yield return new SelectionActionStep(
+            "select the exact dirty plate for its native inspector",
+            new[] { plate.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "selected dirty plate keeps its exaggerated grime visible",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new SelectionActionStep(
+            "select the exact dirty cutlery for its native inspector",
+            new[] { cutlery.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "selected dirty cutlery keeps its exaggerated grime visible",
+            Array.Empty<string>(),
+            paddingPixels: 0);
         yield return new CheckpointStep(
             "visible tableware lifecycle result",
             _ => new Dictionary<string, string>

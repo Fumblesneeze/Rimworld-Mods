@@ -37,7 +37,7 @@
     <description>One rough carved-stone pot, shallow pan and lids with simple wooden handles and utensils. This complete primitive cookware set is slow, fragile and difficult to keep sanitary.</description>
     <graphicData>
       <texPath>ImmersiveChefs/Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware</texPath>
-      <graphicClass>Graphic_Single</graphicClass>
+      <graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass>
       <shaderType>CutoutComplex</shaderType>
       <drawSize>(0.95,0.95)</drawSize>
     </graphicData>
@@ -65,7 +65,7 @@
     <description>One complete reusable kitchen set: a pot, pan, lids, handles and small utensils. Its material and craftsmanship affect cooking speed, cleanliness, comfort and culinary quality.</description>
     <graphicData>
       <texPath>ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware</texPath>
-      <graphicClass>Graphic_Single</graphicClass>
+      <graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass>
       <shaderType>CutoutComplex</shaderType>
       <drawSize>(0.95,0.95)</drawSize>
     </graphicData>
@@ -92,7 +92,7 @@
     <description>A reusable plate for one meal portion. Its material and craftsmanship affect dining comfort, eating speed and sanitation.</description>
     <graphicData>
       <texPath>ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate</texPath>
-      <graphicClass>Graphic_Single</graphicClass>
+      <graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass>
       <shaderType>CutoutComplex</shaderType>
       <drawSize>(0.65,0.65)</drawSize>
     </graphicData>
@@ -119,7 +119,7 @@
     <defName>ImmersiveChefs_AdobePlate</defName>
     <label>adobe plate</label>
     <description>A crude fixed-material plate formed from adobe bricks. It is porous, fragile and extremely difficult to keep sanitary.</description>
-    <graphicData><texPath>ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate</texPath><graphicClass>Graphic_Single</graphicClass><color>(0.62,0.43,0.25)</color><drawSize>(0.65,0.65)</drawSize></graphicData>
+    <graphicData><texPath>ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate</texPath><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass><shaderType>CutoutComplex</shaderType><color>(0.62,0.43,0.25)</color><drawSize>(0.65,0.65)</drawSize></graphicData>
     <stackLimit>25</stackLimit>
     <statBases><MaxHitPoints>45</MaxHitPoints><Flammability>0.35</Flammability><MarketValue>3</MarketValue><Mass>0.45</Mass></statBases>
     <modExtensions>
@@ -133,7 +133,7 @@
     <description>A reusable fork, spoon and knife setting for one diner. Its material and craftsmanship affect dining comfort and sanitation.</description>
     <graphicData>
       <texPath>ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery</texPath>
-      <graphicClass>Graphic_Single</graphicClass>
+      <graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass>
       <shaderType>CutoutComplex</shaderType>
       <drawSize>(0.55,0.55)</drawSize>
     </graphicData>
