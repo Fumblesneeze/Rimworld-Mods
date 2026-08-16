@@ -206,6 +206,10 @@ Every update to an existing Workshop item SHALL provide a nonempty authored chan
 - **WHEN** the candidate's change note is empty, generic, or identical to the last verified published note
 - **THEN** release validation fails before starting a Steam item update and identifies the required authored note
 
+#### Scenario: Steam rate-limits change-history verification
+- **WHEN** the exact existing-item change-history request returns HTTP 429 before publication admission
+- **THEN** the release workflow honors a bounded retry delay and retries a bounded number of times, while every other HTTP failure or exhausted rate-limit budget fails closed without submitting the Workshop update
+
 ### Requirement: Steam publication is typed, guarded, and observable
 The Dev Gateway SHALL expose an authenticated, loopback-only typed publication operation that runs only in a fresh isolated RimWorld process with Steam initialized. It SHALL bind one validated staged package, presentation bundle, and required-item graph to one declared Workshop item, use the native RimWorld/Steam publication path without relying on hidden UI options, expose bounded progress and terminal failure details, and require a separate explicit publish confirmation after dry-run inspection.
 

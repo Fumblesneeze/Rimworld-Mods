@@ -587,6 +587,74 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     [Test]
+    public void Workshop_change_history_retries_one_explicit_rate_limit_before_succeeding()
+    {
+        using var fixture = Fixture.Create();
+        const string html =
+            "<div class=\"detailBox changeLogCtn\"><div class=\"changelog headline\">Update: recovered</div>" +
+            "<p id=\"22\">Recovered note.</p></div>";
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "ConvertFrom-WorkshopChangeHistoryHtml", "Get-WorkshopChangeNotes" },
+            "$script:attempt=0;$script:delays=[System.Collections.Generic.List[int]]::new();" +
+            "$request={param($uri)$script:attempt++;if($script:attempt -eq 1){return [pscustomobject]@{Succeeded=$false;StatusCode=429;RetryAfterMilliseconds=7}};" +
+            "return [pscustomobject]@{Succeeded=$true;StatusCode=200;RetryAfterMilliseconds=0;Html=" + Ps(html) + "}};" +
+            "$delay={param($milliseconds)$script:delays.Add([int]$milliseconds)};" +
+            "$notes=@(Get-WorkshopChangeNotes -PublishedFileId 7 -RequestOperation $request -DelayOperation $delay);" +
+            "Write-Output ($script:attempt.ToString()+'|'+$script:delays[0].ToString()+'|'+$notes[0].id+'|'+$notes[0].note)");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("2|7|22|Recovered note."));
+        });
+    }
+
+    [Test]
+    public void Workshop_retry_after_parser_honors_numeric_and_http_date_bounds()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Resolve-WorkshopRateLimitDelayMilliseconds" },
+            "$now=[datetimeoffset]::Parse('2026-08-16T15:00:00Z');" +
+            "$numeric=Resolve-WorkshopRateLimitDelayMilliseconds -RetryAfter '2' -Now $now;" +
+            "$numericClamp=Resolve-WorkshopRateLimitDelayMilliseconds -RetryAfter '999' -Now $now;" +
+            "$dateClamp=Resolve-WorkshopRateLimitDelayMilliseconds -RetryAfter 'Sun, 16 Aug 2026 15:02:00 GMT' -Now $now;" +
+            "$fallback=Resolve-WorkshopRateLimitDelayMilliseconds -RetryAfter '' -Now $now;" +
+            "Write-Output ($numeric.ToString()+'|'+$numericClamp.ToString()+'|'+$dateClamp.ToString()+'|'+$fallback.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("2000|30000|30000|30000"));
+        });
+    }
+
+    [Test]
+    public void Workshop_change_history_does_not_retry_other_failures_and_stops_after_third_429()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "ConvertFrom-WorkshopChangeHistoryHtml", "Get-WorkshopChangeNotes" },
+            "$script:attempt=0;$script:delays=[System.Collections.Generic.List[int]]::new();" +
+            "$delay={param($milliseconds)$script:delays.Add([int]$milliseconds)};" +
+            "$nonRate={param($uri)$script:attempt++;return [pscustomobject]@{Succeeded=$false;StatusCode=500;RetryAfterMilliseconds=7}};" +
+            "$nonRateError='';try{$null=Get-WorkshopChangeNotes -PublishedFileId 7 -RequestOperation $nonRate -DelayOperation $delay}catch{$nonRateError=$_.Exception.Message};" +
+            "$nonRateAttempts=$script:attempt;$nonRateDelays=$script:delays.Count;" +
+            "$script:attempt=0;$script:delays.Clear();" +
+            "$rate={param($uri)$script:attempt++;return [pscustomobject]@{Succeeded=$false;StatusCode=429;RetryAfterMilliseconds=7}};" +
+            "$rateError='';try{$null=Get-WorkshopChangeNotes -PublishedFileId 7 -RequestOperation $rate -DelayOperation $delay}catch{$rateError=$_.Exception.Message};" +
+            "Write-Output ($nonRateAttempts.ToString()+'|'+$nonRateDelays.ToString()+'|'+$nonRateError+'|'+$script:attempt.ToString()+'|'+$script:delays.Count.ToString()+'|'+$rateError)");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(
+                run.StandardOutput.Trim(),
+                Is.EqualTo("1|0|The Steam change-history request failed with HTTP 500 after 1 attempt(s).|3|2|The Steam change-history request failed with HTTP 429 after 3 attempt(s)."));
+        });
+    }
+
+    [Test]
     public void Retained_memories_showcase_matches_its_declared_crop_and_native_workflow()
     {
         using var fixture = Fixture.Create();

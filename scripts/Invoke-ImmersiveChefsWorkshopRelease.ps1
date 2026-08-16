@@ -158,15 +158,40 @@ function ConvertFrom-WorkshopChangeHistoryHtml([string]$Html, [string]$Uri) {
     return @($notes)
 }
 
-function Get-WorkshopChangeNotes([System.UInt64]$PublishedFileId) {
-    if ($PublishedFileId -eq 0) { return @() }
-    $uri = "https://steamcommunity.com/sharedfiles/filedetails/changelog/$PublishedFileId"
-    $request = [Net.HttpWebRequest]::CreateHttp($uri)
+function Resolve-WorkshopRateLimitDelayMilliseconds(
+    [string]$RetryAfter,
+    [datetimeoffset]$Now = [datetimeoffset]::UtcNow) {
+    $fallbackMilliseconds = 30000
+    $maximumMilliseconds = 30000
+    [int]$seconds = 0
+    if ([int]::TryParse($RetryAfter, [Globalization.NumberStyles]::Integer, [Globalization.CultureInfo]::InvariantCulture, [ref]$seconds) -and
+        $seconds -gt 0) {
+        return [Math]::Min([long]$maximumMilliseconds, [long]$seconds * 1000L)
+    }
+    [datetimeoffset]$retryAt = [datetimeoffset]::MinValue
+    if ([datetimeoffset]::TryParse(
+            $RetryAfter,
+            [Globalization.CultureInfo]::InvariantCulture,
+            [Globalization.DateTimeStyles]::AssumeUniversal,
+            [ref]$retryAt)) {
+        $milliseconds = [long][Math]::Ceiling(($retryAt.ToUniversalTime() - $Now.ToUniversalTime()).TotalMilliseconds)
+        if ($milliseconds -gt 0) { return [Math]::Min($maximumMilliseconds, $milliseconds) }
+    }
+    return $fallbackMilliseconds
+}
+
+function Get-WorkshopRateLimitDelayMilliseconds([Net.HttpWebResponse]$Response) {
+    return Resolve-WorkshopRateLimitDelayMilliseconds -RetryAfter ([string]$Response.Headers['Retry-After'])
+}
+
+function Invoke-WorkshopChangeHistoryRequest([string]$Uri) {
+    $request = [Net.HttpWebRequest]::CreateHttp($Uri)
     $request.Timeout = 30000
     $request.ReadWriteTimeout = 30000
     $request.UserAgent = 'ImmersiveChefsReleaseVerifier/1.0'
-    $response = $request.GetResponse()
+    $response = $null
     try {
+        $response = $request.GetResponse()
         if ([long]$response.ContentLength -gt 2MB) { throw 'The Steam change-history response exceeds the reviewed limit.' }
         $stream = $response.GetResponseStream()
         try {
@@ -175,9 +200,65 @@ function Get-WorkshopChangeNotes([System.UInt64]$PublishedFileId) {
             finally { $reader.Dispose() }
         }
         finally { $stream.Dispose() }
+        return [pscustomobject][ordered]@{
+            Succeeded = $true
+            StatusCode = 200
+            RetryAfterMilliseconds = 0
+            Html = $html
+        }
     }
-    finally { $response.Dispose() }
-    return @(ConvertFrom-WorkshopChangeHistoryHtml -Html $html -Uri $uri)
+    catch [Net.WebException] {
+        $httpResponse = $_.Exception.Response -as [Net.HttpWebResponse]
+        if ($null -eq $httpResponse -or [int]$httpResponse.StatusCode -ne 429) { throw }
+        try { $delay = Get-WorkshopRateLimitDelayMilliseconds -Response $httpResponse }
+        finally { $httpResponse.Dispose() }
+        return [pscustomobject][ordered]@{
+            Succeeded = $false
+            StatusCode = 429
+            RetryAfterMilliseconds = $delay
+            Html = $null
+        }
+    }
+    finally { if ($null -ne $response) { $response.Dispose() } }
+}
+
+function Get-WorkshopChangeNotes(
+    [System.UInt64]$PublishedFileId,
+    [scriptblock]$RequestOperation = $null,
+    [scriptblock]$DelayOperation = $null) {
+    if ($PublishedFileId -eq 0) { return @() }
+    $uri = "https://steamcommunity.com/sharedfiles/filedetails/changelog/$PublishedFileId"
+    if ($null -eq $RequestOperation) {
+        $RequestOperation = { param([string]$RequestUri) Invoke-WorkshopChangeHistoryRequest -Uri $RequestUri }
+    }
+    if ($null -eq $DelayOperation) {
+        $DelayOperation = { param([int]$Milliseconds) Start-Sleep -Milliseconds $Milliseconds }
+    }
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $result = & $RequestOperation $uri
+        if ($null -eq $result -or
+            $result.PSObject.Properties.Name -notcontains 'Succeeded' -or
+            $result.PSObject.Properties.Name -notcontains 'StatusCode') {
+            throw 'The Steam change-history request returned an invalid result.'
+        }
+        if ([bool]$result.Succeeded) {
+            if ($result.PSObject.Properties.Name -notcontains 'Html') {
+                throw 'The successful Steam change-history request omitted its response body.'
+            }
+            return @(ConvertFrom-WorkshopChangeHistoryHtml -Html ([string]$result.Html) -Uri $uri)
+        }
+        $statusCode = [int]$result.StatusCode
+        if ($statusCode -ne 429 -or $attempt -eq 3 -or
+            $result.PSObject.Properties.Name -notcontains 'RetryAfterMilliseconds') {
+            throw "The Steam change-history request failed with HTTP $statusCode after $attempt attempt(s)."
+        }
+        $delayMilliseconds = [int]$result.RetryAfterMilliseconds
+        if ($delayMilliseconds -lt 1 -or $delayMilliseconds -gt 30000) {
+            throw 'The Steam change-history retry delay is outside the reviewed bound.'
+        }
+        & $DelayOperation $delayMilliseconds
+    }
+    throw 'The Steam change-history request exhausted its retry budget.'
 }
 
 function Test-WorkshopChangeHistoryRequired([bool]$FirstPublicationPlan, [bool]$PreviewOnly) {
