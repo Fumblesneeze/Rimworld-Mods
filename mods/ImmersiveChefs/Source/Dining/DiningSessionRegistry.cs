@@ -915,12 +915,10 @@ internal static class DiningSessionRegistry
                     emergency,
                     ImmersiveChefsMod.Settings.WareRequirementMode,
                     plateComplexity: MealComplexityRuntime.Classify(diningMealDef));
-                if (plate is null &&
-                    ImmersiveChefsMod.Settings.WareRequirementMode == WareRequirementMode.Strict &&
-                    !emergency)
-                {
-                    return false;
-                }
+                // Ordinary strict food selection may keep an imported unplated meal out of the
+                // candidate set before StartJob. Once another provider has already admitted the
+                // native ingest job, missing service ware is a dining consequence, never a late
+                // pre-toil reservation failure.
             }
 
             selected = SelectWare(
@@ -995,10 +993,8 @@ internal static class DiningSessionRegistry
                     emergency,
                     settings.WareRequirementMode,
                     plateComplexity: MealComplexityRuntime.Classify(diningMealDef));
-                if (plate is null && settings.WareRequirementMode == WareRequirementMode.Strict && !emergency)
-                {
-                    return false;
-                }
+                // FeedPatient has already entered its native reservation boundary here. Preserve
+                // that admitted job and let the patient own the missing-ware consequence.
             }
 
             cutlery = SelectWare(

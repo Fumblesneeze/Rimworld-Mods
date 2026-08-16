@@ -409,12 +409,8 @@ internal static class HandwashingSourceFinder
 
     private static bool IsPotentialObjectSource(Pawn pawn, Thing thing)
     {
-        if (!IsFromDubsBadHygiene(thing))
-        {
-            return IsNamedWaterSource(thing);
-        }
-
-        return DubsWaterAdapter.TryClassifyHandwashingSource(
+        return ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene) &&
+               DubsWaterAdapter.TryClassifyHandwashingSource(
                    pawn,
                    thing,
                    out _,
@@ -426,80 +422,32 @@ internal static class HandwashingSourceFinder
 
     private static HandwashingObjectSource? ClassifyObjectSource(Pawn pawn, Thing thing)
     {
-        var power = thing.TryGetComp<CompPowerTrader>();
-        var fuel = thing.TryGetComp<CompRefuelable>();
-        var flick = thing.TryGetComp<CompFlickable>();
-        var breakdown = thing.TryGetComp<CompBreakdownable>();
-        var operational = (power is null || power.PowerOn) &&
-                          (fuel is null || fuel.HasFuel) &&
-                          (flick is null || flick.SwitchIsOn) &&
-                          (breakdown is null || !breakdown.BrokenDown);
-        var fromDubs = IsFromDubsBadHygiene(thing);
-        if (fromDubs)
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene) &&
+            DubsWaterAdapter.TryClassifyHandwashingSource(
+                pawn,
+                thing,
+                out var kind,
+                out var pawnAllowed,
+                out var operational,
+                out var hasAvailableWater))
         {
-            if (!DubsWaterAdapter.TryClassifyHandwashingSource(
-                    pawn,
-                    thing,
-                    out var kind,
-                    out var pawnAllowed,
-                    out var dubsOperational,
-                    out var hasAvailableWater))
-            {
-                return null;
-            }
-
             var provenance = WashSourcePolicy.ClassifyDubsSource(
                 kind,
-                ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene),
+                dubsIntegrationEnabled: true,
                 pawnAllowed,
-                operational && dubsOperational,
+                operational,
                 hasAvailableWater);
             return provenance.HasValue
                 ? new HandwashingObjectSource(kind, provenance.Value)
                 : null;
         }
 
-        if (!IsNamedWaterSource(thing) || !operational)
-        {
-            return null;
-        }
-
-        return new HandwashingObjectSource(
-            GenericWaterSourceKind(thing.def.defName),
-            WashProvenance.WildWater);
-    }
-
-    private static bool IsFromDubsBadHygiene(Thing thing) =>
-        string.Equals(
-            thing.def.modContentPack?.PackageId,
-            "Dubwise.DubsBadHygiene",
-            StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsNamedWaterSource(Thing thing)
-    {
-        var name = thing.def.defName;
-        return name.IndexOf("KitchenSink", StringComparison.OrdinalIgnoreCase) >= 0 ||
-               name.IndexOf("Sink", StringComparison.OrdinalIgnoreCase) >= 0 ||
-               name.IndexOf("WaterBowl", StringComparison.OrdinalIgnoreCase) >= 0 ||
-               name.IndexOf("Well", StringComparison.OrdinalIgnoreCase) >= 0;
-    }
-
-    private static HandwashingSourceKind GenericWaterSourceKind(string defName)
-    {
-        if (defName.IndexOf("WaterBowl", StringComparison.OrdinalIgnoreCase) >= 0)
-        {
-            return HandwashingSourceKind.HauledWater;
-        }
-
-        return defName.IndexOf("Well", StringComparison.OrdinalIgnoreCase) >= 0
-            ? HandwashingSourceKind.Well
-            : HandwashingSourceKind.ConnectedFixture;
+        return null;
     }
 }
 
 internal enum HandwashingSourceKind
 {
-    DubsKitchenSink,
     ConnectedFixture,
     HauledWater,
     Well
@@ -534,15 +482,14 @@ internal static class WashSourcePolicy
             return null;
         }
 
-        return kind is HandwashingSourceKind.DubsKitchenSink or HandwashingSourceKind.ConnectedFixture
+        return kind == HandwashingSourceKind.ConnectedFixture
             ? WashProvenance.Safe
             : WashProvenance.WildWater;
     }
 
     internal static WashProvenance? ClassifyObjectSource(
-        bool fromDubs,
-        bool dubsIntegrationEnabled,
-        bool validatedDubsFixture,
+        bool capabilityAvailable,
+        bool capabilityIsSafe,
         bool operational,
         bool hasCycleWater)
     {
@@ -551,13 +498,8 @@ internal static class WashSourcePolicy
             return null;
         }
 
-        if (!fromDubs)
-        {
-            return WashProvenance.WildWater;
-        }
-
-        return dubsIntegrationEnabled && validatedDubsFixture && hasCycleWater
-            ? WashProvenance.Safe
+        return capabilityAvailable && hasCycleWater
+            ? capabilityIsSafe ? WashProvenance.Safe : WashProvenance.WildWater
             : null;
     }
 }

@@ -1,10 +1,35 @@
 using NUnit.Framework;
+using System;
+using System.IO;
 
 namespace ImmersiveChefs.Tests;
 
 [TestFixture]
 public sealed class KitchenwareStoragePolicyTests
 {
+    [Test]
+    public void Integrated_sink_water_gate_requires_a_validated_bridge_and_operation_amount()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                IntegratedSinkWaterPolicy.RequiresSuppliedWater(
+                    hasIntegratedSink: true,
+                    dubsIntegrationEnabled: true,
+                    validatedBridgeAvailable: true),
+                Is.True);
+            Assert.That(
+                IntegratedSinkWaterPolicy.RequiresSuppliedWater(
+                    hasIntegratedSink: true,
+                    dubsIntegrationEnabled: true,
+                    validatedBridgeAvailable: false),
+                Is.False,
+                "A changed DBH API must disable only the bridge, not water-lock the base prep worktable.");
+            Assert.That(IntegratedSinkWaterPolicy.RequiredAmount(1f), Is.EqualTo(1f));
+            Assert.That(IntegratedSinkWaterPolicy.RequiredAmount(0f), Is.EqualTo(0.001f));
+        });
+    }
+
     [Test]
     public void Clean_and_dirty_filters_are_mutually_exclusive_regardless_of_wash_source()
     {
@@ -24,34 +49,30 @@ public sealed class KitchenwareStoragePolicyTests
         {
             Assert.That(
                 WashSourcePolicy.ClassifyObjectSource(
-                    fromDubs: false,
-                    dubsIntegrationEnabled: false,
-                    validatedDubsFixture: false,
+                    capabilityAvailable: true,
+                    capabilityIsSafe: false,
                     operational: true,
                     hasCycleWater: true),
                 Is.EqualTo(WashProvenance.WildWater));
             Assert.That(
                 WashSourcePolicy.ClassifyObjectSource(
-                    fromDubs: true,
-                    dubsIntegrationEnabled: true,
-                    validatedDubsFixture: true,
+                    capabilityAvailable: true,
+                    capabilityIsSafe: true,
                     operational: true,
                     hasCycleWater: true),
                 Is.EqualTo(WashProvenance.Safe));
             Assert.That(
                 WashSourcePolicy.ClassifyObjectSource(
-                    fromDubs: true,
-                    dubsIntegrationEnabled: true,
-                    validatedDubsFixture: false,
+                    capabilityAvailable: false,
+                    capabilityIsSafe: true,
                     operational: true,
                     hasCycleWater: true),
                 Is.Null,
                 "A shape-incompatible Dubs fixture must fail closed instead of becoming generic safe water.");
             Assert.That(
                 WashSourcePolicy.ClassifyObjectSource(
-                    fromDubs: true,
-                    dubsIntegrationEnabled: true,
-                    validatedDubsFixture: true,
+                    capabilityAvailable: true,
+                    capabilityIsSafe: true,
                     operational: true,
                     hasCycleWater: false),
                 Is.Null);
@@ -59,9 +80,8 @@ public sealed class KitchenwareStoragePolicyTests
     }
 
     [TestCase(0, 0, WashProvenance.Safe)]
-    [TestCase(1, 1, WashProvenance.Safe)]
+    [TestCase(1, 1, WashProvenance.WildWater)]
     [TestCase(2, 2, WashProvenance.WildWater)]
-    [TestCase(3, 3, WashProvenance.WildWater)]
     public void Recognized_handwashing_sources_have_a_stable_fallback_order_and_provenance(
         int kindValue,
         int expectedPriority,
@@ -100,5 +120,52 @@ public sealed class KitchenwareStoragePolicyTests
                 operational,
                 hasAvailableWater),
             Is.Null);
+    }
+
+    [Test]
+    public void Water_fixture_runtime_contains_no_Def_name_or_package_owner_whitelist()
+    {
+        var root = FindRepositoryRoot();
+        var sources = new[]
+        {
+            Path.Combine(root, "mods", "ImmersiveChefs", "Source", "Sanitation", "DubsWaterAdapter.cs"),
+            Path.Combine(root, "mods", "ImmersiveChefs", "Source", "Sanitation", "WorkGiver_DoDishes.cs"),
+            Path.Combine(root, "mods", "ImmersiveChefs", "Source", "Sanitation", "JobDriver_DoDishes.cs")
+        }.Select(File.ReadAllText).ToArray();
+        var forbiddenSemanticTokens = new[]
+        {
+            "case \"KitchenSink\"",
+            "case \"BasinStuff\"",
+            "case \"Fountain\"",
+            "case \"WashBucket\"",
+            "case \"WaterTrough\"",
+            "case \"PetWaterBowl\"",
+            "case \"PrimitiveWell\"",
+            "IsNamedWaterSource",
+            "IsFromDubsBadHygiene",
+            "source.def.modContentPack?.PackageId"
+        };
+
+        Assert.That(
+            forbiddenSemanticTokens.Where(token => sources.Any(source =>
+                source.IndexOf(token, StringComparison.Ordinal) >= 0)),
+            Is.Empty,
+            "Water-source eligibility must come from validated behavior, never a Def-name or owner whitelist.");
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "ImmersiveChefs.sln")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate the Immersive Chefs repository root.");
     }
 }

@@ -47,6 +47,43 @@ public sealed class BuildingDefConfigContractTests
         });
     }
 
+    [Test]
+    public void Every_approved_visually_sink_bearing_station_declares_the_runtime_sink_capability()
+    {
+        var root = FindRepositoryRoot();
+        var approvals = XDocument.Load(Path.Combine(root, "docs", "DirectionalSpriteApprovals.xml"));
+        var sinkFamilies = approvals.Descendants("frame")
+            .Where(frame => ((string?)frame.Attribute("equipmentOrder"))?
+                .Split('|').Any(part => part == "sink") == true)
+            .Select(frame => Path.GetFileNameWithoutExtension((string)frame.Attribute("path")!)!
+                .Replace("_Variant01", string.Empty)
+                .Replace("_north", string.Empty)
+                .Replace("_east", string.Empty)
+                .Replace("_south", string.Empty)
+                .Replace("_west", string.Empty))
+            .Distinct()
+            .ToArray();
+        var stationDefs = new[]
+        {
+            XDocument.Load(Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "PreparedFoodAndStation.xml")),
+            XDocument.Load(Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "AssistantStations.xml"))
+        }.SelectMany(document => document.Descendants("ThingDef"))
+            .Where(def => def.Element("defName") is not null)
+            .ToArray();
+        var capableDefs = stationDefs
+            .Where(def => def.Descendants("li").Any(extension =>
+                (string?)extension.Attribute("Class") == "ImmersiveChefs.IntegratedSinkExtension"))
+            .Select(def => (string)def.Element("defName")!)
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sinkFamilies, Is.EqualTo(new[] { "PrepStation" }),
+                "Only art that visibly contains a sink may drive this contract.");
+            Assert.That(capableDefs, Is.EqualTo(new[] { "ImmersiveChefs_PrepStation" }));
+        });
+    }
+
     private static string FindRepositoryRoot()
     {
         var current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);

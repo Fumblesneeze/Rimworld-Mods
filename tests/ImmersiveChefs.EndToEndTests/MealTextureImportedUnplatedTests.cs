@@ -47,7 +47,7 @@ public sealed class FtvImportedUnplatedTest : IRimWorldEndToEndTest
 
     public void Arrange(IEndToEndContext context)
     {
-        fixture = MealTextureImportedFixture.Create("FTV", "FTV_MealSimple");
+        fixture = MealTextureImportedFixture.Create("FTV", "FTV_MealLavish");
     }
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) =>

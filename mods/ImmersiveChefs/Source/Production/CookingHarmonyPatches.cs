@@ -11,12 +11,24 @@ internal static class WorkGiverDoBillWarePatch
 {
     private static void Postfix(Pawn pawn, Thing thing, ref Job? __result)
     {
+        if (__result is null)
+        {
+            return;
+        }
+
+        if (!IntegratedSinkRuntime.CanStartBill(thing))
+        {
+            JobFailReason.Is("ImmersiveChefs_Dishwasher_PauseNoWater".Translate().CapitalizeFirst());
+            __result = null;
+            return;
+        }
+
         if (CookingJobRequestScope.SkipWareAttachment)
         {
             return;
         }
 
-        if (__result is null ||
+        if (
             (!MealCoveragePolicy.IsCovered(__result.RecipeDef) &&
              !AdaptiveMealBillAdapter.Controls(__result.RecipeDef)))
         {
@@ -250,7 +262,9 @@ internal static class BillKitchenwarePickupToilsPatch
 {
     private static void Postfix(JobDriver_DoBill __instance, ref IEnumerable<Toil> __result)
     {
-        __result = CookingSessionRegistry.AddWarePickupToils(__instance.GetActor(), __result);
+        __result = IntegratedSinkRuntime.AddPreparationWaterUse(
+            __instance,
+            CookingSessionRegistry.AddWarePickupToils(__instance.GetActor(), __result));
     }
 }
 

@@ -131,7 +131,9 @@ internal static class IngestReservationPatch
         var meal = job?.GetTarget(TargetIndex.A).Thing;
         if (job is not null && meal is not null)
         {
-            __result = DiningSessionRegistry.TryAttach(pawn, job, meal);
+            __result = DiningReservationSafety.KeepNativeResult(
+                __result,
+                DiningSessionRegistry.TryAttach(pawn, job, meal));
         }
     }
 }
@@ -369,7 +371,9 @@ internal static class FeedPatientReservationPatch
         var foodSource = job?.GetTarget(TargetIndex.A).Thing;
         if (job is not null && patient is not null && foodSource is not null)
         {
-            __result = DiningSessionRegistry.TryAttachAssisted(feeder, patient, job, foodSource);
+            __result = DiningReservationSafety.KeepNativeResult(
+                __result,
+                DiningSessionRegistry.TryAttachAssisted(feeder, patient, job, foodSource));
         }
     }
 }

@@ -154,11 +154,17 @@ When a covered cooking bill would otherwise be runnable but no permitted clean c
 - **THEN** the cooking scan reports the exact missing-clean-cookware reason and does not mutate or teleport the item
 
 ### Requirement: Connected water-source priority
-Hand-washing jobs SHALL choose reachable, allowed water sources in this order: an operational Dubs Bad Hygiene kitchen sink when that integration is active; another recognized connected water fixture such as a sink, water bowl, or well; and a safe standable water-terrain cell as the configurable final fallback when `AllowTerrainHandwashing` is enabled. A powered appliance SHALL be eligible only while powered, and an appliance or fixture whose integration exposes a water network SHALL be eligible only while connected to an operational supplied network.
+Hand-washing jobs SHALL choose reachable, allowed water sources by validated capability rather than by Def name, translated label, package ownership, or a whitelist of known appliance Defs. When Dubs Bad Hygiene is active, every Thing supplied by Dubs or another mod that implements the validated native drinkable-fixture capability SHALL be considered through that capability's fixture kind, pawn permission, working report, current water supply, power, fuel, flick, breakdown, reachability, and reservation rules. A non-Dubs provider MAY expose the same behavior through a narrow registered source-capability adapter or product DefModExtension; absence or shape failure SHALL exclude only that provider rather than guessing from its name.
 
-#### Scenario: Plumbed kitchen sink is available
-- **WHEN** Dubs Bad Hygiene is active and a reachable powered, plumbed, supplied kitchen sink is available alongside lower-priority water sources
-- **THEN** the hand-washing job selects the kitchen sink
+Eligible sources SHALL be ordered as supplied connected drinkable fixtures, self-contained or hauled-water drinkable fixtures, wells, and finally a safe standable water-terrain cell when `AllowTerrainHandwashing` is enabled. Equal-capability sources SHALL use ordinary distance and reservation ordering. A powered appliance SHALL be eligible only while powered, and an appliance or fixture whose integration exposes a water network SHALL be eligible only while connected to an operational supplied network.
+
+#### Scenario: A third-party Dubs basin is available
+- **WHEN** Dubs Bad Hygiene is active and a reachable, allowed, operational and supplied basin from another package implements Dubs' validated drinkable-fixture capability alongside lower-priority water sources
+- **THEN** the hand-washing job selects that basin without its Def name or package ID appearing in an Immersive Chefs source whitelist
+
+#### Scenario: A named sink has no water capability
+- **WHEN** an unrelated building's Def name or translated label contains `sink` but no validated drinkable-water capability claims it
+- **THEN** Immersive Chefs does not select it for dishwashing solely from that text
 
 #### Scenario: A fixture is disconnected
 - **WHEN** a sink or dishwasher requires power or a water network and that required connection is absent
@@ -171,6 +177,20 @@ Hand-washing jobs SHALL choose reachable, allowed water sources in this order: a
 #### Scenario: Terrain fallback is disabled
 - **WHEN** no eligible fixture exists and terrain handwashing is disabled
 - **THEN** no hand-washing job is issued solely from a water-terrain cell
+
+### Requirement: Visually integrated prep sink is a real supplied fixture
+
+The base and optional-variation art for `ImmersiveChefs_PrepStation` visibly contains a sink. When Dubs Bad Hygiene is active and its validated 1.6 shape is available, the finalized prep-station Def SHALL therefore receive the supported pipe capability, participate in Dubs' ordinary human drinking-source search, and be an eligible safe dishwashing source. It SHALL require an operational supplied network for ingredient-preparation bills, drinking, and dishwashing; a merely connected empty network SHALL not count as supplied. Drinking SHALL follow Dubs' native thirst, reachability, reservation, water debit, contamination and job lifecycle rather than directly changing the pawn's need.
+
+The prep station SHALL remain an Immersive Chefs worktable and SHALL not acquire a compile-time Dubs reference. Optional shape absence, an `Off` integration setting, or a changed upstream seam SHALL leave its base worktable behavior loadable, disable only the water/drinking bridge with one bounded warning when applicable, and SHALL not fabricate an unplumbed sink. No other Immersive Chefs workstation SHALL gain a water requirement unless its approved art also visibly contains a sink or a later explicit gameplay contract assigns that capability.
+
+#### Scenario: Supplied prep station supports all three uses
+- **WHEN** Dubs Bad Hygiene is active, the prep station is connected to an operational supplied network, and an eligible colonist can reach it
+- **THEN** its preparation bill may run, Dubs may select it through the ordinary drink-water workflow, and `Doing dishes` may select it as a safe hand-washing source
+
+#### Scenario: Prep station has no supplied water
+- **WHEN** its pipe is disconnected or its connected network has no usable water
+- **THEN** preparation bills report the unavailable water requirement, Dubs does not select it as a usable drink source, and no dishwashing job selects it
 
 ### Requirement: Wild-water washing is usable but not sanitary-equivalent
 

@@ -69,10 +69,6 @@ public sealed class JobDriver_DoDishes : JobDriver
         {
             if (TargetThingB is { } source &&
                 ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene) &&
-                string.Equals(
-                    source.def.modContentPack?.PackageId,
-                    "Dubwise.DubsBadHygiene",
-                    StringComparison.OrdinalIgnoreCase) &&
                 !DubsWaterAdapter.TryUseHandwashingSource(pawn, source, out _))
             {
                 pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
@@ -279,11 +275,7 @@ public sealed class JobDriver_DoDishes : JobDriver
     private bool TryDebitWashWater()
     {
         if (TargetThingB is not { } source ||
-            !ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene) ||
-            !string.Equals(
-                source.def.modContentPack?.PackageId,
-                "Dubwise.DubsBadHygiene",
-                StringComparison.OrdinalIgnoreCase))
+            !ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene))
         {
             return true;
         }

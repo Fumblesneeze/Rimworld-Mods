@@ -18,12 +18,22 @@ internal static class DubsWaterAdapter
     private static Type? washBucketType;
     private static Type? assignableFixtureType;
     private static Type? baseWellCompType;
+    private static PropertyInfo? fixtureKindProperty;
+    private static PropertyInfo? forAnimalsOnlyProperty;
+    private static object? basinFixtureKind;
+    private static object? bathFixtureKind;
     private static MethodInfo? fixtureWorkingMethod;
     private static MethodInfo? pawnAllowedMethod;
     private static MethodInfo? useBucketMethod;
     private static FieldInfo? waterUsesRemainingField;
+    private static MethodInfo? allFixturesMethod;
+    private static MethodInfo? fixtureEverUsableMethod;
+    private static MethodInfo? fixtureUsableNowMethod;
     private static bool dishwasherDefsInitialized;
     private static bool pipeInspectPatched;
+    private static bool integratedSinkDiscoveryPatched;
+
+    internal static bool IntegratedSinkBridgeAvailable => dishwasherDefsInitialized;
 
     internal static bool TryInitializeDishwasherDefs(out string reason)
     {
@@ -31,6 +41,10 @@ internal static class DubsWaterAdapter
         if (pipeCompType is null || pipeNetProperty is null || pullWaterMethod is null ||
             waterStorageProperty is null || waterTowersField is null ||
             pipePropertiesType is null || pipeModeField is null || pipeInspectMethod is null ||
+            assignableFixtureType is null || fixtureKindProperty is null ||
+            forAnimalsOnlyProperty is null || basinFixtureKind is null || bathFixtureKind is null ||
+            fixtureWorkingMethod is null || pawnAllowedMethod is null ||
+            allFixturesMethod is null || fixtureEverUsableMethod is null || fixtureUsableNowMethod is null ||
             ImmersiveChefsMod.HarmonyInstance is null)
         {
             reason = "the installed Dubs plumbing API no longer matches the validated 1.6 shape";
@@ -47,10 +61,16 @@ internal static class DubsWaterAdapter
         {
             AddPipeComp(ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher);
             AddPipeComp(ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher);
+            foreach (var sinkDef in DefDatabase<ThingDef>.AllDefsListForReading.Where(def =>
+                         def.GetModExtension<IntegratedSinkExtension>() is not null))
+            {
+                AddPipeComp(sinkDef);
+            }
             PatchPipeInspect(ImmersiveChefsMod.HarmonyInstance);
+            PatchIntegratedSinkDiscovery(ImmersiveChefsMod.HarmonyInstance);
             dishwasherDefsInitialized = true;
             reason = string.Empty;
-            Log.Message("[ImmersiveChefs] Dubs Bad Hygiene adapter active; dishwashers require supplied plumbing.");
+            Log.Message("[ImmersiveChefs] Dubs Bad Hygiene adapter active; dishwashers and integrated sinks require supplied plumbing.");
             return true;
         }
         catch (Exception exception)
@@ -177,6 +197,18 @@ internal static class DubsWaterAdapter
                towers.Count > 0;
     }
 
+    internal static bool CanUseIntegratedSink(Thing thing, float requiredWater)
+    {
+        if (thing.def.GetModExtension<IntegratedSinkExtension>() is null)
+        {
+            return false;
+        }
+
+        return IsOperationalFixture(thing) &&
+               HasSuppliedConnection(thing) &&
+               CanSupplyCycleWater(thing, IntegratedSinkWaterPolicy.RequiredAmount(requiredWater));
+    }
+
     internal static bool TryClassifyHandwashingSource(
         Pawn pawn,
         Thing thing,
@@ -191,47 +223,56 @@ internal static class DubsWaterAdapter
         operational = false;
         hasAvailableWater = false;
 
-        switch (thing.def.defName)
+        if (thing.def.GetModExtension<IntegratedSinkExtension>() is { } integratedSink)
         {
-            case "KitchenSink":
-                kind = HandwashingSourceKind.DubsKitchenSink;
-                if (!TryReadNativeFixtureReports(pawn, thing, 1f, out pawnAllowed, out var sinkWorking))
-                {
-                    return false;
-                }
-                operational = IsOperationalFixture(thing) && sinkWorking;
-                hasAvailableWater = CanSupplyCycleWater(thing, 1f);
-                return IsPlumbedDubsFixture(thing);
-            case "BasinStuff":
-            case "Fountain":
-                kind = HandwashingSourceKind.ConnectedFixture;
-                if (!TryReadNativeFixtureReports(pawn, thing, 1f, out pawnAllowed, out var basinWorking))
-                {
-                    return false;
-                }
-                operational = IsOperationalFixture(thing) && basinWorking;
-                hasAvailableWater = CanSupplyCycleWater(thing, 1f);
-                return IsPlumbedDubsFixture(thing);
-            case "WashBucket":
-            case "WaterTrough":
-            case "PetWaterBowl":
-                kind = HandwashingSourceKind.HauledWater;
-                if (!TryReadNativeFixtureReports(pawn, thing, 1f, out pawnAllowed, out var bucketWorking))
-                {
-                    return false;
-                }
-                operational = IsOperationalObject(thing) && bucketWorking;
-                hasAvailableWater = CanUseHauledWater(thing);
-                return washBucketType?.IsInstanceOfType(thing) == true;
-            case "PrimitiveWell":
-                kind = HandwashingSourceKind.Well;
-                pawnAllowed = true;
-                operational = IsOperationalObject(thing);
-                hasAvailableWater = HasBaseWellComp(thing);
-                return hasAvailableWater;
-            default:
-                return false;
+            kind = HandwashingSourceKind.ConnectedFixture;
+            pawnAllowed = true;
+            operational = IsOperationalFixture(thing);
+            hasAvailableWater = HasSuppliedConnection(thing) &&
+                                CanSupplyCycleWater(
+                                    thing,
+                                    IntegratedSinkWaterPolicy.RequiredAmount(
+                                        integratedSink.dishwashingWater));
+            return IsPlumbedDubsFixture(thing);
         }
+
+        if (HasDrinkableFixtureCapability(thing))
+        {
+            if (!TryReadNativeFixtureReports(pawn, thing, 1f, out pawnAllowed, out var fixtureWorking))
+            {
+                return false;
+            }
+
+            if (IsPlumbedDubsFixture(thing))
+            {
+                kind = HandwashingSourceKind.ConnectedFixture;
+                operational = IsOperationalFixture(thing) && fixtureWorking;
+                hasAvailableWater = HasSuppliedConnection(thing) &&
+                                    CanSupplyCycleWater(thing, 1f);
+                return true;
+            }
+
+            if (washBucketType?.IsInstanceOfType(thing) == true)
+            {
+                kind = HandwashingSourceKind.HauledWater;
+                operational = IsOperationalObject(thing) && fixtureWorking;
+                hasAvailableWater = CanUseHauledWater(thing);
+                return true;
+            }
+
+            return false;
+        }
+
+        if (HasBaseWellComp(thing))
+        {
+            kind = HandwashingSourceKind.Well;
+            pawnAllowed = true;
+            operational = IsOperationalObject(thing);
+            hasAvailableWater = true;
+            return true;
+        }
+
+        return false;
     }
 
     internal static bool TryUseHandwashingSource(Pawn pawn, Thing thing, out string reason)
@@ -249,9 +290,13 @@ internal static class DubsWaterAdapter
             return false;
         }
 
-        if (kind is HandwashingSourceKind.DubsKitchenSink or HandwashingSourceKind.ConnectedFixture)
+        if (kind == HandwashingSourceKind.ConnectedFixture)
         {
-            return TryConsumeCycleWater(thing, 1f, out reason);
+            var waterUse = thing.def.GetModExtension<IntegratedSinkExtension>()?.dishwashingWater ?? 1f;
+            return TryConsumeCycleWater(
+                thing,
+                IntegratedSinkWaterPolicy.RequiredAmount(waterUse),
+                out reason);
         }
 
         if (kind == HandwashingSourceKind.Well)
@@ -298,6 +343,9 @@ internal static class DubsWaterAdapter
                 "DubsBadHygiene.Building_AssignableFixture",
                 throwOnError: false);
             baseWellCompType = assembly.GetType("DubsBadHygiene.CompBaseWell", throwOnError: false);
+            var fixtureKindType = assembly.GetType("DubsBadHygiene.FixtureType", throwOnError: false);
+            var sanitationUtilType = assembly.GetType("DubsBadHygiene.SanitationUtil", throwOnError: false);
+            var closestSanitationType = assembly.GetType("DubsBadHygiene.ClosestSanitation", throwOnError: false);
             if (pipeCompType is null || pipeNetType is null || contaminationType is null)
             {
                 continue;
@@ -364,9 +412,72 @@ internal static class DubsWaterAdapter
             {
                 waterUsesRemainingField = null;
             }
+            fixtureKindProperty = assignableFixtureType?.GetProperty(
+                "fixture",
+                BindingFlags.Public | BindingFlags.Instance);
+            forAnimalsOnlyProperty = assignableFixtureType?.GetProperty(
+                "ForAnimalsOnly",
+                BindingFlags.Public | BindingFlags.Instance);
+            if (fixtureKindType is null || !fixtureKindType.IsEnum ||
+                fixtureKindProperty?.PropertyType != fixtureKindType ||
+                forAnimalsOnlyProperty?.PropertyType != typeof(bool))
+            {
+                fixtureKindProperty = null;
+                forAnimalsOnlyProperty = null;
+            }
+            else
+            {
+                basinFixtureKind = Enum.Parse(fixtureKindType, "Basin", ignoreCase: false);
+                bathFixtureKind = Enum.Parse(fixtureKindType, "Bath", ignoreCase: false);
+            }
+            allFixturesMethod = sanitationUtilType?.GetMethod(
+                "AllFixtures",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
+                binder: null,
+                types: new[] { typeof(Map) },
+                modifiers: null);
+            if (allFixturesMethod?.ReturnType != typeof(IEnumerable<Thing>))
+            {
+                allFixturesMethod = null;
+            }
+            fixtureEverUsableMethod = fixtureKindType is null
+                ? null
+                : closestSanitationType?.GetMethod(
+                    "IsEverUsable",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
+                    binder: null,
+                    types: new[]
+                    {
+                        typeof(Thing),
+                        typeof(Pawn),
+                        typeof(Pawn),
+                        typeof(bool),
+                        fixtureKindType.MakeArrayType(),
+                        typeof(bool)
+                    },
+                    modifiers: null);
+            if (fixtureEverUsableMethod?.ReturnType != typeof(bool))
+            {
+                fixtureEverUsableMethod = null;
+            }
+            fixtureUsableNowMethod = closestSanitationType?.GetMethod(
+                "UsableNow",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
+                binder: null,
+                types: new[] { typeof(Thing), typeof(Pawn), typeof(bool), typeof(float) },
+                modifiers: null);
+            if (fixtureUsableNowMethod?.ReturnType != typeof(bool))
+            {
+                fixtureUsableNowMethod = null;
+            }
             if (pipeCompType is not null && pipeNetProperty is not null && pullWaterMethod is not null &&
                 waterStorageProperty is not null && waterTowersField is not null &&
-                pipePropertiesType is not null && pipeModeField is not null && pipeInspectMethod is not null)
+                pipePropertiesType is not null && pipeModeField is not null && pipeInspectMethod is not null &&
+                assignableFixtureType is not null && fixtureKindProperty is not null &&
+                forAnimalsOnlyProperty is not null && basinFixtureKind is not null && bathFixtureKind is not null &&
+                fixtureWorkingMethod is not null && pawnAllowedMethod is not null &&
+                allFixturesMethod is not null && fixtureEverUsableMethod is not null &&
+                fixtureUsableNowMethod is not null)
             {
                 return;
             }
@@ -404,12 +515,91 @@ internal static class DubsWaterAdapter
         pipeInspectPatched = true;
     }
 
+    private static void PatchIntegratedSinkDiscovery(Harmony harmony)
+    {
+        if (integratedSinkDiscoveryPatched)
+        {
+            return;
+        }
+
+        var append = typeof(DubsWaterAdapter).GetMethod(
+            nameof(AppendIntegratedSinkFixtures),
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new MissingMethodException(
+                typeof(DubsWaterAdapter).FullName,
+                nameof(AppendIntegratedSinkFixtures));
+        var everUsable = typeof(DubsWaterAdapter).GetMethod(
+            nameof(FilterIntegratedSinkEverUsable),
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new MissingMethodException(
+                typeof(DubsWaterAdapter).FullName,
+                nameof(FilterIntegratedSinkEverUsable));
+        var usableNow = typeof(DubsWaterAdapter).GetMethod(
+            nameof(FilterIntegratedSinkUsableNow),
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new MissingMethodException(
+                typeof(DubsWaterAdapter).FullName,
+                nameof(FilterIntegratedSinkUsableNow));
+
+        harmony.Patch(allFixturesMethod!, postfix: new HarmonyMethod(append));
+        harmony.Patch(fixtureEverUsableMethod!, postfix: new HarmonyMethod(everUsable));
+        harmony.Patch(fixtureUsableNowMethod!, postfix: new HarmonyMethod(usableNow));
+        integratedSinkDiscoveryPatched = true;
+    }
+
+    private static void AppendIntegratedSinkFixtures(Map __0, ref IEnumerable<Thing> __result)
+    {
+        __result = EnumerateFixturesWithIntegratedSinks(__result, __0);
+    }
+
+    private static IEnumerable<Thing> EnumerateFixturesWithIntegratedSinks(
+        IEnumerable<Thing> original,
+        Map map)
+    {
+        var seen = new HashSet<Thing>();
+        foreach (var thing in original)
+        {
+            if (thing is not null && seen.Add(thing))
+            {
+                yield return thing;
+            }
+        }
+
+        foreach (var thing in map.listerThings.AllThings)
+        {
+            if (IntegratedSinkRuntime.IsIntegratedSink(thing) && seen.Add(thing))
+            {
+                yield return thing;
+            }
+        }
+    }
+
+    private static void FilterIntegratedSinkEverUsable(Thing __0, ref bool __result)
+    {
+        if (__result && IntegratedSinkRuntime.IsIntegratedSink(__0))
+        {
+            var water = __0.def.GetModExtension<IntegratedSinkExtension>()?.minimumDrinkWater ?? 0.04f;
+            __result = CanUseIntegratedSink(__0, water);
+        }
+    }
+
+    private static void FilterIntegratedSinkUsableNow(Thing __0, ref bool __result)
+    {
+        if (__result && IntegratedSinkRuntime.IsIntegratedSink(__0))
+        {
+            var water = __0.def.GetModExtension<IntegratedSinkExtension>()?.minimumDrinkWater ?? 0.04f;
+            __result = CanUseIntegratedSink(__0, water);
+        }
+    }
+
     private static void SuppressDishwasherPipeInspect(ThingComp __instance, ref string __result)
     {
-        if (DishwasherInspectPolicy.ShouldSuppressOptionalDiagnostic(
+        if (__instance.parent is not null &&
+            (IntegratedSinkRuntime.IsIntegratedSink(__instance.parent) ||
+            DishwasherInspectPolicy.ShouldSuppressOptionalDiagnostic(
                 __instance.parent?.def?.defName,
                 __instance.GetType().Assembly.GetName().Name,
-                __instance.GetType().FullName))
+                __instance.GetType().FullName)))
         {
             __result = string.Empty;
         }
@@ -471,6 +661,31 @@ internal static class DubsWaterAdapter
         {
             pawnAllowed = false;
             working = false;
+            return false;
+        }
+    }
+
+    internal static bool HasDrinkableFixtureCapability(Thing thing)
+    {
+        if (assignableFixtureType?.IsInstanceOfType(thing) != true ||
+            fixtureKindProperty is null || forAnimalsOnlyProperty is null ||
+            basinFixtureKind is null || bathFixtureKind is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            if (forAnimalsOnlyProperty.GetValue(thing) is true)
+            {
+                return false;
+            }
+
+            var fixtureKind = fixtureKindProperty.GetValue(thing);
+            return Equals(fixtureKind, basinFixtureKind) || Equals(fixtureKind, bathFixtureKind);
+        }
+        catch
+        {
             return false;
         }
     }

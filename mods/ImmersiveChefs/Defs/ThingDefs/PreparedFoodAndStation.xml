@@ -54,6 +54,14 @@
     <costList><Steel>80</Steel><ComponentIndustrial>2</ComponentIndustrial></costList>
     <statBases><WorkToBuild>1800</WorkToBuild><MaxHitPoints>180</MaxHitPoints><Flammability>0.3</Flammability><Cleanliness>2</Cleanliness></statBases>
     <recipes><li>ImmersiveChefs_PrepareIngredients</li></recipes>
+    <modExtensions>
+      <li Class="ImmersiveChefs.IntegratedSinkExtension">
+        <dishwashingWater>1</dishwashingWater>
+        <preparationWater>1</preparationWater>
+        <minimumDrinkWater>0.04</minimumDrinkWater>
+      </li>
+    </modExtensions>
+    <comps><li Class="ImmersiveChefs.CompProperties_IntegratedSink" /></comps>
     <inspectorTabs><li>ITab_Bills</li></inspectorTabs>
     <building><spawnedConceptLearnOpportunity>BillsTab</spawnedConceptLearnOpportunity><paintable>true</paintable><workTableRoomRole>Kitchen</workTableRoomRole></building>
     <placeWorkers><li>PlaceWorker_PreventInteractionSpotOverlap</li></placeWorkers>

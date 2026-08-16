@@ -68,12 +68,19 @@ When `Argon.ExpandedMaterials.Masonry` is active, `EM_AdobeBricks` SHALL enable 
 
 ### Requirement: Hygiene adapters prioritize valid water fixtures
 
-When `Dubwise.DubsBadHygiene` is active and its adapter validates, a reachable operational kitchen sink SHALL be the preferred hand-washing fixture and SHALL be considered connected only when its plumbing and operating requirements pass. Each dishwasher SHALL likewise require a supplied Dubs plumbing connection. After the save-persistent loading window closes, cycle start SHALL atomically verify and debit exactly one positive Def-configured water charge scaled to the final captured plate-equivalent load. Insufficient water SHALL retain the admitted dirty batch without starting it; loss/restoration after cycle start SHALL pause/resume the same cycle without another debit; cancellation or removal SHALL not refund the admitted charge. Without that mod, or when its integration is deliberately set to `Off`, dishwashers SHALL use their abstracted base water behavior and recognized bowls, wells, hauled-water fixtures, and enabled water terrain SHALL remain ordered hand-washing fallbacks. If the package is active in `Auto` mode but shape validation fails, dishwashers SHALL fail closed, one actionable warning SHALL identify the adapter failure, and eligible non-Dubs hand-washing fallbacks SHALL remain available.
+When `Dubwise.DubsBadHygiene` is active and its adapter validates, Immersive Chefs SHALL discover hand-washing fixtures through Dubs' exact public drinkable-fixture and plumbing capabilities across all loaded package owners. It SHALL NOT identify a fixture from `KitchenSink`, `BasinStuff`, `Fountain`, `WashBucket`, `WaterTrough`, `PetWaterBowl`, `PrimitiveWell`, or any other Def-name switch. Native fixture kind, `PawnAllowed(Pawn)`, `Working(float)`, pipe supply, hauled-water use, well component, and ordinary operational state SHALL remain authoritative. A reachable operational supplied connected fixture SHALL outrank self-contained drinkable water and terrain. The visible sink in `ImmersiveChefs_PrepStation` SHALL join Dubs' native drink search and use the same supplied pipe for preparation and dishwashing without changing its worktable ownership.
 
-#### Scenario: Plumbed sink outranks terrain
+Each dishwasher SHALL likewise require a supplied Dubs plumbing connection. After the save-persistent loading window closes, cycle start SHALL atomically verify and debit exactly one positive Def-configured water charge scaled to the final captured plate-equivalent load. Insufficient water SHALL retain the admitted dirty batch without starting it; loss/restoration after cycle start SHALL pause/resume the same cycle without another debit; cancellation or removal SHALL not refund the admitted charge. Without that mod, or when its integration is deliberately set to `Off`, dishwashers SHALL use their abstracted base water behavior and capability-registered non-Dubs fixtures plus enabled water terrain SHALL remain ordered hand-washing fallbacks. If the package is active in `Auto` mode but shape validation fails, dishwashers SHALL fail closed, one actionable warning SHALL identify the adapter failure, and eligible non-Dubs hand-washing fallbacks SHALL remain available.
 
-- **WHEN** a valid Dubs kitchen sink and reachable water terrain are both available
-- **THEN** the dishwashing work giver selects the kitchen sink unless reservations or danger make it invalid
+#### Scenario: Plumbed drink-capable fixture outranks terrain
+
+- **WHEN** a valid supplied Dubs drink-capable fixture from any loaded package and reachable water terrain are both available
+- **THEN** the dishwashing work giver selects the fixture unless pawn permission, reservations, danger, or its native working report make it invalid
+
+#### Scenario: Prep work and drinking share the station's supply
+
+- **WHEN** the finalized Immersive Chefs prep station has Dubs' validated pipe capability and a colonist performs either an ingredient-preparation bill or Dubs' native drink job there
+- **THEN** both workflows require and debit the same real supplied network rather than using an abstract or hidden water source
 
 #### Scenario: Plumbed dishwasher loses its supply
 

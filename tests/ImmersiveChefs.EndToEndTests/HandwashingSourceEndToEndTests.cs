@@ -447,6 +447,247 @@ public sealed class DubsSinkHandwashingPriorityTest : IRimWorldEndToEndTest
 }
 
 [RimWorldEndToEndTest(
+    "immersive-chefs.dubs-prep-station-integrated-sink",
+    "fumblesneeze.immersivechefs",
+    "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
+    "Dubwise.DubsBadHygiene",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 7_200,
+    MaxGameTicks = 26_000,
+    MaxWallClockSeconds = 300)]
+public sealed class DubsPrepStationIntegratedSinkTest : IRimWorldEndToEndTest
+{
+    private Map map = null!;
+    private Pawn worker = null!;
+    private ThingWithComps prepStation = null!;
+    private ThingWithComps tower = null!;
+    private ThingWithComps plate = null!;
+    private Thing rawRice = null!;
+    private string plateId = string.Empty;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        map = Current.Game.CurrentMap;
+        HandwashingE2EFixture.PreserveSettings(context);
+        var center = FoodSearchE2EFixture.FindRoomCenter(map);
+        FoodSearchE2EFixture.BuildSealedRoom(map, center);
+
+        prepStation = DispenserE2EFixture.SpawnBuilding(
+            map,
+            "ImmersiveChefs_PrepStation",
+            center + new IntVec3(2, 0, 2));
+        tower = HandwashingE2EFixture.SpawnDubsSinkWaterSupply(map, prepStation, 0f);
+        worker = HandwashingE2EFixture.CreateInactiveKitchenWorker("Prep sink worker");
+        GenSpawn.Spawn(worker, center + new IntVec3(-1, 0, -2), map);
+        plate = HandwashingE2EFixture.MakeDirtyPlate(ThingDefOf.Steel);
+        GenSpawn.Spawn(plate, center + new IntVec3(-2, 0, -2), map);
+        plateId = plate.ThingID;
+
+        rawRice = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("RawRice"));
+        rawRice.stackCount = 20;
+        GenSpawn.Spawn(rawRice, center + new IntVec3(0, 0, -1), map);
+        var bill = new Bill_Production(
+            DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_PrepareIngredients"))
+        {
+            repeatMode = BillRepeatModeDefOf.RepeatCount,
+            repeatCount = 1,
+            ingredientSearchRadius = 20f
+        };
+        bill.SetPawnRestriction(worker);
+        ((IBillGiver)prepStation).BillStack.AddBill(bill);
+
+        var settings = ImmersiveChefsMod.Settings;
+        settings.PreferDishwashers = true;
+        settings.AllowTerrainHandwashing = false;
+        settings.DishwashingWorkScale = 0.25f;
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        yield return new TimeControlActionStep(
+            "let the integrated prep sink join its empty Dubs network",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "prep sink and tower settle onto one empty network",
+            _ => HandwashingE2EFixture.DubsFixturesShareNetwork(prepStation, tower),
+            new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(30)));
+        yield return new TimeControlActionStep(
+            "pause with the integrated prep sink unsupplied",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "the empty integrated sink admits neither dishwashing nor prep work",
+            ignored =>
+            {
+                _ = ignored;
+                EndToEndAssert.False(
+                    WorkGiver_DoDishes.TryFindDestination(worker, plate, out _),
+                    "An empty integrated prep sink must not accept dishwashing.");
+                EndToEndAssert.True(
+                    FindPrepBillJob(worker, prepStation) is null,
+                    "An empty integrated prep sink must not admit its preparation bill.");
+            });
+        yield return new SelectionActionStep(
+            "select the visibly unsupplied prep sink",
+            new[] { prepStation.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the empty prep sink network and dirty plate",
+            new[] { prepStation.ThingID, tower.ThingID, plate.ThingID, worker.ThingID },
+            paddingPixels: 220);
+        yield return new ScreenshotStep(
+            "prep sink visibly reports that it has no water supply",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new AssertionStep(
+            "a sip-sized supply remains insufficient for prep or dishwashing",
+            _ =>
+            {
+                HandwashingE2EFixture.SetDubsStoredWater(tower, prepStation, 0.5f);
+                EndToEndAssert.False(
+                    WorkGiver_DoDishes.TryFindDestination(
+                        worker,
+                        plate,
+                        out var insufficientDestination),
+                    "Half a liter must not admit a one-liter handwashing operation.");
+                EndToEndAssert.True(
+                    FindPrepBillJob(worker, prepStation) is null,
+                    "Half a liter must not admit a one-liter ingredient-preparation operation.");
+                EndToEndAssert.True(
+                    HandwashingE2EFixture.DubsNativeDrinkSearchAccepts(worker, prepStation),
+                    "The same network may remain eligible for DBH's smaller native drink amount.");
+            });
+
+        HandwashingE2EFixture.SetDubsStoredWater(tower, prepStation, 5f);
+        yield return new AssertionStep(
+            "the supplied prep sink becomes the exact safe dishwashing source",
+            _ =>
+            {
+                EndToEndAssert.True(
+                    WorkGiver_DoDishes.TryFindDestination(worker, plate, out var destination) &&
+                    ReferenceEquals(destination.Target.Thing, prepStation) &&
+                    destination.Provenance == WashProvenance.Safe,
+                    "The supplied prep sink must be selected through the generic connected-fixture capability.");
+                EndToEndAssert.NotNull(
+                    FindPrepBillJob(worker, prepStation),
+                    "Supplying the integrated sink must admit its ordinary preparation bill.");
+                EndToEndAssert.True(
+                    HandwashingE2EFixture.DubsNativeDrinkSearchAccepts(worker, prepStation),
+                    "Dubs' own fixture discovery and drink eligibility seams must accept the supplied prep sink.");
+            });
+
+        HandwashingE2EFixture.ActivateCleaner(worker);
+        yield return new TimeControlActionStep(
+            "run ordinary Cleaning work at the supplied prep sink",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "worker carries the exact plate to the prep sink",
+            _ => HandwashingE2EFixture.IsDoingDishesAt(worker, prepStation, plateId) &&
+                 HandwashingE2EFixture.Nearly(
+                     HandwashingE2EFixture.ReadDubsNetworkWater(prepStation),
+                     4f),
+            new EndToEndDeadline(1_200, 4_000, TimeSpan.FromSeconds(45)));
+        yield return new SelectionActionStep(
+            "select the worker washing at the integrated prep sink",
+            new[] { worker.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame native dishwashing at the integrated prep sink",
+            new[] { worker.ThingID, prepStation.ThingID, tower.ThingID },
+            paddingPixels: 220);
+        yield return new ScreenshotStep(
+            "ordinary Doing dishes visibly uses the prep station sink",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new TimeControlActionStep(
+            "finish the prep sink dishwashing job",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "the exact prep-sink-washed plate returns clean",
+            _ => plate.Spawned && !plate.GetComp<CompSanitation>()!.IsDirty,
+            new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(45)));
+
+        HandwashingE2EFixture.ActivateCooking(worker);
+        yield return new TimeControlActionStep(
+            "run ordinary Cooking work at the supplied prep station",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "worker begins the native preparation bill after the water debit",
+            _ => worker.CurJobDef == JobDefOf.DoBill &&
+                 ReferenceEquals(worker.CurJob?.GetTarget(TargetIndex.A).Thing, prepStation) &&
+                 HandwashingE2EFixture.Nearly(
+                     HandwashingE2EFixture.ReadDubsNetworkWater(prepStation),
+                     3f),
+            new EndToEndDeadline(1_200, 5_000, TimeSpan.FromSeconds(50)));
+        yield return new SelectionActionStep(
+            "select the worker preparing ingredients at the supplied sink",
+            new[] { worker.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame native preparation work and supplied sink",
+            new[] { worker.ThingID, prepStation.ThingID, tower.ThingID },
+            paddingPixels: 220);
+        yield return new ScreenshotStep(
+            "ordinary preparation visibly runs only after the sink receives water",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new TimeControlActionStep(
+            "finish the native preparation bill",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "prepared ingredients are produced by the native bill",
+            _ => map.listerThings.ThingsOfDef(
+                    DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_PreparedFood"))
+                .Sum(thing => thing.stackCount) >= 10,
+            new EndToEndDeadline(1_500, 7_000, TimeSpan.FromSeconds(60)));
+        yield return new TimeControlActionStep(
+            "pause after integrated sink preparation",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "one wash and one preparation debit conserve exact ware and water",
+            _ =>
+            {
+                EndToEndAssert.Equal(plateId, plate.ThingID,
+                    "Integrated-sink dishwashing must return the exact plate.");
+                HandwashingE2EFixture.AssertTotalPlateUnits(map, 1);
+                EndToEndAssert.True(
+                    HandwashingE2EFixture.Nearly(
+                        HandwashingE2EFixture.ReadDubsNetworkWater(prepStation),
+                        3f),
+                    "One dishwash and one prep bill must debit exactly two liters from five.");
+            });
+        yield return new CheckpointStep(
+            "Dubs integrated prep sink result",
+            _ => new Dictionary<string, string>
+            {
+                ["station"] = prepStation.ThingID,
+                ["plate"] = plateId,
+                ["waterBefore"] = "5",
+                ["waterAfterWashAndPrep"] = "3",
+                ["preparedFood"] = "10"
+            });
+    }
+
+    private static Job? FindPrepBillJob(Pawn pawn, Thing prepStation)
+    {
+        var workGiver = DefDatabase<WorkGiverDef>
+            .GetNamed("ImmersiveChefs_PrepareIngredients")
+            .Worker as WorkGiver_DoBill;
+        EndToEndAssert.NotNull(workGiver,
+            "The finalized prep station work giver must remain a WorkGiver_DoBill.");
+        return workGiver!.JobOnThing(pawn, prepStation, forced: false);
+    }
+}
+
+[RimWorldEndToEndTest(
     "immersive-chefs.dubs-handwashing-full-fallback-order",
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
@@ -493,7 +734,7 @@ public sealed class DubsHandwashingFullFallbackOrderTest : IRimWorldEndToEndTest
             map,
             "BasinStuff",
             center + new IntVec3(3, 0, -1));
-        basinTower = DispenserE2EFixture.SpawnDubsWaterSupply(map, basin, 10f);
+        basinTower = DispenserE2EFixture.SpawnDubsWaterSupply(map, basin, 0f);
         HandwashingE2EFixture.SpawnDubsSewageOutlet(
             map,
             basin,
@@ -527,9 +768,10 @@ public sealed class DubsHandwashingFullFallbackOrderTest : IRimWorldEndToEndTest
             paused: false,
             EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
-            "the kitchen sink and basin each pass their native supplied Dubs report",
+            "the kitchen sink is supplied while the closer basin remains empty",
             _ => HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, kitchenSink, 1f) &&
-                 HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, basin, 1f),
+                 HandwashingE2EFixture.DubsFixturesShareNetwork(basin, basinTower) &&
+                 !HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, basin, 1f),
             new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(30)));
         yield return new TimeControlActionStep(
             "pause before the ordered handwashing sequence",
@@ -555,6 +797,10 @@ public sealed class DubsHandwashingFullFallbackOrderTest : IRimWorldEndToEndTest
                 EndToEndAssert.False(
                     HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, kitchenSink, 1f),
                     "The real Dubs kitchen sink must reject this colonist before fallback selection.");
+                HandwashingE2EFixture.SetDubsStoredWater(basinTower, basin, 10f);
+                EndToEndAssert.True(
+                    HandwashingE2EFixture.DubsFixtureAllowsAndWorks(cleaner, basin, 1f),
+                    "The real Dubs basin must become eligible when its own network is supplied.");
             });
         foreach (var step in WashAtObject(
                      "connected basin fallback",
@@ -848,6 +1094,32 @@ internal static class HandwashingE2EFixture
         pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
     }
 
+    internal static Pawn CreateInactiveKitchenWorker(string name)
+    {
+        for (var attempt = 0; attempt < 64; attempt++)
+        {
+            var pawn = CreateInactiveCleaner(name);
+            var cooking = DefDatabase<WorkTypeDef>.GetNamed("Cooking");
+            if (!pawn.WorkTypeIsDisabled(cooking))
+            {
+                pawn.skills.GetSkill(SkillDefOf.Cooking).Level = 10;
+                return pawn;
+            }
+
+            pawn.Destroy(DestroyMode.Vanish);
+        }
+
+        throw new EndToEndAssertionException(
+            "Could not generate a capable cleaning and cooking worker for the integrated sink.");
+    }
+
+    internal static void ActivateCooking(Pawn pawn)
+    {
+        pawn.workSettings.SetPriority(WorkTypeDefOf.Cleaning, 0);
+        pawn.workSettings.SetPriority(DefDatabase<WorkTypeDef>.GetNamed("Cooking"), 1);
+        pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
+    }
+
     internal static ThingWithComps MakeDirtyPlate(ThingDef stuff)
     {
         var plate = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Plate", stuff);
@@ -1010,6 +1282,61 @@ internal static class HandwashingE2EFixture
                pawnReport.Accepted &&
                working!.Invoke(fixture, new object[] { waterUsed }) is AcceptanceReport workingReport &&
                workingReport.Accepted;
+    }
+
+    internal static bool DubsNativeDrinkSearchAccepts(Pawn pawn, ThingWithComps fixture)
+    {
+        var assembly = AppDomain.CurrentDomain.GetAssemblies().Single(candidate =>
+            string.Equals(candidate.GetName().Name, "BadHygiene", StringComparison.Ordinal));
+        var sanitationUtil = assembly.GetType("DubsBadHygiene.SanitationUtil", throwOnError: true)!;
+        var closestSanitation = assembly.GetType("DubsBadHygiene.ClosestSanitation", throwOnError: true)!;
+        var fixtureType = assembly.GetType("DubsBadHygiene.FixtureType", throwOnError: true)!;
+        var allFixtures = sanitationUtil.GetMethod(
+            "AllFixtures",
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            types: new[] { typeof(Map) },
+            modifiers: null);
+        var isEverUsable = closestSanitation.GetMethod(
+            "IsEverUsable",
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            types: new[]
+            {
+                typeof(Thing),
+                typeof(Pawn),
+                typeof(Pawn),
+                typeof(bool),
+                fixtureType.MakeArrayType(),
+                typeof(bool)
+            },
+            modifiers: null);
+        var usableNow = closestSanitation.GetMethod(
+            "UsableNow",
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            types: new[] { typeof(Thing), typeof(Pawn), typeof(bool), typeof(float) },
+            modifiers: null);
+        EndToEndAssert.True(
+            allFixtures?.ReturnType == typeof(IEnumerable<Thing>) &&
+            isEverUsable?.ReturnType == typeof(bool) &&
+            usableNow?.ReturnType == typeof(bool),
+            "The installed Dubs drink discovery surface must retain its exact supported shape.");
+
+        var fixtures = ((IEnumerable<Thing>)allFixtures!.Invoke(null, new object[] { pawn.Map })!).ToArray();
+        var acceptedKinds = Array.CreateInstance(fixtureType, 1);
+        acceptedKinds.SetValue(Enum.Parse(fixtureType, "Basin", ignoreCase: false), 0);
+        return fixtures.Contains(fixture) &&
+               isEverUsable!.Invoke(null, new object?[]
+               {
+                   fixture,
+                   pawn,
+                   pawn,
+                   false,
+                   acceptedKinds,
+                   false
+               }) is true &&
+               usableNow!.Invoke(null, new object[] { fixture, pawn, false, 999f }) is true;
     }
 
     internal static ThingWithComps SpawnDubsSewageOutlet(

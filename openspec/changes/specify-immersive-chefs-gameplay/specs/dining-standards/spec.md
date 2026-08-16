@@ -31,6 +31,12 @@ For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or ownin
 - **WHEN** no clean setting exists and dirty settings are forbidden by the current fallback policy
 - **THEN** the pawn eats without cutlery and receives the missing-cutlery consequence rather than waiting indefinitely
 
+#### Scenario: Externally spawned unplated meal reaches an ingest driver
+
+- **WHEN** another mod, a trader, a visitor, or a debug action supplies a covered meal without an embedded plate and RimWorld has already admitted its ordinary self-ingest or assisted-feeding job while no permitted plate or cutlery exists
+- **THEN** Immersive Chefs leaves the successful native pre-toil reservation successful, attaches a missing-ware dining session when possible, and allows the job to continue without a `TryMakePreToilReservations returned false ... right after StartJob` warning
+- **THEN** any stricter ordinary-selection policy MUST reject before `StartJob` and MUST NOT turn a successful driver reservation into a late failure
+
 #### Scenario: Hand-eaten food is excluded
 
 - **WHEN** a pawn chooses pemmican or a packaged survival meal
@@ -96,6 +102,11 @@ On a spawned map, an eligible self-eating or assisted-feeding event completed wi
 
 - **WHEN** a nurse completes feeding an eligible meal to an unconscious patient without cutlery
 - **THEN** no missing-cutlery memory is added to either pawn while physical plate recovery and the bounded dirt event still occur
+
+#### Scenario: Nurse receives an unplated externally spawned meal
+
+- **WHEN** an ordinary `FeedPatient` job has already been admitted for a covered meal with no embedded plate while no service ware is available
+- **THEN** the feeder's successful native pre-toil reservation remains successful, feeding continues without an engine reservation warning, and the conscious-patient, unconscious-patient, dirt and missing-ware rules remain owned by the fed pawn
 
 ### Requirement: Caravan dining conserves reusable service ware
 
