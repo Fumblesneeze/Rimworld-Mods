@@ -587,6 +587,26 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     [Test]
+    public void Workshop_change_history_uses_a_normal_bounded_browser_request_shape()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Initialize-WorkshopChangeHistoryRequest" },
+            "$request=[Net.HttpWebRequest]::CreateHttp('https://steamcommunity.com/');" +
+            "Initialize-WorkshopChangeHistoryRequest $request;" +
+            "Write-Output ($request.UserAgent+'|'+$request.Accept+'|'+$request.Headers['Accept-Language']+'|'+$request.Timeout+'|'+$request.ReadWriteTimeout)");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Does.StartWith("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"));
+            Assert.That(run.StandardOutput, Does.Contain("|text/html,"));
+            Assert.That(run.StandardOutput, Does.Contain("|en-US,en;q=0.9|30000|30000"));
+        });
+    }
+
+    [Test]
     public void Workshop_change_history_allows_one_first_update_after_a_noted_or_unnoted_private_bootstrap()
     {
         using var fixture = Fixture.Create();

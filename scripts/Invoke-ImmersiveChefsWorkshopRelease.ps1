@@ -184,11 +184,17 @@ function Get-WorkshopRateLimitDelayMilliseconds([Net.HttpWebResponse]$Response) 
     return Resolve-WorkshopRateLimitDelayMilliseconds -RetryAfter ([string]$Response.Headers['Retry-After'])
 }
 
+function Initialize-WorkshopChangeHistoryRequest([Net.HttpWebRequest]$Request) {
+    $Request.Timeout = 30000
+    $Request.ReadWriteTimeout = 30000
+    $Request.UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+    $Request.Accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    $Request.Headers['Accept-Language'] = 'en-US,en;q=0.9'
+}
+
 function Invoke-WorkshopChangeHistoryRequest([string]$Uri) {
     $request = [Net.HttpWebRequest]::CreateHttp($Uri)
-    $request.Timeout = 30000
-    $request.ReadWriteTimeout = 30000
-    $request.UserAgent = 'ImmersiveChefsReleaseVerifier/1.0'
+    Initialize-WorkshopChangeHistoryRequest $request
     $response = $null
     try {
         $response = $request.GetResponse()
