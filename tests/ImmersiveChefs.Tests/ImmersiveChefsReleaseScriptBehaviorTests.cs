@@ -35,6 +35,24 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     [Test]
+    public void Release_builder_decodes_the_real_title_preview_dimensions_without_byte_overflow()
+    {
+        using var fixture = Fixture.Create();
+        var previewPath = Path.Combine(
+            fixture.RepositoryRoot, "mods", "ImmersiveChefs", "Release", "workshop", "preview-main.png");
+        var run = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Get-RasterImageInfo" },
+            "$image=Get-RasterImageInfo " + Ps(previewPath) + ";Write-Output ($image.format+'|'+$image.width+'|'+$image.height)");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("png|1280|720"));
+        });
+    }
+
+    [Test]
     public void Release_tests_do_not_launch_unrelated_visible_desktop_applications()
     {
         using var fixture = Fixture.Create();
