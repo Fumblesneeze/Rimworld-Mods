@@ -37,6 +37,7 @@ The compatibility registry and grouped test runner SHALL use the exact active pa
 | Cook for Yourself | `lordfelix.CookForYourself` | Harmony; custom one-off cooking job and self/dependent delivery owner |
 | Overcooked Meals | `binchcannon.overcookedmeals` | Harmony; final product replacement owner |
 | No Vanilla Meals | `Mlie.NoVanillaMeals` | finalized vanilla meal/recipe removal owner |
+| Ceramics (Continued) | `zal.ceramics` | optional porcelain Stuff and ceramics-bench plate fabrication owner |
 
 #### Scenario: Workshop content is downloaded but inactive
 
@@ -65,6 +66,21 @@ When `Argon.ExpandedMaterials.Masonry` is active, `EM_AdobeBricks` SHALL enable 
 
 - **WHEN** the supported ABS polymer package is active
 - **THEN** its service ware uses the plastic recipe and stat category despite its overlapping Stuff tags
+
+### Requirement: Ceramics (Continued) supplies porcelain plates without broad-tag leakage
+
+When exact package `zal.ceramics` is active and the expected finalized 1.6 Def shape is present, Immersive Chefs SHALL register only `N7_Porcelain` as ceramic plate material and add its plate recipe to `CeramicsBench_Basic` and `CeramicsBench_Electric` behind `BasicCeramics`. Product metadata SHALL order Immersive Chefs after `zal.ceramics` without declaring it as a hard dependency. The adapter SHALL use the package ID plus exact Def shape, SHALL NOT infer ceramic from translated labels or the upstream `Stony` category, and SHALL not make Processor Framework or Vanilla Expanded Framework required merely because Ceramics (Continued) can optionally use either framework. `Auto` SHALL enable this contribution and `Off` SHALL remove its recipe users and material admission after restart while leaving the upstream mod untouched.
+
+#### Scenario: Exact porcelain path is active
+
+- **WHEN** `zal.ceramics` is active in `Auto` mode with the expected porcelain, benches, and research
+- **THEN** native ceramics work can turn 4 `N7_Porcelain` into four Stuff-retaining Immersive Chefs plates
+- **THEN** those plates classify as ceramic for cleanliness, Fine/Lavish plate eligibility, and dining standards
+
+#### Scenario: Ceramics integration is disabled
+
+- **WHEN** `zal.ceramics` remains active but its Immersive Chefs integration is `Off` after restart
+- **THEN** no Immersive Chefs porcelain recipe is available and `N7_Porcelain` does not fall back to primitive stone through its broad `Stony` category
 
 ### Requirement: Hygiene adapters prioritize valid water fixtures
 
@@ -518,6 +534,7 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 12. Processor Framework; Dubs Bad Hygiene; Pick Up And Haul; Immersive Chefs; and Gateway for one-trip tracked dishwasher loading, per-unit Processor admission, cycle completion, and later native clean-output hauling.
 12. Harmony; Core; Cook for Yourself; Immersive Chefs; and Gateway for one-off self-cooking, exact ware/session lifecycle, native self-ingestion, patient delivery, interruption, and an `Off`-setting run in which the upstream one-off job still completes unchanged.
 13. Harmony; Core; Biotech; Cook for Yourself; Immersive Chefs; and Gateway for native baby-food cooking and bottle feeding that remain entirely upstream-owned and kitchenware-free under strict ware settings. Package absence and changed-shape behavior remain host/base-process fail-closed gates rather than claims of either active-mod group.
+14. Harmony; Core; Ceramics (Continued); Immersive Chefs; and Gateway for exact porcelain registration, native ceramics-bench plate crafting, Stuff/color/quality retention, and broad-`Stony` non-leakage. Processor Framework and Vanilla Expanded Framework remain absent from this minimum group because the installed provider has its own legacy fallback.
 
 Every named supported food mod SHALL appear in at least one maintained exact group. Host tests SHALL cover pure policy and package grouping, loaded main-menu integration tests SHALL verify finalized Defs and Harmony ownership, and E2E tests SHALL prove native player-observable cooking, dispensing, selection, serving, storage, and eating behavior. A broad all-supported startup canary MAY be added, but it SHALL NOT substitute for these behavioral groups or claim that every unsupported permutation is compatible.
 

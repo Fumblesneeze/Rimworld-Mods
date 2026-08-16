@@ -35,6 +35,7 @@ public sealed class LocalizationReleaseGateTests
     {
         "ImmersiveChefs_Integration_ProcessorFramework",
         "ImmersiveChefs_Integration_ExpandedMaterials",
+        "ImmersiveChefs_Integration_CeramicsContinued",
         "ImmersiveChefs_Integration_AbsPolymer",
         "ImmersiveChefs_Integration_DubsBadHygiene",
         "ImmersiveChefs_Integration_Gastronomy",

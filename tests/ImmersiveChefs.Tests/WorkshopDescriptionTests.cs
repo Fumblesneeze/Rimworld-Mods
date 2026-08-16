@@ -67,6 +67,7 @@ public sealed class WorkshopDescriptionTests
         "Processor Framework",
         "Expanded Materials - Metals",
         "Expanded Materials - Masonry",
+        "Ceramics (Continued)",
         "Simply Sublime ABS Polymer",
         "Dubs Bad Hygiene",
         "Gastronomy",

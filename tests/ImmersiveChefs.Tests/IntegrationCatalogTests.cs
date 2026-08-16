@@ -44,6 +44,7 @@ public sealed class IntegrationCatalogTests
     [TestCase("Goat.Food.Texture.Variety", OptionalIntegration.FoodTextureVariety)]
     [TestCase("Mehni.PickUpAndHaul", OptionalIntegration.PickUpAndHaul)]
     [TestCase("lordfelix.CookForYourself", OptionalIntegration.CookForYourself)]
+    [TestCase("zal.ceramics", OptionalIntegration.CeramicsContinued)]
     public void Detect_marks_exact_optional_compatibility_integrations_active(
         string packageId,
         OptionalIntegration integration)
@@ -63,6 +64,7 @@ public sealed class IntegrationCatalogTests
     [TestCase("Goat.Food.Texture.Variety.lookalike")]
     [TestCase("Mehni.PickUpAndHaul.compat")]
     [TestCase("lordfelix.CookForYourself.compat")]
+    [TestCase("zal.ceramics.compat")]
     public void Detect_ignores_lookalike_optional_compatibility_packages(string packageId)
     {
         var snapshot = IntegrationCatalog.Detect(new[] { packageId });
@@ -78,6 +80,7 @@ public sealed class IntegrationCatalogTests
             Assert.That(snapshot.IsActive(OptionalIntegration.FoodTextureVariety), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.PickUpAndHaul), Is.False);
             Assert.That(snapshot.IsActive(OptionalIntegration.CookForYourself), Is.False);
+            Assert.That(snapshot.IsActive(OptionalIntegration.CeramicsContinued), Is.False);
         });
     }
 
@@ -245,7 +248,7 @@ public sealed class IntegrationCatalogTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(snapshot.States, Has.Count.EqualTo(23));
+            Assert.That(snapshot.States, Has.Count.EqualTo(24));
             Assert.That(snapshot.States.Values, Has.All.False);
         });
     }

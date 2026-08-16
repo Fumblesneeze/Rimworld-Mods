@@ -28,6 +28,7 @@ public sealed class IngredientValueGetter_Units : IngredientValueGetter
             FabricationTier.PrimitiveStone => "ImmersiveChefs_Ingredient_AnyStonyMaterial".Translate(),
             FabricationTier.Soft => "ImmersiveChefs_Ingredient_WoodOrSoftMaterial".Translate(),
             FabricationTier.Intermediate => "ImmersiveChefs_Ingredient_AnyIntermediateMetal".Translate(),
+            FabricationTier.Ceramic => "ImmersiveChefs_Ingredient_Porcelain".Translate(),
             FabricationTier.Modern when extension.product is KitchenwareProduct.Plate or KitchenwareProduct.Cutlery =>
                 "ImmersiveChefs_Ingredient_AnyMetalOrPlastic".Translate(),
             FabricationTier.Modern => "ImmersiveChefs_Ingredient_AnyModernMetal".Translate(),

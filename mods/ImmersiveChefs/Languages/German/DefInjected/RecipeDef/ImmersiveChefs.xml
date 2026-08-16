@@ -36,4 +36,7 @@
   <ImmersiveChefs_PrepareIngredients.label>Zutaten vorbereiten</ImmersiveChefs_PrepareIngredients.label>
   <ImmersiveChefs_PrepareIngredients.description>Verarbeitet eine halbe Nährwerteinheit essbarer Zutaten zu zehn Kochportionen und bewahrt deren Herkunft.</ImmersiveChefs_PrepareIngredients.description>
   <ImmersiveChefs_PrepareIngredients.jobString>Bereitet Zutaten vor.</ImmersiveChefs_PrepareIngredients.jobString>
+  <ImmersiveChefs_MakePorcelainPlates.label>4 Porzellanteller formen</ImmersiveChefs_MakePorcelainPlates.label>
+  <ImmersiveChefs_MakePorcelainPlates.description>Formt vier Teller aus Porzellan.</ImmersiveChefs_MakePorcelainPlates.description>
+  <ImmersiveChefs_MakePorcelainPlates.jobString>Formt Porzellanteller.</ImmersiveChefs_MakePorcelainPlates.jobString>
 </LanguageData>

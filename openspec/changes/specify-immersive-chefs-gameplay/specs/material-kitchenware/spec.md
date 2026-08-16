@@ -44,12 +44,27 @@ The classifier SHALL use explicit kitchen-material registrations plus narrowly a
 - **THEN** primitive cookware and stone-plate recipes accept it at the crafting spot without an Immersive Chefs package-specific patch
 - **THEN** any explicit exclusion or explicit non-stone registration for that Stuff still wins
 
-### Requirement: Deferred ceramic and supported adobe shapes have safe recipe paths
-Immersive Chefs SHALL NOT require an unsupported pre-1.6 ceramics package and SHALL NOT invent ceramic or porcelain content, research, or recipes in the current change. A later compatibility change MAY use the existing registration seam to add ceramic Stuff or a fixed ceramic ingredient-to-plate recipe after a supported RimWorld 1.6 provider is selected. Because the locally available `EM_AdobeBricks` is a resource rather than Stuff, its current integration SHALL use a fixed-material adobe plate recipe and MUST NOT pretend that the output is made from Stuff.
+### Requirement: Optional ceramic and supported adobe shapes have safe recipe paths
+Immersive Chefs SHALL NOT invent ceramic or porcelain content or make a ceramics provider mandatory. When exact package `zal.ceramics` (`Ceramics (Continued)`) is active and finalized Stuff Def `N7_Porcelain` plus the expected ceramics benches are present, Immersive Chefs SHALL explicitly register that Stuff as `Ceramic` for plates and expose a four-plate porcelain recipe at `CeramicsBench_Basic` and `CeramicsBench_Electric`. The recipe SHALL consume exactly 4 units of one registered ceramic Stuff, retain that exact Stuff and its color on all four output plates, use Crafting quality, and retain the provider's `BasicCeramics` progression. Porcelain MUST NOT enter primitive-stone cookware, primitive-stone plates, cutlery, or chef's-knife recipes merely because the upstream Stuff also carries `Stony`.
+
+When the package is absent, disabled, or its expected Def shape is missing, the porcelain recipe and classification SHALL be unavailable without a missing Def, hard dependency, or fallback to broad `Stony` inference. Because the locally available `EM_AdobeBricks` is a resource rather than Stuff, its current integration SHALL use a fixed-material adobe plate recipe and MUST NOT pretend that the output is made from Stuff.
 
 #### Scenario: No compatible ceramics mod is loaded
 - **WHEN** the player opens the plate recipes without a registered RimWorld 1.6 ceramic material
 - **THEN** no ceramic or porcelain recipe or research is exposed and the game still exposes wood, metal, and any valid adobe or plastic paths without a missing Def, failed recipe, or hard dependency on a ceramics mod
+
+#### Scenario: Ceramics (Continued) porcelain is available
+- **WHEN** exact package `zal.ceramics` finalizes `N7_Porcelain`, `CeramicsBench_Basic`, `CeramicsBench_Electric`, and `BasicCeramics`
+- **THEN** both ceramics benches expose the Immersive Chefs porcelain-plate recipe after the provider's research
+- **THEN** one completed native bill consumes exactly 4 porcelain and produces four quality-bearing plates whose Stuff is exactly `N7_Porcelain`
+
+#### Scenario: Porcelain's broad Stony tag does not leak
+- **WHEN** `N7_Porcelain` is registered as ceramic for plates
+- **THEN** it is not accepted by primitive-stone cookware or plate recipes and is not accepted for cutlery or chef's knives
+
+#### Scenario: Ceramics provider shape is incomplete
+- **WHEN** exact package `zal.ceramics` is active but its porcelain Stuff, research, recipe, or either ceramics bench identity is missing
+- **THEN** the porcelain integration fails closed with one actionable diagnostic while ordinary Immersive Chefs plate recipes remain available
 
 #### Scenario: Expanded Materials - Masonry is active
 - **WHEN** `argon.expandedmaterials.masonry` provides the non-Stuff resource `EM_AdobeBricks`

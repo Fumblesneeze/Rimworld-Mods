@@ -38,6 +38,7 @@
 
   <ImmersiveChefs_Integration_ProcessorFramework>Processor Framework</ImmersiveChefs_Integration_ProcessorFramework>
   <ImmersiveChefs_Integration_ExpandedMaterials>Expanded Materials</ImmersiveChefs_Integration_ExpandedMaterials>
+  <ImmersiveChefs_Integration_CeramicsContinued>Ceramics (Continued)</ImmersiveChefs_Integration_CeramicsContinued>
   <ImmersiveChefs_Integration_AbsPolymer>ABS Polymer</ImmersiveChefs_Integration_AbsPolymer>
   <ImmersiveChefs_Integration_DubsBadHygiene>Dubs Bad Hygiene</ImmersiveChefs_Integration_DubsBadHygiene>
   <ImmersiveChefs_Integration_Gastronomy>Gastronomy</ImmersiveChefs_Integration_Gastronomy>
@@ -88,6 +89,7 @@
   <ImmersiveChefs_Ingredient_AnyStonyMaterial>任意石质材料</ImmersiveChefs_Ingredient_AnyStonyMaterial>
   <ImmersiveChefs_Ingredient_WoodOrSoftMaterial>木材或软质材料</ImmersiveChefs_Ingredient_WoodOrSoftMaterial>
   <ImmersiveChefs_Ingredient_AnyIntermediateMetal>任意中等金属</ImmersiveChefs_Ingredient_AnyIntermediateMetal>
+  <ImmersiveChefs_Ingredient_Porcelain>瓷料</ImmersiveChefs_Ingredient_Porcelain>
   <ImmersiveChefs_Ingredient_AnyMetalOrPlastic>任意可用金属或塑料</ImmersiveChefs_Ingredient_AnyMetalOrPlastic>
   <ImmersiveChefs_Ingredient_AnyModernMetal>任意现代金属</ImmersiveChefs_Ingredient_AnyModernMetal>
   <ImmersiveChefs_Recipe_MakeAdobePlates_Label>制作4个土坯餐盘</ImmersiveChefs_Recipe_MakeAdobePlates_Label>

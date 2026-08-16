@@ -8,6 +8,7 @@ public enum OptionalIntegration
     ProcessorFramework,
     ExpandedMaterialsMetals,
     ExpandedMaterialsMasonry,
+    CeramicsContinued,
     AbsPolymer,
     DubsBadHygiene,
     Gastronomy,
@@ -67,6 +68,7 @@ public static class IntegrationCatalog
             [OptionalIntegration.ProcessorFramework] = "syrchalis.processor.framework",
             [OptionalIntegration.ExpandedMaterialsMetals] = "argon.expandedmaterials.metals",
             [OptionalIntegration.ExpandedMaterialsMasonry] = "argon.expandedmaterials.masonry",
+            [OptionalIntegration.CeramicsContinued] = "zal.ceramics",
             [OptionalIntegration.AbsPolymer] = "mlie.simplysublimeabspolymer",
             [OptionalIntegration.DubsBadHygiene] = "dubwise.dubsbadhygiene",
             [OptionalIntegration.Gastronomy] = "orion.gastronomy",
@@ -156,6 +158,7 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.ProcessorFramework => settings.ProcessorFramework,
             OptionalIntegration.ExpandedMaterialsMetals or OptionalIntegration.ExpandedMaterialsMasonry =>
                 settings.ExpandedMaterials,
+            OptionalIntegration.CeramicsContinued => settings.CeramicsContinued,
             OptionalIntegration.AbsPolymer => settings.AbsPolymer,
             OptionalIntegration.DubsBadHygiene => settings.DubsBadHygiene,
             OptionalIntegration.Gastronomy => settings.Gastronomy,

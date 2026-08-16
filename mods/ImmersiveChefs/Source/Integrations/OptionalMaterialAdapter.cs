@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Linq;
+using RimWorld;
 using Verse;
 
 namespace ImmersiveChefs;
@@ -24,6 +26,13 @@ internal static class OptionalMaterialAdapter
         "EM_Titanium"
     };
 
+    private const string PorcelainDefName = "N7_Porcelain";
+    private const string PorcelainRecipeDefName = "ImmersiveChefs_MakePorcelainPlates";
+    private const string PlateDefName = "ImmersiveChefs_Plate";
+    private const string BasicCeramicsBenchDefName = "CeramicsBench_Basic";
+    private const string ElectricCeramicsBenchDefName = "CeramicsBench_Electric";
+    private const string BasicCeramicsResearchDefName = "BasicCeramics";
+
     internal static KitchenMaterialClassifier CreateClassifier()
     {
         var classifier = KitchenMaterialClassifier.CreateDefault();
@@ -38,6 +47,19 @@ internal static class OptionalMaterialAdapter
         if (!ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.AbsPolymer))
         {
             classifier.Exclude("ABSPolymer");
+        }
+
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.CeramicsContinued) &&
+            HasSupportedCeramicsShape(out _))
+        {
+            classifier.Register(PorcelainDefName, KitchenMaterialKind.Ceramic);
+        }
+        else
+        {
+            // Ceramics (Continued) deliberately tags porcelain as Stony. Exclusion is required
+            // when the adapter is absent, disabled, or incompatible so that broad stone fallback
+            // cannot leak porcelain into primitive cookware or plate recipes.
+            classifier.Exclude(PorcelainDefName);
         }
 
         return classifier;
@@ -66,6 +88,22 @@ internal static class OptionalMaterialAdapter
                 "expected Stuff Def ABSPolymer is missing");
         }
 
+        var porcelainRecipe = DefDatabase<RecipeDef>.GetNamedSilentFail(PorcelainRecipeDefName);
+        if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.CeramicsContinued))
+        {
+            if (!HasSupportedCeramicsShape(out var ceramicsReason))
+            {
+                OptionalIntegrationDiagnostics.WarnOnce(
+                    OptionalIntegration.CeramicsContinued,
+                    ceramicsReason);
+                DisableRecipe(porcelainRecipe);
+            }
+        }
+        else
+        {
+            DisableRecipe(porcelainRecipe);
+        }
+
         var adobeRecipe = DefDatabase<RecipeDef>.GetNamedSilentFail("ImmersiveChefs_MakeAdobePlates");
         if (adobeRecipe is not null)
         {
@@ -83,19 +121,100 @@ internal static class OptionalMaterialAdapter
                     "expected EM_AdobeBricks or its fixed adobe-plate recipe is missing");
             }
 
-            return;
         }
+        else
+        {
+            DisableRecipe(adobeRecipe);
+        }
+    }
 
-        if (adobeRecipe is null)
+    private static void DisableRecipe(RecipeDef? recipe)
+    {
+        if (recipe is null)
         {
             return;
         }
 
-        adobeRecipe.recipeUsers?.Clear();
+        recipe.recipeUsers?.Clear();
         foreach (var def in DefDatabase<ThingDef>.AllDefsListForReading)
         {
-            def.recipes?.Remove(adobeRecipe);
+            def.recipes?.Remove(recipe);
             AllRecipesCachedField?.SetValue(def, null);
         }
+    }
+
+    private static bool HasSupportedCeramicsShape(out string reason)
+    {
+        var porcelain = DefDatabase<ThingDef>.GetNamedSilentFail(PorcelainDefName);
+        if (porcelain?.stuffProps is null)
+        {
+            reason = $"expected porcelain Stuff Def {PorcelainDefName} is missing or is not Stuff";
+            return false;
+        }
+
+        var categories = porcelain.stuffProps.categories;
+        if (categories is null ||
+            categories.All(category => !string.Equals(category.defName, "Stony", StringComparison.OrdinalIgnoreCase)))
+        {
+            reason = $"expected porcelain Stuff Def {PorcelainDefName} no longer carries its supported Stony category";
+            return false;
+        }
+
+        var basicBench = DefDatabase<ThingDef>.GetNamedSilentFail(BasicCeramicsBenchDefName);
+        var electricBench = DefDatabase<ThingDef>.GetNamedSilentFail(ElectricCeramicsBenchDefName);
+        if (!IsWorkTable(basicBench) || !IsWorkTable(electricBench))
+        {
+            reason = "expected ceramics benches CeramicsBench_Basic and CeramicsBench_Electric are missing or are not worktables";
+            return false;
+        }
+
+        var research = DefDatabase<ResearchProjectDef>.GetNamedSilentFail(BasicCeramicsResearchDefName);
+        var recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(PorcelainRecipeDefName);
+        if (research is null || recipe is null)
+        {
+            reason = "expected BasicCeramics research or the package-gated porcelain-plate recipe is missing";
+            return false;
+        }
+
+        var recipeUsers = recipe.recipeUsers;
+        if (recipeUsers is null ||
+            recipeUsers.Count != 2 ||
+            !recipeUsers.Contains(basicBench!) ||
+            !recipeUsers.Contains(electricBench!) ||
+            recipe.researchPrerequisite != research)
+        {
+            reason = "porcelain-plate recipe no longer uses both supported ceramics benches and BasicCeramics";
+            return false;
+        }
+
+        var extension = recipe.GetModExtension<KitchenwareRecipeExtension>();
+        var ingredient = recipe.ingredients is { Count: 1 } ? recipe.ingredients[0] : null;
+        var product = recipe.products is { Count: 1 } ? recipe.products[0] : null;
+        if (extension is null ||
+            extension.product != KitchenwareProduct.Plate ||
+            extension.fabricationTier != FabricationTier.Ceramic ||
+            ingredient is null ||
+            ingredient.GetBaseCount() != 4f ||
+            !ingredient.filter.Allows(porcelain) ||
+            ingredient.filter.AllowedThingDefs.Any(def => def != porcelain) ||
+            recipe.fixedIngredientFilter is null ||
+            !recipe.fixedIngredientFilter.Allows(porcelain) ||
+            recipe.fixedIngredientFilter.AllowedThingDefs.Any(def => def != porcelain) ||
+            !recipe.productHasIngredientStuff ||
+            product is null ||
+            product.thingDef?.defName != PlateDefName ||
+            product.count != 4)
+        {
+            reason = "porcelain-plate recipe no longer has the supported plate-only four-output shape";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    private static bool IsWorkTable(ThingDef? def)
+    {
+        return def?.thingClass is not null && typeof(Building_WorkTable).IsAssignableFrom(def.thingClass);
     }
 }

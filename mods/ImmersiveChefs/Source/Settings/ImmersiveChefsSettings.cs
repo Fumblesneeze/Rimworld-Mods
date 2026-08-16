@@ -54,6 +54,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
     public bool RoyaltyDiningStandards = true;
     public OptionalIntegrationMode ProcessorFramework = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode ExpandedMaterials = OptionalIntegrationMode.Auto;
+    public OptionalIntegrationMode CeramicsContinued = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode AbsPolymer = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode DubsBadHygiene = OptionalIntegrationMode.Auto;
     public OptionalIntegrationMode Gastronomy = OptionalIntegrationMode.Auto;
@@ -110,6 +111,7 @@ public sealed class ImmersiveChefsSettings : ModSettings
         Scribe_Values.Look(ref RoyaltyDiningStandards, "royaltyDiningStandards", true);
         Scribe_Values.Look(ref ProcessorFramework, "processorFramework", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref ExpandedMaterials, "expandedMaterials", OptionalIntegrationMode.Auto);
+        Scribe_Values.Look(ref CeramicsContinued, "ceramicsContinued", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref AbsPolymer, "absPolymer", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref DubsBadHygiene, "dubsBadHygiene", OptionalIntegrationMode.Auto);
         Scribe_Values.Look(ref Gastronomy, "gastronomy", OptionalIntegrationMode.Auto);

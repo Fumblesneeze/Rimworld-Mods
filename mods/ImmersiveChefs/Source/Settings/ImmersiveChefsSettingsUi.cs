@@ -125,6 +125,7 @@ internal sealed class ImmersiveChefsSettingsUi
         listing.Label("ImmersiveChefs_Settings_IntegrationsHeading".Translate());
         Cycle(listing, "ImmersiveChefs_Integration_ProcessorFramework".Translate(), ref settings.ProcessorFramework);
         Cycle(listing, "ImmersiveChefs_Integration_ExpandedMaterials".Translate(), ref settings.ExpandedMaterials);
+        Cycle(listing, "ImmersiveChefs_Integration_CeramicsContinued".Translate(), ref settings.CeramicsContinued);
         Cycle(listing, "ImmersiveChefs_Integration_AbsPolymer".Translate(), ref settings.AbsPolymer);
         Cycle(listing, "ImmersiveChefs_Integration_DubsBadHygiene".Translate(), ref settings.DubsBadHygiene);
         Cycle(listing, "ImmersiveChefs_Integration_Gastronomy".Translate(), ref settings.Gastronomy);

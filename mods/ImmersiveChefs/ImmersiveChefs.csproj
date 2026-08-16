@@ -23,6 +23,7 @@
     <RimWorldLoadAfter Include="syrchalis.processor.framework" />
     <RimWorldLoadAfter Include="Argon.ExpandedMaterials.Metals" />
     <RimWorldLoadAfter Include="Argon.ExpandedMaterials.Masonry" />
+    <RimWorldLoadAfter Include="zal.ceramics" />
     <RimWorldLoadAfter Include="Mlie.SimplySublimeABSPolymer" />
     <RimWorldLoadAfter Include="Dubwise.DubsBadHygiene" />
     <RimWorldLoadAfter Include="Orion.Gastronomy" />

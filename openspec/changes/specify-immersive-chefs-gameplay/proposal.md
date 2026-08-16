@@ -20,7 +20,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - Replace every player-visible placeholder texture with selected custom art, require multiple candidates per asset, compare candidates at game scale against RimWorld's live visual context, and ship only the selected alpha-clean result.
 - Correct playtest findings by Core-benchmarking recipe costs, broadening stony material discovery, adding thematic low trader stock, distinguishing primitive cookware art, conserving personally owned visitor-caravan dishes, hiding latent sanitation/poison diagnostics, attributing actual poisoning, scaling washing work, letting cooks wash or explicitly force dirty cookware, rendering active cookware, and adding game/Workshop preview art.
 - Record food preservation/canning and food waste as future extension points; neither is in this change's implementation scope.
-- Defer ceramic/porcelain content until a provider is installed, while explicitly classifying the installed Vanilla Cooking Expanded family and the other named meal ecosystems in this change.
+- Integrate the installed RimWorld 1.6 `Ceramics (Continued)` provider so its porcelain Stuff can be shaped into Stuff-retaining plates without inventing ceramic content when that optional package is absent.
 - This change is the gameplay contract governing the implementation and its remaining in-game acceptance work.
 
 ## Capabilities

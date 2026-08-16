@@ -13,7 +13,8 @@ public enum FabricationTier
     PrimitiveStone,
     Soft,
     Intermediate,
-    Modern
+    Modern,
+    Ceramic
 }
 
 public enum KitchenMaterialKind
@@ -48,6 +49,13 @@ public static class KitchenMaterialFabricationPolicy
         FabricationTier recipeTier,
         KitchenMaterialClassification classification)
     {
+        if (recipeTier == FabricationTier.Ceramic)
+        {
+            return product == KitchenwareProduct.Plate &&
+                   classification.Kind == KitchenMaterialKind.Ceramic &&
+                   classification.FabricationTier == FabricationTier.Ceramic;
+        }
+
         if (recipeTier == FabricationTier.Modern &&
             product is KitchenwareProduct.Plate or KitchenwareProduct.Cutlery)
         {
@@ -207,7 +215,14 @@ public sealed class KitchenMaterialClassifier
         KitchenMaterialKind kind,
         KitchenwareProduct product)
     {
-        if (kind is KitchenMaterialKind.Plastic or KitchenMaterialKind.Ceramic)
+        if (kind == KitchenMaterialKind.Ceramic)
+        {
+            return product == KitchenwareProduct.Plate
+                ? new KitchenMaterialClassification(kind, FabricationTier.Ceramic)
+                : null;
+        }
+
+        if (kind == KitchenMaterialKind.Plastic)
         {
             if (product is not (KitchenwareProduct.Plate or KitchenwareProduct.Cutlery))
             {

@@ -13,7 +13,7 @@ The practical first steps in a new colony are:
 3. Assign at least one pawn to Cleaning so returned dishes can be washed. Dishwashers unlock through `Dishwashing`; the industrial machine and professional stations unlock through `Professional Kitchens` after `Machining`.
 4. Use the clean/dirty kitchenware stockpile filters when separate service and wash-input storage is useful.
 
-Simple meals accept any registered plate material. Fine/Advanced meals require metal, registered plastic, or a future registered ceramic. Lavish/Elaborate meals require silver, gold, or a future registered ceramic. Pemmican, packaged/travel meals, hardtack, preserved foods, snacks, raw food, drinks, drugs, baby food, and Meal Printer NutriBars remain hand foods.
+Simple meals accept any registered plate material. Fine/Advanced meals require metal, registered plastic, or registered ceramic such as Ceramics (Continued) porcelain. Lavish/Elaborate meals require silver, gold, or registered ceramic. Pemmican, packaged/travel meals, hardtack, preserved foods, snacks, raw food, drinks, drugs, baby food, and Meal Printer NutriBars remain hand foods.
 
 ## Settings
 
@@ -57,7 +57,7 @@ When Thermodynamics - Hot Meals is active, its temperature system and microwave 
 
 ### Optional integration switches
 
-These contributing adapters have individual `Auto`/`Off` switches and default to `Auto`: Processor Framework, Expanded Materials, ABS Polymer, Dubs Bad Hygiene, Gastronomy, Common Sense, Hospitality, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, Vanilla Nutrient Paste Expanded, Adaptive Meal Bill, Overcooked Meals, Meals on Wheels, Prioritize Meals over Preserved Foods, Replimat plus Replimat Meals, Meal Printer, Food Texture Variety, Texture Variations, Pick Up And Haul, and Cook for Yourself.
+These contributing adapters have individual `Auto`/`Off` switches and default to `Auto`: Processor Framework, Expanded Materials, Ceramics (Continued), ABS Polymer, Dubs Bad Hygiene, Gastronomy, Common Sense, Hospitality, Variety Matters, Vanilla Food Variety Expanded, Vanilla Expanded Framework, Vanilla Nutrient Paste Expanded, Adaptive Meal Bill, Overcooked Meals, Meals on Wheels, Prioritize Meals over Preserved Foods, Replimat plus Replimat Meals, Meal Printer, Food Texture Variety, Texture Variations, Pick Up And Haul, and Cook for Yourself.
 
 Use `Off` to isolate a suspected integration problem, then restart RimWorld. The upstream mod remains loaded and untouched. Passive compatibility that only preserves another mod's ownership has no meaningless switch, and Thermodynamics conflict prevention intentionally has no switch that could enable duplicate providers.
 
@@ -72,6 +72,7 @@ Package-ID matching is case-insensitive; the canonical IDs below are the exact i
 | Royalty | `Ludeon.RimWorld.Royalty` | Adds title-based dining expectations on top of colony expectations. |
 | Processor Framework | `syrchalis.processor.framework` | Uses the supported processor timing/presentation for dishwashers while returning the original reusable Things; otherwise the local identity-preserving cycle remains available. |
 | Expanded Materials | `Argon.CoreLib`, then `Argon.ExpandedMaterials.Metals` and/or `Argon.ExpandedMaterials.Masonry` | Registers audited metals and the fixed adobe plate path. No brass is invented when its Def is absent. |
+| Ceramics (Continued) | `zal.ceramics` | Registers `N7_Porcelain` as a plate-only ceramic and adds a four-plate bill to both ceramics benches after `BasicCeramics`. Processor Framework and Vanilla Expanded Framework remain optional. |
 | ABS Polymer | `Mlie.SimplySublimeABSPolymer` | Classifies the supported ABS Stuff explicitly as plastic despite its overlapping Stuff tags. |
 | Dubs Bad Hygiene | `Dubwise.DubsBadHygiene` | Prefers a supplied kitchen sink for handwashing and requires/debits supplied plumbing for dishwashers. Shape failure makes Dubs dishwashers fail closed while non-Dubs handwashing fallbacks remain. |
 | Gastronomy | `Orion.CashRegister`, `Orion.Gastronomy` | Waiters deliver cutlery and retain native order ownership; clearing is immediate and dishwasher-first. Reheating is added only when Immersive Chefs owns temperature. |
@@ -166,7 +167,7 @@ An imported/debug/third-party meal without an actual serialized binding is inten
 ## Known limitations and deferred work
 
 - This is pre-release: backward migration between unreleased schemas and uninstall cleanup are deferred until release preparation.
-- Ceramic/porcelain content and research are deferred until a real compatible RimWorld 1.6 provider is selected. Base silver/gold and Good-or-better steel keep the current expectation tiers attainable; no imaginary ceramic or brass Def is created.
+- Ceramics (Continued) porcelain is the only currently audited ceramic provider. Base silver/gold and Good-or-better steel keep the expectation tiers attainable without it; no imaginary ceramic or brass Def is created for other mods.
 - Food preservation/canning and food waste are separate future systems. Compatible mods' preserved products remain deliberately outside Immersive Chefs meal/ware behavior.
 - Compatibility is guaranteed only for the exact package chains and guarded shapes above. An upstream update may disable one adapter until its new shape is audited; unrelated base behavior should continue.
 - A broad “all mods together” startup is a canary, not proof of every unsupported permutation. The maintained exact groups are the behavioral compatibility contract.

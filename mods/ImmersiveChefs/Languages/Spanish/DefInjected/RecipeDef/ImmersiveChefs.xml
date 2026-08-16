@@ -36,4 +36,7 @@
   <ImmersiveChefs_PrepareIngredients.label>preparar ingredientes</ImmersiveChefs_PrepareIngredients.label>
   <ImmersiveChefs_PrepareIngredients.description>Prepara media unidad de nutrición de ingredientes comestibles como diez porciones culinarias, conservando su procedencia.</ImmersiveChefs_PrepareIngredients.description>
   <ImmersiveChefs_PrepareIngredients.jobString>Preparando ingredientes.</ImmersiveChefs_PrepareIngredients.jobString>
+  <ImmersiveChefs_MakePorcelainPlates.label>hacer 4 platos de porcelana</ImmersiveChefs_MakePorcelainPlates.label>
+  <ImmersiveChefs_MakePorcelainPlates.description>Moldea cuatro platos con porcelana.</ImmersiveChefs_MakePorcelainPlates.description>
+  <ImmersiveChefs_MakePorcelainPlates.jobString>Moldeando platos de porcelana.</ImmersiveChefs_MakePorcelainPlates.jobString>
 </LanguageData>
