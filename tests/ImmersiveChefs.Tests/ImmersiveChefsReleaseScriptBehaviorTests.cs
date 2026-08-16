@@ -697,21 +697,23 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     [Test]
-    public void Publisher_accepts_only_six_feature_cards_when_showcases_are_human_deferred()
+    public void Publisher_keeps_the_title_art_first_then_six_feature_cards_when_showcases_are_human_deferred()
     {
         using var fixture = Fixture.Create();
         var run = fixture.InvokeFunctions(
             "Invoke-ImmersiveChefsWorkshopRelease.ps1",
             new[] { "Test-WorkshopShowcasePlanEvidence" },
-            "$tokens=@('kitchenware','teamwork','dishwashing','meals','colony','compatibility');$p=$tokens|ForEach-Object{[pscustomobject]@{token=$_;showcaseId=$null;format='screenshot';sha256=('card-'+$_)}};" +
+            "$tokens=@('immersive-chefs','kitchenware','teamwork','dishwashing','meals','colony','compatibility');$p=$tokens|ForEach-Object{[pscustomobject]@{token=$_;showcaseId=$null;format='screenshot';sha256=('preview-'+$_);width=$(if($_ -ceq 'immersive-chefs'){1280}else{1164});height=$(if($_ -ceq 'immersive-chefs'){720}else{655})}};" +
             "$ok=Test-WorkshopShowcasePlanEvidence -PublicationStatus 'human-deferred' -Evidence @() -DesignEvidence @() -AdditionalPreviews @($p);" +
             "$leaked=Test-WorkshopShowcasePlanEvidence -PublicationStatus 'human-deferred' -Evidence @([pscustomobject]@{showcaseId='dishwasher-turnaround'}) -DesignEvidence @() -AdditionalPreviews @($p);" +
-            "$missing=Test-WorkshopShowcasePlanEvidence -PublicationStatus 'human-deferred' -Evidence @() -DesignEvidence @() -AdditionalPreviews @($p|Select-Object -First 5);" +
-            "Write-Output ($ok.ToString()+'|'+$leaked.ToString()+'|'+$missing.ToString())");
+            "$missing=Test-WorkshopShowcasePlanEvidence -PublicationStatus 'human-deferred' -Evidence @() -DesignEvidence @() -AdditionalPreviews @($p|Select-Object -Skip 1);" +
+            "$wrongSize=@($p|ForEach-Object{[pscustomobject]@{token=$_.token;showcaseId=$_.showcaseId;format=$_.format;sha256=$_.sha256;width=$_.width;height=$_.height}});$wrongSize[0].width=1164;" +
+            "$badSize=Test-WorkshopShowcasePlanEvidence -PublicationStatus 'human-deferred' -Evidence @() -DesignEvidence @() -AdditionalPreviews $wrongSize;" +
+            "Write-Output ($ok.ToString()+'|'+$leaked.ToString()+'|'+$missing.ToString()+'|'+$badSize.ToString())");
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
-            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False"));
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False|False"));
         });
     }
 

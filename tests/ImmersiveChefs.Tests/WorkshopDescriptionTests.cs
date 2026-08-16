@@ -150,6 +150,8 @@ public sealed class WorkshopDescriptionTests
                 "The Workshop template must place every reviewed feature graphic.");
             Assert.That(normalized, Does.Not.Contain("{{image:hero}}"),
                 "Steam's primary preview already carries the title art; the description must not repeat it.");
+            Assert.That(normalized, Does.Not.Contain("{{image:immersive-chefs}}"),
+                "The first additional gallery preview is the title art, but the description must not embed it.");
             Assert.That(normalized, Does.Not.Contain("package-gated"));
             Assert.That(normalized, Does.Not.Contain("absent-safe"));
             Assert.That(normalized, Does.Not.Contain("Exclusively owns"));

@@ -791,6 +791,8 @@ $declaredShowcasePreviews = @($showcaseDefinition.showcases | ForEach-Object {
         alt = [string]$showcase.title
         showcaseId = [string]$showcase.id
         format = $carouselFormat
+        width = [int]$showcase.crop.width
+        height = [int]$showcase.crop.height
     }
 })
 if (@($declaredShowcasePreviews.slot | Sort-Object) -join ',' -cne '5,6,7,8,9' -or
@@ -811,8 +813,18 @@ $selectedCards = @($cardTokens | ForEach-Object {
     $matches[0]
 })
 $previewDeclarations = @()
+$previewDeclarations += [pscustomobject][ordered]@{
+    token = 'immersive-chefs'
+    slot = 0
+    relativePath = 'preview-main.png'
+    alt = 'Immersive Chefs title art'
+    showcaseId = $null
+    format = 'screenshot'
+    width = 1280
+    height = 720
+}
 $previewDeclarations += @($selectedCards | ForEach-Object {
-    [pscustomobject][ordered]@{ token = [string]$_.token; slot = [array]::IndexOf($cardTokens, [string]$_.token); relativePath = [string]$_.path; alt = [string]$_.alt; showcaseId = $null; format = 'screenshot' }
+    [pscustomobject][ordered]@{ token = [string]$_.token; slot = 1 + [array]::IndexOf($cardTokens, [string]$_.token); relativePath = [string]$_.path; alt = [string]$_.alt; showcaseId = $null; format = 'screenshot'; width = 1164; height = 655 }
 })
 $previewDeclarations += $showcasePreviews
 $additionalPreviews = @($previewDeclarations | Sort-Object slot | ForEach-Object {
@@ -824,21 +836,27 @@ $additionalPreviews = @($previewDeclarations | Sort-Object slot | ForEach-Object
     Copy-Item -LiteralPath $sourcePath -Destination $destinationPath
     $item = Get-Item -LiteralPath $destinationPath
     if ($item.Length -le 0 -or $item.Length -ge 1MB) { Exit-InvalidInput "Workshop preview must be nonempty and under Steam's 1 MiB limit: $token" }
+    $image = Get-RasterImageInfo $destinationPath
+    $expectedImageFormat = if ([string]$_.format -ceq 'gif') { 'gif' } else { 'png' }
+    if ([string]$image.format -cne $expectedImageFormat -or
+        [int]$image.width -ne [int]$_.width -or [int]$image.height -ne [int]$_.height) {
+        Exit-InvalidInput "Workshop preview dimensions or format do not match the reviewed declaration: $token"
+    }
     [pscustomobject][ordered]@{
         token = $token
         path = $destinationPath
         bytes = [long]$item.Length
         sha256 = (Get-FileHash -LiteralPath $destinationPath -Algorithm SHA256).Hash
-        width = if ([string]$_.format -ceq 'screenshot' -and $null -eq $_.showcaseId) { 1164 } else { $null }
-        height = if ([string]$_.format -ceq 'screenshot' -and $null -eq $_.showcaseId) { 655 } else { $null }
+        width = [int]$image.width
+        height = [int]$image.height
         alt = [string]$_.alt
         showcaseId = $_.showcaseId
         format = [string]$_.format
     }
 })
-if ($additionalPreviews.Count -ne 6 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 6 -or
+if ($additionalPreviews.Count -ne 7 -or @($additionalPreviews.token | Sort-Object -Unique).Count -ne 7 -or
     @($additionalPreviews | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.showcaseId) }).Count -ne 0) {
-    Exit-InvalidInput 'The human-deferred Workshop presentation must declare exactly six non-showcase additional previews.'
+    Exit-InvalidInput 'The human-deferred Workshop presentation must declare the title art first and then exactly six non-showcase feature cards.'
 }
 
 $files = @(Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Sort-Object FullName | ForEach-Object {

@@ -280,13 +280,17 @@ function Test-WorkshopChangeNotePreflight(
 
 function Test-WorkshopShowcasePlanEvidence([string]$PublicationStatus, [object[]]$Evidence, [object[]]$DesignEvidence, [object[]]$AdditionalPreviews) {
     if ($PublicationStatus -cne 'human-deferred') { return $false }
-    $cardPreviews = @($AdditionalPreviews | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.showcaseId) })
-    $expectedTokens = @('kitchenware','teamwork','dishwashing','meals','colony','compatibility')
+    $nonShowcasePreviews = @($AdditionalPreviews | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.showcaseId) })
+    $expectedTokens = @('immersive-chefs','kitchenware','teamwork','dishwashing','meals','colony','compatibility')
     if ($Evidence.Count -ne 0 -or $DesignEvidence.Count -ne 0 -or
-        $AdditionalPreviews.Count -ne 6 -or $cardPreviews.Count -ne 6) { return $false }
+        $AdditionalPreviews.Count -ne 7 -or $nonShowcasePreviews.Count -ne 7) { return $false }
     for ($index = 0; $index -lt $expectedTokens.Count; $index++) {
-        if ([string]$cardPreviews[$index].token -cne $expectedTokens[$index] -or
-            [string]$cardPreviews[$index].format -cne 'screenshot') { return $false }
+        $expectedWidth = if ($index -eq 0) { 1280 } else { 1164 }
+        $expectedHeight = if ($index -eq 0) { 720 } else { 655 }
+        if ([string]$nonShowcasePreviews[$index].token -cne $expectedTokens[$index] -or
+            [string]$nonShowcasePreviews[$index].format -cne 'screenshot' -or
+            [int]$nonShowcasePreviews[$index].width -ne $expectedWidth -or
+            [int]$nonShowcasePreviews[$index].height -ne $expectedHeight) { return $false }
     }
     return $true
 }
