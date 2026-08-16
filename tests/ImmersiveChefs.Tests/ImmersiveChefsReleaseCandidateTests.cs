@@ -40,11 +40,11 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwashers now stop without enough water or power, used dishes stay visible where they were used, steel kitchenware is brighter, the chef's knife is easier to read, and Workshop card backgrounds are fixed."));
+            Assert.That(release["previousChangeNote"], Is.EqualTo("Dirty kitchenware is now much easier to spot. Dubs Bad Hygiene sinks, prep stations, and dishwashing now use real water; meals spawned without plates no longer interrupt eating or patient feeding; and Ceramics (Continued) porcelain can be crafted into plates."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo("Dirty kitchenware is now much easier to spot. Dubs Bad Hygiene sinks, prep stations, and dishwashing now use real water; meals spawned without plates no longer interrupt eating or patient feeding; and Ceramics (Continued) porcelain can be crafted into plates."),
-                "The pending Workshop update must retain its reviewed player-facing change note exactly.");
+                Is.EqualTo(string.Empty),
+                "A successful Workshop update must clear its pending note while retaining the verified remote note as previousChangeNote.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));
