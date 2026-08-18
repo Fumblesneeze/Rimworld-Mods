@@ -251,6 +251,30 @@ public sealed class CookForYourselfAdapterTests
         });
     }
 
+    [TestCase(true, true, true, true, true, true)]
+    [TestCase(false, true, true, true, true, false)]
+    [TestCase(true, false, true, true, true, false)]
+    [TestCase(true, true, false, true, true, false)]
+    [TestCase(true, true, true, false, true, false)]
+    [TestCase(true, true, true, true, false, false)]
+    public void Stack_gap_is_bypassed_only_for_the_current_prework_ingredient_drop(
+        bool adapterEnabled,
+        bool jobAdmitted,
+        bool directMode,
+        bool beforeActiveCooking,
+        bool carriedIngredientMatchesCurrentTarget,
+        bool expected)
+    {
+        Assert.That(
+            StackGapIngredientDropPolicy.ShouldBypass(
+                adapterEnabled,
+                jobAdmitted,
+                directMode,
+                beforeActiveCooking,
+                carriedIngredientMatchesCurrentTarget),
+            Is.EqualTo(expected));
+    }
+
     [TestCase(1f, 1f, 1, 1f, 0f, 0f)]
     [TestCase(2f, 1f, 3, 1.5f, 0f, 3f)]
     [TestCase(2f, 1f, 3, 0.5f, 0f, -3f)]

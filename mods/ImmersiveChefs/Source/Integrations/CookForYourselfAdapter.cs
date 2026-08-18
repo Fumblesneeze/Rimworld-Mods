@@ -272,6 +272,23 @@ internal static class CookForYourselfWorkPolicy
     }
 }
 
+internal static class StackGapIngredientDropPolicy
+{
+    internal static bool ShouldBypass(
+        bool adapterEnabled,
+        bool jobAdmitted,
+        bool directMode,
+        bool beforeActiveCooking,
+        bool carriedIngredientMatchesCurrentTarget)
+    {
+        return adapterEnabled &&
+               jobAdmitted &&
+               directMode &&
+               beforeActiveCooking &&
+               carriedIngredientMatchesCurrentTarget;
+    }
+}
+
 internal static class CookForYourselfPatchPolicy
 {
     internal const int AdmissionFinalizerPriority = Priority.Last;
@@ -286,12 +303,26 @@ internal static class CookForYourselfPatchPolicy
 
 internal static class CookForYourselfAdapter
 {
+    private const string StackGapPackageId = "Andromeda.StackGap";
+    private const string StackGapAssemblyName = "StackGap";
+    private const string StackGapDropPatchTypeName =
+        "StorageUpperBound.Pawn_CarryTracker_Patch";
+    private const string StackGapDropPatch2TypeName =
+        "StorageUpperBound.Pawn_CarryTracker_Patch2";
+    private const string StackGapPlacementPatchTypeName =
+        "StorageUpperBound.Patch_TryPlaceDirect+TryPlaceDirect_Patch";
+    private static readonly Version StackGapAssemblyVersion = new(1, 0, 0, 0);
+    private static readonly Guid StackGapModuleVersionId =
+        Guid.Parse("e69587cb-b4c8-4b4a-a3f8-fe0910b5ed73");
     private const BindingFlags DeclaredInstance =
         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+    private const BindingFlags DeclaredStatic =
+        BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
     private static Type? driverType;
     private static JobDef? jobDef;
     private static AccessTools.FieldRef<object, float>? workLeft;
+    private static FieldInfo? stackGapEnabledField;
     private static readonly ConditionalWeakTable<Job, AdmittedJob> AdmittedJobs = new();
 
     internal static bool Enabled { get; private set; }
@@ -328,6 +359,49 @@ internal static class CookForYourselfAdapter
         var deliveryModeField = ExactField(foundDriverType, "deliveryModeValue", typeof(int));
         var foundJobDef = DefDatabase<JobDef>.GetNamedSilentFail(
             CookForYourselfCompatibility.JobDefName);
+        var stackGapLoaded =
+            ImmersiveChefsMod.Integrations?.ContainsPackage(StackGapPackageId) == true;
+        var stackGapDropPatchType = stackGapLoaded
+            ? AccessTools.TypeByName(StackGapDropPatchTypeName)
+            : null;
+        var stackGapDropPatch2Type = stackGapLoaded
+            ? AccessTools.TypeByName(StackGapDropPatch2TypeName)
+            : null;
+        var stackGapPlacementPatchType = stackGapLoaded
+            ? AccessTools.TypeByName(StackGapPlacementPatchTypeName)
+            : null;
+        var stackGapDropPrefix = ExactStaticMethod(
+            stackGapDropPatchType,
+            "Prefix",
+            typeof(void),
+            typeof(IntVec3),
+            typeof(ThingPlaceMode),
+            typeof(Pawn_CarryTracker));
+        var stackGapDropPrefix2 = ExactStaticMethod(
+            stackGapDropPatch2Type,
+            "Prefix",
+            typeof(void),
+            typeof(IntVec3),
+            typeof(ThingPlaceMode),
+            typeof(Pawn_CarryTracker));
+        var foundStackGapEnabledField = stackGapPlacementPatchType?.GetField(
+            "Enabled",
+            DeclaredStatic);
+        var stackGapAssembly = stackGapDropPatchType?.Assembly;
+        var stackGapShapeSupported = !stackGapLoaded ||
+                                     stackGapAssembly?.GetName().Name == StackGapAssemblyName &&
+                                     stackGapAssembly.GetName().Version == StackGapAssemblyVersion &&
+                                     stackGapDropPatchType?.Module.ModuleVersionId == StackGapModuleVersionId &&
+                                     stackGapDropPatch2Type?.Assembly == stackGapAssembly &&
+                                     stackGapPlacementPatchType?.Assembly == stackGapAssembly &&
+                                     stackGapDropPrefix is not null &&
+                                     stackGapDropPrefix2 is not null &&
+                                     foundStackGapEnabledField is
+                                     {
+                                         IsStatic: true,
+                                         FieldType: not null
+                                     } &&
+                                     foundStackGapEnabledField.FieldType == typeof(bool);
         var assembly = foundDriverType?.Assembly;
         var shape = new CookForYourselfShape(
             assembly?.GetName().Name,
@@ -350,20 +424,31 @@ internal static class CookForYourselfAdapter
         var allSameAssembly = assembly is not null &&
                               selfJobGiverType?.Assembly == assembly &&
                               dependentJobGiverType?.Assembly == assembly;
-        var targets = new[] { selfTryGiveJob, dependentTryGiveJob, makeNewToils };
+        var targets = new[]
+        {
+            selfTryGiveJob,
+            dependentTryGiveJob,
+            makeNewToils,
+            stackGapDropPrefix,
+            stackGapDropPrefix2
+        };
         var existingOwnedPatches = targets
             .Where(method => method is not null)
             .Sum(method => OwnedPatchCount(method!, harmony.Id));
         if (!CookForYourselfCompatibility.IsSupported(shape) ||
             !allSameAssembly ||
+            !stackGapShapeSupported ||
             !CookForYourselfPatchPolicy.ShouldInstall(
-                targets.All(method => method is not null),
+                targets.Take(3).All(method => method is not null) &&
+                (!stackGapLoaded || targets.Skip(3).All(method => method is not null)),
                 existingOwnedPatches) ||
             selfTryGiveJob is null || dependentTryGiveJob is null || makeNewToils is null ||
             foundDriverType is null || workLeftField is null || foundJobDef is null)
         {
             reason = existingOwnedPatches > 0
                 ? "a partial or duplicate Immersive Chefs patch already owns the Cook for Yourself seam"
+                : stackGapLoaded && !stackGapShapeSupported
+                    ? "the installed Stack Gap ingredient-placement patch no longer matches the audited 1.6 build"
                 : "the installed Cook for Yourself assembly/job-driver shape no longer matches the audited 1.6 build";
             return false;
         }
@@ -381,6 +466,17 @@ internal static class CookForYourselfAdapter
             harmony.Patch(
                 makeNewToils,
                 postfix: new HarmonyMethod(typeof(CookForYourselfAdapter), nameof(MakeNewToilsPostfix)));
+            if (stackGapLoaded)
+            {
+                var bypass = new HarmonyMethod(
+                    typeof(CookForYourselfAdapter),
+                    nameof(StackGapDropPrefixPrefix))
+                {
+                    priority = Priority.First
+                };
+                harmony.Patch(stackGapDropPrefix!, prefix: bypass);
+                harmony.Patch(stackGapDropPrefix2!, prefix: bypass);
+            }
         }
         catch (Exception exception)
         {
@@ -392,6 +488,7 @@ internal static class CookForYourselfAdapter
         driverType = foundDriverType;
         jobDef = foundJobDef;
         workLeft = foundWorkLeft;
+        stackGapEnabledField = foundStackGapEnabledField;
         Enabled = true;
         reason = string.Empty;
         Log.Message(
@@ -436,6 +533,23 @@ internal static class CookForYourselfAdapter
             types: parameters,
             modifiers: null);
         return method?.ReturnType == returnType ? method : null;
+    }
+
+    private static MethodInfo? ExactStaticMethod(
+        Type? type,
+        string name,
+        Type returnType,
+        params Type[] parameters)
+    {
+        var method = type?.GetMethod(
+            name,
+            DeclaredStatic,
+            binder: null,
+            types: parameters,
+            modifiers: null);
+        return method is { IsStatic: true } && method.ReturnType == returnType
+            ? method
+            : null;
     }
 
     private static FieldInfo? ExactField(Type? type, string name, Type fieldType)
@@ -585,6 +699,43 @@ internal static class CookForYourselfAdapter
         }
 
         __result = WrapToils(__instance, __result);
+    }
+
+    private static bool StackGapDropPrefixPrefix(
+        IntVec3 __0,
+        ThingPlaceMode __1,
+        Pawn_CarryTracker __2)
+    {
+        var pawn = __2.pawn;
+        var job = pawn.CurJob;
+        var carriedThing = __2.CarriedThing;
+        var ingredientTarget = job?.GetTarget(TargetIndex.B).Thing;
+        var currentIngredientMatches = carriedThing is not null &&
+                                       ingredientTarget is not null &&
+                                       (ReferenceEquals(carriedThing, ingredientTarget) ||
+                                        carriedThing.def == ingredientTarget.def);
+        var beforeActiveCooking =
+            !CookingSessionRegistry.TryGetActiveWorkProp(pawn, out _, out _);
+        if (!StackGapIngredientDropPolicy.ShouldBypass(
+                Enabled,
+                job is not null && AdmittedJobs.TryGetValue(job, out _),
+                __1 == ThingPlaceMode.Direct,
+                beforeActiveCooking,
+                currentIngredientMatches))
+        {
+            return true;
+        }
+
+        try
+        {
+            stackGapEnabledField!.SetValue(null, false);
+            return false;
+        }
+        catch (Exception exception)
+        {
+            Disable($"Stack Gap ingredient-drop bypass failed ({RootMessage(exception)})");
+            return true;
+        }
     }
 
     private static IEnumerable<Toil> WrapToils(
