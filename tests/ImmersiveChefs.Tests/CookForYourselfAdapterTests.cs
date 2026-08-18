@@ -109,7 +109,7 @@ public sealed class CookForYourselfAdapterTests
     }
 
     [Test]
-    public void Package_metadata_loads_after_the_optional_owner_without_requiring_it()
+    public void Package_metadata_loads_after_the_optional_owners_without_requiring_them()
     {
         var project = XDocument.Load(Path.Combine(
             FindRepositoryRoot(),
@@ -125,7 +125,9 @@ public sealed class CookForYourselfAdapterTests
         Assert.Multiple(() =>
         {
             Assert.That(loadAfter, Does.Contain("lordfelix.CookForYourself"));
+            Assert.That(loadAfter, Does.Contain("Andromeda.StackGap"));
             Assert.That(required, Does.Not.Contain("lordfelix.CookForYourself"));
+            Assert.That(required, Does.Not.Contain("Andromeda.StackGap"));
         });
     }
 

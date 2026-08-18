@@ -54,6 +54,7 @@
     <RimWorldLoadAfter Include="Mlie.RC2.SaSE" />
     <RimWorldLoadAfter Include="Mlie.NoVanillaMeals" />
     <RimWorldLoadAfter Include="Mehni.PickUpAndHaul" />
+    <RimWorldLoadAfter Include="Andromeda.StackGap" />
     <RimWorldLoadAfter Include="lordfelix.CookForYourself" />
   </ItemGroup>
 
