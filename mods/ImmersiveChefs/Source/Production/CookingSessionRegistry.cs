@@ -785,32 +785,80 @@ internal static class CookingSessionRegistry
 
         IEnumerable<Toil> Wrap()
         {
-            foreach (var portion in session.PortionsToCollect())
+            foreach (var toil in WarePickupToils(pawn, session, originalTargetC))
             {
-                yield return new Toil
-                {
-                    initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, portion.Thing),
-                    defaultCompleteMode = ToilCompleteMode.Instant
-                };
-                yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.Touch);
-                yield return new Toil
-                {
-                    initAction = () => session.Pickup(pawn, portion),
-                    defaultCompleteMode = ToilCompleteMode.Instant
-                };
+                yield return toil;
             }
-
-            yield return new Toil
-            {
-                initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, originalTargetC),
-                defaultCompleteMode = ToilCompleteMode.Instant
-            };
 
             foreach (var toil in original)
             {
                 yield return toil;
             }
         }
+    }
+
+    internal static IEnumerable<Toil> InsertWarePickupToils(
+        Pawn pawn,
+        IReadOnlyList<Toil> original,
+        int insertBeforeIndex)
+    {
+        if (insertBeforeIndex < 0 || insertBeforeIndex > original.Count ||
+            pawn.CurJob is not { } job || !Sessions.TryGetValue(job, out var session))
+        {
+            return original;
+        }
+
+        var originalTargetC = job.GetTarget(TargetIndex.C);
+        return Wrap();
+
+        IEnumerable<Toil> Wrap()
+        {
+            for (var index = 0; index < insertBeforeIndex; index++)
+            {
+                yield return original[index];
+            }
+
+            foreach (var toil in WarePickupToils(pawn, session, originalTargetC))
+            {
+                yield return toil;
+            }
+
+            yield return Toils_Goto.GotoThing(
+                TargetIndex.A,
+                PathEndMode.InteractionCell);
+
+            for (var index = insertBeforeIndex; index < original.Count; index++)
+            {
+                yield return original[index];
+            }
+        }
+    }
+
+    private static IEnumerable<Toil> WarePickupToils(
+        Pawn pawn,
+        CookingSession session,
+        LocalTargetInfo originalTargetC)
+    {
+        foreach (var portion in session.PortionsToCollect())
+        {
+            yield return new Toil
+            {
+                initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, portion.Thing),
+                defaultCompleteMode = ToilCompleteMode.Instant
+            };
+            yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.Touch);
+            yield return new Toil
+            {
+                initAction = () => session.Pickup(pawn, portion),
+                defaultCompleteMode = ToilCompleteMode.Instant
+            };
+        }
+
+        yield return new Toil
+        {
+            initAction = () => pawn.CurJob?.SetTarget(TargetIndex.C, originalTargetC),
+            defaultCompleteMode = ToilCompleteMode.Instant
+        };
     }
 
     internal static float CookingSpeedFactor(Pawn pawn)

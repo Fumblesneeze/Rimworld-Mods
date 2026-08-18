@@ -177,6 +177,63 @@ public sealed class CookForYourselfAdapterTests
     }
 
     [Test]
+    public void Ware_pickup_begins_after_upstream_ingredient_placement_and_before_cooking()
+    {
+        var toils = new[]
+        {
+            new CookForYourselfToilShape("ExtractNextTargetFromQueue", false, false, true, false),
+            new CookForYourselfToilShape("StartCarryThing", false, false, true, false),
+            new CookForYourselfToilShape("SetTargetToIngredientPlaceCell", false, false, true, false),
+            new CookForYourselfToilShape("PlaceCookIngredient", false, false, true, false),
+            new CookForYourselfToilShape("JumpIfHaveTargetInQueue", false, false, true, false),
+            new CookForYourselfToilShape("CookMealForSelf", true, true, true, true),
+            new CookForYourselfToilShape("FinishCookMealForSelf", false, false, true, false)
+        };
+
+        Assert.That(
+            CookForYourselfToilPolicy.TrySelectWarePickupIndex(toils, out var pickupIndex),
+            Is.True);
+        Assert.That(pickupIndex, Is.EqualTo(5));
+        Assert.That(pickupIndex, Is.GreaterThan(3));
+    }
+
+    [Test]
+    public void Missing_reordered_or_ambiguous_ingredient_placement_fails_closed()
+    {
+        var placement = new CookForYourselfToilShape(
+            "PlaceCookIngredient",
+            false,
+            false,
+            true,
+            false);
+        var cooking = new CookForYourselfToilShape(
+            "CookMealForSelf",
+            true,
+            true,
+            true,
+            true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                CookForYourselfToilPolicy.TrySelectWarePickupIndex(
+                    new[] { cooking },
+                    out _),
+                Is.False);
+            Assert.That(
+                CookForYourselfToilPolicy.TrySelectWarePickupIndex(
+                    new[] { cooking, placement },
+                    out _),
+                Is.False);
+            Assert.That(
+                CookForYourselfToilPolicy.TrySelectWarePickupIndex(
+                    new[] { placement, placement, cooking },
+                    out _),
+                Is.False);
+        });
+    }
+
+    [Test]
     public void Missing_or_ambiguous_cooking_toil_fails_closed()
     {
         var exact = new CookForYourselfToilShape("CookMealForSelf", true, true, true, true);

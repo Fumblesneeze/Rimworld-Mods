@@ -181,7 +181,45 @@ internal readonly struct CookForYourselfToilShape
 
 internal static class CookForYourselfToilPolicy
 {
+    internal const string IngredientPlacementToilDebugName = "PlaceCookIngredient";
     internal const string CookingToilDebugName = "CookMealForSelf";
+
+    internal static bool TrySelectWarePickupIndex(
+        IReadOnlyList<CookForYourselfToilShape> toils,
+        out int index)
+    {
+        index = -1;
+        if (!TrySelectExactIndex(toils, out var cookingIndex))
+        {
+            return false;
+        }
+
+        var ingredientPlacementIndex = -1;
+        for (var candidateIndex = 0; candidateIndex < cookingIndex; candidateIndex++)
+        {
+            if (toils[candidateIndex].DebugName != IngredientPlacementToilDebugName)
+            {
+                continue;
+            }
+
+            if (ingredientPlacementIndex >= 0)
+            {
+                return false;
+            }
+
+            ingredientPlacementIndex = candidateIndex;
+        }
+
+        if (ingredientPlacementIndex < 0 ||
+            toils.Skip(cookingIndex + 1)
+                .Any(toil => toil.DebugName == IngredientPlacementToilDebugName))
+        {
+            return false;
+        }
+
+        index = cookingIndex;
+        return true;
+    }
 
     internal static bool TrySelectExactIndex(
         IReadOnlyList<CookForYourselfToilShape> toils,
@@ -561,11 +599,12 @@ internal static class CookForYourselfAdapter
             toil.tickIntervalAction is not null,
             toil.initAction is not null,
             toil.activeSkill is not null)).ToArray();
-        if (!CookForYourselfToilPolicy.TrySelectExactIndex(shapes, out var cookingIndex))
+        if (!CookForYourselfToilPolicy.TrySelectWarePickupIndex(shapes, out var cookingIndex))
         {
             CookingSessionRegistry.Cleanup(pawn, pawn.CurJob);
             Cleanup(pawn.CurJob);
-            Disable("the custom driver no longer exposes exactly one validated active cooking toil");
+            Disable(
+                "the custom driver no longer exposes one validated ingredient-placement toil before its active cooking toil");
             return toils;
         }
 
@@ -586,7 +625,10 @@ internal static class CookForYourselfAdapter
 
             upstreamTick(delta);
         };
-        return CookingSessionRegistry.AddWarePickupToils(pawn, toils);
+        return CookingSessionRegistry.InsertWarePickupToils(
+            pawn,
+            toils,
+            cookingIndex);
     }
 
     private static void ApplyOwnedWorkProgress(JobDriver driver, Pawn pawn, int delta)
