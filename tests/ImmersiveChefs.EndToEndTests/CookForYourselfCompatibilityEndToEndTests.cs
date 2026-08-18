@@ -15,6 +15,8 @@ namespace ImmersiveChefs.EndToEndTests;
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
     "lordfelix.CookForYourself",
+    "Mehni.PickUpAndHaul",
+    "Andromeda.StackGap",
     "fumblesneeze.immersivechefs",
     MaxFrames = 7_200,
     MaxGameTicks = 28_000,
@@ -205,6 +207,7 @@ public sealed class CookForYourselfSelfCookingTest : IRimWorldEndToEndTest
         EndToEndAssert.True(
             ReferenceEquals(fixture.Plate.holdingOwner, fixture.Cook.inventory?.innerContainer),
             "The custom job must collect the exact plate before production.");
+        fixture.AssertIngredientsPlacedBeforeWarePickup();
         EndToEndAssert.True(fixture.Cookware.GetComp<CompSanitation>()!.IsDirty,
             "Beginning actual cooking must dirty the exact cookware once.");
         EndToEndAssert.False(fixture.Plate.GetComp<CompSanitation>()!.IsDirty,
@@ -269,6 +272,8 @@ public sealed class CookForYourselfSelfCookingTest : IRimWorldEndToEndTest
             "The exact cookware must be observed as the active work prop.");
         EndToEndAssert.True(nativeIngestObserved,
             "The upstream product must be observed in native Ingest before it disappears.");
+        EndToEndAssert.Equal(1, fixture.JobTransitions.CustomCookingStartCount,
+            "The ordinary self workflow must start exactly one CFS_CookMealForSelf job without a same-tick restart loop.");
         EndToEndAssert.True(meal?.Destroyed == true,
             "The exact upstream-produced meal must disappear only after native ingestion.");
         EndToEndAssert.True(fixture.Cookware.Spawned &&
@@ -897,6 +902,8 @@ public sealed class CookForYourselfBabyFoodPassThroughTest : IRimWorldEndToEndTe
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
     "lordfelix.CookForYourself",
+    "Mehni.PickUpAndHaul",
+    "Andromeda.StackGap",
     "fumblesneeze.immersivechefs",
     MaxFrames = 9_000,
     MaxGameTicks = 34_000,
@@ -927,8 +934,11 @@ public sealed class CookForYourselfConsciousPatientTest : IRimWorldEndToEndTest
         GenSpawn.Spawn(patient, fixture.Stove.Position + (IntVec3.East * 3), map);
         var torso = patient.health.hediffSet.GetNotMissingParts()
             .First(part => part.def == BodyPartDefOf.Torso);
-        var injury = HediffMaker.MakeHediff(HediffDefOf.Cut, patient, torso);
-        injury.Severity = 0.1f;
+        var injury = HediffMaker.MakeHediff(
+            DefDatabase<HediffDef>.GetNamed("Crush"),
+            patient,
+            torso);
+        injury.Severity = 0.5f;
         patient.health.AddHediff(injury);
         EndToEndAssert.True(HealthAIUtility.ShouldSeekMedicalRest(patient),
             "The conscious-patient fixture must genuinely require medical rest.");
@@ -1123,6 +1133,7 @@ public sealed class CookForYourselfConsciousPatientTest : IRimWorldEndToEndTest
             "Dependent one-off cooking must render the exact reserved cookware.");
         EndToEndAssert.True(ReferenceEquals(fixture.Stove, activeStation),
             "Dependent one-off cooking must remain bound to the upstream-selected station.");
+        fixture.AssertIngredientsPlacedBeforeWarePickup();
         EndToEndAssert.True(fixture.Cookware.GetComp<CompSanitation>()!.IsDirty,
             "Actual dependent cooking must dirty the exact cookware.");
         EndToEndAssert.False(fixture.Plate.GetComp<CompSanitation>()!.IsDirty,
@@ -1210,6 +1221,8 @@ public sealed class CookForYourselfConsciousPatientTest : IRimWorldEndToEndTest
             "The exact upstream dependent job and active cookware must both be observed.");
         EndToEndAssert.True(fixture.JobTransitions.NativeFeedPatientObserved,
             "The upstream product must visibly enter native FeedPatient.");
+        EndToEndAssert.Equal(1, fixture.JobTransitions.CustomCookingStartCount,
+            "The ordinary dependent workflow must start exactly one CFS_CookMealForSelf job without a same-tick restart loop.");
         EndToEndAssert.True(meal?.Destroyed == true,
             "The exact freshly cooked patient meal must be consumed through native feeding.");
         EndToEndAssert.True(patient.Awake(),
@@ -1390,6 +1403,21 @@ internal sealed class CookForYourselfFixture
             "The exact cutlery fixture must remain one unit.");
     }
 
+    internal void AssertIngredientsPlacedBeforeWarePickup()
+    {
+        var job = Cook.CurJob;
+        EndToEndAssert.NotNull(job,
+            "The cook must still own the upstream custom job while its active cooking toil is observed.");
+        EndToEndAssert.True(JobTransitions.InitialIngredientTargetCount > 0,
+            "The traced upstream job must begin with at least one exact ingredient target.");
+        EndToEndAssert.Equal(0, job!.GetTargetQueue(TargetIndex.B)?.Count ?? 0,
+            "Every upstream ingredient target must be extracted and placed before reserved ware pickup finishes.");
+        EndToEndAssert.Equal(0, job.countQueue?.Count ?? 0,
+            "Every upstream ingredient count must be consumed by placement before active cooking begins.");
+        EndToEndAssert.True(Cook.carryTracker.CarriedThing is null,
+            "The cook must return to the station without an ingredient or ware stranded in the carry tracker.");
+    }
+
     private int CountUnits(ThingDef def, ThingWithComps? meal)
     {
         var spawned = Map.listerThings.ThingsOfDef(def).Sum(thing => thing.stackCount);
@@ -1458,6 +1486,8 @@ internal sealed class CookForYourselfJobTransitionTrace : IDisposable
     internal int DependentInvocationCount { get; private set; }
     internal int DependentProposedJobCount { get; private set; }
     internal int DependentFinalJobCount { get; private set; }
+    internal int CustomCookingStartCount { get; private set; }
+    internal int InitialIngredientTargetCount { get; private set; }
     internal bool CustomCookingJobObserved { get; private set; }
     internal Pawn? CustomCookingRecipient { get; private set; }
     internal bool ExcludedDeliveryObserved { get; private set; }
@@ -1568,6 +1598,12 @@ internal sealed class CookForYourselfJobTransitionTrace : IDisposable
 
         if (newJob.def.defName == CookForYourselfCompatibility.JobDefName)
         {
+            trace.CustomCookingStartCount++;
+            if (trace.CustomCookingStartCount == 1)
+            {
+                trace.InitialIngredientTargetCount =
+                    newJob.GetTargetQueue(TargetIndex.B)?.Count ?? 0;
+            }
             trace.CustomCookingJobObserved = true;
             trace.CustomCookingRecipient = newJob.GetTarget(TargetIndex.C).Pawn;
             return;

@@ -209,6 +209,12 @@ The adapter SHALL NOT create a bill, call either upstream job giver twice, rerun
 - **THEN** Cook for Yourself extracts, carries, and places every exact selected ingredient before Immersive Chefs adds ware to inventory or repurposes target C
 - **AND** the pawn collects the already-reserved ware only after the final `PlaceCookIngredient` toil, returns to the selected station's interaction cell, and enters `CookMealForSelf` without an incompletable job, same-tick restart loop, duplicate reservation, or repeated ingredient selection
 
+#### Scenario: Stack Gap preserves CFS ingredient placement without losing its storage rules
+
+- **WHEN** exact package `Andromeda.StackGap` with audited assembly `StackGap, Version=1.0.0.0` observes an admitted CFS job directly dropping the carried target-B ingredient during the upstream `PlaceCookIngredient` toil
+- **THEN** Immersive Chefs bypasses only Stack Gap's exact carry-drop prefix for that one pre-cooking ingredient operation so vanilla direct placement completes and the CFS job continues exactly once
+- **AND** Stack Gap remains authoritative for every non-CFS, non-direct, post-cooking, or nonmatching carried-Thing placement; a changed Stack Gap shape disables the CFS adapter without a partial patch
+
 #### Scenario: Cook prepares a meal for a patient
 
 - **WHEN** Cook for Yourself selects a conscious hungry patient as its dependent and the one-off meal finishes normally
@@ -538,7 +544,7 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 10. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
 11. Pick Up And Haul; Immersive Chefs; and Gateway for native tracked-inventory batch collection, sequential hand washing, interruption, and batch unloading.
 12. Processor Framework; Dubs Bad Hygiene; Pick Up And Haul; Immersive Chefs; and Gateway for one-trip tracked dishwasher loading, per-unit Processor admission, cycle completion, and later native clean-output hauling.
-12. Harmony; Core; Cook for Yourself; Immersive Chefs; and Gateway for one-off self-cooking, exact ware/session lifecycle, native self-ingestion, patient delivery, interruption, and an `Off`-setting run in which the upstream one-off job still completes unchanged.
+12. Harmony; Core; Cook for Yourself; Pick Up And Haul; Stack Gap; Immersive Chefs; and Gateway for one-off self-cooking, exact ingredient placement, exact ware/session lifecycle, native self-ingestion, patient delivery, no same-tick restart, and exact dirty return. Interruption and an `Off`-setting run in which the upstream one-off job still completes unchanged MAY remain in the smaller Harmony/Core/Cook for Yourself/Immersive Chefs group.
 13. Harmony; Core; Biotech; Cook for Yourself; Immersive Chefs; and Gateway for native baby-food cooking and bottle feeding that remain entirely upstream-owned and kitchenware-free under strict ware settings. Package absence and changed-shape behavior remain host/base-process fail-closed gates rather than claims of either active-mod group.
 14. Harmony; Core; Ceramics (Continued); Immersive Chefs; and Gateway for exact porcelain registration, native ceramics-bench plate crafting, Stuff/color/quality retention, and broad-`Stony` non-leakage. Processor Framework and Vanilla Expanded Framework remain absent from this minimum group because the installed provider has its own legacy fallback.
 
