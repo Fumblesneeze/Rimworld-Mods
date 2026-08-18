@@ -43,8 +43,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["previousChangeNote"], Is.EqualTo("Dirty kitchenware is now much easier to spot. Dubs Bad Hygiene sinks, prep stations, and dishwashing now use real water; meals spawned without plates no longer interrupt eating or patient feeding; and Ceramics (Continued) porcelain can be crafted into plates."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo(string.Empty),
-                "A successful Workshop update must clear its pending note while retaining the verified remote note as previousChangeNote.");
+                Is.EqualTo("Fixed Cook for Yourself cooking loops when Pick Up And Haul and Stack Gap are active. One-off self and patient meals now place their ingredients before collecting kitchenware and complete normally. Active cookware also renders behind or in front of the cook according to work direction instead of covering the pawn."),
+                "The committed release candidate must carry the exact reviewed pending Workshop note.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));
