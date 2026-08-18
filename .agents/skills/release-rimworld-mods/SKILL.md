@@ -37,9 +37,9 @@ Read [references/release-checklist.md](references/release-checklist.md) before c
 ## Prove compatibility
 
 1. Run focused and owning tests, guarded repository tests, Release builds, strict OpenSpec validation, and package inspection.
-2. Run every target's declared scenario in a fresh exact-version RimWorld process with unique savedata and the complete ordered mod list.
-3. Exercise the native player workflow and personally inspect before/action/after screenshots from that exact process. Compilation, startup, logs, Gateway JSON, direct state mutation, and static end-state screenshots are supporting evidence only.
-4. Retain at least one product acceptance run without the Gateway. Preserve the normal `ModsConfig.xml` before/after hash and exact-PID cleanup evidence.
+2. Build a release impact map from runtime code, XML/Defs, assets, dependencies, engine targets, workflows, observation contracts, and test-harness changes. Run every impacted target scenario in a fresh exact-version RimWorld process with unique savedata and the complete ordered mod list; unchanged scenarios may rely on current deterministic regression results when the map proves their relevant staged bytes and inputs are identical.
+3. Make each live scenario assert the admitted native player action, the causally related observable outcome, and exact-process cleanup. Personally inspect before/action/after screenshots for new or materially changed player-visible scenarios. Do not manually review every unchanged scenario merely because a release is being prepared. Compilation, startup, logs, uncorrelated Gateway JSON, direct state mutation, and static end-state screenshots are supporting evidence only.
+4. Use the Dev Gateway as the default controller, including subscribed-copy verification. Run a Gateway-free duplicate only when explicitly requested or when an impacted behavior cannot be faithfully controlled or observed through the Gateway. Preserve the normal `ModsConfig.xml` before/after hash and exact-PID cleanup evidence.
 5. Use the `code-review` skill on the scoped diff, resolve findings, and repeat any verification invalidated by review fixes.
 
 ## Generate and review Workshop presentation
@@ -99,15 +99,17 @@ identity before declaring release administration complete.
 
 ## Preserve evidence and clean up
 
-Keep source revision/dirty policy, manifest and tool hashes, depot/file identities, per-target builds, tests, player actions/screenshots, package and presentation digests, operator confirmation, Gateway process identity, Steam result, remote verification, and cleanup together. Exclude passwords, Steam Guard codes, downloader sessions, bearer tokens, and live Gateway discovery files.
+Keep source revision/dirty policy, manifest and tool hashes, depot/file identities, per-target builds, the scenario impact map, assertion results, required manual screenshot reviews, package and presentation digests, operator confirmation, Gateway process identity, Steam result, remote verification, and cleanup together. Exclude passwords, Steam Guard codes, downloader sessions, bearer tokens, and live Gateway discovery files.
 
 Request graceful process shutdown first, use exact-PID fallback only when required, release cache/stage leases, and confirm the user's normal configuration hash is unchanged. Never claim an accepted Workshop update was rolled back automatically; recovery is an explicit reviewed republish of a prior verified candidate.
+
+If the user stops or forbids a verification profile, record the directive, the graceful/exact-PID shutdown result, and the final zero-process check. Keep that profile disabled for the remainder of the release unless the user later gives fresh explicit authorization; do not treat an authorized minimized Gateway profile as permission to revive a stopped product-only profile.
 
 ## Pause conditions
 
 - Pause before publishing if the user has not explicitly confirmed the exact dry-run.
 - Leave the target unsupported if its exact Steam manifest cannot be acquired and verified.
-- Leave gameplay compatibility incomplete when a native player workflow or personally inspected live evidence is missing.
+- Leave gameplay compatibility incomplete when an impacted native player workflow lacks its assertions or a new/materially changed player-visible scenario lacks required manual review.
 - Leave presentation incomplete when rendered assets or inline hosting have not been reviewed and proven.
 - Preserve an indeterminate post-submit operation for diagnosis; do not start another update until remote state resolves it.
 - Stop if required implementation tasks or commands do not exist. Report the exact OpenSpec task/blocker instead of bypassing the contract manually.

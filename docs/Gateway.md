@@ -523,7 +523,7 @@ Before and after every test, the process pauses and removes every constructed or
 
 The focused notification-isolation acceptance run is retained locally at `artifacts/EndToEndRuns/Grouped/20260806T204114758Z`. `gateway.notification-cleanup.seed` visibly displayed a native message, letter, and alert and also seeded a delayed letter; the following `gateway.notification-cleanup.verify` screenshot showed a clean notification surface while exact state inspection confirmed the delayed queue was empty. Both tests and final cleanup passed in the same minimized process.
 
-E2E state and assertions remain supporting automation. Acceptance still requires the acting agent to inspect the exact run's native screenshots and confirm that the recorded player action caused the visible outcome; logs or a green endpoint alone are insufficient.
+E2E scenarios must assert the admitted native player action and its causally related observable outcome. The acting agent additionally inspects exact-run native screenshots for new or materially changed player-visible scenarios; unchanged regressions rely on deterministic assertions and an impact map proving stable relevant inputs. Logs, an HTTP success, or a synthetic/direct-state assertion alone remain insufficient.
 
 Each E2E screenshot is captured at end-of-frame and persisted before its step passes. A transient Unity capture failure, invalid encoded frame, capture timeout, or concurrent-capture lease race receives one fresh end-of-frame retry; deterministic target/request failures and artifact-persistence failures remain terminal so missing evidence is never reported as success.
 

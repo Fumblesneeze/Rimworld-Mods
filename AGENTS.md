@@ -29,20 +29,22 @@ reviewed feature cards remain separate Workshop presentation assets.
 
 TDD and code review are necessary, but they are never sufficient to accept RimWorld behavior.
 
-No mod behavior, bug fix, Harmony/XML integration, compatibility claim, or game-facing gateway capability is complete or accepted until the acting agent personally verifies the reviewed build in a running RimWorld process and observes the behavior through a real player workflow.
+No mod behavior, bug fix, Harmony/XML integration, compatibility claim, or game-facing gateway capability is complete or accepted until the reviewed build exercises the behavior in a running RimWorld process through a real player workflow. The acting agent personally reviews the live view or screenshots for every new or materially changed player-visible workflow; unchanged regression scenarios are accepted from their deterministic native-action and observable-outcome assertions.
 
 Acceptance requires all of the following:
 
 1. Perform an actual player action, or faithful automation of the same native UI, gizmo, designation, bill, job, hauling, ingestion, construction, selection, or game-command path a player uses.
 2. Observe the resulting player-visible or player-observable game behavior in the running game. Examples include a pawn performing the expected job, a physical item changing or appearing, a building accepting work, an inspect pane or gauge changing, a thought or hediff appearing, or a native command visibly taking effect.
-3. Personally inspect the relevant live view or before/action/after screenshots captured from that exact process. Record what was observed, not merely what an automation reported.
+3. For a new or materially changed player-visible workflow, personally inspect the relevant live view or before/action/after screenshots captured from that exact process and record what was observed. For an unchanged regression, retain the scenario's passing assertions and impact evidence instead of manually re-reviewing its screenshots.
 4. Retain enough evidence to connect the input action causally to the observed outcome on the tested build.
+
+Every automated live scenario must assert the admitted native player action, its causally related observable outcome, and exact-process cleanup. Screenshot capture is evidence and a debugging surface, not a substitute for assertions. The release evidence must include an impact map naming which scenarios were manually reviewed and why; a scenario is impacted when runtime code, XML/Defs, assets, dependencies, engine target, player workflow, observation contract, or its test harness changed. A documentation-, metadata-, or packaging-only revision may reuse a passing scenario when the relevant staged runtime bytes and scenario inputs are identical.
 
 The following are useful supporting or diagnostic evidence, but do **not** satisfy live acceptance by themselves:
 
 - a passing unit/integration test suite or Release build;
 - a startup marker, log entry, absence of exceptions, loaded Def, or installed Harmony patch;
-- a successful HTTP status, gateway JSON response, request journal, or synthetic state assertion;
+- a successful HTTP status, request journal, or synthetic/direct-state assertion that is not tied to an admitted native action and its observable result;
 - raw C#/REPL code that reads or directly mutates the expected state;
 - direct spawning or setup code that constructs the desired end state while bypassing the player workflow;
 - a static screenshot that shows only the prepared scene and not the action-to-result behavior.
@@ -68,22 +70,22 @@ Read `docs/TestingEnvironments.md` before adding a test that depends on RimWorld
 2. **Vertical TDD:** Work one behavior at a time: focused RED, minimum GREEN, then refactor while green. Test public behavior rather than private implementation. Record durable RED/GREEN evidence and reject zero-test runs.
 3. **Regression and package checks:** During feature work, run only the focused test IDs, exact active-mod groups, owning project build, and package checks affected by the current slice. Do not replay completed scenarios or run the guarded repository/full E2E suite merely because another feature changed. Reserve full-suite and full compatibility-matrix runs for explicit release preparation or deliberate maintenance/regression work. Run `openspec validate --all --strict --no-interactive` for specification changes.
 4. **Independent review:** Use the `code-review` skill on the scoped diff. Resolve or explicitly reject each finding with evidence, then rerun affected tests and builds.
-5. **Final in-game acceptance:** On the reviewed build, run the isolated player workflow and personally observe its result. Earlier exploratory runs are not final evidence. If review fixes or later edits can affect runtime behavior, repeat the live acceptance run.
+5. **Final in-game acceptance:** On the reviewed build, run the impact-selected isolated player workflows. Personally observe new or materially changed player-visible results; rely on deterministic assertions for unchanged scenarios. If review fixes or later edits can affect a scenario's runtime behavior, rerun that scenario and repeat its manual review when its player-visible contract changed.
 6. **Evidence and task state:** Retain the action sequence and observed result with the tested revision/build identity. Check an OpenSpec task only after all of its required evidence exists.
 
-Never reuse live evidence from an older build to accept a changed runtime revision. Host tests should cover deterministic rules and failure cases, while the final RimWorld run proves engine wiring, real jobs/UI, loaded Defs, rendering, input, lifecycle, and supported optional-mod behavior together.
+Never reuse live evidence when a scenario's relevant runtime bytes, engine target, dependencies, workflow, observation contract, or harness changed. A later documentation-, metadata-, or packaging-only revision may reuse evidence only when the release impact map proves those inputs and staged runtime bytes are identical. Host tests should cover deterministic rules and failure cases, while impact-selected RimWorld runs prove engine wiring, real jobs/UI, loaded Defs, rendering, input, lifecycle, and supported optional-mod behavior together.
 
 ## Live-run safety and evidence
 
 - Use a unique disposable `-savedatafolder`, a dedicated log, and the smallest explicit mod list that proves the scenario.
-- Retain at least one product-mod acceptance run without the Dev Gateway. Use separate installed-mod-present runs for compatibility claims.
+- Use the Dev Gateway as the default release-verification controller, including subscribed-copy acceptance. A Gateway-free duplicate is optional and must be run only when the user explicitly requests that profile or the changed behavior cannot be faithfully controlled or observed through the Gateway.
 - Refuse to reuse an existing RimWorld process. Bind automation, screenshots, input, diagnostics, and cleanup to the exact launched PID and process start identity.
 - Hash the user's normal `ModsConfig.xml` before and after. Never use the normal save/configuration for automation.
 - Capture the tested build/package identity, ordered mod list, exact player actions, before/after observable state, screenshots, relevant supporting logs, request IDs where applicable, configuration hashes, and cleanup result in one evidence directory.
 - Restore camera, selection, developer/god mode, speed, and other mutated state. Delete only disposable objects created by that run.
 - Request graceful shutdown first. Use bounded diagnostics and an exact-PID fallback only when necessary; never kill an unrelated process.
 - Never retain bearer tokens or a live `current.json` in durable artifacts.
-- Respect a user's stop or no-launch request. Do not relaunch until explicitly authorized; leave live acceptance incomplete instead.
+- Respect a user's stop or no-launch request. Treat a stopped or forbidden verification profile as disabled for the rest of that release, record the directive, graceful/exact-PID shutdown result, and zero matching processes, and do not relaunch that profile without fresh explicit authorization. Continue only with an independently authorized profile such as a minimized Dev Gateway run.
 
 Startup, a clean log, and one end-state screenshot are prerequisites, not proof of a gameplay scenario.
 
@@ -116,6 +118,6 @@ openspec validate --all --strict --no-interactive
 .\scripts\Invoke-RimWorldEndToEndTests.ps1 -GroupId ludeon.rimworld -Output json
 ```
 
-Use the grouped E2E runner for repeatable multi-frame player workflows. Each attributed test declares its complete exact non-Gateway package order; the runner appends Gateway last, deploys before staging, starts one fresh isolated process per group, executes same-group tests sequentially, persists screenshots/results, and cleans its exact lease. Do not manually pre-stage E2E bundles for routine verification. A green group is supporting evidence until the acting agent personally inspects its exact-run screenshots and confirms the native action caused the visible outcome.
+Use the grouped E2E runner for repeatable multi-frame player workflows. Each attributed test declares its complete exact non-Gateway package order; the runner appends Gateway last, deploys before staging, starts one fresh isolated process per group, executes same-group tests sequentially, asserts the admitted native action and observable outcome, persists screenshots/results, and cleans its exact lease. Do not manually pre-stage E2E bundles for routine verification. Personally inspect exact-run screenshots for new or materially changed player-visible scenarios; unchanged scenarios rely on their assertions and recorded impact classification.
 
 Normal builds must remain repository-local. Deploy into only the exact local package-ID folder and only for an intentional isolated run; never deploy into Workshop content. Inspect `README.md`, `docs/Development.md`, and `docs/Gateway.md` for current commands, API details, and evidence conventions. Durable run evidence and its TDD ledger remain local under ignored artifact/report paths and must be regenerated for the revision under test.

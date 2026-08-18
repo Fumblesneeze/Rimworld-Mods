@@ -97,7 +97,7 @@ Development-only mods MAY explicitly opt out. RimWorld Dev Gateway SHALL be clas
 - **THEN** its explicit development-only classification exempts it from player-language coverage without weakening the rule for distributable product mods
 
 ### Requirement: Isolated regression runs can select an exact game build
-The scenario and grouped E2E runners SHALL accept a declared RimWorld target, resolve or acquire its complete exact game build into an ignored cache, launch a fresh exact-PID process with isolated savedata and the target package layout, and record the game/depot/manifest/file identity in evidence. They MUST retain all existing configuration-hash, cleanup, player-action, and personal screenshot-inspection acceptance gates.
+The scenario and grouped E2E runners SHALL accept a declared RimWorld target, resolve or acquire its complete exact game build into an ignored cache, launch a fresh exact-PID process with isolated savedata and the target package layout, and record the game/depot/manifest/file identity in evidence. They MUST retain configuration-hash and cleanup gates, assert the admitted native player action and its observable outcome, and require personal screenshot inspection for new or materially changed player-visible scenarios selected by the release impact map.
 
 #### Scenario: Regression executes on a historical target
 - **WHEN** an operator selects a cached historical target for an applicable scenario group
@@ -257,7 +257,7 @@ A clean committed descendant release-tool revision MAY reconcile an older immuta
 - **THEN** the operation reports the actionable agreement state, changes no alternate item, and leaves the same reviewed bundle available for explicit retry
 
 ### Requirement: The subscribed Workshop copy receives final player acceptance
-After Steam reports a successful update and CDN propagation, the release workflow SHALL subscribe to or refresh the exact published item through the owning Steam client, reacquire it into the Steam Workshop content area, and compare its complete file manifest with the reviewed staged candidate. It SHALL then launch a fresh isolated RimWorld process using the subscribed Workshop package path rather than a repository-local or manually deployed copy, with the exact required dependencies and no Dev Gateway unless the verification profile explicitly tests it. The acting agent SHALL perform and personally inspect the mod's declared native player-workflow smoke test. Successful upload, remote metadata, subscription state, file presence, startup, logs, or diagnostics alone MUST NOT satisfy this final acceptance.
+After Steam reports a successful update and CDN propagation, the release workflow SHALL subscribe to or refresh the exact published item through the owning Steam client, reacquire it into the Steam Workshop content area, and compare its complete file manifest with the reviewed staged candidate. It SHALL then launch a fresh isolated RimWorld process using the subscribed Workshop package path rather than a repository-local or manually deployed copy, with the exact required dependencies and the Dev Gateway as the default controller. The declared smoke test SHALL assert the admitted native player action, its causally related observable outcome, and exact-process cleanup. The acting agent SHALL personally inspect screenshots for every new or materially changed player-visible scenario selected by the release impact map; unchanged scenarios SHALL rely on their deterministic assertions when relevant staged bytes and inputs are identical. Successful upload, remote metadata, subscription state, file presence, startup, logs, or diagnostics alone MUST NOT satisfy this final acceptance.
 
 #### Scenario: Published Immersive Chefs is verified as a subscriber receives it
 - **WHEN** the confirmed RimWorld 1.6 Immersive Chefs update reaches Steam
@@ -266,6 +266,14 @@ After Steam reports a successful update and CDN propagation, the release workflo
 #### Scenario: Steam returns stale or different content
 - **WHEN** the subscribed Workshop directory is absent, has not reached the published manifest, or differs from the staged candidate
 - **THEN** release verification fails without substituting a local package or claiming the release accepted
+
+#### Scenario: An unchanged regression remains covered by assertions
+- **WHEN** a release changes no relevant staged runtime bytes, dependencies, engine target, workflow, observation contract, or harness input for a declared scenario
+- **THEN** the impact map classifies it as unchanged, its deterministic native-action and observable-outcome assertions remain required, and no duplicate manual screenshot review is required
+
+#### Scenario: The operator stops a product-only verification profile
+- **WHEN** the user stops or forbids a product-only verification attempt and directs the release to use the Dev Gateway
+- **THEN** the workflow records the directive, shuts down only the exact owned process, confirms that no matching RimWorld process remains, does not relaunch that profile without fresh authorization, and continues only through the separately authorized minimized Gateway profile
 
 ### Requirement: Release evidence is complete and secret-free
 Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, verification results, presentation provenance, operator confirmation, Gateway process identity, Steam item/dependency results, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.

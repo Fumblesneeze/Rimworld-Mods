@@ -56,7 +56,7 @@ A publishable candidate has all of the following:
 1. Clean committed source revision and validated release/catalog manifests.
 2. Fresh isolated build for every supported target.
 3. Focused, owning, guarded, Release-build, OpenSpec, and package checks.
-4. Native player-workflow acceptance on each claimed exact target with personally inspected screenshots.
+4. Native player-workflow assertions on each impacted exact target, plus personally inspected screenshots only for new or materially changed player-visible scenarios; retain the impact map for unchanged regressions.
 5. Generated, validated, deterministic, and personally reviewed Workshop presentation.
 6. Positive-allowlist package manifest and immutable candidate/presentation digests.
 7. Independent review findings resolved and affected verification repeated.
@@ -83,6 +83,10 @@ A publishable candidate has all of the following:
 - Verify remote metadata/previews and reacquired package contents after propagation.
 - Run the declared native workflow from the exact subscribed Workshop root while every local copy
   of the product is absent from RimWorld discovery; restore local state in guaranteed cleanup.
+- Use the Dev Gateway as the default native-workflow controller. A Gateway-free duplicate is optional
+  and requires an explicit request or a recorded Gateway capability gap.
+- Treat a user-stopped verification profile as disabled for that release. Record exact-process shutdown
+  and the zero-process check; never relaunch it without fresh explicit authorization.
 - Preserve a secret-free receipt and exact cleanup outcome.
 - After a verified first publication, commit the returned ID to the mod's release descriptor and disable first publication. Ignored artifacts are recovery evidence, never the cross-clone identity authority.
 
