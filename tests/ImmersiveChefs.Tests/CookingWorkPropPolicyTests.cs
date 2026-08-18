@@ -6,6 +6,27 @@ namespace ImmersiveChefs.Tests;
 public sealed class CookingWorkPropPolicyTests
 {
     [Test]
+    public void Draw_depth_follows_the_north_south_work_direction()
+    {
+        var towardNorth = CookingWorkPropPolicy.AltitudeOffsetFor(
+            normalizedWorkDirectionZ: 1f);
+        var towardSouth = CookingWorkPropPolicy.AltitudeOffsetFor(
+            normalizedWorkDirectionZ: -1f);
+        var lateral = CookingWorkPropPolicy.AltitudeOffsetFor(
+            normalizedWorkDirectionZ: 0f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(towardNorth, Is.LessThan(0f),
+                "Cookware toward a north-side work surface must depth-sort behind the pawn.");
+            Assert.That(towardSouth, Is.GreaterThan(0f),
+                "Cookware toward a south-side work surface must depth-sort in front of the pawn.");
+            Assert.That(towardSouth, Is.EqualTo(-towardNorth).Within(0.0001f));
+            Assert.That(lateral, Is.Zero);
+        });
+    }
+
+    [Test]
     public void Draws_only_during_active_work_with_the_exact_held_cookware()
     {
         Assert.That(CookingWorkPropPolicy.ShouldDraw(new CookingWorkPropState(

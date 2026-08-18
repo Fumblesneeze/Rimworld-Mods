@@ -58,11 +58,12 @@ When the configured policy would ordinarily reject dirty cookware, a selected el
 - **THEN** the normal bill job reserves and uses that exact set, records its dirty-cookware contamination on the meal, and leaves the global ware policy unchanged
 
 ### Requirement: Active cooking visibly uses the reserved cookware
-Once the lead pawn begins the recipe's active cooking toil, the exact reserved cookware set SHALL render as a carried/placed work prop centered in front of the pawn toward the bill giver, comparable to RimWorld's visible ingredient handling. It SHALL remain one physical Thing held by the cooking session, preserve its Stuff tint and selected graphic, and disappear from the work prop when active cooking ends. It MUST NOT render during ingredient hauling alone, duplicate on the map, obscure the pawn, or manufacture a cosmetic substitute.
+Once the lead pawn begins the recipe's active cooking toil, the exact reserved cookware set SHALL render as a carried/placed work prop centered between the pawn and bill giver, comparable to RimWorld's visible ingredient handling. Its draw depth SHALL follow that work direction instead of using one unconditional foreground altitude: when the bill giver is north of the pawn and the pawn works south-to-north, the cookware SHALL render behind the pawn; when the bill giver is south and the pawn works north-to-south, it SHALL render in front. East/west work directions SHALL use neutral pawn-relative depth without a forced foreground bias. It SHALL remain one physical Thing held by the cooking session, preserve its Stuff tint and selected graphic, and disappear from the work prop when active cooking ends. It MUST NOT render during ingredient hauling alone, duplicate on the map, obscure the pawn contrary to that directional depth, or manufacture a cosmetic substitute.
 
 #### Scenario: Watch a cook work at a stove
 - **WHEN** the pawn reaches the active cooking toil with a reserved cookware set
 - **THEN** that exact set is visibly centered between pawn and work surface with its material treatment
+- **THEN** it depth-sorts behind a pawn working toward a north-side surface and in front of a pawn working toward a south-side surface, while east/west work has no forced foreground offset
 - **THEN** completion or interruption removes the work prop and releases the same physical set under the sanitation lifecycle
 
 ### Requirement: Used cookware remains on its cooking station

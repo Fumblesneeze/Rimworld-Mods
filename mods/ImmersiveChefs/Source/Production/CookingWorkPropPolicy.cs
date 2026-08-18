@@ -28,6 +28,8 @@ public readonly struct CookingWorkPropState
 
 public static class CookingWorkPropPolicy
 {
+    private const float AltitudeOffsetMagnitude = 0.028f;
+
     public static bool ShouldDraw(CookingWorkPropState state) =>
         state.CurrentJobMatches &&
         state.CurrentDriverIsDoBill &&
@@ -35,4 +37,7 @@ public static class CookingWorkPropPolicy
         !state.ProductsCompleted &&
         state.CookwareExists &&
         state.CookwareHeldByCook;
+
+    public static float AltitudeOffsetFor(float normalizedWorkDirectionZ) =>
+        -normalizedWorkDirectionZ * AltitudeOffsetMagnitude;
 }

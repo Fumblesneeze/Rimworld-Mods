@@ -223,7 +223,7 @@ internal static class CookingWorkPropDrawPatch
 
         forward /= (float)Math.Sqrt(lengthSquared);
         var propPosition = drawLoc + (forward * 0.42f);
-        propPosition.y = drawLoc.y + 0.028f;
+        propPosition.y = drawLoc.y + CookingWorkPropPolicy.AltitudeOffsetFor(forward.z);
         try
         {
             cookware.Graphic.Draw(propPosition, Rot4.South, cookware, 0f);
