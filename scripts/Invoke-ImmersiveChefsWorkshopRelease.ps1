@@ -92,6 +92,34 @@ function Test-RemoteWorkshopPreviewsMatchResolvedDescription(
     return $true
 }
 
+function Test-ResolvedWorkshopPreviewsReadyForPublication {
+    param(
+        [Parameter(Mandatory)][object[]]$RemotePreviews,
+        [Parameter(Mandatory)][object[]]$ResolvedPreviews,
+        [Parameter(Mandatory)][string]$DownloadRoot,
+        [Parameter(Mandatory)][scriptblock]$DownloadOperation
+    )
+    if (-not (Test-RemoteWorkshopPreviewsMatchResolvedDescription `
+        -RemotePreviews $RemotePreviews -ResolvedPreviews $ResolvedPreviews)) {
+        return $false
+    }
+    try {
+        $null = New-Item -ItemType Directory -Path $DownloadRoot -Force
+        for ($index = 0; $index -lt $ResolvedPreviews.Count; $index++) {
+            $expectedHash = [string]$ResolvedPreviews[$index].remoteSha256
+            if ($expectedHash -notmatch '^[A-F0-9]{64}$') { return $false }
+            $downloadPath = Join-Path $DownloadRoot ("$index.preview")
+            & $DownloadOperation ([string]$RemotePreviews[$index].Url) $downloadPath
+            if (-not (Test-Path -LiteralPath $downloadPath -PathType Leaf) -or
+                (Get-FileHash -LiteralPath $downloadPath -Algorithm SHA256).Hash -cne $expectedHash) {
+                return $false
+            }
+        }
+    }
+    catch { return $false }
+    return $true
+}
+
 function Read-Json([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "JSON file does not exist: $Path" }
     return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -482,6 +510,13 @@ if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [string]$plan.visibility -cne $expectedPlanVisibility -or
     [bool]$plan.mutatesSteam) {
     Exit-InvalidInput 'The publication plan identity or dry-run contract is invalid.'
+}
+if ($PreviewSyncOnly -and
+    ($null -eq $plan.PSObject.Properties['authorizationSourceTreeSha256'] -or
+     $null -eq $plan.PSObject.Properties['authorizationIntentSha256'] -or
+     [string]$plan.authorizationSourceTreeSha256 -notmatch '^[A-F0-9]{64}$' -or
+     [string]$plan.authorizationIntentSha256 -notmatch '^[A-F0-9]{64}$')) {
+    Exit-InvalidInput 'The preview-sync plan does not carry a valid one-authorization release lineage.'
 }
 if (-not (Test-WorkshopShowcasePlanEvidence -PublicationStatus ([string]$plan.showcasePublicationStatus) -Evidence @($plan.showcaseEvidence) -DesignEvidence @($plan.showcaseDesignEvidence) -AdditionalPreviews @($plan.additionalPreviews))) {
     Exit-InvalidInput 'The publication plan showcase policy and presentation evidence are inconsistent.'
@@ -909,6 +944,8 @@ try {
             schema = 'ImmersiveChefs/WorkshopRemotePreviewInventory/v1'
             publishedFileId = [string]$publishedFileId
             publicationPlanSha256 = $actualPlanHash
+            authorizationSourceTreeSha256 = [string]$plan.authorizationSourceTreeSha256
+            authorizationIntentSha256 = [string]$plan.authorizationIntentSha256
             previews = $resolved
         })
         Write-TextAtomically -Path $presentationStatePath -Value ("succeeded|$actualPlanHash|$publishedFileId")
@@ -928,6 +965,17 @@ try {
         if ($publishedFileId -eq 0) { throw 'An indeterminate submit cannot be reconciled without a durable Workshop identity.' }
     }
     else {
+        if (-not $bootstrapPresentation) {
+            $preflightPreviewRoot = Join-Path $runRoot 'preflight-resolved-previews'
+            $preflightPreviewsVerified = Test-ResolvedWorkshopPreviewsReadyForPublication `
+                -RemotePreviews @($preflightRemote.RemoteAdditionalPreviews) `
+                -ResolvedPreviews @($plan.resolvedPreviews) `
+                -DownloadRoot $preflightPreviewRoot `
+                -DownloadOperation { param($uri, $path) Save-RemoteFile -Uri $uri -Path $path }
+            if (-not $preflightPreviewsVerified) {
+                throw 'The resolved description preview URLs or served bytes differ from Steam immediately before publication.'
+            }
+        }
         $request = @{
             operation = 'publish'
             planSha256 = $actualPlanHash
@@ -1125,13 +1173,11 @@ try {
     $publisherLauncherCompleted = $true
 
     $subscribedSmokeScript = Join-Path $repositoryRoot 'scripts\Invoke-ImmersiveChefsSubscribedSmoke.ps1'
-    $subscribedSmokeRoot = Join-Path $runRoot 'subscribed-smoke'
     $subscribedSmokeOutput = @(& $subscribedSmokeScript `
         -PublishedFileId ([string]$publishedFileId) `
         -ExpectedInstallPath $expectedInstallPath `
         -RimWorldPath $RimWorldPath `
         -SteamModContentFolder $SteamModContentFolder `
-        -ArtifactsPath $subscribedSmokeRoot `
         -TimeoutSeconds 420 `
         -Output json 2>&1)
     if ($LASTEXITCODE -ne 0) {

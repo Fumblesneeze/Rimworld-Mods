@@ -75,16 +75,19 @@ normal review/provenance gates are satisfied. Immersive Chefs is currently human
 
 1. Use the implemented Gateway publisher as the primary path only from a fresh isolated RimWorld process with Steam initialized. SteamCMD may be a documented recovery path, but it is not equivalent Gateway evidence.
 2. Address an existing declared Workshop item by default. A first publication is allowed only when the manifest explicitly opts in, the mutation-free dry-run has no item ID, the user confirms that exact creation, no prior receipt or local identity exists, and one bounded native query proves the owning account has no exact-title item. Regardless of an eventual Public declaration, force that first submission to Private so the user can inspect it; promotion is a separate reviewed update of the retained ID. Persist the returned nonzero ID before continuing; immediately after a successful first release, write and commit the same ID in both the release descriptor and `About/PublishedFileId.txt`, disable first publication, and make later staging fail closed if those tracked identities differ. The uploaded/subscribed package must carry that same About identity so RimWorld and Steam treat local and Workshop copies as one mod. Never delete ignored release state as a substitute for that tracked transition.
-3. Run a mutation-free dry-run and show the exact remote item, metadata diff, content/presentation digests, and change note to the user.
+3. Run a mutation-free dry-run and show the remote item, meaningful metadata/dependency diff, player-facing content summary, visibility, and change note to the user. Keep exact content and presentation digests in the evidence; do not make the user validate, repeat, or copy hashes or a tool confirmation phrase.
    Every update after initial publication needs a short authored change note describing the visible player-facing change. Reject empty, generic (`update`, `fixes`, `various changes`), automatically synthesized, or unchanged notes. Bind the exact note to the immutable dry-run and pass it to Steam's `SubmitItemUpdate`; record it in the receipt and verify the corresponding Workshop change-note entry after propagation.
-4. Obtain explicit user confirmation for that dry-run. Confirm using its bound nonce/digests; changed files, presentation, or remote state require a new dry-run and review.
+4. Obtain one explicit natural-language user authorization for that release intent. Treat it as covering the existing item's required preview synchronization, byte-verified Steam URL resolution, deterministic provenance update, final metadata/content submission, dependency reconciliation, and subscribed-copy verification. Pass any exact CLI confirmation phrase internally. Do not ask again merely because Steam assigned new image URLs, the provenance/plan hash changed during that required finalization, or a clean bookkeeping commit was needed. Require the tool's authorization-intent lineage to prove that every committed input except the generated resolved-description/provenance pair is unchanged. Reconfirm only when the Workshop item, visibility, dependencies, change note, user-authored copy, local image bytes/order, product code/XML/assets/packaging inputs, or requested scope changes—or when another Steam submission would be required.
 5. Observe progress and the terminal Steam callback. Report legal-agreement, authentication, quota, connectivity, and indeterminate-callback states without blind retries or false rollback claims.
 6. Query the resulting remote metadata/previews and reacquire the published item into an ignored verification directory. Compare it with the staged file manifest before calling publication verified.
 
 For the current Immersive Chefs 1.6 bootstrap, stage the clean committed candidate with
 `.\scripts\Build-ImmersiveChefsRelease.ps1 -Output json`. After personally reviewing the emitted
 `publication-plan.json`, invoke `.\scripts\Invoke-ImmersiveChefsWorkshopRelease.ps1` only with that
-file's exact SHA-256 and the exact confirmation phrase printed by its help. The publisher revalidates
+file's exact SHA-256 and pass the exact confirmation phrase printed by its help internally; never ask
+the user to recite that implementation detail. When preview synchronization is required, verify that
+the final description resolves only the same reviewed local image hashes/order to Steam-returned URLs,
+then continue under the existing authorization without another user prompt. The publisher revalidates
 the source and presentation, proves exact-title absence on the owning account before first creation, uploads through RimWorld's initialized Steamworks session, queries the
 remote title/description/tags/preview/owner/dependency graph, subscribes the exact item, and compares
 the downloaded package. It then removes the repository-local product from RimWorld's discovery path
@@ -107,7 +110,7 @@ If the user stops or forbids a verification profile, record the directive, the g
 
 ## Pause conditions
 
-- Pause before publishing if the user has not explicitly confirmed the exact dry-run.
+- Pause before publishing only when the user has not authorized the current meaningful release intent, or when a material item/content/dependency/visibility/scope change falls outside that authorization. Do not pause for deterministic preview URL/provenance finalization or ask the user to repeat hashes or magic phrases.
 - Leave the target unsupported if its exact Steam manifest cannot be acquired and verified.
 - Leave gameplay compatibility incomplete when an impacted native player workflow lacks its assertions or a new/materially changed player-visible scenario lacks required manual review.
 - Leave presentation incomplete when rendered assets or inline hosting have not been reviewed and proven.

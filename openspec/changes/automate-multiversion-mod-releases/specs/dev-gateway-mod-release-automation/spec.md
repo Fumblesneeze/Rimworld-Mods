@@ -215,15 +215,21 @@ Every update to an existing Workshop item SHALL provide a nonempty authored chan
 - **THEN** the release workflow honors a bounded retry delay and retries a bounded number of times, while every other HTTP failure or exhausted rate-limit budget fails closed without submitting the Workshop update
 
 ### Requirement: Steam publication is typed, guarded, and observable
-The Dev Gateway SHALL expose an authenticated, loopback-only typed publication operation that runs only in a fresh isolated RimWorld process with Steam initialized. It SHALL bind one validated staged package, presentation bundle, and required-item graph to one declared Workshop item, use the native RimWorld/Steam publication path without relying on hidden UI options, expose bounded progress and terminal failure details, and require a separate explicit publish confirmation after dry-run inspection.
+The Dev Gateway SHALL expose an authenticated, loopback-only typed publication operation that runs only in a fresh isolated RimWorld process with Steam initialized. It SHALL bind one validated staged package, presentation bundle, and required-item graph to one declared Workshop item, use the native RimWorld/Steam publication path without relying on hidden UI options, expose bounded progress and terminal failure details, and require one explicit natural-language publish authorization after dry-run inspection. Exact hashes and command confirmation strings SHALL remain internal guardrails rather than text the operator must repeat.
 
 #### Scenario: Reviewed bundle is published deliberately
-- **WHEN** an operator confirms publication of the exact dry-run package and presentation hashes for the declared Workshop item
-- **THEN** the Gateway uploads those exact inputs, reports Steam's terminal result and published item identity, and retains a credential-free publication receipt
+- **WHEN** an operator authorizes the reviewed existing-item release intent after seeing its item, visibility, meaningful content/dependency summary, and change note
+- **THEN** the Gateway internally binds and uploads the exact validated inputs, reports Steam's terminal result and published item identity, and retains a credential-free publication receipt without requiring the operator to repeat hashes or a magic phrase
 
-#### Scenario: Bundle changes after dry-run
-- **WHEN** any staged file or presentation output changes after dry-run inspection
-- **THEN** the Gateway rejects confirmation as stale and requires a new validation and review cycle
+#### Scenario: Required Steam URL resolution does not require another authorization
+- **WHEN** one authorized existing-item release synchronizes the reviewed local preview bytes, Steam returns byte-matching hosted URLs, and finalization changes only those URLs, their provenance, or machine plan identities while the item, visibility, dependency graph, change note, authored copy, local image bytes/order, product code/XML/assets/packaging inputs, and requested scope remain the same
+- **THEN** the workflow validates the deterministic lineage and continues through final submission and subscribed-copy verification under the existing authorization without prompting the operator again
+
+The deterministic lineage SHALL hash the complete committed source tree except exactly the generated resolved Workshop description and its provenance file. A separate authorization-intent hash SHALL bind that source-tree hash, item/account/application identity, visibility, title/tags, required dependency graph, change note, primary preview hash, ordered additional-preview tokens/hashes, and showcase policy. Preview synchronization SHALL copy both hashes into its remote inventory; description resolution SHALL retain them in provenance; and final staging SHALL refuse resolved presentation when either hash differs.
+
+#### Scenario: Release intent changes after dry-run
+- **WHEN** the target item, visibility, dependency graph, change note, authored copy, local image bytes/order, staged product content, or requested scope changes after authorization
+- **THEN** the Gateway rejects the stale release lineage, performs a new validation and review cycle, and requires fresh authorization before another Steam submission
 
 #### Scenario: Required Steam dependencies are reconciled deliberately
 - **WHEN** the reviewed dry-run shows required Workshop items that must be added or stale required-item edges that must be removed and the operator confirms the exact dependency diff
@@ -262,6 +268,10 @@ After Steam reports a successful update and CDN propagation, the release workflo
 #### Scenario: Published Immersive Chefs is verified as a subscriber receives it
 - **WHEN** the confirmed RimWorld 1.6 Immersive Chefs update reaches Steam
 - **THEN** the exact item is subscribed or refreshed, its reacquired files match the reviewed candidate, and a fresh game loads that Workshop copy and passes the declared observable native cooking/dining smoke workflow
+
+#### Scenario: Subscribed verification preflights a legacy-safe evidence path
+- **WHEN** the publisher prepares the fresh subscribed-copy Gateway smoke on Windows
+- **THEN** it selects a short repository-local ignored evidence root and rejects any projected deepest session temporary path at or beyond the legacy Windows path limit before moving the local product or launching RimWorld
 
 #### Scenario: Steam returns stale or different content
 - **WHEN** the subscribed Workshop directory is absent, has not reached the published manifest, or differs from the staged candidate

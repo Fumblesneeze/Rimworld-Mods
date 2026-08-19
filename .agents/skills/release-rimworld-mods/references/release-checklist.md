@@ -73,7 +73,7 @@ A publishable candidate has all of the following:
   independently reviewed feature cards remain eligible presentation inputs.
 - Put any author-requested AI/process disclosure in the final `Author's Note`; no content follows it. Be candid about playtesting limits and live-AI behavior.
 - Fresh isolated exact-PID RimWorld + Gateway process with initialized Steam.
-- Mutation-free dry-run and explicit user confirmation bound to exact hashes.
+- Mutation-free dry-run and one explicit natural-language user authorization for the meaningful release intent. Keep exact hashes and the CLI confirmation phrase internal. The same authorization covers byte-verified preview synchronization, Steam URL/provenance resolution, final submission, dependency reconciliation, and subscribed-copy verification when item, visibility, dependency graph, change note, authored copy, local image bytes/order, product code/XML/assets/packaging inputs, and requested scope do not change. Enforce that claim with the authorization-intent lineage; exclude only the generated resolved-description/provenance pair from its committed source-tree hash.
 - A non-initial update has one specific player-facing change note bound to the plan, submitted through Steam's change-note parameter, retained in the receipt, and checked on the remote change history. Blank, generic, synthesized, or recycled notes are rejected.
 - One update operation at a time; no blind retry after submission uncertainty.
 - A first-publication ID is durable across candidates, every existing-item update passes an exact
@@ -88,6 +88,7 @@ A publishable candidate has all of the following:
 - Treat a user-stopped verification profile as disabled for that release. Record exact-process shutdown
   and the zero-process check; never relaunch it without fresh explicit authorization.
 - Preserve a secret-free receipt and exact cleanup outcome.
+- Keep subscribed-copy evidence under a short repository-local ignored root and preflight the projected Gateway session/temp path before launching RimWorld; do not discover a legacy Windows path-length failure after the smoke timeout.
 - After a verified first publication, commit the returned ID to the mod's release descriptor and disable first publication. Ignored artifacts are recovery evidence, never the cross-clone identity authority.
 
 ## Current implementation status

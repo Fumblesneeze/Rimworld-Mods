@@ -40,6 +40,22 @@ function Get-SubscribedSmokeEvidencePayload([object]$Document) {
     throw 'The subscribed Workshop E2E evidence has an unsupported schema.'
 }
 
+function Assert-SubscribedSmokeArtifactsPath([string]$Root) {
+    $longestGatewayTemporary = Join-Path $Root (
+        '20260819T143619955Z\smoke-001\20260819T143626581Z\SavedData\DevGateway\Sessions\' +
+        'ffffffffffffffffffffffffffffffff\.ffffffff.tmp')
+    if ($longestGatewayTemporary.Length -ge 260) {
+        throw "The subscribed-smoke output would exceed the guarded legacy Windows path limit: $Root"
+    }
+}
+
+function Get-SubscribedSmokeArtifactsRoot([string]$RepositoryRoot, [string]$AttemptId) {
+    if ($AttemptId -notmatch '^\d{8}T\d{9}Z$') { throw 'The subscribed-smoke attempt ID is invalid.' }
+    $root = [IO.Path]::GetFullPath((Join-Path $RepositoryRoot "artifacts\ReleaseSmoke\$AttemptId"))
+    Assert-SubscribedSmokeArtifactsPath -Root $root
+    return $root
+}
+
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $resolvedGame = [IO.Path]::GetFullPath($RimWorldPath).TrimEnd('\')
 $resolvedWorkshop = [IO.Path]::GetFullPath($SteamModContentFolder).TrimEnd('\')
@@ -57,9 +73,10 @@ if (-not (Test-Path -LiteralPath $identityPath -PathType Leaf) -or
 
 $runId = [datetime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ', [Globalization.CultureInfo]::InvariantCulture)
 if ([string]::IsNullOrWhiteSpace($ArtifactsPath)) {
-    $ArtifactsPath = Join-Path $repositoryRoot "artifacts\Releases\fumblesneeze.immersivechefs\subscribed-smoke\$runId"
+    $ArtifactsPath = Get-SubscribedSmokeArtifactsRoot -RepositoryRoot $repositoryRoot -AttemptId $runId
 }
 $runRoot = [IO.Path]::GetFullPath($ArtifactsPath)
+Assert-SubscribedSmokeArtifactsPath -Root $runRoot
 if (Test-Path -LiteralPath $runRoot) { throw "Subscribed-smoke output already exists: $runRoot" }
 
 $localProduct = Join-Path $resolvedGame 'Mods\fumblesneeze.immersivechefs'

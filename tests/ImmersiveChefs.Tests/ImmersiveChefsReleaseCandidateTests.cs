@@ -75,6 +75,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(publisher, Does.Contain("reconcileOnly"));
             Assert.That(publisher, Does.Contain("publication-state.txt"));
             Assert.That(publisher, Does.Contain("Invoke-ImmersiveChefsSubscribedSmoke.ps1"));
+            Assert.That(publisher, Does.Not.Contain("-ArtifactsPath $subscribedSmokeRoot"));
             Assert.That(publisher, Does.Contain("publication-receipt.json"));
         });
 
@@ -98,6 +99,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(subscribedSmoke, Does.Contain("release.immersive-chefs-subscribed-native-cooking-dining"));
             Assert.That(subscribedSmoke, Does.Contain("RimWorldDevGateway.ReleaseSmoke.EndToEndTests.csproj"));
             Assert.That(subscribedSmoke, Does.Contain("native Prioritize and Consume float-menu callbacks"));
+            Assert.That(subscribedSmoke, Does.Contain("artifacts\\ReleaseSmoke"));
+            Assert.That(subscribedSmoke, Does.Contain("Assert-SubscribedSmokeArtifactsPath -Root $runRoot"));
             Assert.That(subscribedSmoke, Does.Contain("Move-Item -LiteralPath $backupProduct -Destination $localProduct"));
         });
     }

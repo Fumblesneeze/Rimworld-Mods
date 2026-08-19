@@ -457,10 +457,13 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
                    "\",\"remoteIndex\":" + index + ",\"remoteUrl\":\"https://images.steamusercontent.com/ugc/" +
                    (1000 + index) + "/card.png\",\"remoteType\":\"k_EItemPreviewType_Image\"}";
         }).ToArray();
+        var authorizationTree = new string('B', 64);
+        var authorizationIntent = new string('C', 64);
         File.WriteAllText(
             inventoryPath,
             "{\"schema\":\"ImmersiveChefs/WorkshopRemotePreviewInventory/v1\",\"publishedFileId\":\"3782589902\",\"publicationPlanSha256\":\"" +
-            previewPlan + "\",\"previews\":[" + string.Join(",", previewEntries) +
+            previewPlan + "\",\"authorizationSourceTreeSha256\":\"" + authorizationTree +
+            "\",\"authorizationIntentSha256\":\"" + authorizationIntent + "\",\"previews\":[" + string.Join(",", previewEntries) +
             "]}",
             new UTF8Encoding(false));
         var rimWorldPath = typeof(ImmersiveChefsReleaseScriptBehaviorTests).Assembly
@@ -488,6 +491,8 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
             var provenance = File.ReadAllText(provenancePath);
             Assert.That(provenance, Does.Contain("3782589902"));
             Assert.That(provenance, Does.Contain(previewPlan));
+            Assert.That(provenance, Does.Contain(authorizationTree));
+            Assert.That(provenance, Does.Contain(authorizationIntent));
         });
     }
 
@@ -549,19 +554,102 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         using var fixture = Fixture.Create();
         var run = fixture.InvokeFunctions(
             "Build-ImmersiveChefsRelease.ps1",
-            new[] { "Test-WorkshopPreviewProvenance" },
+            new[] { "Test-WorkshopPreviewProvenance", "Test-WorkshopAuthorizationProvenance" },
             "$current=@([pscustomobject]@{token='hero';path='hero.png';sha256='AAAA'},[pscustomobject]@{token='meals';path='meals.png';sha256='BBBB'});" +
-            "$exact=@([pscustomobject]@{token='hero';remoteIndex=0;localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA';remoteType='k_EItemPreviewType_Image'}," +
-            "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='BBBB';remoteSha256='BBBB';remoteType='k_EItemPreviewType_Image'});" +
-            "$drift=@([pscustomobject]@{token='hero';remoteIndex=0;localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA';remoteType='k_EItemPreviewType_Image'}," +
-            "[pscustomobject]@{token='meals';remoteIndex=1;localPath='meals.png';localSha256='CCCC';remoteSha256='CCCC';remoteType='k_EItemPreviewType_Image'});" +
-            "$ok=Test-WorkshopPreviewProvenance $current $exact; $bad=Test-WorkshopPreviewProvenance $current $drift;" +
-            "Write-Output ($ok.ToString()+'|'+$bad.ToString())");
+            "$exact=@([pscustomobject]@{token='hero';remoteIndex=0;remoteUrl='https://images.steamusercontent.com/ugc/1/A/';localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA';remoteType='k_EItemPreviewType_Image'}," +
+            "[pscustomobject]@{token='meals';remoteIndex=1;remoteUrl='https://images.steamusercontent.com/ugc/2/B/';localPath='meals.png';localSha256='BBBB';remoteSha256='BBBB';remoteType='k_EItemPreviewType_Image'});" +
+            "$drift=@([pscustomobject]@{token='hero';remoteIndex=0;remoteUrl='https://images.steamusercontent.com/ugc/1/A/';localPath='hero.png';localSha256='AAAA';remoteSha256='AAAA';remoteType='k_EItemPreviewType_Image'}," +
+            "[pscustomobject]@{token='meals';remoteIndex=1;remoteUrl='https://images.steamusercontent.com/ugc/2/B/';localPath='meals.png';localSha256='CCCC';remoteSha256='CCCC';remoteType='k_EItemPreviewType_Image'});" +
+            "$exactProvenance=[pscustomobject]@{authorizationSourceTreeSha256=('E'*64);authorizationIntentSha256=('D'*64);previews=$exact};" +
+            "$driftedIntent=[pscustomobject]@{authorizationSourceTreeSha256=('E'*64);authorizationIntentSha256=('C'*64);previews=$exact};" +
+            "$ok=Test-WorkshopAuthorizationProvenance -AuthorizationSourceTreeSha256 ('E'*64) -AuthorizationIntentSha256 ('D'*64) -CurrentPreviews $current -Provenance $exactProvenance;" +
+            "$previewDrift=Test-WorkshopAuthorizationProvenance -AuthorizationSourceTreeSha256 ('E'*64) -AuthorizationIntentSha256 ('D'*64) -CurrentPreviews $current -Provenance ([pscustomobject]@{authorizationSourceTreeSha256=('E'*64);authorizationIntentSha256=('D'*64);previews=$drift});" +
+            "$intentDrift=Test-WorkshopAuthorizationProvenance -AuthorizationSourceTreeSha256 ('E'*64) -AuthorizationIntentSha256 ('D'*64) -CurrentPreviews $current -Provenance $driftedIntent;" +
+            "$treeDrift=Test-WorkshopAuthorizationProvenance -AuthorizationSourceTreeSha256 ('E'*64) -AuthorizationIntentSha256 ('D'*64) -CurrentPreviews $current -Provenance ([pscustomobject]@{authorizationSourceTreeSha256=('F'*64);authorizationIntentSha256=('D'*64);previews=$exact});" +
+            "$badHost=@($exact[0].PSObject.Copy(),$exact[1].PSObject.Copy());$badHost[1].remoteUrl='https://example.invalid/not-steam/';" +
+            "$hostDrift=Test-WorkshopAuthorizationProvenance -AuthorizationSourceTreeSha256 ('E'*64) -AuthorizationIntentSha256 ('D'*64) -CurrentPreviews $current -Provenance ([pscustomobject]@{authorizationSourceTreeSha256=('E'*64);authorizationIntentSha256=('D'*64);previews=$badHost});" +
+            "Write-Output ($ok.ToString()+'|'+$previewDrift.ToString()+'|'+$intentDrift.ToString()+'|'+$treeDrift.ToString()+'|'+$hostDrift.ToString())");
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
-            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False"));
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False|False|False"));
         });
+    }
+
+    [Test]
+    public void Resolved_description_must_be_the_exact_template_projection_of_verified_Steam_image_urls()
+    {
+        using var fixture = Fixture.Create();
+        var template = Path.Combine(fixture.Root, "description.template.bbcode");
+        var description = Path.Combine(fixture.Root, "description.bbcode");
+        File.WriteAllText(template, "top [img]{{image:kitchenware}}[/img] middle [img]{{image:meals}}[/img] end", new UTF8Encoding(false));
+        File.WriteAllText(description, "top [img]https://images.steamusercontent.com/ugc/1/A/[/img] middle [img]https://images.steamusercontent.com/ugc/2/B/[/img] end", new UTF8Encoding(false));
+        var run = fixture.InvokeFunctions(
+            "Build-ImmersiveChefsRelease.ps1",
+            new[] { "Test-WorkshopResolvedDescriptionMatchesTemplate" },
+            "$previews=@([pscustomobject]@{token='hero';remoteUrl='https://images.steamusercontent.com/ugc/0/H/'}," +
+            "[pscustomobject]@{token='kitchenware';remoteUrl='https://images.steamusercontent.com/ugc/1/A/'}," +
+            "[pscustomobject]@{token='meals';remoteUrl='https://images.steamusercontent.com/ugc/2/B/'});" +
+            "$ok=Test-WorkshopResolvedDescriptionMatchesTemplate -TemplatePath " + Ps(template) + " -DescriptionPath " + Ps(description) + " -ProvenancePreviews $previews;" +
+            "$previews[1].remoteUrl='https://example.invalid/not-steam/';$badHost=Test-WorkshopResolvedDescriptionMatchesTemplate -TemplatePath " + Ps(template) + " -DescriptionPath " + Ps(description) + " -ProvenancePreviews $previews;$previews[1].remoteUrl='https://images.steamusercontent.com/ugc/1/A/';" +
+            "Set-Content -LiteralPath " + Ps(description) + " -Value 'tampered copy with a self-consistent hash' -NoNewline -Encoding utf8;" +
+            "$tampered=Test-WorkshopResolvedDescriptionMatchesTemplate -TemplatePath " + Ps(template) + " -DescriptionPath " + Ps(description) + " -ProvenancePreviews $previews;" +
+            "Write-Output ($ok.ToString()+'|'+$badHost.ToString()+'|'+$tampered.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False"));
+        });
+    }
+
+    [Test]
+    public void Release_authorization_tree_ignores_only_Steam_URL_outputs_and_detects_authored_or_product_drift()
+    {
+        using var fixture = Fixture.Create();
+        var repository = Path.Combine(fixture.Root, "authorization-repository");
+        var workshop = Path.Combine(repository, "mods", "ImmersiveChefs", "Release", "workshop");
+        var source = Path.Combine(repository, "mods", "ImmersiveChefs", "Source");
+        Directory.CreateDirectory(workshop);
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(workshop, "description.bbcode"), "old Steam URL", new UTF8Encoding(false));
+        File.WriteAllText(Path.Combine(workshop, "description.provenance.json"), "old provenance", new UTF8Encoding(false));
+        File.WriteAllText(Path.Combine(workshop, "description.template.bbcode"), "authored copy", new UTF8Encoding(false));
+        File.WriteAllText(Path.Combine(source, "Cookware.cs"), "product source", new UTF8Encoding(false));
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" init").ExitCode, Is.Zero);
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" config user.email test@example.invalid").ExitCode, Is.Zero);
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" config user.name test").ExitCode, Is.Zero);
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" add .").ExitCode, Is.Zero);
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" commit -m initial").ExitCode, Is.Zero);
+
+        string Digest()
+        {
+            var invocation = fixture.InvokeFunctions(
+                "Build-ImmersiveChefsRelease.ps1",
+                new[] { "Get-Sha256Text", "Get-ReleaseAuthorizationSourceTreeSha256" },
+                "Write-Output (Get-ReleaseAuthorizationSourceTreeSha256 " + Ps(repository) + ")");
+            Assert.That(invocation.ExitCode, Is.Zero, invocation.StandardError);
+            return invocation.StandardOutput.Trim();
+        }
+
+        var initial = Digest();
+        File.WriteAllText(Path.Combine(workshop, "description.bbcode"), "new Steam URL", new UTF8Encoding(false));
+        File.WriteAllText(Path.Combine(workshop, "description.provenance.json"), "new provenance", new UTF8Encoding(false));
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" add .").ExitCode, Is.Zero);
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" commit -m resolved").ExitCode, Is.Zero);
+        var urlOnly = Digest();
+        File.WriteAllText(Path.Combine(workshop, "description.template.bbcode"), "changed authored copy", new UTF8Encoding(false));
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" add .").ExitCode, Is.Zero);
+        Assert.That(Fixture.RunProcess("git", $"-C \"{repository}\" commit -m drift").ExitCode, Is.Zero);
+        var authoredDrift = Digest();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(initial, Does.Match("^[A-F0-9]{64}$"));
+            Assert.That(urlOnly, Is.EqualTo(initial));
+            Assert.That(authoredDrift, Is.Not.EqualTo(initial));
+        });
+        foreach (var path in Directory.GetFiles(repository, "*", SearchOption.AllDirectories))
+            File.SetAttributes(path, FileAttributes.Normal);
     }
 
     [Test]
@@ -756,24 +844,28 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     [Test]
-    public void Final_remote_preview_slots_must_match_the_urls_embedded_in_the_description()
+    public void Final_remote_preview_slots_and_bytes_must_match_before_publication()
     {
         using var fixture = Fixture.Create();
+        var downloadRoot = Path.Combine(fixture.Root, "preview-downloads");
         var run = fixture.InvokeFunctions(
             "Invoke-ImmersiveChefsWorkshopRelease.ps1",
-            new[] { "Test-RemoteWorkshopPreviewsMatchResolvedDescription" },
-            "$resolved=@([pscustomobject]@{remoteIndex=0;remoteUrl='https://images.steamusercontent.com/a.png';remoteType='k_EItemPreviewType_Image'}," +
-            "[pscustomobject]@{remoteIndex=1;remoteUrl='https://images.steamusercontent.com/b.png';remoteType='k_EItemPreviewType_Image'});" +
+            new[] { "Test-RemoteWorkshopPreviewsMatchResolvedDescription", "Test-ResolvedWorkshopPreviewsReadyForPublication" },
+            "$resolved=@([pscustomobject]@{remoteIndex=0;remoteUrl='https://images.steamusercontent.com/a.png';remoteType='k_EItemPreviewType_Image';remoteSha256='BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD'}," +
+            "[pscustomobject]@{remoteIndex=1;remoteUrl='https://images.steamusercontent.com/b.png';remoteType='k_EItemPreviewType_Image';remoteSha256='BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD'});" +
             "$remote=@([pscustomobject]@{Index=0;Url='https://images.steamusercontent.com/a.png';Type='k_EItemPreviewType_Image'}," +
             "[pscustomobject]@{Index=1;Url='https://images.steamusercontent.com/b.png';Type='k_EItemPreviewType_Image'});" +
-            "$reordered=@($remote[1],$remote[0]);" +
-            "$ok=Test-RemoteWorkshopPreviewsMatchResolvedDescription $remote $resolved;" +
-            "$bad=Test-RemoteWorkshopPreviewsMatchResolvedDescription $reordered $resolved;" +
-            "Write-Output ($ok.ToString()+'|'+$bad.ToString())");
+            "$download={param($uri,$path)[IO.File]::WriteAllText($path,'abc',[Text.UTF8Encoding]::new($false))};" +
+            "$ok=Test-ResolvedWorkshopPreviewsReadyForPublication -RemotePreviews $remote -ResolvedPreviews $resolved -DownloadRoot " + Ps(downloadRoot) + " -DownloadOperation $download;" +
+            "$sameHostDrift=@($resolved[0].PSObject.Copy(),$resolved[1].PSObject.Copy());$sameHostDrift[1].remoteUrl='https://images.steamusercontent.com/different.png';" +
+            "$urlDrift=Test-ResolvedWorkshopPreviewsReadyForPublication -RemotePreviews $remote -ResolvedPreviews $sameHostDrift -DownloadRoot " + Ps(downloadRoot) + " -DownloadOperation $download;" +
+            "$wrongBytes={param($uri,$path)[IO.File]::WriteAllText($path,'abd',[Text.UTF8Encoding]::new($false))};" +
+            "$byteDrift=Test-ResolvedWorkshopPreviewsReadyForPublication -RemotePreviews $remote -ResolvedPreviews $resolved -DownloadRoot " + Ps(downloadRoot) + " -DownloadOperation $wrongBytes;" +
+            "Write-Output ($ok.ToString()+'|'+$urlDrift.ToString()+'|'+$byteDrift.ToString())");
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
-            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False"));
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False"));
         });
     }
 
@@ -925,6 +1017,31 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
             Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False|True"));
+        });
+    }
+
+    [Test]
+    public void Subscribed_smoke_uses_a_short_path_and_rejects_an_unsafe_projected_gateway_session_path()
+    {
+        using var fixture = Fixture.Create();
+        const string attemptId = "20260819T143503061Z";
+        var safeRepositoryRoot = Path.Combine(Path.GetPathRoot(fixture.Root)!, "rimmods");
+        var expected = Path.Combine(safeRepositoryRoot, "artifacts", "ReleaseSmoke", attemptId);
+        var unsafeRepositoryRoot = Path.Combine(Path.GetPathRoot(fixture.Root)!, new string('x', 220));
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsSubscribedSmoke.ps1",
+            new[] { "Assert-SubscribedSmokeArtifactsPath", "Get-SubscribedSmokeArtifactsRoot" },
+            "$safe=Get-SubscribedSmokeArtifactsRoot " + Ps(safeRepositoryRoot) + " '" + attemptId + "'; " +
+            "$unsafe=''; try {$null=Get-SubscribedSmokeArtifactsRoot " + Ps(unsafeRepositoryRoot) + " '" + attemptId + "'} catch {$unsafe=$_.Exception.Message}; " +
+            "Write-Output ($safe+'|'+$unsafe)");
+        var parts = run.StandardOutput.Trim().Split(new[] { '|' }, 2);
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(parts[0], Is.EqualTo(expected));
+            Assert.That(parts[0], Does.Not.Contain("fumblesneeze.immersivechefs"));
+            Assert.That(parts[0], Does.Not.Contain("publication"));
+            Assert.That(parts[1], Does.Contain("legacy Windows path limit"));
         });
     }
 

@@ -43,8 +43,12 @@ if ([string]$inventory.schema -cne 'ImmersiveChefs/WorkshopRemotePreviewInventor
 }
 [ulong]$publishedFileId = 0
 $previewPlanSha256 = [string]$inventory.publicationPlanSha256
+$authorizationSourceTreeSha256 = if ($null -eq $inventory.PSObject.Properties['authorizationSourceTreeSha256']) { '' } else { [string]$inventory.authorizationSourceTreeSha256 }
+$authorizationIntentSha256 = if ($null -eq $inventory.PSObject.Properties['authorizationIntentSha256']) { '' } else { [string]$inventory.authorizationIntentSha256 }
 if (-not [ulong]::TryParse([string]$inventory.publishedFileId, [ref]$publishedFileId) -or $publishedFileId -eq 0 -or
-    $previewPlanSha256 -notmatch '^[A-Fa-f0-9]{64}$') {
+    $previewPlanSha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+    $authorizationSourceTreeSha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+    $authorizationIntentSha256 -notmatch '^[A-Fa-f0-9]{64}$') {
     Exit-InvalidInput 'The remote preview inventory item/plan identity is invalid.'
 }
 $previews = @($inventory.previews)
@@ -123,6 +127,8 @@ $provenance = [pscustomobject][ordered]@{
     schema = 'ImmersiveChefs/WorkshopDescriptionProvenance/v1'
     publishedFileId = [string]$publishedFileId
     previewPublicationPlanSha256 = $previewPlanSha256.ToUpperInvariant()
+    authorizationSourceTreeSha256 = $authorizationSourceTreeSha256.ToUpperInvariant()
+    authorizationIntentSha256 = $authorizationIntentSha256.ToUpperInvariant()
     descriptionSha256 = [string]$result.sha256
     previews = @($previews | ForEach-Object {
         [pscustomobject][ordered]@{

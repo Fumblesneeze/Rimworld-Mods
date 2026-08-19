@@ -43,6 +43,25 @@ function Get-Sha256Text {
     finally { $sha.Dispose() }
 }
 
+function Get-ReleaseAuthorizationSourceTreeSha256([string]$RepositoryRoot) {
+    $tree = @(& git -C $RepositoryRoot ls-tree -r --full-tree HEAD --)
+    if ($LASTEXITCODE -ne 0 -or $tree.Count -eq 0) {
+        throw 'Could not resolve the committed release-authorization source tree.'
+    }
+    $excluded = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $null = $excluded.Add('mods/ImmersiveChefs/Release/workshop/description.bbcode')
+    $null = $excluded.Add('mods/ImmersiveChefs/Release/workshop/description.provenance.json')
+    $authorizedEntries = [System.Collections.Generic.List[string]]::new()
+    foreach ($entry in $tree) {
+        $separator = $entry.IndexOf("`t", [StringComparison]::Ordinal)
+        if ($separator -lt 1) { throw 'The committed source-tree inventory is malformed.' }
+        $path = $entry.Substring($separator + 1).Replace('\', '/')
+        if (-not $excluded.Contains($path)) { $authorizedEntries.Add($entry) }
+    }
+    if ($authorizedEntries.Count -eq 0) { throw 'The release-authorization source tree is empty.' }
+    return Get-Sha256Text ($authorizedEntries -join "`n")
+}
+
 function Get-CanonicalJson([object]$Value) {
     return $Value | ConvertTo-Json -Depth 20 -Compress
 }
@@ -614,8 +633,12 @@ function Test-WorkshopPreviewProvenance {
     for ($index = 0; $index -lt $CurrentPreviews.Count; $index++) {
         $current = $CurrentPreviews[$index]
         $provenance = $ProvenancePreviews[$index]
+        [Uri]$remoteUri = $null
         if ([string]$provenance.token -cne [string]$current.token -or
             [int]$provenance.remoteIndex -ne $index -or
+            -not [Uri]::TryCreate([string]$provenance.remoteUrl, [UriKind]::Absolute, [ref]$remoteUri) -or
+            [string]$remoteUri.Scheme -cne 'https' -or
+            [string]$remoteUri.Host -cne 'images.steamusercontent.com' -or
             [string]::IsNullOrWhiteSpace([string]$provenance.localPath) -or
             [IO.Path]::GetFileName([string]$provenance.localPath) -cne [IO.Path]::GetFileName([string]$current.path) -or
             [string]$provenance.localSha256 -cne [string]$current.sha256 -or
@@ -625,6 +648,71 @@ function Test-WorkshopPreviewProvenance {
         }
     }
     return $true
+}
+
+function Test-WorkshopAuthorizationProvenance {
+    param(
+        [Parameter(Mandatory)][string]$AuthorizationSourceTreeSha256,
+        [Parameter(Mandatory)][string]$AuthorizationIntentSha256,
+        [Parameter(Mandatory)][object[]]$CurrentPreviews,
+        [Parameter(Mandatory)][object]$Provenance
+    )
+    if ($AuthorizationSourceTreeSha256 -notmatch '^[A-F0-9]{64}$' -or
+        $AuthorizationIntentSha256 -notmatch '^[A-F0-9]{64}$' -or
+        $null -eq $Provenance.PSObject.Properties['authorizationSourceTreeSha256'] -or
+        [string]$Provenance.authorizationSourceTreeSha256 -cne $AuthorizationSourceTreeSha256 -or
+        $null -eq $Provenance.PSObject.Properties['authorizationIntentSha256'] -or
+        [string]$Provenance.authorizationIntentSha256 -cne $AuthorizationIntentSha256 -or
+        $null -eq $Provenance.PSObject.Properties['previews']) {
+        return $false
+    }
+    return Test-WorkshopPreviewProvenance -CurrentPreviews $CurrentPreviews -ProvenancePreviews @($Provenance.previews)
+}
+
+function Test-WorkshopResolvedDescriptionMatchesTemplate {
+    param(
+        [Parameter(Mandatory)][string]$TemplatePath,
+        [Parameter(Mandatory)][string]$DescriptionPath,
+        [Parameter(Mandatory)][object[]]$ProvenancePreviews
+    )
+    if (-not (Test-Path -LiteralPath $TemplatePath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $DescriptionPath -PathType Leaf)) {
+        return $false
+    }
+
+    try {
+        $expected = Get-Content -LiteralPath $TemplatePath -Raw -Encoding UTF8
+        $actual = Get-Content -LiteralPath $DescriptionPath -Raw -Encoding UTF8
+    }
+    catch { return $false }
+
+    $templateMatches = @([regex]::Matches($expected, '\{\{image:(?<token>[a-z0-9][a-z0-9-]*)\}\}'))
+    if ($templateMatches.Count -eq 0) { return $false }
+    $templateTokens = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($match in $templateMatches) {
+        if (-not $templateTokens.Add([string]$match.Groups['token'].Value)) { return $false }
+    }
+
+    $resolvedByToken = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::Ordinal)
+    foreach ($preview in $ProvenancePreviews) {
+        $token = [string]$preview.token
+        [Uri]$remoteUri = $null
+        if ($token -notmatch '^[a-z0-9][a-z0-9-]*$' -or
+            -not [Uri]::TryCreate([string]$preview.remoteUrl, [UriKind]::Absolute, [ref]$remoteUri) -or
+            [string]$remoteUri.Scheme -cne 'https' -or
+            [string]$remoteUri.Host -cne 'images.steamusercontent.com' -or
+            $resolvedByToken.ContainsKey($token)) {
+            return $false
+        }
+        $resolvedByToken.Add($token, [string]$preview.remoteUrl)
+    }
+
+    foreach ($token in $templateTokens) {
+        if (-not $resolvedByToken.ContainsKey($token)) { return $false }
+        $expected = $expected.Replace("{{image:$token}}", $resolvedByToken[$token])
+    }
+    if ($expected -match '\{\{image:[^}]+\}\}') { return $false }
+    return $expected -ceq $actual
 }
 
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -642,6 +730,7 @@ if ($dirty.Count -ne 0) {
 
 $revision = (& git -C $repositoryRoot rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $revision -notmatch '^[0-9a-f]{40}$') { throw 'Could not resolve the source revision.' }
+$authorizationSourceTreeSha256 = Get-ReleaseAuthorizationSourceTreeSha256 -RepositoryRoot $repositoryRoot
 $release = Get-Content -LiteralPath $descriptorPath -Raw | ConvertFrom-Json
 if ($release.schema -cne 'ImmersiveChefs/Release/v1' -or
     $release.packageId -cne 'fumblesneeze.immersivechefs' -or
@@ -738,6 +827,7 @@ if (Test-Path -LiteralPath (Join-Path $packageRoot '1.6\Assemblies\ImmersiveChef
 }
 
 $descriptionSource = Join-Path $releaseRoot ([string]$release.description)
+$descriptionTemplateSource = Join-Path $releaseRoot 'workshop\description.template.bbcode'
 $descriptionProvenanceSource = [IO.Path]::ChangeExtension($descriptionSource, '.provenance.json')
 $previewSource = Join-Path $releaseRoot ([string]$release.preview)
 Copy-Item -LiteralPath $descriptionSource -Destination (Join-Path $presentationRoot 'description.bbcode')
@@ -879,6 +969,24 @@ Write-JsonUtf8 -Path $manifestPath -Value ([pscustomobject][ordered]@{
 
 $descriptionPath = Join-Path $presentationRoot 'description.bbcode'
 $previewPath = Join-Path $presentationRoot 'preview-main.png'
+$authorizationIntentSha256 = Get-Sha256Text (Get-CanonicalJson ([pscustomobject][ordered]@{
+    schema = 'ImmersiveChefs/WorkshopReleaseAuthorizationIntent/v1'
+    sourceTreeSha256 = $authorizationSourceTreeSha256
+    steamAppId = 294100
+    steamUserId = [string]$release.steamUserId
+    publishedFileId = if ($effectivePublishedFileId -eq 0) { $null } else { [string]$effectivePublishedFileId }
+    visibility = if ($effectivePublishedFileId -eq 0) { 'Private' } else { [string]$release.visibility }
+    packageId = [string]$release.packageId
+    title = [string]$release.title
+    tags = @($release.tags | ForEach-Object { [string]$_ })
+    requiredWorkshopItems = @($release.requiredWorkshopItems | ForEach-Object { [string]$_ })
+    changeNote = $changeNote
+    previewSha256 = (Get-FileHash -LiteralPath $previewPath -Algorithm SHA256).Hash
+    additionalPreviews = @($additionalPreviews | ForEach-Object {
+        [pscustomobject][ordered]@{ token = [string]$_.token; sha256 = [string]$_.sha256 }
+    })
+    showcasePublicationStatus = [string]$showcaseDefinition.publicationStatus
+}))
 $descriptionText = Get-Content -LiteralPath $descriptionPath -Raw -Encoding UTF8
 $hasUnresolvedImageTokens = $descriptionText -match '\{\{image:[^}]+\}\}'
 $resolvedImageCount = [regex]::Matches($descriptionText, '\[img\]https://images\.steamusercontent\.com/.+?\[/img\]').Count
@@ -890,7 +998,15 @@ if ($presentationResolved -and (Test-Path -LiteralPath $descriptionProvenancePat
     if ([string]$descriptionProvenance.schema -cne 'ImmersiveChefs/WorkshopDescriptionProvenance/v1' -or
         [string]$descriptionProvenance.publishedFileId -cne [string]$effectivePublishedFileId -or
         [string]$descriptionProvenance.descriptionSha256 -cne (Get-FileHash -LiteralPath $descriptionPath -Algorithm SHA256).Hash -or
-        -not (Test-WorkshopPreviewProvenance -CurrentPreviews $additionalPreviews -ProvenancePreviews @($descriptionProvenance.previews))) {
+        -not (Test-WorkshopAuthorizationProvenance `
+            -AuthorizationSourceTreeSha256 $authorizationSourceTreeSha256 `
+            -AuthorizationIntentSha256 $authorizationIntentSha256 `
+            -CurrentPreviews $additionalPreviews `
+            -Provenance $descriptionProvenance) -or
+        -not (Test-WorkshopResolvedDescriptionMatchesTemplate `
+            -TemplatePath $descriptionTemplateSource `
+            -DescriptionPath $descriptionPath `
+            -ProvenancePreviews @($descriptionProvenance.previews))) {
         $presentationResolved = $false
         $descriptionProvenance = $null
     }
@@ -899,6 +1015,8 @@ elseif ($presentationResolved) { $presentationResolved = $false }
 $plan = [pscustomobject][ordered]@{
     schema = 'ImmersiveChefs/WorkshopPublicationPlan/v1'
     sourceRevision = $revision
+    authorizationSourceTreeSha256 = $authorizationSourceTreeSha256
+    authorizationIntentSha256 = $authorizationIntentSha256
     releaseDescriptorSha256 = (Get-FileHash -LiteralPath $descriptorPath -Algorithm SHA256).Hash
     steamAppId = 294100
     steamUserId = [string]$release.steamUserId
