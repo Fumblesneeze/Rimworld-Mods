@@ -4,9 +4,10 @@ Adds a deterministic Core-style exterior contour to a RimWorld PNG.
 
 .DESCRIPTION
 Invokes the bundled Pillow processor. Existing nontransparent RGBA pixels are preserved exactly;
-new pixels are limited to originally transparent, canvas-edge-connected background. The required
-baseline and topology approval manifest validate source identity, class policy, components, holes,
-and protected gap runs.
+new pixels use a rounded Euclidean contour rasterized at 4x source resolution and filtered down once,
+and remain limited to originally transparent, canvas-edge-connected background. The required baseline
+and topology approval manifest validate source identity, class policy, components, holes, protected
+gap runs, and an optional asset-specific outline color.
 When a Stuff mask is supplied, its original pixels are preserved and new contour pixels are black.
 
 Exit code 0 is success, 2 is an admitted invalid value or missing prerequisite, and 1 is a

@@ -108,10 +108,13 @@ white fringes.
    stay wholly inside the run's four-final-pixel neighborhood; unrelated or oversized exception
    rectangles fail closed.
 3. Generate the two class-approved depths from the already approved art (fine `0.75/1`, broad
-   `1/2`, building `2/3` final pixels). Use
-   `Add-RimWorldSpriteOutline.ps1` so the candidates preserve source pixels and Stuff-mask semantics.
+   `1/2`, building `2/3` final pixels). Use `Add-RimWorldSpriteOutline.ps1` so the candidates preserve
+   source pixels and Stuff-mask semantics while the new exterior contour is rounded and antialiased
+   through one deterministic 4x supersampled pass. Hard binary square-pixel dilation is not an
+   acceptable contour candidate.
 4. Compare both candidates beside the Core sample at map scale on light and dark backgrounds. Reject
    blobby handles, sealed openings, visible cast-shadow reads, and contours that dominate fine tools.
-5. Promote only the selected candidate, update its output hash/ring fractions, then verify the real Def
+5. Promote only the selected candidate, update its output hash/ring fractions, and pin any reviewed
+   non-default `outlineColor` in the approval entry so regeneration must supply the exact value; then verify the real Def
    in RimWorld. The Pillow proxy is deterministic regression evidence, not a substitute for Unity's
    imported/mipped render.

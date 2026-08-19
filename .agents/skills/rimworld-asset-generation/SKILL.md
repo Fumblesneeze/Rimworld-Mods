@@ -138,10 +138,13 @@ recorded Core baseline. The command never overwrites inputs or occupied outputs:
 ```
 
 The approval entry names its `class`, pre-outline SHA-256, final canvas, component/hole counts, and
-each at-risk horizontal or vertical `protectedGap` cross-section. Class stroke limits, ring-darkness
+each at-risk horizontal or vertical `protectedGap` cross-section. It may also pin an asset-specific
+`outlineColor="#RRGGBB"`; when present, pass the same `-OutlineColor` value and the processor rejects
+a mismatch before publication. Class stroke limits, ring-darkness
 thresholds, and minimum edge clearance come from the baseline and cannot be weakened per asset.
-The processor preserves every original nontransparent RGBA pixel, adds only to originally alpha-zero
-canvas-edge-connected background, leaves enclosed holes alone, and mirrors new diffuse alpha into a
-fixed-black Stuff-mask contour. It rejects a candidate before publication when topology, gap width,
-ring darkness, or edge clearance fails. Pillow is a deterministic package proxy; the reviewed live
-RimWorld render remains authoritative.
+The processor preserves every original nontransparent RGBA pixel, builds a rounded Euclidean contour
+at 4x source resolution, filters that contour down once for fractional edge coverage, adds only to
+originally alpha-zero canvas-edge-connected background, leaves enclosed holes alone, and mirrors new
+diffuse alpha into a fixed-black Stuff-mask contour. It rejects a candidate before publication when
+topology, gap width, ring darkness, or edge clearance fails. Pillow is a deterministic package proxy;
+the reviewed live RimWorld render remains authoritative.

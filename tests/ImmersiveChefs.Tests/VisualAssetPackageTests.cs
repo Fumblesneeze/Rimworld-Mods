@@ -85,6 +85,7 @@ public sealed class VisualAssetPackageTests
         {
             var relativePath = (string)sprite.Attribute("path")!;
             var diffusePath = Path.Combine(textureRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            var outlineColor = (string?)sprite.Attribute("outlineColor") ?? "#17130F";
             Assert.Multiple(() =>
             {
                 Assert.That((string?)sprite.Attribute("class"), Is.AnyOf("portable-fine", "portable-broad", "building"), relativePath);
@@ -97,14 +98,49 @@ public sealed class VisualAssetPackageTests
                 Assert.That((double?)sprite.Attribute("ring2"), Is.InRange(0.0, 1.0), relativePath);
                 Assert.That((double?)sprite.Attribute("ring3"), Is.InRange(0.0, 1.0), relativePath);
                 Assert.That((string?)sprite.Attribute("reviewEvidence"), Is.Not.Null.And.Not.Empty, relativePath);
+                Assert.That(outlineColor, Does.Match("^#[0-9A-F]{6}$"), relativePath);
                 Assert.That((string?)sprite.Attribute("preOutlineSha256"), Does.Match("^[0-9A-F]{64}$"), relativePath);
                 Assert.That((string?)sprite.Attribute("outputSha256"), Is.EqualTo(ComputeSha256(diffusePath)), relativePath);
             });
         }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                sprites.Single(sprite => (string?)sprite.Attribute("path") == "Item/Kitchenware/Cookware/Cookware.png")
+                    .Attribute("class")?.Value,
+                Is.EqualTo("portable-broad"),
+                "Modern Steel cookware needs the broad contour class so it remains separated from a dark stove surface at actual map scale.");
+            Assert.That(
+                sprites.Single(sprite => (string?)sprite.Attribute("path") == "Item/Kitchenware/Cookware/Cookware_Dirty.png")
+                    .Attribute("class")?.Value,
+                Is.EqualTo("portable-broad"),
+                "Clean and dirty modern cookware must use the same approved contour class.");
+            Assert.That(
+                (int?)sprites.Single(sprite => (string?)sprite.Attribute("path") == "Item/Kitchenware/Cookware/Cookware.png")
+                    .Attribute("selectedStrokeSourcePixels"),
+                Is.EqualTo(8),
+                "The one-final-pixel modern-cookware contour disappears into the stove; select the reviewed two-final-pixel candidate.");
+            Assert.That(
+                (int?)sprites.Single(sprite => (string?)sprite.Attribute("path") == "Item/Kitchenware/Cookware/Cookware_Dirty.png")
+                    .Attribute("selectedStrokeSourcePixels"),
+                Is.EqualTo(8),
+                "Clean and dirty modern cookware must use the same two-final-pixel contour.");
+            Assert.That(
+                sprites.Single(sprite => (string?)sprite.Attribute("path") == "Item/Kitchenware/Cookware/Cookware.png")
+                    .Attribute("outlineColor")?.Value,
+                Is.EqualTo("#090705"),
+                "The modern cookware contour needs the reviewed near-black value to remain distinct on the dark stove.");
+            Assert.That(
+                sprites.Single(sprite => (string?)sprite.Attribute("path") == "Item/Kitchenware/Cookware/Cookware_Dirty.png")
+                    .Attribute("outlineColor")?.Value,
+                Is.EqualTo("#090705"),
+                "Clean and dirty modern cookware must use the same high-contrast contour color.");
+        });
     }
 
     [Test]
-    public void Outline_processor_adds_only_exterior_contour_and_preserves_topology_gaps_and_mask_semantics()
+    public void Outline_processor_adds_antialiased_round_exterior_contour_and_preserves_topology_gaps_and_mask_semantics()
     {
         var root = FindRepositoryRoot();
         var scriptPath = Path.Combine(
@@ -137,6 +173,8 @@ public sealed class VisualAssetPackageTests
                 FillRectangle(mask, 5, 5, 14, 14, maskColor);
                 ClearRectangle(diffuse, 8, 8, 11, 11);
                 ClearRectangle(mask, 8, 8, 11, 11);
+                diffuse.SetPixel(4, 10, Color.FromArgb(128, diffuseColor));
+                mask.SetPixel(4, 10, Color.FromArgb(128, maskColor));
 
                 FillRectangle(diffuse, 22, 6, 24, 32, diffuseColor);
                 FillRectangle(diffuse, 32, 6, 34, 32, diffuseColor);
@@ -200,6 +238,68 @@ public sealed class VisualAssetPackageTests
             Assert.That(result.ExitCode, Is.Zero, result.StandardOutput + Environment.NewLine + result.StandardError);
             Assert.That(File.Exists(outputPath), Is.True, result.StandardOutput + Environment.NewLine + result.StandardError);
             Assert.That(File.Exists(maskOutputPath), Is.True, result.StandardOutput + Environment.NewLine + result.StandardError);
+
+            var colorLockedManifestPath = Path.Combine(temporaryRoot, "color-locked-approvals.xml");
+            var colorLockedManifest = XDocument.Load(manifestPath);
+            colorLockedManifest.Root!.Element("sprite")!
+                .SetAttributeValue("outlineColor", "#090705");
+            colorLockedManifest.Save(colorLockedManifestPath);
+            var colorMismatchOutputPath = Path.Combine(temporaryRoot, "color-mismatch.png");
+            var colorMismatchMaskOutputPath = Path.Combine(temporaryRoot, "color-mismatch_m.png");
+            var colorMismatch = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                colorMismatchOutputPath,
+                2,
+                baselinePath,
+                colorLockedManifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                colorMismatchMaskOutputPath);
+            Assert.Multiple(() =>
+            {
+                Assert.That(colorMismatch.ExitCode, Is.EqualTo(2), colorMismatch.StandardOutput + Environment.NewLine + colorMismatch.StandardError);
+                Assert.That(colorMismatch.StandardError, Does.Contain("outline color").IgnoreCase);
+                Assert.That(File.Exists(colorMismatchOutputPath), Is.False, "A color-mismatched diffuse was published.");
+                Assert.That(File.Exists(colorMismatchMaskOutputPath), Is.False, "A color-mismatched mask was published.");
+            });
+
+            var colorMatchOutputPath = Path.Combine(temporaryRoot, "color-match.png");
+            var colorMatchMaskOutputPath = Path.Combine(temporaryRoot, "color-match_m.png");
+            var colorMatch = RunOutlineProcessor(
+                scriptPath,
+                inputPath,
+                colorMatchOutputPath,
+                2,
+                baselinePath,
+                colorLockedManifestPath,
+                "synthetic-fixture",
+                maskInputPath,
+                colorMatchMaskOutputPath,
+                "#090705");
+            Assert.Multiple(() =>
+            {
+                Assert.That(colorMatch.ExitCode, Is.Zero, colorMatch.StandardOutput + Environment.NewLine + colorMatch.StandardError);
+                Assert.That(colorMatch.StandardOutput, Does.Contain("\"outlineColor\":\"#090705\""));
+                Assert.That(File.Exists(colorMatchOutputPath), Is.True, "The matching pinned-color diffuse was not published.");
+                Assert.That(File.Exists(colorMatchMaskOutputPath), Is.True, "The matching pinned-color mask was not published.");
+            });
+            using (var colorMatched = new Bitmap(colorMatchOutputPath))
+            using (var colorMatchedMask = new Bitmap(colorMatchMaskOutputPath))
+            {
+                var contourPixel = colorMatched.GetPixel(4, 5);
+                var contourMaskPixel = colorMatchedMask.GetPixel(4, 5);
+                Assert.Multiple(() =>
+                {
+                    Assert.That(contourPixel.R, Is.EqualTo(9), "The pinned contour red channel was ignored.");
+                    Assert.That(contourPixel.G, Is.EqualTo(7), "The pinned contour green channel was ignored.");
+                    Assert.That(contourPixel.B, Is.EqualTo(5), "The pinned contour blue channel was ignored.");
+                    Assert.That(contourMaskPixel.R, Is.Zero, "The pinned-color mask contour must remain fixed black.");
+                    Assert.That(contourMaskPixel.G, Is.Zero, "The pinned-color mask contour must remain fixed black.");
+                    Assert.That(contourMaskPixel.B, Is.Zero, "The pinned-color mask contour must remain fixed black.");
+                    Assert.That(contourMaskPixel.A, Is.EqualTo(contourPixel.A), "Pinned-color mask alpha differs from its diffuse.");
+                });
+            }
 
             var unrelatedManifestPath = Path.Combine(temporaryRoot, "unrelated-exclusion-approvals.xml");
             var unrelatedManifest = XDocument.Load(manifestPath);
@@ -434,7 +534,26 @@ public sealed class VisualAssetPackageTests
             using var outlinedMask = new Bitmap(maskOutputPath);
             Assert.Multiple(() =>
             {
-                Assert.That(outlined.GetPixel(4, 5).A, Is.EqualTo(255), "Expected a new exterior contour pixel.");
+                Assert.That(
+                    outlined.GetPixel(4, 5).A,
+                    Is.GreaterThanOrEqualTo(240),
+                    "The inner contour must remain visually solid after supersampled filtering.");
+                Assert.That(
+                    outlined.GetPixel(3, 5).A,
+                    Is.InRange(1, 254),
+                    "The outer contour boundary must be antialiased rather than a hard binary step.");
+                Assert.That(
+                    outlined.GetPixel(3, 3).A,
+                    Is.LessThan(96),
+                    "A rounded contour must not retain the square corner produced by Chebyshev dilation.");
+                Assert.That(
+                    outlined.GetPixel(3, 4).A,
+                    Is.InRange(1, 254),
+                    "A Euclidean contour must cover the off-axis radius that a Manhattan dilation misses.");
+                Assert.That(outlined.GetPixel(4, 10).ToArgb(), Is.EqualTo(source.GetPixel(4, 10).ToArgb()),
+                    "The processor must preserve an existing fractional diffuse pixel byte-for-byte.");
+                Assert.That(outlinedMask.GetPixel(4, 10).ToArgb(), Is.EqualTo(sourceMask.GetPixel(4, 10).ToArgb()),
+                    "The processor must preserve an existing fractional mask pixel byte-for-byte.");
                 Assert.That(outlined.GetPixel(9, 9).A, Is.Zero, "The enclosed hole must not receive contour.");
                 Assert.That(outlined.GetPixel(28, 12).A, Is.LessThan(96), "The protected U-shaped opening closed.");
                 Assert.That(outlined.GetPixel(25, 12).A, Is.Zero, "The approved source-space gap exclusion was ignored.");

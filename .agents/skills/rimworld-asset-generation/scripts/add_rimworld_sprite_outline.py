@@ -7,6 +7,7 @@ import argparse
 from collections import deque
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -25,6 +26,7 @@ FOREGROUND_ALPHA = 96
 DARK_LUMA = 80.0
 MINIMUM_COMPONENT_AREA = 2
 MAXIMUM_EXCLUSION_PADDING_FINAL_PIXELS = 4.0
+CONTOUR_SUPERSAMPLE = 4
 
 
 class UsageError(Exception):
@@ -103,38 +105,102 @@ def exterior_background(alpha: list[int], width: int, height: int) -> list[bool]
     return exterior
 
 
-def chebyshev_distance_to_nontransparent(
-    alpha: list[int], width: int, height: int, maximum: int
-) -> list[int]:
-    distance = [-1] * (width * height)
-    queue: deque[int] = deque()
-    for index, value in enumerate(alpha):
-        if value > 0:
-            distance[index] = 0
-            queue.append(index)
+def squared_euclidean_distance_to_nontransparent(
+    alpha: list[int], width: int, height: int
+) -> list[float]:
+    """Return the exact squared pixel-center distance to the nearest alpha-bearing pixel."""
 
-    while queue:
-        index = queue.popleft()
-        current = distance[index]
-        if current >= maximum:
-            continue
-        x = index % width
-        y = index // width
-        for delta_y in (-1, 0, 1):
-            next_y = y + delta_y
-            if next_y < 0 or next_y >= height:
-                continue
-            for delta_x in (-1, 0, 1):
-                if delta_x == 0 and delta_y == 0:
-                    continue
-                next_x = x + delta_x
-                if next_x < 0 or next_x >= width:
-                    continue
-                next_index = next_y * width + next_x
-                if distance[next_index] < 0:
-                    distance[next_index] = current + 1
-                    queue.append(next_index)
+    infinity = float("inf")
+
+    def transform_1d(values: list[float]) -> list[float]:
+        sites = [index for index, value in enumerate(values) if value < infinity]
+        if not sites:
+            return [infinity] * len(values)
+
+        parabola = [0] * len(sites)
+        boundaries = [0.0] * (len(sites) + 1)
+        envelope_index = 0
+        parabola[0] = sites[0]
+        boundaries[0] = -infinity
+        boundaries[1] = infinity
+
+        for site in sites[1:]:
+            while True:
+                previous = parabola[envelope_index]
+                intersection = (
+                    (values[site] + site * site)
+                    - (values[previous] + previous * previous)
+                ) / (2.0 * (site - previous))
+                if intersection > boundaries[envelope_index]:
+                    break
+                envelope_index -= 1
+            envelope_index += 1
+            parabola[envelope_index] = site
+            boundaries[envelope_index] = intersection
+            boundaries[envelope_index + 1] = infinity
+
+        result = [infinity] * len(values)
+        envelope_index = 0
+        for coordinate in range(len(values)):
+            while boundaries[envelope_index + 1] < coordinate:
+                envelope_index += 1
+            site = parabola[envelope_index]
+            result[coordinate] = (
+                (coordinate - site) * (coordinate - site) + values[site]
+            )
+        return result
+
+    row_distance = [infinity] * (width * height)
+    for y in range(height):
+        row = [
+            0.0 if alpha[y * width + x] > 0 else infinity
+            for x in range(width)
+        ]
+        transformed = transform_1d(row)
+        row_distance[y * width : (y + 1) * width] = transformed
+
+    distance = [infinity] * (width * height)
+    for x in range(width):
+        column = transform_1d([row_distance[y * width + x] for y in range(height)])
+        for y, value in enumerate(column):
+            distance[y * width + x] = value
     return distance
+
+
+def antialiased_contour_alpha(
+    alpha: list[int], width: int, height: int, stroke_pixels: int
+) -> list[int]:
+    """Rasterize a rounded contour above source resolution and filter it back once."""
+
+    scale = CONTOUR_SUPERSAMPLE
+    high_width = width * scale
+    high_height = height * scale
+    high_alpha = [
+        alpha[(y // scale) * width + x // scale]
+        for y in range(high_height)
+        for x in range(high_width)
+    ]
+    squared_distance = squared_euclidean_distance_to_nontransparent(
+        high_alpha, high_width, high_height
+    )
+    radius = stroke_pixels * scale
+    coverage: list[int] = []
+    for distance_squared in squared_distance:
+        if not math.isfinite(distance_squared):
+            coverage.append(0)
+            continue
+        amount = min(1.0, radius + 0.5 - math.sqrt(distance_squared))
+        coverage.append(max(0, round(255 * amount)))
+
+    high_contour = Image.new("L", (high_width, high_height))
+    high_contour.putdata(coverage)
+    contour = high_contour.resize(
+        (width, height),
+        Image.Resampling.LANCZOS,
+        box=(0, 0, high_width, high_height),
+        reducing_gap=None,
+    )
+    return [value if value >= 4 else 0 for value in contour.get_flattened_data()]
 
 
 def connected_components(
@@ -622,6 +688,15 @@ def process(args: argparse.Namespace) -> dict[str, object]:
     approval, final_width, final_height = read_approval(
         args.topology_manifest, args.asset_id, args.input
     )
+    approved_outline_color = approval.get("outlineColor") if approval is not None else None
+    if (
+        approved_outline_color is not None
+        and outline_color != parse_color(approved_outline_color)
+    ):
+        raise UsageError(
+            f"Outline color {args.outline_color.upper()} does not match approval "
+            f"{approved_outline_color.upper()} for '{args.asset_id}'."
+        )
     with Image.open(args.input) as opened:
         source = opened.convert("RGBA")
     source_pixels = list(source.get_flattened_data())
@@ -643,7 +718,7 @@ def process(args: argparse.Namespace) -> dict[str, object]:
     validate_approval(source_final, approval, "Pre-outline")
 
     exterior = exterior_background(source_alpha, width, height)
-    distance = chebyshev_distance_to_nontransparent(
+    contour_alpha = antialiased_contour_alpha(
         source_alpha, width, height, args.stroke_pixels
     )
     outlined_pixels = list(source_pixels)
@@ -653,9 +728,9 @@ def process(args: argparse.Namespace) -> dict[str, object]:
             alpha == 0
             and exterior[index]
             and not excluded[index]
-            and 0 < distance[index] <= args.stroke_pixels
+            and contour_alpha[index] > 0
         ):
-            outlined_pixels[index] = outline_color
+            outlined_pixels[index] = (*outline_color[:3], contour_alpha[index])
             added_indices.append(index)
     outlined = Image.new("RGBA", source.size)
     outlined.putdata(outlined_pixels)
@@ -677,7 +752,7 @@ def process(args: argparse.Namespace) -> dict[str, object]:
             if mask_pixel[3] != diffuse_pixel[3]:
                 raise UsageError(f"Mask and diffuse alpha differ at source pixel {index}.")
         for index in added_indices:
-            mask_pixels[index] = (0, 0, 0, outline_color[3])
+            mask_pixels[index] = (0, 0, 0, contour_alpha[index])
         mask_output = Image.new("RGBA", source.size)
         mask_output.putdata(mask_pixels)
         if [pixel[3] for pixel in mask_output.get_flattened_data()] != [

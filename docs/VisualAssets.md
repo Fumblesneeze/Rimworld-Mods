@@ -99,17 +99,40 @@ retained before/after hashes prove that it used the same `1354240F...F7BD2` DLL.
 
 ## Cookware set
 
-Selected: candidate A, generated 2026-08-06. It keeps the pot, pan, two lids, handles, and
-spatula readable at 64 px; its taller circular silhouette also remains distinct from plates.
-Candidate B was rejected because its low bundled silhouette became indistinct at item scale.
+The modern set was regenerated on 2026-08-19 after the shipped mask was found to contain 115
+interior fixed-color components, 113 of them no larger than 16 source pixels. Steel tinting left
+those islands dark while the surrounding material changed color, producing visible speckle and
+blocky mip artifacts. Four independent candidates requested an original RimWorld-like, high
+three-quarter set containing a deep lidded pot, shallow pan, loose lid, slotted spatula, and fixed
+brown wood handles. Compact Candidate B was rejected because its overlapping forms collapsed into
+an animal-like dark blob. Open Candidate A was also rejected by the context-free review because its
+joined bodies and raised handles still read as an animal or scrap pile on soil and on the stove.
+Selected Candidate D instead preserves the pot, pan, lid, and spatula as four disconnected,
+unmistakable silhouettes with transparent space between their final contours at 40, 64, and 128 px.
 
-Both candidates requested original RimWorld-like, hand-painted, high three-quarter item art on a
-pure green chroma background. Candidate A requested a nested deep pot, shallow pan, two loose lids,
-and small spatula with neutral gray stuff-colorable surfaces and fixed brown handles. Candidate B
-requested the same abstract set in a low, wide, mildly worn bundle. The selected image was keyed,
-despilled, trimmed, and reduced to 256 px; transparent pixels were normalized to black to avoid
-chroma leakage in renderers. `Cookware_m.png` marks the neutral cookware surfaces red for RimWorld's
-primary Stuff tint and leaves the brown handles unmasked.
+The selected 256×256 diffuse uses broad, low-frequency shading and an eight-source-pixel
+`portable-broad` exterior contour, which becomes two pixels in the 64 px package proxy. The weaker
+four-source-pixel candidate was rejected after it faded into the workstation in game, and the usual
+Core-brown contour was darkened from `#17130F` to the manifest-pinned near-black `#090705` to retain
+contrast against the stove without expanding beyond the approved two-final-pixel contour. Candidate
+B's generated input was translucent across 92.2% of its visible pixels, which made the cookware-to-
+contour transition look jagged. Candidate D normalization instead makes the measured foreground
+opaque and confines fractional alpha to the real silhouette boundary. AgentBrush's alpha-edge
+smoothing was evaluated for the rejected input but not applied because smoothing a translucent
+interior cannot reconstruct an opaque silhouette. The contour is built from an exact Euclidean
+distance field at 4× source resolution and filtered down once, giving rounded fractional-alpha edges
+instead of the rejected square binary dilation. The generic contour processor preserves every
+existing nontransparent pixel byte-for-byte. `Cookware_m.png` assigns continuous cookware surfaces
+to RimWorld's primary Stuff channel; only the wood handles and exterior contour stay fixed. The clean
+mask contains no tiny interior fixed-color islands. The dirty sibling shares identical geometry and
+uses broad irregular inset sauce/grease patches rather than concentric bands or per-pixel variation.
+Clean diffuse/mask SHA-256 values are
+`2D2AA6930A740BA0F3B219341218A21FB96C67D4399377087FF9EFE69817A7C9` and
+`CEFC2F03DCDDA7AB2B2A1C1020918620A1B7733128865A9DA19BC01EFFD96B02`; dirty values are
+`2E5A6853BBDA2F604C228C4698D4957444F9EDC53D912834DBD974E0CA8B3CFD` and
+`D659A95F806644F5DDD68B63AC848C1238F4677E77F718F994A0511247B5F79C`.
+The measured brief, raw candidates, deterministic normalization scripts, and comparison sheets stay
+under ignored `artifacts/VisualAssets/MetalCookwareCorrection/20260819`.
 
 ## Plate family
 
