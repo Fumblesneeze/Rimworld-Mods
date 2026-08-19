@@ -78,17 +78,57 @@ function Test-WorkshopPresentationAllowsPublication(
 
 function Test-RemoteWorkshopPreviewsMatchResolvedDescription(
     [object[]]$RemotePreviews,
-    [object[]]$ResolvedPreviews) {
+    [object[]]$ResolvedPreviews,
+    [switch]$AllowMissingUrls) {
     if ($RemotePreviews.Count -ne $ResolvedPreviews.Count) { return $false }
     for ($index = 0; $index -lt $ResolvedPreviews.Count; $index++) {
         $remote = $RemotePreviews[$index]
         $resolved = $ResolvedPreviews[$index]
         if ([int]$remote.Index -ne $index -or [int]$resolved.remoteIndex -ne $index -or
-            [string]$remote.Url -cne [string]$resolved.remoteUrl -or
             [string]$remote.Type -cne [string]$resolved.remoteType) {
             return $false
         }
+        $remoteUrl = [string]$remote.Url
+        if ([string]::IsNullOrWhiteSpace($remoteUrl)) {
+            if (-not $AllowMissingUrls -or
+                [string]$remote.OriginalFileName -cne [IO.Path]::GetFileName([string]$resolved.localPath)) {
+                return $false
+            }
+        }
+        elseif ($remoteUrl -cne [string]$resolved.remoteUrl) { return $false }
     }
+    return $true
+}
+
+function Test-ResolvedWorkshopPreviewSourceBytes {
+    param(
+        [Parameter(Mandatory)][object[]]$ResolvedPreviews,
+        [Parameter(Mandatory)][string]$DownloadRoot,
+        [Parameter(Mandatory)][scriptblock]$DownloadOperation
+    )
+    try {
+        $null = New-Item -ItemType Directory -Path $DownloadRoot -Force
+        for ($index = 0; $index -lt $ResolvedPreviews.Count; $index++) {
+            $resolved = $ResolvedPreviews[$index]
+            $expectedHash = [string]$resolved.remoteSha256
+            [Uri]$resolvedUri = $null
+            if ([int]$resolved.remoteIndex -ne $index -or
+                [string]$resolved.remoteType -cne 'k_EItemPreviewType_Image' -or
+                $expectedHash -notmatch '^[A-F0-9]{64}$' -or
+                -not [Uri]::TryCreate([string]$resolved.remoteUrl, [UriKind]::Absolute, [ref]$resolvedUri) -or
+                [string]$resolvedUri.Scheme -cne 'https' -or
+                [string]$resolvedUri.Host -cne 'images.steamusercontent.com') {
+                return $false
+            }
+            $downloadPath = Join-Path $DownloadRoot ("$index.preview")
+            & $DownloadOperation ([string]$resolved.remoteUrl) $downloadPath
+            if (-not (Test-Path -LiteralPath $downloadPath -PathType Leaf) -or
+                (Get-FileHash -LiteralPath $downloadPath -Algorithm SHA256).Hash -cne $expectedHash) {
+                return $false
+            }
+        }
+    }
+    catch { return $false }
     return $true
 }
 
@@ -103,21 +143,10 @@ function Test-ResolvedWorkshopPreviewsReadyForPublication {
         -RemotePreviews $RemotePreviews -ResolvedPreviews $ResolvedPreviews)) {
         return $false
     }
-    try {
-        $null = New-Item -ItemType Directory -Path $DownloadRoot -Force
-        for ($index = 0; $index -lt $ResolvedPreviews.Count; $index++) {
-            $expectedHash = [string]$ResolvedPreviews[$index].remoteSha256
-            if ($expectedHash -notmatch '^[A-F0-9]{64}$') { return $false }
-            $downloadPath = Join-Path $DownloadRoot ("$index.preview")
-            & $DownloadOperation ([string]$RemotePreviews[$index].Url) $downloadPath
-            if (-not (Test-Path -LiteralPath $downloadPath -PathType Leaf) -or
-                (Get-FileHash -LiteralPath $downloadPath -Algorithm SHA256).Hash -cne $expectedHash) {
-                return $false
-            }
-        }
-    }
-    catch { return $false }
-    return $true
+    return Test-ResolvedWorkshopPreviewSourceBytes `
+        -ResolvedPreviews $ResolvedPreviews `
+        -DownloadRoot $DownloadRoot `
+        -DownloadOperation $DownloadOperation
 }
 
 function Read-Json([string]$Path) {
@@ -961,8 +990,18 @@ try {
     }
 
     $remote = $null
+    $reconcilePreviewSourcesVerified = $false
     if ($reconcileOnly) {
         if ($publishedFileId -eq 0) { throw 'An indeterminate submit cannot be reconciled without a durable Workshop identity.' }
+        if (-not $bootstrapPresentation) {
+            $reconcilePreviewSourcesVerified = Test-ResolvedWorkshopPreviewSourceBytes `
+                -ResolvedPreviews @($plan.resolvedPreviews) `
+                -DownloadRoot (Join-Path $runRoot 'reconcile-resolved-previews') `
+                -DownloadOperation { param($uri, $path) Save-RemoteFile -Uri $uri -Path $path }
+            if (-not $reconcilePreviewSourcesVerified) {
+                throw 'A resolved Steam preview URL no longer serves the reviewed bytes during reconciliation.'
+            }
+        }
     }
     else {
         if (-not $bootstrapPresentation) {
@@ -1021,9 +1060,11 @@ try {
             [string]$remoteCandidate.RemoteVisibility -ceq (Get-ExpectedRemoteVisibility ([string]$plan.visibility)) -and
             -not [string]::IsNullOrWhiteSpace([string]$remoteCandidate.RemotePreviewUrl) -and
             ($bootstrapPresentation -or
-             (Test-RemoteWorkshopPreviewsMatchResolvedDescription `
-                 -RemotePreviews @($remoteCandidate.RemoteAdditionalPreviews) `
-                 -ResolvedPreviews @($plan.resolvedPreviews))) -and
+             ((-not $reconcileOnly -or $reconcilePreviewSourcesVerified) -and
+              (Test-RemoteWorkshopPreviewsMatchResolvedDescription `
+                  -RemotePreviews @($remoteCandidate.RemoteAdditionalPreviews) `
+                  -ResolvedPreviews @($plan.resolvedPreviews) `
+                  -AllowMissingUrls:$reconcileOnly))) -and
             $tagsMatch) {
             $remote = $remoteCandidate
             break

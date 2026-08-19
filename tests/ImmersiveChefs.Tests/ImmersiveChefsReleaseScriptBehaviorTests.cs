@@ -850,7 +850,7 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         var downloadRoot = Path.Combine(fixture.Root, "preview-downloads");
         var run = fixture.InvokeFunctions(
             "Invoke-ImmersiveChefsWorkshopRelease.ps1",
-            new[] { "Test-RemoteWorkshopPreviewsMatchResolvedDescription", "Test-ResolvedWorkshopPreviewsReadyForPublication" },
+            new[] { "Test-RemoteWorkshopPreviewsMatchResolvedDescription", "Test-ResolvedWorkshopPreviewSourceBytes", "Test-ResolvedWorkshopPreviewsReadyForPublication" },
             "$resolved=@([pscustomobject]@{remoteIndex=0;remoteUrl='https://images.steamusercontent.com/a.png';remoteType='k_EItemPreviewType_Image';remoteSha256='BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD'}," +
             "[pscustomobject]@{remoteIndex=1;remoteUrl='https://images.steamusercontent.com/b.png';remoteType='k_EItemPreviewType_Image';remoteSha256='BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD'});" +
             "$remote=@([pscustomobject]@{Index=0;Url='https://images.steamusercontent.com/a.png';Type='k_EItemPreviewType_Image'}," +
@@ -866,6 +866,31 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
             Assert.That(run.StandardOutput.Trim(), Is.EqualTo("True|False|False"));
+        });
+    }
+
+    [Test]
+    public void Reconciliation_tolerates_only_a_missing_Steam_preview_url_with_matching_slot_filename_and_verified_source_bytes()
+    {
+        using var fixture = Fixture.Create();
+        var downloadRoot = Path.Combine(fixture.Root, "reconcile-preview-downloads");
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "Test-RemoteWorkshopPreviewsMatchResolvedDescription", "Test-ResolvedWorkshopPreviewSourceBytes" },
+            "$resolved=@([pscustomobject]@{remoteIndex=0;remoteUrl='https://images.steamusercontent.com/a.png';remoteType='k_EItemPreviewType_Image';localPath='feature-a.png';remoteSha256='BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD'});" +
+            "$missing=@([pscustomobject]@{Index=0;Url='';Type='k_EItemPreviewType_Image';OriginalFileName='feature-a.png'});" +
+            "$strict=Test-RemoteWorkshopPreviewsMatchResolvedDescription -RemotePreviews $missing -ResolvedPreviews $resolved;" +
+            "$reconcile=Test-RemoteWorkshopPreviewsMatchResolvedDescription -RemotePreviews $missing -ResolvedPreviews $resolved -AllowMissingUrls;" +
+            "$missing[0].OriginalFileName='different.png';$wrongFile=Test-RemoteWorkshopPreviewsMatchResolvedDescription -RemotePreviews $missing -ResolvedPreviews $resolved -AllowMissingUrls;$missing[0].OriginalFileName='feature-a.png';" +
+            "$download={param($uri,$path)[IO.File]::WriteAllText($path,'abc',[Text.UTF8Encoding]::new($false))};" +
+            "$bytes=Test-ResolvedWorkshopPreviewSourceBytes -ResolvedPreviews $resolved -DownloadRoot " + Ps(downloadRoot) + " -DownloadOperation $download;" +
+            "$wrongBytes={param($uri,$path)[IO.File]::WriteAllText($path,'abd',[Text.UTF8Encoding]::new($false))};" +
+            "$byteDrift=Test-ResolvedWorkshopPreviewSourceBytes -ResolvedPreviews $resolved -DownloadRoot " + Ps(downloadRoot) + " -DownloadOperation $wrongBytes;" +
+            "Write-Output ($strict.ToString()+'|'+$reconcile.ToString()+'|'+$wrongFile.ToString()+'|'+$bytes.ToString()+'|'+$byteDrift.ToString())");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("False|True|False|True|False"));
         });
     }
 
