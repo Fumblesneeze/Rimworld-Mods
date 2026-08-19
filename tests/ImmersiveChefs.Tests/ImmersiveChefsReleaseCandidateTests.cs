@@ -41,11 +41,11 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Fixed Cook for Yourself cooking loops when Pick Up And Haul and Stack Gap are active. One-off self and patient meals now place their ingredients before collecting kitchenware and complete normally. Active cookware also renders behind or in front of the cook according to work direction instead of covering the pawn."));
+            Assert.That(release["previousChangeNote"], Is.EqualTo("Redrew modern cookware so it stays readable on dark stoves and at normal map zoom. Steel sets now use clearly separated pot, pan, lid, and utensil silhouettes with a stronger smooth outline and cleaner Stuff masking."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo("Redrew modern cookware so it stays readable on dark stoves and at normal map zoom. Steel sets now use clearly separated pot, pan, lid, and utensil silhouettes with a stronger smooth outline and cleaner Stuff masking."),
-                "The committed release candidate must carry the exact reviewed pending Workshop note.");
+                Is.EqualTo(string.Empty),
+                "A successful Workshop release must clear the pending change note.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));

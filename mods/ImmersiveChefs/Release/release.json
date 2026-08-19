@@ -22,6 +22,6 @@
   ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
-  "previousChangeNote": "Fixed Cook for Yourself cooking loops when Pick Up And Haul and Stack Gap are active. One-off self and patient meals now place their ingredients before collecting kitchenware and complete normally. Active cookware also renders behind or in front of the cook according to work direction instead of covering the pawn.",
-  "changeNote": "Redrew modern cookware so it stays readable on dark stoves and at normal map zoom. Steel sets now use clearly separated pot, pan, lid, and utensil silhouettes with a stronger smooth outline and cleaner Stuff masking."
+  "previousChangeNote": "Redrew modern cookware so it stays readable on dark stoves and at normal map zoom. Steel sets now use clearly separated pot, pan, lid, and utensil silhouettes with a stronger smooth outline and cleaner Stuff masking.",
+  "changeNote": ""
 }
