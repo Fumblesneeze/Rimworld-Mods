@@ -22,6 +22,6 @@
   ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
-  "previousChangeNote": "Dirty kitchenware is now much easier to spot. Dubs Bad Hygiene sinks, prep stations, and dishwashing now use real water; meals spawned without plates no longer interrupt eating or patient feeding; and Ceramics (Continued) porcelain can be crafted into plates.",
-  "changeNote": "Fixed Cook for Yourself cooking loops when Pick Up And Haul and Stack Gap are active. One-off self and patient meals now place their ingredients before collecting kitchenware and complete normally. Active cookware also renders behind or in front of the cook according to work direction instead of covering the pawn."
+  "previousChangeNote": "Fixed Cook for Yourself cooking loops when Pick Up And Haul and Stack Gap are active. One-off self and patient meals now place their ingredients before collecting kitchenware and complete normally. Active cookware also renders behind or in front of the cook according to work direction instead of covering the pawn.",
+  "changeNote": ""
 }
