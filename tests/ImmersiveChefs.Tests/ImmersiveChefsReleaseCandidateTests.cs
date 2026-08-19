@@ -17,6 +17,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
         var publishScriptPath = Path.Combine(root, "scripts", "Invoke-ImmersiveChefsWorkshopRelease.ps1");
         var publisherFixturePath = Path.Combine(root, "scripts", "Fixtures", "GatewaySteamWorkshopPublisher.cs");
         var subscribedSmokePath = Path.Combine(root, "scripts", "Invoke-ImmersiveChefsSubscribedSmoke.ps1");
+        var subscribedScenarioPath = Path.Combine(root, "tests", "RimWorldDevGateway.ReleaseSmoke.EndToEndTests", "SubscribedImmersiveChefsSmokeTest.cs");
 
         Assert.That(File.Exists(manifestPath), Is.True, "The release descriptor is missing.");
         Assert.That(File.Exists(scriptPath), Is.True, "The release stager is missing.");
@@ -102,6 +103,19 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(subscribedSmoke, Does.Contain("artifacts\\ReleaseSmoke"));
             Assert.That(subscribedSmoke, Does.Contain("Assert-SubscribedSmokeArtifactsPath -Root $runRoot"));
             Assert.That(subscribedSmoke, Does.Contain("Move-Item -LiteralPath $backupProduct -Destination $localProduct"));
+        });
+
+        var subscribedScenario = File.ReadAllText(subscribedScenarioPath);
+        var ingestStarted = subscribedScenario.IndexOf("the native Ingest job collects cutlery and begins dining", System.StringComparison.Ordinal);
+        var pauseForScreenshot = subscribedScenario.IndexOf("pause the subscribed dining job for evidence", System.StringComparison.Ordinal);
+        var diningScreenshot = subscribedScenario.IndexOf("subscribed meal visibly being eaten", System.StringComparison.Ordinal);
+        var resumeAfterScreenshot = subscribedScenario.IndexOf("resume the player-ordered subscribed dining job", System.StringComparison.Ordinal);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ingestStarted, Is.GreaterThanOrEqualTo(0));
+            Assert.That(pauseForScreenshot, Is.GreaterThan(ingestStarted));
+            Assert.That(diningScreenshot, Is.GreaterThan(pauseForScreenshot));
+            Assert.That(resumeAfterScreenshot, Is.GreaterThan(diningScreenshot));
         });
     }
 

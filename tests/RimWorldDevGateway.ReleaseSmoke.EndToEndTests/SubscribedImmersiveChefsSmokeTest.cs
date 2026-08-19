@@ -146,7 +146,9 @@ public sealed class SubscribedImmersiveChefsSmokeTest : IRimWorldEndToEndTest
             "the native Ingest job collects cutlery and begins dining",
             _ => cook.CurJobDef == JobDefOf.Ingest,
             new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(30)));
+        yield return new TimeControlActionStep("pause the subscribed dining job for evidence", true, EndToEndGameSpeed.Normal);
         yield return new ScreenshotStep("subscribed meal visibly being eaten", new[] { cook.ThingID, meal.ThingID }, 180);
+        yield return new TimeControlActionStep("resume the player-ordered subscribed dining job", false, EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
             "native dining consumes the meal and returns the exact dirty service ware",
             _ => meal.Destroyed && plate.Spawned && cutlery.Spawned &&
