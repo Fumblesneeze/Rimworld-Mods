@@ -14,6 +14,57 @@ namespace ImmersiveChefs.Dubs.InGame.IntegrationTests;
 public static class DubsWaterCapabilityIntegrationTests
 {
     [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void DisconnectedRadiatorIsClassifiedButNotOperational()
+    {
+        var map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
+        var cell = map.AllCells
+            .Where(candidate => candidate.Standable(map) && candidate.GetEdifice(map) is null)
+            .OrderBy(candidate => candidate.DistanceToSquared(map.Center))
+            .First();
+        var radiatorDef = DefDatabase<ThingDef>.GetNamed("RadiatorStuffed");
+        var radiator = (ThingWithComps)ThingMaker.MakeThing(radiatorDef, ThingDefOf.Steel);
+        radiator.SetFactionDirect(Faction.OfPlayer);
+
+        try
+        {
+            GenSpawn.Spawn(radiator, cell, map, Rot4.North);
+            var source = MealHeatingSource.TryCreate(radiator);
+            IntegrationAssert.NotNull(
+                source,
+                "The finalized Dubs radiator must expose the positive heating-building capability.");
+            IntegrationAssert.Equal(
+                MealHeatingSourceKind.AmbientHeater,
+                source!.Kind,
+                "A radiator is a last-resort meal-heating source rather than a stove.");
+            IntegrationAssert.True(
+                !source.IsOperational,
+                "A disconnected radiator with no stored pipe heat must not heat a meal.");
+
+            var radiatorComp = radiator.AllComps.Single(comp =>
+                comp.GetType().FullName == "DubsBadHygiene.CompRadiator");
+            var heaterTempField = radiatorComp.GetType().BaseType?.GetField(
+                "HeaterTempInt",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            IntegrationAssert.NotNull(
+                heaterTempField,
+                "The installed Dubs radiator must retain its exact stored-heat shape.");
+            heaterTempField!.SetValue(radiatorComp, 35f);
+            IntegrationAssert.True(
+                DubsRadiatorHeatRuntime.TryGetEmittingHeat(radiator, out var emittingHeat) &&
+                emittingHeat &&
+                source.IsOperational,
+                "A switched-on finalized radiator with stored network heat must become selectable.");
+        }
+        finally
+        {
+            if (!radiator.Destroyed)
+            {
+                radiator.Destroy(DestroyMode.Vanish);
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void PrepStationFinalizesWithPipedSinkCapabilityAndNativeDrinkDiscoveryPatches()
     {
         var prep = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_PrepStation");

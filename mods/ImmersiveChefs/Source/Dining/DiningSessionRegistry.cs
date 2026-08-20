@@ -157,7 +157,7 @@ internal sealed class DiningSession : IThingHolder
         Job job,
         Thing? cutlery,
         Thing? reservedPlate,
-        Thing? microwave,
+        Thing? heatingSourceThing,
         DiningCutlerySource cutlerySource,
         Pawn? servingPawn = null,
         Pawn? carrierPawn = null,
@@ -170,7 +170,7 @@ internal sealed class DiningSession : IThingHolder
             null,
             cutlery,
             reservedPlate,
-            microwave,
+            heatingSourceThing,
             cutlerySource,
             servingPawn,
             carrierPawn,
@@ -203,7 +203,7 @@ internal sealed class DiningSession : IThingHolder
         Caravan? caravan,
         Thing? cutlery,
         Thing? reservedPlate,
-        Thing? microwave,
+        Thing? heatingSourceThing,
         DiningCutlerySource cutlerySource,
         Pawn? servingPawn,
         Pawn? carrierPawn,
@@ -218,7 +218,9 @@ internal sealed class DiningSession : IThingHolder
         travelWare = new ThingOwner<Thing>(this, oneStackOnly: false, LookMode.Deep);
         cutleryFromPersonalInventory = cutlerySource == DiningCutlerySource.PersonalInventory;
         SetCutlery(cutlery);
-        Microwave = microwave;
+        HeatingSource = heatingSourceThing is null
+            ? null
+            : MealHeatingSource.TryCreate(heatingSourceThing);
         ReservedPlate = reservedPlate;
         ServingPawn = servingPawn;
         RequestedMealDef = requestedMealDef;
@@ -240,7 +242,11 @@ internal sealed class DiningSession : IThingHolder
     internal Thing? Plate { get; private set; }
     internal ServiceWareSnapshot? PlateServiceSnapshot { get; private set; }
     internal ContaminationSources TravelPlateContamination { get; private set; }
-    internal Thing? Microwave { get; }
+    internal MealHeatingSource? HeatingSource { get; }
+    internal Thing? Microwave =>
+        HeatingSource?.Kind == MealHeatingSourceKind.Microwave
+            ? HeatingSource.Thing
+            : null;
     internal Pawn? ServingPawn { get; private set; }
     internal ThingDef? RequestedMealDef { get; }
 
@@ -1029,7 +1035,7 @@ internal static class DiningSessionRegistry
                 allowPersonalInventory: mayUsePersonalInventory);
         }
 
-        var microwave = pasteDispenser ? null : FindMicrowave(pawn, meal);
+        var heatingSource = pasteDispenser ? null : FindHeatingSource(pawn, meal);
         var cutlerySource = selected is not null &&
                             ReferenceEquals(selected.holdingOwner, pawn.inventory?.innerContainer)
             ? DiningCutlerySource.PersonalInventory
@@ -1039,7 +1045,7 @@ internal static class DiningSessionRegistry
             job,
             selected,
             plate,
-            microwave,
+            heatingSource,
             cutlerySource,
             requestedMealDef: diningMealDef,
             returnPlateToPersonalInventory:
@@ -1104,17 +1110,17 @@ internal static class DiningSessionRegistry
                 WareRequirementMode.Prefer);
         }
 
-        var microwave = AssistedFeedingMicrowavePolicy.ShouldReserve(
+        var heatingSource = AssistedFeedingMicrowavePolicy.ShouldReserve(
             pasteDispenser,
             ReferenceEquals(foodSource.holdingOwner, feeder.inventory?.innerContainer))
-            ? FindMicrowave(feeder, foodSource)
+            ? FindHeatingSource(feeder, foodSource)
             : null;
         var session = new DiningSession(
             patient,
             job,
             cutlery,
             plate,
-            microwave,
+            heatingSource,
             DiningCutlerySource.Colony,
             carrierPawn: feeder,
             requestedMealDef: diningMealDef);
@@ -1284,6 +1290,11 @@ internal static class DiningSessionRegistry
             ? session.Microwave?.TryGetComp<CompMicrowave>()
             : null;
 
+    internal static MealHeatingSource? HeatingSourceFor(Job job) =>
+        Sessions.TryGetValue(job, out var session)
+            ? session.HeatingSource
+            : null;
+
     internal static void Pickup(Pawn pawn)
     {
         if (pawn.CurJob is { } job && Sessions.TryGetValue(job, out var session))
@@ -1447,22 +1458,43 @@ internal static class DiningSessionRegistry
         }
     }
 
-    internal static Thing? FindMicrowave(Pawn pawn, Thing meal)
+    internal static Thing? FindHeatingSource(Pawn pawn, Thing meal)
     {
         if (!TemperatureOwnership.ImmersiveChefsFeaturesActive ||
             !ImmersiveChefsMod.Settings.MealTemperatureEnabled ||
+            pawn.Map is not { } map ||
             (meal as ThingWithComps)?.GetComp<CompCulinaryState>()?.PeekCurrentServing() is not { } serving ||
-            serving.TemperatureCelsius >= ImmersiveChefsMod.Settings.AutoMicrowaveBelow)
+            !MealHeatingPolicy.ShouldAutomaticallyHeat(
+                serving.TemperatureCelsius,
+                ImmersiveChefsMod.Settings.AutoMicrowaveBelow))
         {
             return null;
         }
 
-        return pawn.Map.listerThings.AllThings
-            .Where(thing => thing.TryGetComp<CompMicrowave>()?.Operational == true)
-            .Where(thing => !thing.IsForbidden(pawn) &&
-                            pawn.CanReserveAndReach(thing, PathEndMode.InteractionCell, Danger.Some))
-            .OrderBy(thing => thing.Position.DistanceToSquared(pawn.Position))
-            .FirstOrDefault(thing => pawn.Reserve(thing, pawn.CurJob, 1, -1));
+        var candidates = map.listerThings.AllThings
+            .Select(MealHeatingSource.TryCreate)
+            .Where(source => source is not null && source.IsOperational)
+            .Cast<MealHeatingSource>()
+            .Where(source =>
+                !source.Thing.IsForbidden(pawn) &&
+                pawn.CanReserveAndReach(
+                    source.Thing,
+                    source.PathEndMode,
+                    Danger.Some))
+            .Select(source => new MealHeatingCandidate<MealHeatingSource>(
+                source,
+                source.Kind,
+                source.Thing.Position.DistanceToSquared(pawn.Position)))
+            .ToList();
+        foreach (var candidate in MealHeatingPolicy.Order(candidates))
+        {
+            if (pawn.Reserve(candidate.Value.Thing, pawn.CurJob, 1, -1))
+            {
+                return candidate.Value.Thing;
+            }
+        }
+
+        return null;
     }
 
     internal static Thing? SelectWare(

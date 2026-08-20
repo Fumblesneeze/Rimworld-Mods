@@ -318,9 +318,10 @@ internal static class IngestCutleryToilsPatch
             };
         }
 
-        if (pawn.CurJob is { } microwaveJob && DiningSessionRegistry.MicrowaveFor(microwaveJob) is { } microwave)
+        if (pawn.CurJob is { } heatingJob &&
+            DiningSessionRegistry.HeatingSourceFor(heatingJob) is { } heatingSource)
         {
-            var meal = microwaveJob.GetTarget(TargetIndex.A).Thing;
+            var meal = heatingJob.GetTarget(TargetIndex.A).Thing;
             var pickupPlan = DiningMealPickupPolicy.For(
                 meal?.Spawned == true,
                 meal is not null &&
@@ -331,11 +332,11 @@ internal static class IngestCutleryToilsPatch
             {
                 // JobDriver_Ingest latched eatingFromInventory when this job started.
                 // Its first native toil performs the inventory-to-carrier transfer. Run
-                // that toil before walking to the microwave, then leave the reheated meal
+                // that toil before walking to the selected heat source, then leave the heated meal
                 // in the carrier for the remaining native ingest toils.
                 foreach (var toil in DiningMealToilOrder.InsertAfterInventoryTransfer(
                              original,
-                             ReheatCarriedMeal(pawn, microwave, dropAfterReheat: false)))
+                             HeatCarriedMeal(pawn, heatingSource, dropAfterHeating: false)))
                 {
                     yield return toil;
                 }
@@ -356,7 +357,7 @@ internal static class IngestCutleryToilsPatch
                             canTakeFromInventory: false);
                     }
 
-                    foreach (var toil in ReheatCarriedMeal(pawn, microwave, dropAfterReheat: true))
+                    foreach (var toil in HeatCarriedMeal(pawn, heatingSource, dropAfterHeating: true))
                     {
                         yield return toil;
                     }
@@ -383,33 +384,35 @@ internal static class IngestCutleryToilsPatch
         };
     }
 
-    private static IEnumerable<Toil> ReheatCarriedMeal(
+    private static IEnumerable<Toil> HeatCarriedMeal(
         Pawn pawn,
-        CompMicrowave microwave,
-        bool dropAfterReheat)
+        MealHeatingSource heatingSource,
+        bool dropAfterHeating)
     {
-        yield return GotoCapturedThing(
-            microwave.parent,
-            PathEndMode.InteractionCell,
-            () => !microwave.Operational);
-        yield return WaitAtCapturedThing(
-            microwave.parent,
-            microwave.HeatingTicks,
-            () => !microwave.Operational);
+        var interrupted = false;
+        yield return GotoOptionalHeatingSource(
+            heatingSource,
+            onInterrupted: () => interrupted = true);
+        yield return WaitAtOptionalHeatingSource(
+            heatingSource,
+            onInterrupted: () => interrupted = true);
         yield return new Toil
         {
             initAction = () =>
             {
                 var carried = pawn.carryTracker?.CarriedThing;
-                if (carried is not null)
+                if (carried is not null &&
+                    MealHeatingPolicy.CanApplyCompletedCycle(
+                        interrupted,
+                        heatingSource.IsOperational))
                 {
-                    microwave.TryReheat(carried);
+                    heatingSource.TryHeat(carried);
                 }
             },
             defaultCompleteMode = ToilCompleteMode.Instant
         };
 
-        if (dropAfterReheat)
+        if (dropAfterHeating)
         {
             yield return Toils_Haul.DropCarriedThing();
         }
@@ -430,22 +433,87 @@ internal static class IngestCutleryToilsPatch
         return toil;
     }
 
-    private static Toil WaitAtCapturedThing(
-        Thing target,
-        int duration,
-        Func<bool>? additionalFailCondition = null)
+    internal static Toil GotoOptionalHeatingSource(
+        MealHeatingSource source,
+        bool normalDeliveryFallback = false,
+        Action? onInterrupted = null)
     {
+        var toil = ToilMaker.MakeToil("ImmersiveChefs_GotoOptionalHeatingSource");
+        toil.initAction = () =>
+        {
+            if (!source.IsOperational)
+            {
+                HandleUnavailableSource(
+                    toil,
+                    source,
+                    normalDeliveryFallback,
+                    onInterrupted: onInterrupted);
+                return;
+            }
+
+            toil.actor.pather.StartPath(source.Thing, source.PathEndMode);
+        };
+        toil.tickAction = () =>
+        {
+            if (source.IsOperational)
+            {
+                return;
+            }
+
+            toil.actor.pather.StopDead();
+            HandleUnavailableSource(
+                toil,
+                source,
+                normalDeliveryFallback,
+                onInterrupted: onInterrupted);
+        };
+        toil.defaultCompleteMode = ToilCompleteMode.PatherArrival;
+        return toil;
+    }
+
+    internal static Toil WaitAtOptionalHeatingSource(
+        MealHeatingSource source,
+        bool normalDeliveryFallback = false,
+        Action? onInterrupted = null)
+    {
+        var target = source.Thing;
+        var duration = source.Profile.HeatingTicks;
         var toil = Toils_General.Wait(duration);
+        var originalInitAction = toil.initAction;
         var originalTickAction = toil.tickAction;
         Effecter? progressEffecter = null;
 
-        toil.debugName = "ImmersiveChefs_HeatAtCapturedMicrowave";
+        toil.debugName = "ImmersiveChefs_HeatAtCapturedSource";
         toil.handlingFacing = true;
+        toil.initAction = () =>
+        {
+            originalInitAction?.Invoke();
+            if (!source.IsOperational)
+            {
+                HandleUnavailableSource(
+                    toil,
+                    source,
+                    normalDeliveryFallback,
+                    completeDelayNormally: true,
+                    onInterrupted: onInterrupted);
+            }
+        };
         toil.tickAction = () =>
         {
+            var actor = toil.actor;
+            if (!source.IsOperational)
+            {
+                HandleUnavailableSource(
+                    toil,
+                    source,
+                    normalDeliveryFallback,
+                    completeDelayNormally: true,
+                    onInterrupted: onInterrupted);
+                return;
+            }
+
             originalTickAction?.Invoke();
 
-            var actor = toil.actor;
             actor.rotationTracker.FaceTarget(target);
             if (actor.Faction != Faction.OfPlayer)
             {
@@ -466,11 +534,31 @@ internal static class IngestCutleryToilsPatch
             progressEffecter?.Cleanup();
             progressEffecter = null;
         });
-        toil.AddFailCondition(() =>
-            target.DestroyedOrNull() ||
-            !target.Spawned ||
-            additionalFailCondition?.Invoke() == true);
         return toil;
+    }
+
+    private static void HandleUnavailableSource(
+        Toil toil,
+        MealHeatingSource source,
+        bool normalDeliveryFallback,
+        bool completeDelayNormally = false,
+        Action? onInterrupted = null)
+    {
+        var actor = toil.actor;
+        onInterrupted?.Invoke();
+        if (MealHeatingPolicy.ShouldCancelWhenUnavailable(source.Kind, normalDeliveryFallback))
+        {
+            actor.jobs.EndCurrentJob(JobCondition.Incompletable);
+            return;
+        }
+
+        if (completeDelayNormally)
+        {
+            actor.jobs.curDriver.ticksLeftThisToil = 1;
+            return;
+        }
+
+        actor.jobs.curDriver.ReadyForNextToil();
     }
 }
 

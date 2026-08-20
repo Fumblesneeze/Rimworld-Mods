@@ -62,6 +62,21 @@ public sealed class CompCulinaryState : ThingComp
 
     public bool ReheatCurrentServing(float targetTemperature, int qualityLoss, int currentTick)
     {
+        return HeatCurrentServing(
+            targetTemperature,
+            qualityLoss,
+            sourceQualityLossPenalty: 0,
+            currentTick,
+            incrementMicrowaveCount: true);
+    }
+
+    public bool HeatCurrentServing(
+        float targetTemperature,
+        int baseQualityLoss,
+        int sourceQualityLossPenalty,
+        int currentTick,
+        bool incrementMicrowaveCount)
+    {
         if (!TemperatureOwnership.ImmersiveChefsFeaturesActive)
         {
             return false;
@@ -76,7 +91,12 @@ public sealed class CompCulinaryState : ThingComp
         var index = servings.Count - 1;
         AdvanceServing(index);
         var record = servings[index].ToRecord();
-        record.Reheat(targetTemperature, qualityLoss, currentTick);
+        record.Heat(
+            targetTemperature,
+            baseQualityLoss,
+            sourceQualityLossPenalty,
+            currentTick,
+            incrementMicrowaveCount);
         servings[index] = CulinaryServingData.From(record);
         return true;
     }

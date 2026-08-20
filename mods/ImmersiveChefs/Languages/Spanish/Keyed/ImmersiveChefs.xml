@@ -29,9 +29,9 @@
   <ImmersiveChefs_Settings_MealTemperature>Temperatura de la comida</ImmersiveChefs_Settings_MealTemperature>
   <ImmersiveChefs_Settings_ThermalHalfLife>Semivida térmica: {0} h</ImmersiveChefs_Settings_ThermalHalfLife>
   <ImmersiveChefs_Settings_AutoMicrowaveBelow>Calentar automáticamente por debajo de: {0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
-  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Pérdida de calidad por microondas: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Pérdida de calidad base al recalentar: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
   <ImmersiveChefs_Settings_MicrowavePoisonChance>Riesgo de intoxicación por microondas: {0} puntos porcentuales</ImmersiveChefs_Settings_MicrowavePoisonChance>
-  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Thermodynamics - Hot Meals proporciona la temperatura y el microondas</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Thermodynamics - Hot Meals proporciona la temperatura y el recalentado</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
   <ImmersiveChefs_Settings_ColonyStandards>Exigencias de mesa de la colonia</ImmersiveChefs_Settings_ColonyStandards>
   <ImmersiveChefs_Settings_RoyaltyStandards>Exigencias de mesa de la nobleza</ImmersiveChefs_Settings_RoyaltyStandards>
   <ImmersiveChefs_Settings_IntegrationsHeading>Integraciones opcionales (requieren reinicio; Auto o Desactivado)</ImmersiveChefs_Settings_IntegrationsHeading>

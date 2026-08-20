@@ -28,10 +28,10 @@
   <ImmersiveChefs_Settings_ToxicExposure>Toxic kitchenware exposure: {0}x</ImmersiveChefs_Settings_ToxicExposure>
   <ImmersiveChefs_Settings_MealTemperature>Meal temperature</ImmersiveChefs_Settings_MealTemperature>
   <ImmersiveChefs_Settings_ThermalHalfLife>Thermal half-life: {0} h</ImmersiveChefs_Settings_ThermalHalfLife>
-  <ImmersiveChefs_Settings_AutoMicrowaveBelow>Automatically microwave below: {0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
-  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Microwave quality loss: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_AutoMicrowaveBelow>Automatically reheat below: {0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Base reheating quality loss: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
   <ImmersiveChefs_Settings_MicrowavePoisonChance>Microwave food-poisoning chance: {0} pp</ImmersiveChefs_Settings_MicrowavePoisonChance>
-  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Meal temperature and microwave: provided by Thermodynamics - Hot Meals</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Meal temperature and reheating: provided by Thermodynamics - Hot Meals</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
   <ImmersiveChefs_Settings_ColonyStandards>Colony dining standards</ImmersiveChefs_Settings_ColonyStandards>
   <ImmersiveChefs_Settings_RoyaltyStandards>Royalty dining standards</ImmersiveChefs_Settings_RoyaltyStandards>
   <ImmersiveChefs_Settings_IntegrationsHeading>Optional integrations (restart required; Auto or Off)</ImmersiveChefs_Settings_IntegrationsHeading>

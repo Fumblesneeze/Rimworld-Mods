@@ -117,12 +117,31 @@ public sealed class CulinaryServingRecord
 
     public void Reheat(float targetTemperature, int baseQualityLoss, int currentTick)
     {
-        var qualityLoss = ThermalCalculator.MicrowaveQualityLoss(
+        Heat(
+            targetTemperature,
             baseQualityLoss,
+            sourceQualityLossPenalty: 0,
+            currentTick,
+            incrementMicrowaveCount: true);
+    }
+
+    public void Heat(
+        float targetTemperature,
+        int baseQualityLoss,
+        int sourceQualityLossPenalty,
+        int currentTick,
+        bool incrementMicrowaveCount)
+    {
+        var qualityLoss = ThermalCalculator.MicrowaveQualityLoss(
+            Math.Max(0, baseQualityLoss) + Math.Max(0, sourceQualityLossPenalty),
             TemperatureCelsius);
         TemperatureCelsius = targetTemperature;
         QualityScore = Math.Max(0, QualityScore - qualityLoss);
-        MicrowaveReheatCount++;
+        if (incrementMicrowaveCount)
+        {
+            MicrowaveReheatCount++;
+        }
+
         LastThermalTick = Math.Max(0, currentTick);
     }
 

@@ -28,10 +28,10 @@
   <ImmersiveChefs_Settings_ToxicExposure>有毒厨房用具暴露：{0}倍</ImmersiveChefs_Settings_ToxicExposure>
   <ImmersiveChefs_Settings_MealTemperature>饭菜温度</ImmersiveChefs_Settings_MealTemperature>
   <ImmersiveChefs_Settings_ThermalHalfLife>温度变化半衰期：{0}小时</ImmersiveChefs_Settings_ThermalHalfLife>
-  <ImmersiveChefs_Settings_AutoMicrowaveBelow>低于此温度自动微波加热：{0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
-  <ImmersiveChefs_Settings_MicrowaveQualityLoss>微波加热质量损失：{0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_AutoMicrowaveBelow>低于此温度自动加热：{0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>加热的基础质量损失：{0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
   <ImmersiveChefs_Settings_MicrowavePoisonChance>微波加热食物中毒增量：{0}个百分点</ImmersiveChefs_Settings_MicrowavePoisonChance>
-  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>饭菜温度与微波炉由 Thermodynamics - Hot Meals 提供</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>饭菜温度与加热由 Thermodynamics - Hot Meals 提供</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
   <ImmersiveChefs_Settings_ColonyStandards>殖民地用餐标准</ImmersiveChefs_Settings_ColonyStandards>
   <ImmersiveChefs_Settings_RoyaltyStandards>贵族用餐标准</ImmersiveChefs_Settings_RoyaltyStandards>
   <ImmersiveChefs_Settings_IntegrationsHeading>可选兼容（需重启；自动或关闭）</ImmersiveChefs_Settings_IntegrationsHeading>
