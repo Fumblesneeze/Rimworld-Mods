@@ -37,6 +37,12 @@ For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or ownin
 - **THEN** Immersive Chefs leaves the successful native pre-toil reservation successful, attaches a missing-ware dining session when possible, and allows the job to continue without a `TryMakePreToilReservations returned false ... right after StartJob` warning
 - **THEN** any stricter ordinary-selection policy MUST reject before `StartJob` and MUST NOT turn a successful driver reservation into a late failure
 
+#### Scenario: Inventory meal reaches the fallback microwave without a restart loop
+
+- **WHEN** `JobGiver_GetFood` starts an ordinary `Ingest` job for a covered cold meal already held in the diner's inventory and an operational Immersive Chefs fallback microwave is available
+- **THEN** the dining toils transfer that exact meal directly from inventory into the native carry tracker without first running a spawned-map-target approach toil
+- **AND** the same admitted job reaches reheating and ingestion once, without an incompletable toil or same-tick `Ingest` restart loop
+
 #### Scenario: Hand-eaten food is excluded
 
 - **WHEN** a pawn chooses pemmican or a packaged survival meal

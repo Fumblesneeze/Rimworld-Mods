@@ -204,6 +204,62 @@ internal static class PlateEatingSpeedPatch
     }
 }
 
+internal enum DiningMealPickupPlan
+{
+    ApproachAndCarry,
+    ReheatAfterVanillaInventoryTransfer,
+    AlreadyCarried,
+    SkipOptionalReheat
+}
+
+internal static class DiningMealPickupPolicy
+{
+    internal static DiningMealPickupPlan For(
+        bool spawned,
+        bool heldInCarrierInventory,
+        bool alreadyCarried)
+    {
+        if (alreadyCarried)
+        {
+            return DiningMealPickupPlan.AlreadyCarried;
+        }
+
+        if (heldInCarrierInventory)
+        {
+            return DiningMealPickupPlan.ReheatAfterVanillaInventoryTransfer;
+        }
+
+        return spawned
+            ? DiningMealPickupPlan.ApproachAndCarry
+            : DiningMealPickupPlan.SkipOptionalReheat;
+    }
+}
+
+internal static class DiningMealToilOrder
+{
+    internal static IEnumerable<T> InsertAfterInventoryTransfer<T>(
+        IEnumerable<T> nativeToils,
+        IEnumerable<T> reheatToils)
+    {
+        using var nativeEnumerator = nativeToils.GetEnumerator();
+        if (!nativeEnumerator.MoveNext())
+        {
+            yield break;
+        }
+
+        yield return nativeEnumerator.Current;
+        foreach (var toil in reheatToils)
+        {
+            yield return toil;
+        }
+
+        while (nativeEnumerator.MoveNext())
+        {
+            yield return nativeEnumerator.Current;
+        }
+    }
+}
+
 [HarmonyPatch(typeof(JobDriver_Ingest), "MakeNewToils")]
 internal static class IngestCutleryToilsPatch
 {
@@ -253,40 +309,59 @@ internal static class IngestCutleryToilsPatch
 
         if (pawn.CurJob is { } microwaveJob && DiningSessionRegistry.MicrowaveFor(microwaveJob) is { } microwave)
         {
-            yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.Touch);
-            yield return Toils_Haul.StartCarryThing(
-                TargetIndex.A,
-                putRemainderInQueue: false,
-                subtractNumTakenFromJobCount: false,
-                failIfStackCountLessThanJobCount: false,
-                reserve: false,
-                canTakeFromInventory: true);
-            yield return GotoCapturedThing(
-                microwave.parent,
-                PathEndMode.InteractionCell,
-                () => !microwave.Operational);
-            yield return WaitAtCapturedThing(
-                microwave.parent,
-                microwave.HeatingTicks,
-                () => !microwave.Operational);
-            yield return new Toil
+            var meal = microwaveJob.GetTarget(TargetIndex.A).Thing;
+            var pickupPlan = DiningMealPickupPolicy.For(
+                meal?.Spawned == true,
+                meal is not null &&
+                ReferenceEquals(meal.holdingOwner, pawn.inventory?.innerContainer),
+                meal is not null && ReferenceEquals(meal, pawn.carryTracker?.CarriedThing));
+            if (pickupPlan == DiningMealPickupPlan.ReheatAfterVanillaInventoryTransfer)
             {
-                initAction = () =>
+                // JobDriver_Ingest latched eatingFromInventory when this job started.
+                // Its first native toil performs the inventory-to-carrier transfer. Run
+                // that toil before walking to the microwave, then leave the reheated meal
+                // in the carrier for the remaining native ingest toils.
+                foreach (var toil in DiningMealToilOrder.InsertAfterInventoryTransfer(
+                             original,
+                             ReheatCarriedMeal(pawn, microwave, dropAfterReheat: false)))
                 {
-                    var carried = pawn.carryTracker.CarriedThing;
-                    if (carried is not null)
+                    yield return toil;
+                }
+            }
+            else
+            {
+                if (pickupPlan != DiningMealPickupPlan.SkipOptionalReheat)
+                {
+                    if (pickupPlan == DiningMealPickupPlan.ApproachAndCarry)
                     {
-                        microwave.TryReheat(carried);
+                        yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.Touch);
+                        yield return Toils_Haul.StartCarryThing(
+                            TargetIndex.A,
+                            putRemainderInQueue: false,
+                            subtractNumTakenFromJobCount: false,
+                            failIfStackCountLessThanJobCount: false,
+                            reserve: false,
+                            canTakeFromInventory: false);
                     }
-                },
-                defaultCompleteMode = ToilCompleteMode.Instant
-            };
-            yield return Toils_Haul.DropCarriedThing();
-        }
 
-        foreach (var toil in original)
+                    foreach (var toil in ReheatCarriedMeal(pawn, microwave, dropAfterReheat: true))
+                    {
+                        yield return toil;
+                    }
+                }
+
+                foreach (var toil in original)
+                {
+                    yield return toil;
+                }
+            }
+        }
+        else
         {
-            yield return toil;
+            foreach (var toil in original)
+            {
+                yield return toil;
+            }
         }
 
         yield return new Toil
@@ -294,6 +369,38 @@ internal static class IngestCutleryToilsPatch
             initAction = () => CommonSenseAdapter.TryQueueCommittedHandoff(pawn, driver.job),
             defaultCompleteMode = ToilCompleteMode.Instant
         };
+    }
+
+    private static IEnumerable<Toil> ReheatCarriedMeal(
+        Pawn pawn,
+        CompMicrowave microwave,
+        bool dropAfterReheat)
+    {
+        yield return GotoCapturedThing(
+            microwave.parent,
+            PathEndMode.InteractionCell,
+            () => !microwave.Operational);
+        yield return WaitAtCapturedThing(
+            microwave.parent,
+            microwave.HeatingTicks,
+            () => !microwave.Operational);
+        yield return new Toil
+        {
+            initAction = () =>
+            {
+                var carried = pawn.carryTracker?.CarriedThing;
+                if (carried is not null)
+                {
+                    microwave.TryReheat(carried);
+                }
+            },
+            defaultCompleteMode = ToilCompleteMode.Instant
+        };
+
+        if (dropAfterReheat)
+        {
+            yield return Toils_Haul.DropCarriedThing();
+        }
     }
 
     private static Toil GotoCapturedThing(
