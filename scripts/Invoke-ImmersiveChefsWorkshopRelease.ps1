@@ -283,7 +283,7 @@ function Get-WorkshopRateLimitDelayMilliseconds([Net.HttpWebResponse]$Response) 
 function Initialize-WorkshopChangeHistoryRequest([Net.HttpWebRequest]$Request) {
     $Request.Timeout = 30000
     $Request.ReadWriteTimeout = 30000
-    $Request.UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+    $Request.UserAgent = 'ImmersiveChefsWorkshopRelease/1.0'
     $Request.Accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
     $Request.Headers['Accept-Language'] = 'en-US,en;q=0.9'
 }

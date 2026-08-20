@@ -214,6 +214,10 @@ Every update to an existing Workshop item SHALL provide a nonempty authored chan
 - **WHEN** the exact existing-item change-history request returns HTTP 429 before publication admission
 - **THEN** the release workflow honors a bounded retry delay and retries a bounded number of times, while every other HTTP failure or exhausted rate-limit budget fails closed without submitting the Workshop update
 
+#### Scenario: Change-history verification identifies the release tool honestly
+- **WHEN** the release workflow queries Steam's public change history before or after an update
+- **THEN** the bounded request uses a stable release-tool user agent rather than impersonating a web browser
+
 ### Requirement: Steam publication is typed, guarded, and observable
 The Dev Gateway SHALL expose an authenticated, loopback-only typed publication operation that runs only in a fresh isolated RimWorld process with Steam initialized. It SHALL bind one validated staged package, presentation bundle, and required-item graph to one declared Workshop item, use the native RimWorld/Steam publication path without relying on hidden UI options, expose bounded progress and terminal failure details, and require one explicit natural-language publish authorization after dry-run inspection. Exact hashes and command confirmation strings SHALL remain internal guardrails rather than text the operator must repeat.
 

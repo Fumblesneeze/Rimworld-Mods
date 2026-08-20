@@ -724,7 +724,7 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
     }
 
     [Test]
-    public void Workshop_change_history_uses_a_normal_bounded_browser_request_shape()
+    public void Workshop_change_history_identifies_the_release_tool_instead_of_impersonating_a_browser()
     {
         using var fixture = Fixture.Create();
         var run = fixture.InvokeFunctions(
@@ -737,7 +737,8 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         Assert.Multiple(() =>
         {
             Assert.That(run.ExitCode, Is.Zero, run.StandardError);
-            Assert.That(run.StandardOutput.Trim(), Does.StartWith("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"));
+            Assert.That(run.StandardOutput.Trim(), Does.StartWith("ImmersiveChefsWorkshopRelease/1.0"));
+            Assert.That(run.StandardOutput, Does.Not.Contain("Mozilla/"));
             Assert.That(run.StandardOutput, Does.Contain("|text/html,"));
             Assert.That(run.StandardOutput, Does.Contain("|en-US,en;q=0.9|30000|30000"));
         });
