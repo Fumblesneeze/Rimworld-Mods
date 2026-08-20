@@ -9,7 +9,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - Specify origin-safe legacy/external meals, cheap embedded plates for generated visitor/raider inventories and trader stock, and increasing plate-material requirements for Simple, Fine, and Lavish meals.
 - Specify prepared ingredients, nutrient-paste preparation, rapidly perishable provenance, and preparation-quality effects.
 - Specify manned linked kitchen stations whose assistants contribute only while the lead cook is actively cooking.
-- Specify culinary quality, temperature, reheating, poisoning risk, dining thoughts, expectations, and Royalty standards.
+- Specify culinary quality, temperature, prioritized microwave/stove/campfire/ambient-heat reheating, poisoning risk, dining thoughts, expectations, and Royalty standards.
 - Specify caravan cooling and reusable tableware, guest and Hospitality ware sourcing, child and patient feeding, wild-water sanitation provenance, missing-cutlery dirt, and clean/dirty stockpile filters.
 - Specify optional integrations for the locally installed material, hygiene, restaurant, dispenser/printer, recipe-replacement, food-selection, storage, variety, and meal-content ecosystem without making those integration targets hard dependencies. XML Extensions is the required declarative package-ID patch engine.
 - Specify an absent-safe Pick Up And Haul integration that gathers a nearby hand-washing batch, washes each physical dish separately, and returns the clean batch through that mod's tracked inventory/unload workflow.

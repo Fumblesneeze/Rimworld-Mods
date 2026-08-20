@@ -54,7 +54,7 @@ The quality gauge SHALL label scores `0`–`19` Awful, `20`–`34` Poor, `35`–
 - **THEN** the pawn has one current culinary-quality thought representing the newly eaten serving rather than multiple copies of that thought
 
 ### Requirement: Meals have physical temperature and defined thermal bands under the fallback provider
-When Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, a serving completed by an actual cooking recipe SHALL start at `70°C`. Its gauge SHALL display Steaming Hot at `55°C` or above, Warm from `35°C` through `54.9°C`, Room Temperature from `15°C` through `34.9°C`, Cold above `0°C` through `14.9°C`, and Frozen at `0°C` or below. Between updates, temperature SHALL move exponentially toward the containing cell's ambient temperature using `ambient + (old - ambient) * 2^(-elapsed / effective half-life)`. The base half-life SHALL be `ThermalHalfLifeHours`; ambient temperatures above `0°C` and at most `10°C` SHALL cool at twice the normal rate, and ambient temperatures at or below `0°C` SHALL cool at four times the normal rate. A serving that is already Frozen and is later exposed to an ambient temperature above `0°C` SHALL thaw at half the normal rate, using twice the base effective half-life, until it crosses above `0°C`. Microwave reheating is the only supported fast-thaw path.
+When Thermodynamics - Hot Meals is absent and Immersive Chefs owns temperature, a serving completed by an actual cooking recipe SHALL start at `70°C`. Its gauge SHALL display Steaming Hot at `55°C` or above, Warm from `35°C` through `54.9°C`, Room Temperature from `15°C` through `34.9°C`, Cold above `0°C` through `14.9°C`, and Frozen at `0°C` or below. Between updates, temperature SHALL move exponentially toward the containing cell's ambient temperature using `ambient + (old - ambient) * 2^(-elapsed / effective half-life)`. The base half-life SHALL be `ThermalHalfLifeHours`; ambient temperatures above `0°C` and at most `10°C` SHALL cool at twice the normal rate, and ambient temperatures at or below `0°C` SHALL cool at four times the normal rate. A serving that is already Frozen and is later exposed to an ambient temperature above `0°C` SHALL thaw at half the normal rate, using twice the base effective half-life, until it crosses above `0°C`. Deliberate microwave, stove, campfire, or positive-heat-building use is the supported faster thawing path.
 
 #### Scenario: Freshly cooked meal is steaming hot
 - **WHEN** a cook completes an affected meal recipe
@@ -135,12 +135,14 @@ Wild-water provenance SHALL be evaluated independently from dirty state, SHALL b
 - **WHEN** ingestion causes food poisoning and the final dirty-cookware delta is larger than every other positive source
 - **THEN** the resulting player-visible cause names dirty cookware rather than `unknown`
 
-### Requirement: Pawns reheat eligible cold meals in a countertop microwave
+### Requirement: Pawns reheat eligible cold meals through prioritized available heat sources
 When Thermodynamics - Hot Meals is absent, the mod SHALL provide a powered one-cell countertop microwave unlocked directly by vanilla `Electricity` that accepts one eligible plated meal serving per heating job. It SHALL require neither `ImmersiveChefs_Dishwashing` nor `ImmersiveChefs_ProfessionalKitchens`. The microwave SHALL render and construct at `BuildingOnTop`, SHALL be a non-edifice, SHALL not clear or replace the supporting building, and SHALL occupy the top-building altitude for that cell. Its placement worker SHALL require an already completed, spawned table or workbench cell whose Def provides an eating/item surface; bare terrain, blueprints, frames, beds, shelves/storage, and unrelated buildings SHALL be rejected. The support MAY be vanilla or modded and the rule SHALL be capability-based rather than a hard-coded Def-name list. Even More Linkables is an inspected implementation example, not a dependency.
 
 The microwave SHALL retain its own power trader, flick, breakdown, reservation, interaction-cell, and heating state independently of the support. It MUST NOT block ordinary bills, interaction cells, dining use, or facility links of a multi-cell supporting table/workbench merely by sharing one surface cell. If the support becomes invalid through destruction, deconstruction, replacement, or another mod, any active heating job SHALL cancel without applying a completed-reheat mutation: it SHALL NOT set the microwave target temperature, subtract quality, increment the reheat count, add contamination, or replace/remove the embedded plate, while ordinary elapsed-time ambient temperature progression remains valid. The microwave SHALL become a recoverable minified building at that cell or the nearest valid standable cell rather than remain floating, disappear, or duplicate.
 
-When meal temperature is enabled, a pawn intending to eat a serving below `AutoMicrowaveBelow` SHALL prefer a reachable, allowed, powered, and reservable microwave before ingesting it. A completed cycle SHALL set that serving to `60°C`, increment its reheat count, and add the per-reheat poisoning delta at eventual ingestion. Its culinary-quality loss SHALL be `MicrowaveQualityLoss + clamp(ceil((15 - sourceTemperatureCelsius) / 5), 0, 10)`, without reducing quality below zero. This makes a refrigerated `5°C` serving lose the configured base plus `2`, while a frozen `-10°C` serving loses the base plus `5`. The source temperature SHALL be advanced to the completion tick before calculating the loss, and an interrupted cycle SHALL apply neither the base nor temperature-depth loss. If no usable microwave exists, reheating MUST remain optional and MUST NOT prevent eating. Recipes excluded by the meal-production contract MUST remain excluded from automatic microwave jobs.
+When meal temperature is enabled, a pawn intending to eat an eligible serving below both `AutoMicrowaveBelow` and the `15°C` Room Temperature boundary SHALL select the first tier containing a reachable, allowed, operational, and reservable source, then the nearest candidate within that tier: countertop microwave, non-open-flame meal-source stove, open-flame meal-source/campfire, then another positive heat-emitting building such as a heater or radiator. Classification SHALL use finalized building capabilities rather than labels. Common power, fuel, flick, breakdown, reachability, forbiddance, and reservation state SHALL remain authoritative. If no usable source exists, reheating remains optional and MUST NOT prevent eating. Recipes excluded by the meal-production contract remain excluded.
+
+A completed microwave cycle SHALL take its finalized Def duration (180 ticks in the base Def), set the serving to `60°C`, increment its microwave reheat count, and add the per-microwave poisoning delta at eventual ingestion. A stove cycle SHALL take `450` ticks and set `55°C`; a campfire cycle SHALL take `750` ticks and set `45°C`; another heating building SHALL take `1800` ticks and set at most `20°C`. The culinary-quality loss SHALL be `MicrowaveQualityLoss + source penalty + clamp(ceil((15 - sourceTemperatureCelsius) / 5), 0, 10)`, with penalties `0`, `3`, `6`, and `10` respectively and without reducing quality below zero. The source temperature SHALL be advanced to the completion tick before calculating the loss, and an interrupted cycle SHALL apply no heat, quality loss, or count. Non-microwave completion SHALL NOT increment the microwave reheat count or add its poisoning contribution.
 
 #### Scenario: Electricity makes microwave reheating available
 - **WHEN** vanilla `Electricity` is complete but neither Immersive Chefs research project is complete
@@ -169,15 +171,37 @@ When meal temperature is enabled, a pawn intending to eat a serving below `AutoM
 - **THEN** both reach `60°C` and increment their own reheat count exactly once
 
 #### Scenario: Microwave is unavailable
-- **WHEN** a hungry pawn selects a serving below the threshold but every microwave is unpowered, forbidden, unreachable, or reserved
-- **THEN** the pawn may continue to eat the serving without waiting indefinitely for a microwave
+- **WHEN** a hungry pawn selects a cold serving but every microwave, stove, campfire, and heating building is unusable
+- **THEN** the pawn may continue to eat the serving without waiting indefinitely for a source
+
+#### Scenario: Stove is the first available fallback
+- **WHEN** a pawn selects a `5°C` serving, no usable microwave exists, and both an operational stove and campfire are available
+- **THEN** the pawn reserves the nearest operational stove rather than the campfire
+- **THEN** completion takes `450` ticks, sets `55°C`, and applies the configured base plus `3` plus the bounded cold-depth loss without incrementing the microwave count
+
+#### Scenario: Campfire is used only after stoves
+- **WHEN** the same serving has no usable microwave or stove but an operational open-flame meal source is available
+- **THEN** the pawn heats it there for `750` ticks to `45°C` with the configured base plus `6` plus cold-depth quality loss
+
+#### Scenario: Heater thaws a meal only to room temperature
+- **WHEN** no usable cooking heat source exists but an operational positive heat-emitting building is reachable
+- **THEN** the pawn spends `1800` ticks warming the serving to at most `20°C` and pays the configured base plus `10` plus cold-depth quality loss
+- **THEN** the ordinary heater/radiator path does not increment the microwave count
+
+#### Scenario: Room-temperature meal is eaten directly
+- **WHEN** an eligible serving is already `15°C` or warmer even though the configured automatic threshold is higher
+- **THEN** no heating source is reserved and the pawn continues the native ingestion job
+
+#### Scenario: Priority outranks distance
+- **WHEN** a reachable campfire is closer than a reachable operational stove and no microwave is usable
+- **THEN** the pawn chooses the stove because source quality tier outranks path distance
 
 #### Scenario: Repeated reheating has cumulative cost
 - **WHEN** the same serving completes a second microwave cycle after cooling again
 - **THEN** the quality loss is applied a second time and its reheat count becomes `2`
 
 ### Requirement: Gastronomy waiters reheat before service
-When Gastronomy is active by package ID, Thermodynamics - Hot Meals is absent, and its service job selects an eligible serving below `AutoMicrowaveBelow`, the waiter SHALL insert a microwave-heating step before carrying the serving to the diner when a usable microwave exists. The integration MUST preserve Gastronomy's diner, table, reservation, and service state while reheating. If the microwave becomes unavailable, the waiter SHALL fall back to Gastronomy's normal delivery rather than abandoning or indefinitely reserving the meal.
+When Gastronomy is active by package ID, Thermodynamics - Hot Meals is absent, and its service job selects an eligible serving below the effective automatic-reheat threshold, the waiter SHALL use the same prioritized microwave/stove/campfire/heating-building selection and completion rules before carrying the serving to the diner. The integration MUST preserve Gastronomy's diner, table, reservation, and service state while reheating. If the selected source becomes unavailable, the waiter SHALL fall back to Gastronomy's normal delivery rather than abandoning or indefinitely reserving the meal.
 
 #### Scenario: Waiter reheats cold order
 - **WHEN** a Gastronomy waiter picks up a `4°C` eligible order, the threshold is `10°C`, and a usable microwave exists
@@ -209,7 +233,7 @@ The exclusion SHALL be package-presence based and SHALL happen before Def and Ha
 - **THEN** Immersive Chefs adds no microwave step or thermal toil and does not compete with whichever delivery/heating behavior those two upstream mods resolve
 
 ### Requirement: Meal-state settings are bounded and apply safely
-The mod SHALL expose `CulinaryQualityEnabled` (default `On`), `QualityMoodScale` (default `1.0`, range `0.0`–`2.0`), `FoodPoisoningEffectScale` (default `1.0`, range `0.0`–`3.0`), `MaximumCustomPoisonChance` (default `50%`, range `5%`–`100%`), `MealTemperatureEnabled` (default `On`), `ThermalHalfLifeHours` (default `2.0`, range `0.25`–`12.0`), `AutoMicrowaveBelow` (default `10°C`, range `-10°C`–`30°C`), `MicrowaveQualityLoss` (default `5`, range `0`–`20`), and `MicrowaveExtraPoisonChance` (default `0.5` percentage points, range `0`–`5`). Disabling culinary quality SHALL retain serialized scores but suppress the custom quality gauge, mood, and poisoning delta. Disabling meal temperature SHALL suppress thermal progression, temperature thoughts and risk, and automatic reheating. Scalar changes SHALL apply immediately to future calculations and microwave cycles without rewriting stored records. When Thermodynamics - Hot Meals is active, the Immersive Chefs temperature and microwave controls SHALL be disabled or replaced by one informational ownership notice; their persisted values SHALL remain untouched and have no runtime effect.
+The mod SHALL expose `CulinaryQualityEnabled` (default `On`), `QualityMoodScale` (default `1.0`, range `0.0`–`2.0`), `FoodPoisoningEffectScale` (default `1.0`, range `0.0`–`3.0`), `MaximumCustomPoisonChance` (default `50%`, range `5%`–`100%`), `MealTemperatureEnabled` (default `On`), `ThermalHalfLifeHours` (default `2.0`, range `0.25`–`12.0`), serialized `AutoMicrowaveBelow` presented as `Auto-reheat below` (default `10°C`, range `-10°C`–`30°C`, effective upper bound `15°C`), `MicrowaveQualityLoss` used as the common base loss (default `5`, range `0`–`20`), and `MicrowaveExtraPoisonChance` (default `0.5` percentage points, range `0`–`5`). Disabling culinary quality SHALL retain serialized scores but suppress the custom quality gauge, mood, and poisoning delta. Disabling meal temperature SHALL suppress thermal progression, temperature thoughts and risk, and automatic reheating. Scalar changes SHALL apply immediately to future calculations and heating cycles without rewriting stored records. When Thermodynamics - Hot Meals is active, the Immersive Chefs temperature and reheating controls SHALL be disabled or replaced by one informational ownership notice; their persisted values SHALL remain untouched and have no runtime effect.
 
 #### Scenario: Culinary quality is disabled
 - **WHEN** `CulinaryQualityEnabled` is changed to `Off`
@@ -217,7 +241,7 @@ The mod SHALL expose `CulinaryQualityEnabled` (default `On`), `QualityMoodScale`
 
 #### Scenario: Temperature system is disabled
 - **WHEN** `MealTemperatureEnabled` is `Off`
-- **THEN** meals do not progress through custom thermal bands, generate custom temperature effects, or trigger automatic microwave jobs
+- **THEN** meals do not progress through custom thermal bands, generate custom temperature effects, or trigger automatic heating jobs
 
 #### Scenario: New microwave settings do not rewrite history
 - **WHEN** the player changes `MicrowaveQualityLoss` or `MicrowaveExtraPoisonChance`
