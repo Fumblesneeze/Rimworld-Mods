@@ -318,3 +318,33 @@ internal static class CookingJobCleanupPatch
         CommonSenseAdapter.Cleanup(pawn.CurJob);
     }
 }
+
+[HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.StartJob))]
+internal static class CookForYourselfPostCookingCleanupTransitionPatch
+{
+    private static void Prefix(
+        Pawn ___pawn,
+        ref Job newJob,
+        JobCondition lastJobEndCondition,
+        JobTag? tag)
+    {
+        var cookForYourselfDriver = CookForYourselfAdapter.OwnsDriver(___pawn.jobs.curDriver);
+        var currentJobSucceeded = lastJobEndCondition == JobCondition.Succeeded;
+        Job? cleanupJob = null;
+        var cleanupCreated = cookForYourselfDriver && currentJobSucceeded &&
+                             CookingSessionRegistry.TryPrepareImmediatePostCookingCleanup(
+                                 ___pawn,
+                                 ___pawn.CurJob,
+                                 out cleanupJob);
+        if (!CommonSenseCookingCleanupPolicy.ShouldReplaceImmediateFollowup(
+                cookForYourselfDriver,
+                currentJobSucceeded,
+                cleanupCreated))
+        {
+            return;
+        }
+
+        ___pawn.jobs.jobQueue.EnqueueFirst(newJob, tag);
+        newJob = cleanupJob!;
+    }
+}

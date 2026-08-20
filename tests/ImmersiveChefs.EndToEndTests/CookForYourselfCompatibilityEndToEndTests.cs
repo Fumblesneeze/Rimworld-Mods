@@ -1306,7 +1306,8 @@ internal sealed class CookForYourselfFixture
     internal static CookForYourselfFixture Create(
         IEndToEndContext context,
         string cookName,
-        float hunger)
+        float hunger,
+        bool requireCleaning = false)
     {
         FoodSearchE2EFixture.UseStrictNonEmergencyDining(context);
         var settings = ImmersiveChefsMod.Settings;
@@ -1318,9 +1319,13 @@ internal sealed class CookForYourselfFixture
         var center = FoodSearchE2EFixture.FindRoomCenter(map);
         FoodSearchE2EFixture.BuildSealedRoom(map, center);
         var cooking = DefDatabase<WorkTypeDef>.GetNamed("Cooking");
-        var cook = CreateCapableCook(cookName, cooking);
+        var cook = CreateCapableCook(cookName, cooking, requireCleaning);
         FoodSearchE2EFixture.SetHunger(cook, hunger);
         cook.workSettings.SetPriority(cooking, 1);
+        if (requireCleaning)
+        {
+            cook.workSettings.SetPriority(WorkTypeDefOf.Cleaning, 1);
+        }
         GenSpawn.Spawn(cook, center + (IntVec3.South * 3), map);
         cook.drafter.Drafted = true;
 
@@ -1438,12 +1443,16 @@ internal sealed class CookForYourselfFixture
         return spawned + held + embedded;
     }
 
-    internal static Pawn CreateCapableCook(string name, WorkTypeDef cooking)
+    internal static Pawn CreateCapableCook(
+        string name,
+        WorkTypeDef cooking,
+        bool requireCleaning = false)
     {
         for (var attempt = 0; attempt < 96; attempt++)
         {
             var pawn = FoodSearchE2EFixture.CreateColonist(name);
             if (!pawn.WorkTypeIsDisabled(cooking) &&
+                (!requireCleaning || !pawn.WorkTypeIsDisabled(WorkTypeDefOf.Cleaning)) &&
                 pawn.health.capacities.CapableOf(PawnCapacityDefOf.Manipulation) &&
                 pawn.health.capacities.GetLevel(PawnCapacityDefOf.Moving) >= 0.9f)
             {
