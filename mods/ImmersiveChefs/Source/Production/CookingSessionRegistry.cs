@@ -77,6 +77,9 @@ internal sealed class CookingSession
     internal bool WareExempt { get; }
     internal bool WorkStarted { get; private set; }
     internal bool ProductsCompleted { get; private set; }
+    internal bool CoveredProductFinalized { get; private set; }
+    internal bool PostCookingCleanupClaimed { get; private set; }
+    private bool ReleaseAtEndPerformed { get; set; }
     internal float PreparedWorkFactor { get; }
     internal AssistantContributionAccumulator AssistantContribution { get; } = new();
     private FinalProductLedger<Thing> FinalizedProducts { get; } = new();
@@ -216,6 +219,7 @@ internal sealed class CookingSession
         }
 
         culinaryState?.ReplaceServings(records);
+        CoveredProductFinalized = product.stackCount > 0;
     }
 
     private Thing? TryEmbedNextPlate(CompEmbeddedWare embeddedWare)
@@ -271,13 +275,25 @@ internal sealed class CookingSession
         UrgentProductionRequestRegistry.Consume(BillGiver.MapHeld);
     }
 
+    internal void MarkPostCookingCleanupClaimed()
+    {
+        PostCookingCleanupClaimed = true;
+    }
+
     internal void ReleaseAtEnd()
     {
+        if (ReleaseAtEndPerformed)
+        {
+            return;
+        }
+
         var map = BillGiver.Map ?? Pawn.MapHeld;
         if (map is null)
         {
             return;
         }
+
+        ReleaseAtEndPerformed = true;
 
         if (Cookware?.Thing is { Destroyed: false } cookware)
         {
@@ -910,8 +926,56 @@ internal static class CookingSessionRegistry
         }
 
         session.ReleaseAtEnd();
+        if (TryClaimPostCookingCleanupJob(pawn, session, out var cleanupJob))
+        {
+            pawn.jobs.jobQueue.EnqueueFirst(cleanupJob!, tag: JobTag.Misc);
+        }
         KitchenAssistanceRegistry.Cleanup(pawn, job);
         Sessions.Remove(job);
+    }
+
+    internal static bool TryPrepareImmediatePostCookingCleanup(
+        Pawn pawn,
+        Job? cookingJob,
+        out Job? cleanupJob)
+    {
+        cleanupJob = null;
+        if (cookingJob is null ||
+            !Sessions.TryGetValue(cookingJob, out var session) ||
+            session.PostCookingCleanupClaimed ||
+            !CommonSenseAdapter.IsPostCookingCleanupEligible(
+                pawn,
+                session.ProductsCompleted,
+                session.CoveredProductFinalized))
+        {
+            return false;
+        }
+
+        // Cook for Yourself starts its follow-up synchronously. Release first so
+        // the replacement cleanup job can reserve the real spawned cookware.
+        session.ReleaseAtEnd();
+        return TryClaimPostCookingCleanupJob(pawn, session, out cleanupJob);
+    }
+
+    private static bool TryClaimPostCookingCleanupJob(
+        Pawn pawn,
+        CookingSession session,
+        out Job? cleanupJob)
+    {
+        cleanupJob = null;
+        if (session.PostCookingCleanupClaimed ||
+            !CommonSenseAdapter.TryCreatePostCookingCleanupJob(
+                pawn,
+                session.Cookware?.Thing,
+                session.ProductsCompleted,
+                session.CoveredProductFinalized,
+                out cleanupJob))
+        {
+            return false;
+        }
+
+        session.MarkPostCookingCleanupClaimed();
+        return true;
     }
 
     private static List<ReservedWarePortion> FindPortions(

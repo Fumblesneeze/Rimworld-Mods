@@ -162,6 +162,33 @@ When `avilmask.CommonSense` is active and the locally supported `CommonSense` as
 - **WHEN** `avilmask.CommonSense` is active but the expected public settings surface is absent or incompatible
 - **THEN** one actionable warning disables only opportunistic post-dining cleanup and ordinary Immersive Chefs sanitation continues
 
+### Requirement: Common Sense assigns exact post-cooking cookware cleanup
+
+When `avilmask.CommonSense` is active through its validated public cleaning-capability shape, Immersive Chefs SHALL give the pawn who completes a covered cooking session one immediate cleanup handoff for the exact cookware dirtied by that session. The handoff SHALL occur only after enumeration has completed with at least one real finalized covered recipe product and the exact cookware has returned dirty to the map. It SHALL queue the ordinary Immersive Chefs `Doing dishes` job ahead of unrelated queued work, prefer a reachable, reservable, accepting dishwasher, and otherwise use the ordinary hand-washing source order. The cooking product and any upstream follow-up SHALL remain intact behind this handoff.
+
+Canceled, failed, pre-work, and product-incomplete cooking SHALL NOT queue cleanup. Neither SHALL clean, destroyed, unspawned, forbidden, unreachable, or Gastronomy-claimed cookware; a pawn whom Common Sense reports incapable of Cleaning; a drafted, downed, mentally broken, caravan, or mapless cook; or a setting with no viable washing destination. Failure to form the handoff SHALL leave the dirty cookware available for ordinary sanitation without retaining reservations or retrying indefinitely. Package absence, an Immersive Chefs integration setting of `Off`, or a changed Common Sense public shape SHALL disable only this automatic post-cooking handoff without a hard reference or missing-type error.
+
+#### Scenario: Cook washes the exact cookware after completing a meal
+
+- **WHEN** a Cleaning-capable pawn completes a covered meal with Common Sense active and the exact cookware dirtied by that cooking session can reach an accepting washing destination
+- **THEN** that pawn claims the same returned cookware and begins one ordinary `Doing dishes` job before unrelated queued work
+- **AND** an accepting dishwasher outranks every hand-washing source
+
+#### Scenario: Cook for Yourself preserves its follow-up behind cleanup
+
+- **WHEN** a Cook for Yourself job completes a covered meal and directly requests its native ingestion, feeding, or delivery follow-up through `Pawn_JobTracker.StartJob`
+- **THEN** the exact cookware cleanup runs first and that unchanged upstream follow-up remains queued behind it
+
+#### Scenario: Incomplete cooking does not clean cookware
+
+- **WHEN** cooking is canceled before a real recipe product completes, or the exact cookware is not returned dirty and spawned
+- **THEN** no post-cooking cleanup job is queued and the existing interruption/conservation lifecycle remains authoritative
+
+#### Scenario: Post-cooking cleanup has no viable route
+
+- **WHEN** the exact returned cookware is dirty but every dishwasher and hand-washing source is unavailable, forbidden, full, reserved, disconnected, or unreachable
+- **THEN** the meal remains complete, no cleanup reservation or immediate retry is retained, and ordinary sanitation may claim that cookware later
+
 ### Requirement: Pick Up And Haul transports a dishwashing batch
 
 When exact package `Mehni.PickUpAndHaul` is active and assembly `PickUpAndHaul, Version=1.0.0.0` exposes the validated public hauled-inventory component, `RegisterHauledItem(Verse.Thing)`, `CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and native `UnloadYourHauledInventory` JobDef/driver shape, an ordinary `Doing dishes` job SHALL collect a bounded nearby batch before visiting its one chosen hand-washing source or dishwasher. It SHALL reserve only dirty eligible ware within 12 cells of the first item that can use the same exact destination and stop before either pawn encumbrance or appliance capacity is exceeded.

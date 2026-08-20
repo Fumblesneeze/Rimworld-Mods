@@ -49,6 +49,27 @@ internal static class CommonSenseHandoffPolicy
     }
 }
 
+internal static class CommonSenseCookingCleanupPolicy
+{
+    internal static bool ShouldQueue(
+        bool cleanupEligible,
+        bool productsCompleted,
+        bool coveredProductFinalized,
+        bool exactCookwareReturnedDirty)
+    {
+        return cleanupEligible && productsCompleted && coveredProductFinalized &&
+               exactCookwareReturnedDirty;
+    }
+
+    internal static bool ShouldReplaceImmediateFollowup(
+        bool cookForYourselfDriver,
+        bool currentJobSucceeded,
+        bool cleanupJobCreated)
+    {
+        return cookForYourselfDriver && currentJobSucceeded && cleanupJobCreated;
+    }
+}
+
 internal static class CommonSenseAdapter
 {
     private static readonly ConditionalWeakTable<Job, HandoffRequest> Pending = new();
@@ -101,7 +122,7 @@ internal static class CommonSenseAdapter
                 incapableMethod);
             Enabled = true;
             reason = string.Empty;
-            Log.Message("[ImmersiveChefs] Common Sense adapter active; completed diners and patient-feeding nurses clean their exact dirty tableware.");
+            Log.Message("[ImmersiveChefs] Common Sense adapter active; cooks clean their completed cookware and diners or patient-feeding nurses clean their exact dirty tableware.");
             return true;
         }
         catch (Exception exception)
@@ -162,6 +183,62 @@ internal static class CommonSenseAdapter
         }
     }
 
+    internal static bool IsPostCookingCleanupEligible(
+        Pawn cook,
+        bool productsCompleted,
+        bool coveredProductFinalized)
+    {
+        return CommonSenseCookingCleanupPolicy.ShouldQueue(
+            CanClaim(cook, gastronomyOwned: false),
+            productsCompleted,
+            coveredProductFinalized,
+            exactCookwareReturnedDirty: true);
+    }
+
+    internal static bool TryCreatePostCookingCleanupJob(
+        Pawn cook,
+        Thing? cookware,
+        bool productsCompleted,
+        bool coveredProductFinalized,
+        out Job? cleanupJob)
+    {
+        cleanupJob = null;
+        try
+        {
+            var cleanupEligible = CanClaim(cook, gastronomyOwned: false);
+            var exactCookwareReturnedDirty = cookware is not null &&
+                                             IsSpawnedDirtyProductFor(
+                                                 cookware,
+                                                 cook,
+                                                 KitchenwareProduct.Cookware);
+            if (!CommonSenseCookingCleanupPolicy.ShouldQueue(
+                    cleanupEligible,
+                    productsCompleted,
+                    coveredProductFinalized,
+                    exactCookwareReturnedDirty) ||
+                cookware is null)
+            {
+                return false;
+            }
+
+            var workGiver = new WorkGiver_DoDishes();
+            if (!workGiver.HasJobOnThing(cook, cookware) ||
+                !WorkGiver_DoDishes.TryFindDestination(cook, cookware, out var destination))
+            {
+                return false;
+            }
+
+            cleanupJob = WorkGiver_DoDishes.CreateExactWareJob(cookware, destination);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Disable(
+                $"post-cooking cleanup handoff failed ({exception.GetType().Name}: {exception.Message})");
+            return false;
+        }
+    }
+
     internal static void Cleanup(Job? diningJob)
     {
         if (diningJob is not null)
@@ -199,21 +276,33 @@ internal static class CommonSenseAdapter
         }
         catch (Exception exception)
         {
-            Enabled = false;
-            incapableOfCleaning = null;
-            OptionalIntegrationDiagnostics.WarnOnce(
-                OptionalIntegration.CommonSense,
+            Disable(
                 $"cleaning-capability invocation failed ({exception.GetType().Name}: {exception.Message})");
             return true;
         }
     }
 
+    private static void Disable(string reason)
+    {
+        Enabled = false;
+        incapableOfCleaning = null;
+        OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.CommonSense, reason);
+    }
+
     private static bool IsSpawnedDirtyWareFor(Thing thing, Pawn pawn)
+    {
+        return IsSpawnedDirtyProductFor(thing, pawn, KitchenwareProduct.Plate) ||
+               IsSpawnedDirtyProductFor(thing, pawn, KitchenwareProduct.Cutlery);
+    }
+
+    private static bool IsSpawnedDirtyProductFor(
+        Thing thing,
+        Pawn pawn,
+        KitchenwareProduct product)
     {
         return !thing.Destroyed && thing.Spawned && thing.Map == pawn.MapHeld &&
                (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true &&
-               thing.def.GetModExtension<KitchenwareExtension>()?.product is
-                   KitchenwareProduct.Plate or KitchenwareProduct.Cutlery;
+               thing.def.GetModExtension<KitchenwareExtension>()?.product == product;
     }
 
     private sealed class HandoffRequest

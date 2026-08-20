@@ -86,4 +86,43 @@ public sealed class CommonSenseAdapterTests
                 pawnCanClean: false),
             Is.False);
     }
+
+    [TestCase(true, true, true, true, true)]
+    [TestCase(false, true, true, true, false)]
+    [TestCase(true, false, true, true, false)]
+    [TestCase(true, true, false, true, false)]
+    [TestCase(true, true, true, false, false)]
+    public void Post_cooking_handoff_requires_eligible_cleanup_a_finalized_covered_product_and_exact_dirty_cookware(
+        bool cleanupEligible,
+        bool productsCompleted,
+        bool coveredProductFinalized,
+        bool exactCookwareReturnedDirty,
+        bool expected)
+    {
+        Assert.That(
+            CommonSenseCookingCleanupPolicy.ShouldQueue(
+                cleanupEligible,
+                productsCompleted,
+                coveredProductFinalized,
+                exactCookwareReturnedDirty),
+            Is.EqualTo(expected));
+    }
+
+    [TestCase(true, true, true, true)]
+    [TestCase(false, true, true, false)]
+    [TestCase(true, false, true, false)]
+    [TestCase(true, true, false, false)]
+    public void Direct_Cook_for_Yourself_followup_is_replaced_only_by_a_created_cleanup_job(
+        bool cookForYourselfDriver,
+        bool currentJobSucceeded,
+        bool cleanupJobCreated,
+        bool expected)
+    {
+        Assert.That(
+            CommonSenseCookingCleanupPolicy.ShouldReplaceImmediateFollowup(
+                cookForYourselfDriver,
+                currentJobSucceeded,
+                cleanupJobCreated),
+            Is.EqualTo(expected));
+    }
 }
