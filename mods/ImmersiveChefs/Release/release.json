@@ -23,5 +23,5 @@
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
   "previousChangeNote": "Redrew modern cookware so it stays readable on dark stoves and at normal map zoom. Steel sets now use clearly separated pot, pan, lid, and utensil silhouettes with a stronger smooth outline and cleaner Stuff masking.",
-  "changeNote": ""
+  "changeNote": "Fixed colonists repeatedly restarting their eating job when a cold plated meal was already in inventory. Inventory meals now remain in the same job through microwave reheating and eating."
 }
