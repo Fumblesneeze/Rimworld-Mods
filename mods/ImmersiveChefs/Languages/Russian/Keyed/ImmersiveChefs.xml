@@ -29,9 +29,9 @@
   <ImmersiveChefs_Settings_MealTemperature>Температура блюда</ImmersiveChefs_Settings_MealTemperature>
   <ImmersiveChefs_Settings_ThermalHalfLife>Тепловой период полураспада: {0} ч</ImmersiveChefs_Settings_ThermalHalfLife>
   <ImmersiveChefs_Settings_AutoMicrowaveBelow>Автоматически разогревать ниже: {0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
-  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Потеря качества от микроволновки: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Базовая потеря качества при разогреве: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
   <ImmersiveChefs_Settings_MicrowavePoisonChance>Риск отравления от микроволновки: {0} п. п.</ImmersiveChefs_Settings_MicrowavePoisonChance>
-  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Температуру блюд и микроволновку предоставляет Thermodynamics - Hot Meals</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Температуру и разогрев блюд предоставляет Thermodynamics - Hot Meals</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
   <ImmersiveChefs_Settings_ColonyStandards>Стандарты питания колонии</ImmersiveChefs_Settings_ColonyStandards>
   <ImmersiveChefs_Settings_RoyaltyStandards>Стандарты питания знати</ImmersiveChefs_Settings_RoyaltyStandards>
   <ImmersiveChefs_Settings_IntegrationsHeading>Необязательные интеграции (требуется перезапуск; Авто или Выкл.)</ImmersiveChefs_Settings_IntegrationsHeading>

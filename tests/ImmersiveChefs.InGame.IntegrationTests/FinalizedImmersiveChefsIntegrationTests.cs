@@ -418,6 +418,31 @@ public static class FinalizedImmersiveChefsIntegrationTests
             "The fallback microwave must use the reviewed custom countertop sprite.");
     }
 
+    [IntegrationTest(RunAt.MainMenuLoaded)]
+    public static void CoreHeatingSourcesClassifyByFinalizedCapabilities()
+    {
+        var cases = new[]
+        {
+            new { DefName = "ElectricStove", Expected = MealHeatingSourceKind.Stove },
+            new { DefName = "FueledStove", Expected = MealHeatingSourceKind.Stove },
+            new { DefName = "Campfire", Expected = MealHeatingSourceKind.Campfire },
+            new { DefName = "Heater", Expected = MealHeatingSourceKind.AmbientHeater }
+        };
+
+        foreach (var sourceCase in cases)
+        {
+            var thing = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed(sourceCase.DefName));
+            var source = MealHeatingSource.TryCreate(thing);
+            IntegrationAssert.NotNull(
+                source,
+                $"Core {sourceCase.DefName} must expose a supported heating capability.");
+            IntegrationAssert.Equal(
+                sourceCase.Expected,
+                source!.Kind,
+                $"Core {sourceCase.DefName} must retain its capability-derived heating tier.");
+        }
+    }
+
     [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void CountertopMicrowaveAcceptsRealSurfacesAndRecoversAfterSupportLoss()
     {

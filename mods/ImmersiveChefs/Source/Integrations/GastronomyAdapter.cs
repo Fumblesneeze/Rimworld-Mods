@@ -122,8 +122,8 @@ internal static class GastronomyAdapter
         var cutlery = ImmersiveChefsMod.Settings.WareRequirementMode == WareRequirementMode.Off
             ? null
             : DiningSessionRegistry.SelectWare(server, job, KitchenwareProduct.Cutlery, emergency);
-        var microwave = DiningSessionRegistry.FindMicrowave(server, meal);
-        Services.Add(job, new GastronomyServiceContext(patron, meal, cutlery, microwave));
+        var heatingSource = DiningSessionRegistry.FindHeatingSource(server, meal);
+        Services.Add(job, new GastronomyServiceContext(patron, meal, cutlery, heatingSource));
     }
 
     private static void ServeToilsPostfix(JobDriver __instance, ref IEnumerable<Toil> __result)
@@ -174,16 +174,22 @@ internal static class GastronomyAdapter
         private readonly Pawn patron;
         private readonly Thing meal;
         private readonly Thing? selectedCutlery;
-        private readonly Thing? microwave;
+        private readonly MealHeatingSource? heatingSource;
         private Thing? carriedCutlery;
         private bool delivered;
 
-        internal GastronomyServiceContext(Pawn patron, Thing meal, Thing? selectedCutlery, Thing? microwave)
+        internal GastronomyServiceContext(
+            Pawn patron,
+            Thing meal,
+            Thing? selectedCutlery,
+            Thing? heatingSourceThing)
         {
             this.patron = patron;
             this.meal = meal;
             this.selectedCutlery = selectedCutlery;
-            this.microwave = microwave;
+            heatingSource = heatingSourceThing is null
+                ? null
+                : MealHeatingSource.TryCreate(heatingSourceThing);
         }
 
         internal IEnumerable<Toil> Wrap(Pawn server, Job job, IEnumerable<Toil> original)
@@ -196,9 +202,9 @@ internal static class GastronomyAdapter
                 yield return Instant(() => PickupCutlery(server));
             }
 
-            if (microwave?.TryGetComp<CompMicrowave>() is { } microwaveComp)
+            if (heatingSource is { } source)
             {
-                yield return Instant(() => job.SetTarget(TargetIndex.C, microwave));
+                var heatingInterrupted = false;
                 yield return Toils_Goto.GotoThing(TargetIndex.B, PathEndMode.Touch);
                 yield return Toils_Haul.StartCarryThing(
                     TargetIndex.B,
@@ -207,20 +213,28 @@ internal static class GastronomyAdapter
                     failIfStackCountLessThanJobCount: false,
                     reserve: false,
                     canTakeFromInventory: true);
-                yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.InteractionCell);
-                yield return Toils_General.Wait(microwaveComp.HeatingTicks, TargetIndex.C)
-                    .WithProgressBarToilDelay(TargetIndex.C);
+                yield return IngestCutleryToilsPatch.GotoOptionalHeatingSource(
+                    source,
+                    normalDeliveryFallback: true,
+                    onInterrupted: () => heatingInterrupted = true);
+                yield return IngestCutleryToilsPatch.WaitAtOptionalHeatingSource(
+                    source,
+                    normalDeliveryFallback: true,
+                    onInterrupted: () => heatingInterrupted = true);
                 yield return Instant(() =>
                 {
-                    if (server.carryTracker.CarriedThing is { } carried)
+                    if (server.carryTracker.CarriedThing is { } carried &&
+                        MealHeatingPolicy.CanApplyCompletedCycle(
+                            heatingInterrupted,
+                            source.IsOperational))
                     {
-                        microwaveComp.TryReheat(carried);
+                        source.TryHeat(carried);
                     }
                 });
                 yield return Toils_Haul.DropCarriedThing();
             }
 
-            if (selectedCutlery is not null || microwave is not null)
+            if (selectedCutlery is not null)
             {
                 yield return Instant(() => job.SetTarget(TargetIndex.C, originalDiningTarget));
             }

@@ -29,9 +29,9 @@
   <ImmersiveChefs_Settings_MealTemperature>Mahlzeitentemperatur</ImmersiveChefs_Settings_MealTemperature>
   <ImmersiveChefs_Settings_ThermalHalfLife>Thermische Halbwertszeit: {0} Std.</ImmersiveChefs_Settings_ThermalHalfLife>
   <ImmersiveChefs_Settings_AutoMicrowaveBelow>Automatisch aufwärmen unter: {0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
-  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Qualitätsverlust durch Mikrowelle: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Grund-Qualitätsverlust beim Aufwärmen: {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
   <ImmersiveChefs_Settings_MicrowavePoisonChance>Vergiftungsrisiko durch Mikrowelle: {0} Prozentpunkte</ImmersiveChefs_Settings_MicrowavePoisonChance>
-  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Mahlzeitentemperatur und Mikrowelle werden von Thermodynamics - Hot Meals bereitgestellt</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Mahlzeitentemperatur und Aufwärmen werden von Thermodynamics - Hot Meals bereitgestellt</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
   <ImmersiveChefs_Settings_ColonyStandards>Essstandards der Kolonie</ImmersiveChefs_Settings_ColonyStandards>
   <ImmersiveChefs_Settings_RoyaltyStandards>Essstandards für Adel</ImmersiveChefs_Settings_RoyaltyStandards>
   <ImmersiveChefs_Settings_IntegrationsHeading>Optionale Integrationen (Neustart erforderlich; Auto oder Aus)</ImmersiveChefs_Settings_IntegrationsHeading>

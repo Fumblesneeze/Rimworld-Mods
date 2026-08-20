@@ -29,9 +29,9 @@
   <ImmersiveChefs_Settings_MealTemperature>Température du repas</ImmersiveChefs_Settings_MealTemperature>
   <ImmersiveChefs_Settings_ThermalHalfLife>Demi-vie thermique : {0} h</ImmersiveChefs_Settings_ThermalHalfLife>
   <ImmersiveChefs_Settings_AutoMicrowaveBelow>Réchauffer automatiquement sous : {0} °C</ImmersiveChefs_Settings_AutoMicrowaveBelow>
-  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Perte de qualité au micro-ondes : {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>Perte de qualité de base au réchauffage : {0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
   <ImmersiveChefs_Settings_MicrowavePoisonChance>Risque d'intoxication au micro-ondes : {0} points</ImmersiveChefs_Settings_MicrowavePoisonChance>
-  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Thermodynamics - Hot Meals fournit la température des repas et le micro-ondes</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>Thermodynamics - Hot Meals fournit la température et le réchauffage des repas</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
   <ImmersiveChefs_Settings_ColonyStandards>Exigences de table de la colonie</ImmersiveChefs_Settings_ColonyStandards>
   <ImmersiveChefs_Settings_RoyaltyStandards>Exigences de table de la noblesse</ImmersiveChefs_Settings_RoyaltyStandards>
   <ImmersiveChefs_Settings_IntegrationsHeading>Intégrations facultatives (redémarrage requis ; Auto ou Désactivé)</ImmersiveChefs_Settings_IntegrationsHeading>

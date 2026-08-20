@@ -72,8 +72,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["previousChangeNote"], Is.EqualTo("Fixed colonists repeatedly restarting their eating job when a cold plated meal was already in inventory. Inventory meals now remain in the same job through microwave reheating and eating."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo(string.Empty),
-                "The one-shot change note must be cleared immediately after its exact candidate has been published and remotely verified.");
+                Is.EqualTo("Cold meals now use the best available heat source: microwave, stove, campfire, then a slow heater or radiator fallback. Last-resort heating stops at 20 °C, while room-temperature meals are eaten directly."),
+                "A pending publication must carry the exact reviewed player-facing change note.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));
