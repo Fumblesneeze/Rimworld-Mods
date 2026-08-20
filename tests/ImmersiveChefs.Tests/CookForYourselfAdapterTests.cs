@@ -253,18 +253,20 @@ public sealed class CookForYourselfAdapterTests
         });
     }
 
-    [TestCase(true, true, true, true, true, true)]
-    [TestCase(false, true, true, true, true, false)]
-    [TestCase(true, false, true, true, true, false)]
-    [TestCase(true, true, false, true, true, false)]
-    [TestCase(true, true, true, false, true, false)]
-    [TestCase(true, true, true, true, false, false)]
+    [TestCase(true, true, true, true, true, true, true)]
+    [TestCase(false, true, true, true, true, true, false)]
+    [TestCase(true, false, true, true, true, true, false)]
+    [TestCase(true, true, false, true, true, true, false)]
+    [TestCase(true, true, true, false, true, true, false)]
+    [TestCase(true, true, true, true, false, true, false)]
+    [TestCase(true, true, true, true, true, false, false)]
     public void Stack_gap_is_bypassed_only_for_the_current_prework_ingredient_drop(
         bool adapterEnabled,
         bool jobAdmitted,
         bool directMode,
         bool beforeActiveCooking,
-        bool carriedIngredientMatchesCurrentTarget,
+        bool currentToilIsIngredientPlacement,
+        bool hasCarriedThing,
         bool expected)
     {
         Assert.That(
@@ -273,7 +275,8 @@ public sealed class CookForYourselfAdapterTests
                 jobAdmitted,
                 directMode,
                 beforeActiveCooking,
-                carriedIngredientMatchesCurrentTarget),
+                currentToilIsIngredientPlacement,
+                hasCarriedThing),
             Is.EqualTo(expected));
     }
 

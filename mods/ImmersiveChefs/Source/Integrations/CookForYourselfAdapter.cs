@@ -279,13 +279,15 @@ internal static class StackGapIngredientDropPolicy
         bool jobAdmitted,
         bool directMode,
         bool beforeActiveCooking,
-        bool carriedIngredientMatchesCurrentTarget)
+        bool currentToilIsIngredientPlacement,
+        bool hasCarriedThing)
     {
         return adapterEnabled &&
                jobAdmitted &&
                directMode &&
                beforeActiveCooking &&
-               carriedIngredientMatchesCurrentTarget;
+               currentToilIsIngredientPlacement &&
+               hasCarriedThing;
     }
 }
 
@@ -322,6 +324,7 @@ internal static class CookForYourselfAdapter
     private static Type? driverType;
     private static JobDef? jobDef;
     private static AccessTools.FieldRef<object, float>? workLeft;
+    private static AccessTools.FieldRef<JobDriver, List<Toil>>? driverToils;
     private static FieldInfo? stackGapEnabledField;
     private static readonly ConditionalWeakTable<Job, AdmittedJob> AdmittedJobs = new();
 
@@ -357,6 +360,7 @@ internal static class CookForYourselfAdapter
         var recipeField = ExactField(foundDriverType, "recipe", typeof(RecipeDef));
         var recipientField = ExactField(foundDriverType, "recipient", typeof(Pawn));
         var deliveryModeField = ExactField(foundDriverType, "deliveryModeValue", typeof(int));
+        var foundDriverToilsField = ExactField(typeof(JobDriver), "toils", typeof(List<Toil>));
         var foundJobDef = DefDatabase<JobDef>.GetNamedSilentFail(
             CookForYourselfCompatibility.JobDefName);
         var stackGapLoaded =
@@ -396,6 +400,7 @@ internal static class CookForYourselfAdapter
                                      stackGapPlacementPatchType?.Assembly == stackGapAssembly &&
                                      stackGapDropPrefix is not null &&
                                      stackGapDropPrefix2 is not null &&
+                                     foundDriverToilsField is not null &&
                                      foundStackGapEnabledField is
                                      {
                                          IsStatic: true,
@@ -454,9 +459,16 @@ internal static class CookForYourselfAdapter
         }
 
         AccessTools.FieldRef<object, float> foundWorkLeft;
+        AccessTools.FieldRef<JobDriver, List<Toil>>? foundDriverToils = null;
         try
         {
             foundWorkLeft = AccessTools.FieldRefAccess<float>(foundDriverType, workLeftField.Name);
+            if (stackGapLoaded)
+            {
+                foundDriverToils = AccessTools.FieldRefAccess<JobDriver, List<Toil>>(
+                    foundDriverToilsField!.Name);
+            }
+
             harmony.Patch(
                 selfTryGiveJob,
                 finalizer: AdmissionFinalizer());
@@ -488,6 +500,7 @@ internal static class CookForYourselfAdapter
         driverType = foundDriverType;
         jobDef = foundJobDef;
         workLeft = foundWorkLeft;
+        driverToils = foundDriverToils;
         stackGapEnabledField = foundStackGapEnabledField;
         Enabled = true;
         reason = string.Empty;
@@ -709,25 +722,35 @@ internal static class CookForYourselfAdapter
         var pawn = __2.pawn;
         var job = pawn.CurJob;
         var carriedThing = __2.CarriedThing;
-        var ingredientTarget = job?.GetTarget(TargetIndex.B).Thing;
-        var currentIngredientMatches = carriedThing is not null &&
-                                       ingredientTarget is not null &&
-                                       (ReferenceEquals(carriedThing, ingredientTarget) ||
-                                        carriedThing.def == ingredientTarget.def);
         var beforeActiveCooking =
             !CookingSessionRegistry.TryGetActiveWorkProp(pawn, out _, out _);
-        if (!StackGapIngredientDropPolicy.ShouldBypass(
-                Enabled,
-                job is not null && AdmittedJobs.TryGetValue(job, out _),
-                __1 == ThingPlaceMode.Direct,
-                beforeActiveCooking,
-                currentIngredientMatches))
-        {
-            return true;
-        }
 
         try
         {
+            var currentDriver = pawn.jobs?.curDriver;
+            var currentToils = currentDriver is not null && driverToils is not null
+                ? driverToils(currentDriver)
+                : null;
+            var currentToilIndex = currentDriver?.CurToilIndex ?? -1;
+            var currentToilIsIngredientPlacement =
+                currentDriver is not null &&
+                OwnsDriver(currentDriver) &&
+                currentToils is not null &&
+                currentToilIndex >= 0 &&
+                currentToilIndex < currentToils.Count &&
+                currentToils[currentToilIndex].debugName ==
+                CookForYourselfToilPolicy.IngredientPlacementToilDebugName;
+            if (!StackGapIngredientDropPolicy.ShouldBypass(
+                    Enabled,
+                    job is not null && AdmittedJobs.TryGetValue(job, out _),
+                    __1 == ThingPlaceMode.Direct,
+                    beforeActiveCooking,
+                    currentToilIsIngredientPlacement,
+                    carriedThing is not null))
+            {
+                return true;
+            }
+
             stackGapEnabledField!.SetValue(null, false);
             return false;
         }

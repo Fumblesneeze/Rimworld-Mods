@@ -211,9 +211,9 @@ The adapter SHALL NOT create a bill, call either upstream job giver twice, rerun
 
 #### Scenario: Stack Gap preserves CFS ingredient placement without losing its storage rules
 
-- **WHEN** exact package `Andromeda.StackGap` with audited assembly `StackGap, Version=1.0.0.0` observes an admitted CFS job directly dropping the carried target-B ingredient during the upstream `PlaceCookIngredient` toil
+- **WHEN** exact package `Andromeda.StackGap` with audited assembly `StackGap, Version=1.0.0.0` observes an admitted CFS job directly dropping its actual carried ingredient during the exact active upstream `PlaceCookIngredient` toil, including after upstream queue handling has consumed or replaced target B
 - **THEN** Immersive Chefs bypasses only Stack Gap's exact carry-drop prefix for that one pre-cooking ingredient operation so vanilla direct placement completes and the CFS job continues exactly once
-- **AND** Stack Gap remains authoritative for every non-CFS, non-direct, post-cooking, or nonmatching carried-Thing placement; a changed Stack Gap shape disables the CFS adapter without a partial patch
+- **AND** Stack Gap remains authoritative for every non-CFS, non-direct, post-cooking, non-ingredient-toil, or empty-carry placement; a changed Stack Gap shape disables the CFS adapter without a partial patch
 
 #### Scenario: Cook prepares a meal for a patient
 

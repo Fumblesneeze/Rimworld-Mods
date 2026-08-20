@@ -43,6 +43,13 @@ For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or ownin
 - **THEN** the dining toils transfer that exact meal directly from inventory into the native carry tracker without first running a spawned-map-target approach toil
 - **AND** the same admitted job reaches reheating and ingestion once, without an incompletable toil or same-tick `Ingest` restart loop
 
+#### Scenario: Patient feeding preserves RimWorld's inventory transfer graph
+
+- **WHEN** an already-admitted `FeedPatient` job targets a covered meal held in the feeder's inventory and an operational Immersive Chefs fallback microwave is available
+- **THEN** Immersive Chefs preserves RimWorld's native inventory-to-carrier and patient-feeding toil graph without prepending a spawned-map-target approach
+- **AND** if the installed feed driver exposes no validated reheat insertion seam, Immersive Chefs skips only optional reheating so the same admitted job can feed the patient without an incompletable toil or same-tick `FeedPatient` restart loop
+- **AND** that feeding session does not reserve an unused fallback microwave, so another eligible dining job may reserve and use it normally
+
 #### Scenario: Hand-eaten food is excluded
 
 - **WHEN** a pawn chooses pemmican or a packaged survival meal
@@ -69,6 +76,12 @@ When an eligible humanlike pawn completes map dining at a vanilla-resolved eat s
 #### Scenario: Colonist eats without a table
 - **WHEN** vanilla dining leaves `TargetIndex.B` invalid or without an eat surface
 - **THEN** the exact dirty plate and cutlery are released near the dining pawn and are not moved onto an unrelated nearby table
+
+#### Scenario: A placement integration temporarily rejects returned cutlery
+
+- **WHEN** RimWorld resolves a valid near-diner candidate for exact returned cutlery but another active placement integration rejects that direct placement
+- **THEN** Immersive Chefs retains the exact marked cutlery in its responsible pawn inventory and retries from a freshly resolved candidate without bypassing the placement integration
+- **AND** the failed attempt does not enter RimWorld's noisy repeated `Near` placement loop, emit `Failed to place`, lose or duplicate the cutlery, or leave it permanently stranded after an eligible candidate becomes available
 
 #### Scenario: Personal and caravan ownership override map-table retention
 - **WHEN** a visiting pawn consumes its personally owned setting or a caravan pawn completes world-holder ingestion

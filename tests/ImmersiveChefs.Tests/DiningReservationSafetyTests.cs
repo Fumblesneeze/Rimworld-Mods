@@ -20,21 +20,24 @@ public sealed class DiningReservationSafetyTests
             Is.EqualTo(nativeReservationSucceeded));
     }
 
-    [TestCase(true, false, false, "ApproachAndCarry")]
-    [TestCase(false, true, false, "ReheatAfterVanillaInventoryTransfer")]
-    [TestCase(false, false, true, "AlreadyCarried")]
-    [TestCase(false, false, false, "SkipOptionalReheat")]
-    public void Microwave_pickup_plan_respects_the_meals_actual_holder(
+    [TestCase(true, false, false, true, "ApproachAndCarry")]
+    [TestCase(false, true, false, true, "ReheatAfterVanillaInventoryTransfer")]
+    [TestCase(false, true, false, false, "SkipOptionalReheat")]
+    [TestCase(false, false, true, false, "AlreadyCarried")]
+    [TestCase(false, false, false, true, "SkipOptionalReheat")]
+    public void Microwave_pickup_plan_respects_the_meals_holder_and_native_transfer_seam(
         bool spawned,
         bool heldInCarrierInventory,
         bool alreadyCarried,
+        bool nativeToilsStartWithInventoryTransfer,
         string expected)
     {
         Assert.That(
             DiningMealPickupPolicy.For(
                 spawned,
                 heldInCarrierInventory,
-                alreadyCarried).ToString(),
+                alreadyCarried,
+                nativeToilsStartWithInventoryTransfer).ToString(),
             Is.EqualTo(expected));
     }
 
@@ -52,5 +55,33 @@ public sealed class DiningReservationSafetyTests
                 "microwave heat",
                 "native carry and ingest"
             }));
+    }
+
+    [TestCase(false, false, true)]
+    [TestCase(true, false, false)]
+    [TestCase(false, true, false)]
+    public void Assisted_feeding_reserves_a_microwave_only_when_its_meal_can_use_it(
+        bool pasteDispenser,
+        bool mealHeldInFeederInventory,
+        bool expected)
+    {
+        Assert.That(
+            AssistedFeedingMicrowavePolicy.ShouldReserve(
+                pasteDispenser,
+                mealHeldInFeederInventory),
+            Is.EqualTo(expected));
+    }
+
+    [TestCase(false, false, "UseRequestedCell")]
+    [TestCase(true, false, "Defer")]
+    [TestCase(true, true, "UseResolvedCellDirectly")]
+    public void Near_ware_placement_is_resolved_before_one_direct_attempt(
+        bool requestedNear,
+        bool nearCellResolved,
+        string expected)
+    {
+        Assert.That(
+            DiningWarePlacementPolicy.For(requestedNear, nearCellResolved).ToString(),
+            Is.EqualTo(expected));
     }
 }

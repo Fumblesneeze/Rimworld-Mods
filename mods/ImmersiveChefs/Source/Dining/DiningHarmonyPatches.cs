@@ -217,7 +217,8 @@ internal static class DiningMealPickupPolicy
     internal static DiningMealPickupPlan For(
         bool spawned,
         bool heldInCarrierInventory,
-        bool alreadyCarried)
+        bool alreadyCarried,
+        bool nativeToilsStartWithInventoryTransfer)
     {
         if (alreadyCarried)
         {
@@ -226,13 +227,23 @@ internal static class DiningMealPickupPolicy
 
         if (heldInCarrierInventory)
         {
-            return DiningMealPickupPlan.ReheatAfterVanillaInventoryTransfer;
+            return nativeToilsStartWithInventoryTransfer
+                ? DiningMealPickupPlan.ReheatAfterVanillaInventoryTransfer
+                : DiningMealPickupPlan.SkipOptionalReheat;
         }
 
         return spawned
             ? DiningMealPickupPlan.ApproachAndCarry
             : DiningMealPickupPlan.SkipOptionalReheat;
     }
+}
+
+internal static class AssistedFeedingMicrowavePolicy
+{
+    internal static bool ShouldReserve(
+        bool pasteDispenser,
+        bool mealHeldInFeederInventory) =>
+        !pasteDispenser && !mealHeldInFeederInventory;
 }
 
 internal static class DiningMealToilOrder
@@ -314,7 +325,8 @@ internal static class IngestCutleryToilsPatch
                 meal?.Spawned == true,
                 meal is not null &&
                 ReferenceEquals(meal.holdingOwner, pawn.inventory?.innerContainer),
-                meal is not null && ReferenceEquals(meal, pawn.carryTracker?.CarriedThing));
+                meal is not null && ReferenceEquals(meal, pawn.carryTracker?.CarriedThing),
+                driver is JobDriver_Ingest);
             if (pickupPlan == DiningMealPickupPlan.ReheatAfterVanillaInventoryTransfer)
             {
                 // JobDriver_Ingest latched eatingFromInventory when this job started.
