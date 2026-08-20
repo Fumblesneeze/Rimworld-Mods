@@ -13,6 +13,129 @@ internal enum DiningCutlerySource
     PersonalInventory
 }
 
+internal enum DiningWarePlacementPlan
+{
+    UseRequestedCell,
+    UseResolvedCellDirectly,
+    Defer
+}
+
+internal static class DiningWarePlacementPolicy
+{
+    internal static DiningWarePlacementPlan For(
+        bool requestedNear,
+        bool nearCellResolved)
+    {
+        if (!requestedNear)
+        {
+            return DiningWarePlacementPlan.UseRequestedCell;
+        }
+
+        return nearCellResolved
+            ? DiningWarePlacementPlan.UseResolvedCellDirectly
+            : DiningWarePlacementPlan.Defer;
+    }
+}
+
+internal static class DiningWarePlacementRuntime
+{
+    private static readonly System.Reflection.MethodInfo? TryFindPlaceSpotNear =
+        AccessTools.Method(
+            typeof(GenPlace),
+            "TryFindPlaceSpotNear",
+            new[]
+            {
+                typeof(IntVec3),
+                typeof(Rot4),
+                typeof(Map),
+                typeof(Thing),
+                typeof(bool),
+                typeof(IntVec3).MakeByRefType(),
+                typeof(Predicate<IntVec3>)
+            });
+
+    internal static Thing? DropAt(
+        Thing thing,
+        IntVec3 position,
+        Map map,
+        ThingPlaceMode mode = ThingPlaceMode.Near)
+    {
+        if (thing.Spawned)
+        {
+            return thing;
+        }
+
+        var resolvedCell = IntVec3.Invalid;
+        var nearCellResolved = mode == ThingPlaceMode.Near &&
+                               TryResolveNearCell(thing, position, map, out resolvedCell);
+        switch (DiningWarePlacementPolicy.For(
+                    mode == ThingPlaceMode.Near,
+                    nearCellResolved))
+        {
+            case DiningWarePlacementPlan.Defer:
+                return null;
+            case DiningWarePlacementPlan.UseResolvedCellDirectly:
+                position = resolvedCell;
+                mode = ThingPlaceMode.Direct;
+                break;
+        }
+
+        if (thing.holdingOwner is { } owner)
+        {
+            return owner.TryDrop(thing, position, map, mode, out var dropped)
+                ? dropped
+                : null;
+        }
+
+        return GenPlace.TryPlaceThing(thing, position, map, mode, out var placed)
+            ? placed
+            : null;
+    }
+
+    private static bool TryResolveNearCell(
+        Thing thing,
+        IntVec3 position,
+        Map map,
+        out IntVec3 resolvedCell)
+    {
+        resolvedCell = IntVec3.Invalid;
+        if (TryFindPlaceSpotNear is null)
+        {
+            return false;
+        }
+
+        var arguments = new object?[]
+        {
+            position,
+            thing.def.defaultPlacingRot,
+            map,
+            thing,
+            true,
+            resolvedCell,
+            null
+        };
+        try
+        {
+            if (TryFindPlaceSpotNear.Invoke(null, arguments) is not true ||
+                arguments[5] is not IntVec3 found)
+            {
+                return false;
+            }
+
+            resolvedCell = found;
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Log.ErrorOnce(
+                $"[ImmersiveChefs] Could not resolve a silent dining-ware placement candidate: " +
+                $"{exception.GetType().Name}: {exception.Message}",
+                1966077713);
+            return false;
+        }
+    }
+}
+
 internal sealed class DiningSession : IThingHolder
 {
     private readonly Caravan? caravan;
@@ -274,14 +397,12 @@ internal sealed class DiningSession : IThingHolder
             else
             {
                 var returned = false;
-                if (CarrierPawn.MapHeld is { } map && CarriedCutlery.holdingOwner is { } owner)
+                if (CarrierPawn.MapHeld is { } map && CarriedCutlery.holdingOwner is not null)
                 {
-                    if (owner.TryDrop(
+                    if (DiningWarePlacementRuntime.DropAt(
                             CarriedCutlery,
                             CarrierPawn.PositionHeld,
-                            map,
-                            ThingPlaceMode.Near,
-                            out _))
+                            map) is not null)
                     {
                         ClearTemporaryWareProvenance(CarriedCutlery);
                         returned = true;
@@ -608,7 +729,7 @@ internal sealed class DiningSession : IThingHolder
             return null;
         }
 
-        var dropped = DropAt(CarriedPlate, dropPawn.PositionHeld, map);
+        var dropped = DiningWarePlacementRuntime.DropAt(CarriedPlate, dropPawn.PositionHeld, map);
         if (dropped is not null)
         {
             ClearTemporaryWareProvenance(CarriedPlate);
@@ -657,7 +778,7 @@ internal sealed class DiningSession : IThingHolder
         if (map is not null)
         {
             var origin = CarrierPawn.Spawned ? CarrierPawn.PositionHeld : Pawn.PositionHeld;
-            if (DropAt(capturedPlate, origin, map) is not null)
+            if (DiningWarePlacementRuntime.DropAt(capturedPlate, origin, map) is not null)
             {
                 Plate = null;
                 return;
@@ -718,7 +839,7 @@ internal sealed class DiningSession : IThingHolder
                 dropPawn.PositionHeld,
                 map,
                 requireExactCell)
-            : DropAt(CarriedCutlery, dropPawn.PositionHeld, map);
+            : DiningWarePlacementRuntime.DropAt(CarriedCutlery, dropPawn.PositionHeld, map);
         if (dropped is not null)
         {
             ClearTemporaryWareProvenance(CarriedCutlery);
@@ -782,13 +903,13 @@ internal sealed class DiningSession : IThingHolder
         Map map,
         bool requireExactCell)
     {
-        var placed = DropAt(
+        var placed = DiningWarePlacementRuntime.DropAt(
             thing,
             preferredCell,
             map,
             requireExactCell ? ThingPlaceMode.Direct : ThingPlaceMode.Near);
         return placed ?? (requireExactCell
-            ? DropAt(thing, fallbackCell, map, ThingPlaceMode.Near)
+            ? DiningWarePlacementRuntime.DropAt(thing, fallbackCell, map, ThingPlaceMode.Near)
             : null);
     }
 
@@ -809,28 +930,6 @@ internal sealed class DiningSession : IThingHolder
         }
     }
 
-    private static Thing? DropAt(
-        Thing thing,
-        IntVec3 position,
-        Map map,
-        ThingPlaceMode mode = ThingPlaceMode.Near)
-    {
-        if (thing.holdingOwner is { } owner)
-        {
-            return owner.TryDrop(thing, position, map, mode, out var dropped)
-                ? dropped
-                : null;
-        }
-
-        if (thing.Spawned)
-        {
-            return thing;
-        }
-
-        return GenPlace.TryPlaceThing(thing, position, map, mode, out var placed)
-            ? placed
-            : null;
-    }
 }
 
 internal static class DiningSessionRegistry
@@ -1005,7 +1104,11 @@ internal static class DiningSessionRegistry
                 WareRequirementMode.Prefer);
         }
 
-        var microwave = pasteDispenser ? null : FindMicrowave(feeder, foodSource);
+        var microwave = AssistedFeedingMicrowavePolicy.ShouldReserve(
+            pasteDispenser,
+            ReferenceEquals(foodSource.holdingOwner, feeder.inventory?.innerContainer))
+            ? FindMicrowave(feeder, foodSource)
+            : null;
         var session = new DiningSession(
             patient,
             job,

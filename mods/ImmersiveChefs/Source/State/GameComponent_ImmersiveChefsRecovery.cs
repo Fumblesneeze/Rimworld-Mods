@@ -123,7 +123,7 @@ public sealed class GameComponent_ImmersiveChefsRecovery : GameComponent
                 (thing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
             }
 
-            if (owner.TryDrop(thing, pawn.PositionHeld, map, ThingPlaceMode.Near, out _))
+            if (DiningWarePlacementRuntime.DropAt(thing, pawn.PositionHeld, map) is not null)
             {
                 sanitation.ClearSessionTransfer();
             }
@@ -184,7 +184,7 @@ public sealed class GameComponent_ImmersiveChefsRecovery : GameComponent
             }
 
             if (pawn.MapHeld is { } map &&
-                owner.TryDrop(thing, pawn.PositionHeld, map, ThingPlaceMode.Near, out _))
+                DiningWarePlacementRuntime.DropAt(thing, pawn.PositionHeld, map) is not null)
             {
                 (thing as ThingWithComps)?.GetComp<CompSanitation>()?.ClearSessionTransfer();
                 PendingWareRecoveryKeys.Remove(pending.Key);
