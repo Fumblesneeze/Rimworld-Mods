@@ -69,11 +69,11 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Fixed colonists repeatedly restarting their eating job when a cold plated meal was already in inventory. Inventory meals now remain in the same job through microwave reheating and eating."));
+            Assert.That(release["previousChangeNote"], Is.EqualTo("Cold meals now use the best available heat source: microwave, stove, campfire, then a slow heater or radiator fallback. Last-resort heating stops at 20 °C, while room-temperature meals are eaten directly."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo("Cold meals now use the best available heat source: microwave, stove, campfire, then a slow heater or radiator fallback. Last-resort heating stops at 20 °C, while room-temperature meals are eaten directly."),
-                "A pending publication must carry the exact reviewed player-facing change note.");
+                Is.EqualTo(string.Empty),
+                "A completed publication must rotate the exact reviewed note and leave no pending release note.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));
