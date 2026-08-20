@@ -303,6 +303,21 @@ internal static class CookForYourselfPatchPolicy
     internal static bool ShouldDecorateDriver(bool jobWasAdmitted) => jobWasAdmitted;
 }
 
+internal static class CookForYourselfRecoveryPolicy
+{
+    internal static bool ShouldAbortOnLoad(
+        bool adapterEnabled,
+        bool integrationEnabled,
+        bool exactDriver,
+        bool exactJobDef,
+        bool coveredRecipeTag) =>
+        adapterEnabled &&
+        integrationEnabled &&
+        exactDriver &&
+        exactJobDef &&
+        coveredRecipeTag;
+}
+
 internal static class CookForYourselfAdapter
 {
     private const string StackGapPackageId = "Andromeda.StackGap";
@@ -517,6 +532,19 @@ internal static class CookForYourselfAdapter
                CookForYourselfPatchPolicy.ShouldDecorateDriver(AdmittedJobs.TryGetValue(job, out _));
     }
 
+    internal static bool IsRecoverableCurrentJob(Job? job, JobDriver? driver)
+    {
+        var recipe = job?.controlGroupTag.NullOrEmpty() == false
+            ? DefDatabase<RecipeDef>.GetNamedSilentFail(job.controlGroupTag)
+            : null;
+        return CookForYourselfRecoveryPolicy.ShouldAbortOnLoad(
+            Enabled,
+            ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.CookForYourself),
+            driver is not null && driverType?.IsInstanceOfType(driver) == true,
+            job is not null && job.def == jobDef,
+            recipe is not null && MealCoveragePolicy.IsCovered(recipe));
+    }
+
     private static HarmonyMethod AdmissionFinalizer()
     {
         return new HarmonyMethod(typeof(CookForYourselfAdapter), nameof(JobGiverFinalizer))
@@ -687,7 +715,7 @@ internal static class CookForYourselfAdapter
         var consumer = recipient.Pawn ?? pawn;
         var emergency = consumer.needs?.food?.CurLevelPercentage <=
                         ImmersiveChefsMod.Settings.EmergencyHungerThreshold;
-        if (!CookingSessionRegistry.TryAttach(
+        if (!CookingSessionRegistry.TryPreflight(
                 pawn,
                 job,
                 station,
@@ -766,6 +794,34 @@ internal static class CookForYourselfAdapter
         IEnumerable<Toil> original)
     {
         var pawn = driver.GetActor();
+        var job = pawn.CurJob;
+        var station = job?.GetTarget(TargetIndex.A).Thing;
+        var recipe = job?.controlGroupTag.NullOrEmpty() == false
+            ? DefDatabase<RecipeDef>.GetNamedSilentFail(job.controlGroupTag)
+            : null;
+        var recipient = job?.GetTarget(TargetIndex.C).Pawn;
+        var consumer = recipient ?? pawn;
+        var emergency = consumer.needs?.food?.CurLevelPercentage <=
+                        ImmersiveChefsMod.Settings.EmergencyHungerThreshold;
+        var driverJobIsCurrent = ReferenceEquals(job, driver.job);
+        string? missingReason = null;
+        if (job is null || station is null || recipe is null ||
+            !CookingAdmissionLifecyclePolicy.MayReserveWare(
+                CookingAdmissionPhase.AcceptedDriverStart,
+                driverJobIsCurrent) ||
+            !CookingSessionRegistry.TryAttachAtDriverStart(
+                pawn,
+                job,
+                station,
+                recipe,
+                emergency,
+                out missingReason))
+        {
+            CookingSessionRegistry.AbortAdmission(pawn, job);
+            Cleanup(job);
+            return CookingAdmissionFailureToils.Create(pawn, missingReason);
+        }
+
         var toils = original.ToList();
         var shapes = toils.Select(toil => new CookForYourselfToilShape(
             toil.debugName,

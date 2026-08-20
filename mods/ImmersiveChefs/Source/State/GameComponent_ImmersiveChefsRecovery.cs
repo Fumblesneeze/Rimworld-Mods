@@ -73,7 +73,10 @@ public sealed class GameComponent_ImmersiveChefsRecovery : GameComponent
                      .ToList())
         {
             var job = pawn.CurJob!;
-            var cooking = MealCoveragePolicy.IsCovered(job.RecipeDef);
+            var cookForYourself = CookForYourselfAdapter.IsRecoverableCurrentJob(
+                job,
+                pawn.jobs.curDriver);
+            var cooking = MealCoveragePolicy.IsCovered(job.RecipeDef) || cookForYourself;
             var dining = job.def == JobDefOf.Ingest;
             var assisting = job.def == ImmersiveChefsDefOf.ImmersiveChefs_AssistCooking;
             var serving = pawn.jobs.curDriver?.GetType().FullName?.IndexOf(
@@ -84,7 +87,8 @@ public sealed class GameComponent_ImmersiveChefsRecovery : GameComponent
                 continue;
             }
 
-            var cookwareWasUsed = cooking && pawn.jobs.curDriver is JobDriver_DoBill doBill &&
+            var cookwareWasUsed = !cookForYourself && cooking &&
+                                   pawn.jobs.curDriver is JobDriver_DoBill doBill &&
                                    RecipeWorkTicks(doBill) > 0;
             ReturnCarriedWare(pawn, cookwareWasUsed);
             pawn.jobs.EndCurrentJob(JobCondition.InterruptForced, startNewJob: true);

@@ -35,7 +35,7 @@ internal static class WorkGiverDoBillWarePatch
             return;
         }
 
-        if (!CookingSessionRegistry.TryAttach(
+        if (!CookingSessionRegistry.TryPreflight(
                 pawn,
                 __result,
                 thing,
@@ -262,9 +262,51 @@ internal static class BillKitchenwarePickupToilsPatch
 {
     private static void Postfix(JobDriver_DoBill __instance, ref IEnumerable<Toil> __result)
     {
+        var pawn = __instance.GetActor();
+        var job = __instance.job;
+        var requiresWare = MealCoveragePolicy.IsCovered(job.RecipeDef) ||
+                           AdaptiveMealBillAdapter.Controls(job.RecipeDef);
+        var driverJobIsCurrent = ReferenceEquals(job, pawn.CurJob);
+        var billGiver = job.GetTarget(TargetIndex.A).Thing;
+        string? missingReason = null;
+        if (requiresWare &&
+            (!CookingAdmissionLifecyclePolicy.MayReserveWare(
+                 CookingAdmissionPhase.AcceptedDriverStart,
+                 driverJobIsCurrent) ||
+             billGiver is null ||
+             !CookingSessionRegistry.TryAttachAtDriverStart(
+                 pawn,
+                 job,
+                 billGiver,
+                 out missingReason)))
+        {
+            __result = CookingAdmissionFailureToils.Create(pawn, missingReason);
+            return;
+        }
+
         __result = IntegratedSinkRuntime.AddPreparationWaterUse(
             __instance,
-            CookingSessionRegistry.AddWarePickupToils(__instance.GetActor(), __result));
+            CookingSessionRegistry.AddWarePickupToils(pawn, __result));
+    }
+}
+
+internal static class CookingAdmissionFailureToils
+{
+    internal static IEnumerable<Toil> Create(Pawn pawn, string? missingReason)
+    {
+        yield return Toils_General.DoAtomic(() =>
+        {
+            if (!missingReason.NullOrEmpty())
+            {
+                Messages.Message(
+                    "ImmersiveChefs_MissingKitchenware".Translate(missingReason),
+                    pawn,
+                    MessageTypeDefOf.RejectInput,
+                    historical: false);
+            }
+
+            pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
+        });
     }
 }
 

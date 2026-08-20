@@ -161,6 +161,144 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]
+    public static void CookingCandidatePreflightIsReservationNeutralAndCommittedCleanupReleasesExactWare()
+    {
+        var map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
+        var fixture = map.AllCells
+            .Where(cell => CellRect.CenteredOn(cell, 4).Cells.All(candidate =>
+                candidate.InBounds(map) && candidate.Standable(map) &&
+                candidate.GetThingList(map).Count == 0))
+            .OrderBy(cell => cell.DistanceToSquared(map.Center))
+            .First();
+        var stove = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("FueledStove"));
+        var pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+            PawnKindDefOf.Colonist,
+            Faction.OfPlayer,
+            forceGenerateNewPawn: true,
+            canGeneratePawnRelations: false));
+        var cookware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware"),
+            ThingDefOf.Steel);
+        var priorDirtyCookware = (ThingWithComps)ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware"),
+            ThingDefOf.Steel);
+        var plates = ThingMaker.MakeThing(
+            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
+            ThingDefOf.Steel);
+        var recipe = DefDatabase<RecipeDef>.GetNamed("CookMealSimple");
+        plates.stackCount = MealCoveragePolicy.ServingCount(recipe);
+        var job = JobMaker.MakeJob(JobDefOf.DoBill, stove);
+        var forcedJob = JobMaker.MakeJob(JobDefOf.DoBill, stove);
+        forcedJob.bill = new Bill_Production(recipe);
+        ThingWithComps? laterCleanCookware = null;
+        var priorMode = ImmersiveChefsMod.Settings.WareRequirementMode;
+
+        try
+        {
+            GenSpawn.Spawn(stove, fixture, map, Rot4.North);
+            GenSpawn.Spawn(pawn, stove.InteractionCell, map);
+            GenSpawn.Spawn(cookware, fixture + IntVec3.East * 3, map);
+            GenSpawn.Spawn(plates, fixture + IntVec3.West * 3, map);
+            GenSpawn.Spawn(priorDirtyCookware, stove.Position, map);
+            priorDirtyCookware.GetComp<CompSanitation>().MarkDirty();
+            var priorDirtyCell = priorDirtyCookware.Position;
+            ImmersiveChefsMod.Settings.WareRequirementMode = WareRequirementMode.Strict;
+
+            IntegrationAssert.True(
+                CookingSessionRegistry.TryPreflight(
+                    pawn,
+                    job,
+                    stove,
+                    recipe,
+                    emergency: false,
+                    out var missingReason),
+                "The candidate should see its available clean ware: " + missingReason);
+            IntegrationAssert.True(
+                !map.reservationManager.ReservedBy(cookware, pawn, job) &&
+                !map.reservationManager.ReservedBy(plates, pawn, job),
+                "Speculative candidate evaluation must not reserve cookware or plates.");
+            IntegrationAssert.True(
+                priorDirtyCookware.Spawned && priorDirtyCookware.Position == priorDirtyCell,
+                "Speculative candidate evaluation must not move prior dirty cookware off the stove.");
+
+            IntegrationAssert.True(
+                CookingSessionRegistry.TryAttachAtDriverStart(
+                    pawn,
+                    job,
+                    stove,
+                    recipe,
+                    emergency: false,
+                    out missingReason),
+                "The accepted driver should commit the previously available ware: " + missingReason);
+            IntegrationAssert.True(
+                map.reservationManager.ReservedBy(cookware, pawn, job) &&
+                map.reservationManager.ReservedBy(plates, pawn, job),
+                "The accepted driver must own both exact ware reservations.");
+
+            CookingSessionRegistry.Cleanup(pawn, job);
+            IntegrationAssert.True(
+                !map.reservationManager.ReservedBy(cookware, pawn, job) &&
+                !map.reservationManager.ReservedBy(plates, pawn, job),
+                "Job cleanup must explicitly release every exact reservation owned by the session.");
+
+            cookware.GetComp<CompSanitation>().MarkDirty();
+            priorDirtyCookware.GetComp<CompSanitation>().MarkDirty();
+            IntegrationAssert.True(
+                CookingSessionRegistry.TryPreflight(
+                    pawn,
+                    forcedJob,
+                    stove,
+                    out missingReason,
+                    forceDirtyCookware: true),
+                "The one-job dirty override should record one exact available set: " + missingReason);
+            var plannedDirtyCookware = forcedJob.GetTarget(TargetIndex.C).Thing;
+            IntegrationAssert.True(
+                plannedDirtyCookware is not null &&
+                (plannedDirtyCookware as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true &&
+                !map.reservationManager.IsReserved(plannedDirtyCookware),
+                "The forced candidate must retain its exact dirty target without reserving it.");
+
+            laterCleanCookware = (ThingWithComps)ThingMaker.MakeThing(
+                DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Cookware"),
+                ThingDefOf.Steel);
+            GenSpawn.Spawn(laterCleanCookware, fixture + IntVec3.North * 3, map);
+            IntegrationAssert.True(
+                CookingSessionRegistry.TryAttachAtDriverStart(
+                    pawn,
+                    forcedJob,
+                    stove,
+                    out missingReason),
+                "A newly available clean set must not invalidate the exact player override: " + missingReason);
+            IntegrationAssert.True(
+                map.reservationManager.ReservedBy(plannedDirtyCookware!, pawn, forcedJob) &&
+                !map.reservationManager.ReservedBy(laterCleanCookware!, pawn, forcedJob) &&
+                !forcedJob.GetTarget(TargetIndex.C).IsValid,
+                "Driver commitment must reserve the persisted exact dirty target once and clear its scratch target.");
+        }
+        finally
+        {
+            ImmersiveChefsMod.Settings.WareRequirementMode = priorMode;
+            CookingSessionRegistry.Cleanup(pawn, job);
+            CookingSessionRegistry.Cleanup(pawn, forcedJob);
+            foreach (var thing in new Thing?[]
+                     {
+                         laterCleanCookware,
+                         priorDirtyCookware,
+                         plates,
+                         cookware,
+                         pawn,
+                         stove
+                     })
+            {
+                if (thing is { Destroyed: false })
+                {
+                    thing.Destroy(DestroyMode.Vanish);
+                }
+            }
+        }
+    }
+
+    [IntegrationTest(RunAt.PlayableMapLoaded)]
     public static void CompletedCookingLeavesExactDirtyCookwareOnBillGiverSurface()
     {
         var map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
