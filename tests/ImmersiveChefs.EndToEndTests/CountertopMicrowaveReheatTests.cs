@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using HarmonyLib;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using Verse;
@@ -112,6 +113,204 @@ public sealed class CountertopMicrowaveNativeReheatTest : IRimWorldEndToEndTest
                 ["cutleryDirty"] = fixture.Cutlery.GetComp<CompSanitation>().IsDirty.ToString(),
                 ["microwaveStillSupported"] = fixture.Microwave.GetComp<CompMicrowave>().Operational.ToString()
             });
+    }
+}
+
+[RimWorldEndToEndTest(
+    "immersive-chefs.inventory-meal-countertop-reheat",
+    "fumblesneeze.immersivechefs",
+    "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 3_600,
+    MaxGameTicks = 12_000,
+    MaxWallClockSeconds = 120)]
+public sealed class InventoryMealCountertopReheatTest : IRimWorldEndToEndTest
+{
+    private const string IngestionTraceOwner =
+        "fumblesneeze.immersivechefs.e2e.inventory-meal-ingestion-trace";
+    private static InventoryMealCountertopReheatTest? activeTrace;
+
+    private CountertopMicrowaveDiningFixture fixture = null!;
+    private Job? admittedJob;
+    private int reheatCountBeforeIngestion;
+    private bool exactMealIngested;
+    private bool admittedJobReachedIngestion;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        fixture = CountertopMicrowaveDiningFixture.Create(
+            context,
+            "Inventory Reheat Diner",
+            mealInDinerInventory: true);
+
+        var traceHarmony = new Harmony(IngestionTraceOwner);
+        activeTrace = this;
+        traceHarmony.Patch(
+            AccessTools.Method(typeof(Thing), nameof(Thing.Ingested)),
+            prefix: new HarmonyMethod(
+                typeof(InventoryMealCountertopReheatTest),
+                nameof(TraceExactMealIngestion)));
+        context.DeferCleanup(() =>
+        {
+            traceHarmony.UnpatchAll(IngestionTraceOwner);
+            if (ReferenceEquals(activeTrace, this))
+            {
+                activeTrace = null;
+            }
+        });
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        yield return new AssertionStep(
+            "cold plated meal begins in the exact diner's inventory",
+            _ => EndToEndAssert.True(
+                ReferenceEquals(
+                    fixture.Meal.holdingOwner,
+                    fixture.Diner.inventory?.innerContainer),
+                "The regression fixture must begin with the exact cold meal in the diner's inventory."));
+        yield return new SelectionActionStep(
+            "select the diner carrying the cold meal",
+            new[] { fixture.Diner.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the inventory-meal diner and fallback microwave",
+            new[] { fixture.Diner.ThingID, fixture.Microwave.ThingID },
+            paddingPixels: 180);
+        yield return new PawnInspectTabActionStep(
+            "open the diner's native Gear tab before food search",
+            fixture.Diner.ThingID,
+            EndToEndPawnInspectTab.Gear);
+        yield return new ScreenshotStep(
+            "observe the cold meal in inventory before native food search",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return fixture.ToggleDraft(
+            context,
+            "undraft diner to start ordinary inventory food search",
+            expectedCurrentState: true);
+        yield return new TimeControlActionStep(
+            "run ordinary food search for the inventory meal",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "one native ingest job admits the exact inventory meal",
+            _ => TryCaptureAdmittedJob(),
+            new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(35)));
+        yield return new WaitUntilStep(
+            "the same ingest job reaches fallback microwave heating",
+            _ => ReferenceEquals(fixture.Diner.CurJob, admittedJob) && fixture.IsActivelyHeating,
+            new EndToEndDeadline(1_200, 3_000, TimeSpan.FromSeconds(45)));
+        yield return new ScreenshotStep(
+            "observe the inventory meal heating in the same native ingest job",
+            new[] { fixture.Diner.ThingID, fixture.Microwave.ThingID },
+            paddingPixels: 150);
+        yield return new WaitUntilStep(
+            "the same ingest job completes exactly one inventory-meal reheat",
+            _ => ObserveCompletedReheat(),
+            new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(35)));
+        yield return new TimeControlActionStep(
+            "pause after the same job reheats its carried inventory meal",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "the reheated inventory meal remains carried for native ingestion",
+            _ => EndToEndAssert.True(
+                ReferenceEquals(fixture.Diner.CurJob, admittedJob) &&
+                ReferenceEquals(fixture.Diner.carryTracker?.CarriedThing, fixture.Meal) &&
+                !fixture.Meal.Spawned &&
+                !fixture.Diner.inventory.innerContainer.Contains(fixture.Meal),
+                "The admitted ingest job must retain the exact reheated meal in its carrier instead of dropping it or restarting."));
+        yield return new ScreenshotStep(
+            "observe the same job retaining the reheated inventory meal",
+            new[] { fixture.Diner.ThingID, fixture.Microwave.ThingID },
+            paddingPixels: 150);
+        yield return new TimeControlActionStep(
+            "continue the admitted inventory-meal job into chewing",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the same admitted job reaches ordinary post-reheat chewing",
+            _ => ReferenceEquals(fixture.Diner.CurJob, admittedJob) &&
+                 fixture.ObserveReheatedChewing(),
+            new EndToEndDeadline(900, 2_000, TimeSpan.FromSeconds(35)));
+        yield return new TimeControlActionStep(
+            "finish ordinary inventory-meal dining",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "inventory meal is consumed and returns the exact dirty setting",
+            _ => fixture.Meal.Destroyed && fixture.ExactSettingReturnedDirty,
+            new EndToEndDeadline(1_800, 6_000, TimeSpan.FromSeconds(60)));
+        yield return new AssertionStep(
+            "the admitted job performs the exact meal's ingestion",
+            _ => EndToEndAssert.True(
+                exactMealIngested && admittedJobReachedIngestion,
+                "The exact meal must reach Thing.Ingested while the original admitted ingest job is still current."));
+        yield return new TimeControlActionStep(
+            "pause after completed inventory-meal dining",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the exact returned inventory-meal setting",
+            new[] { fixture.Plate.ThingID, fixture.Cutlery.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "observe the exact dirty setting after one completed ingest job",
+            new[] { fixture.Plate.ThingID, fixture.Cutlery.ThingID, fixture.Microwave.ThingID },
+            paddingPixels: 160);
+        yield return new CheckpointStep(
+            "inventory meal microwave restart regression result",
+            _ => new Dictionary<string, string>
+            {
+                ["admittedJob"] = admittedJob?.GetUniqueLoadID() ?? "none",
+                ["mealDestroyed"] = fixture.Meal.Destroyed.ToString(),
+                ["plateDirty"] = fixture.Plate.GetComp<CompSanitation>().IsDirty.ToString(),
+                ["cutleryDirty"] = fixture.Cutlery.GetComp<CompSanitation>().IsDirty.ToString(),
+                ["microwaveReheatCount"] = reheatCountBeforeIngestion.ToString(),
+                ["admittedJobReachedIngestion"] = admittedJobReachedIngestion.ToString()
+            });
+    }
+
+    private bool TryCaptureAdmittedJob()
+    {
+        var current = fixture.Diner.CurJob;
+        if (current?.def != JobDefOf.Ingest ||
+            !ReferenceEquals(current.GetTarget(TargetIndex.A).Thing, fixture.Meal))
+        {
+            return false;
+        }
+
+        admittedJob ??= current;
+        return ReferenceEquals(current, admittedJob);
+    }
+
+    private bool ObserveCompletedReheat()
+    {
+        if (!ReferenceEquals(fixture.Diner.CurJob, admittedJob) ||
+            fixture.CurrentServingWithoutThermalUpdate.MicrowaveReheatCount != 1)
+        {
+            return false;
+        }
+
+        reheatCountBeforeIngestion = 1;
+        return true;
+    }
+
+    private static void TraceExactMealIngestion(Thing __instance, Pawn ingester)
+    {
+        var trace = activeTrace;
+        if (trace is null ||
+            !ReferenceEquals(__instance, trace.fixture.Meal) ||
+            !ReferenceEquals(ingester, trace.fixture.Diner))
+        {
+            return;
+        }
+
+        trace.exactMealIngested = true;
+        trace.admittedJobReachedIngestion =
+            ReferenceEquals(ingester.CurJob, trace.admittedJob);
     }
 }
 
@@ -437,7 +636,8 @@ internal sealed class CountertopMicrowaveDiningFixture
         IEndToEndContext context,
         string pawnName,
         int? heatingTicksOverride = null,
-        bool createSupportBuilder = false)
+        bool createSupportBuilder = false,
+        bool mealInDinerInventory = false)
     {
         var map = Current.Game.CurrentMap;
         var center = FoodSearchE2EFixture.FindRoomCenter(map);
@@ -510,7 +710,18 @@ internal sealed class CountertopMicrowaveDiningFixture
         var cutlery = FoodSearchE2EFixture.MakeCleanWare(
             "ImmersiveChefs_Cutlery",
             ThingDefOf.Steel);
-        GenSpawn.Spawn(meal, center + new IntVec3(-2, 0, 0), map);
+        if (mealInDinerInventory)
+        {
+            EndToEndAssert.True(
+                diner.inventory?.innerContainer.TryAdd(
+                    meal,
+                    canMergeWithExistingStacks: false) == true,
+                "The exact cold regression meal must enter the diner's inventory.");
+        }
+        else
+        {
+            GenSpawn.Spawn(meal, center + new IntVec3(-2, 0, 0), map);
+        }
         GenSpawn.Spawn(cutlery, center + new IntVec3(-2, 0, -2), map);
 
         var gizmos = context.GetRequiredService<IEndToEndGizmoCatalog>();
