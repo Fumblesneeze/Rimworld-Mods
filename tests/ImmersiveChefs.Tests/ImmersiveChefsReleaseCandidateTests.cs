@@ -69,11 +69,11 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Redrew modern cookware so it stays readable on dark stoves and at normal map zoom. Steel sets now use clearly separated pot, pan, lid, and utensil silhouettes with a stronger smooth outline and cleaner Stuff masking."));
+            Assert.That(release["previousChangeNote"], Is.EqualTo("Fixed colonists repeatedly restarting their eating job when a cold plated meal was already in inventory. Inventory meals now remain in the same job through microwave reheating and eating."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo("Fixed colonists repeatedly restarting their eating job when a cold plated meal was already in inventory. Inventory meals now remain in the same job through microwave reheating and eating."),
-                "The pending Workshop update must retain its exact reviewed player-facing change note.");
+                Is.EqualTo(string.Empty),
+                "The one-shot change note must be cleared immediately after its exact candidate has been published and remotely verified.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));
