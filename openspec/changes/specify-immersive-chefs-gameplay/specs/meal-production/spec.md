@@ -15,6 +15,24 @@ Reservations SHALL respect pawn reachability, forbidden state, storage and bill 
 - **WHEN** concurrent bills can see only one cookware set and four plates
 - **THEN** the first accepted job owns those reservations and the second job waits or selects different eligible wares without duplicating an item or plate count
 
+### Requirement: Cooking work scans are reservation-neutral
+Evaluating a prospective covered cooking job SHALL only verify that suitable ware is currently available. It MUST NOT reserve cookware or plates, open a cooking session, move dirty cookware off a work surface, or create an assistance claim until that exact job has been accepted and its driver starts. A prospective job discarded by RimWorld's work search SHALL therefore leave no mod-owned reservation or session behind.
+
+Once an accepted job starts, Immersive Chefs SHALL reserve its selected ware exactly once. Completion, drafting, downing, interruption, job replacement, map removal, or another native job cleanup path SHALL explicitly release every exact ware reservation owned by that job, including cancellation before active cooking. Saving and loading SHALL NOT retain a reservation whose cooking job is neither current nor queued.
+
+#### Scenario: RimWorld discards a speculative bill job
+- **WHEN** `WorkGiver_DoBill.JobOnThing` constructs a covered candidate but the pawn never starts or queues that job
+- **THEN** the candidate leaves no cookware or plate reservation, cooking session, work-surface movement, or assistance claim
+- **THEN** another pawn can reserve the same eligible ware normally
+
+#### Scenario: A cook is interrupted before active work
+- **WHEN** an accepted cooking job has reserved ware and the cook is drafted, downed, put to bed, or otherwise changes jobs before the first cooking work tick
+- **THEN** every exact reservation owned by that job is released and the same ware remains clean and available
+
+#### Scenario: Save and load after an interrupted cook
+- **WHEN** an interrupted cooking job is no longer current or queued and the game is saved and loaded
+- **THEN** no null-job or orphaned cooking-ware reservation is restored for that pawn
+
 ### Requirement: Ware requirement modes are explicit and deadlock-safe
 The `WareRequirementMode` setting SHALL provide `Strict`, `Prefer`, and `Off`, defaulting to `Strict`.
 
@@ -48,6 +66,8 @@ An explicit missing-ware result SHALL record every unavailable cookware or plate
 The ware selector SHALL always rank clean cookware and plates ahead of dirty equivalents. It SHALL exclude dirty wares unless the precedence matrix permits them for the configured fallback and current emergency state. Among wares in the same allowed sanitation state, it SHALL apply player restrictions, material cleanliness, crafting quality, speed, comfort, culinary value, path cost, and stack availability as deterministic secondary considerations.
 
 When the configured policy would ordinarily reject dirty cookware, a selected eligible cook SHALL receive a native right-click option on the covered bill giver to `Force cook with dirty cookware` if all food ingredients and plates are available and a reachable dirty cookware set is the only cookware blocker. Choosing it SHALL enqueue the ordinary `DoBill` job with a one-job dirty-cookware override; it SHALL not change the global fallback setting, pre-clean the set, suppress sanitation recording, or hide the resulting poisoning contribution. The option SHALL be absent when clean cookware exists, no eligible dirty set exists, the bill is not otherwise runnable, or the pawn cannot perform the bill.
+
+The override SHALL retain the exact dirty cookware Thing selected by that candidate as serializable job-local intent without reserving it during the work scan. If that ordered job waits in a queue or is saved and loaded before starting, its accepted driver SHALL attempt that exact Thing even if a clean set later appears; it SHALL fail cleanly only if the chosen Thing itself is no longer eligible or available.
 
 #### Scenario: Clean low-quality and dirty high-quality cookware are both available
 - **WHEN** an ordinary covered cooking job searches for cookware

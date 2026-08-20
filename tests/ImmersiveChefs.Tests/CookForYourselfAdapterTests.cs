@@ -7,6 +7,30 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class CookForYourselfAdapterTests
 {
+    [TestCase(true, true, true, true, true, true)]
+    [TestCase(false, true, true, true, true, false)]
+    [TestCase(true, false, true, true, true, false)]
+    [TestCase(true, true, false, true, true, false)]
+    [TestCase(true, true, true, false, true, false)]
+    [TestCase(true, true, true, true, false, false)]
+    public void Loaded_cfs_jobs_are_aborted_only_for_the_exact_active_covered_shape(
+        bool adapterEnabled,
+        bool integrationEnabled,
+        bool exactDriver,
+        bool exactJobDef,
+        bool coveredRecipeTag,
+        bool expected)
+    {
+        Assert.That(
+            CookForYourselfRecoveryPolicy.ShouldAbortOnLoad(
+                adapterEnabled,
+                integrationEnabled,
+                exactDriver,
+                exactJobDef,
+                coveredRecipeTag),
+            Is.EqualTo(expected));
+    }
+
     private static CookForYourselfShape SupportedShape => new(
         assemblyName: "CookForYourself",
         assemblyVersion: new Version(1, 0, 0, 0),

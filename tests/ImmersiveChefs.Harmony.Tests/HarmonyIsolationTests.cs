@@ -7,6 +7,7 @@ using NUnit.Framework;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.AI;
 
 namespace ImmersiveChefs.Harmony.Tests;
 
@@ -283,6 +284,9 @@ public sealed class HarmonyIsolationTests
         var drawPostfix = productAssembly
             .GetType("ImmersiveChefs.CookingWorkPropDrawPatch", throwOnError: true)!
             .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var pickupPostfix = productAssembly
+            .GetType("ImmersiveChefs.BillKitchenwarePickupToilsPatch", throwOnError: true)!
+            .GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static)!;
         var doBillBoundary = AccessTools.Method(
             typeof(WorkGiver_DoBill),
             nameof(WorkGiver_DoBill.JobOnThing),
@@ -300,12 +304,16 @@ public sealed class HarmonyIsolationTests
             typeof(Pawn),
             "DrawAt",
             new[] { typeof(Vector3), typeof(bool) });
+        var acceptedDriverBoundary = AccessTools.Method(
+            typeof(JobDriver_DoBill),
+            "MakeNewToils");
 
         Assert.Multiple(() =>
         {
             Assert.That(doBillBoundary, Is.Not.Null);
             Assert.That(floatMenuBoundary, Is.Not.Null);
             Assert.That(drawBoundary, Is.Not.Null);
+            Assert.That(acceptedDriverBoundary, Is.Not.Null);
         });
         Assert.That(
             () =>
@@ -328,6 +336,13 @@ public sealed class HarmonyIsolationTests
                            "fumblesneeze.immersivechefs.tests.cooking-work-prop",
                            drawBoundary!,
                            drawPostfix))
+                {
+                }
+
+                using (HarmonyPatchScope.ApplyPostfix(
+                           "fumblesneeze.immersivechefs.tests.cooking-driver-admission",
+                           acceptedDriverBoundary!,
+                           pickupPostfix))
                 {
                 }
             },

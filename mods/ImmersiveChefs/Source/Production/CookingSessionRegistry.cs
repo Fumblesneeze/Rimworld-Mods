@@ -10,6 +10,7 @@ internal sealed class ReservedWarePortion
     internal ReservedWarePortion(Thing thing, int count)
     {
         Thing = thing;
+        ReservationTarget = thing;
         Count = count;
         RemainingCount = count;
         var sanitation = (thing as ThingWithComps)?.GetComp<CompSanitation>();
@@ -18,6 +19,7 @@ internal sealed class ReservedWarePortion
     }
 
     internal Thing Thing { get; private set; }
+    internal Thing ReservationTarget { get; }
     internal int Count { get; }
     internal bool WasDirty { get; }
     internal bool WasWildWaterWashed { get; }
@@ -482,12 +484,179 @@ internal static class CookingSessionRegistry
 {
     private static readonly ConditionalWeakTable<Job, CookingSession> Sessions = new();
 
-    internal static bool TryAttach(
+    internal static bool TryPreflight(
         Pawn pawn,
         Job job,
         Thing billGiver,
         out string? missingReason,
         bool forceDirtyCookware = false)
+    {
+        missingReason = null;
+        if (!AdaptiveMealBillAdapter.TryResolveConcreteRecipe(job, out var reservationRecipe))
+        {
+            missingReason = "ImmersiveChefs_Missing_AdaptiveRecipe".Translate();
+            return false;
+        }
+
+        var admitted = TryPreflightResolved(
+            pawn,
+            job,
+            reservationRecipe!,
+            UrgentProductionRequestRegistry.HasActive(pawn.Map),
+            out missingReason,
+            forceDirtyCookware,
+            out var forcedDirtyCookware);
+        if (admitted && forcedDirtyCookware is not null)
+        {
+            // Target C is unused by vanilla DoBill before the pickup wrapper and
+            // is scribed with the Job. It retains the exact player-selected set
+            // across ordering, queuing, and save/load without reserving it.
+            job.SetTarget(TargetIndex.C, forcedDirtyCookware);
+        }
+
+        return admitted;
+    }
+
+    internal static bool TryPreflight(
+        Pawn pawn,
+        Job job,
+        Thing billGiver,
+        RecipeDef reservationRecipe,
+        bool emergency,
+        out string? missingReason)
+    {
+        return TryPreflightResolved(
+            pawn,
+            job,
+            reservationRecipe,
+            emergency,
+            out missingReason,
+            forceDirtyCookware: false,
+            out _);
+    }
+
+    private static bool TryPreflightResolved(
+        Pawn pawn,
+        Job job,
+        RecipeDef reservationRecipe,
+        bool emergency,
+        out string? missingReason,
+        bool forceDirtyCookware,
+        out Thing? forcedDirtyCookware)
+    {
+        missingReason = null;
+        forcedDirtyCookware = null;
+        if (CookingAdmissionLifecyclePolicy.MayReserveWare(
+                CookingAdmissionPhase.CandidateEvaluation,
+                driverJobIsCurrent: false))
+        {
+            throw new InvalidOperationException("Candidate evaluation cannot own cooking ware.");
+        }
+
+        if (!MealCoveragePolicy.IsCovered(reservationRecipe) ||
+            ImmersiveChefsMod.Settings.WareRequirementMode == WareRequirementMode.Off)
+        {
+            return true;
+        }
+
+        var cookware = FindCandidates(
+            pawn,
+            job,
+            KitchenwareProduct.Cookware,
+            requiredCount: 1,
+            plateComplexity: null);
+        var requiredPlates = MealCoveragePolicy.ServingCount(reservationRecipe);
+        var plates = FindCandidates(
+            pawn,
+            job,
+            KitchenwareProduct.Plate,
+            requiredPlates,
+            MealClassificationRuntime.ClassifyRecipe(reservationRecipe));
+        var cookwareUse = SelectAvailableWare(
+            cookware,
+            requiredCount: 1,
+            emergency,
+            forceDirtyCookware ? WareUse.Dirty : null);
+        var plateUse = SelectAvailableWare(
+            plates,
+            requiredPlates,
+            emergency,
+            forcedUse: null);
+        var cookwareAllowed = cookwareUse.Admission == WareAdmission.Allowed;
+        var platesAllowed = plateUse.Admission == WareAdmission.Allowed;
+        if (cookwareAllowed && platesAllowed)
+        {
+            if (forceDirtyCookware)
+            {
+                forcedDirtyCookware = cookware.First(candidate => candidate.Dirty).Thing;
+            }
+            return true;
+        }
+
+        missingReason = !cookwareAllowed && !platesAllowed
+            ? "ImmersiveChefs_Missing_CookwareAndPlates".Translate()
+            : !cookwareAllowed
+                ? "ImmersiveChefs_Missing_Cookware".Translate()
+                : "ImmersiveChefs_Missing_Plates".Translate();
+        return false;
+    }
+
+    internal static bool TryAttachAtDriverStart(
+        Pawn pawn,
+        Job job,
+        Thing billGiver,
+        out string? missingReason)
+    {
+        var plannedCookware = job.GetTarget(TargetIndex.C).Thing;
+        var forcedDirtyCookware = plannedCookware is not null &&
+                                  plannedCookware.def
+                                      .GetModExtension<KitchenwareExtension>()?.product ==
+                                  KitchenwareProduct.Cookware
+            ? plannedCookware
+            : null;
+        try
+        {
+            return TryAttach(
+                pawn,
+                job,
+                billGiver,
+                out missingReason,
+                forceDirtyCookware: forcedDirtyCookware is not null,
+                forcedDirtyCookware: forcedDirtyCookware);
+        }
+        finally
+        {
+            if (forcedDirtyCookware is not null)
+            {
+                job.SetTarget(TargetIndex.C, LocalTargetInfo.Invalid);
+            }
+        }
+    }
+
+    internal static bool TryAttachAtDriverStart(
+        Pawn pawn,
+        Job job,
+        Thing billGiver,
+        RecipeDef reservationRecipe,
+        bool emergency,
+        out string? missingReason)
+    {
+        return TryAttach(
+            pawn,
+            job,
+            billGiver,
+            reservationRecipe,
+            emergency,
+            out missingReason);
+    }
+
+    internal static bool TryAttach(
+        Pawn pawn,
+        Job job,
+        Thing billGiver,
+        out string? missingReason,
+        bool forceDirtyCookware = false,
+        Thing? forcedDirtyCookware = null)
     {
         missingReason = null;
         if (!AdaptiveMealBillAdapter.TryResolveConcreteRecipe(job, out var reservationRecipe))
@@ -505,7 +674,8 @@ internal static class CookingSessionRegistry
             reservationRecipe!,
             UrgentProductionRequestRegistry.HasActive(pawn.Map),
             out missingReason,
-            forceDirtyCookware);
+            forceDirtyCookware,
+            forcedDirtyCookware);
     }
 
     internal static bool TryAttach(
@@ -523,7 +693,8 @@ internal static class CookingSessionRegistry
             reservationRecipe,
             emergency,
             out missingReason,
-            forceDirtyCookware: false);
+            forceDirtyCookware: false,
+            forcedDirtyCookware: null);
     }
 
     private static bool TryAttachResolved(
@@ -533,9 +704,15 @@ internal static class CookingSessionRegistry
         RecipeDef reservationRecipe,
         bool emergency,
         out string? missingReason,
-        bool forceDirtyCookware)
+        bool forceDirtyCookware,
+        Thing? forcedDirtyCookware)
     {
         missingReason = null;
+
+        if (Sessions.TryGetValue(job, out _))
+        {
+            return true;
+        }
 
         if (!MealCoveragePolicy.IsCovered(reservationRecipe))
         {
@@ -560,14 +737,26 @@ internal static class CookingSessionRegistry
         var plates = new List<ReservedWarePortion>();
         try
         {
-            cookware = FindPortions(
-                pawn,
-                job,
-                KitchenwareProduct.Cookware,
-                1,
-                emergency,
-                out var cookwareUse,
-                forcedUse: forceDirtyCookware ? WareUse.Dirty : null);
+            WareSelectionResult cookwareUse;
+            if (forcedDirtyCookware is not null)
+            {
+                cookware = FindExactForcedCookware(
+                    pawn,
+                    job,
+                    forcedDirtyCookware,
+                    out cookwareUse);
+            }
+            else
+            {
+                cookware = FindPortions(
+                    pawn,
+                    job,
+                    KitchenwareProduct.Cookware,
+                    1,
+                    emergency,
+                    out cookwareUse,
+                    forcedUse: forceDirtyCookware ? WareUse.Dirty : null);
+            }
             var requiredPlates = MealCoveragePolicy.ServingCount(reservationRecipe!);
             var plateComplexity = MealClassificationRuntime.ClassifyRecipe(reservationRecipe);
             plates = FindPortions(
@@ -692,6 +881,11 @@ internal static class CookingSessionRegistry
             return;
         }
 
+        if (Sessions.TryGetValue(job, out var session))
+        {
+            ReleaseSessionReservations(pawn, job, session);
+            session.ReleaseAtEnd();
+        }
         Sessions.Remove(job);
         KitchenAssistanceRegistry.Cleanup(pawn, job);
     }
@@ -925,6 +1119,7 @@ internal static class CookingSessionRegistry
             return;
         }
 
+        ReleaseSessionReservations(pawn, job, session);
         session.ReleaseAtEnd();
         if (TryClaimPostCookingCleanupJob(pawn, session, out var cleanupJob))
         {
@@ -953,6 +1148,7 @@ internal static class CookingSessionRegistry
 
         // Cook for Yourself starts its follow-up synchronously. Release first so
         // the replacement cleanup job can reserve the real spawned cookware.
+        ReleaseSessionReservations(pawn, cookingJob, session);
         session.ReleaseAtEnd();
         return TryClaimPostCookingCleanupJob(pawn, session, out cleanupJob);
     }
@@ -1048,6 +1244,62 @@ internal static class CookingSessionRegistry
         }
 
         return result;
+    }
+
+    private static List<ReservedWarePortion> FindExactForcedCookware(
+        Pawn pawn,
+        Job job,
+        Thing exactCookware,
+        out WareSelectionResult selection)
+    {
+        var available = FindCandidates(
+                pawn,
+                job,
+                KitchenwareProduct.Cookware,
+                requiredCount: 1,
+                plateComplexity: null)
+            .Any(candidate => ReferenceEquals(candidate.Thing, exactCookware));
+        if (!available || !pawn.Reserve(exactCookware, job, 1, 1))
+        {
+            selection = new WareSelectionResult(WareUse.Missing, WareAdmission.Blocked);
+            return new List<ReservedWarePortion>();
+        }
+
+        selection = new WareSelectionResult(
+            (exactCookware as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true
+                ? WareUse.Dirty
+                : WareUse.Clean,
+            WareAdmission.Allowed);
+        return new List<ReservedWarePortion>
+        {
+            new(exactCookware, 1)
+        };
+    }
+
+    private static WareSelectionResult SelectAvailableWare(
+        IReadOnlyList<WareCandidate> candidates,
+        int requiredCount,
+        bool emergency,
+        WareUse? forcedUse)
+    {
+        var cleanAvailable = candidates
+            .Where(candidate => !candidate.Dirty)
+            .Sum(candidate => candidate.Thing.stackCount) >= requiredCount;
+        var dirtyAvailable = candidates
+            .Where(candidate => candidate.Dirty)
+            .Sum(candidate => candidate.Thing.stackCount) >= requiredCount;
+        return forcedUse switch
+        {
+            WareUse.Dirty when !cleanAvailable && dirtyAvailable =>
+                new WareSelectionResult(WareUse.Dirty, WareAdmission.Allowed),
+            WareUse.Dirty => new WareSelectionResult(WareUse.Missing, WareAdmission.Blocked),
+            _ => WareSelectionPolicy.Select(
+                ImmersiveChefsMod.Settings.WareRequirementMode,
+                ImmersiveChefsMod.Settings.DirtyWareFallback,
+                emergency,
+                cleanAvailable,
+                dirtyAvailable)
+        };
     }
 
     private static bool TryEvaluateDirtyCookwareAction(
@@ -1178,9 +1430,38 @@ internal static class CookingSessionRegistry
 
     private static void ReleaseReservations(Pawn pawn, Job job, IEnumerable<ReservedWarePortion> portions)
     {
+        var reservationManager = pawn.MapHeld?.reservationManager;
+        if (reservationManager is null)
+        {
+            return;
+        }
+
         foreach (var portion in portions)
         {
-            pawn.Map.reservationManager.Release(portion.Thing, pawn, job);
+            if (reservationManager.ReservedBy(portion.Thing, pawn, job))
+            {
+                reservationManager.Release(portion.Thing, pawn, job);
+            }
+        }
+    }
+
+    private static void ReleaseSessionReservations(Pawn pawn, Job job, CookingSession session)
+    {
+        var reservationManager = (session.BillGiver.MapHeld ?? pawn.MapHeld)?.reservationManager;
+        if (reservationManager is null)
+        {
+            return;
+        }
+
+        foreach (var thing in session.PortionsToCollect()
+                     .Select(portion => portion.ReservationTarget)
+                     .Where(thing => thing is not null && !thing.Destroyed)
+                     .Distinct())
+        {
+            if (reservationManager.ReservedBy(thing, pawn, job))
+            {
+                reservationManager.Release(thing, pawn, job);
+            }
         }
     }
 }
