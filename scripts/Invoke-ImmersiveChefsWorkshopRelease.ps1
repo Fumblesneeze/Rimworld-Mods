@@ -5,9 +5,11 @@ Publishes one explicitly confirmed, immutable Immersive Chefs release plan to St
 .DESCRIPTION
 Revalidates the clean committed source revision and every staged byte, launches one isolated
 RimWorld Dev Gateway process, compiles the checked-in Steamworks publisher, creates or updates
-the item, queries its remote metadata, subscribes/downloads it, verifies the installed bytes,
-and writes a token-free receipt. The exact confirmation is intentionally awkward and is accepted
-only together with the reviewed publication-plan SHA-256.
+the item, verifies its remote metadata and presentation, and writes a token-free receipt. Ordinary
+mod releases do not subscribe to the published item or run a post-publication gameplay smoke.
+That exceptional verification remains available only for deliberate release-tooling changes.
+The exact confirmation is intentionally awkward and is accepted only together with the reviewed
+publication-plan SHA-256.
 
 .EXAMPLE
 .\scripts\Invoke-ImmersiveChefsWorkshopRelease.ps1 `
@@ -24,6 +26,7 @@ param(
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
     [ValidateRange(120, 1800)][int]$TimeoutSeconds = 900,
     [switch]$PreviewSyncOnly,
+    [switch]$VerifySubscribedCopyForReleaseToolingChange,
     [ValidateSet('table', 'json')][string]$Output = 'table'
 )
 
@@ -44,6 +47,42 @@ function Test-ReconciliationStateIdentity([string]$State, [System.UInt64]$StateI
     $reconciliationStates = @('submit-admitted', 'submitted', 'submit-indeterminate', 'dependency-indeterminate', 'succeeded')
     return $reconciliationStates -cnotcontains $State -or
         ($StateItemId -ne 0 -and $PublishedFileId -ne 0 -and $StateItemId -eq $PublishedFileId)
+}
+
+function New-WorkshopSubscriberArtifacts(
+    [bool]$Requested,
+    [object]$Installed,
+    [string]$InstalledPackagePath,
+    [object]$SubscribedSmoke) {
+    if (-not $Requested) {
+        return [pscustomobject][ordered]@{
+            installed = $null
+            installedPackagePath = $null
+            subscribedSmoke = $null
+            verification = [pscustomobject][ordered]@{
+                policy = 'release-tooling-change-only'
+                requested = $false
+                status = 'not-run-for-ordinary-release'
+                installedPackagePath = $null
+                smoke = $null
+            }
+        }
+    }
+    if ($null -eq $Installed -or [string]::IsNullOrWhiteSpace($InstalledPackagePath) -or $null -eq $SubscribedSmoke) {
+        throw 'Release-tooling subscriber verification did not produce complete package and smoke evidence.'
+    }
+    return [pscustomobject][ordered]@{
+        installed = $Installed
+        installedPackagePath = $InstalledPackagePath
+        subscribedSmoke = $SubscribedSmoke
+        verification = [pscustomobject][ordered]@{
+            policy = 'release-tooling-change-only'
+            requested = $true
+            status = 'passed-for-release-tooling-change'
+            installedPackagePath = $InstalledPackagePath
+            smoke = $SubscribedSmoke
+        }
+    }
 }
 
 function Get-ExpectedRemoteVisibility([string]$PlanVisibility) {
@@ -1165,35 +1204,40 @@ try {
     }
     Write-TextAtomically -Path $statePath -Value ("succeeded|$actualPlanHash|$publishedFileId")
 
-    $null = Invoke-WorkshopAutomation -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
-        -Arguments @{ operation = 'subscribe'; planSha256 = $actualPlanHash; publishedFileId = [string]$publishedFileId }
-    $installed = Wait-WorkshopTerminal -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
-        -PlanSha256 $actualPlanHash -Deadline $deadline -TerminalStatuses @('installed', 'failed')
-    if ([string]$installed.Status -cne 'installed') { throw "The subscribed Workshop item did not install: $($installed | ConvertTo-Json -Compress)" }
-    $expectedInstallPath = Join-Path ([IO.Path]::GetFullPath($SteamModContentFolder)) ([string]$publishedFileId)
-    if (-not [string]::Equals([IO.Path]::GetFullPath([string]$installed.InstallFolder), $expectedInstallPath, [StringComparison]::OrdinalIgnoreCase)) {
-        throw 'Steam reported an unexpected Workshop install folder.'
-    }
-    $manifest = Read-Json ([string]$plan.packageManifestPath)
-    foreach ($entry in @($manifest.files)) {
-        $installedPath = Join-Path $expectedInstallPath ([string]$entry.path)
-        if (-not (Test-Path -LiteralPath $installedPath -PathType Leaf) -or
-            (Get-FileHash -LiteralPath $installedPath -Algorithm SHA256).Hash -cne [string]$entry.sha256) {
-            throw "Subscribed Workshop package differs from the candidate: $installedPath"
+    $installed = $null
+    $expectedInstallPath = $null
+    $subscribedSmoke = $null
+    if ([bool]$VerifySubscribedCopyForReleaseToolingChange) {
+        $null = Invoke-WorkshopAutomation -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
+            -Arguments @{ operation = 'subscribe'; planSha256 = $actualPlanHash; publishedFileId = [string]$publishedFileId }
+        $installed = Wait-WorkshopTerminal -Client $client -Manifest $manifestPath -ProcessId $gameProcessId `
+            -PlanSha256 $actualPlanHash -Deadline $deadline -TerminalStatuses @('installed', 'failed')
+        if ([string]$installed.Status -cne 'installed') { throw "The subscribed Workshop item did not install: $($installed | ConvertTo-Json -Compress)" }
+        $expectedInstallPath = Join-Path ([IO.Path]::GetFullPath($SteamModContentFolder)) ([string]$publishedFileId)
+        if (-not [string]::Equals([IO.Path]::GetFullPath([string]$installed.InstallFolder), $expectedInstallPath, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Steam reported an unexpected Workshop install folder.'
         }
-    }
-    if ((Get-Content -LiteralPath (Join-Path $expectedInstallPath 'About\PublishedFileId.txt') -Raw).Trim() -cne [string]$publishedFileId) {
-        throw 'Subscribed Workshop package has the wrong identity file.'
-    }
-    $expectedInstalledPaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-    foreach ($entry in @($manifest.files)) { $null = $expectedInstalledPaths.Add([string]$entry.path) }
-    $null = $expectedInstalledPaths.Add('About\PublishedFileId.txt')
-    $actualInstalledPaths = @(Get-ChildItem -LiteralPath $expectedInstallPath -Recurse -File | ForEach-Object {
-        Get-RelativePath -Root $expectedInstallPath -Path $_.FullName
-    })
-    if ($actualInstalledPaths.Count -ne $expectedInstalledPaths.Count -or
-        @($actualInstalledPaths | Where-Object { -not $expectedInstalledPaths.Contains($_) }).Count -ne 0) {
-        throw 'Subscribed Workshop package contains an unexpected or missing file.'
+        $manifest = Read-Json ([string]$plan.packageManifestPath)
+        foreach ($entry in @($manifest.files)) {
+            $installedPath = Join-Path $expectedInstallPath ([string]$entry.path)
+            if (-not (Test-Path -LiteralPath $installedPath -PathType Leaf) -or
+                (Get-FileHash -LiteralPath $installedPath -Algorithm SHA256).Hash -cne [string]$entry.sha256) {
+                throw "Subscribed Workshop package differs from the candidate: $installedPath"
+            }
+        }
+        if ((Get-Content -LiteralPath (Join-Path $expectedInstallPath 'About\PublishedFileId.txt') -Raw).Trim() -cne [string]$publishedFileId) {
+            throw 'Subscribed Workshop package has the wrong identity file.'
+        }
+        $expectedInstalledPaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach ($entry in @($manifest.files)) { $null = $expectedInstalledPaths.Add([string]$entry.path) }
+        $null = $expectedInstalledPaths.Add('About\PublishedFileId.txt')
+        $actualInstalledPaths = @(Get-ChildItem -LiteralPath $expectedInstallPath -Recurse -File | ForEach-Object {
+            Get-RelativePath -Root $expectedInstallPath -Path $_.FullName
+        })
+        if ($actualInstalledPaths.Count -ne $expectedInstalledPaths.Count -or
+            @($actualInstalledPaths | Where-Object { -not $expectedInstalledPaths.Contains($_) }).Count -ne 0) {
+            throw 'Subscribed Workshop package contains an unexpected or missing file.'
+        }
     }
 
     [IO.File]::WriteAllText($completionFile, [datetime]::UtcNow.ToString('O'), [Text.UTF8Encoding]::new($false))
@@ -1202,38 +1246,46 @@ try {
         $launcherProcess.WaitForExit()
         Assert-RetainedProcessIdentity -Process $publisherGameProcess -ExpectedStartUtc $publisherGameProcessStartUtc
         $null = Stop-RetainedProcess -Process $publisherGameProcess
-        throw 'The exact Gateway publisher launcher did not clean up before subscribed verification.'
+        throw 'The exact Gateway publisher launcher did not clean up after remote verification.'
     }
     if ($launcherProcess.ExitCode -ne 0) {
-        throw "Gateway publisher cleanup failed before subscribed verification: $((Get-Content $launcherErr -Raw -ErrorAction SilentlyContinue))"
+        throw "Gateway publisher cleanup failed after remote verification: $((Get-Content $launcherErr -Raw -ErrorAction SilentlyContinue))"
     }
     Assert-RetainedProcessIdentity -Process $publisherGameProcess -ExpectedStartUtc $publisherGameProcessStartUtc
     if (Stop-RetainedProcess -Process $publisherGameProcess) {
-        throw 'The exact Gateway publisher RimWorld process required force cleanup before subscribed verification.'
+        throw 'The exact Gateway publisher RimWorld process required force cleanup after remote verification.'
     }
     $publisherLauncherCompleted = $true
 
-    $subscribedSmokeScript = Join-Path $repositoryRoot 'scripts\Invoke-ImmersiveChefsSubscribedSmoke.ps1'
-    $subscribedSmokeOutput = @(& $subscribedSmokeScript `
-        -PublishedFileId ([string]$publishedFileId) `
-        -ExpectedInstallPath $expectedInstallPath `
-        -RimWorldPath $RimWorldPath `
-        -SteamModContentFolder $SteamModContentFolder `
-        -TimeoutSeconds 420 `
-        -Output json 2>&1)
-    if ($LASTEXITCODE -ne 0) {
-        throw "Subscribed Workshop player smoke failed: $($subscribedSmokeOutput -join [Environment]::NewLine)"
+    if ([bool]$VerifySubscribedCopyForReleaseToolingChange) {
+        $subscribedSmokeScript = Join-Path $repositoryRoot 'scripts\Invoke-ImmersiveChefsSubscribedSmoke.ps1'
+        $subscribedSmokeOutput = @(& $subscribedSmokeScript `
+            -PublishedFileId ([string]$publishedFileId) `
+            -ExpectedInstallPath $expectedInstallPath `
+            -RimWorldPath $RimWorldPath `
+            -SteamModContentFolder $SteamModContentFolder `
+            -TimeoutSeconds 420 `
+            -Output json 2>&1)
+        if ($LASTEXITCODE -ne 0) {
+            throw "Subscribed Workshop player smoke failed: $($subscribedSmokeOutput -join [Environment]::NewLine)"
+        }
+        try { $subscribedSmoke = ($subscribedSmokeOutput -join [Environment]::NewLine).Trim() | ConvertFrom-Json }
+        catch { throw "Subscribed Workshop player smoke returned invalid JSON: $($subscribedSmokeOutput -join [Environment]::NewLine)" }
+        if ([string]$subscribedSmoke.status -cne 'passed' -or
+            -not [bool]$subscribedSmoke.localProductRestored -or
+            -not [string]::Equals(
+                [IO.Path]::GetFullPath([string]$subscribedSmoke.loadedPackagePath),
+                $expectedInstallPath,
+                [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Subscribed Workshop player smoke did not prove exact-path native behavior and restoration.'
+        }
     }
-    try { $subscribedSmoke = ($subscribedSmokeOutput -join [Environment]::NewLine).Trim() | ConvertFrom-Json }
-    catch { throw "Subscribed Workshop player smoke returned invalid JSON: $($subscribedSmokeOutput -join [Environment]::NewLine)" }
-    if ([string]$subscribedSmoke.status -cne 'passed' -or
-        -not [bool]$subscribedSmoke.localProductRestored -or
-        -not [string]::Equals(
-            [IO.Path]::GetFullPath([string]$subscribedSmoke.loadedPackagePath),
-            $expectedInstallPath,
-            [StringComparison]::OrdinalIgnoreCase)) {
-        throw 'Subscribed Workshop player smoke did not prove exact-path native behavior and restoration.'
-    }
+
+    $subscriberArtifacts = New-WorkshopSubscriberArtifacts `
+        -Requested ([bool]$VerifySubscribedCopyForReleaseToolingChange) `
+        -Installed $installed `
+        -InstalledPackagePath $expectedInstallPath `
+        -SubscribedSmoke $subscribedSmoke
 
     $receipt = [pscustomobject][ordered]@{
         schema = 'ImmersiveChefs/WorkshopPublicationReceipt/v1'
@@ -1248,16 +1300,21 @@ try {
         publishedFileId = [string]$publishedFileId
         workshopUrl = "https://steamcommunity.com/sharedfiles/filedetails/?id=$publishedFileId"
         remote = $remote
-        installed = $installed
-        installedPackagePath = $expectedInstallPath
-        subscribedSmoke = $subscribedSmoke
+        installed = $subscriberArtifacts.installed
+        installedPackagePath = $subscriberArtifacts.installedPackagePath
+        subscribedSmoke = $subscriberArtifacts.subscribedSmoke
+        subscriberVerification = $subscriberArtifacts.verification
         gatewayEvidence = [IO.DirectoryInfo]::new([string]$holdFiles[0].FullName).Parent.FullName
         tokenRetained = $false
     }
     $receiptPath = Join-Path $runRoot 'publication-receipt.json'
     Write-JsonUtf8 -Path $receiptPath -Value $receipt
     $result = [pscustomobject][ordered]@{
-        status = 'published-and-subscribed'
+        status = if ([bool]$VerifySubscribedCopyForReleaseToolingChange) {
+            'published-and-subscriber-verified-for-release-tooling-change'
+        } else {
+            'published-and-remotely-verified'
+        }
         publishedFileId = [string]$publishedFileId
         workshopUrl = $receipt.workshopUrl
         receipt = $receiptPath

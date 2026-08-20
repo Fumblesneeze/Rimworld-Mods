@@ -73,29 +73,29 @@ A publishable candidate has all of the following:
   independently reviewed feature cards remain eligible presentation inputs.
 - Put any author-requested AI/process disclosure in the final `Author's Note`; no content follows it. Be candid about playtesting limits and live-AI behavior.
 - Fresh isolated exact-PID RimWorld + Gateway process with initialized Steam.
-- Mutation-free dry-run and one explicit natural-language user authorization for the meaningful release intent. Keep exact hashes and the CLI confirmation phrase internal. The same authorization covers byte-verified preview synchronization, Steam URL/provenance resolution, final submission, dependency reconciliation, and subscribed-copy verification when item, visibility, dependency graph, change note, authored copy, local image bytes/order, product code/XML/assets/packaging inputs, and requested scope do not change. Enforce that claim with the authorization-intent lineage; exclude only the generated resolved-description/provenance pair from its committed source-tree hash.
+- Mutation-free dry-run and one explicit natural-language user authorization for the meaningful release intent. Keep exact hashes and the CLI confirmation phrase internal. The same authorization covers byte-verified preview synchronization, Steam URL/provenance resolution, final submission, dependency reconciliation, and remote verification when item, visibility, dependency graph, change note, authored copy, local image bytes/order, product code/XML/assets/packaging inputs, and requested scope do not change. Enforce that claim with the authorization-intent lineage; exclude only the generated resolved-description/provenance pair from its committed source-tree hash.
 - A non-initial update has one specific player-facing change note bound to the plan, submitted through Steam's change-note parameter, retained in the receipt, and checked on the remote change history. Blank, generic, synthesized, or recycled notes are rejected.
 - One update operation at a time; no blind retry after submission uncertainty.
 - A first-publication ID is durable across candidates, every existing-item update passes an exact
   Steam ID/owner/app/title query first, and an admitted-but-indeterminate submit is query-reconciled
   before any further mutation.
 - Check every SteamUGC setter, submit result, legal-agreement flag, and remote identity.
-- Verify remote metadata/previews and reacquired package contents after propagation.
-- Run the declared native workflow from the exact subscribed Workshop root while every local copy
-  of the product is absent from RimWorld discovery; restore local state in guaranteed cleanup.
+- Verify remote identity/owner/app/visibility, metadata, description, tags, dependency graph, preview inventory/bytes, and change history after propagation.
+- Do not subscribe, reacquire, or launch the published mod after an ordinary publication. Use the immutable staged candidate and impact-selected pre-publication gameplay evidence instead.
+- Run subscribed-copy package comparison and native gameplay smoke only as explicit validation when the release publisher, Steam subscription/install verification, or related Gateway tooling itself changed. Never make it a routine product-release gate.
 - Use the Dev Gateway as the default native-workflow controller. A Gateway-free duplicate is optional
   and requires an explicit request or a recorded Gateway capability gap.
 - Treat a user-stopped verification profile as disabled for that release. Record exact-process shutdown
   and the zero-process check; never relaunch it without fresh explicit authorization.
 - Preserve a secret-free receipt and exact cleanup outcome.
-- Keep subscribed-copy evidence under a short repository-local ignored root and preflight the projected Gateway session/temp path before launching RimWorld; do not discover a legacy Windows path-length failure after the smoke timeout.
+- For the exceptional release-tooling-change subscriber check, keep evidence under a short repository-local ignored root and preflight the projected Gateway session/temp path before launching RimWorld.
 - After a verified first publication, commit the returned ID to the mod's release descriptor and disable first publication. Ignored artifacts are recovery evidence, never the cross-clone identity authority.
 
 ## Current implementation status
 
 The architecture is specified under `openspec/changes/automate-multiversion-mod-releases/`. The
 Immersive Chefs 1.6 bootstrap currently implements clean positive-allowlist staging with
-`scripts/Build-ImmersiveChefsRelease.ps1` and a guarded Steamworks publish/query/subscribe flow with
+`scripts/Build-ImmersiveChefsRelease.ps1` and a guarded Steamworks publish/query/remote-verification flow with
 `scripts/Invoke-ImmersiveChefsWorkshopRelease.ps1`. Broader target-catalog, historical-build,
 presentation-compiler, and reusable multi-mod release tasks remain unchecked; do not imply that this
 one-mod bootstrap implements them. Inspect `tasks.md`, repository scripts, and command help on every

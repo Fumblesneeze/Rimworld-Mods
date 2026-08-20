@@ -17,6 +17,55 @@ namespace ImmersiveChefs.Tests;
 public sealed class ImmersiveChefsReleaseScriptBehaviorTests
 {
     [Test]
+    public void Ordinary_publication_forces_all_subscriber_receipt_artifacts_to_null()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeFunctions(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            new[] { "New-WorkshopSubscriberArtifacts" },
+            "$result=New-WorkshopSubscriberArtifacts -Requested $false " +
+            "-Installed ([pscustomobject]@{Status='installed'}) " +
+            "-InstalledPackagePath 'X:\\must-not-be-retained' " +
+            "-SubscribedSmoke ([pscustomobject]@{status='passed'});" +
+            "$parts=@(($null -eq $result.installed),($null -eq $result.installedPackagePath)," +
+            "($null -eq $result.subscribedSmoke),$result.verification.requested,$result.verification.status);" +
+            "Write-Output ($parts -join '|')");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(
+                run.StandardOutput.Trim(),
+                Is.EqualTo("True|True|True|False|not-run-for-ordinary-release"));
+        });
+    }
+
+    [Test]
+    public void Subscription_and_subscribed_smoke_side_effects_are_dominated_by_the_tooling_change_guard()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeScriptAst(
+            "Invoke-ImmersiveChefsWorkshopRelease.ps1",
+            "$effects=@($ast.FindAll({param($node) " +
+            "($node -is [System.Management.Automation.Language.HashtableAst] -and " +
+            "$node.Extent.Text -match \"operation\\s*=\\s*'subscribe'\") -or " +
+            "($node -is [System.Management.Automation.Language.StringConstantExpressionAst] -and " +
+            "$node.Value -like '*Invoke-ImmersiveChefsSubscribedSmoke.ps1')},$true));" +
+            "if($effects.Count -ne 2){throw ('Expected exactly two subscriber side effects, found '+$effects.Count)};" +
+            "foreach($effect in $effects){$guard=$effect.Parent;" +
+            "while($null -ne $guard -and $guard -isnot [System.Management.Automation.Language.IfStatementAst]){$guard=$guard.Parent};" +
+            "if($null -eq $guard -or $guard.Clauses.Item1.Extent.Text -notmatch '\\$VerifySubscribedCopyForReleaseToolingChange'){" +
+            "throw ('Subscriber side effect is outside the tooling-change guard: '+$effect.Extent.Text)}};" +
+            "Write-Output $effects.Count");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(run.StandardOutput.Trim(), Is.EqualTo("2"));
+        });
+    }
+
+    [Test]
     public void Published_identity_is_checked_in_and_matches_the_release_descriptor()
     {
         using var fixture = Fixture.Create();
@@ -1170,6 +1219,19 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
                 "$ErrorActionPreference='Stop'\n$tokens=$null;$errors=$null\n" +
                 $"$ast=[System.Management.Automation.Language.Parser]::ParseFile({Ps(target)},[ref]$tokens,[ref]$errors)\n" +
                 $"foreach($name in @({string.Join(",", functionNames.Select(Ps))})){{ $node=$ast.Find({{param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name}},$true); if($null -eq $node){{throw \"missing $name\"}}; Invoke-Expression $node.Extent.Text }}\n" +
+                "try {\n" + operation + "\nexit 0\n} catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }\n";
+            File.WriteAllText(invocation, script, new UTF8Encoding(false));
+            return Run("pwsh.exe", $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{invocation}\"");
+        }
+
+        public Invocation InvokeScriptAst(string scriptName, string operation)
+        {
+            var target = Path.Combine(RepositoryRoot, "scripts", scriptName);
+            var invocation = Path.Combine(Root, "inspect-" + Guid.NewGuid().ToString("N") + ".ps1");
+            var script =
+                "$ErrorActionPreference='Stop'\n$tokens=$null;$errors=$null\n" +
+                $"$ast=[System.Management.Automation.Language.Parser]::ParseFile({Ps(target)},[ref]$tokens,[ref]$errors)\n" +
+                "if($errors.Count -ne 0){throw ($errors | Out-String)}\n" +
                 "try {\n" + operation + "\nexit 0\n} catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }\n";
             File.WriteAllText(invocation, script, new UTF8Encoding(false));
             return Run("pwsh.exe", $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{invocation}\"");

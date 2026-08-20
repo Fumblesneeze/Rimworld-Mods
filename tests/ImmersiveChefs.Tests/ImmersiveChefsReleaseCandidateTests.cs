@@ -9,6 +9,34 @@ namespace ImmersiveChefs.Tests;
 public sealed class ImmersiveChefsReleaseCandidateTests
 {
     [Test]
+    public void Ordinary_publication_does_not_subscribe_or_smoke_test_the_published_mod()
+    {
+        var root = FindRepositoryRoot();
+        var publishScriptPath = Path.Combine(root, "scripts", "Invoke-ImmersiveChefsWorkshopRelease.ps1");
+        var publisher = File.ReadAllText(publishScriptPath);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                publisher,
+                Does.Contain("[switch]$VerifySubscribedCopyForReleaseToolingChange"),
+                "Subscribed-copy verification must be an explicit release-tooling-only mode.");
+            Assert.That(
+                publisher,
+                Does.Contain("if ([bool]$VerifySubscribedCopyForReleaseToolingChange)"),
+                "The subscriber workflow must be unreachable during an ordinary publication.");
+            Assert.That(
+                publisher,
+                Does.Contain("not-run-for-ordinary-release"),
+                "The receipt must record that ordinary releases intentionally skip subscriber verification.");
+            Assert.That(
+                publisher,
+                Does.Contain("published-and-remotely-verified"),
+                "Ordinary publication must finish after remote Steam verification.");
+        });
+    }
+
+    [Test]
     public void Release_descriptor_and_stager_define_the_published_public_RimWorld_1_6_release()
     {
         var root = FindRepositoryRoot();

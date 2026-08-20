@@ -8,8 +8,12 @@ positive-allowlist 1.6 candidate from a clean commit. Publication is a separate 
 operation through `scripts/Invoke-ImmersiveChefsWorkshopRelease.ps1`; it validates the exact plan
 hash and pinned RimWorld managed identity, uses a fresh isolated RimWorld Steam session, persists
 first-publication/submission state, preflights an existing item before mutation, verifies the
-subscribed bytes, and runs `scripts/Invoke-ImmersiveChefsSubscribedSmoke.ps1` from the exact Workshop
-root before retaining its receipt. Never call the publisher without first reviewing its exact
+remote item identity, owner, app, metadata, description, tags, dependencies, preview bytes, and
+change history before retaining its receipt. Ordinary publications must not subscribe, reacquire,
+or launch the published mod afterward. `scripts/Invoke-ImmersiveChefsSubscribedSmoke.ps1` and the
+publisher's `-VerifySubscribedCopyForReleaseToolingChange` switch are reserved only for deliberate
+changes to the publisher, Steam subscription/install verification, or related Gateway tooling; they
+are not a routine product-release gate. Never call the publisher without first reviewing its exact
 `publication-plan.json`, and never delete durable state to force a retry after an indeterminate callback.
 An ID-less first publication also requires a complete native exact-title scan of the owning Steam
 account. After the first release succeeds, commit the returned `publishedFileId` to

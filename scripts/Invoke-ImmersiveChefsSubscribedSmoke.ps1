@@ -1,8 +1,10 @@
 <#
 .SYNOPSIS
-Runs the final player-workflow smoke from one exact subscribed Immersive Chefs Workshop directory.
+Runs the exceptional release-tooling validation from one exact subscribed Immersive Chefs Workshop directory.
 
 .DESCRIPTION
+Do not run this script after an ordinary mod publication. It is reserved only for deliberate changes
+to the release publisher, Steam subscription/install verification, or related Dev Gateway tooling.
 Temporarily removes any repository-local product copy, leaves the subscribed package read-only,
 and runs a Gateway-owned dynamic E2E test. The test verifies the exact loaded mod root, invokes
 RimWorld's native Prioritize and Consume float-menu callbacks, and visibly observes plated cooking,
