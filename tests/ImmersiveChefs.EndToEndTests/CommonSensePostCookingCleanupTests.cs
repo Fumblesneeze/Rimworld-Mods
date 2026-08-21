@@ -157,7 +157,7 @@ public sealed class CommonSensePostCookingCleanupTest : IRimWorldEndToEndTest
             additive: false);
         yield return new CameraActionStep(
             "frame the cook stove cookware and washing source",
-            new[] { cook.ThingID, stove.ThingID, cookware.ThingID },
+            new[] { cook.ThingID, stove.ThingID },
             paddingPixels: 160);
         yield return new ScreenshotStep(
             "same cook immediately claims the exact dirty cookware after cooking",
@@ -351,6 +351,7 @@ public sealed class CommonSenseCookForYourselfCleanupOrderTest : IRimWorldEndToE
     private CookForYourselfFixture fixture = null!;
     private IntVec3 waterCell;
     private ThingWithComps? meal;
+    private int transitionStartTick = -1;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -416,9 +417,7 @@ public sealed class CommonSenseCookForYourselfCleanupOrderTest : IRimWorldEndToE
             EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
             "the direct ingestion transition starts exact cookware cleanup first",
-            _ => TryResolveMeal() &&
-                 fixture.Cook.CurJobDef == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
-                 ReferenceEquals(fixture.Cook.CurJob?.targetA.Thing, fixture.Cookware),
+            _ => TryObserveCleanupHandoff(),
             new EndToEndDeadline(2_600, 10_000, TimeSpan.FromSeconds(100)));
         yield return new TimeControlActionStep(
             "pause before Cook for Yourself ingestion",
@@ -448,7 +447,6 @@ public sealed class CommonSenseCookForYourselfCleanupOrderTest : IRimWorldEndToE
             new[]
             {
                 fixture.Cook.ThingID,
-                fixture.Cookware.ThingID,
                 fixture.Stove.ThingID,
                 meal!.ThingID
             },
@@ -533,11 +531,51 @@ public sealed class CommonSenseCookForYourselfCleanupOrderTest : IRimWorldEndToE
 
     private bool TryResolveMeal()
     {
+        meal ??= fixture.Cook.jobs.jobQueue
+            .Select(queued => queued.job)
+            .Where(job => job.def == JobDefOf.Ingest)
+            .Select(job => job.GetTarget(TargetIndex.A).Thing)
+            .OfType<ThingWithComps>()
+            .FirstOrDefault(candidate => ReferenceEquals(
+                candidate.GetComp<CompEmbeddedWare>()?.PeekPlateThing(),
+                fixture.Plate));
         meal ??= fixture.Map.listerThings.ThingsOfDef(ThingDefOf.MealSimple)
             .OfType<ThingWithComps>()
             .FirstOrDefault(candidate => ReferenceEquals(
                 candidate.GetComp<CompEmbeddedWare>()?.PeekPlateThing(),
                 fixture.Plate));
         return meal is not null;
+    }
+
+    private bool TryObserveCleanupHandoff()
+    {
+        transitionStartTick = transitionStartTick < 0
+            ? Find.TickManager.TicksGame
+            : transitionStartTick;
+        if (TryResolveMeal() &&
+            fixture.Cook.CurJobDef == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+            ReferenceEquals(fixture.Cook.CurJob?.targetA.Thing, fixture.Cookware))
+        {
+            return true;
+        }
+
+        if (Find.TickManager.TicksGame - transitionStartTick < 2_200)
+        {
+            return false;
+        }
+
+        var queuedJobs = fixture.Cook.jobs.jobQueue
+            .Select(queued => queued.job.def.defName)
+            .ToArray();
+        throw new EndToEndAssertionException(
+            "Cook for Yourself did not reach the cleanup-first transition. " +
+            $"currentJob={fixture.Cook.CurJobDef?.defName ?? "<none>"}; " +
+            $"customStarts={fixture.JobTransitions.CustomCookingStartCount}; " +
+            $"observedStarts={string.Join(",", fixture.JobTransitions.ObservedCookJobDefs)}; " +
+            $"queued={string.Join(",", queuedJobs)}; " +
+            $"mealResolved={meal is not null}; " +
+            $"cookwareSpawned={fixture.Cookware.Spawned}; " +
+            $"cookwareDirty={fixture.Cookware.GetComp<CompSanitation>()!.IsDirty}; " +
+            $"cookwareHolder={fixture.Cookware.holdingOwner?.Owner?.GetType().FullName ?? "<none>"}.");
     }
 }

@@ -72,8 +72,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["previousChangeNote"], Is.EqualTo("Cold meals now use the best available heat source: microwave, stove, campfire, then a slow heater or radiator fallback. Last-resort heating stops at 20 °C, while room-temperature meals are eaten directly."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo(string.Empty),
-                "A completed publication must rotate the exact reviewed note and leave no pending release note.");
+                Is.EqualTo("Dishwashers now accept new dirty dishes while already running, with each load washing on its own timer. With Common Sense, cooks clean their cookware after cooking. Interrupted or abandoned cooking no longer leaves cookware permanently reserved."),
+                "A pending publication must carry the exact reviewed player-facing note.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
                 Is.EqualTo("2009463077"));

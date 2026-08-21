@@ -23,5 +23,5 @@
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
   "previousChangeNote": "Cold meals now use the best available heat source: microwave, stove, campfire, then a slow heater or radiator fallback. Last-resort heating stops at 20 °C, while room-temperature meals are eaten directly.",
-  "changeNote": ""
+  "changeNote": "Dishwashers now accept new dirty dishes while already running, with each load washing on its own timer. With Common Sense, cooks clean their cookware after cooking. Interrupted or abandoned cooking no longer leaves cookware permanently reserved."
 }
