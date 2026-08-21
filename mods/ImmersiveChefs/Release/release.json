@@ -22,6 +22,6 @@
   ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
-  "previousChangeNote": "Dishwashers now accept new dirty dishes while already running, with each load washing on its own timer. With Common Sense, cooks clean their cookware after cooking. Interrupted or abandoned cooking no longer leaves cookware permanently reserved.",
-  "changeNote": "Dishwasher unloading is now nearly instant, and Pick Up And Haul carries every finished item that fits before hauling the batch to storage."
+  "previousChangeNote": "Dishwasher unloading is now nearly instant, and Pick Up And Haul carries every finished item that fits before hauling the batch to storage.",
+  "changeNote": ""
 }

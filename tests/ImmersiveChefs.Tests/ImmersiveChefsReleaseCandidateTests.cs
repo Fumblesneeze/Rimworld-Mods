@@ -69,7 +69,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwashers now accept new dirty dishes while already running, with each load washing on its own timer. With Common Sense, cooks clean their cookware after cooking. Interrupted or abandoned cooking no longer leaves cookware permanently reserved."));
+            Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwasher unloading is now nearly instant, and Pick Up And Haul carries every finished item that fits before hauling the batch to storage."));
             Assert.That(
                 release["changeNote"],
                 Is.EqualTo(string.Empty),
