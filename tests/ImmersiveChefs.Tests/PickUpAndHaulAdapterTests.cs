@@ -192,4 +192,162 @@ public sealed class PickUpAndHaulAdapterTests
     {
         Assert.That(DishwashingBatchPolicy.IsPersistedBatch(false, 0), Is.False);
     }
+
+    [Test]
+    public void Dishwasher_output_batch_takes_every_completed_unit_that_fits()
+    {
+        var selected = DishwasherOutputBatchPolicy.Select(
+            new[]
+            {
+                new DishwasherOutputBatchCandidate("plates", 4, 0.5f, progress: 1f, ruined: false),
+                new DishwasherOutputBatchCandidate("active-cutlery", 8, 0.1f, progress: 0.99f, ruined: false),
+                new DishwasherOutputBatchCandidate("ruined-cookware", 1, 2f, progress: 1f, ruined: true),
+                new DishwasherOutputBatchCandidate("cutlery", 10, 0.1f, progress: 1.25f, ruined: false)
+            },
+            availableMass: 2.45f);
+
+        Assert.That(selected, Is.EqualTo(new[]
+        {
+            new DishwasherOutputBatchSelection("cutlery", 10),
+            new DishwasherOutputBatchSelection("plates", 2)
+        }));
+    }
+
+    [Test]
+    public void Dishwasher_output_batch_splits_only_the_completed_stack_at_capacity()
+    {
+        var selected = DishwasherOutputBatchPolicy.Select(
+            new[]
+            {
+                new DishwasherOutputBatchCandidate("plates", 6, 0.5f, progress: 1f, ruined: false)
+            },
+            availableMass: 1.1f);
+
+        Assert.That(selected, Is.EqualTo(new[]
+        {
+            new DishwasherOutputBatchSelection("plates", 2)
+        }));
+    }
+
+    [TestCase(true, true, true, true)]
+    [TestCase(true, true, false, false)]
+    [TestCase(true, false, true, false)]
+    [TestCase(false, true, true, false)]
+    public void Instant_output_batch_requires_both_validated_integrations(
+        bool processorDishwasher,
+        bool canTrack,
+        bool hasFittingNaturalOutput,
+        bool expected)
+    {
+        Assert.That(
+            DishwasherOutputBatchPolicy.ShouldReplaceStockEmptying(
+                processorDishwasher,
+                canTrack,
+                hasFittingNaturalOutput),
+            Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void Empty_now_does_not_turn_an_active_load_into_batch_output()
+    {
+        var selected = DishwasherOutputBatchPolicy.Select(
+            new[]
+            {
+                new DishwasherOutputBatchCandidate(
+                    "empty-now-but-active",
+                    1,
+                    0.5f,
+                    progress: 0.75f,
+                    ruined: false)
+            },
+            availableMass: 10f);
+
+        Assert.That(selected, Is.Empty);
+    }
+
+    [TestCase(true, false)]
+    [TestCase(false, true)]
+    public void Appliance_arrival_revalidation_selects_the_stock_tail_when_nothing_fits(
+        bool hasFittingNaturalOutput,
+        bool expectedStockFallback)
+    {
+        Assert.That(
+            DishwasherOutputBatchPolicy.ShouldUseStockFallbackAtAppliance(hasFittingNaturalOutput),
+            Is.EqualTo(expectedStockFallback));
+    }
+
+    [TestCase(true, false, false, false)]
+    [TestCase(false, true, false, false)]
+    [TestCase(false, false, false, true)]
+    [TestCase(true, false, true, true)]
+    public void Stock_emptying_lifecycle_preserves_processor_fail_conditions(
+        bool anyComplete,
+        bool anyRuined,
+        bool empty,
+        bool expectedFailure)
+    {
+        Assert.That(
+            ProcessorEmptyLifecyclePolicy.ShouldFail(anyComplete, anyRuined, empty),
+            Is.EqualTo(expectedFailure));
+    }
+
+    [TestCase(false, false)]
+    [TestCase(true, true)]
+    public void Stock_emptying_lifecycle_succeeds_only_when_processor_is_empty(
+        bool empty,
+        bool expectedSuccess)
+    {
+        Assert.That(ProcessorEmptyLifecyclePolicy.ShouldSucceed(empty), Is.EqualTo(expectedSuccess));
+    }
+
+    [Test]
+    public void Installed_processor_emptying_shape_is_supported()
+    {
+        Assert.That(
+            ProcessorDishwasherOutputCompatibility.IsSupported(
+                assemblyName: "ProcessorFramework",
+                assemblyVersion: new Version(1, 0, 0, 0),
+                driverTypeName: "ProcessorFramework.JobDriver_EmptyProcessor",
+                driverIsPublicJobDriver: true,
+                makeNewToilsIsProtectedInstanceEnumerable: true,
+                emptyJobUsesDriver: true,
+                ruinedIsPublicInstanceBoolean: true,
+                progressIsPublicInstanceFloat: true,
+                lifecyclePropertiesArePublicInstanceBoolean: true),
+            Is.True);
+    }
+
+    [TestCase("ChangedFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, true, true, true, true, true)]
+    [TestCase("ProcessorFramework", "2.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, true, true, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "Changed.EmptyDriver", true, true, true, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", false, true, true, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, false, true, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, true, false, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, true, true, false, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, true, true, true, false, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, true, true, true, true, false)]
+    public void Changed_processor_emptying_shape_falls_back_to_stock(
+        string assemblyName,
+        string version,
+        string driverTypeName,
+        bool driverShape,
+        bool toilShape,
+        bool jobShape,
+        bool ruinedShape,
+        bool progressShape,
+        bool lifecycleShape)
+    {
+        Assert.That(
+            ProcessorDishwasherOutputCompatibility.IsSupported(
+                assemblyName,
+                Version.Parse(version),
+                driverTypeName,
+                driverShape,
+                toilShape,
+                jobShape,
+                ruinedShape,
+                progressShape,
+                lifecycleShape),
+            Is.False);
+    }
 }
