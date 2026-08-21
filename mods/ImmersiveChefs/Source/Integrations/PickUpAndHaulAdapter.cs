@@ -158,6 +158,90 @@ internal static class DishwashingBatchPolicy
     }
 }
 
+internal readonly struct DishwasherOutputBatchCandidate
+{
+    internal DishwasherOutputBatchCandidate(
+        string id,
+        int count,
+        float unitMass,
+        float progress,
+        bool ruined)
+    {
+        Id = id;
+        Count = count;
+        UnitMass = unitMass;
+        Progress = progress;
+        Ruined = ruined;
+    }
+
+    internal string Id { get; }
+    internal int Count { get; }
+    internal float UnitMass { get; }
+    internal float Progress { get; }
+    internal bool Ruined { get; }
+}
+
+internal readonly struct DishwasherOutputBatchSelection : IEquatable<DishwasherOutputBatchSelection>
+{
+    internal DishwasherOutputBatchSelection(string id, int count)
+    {
+        Id = id;
+        Count = count;
+    }
+
+    internal string Id { get; }
+    internal int Count { get; }
+
+    public bool Equals(DishwasherOutputBatchSelection other) => Id == other.Id && Count == other.Count;
+    public override bool Equals(object? obj) => obj is DishwasherOutputBatchSelection other && Equals(other);
+    public override int GetHashCode() => (Id.GetHashCode() * 397) ^ Count;
+}
+
+internal static class DishwasherOutputBatchPolicy
+{
+    internal static bool ShouldReplaceStockEmptying(
+        bool processorDishwasher,
+        bool canTrack,
+        bool hasFittingNaturalOutput) =>
+        processorDishwasher && canTrack && hasFittingNaturalOutput;
+
+    internal static bool ShouldUseStockFallbackAtAppliance(bool hasFittingNaturalOutput) =>
+        !hasFittingNaturalOutput;
+
+    internal static IReadOnlyList<DishwasherOutputBatchSelection> Select(
+        IEnumerable<DishwasherOutputBatchCandidate> candidates,
+        float availableMass)
+    {
+        var remainingMass = Math.Max(0f, availableMass);
+        var selected = new List<DishwasherOutputBatchSelection>();
+        foreach (var candidate in candidates
+                     .Where(candidate => candidate.Progress >= 1f &&
+                                         !candidate.Ruined &&
+                                         candidate.Count > 0 &&
+                                         candidate.UnitMass > 0f)
+                     .OrderBy(candidate => candidate.UnitMass))
+        {
+            if (remainingMass + 0.0001f < candidate.UnitMass)
+            {
+                continue;
+            }
+
+            var count = Math.Min(
+                candidate.Count,
+                (int)Math.Floor((remainingMass + 0.0001f) / candidate.UnitMass));
+            if (count <= 0)
+            {
+                continue;
+            }
+
+            selected.Add(new DishwasherOutputBatchSelection(candidate.Id, count));
+            remainingMass = Math.Max(0f, remainingMass - count * candidate.UnitMass);
+        }
+
+        return selected;
+    }
+}
+
 internal static class PickUpAndHaulAdapter
 {
     private static Type? compType;

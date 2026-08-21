@@ -6,6 +6,43 @@ using Verse.AI;
 
 namespace ImmersiveChefs;
 
+internal static class ProcessorEmptyLifecyclePolicy
+{
+    internal static bool ShouldFail(bool anyComplete, bool anyRuined, bool empty) =>
+        (!anyComplete && !anyRuined) || empty;
+
+    internal static bool ShouldSucceed(bool empty) => empty;
+}
+
+internal static class ProcessorDishwasherOutputCompatibility
+{
+    internal const string AssemblyName = "ProcessorFramework";
+    internal static readonly Version AssemblyVersion = new(1, 0, 0, 0);
+    internal const string EmptyDriverTypeName = "ProcessorFramework.JobDriver_EmptyProcessor";
+
+    internal static bool IsSupported(
+        string? assemblyName,
+        Version? assemblyVersion,
+        string? driverTypeName,
+        bool driverIsPublicJobDriver,
+        bool makeNewToilsIsProtectedInstanceEnumerable,
+        bool emptyJobUsesDriver,
+        bool ruinedIsPublicInstanceBoolean,
+        bool progressIsPublicInstanceFloat,
+        bool lifecyclePropertiesArePublicInstanceBoolean)
+    {
+        return assemblyName == AssemblyName &&
+               assemblyVersion == AssemblyVersion &&
+               driverTypeName == EmptyDriverTypeName &&
+               driverIsPublicJobDriver &&
+               makeNewToilsIsProtectedInstanceEnumerable &&
+               emptyJobUsesDriver &&
+               ruinedIsPublicInstanceBoolean &&
+               progressIsPublicInstanceFloat &&
+               lifecyclePropertiesArePublicInstanceBoolean;
+    }
+}
+
 internal static class ProcessorFrameworkAdapter
 {
     private const string ProcessorTypeName = "ProcessorFramework.CompProcessor";
@@ -28,13 +65,19 @@ internal static class ProcessorFrameworkAdapter
     private static FieldInfo? processCapacityFactor;
     private static FieldInfo? processorEmptyNow;
     private static PropertyInfo? activeProcessComplete;
+    private static PropertyInfo? activeProcessRuined;
     private static PropertyInfo? activeProcessPercent;
+    private static PropertyInfo? processorAnyComplete;
+    private static PropertyInfo? processorAnyRuined;
+    private static PropertyInfo? processorEmpty;
     private static MethodInfo? spaceLeftFor;
     private static MethodInfo? graphicChange;
     private static MethodInfo? enableAllProcesses;
     private static MethodInfo? addIngredient;
+    private static MethodInfo? takeOutProduct;
     private static MethodInfo? findIngredient;
     private static MethodInfo? fillProcessorTryMakeReservations;
+    private static MethodInfo? emptyProcessorMakeNewToils;
     private static MethodInfo? resolveProcessReferences;
     private static MethodInfo? addProcessDef;
     private static MethodInfo? recacheAll;
@@ -48,6 +91,13 @@ internal static class ProcessorFrameworkAdapter
         internal ThingOwner? PreviousOwner;
         internal Map? PreviousMap;
         internal IntVec3 PreviousPosition;
+    }
+
+    private sealed class CompletedOutputCandidate
+    {
+        internal string Id = string.Empty;
+        internal object Process = null!;
+        internal Thing Ware = null!;
     }
 
     internal static bool Enabled { get; private set; }
@@ -121,7 +171,11 @@ internal static class ProcessorFrameworkAdapter
         processCapacityFactor = AccessTools.Field(processDefType, "capacityFactor");
         processorEmptyNow = AccessTools.Field(processorType, "emptyNow");
         activeProcessComplete = AccessTools.Property(activeProcessType, "Complete");
+        activeProcessRuined = AccessTools.Property(activeProcessType, "Ruined");
         activeProcessPercent = AccessTools.Property(activeProcessType, "ActiveProcessPercent");
+        processorAnyComplete = AccessTools.Property(processorType, "AnyComplete");
+        processorAnyRuined = AccessTools.Property(processorType, "AnyRuined");
+        processorEmpty = AccessTools.Property(processorType, "Empty");
         spaceLeftFor = AccessTools.Method(processorType, "SpaceLeftFor");
         graphicChange = AccessTools.Method(processorType, "GraphicChange");
         enableAllProcesses = AccessTools.Method(processorType, "EnableAllProcesses");
@@ -130,6 +184,12 @@ internal static class ProcessorFrameworkAdapter
             BindingFlags.Public | BindingFlags.Instance,
             binder: null,
             types: new[] { typeof(Thing), processDefType },
+            modifiers: null);
+        takeOutProduct = processorType.GetMethod(
+            "TakeOutProduct",
+            BindingFlags.Public | BindingFlags.Instance,
+            binder: null,
+            types: new[] { activeProcessType },
             modifiers: null);
         var workGiverType = AccessTools.TypeByName("ProcessorFramework.WorkGiver_FillProcessor");
         findIngredient = workGiverType is null ? null : AccessTools.Method(workGiverType, "FindIngredient");
@@ -140,6 +200,15 @@ internal static class ProcessorFrameworkAdapter
             binder: null,
             types: new[] { typeof(bool) },
             modifiers: null);
+        var emptyProcessorJobDriverType = AccessTools.TypeByName(
+            ProcessorDishwasherOutputCompatibility.EmptyDriverTypeName);
+        emptyProcessorMakeNewToils = emptyProcessorJobDriverType?.GetMethod(
+            "MakeNewToils",
+            BindingFlags.NonPublic | BindingFlags.Instance,
+            binder: null,
+            types: Type.EmptyTypes,
+            modifiers: null);
+        var emptyProcessorJob = DefDatabase<JobDef>.GetNamedSilentFail("EmptyProcessor");
         resolveProcessReferences = AccessTools.Method(processDefType, "ResolveReferences");
         recacheAll = AccessTools.Method(
             AccessTools.TypeByName("ProcessorFramework.ProcessorFramework_Utility"),
@@ -185,10 +254,12 @@ internal static class ProcessorFrameworkAdapter
             activeProcessIngredients is null || activeProcessIngredientCount is not { FieldType: { } ingredientCountType } ||
             ingredientCountType != typeof(int) || activeProcessProcessor is null ||
             processIngredientFilter is null || processCapacityFactor is null || processorEmptyNow is null ||
-            activeProcessComplete is null || activeProcessPercent is null ||
+            activeProcessComplete is null || activeProcessRuined is null || activeProcessPercent is null ||
             spaceLeftFor is null || graphicChange is null || enableAllProcesses is null ||
             addIngredient is not { ReturnType: { } addIngredientReturn } ||
             addIngredientReturn != typeof(void) || addIngredient.DeclaringType != processorType ||
+            takeOutProduct is not { ReturnType: { } takeOutReturn } ||
+            takeOutReturn != typeof(Thing) || takeOutProduct.DeclaringType != processorType ||
             findIngredient is null || fillProcessorJobDriverType is null ||
             !typeof(JobDriver).IsAssignableFrom(fillProcessorJobDriverType) ||
             fillProcessorTryMakeReservations is not { ReturnType: { } fillReservationReturn } ||
@@ -205,8 +276,41 @@ internal static class ProcessorFrameworkAdapter
             return false;
         }
 
+        var processorAssembly = processorType.Assembly;
+        var outputShapeSupported = ProcessorDishwasherOutputCompatibility.IsSupported(
+            processorAssembly.GetName().Name,
+            processorAssembly.GetName().Version,
+            emptyProcessorJobDriverType?.FullName,
+            emptyProcessorJobDriverType is { IsPublic: true } &&
+            typeof(JobDriver).IsAssignableFrom(emptyProcessorJobDriverType),
+            emptyProcessorMakeNewToils is { IsStatic: false, IsFamily: true } &&
+            emptyProcessorMakeNewToils.DeclaringType == emptyProcessorJobDriverType &&
+            emptyProcessorMakeNewToils.ReturnType == typeof(IEnumerable<Toil>),
+            emptyProcessorJob?.driverClass == emptyProcessorJobDriverType,
+            activeProcessRuined.GetMethod is { IsPublic: true, IsStatic: false } &&
+            activeProcessRuined.PropertyType == typeof(bool) &&
+            activeProcessRuined.DeclaringType == activeProcessType,
+            activeProcessPercent.GetMethod is { IsPublic: true, IsStatic: false } &&
+            activeProcessPercent.PropertyType == typeof(float) &&
+            activeProcessPercent.DeclaringType == activeProcessType,
+            IsPublicInstanceBoolean(processorAnyComplete, processorType) &&
+            IsPublicInstanceBoolean(processorAnyRuined, processorType) &&
+            IsPublicInstanceBoolean(processorEmpty, processorType));
+        if (!outputShapeSupported || emptyProcessorJobDriverType?.Assembly != processorAssembly)
+        {
+            reason = "the installed Processor Framework emptying lifecycle no longer matches the validated 1.6 shape";
+            return false;
+        }
+
         reason = string.Empty;
         return true;
+    }
+
+    private static bool IsPublicInstanceBoolean(PropertyInfo? property, Type declaringType)
+    {
+        return property?.GetMethod is { IsPublic: true, IsStatic: false } &&
+               property.PropertyType == typeof(bool) &&
+               property.DeclaringType == declaringType;
     }
 
     private static void AddProcessor(ThingDef buildingDef, string processDefName, int cycleTicks)
@@ -296,7 +400,7 @@ internal static class ProcessorFrameworkAdapter
             spaceLeftFor!,
             postfix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(SpaceLeftForPostfix)));
         harmony.Patch(
-            AccessTools.Method(processorType!, "TakeOutProduct"),
+            takeOutProduct!,
             prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(TakeOutProductPrefix)));
         harmony.Patch(
             AccessTools.Method(processorType!, "DoTicks"),
@@ -311,6 +415,9 @@ internal static class ProcessorFrameworkAdapter
         harmony.Patch(
             fillProcessorTryMakeReservations!,
             prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(FillProcessorReservationsPrefix)));
+        harmony.Patch(
+            emptyProcessorMakeNewToils!,
+            prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(EmptyProcessorMakeNewToilsPrefix)));
     }
 
     internal static bool AllowsFillReservation(bool isDishwasher, bool isDirtyWare)
@@ -335,6 +442,161 @@ internal static class ProcessorFrameworkAdapter
 
         __result = false;
         return false;
+    }
+
+    private static bool EmptyProcessorMakeNewToilsPrefix(
+        JobDriver __instance,
+        ref IEnumerable<Toil> __result)
+    {
+        var processor = __instance.job?.GetTarget(TargetIndex.A).Thing;
+        var processorDishwasher = processor is not null && Controls(processor);
+        var canTrack = PickUpAndHaulAdapter.CanTrack(__instance.pawn);
+        if (!DishwasherOutputBatchPolicy.ShouldReplaceStockEmptying(
+                processorDishwasher,
+                canTrack,
+                processorDishwasher && canTrack &&
+                HasFittingNaturalCompletedOutput(__instance.pawn, processor!)))
+        {
+            return true;
+        }
+
+        __result = MakeBatchedEmptyProcessorToils(__instance, processor!);
+        return false;
+    }
+
+    private static IEnumerable<Toil> MakeBatchedEmptyProcessorToils(
+        JobDriver driver,
+        Thing dishwasher)
+    {
+        var processor = ProcessorOf(dishwasher)!;
+        driver.FailOn(() => ProcessorEmptyLifecyclePolicy.ShouldFail(
+            processorAnyComplete!.GetValue(processor) is true,
+            processorAnyRuined!.GetValue(processor) is true,
+            processorEmpty!.GetValue(processor) is true));
+        driver.FailOnDestroyedNullOrForbidden(TargetIndex.A);
+        driver.AddEndCondition(() => ProcessorEmptyLifecyclePolicy.ShouldSucceed(
+                processorEmpty!.GetValue(processor) is true)
+            ? JobCondition.Succeeded
+            : JobCondition.Ongoing);
+        var stockWait = Toils_General.Wait(200, TargetIndex.A)
+            .FailOnDestroyedNullOrForbidden(TargetIndex.A)
+            .WithProgressBarToilDelay(TargetIndex.A);
+        var terminal = Toils_General.DoAtomic(() => { });
+        yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.InteractionCell);
+        yield return Toils_General.Wait(2, TargetIndex.A)
+            .FailOnDestroyedNullOrForbidden(TargetIndex.A);
+        yield return Toils_Jump.JumpIf(
+            stockWait,
+            () => DishwasherOutputBatchPolicy.ShouldUseStockFallbackAtAppliance(
+                HasFittingNaturalCompletedOutput(driver.pawn, dishwasher)));
+        yield return new Toil
+        {
+            defaultCompleteMode = ToilCompleteMode.Instant,
+            initAction = () =>
+            {
+                var extracted = TryTakeCompletedOutputsToInventory(
+                    driver.pawn,
+                    dishwasher,
+                    out var reason);
+                if (extracted <= 0)
+                {
+                    driver.JumpToToil(stockWait);
+                    return;
+                }
+
+                if (!PickUpAndHaulAdapter.TryQueueUnload(driver.pawn, out reason))
+                {
+                    OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.PickUpAndHaul, reason);
+                }
+            }
+        };
+        yield return Toils_Jump.Jump(terminal);
+        yield return stockWait;
+        yield return MakeStockEmptyProcessorExtractionToil(driver, dishwasher);
+        yield return Toils_Reserve.Reserve(TargetIndex.B);
+        yield return Toils_Reserve.Reserve(TargetIndex.C);
+        yield return Toils_Goto.GotoThing(TargetIndex.B, PathEndMode.Touch);
+        yield return Toils_Haul.StartCarryThing(TargetIndex.B);
+        var carry = Toils_Haul.CarryHauledThingToCell(TargetIndex.C);
+        yield return carry;
+        yield return Toils_Haul.PlaceHauledThingInCell(TargetIndex.C, carry, storageMode: true);
+        yield return terminal;
+    }
+
+    private static Toil MakeStockEmptyProcessorExtractionToil(
+        JobDriver driver,
+        Thing dishwasher)
+    {
+        return new Toil
+        {
+            defaultCompleteMode = ToilCompleteMode.Instant,
+            initAction = () =>
+            {
+                var processor = ProcessorOf(dishwasher);
+                var process = processor is null
+                    ? null
+                    : ActiveProcesses(processor)
+                        .Cast<object>()
+                        .FirstOrDefault(candidate =>
+                            activeProcessComplete!.GetValue(candidate) is true ||
+                            activeProcessRuined!.GetValue(candidate) is true);
+                var output = process is null
+                    ? null
+                    : takeOutProduct!.Invoke(processor, new[] { process }) as Thing;
+                var map = driver.pawn.Map;
+                if (output is null || output.stackCount <= 0 || map is null)
+                {
+                    driver.EndJobWith(JobCondition.Incompletable);
+                    return;
+                }
+
+                if (!GenPlace.TryPlaceThing(
+                        output,
+                        driver.pawn.Position,
+                        map,
+                        ThingPlaceMode.Near))
+                {
+                    driver.EndJobWith(JobCondition.Incompletable);
+                    return;
+                }
+
+                var currentPriority = StoreUtility.CurrentStoragePriorityOf(output);
+                if (!StoreUtility.TryFindBestBetterStoreCellFor(
+                        output,
+                        driver.pawn,
+                        map,
+                        currentPriority,
+                        driver.pawn.Faction,
+                        out var storeCell,
+                        needAccurateResult: true))
+                {
+                    driver.EndJobWith(JobCondition.Incompletable);
+                    return;
+                }
+
+                driver.job.SetTarget(TargetIndex.B, output);
+                driver.job.count = output.stackCount;
+                driver.job.SetTarget(TargetIndex.C, storeCell);
+            }
+        };
+    }
+
+    private static bool HasFittingNaturalCompletedOutput(Pawn pawn, Thing dishwasherThing)
+    {
+        var processor = ProcessorOf(dishwasherThing);
+        if (processor is null)
+        {
+            return false;
+        }
+
+        var availableMass = RemainingInventoryMassCapacity(pawn);
+        return ActiveProcesses(processor)
+            .Cast<object>()
+            .Where(process => NaturalProgress(process) >= 1f &&
+                              activeProcessRuined!.GetValue(process) is not true)
+            .SelectMany(ProcessIngredients)
+            .Any(ware => ware.stackCount > 0 &&
+                         availableMass + 0.0001f >= UnitMass(ware));
     }
 
     private static bool AddIngredientPrefix(
@@ -700,6 +962,189 @@ internal static class ProcessorFrameworkAdapter
                 .ToArray();
     }
 
+    internal static int TryTakeCompletedOutputsToInventory(
+        Pawn pawn,
+        Thing dishwasherThing,
+        out string reason)
+    {
+        reason = string.Empty;
+        var processor = ProcessorOf(dishwasherThing);
+        var inventory = pawn.inventory?.innerContainer;
+        var owner = processor is null
+            ? null
+            : processorInnerContainer!.GetValue(processor) as ThingOwner;
+        if (processor is null || inventory is null || owner is null ||
+            !Controls(dishwasherThing) || !PickUpAndHaulAdapter.CanTrack(pawn))
+        {
+            reason = "the validated dishwasher output batch is no longer available";
+            return 0;
+        }
+
+        var candidates = new List<CompletedOutputCandidate>();
+        var descriptors = new List<DishwasherOutputBatchCandidate>();
+        var processIndex = 0;
+        foreach (var process in ActiveProcesses(processor).Cast<object>().ToList())
+        {
+            var progress = NaturalProgress(process);
+            var ruined = activeProcessRuined!.GetValue(process) is true;
+            foreach (var ware in ProcessIngredients(process).ToList())
+            {
+                var id = $"{processIndex}:{ware.ThingID}";
+                candidates.Add(new CompletedOutputCandidate
+                {
+                    Id = id,
+                    Process = process,
+                    Ware = ware
+                });
+                descriptors.Add(new DishwasherOutputBatchCandidate(
+                    id,
+                    ware.stackCount,
+                    UnitMass(ware),
+                    progress,
+                    ruined));
+            }
+
+            processIndex++;
+        }
+
+        var availableMass = RemainingInventoryMassCapacity(pawn);
+        var selections = DishwasherOutputBatchPolicy.Select(descriptors, availableMass);
+        if (selections.Count == 0)
+        {
+            reason = "the dishwasher has no completed output that fits the pawn's remaining capacity";
+            return 0;
+        }
+
+        var byId = candidates.ToDictionary(candidate => candidate.Id, StringComparer.Ordinal);
+        var processes = ActiveProcesses(processor);
+        var extractedCount = 0;
+        var processorChanged = false;
+        foreach (var selection in selections)
+        {
+            if (!byId.TryGetValue(selection.Id, out var candidate) ||
+                !processes.Contains(candidate.Process) ||
+                NaturalProgress(candidate.Process) < 1f ||
+                activeProcessRuined!.GetValue(candidate.Process) is true ||
+                candidate.Ware.Destroyed ||
+                !ReferenceEquals(candidate.Ware.holdingOwner, owner))
+            {
+                continue;
+            }
+
+            var count = Math.Min(selection.Count, candidate.Ware.stackCount);
+            if (count <= 0)
+            {
+                continue;
+            }
+
+            var priorCount = candidate.Ware.stackCount;
+            var transferred = owner.TryTransferToContainer(
+                candidate.Ware,
+                inventory,
+                count,
+                out var moved,
+                canMergeWithExistingStacks: false);
+            if (transferred <= 0 || moved is null)
+            {
+                continue;
+            }
+
+            var ingredients = activeProcessIngredients!.GetValue(candidate.Process) as IList;
+            if (!PickUpAndHaulAdapter.TryRegister(pawn, moved, out reason))
+            {
+                var registrationFailure = reason;
+                PickUpAndHaulAdapter.TryRemoveTracked(pawn, moved, out _);
+                if (owner.TryAddOrTransfer(moved, canMergeWithExistingStacks: false))
+                {
+                    if (ingredients is not null && !ingredients.Contains(moved))
+                    {
+                        ingredients.Add(moved);
+                    }
+
+                    reason = registrationFailure;
+                    break;
+                }
+
+                CommitCompletedOutputExtraction(
+                    processes,
+                    candidate.Process,
+                    ingredients,
+                    candidate.Ware,
+                    priorCount,
+                    transferred);
+                (moved as ThingWithComps)?.GetComp<CompSanitation>()?
+                    .MarkClean(WashProvenance.Safe);
+                if (pawn.MapHeld is { } map)
+                {
+                    DiningWarePlacementRuntime.DropAt(moved, dishwasherThing.InteractionCell, map);
+                }
+
+                processorChanged = true;
+                reason = $"{registrationFailure}; the extracted output could not be restored to the processor";
+                OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.PickUpAndHaul, reason);
+                break;
+            }
+
+            CommitCompletedOutputExtraction(
+                processes,
+                candidate.Process,
+                ingredients,
+                candidate.Ware,
+                priorCount,
+                transferred);
+            (moved as ThingWithComps)?.GetComp<CompSanitation>()?
+                .MarkClean(WashProvenance.Safe);
+            extractedCount += transferred;
+            processorChanged = true;
+        }
+
+        if (processorChanged)
+        {
+            graphicChange!.Invoke(processor, new object[] { true });
+        }
+        if (processes.Count == 0)
+        {
+            FinalizeEmptyProcessor(processor, (ThingWithComps)dishwasherThing);
+        }
+
+        return extractedCount;
+    }
+
+    private static void CommitCompletedOutputExtraction(
+        IList processes,
+        object process,
+        IList? ingredients,
+        Thing originalWare,
+        int priorCount,
+        int transferred)
+    {
+        var remainingIngredientCount = Math.Max(
+            0,
+            Convert.ToInt32(activeProcessIngredientCount!.GetValue(process)) - transferred);
+        activeProcessIngredientCount.SetValue(process, remainingIngredientCount);
+        if (transferred >= priorCount)
+        {
+            ingredients?.Remove(originalWare);
+        }
+
+        if (remainingIngredientCount == 0 || ingredients is null || ingredients.Count == 0)
+        {
+            processes.Remove(process);
+        }
+    }
+
+    private static float NaturalProgress(object process) =>
+        Convert.ToSingle(activeProcessPercent!.GetValue(process));
+
+    private static float UnitMass(Thing thing) =>
+        Math.Max(0.001f, thing.GetStatValue(RimWorld.StatDefOf.Mass));
+
+    private static float RemainingInventoryMassCapacity(Pawn pawn) =>
+        Math.Max(
+            0f,
+            RimWorld.MassUtility.Capacity(pawn) *
+            (1f - RimWorld.MassUtility.EncumbrancePercent(pawn)));
+
     internal static float ProgressPercent(Thing thing)
     {
         var processor = ProcessorOf(thing);
@@ -710,6 +1155,18 @@ internal static class ProcessorFrameworkAdapter
                 .Select(process => Convert.ToSingle(activeProcessPercent!.GetValue(process)))
                 .ToList();
         return progress.Count == 0 ? 0f : 100f * progress.Max();
+    }
+
+    internal static bool AllProcessesNaturallyComplete(Thing thing)
+    {
+        var processor = ProcessorOf(thing);
+        if (processor is null)
+        {
+            return false;
+        }
+
+        var processes = ActiveProcesses(processor).Cast<object>().ToArray();
+        return processes.Length > 0 && processes.All(process => NaturalProgress(process) >= 1f);
     }
 
     internal static float ProgressPercent(Thing thing, Thing exactWare)

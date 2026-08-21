@@ -166,7 +166,9 @@ When `avilmask.CommonSense` is active and the locally supported `CommonSense` as
 
 When exact package `Mehni.PickUpAndHaul` is active and assembly `PickUpAndHaul, Version=1.0.0.0` exposes the validated public hauled-inventory component, `RegisterHauledItem(Verse.Thing)`, `CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and native `UnloadYourHauledInventory` JobDef/driver shape, an ordinary `Doing dishes` job SHALL collect a bounded nearby batch before visiting its one chosen hand-washing source or dishwasher. It SHALL reserve only dirty eligible ware within 12 cells of the first item that can use the same exact destination and stop before either pawn encumbrance or appliance capacity is exceeded.
 
-At a hand-washing source it SHALL wash units one by one with their own duration and water use, then invoke the upstream native unload workflow once so the clean batch enters ordinary valid storage together. At a dishwasher it SHALL admit each tracked unit through the validated local or Processor Framework appliance seam, immediately remove each admitted unit from upstream tracking, and leave the dishwasher to own the cycle. Still-carried units SHALL use upstream unloading on interruption. Clean dishwasher outputs SHALL remain ordinary haulable ware so Pick Up And Haul may batch their later stockpiling through its own normal hauling behavior.
+At a hand-washing source it SHALL wash units one by one with their own duration and water use, then invoke the upstream native unload workflow once so the clean batch enters ordinary valid storage together. At a dishwasher it SHALL admit each tracked unit through the validated local or Processor Framework appliance seam, immediately remove each admitted unit from upstream tracking, and leave the dishwasher to own the cycle. Still-carried units SHALL use upstream unloading on interruption.
+
+For completed output from an Immersive Chefs Processor dishwasher, the validated public tracker/unload shape SHALL combine with the exact installed `ProcessorFramework.JobDriver_EmptyProcessor` shape. Processor Framework SHALL continue to own the work scan and appliance reservation. Immersive Chefs SHALL replace only the admitted dishwasher job's stock 200-tick, one-product extraction sequence with a bounded transfer beginning no more than two engine ticks after arrival. It SHALL prefer lighter naturally completed (`ActiveProcessPercent >= 1`) output so the greatest whole-unit count fitting remaining pawn mass enters inventory. Every transferred Thing SHALL be registered at once and the upstream native unload workflow SHALL be requested once after collection. A completed partial stack MAY split only at the exact capacity boundary; its remainder SHALL stay complete in the processor. Processor Framework's `EmptyNow` completion override SHALL NOT make an active load eligible; active or ruined processes and unrelated inventory SHALL remain untouched. If either optional shape is absent, disabled, or changed, or if no naturally completed non-ruined unit fits at admission, the original one-product Processor emptying job SHALL run unchanged. If capacity disappears between admission and appliance arrival, the validated stock 200-tick tail SHALL run with Processor Framework's exact content-loss failure and empty-success conditions.
 
 Immersive Chefs SHALL retain ownership of sanitation, source priority, water provenance, per-item work, reservations, and exact identity. Pre-existing inventory and previously tracked hauling items SHALL not be washed or claimed. If the batch is interrupted, completed units remain clean, unwashed units remain dirty, and every collected unit remains registered for upstream unloading. Package absence, `Off`, incomplete dependency state, or any changed member/JobDef shape SHALL select the ordinary one-target dishwashing path without a hard reference or missing-assembly error.
 
@@ -190,6 +192,18 @@ Immersive Chefs SHALL retain ownership of sanitation, source priority, water pro
 
 - **WHEN** its package is absent, its integration setting is `Off`, or the expected public assembly/member/JobDef shape does not validate
 - **THEN** Immersive Chefs issues only the ordinary one-target `Doing dishes` job and disables no other sanitation behavior
+
+#### Scenario: Cleaner batch-empties a completed Processor dishwasher
+
+- **WHEN** several independently timed dishwasher loads are complete, exact Pick Up And Haul and Processor Framework shapes are active, and one cleaner can carry every output
+- **THEN** Processor Framework's ordinary empty-work assignment reserves the appliance once, the cleaner takes all completed exact units without its stock emptying wait, and each unit is tracked in pawn inventory
+- **AND** the cleaner follows one native Pick Up And Haul unload job to valid clean storage
+
+#### Scenario: Output collection stops at mass capacity
+
+- **WHEN** the completed outputs exceed the cleaner's remaining mass capacity
+- **THEN** the cleaner takes only the greatest exact unit count that fits and Pick Up And Haul unloads that collected subset
+- **AND** every remaining completed unit stays owned by the dishwasher for a later native empty-work assignment
 
 ### Requirement: Cook for Yourself one-off jobs use the normal culinary ware lifecycle
 
