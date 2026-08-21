@@ -139,7 +139,6 @@
   <ImmersiveChefs_Stat_Explanation>Immersive Chefs deriva este valor del material y la calidad de fabricación.</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>inactivo</ImmersiveChefs_Dishwasher_StatusIdle>
-  <ImmersiveChefs_Dishwasher_StatusLoading>cargando</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>lavando ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>en pausa: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
   <ImmersiveChefs_Dishwasher_PauseNoPower>energía insuficiente</ImmersiveChefs_Dishwasher_PauseNoPower>

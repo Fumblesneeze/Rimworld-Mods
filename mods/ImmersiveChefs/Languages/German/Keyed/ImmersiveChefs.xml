@@ -139,7 +139,6 @@
   <ImmersiveChefs_Stat_Explanation>Immersive Chefs leitet diesen Wert aus Material und Fertigungsqualität ab.</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>inaktiv</ImmersiveChefs_Dishwasher_StatusIdle>
-  <ImmersiveChefs_Dishwasher_StatusLoading>wird beladen</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>spült ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>pausiert: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
   <ImmersiveChefs_Dishwasher_PauseNoPower>nicht genug Strom</ImmersiveChefs_Dishwasher_PauseNoPower>

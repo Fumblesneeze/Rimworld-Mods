@@ -139,7 +139,6 @@
   <ImmersiveChefs_Stat_Explanation>Immersive Chefs 根据材料与制造品质计算此数值。</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>空闲</ImmersiveChefs_Dishwasher_StatusIdle>
-  <ImmersiveChefs_Dishwasher_StatusLoading>装载中</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>清洗中（{0}%）</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>已暂停：{0}</ImmersiveChefs_Dishwasher_StatusPaused>
   <ImmersiveChefs_Dishwasher_PauseNoPower>电力不足</ImmersiveChefs_Dishwasher_PauseNoPower>

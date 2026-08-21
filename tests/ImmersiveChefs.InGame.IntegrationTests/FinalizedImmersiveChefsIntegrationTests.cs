@@ -3935,6 +3935,14 @@ public static class FinalizedImmersiveChefsIntegrationTests
             var def = DefDatabase<ThingDef>.GetNamed(defName);
             var processorProperties = def.comps.Single(comp =>
                 processorType!.IsAssignableFrom(comp.compClass));
+            IntegrationAssert.True(
+                (bool)AccessTools.Field(processorProperties.GetType(), "independentProcesses")!
+                    .GetValue(processorProperties),
+                $"{defName} must keep each later admission on its own persisted progress clock.");
+            IntegrationAssert.True(
+                (bool)AccessTools.Field(processorProperties.GetType(), "parallelProcesses")!
+                    .GetValue(processorProperties),
+                $"{defName} must keep shared free capacity open while earlier loads are washing.");
             IntegrationAssert.Equal(
                 1,
                 def.comps.Count(comp => processorType!.IsAssignableFrom(comp.compClass)),
@@ -3974,6 +3982,7 @@ public static class FinalizedImmersiveChefsIntegrationTests
 
         var initialize = AccessTools.Method(processorType, "Initialize");
         var addIngredient = AccessTools.Method(processorType, "AddIngredient");
+        var spaceLeftFor = AccessTools.Method(processorType, "SpaceLeftFor");
         var takeOut = AccessTools.Method(processorType, "TakeOutProduct");
         var fillDriverType = AccessTools.TypeByName("ProcessorFramework.JobDriver_FillProcessor");
         var fillReservations = fillDriverType?.GetMethod(
@@ -3987,10 +3996,13 @@ public static class FinalizedImmersiveChefsIntegrationTests
             .Count(owner => owner == ImmersiveChefsMod.PackageId) ?? 0;
         IntegrationAssert.Equal(1, addIngredientPatches?.Prefixes
             .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
-            "Processor admission must have one Immersive Chefs batch-gating prefix.");
+            "Processor admission must have one Immersive Chefs utility/capacity prefix.");
         IntegrationAssert.Equal(1, addIngredientPatches?.Postfixes
             .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
-            "Processor admission must have one Immersive Chefs persistence postfix.");
+            "Processor admission must have one Immersive Chefs per-load water-commit postfix.");
+        IntegrationAssert.Equal(1, Harmony.GetPatchInfo(spaceLeftFor)?.Postfixes
+            .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
+            "Processor capacity must have one Immersive Chefs utility-affordability postfix.");
         IntegrationAssert.Equal(1, Harmony.GetPatchInfo(initialize)?.Postfixes
             .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
             "New dishwashers must have one Immersive Chefs process-enablement postfix.");

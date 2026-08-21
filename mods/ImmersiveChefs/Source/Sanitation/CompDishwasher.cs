@@ -12,7 +12,6 @@ public sealed class CompProperties_Dishwasher : CompProperties
 
     public float basePlateCapacity = 16f;
     public int baseCycleTicks = 2500;
-    public int baseLoadingTicks = 1000;
     public bool requiresDubsWater = true;
     public float waterPerPlateEquivalent = 0.1f;
 }
@@ -40,39 +39,25 @@ public static class DishwasherCapacityPolicy
 
 public static class DishwasherCyclePolicy
 {
-    public static bool CanAcceptAdditionalWare(
-        int progressTicks,
-        bool waterDebitedForCycle,
-        bool batchCaptured = false)
+    public static int CaptureLoadDuration(int baseCycleTicks, float workScale)
     {
-        return progressTicks == 0 && !waterDebitedForCycle && !batchCaptured;
+        return Math.Max(1, (int)Math.Round(
+            Math.Max(1, baseCycleTicks) * Math.Max(0.01f, workScale)));
     }
 
-    public static int ResetLoadingWindow(int baseLoadingTicks)
+    public static int AdvanceLoad(int progressTicks, int elapsedTicks, int capturedDurationTicks)
     {
-        return Math.Max(0, baseLoadingTicks);
+        return Math.Min(
+            Math.Max(1, capturedDurationTicks),
+            Math.Max(0, progressTicks) + Math.Max(0, elapsedTicks));
     }
 
-    public static int AdvanceLoadingWindow(int remainingTicks, int elapsedTicks)
-    {
-        return Math.Max(0, remainingTicks - Math.Max(0, elapsedTicks));
-    }
-
-    public static bool ShouldRequestWater(
-        bool hasContents,
-        int loadingTicksRemaining,
-        bool batchCaptured,
-        bool waterDebited)
-    {
-        return hasContents && loadingTicksRemaining <= 0 && batchCaptured && !waterDebited;
-    }
-
-    public static float CaptureWaterCharge(
-        float finalPlateEquivalentLoad,
+    public static float AdmissionWaterCharge(
+        float admittedPlateEquivalentLoad,
         float waterPerPlateEquivalent)
     {
         return Math.Max(0.001f,
-            Math.Max(0f, finalPlateEquivalentLoad) * Math.Max(0f, waterPerPlateEquivalent));
+            Math.Max(0f, admittedPlateEquivalentLoad) * Math.Max(0f, waterPerPlateEquivalent));
     }
 
     public static bool CanContinueWithWater(
@@ -168,6 +153,12 @@ public static class DishwasherInspectPolicy
 public sealed class CompDishwasher : ThingComp, IThingHolder
 {
     private ThingOwner<Thing>? contents;
+    private List<Thing> localLoadThings = new();
+    private List<int> localLoadProgressTicks = new();
+    private List<int> localLoadDurationTicks = new();
+
+    // Kept as read-compatible save fields so an in-progress sealed batch from an older build
+    // can be migrated into independently timed local loads without losing its progress.
     private int progressTicks;
     private int capturedCycleTicks;
     private int loadingTicksRemaining;
@@ -219,21 +210,22 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
         return thing is ThingWithComps withComps &&
                withComps.GetComp<CompSanitation>()?.IsDirty == true &&
-               HasActivePower() &&
-               DishwasherCyclePolicy.CanAcceptAdditionalWare(
-                   progressTicks,
-                   waterDebitedForCycle,
-                   batchCaptured) &&
                CountCanAccept(thing) > 0;
     }
 
     public int CountCanAccept(Thing thing)
     {
-        return DishwasherCapacityPolicy.CountAccepted(
+        if (ProcessorFrameworkAdapter.Controls(parent) || !HasActivePower())
+        {
+            return 0;
+        }
+
+        var capacityCount = DishwasherCapacityPolicy.CountAccepted(
             Capacity,
             UsedCapacity,
             PlateEquivalentsPerItem(thing),
             thing.stackCount);
+        return CountSupportedByAdmissionWater(thing, capacityCount);
     }
 
     public bool TryAcceptFrom(Pawn pawn)
@@ -253,19 +245,32 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         var transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(
             carried,
             Contents,
-            count);
-        if (transferred > 0)
+            count,
+            out Thing transferredThing,
+            canMergeWithExistingStacks: false);
+        if (transferred <= 0)
         {
-            if (capturedCycleTicks <= 0)
-            {
-                capturedCycleTicks = Math.Max(1, (int)Math.Round(
-                    Props.baseCycleTicks * ImmersiveChefsMod.Settings.DishwashingWorkScale));
-            }
-
-            loadingTicksRemaining = DishwasherCyclePolicy.ResetLoadingWindow(Props.baseLoadingTicks);
+            return false;
         }
 
-        return transferred > 0;
+        if (!TryCommitAdmissionWater(PlateEquivalents(transferredThing), out _))
+        {
+            if (!TryReturnRejectedAdmission(
+                transferredThing,
+                pawn.carryTracker.innerContainer,
+                pawn,
+                allowMerge: true,
+                out _))
+            {
+                Log.ErrorOnce(
+                    "[ImmersiveChefs] A rejected dishwasher admission could not be returned to its pawn or map.",
+                    194820731);
+            }
+            return false;
+        }
+
+        AddLocalLoad(transferredThing);
+        return true;
     }
 
     internal bool TryAcceptTrackedWare(Pawn pawn, Thing ware)
@@ -282,7 +287,12 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             return false;
         }
 
-        var transferred = inventory.TryTransferToContainer(ware, Contents, 1);
+        var transferred = inventory.TryTransferToContainer(
+            ware,
+            Contents,
+            1,
+            out Thing transferredThing,
+            canMergeWithExistingStacks: false);
         if (transferred <= 0)
         {
             if (!PickUpAndHaulAdapter.TryRegister(pawn, ware, out _) && pawn.MapHeld is { } map)
@@ -292,13 +302,29 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             return false;
         }
 
-        if (capturedCycleTicks <= 0)
+        if (!TryCommitAdmissionWater(PlateEquivalents(transferredThing), out _))
         {
-            capturedCycleTicks = Math.Max(1, (int)Math.Round(
-                Props.baseCycleTicks * ImmersiveChefsMod.Settings.DishwashingWorkScale));
+            if (!TryReturnRejectedAdmission(
+                transferredThing,
+                inventory,
+                pawn,
+                allowMerge: false,
+                out var returned))
+            {
+                Log.ErrorOnce(
+                    "[ImmersiveChefs] A rejected tracked dishwasher admission could not be returned to its pawn or map.",
+                    194820732);
+            }
+            else if (returned is not null && ReferenceEquals(returned.holdingOwner, inventory) &&
+                     !PickUpAndHaulAdapter.TryRegister(pawn, returned, out _) &&
+                     pawn.MapHeld is { } map)
+            {
+                DiningWarePlacementRuntime.DropAt(returned, pawn.PositionHeld, map);
+            }
+            return false;
         }
 
-        loadingTicksRemaining = DishwasherCyclePolicy.ResetLoadingWindow(Props.baseLoadingTicks);
+        AddLocalLoad(transferredThing);
         return true;
     }
 
@@ -320,43 +346,47 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             return;
         }
 
-        if (loadingTicksRemaining > 0)
-        {
-            loadingTicksRemaining = DishwasherCyclePolicy.AdvanceLoadingWindow(
-                loadingTicksRemaining,
-                250);
-            pauseReason = string.Empty;
-            if (loadingTicksRemaining > 0)
-            {
-                return;
-            }
-        }
-
-        if (!batchCaptured)
-        {
-            batchCaptured = true;
-            capturedWaterCharge = DishwasherCyclePolicy.CaptureWaterCharge(
-                UsedCapacity,
-                Props.waterPerPlateEquivalent);
-        }
+        EnsureLocalLoadRecords();
 
         if (!CanProgress(out pauseReason))
         {
             return;
         }
 
-        progressTicks += 250;
-        if (progressTicks < Math.Max(1, capturedCycleTicks))
+        for (var index = localLoadThings.Count - 1; index >= 0; index--)
         {
-            return;
+            var ware = localLoadThings[index];
+            if (ware is null || ware.Destroyed || !ReferenceEquals(ware.holdingOwner, Contents))
+            {
+                RemoveLocalLoadAt(index);
+                continue;
+            }
+
+            localLoadProgressTicks[index] = DishwasherCyclePolicy.AdvanceLoad(
+                localLoadProgressTicks[index],
+                250,
+                localLoadDurationTicks[index]);
+            if (localLoadProgressTicks[index] < localLoadDurationTicks[index])
+            {
+                continue;
+            }
+
+            (ware as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean(WashProvenance.Safe);
+            if (parent.Map is { } map && Contents.TryDrop(
+                    ware,
+                    parent.InteractionCell,
+                    map,
+                    ThingPlaceMode.Near,
+                    out _))
+            {
+                RemoveLocalLoadAt(index);
+            }
         }
 
-        foreach (var thing in Contents.InnerListForReading)
+        if (!Contents.Any)
         {
-            (thing as ThingWithComps)?.GetComp<CompSanitation>()?.MarkClean(WashProvenance.Safe);
+            ResetCycleState();
         }
-
-        EjectAll();
     }
 
     public override string CompInspectStringExtra()
@@ -369,12 +399,10 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
                 ? TranslateUtilityBlocker(utilityBlocker)
                 : processorLoad <= 0f
                 ? "ImmersiveChefs_Dishwasher_StatusIdle".Translate()
-                : loadingTicksRemaining > 0
-                    ? "ImmersiveChefs_Dishwasher_StatusLoading".Translate()
-                    : !string.IsNullOrEmpty(pauseReason)
-                        ? "ImmersiveChefs_Dishwasher_StatusPaused".Translate(TranslatePauseReason(pauseReason))
-                        : "ImmersiveChefs_Dishwasher_StatusWashing".Translate(
-                            ProcessorFrameworkAdapter.ProgressPercent(parent).ToString("0"));
+                : !string.IsNullOrEmpty(pauseReason)
+                    ? "ImmersiveChefs_Dishwasher_StatusPaused".Translate(TranslatePauseReason(pauseReason))
+                    : "ImmersiveChefs_Dishwasher_StatusWashing".Translate(
+                        ProcessorFrameworkAdapter.ProgressPercent(parent).ToString("0"));
             return "ImmersiveChefs_Dishwasher_Inspect".Translate(
                 processorStatus,
                 processorLoad.ToString("0.##"),
@@ -385,11 +413,9 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             ? TranslateUtilityBlocker(utilityBlocker)
             : !Contents.Any
             ? "ImmersiveChefs_Dishwasher_StatusIdle".Translate()
-            : loadingTicksRemaining > 0
-                ? "ImmersiveChefs_Dishwasher_StatusLoading".Translate()
             : string.IsNullOrEmpty(pauseReason)
                 ? "ImmersiveChefs_Dishwasher_StatusWashing".Translate(
-                    Math.Min(100, (int)(100f * progressTicks / Math.Max(1, capturedCycleTicks))))
+                    LocalProgressPercent().ToString("0"))
                 : "ImmersiveChefs_Dishwasher_StatusPaused".Translate(TranslatePauseReason(pauseReason));
         return "ImmersiveChefs_Dishwasher_Inspect".Translate(
             status,
@@ -445,6 +471,9 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
     {
         base.PostExposeData();
         Scribe_Deep.Look(ref contents, "contents", this);
+        Scribe_Collections.Look(ref localLoadThings, "localLoadThings", LookMode.Reference);
+        Scribe_Collections.Look(ref localLoadProgressTicks, "localLoadProgressTicks", LookMode.Value);
+        Scribe_Collections.Look(ref localLoadDurationTicks, "localLoadDurationTicks", LookMode.Value);
         Scribe_Values.Look(ref progressTicks, "progressTicks", 0);
         Scribe_Values.Look(ref capturedCycleTicks, "capturedCycleTicks", 0);
         Scribe_Values.Look(ref loadingTicksRemaining, "loadingTicksRemaining", 0);
@@ -458,6 +487,13 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         Scribe_Values.Look(ref pauseReason, "pauseReason", string.Empty);
         Scribe_Values.Look(ref lastKnownPosition, "lastKnownPosition", IntVec3.Invalid);
         contents ??= new ThingOwner<Thing>(this, LookMode.Deep);
+        localLoadThings ??= new List<Thing>();
+        localLoadProgressTicks ??= new List<int>();
+        localLoadDurationTicks ??= new List<int>();
+        if (Scribe.mode == LoadSaveMode.PostLoadInit && !ProcessorFrameworkAdapter.Controls(parent))
+        {
+            EnsureLocalLoadRecords();
+        }
     }
 
     public ThingOwner GetDirectlyHeldThings() => Contents;
@@ -471,47 +507,44 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     private CompProperties_Dishwasher Props => (CompProperties_Dishwasher)props;
 
-    internal bool CanAcceptProcessorWare(bool hasProcessorContents)
+    internal bool CanAcceptProcessorWare(Thing ware, int requestedCount = 1)
     {
-        if (!HasActivePower())
-        {
-            return false;
-        }
-
-        return !hasProcessorContents ||
-               (loadingTicksRemaining > 0 && DishwasherCyclePolicy.CanAcceptAdditionalWare(
-                   progressTicks,
-                   waterDebitedForCycle,
-                   batchCaptured));
+        return CountCanAcceptProcessorWare(ware, requestedCount) > 0;
     }
 
-    internal void NotifyProcessorAdmission(bool startedNewBatch)
+    internal int CountCanAcceptProcessorWare(Thing ware, int requestedCount)
     {
-        if (startedNewBatch)
+        if (ware is null || requestedCount <= 0 || !HasActivePower())
         {
-            progressTicks = 0;
-            capturedCycleTicks = 0;
-            batchCaptured = false;
-            waterDebitedForCycle = false;
-            residualWaterSupplyRequiredForCycle = false;
-            capturedWaterCharge = 0f;
+            return 0;
         }
 
-        loadingTicksRemaining = DishwasherCyclePolicy.ResetLoadingWindow(Props.baseLoadingTicks);
-        pauseReason = string.Empty;
+        return CountCanAcceptProcessorWare(
+            PlateEquivalentsPerItem(ware),
+            Math.Min(requestedCount, ware.stackCount));
+    }
+
+    internal int CountCanAcceptProcessorWare(float plateEquivalentsPerItem, int requestedCount)
+    {
+        if (requestedCount <= 0 || !HasActivePower())
+        {
+            return 0;
+        }
+
+        return CountSupportedByAdmissionWater(plateEquivalentsPerItem, requestedCount);
+    }
+
+    internal bool TryCommitProcessorAdmission(float admittedPlateEquivalents, out string reason)
+    {
+        return TryCommitAdmissionWater(admittedPlateEquivalents, out reason);
     }
 
     internal bool ProcessorCycleCanProgress()
     {
-        if (!batchCaptured || loadingTicksRemaining > 0)
-        {
-            return false;
-        }
-
         var blocker = CurrentUtilityBlocker(
             cycleWaterAvailable: !RequiresDubsWater ||
                                  waterDebitedForCycle ||
-                                 DubsWaterAdapter.CanSupplyCycleWater(parent, capturedWaterCharge));
+                                 DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f));
         if (blocker != DishwasherUtilityBlocker.None)
         {
             pauseReason = blocker == DishwasherUtilityBlocker.NoPower
@@ -535,10 +568,15 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     private bool CanProgress(out string reason)
     {
+        if (!EnsureLegacyWaterDebit(out reason))
+        {
+            return false;
+        }
+
         var blocker = CurrentUtilityBlocker(
             cycleWaterAvailable: !RequiresDubsWater ||
                                  waterDebitedForCycle ||
-                                 DubsWaterAdapter.CanSupplyCycleWater(parent, capturedWaterCharge));
+                                 DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f));
         if (blocker == DishwasherUtilityBlocker.NoPower)
         {
             reason = "no power";
@@ -550,21 +588,6 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             reason = "water supply unavailable";
             return false;
         }
-
-        if (Props.requiresDubsWater &&
-            ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.DubsBadHygiene) &&
-            !waterDebitedForCycle)
-        {
-            if (!DubsWaterAdapter.TryConsumeCycleWater(parent, capturedWaterCharge, out reason))
-            {
-                return false;
-            }
-
-            waterDebitedForCycle = true;
-            residualWaterSupplyRequiredForCycle =
-                DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f);
-        }
-
 
         if (!DishwasherCyclePolicy.CanContinueWithWater(
                 RequiresDubsWater,
@@ -594,46 +617,15 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
             return;
         }
 
-        if (loadingTicksRemaining > 0)
-        {
-            loadingTicksRemaining = DishwasherCyclePolicy.AdvanceLoadingWindow(
-                loadingTicksRemaining,
-                250);
-            pauseReason = string.Empty;
-            if (loadingTicksRemaining > 0)
-            {
-                return;
-            }
-        }
-
-        if (!batchCaptured)
-        {
-            batchCaptured = true;
-            capturedWaterCharge = DishwasherCyclePolicy.CaptureWaterCharge(
-                usedCapacity,
-                Props.waterPerPlateEquivalent);
-        }
-
         if (!HasActivePower())
         {
             pauseReason = "no power";
             return;
         }
 
-        if (RequiresDubsWater && DishwasherCyclePolicy.ShouldRequestWater(
-                hasContents: true,
-                loadingTicksRemaining: loadingTicksRemaining,
-                batchCaptured: batchCaptured,
-                waterDebited: waterDebitedForCycle))
+        if (!EnsureLegacyWaterDebit(out pauseReason))
         {
-            if (!DubsWaterAdapter.TryConsumeCycleWater(parent, capturedWaterCharge, out pauseReason))
-            {
-                return;
-            }
-
-            waterDebitedForCycle = true;
-            residualWaterSupplyRequiredForCycle =
-                DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f);
+            return;
         }
 
         if (!DishwasherCyclePolicy.CanContinueWithWater(
@@ -652,12 +644,10 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     private DishwasherUtilityBlocker InspectUtilityBlocker()
     {
-        var requiredWater = batchCaptured && !waterDebitedForCycle
-            ? Math.Max(0.001f, capturedWaterCharge)
-            : 0.001f;
         return CurrentUtilityBlocker(
             cycleWaterAvailable: !RequiresDubsWater ||
-                                 DubsWaterAdapter.CanSupplyCycleWater(parent, requiredWater));
+                                 waterDebitedForCycle ||
+                                 DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f));
     }
 
     private DishwasherUtilityBlocker CurrentUtilityBlocker(bool cycleWaterAvailable)
@@ -674,7 +664,9 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     private bool HasActivePower()
     {
-        return HasActivePower(parent.TryGetComp<CompPowerTrader>());
+        return !parent.IsBrokenDown() &&
+               FlickUtility.WantsToBeOn(parent) &&
+               HasActivePower(parent.TryGetComp<CompPowerTrader>());
     }
 
     private static bool HasActivePower(CompPowerTrader? power)
@@ -707,6 +699,234 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
         return false;
     }
 
+    private int CountSupportedByAdmissionWater(Thing ware, int capacityCount)
+    {
+        return CountSupportedByAdmissionWater(PlateEquivalentsPerItem(ware), capacityCount);
+    }
+
+    private int CountSupportedByAdmissionWater(float plateEquivalentsPerItem, int capacityCount)
+    {
+        if (capacityCount <= 0)
+        {
+            return 0;
+        }
+
+        if (!RequiresDubsWater)
+        {
+            return capacityCount;
+        }
+
+        if (!DubsWaterAdapter.HasSuppliedConnection(parent))
+        {
+            return 0;
+        }
+
+        for (var count = capacityCount; count > 0; count--)
+        {
+            var charge = DishwasherCyclePolicy.AdmissionWaterCharge(
+                plateEquivalentsPerItem * count,
+                Props.waterPerPlateEquivalent);
+            if (DubsWaterAdapter.CanSupplyCycleWater(parent, charge))
+            {
+                return count;
+            }
+        }
+
+        return 0;
+    }
+
+    private bool TryReturnRejectedAdmission(
+        Thing ware,
+        ThingOwner destination,
+        Pawn pawn,
+        bool allowMerge,
+        out Thing? returned)
+    {
+        var expectedCount = ware.stackCount;
+        var restoredCount = Contents.TryTransferToContainer(
+            ware,
+            destination,
+            expectedCount,
+            out var restored,
+            canMergeWithExistingStacks: allowMerge);
+        returned = restoredCount > 0 ? restored : null;
+        if (restoredCount >= expectedCount)
+        {
+            return true;
+        }
+
+        if (ware.Destroyed || !ReferenceEquals(ware.holdingOwner, Contents))
+        {
+            return restoredCount == expectedCount;
+        }
+
+        var map = pawn.MapHeld ?? parent.MapHeld;
+        var position = pawn.PositionHeld.IsValid ? pawn.PositionHeld : parent.InteractionCell;
+        if (map is null || !position.InBounds(map))
+        {
+            return false;
+        }
+
+        returned = DiningWarePlacementRuntime.DropAt(ware, position, map);
+        if (returned is not null)
+        {
+            return true;
+        }
+
+        Contents.Remove(ware);
+        returned = GenSpawn.Spawn(ware, position, map);
+        return returned.Spawned;
+    }
+
+    private bool TryCommitAdmissionWater(float admittedPlateEquivalents, out string reason)
+    {
+        reason = string.Empty;
+        if (RequiresDubsWater)
+        {
+            var charge = DishwasherCyclePolicy.AdmissionWaterCharge(
+                admittedPlateEquivalents,
+                Props.waterPerPlateEquivalent);
+            if (!DubsWaterAdapter.HasSuppliedConnection(parent) ||
+                !DubsWaterAdapter.CanSupplyCycleWater(parent, charge) ||
+                !DubsWaterAdapter.TryConsumeCycleWater(parent, charge, out reason))
+            {
+                reason = string.IsNullOrEmpty(reason) ? "water supply unavailable" : reason;
+                return false;
+            }
+
+            // Preserve the established interruption rule when residual supply existed after this
+            // admission, while still allowing an exactly sufficient final admission to reach zero.
+            residualWaterSupplyRequiredForCycle =
+                DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f);
+        }
+
+        waterDebitedForCycle = true;
+        pauseReason = string.Empty;
+        reason = string.Empty;
+        return true;
+    }
+
+    private bool EnsureLegacyWaterDebit(out string reason)
+    {
+        if (waterDebitedForCycle || !RequiresDubsWater)
+        {
+            waterDebitedForCycle = true;
+            reason = string.Empty;
+            return true;
+        }
+
+        var legacyLoad = ProcessorFrameworkAdapter.Controls(parent)
+            ? ProcessorFrameworkAdapter.UsedPlateEquivalentCapacity(parent)
+            : UsedCapacity;
+        if (legacyLoad <= 0f)
+        {
+            reason = string.Empty;
+            return true;
+        }
+
+        return TryCommitAdmissionWater(legacyLoad, out reason);
+    }
+
+    private void AddLocalLoad(Thing ware)
+    {
+        if (localLoadThings.Any(candidate => ReferenceEquals(candidate, ware)))
+        {
+            return;
+        }
+
+        localLoadThings.Add(ware);
+        localLoadProgressTicks.Add(0);
+        localLoadDurationTicks.Add(DishwasherCyclePolicy.CaptureLoadDuration(
+            Props.baseCycleTicks,
+            ImmersiveChefsMod.Settings.DishwashingWorkScale));
+        ClearLegacyBatchMarkers();
+    }
+
+    private void EnsureLocalLoadRecords()
+    {
+        var alignedCount = Math.Min(
+            localLoadThings.Count,
+            Math.Min(localLoadProgressTicks.Count, localLoadDurationTicks.Count));
+        while (localLoadThings.Count > alignedCount)
+        {
+            localLoadThings.RemoveAt(localLoadThings.Count - 1);
+        }
+        while (localLoadProgressTicks.Count > alignedCount)
+        {
+            localLoadProgressTicks.RemoveAt(localLoadProgressTicks.Count - 1);
+        }
+        while (localLoadDurationTicks.Count > alignedCount)
+        {
+            localLoadDurationTicks.RemoveAt(localLoadDurationTicks.Count - 1);
+        }
+
+        for (var index = localLoadThings.Count - 1; index >= 0; index--)
+        {
+            var ware = localLoadThings[index];
+            if (ware is null || ware.Destroyed || !ReferenceEquals(ware.holdingOwner, Contents))
+            {
+                RemoveLocalLoadAt(index);
+                continue;
+            }
+
+            localLoadDurationTicks[index] = Math.Max(1, localLoadDurationTicks[index]);
+            localLoadProgressTicks[index] = Math.Max(
+                0,
+                Math.Min(localLoadProgressTicks[index], localLoadDurationTicks[index]));
+        }
+
+        var migratedDuration = capturedCycleTicks > 0
+            ? capturedCycleTicks
+            : DishwasherCyclePolicy.CaptureLoadDuration(
+                Props.baseCycleTicks,
+                ImmersiveChefsMod.Settings.DishwashingWorkScale);
+        foreach (var ware in Contents.InnerListForReading)
+        {
+            if (localLoadThings.Any(candidate => ReferenceEquals(candidate, ware)))
+            {
+                continue;
+            }
+
+            localLoadThings.Add(ware);
+            localLoadDurationTicks.Add(Math.Max(1, migratedDuration));
+            localLoadProgressTicks.Add(Math.Max(
+                0,
+                Math.Min(progressTicks, Math.Max(1, migratedDuration))));
+        }
+
+        ClearLegacyBatchMarkers();
+    }
+
+    private float LocalProgressPercent()
+    {
+        EnsureLocalLoadRecords();
+        var maximum = 0f;
+        for (var index = 0; index < localLoadThings.Count; index++)
+        {
+            maximum = Math.Max(
+                maximum,
+                100f * localLoadProgressTicks[index] / Math.Max(1, localLoadDurationTicks[index]));
+        }
+
+        return Math.Min(100f, maximum);
+    }
+
+    private void RemoveLocalLoadAt(int index)
+    {
+        localLoadThings.RemoveAt(index);
+        localLoadProgressTicks.RemoveAt(index);
+        localLoadDurationTicks.RemoveAt(index);
+    }
+
+    private void ClearLegacyBatchMarkers()
+    {
+        progressTicks = 0;
+        capturedCycleTicks = 0;
+        loadingTicksRemaining = 0;
+        batchCaptured = false;
+        capturedWaterCharge = 0f;
+    }
+
     private void EjectAll()
     {
         if (parent.Map is not { } map)
@@ -726,6 +946,9 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     private void ResetCycleState()
     {
+        localLoadThings.Clear();
+        localLoadProgressTicks.Clear();
+        localLoadDurationTicks.Clear();
         progressTicks = 0;
         capturedCycleTicks = 0;
         loadingTicksRemaining = 0;
