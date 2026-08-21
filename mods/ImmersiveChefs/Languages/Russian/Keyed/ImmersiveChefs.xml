@@ -139,7 +139,6 @@
   <ImmersiveChefs_Stat_Explanation>Immersive Chefs рассчитывает это значение по материалу и качеству изготовления.</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>простаивает</ImmersiveChefs_Dishwasher_StatusIdle>
-  <ImmersiveChefs_Dishwasher_StatusLoading>загрузка</ImmersiveChefs_Dishwasher_StatusLoading>
   <ImmersiveChefs_Dishwasher_StatusWashing>моет ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>
   <ImmersiveChefs_Dishwasher_StatusPaused>приостановлено: {0}</ImmersiveChefs_Dishwasher_StatusPaused>
   <ImmersiveChefs_Dishwasher_PauseNoPower>недостаточно электроэнергии</ImmersiveChefs_Dishwasher_PauseNoPower>

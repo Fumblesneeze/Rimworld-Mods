@@ -22,100 +22,66 @@ public sealed class DishwasherCapacityTests
             Is.EqualTo(expected));
     }
 
-    [TestCase(0, false, true)]
-    [TestCase(250, false, false)]
-    [TestCase(0, true, false)]
-    public void Additional_ware_can_join_only_before_cleaning_or_water_debit_starts(
-        int progressTicks,
-        bool waterDebited,
-        bool expected)
+    [Test]
+    public void Active_load_leaves_all_remaining_capacity_available_to_a_later_stack()
     {
         Assert.That(
-            DishwasherCyclePolicy.CanAcceptAdditionalWare(progressTicks, waterDebited),
-            Is.EqualTo(expected));
+            DishwasherCapacityPolicy.CountAccepted(
+                capacity: 16f,
+                used: 1f,
+                perItem: 0.25f,
+                stackCount: 100),
+            Is.EqualTo(60),
+            "An earlier one-plate load must leave fifteen plate-equivalents open for later cutlery.");
     }
 
     [Test]
-    public void Additional_ware_cannot_join_after_the_loading_batch_is_captured()
-    {
-        Assert.That(
-            DishwasherCyclePolicy.CanAcceptAdditionalWare(
-                progressTicks: 0,
-                waterDebitedForCycle: false,
-                batchCaptured: true),
-            Is.False);
-    }
-
-    [Test]
-    public void Every_admission_reopens_one_bounded_loading_window()
+    public void Every_admission_captures_its_own_duration()
     {
         Assert.Multiple(() =>
         {
-            Assert.That(DishwasherCyclePolicy.ResetLoadingWindow(500), Is.EqualTo(500));
-            Assert.That(DishwasherCyclePolicy.AdvanceLoadingWindow(500, 250), Is.EqualTo(250));
-            Assert.That(DishwasherCyclePolicy.AdvanceLoadingWindow(250, 250), Is.Zero);
-            Assert.That(DishwasherCyclePolicy.AdvanceLoadingWindow(0, 250), Is.Zero);
+            Assert.That(DishwasherCyclePolicy.CaptureLoadDuration(2500, 1f), Is.EqualTo(2500));
+            Assert.That(DishwasherCyclePolicy.CaptureLoadDuration(2500, 2f), Is.EqualTo(5000));
+            Assert.That(DishwasherCyclePolicy.CaptureLoadDuration(1800, 0.5f), Is.EqualTo(900));
         });
     }
 
     [Test]
-    public void Default_loading_window_can_collect_one_place_setting_through_serial_processor_jobs()
+    public void Later_load_advances_independently_without_resetting_the_earlier_load()
     {
-        const int processorWorkTicksPerAdmission = 200;
-        const int serializedAdmissions = 3;
-        const int boundedTravelMarginTicks = 250;
-
-        Assert.That(
-            new CompProperties_Dishwasher().baseLoadingTicks,
-            Is.GreaterThanOrEqualTo(
-                (processorWorkTicksPerAdmission * serializedAdmissions) + boundedTravelMarginTicks),
-            "The processor admits only one hauled stack at a time; cookware, a plate, and cutlery " +
-            "must all have time to join the same dishwasher batch.");
-    }
-
-    [Test]
-    public void Processor_batch_requests_water_once_only_after_the_final_loading_window_closes()
-    {
-        var loadingTicks = DishwasherCyclePolicy.ResetLoadingWindow(500);
-
-        Assert.That(
-            DishwasherCyclePolicy.ShouldRequestWater(
-                hasContents: true,
-                loadingTicksRemaining: loadingTicks,
-                batchCaptured: false,
-                waterDebited: false),
-            Is.False,
-            "The first admitted dish must not debit water while matching ware can still join.");
-
-        loadingTicks = DishwasherCyclePolicy.AdvanceLoadingWindow(loadingTicks, 250);
-        loadingTicks = DishwasherCyclePolicy.ResetLoadingWindow(500);
-        loadingTicks = DishwasherCyclePolicy.AdvanceLoadingWindow(loadingTicks, 500);
+        var earlier = DishwasherCyclePolicy.AdvanceLoad(
+            progressTicks: 1000,
+            elapsedTicks: 250,
+            capturedDurationTicks: 2500);
+        var later = DishwasherCyclePolicy.AdvanceLoad(
+            progressTicks: 0,
+            elapsedTicks: 250,
+            capturedDurationTicks: 2500);
 
         Assert.Multiple(() =>
         {
-            Assert.That(loadingTicks, Is.Zero);
-            Assert.That(
-                DishwasherCyclePolicy.ShouldRequestWater(
-                    hasContents: true,
-                    loadingTicksRemaining: loadingTicks,
-                    batchCaptured: true,
-                    waterDebited: false),
-                Is.True,
-                "The closed batch must request its one atomic water debit.");
-            Assert.That(
-                DishwasherCyclePolicy.CaptureWaterCharge(
-                    finalPlateEquivalentLoad: 1.25f,
-                    waterPerPlateEquivalent: 0.1f),
-                Is.EqualTo(0.125f).Within(0.0001f),
-                "The charge must include the final plate and cutlery load.");
-            Assert.That(
-                DishwasherCyclePolicy.ShouldRequestWater(
-                    hasContents: true,
-                    loadingTicksRemaining: loadingTicks,
-                    batchCaptured: true,
-                    waterDebited: true),
-                Is.False,
-                "A resumed captured batch must never request a second debit.");
+            Assert.That(earlier, Is.EqualTo(1250));
+            Assert.That(later, Is.EqualTo(250));
+            Assert.That(earlier, Is.GreaterThan(later),
+                "A late load must start at zero without inheriting or resetting the earlier load.");
+        });
+    }
+
+    [Test]
+    public void Processor_charges_each_admission_for_only_its_own_load()
+    {
+        var plateCharge = DishwasherCyclePolicy.AdmissionWaterCharge(
+            admittedPlateEquivalentLoad: 1f,
+            waterPerPlateEquivalent: 0.1f);
+        var cutleryCharge = DishwasherCyclePolicy.AdmissionWaterCharge(
+            admittedPlateEquivalentLoad: 0.25f,
+            waterPerPlateEquivalent: 0.1f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(plateCharge, Is.EqualTo(0.1f).Within(0.0001f));
+            Assert.That(cutleryCharge, Is.EqualTo(0.025f).Within(0.0001f));
+            Assert.That(plateCharge + cutleryCharge, Is.EqualTo(0.125f).Within(0.0001f));
         });
     }
 
@@ -125,7 +91,7 @@ public sealed class DishwasherCapacityTests
     [TestCase(true, true, true, false, false, true)]
     [TestCase(true, true, true, true, false, false)]
     [TestCase(true, true, true, true, true, true)]
-    public void Debited_processor_batch_requires_its_captured_connection_and_only_preexisting_residual_supply(
+    public void Debited_processor_loads_require_their_connection_and_only_preexisting_residual_supply(
         bool requiresDubsWater,
         bool waterDebited,
         bool hasSuppliedConnection,

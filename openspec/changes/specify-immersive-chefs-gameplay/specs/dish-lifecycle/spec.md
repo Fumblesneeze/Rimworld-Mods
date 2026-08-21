@@ -225,36 +225,39 @@ Immersive Chefs SHALL add mutually exclusive `Clean kitchenware` and `Dirty kitc
 ### Requirement: Identity-preserving dishwashers
 Immersive Chefs SHALL provide a dishwasher with a base capacity of 16 plate-equivalents and an industrial dishwasher with a base capacity of 64 plate-equivalents before applying `DishwasherCapacityScale`. A wash cycle SHALL preserve each input item's Def, Stuff, craftsmanship quality, hit points, stack count, and other components while changing only sanitation-related state, and clean output SHALL be available for hauling when the cycle completes.
 
-For capacity accounting, the default load SHALL count a plate as 1 plate-equivalent, a cookware set as 4, a cutlery set as 0.25, and any future washable item by a Def-configurable value. The first admitted item SHALL open a Def-configured, save-persistent loading phase during which more dirty ware can join while capacity remains; every successful admission SHALL reset that phase, cleaning progress SHALL remain zero, and the inspector SHALL identify the loading state. When the loading phase closes, the cycle SHALL capture its exact input identities, work duration, load-scaled resource demand, and progress. With the validated Dubs adapter active, cycle start SHALL atomically verify and debit exactly one positive Def-configured water charge scaled to the final captured load. Insufficient supplied water SHALL retain the admitted dirty batch without starting the cycle and SHALL expose that reason. A paused/resumed cycle MUST NOT debit water again, and explicit cancellation, deconstruction, or terminal destruction SHALL NOT refund the already admitted charge.
+For capacity accounting, the default load SHALL count a plate as 1 plate-equivalent, a cookware set as 4, a cutlery set as 0.25, and any future washable item by a Def-configurable value. The dishwasher SHALL remain continuously open to later dirty ware while live power, supplied water when required, reachability, reservations, and remaining capacity allow. Every successful admission SHALL create one independently timed, save-persistent load at zero progress. A later load SHALL wash in parallel and MUST NOT reset, delay, merge with, inherit progress from, or accelerate an earlier load; each load becomes clean and exits when its own captured duration completes. The inspector SHALL present active washing rather than a sealed loading or batch state.
 
-Temporary loss of power, supplied water, or operability through breakdown SHALL pause captured cycle state without cleaning or ejecting items; restoration or repair SHALL automatically resume it. Explicit cancellation, deconstruction, or terminal destruction SHALL end the cycle and eject every recoverable original input dirty under normal holder rules. When the Dubs package is active in `Auto` mode but its required plumbing shape fails validation, both dishwashers SHALL be ineligible rather than silently washing without water; one actionable integration warning SHALL remain, and recognized non-Dubs hand-washing fallbacks SHALL still be eligible.
+With the validated Dubs adapter active, each admission SHALL atomically verify and debit exactly one positive Def-configured water charge scaled only to the newly admitted physical load before dishwasher ownership commits. Insufficient supplied water SHALL reject that admission without consuming or moving the dirty ware and without pausing, restarting, or otherwise changing already admitted loads. A paused/resumed load MUST NOT debit water again, and explicit cancellation, deconstruction, or terminal destruction SHALL NOT refund any already admitted charge.
+
+Temporary loss of power, supplied water, or operability through breakdown SHALL pause every admitted load at its own progress without cleaning or ejecting items; restoration or repair SHALL automatically resume them. Explicit cancellation, deconstruction, or terminal destruction SHALL end processing and eject every recoverable original input dirty under normal holder rules. When the Dubs package is active in `Auto` mode but its required plumbing shape fails validation, both dishwashers SHALL be ineligible rather than silently washing without water; one actionable integration warning SHALL remain, and recognized non-Dubs hand-washing fallbacks SHALL still be eligible.
 
 #### Scenario: Standard dishwasher reaches capacity
 - **WHEN** `DishwasherCapacityScale` is `1.0` and a standard dishwasher contains ware totaling 16 plate-equivalents
 - **THEN** it accepts no additional load until enough capacity is freed
 
-#### Scenario: One place setting forms one batch
-- **WHEN** a dirty plate enters an idle dishwasher and its matching dirty cutlery arrives during the loading phase
-- **THEN** both exact items are admitted before cleaning progress or the Dubs water debit begins
-- **THEN** the final cycle load and any water charge include both items
+#### Scenario: Later ware joins active washing in parallel
+- **WHEN** a dirty plate is already partway through washing and matching dirty cutlery arrives while sufficient capacity and utilities remain
+- **THEN** the cutlery is admitted immediately at zero progress while the plate retains its exact earlier progress
+- **THEN** both loads advance in parallel, the plate may finish first, and each admission receives only its own load-scaled Dubs water debit
 
-#### Scenario: Industrial cycle completes
-- **WHEN** `DishwasherCapacityScale` is `1.0` and an industrial dishwasher completes a cycle containing mixed-Stuff, mixed-quality ware within its 64 plate-equivalent capacity
+#### Scenario: Industrial loads complete
+- **WHEN** `DishwasherCapacityScale` is `1.0` and an industrial dishwasher completes independently timed mixed-Stuff, mixed-quality ware within its 64 plate-equivalent capacity
 - **THEN** it exposes corresponding clean items with every non-sanitation property and count preserved
 
-#### Scenario: Power is lost during a cycle
+#### Scenario: Power is lost during active washing
 - **WHEN** a dishwasher loses power after making progress
-- **THEN** the cycle pauses without cleaning or ejecting any item and without changing its captured progress or contents
-- **THEN** restoring power automatically resumes that same cycle from the captured progress
+- **THEN** every active load pauses without cleaning or ejection and retains its own progress and contents
+- **THEN** restoring power automatically resumes those same loads from their individual progress
 
-#### Scenario: Dubs water is lost during a cycle
+#### Scenario: Dubs water is lost during active washing
 - **WHEN** Dubs Bad Hygiene is active and the dishwasher's supplied plumbing becomes unavailable after making progress
-- **THEN** the cycle pauses without consuming completion output or losing progress
-- **THEN** restoring a supplied connection automatically resumes the same cycle without a second water debit
+- **THEN** every active load pauses without consuming completion output or losing its individual progress
+- **THEN** restoring a supplied connection automatically resumes the same loads without a second water debit
 
-#### Scenario: Dubs water is insufficient when the loading batch closes
-- **WHEN** the validated Dubs adapter cannot atomically debit the cycle's captured load-scaled water charge
-- **THEN** the dishwasher does not start, retains the dirty inputs for retry or hauling, and exposes insufficient supplied water as the reason
+#### Scenario: Dubs water is insufficient for one later admission
+- **WHEN** active loads are already washing and the validated Dubs adapter cannot atomically debit a later dirty item's load-scaled water charge
+- **THEN** only the later admission is rejected and that exact dirty item remains with its prior holder or map position
+- **THEN** already admitted loads retain their progress and continue when their already-paid utility requirements remain satisfied
 
 #### Scenario: A cycle is explicitly cancelled or the building is removed
 - **WHEN** a player cancels a cycle or deconstructs or terminally destroys the dishwasher before completion
@@ -266,7 +269,7 @@ Temporary loss of power, supplied water, or operability through breakdown SHALL 
 - **THEN** dishwashers fail closed with one actionable warning while eligible hand-washing fallbacks remain available
 
 ### Requirement: Safe Processor Framework use
-When the supported Processor Framework is active and its expected shape validates, Immersive Chefs SHALL drive dishwasher timing, progress, and presentation through an identity-preserving adapter over that framework. The adapter SHALL intercept its locally verified destructive fixed-output completion path and return the captured original input instances with all non-sanitation state intact. It SHALL use Processor Framework's normal pause/resume lifecycle for temporary power loss and SHALL add the equivalent supplied-water gate when Dubs Bad Hygiene is active. Processor Framework remains optional: only when it is absent, disabled, or shape-incompatible SHALL the dishwasher use the behaviorally equivalent Immersive Chefs local cycle.
+When the supported Processor Framework is active and its expected shape validates, Immersive Chefs SHALL drive dishwasher timing, progress, continuous independent admission, and presentation through an identity-preserving adapter over that framework. The adapter SHALL configure independent parallel processes, SHALL leave admission open while shared capacity remains, and SHALL intercept its locally verified destructive fixed-output completion path to return each original input instance with all non-sanitation state intact. It SHALL use Processor Framework's separately serialized active-process ticks and normal pause/resume lifecycle for temporary power loss and SHALL add the equivalent per-admission supplied-water gate when Dubs Bad Hygiene is active. Processor Framework remains optional: only when it is absent, disabled, or shape-incompatible SHALL the dishwasher use behaviorally equivalent independent local loads.
 
 #### Scenario: Stock processor cannot preserve identity
 - **WHEN** the supported Processor Framework is active and its stock completion would replace a Stuff-made dirty item with a fixed Stuff-less clean output
@@ -341,7 +344,7 @@ When Gastronomy integration is active, waiters and servers SHALL collect the req
 - **THEN** the same waiter, ware identities, jobs, shared dishwasher target, service claims, and native reservations are restored exactly once
 
 ### Requirement: Dishwashing settings are bounded and have explicit application timing
-Immersive Chefs SHALL expose `PreferDishwashers` (default `On`), `AllowTerrainHandwashing` (default `On`), `DishwashingWorkScale` (default `1.0`, range `0.25`-`4.0`), and `DishwasherCapacityScale` (default `1.0`, range `0.5`-`4.0`). The two toggles SHALL apply live to newly selected work. `DishwashingWorkScale` SHALL multiply the base work required by hand-washing jobs and new appliance cycles, SHALL apply live when a new job or cycle starts, and SHALL not recalculate progress or duration already captured by an active job or cycle. `DishwasherCapacityScale` SHALL multiply the base 16/64 plate-equivalent capacities, SHALL be labeled restart-required because it changes appliance component properties, and SHALL take effect only after Def databases are rebuilt.
+Immersive Chefs SHALL expose `PreferDishwashers` (default `On`), `AllowTerrainHandwashing` (default `On`), `DishwashingWorkScale` (default `1.0`, range `0.25`-`4.0`), and `DishwasherCapacityScale` (default `1.0`, range `0.5`-`4.0`). The two toggles SHALL apply live to newly selected work. `DishwashingWorkScale` SHALL multiply the base work required by hand-washing jobs and newly admitted appliance loads, SHALL apply live when a new job or load starts, and SHALL not recalculate progress or duration already captured by an active job or load. `DishwasherCapacityScale` SHALL multiply the base 16/64 plate-equivalent capacities, SHALL be labeled restart-required because it changes appliance component properties, and SHALL take effect only after Def databases are rebuilt.
 
 #### Scenario: Dishwasher preference is disabled live
 - **WHEN** `PreferDishwashers` changes from `On` to `Off` while both a dishwasher and hand-washing source are eligible
@@ -351,9 +354,9 @@ Immersive Chefs SHALL expose `PreferDishwashers` (default `On`), `AllowTerrainHa
 - **WHEN** `AllowTerrainHandwashing` changes from `Off` to `On` and safe reachable water terrain is the only source
 - **THEN** the next work search may issue a terrain hand-washing job without a restart
 
-#### Scenario: Work scale changes during an active cycle
-- **WHEN** `DishwashingWorkScale` changes from `1.0` to `2.0` while one wash cycle is active
-- **THEN** the active cycle retains its captured duration and the next cycle requires twice its base work
+#### Scenario: Work scale changes during active washing
+- **WHEN** `DishwashingWorkScale` changes from `1.0` to `2.0` while one dishwasher load is active
+- **THEN** that load retains its captured duration and the next admitted load requires twice its base work
 
 #### Scenario: Capacity scale waits for restart
 - **WHEN** the player saves `DishwasherCapacityScale` as `2.0` during a running game
@@ -361,20 +364,20 @@ Immersive Chefs SHALL expose `PreferDishwashers` (default `On`), `AllowTerrainHa
 - **THEN** after restart the domestic and industrial capacities are `32` and `128` plate-equivalents
 
 ### Requirement: Dishwasher utility state is real and player-readable
-An Immersive Chefs dishwasher SHALL advance a captured washing cycle only while its native power trader is actually powered for the appliance's active draw. Merely being connected to a power net SHALL NOT count as sufficient power. If the active load exceeds current generation and stored-energy delivery, cycle progress SHALL remain unchanged until the network can supply it, including after a charged battery or additional generation becomes available. The same captured batch SHALL resume without a second water debit.
+An Immersive Chefs dishwasher SHALL advance its independently timed washing loads only while its native power trader is actually powered for the appliance's active draw. Merely being connected to a power net SHALL NOT count as sufficient power. If the active appliance load exceeds current generation and stored-energy delivery, every washing load's progress SHALL remain unchanged until the network can supply it, including after a charged battery or additional generation becomes available. Those same loads SHALL resume without a second water debit.
 
-When Dubs Bad Hygiene is active, a connected pipe with an empty or otherwise unusable upstream water supply SHALL NOT count as supplied water. Loading MAY retain the batch, but washing SHALL not begin or advance until the exact load-scaled water charge is available and the supported Dubs fixture/network reports operational supply. The dishwasher's ordinary inspect pane SHALL explain actionable states such as `Not enough power` and `No supplied water` in player-facing language. It SHALL NOT expose raw pipe-network, sewage-network, grid, object, reflection, or implementation identifiers. Optional integration components attached to an Immersive Chefs dishwasher SHALL contribute no diagnostic-only inspect strings; useful operational state remains owned by the Immersive Chefs status line.
+When Dubs Bad Hygiene is active, a connected pipe with an empty or otherwise unusable upstream water supply SHALL NOT count as supplied water. A new admission SHALL not commit until its exact load-scaled water charge is available, and active washing SHALL pause whenever the supported Dubs fixture/network no longer reports operational supply. The dishwasher's ordinary inspect pane SHALL explain actionable states such as `Not enough power` and `No supplied water` in player-facing language. It SHALL NOT expose raw pipe-network, sewage-network, grid, object, reflection, or implementation identifiers. Optional integration components attached to an Immersive Chefs dishwasher SHALL contribute no diagnostic-only inspect strings; useful operational state remains owned by the Immersive Chefs status line.
 
 #### Scenario: A connected water tower is empty
-- **WHEN** Dubs Bad Hygiene is active, the dishwasher is connected through supported plumbing, but the connected tower/network cannot supply the captured cycle charge
-- **THEN** the exact batch remains retained with unchanged washing progress and the inspect pane says that supplied water is unavailable
+- **WHEN** Dubs Bad Hygiene is active, the dishwasher is connected through supported plumbing, but the connected tower/network cannot supply a new load's admission charge
+- **THEN** that new dirty load remains outside the dishwasher while any already admitted loads retain unchanged washing progress and the inspect pane says that supplied water is unavailable
 - **THEN** no pipe-net ID, sewage ID, grid ID, component name, or other diagnostic identifier is visible
 
 #### Scenario: Active draw exceeds the power network
 - **WHEN** the dishwasher is connected to a network whose lone generator can cover idle draw but not the appliance's active washing draw
 - **THEN** the retained batch does not become clean and cycle progress remains unchanged while the inspect pane reports insufficient power
-- **THEN** after adequate generation or a charged battery is added, the same batch resumes rather than restarting or consuming water twice
+- **THEN** after adequate generation or a charged battery is added, the same loads resume rather than restarting or consuming water twice
 
 #### Scenario: The appliance is fully supplied
-- **WHEN** both the active native power draw and the exact Dubs water charge are available
-- **THEN** the dishwasher advances through its ordinary cycle and ejects the exact clean ware identities
+- **WHEN** both the active native power draw and each admission's exact Dubs water charge are available
+- **THEN** the dishwasher advances every admitted load in parallel and ejects each exact clean ware identity as its own duration completes

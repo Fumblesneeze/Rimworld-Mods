@@ -25,6 +25,7 @@ internal static class ProcessorFrameworkAdapter
     private static FieldInfo? activeProcessIngredientCount;
     private static FieldInfo? activeProcessProcessor;
     private static FieldInfo? processIngredientFilter;
+    private static FieldInfo? processCapacityFactor;
     private static FieldInfo? processorEmptyNow;
     private static PropertyInfo? activeProcessComplete;
     private static PropertyInfo? activeProcessPercent;
@@ -37,6 +38,17 @@ internal static class ProcessorFrameworkAdapter
     private static MethodInfo? resolveProcessReferences;
     private static MethodInfo? addProcessDef;
     private static MethodInfo? recacheAll;
+
+    private sealed class ProcessorAdmissionState
+    {
+        internal int BeforeCount;
+        internal float PlateEquivalentsPerItem;
+        internal List<object> ExistingProcesses = new();
+        internal Thing Ware = null!;
+        internal ThingOwner? PreviousOwner;
+        internal Map? PreviousMap;
+        internal IntVec3 PreviousPosition;
+    }
 
     internal static bool Enabled { get; private set; }
 
@@ -106,6 +118,7 @@ internal static class ProcessorFrameworkAdapter
         activeProcessIngredientCount = AccessTools.Field(activeProcessType, "ingredientCount");
         activeProcessProcessor = AccessTools.Field(activeProcessType, "processor");
         processIngredientFilter = AccessTools.Field(processDefType, "ingredientFilter");
+        processCapacityFactor = AccessTools.Field(processDefType, "capacityFactor");
         processorEmptyNow = AccessTools.Field(processorType, "emptyNow");
         activeProcessComplete = AccessTools.Property(activeProcessType, "Complete");
         activeProcessPercent = AccessTools.Property(activeProcessType, "ActiveProcessPercent");
@@ -171,7 +184,7 @@ internal static class ProcessorFrameworkAdapter
             processorEnabledProcesses is null ||
             activeProcessIngredients is null || activeProcessIngredientCount is not { FieldType: { } ingredientCountType } ||
             ingredientCountType != typeof(int) || activeProcessProcessor is null ||
-            processIngredientFilter is null || processorEmptyNow is null ||
+            processIngredientFilter is null || processCapacityFactor is null || processorEmptyNow is null ||
             activeProcessComplete is null || activeProcessPercent is null ||
             spaceLeftFor is null || graphicChange is null || enableAllProcesses is null ||
             addIngredient is not { ReturnType: { } addIngredientReturn } ||
@@ -280,6 +293,9 @@ internal static class ProcessorFrameworkAdapter
             prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(AddIngredientPrefix)),
             postfix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(AddIngredientPostfix)));
         harmony.Patch(
+            spaceLeftFor!,
+            postfix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(SpaceLeftForPostfix)));
+        harmony.Patch(
             AccessTools.Method(processorType!, "TakeOutProduct"),
             prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(TakeOutProductPrefix)));
         harmony.Patch(
@@ -321,9 +337,13 @@ internal static class ProcessorFrameworkAdapter
         return false;
     }
 
-    private static bool AddIngredientPrefix(object __instance, Thing __0, ref int __state)
+    private static bool AddIngredientPrefix(
+        object __instance,
+        Thing __0,
+        object __1,
+        ref ProcessorAdmissionState? __state)
     {
-        __state = -1;
+        __state = null;
         var parent = ParentOfProcessor(__instance);
         if (parent is null || !IsDishwasher(parent))
         {
@@ -337,12 +357,22 @@ internal static class ProcessorFrameworkAdapter
 
         var dishwasher = parent.GetComp<CompDishwasher>();
         var before = ProcessorInputCount(__instance);
-        if (dishwasher is null || !dishwasher.CanAcceptProcessorWare(before > 0))
+        var capacityCount = ProcessorAdmissionCapacityCount(__instance, __1, __0);
+        if (dishwasher is null || capacityCount <= 0)
         {
             return false;
         }
 
-        __state = before;
+        __state = new ProcessorAdmissionState
+        {
+            BeforeCount = before,
+            PlateEquivalentsPerItem = PlateEquivalentsPerItem(__0),
+            ExistingProcesses = ActiveProcesses(__instance).Cast<object>().ToList(),
+            Ware = __0,
+            PreviousOwner = __0.holdingOwner,
+            PreviousMap = __0.MapHeld,
+            PreviousPosition = __0.PositionHeld
+        };
         return true;
     }
 
@@ -355,21 +385,55 @@ internal static class ProcessorFrameworkAdapter
         }
     }
 
-    private static void AddIngredientPostfix(object __instance, int __state)
+    private static void AddIngredientPostfix(object __instance, ProcessorAdmissionState? __state)
     {
-        if (__state < 0)
+        if (__state is null)
         {
             return;
         }
 
         var parent = ParentOfProcessor(__instance);
         var after = ProcessorInputCount(__instance);
-        if (parent is null || after <= __state)
+        if (parent is null || after <= __state.BeforeCount)
         {
             return;
         }
 
-        parent.GetComp<CompDishwasher>()?.NotifyProcessorAdmission(startedNewBatch: __state == 0);
+        var dishwasher = parent.GetComp<CompDishwasher>();
+        var admittedCount = after - __state.BeforeCount;
+        var reason = "dishwasher component unavailable";
+        if (dishwasher is not null && dishwasher.TryCommitProcessorAdmission(
+                __state.PlateEquivalentsPerItem * admittedCount,
+                out reason))
+        {
+            return;
+        }
+
+        RollBackProcessorAdmission(__instance, parent, __state);
+        OptionalIntegrationDiagnostics.WarnOnce(
+            OptionalIntegration.ProcessorFramework,
+            $"Dishwasher admission was rolled back because its utility debit could not commit ({reason}).");
+    }
+
+    private static void SpaceLeftForPostfix(object __instance, object __0, ref int __result)
+    {
+        if (__result <= 0)
+        {
+            return;
+        }
+
+        var parent = ParentOfProcessor(__instance);
+        if (parent is null || !IsDishwasher(parent))
+        {
+            return;
+        }
+
+        var dishwasher = parent.GetComp<CompDishwasher>();
+        __result = dishwasher is null
+            ? 0
+            : dishwasher.CountCanAcceptProcessorWare(
+                Convert.ToSingle(processCapacityFactor!.GetValue(__0)),
+                __result);
     }
 
     private static bool TakeOutProductPrefix(object __instance, object __0, ref Thing? __result)
@@ -448,7 +512,7 @@ internal static class ProcessorFrameworkAdapter
         }
 
         var dishwasher = parent.GetComp<CompDishwasher>();
-        if (dishwasher is null || !dishwasher.CanAcceptProcessorWare(HasContents(parent)))
+        if (dishwasher is null)
         {
             __result = null;
             return;
@@ -456,7 +520,7 @@ internal static class ProcessorFrameworkAdapter
 
         __result = __0.Map.listerThings.AllThings
             .Where(IsDirtyWare)
-            .Where(thing => ProcessorHasSpaceFor(__1, thing.def))
+            .Where(thing => CanAdmitProcessorStack(dishwasher, __1, thing))
             .Where(thing => !thing.IsForbidden(__0) &&
                             __0.CanReserveAndReach(thing, Verse.AI.PathEndMode.Touch, Danger.Some))
             .OrderBy(thing => thing.Position.DistanceToSquared(parent.Position))
@@ -496,7 +560,7 @@ internal static class ProcessorFrameworkAdapter
         var processor = ProcessorOf(dishwasherThing);
         var dishwasher = (dishwasherThing as ThingWithComps)?.GetComp<CompDishwasher>();
         return processor is not null && dishwasher is not null && IsDirtyWare(ware) &&
-               dishwasher.CanAcceptProcessorWare(HasContents(dishwasherThing)) &&
+               dishwasher.CanAcceptProcessorWare(ware) &&
                ProcessorHasSpaceFor(processor, ware.def) &&
                AvailablePlateEquivalentCapacity(dishwasherThing) + 0.0001f >=
                PlateEquivalentsPerItem(ware);
@@ -600,6 +664,12 @@ internal static class ProcessorFrameworkAdapter
         ThingOwner inventory,
         out string reason)
     {
+        if (ware.Spawned)
+        {
+            reason = string.Empty;
+            return true;
+        }
+
         if (ReferenceEquals(ware.holdingOwner, inventory) &&
             PickUpAndHaulAdapter.TryRegister(pawn, ware, out reason))
         {
@@ -639,7 +709,24 @@ internal static class ProcessorFrameworkAdapter
                 .Cast<object>()
                 .Select(process => Convert.ToSingle(activeProcessPercent!.GetValue(process)))
                 .ToList();
-        return progress.Count == 0 ? 0f : 100f * progress.Min();
+        return progress.Count == 0 ? 0f : 100f * progress.Max();
+    }
+
+    internal static float ProgressPercent(Thing thing, Thing exactWare)
+    {
+        var processor = ProcessorOf(thing);
+        if (processor is null)
+        {
+            return 0f;
+        }
+
+        var process = ActiveProcesses(processor)
+            .Cast<object>()
+            .FirstOrDefault(candidate => ProcessIngredients(candidate)
+                .Any(ware => ReferenceEquals(ware, exactWare)));
+        return process is null
+            ? 0f
+            : 100f * Convert.ToSingle(activeProcessPercent!.GetValue(process));
     }
 
     internal static bool EjectAllDirty(Thing thing)
@@ -699,6 +786,111 @@ internal static class ProcessorFrameworkAdapter
             .Cast<object>()
             .SelectMany(ProcessIngredients)
             .Sum(thing => thing.stackCount);
+    }
+
+    private static int ProcessorAdmissionCapacityCount(object processor, object process, Thing ware)
+    {
+        if (spaceLeftFor is null || ware.stackCount <= 0)
+        {
+            return 0;
+        }
+
+        try
+        {
+            return Math.Max(0, Math.Min(
+                ware.stackCount,
+                Convert.ToInt32(spaceLeftFor.Invoke(processor, new[] { process, (object)1f }))));
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static bool CanAdmitProcessorStack(
+        CompDishwasher dishwasher,
+        object processor,
+        Thing ware)
+    {
+        var enabled = processorEnabledProcesses!.GetValue(processor) as IDictionary;
+        var process = enabled?.Keys.Cast<object>().FirstOrDefault(candidate =>
+            (processIngredientFilter!.GetValue(candidate) as ThingFilter)?.Allows(ware.def) == true);
+        if (process is null)
+        {
+            return false;
+        }
+
+        var capacityCount = ProcessorAdmissionCapacityCount(processor, process, ware);
+        return capacityCount > 0 &&
+               dishwasher.CountCanAcceptProcessorWare(ware, capacityCount) >= capacityCount;
+    }
+
+    private static void RollBackProcessorAdmission(
+        object processor,
+        ThingWithComps parent,
+        ProcessorAdmissionState state)
+    {
+        var processes = ActiveProcesses(processor);
+        var addedProcesses = processes
+            .Cast<object>()
+            .Where(candidate => state.ExistingProcesses.All(existing =>
+                !ReferenceEquals(existing, candidate)))
+            .ToList();
+        var addedWare = addedProcesses
+            .SelectMany(ProcessIngredients)
+            .Distinct()
+            .ToList();
+        foreach (var process in addedProcesses)
+        {
+            processes.Remove(process);
+        }
+
+        var owner = processorInnerContainer!.GetValue(processor) as ThingOwner;
+        foreach (var ware in addedWare)
+        {
+            owner?.Remove(ware);
+            RestoreAdmissionThing(ware, parent, state);
+        }
+
+        if (addedWare.Count == 0 && IsOwnedByProcessor(processor, state.Ware))
+        {
+            RemoveDanglingProcessorReference(processor, state.Ware);
+            owner?.Remove(state.Ware);
+            RestoreAdmissionThing(state.Ware, parent, state);
+        }
+
+        if (processes.Count == 0)
+        {
+            FinalizeEmptyProcessor(processor, parent);
+        }
+    }
+
+    private static void RestoreAdmissionThing(
+        Thing ware,
+        ThingWithComps parent,
+        ProcessorAdmissionState state)
+    {
+        if (ware.Spawned ||
+            state.PreviousOwner is not null &&
+            state.PreviousOwner.TryAddOrTransfer(ware, canMergeWithExistingStacks: false))
+        {
+            return;
+        }
+
+        if (state.PreviousMap is not null && state.PreviousPosition.IsValid &&
+            GenPlace.TryPlaceThing(
+                ware,
+                state.PreviousPosition,
+                state.PreviousMap,
+                ThingPlaceMode.Near))
+        {
+            return;
+        }
+
+        if (parent.Map is { } map)
+        {
+            GenPlace.TryPlaceThing(ware, parent.InteractionCell, map, ThingPlaceMode.Near);
+        }
     }
 
     private static bool ProcessorHasSpaceFor(object processor, ThingDef ingredient)

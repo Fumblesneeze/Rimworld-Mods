@@ -224,6 +224,142 @@ public sealed class PickUpAndHaulProcessorDishwasherBatchTest : IRimWorldEndToEn
 }
 
 [RimWorldEndToEndTest(
+    "immersive-chefs.processor-dishwasher-continuous-admission",
+    "fumblesneeze.immersivechefs",
+    "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
+    "syrchalis.processor.framework",
+    "Dubwise.DubsBadHygiene",
+    "Mehni.PickUpAndHaul",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 7_200,
+    MaxGameTicks = 24_000,
+    MaxWallClockSeconds = 240)]
+public sealed class ProcessorDishwasherContinuousAdmissionTest : IRimWorldEndToEndTest
+{
+    private PickUpAndHaulDishwasherFixture fixture = null!;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        fixture = PickUpAndHaulDishwasherFixture.Create(context, requireProcessor: true);
+        fixture.PrepareContinuousAdmission();
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        yield return new TimeControlActionStep(
+            "pause before the first independent dishwasher load",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "enable ordinary Cleaning for only the first dirty item",
+            _ => fixture.ActivateCleaning());
+        yield return new TimeControlActionStep(
+            "let native Cleaning admit and start the first load",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the first exact load is visibly partway through washing",
+            _ => fixture.FirstContinuousLoadHasProgress(),
+            new EndToEndDeadline(2_400, 7_000, TimeSpan.FromSeconds(75)));
+        yield return new TimeControlActionStep(
+            "pause on the first load's established progress",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "capture the first load progress and its separate water debit",
+            _ => fixture.CaptureFirstContinuousLoad());
+        yield return new SelectionActionStep(
+            "select the dishwasher washing only the first load",
+            new[] { fixture.Dishwasher.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the active dishwasher and later dirty item",
+            fixture.ContinuousVisibleThingIds,
+            paddingPixels: 220);
+        yield return new ScreenshotStep(
+            "one exact load is already washing while later ware remains outside",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new AssertionStep(
+            "make the later dirty item available to ordinary Cleaning",
+            _ => fixture.ReleaseLaterContinuousLoad());
+        yield return new TimeControlActionStep(
+            "let native Cleaning add the later load without stopping the first",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "both exact loads wash in parallel on different progress clocks",
+            _ => fixture.ObserveParallelContinuousLoads(),
+            new EndToEndDeadline(2_400, 7_000, TimeSpan.FromSeconds(75)));
+        yield return new TimeControlActionStep(
+            "pause after the later parallel admission",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the continuously loaded dishwasher",
+            new[] { fixture.Dishwasher.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "later ware joins active washing without resetting the older load",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new AssertionStep(
+            "enable native output hauling while Cleaning remains active",
+            _ => fixture.ActivateHaulingWhileCleaningRemainsEnabled());
+        yield return new TimeControlActionStep(
+            "run both independent loads toward their own completion",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "the older load exits clean while the later load is still washing",
+            _ => fixture.FirstContinuousLoadCompletesBeforeLaterLoad(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(85)));
+        yield return new TimeControlActionStep(
+            "pause between the two independent completions",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the older clean output and still-active dishwasher",
+            new[] { fixture.FirstContinuousWareId, fixture.Dishwasher.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "older ware is clean outside while the later load remains in progress",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new TimeControlActionStep(
+            "finish the later independent load",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "the later exact load also returns clean",
+            _ => fixture.BothContinuousLoadsAreCleanOutputs(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(85)));
+        yield return new TimeControlActionStep(
+            "pause after both independent completions",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select both exact clean outputs",
+            fixture.ContinuousWareIds,
+            additive: false);
+        yield return new ScreenshotStep(
+            "both separately admitted identities return clean",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new AssertionStep(
+            "conserve both identities progress order and per-admission water",
+            _ => fixture.AssertContinuousAdmission());
+        yield return new CheckpointStep(
+            "continuous dishwasher admission result",
+            _ => fixture.ContinuousAdmissionCheckpoint());
+    }
+}
+
+[RimWorldEndToEndTest(
     "immersive-chefs.pick-up-and-haul-processor-dishwasher-interruption",
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
@@ -339,6 +475,11 @@ internal sealed class PickUpAndHaulDishwasherFixture
     private readonly HashSet<IntVec3> cleanStorageCells;
     private bool observedCleanBatchHaul;
     private ThingWithComps? admittedBeforeInterruption;
+    private float firstContinuousProgressBeforeLaterAdmission;
+    private float firstContinuousProgressAfterLaterAdmission;
+    private float laterContinuousProgressAfterAdmission;
+    private float waterAfterFirstContinuousAdmission;
+    private float waterAfterLaterContinuousAdmission;
 
     private PickUpAndHaulDishwasherFixture(
         Map map,
@@ -377,6 +518,15 @@ internal sealed class PickUpAndHaulDishwasherFixture
         Dishwasher.ThingID,
         waterTower.ThingID
     }).ToArray();
+    internal string FirstContinuousWareId => ware[0].ThingID;
+    internal string[] ContinuousWareIds => ware.Take(2).Select(item => item.ThingID).ToArray();
+    internal string[] ContinuousVisibleThingIds => new[]
+    {
+        ware[1].ThingID,
+        Cleaner.ThingID,
+        Dishwasher.ThingID,
+        waterTower.ThingID
+    };
 
     internal static PickUpAndHaulDishwasherFixture Create(
         IEndToEndContext context,
@@ -454,6 +604,120 @@ internal sealed class PickUpAndHaulDishwasherFixture
     {
         Cleaner.workSettings.SetPriority(WorkTypeDefOf.Cleaning, 1);
         Cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
+    }
+
+    internal void PrepareContinuousAdmission()
+    {
+        ware[1].SetForbidden(true, warnOnFail: false);
+        ware[2].SetForbidden(true, warnOnFail: false);
+    }
+
+    internal bool FirstContinuousLoadHasProgress()
+    {
+        var held = DishwasherHeldWare();
+        var progress = ProcessorFrameworkAdapter.ProgressPercent(Dishwasher, ware[0]);
+        return held.Count == 1 &&
+               held.Any(item => ReferenceEquals(item, ware[0])) &&
+               progress >= 12f && progress < 70f &&
+               ware[1].Spawned && ware[1].IsForbidden(Faction.OfPlayer);
+    }
+
+    internal void CaptureFirstContinuousLoad()
+    {
+        firstContinuousProgressBeforeLaterAdmission =
+            ProcessorFrameworkAdapter.ProgressPercent(Dishwasher, ware[0]);
+        waterAfterFirstContinuousAdmission =
+            HandwashingE2EFixture.ReadDubsNetworkWater(Dishwasher);
+        EndToEndAssert.True(firstContinuousProgressBeforeLaterAdmission >= 12f,
+            "The first load must establish independent progress before later admission.");
+        EndToEndAssert.True(HandwashingE2EFixture.Nearly(waterAfterFirstContinuousAdmission, 9.9f),
+            "The first plate admission must debit only its own 0.1-liter charge.");
+    }
+
+    internal void ReleaseLaterContinuousLoad()
+    {
+        ware[1].SetForbidden(false, warnOnFail: false);
+        Cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
+    }
+
+    internal bool ObserveParallelContinuousLoads()
+    {
+        var held = DishwasherHeldWare();
+        if (!held.Any(item => ReferenceEquals(item, ware[0])) ||
+            !held.Any(item => ReferenceEquals(item, ware[1])))
+        {
+            return false;
+        }
+
+        var firstProgress = ProcessorFrameworkAdapter.ProgressPercent(Dishwasher, ware[0]);
+        var laterProgress = ProcessorFrameworkAdapter.ProgressPercent(Dishwasher, ware[1]);
+        if (firstProgress + 0.01f < firstContinuousProgressBeforeLaterAdmission ||
+            laterProgress >= firstProgress - 5f)
+        {
+            return false;
+        }
+
+        firstContinuousProgressAfterLaterAdmission = firstProgress;
+        laterContinuousProgressAfterAdmission = laterProgress;
+        waterAfterLaterContinuousAdmission =
+            HandwashingE2EFixture.ReadDubsNetworkWater(Dishwasher);
+        return HandwashingE2EFixture.Nearly(waterAfterLaterContinuousAdmission, 9.875f);
+    }
+
+    internal bool FirstContinuousLoadCompletesBeforeLaterLoad()
+    {
+        return ware[0].Spawned &&
+               ware[0].GetComp<CompSanitation>() is
+                   { IsDirty: false, WashProvenance: WashProvenance.Safe } &&
+               DishwasherHeldWare().Any(item => ReferenceEquals(item, ware[1])) &&
+               ware[1].GetComp<CompSanitation>()?.IsDirty == true &&
+               ProcessorFrameworkAdapter.ProgressPercent(Dishwasher, ware[1]) is > 0f and < 100f;
+    }
+
+    internal bool BothContinuousLoadsAreCleanOutputs()
+    {
+        return ware.Take(2).All(item =>
+            item.Spawned && item.Map == map &&
+            item.GetComp<CompSanitation>() is
+                { IsDirty: false, WashProvenance: WashProvenance.Safe });
+    }
+
+    internal void AssertContinuousAdmission()
+    {
+        EndToEndAssert.True(BothContinuousLoadsAreCleanOutputs(),
+            "Both separately admitted exact loads must return clean.");
+        EndToEndAssert.True(
+            firstContinuousProgressAfterLaterAdmission + 0.01f >=
+            firstContinuousProgressBeforeLaterAdmission,
+            "Later admission must not reset the first load's established progress.");
+        EndToEndAssert.True(
+            firstContinuousProgressAfterLaterAdmission > laterContinuousProgressAfterAdmission + 5f,
+            "The later load must begin on its own younger progress clock.");
+        EndToEndAssert.True(
+            HandwashingE2EFixture.Nearly(waterAfterFirstContinuousAdmission, 9.9f) &&
+            HandwashingE2EFixture.Nearly(waterAfterLaterContinuousAdmission, 9.875f) &&
+            HandwashingE2EFixture.Nearly(
+                HandwashingE2EFixture.ReadDubsNetworkWater(Dishwasher),
+                9.875f),
+            "Plate and cutlery admissions must debit separate 0.1- and 0.025-liter charges exactly once.");
+        EndToEndAssert.Equal(2, ContinuousWareIds.Distinct().Count(),
+            "Continuous admission must preserve both exact identities.");
+        EndToEndAssert.True(ware.Take(2).All(item => item.stackCount == 1),
+            "Continuous admission must conserve one physical unit for each exact load.");
+    }
+
+    internal Dictionary<string, string> ContinuousAdmissionCheckpoint()
+    {
+        return new Dictionary<string, string>
+        {
+            ["firstWare"] = ware[0].ThingID,
+            ["laterWare"] = ware[1].ThingID,
+            ["firstProgressBeforeLater"] = firstContinuousProgressBeforeLaterAdmission.ToString("R"),
+            ["firstProgressAfterLater"] = firstContinuousProgressAfterLaterAdmission.ToString("R"),
+            ["laterProgressAfterAdmission"] = laterContinuousProgressAfterAdmission.ToString("R"),
+            ["waterAfterFirstAdmission"] = waterAfterFirstContinuousAdmission.ToString("R"),
+            ["waterAfterLaterAdmission"] = waterAfterLaterContinuousAdmission.ToString("R")
+        };
     }
 
     internal void ActivateHaulingWhileCleaningRemainsEnabled()
