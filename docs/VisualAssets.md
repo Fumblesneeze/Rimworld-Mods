@@ -252,9 +252,10 @@ families for the domestic and industrial dishwashers plus prep, sauce, meat, veg
 stations. The prompt used the measured bare Core table as a projection reference, fixed one camera
 for all four cards, required the apron/underframe at screen bottom in every card, and explicitly
 forbade manufacturing vertical or opposite views by pixel rotation. North places the worker below,
-East left, South above, and West right. The countertop microwave was not regenerated in this pass:
-it is a one-cell appliance rather than a workbench and already has independently authored square
-cardinal art.
+East left, South above, and West right. The countertop microwave was separately reopened and
+regenerated on 2026-08-23 after its earlier square cardinal art proved too flat and lacked a measured
+top/casing projection. The replacement preserves the already-correct local-south front mapping. Its
+retained numeric plane contract and exact prompts are in `docs/MicrowaveSpriteGeneration.md`.
 
 The raw sheets and normalization pipeline remain ignored under
 `artifacts/VisualAssets/MeasuredCardinalRedraft/20260809`. Normalization uses direction-specific
@@ -288,13 +289,12 @@ rejected approvals without direction-specific equipment order. The reviewed fina
 package GREEN is
 `artifacts/TestResults/20260809T165649825Z-24268-7ba9ce5a349544dbb2b5c520ee6aee1e`.
 
-The earlier base run is
+The earlier base run is historical evidence for the rest of the catalog and defect evidence for the
+rejected microwave, not acceptance evidence for the 2026-08-23 replacement. It is
 `artifacts/EndToEndRuns/Grouped/20260809T001235413Z`. In the exact Core/Harmony/Immersive
 Chefs/Gateway process it captured all eight concrete building Defs in four cardinal directions,
 including 32 close same-zoom custom/Core pairs, Production-menu icons and labels, and the microwave
-on both a real dining table and machining table. The acting agent inspected those exact frames and
-observed coherent map-scale silhouettes, distinct vertical views, readable brackets, and comparable
-visual mass beside Core benches. The same run then used the native Production `Designator_Place`
+on both a real dining table and machining table. The same run then used the native Production `Designator_Place`
 path to turn an empty marked area into an east-facing dishwasher; screenshots 41 and 42 retain the
 before/action/after evidence. PID 50160 exited cleanly, the isolated config/preferences hashes were
 unchanged, the staged bundles were removed, and credentials were sanitized.
@@ -393,14 +393,46 @@ state-neutral bakery equipment on pure green chroma. The selected 512×256 fixed
 
 ## Fallback countertop microwave
 
-Selected: new candidate B, generated 2026-08-06. Its rounded off-white enamel shell, dark closed
-door, fixed handle, top/side vents, and unlit push controls read as one compact appliance in a steep
-map view without including any counter, cabinet, shelf, pedestal, legs, or supporting furniture.
-The former candidate 0 was rejected because its frontal presentation and cyan controls permanently
-looked powered; new candidate A was rejected because its broad front and oversized top remained
-flatter and less map-like. Both new prompts requested appliance-only art on pure green chroma. The
-selected fixed-color 512×512 `Graphic_Single`/`Cutout` sprite has 346×320 visible bounds; on the
-Def's 0.82×0.82 mesh it occupies roughly 0.55×0.51 cells so the real table/workbench remains visible.
+Selected on 2026-08-23 from two exact axis-aligned four-cardinal briefs and one measured top/casing
+refinement per brief. The earlier diagonal three-quarter and ultra-thin low-body attempts were
+rejected because they used the wrong RimWorld projection and read as a VHS/VCR. The warm light-grey
+family with round controls is the base; the warm ivory family with square controls is the supported
+`_Variant01`. Both are fixed-color 512×512 `Graphic_Multi`/`Cutout` families with four independently
+illustrated fixed-camera views.
+
+The frames now follow the convention measured from two installed runtime comparator families:
+South is the full door/front, North is the rear, East is an axis-aligned vertical side with its narrow
+front terminal on screen-right, and West is an axis-aligned vertical side with its narrow front
+terminal on screen-left. The selected outlined bounds span 322–454 pixels wide and 338–448 pixels
+high, retain at least 29 transparent source pixels at every edge, and satisfy the building contour's
+three final-scale dark rings. Their substantial casing, distinct top/casing seam, normal microwave
+cavity ratio, controls, and vents remain legible at the 64×64 proxy. They contain no counter,
+cabinet, shelf, pedestal, floor, cast shadow, food, text, or powered display. Exact successful prompts
+and numeric plane contracts are retained in `docs/MicrowaveSpriteGeneration.md`; raw sheets, rejected
+proportions, chroma normalization, source/map-scale contacts, and outline candidates remain ignored
+under `artifacts/VisualAssets/MicrowavePerspective-20260823`.
+
+Final reviewed-build live acceptance is
+`artifacts/EndToEndRuns/Grouped/20260823T195055338Z`. In isolated PID 67420, the exact ordered
+Core/Harmony/Immersive Chefs/Gateway group used the native Production designator to place North,
+East, South, and West microwaves on real steel tables. The acting agent personally inspected the
+wide rotation rows in screenshots 2–5 and the unobstructed native after-placement frames 50, 52, 54,
+and 56. North visibly shows the blank vented rear, East and West remain axis-aligned opposing side
+profiles with their front terminals at opposite screen ends, and South visibly shows a normal dark
+microwave cavity and separate controls. Every orientation retains the support table, a coherent
+fixed-camera top/casing projection, and a continuous readable contour at the closest practical map
+zoom.
+
+The final fixture powers the already player-placed appliance only after native construction so the
+irrelevant needs-power overlay cannot cover its one-cell art; this bounded visual setup was
+independently reviewed and leaves placement causality intact. A fresh context-free reviewer received
+only screenshots 2–5, 50, 52, 54, and 56, identified the object as a compact countertop microwave,
+and found no perspective, outline, internal-edge, style, support-contact, cardinal-coherence, scale,
+or zoom-legibility defect. The scenario passed, the retained complete log contained zero errors, the
+reviewed product DLL SHA-256 was
+`3C00C7E9FDD2F7E60322474B270626578C9E54CA97860F6EBCC158C2BB1009C4`, normal config and preference
+hashes were unchanged, credentials and staged bundles were cleaned, and the exact process exited
+normally through window close without force.
 
 ## Optional building variation families
 

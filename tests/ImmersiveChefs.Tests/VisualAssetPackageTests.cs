@@ -1157,13 +1157,13 @@ public sealed class VisualAssetPackageTests
             Assert.Multiple(() =>
             {
                 Assert.That((string?)approvedFrames[family + "_north.png"].Attribute("visibleFace"),
-                    Is.EqualTo("door-top"), family + " north must expose the reviewed top-facing door.");
+                    Is.EqualTo("rear-bottom-full"), family + " north must show the blank rear under RimWorld's fixed camera.");
                 Assert.That((string?)approvedFrames[family + "_south.png"].Attribute("visibleFace"),
-                    Is.EqualTo("door-bottom"), family + " south must expose the player-facing door at screen bottom.");
+                    Is.EqualTo("door-bottom-full"), family + " south must show the local-south microwave front.");
                 Assert.That((string?)approvedFrames[family + "_east.png"].Attribute("visibleFace"),
-                    Is.EqualTo("door-right"), family + " east must expose the reviewed right-facing door.");
+                    Is.EqualTo("door-edge-right"), family + " east must show the front terminal edge at screen right.");
                 Assert.That((string?)approvedFrames[family + "_west.png"].Attribute("visibleFace"),
-                    Is.EqualTo("door-left"), family + " west must expose the reviewed left-facing door.");
+                    Is.EqualTo("door-edge-left"), family + " west must show the front terminal edge at screen left.");
             });
         }
     }
@@ -1194,20 +1194,109 @@ public sealed class VisualAssetPackageTests
             "Things",
             "Building",
             "Appliance");
+        var approvals = XDocument.Load(Path.Combine(root, "docs", "DirectionalSpriteApprovals.xml"))
+            .Root!
+            .Elements("frame")
+            .Where(element => ((string?)element.Attribute("path"))?.StartsWith("Appliance/Microwave", StringComparison.Ordinal) == true)
+            .ToDictionary(element => (string)element.Attribute("path")!, StringComparer.Ordinal);
+        var measuredFrames = new Dictionary<string, List<(string Direction, int TopDepth, int CasingDepth)>>(
+            StringComparer.Ordinal);
 
         foreach (var family in new[] { "Microwave", "Microwave_Variant01" })
         {
             foreach (var direction in new[] { "north", "east", "south", "west" })
             {
                 using var bitmap = new Bitmap(Path.Combine(textureRoot, family + "_" + direction + ".png"));
-                var interactionDarkPixels = CountDarkInteractionSidePixels(bitmap, direction);
-                var oppositeDarkPixels = CountDarkInteractionSidePixels(bitmap, Opposite(direction));
+                var bounds = AlphaBounds(bitmap);
+                var approvalPath = "Appliance/" + family + "_" + direction + ".png";
+                var approval = approvals[approvalPath];
+                var approvedBounds = ParseRectangle((string)approval.Attribute("alphaBounds")!);
+                var topPlane = ParseRectangle((string)approval.Attribute("topPlane")!);
+                var nearCasing = ParseRectangle((string)approval.Attribute("nearCasing")!);
+                var bevelBand = ParseRectangle((string)approval.Attribute("bevelBand")!);
+                var topDepth = int.Parse((string)approval.Attribute("topDepth")!);
+                var casingDepth = int.Parse((string)approval.Attribute("casingDepth")!);
+                var projection = (string)approval.Attribute("projection")!;
+                if (!measuredFrames.TryGetValue(projection, out var projectionFrames))
+                {
+                    projectionFrames = new List<(string Direction, int TopDepth, int CasingDepth)>();
+                    measuredFrames.Add(projection, projectionFrames);
+                }
+
+                projectionFrames.Add((family + "_" + direction, topDepth, casingDepth));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(bitmap.Width, Is.EqualTo(512), family + "_" + direction + " canvas width");
+                    Assert.That(bitmap.Height, Is.EqualTo(512), family + "_" + direction + " canvas height");
+                    Assert.That(bounds, Is.EqualTo(approvedBounds), family + "_" + direction + " approved alpha bounds");
+                    Assert.That(bounds.Left, Is.GreaterThanOrEqualTo(24), family + "_" + direction + " left clearance");
+                    Assert.That(bounds.Top, Is.GreaterThanOrEqualTo(24), family + "_" + direction + " top clearance");
+                    Assert.That(bitmap.Width - bounds.Right, Is.GreaterThanOrEqualTo(24), family + "_" + direction + " right clearance");
+                    Assert.That(bitmap.Height - bounds.Bottom, Is.GreaterThanOrEqualTo(24), family + "_" + direction + " bottom clearance");
+                    Assert.That(AlphaCoverage(bitmap, topPlane), Is.GreaterThanOrEqualTo(0.98), family + "_" + direction + " measured top plane");
+                    Assert.That(AlphaCoverage(bitmap, nearCasing), Is.GreaterThanOrEqualTo(0.98), family + "_" + direction + " measured near casing");
+                    Assert.That(AlphaCoverage(bitmap, bevelBand), Is.GreaterThanOrEqualTo(0.90), family + "_" + direction + " measured bevel band");
+                    Assert.That(Math.Max(bounds.Width, bounds.Height), Is.LessThanOrEqualTo(456), family + "_" + direction + " compact long axis");
+                    Assert.That(casingDepth, Is.GreaterThanOrEqualTo(topDepth * 0.50), family + "_" + direction + " must retain a substantial microwave casing rather than a VHS-thin band");
+                    Assert.That(casingDepth, Is.LessThanOrEqualTo(topDepth * 1.35), family + "_" + direction + " must still expose a distinct top surface");
+                    Assert.That(
+                        direction is "north" or "south" ? bounds.Width / (double)bounds.Height : bounds.Height / (double)bounds.Width,
+                        Is.GreaterThanOrEqualTo(1.10),
+                        family + "_" + direction + " must use RimWorld's axis-aligned horizontal/vertical cardinal projection");
+                    Assert.That(
+                        projection,
+                        Is.EqualTo(direction is "north" or "south" ? family + "-horizontal" : family + "-vertical"),
+                        family + "_" + direction + " fixed-camera projection group");
+                });
+
+                if (direction is "east" or "west")
+                {
+                    var sidePlane = ParseRectangle((string)approval.Attribute("sidePlane")!);
+                    Assert.That(
+                        AlphaCoverage(bitmap, sidePlane),
+                        Is.GreaterThanOrEqualTo(0.98),
+                        family + "_" + direction + " measured axis-aligned side plane");
+                }
+
+                if (direction == "north")
+                {
+                    var rearFeature = ParseRectangle((string)approval.Attribute("rearFeature")!);
+                    Assert.That(
+                        DarkPixelFraction(bitmap, rearFeature),
+                        Is.LessThan(0.18),
+                        family + "_north must retain a blank rear field rather than painting the door onto it.");
+                    continue;
+                }
+
+                var frontFeature = ParseRectangle((string)approval.Attribute("frontFeature")!);
                 Assert.That(
-                    interactionDarkPixels,
-                    Is.GreaterThan(oppositeDarkPixels * 1.35),
-                    family + "_" + direction
-                    + " must place its dark door/control landmarks on the reviewed visible face, not on the opposite casing.");
+                    DarkPixelFraction(bitmap, frontFeature),
+                    Is.GreaterThan(direction == "south" ? 0.45 : 0.08),
+                    family + "_" + direction + " must retain its readable door/control landmark on the approved front face.");
+                if (direction == "south")
+                {
+                    Assert.That(
+                        frontFeature.Width / (double)frontFeature.Height,
+                        Is.InRange(2.0, 3.0),
+                        family + "_south must retain a microwave-shaped cavity instead of a VHS/VCR letterbox slot.");
+                }
             }
+        }
+
+        foreach (var (projection, frames) in measuredFrames)
+        {
+            Assert.That(frames, Has.Count.EqualTo(2), projection + " must contain one cardinal-opposite pair.");
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    Math.Abs(frames[0].TopDepth - frames[1].TopDepth),
+                    Is.LessThanOrEqualTo(25),
+                    projection + " opposite frames must share one measured top projection.");
+                Assert.That(
+                    Math.Abs(frames[0].CasingDepth - frames[1].CasingDepth),
+                    Is.LessThanOrEqualTo(25),
+                    projection + " opposite frames must share one measured shallow casing projection.");
+            });
         }
     }
 
@@ -2617,38 +2706,28 @@ public sealed class VisualAssetPackageTests
         return (process.ExitCode, standardOutput.Result, standardError.Result);
     }
 
-    private static int CountDarkInteractionSidePixels(Bitmap bitmap, string direction)
+    private static double DarkPixelFraction(Bitmap bitmap, Rectangle rectangle)
     {
-        var (minimumX, maximumX, minimumY, maximumY) = direction switch
-        {
-            "north" => (0.15, 0.85, 0.08, 0.45),
-            "south" => (0.15, 0.85, 0.55, 0.92),
-            "east" => (0.55, 0.92, 0.15, 0.85),
-            "west" => (0.08, 0.45, 0.15, 0.85),
-            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
-        };
-        var count = 0;
-        for (var y = (int)(bitmap.Height * minimumY); y < (int)(bitmap.Height * maximumY); y++)
-        for (var x = (int)(bitmap.Width * minimumX); x < (int)(bitmap.Width * maximumX); x++)
+        var dark = 0;
+        var visible = 0;
+        for (var y = rectangle.Top; y < rectangle.Bottom; y++)
+        for (var x = rectangle.Left; x < rectangle.Right; x++)
         {
             var pixel = bitmap.GetPixel(x, y);
-            if (pixel.A > 180 && (pixel.R + pixel.G + pixel.B) / 3 < 65)
+            if (pixel.A <= 180)
             {
-                count++;
+                continue;
+            }
+
+            visible++;
+            if ((pixel.R + pixel.G + pixel.B) / 3 < 80)
+            {
+                dark++;
             }
         }
 
-        return count;
+        return visible == 0 ? 0 : dark / (double)visible;
     }
-
-    private static string Opposite(string direction) => direction switch
-    {
-        "north" => "south",
-        "south" => "north",
-        "east" => "west",
-        "west" => "east",
-        _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
-    };
 
     private static string Quote(string value) => "\"" + value.Replace("\"", "\\\"") + "\"";
 
