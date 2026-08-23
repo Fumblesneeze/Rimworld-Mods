@@ -137,6 +137,17 @@ public sealed class DishwasherCapacityTests
     }
 
     [Test]
+    public void Dishwasher_batch_handoff_is_near_instant()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(DishwashingBatchPolicy.DishwasherAdmissionTicksPerUnit, Is.EqualTo(2));
+            Assert.That(DishwashingBatchPolicy.IsDishwasherAdmissionReady(1), Is.False);
+            Assert.That(DishwashingBatchPolicy.IsDishwasherAdmissionReady(2), Is.True);
+        });
+    }
+
+    [Test]
     public void Processor_string_field_materializes_translated_tagged_text()
     {
         TaggedString translated = "Wash steel plate";

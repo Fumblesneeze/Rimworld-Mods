@@ -159,7 +159,7 @@ public sealed class JobDriver_DoDishes : JobDriver
         }
 
         admissionTicks++;
-        if (admissionTicks < 200)
+        if (!DishwashingBatchPolicy.IsDishwasherAdmissionReady(admissionTicks))
         {
             return;
         }
@@ -180,7 +180,9 @@ public sealed class JobDriver_DoDishes : JobDriver
     }
 
     private float CurrentAdmissionProgress() =>
-        washIndex >= collectedWare.Count ? 1f : Math.Min(1f, admissionTicks / 200f);
+        washIndex >= collectedWare.Count
+            ? 1f
+            : Math.Min(1f, admissionTicks / (float)DishwashingBatchPolicy.DishwasherAdmissionTicksPerUnit);
 
     private bool IsTrackedInInventory(Thing thing) =>
         thing is { Destroyed: false } &&

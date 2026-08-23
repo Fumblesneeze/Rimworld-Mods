@@ -100,9 +100,16 @@ Immersive Chefs SHALL add a `Doing dishes` work giver governed by the vanilla Cl
 
 Hand-washing duration SHALL scale with the physical abstraction represented by the exact item instead of using one duration for every product. At the default work scale, one plate SHALL take 250 ticks, one cutlery setting 125 ticks, and a cookware set 1,000 ticks. The configured hand-washing work scale SHALL multiply those baselines once. A stack split for one job SHALL use only the admitted physical unit's duration.
 
+Dishwasher delivery is hauling rather than manual washing. Once the pawn reaches the selected dishwasher, each carried physical unit SHALL transfer into the local or Processor-backed appliance within two job ticks. This near-instant handoff SHALL NOT show or apply the item's hand-washing duration. The appliance's independent loading state and subsequent wash cycle SHALL remain unchanged and SHALL begin only after ownership transfer.
+
 #### Scenario: Dishwasher has capacity
 - **WHEN** a cleaner searches for work while dirty ware and a reachable eligible dishwasher with free capacity exist
 - **THEN** the generated job reserves both and hauls the ware to that dishwasher instead of selecting a hand-washing source
+
+#### Scenario: Dishwasher delivery is a near-instant hauling handoff
+- **WHEN** a cleaner reaches the selected dishwasher carrying one dirty unit or a tracked batch
+- **THEN** each physical unit enters the appliance within two job ticks without applying the item's hand-washing duration
+- **AND** any later loading-state wait and washing progress belong to the dishwasher rather than keeping the hauling pawn at the appliance
 
 #### Scenario: No dishwasher can accept the ware
 - **WHEN** every dishwasher is full, disconnected, unpowered, forbidden, reserved, or unreachable
