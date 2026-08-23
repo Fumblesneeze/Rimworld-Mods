@@ -71,6 +71,9 @@ public sealed class PickUpAndHaulLocalDishwasherBatchTest : IRimWorldEndToEndTes
         yield return new AssertionStep(
             "local holder admission releases every upstream tracking claim exactly once",
             _ => fixture.AssertLoadedConservation());
+        yield return new AssertionStep(
+            "local holder admission completes within two ticks per physical unit",
+            _ => fixture.AssertInputAdmissionWasNearInstant());
     }
 }
 
@@ -124,12 +127,8 @@ public sealed class PickUpAndHaulProcessorDishwasherBatchTest : IRimWorldEndToEn
             EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
             "one Doing dishes job collects all exact units before one dishwasher trip",
-            _ => fixture.AllDirtyWareTrackedAtDishwasher(),
+            _ => fixture.ObserveTrackedBatchAtDishwasherAndPause(),
             new EndToEndDeadline(3_600, 8_000, TimeSpan.FromSeconds(75)));
-        yield return new TimeControlActionStep(
-            "pause while the cleaner carries the full dirty batch",
-            paused: true,
-            EndToEndGameSpeed.Normal);
         yield return new SelectionActionStep(
             "select the cleaner carrying the tracked dirty batch",
             new[] { fixture.Cleaner.ThingID },
@@ -163,6 +162,9 @@ public sealed class PickUpAndHaulProcessorDishwasherBatchTest : IRimWorldEndToEn
             "the appliance visibly owns all three exact stacks after one collection trip",
             Array.Empty<string>(),
             paddingPixels: 0);
+        yield return new AssertionStep(
+            "Processor admission completes within two ticks per physical unit",
+            _ => fixture.AssertInputAdmissionWasNearInstant());
         yield return new AssertionStep(
             "suspend output work while every independent load finishes naturally",
             _ => fixture.SuspendOutputWork());
@@ -692,12 +694,8 @@ public sealed class PickUpAndHaulProcessorDishwasherInterruptionTest : IRimWorld
             EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
             "one exact unit enters the dishwasher while two remain tracked",
-            _ => fixture.ObservePartialDishwasherAdmission(),
+            _ => fixture.ObservePartialDishwasherAdmissionAndPause(),
             new EndToEndDeadline(1_800, 6_000, TimeSpan.FromSeconds(65)));
-        yield return new TimeControlActionStep(
-            "pause before the player interrupts admission",
-            paused: true,
-            EndToEndGameSpeed.Normal);
         yield return new PawnInspectTabActionStep(
             "open Gear on the two still-carried dirty units",
             fixture.Cleaner.ThingID,
@@ -791,6 +789,9 @@ internal sealed class PickUpAndHaulDishwasherFixture
     private int lastOutputEmptyJobId = -1;
     private int naturalCompletionObservationStartedTick = -1;
     private int stockFallbackCompletedTick = -1;
+    private int inputAdmissionStartedTick = -1;
+    private int inputAdmissionCompletedTick = -1;
+    private int inputAdmissionUnitCount;
 
     private PickUpAndHaulDishwasherFixture(
         Map map,
@@ -1101,23 +1102,64 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
     internal bool AllDirtyWareTrackedAtDishwasher()
     {
-        return Cleaner.CurJobDef == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
-               Cleaner.Position.DistanceToSquared(Dishwasher.InteractionCell) <= 2 &&
-               ware.All(item => ReferenceEquals(item.holdingOwner, Cleaner.inventory?.innerContainer)) &&
-               ware.All(IsTracked) &&
-               ware.All(item => item.GetComp<CompSanitation>()!.IsDirty);
+        var trackedAtDishwasher =
+            Cleaner.CurJobDef == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+            Cleaner.Position.DistanceToSquared(Dishwasher.InteractionCell) <= 2 &&
+            ware.All(item => ReferenceEquals(item.holdingOwner, Cleaner.inventory?.innerContainer)) &&
+            ware.All(IsTracked) &&
+            ware.All(item => item.GetComp<CompSanitation>()!.IsDirty);
+        if (trackedAtDishwasher && inputAdmissionStartedTick < 0)
+        {
+            inputAdmissionStartedTick = Find.TickManager.TicksGame;
+            inputAdmissionUnitCount = ware.Sum(item => item.stackCount);
+        }
+
+        return trackedAtDishwasher;
+    }
+
+    internal bool ObserveTrackedBatchAtDishwasherAndPause()
+    {
+        if (!AllDirtyWareTrackedAtDishwasher())
+        {
+            return false;
+        }
+
+        Find.TickManager.Pause();
+        return true;
     }
 
     internal bool AllWareOwnedByDishwasher()
     {
         var held = DishwasherHeldWare();
-        return ware.All(item => held.Any(candidate => ReferenceEquals(candidate, item))) &&
-               ware.All(item => !IsTracked(item)) &&
-               ware.All(item => !item.Spawned) &&
+        var applianceOwnsAll =
+            ware.All(item => held.Any(candidate => ReferenceEquals(candidate, item))) &&
+            ware.All(item => !IsTracked(item)) &&
+            ware.All(item => !item.Spawned);
+        if (applianceOwnsAll && inputAdmissionCompletedTick < 0)
+        {
+            inputAdmissionCompletedTick = Find.TickManager.TicksGame;
+        }
+
+        return applianceOwnsAll &&
                Cleaner.CurJobDef != ImmersiveChefsDefOf.ImmersiveChefs_DoDishes;
     }
 
-    internal bool ObservePartialDishwasherAdmission()
+    internal void AssertInputAdmissionWasNearInstant()
+    {
+        EndToEndAssert.True(inputAdmissionStartedTick >= 0,
+            "The native Doing dishes workflow must reach the dishwasher with the complete tracked batch.");
+        EndToEndAssert.True(inputAdmissionCompletedTick >= inputAdmissionStartedTick,
+            "The appliance must own the complete batch after the observed hauling handoff begins.");
+        EndToEndAssert.True(inputAdmissionUnitCount > 0,
+            "The observed hauling handoff must contain at least one physical unit.");
+
+        var elapsedTicks = inputAdmissionCompletedTick - inputAdmissionStartedTick;
+        var maximumTicks = inputAdmissionUnitCount * DishwashingBatchPolicy.DishwasherAdmissionTicksPerUnit;
+        EndToEndAssert.True(elapsedTicks <= maximumTicks,
+            $"Dishwasher hauling handoff took {elapsedTicks} ticks for {inputAdmissionUnitCount} physical units; expected no more than {maximumTicks}.");
+    }
+
+    internal bool ObservePartialDishwasherAdmissionAndPause()
     {
         var held = DishwasherHeldWare();
         var admitted = ware.Where(item => held.Any(candidate => ReferenceEquals(candidate, item))).ToArray();
@@ -1128,7 +1170,13 @@ internal sealed class PickUpAndHaulDishwasherFixture
         }
 
         admittedBeforeInterruption = admitted[0];
-        return !IsTracked(admittedBeforeInterruption);
+        if (IsTracked(admittedBeforeInterruption))
+        {
+            return false;
+        }
+
+        Find.TickManager.Pause();
+        return true;
     }
 
     internal bool PartialOwnershipRemainsDisjoint()

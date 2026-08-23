@@ -95,7 +95,11 @@ internal readonly struct DishwashingBatchSelection : IEquatable<DishwashingBatch
 internal static class DishwashingBatchPolicy
 {
     internal const int SearchRadius = 12;
+    internal const int DishwasherAdmissionTicksPerUnit = 2;
     private const int SearchRadiusSquared = SearchRadius * SearchRadius;
+
+    internal static bool IsDishwasherAdmissionReady(int elapsedTicks) =>
+        elapsedTicks >= DishwasherAdmissionTicksPerUnit;
 
     internal static IReadOnlyList<DishwashingBatchSelection> Select(
         IEnumerable<DishwashingBatchCandidate> candidates,
