@@ -98,6 +98,7 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 support.Position,
                 "ImmersiveChefs_Microwave",
                 rotation);
+            PrepareMicrowaveForVisualReview(microwave.Building);
             rotationRows[rotation].Add(microwave.Building.ThingID);
             AddVanillaComparison(
                 map,
@@ -402,18 +403,19 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
                 new EndToEndDeadline(180, 600, TimeSpan.FromSeconds(10)));
             var placed = FindNativeMicrowave(fixture) ?? throw new EndToEndAssertionException(
                 "The native " + direction + " microwave placement completed without a player-visible building.");
+            PrepareMicrowaveForVisualReview(placed);
             yield return new SelectionActionStep(
-                "select the player-placed " + direction + "-facing microwave",
-                new[] { placed.ThingID },
+                "select the real table beneath the player-placed " + direction + "-facing microwave",
+                new[] { fixture.Support.ThingID },
                 additive: false);
             yield return new CameraActionStep(
                 "frame the player-placed " + direction + "-facing microwave on its table",
                 new[] { fixture.Support.ThingID, placed.ThingID },
-                paddingPixels: 280);
+                paddingPixels: 100);
             yield return new ScreenshotStep(
                 "after native " + direction + "-facing microwave placement",
                 new[] { fixture.Support.ThingID, placed.ThingID },
-                280);
+                100);
             yield return new AssertionStep(
                 "observe the exact native " + direction + " microwave orientation",
                 _ =>
@@ -645,6 +647,16 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         building.SetFactionDirect(Faction.OfPlayer);
         GenSpawn.Spawn(building, cell, map, rotation);
         return building;
+    }
+
+    private static void PrepareMicrowaveForVisualReview(Building microwave)
+    {
+        var power = microwave.TryGetComp<CompPowerTrader>();
+        EndToEndAssert.True(power is not null,
+            "The fallback microwave visual fixture must expose its declared power component.");
+        power!.PowerOn = true;
+        EndToEndAssert.True(power.PowerOn,
+            "The fallback microwave visual fixture must suppress the needs-power overlay before screenshot review.");
     }
 
     private static IntVec3 FindCatalogCenter(Map map)
