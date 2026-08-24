@@ -42,11 +42,13 @@ Every operation has a stable snake-case name, description, typed input/output, r
 
 Long-running operations receive a run ID and durable artifact directory. They retain child-process identity, stream bounded progress to evidence, honor cancellation, and expose status/stop operations. Read-only Gateway diagnostics and raw mutations remain separately named so callers cannot confuse observation with acceptance.
 
-### 3. Repository configuration starts the source-built stdio server
+### 3. Repository configuration starts a concurrency-safe source build
 
-Commit `.codex/config.toml` with a required local stdio server whose command is `dotnet`, working directory is the repository root, and arguments run the tool project with `serve --repository-root .`. The tool resolves and validates the root independently and refuses execution outside it. A longer tool timeout accommodates bounded test and release orchestration.
+Commit `.codex/config.toml` with a required local stdio server whose command invokes one internal bootstrap for `RimWorldModding.Mcp`. Omit an MCP `cwd` override so Codex uses the task's logical workspace-root fallback; a relative `.` or `..` would instead depend on the desktop/CLI host process directory. Codex project configuration remains authoritative because Codex automatically loads trusted `.codex/config.toml` files. Also commit a root `.mcp.json` projection of the same command with its conventional project-root working directory for MCP clients which choose that JSON convention; MCP itself does not standardize configuration discovery, so the JSON file is a portability aid rather than a replacement for Codex configuration.
 
-Source-run startup is slower than a checked-in binary but is reproducible in a fresh clone and does not commit build output. Release builds still publish one single-file executable into ignored artifacts for manual or CI use.
+The bootstrap is not another public automation surface. It exposes no repository operation and only acquires a bounded cross-process build lease, fingerprints the exact C# project/SDK/build inputs, builds into an isolated staging directory, atomically publishes a verified immutable cache entry, and then executes that C# assembly with `serve --repository-root <exact-root>`. Build diagnostics go to stderr and stdout remains untouched before the MCP process owns it. A cancelled or failed build cannot publish a success stamp, and a later start repairs or retries it. The server independently validates its root and refuses to search upward into another repository.
+
+This is reproducible in a fresh clone without committing build output, while avoiding `dotnet run` races when Codex initializes multiple tasks concurrently. Release builds still publish one single-file executable into ignored artifacts for manual or CI use.
 
 ### 4. Per-mod JSON profiles make release behavior universal
 
@@ -77,6 +79,7 @@ Local package synchronization uses the same recoverable pattern, but retains sta
 ## Risks / Trade-offs
 
 - **[MCP server context grows with too many tools]** → Keep tools high-level and typed, group narrow variants behind bounded arguments, and expose concise descriptions.
+- **[Concurrent Codex tasks race a source build or corrupt stdio]** → Serialize cache validation and the cold build/publication transaction, use isolated staging and immutable fingerprinted output, and reserve stdout for MCP frames from the executed C# server.
 - **[A wrapper preserves script fragmentation internally]** → Treat scripts as versioned migration adapters, record which operation owns each one, and remove adapters only after parity tests.
 - **[Long tests exceed client timeouts]** → Use run leases and status/cancel operations; the initiating call returns identity promptly where execution cannot finish within the configured bound.
 - **[Generic release configuration becomes an unsafe command language]** → Permit registered operation IDs and typed data only; reject arbitrary commands, paths outside the repository/candidate, unknown fields, and mismatched identities.

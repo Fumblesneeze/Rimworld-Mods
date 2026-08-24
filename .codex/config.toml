@@ -1,9 +1,8 @@
 [mcp_servers.rimworld_modding]
-command = "dotnet"
-args = ["run", "--project", "tools/RimWorldModding.Mcp/RimWorldModding.Mcp.csproj", "--", "serve", "--repository-root", "."]
-cwd = ".."
+command = "pwsh"
+args = ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", ".codex/Start-RimWorldModdingMcp.ps1"]
 required = true
-startup_timeout_sec = 30
+startup_timeout_sec = 90
 tool_timeout_sec = 3900
 default_tools_approval_mode = "writes"
 

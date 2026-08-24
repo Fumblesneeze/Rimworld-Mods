@@ -7,12 +7,16 @@
 - Repository SDK: .NET 8 (`global.json`), single-file publish.
 - MCP SDK: official `ModelContextProtocol` 2.2.0 package, stdio transport.
 - CLI parser: `System.CommandLine` 2.0.0.
-- Codex project configuration: `.codex/config.toml`, `[mcp_servers.rimworld_modding]`, explicit `command`, `args`, `cwd`, startup/tool timeouts, and write-aware approvals.
+- Codex project configuration: `.codex/config.toml`, `[mcp_servers.rimworld_modding]`, explicit `command` and `args`, startup/tool timeouts, and write-aware approvals. It intentionally omits `cwd`, making Codex use the task's logical workspace root instead of resolving `.` or `..` against an arbitrary host-process directory.
+- Portable client projection: root `.mcp.json`, with the same `command` and `args` and a project-root `cwd` for clients that support that convention. MCP standardizes the protocol, not a configuration filename or discovery convention, so Codex still needs its native TOML entry.
+- Source bootstrap: `.codex/Start-RimWorldModdingMcp.ps1` uses a bounded cross-process lease, a shorter explicit build deadline, isolated build directories, and an atomically published content-addressed cache before executing the exact server DLL. Concurrent cold sessions therefore never share MSBuild `obj` outputs, and failed or cancelled builds cannot become runnable cache entries.
 - stdout contains only MCP protocol frames or the selected CLI result. Diagnostics use stderr.
 - CLI output is `table` by default and `json` with `-o|--output json`.
 - Exit codes: `0` success, `2` invalid usage or validation, `1` runtime failure.
 
 The local server is intentionally stdio rather than HTTP: Codex owns the child process and the operations act on this exact local repository, local RimWorld processes, and the local Steam client.
+
+The launcher requires PowerShell 7 (`pwsh`) and the SDK pinned by `global.json`. Both checked-in client configurations intentionally invoke the same launcher. A focused regression test parses both files and rejects command drift, then exercises concurrent cold initialization and cancelled-build retry through real stdio handshakes.
 
 ## Operation families
 
