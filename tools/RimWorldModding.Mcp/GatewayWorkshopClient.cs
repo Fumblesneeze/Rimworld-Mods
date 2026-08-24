@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace RimWorldModding.Mcp;
@@ -20,16 +22,15 @@ public sealed class GatewayWorkshopClient(
     public async Task RegisterSourceAsync(string source, string entryType, CancellationToken cancellationToken)
     {
         source = RepositoryRoot.ContainedPath(_repositoryRoot, source);
+        var companion = await EnsureCompanionAsync(cancellationToken);
         var managed = @"F:\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed";
-        var contract = Path.Combine(
-            _repositoryRoot, "artifacts", "HostTools", "Release", "net480", "RimWorldDevGateway.Contracts.dll");
-        if (!File.Exists(source) || !Directory.Exists(managed) || !File.Exists(contract))
+        if (!File.Exists(source) || !Directory.Exists(managed))
             throw new InvalidOperationException("Workshop publisher source, RimWorld managed directory, or Gateway contract is missing.");
         var outer = await CallAsync(
             [
                 "execute-source", source,
                 "--managed", managed,
-                "--contract", contract,
+                "--contract", companion.ContractPath,
                 "--entry-type", entryType,
                 "--entry-method", "Execute",
                 "--request-json", "{}"
@@ -89,13 +90,12 @@ public sealed class GatewayWorkshopClient(
                 throw new ArgumentException("requestJson must be one JSON object.");
         }
         var managed = @"F:\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed";
-        var contract = Path.Combine(
-            _repositoryRoot, "artifacts", "HostTools", "Release", "net480", "RimWorldDevGateway.Contracts.dll");
+        var companion = await EnsureCompanionAsync(cancellationToken);
         var outer = await CallAsync(
             [
                 "execute-source", source,
                 "--managed", managed,
-                "--contract", contract,
+                "--contract", companion.ContractPath,
                 "--entry-type", entryType,
                 "--entry-method", "Execute",
                 "--request-json", requestJson
@@ -156,9 +156,7 @@ public sealed class GatewayWorkshopClient(
 
     private async Task<JsonElement> CallAsync(IReadOnlyList<string> commandArguments, CancellationToken cancellationToken)
     {
-        var client = Path.Combine(
-            _repositoryRoot, "artifacts", "HostTools", "Release", "net480", "RimWorldDevGateway.Client.exe");
-        if (!File.Exists(client)) throw new InvalidOperationException("Built Gateway companion client is missing.");
+        var companion = await EnsureCompanionAsync(cancellationToken);
         var arguments = commandArguments.ToList();
         arguments.Add("--manifest");
         arguments.Add(_manifestPath);
@@ -167,7 +165,7 @@ public sealed class GatewayWorkshopClient(
         arguments.Add("--output");
         arguments.Add("json");
         var result = await ProcessRunner.RunAsync(
-            client, arguments, _repositoryRoot, TimeSpan.FromMinutes(3), cancellationToken);
+            companion.ClientPath, arguments, _repositoryRoot, TimeSpan.FromMinutes(3), cancellationToken);
         if (result.ExitCode != 0)
             throw new InvalidOperationException($"Gateway client failed: {Bound(result.StandardError + result.StandardOutput)}");
         try
@@ -181,6 +179,143 @@ public sealed class GatewayWorkshopClient(
         }
     }
 
+    internal static GatewayCompanionBuildPlan CreateCompanionBuildPlan(string repositoryRoot)
+    {
+        var root = RepositoryRoot.Resolve(repositoryRoot);
+        var project = Path.Combine(root, "tools", "RimWorldDevGateway.Client", "RimWorldDevGateway.Client.csproj");
+        var inputs = new[]
+            {
+                Path.Combine(root, "Directory.Build.props"),
+                Path.Combine(root, "Directory.Build.targets"),
+                Path.Combine(root, "global.json")
+            }
+            .Concat(Directory.EnumerateFiles(Path.Combine(root, "tools", "RimWorldDevGateway.Client"), "*", SearchOption.AllDirectories))
+            .Concat(Directory.EnumerateFiles(Path.Combine(root, "shared", "RimWorldDevGateway.Contracts"), "*", SearchOption.AllDirectories))
+            .Where(path => !Path.GetRelativePath(root, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                               .Any(part => part.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
+                                            part.Equals("obj", StringComparison.OrdinalIgnoreCase)))
+            .Where(path => path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
+                           path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase) ||
+                           path.EndsWith(".props", StringComparison.OrdinalIgnoreCase) ||
+                           path.EndsWith(".targets", StringComparison.OrdinalIgnoreCase) ||
+                           Path.GetFileName(path).Equals("global.json", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(path => Path.GetRelativePath(root, path), StringComparer.Ordinal)
+            .ToArray();
+        if (!File.Exists(project) || inputs.Any(path => !File.Exists(path)))
+            throw new InvalidOperationException("Gateway companion build inputs are missing.");
+        var fingerprint = Fingerprint(root, inputs);
+        var cacheRoot = Path.Combine(root, "artifacts", "HostTools", "RimWorldModdingMcp", "GatewayCompanion");
+        var output = Path.Combine(cacheRoot, fingerprint);
+        return new GatewayCompanionBuildPlan(
+            project,
+            cacheRoot,
+            fingerprint,
+            output,
+            Path.Combine(output, "RimWorldDevGateway.Client.exe"),
+            Path.Combine(output, "RimWorldDevGateway.Contracts.dll"),
+            Path.Combine(output, ".complete"),
+            Path.Combine(cacheRoot, fingerprint + ".lock"));
+    }
+
+    internal static IReadOnlyList<string> CreateCompanionBuildArguments(
+        GatewayCompanionBuildPlan plan,
+        string outputDirectory) =>
+        ["build", plan.ProjectPath, "--configuration", "Release", "--framework", "net480",
+            "--output", outputDirectory, "--nologo", "--verbosity", "minimal"];
+
+    internal static async Task<GatewayCompanionBuildPlan> EnsureCompanionBuiltAsync(
+        string repositoryRoot,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var root = RepositoryRoot.Resolve(repositoryRoot);
+        var plan = CreateCompanionBuildPlan(root);
+        Directory.CreateDirectory(plan.CacheRoot);
+        using var lease = await AcquireBuildLeaseAsync(plan.LockPath, cancellationToken);
+        if (IsPublishedCompanionValid(plan)) return plan;
+
+        var staging = Path.Combine(plan.CacheRoot, plan.InputFingerprint + ".staging-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(staging);
+        try
+        {
+            var result = await ProcessRunner.RunAsync(
+                "dotnet", CreateCompanionBuildArguments(plan, staging), root, TimeSpan.FromMinutes(5), cancellationToken);
+            if (result.ExitCode != 0)
+                throw new InvalidOperationException("Gateway companion client build failed: " +
+                                                    Bound(result.StandardError + result.StandardOutput));
+            var stagedClient = Path.Combine(staging, "RimWorldDevGateway.Client.exe");
+            var stagedContract = Path.Combine(staging, "RimWorldDevGateway.Contracts.dll");
+            if (!File.Exists(stagedClient) || !File.Exists(stagedContract))
+                throw new InvalidOperationException("Gateway companion build did not produce the exact client and contract outputs.");
+            var postBuildPlan = CreateCompanionBuildPlan(root);
+            if (!string.Equals(postBuildPlan.InputFingerprint, plan.InputFingerprint, StringComparison.Ordinal))
+                throw new InvalidOperationException("Gateway companion build inputs changed while the isolated build was running.");
+            DurableFile.WriteAllText(
+                Path.Combine(staging, ".complete"),
+                BuildStamp(plan.InputFingerprint, Hash(stagedClient), Hash(stagedContract)));
+            if (Directory.Exists(plan.OutputDirectory)) Directory.Delete(plan.OutputDirectory, recursive: true);
+            Directory.Move(staging, plan.OutputDirectory);
+            if (!IsPublishedCompanionValid(plan))
+                throw new InvalidOperationException("Gateway companion atomic publication failed validation.");
+            return plan;
+        }
+        finally
+        {
+            if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
+        }
+    }
+
+    internal static bool IsPublishedCompanionValid(GatewayCompanionBuildPlan plan)
+    {
+        if (!File.Exists(plan.ClientPath) || !File.Exists(plan.ContractPath) || !File.Exists(plan.StampPath)) return false;
+        var lines = File.ReadAllLines(plan.StampPath);
+        return lines.Length == 4 &&
+               lines[0] == "RimWorldModdingMcp/GatewayCompanion/v1" &&
+               lines[1] == plan.InputFingerprint &&
+               lines[2] == Hash(plan.ClientPath) &&
+               lines[3] == Hash(plan.ContractPath);
+    }
+
+    private Task<GatewayCompanionBuildPlan> EnsureCompanionAsync(CancellationToken cancellationToken) =>
+        EnsureCompanionBuiltAsync(_repositoryRoot, cancellationToken);
+
+    private static async Task<FileStream> AcquireBuildLeaseAsync(string path, CancellationToken cancellationToken)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddMinutes(5);
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException) when (DateTimeOffset.UtcNow < deadline)
+            {
+                await Task.Delay(100, cancellationToken);
+            }
+            if (DateTimeOffset.UtcNow >= deadline)
+                throw new TimeoutException("Timed out waiting for the exact Gateway companion build lease.");
+        }
+    }
+
+    private static string Fingerprint(string root, IEnumerable<string> inputs)
+    {
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        foreach (var path in inputs)
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes(Path.GetRelativePath(root, path).Replace('\\', '/') + "\0"));
+            hash.AppendData(File.ReadAllBytes(path));
+            hash.AppendData([0]);
+        }
+        return Convert.ToHexString(hash.GetHashAndReset());
+    }
+
+    private static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
+
+    private static string BuildStamp(string fingerprint, string clientHash, string contractHash) =>
+        string.Join('\n', "RimWorldModdingMcp/GatewayCompanion/v1", fingerprint, clientHash, contractHash);
+
     private static void RequireOk(JsonElement outer, string operation)
     {
         if (!outer.TryGetProperty("ok", out var ok) || ok.ValueKind != JsonValueKind.True)
@@ -189,3 +324,13 @@ public sealed class GatewayWorkshopClient(
 
     private static string Bound(string value) => value.Length <= 8192 ? value.Trim() : value[..8192].Trim();
 }
+
+internal sealed record GatewayCompanionBuildPlan(
+    string ProjectPath,
+    string CacheRoot,
+    string InputFingerprint,
+    string OutputDirectory,
+    string ClientPath,
+    string ContractPath,
+    string StampPath,
+    string LockPath);
