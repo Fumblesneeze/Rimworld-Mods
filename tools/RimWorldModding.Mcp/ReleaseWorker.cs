@@ -36,7 +36,7 @@ public sealed record ReleaseWorkerStatus(
 
 public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
 {
-    private const int MaximumAttempts = 6;
+    private const int MaximumAttempts = 9;
     private static readonly ConcurrentDictionary<int, Process> ActiveWorkers = new();
     private readonly string _repositoryRoot = RepositoryRoot.Resolve(repositoryRoot);
 

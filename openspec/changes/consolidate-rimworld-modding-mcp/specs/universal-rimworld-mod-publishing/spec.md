@@ -52,6 +52,10 @@ The subscriber workflow SHALL freeze its manifest/source inputs into the admitte
 - **WHEN** the subscribed-copy Gateway becomes reachable while RimWorld is still initializing its new game
 - **THEN** the verifier waits for `ProgramState.Playing`, a non-null current map, and no active or waiting RimWorld long event before dispatching the first native subscriber workflow step, and every status request and retry delay remains bounded by the workflow deadline
 
+#### Scenario: Gateway CLI screenshot returns its direct file result
+- **WHEN** a subscriber evidence step invokes the Gateway client's native `screenshot --file` command and it returns its direct successful file metadata payload
+- **THEN** the verifier validates that exact output path and nonempty file without requiring the JSON envelope used by HTTP-style Gateway commands
+
 #### Scenario: Persistence or verification fails after upload
 - **WHEN** Steam reports success but identity persistence, reacquisition, or native subscriber verification fails
 - **THEN** the run reports an incomplete release against the known item ID, retains recovery evidence, and never claims the release verified or creates another item

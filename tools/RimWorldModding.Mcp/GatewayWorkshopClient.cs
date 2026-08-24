@@ -116,10 +116,17 @@ public sealed class GatewayWorkshopClient(
     {
         var path = RepositoryRoot.ContainedPath(_repositoryRoot, outputPath);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var outer = await CallAsync(["screenshot", "--file", path], cancellationToken);
-        RequireOk(outer, "Gateway screenshot");
-        if (!File.Exists(path) || new FileInfo(path).Length == 0)
-            throw new InvalidOperationException("Gateway screenshot did not produce a nonempty file.");
+        var result = await CallAsync(["screenshot", "--file", path], cancellationToken);
+        ValidateScreenshotResult(result, path);
+    }
+
+    internal static void ValidateScreenshotResult(JsonElement result, string expectedPath)
+    {
+        if (!TryProperty(result, "bytes", out var bytes) || !bytes.TryGetInt64(out var expectedBytes) || expectedBytes <= 0 ||
+            !TryProperty(result, "file", out var file) || file.ValueKind != JsonValueKind.String ||
+            !string.Equals(Path.GetFullPath(file.GetString()!), Path.GetFullPath(expectedPath), StringComparison.OrdinalIgnoreCase) ||
+            !File.Exists(expectedPath) || new FileInfo(expectedPath).Length != expectedBytes)
+            throw new InvalidOperationException($"Gateway screenshot did not produce the exact nonempty file: {Bound(result.ToString())}");
     }
 
     public async Task<JsonElement> ExecuteSourceAsync(

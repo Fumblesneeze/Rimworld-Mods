@@ -98,6 +98,30 @@ public sealed class GatewayWorkshopClientTests
     }
 
     [Test]
+    public void ScreenshotResult_AcceptsTheClientsDirectSuccessPayload()
+    {
+        var path = Path.Combine(TestContext.CurrentContext.WorkDirectory, "gateway-screenshot-" + Guid.NewGuid().ToString("N") + ".png");
+        try
+        {
+            File.WriteAllBytes(path, [137, 80, 78, 71]);
+            using var payload = JsonDocument.Parse(JsonSerializer.Serialize(new
+            {
+                bytes = 4,
+                contentType = "image/png; charset=utf-8",
+                file = path
+            }));
+
+            Assert.That(
+                () => GatewayWorkshopClient.ValidateScreenshotResult(payload.RootElement, path),
+                Throws.Nothing);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Test]
     public void CompanionBuildPlan_IsRepositoryLocalAndProducesTheExactRequiredOutputs()
     {
         var root = TestRepository.FindRoot();
