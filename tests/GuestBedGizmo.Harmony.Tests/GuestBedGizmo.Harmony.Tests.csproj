@@ -1,0 +1,38 @@
+<Project Sdk="Zlepper.RimWorld.ModSdk.Testing/0.0.9">
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(SteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
+    <HospitalityAssemblyPath Condition="'$(HospitalityAssemblyPath)' == ''">$(SteamModContentFolder)\3509486825\1.6\Assemblies\Hospitality.dll</HospitalityAssemblyPath>
+    <RootNamespace>GuestBedGizmo.Harmony.Tests</RootNamespace>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\mods\GuestBedGizmo\GuestBedGizmo.csproj" />
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyAssemblyPath)</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <PackageReference Update="NUnit3TestAdapter" Version="6.2.0" PrivateAssets="all" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>HarmonyAssemblyPath</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(HarmonyAssemblyPath)'))</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>HospitalityAssemblyPath</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(HospitalityAssemblyPath)'))</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>AssemblyCSharpPath</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(RimWorldManagedPath)\Assembly-CSharp.dll'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <Target Name="ValidateGuestBedGizmoShapeInputs" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(HarmonyAssemblyPath)')" Text="The Harmony test assembly does not exist: $(HarmonyAssemblyPath)." />
+    <Error Condition="!Exists('$(HospitalityAssemblyPath)')" Text="The Hospitality shape assembly does not exist: $(HospitalityAssemblyPath)." />
+  </Target>
+</Project>

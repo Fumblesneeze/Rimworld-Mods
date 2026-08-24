@@ -314,8 +314,14 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
             exception);
     }
 
-    private sealed class VerseCandidate : IGatewayGizmoCandidate
+    private sealed class VerseCandidate : IGatewayGizmoCandidate, IGatewayDesignatorPreviewCandidate
     {
+        private static readonly MethodInfo? HandleRotationMethod = typeof(Designator_Place).GetMethod(
+            "HandleRotation",
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null,
+            types: new[] { typeof(RotationDirection) },
+            modifiers: null);
         private static readonly IReadOnlyList<GatewayInteractionInputKind> NoInputs =
             Array.Empty<GatewayInteractionInputKind>();
         private static readonly IReadOnlyList<GatewayInteractionInputKind> TargetInputs =
@@ -337,6 +343,7 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
         private readonly IReadOnlyList<string> owners;
         private readonly string identity;
         private Designator_Place? selectedPlaceDesignator;
+        private IntVec3 previewCell = IntVec3.Invalid;
 
         public VerseCandidate(
             Map map,
@@ -385,10 +392,17 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
 
         public void Invoke()
         {
+            FloatMenuAutomationLease.Clear();
+            FloatMenu[] existingMenus = Find.WindowStack?.Windows
+                .OfType<FloatMenu>()
+                .ToArray() ?? Array.Empty<FloatMenu>();
             switch (gizmo)
             {
                 case Command_Action action when action.action is not null:
                     action.action();
+                    FloatMenuAutomationLease.CaptureNewlyOpened(
+                        existingMenus,
+                        Find.WindowStack?.Windows.OfType<FloatMenu>() ?? Enumerable.Empty<FloatMenu>());
                     return;
                 case Command_Toggle toggle when toggle.toggleAction is not null:
                     toggle.toggleAction();
@@ -402,7 +416,7 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
 
         public void Prepare(GatewayInteractionInput input)
         {
-            if (!input.Rotation.HasValue)
+            if (!input.Rotation.HasValue && input.StuffDefName is null)
             {
                 return;
             }
@@ -411,7 +425,7 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
             {
                 throw new GatewayGizmoException(
                     "interaction_rotation_unsupported",
-                    "Cardinal rotation is supported only by a native place designator.");
+                    "Cardinal rotation is supported only by a native Designator_Place interaction.");
             }
 
             CompletePlaceDesignatorLifecycle();
@@ -419,7 +433,22 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
             try
             {
                 placeDesignator.Selected();
-                DesignatorPlaceRotationAdapter.Configure(placeDesignator, input.Rotation.Value);
+                if (input.Rotation.HasValue)
+                {
+                    DesignatorPlaceRotationAdapter.Configure(placeDesignator, input.Rotation.Value);
+                }
+
+                if (input.StuffDefName is not null)
+                {
+                    if (placeDesignator is not Designator_Build buildDesignator)
+                    {
+                        throw new GatewayGizmoException(
+                            "interaction_stuff_unsupported",
+                            "A Stuff choice is supported only by a native Designator_Build interaction.");
+                    }
+
+                    DesignatorBuildStuffAdapter.Configure(buildDesignator, input.StuffDefName);
+                }
             }
             catch
             {
@@ -523,11 +552,144 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
             CompletePlaceDesignatorLifecycle();
         }
 
+        public void BeginPreview(GatewayMapCell cell, string? stuffDefName)
+        {
+            if (gizmo is not Designator_Place placeDesignator)
+            {
+                throw new GatewayGizmoException(
+                    "designator_preview_unsupported",
+                    "Only a native Designator_Place can begin an in-game hover preview.");
+            }
+
+            var target = ToIntVec3(cell);
+            if (!target.InBounds(map))
+            {
+                throw new GatewayGizmoException(
+                    "designator_preview_cell_out_of_bounds",
+                    "The requested preview cell is outside the current map.");
+            }
+
+            CompletePlaceDesignatorLifecycle();
+            if (Find.DesignatorManager?.SelectedDesignator is not null)
+            {
+                throw new GatewayGizmoException(
+                    "designator_preview_not_current",
+                    "Another native designator is already selected.");
+            }
+
+            previewCell = target;
+            selectedPlaceDesignator = placeDesignator;
+            try
+            {
+                placeDesignator.Selected();
+                if (stuffDefName is not null)
+                {
+                    if (placeDesignator is not Designator_Build buildDesignator)
+                    {
+                        throw new GatewayGizmoException(
+                            "interaction_stuff_unsupported",
+                            "A Stuff choice is supported only by a native Designator_Build preview.");
+                    }
+
+                    DesignatorBuildStuffAdapter.Configure(buildDesignator, stuffDefName);
+                }
+
+            }
+            catch
+            {
+                CancelPreview();
+                throw;
+            }
+        }
+
+        public bool PreviewIsCurrent =>
+            selectedPlaceDesignator is not null &&
+            previewCell != IntVec3.Invalid &&
+            Current.Game?.CurrentMap == map &&
+            Find.DesignatorManager?.SelectedDesignator is null;
+
+        public void RotatePreview(GatewayDesignatorRotationDirection direction)
+        {
+            Designator_Place designator = RequirePreviewDesignator();
+            if (HandleRotationMethod is null)
+            {
+                throw new GatewayGizmoException(
+                    "designator_rotation_unavailable",
+                    "This RimWorld build does not expose the native designator rotation handler.");
+            }
+
+            var nativeDirection = direction == GatewayDesignatorRotationDirection.Clockwise
+                ? RotationDirection.Clockwise
+                : RotationDirection.Counterclockwise;
+            try
+            {
+                HandleRotationMethod.Invoke(designator, new object[] { nativeDirection });
+            }
+            catch (TargetInvocationException exception) when (exception.InnerException is not null)
+            {
+                throw new GatewayGizmoException(
+                    "designator_rotation_failed",
+                    "RimWorld's native designator rotation handler failed.",
+                    exception.InnerException);
+            }
+        }
+
+        public void DrawPreview()
+        {
+            Designator_Place designator = RequirePreviewDesignator();
+            designator.RenderHighlight(new List<IntVec3> { previewCell });
+        }
+
+        public GatewayDesignatorCommitResult CommitPreview()
+        {
+            Designator_Place designator = RequirePreviewDesignator();
+            try
+            {
+                AcceptanceReport report = designator.CanDesignateCell(previewCell);
+                if (!report.Accepted)
+                {
+                    return new GatewayDesignatorCommitResult(false, report.Reason);
+                }
+
+                designator.DesignateMultiCell(new[] { previewCell });
+                return new GatewayDesignatorCommitResult(true, null);
+            }
+            finally
+            {
+                CancelPreview();
+            }
+        }
+
+        public void CancelPreview()
+        {
+            previewCell = IntVec3.Invalid;
+            CompletePlaceDesignatorLifecycle();
+        }
+
+        private Designator_Place RequirePreviewDesignator()
+        {
+            if (!PreviewIsCurrent)
+            {
+                throw new GatewayGizmoException(
+                    "designator_preview_not_current",
+                    "The native designator preview is no longer selected.");
+            }
+
+            return selectedPlaceDesignator!;
+        }
+
         private void CompletePlaceDesignatorLifecycle()
         {
             var selected = selectedPlaceDesignator;
             selectedPlaceDesignator = null;
-            selected?.Deselected();
+            if (selected is not null && Find.DesignatorManager?.SelectedDesignator == selected)
+            {
+                Find.DesignatorManager.Deselect();
+            }
+            else
+            {
+                selected?.Deselected();
+            }
         }
 
         private TargetInfo ResolveTargetInfo(
@@ -657,9 +819,96 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
         }
     }
 
+    internal static class DesignatorBuildStuffAdapter
+    {
+        private static readonly FieldInfo? StuffDefField = typeof(Designator_Build).GetField(
+            "stuffDef",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
+        internal static void Configure(Designator_Build designator, string stuffDefName)
+        {
+            if (designator is null)
+            {
+                throw new ArgumentNullException(nameof(designator));
+            }
+
+            ThingDef? stuff = DefDatabase<ThingDef>.GetNamedSilentFail(stuffDefName);
+            if (stuff is null || !stuff.IsStuff)
+            {
+                throw new GatewayGizmoException(
+                    "interaction_stuff_invalid",
+                    $"The requested Stuff Def '{stuffDefName}' is not loaded Stuff.");
+            }
+
+            if (designator.PlacingDef is not ThingDef placingDef ||
+                !placingDef.MadeFromStuff ||
+                !GenStuff.AllowedStuffsFor(placingDef).Contains(stuff))
+            {
+                throw new GatewayGizmoException(
+                    "interaction_stuff_unsupported",
+                    $"The placing Def does not accept Stuff '{stuffDefName}'.");
+            }
+
+            if (StuffDefField is null || StuffDefField.FieldType != typeof(ThingDef))
+            {
+                throw new GatewayGizmoException(
+                    "interaction_stuff_unavailable",
+                    "This RimWorld build does not expose the expected native build material state.");
+            }
+
+            StuffDefField.SetValue(designator, stuff);
+        }
+    }
+
     private static Thing? ResolveThing(IEnumerable<Thing> candidates, string handle) =>
         candidates.FirstOrDefault(candidate =>
             string.Equals(candidate.ThingID, handle, StringComparison.Ordinal)) ??
         candidates.FirstOrDefault(candidate =>
             string.Equals(candidate.GetUniqueLoadID(), handle, StringComparison.Ordinal));
+}
+
+internal static class FloatMenuAutomationLease
+{
+    private static FloatMenu? capturedForAutomation;
+    private static bool originalVanishIfMouseDistant;
+
+    internal static FloatMenu? CapturedForAutomation => capturedForAutomation;
+
+    internal static void CaptureNewlyOpened(
+        IEnumerable<FloatMenu> before,
+        IEnumerable<FloatMenu> after)
+    {
+        Clear();
+        var existing = new HashSet<FloatMenu>(before);
+        FloatMenu[] newlyOpened = after
+            .Where(menu => !existing.Contains(menu))
+            .ToArray();
+        if (newlyOpened.Length != 1)
+        {
+            return;
+        }
+
+        originalVanishIfMouseDistant = newlyOpened[0].vanishIfMouseDistant;
+        newlyOpened[0].vanishIfMouseDistant = false;
+        capturedForAutomation = newlyOpened[0];
+    }
+
+    internal static void Consume(FloatMenu menu)
+    {
+        if (ReferenceEquals(capturedForAutomation, menu))
+        {
+            Clear();
+        }
+    }
+
+    internal static void Clear()
+    {
+        if (capturedForAutomation is not null)
+        {
+            capturedForAutomation.vanishIfMouseDistant = originalVanishIfMouseDistant;
+        }
+
+        capturedForAutomation = null;
+        originalVanishIfMouseDistant = false;
+    }
 }

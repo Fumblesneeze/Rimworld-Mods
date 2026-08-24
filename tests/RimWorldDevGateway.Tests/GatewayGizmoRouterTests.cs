@@ -132,10 +132,15 @@ public sealed class GatewayGizmoRouterTests
     }
 
     [Test]
-    public void Interaction_json_accepts_one_cardinal_rotation_only_for_cell_input()
+    public void Interaction_json_accepts_one_cardinal_rotation_for_cell_or_line_input()
     {
         var input = GatewayGizmoRequestJson.ReadInteractionInput(
             "{\"kind\":\"cell\",\"cell\":{\"x\":5,\"z\":6},\"rotation\":\"East\"}");
+        var line = GatewayGizmoRequestJson.ReadInteractionInput(
+            "{\"kind\":\"line\",\"start\":{\"x\":5,\"z\":6},\"end\":{\"x\":2,\"z\":6},\"rotation\":\"North\"}");
+        var diagonal = Assert.Throws<System.Runtime.Serialization.SerializationException>(() =>
+            GatewayGizmoRequestJson.ReadInteractionInput(
+                "{\"kind\":\"line\",\"start\":{\"x\":5,\"z\":6},\"end\":{\"x\":2,\"z\":3},\"rotation\":\"North\"}"));
         var wrongShape = Assert.Throws<System.Runtime.Serialization.SerializationException>(() =>
             GatewayGizmoRequestJson.ReadInteractionInput(
                 "{\"kind\":\"rectangle\",\"cornerA\":{\"x\":1,\"z\":2}," +
@@ -147,6 +152,8 @@ public sealed class GatewayGizmoRouterTests
         Assert.Multiple(() =>
         {
             Assert.That(input.Rotation, Is.EqualTo(GatewayCardinalRotation.East));
+            Assert.That(line.Rotation, Is.EqualTo(GatewayCardinalRotation.North));
+            Assert.That(diagonal?.Message, Does.Contain("cardinal"));
             Assert.That(wrongShape?.Message, Does.Contain("rotation"));
             Assert.That(invalid?.Message, Does.Contain("cardinal rotation"));
         });

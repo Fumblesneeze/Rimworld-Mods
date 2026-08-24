@@ -237,6 +237,40 @@ public interface IGatewayGizmoCandidate
     void Cancel();
 }
 
+public enum GatewayDesignatorRotationDirection
+{
+    Clockwise = 1,
+    Counterclockwise = 3
+}
+
+public sealed class GatewayDesignatorCommitResult
+{
+    public GatewayDesignatorCommitResult(bool accepted, string? rejectionReason)
+    {
+        Accepted = accepted;
+        RejectionReason = string.IsNullOrWhiteSpace(rejectionReason) ? null : rejectionReason;
+    }
+
+    public bool Accepted { get; }
+
+    public string? RejectionReason { get; }
+}
+
+public interface IGatewayDesignatorPreviewCandidate
+{
+    bool PreviewIsCurrent { get; }
+
+    void BeginPreview(GatewayMapCell cell, string? stuffDefName);
+
+    void RotatePreview(GatewayDesignatorRotationDirection direction);
+
+    void DrawPreview();
+
+    GatewayDesignatorCommitResult CommitPreview();
+
+    void CancelPreview();
+}
+
 public interface IGatewayGizmoSource
 {
     GatewayGizmoDiscovery Discover(GatewayGizmoSourceQuery query);
@@ -419,12 +453,14 @@ public sealed class GatewayInteractionInput
         GatewayInteractionInputKind kind,
         string? thingHandle,
         IReadOnlyList<GatewayMapCell> cells,
-        GatewayCardinalRotation? rotation = null)
+        GatewayCardinalRotation? rotation = null,
+        string? stuffDefName = null)
     {
         Kind = kind;
         ThingHandle = thingHandle;
         Cells = cells;
         Rotation = rotation;
+        StuffDefName = stuffDefName;
     }
 
     public GatewayInteractionInputKind Kind { get; }
@@ -435,6 +471,8 @@ public sealed class GatewayInteractionInput
 
     public GatewayCardinalRotation? Rotation { get; }
 
+    public string? StuffDefName { get; }
+
     public static GatewayInteractionInput ForThing(string thingHandle) =>
         new(
             GatewayInteractionInputKind.Thing,
@@ -443,12 +481,14 @@ public sealed class GatewayInteractionInput
 
     public static GatewayInteractionInput ForCell(
         GatewayMapCell cell,
-        GatewayCardinalRotation? rotation = null) =>
+        GatewayCardinalRotation? rotation = null,
+        string? stuffDefName = null) =>
         new(
             GatewayInteractionInputKind.Cell,
             null,
             new[] { cell ?? throw new ArgumentNullException(nameof(cell)) },
-            ValidateRotation(rotation));
+            ValidateRotation(rotation),
+            ValidateStuffDefName(stuffDefName));
 
     public static GatewayInteractionInput ForCells(IEnumerable<GatewayMapCell> cells) =>
         new(
@@ -456,15 +496,30 @@ public sealed class GatewayInteractionInput
             null,
             CopyCells(cells));
 
-    public static GatewayInteractionInput ForLine(GatewayMapCell start, GatewayMapCell end) =>
-        new(
+    public static GatewayInteractionInput ForLine(
+        GatewayMapCell start,
+        GatewayMapCell end,
+        GatewayCardinalRotation? rotation = null,
+        string? stuffDefName = null)
+    {
+        if (rotation.HasValue && start != null && end != null && start.X != end.X && start.Z != end.Z)
+        {
+            throw new ArgumentException(
+                "A rotated native line interaction must be cardinal.",
+                nameof(rotation));
+        }
+
+        return new(
             GatewayInteractionInputKind.Line,
             null,
             new[]
             {
                 start ?? throw new ArgumentNullException(nameof(start)),
                 end ?? throw new ArgumentNullException(nameof(end))
-            });
+            },
+            ValidateRotation(rotation),
+            ValidateStuffDefName(stuffDefName));
+    }
 
     public static GatewayInteractionInput ForRectangle(GatewayMapCell cornerA, GatewayMapCell cornerB) =>
         new(
@@ -500,6 +555,21 @@ public sealed class GatewayInteractionInput
         }
 
         return rotation;
+    }
+
+    private static string? ValidateStuffDefName(string? stuffDefName)
+    {
+        if (stuffDefName is null)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(stuffDefName))
+        {
+            throw new ArgumentException("A Stuff Def name cannot be empty.", nameof(stuffDefName));
+        }
+
+        return stuffDefName.Trim();
     }
 }
 
@@ -587,6 +657,7 @@ public sealed class GatewayGizmoRegistry
     private readonly Dictionary<string, Registration> registrations = new(StringComparer.Ordinal);
     private readonly List<string> registrationOrder = new();
     private ActiveInteraction? activeInteraction;
+    private ActiveDesignatorPreview? activeDesignatorPreview;
     private long nextInteractionId;
 
     public GatewayGizmoRegistry(IGatewayGizmoSource source)
@@ -617,6 +688,130 @@ public sealed class GatewayGizmoRegistry
                     "The interaction source changed after it was started.",
                     exception);
             }
+        }
+    }
+
+    public bool HasActiveDesignatorPreview => activeDesignatorPreview is not null;
+
+    public void BeginDesignatorPreview(
+        string handle,
+        GatewayMapCell cell,
+        string? stuffDefName = null)
+    {
+        if (cell is null)
+        {
+            throw new ArgumentNullException(nameof(cell));
+        }
+
+        if (activeInteraction is not null || activeDesignatorPreview is not null)
+        {
+            throw new GatewayGizmoException(
+                "interaction_in_progress",
+                "Another semantic interaction is already active.");
+        }
+
+        if (string.IsNullOrWhiteSpace(handle) || !registrations.TryGetValue(handle, out var registration))
+        {
+            throw new GatewayGizmoException("gizmo_not_found", "The gizmo handle is unknown.");
+        }
+
+        IGatewayGizmoCandidate candidate = Revalidate(registration, out GatewayGizmoCandidateSnapshot snapshot);
+        if (snapshot.Disabled)
+        {
+            throw new GatewayGizmoException(
+                "gizmo_disabled",
+                snapshot.DisabledReason ?? $"Gizmo '{snapshot.Label}' is disabled.");
+        }
+
+        if (candidate is not IGatewayDesignatorPreviewCandidate preview)
+        {
+            throw new GatewayGizmoException(
+                "designator_preview_unsupported",
+                "The selected gizmo does not expose a native designator preview lifecycle.");
+        }
+
+        preview.BeginPreview(cell, stuffDefName);
+        activeDesignatorPreview = new ActiveDesignatorPreview(registration, preview);
+    }
+
+    public void RotateDesignatorPreview(GatewayDesignatorRotationDirection direction)
+    {
+        if (!Enum.IsDefined(typeof(GatewayDesignatorRotationDirection), direction))
+        {
+            throw new ArgumentOutOfRangeException(nameof(direction));
+        }
+
+        ActiveDesignatorPreview active = RequireActiveDesignatorPreview();
+        RevalidateDesignatorPreview(active);
+        try
+        {
+            active.Candidate.RotatePreview(direction);
+        }
+        catch (GatewayGizmoException exception) when (exception.Code == "designator_preview_not_current")
+        {
+            ClearStaleDesignatorPreview(active);
+            throw;
+        }
+    }
+
+    public bool RefreshDesignatorPreview()
+    {
+        ActiveDesignatorPreview? active = activeDesignatorPreview;
+        if (active is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            RevalidateDesignatorPreview(active);
+            if (!active.Candidate.PreviewIsCurrent)
+            {
+                ClearStaleDesignatorPreview(active);
+                return false;
+            }
+
+            active.Candidate.DrawPreview();
+            return true;
+        }
+        catch (GatewayGizmoException exception) when (
+            exception.Code == "designator_preview_not_current" ||
+            exception.Code == "stale_designator_preview")
+        {
+            ClearStaleDesignatorPreview(active);
+            return false;
+        }
+        catch
+        {
+            ClearStaleDesignatorPreview(active);
+            throw;
+        }
+    }
+
+    public GatewayDesignatorCommitResult CommitDesignatorPreview()
+    {
+        ActiveDesignatorPreview active = RequireActiveDesignatorPreview();
+        try
+        {
+            RevalidateDesignatorPreview(active);
+            return active.Candidate.CommitPreview();
+        }
+        finally
+        {
+            activeDesignatorPreview = null;
+        }
+    }
+
+    public void CancelDesignatorPreview()
+    {
+        ActiveDesignatorPreview active = RequireActiveDesignatorPreview();
+        try
+        {
+            active.Candidate.CancelPreview();
+        }
+        finally
+        {
+            activeDesignatorPreview = null;
         }
     }
 
@@ -676,7 +871,7 @@ public sealed class GatewayGizmoRegistry
             snapshot.InteractionKind == GatewayGizmoInteractionKind.Placement ||
             snapshot.InteractionKind == GatewayGizmoInteractionKind.Drag)
         {
-            if (activeInteraction is not null)
+            if (activeInteraction is not null || activeDesignatorPreview is not null)
             {
                 throw new GatewayGizmoException(
                     "interaction_in_progress",
@@ -854,6 +1049,52 @@ public sealed class GatewayGizmoRegistry
                 throw new GatewayGizmoException(
                     "interaction_target_mismatch",
                     $"Input shape {input.Kind} is unsupported.");
+        }
+    }
+
+    private ActiveDesignatorPreview RequireActiveDesignatorPreview() =>
+        activeDesignatorPreview ?? throw new GatewayGizmoException(
+            "designator_preview_not_current",
+            "No native designator preview session is active.");
+
+    private void RevalidateDesignatorPreview(ActiveDesignatorPreview active)
+    {
+        try
+        {
+            Revalidate(active.Registration, out _);
+        }
+        catch (GatewayGizmoException exception) when (exception.Code == "stale_gizmo_handle")
+        {
+            try
+            {
+                active.Candidate.CancelPreview();
+            }
+            finally
+            {
+                activeDesignatorPreview = null;
+            }
+
+            throw new GatewayGizmoException(
+                "stale_designator_preview",
+                "The designator source changed after its preview started.",
+                exception);
+        }
+    }
+
+    private void ClearStaleDesignatorPreview(ActiveDesignatorPreview active)
+    {
+        try
+        {
+            active.Candidate.CancelPreview();
+        }
+        catch
+        {
+            // Preserve the native stale-selection failure; the registry must still
+            // release ownership so the next bounded session can start.
+        }
+        finally
+        {
+            activeDesignatorPreview = null;
         }
     }
 
@@ -1214,5 +1455,20 @@ public sealed class GatewayGizmoRegistry
         public GatewayInteractionDescriptor Descriptor { get; }
 
         public Registration Registration { get; }
+    }
+
+    private sealed class ActiveDesignatorPreview
+    {
+        public ActiveDesignatorPreview(
+            Registration registration,
+            IGatewayDesignatorPreviewCandidate candidate)
+        {
+            Registration = registration;
+            Candidate = candidate;
+        }
+
+        public Registration Registration { get; }
+
+        public IGatewayDesignatorPreviewCandidate Candidate { get; }
     }
 }

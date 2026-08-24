@@ -1,8 +1,10 @@
 {
-  "schema": "ImmersiveChefs/Release/v1",
+  "schema": "RimWorldModRelease/v1",
+  "project": "mods/ImmersiveChefs/ImmersiveChefs.csproj",
   "packageId": "fumblesneeze.immersivechefs",
   "title": "Immersive Chefs",
   "author": "Fumblesneeze",
+  "distributionKind": "Product",
   "rimWorldVersion": "1.6",
   "rimWorldBuild": "1.6.4871 rev590",
   "rimWorldRuntimeBuild": "1.6.4871 rev591",
@@ -20,8 +22,21 @@
   "requiredWorkshopItems": [
     "2009463077"
   ],
+  "hardRuntimeAssemblyReferences": [],
+  "buildOperation": "mod_build",
+  "presentationOperation": "presentation_render",
+  "packageSource": "artifacts/Mods/fumblesneeze.immersivechefs",
+  "packageInclude": [
+    "About/",
+    "1.6/Assemblies/ImmersiveChefs.dll",
+    "1.6/Defs/",
+    "1.6/Languages/",
+    "1.6/Patches/",
+    "1.6/Textures/"
+  ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
   "previousChangeNote": "Dirty kitchenware is now much easier to spot. Dubs Bad Hygiene sinks, prep stations, and dishwashing now use real water; meals spawned without plates no longer interrupt eating or patient feeding; and Ceramics (Continued) porcelain can be crafted into plates.",
-  "changeNote": ""
+  "changeNote": "",
+  "verificationProfile": "mods/ImmersiveChefs/Release/subscriber-verification.json"
 }

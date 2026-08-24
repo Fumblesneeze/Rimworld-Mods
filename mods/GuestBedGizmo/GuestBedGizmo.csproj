@@ -1,0 +1,24 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <RimWorldModName>Hospitality + Ideoligy Patch</RimWorldModName>
+    <RimWorldPackageId>fumblesneeze.guestbedgizmo</RimWorldPackageId>
+    <RimWorldDistributionKind>Product</RimWorldDistributionKind>
+    <Authors>Fumblesneeze</Authors>
+    <AssemblyName>GuestBedGizmo</AssemblyName>
+    <RootNamespace>GuestBedGizmo</RootNamespace>
+    <IncludeHarmony>true</IncludeHarmony>
+    <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
+    <Description>Adds Hospitality guest beds to RimWorld 1.6's unified bed-owner menu alongside colonist, prisoner, and slave beds.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <RimWorldLoadAfter Include="Orion.Hospitality" />
+    <RimWorldLoadAfter Include="Ludeon.RimWorld.Ideology" />
+  </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+</Project>

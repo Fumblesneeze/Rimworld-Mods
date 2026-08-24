@@ -102,6 +102,25 @@ public sealed class GatewayEndToEndTestIsolationTests
         });
     }
 
+    [Test]
+    public void Isolation_reset_cancels_a_preview_left_active_by_a_failed_test()
+    {
+        var candidate = new IsolationPreviewCandidate();
+        var registry = new GatewayGizmoRegistry(new IsolationGizmoSource(candidate));
+        string handle = registry.Query(GatewayGizmoQuery.ForOwners(
+            Array.Empty<string>(), architectCategoryDefNames: new[] { "Structure" })).Items.Single().Handle;
+        registry.BeginDesignatorPreview(handle, new GatewayMapCell(4, 5), stuffDefName: "WoodLog");
+
+        VerseGatewayEndToEndIsolationOperations.CancelSemanticInteractions(registry);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(candidate.CancelCount, Is.EqualTo(1));
+            Assert.That(registry.HasActiveDesignatorPreview, Is.False);
+            Assert.That(VerseGatewayEndToEndIsolationOperations.SemanticInteractionsEmpty(registry), Is.True);
+        });
+    }
+
     private static Thing UninitializedThing(bool destroyable)
     {
         var def = (ThingDef)FormatterServices.GetUninitializedObject(typeof(ThingDef));
@@ -253,5 +272,70 @@ public sealed class GatewayEndToEndTestIsolationTests
         public void ClearLetters() => Calls.Add("letters");
 
         public void ClearAlerts() => Calls.Add("alerts");
+    }
+
+    private sealed class IsolationGizmoSource : IGatewayGizmoSource
+    {
+        private readonly IGatewayGizmoCandidate candidate;
+
+        public IsolationGizmoSource(IGatewayGizmoCandidate candidate) => this.candidate = candidate;
+
+        public GatewayGizmoDiscovery Discover(GatewayGizmoSourceQuery query) => new(
+            "Map_7",
+            Array.Empty<string>(),
+            new[] { candidate },
+            pageTruncated: false);
+    }
+
+    private sealed class IsolationPreviewCandidate : IGatewayGizmoCandidate, IGatewayDesignatorPreviewCandidate
+    {
+        public int CancelCount { get; private set; }
+
+        public bool PreviewIsCurrent => true;
+
+        public GatewayGizmoCandidateSnapshot Capture() => new(
+            "build-thin-wall",
+            GatewayGizmoSource.Architect,
+            Array.Empty<string>(),
+            "ThinWalls.Designation.Designator_ThinWall",
+            "Thin wall",
+            "Place a Thin Wall.",
+            20f,
+            disabled: false,
+            disabledReason: null,
+            hotKey: null,
+            groupKey: -1,
+            GatewayGizmoInteractionKind.Drag,
+            toggleState: null,
+            new[] { GatewayInteractionInputKind.Cell, GatewayInteractionInputKind.Line });
+
+        public void BeginPreview(GatewayMapCell cell, string? stuffDefName)
+        {
+        }
+
+        public void RotatePreview(GatewayDesignatorRotationDirection direction)
+        {
+        }
+
+        public void DrawPreview()
+        {
+        }
+
+        public GatewayDesignatorCommitResult CommitPreview() =>
+            new(accepted: true, rejectionReason: null);
+
+        public void CancelPreview() => CancelCount++;
+
+        public void Invoke() => throw new NotSupportedException();
+
+        public void Prepare(GatewayInteractionInput input) => throw new NotSupportedException();
+
+        public GatewayTargetAcceptance Preflight(GatewayInteractionTarget target) =>
+            throw new NotSupportedException();
+
+        public GatewayNativeApplyResult Apply(IReadOnlyList<GatewayInteractionTarget> targets) =>
+            throw new NotSupportedException();
+
+        public void Cancel() => throw new NotSupportedException();
     }
 }

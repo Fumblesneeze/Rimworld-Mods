@@ -16,7 +16,12 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             new TimeControlActionStep("time", false, EndToEndGameSpeed.Fast),
             new SelectionActionStep("selection", new[] { "thing_1" }, false),
+            new SupportingHitPointFixtureActionStep(
+                "supporting-hit-points",
+                new[] { new EndToEndHitPointFixture("thing_1", 0.5f) }),
             new CameraActionStep("camera", new[] { "thing_1" }, 10),
+            new ScreenshotModeActionStep("screenshot-mode", enabled: true),
+            new ShadowRenderingActionStep("shadow-rendering", enabled: false),
             new GizmoActionStep(
                 "gizmo",
                 new[] { "thing_1" },
@@ -24,6 +29,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
                 EndToEndGizmoInteraction.Invoke,
                 "stable-gizmo"),
             new FloatMenuActionStep("float", "pawn_1", "thing_1", "stable-option"),
+            new CurrentFloatMenuActionStep("current-float", "For guests"),
             new SettlementTradeActionStep("settlement-trade", 41, 42),
             new IncidentActionStep("incident", "TraderCaravanArrival", 17),
             TradeDialogActionStep.AdjustTransfer("trade", "meal_1", -1),
@@ -51,12 +57,12 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "camera", "gizmo", "float", "settlement-trade", "incident", "trade", "dialog", "architect", "inspect-tab", "info-card", "close-inspect", "cancel-window", "accept-window", "mod-settings", "save-load", "input", "screenshot"
+                "time", "selection", "supporting-hit-points", "camera", "screenshot-mode", "shadow-rendering", "gizmo", "float", "current-float", "settlement-trade", "incident", "trade", "dialog", "architect", "inspect-tab", "info-card", "close-inspect", "cancel-window", "accept-window", "mod-settings", "save-load", "input", "screenshot"
             }));
-            Assert.That(operations.Take(16).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[16], Is.SameAs(actions.SaveLoadOperation));
-            Assert.That(operations[17], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[18], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations.Take(20).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[20], Is.SameAs(actions.SaveLoadOperation));
+            Assert.That(operations[21], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[22], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -81,6 +87,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         IGatewayEndToEndNativeActions,
         IGatewayEndToEndDialogConfirmationNativeActions,
         IGatewayEndToEndArchitectCategoryNativeActions,
+        IGatewayEndToEndCurrentFloatMenuNativeActions,
         IGatewayEndToEndInspectionNativeActions
     {
         public List<string> Calls { get; } = new();
@@ -101,14 +108,30 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         public GatewayEndToEndStepOutcome Apply(SelectionActionStep step, IEndToEndContext context) =>
             Record("selection");
 
+        public GatewayEndToEndStepOutcome Apply(
+            SupportingHitPointFixtureActionStep step,
+            IEndToEndContext context) => Record("supporting-hit-points");
+
         public GatewayEndToEndStepOutcome Apply(CameraActionStep step, IEndToEndContext context) =>
             Record("camera");
+
+        public GatewayEndToEndStepOutcome Apply(
+            ScreenshotModeActionStep step,
+            IEndToEndContext context) => Record("screenshot-mode");
+
+        public GatewayEndToEndStepOutcome Apply(
+            ShadowRenderingActionStep step,
+            IEndToEndContext context) => Record("shadow-rendering");
 
         public GatewayEndToEndStepOutcome Apply(GizmoActionStep step, IEndToEndContext context) =>
             Record("gizmo");
 
         public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step, IEndToEndContext context) =>
             Record("float");
+
+        GatewayEndToEndStepOutcome IGatewayEndToEndCurrentFloatMenuNativeActions.Apply(
+            CurrentFloatMenuActionStep step,
+            IEndToEndContext context) => Record("current-float");
 
         public GatewayEndToEndStepOutcome Apply(SettlementTradeActionStep step, IEndToEndContext context) =>
             Record("settlement-trade");

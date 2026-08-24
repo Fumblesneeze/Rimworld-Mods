@@ -34,7 +34,7 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
+    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
@@ -128,6 +128,21 @@ try {
             Project = Join-Path $repositoryRoot 'tests\ImmersiveChefs.Defs.Tests\ImmersiveChefs.Defs.Tests.csproj'
         },
         [pscustomobject]@{
+            Name = 'GuestBedGizmo.Unit'
+            Group = 'GuestBedGizmo'
+            Project = Join-Path $repositoryRoot 'tests\GuestBedGizmo.Tests\GuestBedGizmo.Tests.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'GuestBedGizmo.Harmony'
+            Group = 'GuestBedGizmo'
+            Project = Join-Path $repositoryRoot 'tests\GuestBedGizmo.Harmony.Tests\GuestBedGizmo.Harmony.Tests.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'RimWorldModding.Mcp'
+            Group = 'RimWorldModding.Mcp'
+            Project = Join-Path $repositoryRoot 'tests\RimWorldModding.Mcp.Tests\RimWorldModding.Mcp.Tests.csproj'
+        },
+        [pscustomobject]@{
             Name = 'RimWorldDevGateway.Unit'
             Group = 'RimWorldDevGateway'
             Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Tests\RimWorldDevGateway.Tests.csproj'
@@ -146,7 +161,7 @@ try {
     $selectedSuites = if ($Suite -eq 'All') {
         @($availableSuites)
     }
-    elseif ($Suite -in @('ImmersiveChefs', 'RimWorldDevGateway')) {
+    elseif ($Suite -in @('ImmersiveChefs', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
         @($availableSuites | Where-Object Group -EQ $Suite)
     }
     else {
@@ -169,7 +184,7 @@ try {
 
     $resolvedHarmonyAssemblyPath = $null
     $harmonyDependency = $null
-    if (@($selectedSuites | Where-Object Name -EQ 'ImmersiveChefs.Harmony').Count -gt 0) {
+    if (@($selectedSuites | Where-Object Name -Like '*.Harmony').Count -gt 0) {
         $candidateHarmonyPath = if ([string]::IsNullOrWhiteSpace($HarmonyAssemblyPath)) {
             Join-Path $resolvedWorkshopPath '2009463077\Current\Assemblies\0Harmony.dll'
         }
@@ -238,7 +253,7 @@ try {
 
     $harmonyDependencyEvidencePath = $null
     if ($null -ne $harmonyDependency) {
-        $harmonyDependencyEvidencePath = Join-Path $resultsDirectory 'ImmersiveChefs.Harmony.dependencies.json'
+        $harmonyDependencyEvidencePath = Join-Path $resultsDirectory 'Harmony.dependencies.json'
         $harmonyDependency |
             ConvertTo-Json -Depth 3 |
             Set-Content -LiteralPath $harmonyDependencyEvidencePath -Encoding UTF8
@@ -271,7 +286,7 @@ try {
             $arguments += @('--filter', $TestFilter)
         }
 
-        if ($selected.Name -eq 'ImmersiveChefs.Harmony') {
+        if ($selected.Name -like '*.Harmony') {
             $arguments += "-p:HarmonyAssemblyPath=$resolvedHarmonyAssemblyPath"
         }
 
@@ -334,10 +349,10 @@ try {
             Passed = $passed
             Failed = $failed
             NotExecuted = $notExecuted
-            Framework = '.NET Framework 4.8'
+            Framework = if ($selected.Name -eq 'RimWorldModding.Mcp') { '.NET 8.0' } else { '.NET Framework 4.8' }
             Results = $trxPath
             Log = $logPath
-            DependencyEvidence = if ($selected.Name -eq 'ImmersiveChefs.Harmony') { $harmonyDependencyEvidencePath } else { $null }
+            DependencyEvidence = if ($selected.Name -like '*.Harmony') { $harmonyDependencyEvidencePath } else { $null }
             ExitCode = $dotnetExitCode
             Failure = $suiteFailure
         })

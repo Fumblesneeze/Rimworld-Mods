@@ -123,7 +123,12 @@ public static class GatewayRuntimeBootstrap
                 host = createdHost;
             }
 
-            var runtime = CreateDefaultRuntime(content, factory, integrationTests, endToEndTests);
+            var runtime = CreateDefaultRuntime(
+                content,
+                factory,
+                integrationTests,
+                endToEndTests,
+                createdHost);
             createdHost.Initialize(runtime, integrationTests, endToEndTests);
             integrationTests = null;
             endToEndTests = null;
@@ -160,7 +165,8 @@ public static class GatewayRuntimeBootstrap
         ModContentPack content,
         GatewayTransportFactory factory,
         GatewayIntegrationTestCoordinator integrationTests,
-        GatewayEndToEndCoordinator endToEndTests)
+        GatewayEndToEndCoordinator endToEndTests,
+        GatewayRuntimeHost runtimeHost)
     {
         using var process = Process.GetCurrentProcess();
         var processStartUtc = new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero);
@@ -204,6 +210,7 @@ public static class GatewayRuntimeBootstrap
                     logBuffer);
                 var gizmos = new GatewayGizmoRegistry(
                     new VerseGatewayGizmoSource(logBuffer));
+                runtimeHost.AttachGizmoRegistry(gizmos);
 
                 if (endToEndTests.Snapshot.Enabled)
                 {
@@ -321,6 +328,7 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
     private GatewayRuntime? runtime;
     private GatewayIntegrationTestCoordinator? integrationTests;
     private GatewayEndToEndCoordinator? endToEndTests;
+    private GatewayGizmoRegistry? gizmos;
     private readonly GatewayShutdownLifecycle shutdownLifecycle = new();
     private int stopping;
     private int shutdownInitialized;
@@ -328,7 +336,10 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
 
     private void OnGUI()
     {
-        if (runtime?.IsRunning != true || Volatile.Read(ref stopping) != 0)
+        if (!GatewayRuntimeOverlayPolicy.ShouldDraw(
+                runtime?.IsRunning == true,
+                Volatile.Read(ref stopping) != 0,
+                Find.ScreenshotModeHandler?.Active == true))
         {
             return;
         }
@@ -394,6 +405,22 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
         StartCoroutine(DrainEndOfFrame());
     }
 
+    internal void AttachGizmoRegistry(GatewayGizmoRegistry value)
+    {
+        if (value is null)
+        {
+            throw new ArgumentNullException(nameof(value));
+        }
+
+        if (gizmos is not null && !ReferenceEquals(gizmos, value))
+        {
+            throw new InvalidOperationException(
+                "The gateway runtime host already owns a gizmo registry.");
+        }
+
+        gizmos = value;
+    }
+
     private void Update()
     {
         var active = runtime;
@@ -415,6 +442,7 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             }
             if (!active.IsShutdownRequested)
             {
+                gizmos?.RefreshDesignatorPreview();
                 return;
             }
         }
@@ -516,6 +544,12 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
         Volatile.Write(ref stopping, 0);
         return false;
     }
+}
+
+internal static class GatewayRuntimeOverlayPolicy
+{
+    internal static bool ShouldDraw(bool runtimeRunning, bool stopping, bool screenshotMode) =>
+        runtimeRunning && !stopping && !screenshotMode;
 }
 
 internal sealed class UnityGatewayLogSubscription : IDisposable

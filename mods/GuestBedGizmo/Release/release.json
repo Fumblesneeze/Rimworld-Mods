@@ -1,0 +1,39 @@
+{
+  "schema": "RimWorldModRelease/v1",
+  "project": "mods/GuestBedGizmo/GuestBedGizmo.csproj",
+  "packageId": "fumblesneeze.guestbedgizmo",
+  "title": "Hospitality + Ideoligy Patch",
+  "author": "Fumblesneeze",
+  "distributionKind": "Product",
+  "rimWorldVersion": "1.6",
+  "rimWorldBuild": "1.6.4871 rev590",
+  "rimWorldRuntimeBuild": "1.6.4871 rev591",
+  "steamBuildId": "23969874",
+  "managedAssemblySha256": "5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A",
+  "steamAppId": 294100,
+  "steamUserId": "76561198077136238",
+  "publishedFileId": null,
+  "allowFirstPublication": true,
+  "visibility": "Private",
+  "tags": [
+    "Mod",
+    "1.6"
+  ],
+  "requiredWorkshopItems": [
+    "2009463077",
+    "3509486825"
+  ],
+  "hardRuntimeAssemblyReferences": [],
+  "buildOperation": "mod_build",
+  "presentationOperation": "presentation_render",
+  "packageSource": "artifacts/Mods/fumblesneeze.guestbedgizmo",
+  "packageInclude": [
+    "About/About.xml",
+    "About/Preview.png",
+    "1.6/Assemblies/GuestBedGizmo.dll"
+  ],
+  "description": "workshop/description.bbcode.txt",
+  "preview": "workshop/preview-main.png",
+  "changeNote": "Initial release.",
+  "verificationProfile": "mods/GuestBedGizmo/Release/subscriber-verification.json"
+}

@@ -165,6 +165,32 @@ public static class TestSnippet
     }
 
     [Test]
+    public void Source_compiler_builds_the_universal_MCP_guest_bed_subscriber_workflow()
+    {
+        var root = FindRepositoryRoot();
+        var compilerRoot = Path.Combine(Path.GetTempPath(), "gateway-subscriber-compiler-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var compiler = new DotNetGatewaySourceCompiler(temporaryRoot: compilerRoot);
+            var assembly = compiler.Compile(new GatewaySourceCompilationRequest(
+                Path.Combine(root, "tools", "RimWorldModding.Mcp", "Fixtures", "GuestBedSubscriberVerification.cs.source"),
+                Path.GetDirectoryName(typeof(Pawn).Assembly.Location)!,
+                typeof(GatewaySessionManifest).Assembly.Location));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(assembly.Length, Is.GreaterThan(128));
+                Assert.That(assembly[0], Is.EqualTo((byte)'M'));
+                Assert.That(assembly[1], Is.EqualTo((byte)'Z'));
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(compilerRoot)) Directory.Delete(compilerRoot, true);
+        }
+    }
+
+    [Test]
     public void Checked_in_Steam_publisher_safety_classifies_failures_and_correlates_callback_IDs()
     {
         var root = FindRepositoryRoot();

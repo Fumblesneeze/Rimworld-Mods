@@ -167,6 +167,15 @@ The Gateway SHALL atomically commit session manifests, request-journal snapshots
 - **WHEN** a generated short temporary leaf already belongs to another file
 - **THEN** the writer leaves that file unchanged, selects another leaf within a bounded retry count, and removes only the sibling it exclusively created
 
+### Requirement: Clean native screenshot-mode evidence
+The attributed E2E contract SHALL expose a typed reversible screenshot-mode action that changes only RimWorld's native `ScreenshotModeHandler.Active` flag on the Unity thread. While that native flag is active, the Gateway runtime host SHALL suppress its own unrestricted-execution warning and integration/E2E status boxes without stopping the server, coordinator, or current workflow. The action SHALL use no desktop input, expose no generic UI mutation, record enabled/disabled state, and be paired with guaranteed restoration by every using fixture.
+
+#### Scenario: Screenshot mode hides native and Gateway-only evidence clutter
+- **WHEN** a minimized E2E workflow enables the typed screenshot-mode action and captures an end-of-frame PNG
+- **THEN** RimWorld's ordinary interface and the Gateway warning/status boxes are absent while the Gateway remains responsive and the E2E workflow continues
+- **WHEN** the fixture restores the prior screenshot-mode state during cleanup
+- **THEN** the host resumes its warning/status overlay according to that restored native flag without restarting the process
+
 ### Requirement: Normal mod configuration preservation
 Automated launch SHALL use an isolated save-data folder and isolated `ModsConfig.xml`. If a future host operation is explicitly configured to modify the normal `ModsConfig.xml`, it SHALL back up and hash the exact file first, restore it in `finally`, and verify the restored hash before reporting success.
 
@@ -192,3 +201,10 @@ The Gateway host launcher SHALL write an isolated `Prefs.xml` that sets RimWorld
 #### Scenario: Desktop interaction requires a visible window
 - **WHEN** the caller requests a visible window or selects `gateway-regression`
 - **THEN** the owned RimWorld process starts with a normal visible window while retaining the isolated background-execution preference
+
+### Requirement: Persistent native designator preview workflow
+The attributed E2E contract SHALL expose a persistent native `Designator_Place` session with begin, rotate-left, rotate-right, commit, and cancel actions. Begin SHALL run the exact revalidated architect designator's native `Selected` lifecycle, configure an exact valid Stuff choice when supplied, retain one requested in-bounds map cell, and require that `DesignatorManager` has no separately selected pointer-driven designator. It SHALL NOT register the retained designator for normal stale-pointer `SelectedUpdate`, restore, focus, click, type into, move the pointer across, or otherwise manipulate the desktop window. While the session remains active, the Gateway runtime host SHALL ask the registry to invoke that retained designator's own `RenderHighlight` path exactly once for the retained single cell every rendered frame, so minimized execution remains visible without pretending that Unity's stale desktop pointer is a trustworthy hover. Rotate-left and rotate-right SHALL invoke RimWorld's native designator rotation handler, equivalent to the configured Q/E actions, and commit SHALL run that same designator's `CanDesignateCell` and one-cell `DesignateMultiCell` path, matching a one-cell drag-designator click, before running `Deselected`. Only one semantic interaction or preview session may be active; the registry SHALL atomically cancel its candidate and release ownership when the map, gizmo revision, or native selection state becomes stale, so a fresh begin is immediately possible.
+
+#### Scenario: Capture and commit a Q/E-rotated preview while minimized
+- **WHEN** a minimized grouped E2E test begins a native build-designator preview on an empty map cell, captures it, rotates left and right with intervening captures, selects its final orientation, and commits
+- **THEN** every screenshot shows the live selected designator preview at the requested cell, the desktop remains undisturbed, and the ordinary native designation creates the chosen orientation without raw input or direct mutation of the result

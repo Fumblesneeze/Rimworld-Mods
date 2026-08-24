@@ -116,9 +116,13 @@ public sealed class EndToEndTestingContractTests
         {
             new GizmoActionStep("undraft", new[] { "pawn:42" }, "Command_Toggle", EndToEndGizmoInteraction.Invoke),
             new FloatMenuActionStep("eat-meal", "pawn:42", "thing:meal:7", "Consume"),
+            new CurrentFloatMenuActionStep("choose-guests", "For guests"),
             new SettlementTradeActionStep("open-settlement-trade", settlementWorldObjectId: 41, caravanWorldObjectId: 42),
             new TimeControlActionStep("run", paused: false, speed: EndToEndGameSpeed.Superfast),
             new SelectionActionStep("select-meal", new[] { "thing:meal:7" }, additive: false),
+            new SupportingHitPointFixtureActionStep(
+                "prepare-damaged-wall",
+                new[] { new EndToEndHitPointFixture("thing:wall:9", 0.48f) }),
             new CameraActionStep("frame-meal", new[] { "thing:meal:7" }, paddingPixels: 24),
             TradeDialogActionStep.AdjustTransfer(
                 "buy-one-meal",
@@ -149,25 +153,92 @@ public sealed class EndToEndTestingContractTests
             EndToEndStepKind.Act,
             EndToEndStepKind.Act,
             EndToEndStepKind.Act,
+            EndToEndStepKind.Act,
+            EndToEndStepKind.Act,
             EndToEndStepKind.Wait,
             EndToEndStepKind.Observe,
             EndToEndStepKind.Observe,
             EndToEndStepKind.Observe
         }));
-        Assert.That(((WaitUntilStep)steps[10]).Deadline, Is.SameAs(waitDeadline));
+        Assert.That(((WaitUntilStep)steps[12]).Deadline, Is.SameAs(waitDeadline));
         Assert.Multiple(() =>
         {
-            var settlementTrade = (SettlementTradeActionStep)steps[2];
+            var currentMenu = (CurrentFloatMenuActionStep)steps[2];
+            Assert.That(currentMenu.ExactOptionLabel, Is.EqualTo("For guests"));
+            var settlementTrade = (SettlementTradeActionStep)steps[3];
             Assert.That(settlementTrade.SettlementWorldObjectId, Is.EqualTo(41));
             Assert.That(settlementTrade.CaravanWorldObjectId, Is.EqualTo(42));
-            var adjust = (TradeDialogActionStep)steps[6];
+            var fixture = (SupportingHitPointFixtureActionStep)steps[6];
+            Assert.That(fixture.Targets.Single().RuntimeId, Is.EqualTo("thing:wall:9"));
+            Assert.That(fixture.Targets.Single().RemainingHitPointRatio, Is.EqualTo(0.48f));
+            var adjust = (TradeDialogActionStep)steps[8];
             Assert.That(adjust.Action, Is.EqualTo(EndToEndTradeDialogAction.AdjustTransfer));
             Assert.That(adjust.ThingRuntimeId, Is.EqualTo("MealFine42"));
             Assert.That(adjust.CountDelta, Is.EqualTo(-1));
-            var accept = (TradeDialogActionStep)steps[7];
+            var accept = (TradeDialogActionStep)steps[9];
             Assert.That(accept.Action, Is.EqualTo(EndToEndTradeDialogAction.Accept));
             Assert.That(accept.ThingRuntimeId, Is.Null);
         });
+    }
+
+    [Test]
+    public void Screenshot_mode_is_an_explicit_reversible_action_step()
+    {
+        var enabled = new ScreenshotModeActionStep("hide normal interface", enabled: true);
+        var disabled = new ScreenshotModeActionStep("restore normal interface", enabled: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(enabled.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(enabled.Enabled, Is.True);
+            Assert.That(disabled.Enabled, Is.False);
+        });
+    }
+
+    [Test]
+    public void Shadow_rendering_is_an_explicit_reversible_action_step()
+    {
+        var disabled = new ShadowRenderingActionStep("shadow-free measurement", enabled: false);
+        var enabled = new ShadowRenderingActionStep("restore publication shadows", enabled: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(disabled.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(disabled.Enabled, Is.False);
+            Assert.That(enabled.Enabled, Is.True);
+        });
+    }
+
+    [Test]
+    public void Supporting_hit_point_fixture_is_bounded_exact_and_damage_only()
+    {
+        var exact = Enumerable.Range(0, SupportingHitPointFixtureActionStep.MaximumTargets)
+            .Select(index => new EndToEndHitPointFixture("wall:" + index, 0.5f));
+
+        Assert.That(
+            new SupportingHitPointFixtureActionStep("damage catalog", exact).Targets,
+            Has.Count.EqualTo(SupportingHitPointFixtureActionStep.MaximumTargets));
+        Assert.That(
+            () => new SupportingHitPointFixtureActionStep(
+                "too many",
+                Enumerable.Range(0, SupportingHitPointFixtureActionStep.MaximumTargets + 1)
+                    .Select(index => new EndToEndHitPointFixture("wall:" + index, 0.5f))),
+            Throws.TypeOf<ArgumentException>());
+        Assert.That(
+            () => new SupportingHitPointFixtureActionStep(
+                "duplicate",
+                new[]
+                {
+                    new EndToEndHitPointFixture("wall:1", 0.5f),
+                    new EndToEndHitPointFixture("wall:1", 0.25f)
+                }),
+            Throws.TypeOf<ArgumentException>());
+        Assert.That(
+            () => new EndToEndHitPointFixture("wall:1", 1f),
+            Throws.TypeOf<ArgumentOutOfRangeException>());
+        Assert.That(
+            () => new EndToEndHitPointFixture("wall:1", 0f),
+            Throws.TypeOf<ArgumentOutOfRangeException>());
     }
 
     [Test]
@@ -406,7 +477,7 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
-    public void Gizmo_step_accepts_cardinal_rotation_only_for_native_place()
+    public void Gizmo_step_accepts_cardinal_rotation_for_native_place_and_drag()
     {
         var step = new GizmoActionStep(
             "place-east",
@@ -420,16 +491,90 @@ public sealed class EndToEndTestingContractTests
         Assert.Multiple(() =>
         {
             Assert.That(step.Rotation, Is.EqualTo(EndToEndCardinalRotation.East));
-            Assert.That(
-                () => new GizmoActionStep(
+            var drag = new GizmoActionStep(
                     "drag-east",
                     Array.Empty<string>(),
-                    "RimWorld.Designator_Zone",
+                    "RimWorld.Designator_Build",
+                    EndToEndGizmoInteraction.Drag,
+                    startCell: new EndToEndMapCell(10, 20),
+                    endCell: new EndToEndMapCell(12, 20),
+                    architectCategoryDefNames: new[] { "Structure" },
+                    rotation: EndToEndCardinalRotation.East);
+            Assert.That(drag.Rotation, Is.EqualTo(EndToEndCardinalRotation.East));
+            Assert.That(
+                () => new GizmoActionStep(
+                    "drag-diagonal",
+                    Array.Empty<string>(),
+                    "RimWorld.Designator_Build",
                     EndToEndGizmoInteraction.Drag,
                     startCell: new EndToEndMapCell(10, 20),
                     endCell: new EndToEndMapCell(12, 22),
-                    architectCategoryDefNames: new[] { "Zone" },
+                    architectCategoryDefNames: new[] { "Structure" },
                     rotation: EndToEndCardinalRotation.East),
+                Throws.TypeOf<ArgumentException>());
+            Assert.That(
+                () => new GizmoActionStep(
+                    "invoke-east",
+                    new[] { "pawn:1" },
+                    "Command_Action",
+                    EndToEndGizmoInteraction.Invoke,
+                    rotation: EndToEndCardinalRotation.East),
+                Throws.TypeOf<ArgumentException>());
+        });
+    }
+
+    [Test]
+    public void Gizmo_step_carries_one_exact_build_material_with_rotated_place_or_drag()
+    {
+        var step = new GizmoActionStep(
+            "build-steel-line",
+            Array.Empty<string>(),
+            "RimWorld.Designator_Build",
+            EndToEndGizmoInteraction.Drag,
+            EndToEndCardinalRotation.North,
+            new EndToEndBuildMaterial("Steel"),
+            startCell: new EndToEndMapCell(10, 20),
+            endCell: new EndToEndMapCell(12, 20),
+            architectCategoryDefNames: new[] { "Structure" });
+
+        Assert.That(step.StuffDefName, Is.EqualTo("Steel"));
+    }
+
+    [Test]
+    public void Gizmo_step_carries_one_exact_build_material_without_forcing_rotation()
+    {
+        var step = new GizmoActionStep(
+            "build-steel-wall-line",
+            Array.Empty<string>(),
+            "RimWorld.Designator_Build",
+            EndToEndGizmoInteraction.Drag,
+            new EndToEndBuildMaterial("Steel"),
+            startCell: new EndToEndMapCell(10, 20),
+            endCell: new EndToEndMapCell(10, 20),
+            architectCategoryDefNames: new[] { "Structure" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(step.Rotation, Is.Null);
+            Assert.That(step.StuffDefName, Is.EqualTo("Steel"));
+            Assert.That(
+                () => new GizmoActionStep(
+                    "invoke-with-material",
+                    new[] { "pawn:1" },
+                    "Command_Action",
+                    EndToEndGizmoInteraction.Invoke,
+                    new EndToEndBuildMaterial("Steel")),
+                Throws.TypeOf<ArgumentException>());
+            Assert.That(
+                () => new GizmoActionStep(
+                    "drag-with-default-material",
+                    Array.Empty<string>(),
+                    "RimWorld.Designator_Build",
+                    EndToEndGizmoInteraction.Drag,
+                    default(EndToEndBuildMaterial),
+                    startCell: new EndToEndMapCell(10, 20),
+                    endCell: new EndToEndMapCell(10, 20),
+                    architectCategoryDefNames: new[] { "Structure" }),
                 Throws.TypeOf<ArgumentException>());
         });
     }

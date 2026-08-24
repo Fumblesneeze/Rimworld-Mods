@@ -76,7 +76,8 @@ Never reuse live evidence from an older build to accept a changed runtime revisi
 ## Live-run safety and evidence
 
 - Use a unique disposable `-savedatafolder`, a dedicated log, and the smallest explicit mod list that proves the scenario.
-- Retain at least one product-mod acceptance run without the Dev Gateway. Use separate installed-mod-present runs for compatibility claims.
+- Retain at least one product-mod acceptance run without the Dev Gateway. Use separate installed-mod-present runs for compatibility claims. This mandatory product-only run is the sole Gateway-free exception below: launch it isolated and minimized, but when its native player action genuinely has no process-local semantic control, automation may briefly restore or foreground only that exact PID for the minimum required input, then return it to minimized state. Do not use that exception for presentation capture or ordinary Gateway-capable verification.
+- Keep automated RimWorld processes minimized and use the Dev Gateway as the primary control, native-player-action, observation, and screenshot surface so verification does not disturb the user's desktop. Use direct OS-level screen, mouse, or keyboard input only when a faithful workflow is genuinely impossible through the Gateway and no practical Gateway extension can provide it.
 - Refuse to reuse an existing RimWorld process. Bind automation, screenshots, input, diagnostics, and cleanup to the exact launched PID and process start identity.
 - Hash the user's normal `ModsConfig.xml` before and after. Never use the normal save/configuration for automation.
 - Capture the tested build/package identity, ordered mod list, exact player actions, before/after observable state, screenshots, relevant supporting logs, request IDs where applicable, configuration hashes, and cleanup result in one evidence directory.
@@ -89,7 +90,7 @@ Startup, a clean log, and one end-state screenshot are prerequisites, not proof 
 
 ## Extending and using the Dev Gateway
 
-Future agents are authorized to extend the Dev Gateway whenever a missing capability makes faithful game control or observation difficult. Prefer a small TDD-backed typed route or versioned automation for a recurring operation; use raw C# only to explore the needed seam or for a genuinely one-off diagnostic.
+Future agents are authorized to extend the Dev Gateway whenever a missing capability makes faithful game control or observation difficult. Treat a missing Gateway capability as specification and implementation work rather than a reason to take over the foreground desktop: update the owning Dev Gateway OpenSpec contract, implement and test the capability, then use it with RimWorld minimized. Prefer a small TDD-backed typed route or versioned automation for a recurring operation; use raw C# only to explore the needed seam or for a genuinely one-off diagnostic.
 
 Gateway extensions must follow these rules:
 
@@ -104,17 +105,30 @@ If verification needs clicking a custom window, choosing a material, drawing a z
 
 Gateway work must remain bounded and robust: do not block the Unity thread with network I/O, sleeps, recursive lazy-menu evaluation, or unbounded enumeration. Serialize raw input, propagate cancellation, isolate failures from individual modded objects/providers, journal admitted requests, restore pressed inputs in cleanup, and preserve retryable lifecycle ownership after timeouts.
 
+## Repository automation surface
+
+Use the repository-owned `RimWorldModding.Mcp` operation registry as the public automation surface for
+RimWorld mod development, verification, live diagnostics, local installation, and publishing. Trusted
+local Codex sessions start it from `.codex/config.toml`; the matching CLI projection is for CI,
+recovery, and transparent reproduction. PowerShell scripts and companion executables may remain only
+as internal migration adapters owned by typed operations with bounded execution, validation,
+cancellation, and evidence handling.
+
+Before adding or repeating orchestration, copied parsing, process ownership, safety boundaries, or
+evidence-generation logic, inspect `operation_list`. If the capability is absent or a workflow is being
+repeated, add an owning OpenSpec scenario and a typed MCP/CLI operation instead of another public
+script or ad hoc command sequence.
+
 ## Common commands
 
 ```powershell
-.\scripts\Invoke-Tests.ps1 -Configuration Release
-dotnet build .\ImmersiveChefs.sln -c Release
-openspec validate --all --strict --no-interactive
-.\scripts\Invoke-RimWorldSmoke.ps1 -DryRun -Output json
-.\scripts\Invoke-GatewaySmoke.ps1 -DryRun -Output json
-.\scripts\Invoke-RimWorldEndToEndTests.ps1 -DryRun -Output json
-.\scripts\Invoke-RimWorldEndToEndTests.ps1 -GroupId ludeon.rimworld -Output json
+dotnet run --project .\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj -- serve --repository-root .
+dotnet run --project .\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj -- tool list -o table
+dotnet run --project .\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj -- tool call repository_status --arguments '{}' -o json
 ```
+
+Use `operation_list` to discover the typed arguments for builds, tests, package validation, game and
+E2E runs, Gateway control, evidence reads, local mod-list changes, and release preparation/publication.
 
 Use the grouped E2E runner for repeatable multi-frame player workflows. Each attributed test declares its complete exact non-Gateway package order; the runner appends Gateway last, deploys before staging, starts one fresh isolated process per group, executes same-group tests sequentially, persists screenshots/results, and cleans its exact lease. Do not manually pre-stage E2E bundles for routine verification. A green group is supporting evidence until the acting agent personally inspects its exact-run screenshots and confirms the native action caused the visible outcome.
 

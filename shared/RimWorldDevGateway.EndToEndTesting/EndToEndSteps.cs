@@ -21,12 +21,31 @@ public enum EndToEndGizmoInteraction
     Drag = 3
 }
 
+public enum EndToEndDesignatorSessionAction
+{
+    Begin = 0,
+    RotateLeft = 1,
+    RotateRight = 2,
+    Commit = 3,
+    Cancel = 4
+}
+
 public enum EndToEndCardinalRotation
 {
     North = 0,
     East = 1,
     South = 2,
     West = 3
+}
+
+public readonly struct EndToEndBuildMaterial
+{
+    public EndToEndBuildMaterial(string defName)
+    {
+        DefName = StepValues.Required(defName, nameof(defName));
+    }
+
+    public string DefName { get; }
 }
 
 public enum EndToEndGameSpeed
@@ -151,6 +170,7 @@ public sealed class GizmoActionStep : EndToEndStep
             endCell,
             architectCategoryDefNames,
             expectRejected,
+            stuffDefName: null,
             useCardinalOverload: false)
     {
     }
@@ -177,6 +197,62 @@ public sealed class GizmoActionStep : EndToEndStep
             endCell,
             architectCategoryDefNames,
             expectRejected,
+            stuffDefName: null,
+            useCardinalOverload: true)
+    {
+    }
+
+    public GizmoActionStep(
+        string name,
+        IEnumerable<string> targetRuntimeIds,
+        string gizmoType,
+        EndToEndGizmoInteraction interaction,
+        EndToEndBuildMaterial material,
+        string? stableGizmoId = null,
+        EndToEndMapCell? startCell = null,
+        EndToEndMapCell? endCell = null,
+        IEnumerable<string>? architectCategoryDefNames = null,
+        bool expectRejected = false)
+        : this(
+            name,
+            targetRuntimeIds,
+            gizmoType,
+            interaction,
+            rotation: null,
+            stableGizmoId,
+            startCell,
+            endCell,
+            architectCategoryDefNames,
+            expectRejected,
+            MaterialName(material, interaction),
+            useCardinalOverload: false)
+    {
+    }
+
+    public GizmoActionStep(
+        string name,
+        IEnumerable<string> targetRuntimeIds,
+        string gizmoType,
+        EndToEndGizmoInteraction interaction,
+        EndToEndCardinalRotation rotation,
+        EndToEndBuildMaterial material,
+        string? stableGizmoId = null,
+        EndToEndMapCell? startCell = null,
+        EndToEndMapCell? endCell = null,
+        IEnumerable<string>? architectCategoryDefNames = null,
+        bool expectRejected = false)
+        : this(
+            name,
+            targetRuntimeIds,
+            gizmoType,
+            interaction,
+            rotation,
+            stableGizmoId,
+            startCell,
+            endCell,
+            architectCategoryDefNames,
+            expectRejected,
+            MaterialName(material, interaction),
             useCardinalOverload: true)
     {
     }
@@ -192,6 +268,7 @@ public sealed class GizmoActionStep : EndToEndStep
         EndToEndMapCell? endCell,
         IEnumerable<string>? architectCategoryDefNames,
         bool expectRejected,
+        string? stuffDefName,
         bool useCardinalOverload)
         : base(name, EndToEndStepKind.Act)
     {
@@ -217,14 +294,27 @@ public sealed class GizmoActionStep : EndToEndStep
             throw new ArgumentOutOfRangeException(nameof(rotation));
         }
 
-        if (rotation.HasValue && interaction != EndToEndGizmoInteraction.Place)
+        if (rotation.HasValue &&
+            interaction != EndToEndGizmoInteraction.Place &&
+            interaction != EndToEndGizmoInteraction.Drag)
         {
             throw new ArgumentException(
-                "A cardinal rotation is valid only for a native Place gizmo step.",
+                "A cardinal rotation is valid only for a native Place or Drag gizmo step.",
+                nameof(rotation));
+        }
+
+
+        if (rotation.HasValue && interaction == EndToEndGizmoInteraction.Drag &&
+            startCell.HasValue && endCell.HasValue &&
+            startCell.Value.X != endCell.Value.X && startCell.Value.Z != endCell.Value.Z)
+        {
+            throw new ArgumentException(
+                "A rotated native Drag gizmo step must describe one cardinal line.",
                 nameof(rotation));
         }
 
         Rotation = rotation;
+        StuffDefName = stuffDefName;
     }
 
     public IReadOnlyList<string> TargetRuntimeIds { get; }
@@ -245,7 +335,97 @@ public sealed class GizmoActionStep : EndToEndStep
 
     public EndToEndCardinalRotation? Rotation { get; }
 
+    public string? StuffDefName { get; }
+
+    private static string MaterialName(
+        EndToEndBuildMaterial material,
+        EndToEndGizmoInteraction interaction)
+    {
+        if (interaction != EndToEndGizmoInteraction.Place &&
+            interaction != EndToEndGizmoInteraction.Drag)
+        {
+            throw new ArgumentException(
+                "A build material is valid only for a native Place or Drag gizmo step.",
+                nameof(interaction));
+        }
+
+        return StepValues.Required(material.DefName, nameof(material));
+    }
+
     private static string Required(string value, string parameterName) => StepValues.Required(value, parameterName);
+}
+
+public sealed class DesignatorSessionActionStep : EndToEndStep
+{
+    private DesignatorSessionActionStep(
+        string name,
+        EndToEndDesignatorSessionAction action,
+        IEnumerable<string>? targetRuntimeIds = null,
+        string? gizmoType = null,
+        string? stableGizmoId = null,
+        IEnumerable<string>? architectCategoryDefNames = null,
+        EndToEndMapCell? hoverCell = null,
+        string? stuffDefName = null,
+        bool expectRejected = false)
+        : base(name, EndToEndStepKind.Act)
+    {
+        Action = action;
+        TargetRuntimeIds = StepValues.CopyIds(targetRuntimeIds ?? Array.Empty<string>(), nameof(targetRuntimeIds));
+        ArchitectCategoryDefNames = StepValues.CopyIds(
+            architectCategoryDefNames ?? Array.Empty<string>(),
+            nameof(architectCategoryDefNames));
+        GizmoType = gizmoType;
+        StableGizmoId = string.IsNullOrWhiteSpace(stableGizmoId) ? null : stableGizmoId!.Trim();
+        HoverCell = hoverCell;
+        StuffDefName = string.IsNullOrWhiteSpace(stuffDefName) ? null : stuffDefName!.Trim();
+        ExpectRejected = expectRejected;
+    }
+
+    public EndToEndDesignatorSessionAction Action { get; }
+
+    public IReadOnlyList<string> TargetRuntimeIds { get; }
+
+    public IReadOnlyList<string> ArchitectCategoryDefNames { get; }
+
+    public string? GizmoType { get; }
+
+    public string? StableGizmoId { get; }
+
+    public EndToEndMapCell? HoverCell { get; }
+
+    public string? StuffDefName { get; }
+
+    public bool ExpectRejected { get; }
+
+    public static DesignatorSessionActionStep Begin(
+        string name,
+        IEnumerable<string> targetRuntimeIds,
+        string gizmoType,
+        string stableGizmoId,
+        IEnumerable<string> architectCategoryDefNames,
+        EndToEndMapCell hoverCell,
+        EndToEndBuildMaterial? material = null) =>
+        new(
+            name,
+            EndToEndDesignatorSessionAction.Begin,
+            targetRuntimeIds,
+            StepValues.Required(gizmoType, nameof(gizmoType)),
+            StepValues.Required(stableGizmoId, nameof(stableGizmoId)),
+            architectCategoryDefNames,
+            hoverCell: hoverCell,
+            stuffDefName: material?.DefName);
+
+    public static DesignatorSessionActionStep RotateLeft(string name) =>
+        new(name, EndToEndDesignatorSessionAction.RotateLeft);
+
+    public static DesignatorSessionActionStep RotateRight(string name) =>
+        new(name, EndToEndDesignatorSessionAction.RotateRight);
+
+    public static DesignatorSessionActionStep Commit(string name, bool expectRejected = false) =>
+        new(name, EndToEndDesignatorSessionAction.Commit, expectRejected: expectRejected);
+
+    public static DesignatorSessionActionStep Cancel(string name) =>
+        new(name, EndToEndDesignatorSessionAction.Cancel);
 }
 
 public sealed class FloatMenuActionStep : EndToEndStep
@@ -263,6 +443,17 @@ public sealed class FloatMenuActionStep : EndToEndStep
     public string TargetRuntimeId { get; }
 
     public string StableOptionId { get; }
+}
+
+public sealed class CurrentFloatMenuActionStep : EndToEndStep
+{
+    public CurrentFloatMenuActionStep(string name, string exactOptionLabel)
+        : base(name, EndToEndStepKind.Act)
+    {
+        ExactOptionLabel = StepValues.Required(exactOptionLabel, nameof(exactOptionLabel));
+    }
+
+    public string ExactOptionLabel { get; }
 }
 
 public sealed class SettlementTradeActionStep : EndToEndStep
@@ -359,6 +550,79 @@ public sealed class SelectionActionStep : EndToEndStep
     public IReadOnlyList<string> TargetRuntimeIds { get; }
 
     public bool Additive { get; }
+}
+
+public readonly struct EndToEndHitPointFixture
+{
+    public EndToEndHitPointFixture(string runtimeId, float remainingHitPointRatio)
+    {
+        RuntimeId = StepValues.Required(runtimeId, nameof(runtimeId));
+        if (float.IsNaN(remainingHitPointRatio) ||
+            float.IsInfinity(remainingHitPointRatio) ||
+            remainingHitPointRatio <= 0f ||
+            remainingHitPointRatio >= 1f)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(remainingHitPointRatio),
+                "A supporting damage fixture ratio must be finite and strictly between zero and one.");
+        }
+
+        RemainingHitPointRatio = remainingHitPointRatio;
+    }
+
+    public string RuntimeId { get; }
+
+    public float RemainingHitPointRatio { get; }
+}
+
+public sealed class SupportingHitPointFixtureActionStep : EndToEndStep
+{
+    public const int MaximumTargets = 64;
+
+    public SupportingHitPointFixtureActionStep(
+        string name,
+        IEnumerable<EndToEndHitPointFixture> targets)
+        : base(name, EndToEndStepKind.Act)
+    {
+        if (targets is null)
+        {
+            throw new ArgumentNullException(nameof(targets));
+        }
+
+        var copy = new List<EndToEndHitPointFixture>();
+        var runtimeIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var target in targets)
+        {
+            if (target.RuntimeId is null)
+            {
+                throw new ArgumentException("Every supporting damage target must be initialized.", nameof(targets));
+            }
+
+            if (!runtimeIds.Add(target.RuntimeId))
+            {
+                throw new ArgumentException(
+                    "A supporting damage fixture cannot target the same runtime ID more than once.",
+                    nameof(targets));
+            }
+
+            copy.Add(target);
+            if (copy.Count > MaximumTargets)
+            {
+                throw new ArgumentException(
+                    $"A supporting damage fixture can target at most {MaximumTargets} Things.",
+                    nameof(targets));
+            }
+        }
+
+        if (copy.Count == 0)
+        {
+            throw new ArgumentException("At least one supporting damage target is required.", nameof(targets));
+        }
+
+        Targets = new ReadOnlyCollection<EndToEndHitPointFixture>(copy);
+    }
+
+    public IReadOnlyList<EndToEndHitPointFixture> Targets { get; }
 }
 
 public enum EndToEndPawnInspectTab
@@ -504,6 +768,22 @@ public sealed class CameraActionStep : EndToEndStep
     public IReadOnlyList<string> TargetRuntimeIds { get; }
 
     public int PaddingPixels { get; }
+}
+
+public sealed class ScreenshotModeActionStep : EndToEndStep
+{
+    public ScreenshotModeActionStep(string name, bool enabled)
+        : base(name, EndToEndStepKind.Act) => Enabled = enabled;
+
+    public bool Enabled { get; }
+}
+
+public sealed class ShadowRenderingActionStep : EndToEndStep
+{
+    public ShadowRenderingActionStep(string name, bool enabled)
+        : base(name, EndToEndStepKind.Act) => Enabled = enabled;
+
+    public bool Enabled { get; }
 }
 
 public sealed class ProcessInputActionStep : EndToEndStep

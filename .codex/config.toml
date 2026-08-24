@@ -1,0 +1,38 @@
+[mcp_servers.rimworld_modding]
+command = "dotnet"
+args = ["run", "--project", "tools/RimWorldModding.Mcp/RimWorldModding.Mcp.csproj", "--", "serve", "--repository-root", "."]
+cwd = ".."
+required = true
+startup_timeout_sec = 30
+tool_timeout_sec = 3900
+default_tools_approval_mode = "writes"
+
+[mcp_servers.rimworld_modding.tools.gateway_mutation]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.gateway_raw_mutation]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.game_run_start]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.e2e_run_start]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.run_cancel]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.modlist_enable]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.modlist_disable]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.modlist_restore]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.release_publish]
+approval_mode = "prompt"
+
+[mcp_servers.rimworld_modding.tools.release_accept_subscriber_evidence]
+approval_mode = "prompt"

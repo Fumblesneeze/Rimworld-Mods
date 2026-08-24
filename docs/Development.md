@@ -2,19 +2,35 @@
 
 This repository is a RimWorld 1.6 mod monorepo. OpenSpec changes live at the repository root, playable mods live under `mods/`, shared host-safe contracts under `shared/`, companion tools under `tools/`, and NUnit projects under `tests/`. Re-inspect installed dependency assemblies and finalized Defs before changing optional-mod integration code; machine-local dependency audits are deliberately ignored. Downloaded Workshop content is read-only inspection input and must remain unmodified. See [Gateway.md](Gateway.md) for the developer gateway's security model and command/API reference.
 
-The current Immersive Chefs release bootstrap is documented by the repo-local
-`release-rimworld-mods` skill. `scripts/Build-ImmersiveChefsRelease.ps1` creates a mutation-free,
-positive-allowlist 1.6 candidate from a clean commit. Publication is a separate explicitly confirmed
-operation through `scripts/Invoke-ImmersiveChefsWorkshopRelease.ps1`; it validates the exact plan
-hash and pinned RimWorld managed identity, uses a fresh isolated RimWorld Steam session, persists
-first-publication/submission state, preflights an existing item before mutation, verifies the
-subscribed bytes, and runs `scripts/Invoke-ImmersiveChefsSubscribedSmoke.ps1` from the exact Workshop
-root before retaining its receipt. Never call the publisher without first reviewing its exact
-`publication-plan.json`, and never delete durable state to force a retry after an indeterminate callback.
-An ID-less first publication also requires a complete native exact-title scan of the owning Steam
-account. After the first release succeeds, commit the returned `publishedFileId` to
-`mods/ImmersiveChefs/Release/release.json` and set `allowFirstPublication` to `false`; ignored local
-state is recovery evidence, not the cross-machine source of truth.
+Trusted local Codex sessions start the repository-owned `rimworld_modding` stdio MCP from
+`.codex/config.toml`. Use its typed operations for discovery, strict OpenSpec validation, focused
+builds/tests, package checks, leased game and E2E runs, live Gateway diagnostics/mutations, normal
+mod-list changes, evidence reads, and universal release preparation/publication. The identical
+operation registry is available to CI and recovery through `RimWorldModding.Mcp tool list|call`.
+See [RimWorldModdingMcp.md](RimWorldModdingMcp.md).
+
+Every publishable mod owns a strict `Release/release.json`; the universal `release_prepare` operation
+builds a clean positive-allowlist candidate and returns a mutation-free Steam diff, digest, nonce,
+and expiry. Only the later `release_publish` operation may mutate Steam, and only with that exact
+reviewed plan hash and nonce. It uses an isolated initialized-Steam Gateway process, persists admitted
+callback state and an exact detached worker/Gateway lease atomically, persists the first returned
+Workshop identity before later verification, verifies the
+exact metadata/preview/dependencies/content baseline, reacquires the Workshop copy, runs the
+prevalidated profile native subscriber workflow with the local product temporarily absent, restores
+it, and leaves its screenshots awaiting personal review. Use `release_accept_subscriber_evidence`
+only after inspecting those exact frames. A timed-out caller may invoke the same `release_publish`
+again: it reattaches to the same callback or polls only the durable same item and never repeats
+first-item creation or update submission. Subscriber isolation also records its exact reserved run, backup, and normal
+configuration hash before moving the local package. Never delete durable state to force a retry.
+
+Local package synchronization and subscriber isolation keep recoverable prior copies under the
+sibling `RimWorld\.rimworld-modding-mcp\Mods` recovery root, outside RimWorld's scanned `Mods`
+directory.
+
+The PowerShell launchers and older companion tools documented below are internal migration engines,
+not the agent-facing API. Before adding another script or repeating a workflow, inspect
+`operation_list`; repeated orchestration, copied parsing, process ownership, safety boundaries, or
+durable evidence require an owning OpenSpec scenario and typed MCP/CLI operation.
 
 Each publishable mod may declare ordered gameplay showcases under its release presentation folder.
 Immersive Chefs uses `mods\ImmersiveChefs\Release\workshop\showcases.json` for exact optional-mod

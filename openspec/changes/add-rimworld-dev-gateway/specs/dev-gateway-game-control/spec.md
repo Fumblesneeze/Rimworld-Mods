@@ -122,7 +122,9 @@ A modded owner whose `GetGizmos()` or reverse-designator enumeration throws SHAL
 
 `GET /api/v1/interactions/current` SHALL return the active interaction or null. `POST /api/v1/interactions/{handle}/apply` SHALL accept exactly one matching thing, cell, explicit cell set, line, or rectangle input; resolve shapes to at most 4,096 unique cells; preflight every target using the native targeter/designator validator; then invoke the captured native callback or designator and report accepted/rejected targets plus completion state. `POST /api/v1/interactions/{handle}/cancel` SHALL cancel only the matching interaction. Native world-target commands and mod-defined multi-stage interactions SHALL be reported as unsupported until a typed adapter exists; native world debug tools remain available through the debug-action activation plus process-scoped pointer workflow.
 
-A cell input for a native `Designator_Place` MAY name exactly one cardinal `rotation` (`North`, `East`, `South`, or `West`). The gateway SHALL select and configure the revalidated native place designator with that rotation before calling its own `CanDesignateCell` and `DesignateMultiCell` paths. Rotation on another interaction/input kind, an invalid cardinal value, or a requested orientation that the placing Def cannot represent SHALL fail before designation. The gateway SHALL NOT set the resulting Thing rotation after placement or bypass the native designator.
+A cell or line input for a native `Designator_Place` MAY name exactly one cardinal `rotation` (`North`, `East`, `South`, or `West`). The gateway SHALL select and configure the revalidated native place designator with that rotation before calling its own `CanDesignateCell` and `DesignateMultiCell` paths. This line-shaped option preserves a directional drag choice for designators whose native multi-cell behavior depends on the origin-to-destination vector. Rotation on another interaction/input kind, an invalid cardinal value, or a requested orientation that the placing Def cannot represent SHALL fail before designation. The gateway SHALL NOT set the resulting Thing rotation after placement or bypass the native designator.
+
+A cell or line input for a native `Designator_Build` MAY additionally name one exact loaded Stuff Def. The Gateway SHALL require that the placing Thing is Stuff-made and accepts that Stuff, configure the revalidated native build designator before preflight, and let the ordinary blueprint/construction path consume the declared material. Missing, non-Stuff, disallowed, or shape-incompatible material requests SHALL fail before designation; the Gateway SHALL NOT rewrite a blueprint or finished Thing afterward.
 
 Only one interaction MAY be active. Starting another SHALL return `interaction_in_progress`. Map changes, lost/destroyed owners, changed command fingerprints, or native cancellation SHALL return `stale_interaction` and clear it. The gateway SHALL NOT synthesize `Event.current`, guess a mod-defined callback, or silently use pixel input.
 
@@ -141,6 +143,20 @@ Only one interaction MAY be active. Starting another SHALL return `interaction_i
 #### Scenario: Drag a wall or zone
 - **WHEN** a drag designator interaction receives a valid bounded line or rectangle
 - **THEN** the gateway deterministically expands and preflights the cells, invokes the native multi-cell designator, and returns the affected cells
+
+#### Scenario: Carry a directional choice through a native line designator
+- **WHEN** a native `Designator_Place` drag interaction receives a line with `rotation` equal to `North`
+- **THEN** the gateway configures that exact designator before preflight and passes the ordered line cells through its native multi-cell designation path
+- **THEN** no resulting Thing is rotated after designation
+
+#### Scenario: Select material for a native Stuff-made line
+- **WHEN** a native `Designator_Build` line interaction names the loaded Stuff Def `Steel`
+- **THEN** the Gateway configures that exact designator before preflight and ordinary designation creates steel blueprints
+- **THEN** no blueprint or completed Thing has its Stuff rewritten afterward
+
+#### Scenario: Select material without forcing rotation
+- **WHEN** a non-rotatable native `Designator_Build` line interaction names the loaded Stuff Def `Steel` and omits `rotation`
+- **THEN** the Gateway configures that exact material before preflight without requiring or inventing a placing rotation
 
 #### Scenario: Place a rotatable building facing east
 - **WHEN** a native building placement interaction receives one valid cell with `rotation` equal to `East`

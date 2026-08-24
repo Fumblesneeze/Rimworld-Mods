@@ -1,0 +1,249 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.Text;
+using System.Threading;
+using RimWorld;
+using RimWorldDevGateway.Contracts;
+using UnityEngine;
+using Verse;
+
+namespace GuestBedSubscriberVerification;
+
+public static class Entry
+{
+    public static string Execute(string requestJson, GatewayAssemblyExecutionContext context)
+    {
+        context.RuntimeExtensions.RegisterSessionAutomation(
+            new GatewayAssemblyAutomationDescriptor(
+                "release.guestbed-subscriber",
+                "1",
+                "Arranges disposable beds, opens the real selected-bed gizmo, chooses the real guest FloatMenu option, observes the Hospitality replacement, and cleans up.",
+                true,
+                new Dictionary<string, string>
+                {
+                    ["operation"] = "arrange|open|choose|observe|cleanup",
+                    ["expectedWorkshopPath"] = "Exact subscribed Workshop item root for arrange."
+                },
+                new[] { "Playable map", "Hospitality + Ideoligy Patch loaded from subscribed Workshop root" }),
+            Workflow.Handle);
+        return "release.guestbed-subscriber registered";
+    }
+}
+
+internal static class Workflow
+{
+    private static readonly List<Thing> Fixtures = new();
+    private static Map? map;
+    private static IntVec3 firstCell;
+    private static IntVec3 secondCell;
+    private static FloatMenu? menu;
+    private static bool previousVanish;
+
+    public static string Handle(string argumentsJson, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var request = Json.Read<Request>(argumentsJson) ?? throw new InvalidOperationException("Invalid request.");
+        return request.operation switch
+        {
+            "arrange" => Arrange(request.expectedWorkshopPath ?? ""),
+            "open" => Open(),
+            "choose" => Choose(),
+            "observe" => Observe(),
+            "cleanup" => Cleanup(),
+            _ => throw new InvalidOperationException("Unsupported subscriber verification operation.")
+        };
+    }
+
+    private static string Arrange(string expectedWorkshopPath)
+    {
+        CleanupCore();
+        if (string.IsNullOrWhiteSpace(expectedWorkshopPath) || !Directory.Exists(expectedWorkshopPath))
+            throw new InvalidOperationException("Expected Workshop root is invalid.");
+        var product = LoadedModManager.RunningModsListForReading.SingleOrDefault(mod => mod.PackageId == "fumblesneeze.guestbedgizmo") ??
+                      throw new InvalidOperationException("Product mod is not active.");
+        if (!string.Equals(Path.GetFullPath(product.RootDir), Path.GetFullPath(expectedWorkshopPath), StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Product mod did not load from the exact subscribed Workshop root.");
+        map = Find.CurrentMap ?? throw new InvalidOperationException("A playable map is required.");
+        firstCell = map.AllCells.Where(cell => CellRect.CenteredOn(cell, 3).Cells.All(candidate =>
+                candidate.InBounds(map) && candidate.Standable(map) && !candidate.Fogged(map) && candidate.GetThingList(map).Count == 0))
+            .OrderBy(cell => cell.DistanceToSquared(map.Center)).First();
+        secondCell = firstCell + IntVec3.East + IntVec3.East;
+        foreach (var wallCell in CellRect.CenteredOn(firstCell, 3).EdgeCells)
+        {
+            var wall = ThingMaker.MakeThing(ThingDefOf.Wall, ThingDefOf.WoodLog);
+            wall.SetFactionDirect(Faction.OfPlayer);
+            Fixtures.Add(GenSpawn.Spawn(wall, wallCell, map));
+        }
+        map.regionAndRoomUpdater.RebuildAllRegionsAndRooms();
+        var bedDef = DefDatabase<ThingDef>.GetNamed("Bed");
+        var first = (Building_Bed)ThingMaker.MakeThing(bedDef, ThingDefOf.WoodLog);
+        first.SetFactionDirect(Faction.OfPlayer);
+        Fixtures.Add(GenSpawn.Spawn(first, firstCell, map, Rot4.South));
+        var second = (Building_Bed)ThingMaker.MakeThing(bedDef, ThingDefOf.WoodLog);
+        second.SetFactionDirect(Faction.OfPlayer);
+        Fixtures.Add(GenSpawn.Spawn(second, secondCell, map, Rot4.South));
+        Find.Selector.ClearSelection();
+        Find.Selector.Select(first);
+        Find.Selector.Select(second);
+        CameraJumper.TryJump(firstCell, map);
+        return Json.Write(new Result
+        {
+            status = "arranged",
+            loadedPackagePath = product.RootDir,
+            firstThingId = first.ThingID,
+            secondThingId = second.ThingID
+        });
+    }
+
+    private static string Open()
+    {
+        var bed = Current(firstCell);
+        var commands = bed.GetGizmos().OfType<Command_Action>()
+            .Where(command => command.GetType().FullName == "GuestBedGizmo.Beds.Command_GuestAwareBedOwnerType")
+            .ToArray();
+        if (commands.Length != 1 || commands[0].action is null)
+            throw new InvalidOperationException("Exactly one unified owner Command_Action is required.");
+        var before = Find.WindowStack.Windows.OfType<FloatMenu>().ToArray();
+        commands[0].action();
+        var opened = Find.WindowStack.Windows.OfType<FloatMenu>().Where(candidate => !before.Contains(candidate)).ToArray();
+        if (opened.Length != 1) throw new InvalidOperationException("Unified owner command did not open exactly one native FloatMenu.");
+        menu = opened[0];
+        previousVanish = menu.vanishIfMouseDistant;
+        menu.vanishIfMouseDistant = false;
+        var labels = Options(menu).Select(option => option.Label).ToArray();
+        if (labels.Length != 4 || labels.Distinct(StringComparer.Ordinal).Count() != 4)
+            throw new InvalidOperationException("Native owner menu does not expose four distinct choices.");
+        return Json.Write(new Result { status = "menu-open", menuLabels = labels });
+    }
+
+    private static string Choose()
+    {
+        if (menu is null || !menu.IsOpen || Find.WindowStack.Windows.OfType<FloatMenu>().SingleOrDefault() != menu)
+            throw new InvalidOperationException("The exact native owner menu is no longer the sole open FloatMenu.");
+        var options = Options(menu);
+        if (options.Length != 4) throw new InvalidOperationException("Native owner menu changed before selection.");
+        var option = options[3];
+        if (option.Disabled) throw new InvalidOperationException("Guest option is disabled.");
+        var tutorTag = option.tutorTag;
+        if (tutorTag is not null && !TutorSystem.AllowAction((EventPack)tutorTag))
+            throw new InvalidOperationException("Tutorial system rejected the guest option.");
+        option.Chosen(menu.givesColonistOrders, menu);
+        if (tutorTag is not null) TutorSystem.Notify_Event((EventPack)tutorTag);
+        Find.WindowStack.TryRemove(menu, doCloseSound: true);
+        menu.vanishIfMouseDistant = previousVanish;
+        menu = null;
+        return Json.Write(new Result { status = "guest-chosen", chosenLabel = option.Label });
+    }
+
+    private static string Observe()
+    {
+        var first = Current(firstCell);
+        var second = Current(secondCell);
+        if (first.GetType().FullName != "Hospitality.Building_GuestBed" ||
+            second.GetType().FullName != "Hospitality.Building_GuestBed")
+            throw new InvalidOperationException("Native guest choice did not replace both selected beds with Hospitality guest beds.");
+        foreach (var bed in new[] { first, second })
+        {
+            var gizmos = bed.GetGizmos().ToArray();
+            if (gizmos.Count(gizmo => gizmo.GetType().FullName == "GuestBedGizmo.Beds.Command_GuestAwareBedOwnerType") != 1 ||
+                gizmos.Count(gizmo => gizmo.GetType().FullName == "Hospitality.Gizmo_GuestBed") != 1)
+                throw new InvalidOperationException("Guest replacement does not retain one unified owner command and one Hospitality rental control.");
+        }
+        if (Find.Selector.SelectedObjects.Count != 2 || !Find.Selector.IsSelected(first) || !Find.Selector.IsSelected(second))
+            throw new InvalidOperationException("Guest replacements did not preserve the two-bed selection.");
+        CameraJumper.TryJump(firstCell, map);
+        return Json.Write(new Result
+        {
+            status = "passed",
+            firstRuntimeType = first.GetType().FullName,
+            secondRuntimeType = second.GetType().FullName,
+            selectedCount = Find.Selector.SelectedObjects.Count
+        });
+    }
+
+    private static string Cleanup()
+    {
+        CleanupCore();
+        return Json.Write(new Result { status = "cleaned" });
+    }
+
+    private static void CleanupCore()
+    {
+        if (menu is not null)
+        {
+            if (menu.IsOpen) Find.WindowStack.TryRemove(menu, false);
+            menu.vanishIfMouseDistant = previousVanish;
+            menu = null;
+        }
+        Find.Selector?.ClearSelection();
+        if (map is not null)
+        {
+            foreach (var bed in new[] { firstCell, secondCell }
+                         .Where(cell => cell.IsValid && cell.InBounds(map))
+                         .SelectMany(cell => cell.GetThingList(map))
+                         .OfType<Building_Bed>()
+                         .Distinct()
+                         .ToArray())
+            {
+                if (!bed.Destroyed) bed.Destroy(DestroyMode.Vanish);
+            }
+        }
+        foreach (var fixture in Fixtures.ToArray()) if (!fixture.Destroyed) fixture.Destroy(DestroyMode.Vanish);
+        Fixtures.Clear();
+        map = null;
+    }
+
+    private static Building_Bed Current(IntVec3 cell) =>
+        cell.GetThingList(map!).OfType<Building_Bed>().Single();
+
+    private static FloatMenuOption[] Options(FloatMenu source)
+    {
+        var field = typeof(FloatMenu).GetField("options", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) ??
+                    throw new InvalidOperationException("FloatMenu option field is unavailable.");
+        return ((IEnumerable<FloatMenuOption>)field.GetValue(source)).ToArray();
+    }
+
+    [DataContract]
+    private sealed class Request
+    {
+        [DataMember] public string? operation;
+        [DataMember] public string? expectedWorkshopPath;
+    }
+
+    [DataContract]
+    private sealed class Result
+    {
+        [DataMember] public string status = "";
+        [DataMember] public string loadedPackagePath = "";
+        [DataMember] public string firstThingId = "";
+        [DataMember] public string secondThingId = "";
+        [DataMember] public string[] menuLabels = Array.Empty<string>();
+        [DataMember] public string chosenLabel = "";
+        [DataMember] public string firstRuntimeType = "";
+        [DataMember] public string secondRuntimeType = "";
+        [DataMember] public int selectedCount;
+    }
+
+    private static class Json
+    {
+        public static T? Read<T>(string value)
+        {
+            var serializer = new DataContractJsonSerializer(typeof(T));
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(value ?? ""));
+            return (T?)serializer.ReadObject(stream);
+        }
+
+        public static string Write<T>(T value)
+        {
+            var serializer = new DataContractJsonSerializer(typeof(T));
+            using var stream = new MemoryStream();
+            serializer.WriteObject(stream, value);
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+    }
+}

@@ -56,11 +56,18 @@ public interface IGatewayEndToEndActionBackend
 
     void SetSelection(IReadOnlyList<string> handles, bool additive);
 
+    GatewayEndToEndStepOutcome ApplySupportingHitPointFixture(
+        SupportingHitPointFixtureActionStep step);
+
     GatewayEndToEndCameraViewport CaptureCameraViewport();
 
     GatewayEndToEndTargetBounds ResolveTarget(string runtimeId);
 
     void SetCamera(string mapHandle, GatewayMapCell center, float rootSize);
+
+    void SetScreenshotMode(bool enabled);
+
+    void SetShadowRendering(bool enabled);
 
     IReadOnlyList<GatewayGizmoDescriptor> QueryGizmos(
         IReadOnlyList<string> targetRuntimeIds,
@@ -107,6 +114,22 @@ internal interface IGatewayEndToEndArchitectCategoryBackend
     GatewayEndToEndStepOutcome ApplyArchitectCategory(ArchitectCategoryActionStep step);
 }
 
+internal interface IGatewayEndToEndCurrentFloatMenuBackend
+{
+    GatewayEndToEndStepOutcome ApplyCurrentFloatMenu(CurrentFloatMenuActionStep step);
+}
+
+internal interface IGatewayEndToEndDesignatorSessionBackend
+{
+    void BeginDesignatorPreview(string gizmoHandle, EndToEndMapCell hoverCell, string? stuffDefName);
+
+    void RotateDesignatorPreview(GatewayDesignatorRotationDirection direction);
+
+    GatewayDesignatorCommitResult CommitDesignatorPreview();
+
+    void CancelDesignatorPreview();
+}
+
 internal interface IGatewayEndToEndInspectionBackend
 {
     GatewayEndToEndStepOutcome ApplyPawnInspectTab(PawnInspectTabActionStep step);
@@ -126,6 +149,8 @@ public sealed class GatewayEndToEndNativeActions :
     IGatewayEndToEndNativeActions,
     IGatewayEndToEndDialogConfirmationNativeActions,
     IGatewayEndToEndArchitectCategoryNativeActions,
+    IGatewayEndToEndCurrentFloatMenuNativeActions,
+    IGatewayEndToEndDesignatorSessionNativeActions,
     IGatewayEndToEndInspectionNativeActions
 {
     private readonly IGatewayEndToEndActionBackend backend;
@@ -145,6 +170,14 @@ public sealed class GatewayEndToEndNativeActions :
         Require(step, context);
         backend.SetSelection(step.TargetRuntimeIds, step.Additive);
         return GatewayEndToEndStepOutcome.Pass();
+    }
+
+    public GatewayEndToEndStepOutcome Apply(
+        SupportingHitPointFixtureActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend.ApplySupportingHitPointFixture(step);
     }
 
     public GatewayEndToEndStepOutcome Apply(CameraActionStep step, IEndToEndContext context)
@@ -197,6 +230,32 @@ public sealed class GatewayEndToEndNativeActions :
             Clamp((minZ + maxZ) / 2, 0, viewport.MapHeight - 1));
         backend.SetCamera(viewport.MapHandle, center, rootSize);
         return GatewayEndToEndStepOutcome.Pass();
+    }
+
+    public GatewayEndToEndStepOutcome Apply(
+        ScreenshotModeActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        backend.SetScreenshotMode(step.Enabled);
+        return GatewayEndToEndStepOutcome.Pass(
+            new Dictionary<string, string>
+            {
+                ["screenshotMode"] = step.Enabled ? "enabled" : "disabled"
+            });
+    }
+
+    public GatewayEndToEndStepOutcome Apply(
+        ShadowRenderingActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        backend.SetShadowRendering(step.Enabled);
+        return GatewayEndToEndStepOutcome.Pass(
+            new Dictionary<string, string>
+            {
+                ["shadowRendering"] = step.Enabled ? "enabled" : "disabled"
+            });
     }
 
     public GatewayEndToEndStepOutcome Apply(GizmoActionStep step, IEndToEndContext context)
@@ -289,11 +348,92 @@ public sealed class GatewayEndToEndNativeActions :
         }
     }
 
+    GatewayEndToEndStepOutcome IGatewayEndToEndDesignatorSessionNativeActions.Apply(
+        DesignatorSessionActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        if (backend is not IGatewayEndToEndDesignatorSessionBackend designatorBackend)
+        {
+            return Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support persistent designator previews.");
+        }
+
+        switch (step.Action)
+        {
+            case EndToEndDesignatorSessionAction.Begin:
+            {
+                GatewayGizmoDescriptor[] matches = backend.QueryGizmos(
+                        step.TargetRuntimeIds,
+                        step.ArchitectCategoryDefNames)
+                    .Where(item => string.Equals(item.RuntimeType, step.GizmoType, StringComparison.Ordinal))
+                    .Where(item => string.Equals(item.Identity, step.StableGizmoId, StringComparison.Ordinal))
+                    .ToArray();
+                if (matches.Length != 1)
+                {
+                    return Fail(
+                        matches.Length == 0 ? "gizmo_not_found" : "ambiguous_gizmo",
+                        "The designator preview selector must resolve exactly one native designator.");
+                }
+
+                EndToEndMapCell cell = step.HoverCell ?? throw new InvalidOperationException(
+                    "A designator preview begin step requires a hover cell.");
+                designatorBackend.BeginDesignatorPreview(matches[0].Handle, cell, step.StuffDefName);
+                return GatewayEndToEndStepOutcome.Pass(new Dictionary<string, string>
+                {
+                    ["hoverCell"] = $"{cell.X},{cell.Z}",
+                    ["inputMode"] = "semantic-native-designator"
+                });
+            }
+            case EndToEndDesignatorSessionAction.RotateLeft:
+                designatorBackend.RotateDesignatorPreview(GatewayDesignatorRotationDirection.Counterclockwise);
+                return GatewayEndToEndStepOutcome.Pass();
+            case EndToEndDesignatorSessionAction.RotateRight:
+                designatorBackend.RotateDesignatorPreview(GatewayDesignatorRotationDirection.Clockwise);
+                return GatewayEndToEndStepOutcome.Pass();
+            case EndToEndDesignatorSessionAction.Commit:
+            {
+                GatewayDesignatorCommitResult result = designatorBackend.CommitDesignatorPreview();
+                if (step.ExpectRejected)
+                {
+                    return result.Accepted
+                        ? Fail("designator_target_not_rejected", "The previewed native click was expected to be rejected.")
+                        : GatewayEndToEndStepOutcome.Pass();
+                }
+
+                return result.Accepted
+                    ? GatewayEndToEndStepOutcome.Pass()
+                    : Fail(
+                        "designator_target_rejected",
+                        result.RejectionReason ?? "RimWorld rejected the previewed native click.");
+            }
+            case EndToEndDesignatorSessionAction.Cancel:
+                designatorBackend.CancelDesignatorPreview();
+                return GatewayEndToEndStepOutcome.Pass();
+            default:
+                throw new ArgumentOutOfRangeException(nameof(step.Action));
+        }
+    }
+
     public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step, IEndToEndContext context)
     {
         Require(step, context);
         return backend.ApplyFloatMenu(step, context) ??
                throw new InvalidOperationException("The float-menu backend returned no outcome.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndCurrentFloatMenuNativeActions.Apply(
+        CurrentFloatMenuActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndCurrentFloatMenuBackend currentMenuBackend
+            ? currentMenuBackend.ApplyCurrentFloatMenu(step) ??
+              throw new InvalidOperationException("The current-float-menu backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support an already-open float menu.");
     }
 
     public GatewayEndToEndStepOutcome Apply(
@@ -466,12 +606,43 @@ public sealed class GatewayEndToEndNativeActions :
                 first,
                 step.Rotation.HasValue
                     ? (GatewayCardinalRotation)(int)step.Rotation.Value
-                    : null);
+                    : null,
+                step.StuffDefName);
         }
 
         var end = step.EndCell ?? throw new InvalidOperationException(
             "A drag E2E step requires an end cell.");
         var last = new GatewayMapCell(end.X, end.Z);
+        if (step.Rotation.HasValue)
+        {
+            if (!interaction.AcceptedInputs.Contains(GatewayInteractionInputKind.Line))
+            {
+                throw new InvalidOperationException(
+                    "A rotated drag E2E step requires a native line interaction.");
+            }
+
+            return GatewayInteractionInput.ForLine(
+                first,
+                last,
+                (GatewayCardinalRotation)(int)step.Rotation.Value,
+                step.StuffDefName);
+        }
+
+        if (step.StuffDefName is not null)
+        {
+            if (!interaction.AcceptedInputs.Contains(GatewayInteractionInputKind.Line))
+            {
+                throw new InvalidOperationException(
+                    "A material-bearing drag E2E step requires a native line interaction.");
+            }
+
+            return GatewayInteractionInput.ForLine(
+                first,
+                last,
+                rotation: null,
+                stuffDefName: step.StuffDefName);
+        }
+
         if (interaction.AcceptedInputs.Contains(GatewayInteractionInputKind.Rectangle))
         {
             return GatewayInteractionInput.ForRectangle(first, last);
@@ -479,7 +650,13 @@ public sealed class GatewayEndToEndNativeActions :
 
         if (interaction.AcceptedInputs.Contains(GatewayInteractionInputKind.Line))
         {
-            return GatewayInteractionInput.ForLine(first, last);
+            return GatewayInteractionInput.ForLine(
+                first,
+                last,
+                step.Rotation.HasValue
+                    ? (GatewayCardinalRotation)(int)step.Rotation.Value
+                    : null,
+                step.StuffDefName);
         }
 
         throw new InvalidOperationException("The drag gizmo does not accept line or rectangle input.");

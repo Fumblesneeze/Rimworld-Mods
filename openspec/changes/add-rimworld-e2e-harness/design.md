@@ -41,7 +41,7 @@ An existing quickstart `Map` is not sufficient readiness: `TickManager.Pause` fo
 
 Initial typed steps cover:
 
-- exact native gizmo invocation from Thing owners and/or architect category Def names, plus exact float-menu order invocation;
+- exact native gizmo invocation from Thing owners and/or architect category Def names, including optional cardinal cell/line direction and independent exact Stuff selection for native build designators, plus exact float-menu order invocation;
 - process-scoped click, drag, chord, key, and text input when no semantic path exists;
 - an exact native Architect-category action that opens/closes the main tab and selects one loaded
   `DesignationCategoryDef` without restoring or foregrounding the process;
@@ -49,11 +49,14 @@ Initial typed steps cover:
 - exact allowlisted optional-mod dialog confirmations that retain private assembly/type/callback shapes in the Gateway rather than accepting reflection details from test bundles;
 - pause and native speed control;
 - thing selection and camera framing;
+- reversible native screenshot-mode control for UI-free visual evidence without desktop input;
 - predicate waits with test-declared frame, game-tick, and wall-clock deadlines;
 - end-of-frame full or object-bounded screenshots;
 - named observable checkpoints and bounded assertion details.
 
 Product-owned test assemblies discover current right-click options through a host-safe `IEndToEndFloatMenuCatalog` context service. The returned metadata contains only visible label, disabled state, and a callback-sensitive stable identity. The test then submits that identity through `FloatMenuActionStep`; Gateway re-queries immediately and invokes the one exact native callback. This avoids a product-test dependency on Gateway internals and avoids retaining Unity/RimWorld delegates across frames.
+
+For a `Command_Action` that opens its own on-screen `FloatMenu`, the Gateway snapshots existing menus before the native callback and retains only one exact newly opened instance as a short-lived automation lease. The following `CurrentFloatMenuActionStep` accepts only that same sole open window, uses its actual colonist-ordering mode, and mirrors the native tutorial allow/chosen/notify/close sequence. Replacement or ambiguity fails closed; successful close consumes the lease, while the next semantic action and isolation cleanup clear it. Any release of a still-open lease restores that exact menu's prior mouse-distance behavior.
 
 `TradeDialogActionStep` is a narrow semantic adapter for the native trade window. Adjustment re-resolves the exact current `Tradeable` by physical Thing ID, uses the native count setter and dialog refresh, and acceptance invokes the exact compiler-generated callback owned by `Dialog_Trade`; version-shape drift fails instead of approximating the deal. This is deliberately separate from `ProcessInputActionStep`: known trade semantics remain minimized and deterministic, while map pointer tools, drags, keys, text, and unknown surfaces retain foreground Win32 input. Observable waits and screenshots still prove that the real trade deal and delivery occurred.
 
@@ -68,6 +71,12 @@ The action opens UI only; a later screenshot and exact architect-designator cata
 the player-visible menu contains the intended buildables.
 
 Tests may inspect Verse state inside predicates and assertions, but a direct mutation cannot be registered as the player action or observable result. Each test result records which steps were `arrange`, `act`, `wait`, and `observe`. This makes dishonest fixtures reviewable without attempting to sandbox test code.
+
+`ScreenshotModeActionStep` is the narrow presentation-state adapter for evidence captures. It changes only RimWorld's own `ScreenshotModeHandler.Active` flag on the Unity thread, is recorded as an `act`, and never synthesizes a key or touches desktop focus. A test that enables it must restore the prior value in guaranteed cleanup even when later steps fail. This is evidence preparation, not proof of product behavior; the actual player workflow and resulting rendered objects remain independently required.
+
+`ShadowRenderingActionStep` is the corresponding narrow raster-measurement adapter. It changes only `DebugViewSettings.drawShadows`, invokes RimWorld's own `drawShadowsToggled` map-mesh invalidation path, and records the transition as an `act`. A test uses the shadow-free phase only to derive exact structural masks from same-camera staged screenshots, restores normal shadows before the public candidate, and restores the original global value again in guaranteed cleanup. It is never publication art or gameplay proof.
+
+Damage-rendering catalogs have one deliberately narrow exception to the ordinary native-action rule: `SupportingHitPointFixtureActionStep` performs bounded, exact current-map hit-point setup as an explicitly named `act`. It accepts at most 64 unique Things and only ratios strictly between zero and one, resolves and validates every target before applying any mutation, and marks its outcome as direct supporting setup. It cannot prove combat or damage behavior; a separate native bash/melee workflow carries that acceptance. This avoids disguising fixture construction inside an assertion while retaining deterministic material/grade screenshots.
 
 `Task`/`async void` test methods were rejected because Unity Mono continuations and process shutdown are difficult to own deterministically. A synchronous one-shot method was rejected because it would either block the main thread or directly tick the result into existence.
 

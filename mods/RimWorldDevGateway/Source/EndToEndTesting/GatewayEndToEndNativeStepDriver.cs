@@ -8,7 +8,15 @@ public interface IGatewayEndToEndNativeActions
 
     GatewayEndToEndStepOutcome Apply(SelectionActionStep step, IEndToEndContext context);
 
+    GatewayEndToEndStepOutcome Apply(
+        SupportingHitPointFixtureActionStep step,
+        IEndToEndContext context);
+
     GatewayEndToEndStepOutcome Apply(CameraActionStep step, IEndToEndContext context);
+
+    GatewayEndToEndStepOutcome Apply(ScreenshotModeActionStep step, IEndToEndContext context);
+
+    GatewayEndToEndStepOutcome Apply(ShadowRenderingActionStep step, IEndToEndContext context);
 
     GatewayEndToEndStepOutcome Apply(GizmoActionStep step, IEndToEndContext context);
 
@@ -35,6 +43,16 @@ internal interface IGatewayEndToEndDialogConfirmationNativeActions
 internal interface IGatewayEndToEndArchitectCategoryNativeActions
 {
     GatewayEndToEndStepOutcome Apply(ArchitectCategoryActionStep step, IEndToEndContext context);
+}
+
+internal interface IGatewayEndToEndCurrentFloatMenuNativeActions
+{
+    GatewayEndToEndStepOutcome Apply(CurrentFloatMenuActionStep step, IEndToEndContext context);
+}
+
+internal interface IGatewayEndToEndDesignatorSessionNativeActions
+{
+    GatewayEndToEndStepOutcome Apply(DesignatorSessionActionStep step, IEndToEndContext context);
 }
 
 internal interface IGatewayEndToEndInspectionNativeActions
@@ -75,9 +93,24 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
         {
             TimeControlActionStep time => Complete(actions.Apply(time, context)),
             SelectionActionStep selection => Complete(actions.Apply(selection, context)),
+            SupportingHitPointFixtureActionStep fixture => Complete(actions.Apply(fixture, context)),
             CameraActionStep camera => Complete(actions.Apply(camera, context)),
+            ScreenshotModeActionStep screenshotMode => Complete(actions.Apply(screenshotMode, context)),
+            ShadowRenderingActionStep shadowRendering => Complete(actions.Apply(shadowRendering, context)),
             GizmoActionStep gizmo => Complete(actions.Apply(gizmo, context)),
+            DesignatorSessionActionStep designatorSession => actions is
+                IGatewayEndToEndDesignatorSessionNativeActions designatorActions
+                    ? Complete(designatorActions.Apply(designatorSession, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support persistent designator previews."),
             FloatMenuActionStep floatMenu => Complete(actions.Apply(floatMenu, context)),
+            CurrentFloatMenuActionStep currentFloatMenu => actions is
+                IGatewayEndToEndCurrentFloatMenuNativeActions currentFloatMenuActions
+                    ? Complete(currentFloatMenuActions.Apply(currentFloatMenu, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support an already-open float menu."),
             SettlementTradeActionStep settlementTrade => Complete(actions.Apply(settlementTrade, context)),
             IncidentActionStep incident => Complete(actions.Apply(incident, context)),
             TradeDialogActionStep tradeDialog => Complete(actions.Apply(tradeDialog, context)),

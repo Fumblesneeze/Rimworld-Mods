@@ -129,9 +129,28 @@ Native debug-action discovery walks only RimWorld's already-materialized generat
 
 Gizmo discovery accepts selected things, explicit thing handles, or architect categories. It enumerates current `Gizmo`/`Command` instances and resolved `Designator`s without retaining them across maps, bounds the result, and reports owner, label/description, disabled reason, hotkey, group key, toggle state when observable, and one interaction kind: `immediate`, `toggle`, `target`, `placement`, `drag`, or `unsupported`. A handle includes the map/owner, source, runtime type, stable ordering key, and a query revision. Invocation re-enumerates and fingerprints the candidate before use; a stale handle fails without invoking a different command.
 
-Typed cell placement may carry an optional cardinal rotation. After revalidation, the Gateway calls the exact `Designator_Place.Selected()` lifecycle, applies the requested `Rot4` to that designator's protected placing-rotation state through one shape-guarded adapter, and only then runs native preflight and designation. This models the player's rotate command without synthesizing `Event.current`; it never edits the placed Thing afterward. Rotation is rejected for non-place designators and non-cell shapes.
+Typed cell placement and cardinal line placement may carry an optional cardinal rotation. After revalidation, the Gateway calls the exact `Designator_Place.Selected()` lifecycle, applies the requested `Rot4` to that designator's protected placing-rotation state through one shape-guarded adapter, and only then runs native preflight and designation. The line form preserves directional state for native multi-cell designators whose behavior depends on the ordered drag; rectangle drags remain unsupported. This models the player's directional choice without synthesizing `Event.current`; it never edits the placed Thing afterward. Rotation is rejected for non-place designators and incompatible shapes.
+
+The same cell or line input may name one exact Stuff Def for a native `Designator_Build`. A shape-guarded adapter resolves the loaded Def, requires Stuff status and placing-Def acceptance, and sets the designator's existing material selection before native preflight. Invalid or disallowed Stuff fails before designation, and neither the blueprint nor the completed Thing is rewritten afterward.
 
 Immediate and toggle commands finish in their invocation response. Target commands and designators create at most one active semantic interaction. The returned interaction declares its accepted input shapes plus its map, owner, and revision fingerprint. Applying it accepts exactly one matching input: a thing handle, map cell, explicit bounded cell set, line, or rectangle. The gateway resolves shapes deterministically, removes duplicate cells, preflights every target through the native targeting/designation validator, and then invokes the native callback or designator. It reports accepted/rejected cells and completion state. A new interaction is rejected while another is active unless the caller cancels the exact handle; map changes, destroyed owners, or changed gizmo fingerprints make the handle stale. Native debug tools instead activate RimWorld's own pointer tool and use the process-scoped input route because their closures read current UI coordinates. No endpoint synthesizes `Event.current` or silently falls back to pixel input. World targeting, mod-defined multi-stage interactions, and custom GUI-only gizmos remain explicitly unsupported until a typed adapter exists.
+
+The E2E-only persistent designator session is a bounded exception for visual hover evidence while the
+game remains minimized. It retains one exact `Designator_Place` and map cell, runs that object's
+native `Selected`/`Deselected` lifecycle directly, and deliberately does not register it with
+`DesignatorManager` for the normal pointer-driven `SelectedUpdate`; doing both would draw a second
+ghost at Unity's stale off-window pointer. The runtime host asks the owning registry to call the
+designator's own `RenderHighlight` path exactly once per rendered frame. Commit uses native preflight
+and one-cell `DesignateMultiCell` because a line-capable designator completes a click through the same
+multi-cell lifecycle. Per-frame registry maintenance revalidates the original map/gizmo fingerprint
+and candidate state, atomically cancels stale ownership, and lets a fresh begin proceed immediately.
+Reset cancels the registry session and verifies both registry and native designator-manager state empty.
+
+The E2E screenshot-mode action changes only RimWorld's native `ScreenshotModeHandler.Active` flag.
+The runtime host reads that same flag before `OnGUI` draws its unrestricted-execution and test-status
+boxes; while active it skips those Gateway-only overlays without stopping the server, discovery, or
+the running test. This keeps the action reversible and avoids a second private visibility state.
+Using fixtures retain and restore the prior native flag in guaranteed cleanup.
 
 This semantic protocol is intentionally not a universal serializer or a promise to parameterize every mod-defined command. Unsupported custom gizmos/debug tools return their concrete runtime type and reason; the always-on raw C# endpoint remains the escape hatch and can be used to prototype a later typed adapter without restarting the game.
 

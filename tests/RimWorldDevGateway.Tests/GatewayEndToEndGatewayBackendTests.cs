@@ -192,6 +192,146 @@ public sealed class GatewayEndToEndGatewayBackendTests
             Is.Not.EqualTo(VerseGatewayEndToEndFloatMenuActions.StableIdentity(second)));
     }
 
+    [Test]
+    public void Current_float_menu_requires_one_exact_enabled_visible_label()
+    {
+        var chosen = CreateHostSafeFloatMenuOption("For guests", () => { });
+        var duplicate = CreateHostSafeFloatMenuOption("For guests", () => { });
+        var other = CreateHostSafeFloatMenuOption("For colonists", () => { });
+
+        GatewayEndToEndStepOutcome unique = VerseGatewayEndToEndFloatMenuActions.ResolveExactEnabledOption(
+            new[] { other, chosen },
+            "For guests",
+            out FloatMenuOption? resolved);
+        GatewayEndToEndStepOutcome ambiguous = VerseGatewayEndToEndFloatMenuActions.ResolveExactEnabledOption(
+            new[] { chosen, duplicate },
+            "For guests",
+            out _);
+        GatewayEndToEndStepOutcome missing = VerseGatewayEndToEndFloatMenuActions.ResolveExactEnabledOption(
+            new[] { other },
+            "For guests",
+            out _);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(unique.Passed, Is.True);
+            Assert.That(resolved, Is.SameAs(chosen));
+            Assert.That(ambiguous.Passed, Is.False);
+            Assert.That(ambiguous.FailureCode, Is.EqualTo("current_float_menu_option_ambiguous"));
+            Assert.That(missing.Passed, Is.False);
+            Assert.That(missing.FailureCode, Is.EqualTo("current_float_menu_option_not_found"));
+        });
+    }
+
+    [Test]
+    public void Current_float_menu_uses_the_native_tutor_callback_notify_then_close_order()
+    {
+        var events = new List<string>();
+        FloatMenuOption option = CreateHostSafeFloatMenuOption(
+            "For guests",
+            () => events.Add("chosen"));
+        SetTutorTag(option, "ChooseGuestBed");
+        var menu = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+
+        bool accepted = VerseGatewayEndToEndFloatMenuActions.RunChosenLifecycle(
+            option,
+            menu,
+            () => events.Add("closed"),
+            tag =>
+            {
+                events.Add("allow:" + tag);
+                return true;
+            },
+            tag => events.Add("notify:" + tag));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(accepted, Is.True);
+            Assert.That(events, Is.EqualTo(new[]
+            {
+                "allow:ChooseGuestBed",
+                "chosen",
+                "notify:ChooseGuestBed",
+                "closed"
+            }));
+        });
+    }
+
+    [Test]
+    public void Current_float_menu_tutor_rejection_does_not_choose_notify_or_close()
+    {
+        var events = new List<string>();
+        FloatMenuOption option = CreateHostSafeFloatMenuOption(
+            "For guests",
+            () => events.Add("chosen"));
+        SetTutorTag(option, "ChooseGuestBed");
+        var menu = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+
+        bool accepted = VerseGatewayEndToEndFloatMenuActions.RunChosenLifecycle(
+            option,
+            menu,
+            () => events.Add("closed"),
+            tag =>
+            {
+                events.Add("allow:" + tag);
+                return false;
+            },
+            tag => events.Add("notify:" + tag));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(accepted, Is.False);
+            Assert.That(events, Is.EqualTo(new[] { "allow:ChooseGuestBed" }));
+        });
+    }
+
+    [Test]
+    public void Current_float_menu_requires_the_exact_captured_window()
+    {
+        var captured = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        var replacement = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+
+        GatewayEndToEndStepOutcome exact =
+            VerseGatewayEndToEndFloatMenuActions.ResolveExactCapturedMenu(
+                new[] { captured },
+                captured,
+                out FloatMenu? resolved);
+        GatewayEndToEndStepOutcome stale =
+            VerseGatewayEndToEndFloatMenuActions.ResolveExactCapturedMenu(
+                new[] { replacement },
+                captured,
+                out _);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exact.Passed, Is.True);
+            Assert.That(resolved, Is.SameAs(captured));
+            Assert.That(stale.Passed, Is.False);
+            Assert.That(stale.FailureCode, Is.EqualTo("current_float_menu_stale"));
+        });
+    }
+
+    [Test]
+    public void Current_float_menu_preserves_both_native_colonist_ordering_modes()
+    {
+        var colonistOrder = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        var ordinaryMenu = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        const BindingFlags fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        FieldInfo ordering = typeof(FloatMenu).GetField("givesColonistOrders", fields)!;
+        ordering.SetValue(colonistOrder, true);
+        ordering.SetValue(ordinaryMenu, false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                VerseGatewayEndToEndFloatMenuActions.GetColonistOrdering(colonistOrder),
+                Is.True);
+            Assert.That(
+                VerseGatewayEndToEndFloatMenuActions.GetColonistOrdering(ordinaryMenu),
+                Is.False);
+        });
+    }
+
     private static FloatMenuOption CreateHostSafeFloatMenuOption(string label, Action? action)
     {
         var option = (FloatMenuOption)FormatterServices.GetUninitializedObject(typeof(FloatMenuOption));
@@ -201,6 +341,13 @@ public sealed class GatewayEndToEndGatewayBackendTests
         typeof(FloatMenuOption).GetField("action", fields)!
             .SetValue(option, action);
         return option;
+    }
+
+    private static void SetTutorTag(FloatMenuOption option, string tutorTag)
+    {
+        const BindingFlags fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        typeof(FloatMenuOption).GetField("tutorTag", fields)!
+            .SetValue(option, tutorTag);
     }
 
     private static void FirstFloatMenuAction()

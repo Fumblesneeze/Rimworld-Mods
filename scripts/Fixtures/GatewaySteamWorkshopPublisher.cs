@@ -7,9 +7,11 @@ using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using RimWorld;
 using RimWorldDevGateway.Contracts;
 using Steamworks;
 using UnityEngine;
+using Verse;
 using Verse.Steam;
 
 namespace GatewaySteamWorkshopPublisher;
@@ -40,6 +42,9 @@ public static class PublisherSafety
     public static bool OwnerScanProvesAbsence(uint total, uint returned, int exactTitleMatches) =>
         total == returned && exactTitleMatches == 0;
 
+    public static string RequiredConfirmation(string planSha256, string confirmationNonce) =>
+        "publish " + planSha256 + " " + confirmationNonce;
+
     public static string[] PreviewOperations(uint existingCount, int desiredCount)
     {
         if (desiredCount < 1 || desiredCount > 10) throw new ArgumentOutOfRangeException(nameof(desiredCount));
@@ -50,6 +55,7 @@ public static class PublisherSafety
         for (var index = (int)existingCount - 1; index >= desiredCount; index--) operations.Add("remove:" + index);
         return operations.ToArray();
     }
+
 }
 
 public static class Entry
@@ -77,7 +83,6 @@ public static class Entry
 
 internal static class Publisher
 {
-    private const string Confirmation = "publish immersive chefs to steam workshop";
     private static readonly object Gate = new();
     private static Callback<DownloadItemResult_t>? downloadCallback;
     private static CallResult<CreateItemResult_t>? createResult;
@@ -115,6 +120,7 @@ internal static class Publisher
                 {
                     snapshot.CurrentUserSteamId = SteamUser.GetSteamID().m_SteamID;
                 }
+                snapshot.RimWorldVersion = VersionControl.CurrentVersionStringWithRev;
                 return snapshot.ToJson();
             }
 
@@ -264,7 +270,7 @@ internal static class Publisher
             if (request.Operation == "preview-sync")
             {
                 EnsureIdle();
-                request.ValidatePreviewSync(Confirmation);
+                request.ValidatePreviewSync();
                 RequireExactIdentity(request.IdentityPath, request.PublishedFileId, "durable identity");
                 RequireExistingPreflight(request);
                 activeRequest = request;
@@ -274,7 +280,7 @@ internal static class Publisher
 
             if (request.Operation != "publish") throw new InvalidOperationException("Unsupported operation.");
             EnsureIdle();
-            request.ValidatePublish(Confirmation);
+            request.ValidatePublish();
             activeRequest = request;
             snapshot = Snapshot.Pending(
                 request.PublishedFileId == 0 ? "creating" : "updating",
@@ -335,6 +341,7 @@ internal static class Publisher
             snapshot = Snapshot.Pending("created", request.PlanSha256, id, result.m_bUserNeedsToAcceptWorkshopLegalAgreement);
             if (result.m_bUserNeedsToAcceptWorkshopLegalAgreement)
             {
+                WriteStateAtomically(request.StatePath, "legal-agreement-required|" + request.PlanSha256 + "|" + id);
                 snapshot = Snapshot.LegalAgreementRequired(request.PlanSha256, id);
                 activeRequest = null;
                 return;
@@ -422,6 +429,7 @@ internal static class Publisher
             WriteStateAtomically(request.StatePath, submittedStage + "|" + request.PlanSha256 + "|" + id);
             if (result.m_bUserNeedsToAcceptWorkshopLegalAgreement)
             {
+                WriteStateAtomically(request.StatePath, "legal-agreement-required|" + request.PlanSha256 + "|" + id);
                 snapshot = Snapshot.LegalAgreementRequired(request.PlanSha256, id);
                 activeRequest = null;
                 return;
@@ -819,6 +827,7 @@ internal static class Publisher
         public string Operation = "";
         public string PlanSha256 = "";
         public string Confirmation = "";
+        public string ConfirmationNonce = "";
         public ulong PublishedFileId;
         public bool AllowFirstPublication;
         public string IdentityPath = "";
@@ -847,6 +856,7 @@ internal static class Publisher
                 Operation = operation,
                 PlanSha256 = objectValue.planSha256 ?? "",
                 Confirmation = objectValue.confirmation ?? "",
+                ConfirmationNonce = objectValue.confirmationNonce ?? "",
                 PublishedFileId = ParseId(objectValue.publishedFileId, allowEmpty: true),
                 AllowFirstPublication = objectValue.allowFirstPublication,
                 IdentityPath = objectValue.identityPath ?? "",
@@ -869,10 +879,12 @@ internal static class Publisher
             return request;
         }
 
-        public void ValidatePublish(string exactConfirmation)
+        public void ValidatePublish()
         {
-            if (Confirmation != exactConfirmation) throw new InvalidOperationException("Exact publish confirmation is required.");
             if (PlanSha256.Length != 64 || PlanSha256.Any(c => !Uri.IsHexDigit(c))) throw new InvalidOperationException("planSha256 is invalid.");
+            if (ConfirmationNonce.Length < 32 || ConfirmationNonce.Any(c => !Uri.IsHexDigit(c)) ||
+                Confirmation != PublisherSafety.RequiredConfirmation(PlanSha256, ConfirmationNonce))
+                throw new InvalidOperationException("Exact plan-and-nonce publish confirmation is required.");
             if (string.IsNullOrWhiteSpace(Title) || Title.Length > 128) throw new InvalidOperationException("title is invalid.");
             RequireFile(DescriptionPath, "descriptionPath");
             RequireFile(PreviewPath, "previewPath");
@@ -881,14 +893,15 @@ internal static class Publisher
             if (string.IsNullOrWhiteSpace(RepositoryIdentityPath) || Path.GetFileName(RepositoryIdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("repositoryIdentityPath is invalid.");
             if (string.IsNullOrWhiteSpace(PackageIdentityPath) || Path.GetFileName(PackageIdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("packageIdentityPath is invalid.");
             if (string.IsNullOrWhiteSpace(StatePath) || Path.GetFileName(StatePath) != "publication-state.txt") throw new InvalidOperationException("statePath is invalid.");
-            if (RequiredWorkshopItemId == 0) throw new InvalidOperationException("requiredWorkshopItemId is invalid.");
             if (Tags.Count == 0 || Tags.Count > 16 || Tags.Any(string.IsNullOrWhiteSpace)) throw new InvalidOperationException("tags are invalid.");
         }
 
-        public void ValidatePreviewSync(string exactConfirmation)
+        public void ValidatePreviewSync()
         {
-            if (Confirmation != exactConfirmation) throw new InvalidOperationException("Exact publish confirmation is required.");
             if (PlanSha256.Length != 64 || PlanSha256.Any(c => !Uri.IsHexDigit(c))) throw new InvalidOperationException("planSha256 is invalid.");
+            if (ConfirmationNonce.Length < 32 || ConfirmationNonce.Any(c => !Uri.IsHexDigit(c)) ||
+                Confirmation != PublisherSafety.RequiredConfirmation(PlanSha256, ConfirmationNonce))
+                throw new InvalidOperationException("Exact plan-and-nonce publish confirmation is required.");
             if (PublishedFileId == 0) throw new InvalidOperationException("preview-sync requires an existing Workshop identity.");
             if (string.IsNullOrWhiteSpace(Title) || Title.Length > 128) throw new InvalidOperationException("title is invalid.");
             if (string.IsNullOrWhiteSpace(IdentityPath) || Path.GetFileName(IdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("identityPath is invalid.");
@@ -946,6 +959,8 @@ internal static class Publisher
         public string? planSha256;
         [DataMember(Name = "confirmation")]
         public string? confirmation;
+        [DataMember(Name = "confirmationNonce")]
+        public string? confirmationNonce;
         [DataMember(Name = "publishedFileId")]
         public string? publishedFileId;
         [DataMember(Name = "allowFirstPublication")]
@@ -1015,6 +1030,8 @@ internal static class Publisher
         [DataMember]
         public ulong CurrentUserSteamId;
         [DataMember]
+        public string RimWorldVersion = "";
+        [DataMember]
         public string RemoteTitle = "";
         [DataMember]
         public string RemoteDescriptionSha256 = "";
@@ -1032,6 +1049,10 @@ internal static class Publisher
         public ulong RemoteOwnerSteamId;
         [DataMember]
         public uint RemoteConsumerAppId;
+        [DataMember]
+        public ulong RemoteContentBytes;
+        [DataMember]
+        public uint RemoteUpdatedUnixSeconds;
         [DataMember]
         public ulong[] RemoteDependencies = Array.Empty<ulong>();
         [DataMember]
@@ -1067,6 +1088,8 @@ internal static class Publisher
                 RemoteAdditionalPreviews = additionalPreviews ?? Array.Empty<RemoteAdditionalPreview>(),
                 RemoteOwnerSteamId = details.m_ulSteamIDOwner,
                 RemoteConsumerAppId = details.m_nConsumerAppID.m_AppId,
+                RemoteContentBytes = checked((ulong)details.m_nFileSize),
+                RemoteUpdatedUnixSeconds = details.m_rtimeUpdated,
                 RemoteDependencies = dependencies
             };
         }

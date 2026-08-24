@@ -25,7 +25,8 @@ public static class GatewayGizmoRequestJson
         "end",
         "cornerA",
         "cornerB",
-        "rotation"
+        "rotation",
+        "stuffDefName"
     };
 
     public static GatewayGizmoQuery ReadQuery(string json)
@@ -73,21 +74,38 @@ public static class GatewayGizmoRequestJson
                     RequireOnlyString(properties, "thingHandle", kind)),
             GatewayInteractionInputKind.Cell =>
                 GatewayInteractionInput.ForCell(
-                    RequireOnlyCell(properties, "cell", kind, "rotation"),
-                    ReadCardinalRotation(properties)),
+                    RequireOnlyCell(properties, "cell", kind, "rotation", "stuffDefName"),
+                    ReadCardinalRotation(properties),
+                    ReadString(properties, "stuffDefName", required: false)),
             GatewayInteractionInputKind.Cells =>
                 GatewayInteractionInput.ForCells(
                     RequireOnlyCells(properties, "cells", kind)),
             GatewayInteractionInputKind.Line =>
-                GatewayInteractionInput.ForLine(
-                    RequireCell(properties, "start"),
-                    RequireOnlyCell(properties, "end", kind, "start")),
+                ReadLineInput(properties, kind),
             GatewayInteractionInputKind.Rectangle =>
                 GatewayInteractionInput.ForRectangle(
                     RequireCell(properties, "cornerA"),
                     RequireOnlyCell(properties, "cornerB", kind, "cornerA")),
             _ => throw Error($"Interaction input kind '{kind}' is unsupported.")
         };
+    }
+
+    private static GatewayInteractionInput ReadLineInput(
+        Dictionary<string, object?> properties,
+        GatewayInteractionInputKind kind)
+    {
+        try
+        {
+            return GatewayInteractionInput.ForLine(
+                RequireCell(properties, "start"),
+                RequireOnlyCell(properties, "end", kind, "start", "rotation", "stuffDefName"),
+                ReadCardinalRotation(properties),
+                ReadString(properties, "stuffDefName", required: false));
+        }
+        catch (ArgumentException exception)
+        {
+            throw Error(exception.Message);
+        }
     }
 
     private static Dictionary<string, object?> ReadObject(

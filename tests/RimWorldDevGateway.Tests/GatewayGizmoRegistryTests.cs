@@ -159,6 +159,84 @@ public sealed class GatewayGizmoRegistryTests
     }
 
     [Test]
+    public void Designator_preview_session_keeps_native_hover_rotation_and_click_in_one_lifecycle()
+    {
+        var candidate = PreviewCandidate.Create("build-thin-wall");
+        var registry = new GatewayGizmoRegistry(new FakeSource(candidate));
+        string handle = registry.Query(GatewayGizmoQuery.ForOwners(
+            Array.Empty<string>(), architectCategoryDefNames: new[] { "Structure" })).Items.Single().Handle;
+
+        registry.BeginDesignatorPreview(
+            handle,
+            new GatewayMapCell(8, 11),
+            stuffDefName: "WoodLog");
+        registry.RotateDesignatorPreview(GatewayDesignatorRotationDirection.Counterclockwise);
+        GatewayDesignatorCommitResult result = registry.CommitDesignatorPreview();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Accepted, Is.True);
+            Assert.That(candidate.Events, Is.EqualTo(new[]
+            {
+                "begin:8,11:WoodLog",
+                "rotate:Counterclockwise",
+                "commit"
+            }));
+            Assert.That(registry.HasActiveDesignatorPreview, Is.False);
+        });
+    }
+
+    [Test]
+    public void Designator_preview_session_clears_itself_when_native_selection_is_lost()
+    {
+        var candidate = PreviewCandidate.Create("build-thin-wall");
+        var registry = new GatewayGizmoRegistry(new FakeSource(candidate));
+        string handle = registry.Query(GatewayGizmoQuery.ForOwners(
+            Array.Empty<string>(), architectCategoryDefNames: new[] { "Structure" })).Items.Single().Handle;
+        registry.BeginDesignatorPreview(handle, new GatewayMapCell(8, 11), stuffDefName: "WoodLog");
+        candidate.PreviewCurrent = false;
+
+        GatewayGizmoException error = Assert.Throws<GatewayGizmoException>(() =>
+            registry.RotateDesignatorPreview(GatewayDesignatorRotationDirection.Counterclockwise))!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(error.Code, Is.EqualTo("designator_preview_not_current"));
+            Assert.That(candidate.Events, Is.EqualTo(new[]
+            {
+                "begin:8,11:WoodLog",
+                "cancel"
+            }));
+            Assert.That(registry.HasActiveDesignatorPreview, Is.False);
+        });
+    }
+
+    [Test]
+    public void Per_frame_preview_draws_once_and_atomically_releases_stale_ownership()
+    {
+        var candidate = PreviewCandidate.Create("build-thin-wall");
+        var registry = new GatewayGizmoRegistry(new FakeSource(candidate));
+        string handle = registry.Query(GatewayGizmoQuery.ForOwners(
+            Array.Empty<string>(), architectCategoryDefNames: new[] { "Structure" })).Items.Single().Handle;
+        registry.BeginDesignatorPreview(handle, new GatewayMapCell(8, 11), stuffDefName: "WoodLog");
+
+        Assert.That(registry.RefreshDesignatorPreview(), Is.True);
+        candidate.PreviewCurrent = false;
+        Assert.That(registry.RefreshDesignatorPreview(), Is.False);
+
+        candidate.PreviewCurrent = true;
+        registry.BeginDesignatorPreview(handle, new GatewayMapCell(9, 11), stuffDefName: "WoodLog");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(candidate.DrawCount, Is.EqualTo(1));
+            Assert.That(candidate.Events.Count(entry => entry == "cancel"), Is.EqualTo(1));
+            Assert.That(registry.HasActiveDesignatorPreview, Is.True,
+                "A fresh session must start immediately after per-frame stale cleanup.");
+        });
+    }
+
+    [Test]
     public void Cancel_refuses_a_non_current_handle_then_cancels_the_matching_interaction()
     {
         var candidate = FakeCandidate.Target("set-target", "Thing_Turret1");
@@ -576,5 +654,77 @@ public sealed class GatewayGizmoRegistryTests
             apply(targets);
 
         public void Cancel() => cancel();
+    }
+
+    private sealed class PreviewCandidate : IGatewayGizmoCandidate, IGatewayDesignatorPreviewCandidate
+    {
+        public List<string> Events { get; } = new();
+
+        public bool PreviewCurrent { get; set; } = true;
+
+        public bool PreviewIsCurrent => PreviewCurrent;
+
+        public int DrawCount { get; private set; }
+
+        public static PreviewCandidate Create(string identity) => new(identity);
+
+        private readonly string identity;
+
+        private PreviewCandidate(string identity) => this.identity = identity;
+
+        public GatewayGizmoCandidateSnapshot Capture() => new(
+            identity,
+            GatewayGizmoSource.Architect,
+            Array.Empty<string>(),
+            "ThinWalls.Designation.Designator_ThinWall",
+            "Thin wall",
+            "Place a Thin Wall.",
+            20f,
+            disabled: false,
+            disabledReason: null,
+            hotKey: null,
+            groupKey: -1,
+            GatewayGizmoInteractionKind.Drag,
+            toggleState: null,
+            new[] { GatewayInteractionInputKind.Cell, GatewayInteractionInputKind.Line });
+
+        public void BeginPreview(GatewayMapCell cell, string? stuffDefName) =>
+            Events.Add($"begin:{cell.X},{cell.Z}:{stuffDefName}");
+
+        public void RotatePreview(GatewayDesignatorRotationDirection direction)
+        {
+            if (!PreviewCurrent)
+            {
+                throw new GatewayGizmoException(
+                    "designator_preview_not_current",
+                    "The native designator preview is no longer selected.");
+            }
+
+            Events.Add("rotate:" + direction);
+        }
+
+        public void DrawPreview() => DrawCount++;
+
+        public GatewayDesignatorCommitResult CommitPreview()
+        {
+            Events.Add("commit");
+            return new GatewayDesignatorCommitResult(accepted: true, rejectionReason: null);
+        }
+
+        public void Invoke() => throw new NotSupportedException();
+
+        public void Prepare(GatewayInteractionInput input) => throw new NotSupportedException();
+
+        public GatewayTargetAcceptance Preflight(GatewayInteractionTarget target) =>
+            throw new NotSupportedException();
+
+        public GatewayNativeApplyResult Apply(IReadOnlyList<GatewayInteractionTarget> targets) =>
+            throw new NotSupportedException();
+
+        public void Cancel()
+        {
+        }
+
+        public void CancelPreview() => Events.Add("cancel");
     }
 }

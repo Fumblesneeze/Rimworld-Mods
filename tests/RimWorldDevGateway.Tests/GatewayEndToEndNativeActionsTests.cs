@@ -30,6 +30,63 @@ public sealed class GatewayEndToEndNativeActionsTests
     }
 
     [Test]
+    public void Screenshot_mode_action_uses_the_typed_gateway_backend_without_process_input()
+    {
+        var backend = new RecordingBackend();
+        var actions = new GatewayEndToEndNativeActions(backend);
+
+        GatewayEndToEndStepOutcome outcome = actions.Apply(
+            new ScreenshotModeActionStep("clean capture", enabled: true),
+            Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(backend.ScreenshotMode, Is.True);
+            Assert.That(backend.InputStep, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Shadow_rendering_action_uses_the_typed_gateway_backend_without_process_input()
+    {
+        var backend = new RecordingBackend();
+        var actions = new GatewayEndToEndNativeActions(backend);
+
+        GatewayEndToEndStepOutcome outcome = actions.Apply(
+            new ShadowRenderingActionStep("shadow-free measurement", enabled: false),
+            Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(backend.ShadowRendering, Is.False);
+            Assert.That(backend.InputStep, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Supporting_hit_point_fixture_action_is_explicitly_forwarded()
+    {
+        var backend = new RecordingBackend();
+        var step = new SupportingHitPointFixtureActionStep(
+            "prepare visual damage",
+            new[]
+            {
+                new EndToEndHitPointFixture("wall_1", 0.72f),
+                new EndToEndHitPointFixture("wall_2", 0.22f)
+            });
+
+        var outcome = new GatewayEndToEndNativeActions(backend).Apply(step, Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(backend.SupportingHitPointFixtureStep, Is.SameAs(step));
+        });
+    }
+
+    [Test]
     public void Camera_action_frames_the_union_with_pixel_padding_and_clamps_zoom()
     {
         var backend = new RecordingBackend
@@ -157,9 +214,16 @@ public sealed class GatewayEndToEndNativeActionsTests
         backend.Gizmos.Add(Gizmo(
             "drag",
             "drag",
-            "Designator_Zone",
+            "Designator_Build",
             GatewayGizmoInteractionKind.Drag,
-            GatewayInteractionInputKind.Rectangle));
+            GatewayInteractionInputKind.Line));
+        backend.Gizmos.Add(Gizmo(
+            "material-drag",
+            "material-drag",
+            "Designator_Build",
+            GatewayGizmoInteractionKind.Drag,
+            GatewayInteractionInputKind.Rectangle,
+            GatewayInteractionInputKind.Line));
         var actions = new GatewayEndToEndNativeActions(backend);
 
         var placed = actions.Apply(
@@ -176,23 +240,42 @@ public sealed class GatewayEndToEndNativeActionsTests
             new GizmoActionStep(
                 "drag",
                 new[] { "architect" },
-                "Designator_Zone",
+                "Designator_Build",
                 EndToEndGizmoInteraction.Drag,
+                EndToEndCardinalRotation.North,
+                new EndToEndBuildMaterial("Steel"),
                 "drag",
                 new EndToEndMapCell(1, 2),
-                new EndToEndMapCell(3, 4)),
+                new EndToEndMapCell(3, 2)),
+            Context());
+        var materialOnlyDrag = actions.Apply(
+            new GizmoActionStep(
+                "material-only-drag",
+                new[] { "architect" },
+                "Designator_Build",
+                EndToEndGizmoInteraction.Drag,
+                new EndToEndBuildMaterial("Steel"),
+                "material-drag",
+                new EndToEndMapCell(7, 8),
+                new EndToEndMapCell(9, 8)),
             Context());
 
         Assert.Multiple(() =>
         {
             Assert.That(placed.Passed, Is.True);
             Assert.That(dragged.Passed, Is.True);
+            Assert.That(materialOnlyDrag.Passed, Is.True);
             Assert.That(backend.AppliedInputs[0].Kind, Is.EqualTo(GatewayInteractionInputKind.Cell));
             Assert.That(backend.AppliedInputs[0].Cells.Single().X, Is.EqualTo(5));
             Assert.That(backend.AppliedInputs[0].Rotation, Is.EqualTo(GatewayCardinalRotation.East));
-            Assert.That(backend.AppliedInputs[1].Kind, Is.EqualTo(GatewayInteractionInputKind.Rectangle));
+            Assert.That(backend.AppliedInputs[1].Kind, Is.EqualTo(GatewayInteractionInputKind.Line));
             Assert.That(backend.AppliedInputs[1].Cells.Select(cell => (cell.X, cell.Z)),
-                Is.EqualTo(new[] { (1, 2), (3, 4) }));
+                Is.EqualTo(new[] { (1, 2), (3, 2) }));
+            Assert.That(backend.AppliedInputs[1].Rotation, Is.EqualTo(GatewayCardinalRotation.North));
+            Assert.That(backend.AppliedInputs[1].StuffDefName, Is.EqualTo("Steel"));
+            Assert.That(backend.AppliedInputs[2].Kind, Is.EqualTo(GatewayInteractionInputKind.Line));
+            Assert.That(backend.AppliedInputs[2].Rotation, Is.Null);
+            Assert.That(backend.AppliedInputs[2].StuffDefName, Is.EqualTo("Steel"));
         });
     }
 
@@ -333,6 +416,7 @@ public sealed class GatewayEndToEndNativeActionsTests
         var saveLoadContext = Context();
         var screenshot = new ScreenshotStep("shot", new[] { "pawn_1" }, 8);
         var menu = new FloatMenuActionStep("eat", "pawn_1", "meal_1", "consume");
+        var currentMenu = new CurrentFloatMenuActionStep("choose guests", "For guests");
         var settlementTrade = new SettlementTradeActionStep("trade", 41, 42);
         var incident = new IncidentActionStep("incident", "TraderCaravanArrival", 17);
         var dialog = new DialogConfirmationActionStep(
@@ -343,6 +427,8 @@ public sealed class GatewayEndToEndNativeActionsTests
         var saveLoadOperation = actions.Begin(saveLoad, saveLoadContext);
         var screenshotOperation = actions.Begin(screenshot, Context());
         var menuOutcome = actions.Apply(menu, Context());
+        var currentMenuOutcome = ((IGatewayEndToEndCurrentFloatMenuNativeActions)actions)
+            .Apply(currentMenu, Context());
         var settlementTradeOutcome = actions.Apply(settlementTrade, Context());
         var incidentOutcome = actions.Apply(incident, Context());
         var dialogOutcome = ((IGatewayEndToEndDialogConfirmationNativeActions)actions)
@@ -354,6 +440,7 @@ public sealed class GatewayEndToEndNativeActionsTests
             Assert.That(saveLoadOperation, Is.SameAs(backend.SaveLoadOperation));
             Assert.That(screenshotOperation, Is.SameAs(backend.ScreenshotOperation));
             Assert.That(menuOutcome.Passed, Is.True);
+            Assert.That(currentMenuOutcome.Passed, Is.True);
             Assert.That(settlementTradeOutcome.Passed, Is.True);
             Assert.That(incidentOutcome.Passed, Is.True);
             Assert.That(dialogOutcome.Passed, Is.True);
@@ -362,6 +449,7 @@ public sealed class GatewayEndToEndNativeActionsTests
             Assert.That(backend.SaveLoadContext, Is.SameAs(saveLoadContext));
             Assert.That(backend.ScreenshotStep, Is.SameAs(screenshot));
             Assert.That(backend.FloatMenuStep, Is.SameAs(menu));
+            Assert.That(backend.CurrentFloatMenuStep, Is.SameAs(currentMenu));
             Assert.That(backend.SettlementTradeStep, Is.SameAs(settlementTrade));
             Assert.That(backend.IncidentStep, Is.SameAs(incident));
             Assert.That(backend.DialogStep, Is.SameAs(dialog));
@@ -415,7 +503,8 @@ public sealed class GatewayEndToEndNativeActionsTests
     private sealed class RecordingBackend :
         IGatewayEndToEndActionBackend,
         IGatewayEndToEndDialogConfirmationBackend,
-        IGatewayEndToEndArchitectCategoryBackend
+        IGatewayEndToEndArchitectCategoryBackend,
+        IGatewayEndToEndCurrentFloatMenuBackend
     {
         public GatewayEndToEndCameraViewport Viewport { get; set; } =
             new("map_1", 200, 200, 1000, 500, 8f, 60f);
@@ -430,7 +519,13 @@ public sealed class GatewayEndToEndNativeActionsTests
 
         public (bool Additive, string[] Handles)? Selection { get; private set; }
 
+        public SupportingHitPointFixtureActionStep? SupportingHitPointFixtureStep { get; private set; }
+
         public (string MapHandle, GatewayMapCell Center, float RootSize)? Camera { get; private set; }
+
+        public bool? ScreenshotMode { get; private set; }
+
+        public bool? ShadowRendering { get; private set; }
 
         public string? InvokedHandle { get; private set; }
 
@@ -443,6 +538,8 @@ public sealed class GatewayEndToEndNativeActionsTests
         public ScreenshotStep? ScreenshotStep { get; private set; }
 
         public FloatMenuActionStep? FloatMenuStep { get; private set; }
+
+        public CurrentFloatMenuActionStep? CurrentFloatMenuStep { get; private set; }
 
         public SettlementTradeActionStep? SettlementTradeStep { get; private set; }
 
@@ -470,12 +567,23 @@ public sealed class GatewayEndToEndNativeActionsTests
         public void SetSelection(IReadOnlyList<string> handles, bool additive) =>
             Selection = (additive, handles.ToArray());
 
+        public GatewayEndToEndStepOutcome ApplySupportingHitPointFixture(
+            SupportingHitPointFixtureActionStep step)
+        {
+            SupportingHitPointFixtureStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
+
         public GatewayEndToEndCameraViewport CaptureCameraViewport() => Viewport;
 
         public GatewayEndToEndTargetBounds ResolveTarget(string runtimeId) => Targets[runtimeId];
 
         public void SetCamera(string mapHandle, GatewayMapCell center, float rootSize) =>
             Camera = (mapHandle, center, rootSize);
+
+        public void SetScreenshotMode(bool enabled) => ScreenshotMode = enabled;
+
+        public void SetShadowRendering(bool enabled) => ShadowRendering = enabled;
 
         public IReadOnlyList<GatewayGizmoDescriptor> QueryGizmos(
             IReadOnlyList<string> targetRuntimeIds,
@@ -538,6 +646,12 @@ public sealed class GatewayEndToEndNativeActionsTests
             IEndToEndContext context)
         {
             FloatMenuStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
+
+        public GatewayEndToEndStepOutcome ApplyCurrentFloatMenu(CurrentFloatMenuActionStep step)
+        {
+            CurrentFloatMenuStep = step;
             return GatewayEndToEndStepOutcome.Pass();
         }
 

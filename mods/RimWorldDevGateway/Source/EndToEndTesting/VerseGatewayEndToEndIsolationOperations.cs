@@ -68,7 +68,9 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
     public void ResetTransientState()
     {
         var map = RequireMap();
-        CancelInteraction();
+        FloatMenuAutomationLease.Clear();
+        CancelSemanticInteractions(gizmos);
+        Find.DesignatorManager?.Deselect();
         Find.Selector.ClearSelection();
         RemoveTestWindows();
 
@@ -161,7 +163,9 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
                map.zoneManager.AllZones.Count == 0 &&
                notifications.IsEmpty() &&
                Find.Selector.SelectedObjectsListForReading.Count == 0 &&
-               gizmos.CurrentInteraction is null &&
+               FloatMenuAutomationLease.CapturedForAutomation is null &&
+               SemanticInteractionsEmpty(gizmos) &&
+               Find.DesignatorManager?.SelectedDesignator is null &&
                Find.WindowStack.Windows.All(state.Windows.Contains);
     }
 
@@ -206,14 +210,29 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
                Math.Abs(restoredCamera.RootSize - state.Camera.RootSize) < 0.001f;
     }
 
-    private void CancelInteraction()
+    internal static void CancelSemanticInteractions(GatewayGizmoRegistry gizmos)
     {
+        if (gizmos is null)
+        {
+            throw new ArgumentNullException(nameof(gizmos));
+        }
+
+        if (gizmos.HasActiveDesignatorPreview)
+        {
+            gizmos.CancelDesignatorPreview();
+        }
+
         var interaction = gizmos.CurrentInteraction;
         if (interaction is not null)
         {
             gizmos.Cancel(interaction.Handle);
         }
     }
+
+    internal static bool SemanticInteractionsEmpty(GatewayGizmoRegistry gizmos) =>
+        gizmos is not null &&
+        !gizmos.HasActiveDesignatorPreview &&
+        gizmos.CurrentInteraction is null;
 
     private void RemoveTestWindows()
     {

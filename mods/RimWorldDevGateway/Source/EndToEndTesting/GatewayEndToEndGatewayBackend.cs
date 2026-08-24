@@ -17,10 +17,17 @@ public interface IGatewayEndToEndFloatMenuActions
     GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step);
 }
 
+internal interface IGatewayEndToEndCurrentFloatMenuActions
+{
+    GatewayEndToEndStepOutcome Apply(CurrentFloatMenuActionStep step);
+}
+
 public sealed class GatewayEndToEndGatewayBackend :
     IGatewayEndToEndActionBackend,
     IGatewayEndToEndDialogConfirmationBackend,
     IGatewayEndToEndArchitectCategoryBackend,
+    IGatewayEndToEndCurrentFloatMenuBackend,
+    IGatewayEndToEndDesignatorSessionBackend,
     IGatewayEndToEndInspectionBackend
 {
     private static int nextScreenshotId;
@@ -82,6 +89,87 @@ public sealed class GatewayEndToEndGatewayBackend :
         });
     }
 
+    public void SetScreenshotMode(bool enabled)
+    {
+        if (Find.ScreenshotModeHandler is null)
+        {
+            throw new InvalidOperationException("RimWorld screenshot mode is unavailable without an initialized UI root.");
+        }
+
+        Find.ScreenshotModeHandler.Active = enabled;
+    }
+
+    public void SetShadowRendering(bool enabled)
+    {
+        if (Current.Game?.CurrentMap is null)
+        {
+            throw new InvalidOperationException("Shadow rendering cannot be changed without a playable current map.");
+        }
+
+        if (DebugViewSettings.drawShadows == enabled)
+        {
+            return;
+        }
+
+        DebugViewSettings.drawShadows = enabled;
+        DebugViewSettings.drawShadowsToggled();
+    }
+
+    public GatewayEndToEndStepOutcome ApplySupportingHitPointFixture(
+        SupportingHitPointFixtureActionStep step)
+    {
+        var map = Current.Game?.CurrentMap;
+        if (map is null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "supporting_fixture_map_unavailable",
+                "A playable current map is required for a supporting damage fixture.");
+        }
+
+        var currentThings = map.listerThings.AllThings
+            .Where(thing => thing.Spawned && !thing.Destroyed && thing.Map == map)
+            .ToArray();
+        var resolved = new List<(Thing Thing, float Ratio)>();
+        foreach (var target in step.Targets)
+        {
+            var matches = currentThings
+                .Where(thing =>
+                    string.Equals(thing.ThingID, target.RuntimeId, StringComparison.Ordinal) ||
+                    string.Equals(thing.GetUniqueLoadID(), target.RuntimeId, StringComparison.Ordinal))
+                .ToArray();
+            if (matches.Length != 1)
+            {
+                return GatewayEndToEndStepOutcome.Fail(
+                    "supporting_fixture_target_missing",
+                    "Every supporting damage target must resolve to exactly one spawned Thing on the current map.");
+            }
+
+            var thing = matches[0];
+            if (!thing.def.useHitPoints || thing.MaxHitPoints <= 1)
+            {
+                return GatewayEndToEndStepOutcome.Fail(
+                    "supporting_fixture_target_has_no_hit_points",
+                    "Every supporting damage target must use hit points and have a damageable maximum.");
+            }
+
+            resolved.Add((thing, target.RemainingHitPointRatio));
+        }
+
+        foreach (var target in resolved)
+        {
+            target.Thing.HitPoints = Math.Max(
+                1,
+                (int)Math.Floor(target.Thing.MaxHitPoints * target.Ratio));
+        }
+
+        return GatewayEndToEndStepOutcome.Pass(
+            new Dictionary<string, string>
+            {
+                ["supportingFixture"] = "direct-hit-point-setup-only",
+                ["targetCount"] = resolved.Count.ToString()
+            });
+    }
+
     public GatewayEndToEndCameraViewport CaptureCameraViewport()
     {
         var snapshot = camera.Capture();
@@ -129,9 +217,36 @@ public sealed class GatewayEndToEndGatewayBackend :
 
     public void CancelGizmo(string interactionHandle) => gizmos.Cancel(interactionHandle);
 
+    void IGatewayEndToEndDesignatorSessionBackend.BeginDesignatorPreview(
+        string gizmoHandle,
+        EndToEndMapCell hoverCell,
+        string? stuffDefName) =>
+        gizmos.BeginDesignatorPreview(
+            gizmoHandle,
+            new GatewayMapCell(hoverCell.X, hoverCell.Z),
+            stuffDefName);
+
+    void IGatewayEndToEndDesignatorSessionBackend.RotateDesignatorPreview(
+        GatewayDesignatorRotationDirection direction) =>
+        gizmos.RotateDesignatorPreview(direction);
+
+    GatewayDesignatorCommitResult IGatewayEndToEndDesignatorSessionBackend.CommitDesignatorPreview() =>
+        gizmos.CommitDesignatorPreview();
+
+    void IGatewayEndToEndDesignatorSessionBackend.CancelDesignatorPreview() =>
+        gizmos.CancelDesignatorPreview();
+
     public GatewayEndToEndStepOutcome ApplyFloatMenu(
         FloatMenuActionStep step,
         IEndToEndContext context) => floatMenus.Apply(step);
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndCurrentFloatMenuBackend.ApplyCurrentFloatMenu(
+        CurrentFloatMenuActionStep step) =>
+        floatMenus is IGatewayEndToEndCurrentFloatMenuActions currentMenuActions
+            ? currentMenuActions.Apply(step)
+            : GatewayEndToEndStepOutcome.Fail(
+                "unsupported_e2e_step",
+                "The configured float-menu adapter cannot operate an already-open menu.");
 
     public GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step) =>
         settlementTrade.Apply(step);
@@ -397,10 +512,14 @@ public sealed class GatewayEndToEndGatewayBackend :
 
 public sealed class VerseGatewayEndToEndFloatMenuActions :
     IGatewayEndToEndFloatMenuActions,
+    IGatewayEndToEndCurrentFloatMenuActions,
     IEndToEndFloatMenuCatalog
 {
     private static readonly FieldInfo? ActionField = typeof(FloatMenuOption).GetField(
         "action",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+    private static readonly FieldInfo? OptionsField = typeof(FloatMenu).GetField(
+        "options",
         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
     public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step)
@@ -456,6 +575,165 @@ public sealed class VerseGatewayEndToEndFloatMenuActions :
         }
 
         return ProjectOptions(options);
+    }
+
+    public GatewayEndToEndStepOutcome Apply(CurrentFloatMenuActionStep step)
+    {
+        WindowStack? windowStack = Find.WindowStack;
+        if (windowStack == null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_missing",
+                "The native window stack is unavailable.");
+        }
+
+        FloatMenu[] openMenus = windowStack.Windows
+            .OfType<FloatMenu>()
+            .Where(menu => menu.IsOpen)
+            .ToArray();
+        GatewayEndToEndStepOutcome menuResolution = ResolveExactCapturedMenu(
+            openMenus,
+            FloatMenuAutomationLease.CapturedForAutomation,
+            out FloatMenu? menu);
+        if (!menuResolution.Passed)
+        {
+            return menuResolution;
+        }
+
+        if (OptionsField?.GetValue(menu!) is not IEnumerable<FloatMenuOption> options)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_shape_changed",
+                "The current RimWorld FloatMenu option shape is unavailable.");
+        }
+
+        GatewayEndToEndStepOutcome resolution = ResolveExactEnabledOption(
+            options,
+            step.ExactOptionLabel,
+            out FloatMenuOption? option);
+        if (!resolution.Passed)
+        {
+            return resolution;
+        }
+
+        bool tutorAllowed = RunChosenLifecycle(
+            option!,
+            menu!,
+            () => windowStack.TryRemove(menu!, doCloseSound: true));
+        if (!tutorAllowed)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_tutor_rejected",
+                "RimWorld's tutorial system rejected the native FloatMenu option.");
+        }
+
+        if (menu!.IsOpen)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_did_not_close",
+                "The selected native FloatMenu option did not close its source menu.");
+        }
+
+        FloatMenuAutomationLease.Consume(menu);
+        return GatewayEndToEndStepOutcome.Pass(
+            new Dictionary<string, string> { ["optionLabel"] = step.ExactOptionLabel });
+    }
+
+    internal static GatewayEndToEndStepOutcome ResolveExactCapturedMenu(
+        IEnumerable<FloatMenu> openMenus,
+        FloatMenu? captured,
+        out FloatMenu? menu)
+    {
+        menu = null;
+        if (captured is null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_missing",
+                "No native FloatMenu was captured from the preceding semantic gizmo action.");
+        }
+
+        FloatMenu[] menus = openMenus.ToArray();
+        if (menus.Length > 1)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_ambiguous",
+                "Exactly one open native FloatMenu is required.");
+        }
+
+        if (menus.Length == 0 || !ReferenceEquals(menus[0], captured))
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_stale",
+                "The FloatMenu captured from the preceding gizmo action is no longer the sole open menu.");
+        }
+
+        menu = captured;
+        return GatewayEndToEndStepOutcome.Pass();
+    }
+
+    internal static bool RunChosenLifecycle(
+        FloatMenuOption option,
+        FloatMenu menu,
+        Action close) =>
+        RunChosenLifecycle(
+            option,
+            menu,
+            close,
+            tutorTag => TutorSystem.AllowAction((EventPack)tutorTag),
+            tutorTag => TutorSystem.Notify_Event((EventPack)tutorTag));
+
+    internal static bool RunChosenLifecycle(
+        FloatMenuOption option,
+        FloatMenu menu,
+        Action close,
+        Func<string, bool> allowTutorAction,
+        Action<string> notifyTutorEvent)
+    {
+        string? tutorTag = option.tutorTag;
+        if (tutorTag is not null && !allowTutorAction(tutorTag))
+        {
+            return false;
+        }
+
+        option.Chosen(GetColonistOrdering(menu), menu);
+        if (tutorTag is not null)
+        {
+            notifyTutorEvent(tutorTag);
+        }
+
+        close();
+        return true;
+    }
+
+    internal static bool GetColonistOrdering(FloatMenu menu) => menu.givesColonistOrders;
+
+    internal static GatewayEndToEndStepOutcome ResolveExactEnabledOption(
+        IEnumerable<FloatMenuOption> options,
+        string exactLabel,
+        out FloatMenuOption? option)
+    {
+        option = null;
+        FloatMenuOption[] matches = options
+            .Where(candidate => string.Equals(candidate.Label, exactLabel, StringComparison.Ordinal))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                matches.Length == 0
+                    ? "current_float_menu_option_not_found"
+                    : "current_float_menu_option_ambiguous",
+                "The open FloatMenu must contain exactly one option with the requested visible label.");
+        }
+
+        if (matches[0].Disabled)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_option_disabled",
+                "The requested open FloatMenu option is disabled.");
+        }
+
+        option = matches[0];
+        return GatewayEndToEndStepOutcome.Pass();
     }
 
     public static IReadOnlyList<EndToEndFloatMenuOption> ProjectOptions(

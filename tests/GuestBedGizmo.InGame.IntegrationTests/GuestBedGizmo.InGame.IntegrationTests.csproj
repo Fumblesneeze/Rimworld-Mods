@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net480</TargetFramework>
+    <AssemblyName>GuestBedGizmo.InGame.IntegrationTests</AssemblyName>
+    <RootNamespace>GuestBedGizmo.InGame.IntegrationTests</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RimWorldInGameIntegrationTest>true</RimWorldInGameIntegrationTest>
+    <RimWorldIntegrationTestOwnerPackageId>fumblesneeze.guestbedgizmo</RimWorldIntegrationTestOwnerPackageId>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(DefaultSteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\mods\GuestBedGizmo\GuestBedGizmo.csproj" />
+    <ProjectReference Include="..\..\shared\RimWorldDevGateway.IntegrationTesting\RimWorldDevGateway.IntegrationTesting.csproj" />
+    <Reference Include="Assembly-CSharp"><HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(HarmonyAssemblyPath)</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="GuestBedGizmo.InGame.IntegrationTests.integrationtests.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

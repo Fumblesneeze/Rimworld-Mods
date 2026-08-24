@@ -1,0 +1,13 @@
+{
+  "ownerPackageId": "fumblesneeze.guestbedgizmo",
+  "assembly": "GuestBedGizmo.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "brrainz.harmony",
+    "ludeon.rimworld",
+    "ludeon.rimworld.ideology",
+    "orion.hospitality",
+    "fumblesneeze.guestbedgizmo",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}

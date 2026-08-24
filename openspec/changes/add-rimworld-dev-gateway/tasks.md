@@ -227,8 +227,20 @@
 - [x] 30.1 SPEC/TDD RED: define and reproduce an optional exact cardinal rotation on cell-shaped native placement, including rejection for invalid values, other shapes, non-place designators, and non-rotatable placing Defs.
 - [x] 30.2 GREEN: configure the revalidated `Designator_Place` before its native preflight/designation path without editing the resulting Thing or synthesizing input events.
 - [x] 30.3 E2E/IN-GAME: place an Immersive Chefs building through the native Production designator with a requested non-default rotation and retain before/action/after evidence that the resulting player-visible building faces that direction.
+- [x] 30.4 TDD/E2E: extend typed native place interactions with optional cardinal line direction and independent exact loaded Stuff selection for native build designators; reject incompatible shapes/materials before designation, prove rotated mod lines through ordinary blueprints/buildings, and prove a non-rotatable Core wall line retains exact Steel Stuff through its native designator.
 
 ## 31. mods/RimWorldDevGateway — Exact native window acceptance
 
 - [x] 31.1 SPEC/TDD: Add a typed exact-window accept action that uses the native Unity-thread accept-key path, restores the prior event, fails closed on absent/ambiguous runtime identity, and remains independent of desktop focus.
 - [x] 31.2 IN-GAME: From the minimized exact Adaptive Storage/[sbz] Fridge E2E group, accept the native power-designation message box, then observe the pawn complete the resulting Flick job and the stored meal begin warming after cooling stops. Evidence: current reviewed Gateway/product group `20260814T053531416Z`.
+
+## 32. mods/RimWorldDevGateway — Persistent minimized designator previews
+
+- [x] 32.1 SPEC/TDD RED: define a persistent begin/rotate-left/rotate-right/commit/cancel designator session that keeps the native hover preview visible while minimized and rejects concurrent or stale sessions. RED: `artifacts/TestResults/20260818T102514010Z-46944-3b81d825a23d4fecaef8db67af47a566`.
+- [x] 32.2 GREEN: retain the exact native designator through its direct `Selected`/`Deselected` lifecycle, render its requested cell exactly once through registry-owned per-frame `RenderHighlight` without registering stale pointer updates, invoke RimWorld's native rotation handler, and commit a drag-capable single cell through native preflight/`DesignateMultiCell` without desktop input. Initial GREEN: `artifacts/TestResults/20260818T102958175Z-16740-ac8bc57fbc7c4007b59b9f5cc7d65467`; stale-session cleanup GREEN: `artifacts/TestResults/20260818T105333638Z-54344-e4b481409ac741bfb87f1bb39444c7ed`.
+- [ ] 32.3 E2E/IN-GAME: from a fresh minimized exact-PID run, capture the live single-cell preview before input, after left rotation, and after right rotation, then commit the selected orientation and observe the resulting player-visible blueprint/building.
+
+## 33. mods/RimWorldDevGateway — Native screenshot-mode evidence control
+
+- [x] 33.1 SPEC/TDD: Add a typed E2E action that changes only RimWorld's native screenshot-mode flag on the Unity thread, exposes no generic UI mutation, uses no desktop input, and records enabled/disabled state; make the Gateway host passively honor that flag by suppressing only its own warning/status boxes while capture mode is active.
+- [ ] 33.2 E2E/IN-GAME: In a fresh minimized exact-PID visual catalog, enable screenshot mode through the typed action, retain clean rendered evidence, then restore and verify the prior state during guaranteed cleanup.
