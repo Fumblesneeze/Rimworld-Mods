@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -63,6 +64,53 @@ public sealed class GatewayWorkshopClient(
         using var snapshot = JsonDocument.Parse(resultJson.GetString()!);
         return snapshot.RootElement.Clone();
     }
+
+    public async Task WaitForPlayableMapAsync(
+        DateTimeOffset deadline,
+        CancellationToken cancellationToken)
+    {
+        await PollUntilPlayableMapAsync(
+            deadline,
+            (timeout, token) => CallAsync(["status"], timeout, token),
+            Task.Delay,
+            () => DateTimeOffset.UtcNow,
+            cancellationToken);
+    }
+
+    internal static async Task PollUntilPlayableMapAsync(
+        DateTimeOffset deadline,
+        Func<TimeSpan, CancellationToken, Task<JsonElement>> statusCall,
+        Func<TimeSpan, CancellationToken, Task> delay,
+        Func<DateTimeOffset> utcNow,
+        CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var remaining = deadline - utcNow();
+            if (remaining <= TimeSpan.Zero) break;
+
+            var outer = await statusCall(remaining, cancellationToken);
+            RequireOk(outer, "Gateway playable-map status");
+            if (TryProperty(outer, "result", out var status) && IsPlayableStatus(status)) return;
+
+            remaining = deadline - utcNow();
+            if (remaining <= TimeSpan.Zero) break;
+            await delay(
+                remaining < TimeSpan.FromMilliseconds(500) ? remaining : TimeSpan.FromMilliseconds(500),
+                cancellationToken);
+        }
+
+        throw new TimeoutException(
+            "Gateway did not reach ProgramState.Playing with a current map and no active long event before subscriber verification.");
+    }
+
+    internal static bool IsPlayableStatus(JsonElement status) =>
+        string.Equals(String(status, "programState"), "Playing", StringComparison.Ordinal) &&
+        TryProperty(status, "map", out var map) &&
+        map.ValueKind == JsonValueKind.Object &&
+        TryProperty(status, "longEventActive", out var longEventActive) &&
+        longEventActive.ValueKind == JsonValueKind.False;
 
     public async Task CaptureScreenshotAsync(string outputPath, CancellationToken cancellationToken)
     {
@@ -156,7 +204,21 @@ public sealed class GatewayWorkshopClient(
 
     private async Task<JsonElement> CallAsync(IReadOnlyList<string> commandArguments, CancellationToken cancellationToken)
     {
-        var companion = await EnsureCompanionAsync(cancellationToken);
+        return await CallAsync(commandArguments, TimeSpan.FromMinutes(3), cancellationToken);
+    }
+
+    private async Task<JsonElement> CallAsync(
+        IReadOnlyList<string> commandArguments,
+        TimeSpan timeout,
+        CancellationToken cancellationToken)
+    {
+        if (timeout <= TimeSpan.Zero)
+            throw new TimeoutException("Gateway client call has no remaining operation deadline.");
+        var stopwatch = Stopwatch.StartNew();
+        var companion = await RunWithinDeadlineAsync(timeout, EnsureCompanionAsync, cancellationToken);
+        var remaining = timeout - stopwatch.Elapsed;
+        if (remaining <= TimeSpan.Zero)
+            throw new TimeoutException("Gateway companion acquisition exhausted the operation deadline.");
         var arguments = commandArguments.ToList();
         arguments.Add("--manifest");
         arguments.Add(_manifestPath);
@@ -164,8 +226,16 @@ public sealed class GatewayWorkshopClient(
         arguments.Add(_processId.ToString(System.Globalization.CultureInfo.InvariantCulture));
         arguments.Add("--output");
         arguments.Add("json");
-        var result = await ProcessRunner.RunAsync(
-            companion.ClientPath, arguments, _repositoryRoot, TimeSpan.FromMinutes(3), cancellationToken);
+        ProcessResult result;
+        try
+        {
+            result = await ProcessRunner.RunAsync(
+                companion.ClientPath, arguments, _repositoryRoot, remaining, cancellationToken);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("Gateway client call exceeded its bounded operation deadline.");
+        }
         if (result.ExitCode != 0)
             throw new InvalidOperationException($"Gateway client failed: {Bound(result.StandardError + result.StandardOutput)}");
         try
@@ -176,6 +246,25 @@ public sealed class GatewayWorkshopClient(
         catch (JsonException exception)
         {
             throw new InvalidOperationException($"Gateway client returned invalid JSON: {exception.Message}");
+        }
+    }
+
+    internal static async Task<T> RunWithinDeadlineAsync<T>(
+        TimeSpan timeout,
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        if (timeout <= TimeSpan.Zero)
+            throw new TimeoutException("The bounded operation has no remaining deadline.");
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(timeout);
+        try
+        {
+            return await operation(deadline.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("The bounded operation exceeded its deadline.");
         }
     }
 

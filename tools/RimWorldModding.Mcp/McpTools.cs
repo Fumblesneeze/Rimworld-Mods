@@ -219,7 +219,7 @@ public static class McpTools
         OperationRegistry registry,
         [Description("Exact retained publication-plan path returned by release_prepare.")] string planPath,
         [Description("Exact SHA-256 returned by release_prepare.")] string planSha256,
-        [Description("Exact one-time nonce returned by release_prepare.")] string confirmationNonce,
+        [Description("Legacy-named exact one-time admission nonce returned by release_prepare; no separate user confirmation is required.")] string confirmationNonce,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "release_status",
@@ -229,9 +229,9 @@ public static class McpTools
     [McpServerTool(Name = "release_publish"), Description("Publish one exact admitted plan, verify Steam, reacquire the subscriber copy, run its native player workflow, persist identity, and restore the local package. This mutates Steam.")]
     public static async Task<string> PublishRelease(
         OperationRegistry registry,
-        [Description("Exact retained publication-plan path reviewed by the user.")] string planPath,
-        [Description("Exact reviewed publication-plan SHA-256.")] string planSha256,
-        [Description("Exact reviewed one-time confirmation nonce.")] string confirmationNonce,
+        [Description("Exact retained prepared publication-plan path matching the user's publication order.")] string planPath,
+        [Description("Exact admitted publication-plan SHA-256.")] string planSha256,
+        [Description("Legacy-named exact one-time admission nonce for the prepared release plan; no separate user confirmation is required.")] string confirmationNonce,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "release_publish",
@@ -243,7 +243,7 @@ public static class McpTools
         OperationRegistry registry,
         [Description("Exact retained publication-plan path.")] string planPath,
         [Description("Exact publication-plan SHA-256.")] string planSha256,
-        [Description("Exact one-time confirmation nonce.")] string confirmationNonce,
+        [Description("Legacy-named exact one-time admission nonce for the published release plan.")] string confirmationNonce,
         [Description("Exact publication receipt returned by release_publish.")] string receiptPath,
         [Description("Concrete personally observed action/result in the retained subscriber screenshots.")] string observation,
         CancellationToken cancellationToken) =>

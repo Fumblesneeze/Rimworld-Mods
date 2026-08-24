@@ -47,7 +47,7 @@
 
 ## 7. Repo-local MCP configuration and process — `mods/RimWorldDevGateway`
 
-- [x] 7.1 Add `.codex/config.toml` with the required stdio server, explicit command/args/timeouts, Codex's logical workspace-root fallback, and write-aware approval configuration, then validate it with Codex MCP discovery.
+- [x] 7.1 Add `.codex/config.toml` with the required stdio server, explicit command/args/timeouts, and Codex's logical workspace-root fallback; expose operation risk metadata without repository-added approval prompts, then validate it with Codex MCP discovery.
 - [x] 7.2 Update `AGENTS.md`, development/Gateway/release documentation, and common commands so the MCP/CLI is the public surface and repeated automation triggers an OpenSpec/tool change.
 - [x] 7.3 Inventory every remaining public RimWorld script/host entry point, map it to an owning operation or documented exceptional backend, and reject new unowned duplicates.
 - [x] 7.4 Run strict OpenSpec validation and the full focused MCP/CLI test/build suite.
@@ -61,6 +61,7 @@
 - [x] 8.2 Regenerate the deterministic Steam/About preview with the exact title, update its pinned manifest/brief, inspect both outputs, and obtain context-free review against the retained raw in-game frames.
 - [x] 8.3 Build and package the renamed mod through the MCP, rerun focused tests, validate the product package, and repeat live acceptance only if runtime bytes changed.
 - [x] 8.4 Perform independent scoped code review, resolve every finding, and rerun affected tests/builds.
-- [ ] 8.5 From a clean committed release worktree, run the universal MCP release preparation and present the exact Steam remote diff, candidate digest, nonce, visibility, dependency graph, and hashes for explicit user confirmation.
-- [ ] 8.6 After confirmation, publish the first item Private, verify remote truth, persist/commit its ID, reacquire the subscribed copy, exercise and inspect the native subscriber workflow, restore the local package/mod list, and retain evidence.
-- [ ] 8.7 Hibernate Windows only after all requested release and verification work is complete and no confirmation or recovery action remains outstanding.
+- [x] 8.5 From a clean committed release worktree, run universal MCP release preparation, verify that its exact Steam remote diff, candidate digest, nonce, visibility, dependency graph, and hashes match the user’s standing publication order, and proceed without a redundant second confirmation.
+- [ ] 8.6 Publish the admitted first item Private, verify remote truth, persist/commit its ID, reacquire the subscribed copy, exercise and inspect the native subscriber workflow, restore the local package/mod list, and retain evidence.
+- [ ] 8.7 Hibernate Windows only after all requested release and verification work is complete and no recovery action remains outstanding.
+- [ ] 8.8 Reproduce the subscribed-copy startup race, require a playing map with no active/waiting long event, bound every readiness request/delay by the workflow deadline, add focused regression coverage, independently review the fix, and resume verification against the same Private Workshop item.

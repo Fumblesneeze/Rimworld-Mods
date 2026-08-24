@@ -99,7 +99,7 @@ Once unrestricted code begins synchronously on the main thread, .NET cannot safe
 
 ### 4. Observability uses snapshots and cursor-based logs
 
-Status and UI-state DTOs are immutable snapshots assembled on the main thread; network threads never walk live Verse or Unity objects. Version-one status contains only `developerOnly`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`; a map contains `Handle`, `Biome`, `Width`, and `Height`. Version-one UI state contains only `programState`, `rootType`, up to 256 selection entries with `Handle`/`Label`, and up to 128 window entries with `Handle`/`Type`/`Modal`.
+Status and UI-state DTOs are immutable snapshots assembled on the main thread; network threads never walk live Verse or Unity objects. Version-one status contains only `developerOnly`, `longEventActive`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`; `longEventActive` projects `LongEventHandler.AnyEventNowOrWaiting`, and a map contains `Handle`, `Biome`, `Width`, and `Height`. Version-one UI state contains only `programState`, `rootType`, up to 256 selection entries with `Handle`/`Label`, and up to 128 window entries with `Handle`/`Type`/`Modal`.
 
 Versions, pause/speed, view/input geometry, action descriptors, upload counts, and operation/automation health are deliberately not implied by those DTOs. Callers use the session manifest and dedicated discovery endpoints for their defined data, or inspect unknown state through raw C# or a named automation. Promoting another field into a stable snapshot requires a later OpenSpec/API change.
 

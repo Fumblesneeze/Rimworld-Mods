@@ -36,6 +36,7 @@ public sealed record ReleaseWorkerStatus(
 
 public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
 {
+    private const int MaximumAttempts = 6;
     private static readonly ConcurrentDictionary<int, Process> ActiveWorkers = new();
     private readonly string _repositoryRoot = RepositoryRoot.Resolve(repositoryRoot);
 
@@ -115,7 +116,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
                       throw new InvalidOperationException("Release worker request is empty.");
             if (request.Schema != "RimWorldModdingMcp/ReleaseWorkerRequest/v1")
                 throw new InvalidOperationException("Release worker request schema is unsupported.");
-            if (request.Attempt is < 1 or > 3)
+            if (request.Attempt is < 1 or > MaximumAttempts)
                 throw new InvalidOperationException("Release worker attempt is outside the bounded range.");
             var root = RepositoryRoot.Resolve(request.RepositoryRoot);
             var workerRoot = Path.Combine(root, "artifacts", "Releases",
@@ -233,9 +234,9 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         }
 
         var attempt = priorAttempt + 1;
-        if (attempt > 3)
+        if (attempt > MaximumAttempts)
             throw new InvalidOperationException(
-                "The durable release worker exhausted three bounded attempts; exact state is retained for diagnosis and no duplicate Steam create was issued.");
+                $"The durable release worker exhausted {MaximumAttempts} bounded attempts; exact state is retained for diagnosis and no duplicate Steam create was issued.");
 
         Directory.CreateDirectory(paths.Root);
         DeleteIfExists(paths.Lease);
@@ -372,7 +373,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
                       throw new InvalidOperationException("Release worker request is empty.");
         if (request.Schema != "RimWorldModdingMcp/ReleaseWorkerRequest/v1" ||
             !string.Equals(request.PlanSha256, planSha256, StringComparison.OrdinalIgnoreCase) ||
-            request.Attempt is < 1 or > 3)
+            request.Attempt is < 1 or > MaximumAttempts)
             throw new InvalidOperationException("Release worker request does not match the exact publication plan.");
         return request;
     }

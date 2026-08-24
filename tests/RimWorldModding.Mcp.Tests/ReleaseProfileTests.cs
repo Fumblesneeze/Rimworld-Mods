@@ -18,12 +18,17 @@ public sealed class ReleaseProfileTests
 
         var guest = profiles.Single(profile => profile.PackageId == "fumblesneeze.guestbedgizmo");
         Assert.That(guest.Title, Is.EqualTo("Hospitality + Ideoligy Patch"));
-        Assert.That(guest.PublishedFileId, Is.Null);
-        Assert.That(guest.AllowFirstPublication, Is.True);
+        Assert.That(guest.PublishedFileId, Does.Match("^[1-9][0-9]{5,19}$"));
+        Assert.That(guest.AllowFirstPublication, Is.False);
+        Assert.That(
+            File.ReadAllText(Path.Combine(root, "mods", "GuestBedGizmo", "About", "PublishedFileId.txt")).Trim(),
+            Is.EqualTo(guest.PublishedFileId));
         Assert.That(guest.Visibility, Is.EqualTo("Private"));
         Assert.That(guest.RequiredWorkshopItems, Is.EquivalentTo(new[] { "2009463077", "3509486825" }));
         Assert.DoesNotThrow(() => ReleaseEnvironmentValidator.Validate(guest));
-        Assert.DoesNotThrow(() => ReleaseChangeNotePolicy.Validate(guest));
+        Assert.That(
+            Assert.Throws<InvalidOperationException>(() => ReleaseChangeNotePolicy.Validate(guest))!.Message,
+            Does.Contain("specific player-facing note"));
     }
 
     [Test]
@@ -109,7 +114,15 @@ public sealed class ReleaseProfileTests
         }
 
         var noIdentity = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"release-{Guid.NewGuid():N}.json");
-        File.WriteAllText(noIdentity, json.Replace("\"allowFirstPublication\": true", "\"allowFirstPublication\": false"));
+        var missingIdentityJson = System.Text.RegularExpressions.Regex.Replace(
+            json,
+            "\"publishedFileId\"\\s*:\\s*(null|\"[^\"]+\")",
+            "\"publishedFileId\": null");
+        missingIdentityJson = System.Text.RegularExpressions.Regex.Replace(
+            missingIdentityJson,
+            "\"allowFirstPublication\"\\s*:\\s*(true|false)",
+            "\"allowFirstPublication\": false");
+        File.WriteAllText(noIdentity, missingIdentityJson);
         try
         {
             Assert.That(
