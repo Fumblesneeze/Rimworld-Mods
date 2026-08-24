@@ -12,6 +12,8 @@ public interface IGatewaySnapshotSource
 
     long? Tick { get; }
 
+    bool LongEventActive { get; }
+
     bool? Paused { get; }
 
     GatewayGameSpeed? Speed { get; }
@@ -119,6 +121,7 @@ public sealed class RimWorldGatewayStateProvider : IGatewayStateProvider
         return new SortedDictionary<string, object?>
         {
             ["developerOnly"] = true,
+            ["longEventActive"] = source.LongEventActive,
             ["map"] = source.Map,
             ["pendingDispatches"] = dispatcher.PendingCount,
             ["processId"] = processId,
@@ -155,6 +158,8 @@ public sealed class VerseGatewaySnapshotSource : IGatewaySnapshotSource
     public string RootType => Current.Root?.GetType().Name ?? string.Empty;
 
     public long? Tick => Current.Game?.tickManager?.TicksGame;
+
+    public bool LongEventActive => LongEventHandler.AnyEventNowOrWaiting;
 
     public bool? Paused => Current.Game?.tickManager?.Paused;
 

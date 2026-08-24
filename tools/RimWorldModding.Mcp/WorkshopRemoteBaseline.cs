@@ -104,7 +104,7 @@ public sealed record WorkshopRemoteBaseline(
             $"PREVIEW {baseline.PreviewSha256} -> {desiredPreview}",
             $"DEPENDENCIES [{string.Join(", ", baseline.Dependencies)}] -> [{string.Join(", ", profile.RequiredWorkshopItems.OrderBy(value => value, StringComparer.Ordinal))}]",
             $"CONTENT remote-bytes={baseline.ContentBytes},updated={baseline.UpdatedUnixSeconds} -> {candidate.Files.Count} files,digest={candidate.ContentDigest}",
-            $"METADATA {baseline.Metadata} -> exact confirmed publication-plan SHA-256",
+            $"METADATA {baseline.Metadata} -> exact admitted publication-plan SHA-256",
             $"CHANGE NOTE -> {profile.ChangeNote}"
         };
     }

@@ -36,7 +36,7 @@ The mod SHALL include one deterministic 1164×655 Steam preview card below 1 MiB
 
 ### Requirement: First Workshop publication uses the universal guarded publisher
 
-The mod SHALL declare a strict universal release profile with no pre-existing Workshop ID and explicit first-publication opt-in. Preparation MUST produce a mutation-free exact-title owner scan and immutable candidate/dry-run identity; publication MUST wait for explicit digest-and-nonce confirmation, create at most one Private item, persist its ID, disable first-publication opt-in, reacquire the subscribed copy, and verify its native workflow before the release is accepted.
+The mod SHALL declare a strict universal release profile with no pre-existing Workshop ID and explicit first-publication opt-in. Preparation MUST produce a mutation-free exact-title owner scan and immutable candidate/dry-run identity. The user’s explicit publication order authorizes the matching prepared plan; its digest and nonce are internal admission proof and MUST NOT introduce a second confirmation prompt. Publication MUST create at most one Private item, persist its ID, disable first-publication opt-in, reacquire the subscribed copy, and verify its native workflow before the release is accepted.
 
 #### Scenario: Private first-publication plan is prepared
 - **WHEN** the clean reviewed profile is prepared and the owner publishes no exact-title item

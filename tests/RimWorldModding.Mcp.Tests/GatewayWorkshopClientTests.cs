@@ -1,10 +1,102 @@
 using NUnit.Framework;
+using System.Text.Json;
 
 namespace RimWorldModding.Mcp.Tests;
 
 [TestFixture]
 public sealed class GatewayWorkshopClientTests
 {
+    [TestCase("{\"programState\":\"Entry\",\"map\":null,\"longEventActive\":false}", false)]
+    [TestCase("{\"programState\":\"Playing\",\"map\":null,\"longEventActive\":false}", false)]
+    [TestCase("{\"programState\":\"Entry\",\"map\":{\"Handle\":\"map-0\"},\"longEventActive\":false}", false)]
+    [TestCase("{\"programState\":\"Playing\",\"map\":{\"Handle\":\"map-0\"}}", false)]
+    [TestCase("{\"programState\":\"Playing\",\"map\":{\"Handle\":\"map-0\"},\"longEventActive\":true}", false)]
+    [TestCase("{\"programState\":\"Playing\",\"map\":{\"Handle\":\"map-0\"},\"longEventActive\":false}", true)]
+    public void PlayableStatus_RequiresPlayingStateCurrentMapAndNoLongEvent(string json, bool expected)
+    {
+        using var document = JsonDocument.Parse(json);
+
+        Assert.That(GatewayWorkshopClient.IsPlayableStatus(document.RootElement), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void PlayableMapPoll_BoundsEveryCallAndDelayByTheRemainingDeadline()
+    {
+        var now = DateTimeOffset.Parse("2026-08-24T00:00:00Z");
+        var callBudgets = new List<TimeSpan>();
+        var delayBudgets = new List<TimeSpan>();
+
+        Assert.That(async () => await GatewayWorkshopClient.PollUntilPlayableMapAsync(
+                now.AddMilliseconds(750),
+                (budget, _) =>
+                {
+                    callBudgets.Add(budget);
+                    now = now.AddMilliseconds(300);
+                    return Task.FromResult(ParseOuterStatus(
+                        "{\"programState\":\"Playing\",\"map\":null,\"longEventActive\":false}"));
+                },
+                (budget, _) =>
+                {
+                    delayBudgets.Add(budget);
+                    now = now.Add(budget);
+                    return Task.CompletedTask;
+                },
+                () => now,
+                CancellationToken.None),
+            Throws.InstanceOf<TimeoutException>());
+        Assert.That(callBudgets, Is.EqualTo(new[] { TimeSpan.FromMilliseconds(750) }));
+        Assert.That(delayBudgets, Is.EqualTo(new[] { TimeSpan.FromMilliseconds(450) }));
+    }
+
+    [Test]
+    public void PlayableMapPoll_PropagatesCancellationIntoAnInFlightStatusCall()
+    {
+        using var cancelled = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var poll = GatewayWorkshopClient.PollUntilPlayableMapAsync(
+            DateTimeOffset.UtcNow.AddMinutes(1),
+            async (_, token) =>
+            {
+                started.SetResult();
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                return default;
+            },
+            Task.Delay,
+            () => DateTimeOffset.UtcNow,
+            cancelled.Token);
+
+        Assert.That(async () => await started.Task.WaitAsync(TimeSpan.FromSeconds(1)), Throws.Nothing);
+        cancelled.Cancel();
+        Assert.That(async () => await poll, Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void DeadlineBoundOperation_TimesOutCompanionAcquisitionAndPreservesCallerCancellation()
+    {
+        Assert.That(async () => await GatewayWorkshopClient.RunWithinDeadlineAsync(
+                TimeSpan.FromMilliseconds(100),
+                async token =>
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                    return 1;
+                },
+                CancellationToken.None),
+            Throws.InstanceOf<TimeoutException>());
+
+        using var cancelled = new CancellationTokenSource();
+        var operation = GatewayWorkshopClient.RunWithinDeadlineAsync(
+            TimeSpan.FromMinutes(1),
+            async token =>
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                return 1;
+            },
+            cancelled.Token);
+        cancelled.Cancel();
+
+        Assert.That(async () => await operation, Throws.InstanceOf<OperationCanceledException>());
+    }
+
     [Test]
     public void CompanionBuildPlan_IsRepositoryLocalAndProducesTheExactRequiredOutputs()
     {
@@ -131,5 +223,11 @@ public sealed class GatewayWorkshopClientTests
             await Task.Delay(25);
         }
         throw new TimeoutException("The cancellable companion build never created its isolated staging directory.");
+    }
+
+    private static JsonElement ParseOuterStatus(string statusJson)
+    {
+        using var document = JsonDocument.Parse("{\"ok\":true,\"result\":" + statusJson + "}");
+        return document.RootElement.Clone();
     }
 }

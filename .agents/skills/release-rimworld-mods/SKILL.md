@@ -74,17 +74,18 @@ normal review/provenance gates are satisfied. Immersive Chefs is currently human
 ## Publish deliberately
 
 1. Use the implemented Gateway publisher as the primary path only from a fresh isolated RimWorld process with Steam initialized. SteamCMD may be a documented recovery path, but it is not equivalent Gateway evidence.
-2. Address an existing declared Workshop item by default. A first publication is allowed only when the manifest explicitly opts in, the mutation-free dry-run has no item ID, the user confirms that exact creation, no prior receipt or local identity exists, and one bounded native query proves the owning account has no exact-title item. Regardless of an eventual Public declaration, force that first submission to Private so the user can inspect it; promotion is a separate reviewed update of the retained ID. Persist the returned nonzero ID before continuing; immediately after a successful first release, write and commit the same ID in both the release descriptor and `About/PublishedFileId.txt`, disable first publication, and make later staging fail closed if those tracked identities differ. The uploaded/subscribed package must carry that same About identity so RimWorld and Steam treat local and Workshop copies as one mod. Never delete ignored release state as a substitute for that tracked transition.
-3. Run a mutation-free dry-run and show the exact remote item, metadata diff, content/presentation digests, and change note to the user.
+2. Address an existing declared Workshop item by default. A first publication is allowed only when the manifest explicitly opts in, the mutation-free dry-run has no item ID, the user has explicitly ordered publication and the prepared title/item/visibility/dependency scope matches that order, no prior receipt or local identity exists, and one bounded native query proves the owning account has no exact-title item. Do not ask for a second confirmation merely because preparation produced a digest or nonce. Regardless of an eventual Public declaration, force that first submission to Private so the user can inspect it; promotion is a separate reviewed update of the retained ID. Persist the returned nonzero ID before continuing; immediately after a successful first release, write and commit the same ID in both the release descriptor and `About/PublishedFileId.txt`, disable first publication, and make later staging fail closed if those tracked identities differ. The uploaded/subscribed package must carry that same About identity so RimWorld and Steam treat local and Workshop copies as one mod. Never delete ignored release state as a substitute for that tracked transition.
+3. Run a mutation-free dry-run and retain the exact remote item, metadata diff, content/presentation digests, and change note. Report them to the user without pausing an already authorized publish workflow.
    Every update after initial publication needs a short authored change note describing the visible player-facing change. Reject empty, generic (`update`, `fixes`, `various changes`), automatically synthesized, or unchanged notes. Bind the exact note to the immutable dry-run and pass it to Steam's `SubmitItemUpdate`; record it in the receipt and verify the corresponding Workshop change-note entry after propagation.
-4. Obtain explicit user confirmation for that dry-run. Confirm using its bound nonce/digests; changed files, presentation, or remote state require a new dry-run and review.
+4. Feed the dry-run's bound nonce and digests directly into publication when an explicit publish order is already in scope. Ask only when no publish order exists or the prepared title, target item, visibility, dependency scope, or other material mutation differs from that order. Changed files, presentation, or remote state require a new dry-run and revalidation against the standing order, not a redundant prompt.
 5. Observe progress and the terminal Steam callback. Report legal-agreement, authentication, quota, connectivity, and indeterminate-callback states without blind retries or false rollback claims.
 6. Query the resulting remote metadata/previews and reacquire the published item into an ignored verification directory. Compare it with the staged file manifest before calling publication verified.
 
 For the current Immersive Chefs 1.6 bootstrap, stage the clean committed candidate with
 `.\scripts\Build-ImmersiveChefsRelease.ps1 -Output json`. After personally reviewing the emitted
 `publication-plan.json`, invoke `.\scripts\Invoke-ImmersiveChefsWorkshopRelease.ps1` only with that
-file's exact SHA-256 and the exact confirmation phrase printed by its help. The publisher revalidates
+file's exact SHA-256 and the exact admission phrase printed by its help. When publication was already
+ordered, pass those values without another user prompt. The publisher revalidates
 the source and presentation, proves exact-title absence on the owning account before first creation, uploads through RimWorld's initialized Steamworks session, queries the
 remote title/description/tags/preview/owner/dependency graph, subscribes the exact item, and compares
 the downloaded package. It then removes the repository-local product from RimWorld's discovery path
@@ -99,13 +100,13 @@ identity before declaring release administration complete.
 
 ## Preserve evidence and clean up
 
-Keep source revision/dirty policy, manifest and tool hashes, depot/file identities, per-target builds, tests, player actions/screenshots, package and presentation digests, operator confirmation, Gateway process identity, Steam result, remote verification, and cleanup together. Exclude passwords, Steam Guard codes, downloader sessions, bearer tokens, and live Gateway discovery files.
+Keep source revision/dirty policy, manifest and tool hashes, depot/file identities, per-target builds, tests, player actions/screenshots, package and presentation digests, publication authorization, Gateway process identity, Steam result, remote verification, and cleanup together. Exclude passwords, Steam Guard codes, downloader sessions, bearer tokens, and live Gateway discovery files.
 
 Request graceful process shutdown first, use exact-PID fallback only when required, release cache/stage leases, and confirm the user's normal configuration hash is unchanged. Never claim an accepted Workshop update was rolled back automatically; recovery is an explicit reviewed republish of a prior verified candidate.
 
 ## Pause conditions
 
-- Pause before publishing if the user has not explicitly confirmed the exact dry-run.
+- Pause before publishing only when the user has not explicitly ordered publication or the prepared material mutation differs from that order. Never require a second digest/nonce confirmation for an already authorized matching plan.
 - Leave the target unsupported if its exact Steam manifest cannot be acquired and verified.
 - Leave gameplay compatibility incomplete when a native player workflow or personally inspected live evidence is missing.
 - Leave presentation incomplete when rendered assets or inline hosting have not been reviewed and proven.

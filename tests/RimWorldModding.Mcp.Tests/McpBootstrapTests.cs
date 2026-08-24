@@ -41,6 +41,8 @@ public sealed class McpBootstrapTests
         }));
         Assert.That(codexConfig, Does.Not.Match("(?m)^cwd\\s*="),
             "Codex must use its logical workspace-root fallback rather than an OS-process-relative cwd.");
+        Assert.That(codexConfig, Does.Not.Contain("approval_mode"),
+            "The repository must not add a second approval prompt after an explicit task order.");
         Assert.That(codexConfig, Does.Match("(?m)^required\\s*=\\s*true\\r?$"));
         Assert.That(server.GetProperty("cwd").GetString(), Is.EqualTo("."));
         Assert.That(File.Exists(Path.Combine(root, ".codex", "Start-RimWorldModdingMcp.ps1")), Is.True);

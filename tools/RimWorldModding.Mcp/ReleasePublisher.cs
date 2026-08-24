@@ -129,13 +129,13 @@ public sealed class ReleasePublisher(string repositoryRoot)
             deadline = DateTimeOffset.UtcNow.AddMinutes(15);
             var repositoryIdentityPath = Path.Combine(Path.GetDirectoryName(profile.Project)!, "About", "PublishedFileId.txt");
             var packageIdentityPath = Path.Combine(admission.Plan.PackagePath, "About", "PublishedFileId.txt");
-            var confirmation = ReleasePlanAdmission.ConfirmationText(admission);
+            var admissionProof = ReleasePlanAdmission.AdmissionText(admission);
             _ = await client.InvokeAsync(new Dictionary<string, object?>
             {
                 ["operation"] = "publish",
                 ["planSha256"] = admission.PlanSha256,
                 ["confirmationNonce"] = admission.Plan.ConfirmationNonce,
-                ["confirmation"] = confirmation,
+                ["confirmation"] = admissionProof,
                 ["publishedFileId"] = publishedId == 0 ? "" : publishedId.ToString(),
                 ["allowFirstPublication"] = publishedId == 0 && admission.Plan.AllowFirstPublication,
                 ["identityPath"] = identityPath,
@@ -506,7 +506,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 return remote;
             await Task.Delay(1500, cancellationToken);
         }
-        throw new TimeoutException("Remote Workshop metadata did not converge to the reviewed plan.");
+        throw new TimeoutException("Remote Workshop metadata did not converge to the admitted plan.");
     }
 
     private static async Task<JsonElement> ReconcileDependenciesAsync(
@@ -645,8 +645,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var projected = ProjectFrozenProfileIdentity(admission.Plan, publishedId);
         var currentHash = File.Exists(canonicalProfilePath) ? ReleaseCandidateBuilder.Hash(canonicalProfilePath) : "";
         if (!string.Equals(currentHash, admission.Plan.ReleaseProfileSha256, StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(File.Exists(canonicalProfilePath) ? File.ReadAllText(canonicalProfilePath) : "", projected,
-                StringComparison.Ordinal))
+            !CanonicalProfileMatchesProjectedIdentity(admission.Plan, publishedId))
             throw new InvalidOperationException(
                 "Canonical release profile changed after Steam admission; refusing to overwrite mutable repository state.");
         DurableFile.WriteAllText(canonicalProfilePath, projected);
@@ -752,15 +751,18 @@ public sealed class ReleasePublisher(string repositoryRoot)
                    throw new InvalidOperationException("Frozen release profile is unreadable during identity persistence.");
         node["publishedFileId"] = publishedId.ToString();
         node["allowFirstPublication"] = false;
+        node["previousChangeNote"] = plan.ChangeNote;
+        node["changeNote"] = "";
         var includes = node["packageInclude"]?.AsArray() ?? throw new InvalidOperationException("packageInclude is missing.");
         if (!includes.Any(value => value?.GetValue<string>() == "About/PublishedFileId.txt"))
             includes.Add("About/PublishedFileId.txt");
         return node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine;
     }
 
-    private static bool CanonicalProfileMatchesProjectedIdentity(ReleasePublicationPlan plan, ulong publishedId) =>
+    internal static bool CanonicalProfileMatchesProjectedIdentity(ReleasePublicationPlan plan, ulong publishedId) =>
         File.Exists(plan.ReleaseProfilePath) &&
-        string.Equals(File.ReadAllText(plan.ReleaseProfilePath), ProjectFrozenProfileIdentity(plan, publishedId),
+        string.Equals(NormalizeGitText(File.ReadAllText(plan.ReleaseProfilePath)),
+            NormalizeGitText(ProjectFrozenProfileIdentity(plan, publishedId)),
             StringComparison.Ordinal);
 
     private async Task<bool> IsWorktreeCleanAsync(CancellationToken cancellationToken)
@@ -779,7 +781,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         if (parts.Length != 3) throw new InvalidOperationException("Durable publication state is malformed.");
         if (parts[1].Equals(planSha256, StringComparison.OrdinalIgnoreCase) &&
             ReleasePlanAdmission.IsRecoverableDurableState(string.Join('|', parts), planSha256, out _))
-            throw new InvalidOperationException("This exact reviewed plan is already admitted; use durable recovery instead of redispatch.");
+            throw new InvalidOperationException("This exact plan is already admitted; use durable recovery instead of redispatch.");
         if (parts[0] is "complete-reviewed" or "create-failed-definite" or "submit-failed-definite" or "dependency-failed-definite")
             return;
         var operation = publishedFileId is null ? "creation" : "update";

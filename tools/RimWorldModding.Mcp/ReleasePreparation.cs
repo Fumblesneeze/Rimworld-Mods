@@ -429,7 +429,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
         DurableFile.WriteAllText(planPath, planJson + Environment.NewLine);
         var planHash = ReleaseCandidateBuilder.Hash(planPath);
         return new ReleasePreparationResult(
-            "awaiting-confirmation",
+            "ready-for-publish",
             planPath,
             planHash,
             stage.ContentDigest,

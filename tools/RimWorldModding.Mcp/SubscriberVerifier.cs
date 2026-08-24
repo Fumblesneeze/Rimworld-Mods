@@ -85,12 +85,14 @@ public sealed class SubscriberVerifier(string repositoryRoot)
         try
         {
             var manager = new RunLeaseManager(_repositoryRoot);
+            var workflowDeadline = DateTimeOffset.UtcNow.AddSeconds(plan.TimeoutSeconds);
             var start = manager.StartGateway(plan.PackageIds, Array.Empty<string>(), plan.TimeoutSeconds, leasedRun);
             leasedRun = start.RunId;
             var ready = await WaitReadyAsync(
-                manager, start.RunId, DateTimeOffset.UtcNow.AddSeconds(plan.TimeoutSeconds), cancellationToken);
+                manager, start.RunId, workflowDeadline, cancellationToken);
             client = new GatewayWorkshopClient(_repositoryRoot, ready.GatewayManifestPath!, ready.GameProcessId!.Value);
             await client.RegisterSourceAsync(plan.Source!, plan.EntryType!, cancellationToken);
+            await client.WaitForPlayableMapAsync(workflowDeadline, cancellationToken);
             foreach (var step in plan.Steps)
             {
                 var arguments = new Dictionary<string, object?> { ["operation"] = step.Operation };

@@ -244,3 +244,8 @@
 
 - [x] 33.1 SPEC/TDD: Add a typed E2E action that changes only RimWorld's native screenshot-mode flag on the Unity thread, exposes no generic UI mutation, uses no desktop input, and records enabled/disabled state; make the Gateway host passively honor that flag by suppressing only its own warning/status boxes while capture mode is active.
 - [ ] 33.2 E2E/IN-GAME: In a fresh minimized exact-PID visual catalog, enable screenshot mode through the typed action, retain clean rendered evidence, then restore and verify the prior state during guaranteed cleanup.
+
+## 34. mods/RimWorldDevGateway — Settled playable-map readiness
+
+- [x] 34.1 SPEC/TDD: Expose the native active-or-waiting long-event signal in the immutable status snapshot and prove the state can coexist with a non-null map.
+- [x] 34.2 REGRESSION/REVIEW: Run focused Gateway/MCP readiness tests, strict OpenSpec validation, and independent review before using the field to resume the retained Workshop subscriber workflow.

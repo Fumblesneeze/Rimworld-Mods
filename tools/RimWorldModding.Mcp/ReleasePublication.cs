@@ -59,7 +59,7 @@ public static class ReleasePlanAdmission
                    throw new InvalidOperationException("Publication plan is empty.");
         if (!string.Equals(plan.ConfirmationNonce, confirmationNonce, StringComparison.Ordinal) ||
             confirmationNonce.Length < 32 || confirmationNonce.Any(character => !Uri.IsHexDigit(character)))
-            throw new InvalidOperationException("Confirmation nonce does not match the exact reviewed plan.");
+            throw new InvalidOperationException("Admission nonce does not match the exact prepared plan.");
         var statePath = Path.Combine(
             root, "artifacts", "Releases", plan.PackageId, "publication-state.txt");
         var durableState = File.Exists(statePath) ? File.ReadAllText(statePath).Trim() : "none";
@@ -125,9 +125,9 @@ public static class ReleasePlanAdmission
         ValidateFrozenProfile(root, plan);
         if (!string.Equals(plan.ConfirmationNonce, confirmationNonce, StringComparison.Ordinal) ||
             confirmationNonce.Length < 32 || confirmationNonce.Any(character => !Uri.IsHexDigit(character)))
-            throw new InvalidOperationException("Confirmation nonce does not match the exact reviewed plan.");
-        if (plan.ExpiresUtc <= now) throw new InvalidOperationException("Publication plan confirmation has expired.");
-        if (plan.ExpiresUtc > now.AddHours(3)) throw new InvalidOperationException("Publication plan expiry exceeds the bounded confirmation window.");
+            throw new InvalidOperationException("Admission nonce does not match the exact prepared plan.");
+        if (plan.ExpiresUtc <= now) throw new InvalidOperationException("Publication plan admission has expired.");
+        if (plan.ExpiresUtc > now.AddHours(3)) throw new InvalidOperationException("Publication plan expiry exceeds the bounded admission window.");
         if (plan.PublishedFileId is null && (!plan.AllowFirstPublication || plan.Visibility != "Private" || plan.ExactTitleMatches != 0))
             throw new InvalidOperationException("First publication is not an exact-title-absent Private opt-in.");
         if (plan.PublishedFileId is not null && plan.AllowFirstPublication)
@@ -150,7 +150,7 @@ public static class ReleasePlanAdmission
             new FileInfo(plan.PreviewPath).Length != plan.PreviewBytes)
             throw new InvalidOperationException("Workshop preview changed after preparation.");
         if (plan.VerificationFiles.Count == 0)
-            throw new InvalidOperationException("Subscriber verification inputs are missing from the reviewed plan.");
+            throw new InvalidOperationException("Subscriber verification inputs are missing from the admitted plan.");
         foreach (var input in plan.VerificationFiles)
         {
             var inputPath = RepositoryRoot.ContainedPath(root, input.Path);
@@ -160,7 +160,7 @@ public static class ReleasePlanAdmission
         }
         var verificationRelative = Path.GetRelativePath(root, plan.VerificationProfile).Replace('\\', '/');
         if (!plan.VerificationFiles.Any(file => string.Equals(file.Path, verificationRelative, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("Subscriber verification manifest is not bound into the reviewed plan.");
+            throw new InvalidOperationException("Subscriber verification manifest is not bound into the admitted plan.");
 
         var includes = plan.Files.Select(file => file.Path).ToArray();
         var candidate = ReleaseCandidateBuilder.Inspect(plan.PackagePath, includes);
@@ -250,7 +250,7 @@ public static class ReleasePlanAdmission
                ulong.TryParse(values[0], out var id) && id != 0 ? values[0] : null;
     }
 
-    public static string ConfirmationText(ReleaseAdmission admission) =>
+    public static string AdmissionText(ReleaseAdmission admission) =>
         $"publish {admission.PlanSha256} {admission.Plan.ConfirmationNonce}";
 
     private static bool IsHash(string value) =>
@@ -263,7 +263,7 @@ public static class ReleasePlanAdmission
         var frozenRelative = Path.GetRelativePath(root, frozenPath).Replace('\\', '/');
         if (!plan.VerificationFiles.Any(file =>
                 string.Equals(file.Path, frozenRelative, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("Frozen release profile is not bound into the reviewed plan.");
+            throw new InvalidOperationException("Frozen release profile is not bound into the admitted plan.");
         var profile = plan.FrozenProfile;
         if (!string.Equals(Path.GetFullPath(profile.Path), frozenPath, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(profile.PackageId, plan.PackageId, StringComparison.Ordinal) ||

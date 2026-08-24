@@ -88,7 +88,7 @@ All routes are below the manifest's `/api/v1` `baseUrl`.
 
 | Route | Companion command | Purpose |
 | --- | --- | --- |
-| `GET /status` | `status` | Process/program/root, optional map/tick, pending dispatches, and danger flags |
+| `GET /status` | `status` | Process/program/root, native long-event readiness, optional map/tick, pending dispatches, and danger flags |
 | `GET /ui-state` | `ui-state` | Pause/speed, rendered-client bounds, and bounded window/selection snapshot |
 | `GET /game-state` | direct HTTP | Developer/god mode, time, nullable map/camera, and bounded selection snapshot |
 | `POST /game-state` | direct HTTP | Atomically set developer/god mode, pause, and native speed |
@@ -122,7 +122,7 @@ All routes are below the manifest's `/api/v1` `baseUrl`.
 
 Routed JSON API envelopes use version 1 and report the request ID, `ok`, duration, and either `result` or a stable error. Every response also carries `X-Request-Id`, including authentication and transport-limit errors. A caller-provided ID must be 1–64 letters, digits, `-`, `_`, `.`, or `:`; otherwise the server generates one.
 
-The version-one status result remains intentionally narrow: `developerOnly`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. A non-null map has `Handle`, `Biome`, `Width`, and `Height`. The UI-state result contains `programState`, `rootType`, nullable effective `paused`, nullable native `speed`, nullable rendered `clientArea`, up to 256 selection entries (`Handle`, `Label`), and up to 128 window entries (`Handle`, `Type`, `Modal`). `clientArea` reports positive `Width`/`Height` and `CoordinateOrigin: TopLeft`; this is the exact client-pixel coordinate space accepted by `/input/click` and `/input/drag`, independent of desktop screenshot scaling. Richer developer controls live in the dedicated `/game-state`, `/camera`, `/things`, and `/selection` contracts. Versions come from the session manifest, and action schemas and availability come from their discovery routes.
+The version-one status result remains intentionally narrow: `developerOnly`, `longEventActive`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. `longEventActive` is RimWorld's native `LongEventHandler.AnyEventNowOrWaiting` signal; a non-null map can therefore be distinguished from a settled playable lifecycle. A non-null map has `Handle`, `Biome`, `Width`, and `Height`. The UI-state result contains `programState`, `rootType`, nullable effective `paused`, nullable native `speed`, nullable rendered `clientArea`, up to 256 selection entries (`Handle`, `Label`), and up to 128 window entries (`Handle`, `Type`, `Modal`). `clientArea` reports positive `Width`/`Height` and `CoordinateOrigin: TopLeft`; this is the exact client-pixel coordinate space accepted by `/input/click` and `/input/drag`, independent of desktop screenshot scaling. Richer developer controls live in the dedicated `/game-state`, `/camera`, `/things`, and `/selection` contracts. Versions come from the session manifest, and action schemas and availability come from their discovery routes.
 
 Use the raw C# endpoint or a named automation when a verification needs state outside those stable DTOs. That escape hatch does not promote the returned data into the API contract; adding a new stable snapshot field requires an OpenSpec/API change.
 

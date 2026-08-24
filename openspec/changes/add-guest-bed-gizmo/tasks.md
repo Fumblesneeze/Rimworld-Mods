@@ -65,5 +65,5 @@
 
 - [x] 11.1 Specify and apply the exact public title `Hospitality + Ideoligy Patch` while retaining package ID `fumblesneeze.guestbedgizmo` and runtime assembly identity.
 - [x] 11.2 Regenerate and independently review the deterministic renamed Steam/About presentation, then pin its new renderer/output identities.
-- [ ] 11.3 Add and validate the universal release profile, rebuild/test/package from clean committed source, and prepare the mutation-free private first-publication dry-run.
-- [ ] 11.4 After explicit digest-and-nonce confirmation, publish once, persist the Workshop ID, reacquire and verify the subscribed copy, and retain complete release evidence.
+- [x] 11.3 Add and validate the universal release profile, rebuild/test/package from clean committed source, and prepare the mutation-free private first-publication dry-run.
+- [ ] 11.4 Under the user’s standing explicit publication order, pass the prepared digest and nonce directly to publication without another prompt, publish once, persist the Workshop ID, reacquire and verify the subscribed copy, and retain complete release evidence.

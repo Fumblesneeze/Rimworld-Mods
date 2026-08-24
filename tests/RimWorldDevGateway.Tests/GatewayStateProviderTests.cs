@@ -32,6 +32,7 @@ public sealed class GatewayStateProviderTests
             ProgramState = "Playing",
             RootType = "Root_Play",
             Tick = 1234,
+            LongEventActive = false,
             Map = new GatewayMapSnapshot("map-7", "Temperate Forest", 250, 250),
             Windows = new[] { new GatewayWindowSnapshot("window-1", "MainTabWindow_Architect", false) },
             Selection = new[] { new GatewaySelectionSnapshot("thing-42", "Steel") }
@@ -46,6 +47,7 @@ public sealed class GatewayStateProviderTests
             Assert.That(json, Does.Contain("\"unrestrictedExecutionEnabled\":true"));
             Assert.That(json, Does.Contain("\"processId\":99"));
             Assert.That(json, Does.Contain("\"programState\":\"Playing\""));
+            Assert.That(json, Does.Contain("\"longEventActive\":false"));
             Assert.That(json, Does.Contain("\"pendingDispatches\":0"));
             Assert.That(json, Does.Contain("\"map-7\""));
         });
@@ -90,6 +92,8 @@ public sealed class GatewayStateProviderTests
         public string RootType { get; set; } = string.Empty;
 
         public long? Tick { get; set; }
+
+        public bool LongEventActive { get; set; }
 
         public GatewayMapSnapshot? Map { get; set; }
 

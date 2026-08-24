@@ -2,17 +2,21 @@
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: Structured status snapshot
-`GET /api/v1/status` SHALL return an immutable main-thread version-one snapshot with these fields: `developerOnly`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. A non-null `map` SHALL contain only `Handle`, `Biome`, `Width`, and `Height`. The version-one status contract SHALL NOT imply game/mod-version, pause/speed, window-geometry, uploaded-assembly-count, per-operation, raw-input, or automation-health fields.
+`GET /api/v1/status` SHALL return an immutable main-thread version-one snapshot with these fields: `developerOnly`, `longEventActive`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. `longEventActive` SHALL report `LongEventHandler.AnyEventNowOrWaiting`, allowing callers to distinguish an allocated map from a settled lifecycle boundary. A non-null `map` SHALL contain only `Handle`, `Biome`, `Width`, and `Height`. The version-one status contract SHALL NOT imply game/mod-version, pause/speed, window-geometry, uploaded-assembly-count, per-operation, raw-input, or automation-health fields.
 
 State outside this deliberately narrow contract MAY be inspected through the unrestricted raw-C# endpoint or a discoverable named automation. Adding another stable status field requires a later OpenSpec/API contract change rather than relying on an undocumented implementation detail.
 
 #### Scenario: Status at the main menu
 - **WHEN** an authenticated caller requests status while RimWorld is at the main menu
-- **THEN** the result reports the current `processId`, program/root state, developer warning and execution flags, a nullable `tick`, `map: null`, and the current dispatcher pending count without dereferencing map-only state
+- **THEN** the result reports the current `processId`, program/root state, developer warning and execution flags, long-event state, a nullable `tick`, `map: null`, and the current dispatcher pending count without dereferencing map-only state
 
 #### Scenario: Status in a colony
 - **WHEN** an authenticated caller requests status with a playable map loaded
-- **THEN** the result reports the current tick and the map's stable-in-run handle, biome, width, and height without returning live Verse objects
+- **THEN** the result reports the current tick, long-event state, and the map's stable-in-run handle, biome, width, and height without returning live Verse objects
+
+#### Scenario: Map exists while initialization remains active
+- **WHEN** RimWorld has assigned the current map but a native long event remains active or waiting
+- **THEN** status reports the non-null map together with `longEventActive: true` so automation does not mistake that intermediate state for readiness
 
 ### Requirement: Structured UI-state snapshot
 `GET /api/v1/ui-state` SHALL return a main-thread snapshot with exactly the stable fields `programState`, `rootType`, nullable `paused`, nullable native `speed`, nullable `clientArea`, `selection`, and `windows`. While a game exists, `paused` SHALL report the effective native pause state and `speed` SHALL be one of `Paused`, `Normal`, `Fast`, `Superfast`, or `Ultrafast`; both SHALL be null at roots without a game. A present `clientArea` SHALL contain the positive rendered-client `Width` and `Height` plus `CoordinateOrigin: TopLeft`, matching the coordinate space accepted by the screen-local input endpoints. `selection` SHALL contain at most 256 entries with `Handle` and `Label`; `windows` SHALL contain at most 128 entries with `Handle`, `Type`, and `Modal`. The snapshot SHALL NOT walk or recursively serialize live Verse/Unity object graphs.

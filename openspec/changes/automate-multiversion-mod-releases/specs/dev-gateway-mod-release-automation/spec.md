@@ -203,7 +203,7 @@ When a declared GIF uses hard cuts, every source segment SHALL be a complete cap
 Every update to an existing Workshop item SHALL provide a nonempty authored change note in player-facing language. The dry-run SHALL show the exact note, bind its UTF-8 bytes into the immutable publication plan, and distinguish it from the previous verified note. The publisher SHALL pass that exact note to Steam's item-update submission and SHALL retain the resulting change-note identity or remotely observed entry in the credential-free receipt. It MUST reject blank, whitespace-only, generic, automatically generated commit/file lists, and unchanged copied notes before mutation.
 
 #### Scenario: Existing Workshop item receives an authored change note
-- **WHEN** a reviewed incremental release is confirmed for a retained nonzero Workshop identity
+- **WHEN** an explicitly ordered and admitted incremental release targets a retained nonzero Workshop identity
 - **THEN** its exact player-facing change note is submitted with the content update, appears in the Steam change history, and is recorded in the publication receipt
 
 #### Scenario: Incremental release reuses a stale note
@@ -215,22 +215,22 @@ Every update to an existing Workshop item SHALL provide a nonempty authored chan
 - **THEN** the release workflow honors a bounded retry delay and retries a bounded number of times, while every other HTTP failure or exhausted rate-limit budget fails closed without submitting the Workshop update
 
 ### Requirement: Steam publication is typed, guarded, and observable
-The Dev Gateway SHALL expose an authenticated, loopback-only typed publication operation that runs only in a fresh isolated RimWorld process with Steam initialized. It SHALL bind one validated staged package, presentation bundle, and required-item graph to one declared Workshop item, use the native RimWorld/Steam publication path without relying on hidden UI options, expose bounded progress and terminal failure details, and require a separate explicit publish confirmation after dry-run inspection.
+The Dev Gateway SHALL expose an authenticated, loopback-only typed publication operation that runs only in a fresh isolated RimWorld process with Steam initialized. It SHALL bind one validated staged package, presentation bundle, and required-item graph to one declared Workshop item, use the native RimWorld/Steam publication path without relying on hidden UI options, and expose bounded progress and terminal failure details. An explicit publication order SHALL authorize a subsequently prepared matching dry-run; the exact plan proof SHALL be passed directly without a separate post-dry-run confirmation prompt.
 
 #### Scenario: Reviewed bundle is published deliberately
-- **WHEN** an operator confirms publication of the exact dry-run package and presentation hashes for the declared Workshop item
+- **WHEN** an operator has explicitly ordered publication and the exact dry-run package, target, visibility, dependencies, and presentation hashes match that order
 - **THEN** the Gateway uploads those exact inputs, reports Steam's terminal result and published item identity, and retains a credential-free publication receipt
 
 #### Scenario: Bundle changes after dry-run
 - **WHEN** any staged file or presentation output changes after dry-run inspection
-- **THEN** the Gateway rejects confirmation as stale and requires a new validation and review cycle
+- **THEN** the Gateway rejects the admission proof as stale and requires a new validation cycle
 
 #### Scenario: Required Steam dependencies are reconciled deliberately
-- **WHEN** the reviewed dry-run shows required Workshop items that must be added or stale required-item edges that must be removed and the operator confirms the exact dependency diff
+- **WHEN** the admitted dry-run shows required Workshop items that must be added or stale required-item edges that must be removed and the exact dependency diff matches the operator's publication order
 - **THEN** the Gateway reconciles only those declared parent-child relationships, never adds optional mods, and reports each Steam dependency operation and its terminal result
 
 ### Requirement: Publication failure is retryable and cannot target another item
-The publication workflow SHALL fail closed on Steam authentication, legal-agreement, connectivity, quota, callback, ownership, or item-identity errors. It MUST NOT create a new Workshop item implicitly or change a different item. It MAY create exactly one item when the reviewed manifest explicitly opts into first publication, the mutation-free dry-run declared no item ID, the user confirms that exact create operation, and no prior publication receipt or local item identity exists. Every first publication MUST submit the new item with Steam visibility `Private`, regardless of the eventual release visibility declared for later updates. Making that retained item Friends-only, Unlisted, or Public SHALL require a separate reviewed update after the user has inspected the private item. The returned nonzero identity MUST be persisted before upload continuation and every later release MUST be update-only. The workflow SHALL preserve the reviewed local bundle plus diagnostic state for an explicit retry without claiming rollback of an already accepted Steam update.
+The publication workflow SHALL fail closed on Steam authentication, legal-agreement, connectivity, quota, callback, ownership, or item-identity errors. It MUST NOT create a new Workshop item implicitly or change a different item. It MAY create exactly one item when the reviewed manifest explicitly opts into first publication, the mutation-free dry-run declared no item ID, the user's explicit publication order materially matches that exact create operation, and no prior publication receipt or local item identity exists. Every first publication MUST submit the new item with Steam visibility `Private`, regardless of the eventual release visibility declared for later updates. Making that retained item Friends-only, Unlisted, or Public SHALL require a separate explicitly ordered update after the user has inspected the private item. The returned nonzero identity MUST be persisted before upload continuation and every later release MUST be update-only. The workflow SHALL preserve the reviewed local bundle plus diagnostic state for an explicit retry without claiming rollback of an already accepted Steam update.
 
 One cross-process lease SHALL cover identity recovery, mutation admission, remote reconciliation, dependency reconciliation, subscription, and receipt creation. Before an ID-less first publication, a bounded native query of every item published by the owning account SHALL prove that no exact-title RimWorld item exists; an incomplete query, one exact-title item, or more than one exact-title item SHALL fail before `CreateItem`. Every async Steam call MUST reject an invalid handle and correlate callback parent/child/item identities with the admitted request. A duplicate-create callback carrying one nonzero identity SHALL be treated as an already-created identity and persisted, not as permission for another create. Steam's legal-agreement flag SHALL stop before submission on creation as well as after submission. Definite callback failures MAY be retried from a fresh reviewed invocation; I/O failure, a timeout after admission, or a completed upload whose subscription/smoke/receipt phase did not finish is indeterminate and MUST block a different plan until the exact prior plan is reconciled. Existing receipts participate in identity recovery and conflicting identities fail closed. Remote acceptance SHALL require exact title, owner, app, visibility, description hash, metadata, tags, dependency set, and downloaded preview hash before subscription.
 
@@ -241,7 +241,7 @@ A clean committed descendant release-tool revision MAY reconcile an older immuta
 - **THEN** a release invocation for a different plan fails before mutation and identifies the exact prior plan that must be reconciled
 
 #### Scenario: First publication is private for human review
-- **WHEN** an explicitly confirmed ID-less release creates its one permitted Workshop item even though the eventual release manifest declares Public visibility
+- **WHEN** an explicitly ordered and admitted ID-less release creates its one permitted Workshop item even though the eventual release manifest declares Public visibility
 - **THEN** the created item and first content submission use Private visibility, and Public visibility is possible only through a later reviewed update of the retained nonzero item identity
 
 #### Scenario: A release-tool fix completes an exact submitted plan
@@ -260,7 +260,7 @@ A clean committed descendant release-tool revision MAY reconcile an older immuta
 After Steam reports a successful update and CDN propagation, the release workflow SHALL subscribe to or refresh the exact published item through the owning Steam client, reacquire it into the Steam Workshop content area, and compare its complete file manifest with the reviewed staged candidate. It SHALL then launch a fresh isolated RimWorld process using the subscribed Workshop package path rather than a repository-local or manually deployed copy, with the exact required dependencies and no Dev Gateway unless the verification profile explicitly tests it. The acting agent SHALL perform and personally inspect the mod's declared native player-workflow smoke test. Successful upload, remote metadata, subscription state, file presence, startup, logs, or diagnostics alone MUST NOT satisfy this final acceptance.
 
 #### Scenario: Published Immersive Chefs is verified as a subscriber receives it
-- **WHEN** the confirmed RimWorld 1.6 Immersive Chefs update reaches Steam
+- **WHEN** the admitted RimWorld 1.6 Immersive Chefs update reaches Steam
 - **THEN** the exact item is subscribed or refreshed, its reacquired files match the reviewed candidate, and a fresh game loads that Workshop copy and passes the declared observable native cooking/dining smoke workflow
 
 #### Scenario: Steam returns stale or different content
@@ -268,14 +268,14 @@ After Steam reports a successful update and CDN propagation, the release workflo
 - **THEN** release verification fails without substituting a local package or claiming the release accepted
 
 ### Requirement: Release evidence is complete and secret-free
-Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, verification results, presentation provenance, operator confirmation, Gateway process identity, Steam item/dependency results, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.
+Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, verification results, presentation provenance, publication authorization and plan admission, Gateway process identity, Steam item/dependency results, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.
 
 #### Scenario: Release receipt is audited
 - **WHEN** a publication attempt reaches a terminal state
 - **THEN** its evidence connects the exact reviewed source, dependencies, tests, package, presentation, target item, result, and cleanup without containing reusable credentials
 
 ### Requirement: Published Workshop identity is repository durable
-After a mod receives a nonzero Steam Workshop identity, the distributable source tree SHALL check in `About/PublishedFileId.txt` and the release manifest SHALL declare the same exact value. Candidate staging SHALL require both identities, byte-for-byte package the checked-in About file, and fail before publication when either is absent, zero, malformed, or disagrees with the other, a retained receipt, or the remotely owned item. Later releases SHALL be update-only. A generated-at-publication identity is permitted only during the one explicitly confirmed first-publication transaction and MUST be promoted into the repository before any subsequent release plan is accepted.
+After a mod receives a nonzero Steam Workshop identity, the distributable source tree SHALL check in `About/PublishedFileId.txt` and the release manifest SHALL declare the same exact value. Candidate staging SHALL require both identities, byte-for-byte package the checked-in About file, and fail before publication when either is absent, zero, malformed, or disagrees with the other, a retained receipt, or the remotely owned item. Later releases SHALL be update-only. A generated-at-publication identity is permitted only during the one explicitly ordered and admitted first-publication transaction and MUST be promoted into the repository before any subsequent release plan is accepted.
 
 #### Scenario: A published mod is cloned to another machine
 - **WHEN** a clean checkout prepares an update for an already published mod without access to prior ignored artifacts

@@ -112,7 +112,7 @@ public sealed class ReleasePublicationAdmissionTests
         var source = File.ReadAllText(Path.Combine(root, "tools", "RimWorldModding.Mcp", "ReleasePublisher.cs"));
 
         Assert.That(Regex.Matches(source, "\\[\\\"operation\\\"\\]\\s*=\\s*\\\"publish\\\"").Count,
-            Is.EqualTo(1), "Only initial confirmed admission may dispatch Steam publication.");
+            Is.EqualTo(1), "Only initial exact-plan admission may dispatch Steam publication.");
         Assert.Multiple(() =>
         {
             Assert.That(ReleasePlanAdmission.IsRecoverableDurableState(
@@ -175,8 +175,35 @@ public sealed class ReleasePublicationAdmissionTests
 
             Assert.That(projected, Does.Contain("\"publishedFileId\": \"1234567890\""));
             Assert.That(projected, Does.Contain("\"allowFirstPublication\": false"));
+            Assert.That(projected, Does.Contain("\"previousChangeNote\": \"Initial release.\""));
+            Assert.That(projected, Does.Contain("\"changeNote\": \"\""));
             Assert.That(projected, Does.Contain("About/PublishedFileId.txt"));
             Assert.That(projected, Does.Not.Contain("changed after Steam admission"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
+    public void IdentityProjection_MatchesCanonicalProfileWithMixedWindowsAndUnixLineEndings()
+    {
+        var root = TestRoot();
+        try
+        {
+            var planPath = WritePlan(root, DateTimeOffset.UtcNow.AddMinutes(30), new string('A', 64), "dll");
+            var plan = JsonSerializer.Deserialize(
+                File.ReadAllText(planPath), McpJsonContext.Default.ReleasePublicationPlan)!;
+            var projected = ReleasePublisher.ProjectFrozenProfileIdentity(plan, 1234567890);
+            var lines = projected.Replace("\r\n", "\n").Split('\n');
+            var mixed = string.Join("", lines.Select((line, index) =>
+                index == lines.Length - 1 ? line : line + (index % 2 == 0 ? "\r\n" : "\n")));
+            File.WriteAllText(plan.ReleaseProfilePath, mixed);
+
+            Assert.That(
+                ReleasePublisher.CanonicalProfileMatchesProjectedIdentity(plan, 1234567890),
+                Is.True);
         }
         finally
         {
