@@ -47,10 +47,13 @@
 
 ## 7. Repo-local MCP configuration and process — `mods/RimWorldDevGateway`
 
-- [x] 7.1 Add `.codex/config.toml` with the required stdio server, explicit cwd/args/timeouts, and write-aware approval configuration, then validate it with Codex MCP discovery.
+- [x] 7.1 Add `.codex/config.toml` with the required stdio server, explicit command/args/timeouts, Codex's logical workspace-root fallback, and write-aware approval configuration, then validate it with Codex MCP discovery.
 - [x] 7.2 Update `AGENTS.md`, development/Gateway/release documentation, and common commands so the MCP/CLI is the public surface and repeated automation triggers an OpenSpec/tool change.
 - [x] 7.3 Inventory every remaining public RimWorld script/host entry point, map it to an owning operation or documented exceptional backend, and reject new unowned duplicates.
 - [x] 7.4 Run strict OpenSpec validation and the full focused MCP/CLI test/build suite.
+- [x] 7.5 RED: reproduce cold concurrent Codex-style starts and add focused bootstrap/config tests which reject shared build races, protocol-stdout contamination, divergent TOML/JSON launch projections, and non-retryable partial publication.
+- [x] 7.6 GREEN: add the bounded internal source bootstrap, immutable verified build cache, and root `.mcp.json`; re-enable `.codex/config.toml` on the shared bootstrap command without adding a second operation surface.
+- [x] 7.7 Run cold concurrent initialize/list/call verification, focused MCP tests, strict OpenSpec validation, and an ephemeral Codex client discovery against the enabled project configuration.
 
 ## 8. Guest Bed rename and release use — `mods/RimWorldDevGateway`
 

@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "rimworld_modding": {
+      "command": "pwsh",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        ".codex/Start-RimWorldModdingMcp.ps1"
+      ],
+      "cwd": "."
+    }
+  }
+}

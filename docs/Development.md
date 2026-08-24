@@ -3,7 +3,10 @@
 This repository is a RimWorld 1.6 mod monorepo. OpenSpec changes live at the repository root, playable mods live under `mods/`, shared host-safe contracts under `shared/`, companion tools under `tools/`, and NUnit projects under `tests/`. Re-inspect installed dependency assemblies and finalized Defs before changing optional-mod integration code; machine-local dependency audits are deliberately ignored. Downloaded Workshop content is read-only inspection input and must remain unmodified. See [Gateway.md](Gateway.md) for the developer gateway's security model and command/API reference.
 
 Trusted local Codex sessions start the repository-owned `rimworld_modding` stdio MCP from
-`.codex/config.toml`. Use its typed operations for discovery, strict OpenSpec validation, focused
+Codex's native `.codex/config.toml`. The root `.mcp.json` projects the same launcher for clients that
+support that common convention; MCP itself does not define a universal configuration filename.
+The shared launcher serializes and isolates cold source builds before executing a verified cached
+server, so simultaneous local sessions do not race MSBuild output files. Use its typed operations for discovery, strict OpenSpec validation, focused
 builds/tests, package checks, leased game and E2E runs, live Gateway diagnostics/mutations, normal
 mod-list changes, evidence reads, and universal release preparation/publication. The identical
 operation registry is available to CI and recovery through `RimWorldModding.Mcp tool list|call`.

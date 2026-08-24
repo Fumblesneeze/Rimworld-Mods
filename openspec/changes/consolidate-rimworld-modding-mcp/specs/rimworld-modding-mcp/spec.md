@@ -13,11 +13,19 @@ The repository SHALL provide one C# executable named `RimWorldModding.Mcp` that 
 - **THEN** the CLI writes an actionable diagnostic to stderr, emits no misleading success payload, and exits with code `2`
 
 ### Requirement: Trusted repository configuration starts the local server
-The repository SHALL contain `.codex/config.toml` configuring a required stdio MCP server with explicit repository working directory, source-built `serve` arguments, bounded startup/tool timeouts, and write-aware approval policy. The server MUST validate that its configured root contains the expected repository markers and MUST NOT search upward into or operate on another repository.
+The repository SHALL contain `.codex/config.toml` configuring a required stdio MCP server with a concurrency-safe source bootstrap, Codex's logical workspace-root fallback, bounded startup/tool timeouts, and write-aware approval policy. It SHALL also contain a root `.mcp.json` projection of the same bootstrap command with a project-root working directory for compatible MCP clients, while documenting that client configuration discovery is not standardized and Codex uses `.codex/config.toml`. The bootstrap MUST expose no repository operations of its own, MUST reserve stdout for the executed MCP server, and MUST use a bounded cross-process lease plus isolated staging and verified immutable output so cold, concurrent, failed, or cancelled starts cannot race shared build files or publish a partial executable. The server MUST validate that its configured root contains the expected repository markers and MUST NOT search upward into or operate on another repository.
 
 #### Scenario: A new trusted local session discovers tools
 - **WHEN** Codex starts a trusted session rooted at this repository and loads its project configuration
-- **THEN** it launches the stdio server from the declared working directory and discovers the repository operation catalog without user-global MCP configuration
+- **THEN** it launches the stdio server from Codex's logical workspace root and discovers the repository operation catalog without user-global MCP configuration
+
+#### Scenario: Cold concurrent clients converge on one verified build
+- **WHEN** multiple MCP clients initialize simultaneously before a cached tool build exists
+- **THEN** every client receives a valid MCP initialize response from the exact C# server, no build text is written to protocol stdout, one verified fingerprinted build is published atomically, and no client fails on shared `obj` or output-file contention
+
+#### Scenario: A failed bootstrap remains retryable
+- **WHEN** a source build is cancelled, fails, or observes its fingerprint change before publication
+- **THEN** it leaves no valid cache stamp or partial published entry and a later start can build and initialize normally
 
 ### Requirement: Operations are typed, discoverable, cancellable, and bounded
 Every operation SHALL declare a stable name, concise description, typed input/output, risk class, timeout, cancellation behavior, and evidence policy. Long-running work SHALL return or retain a run ID, exact child-process identity, bounded progress, durable result location, and status/cancel lifecycle. The server MUST NOT expose arbitrary shell execution, arbitrary filesystem mutation, or a combined diagnostic/mutation Gateway tool.
