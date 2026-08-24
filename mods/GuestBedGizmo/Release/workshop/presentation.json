@@ -11,7 +11,7 @@
   },
   "renderer": {
     "path": "scripts/Build-GuestBedGizmoPreview.ps1",
-    "sha256": "E928F1AE4EBAC6C9417CF269BCA2496EACEF8C085ADCF9EC8FF83727C5460876",
+    "sha256": "5DD39A61CB9FC518E803ABAA72443CB22BD1588BF0F5480ED08E8786D18393BD",
     "imageMagickVersionLine": "Version: ImageMagick 7.1.2-18 Q16-HDRI x64 d4e4b2b:20260322 https://imagemagick.org",
     "fontPath": "release/templates/workshop/fonts/Oswald-SemiBold.ttf",
     "fontSha256": "5B38C246E255A12F5712D640D56BCCED0472466FC68983D2D0410EC0457C2817"
