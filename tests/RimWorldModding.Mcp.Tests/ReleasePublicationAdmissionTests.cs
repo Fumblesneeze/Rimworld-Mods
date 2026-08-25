@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 
@@ -179,6 +181,87 @@ public sealed class ReleasePublicationAdmissionTests
             Assert.That(projected, Does.Contain("\"changeNote\": \"\""));
             Assert.That(projected, Does.Contain("About/PublishedFileId.txt"));
             Assert.That(projected, Does.Not.Contain("changed after Steam admission"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
+    public void RecoveryAdmission_NormalizesMissingDlcGraphsFromAnAlreadyAdmittedV2Plan()
+    {
+        var root = TestRoot();
+        try
+        {
+            var nonce = new string('D', 64);
+            var planPath = WritePlan(root, DateTimeOffset.UtcNow.AddMinutes(-1), nonce, "dll");
+            var node = JsonNode.Parse(File.ReadAllText(planPath))!.AsObject();
+            node.Remove("RequiredDlcAppIds");
+            node["FrozenProfile"]!.AsObject().Remove("RequiredDlcAppIds");
+            File.WriteAllText(planPath, node.ToJsonString());
+            var hash = ReleaseCandidateBuilder.Hash(planPath);
+            var releaseRoot = Path.Combine(root, "artifacts", "Releases", "fumblesneeze.example");
+            Directory.CreateDirectory(releaseRoot);
+            File.WriteAllText(Path.Combine(releaseRoot, "publication-state.txt"), $"submitted|{hash}|1234567890");
+            var candidateIdentity = Path.Combine(root, "candidate", "About", "PublishedFileId.txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(candidateIdentity)!);
+            File.WriteAllText(candidateIdentity, "1234567890");
+
+            var recovered = ReleasePlanAdmission.ValidateRecovery(root, planPath, hash, nonce);
+
+            Assert.That(recovered.Plan.RequiredDlcAppIds ?? [], Is.Empty);
+            Assert.That(recovered.Plan.FrozenProfile.RequiredDlcAppIds ?? [], Is.Empty);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
+    public void PrivateUpdateAdmission_RequiresFrozenEvidenceAndPredispatchExactSourceMatch()
+    {
+        var root = TestRoot();
+        try
+        {
+            var nonce = new string('E', 64);
+            var planPath = WritePrivateUpdatePlan(root, DateTimeOffset.UtcNow.AddMinutes(30), nonce);
+            var planHash = ReleaseCandidateBuilder.Hash(planPath);
+            var admitted = ReleasePlanAdmission.ValidateLocal(
+                root, planPath, planHash, nonce, DateTimeOffset.UtcNow, requireCleanRevision: false);
+            var expected = admitted.Plan.PreviousPrivateReleaseEvidence!;
+            var actual = new RetainedPrivateReleaseEvidence(
+                expected.PublicationPlanSha256,
+                expected.PublishedFileId,
+                expected.ChangeNote,
+                expected.WorkerResult,
+                expected.Receipt);
+
+            Assert.DoesNotThrow(() => ReleasePublisher.AssertPreviousReleaseEvidence(admitted.Plan, actual));
+            Assert.Throws<InvalidOperationException>(() => ReleasePublisher.AssertPreviousReleaseEvidence(
+                admitted.Plan,
+                actual with { Receipt = actual.Receipt with { Sha256 = new string('F', 64) } }));
+
+            var missingEvidencePath = Path.Combine(root, "publication-plan-missing-history.json");
+            File.WriteAllText(missingEvidencePath, JsonSerializer.Serialize(
+                admitted.Plan with { PreviousPrivateReleaseEvidence = null },
+                McpJsonContext.Default.ReleasePublicationPlan));
+            Assert.That(
+                Assert.Throws<InvalidOperationException>(() => ReleasePlanAdmission.ValidateLocal(
+                    root,
+                    missingEvidencePath,
+                    ReleaseCandidateBuilder.Hash(missingEvidencePath),
+                    nonce,
+                    DateTimeOffset.UtcNow,
+                    requireCleanRevision: false))!.Message,
+                Does.Contain("must bind"));
+
+            File.AppendAllText(RepositoryRoot.ContainedPath(root, expected.FrozenReceipt.Path), "tampered");
+            Assert.That(
+                Assert.Throws<InvalidOperationException>(() => ReleasePlanAdmission.ValidateLocal(
+                    root, planPath, planHash, nonce, DateTimeOffset.UtcNow, requireCleanRevision: false))!.Message,
+                Does.Contain("Frozen preceding publication receipt"));
         }
         finally
         {
@@ -468,7 +551,7 @@ public sealed class ReleasePublicationAdmissionTests
         var frozen = new ReleaseProfile(
             "RimWorldModRelease/v1", frozenProfile, project, "fumblesneeze.example", "Example", "Fumblesneeze",
             "Product", "1.6", "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
-            294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["2009463077"], [],
+            294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["2009463077"], [], [],
             "mod_build", "presentation_render", candidate, ["1.6/Assemblies/Product.dll"], description, preview,
             null, "Initial release.", subscriber);
         var plan = new ReleasePublicationPlan(
@@ -476,10 +559,85 @@ public sealed class ReleasePublicationAdmissionTests
             digest, candidate, files, profile, ReleaseCandidateBuilder.Hash(profile), frozenProfile, frozen,
             description, ReleaseCandidateBuilder.Hash(description), preview, ReleaseCandidateBuilder.Hash(preview),
             new FileInfo(preview).Length, 294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"],
-            ["2009463077"], "Initial release.", subscriber, [subscriberFile, frozenProfileFile], "https://example.invalid", 0, [], 0,
+            ["2009463077"], [], "Initial release.", subscriber, [subscriberFile, frozenProfileFile], null,
+            "https://example.invalid", 0, [], 0,
             null, ["CREATE"], nonce, expiry, false);
         var path = Path.Combine(root, "publication-plan.json");
         File.WriteAllText(path, JsonSerializer.Serialize(plan));
+        return path;
+    }
+
+    private static string WritePrivateUpdatePlan(string root, DateTimeOffset expiry, string nonce)
+    {
+        var path = WritePlan(root, expiry, nonce, "private-update-dll");
+        var plan = JsonSerializer.Deserialize(
+            File.ReadAllText(path), McpJsonContext.Default.ReleasePublicationPlan)!;
+        const string publishedFileId = "1234567890";
+        var priorPlan = new string('C', 64);
+        const string priorNote = "Prior exact private change note.";
+        var sourceRoot = Path.Combine(root, "artifacts", "Releases", plan.PackageId, "prior-source");
+        var frozenRoot = Path.Combine(root, "verification", "previous-private-release");
+        Directory.CreateDirectory(sourceRoot);
+        Directory.CreateDirectory(frozenRoot);
+        var sourceWorker = Path.Combine(sourceRoot, "worker-result.json");
+        var sourceReceipt = Path.Combine(sourceRoot, "publication-receipt.json");
+        var frozenWorker = Path.Combine(frozenRoot, "worker-result.json");
+        var frozenReceipt = Path.Combine(frozenRoot, "publication-receipt.json");
+        File.WriteAllText(sourceWorker, "exact previous worker");
+        File.WriteAllText(sourceReceipt, "exact previous receipt");
+        File.Copy(sourceWorker, frozenWorker);
+        File.Copy(sourceReceipt, frozenReceipt);
+        CandidateFile Capture(string file) => new(
+            Path.GetRelativePath(root, file).Replace('\\', '/'),
+            new FileInfo(file).Length,
+            ReleaseCandidateBuilder.Hash(file));
+        var sourceWorkerFile = Capture(sourceWorker);
+        var sourceReceiptFile = Capture(sourceReceipt);
+        var frozenWorkerFile = Capture(frozenWorker);
+        var frozenReceiptFile = Capture(frozenReceipt);
+        var evidence = new PreviousPrivateReleaseEvidence(
+            priorPlan,
+            publishedFileId,
+            priorNote,
+            sourceWorkerFile,
+            sourceReceiptFile,
+            frozenWorkerFile,
+            frozenReceiptFile);
+        var baseline = WorkshopRemoteBaseline.Create(
+            publishedFileId,
+            plan.Title,
+            plan.DescriptionSha256,
+            Encoding.UTF8.GetByteCount(File.ReadAllText(plan.DescriptionPath)),
+            plan.Tags,
+            "prior-plan-metadata",
+            "Private",
+            "https://example.invalid/preview.png",
+            plan.PreviewSha256,
+            plan.SteamUserId,
+            plan.SteamAppId,
+            1,
+            1,
+            plan.RequiredWorkshopItems,
+            plan.RequiredDlcAppIds ?? [],
+            []);
+        var updated = plan with
+        {
+            PublishedFileId = publishedFileId,
+            AllowFirstPublication = false,
+            FrozenProfile = plan.FrozenProfile with
+            {
+                PublishedFileId = publishedFileId,
+                AllowFirstPublication = false,
+                PreviousChangeNote = priorNote
+            },
+            VerificationFiles = plan.VerificationFiles.Concat([frozenWorkerFile, frozenReceiptFile]).ToArray(),
+            PreviousPrivateReleaseEvidence = evidence,
+            OwnerItems = [new WorkshopOwnerItem(publishedFileId, plan.Title)],
+            OwnerItemCount = 1,
+            ExactTitleMatches = 1,
+            RemoteBaseline = baseline
+        };
+        File.WriteAllText(path, JsonSerializer.Serialize(updated, McpJsonContext.Default.ReleasePublicationPlan));
         return path;
     }
 

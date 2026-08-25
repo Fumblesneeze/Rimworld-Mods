@@ -3,8 +3,8 @@
 Renders the Guest Bed Gizmo Steam and About previews from one accepted in-game frame.
 
 .DESCRIPTION
-Validates the pinned source, font, crop, copy, and ImageMagick build in the mod-owned
-presentation manifest, then creates a 1164x655 Steam card and 640x360 About derivative.
+Validates the pinned source, menu crop, layout, and ImageMagick build in the mod-owned
+presentation manifest, then creates a menu-focused 1164x655 Steam card and 640x360 About derivative.
 
 .EXAMPLE
 .\scripts\Build-GuestBedGizmoPreview.ps1 -Output table
@@ -101,11 +101,10 @@ if ($manifest.schema -cne 'GuestBedGizmo/WorkshopPresentation/v1') {
 }
 
 $sourcePath = Resolve-RepositoryPath -RelativePath ([string]$manifest.source.path)
-$fontPath = Resolve-RepositoryPath -RelativePath ([string]$manifest.renderer.fontPath)
 $rendererPath = Resolve-RepositoryPath -RelativePath ([string]$manifest.renderer.path)
 $workshopPath = Resolve-RepositoryPath -RelativePath ([string]$manifest.outputs.workshop.path)
 $aboutPath = Resolve-RepositoryPath -RelativePath ([string]$manifest.outputs.about.path)
-foreach ($requiredPath in @($sourcePath, $fontPath)) {
+foreach ($requiredPath in @($sourcePath)) {
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
         Exit-InvalidInput "Required presentation input does not exist: $requiredPath"
     }
@@ -113,9 +112,6 @@ foreach ($requiredPath in @($sourcePath, $fontPath)) {
 
 if ((Get-Sha256 -Path $sourcePath) -cne [string]$manifest.source.sha256) {
     Exit-InvalidInput 'Accepted source hash differs from presentation.json.'
-}
-if ((Get-Sha256 -Path $fontPath) -cne [string]$manifest.renderer.fontSha256) {
-    Exit-InvalidInput 'Pinned presentation font hash differs from presentation.json.'
 }
 if ([string]$manifest.renderer.sha256 -cne 'PENDING' -and
     (Get-Sha256 -Path $rendererPath) -cne [string]$manifest.renderer.sha256) {
@@ -141,23 +137,14 @@ $aboutParent = Split-Path -Parent $aboutPath
 New-Item -ItemType Directory -Force -Path $workshopParent, $aboutParent | Out-Null
 $temporaryRoot = Join-Path $repositoryRoot ('artifacts\GuestBedGizmoPreview\' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $temporaryRoot | Out-Null
-$cropPath = Join-Path $temporaryRoot 'crop.png'
 $menuCropPath = Join-Path $temporaryRoot 'menu-crop.png'
 $masterPath = Join-Path $temporaryRoot 'preview-main.png'
 $aboutTempPath = Join-Path $temporaryRoot 'about-preview.png'
 
 try {
-    $crop = $manifest.layout.sourceCrop
-    $cropGeometry = '{0}x{1}+{2}+{3}' -f $crop.width, $crop.height, $crop.x, $crop.y
-    Invoke-Magick -Arguments @(
-        $sourcePath,
-        '-crop', $cropGeometry,
-        '+repage',
-        '-filter', 'Lanczos',
-        '-resize', "$($manifest.layout.image.width)x$($manifest.layout.image.height)!",
-        '-strip',
-        "PNG24:$cropPath"
-    )
+    if ([string]$manifest.layout.mode -cne 'menu-focus') {
+        Exit-InvalidInput "Unsupported Guest Bed presentation mode '$($manifest.layout.mode)'."
+    }
 
     $menuCrop = $manifest.layout.menuCrop
     $menuCropGeometry = '{0}x{1}+{2}+{3}' -f $menuCrop.width, $menuCrop.height, $menuCrop.x, $menuCrop.y
@@ -171,13 +158,6 @@ try {
         "PNG24:$menuCropPath"
     )
 
-    $title = ([string]$manifest.copy.title).Replace('\\n', "`n")
-    $kicker = ([string]$manifest.copy.kicker).Replace('\\n', "`n")
-    $imageBorder = 'rectangle {0},{1} {2},{3}' -f `
-        ($manifest.layout.image.x - 4), `
-        ($manifest.layout.image.y - 4), `
-        ($manifest.layout.image.x + $manifest.layout.image.width + 4), `
-        ($manifest.layout.image.y + $manifest.layout.image.height + 4)
     $menuBorder = 'rectangle {0},{1} {2},{3}' -f `
         ($manifest.layout.menuImage.x - 4), `
         ($manifest.layout.menuImage.y - 4), `
@@ -189,27 +169,6 @@ try {
         '-fill', [string]$manifest.colors.panel,
         '-stroke', 'none',
         '-draw', 'roundrectangle 14,14 1150,641 26,26',
-        '-font', $fontPath,
-        '-gravity', 'northwest',
-        '-pointsize', '22',
-        '-fill', [string]$manifest.colors.muted,
-        '-annotate', '+48+50', [string]$manifest.copy.eyebrow,
-        '-pointsize', [string]$manifest.layout.typography.titlePointSize,
-        '-fill', [string]$manifest.colors.primary,
-        '-interline-spacing', [string]$manifest.layout.typography.titleInterlineSpacing,
-        '-annotate', "+$($manifest.layout.typography.titleX)+$($manifest.layout.typography.titleY)", $title,
-        '-pointsize', [string]$manifest.layout.typography.kickerPointSize,
-        '-fill', [string]$manifest.colors.accent,
-        '-interline-spacing', '-3',
-        '-annotate', "+$($manifest.layout.typography.kickerX)+$($manifest.layout.typography.kickerY)", $kicker,
-        '-pointsize', [string]$manifest.layout.typography.supportPointSize,
-        '-fill', [string]$manifest.colors.primary,
-        '-interline-spacing', '0',
-        '-annotate', "+$($manifest.layout.typography.supportX)+$($manifest.layout.typography.supportY)", [string]$manifest.copy.support,
-        $cropPath,
-        '-geometry', "+$($manifest.layout.image.x)+$($manifest.layout.image.y)",
-        '-compose', 'over',
-        '-composite',
         $menuCropPath,
         '-geometry', "+$($manifest.layout.menuImage.x)+$($manifest.layout.menuImage.y)",
         '-compose', 'over',
@@ -217,7 +176,6 @@ try {
         '-fill', 'none',
         '-stroke', [string]$manifest.colors.frame,
         '-strokewidth', '3',
-        '-draw', $imageBorder,
         '-draw', $menuBorder,
         '-strip',
         '-define', 'png:compression-level=9',

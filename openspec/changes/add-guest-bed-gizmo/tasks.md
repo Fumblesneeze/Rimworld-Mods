@@ -63,7 +63,14 @@
 
 ## 11. `mods/GuestBedGizmo` Public Rename and First Release
 
-- [x] 11.1 Specify and apply the exact public title `Hospitality + Ideoligy Patch` while retaining package ID `fumblesneeze.guestbedgizmo` and runtime assembly identity.
+- [x] 11.1 Specify and apply the initially ordered public title while retaining package ID `fumblesneeze.guestbedgizmo` and runtime assembly identity; the corrected spelling is owned by section 12.
 - [x] 11.2 Regenerate and independently review the deterministic renamed Steam/About presentation, then pin its new renderer/output identities.
 - [x] 11.3 Add and validate the universal release profile, rebuild/test/package from clean committed source, and prepare the mutation-free private first-publication dry-run.
 - [x] 11.4 Under the user’s standing explicit publication order, pass the prepared digest and nonce directly to publication without another prompt, publish once, persist the Workshop ID, reacquire and verify the subscribed copy, and retain complete release evidence.
+
+## 12. `mods/GuestBedGizmo` Annotated Workshop Correction
+
+- [x] 12.1 RED/GREEN: specify and test the corrected `Hospitality + Ideology Patch` identity, concise save-safe copy, omitted package/legacy commentary, menu-dominant presentation manifest, and split Workshop-item/Ideology-DLC dependency graphs.
+- [x] 12.2 Replace the text-heavy preview with a deterministic menu-only 1164×655 composition from the reviewed source frame, inspect full/page/About scales, and obtain context-free independent visual review.
+- [x] 12.3 Validate the corrected About/package/presentation through focused tests and package checks, run strict OpenSpec validation, and independently review the scoped diff.
+- [ ] 12.4 Prepare and publish the exact update to retained Private item `3789536584` without another confirmation, verify remote metadata and both dependency graphs, reacquire and exercise the subscribed native workflow, personally inspect/accept the fresh evidence, and verify the rendered Steam page plus restored local copy/mod-list state.

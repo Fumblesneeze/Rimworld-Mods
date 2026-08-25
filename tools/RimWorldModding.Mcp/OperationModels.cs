@@ -43,6 +43,7 @@ public sealed record ReleaseProfileResult(
     string? PublishedFileId,
     bool AllowFirstPublication,
     IReadOnlyList<string> RequiredWorkshopItems,
+    IReadOnlyList<string> RequiredDlcAppIds,
     string Project,
     string PackageSource,
     string Description,

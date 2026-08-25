@@ -15,6 +15,22 @@ public sealed record CandidateFile(string Path, long Bytes, string Sha256);
 
 public sealed record ReleaseCandidateStage(string PackagePath, string ContentDigest, IReadOnlyList<CandidateFile> Files);
 
+public sealed record RetainedPrivateReleaseEvidence(
+    string PublicationPlanSha256,
+    string PublishedFileId,
+    string ChangeNote,
+    CandidateFile WorkerResult,
+    CandidateFile Receipt);
+
+public sealed record PreviousPrivateReleaseEvidence(
+    string PublicationPlanSha256,
+    string PublishedFileId,
+    string ChangeNote,
+    CandidateFile WorkerResult,
+    CandidateFile Receipt,
+    CandidateFile FrozenWorkerResult,
+    CandidateFile FrozenReceipt);
+
 public sealed record ReleasePublicationPlan(
     string Schema,
     string PackageId,
@@ -40,9 +56,11 @@ public sealed record ReleasePublicationPlan(
     string Visibility,
     IReadOnlyList<string> Tags,
     IReadOnlyList<string> RequiredWorkshopItems,
+    IReadOnlyList<string> RequiredDlcAppIds,
     string ChangeNote,
     string VerificationProfile,
     IReadOnlyList<CandidateFile> VerificationFiles,
+    PreviousPrivateReleaseEvidence? PreviousPrivateReleaseEvidence,
     string OwnerScanUrl,
     int OwnerItemCount,
     IReadOnlyList<WorkshopOwnerItem> OwnerItems,
@@ -64,6 +82,7 @@ public sealed record ReleasePreparationResult(
     string Title,
     string Visibility,
     IReadOnlyList<string> RequiredWorkshopItems,
+    IReadOnlyList<string> RequiredDlcAppIds,
     IReadOnlyList<string> RemoteDiff,
     string PackagePath,
     string PreviewSha256);
@@ -314,7 +333,8 @@ public sealed class ReleasePreparer(string repositoryRoot)
         ReleaseEnvironmentValidator.Validate(profile);
         ReleaseChangeNotePolicy.Validate(profile);
         _ = SubscriberVerificationProfiles.Load(_repositoryRoot, profile.VerificationProfile);
-        await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(profile, cancellationToken);
+        var initialPrivateHistory = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
+            _repositoryRoot, profile, cancellationToken);
         var revision = await RequireCleanRevisionAsync(cancellationToken);
 
         var build = await ProcessRunner.RunAsync(
@@ -339,22 +359,21 @@ public sealed class ReleasePreparer(string repositoryRoot)
             Path.Combine(runRoot, "package"),
             profile.PackageInclude);
         ReleasePackageValidator.Validate(profile, stage);
-        IReadOnlyList<WorkshopOwnerItem> ownerItems;
-        int exactMatches;
+        IReadOnlyList<WorkshopOwnerItem> ownerItems = [];
+        var exactMatches = 0;
         if (profile.PublishedFileId is null)
         {
             await ProveAuthenticatedTitleAbsenceAsync(profile, cancellationToken);
-            ownerItems = [];
-            exactMatches = 0;
-        }
-        else
-        {
-            ownerItems = [new WorkshopOwnerItem(profile.PublishedFileId, profile.Title)];
-            exactMatches = 1;
         }
         WorkshopRemoteBaseline? remoteBaseline = profile.PublishedFileId is null
             ? null
             : await InspectExistingRemoteAsync(profile, cancellationToken);
+        if (remoteBaseline is not null)
+            (ownerItems, exactMatches) = ProjectExistingOwnerEvidence(profile, remoteBaseline);
+        var finalPrivateHistory = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
+            _repositoryRoot, profile, cancellationToken);
+        if (initialPrivateHistory != finalPrivateHistory)
+            throw new InvalidOperationException("Previous release evidence changed during release preparation.");
 
         var verificationRoot = Path.Combine(runRoot, "verification");
         Directory.CreateDirectory(verificationRoot);
@@ -370,6 +389,45 @@ public sealed class ReleasePreparer(string repositoryRoot)
                 Path.GetRelativePath(_repositoryRoot, frozenReleaseProfile).Replace('\\', '/'),
                 new FileInfo(frozenReleaseProfile).Length,
                 ReleaseCandidateBuilder.Hash(frozenReleaseProfile)))
+            .ToList();
+        PreviousPrivateReleaseEvidence? previousPrivateReleaseEvidence = null;
+        if (finalPrivateHistory is not null)
+        {
+            var privateHistoryRoot = Path.Combine(verificationRoot, "previous-private-release");
+            Directory.CreateDirectory(privateHistoryRoot);
+            var frozenWorker = Path.Combine(privateHistoryRoot, "worker-result.json");
+            var frozenReceipt = Path.Combine(privateHistoryRoot, "publication-receipt.json");
+            File.Copy(
+                RepositoryRoot.ContainedPath(_repositoryRoot, finalPrivateHistory.WorkerResult.Path),
+                frozenWorker,
+                overwrite: false);
+            File.Copy(
+                RepositoryRoot.ContainedPath(_repositoryRoot, finalPrivateHistory.Receipt.Path),
+                frozenReceipt,
+                overwrite: false);
+            var frozenWorkerFile = CaptureFile(_repositoryRoot, frozenWorker);
+            var frozenReceiptFile = CaptureFile(_repositoryRoot, frozenReceipt);
+            if (finalPrivateHistory.WorkerResult.Bytes != frozenWorkerFile.Bytes ||
+                !string.Equals(finalPrivateHistory.WorkerResult.Sha256, frozenWorkerFile.Sha256, StringComparison.OrdinalIgnoreCase) ||
+                finalPrivateHistory.Receipt.Bytes != frozenReceiptFile.Bytes ||
+                !string.Equals(finalPrivateHistory.Receipt.Sha256, frozenReceiptFile.Sha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Previous Private release evidence changed while it was being frozen.");
+            var afterFreezeHistory = WorkshopChangeHistoryVerifier.ValidateRetainedPrivateReceipt(
+                _repositoryRoot, profile);
+            if (finalPrivateHistory != afterFreezeHistory)
+                throw new InvalidOperationException("Previous Private release evidence changed while the publication plan was being written.");
+            verificationFiles.Add(frozenWorkerFile);
+            verificationFiles.Add(frozenReceiptFile);
+            previousPrivateReleaseEvidence = new PreviousPrivateReleaseEvidence(
+                finalPrivateHistory.PublicationPlanSha256,
+                finalPrivateHistory.PublishedFileId,
+                finalPrivateHistory.ChangeNote,
+                finalPrivateHistory.WorkerResult,
+                finalPrivateHistory.Receipt,
+                frozenWorkerFile,
+                frozenReceiptFile);
+        }
+        var orderedVerificationFiles = verificationFiles
             .OrderBy(file => file.Path, StringComparer.Ordinal)
             .ToArray();
         var finalRevision = await RequireCleanRevisionAsync(cancellationToken);
@@ -384,7 +442,8 @@ public sealed class ReleasePreparer(string repositoryRoot)
                 $"CREATE Private Workshop item '{profile.Title}'",
                 $"UPLOAD {stage.Files.Count} package files with digest {stage.ContentDigest}",
                 $"SET primary preview SHA-256 {ReleaseCandidateBuilder.Hash(profile.Preview)}",
-                $"SET required items [{string.Join(", ", profile.RequiredWorkshopItems)}]"
+                $"SET required items [{string.Join(", ", profile.RequiredWorkshopItems)}]",
+                $"SET required DLC applications [{string.Join(", ", profile.RequiredDlcAppIds)}]"
             }
             : WorkshopRemoteBaseline.DescribeDiff(remoteBaseline!, profile, stage);
         var plan = new ReleasePublicationPlan(
@@ -412,9 +471,11 @@ public sealed class ReleasePreparer(string repositoryRoot)
             profile.PublishedFileId is null ? "Private" : profile.Visibility,
             profile.Tags,
             profile.RequiredWorkshopItems,
+            profile.RequiredDlcAppIds,
             profile.ChangeNote,
             frozenProfile,
-            verificationFiles,
+            orderedVerificationFiles,
+            previousPrivateReleaseEvidence,
             $"steam-authenticated://owner/{profile.SteamUserId}/app/{profile.SteamAppId}",
             ownerItems.Count,
             ownerItems,
@@ -439,9 +500,26 @@ public sealed class ReleasePreparer(string repositoryRoot)
             profile.Title,
             plan.Visibility,
             profile.RequiredWorkshopItems,
+            profile.RequiredDlcAppIds,
             remoteDiff,
             stage.PackagePath,
             plan.PreviewSha256);
+    }
+
+    private static CandidateFile CaptureFile(string root, string path) =>
+        new(
+            Path.GetRelativePath(root, path).Replace('\\', '/'),
+            new FileInfo(path).Length,
+            ReleaseCandidateBuilder.Hash(path));
+
+    internal static (IReadOnlyList<WorkshopOwnerItem> Items, int ExactTitleMatches) ProjectExistingOwnerEvidence(
+        ReleaseProfile profile,
+        WorkshopRemoteBaseline baseline)
+    {
+        baseline.AssertItemIdentity(profile);
+        return (
+            [new WorkshopOwnerItem(baseline.PublishedFileId, baseline.Title)],
+            string.Equals(baseline.Title, profile.Title, StringComparison.Ordinal) ? 1 : 0);
     }
 
     private async Task<WorkshopRemoteBaseline> InspectExistingRemoteAsync(

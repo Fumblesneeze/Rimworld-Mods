@@ -1,6 +1,7 @@
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
@@ -65,19 +66,92 @@ public static class WorkshopChangeHistoryVerifier
         "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
     public sealed record Verification(string Status, string ChangeNote, string? Url);
 
-    public static async Task ValidatePreviousAsync(ReleaseProfile profile, CancellationToken cancellationToken)
+    public static async Task<RetainedPrivateReleaseEvidence?> ValidatePreviousAsync(
+        string repositoryRoot,
+        ReleaseProfile profile,
+        CancellationToken cancellationToken)
     {
-        if (profile.PublishedFileId is null) return;
+        if (profile.PublishedFileId is null) return null;
         if (profile.Visibility == "Private")
-            throw new InvalidOperationException(
-                "An existing private Workshop item cannot be updated because its previous change note cannot be independently verified; publish it as public or unlisted first.");
+        {
+            return ValidateRetainedPrivateReceipt(repositoryRoot, profile);
+        }
         var expected = profile.PreviousChangeNote ??
                        throw new InvalidOperationException("An existing public Workshop item requires previousChangeNote.");
         var url = $"https://steamcommunity.com/sharedfiles/filedetails/changelog/{profile.PublishedFileId}";
         var latest = ParseLatest(await DownloadBoundedAsync(url, cancellationToken));
         if (!string.Equals(latest, Normalize(expected), StringComparison.Ordinal))
             throw new InvalidOperationException("The pinned previousChangeNote is not the latest Workshop change-history entry.");
+        return null;
     }
+
+    public static RetainedPrivateReleaseEvidence ValidateRetainedPrivateReceipt(
+        string repositoryRoot,
+        ReleaseProfile profile)
+    {
+        var root = RepositoryRoot.Resolve(repositoryRoot);
+        var packageRoot = Path.Combine(root, "artifacts", "Releases", profile.PackageId);
+        var statePath = Path.Combine(packageRoot, "publication-state.txt");
+        if (!File.Exists(statePath))
+            throw new InvalidOperationException("Private update requires the retained preceding release state.");
+        var state = File.ReadAllText(statePath).Trim().Split('|');
+        if (state.Length != 3 || state[0] != "complete-reviewed" ||
+            state[1].Length != 64 || state[1].Any(character => !Uri.IsHexDigit(character)) ||
+            state[2] != profile.PublishedFileId)
+            throw new InvalidOperationException("Private update requires the exact complete-reviewed preceding release state.");
+
+        var workerPath = Path.Combine(packageRoot, "workers", state[1], "worker-result.json");
+        var worker = ReleaseWorkerCoordinator.ReadValidatedResult(
+            root, workerPath, profile.PackageId, state[1], null, null);
+        if (!string.Equals(worker.PublishedFileId, profile.PublishedFileId, StringComparison.Ordinal))
+            throw new InvalidOperationException("Retained preceding publisher result does not match the Private update identity.");
+
+        var receiptPath = RepositoryRoot.ContainedPath(root, worker.ReceiptPath);
+        var publicationRoot = Path.Combine(packageRoot, "publication") + Path.DirectorySeparatorChar;
+        if (!receiptPath.StartsWith(publicationRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(receiptPath) ||
+            !string.Equals(ReleaseCandidateBuilder.Hash(receiptPath),
+                worker.ReceiptSha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Retained preceding publication receipt path or hash is invalid.");
+
+        using var receiptDocument = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        var receipt = receiptDocument.RootElement;
+        if (!GatewayWorkshopClient.TryProperty(receipt, "changeNoteVerification", out var verification) ||
+            verification.ValueKind != JsonValueKind.Object)
+            throw new InvalidOperationException("Retained preceding receipt omitted change-note verification.");
+        var previous = profile.PreviousChangeNote ?? "";
+        if (GatewayWorkshopClient.String(receipt, "schema") != "RimWorldModReleaseReceipt/v1" ||
+            GatewayWorkshopClient.String(receipt, "packageId") != profile.PackageId ||
+            GatewayWorkshopClient.String(receipt, "publishedFileId") != profile.PublishedFileId ||
+            GatewayWorkshopClient.String(receipt, "publicationPlanSha256") != state[1] ||
+            GatewayWorkshopClient.String(receipt, "changeNote") != previous ||
+            GatewayWorkshopClient.String(receipt, "subscriberEvidenceStatus") != "awaiting-personal-review" ||
+            GatewayWorkshopClient.String(verification, "status") != "steam-callback-confirmed-private-history-not-publicly-readable" ||
+            GatewayWorkshopClient.String(verification, "changeNote") != previous)
+            throw new InvalidOperationException("Retained preceding receipt does not bind the pinned Private change note.");
+        return new RetainedPrivateReleaseEvidence(
+            state[1].ToUpperInvariant(),
+            worker.PublishedFileId,
+            previous,
+            Capture(root, workerPath),
+            Capture(root, receiptPath));
+    }
+
+    public static void AssertMatches(
+        PreviousPrivateReleaseEvidence expected,
+        RetainedPrivateReleaseEvidence actual)
+    {
+        if (!string.Equals(expected.PublicationPlanSha256, actual.PublicationPlanSha256, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expected.PublishedFileId, actual.PublishedFileId, StringComparison.Ordinal) ||
+            !string.Equals(expected.ChangeNote, actual.ChangeNote, StringComparison.Ordinal) ||
+            expected.WorkerResult != actual.WorkerResult || expected.Receipt != actual.Receipt)
+            throw new InvalidOperationException("Retained preceding Private release evidence changed after plan preparation.");
+    }
+
+    private static CandidateFile Capture(string root, string path) =>
+        new(
+            Path.GetRelativePath(root, path).Replace('\\', '/'),
+            new FileInfo(path).Length,
+            ReleaseCandidateBuilder.Hash(path));
 
     public static async Task<Verification> VerifyPublishedAsync(
         ReleaseProfile profile,

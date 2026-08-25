@@ -6,15 +6,13 @@
     "sessionId": "eb9f997c46c34cb4a27cac3a143c5f3a",
     "launchWindowStyle": "Minimized",
     "visibleWindow": false,
-    "reviewVerdict": "accepted-blind-independent-review",
+    "reviewVerdict": "accepted-blind-independent-review-menu-focus",
     "productAssemblySha256": "927245453F6B6E74C5213065E835FD9C64A1240F9DBA8F8428434BACA9D1CF56"
   },
   "renderer": {
     "path": "scripts/Build-GuestBedGizmoPreview.ps1",
-    "sha256": "5DD39A61CB9FC518E803ABAA72443CB22BD1588BF0F5480ED08E8786D18393BD",
-    "imageMagickVersionLine": "Version: ImageMagick 7.1.2-18 Q16-HDRI x64 d4e4b2b:20260322 https://imagemagick.org",
-    "fontPath": "release/templates/workshop/fonts/Oswald-SemiBold.ttf",
-    "fontSha256": "5B38C246E255A12F5712D640D56BCCED0472466FC68983D2D0410EC0457C2817"
+    "sha256": "FDD4736135401C00F960E689419FA9A12E2ADFBB273D8DBD666F6D7F0DF54FD7",
+    "imageMagickVersionLine": "Version: ImageMagick 7.1.2-18 Q16-HDRI x64 d4e4b2b:20260322 https://imagemagick.org"
   },
   "source": {
     "path": "mods/GuestBedGizmo/Release/workshop/source/accepted-20260824T121936256Z/e2e-screenshot-000005.png",
@@ -27,53 +25,31 @@
   },
   "layout": {
     "canvas": { "width": 1164, "height": 655 },
-    "sourceCrop": { "x": 432, "y": 108, "width": 850, "height": 600 },
-    "image": { "x": 414, "y": 73, "width": 720, "height": 508 },
+    "mode": "menu-focus",
     "menuCrop": { "x": 1474, "y": 786, "width": 126, "height": 114 },
-    "menuImage": { "x": 78, "y": 421, "width": 234, "height": 208 },
-    "typography": {
-      "titlePointSize": 42,
-      "titleX": 48,
-      "titleY": 98,
-      "titleInterlineSpacing": -5,
-      "kickerPointSize": 31,
-      "kickerX": 48,
-      "kickerY": 230,
-      "supportPointSize": 21,
-      "supportX": 48,
-      "supportY": 330
-    }
+    "menuImage": { "x": 272, "y": 47, "width": 620, "height": 561 }
   },
   "colors": {
     "outer": "#182532",
     "panel": "#10161C",
-    "primary": "#F4E7C8",
-    "accent": "#E7653C",
-    "muted": "#A8BCD0",
     "frame": "#D9BE83"
-  },
-  "copy": {
-    "eyebrow": "RIMWORLD 1.6 • HOSPITALITY",
-    "title": "HOSPITALITY +\\nIDEOLIGY PATCH",
-    "kicker": "GUESTS JOIN\\nTHE MENU",
-    "support": "FOUR TYPES. ONE GIZMO."
   },
   "outputs": {
     "workshop": {
       "path": "mods/GuestBedGizmo/Release/workshop/preview-main.png",
-      "alt": "Hospitality + Ideoligy Patch title beside a verified in-game RimWorld bed owner menu listing colonists, prisoners, slaves, and guests",
+      "alt": "Hospitality + Ideology Patch preview showing the verified RimWorld bed owner menu for colonists, prisoners, slaves, and guests",
       "width": 1164,
       "height": 655,
-      "bytes": 609742,
-      "sha256": "48C2AA89B06EA6C97C82229CCE78FB88F0734FBD92D68B67AFAC12889A53ECE5"
+      "bytes": 164848,
+      "sha256": "BEB835A980B96B3285B803C3686CAC1746BD3711A4E2D4E3AF28981A1F326D7B"
     },
     "about": {
       "path": "mods/GuestBedGizmo/About/Preview.png",
-      "alt": "Hospitality + Ideoligy Patch title beside a verified in-game RimWorld bed owner menu listing colonists, prisoners, slaves, and guests",
+      "alt": "Hospitality + Ideology Patch preview showing the verified RimWorld bed owner menu for colonists, prisoners, slaves, and guests",
       "width": 640,
       "height": 360,
-      "bytes": 214853,
-      "sha256": "B98A0F1A8F2295AE1E36F6FD1EABA94BED29C06C032ED3DDEA3FF309ACD0B8BB"
+      "bytes": 70314,
+      "sha256": "5C71898680D79435BC61AA640968D698AC1FB289C8A4F4B0EECBBA42029A546E"
     }
   }
 }

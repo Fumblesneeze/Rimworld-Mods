@@ -1,10 +1,10 @@
-# Hospitality + Ideoligy Patch
+# Hospitality + Ideology Patch
 
 Hospitality guest beds now use RimWorld's ordinary bed-owner menu.
 
-Select a bed and choose **For colonists**, **For prisoners**, **For slaves**, or **For guests** from one familiar command. Hospitality's separate legacy guest-bed toggle is removed; its other guest-bed controls remain available.
+Select a bed and choose **For colonists**, **For prisoners**, **For slaves**, or **For guests** from one familiar command.
 
-No settings or saved data.
+Safe to add or remove during a save game.
 
 ## Requirements
 
@@ -12,5 +12,3 @@ No settings or saved data.
 - Harmony
 - Ideology
 - Hospitality Continued
-
-Package: `fumblesneeze.guestbedgizmo`.

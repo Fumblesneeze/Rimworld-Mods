@@ -246,6 +246,7 @@ public static class TestSnippet
                 Assert.That(failure.Invoke(null, new object[] { "submit", true }), Is.EqualTo("submit-indeterminate"));
                 Assert.That(failure.Invoke(null, new object[] { "preview-submit", true }), Is.EqualTo("preview-submit-indeterminate"));
                 Assert.That(failure.Invoke(null, new object[] { "dependency-remove", false }), Is.EqualTo("dependency-failed-definite"));
+                Assert.That(failure.Invoke(null, new object[] { "app-dependency-add", true }), Is.EqualTo("dependency-indeterminate"));
                 Assert.That(correlation.Invoke(null, new object[] { 17UL, 23UL, 17UL, 23UL }), Is.True);
                 Assert.That(correlation.Invoke(null, new object[] { 17UL, 23UL, 17UL, 99UL }), Is.False);
                 Assert.That(invalid.Invoke(null, new object[] { 0UL }), Is.True);
@@ -253,6 +254,50 @@ public static class TestSnippet
                 Assert.That(ownerAbsence.Invoke(null, new object[] { 0u, 0u, 0 }), Is.True);
                 Assert.That(ownerAbsence.Invoke(null, new object[] { 2u, 1u, 0 }), Is.False);
                 Assert.That(ownerAbsence.Invoke(null, new object[] { 1u, 1u, 1 }), Is.False);
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(compilerRoot)) Directory.Delete(compilerRoot, true);
+        }
+    }
+
+    [Test]
+    public void Checked_in_Steam_publisher_queries_and_mutates_exact_application_dependencies()
+    {
+        var root = FindRepositoryRoot();
+        var compilerRoot = Path.Combine(Path.GetTempPath(), "gateway-release-app-dependencies-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var sourcePath = Path.Combine(root, "scripts", "Fixtures", "GatewaySteamWorkshopPublisher.cs");
+            var compiler = new DotNetGatewaySourceCompiler(temporaryRoot: compilerRoot);
+            var assembly = Assembly.Load(compiler.Compile(new GatewaySourceCompilationRequest(
+                sourcePath,
+                Path.GetDirectoryName(typeof(Pawn).Assembly.Location)!,
+                typeof(GatewaySessionManifest).Assembly.Location)));
+            var source = File.ReadAllText(sourcePath);
+            var safety = assembly.GetType("GatewaySteamWorkshopPublisher.PublisherSafety", throwOnError: true)!;
+            var correlation = safety.GetMethod("CallbackAppIdsMatch", BindingFlags.Public | BindingFlags.Static);
+            var existingIdentity = safety.GetMethod("ExistingItemIdentityMatches", BindingFlags.Public | BindingFlags.Static);
+            var exactChildInventory = safety.GetMethod("ExactChildInventoryFits", BindingFlags.Public | BindingFlags.Static);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(correlation, Is.Not.Null);
+                Assert.That(existingIdentity, Is.Not.Null);
+                Assert.That(exactChildInventory, Is.Not.Null);
+                Assert.That(correlation!.Invoke(null, new object[] { 17UL, 1392840u, 17UL, 1392840u }), Is.True);
+                Assert.That(correlation.Invoke(null, new object[] { 17UL, 1392840u, 17UL, 1149640u }), Is.False);
+                Assert.That(existingIdentity!.Invoke(null, new object[] { 17UL, 23UL, 294100u, 17UL, 23UL, 294100u }), Is.True);
+                Assert.That(existingIdentity.Invoke(null, new object[] { 17UL, 23UL, 294100u, 17UL, 99UL, 294100u }), Is.False);
+                Assert.That(exactChildInventory!.Invoke(null, new object[] { 64u }), Is.True);
+                Assert.That(exactChildInventory.Invoke(null, new object[] { 65u }), Is.False,
+                    "An oversized Workshop dependency inventory must fail closed instead of truncating stale children.");
+                Assert.That(source, Does.Contain("SteamUGC.GetAppDependencies"));
+                Assert.That(source, Does.Contain("SteamUGC.AddAppDependency"));
+                Assert.That(source, Does.Contain("SteamUGC.RemoveAppDependency"));
+                Assert.That(source, Does.Contain("RemoteAppDependencies"));
+                Assert.That(source, Does.Contain("requiredDlcAppId"));
             });
         }
         finally

@@ -17,7 +17,7 @@ public sealed class ReleaseProfileTests
         Assert.That(profiles.Select(profile => profile.PackageId).Distinct(StringComparer.OrdinalIgnoreCase).Count(), Is.EqualTo(profiles.Count));
 
         var guest = profiles.Single(profile => profile.PackageId == "fumblesneeze.guestbedgizmo");
-        Assert.That(guest.Title, Is.EqualTo("Hospitality + Ideoligy Patch"));
+        Assert.That(guest.Title, Is.EqualTo("Hospitality + Ideology Patch"));
         Assert.That(guest.PublishedFileId, Does.Match("^[1-9][0-9]{5,19}$"));
         Assert.That(guest.AllowFirstPublication, Is.False);
         Assert.That(
@@ -25,10 +25,55 @@ public sealed class ReleaseProfileTests
             Is.EqualTo(guest.PublishedFileId));
         Assert.That(guest.Visibility, Is.EqualTo("Private"));
         Assert.That(guest.RequiredWorkshopItems, Is.EquivalentTo(new[] { "2009463077", "3509486825" }));
+        var requiredDlc = typeof(ReleaseProfile).GetProperty("RequiredDlcAppIds");
+        Assert.That(requiredDlc, Is.Not.Null);
+        Assert.That((IReadOnlyList<string>)requiredDlc!.GetValue(guest)!, Is.EqualTo(new[] { "1392840" }));
+        Assert.That(typeof(ReleasePublicationPlan).GetProperty("RequiredDlcAppIds"), Is.Not.Null);
+        Assert.That(typeof(ReleasePublicationPlan).GetProperty("PreviousPrivateReleaseEvidence"), Is.Not.Null);
+        Assert.That(typeof(ReleasePreparationResult).GetProperty("RequiredDlcAppIds"), Is.Not.Null);
         Assert.DoesNotThrow(() => ReleaseEnvironmentValidator.Validate(guest));
-        Assert.That(
-            Assert.Throws<InvalidOperationException>(() => ReleaseChangeNotePolicy.Validate(guest))!.Message,
-            Does.Contain("specific player-facing note"));
+        Assert.DoesNotThrow(() => ReleaseChangeNotePolicy.Validate(guest));
+    }
+
+    [Test]
+    public void SteamDlcApplicationGraph_IsStrictAndSeparateFromWorkshopItems()
+    {
+        var root = TestRepository.FindRoot();
+        var source = Path.Combine(root, "mods", "GuestBedGizmo", "Release", "release.json");
+        var original = File.ReadAllText(source);
+        var missingDlcField = Path.Combine(Path.GetDirectoryName(source)!, $"release-{Guid.NewGuid():N}.json");
+        var duplicateDlc = Path.Combine(Path.GetDirectoryName(source)!, $"release-{Guid.NewGuid():N}.json");
+        var consumerAppAsDlc = Path.Combine(Path.GetDirectoryName(source)!, $"release-{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(missingDlcField, System.Text.RegularExpressions.Regex.Replace(
+                original,
+                "\\s*\"requiredDlcAppIds\"\\s*:\\s*\\[[^\\]]*\\]\\s*,",
+                string.Empty,
+                System.Text.RegularExpressions.RegexOptions.Singleline));
+            File.WriteAllText(duplicateDlc, System.Text.RegularExpressions.Regex.Replace(
+                original,
+                "(\"requiredDlcAppIds\"\\s*:\\s*\\[\\s*\"1392840\")",
+                "$1, \"1392840\"",
+                System.Text.RegularExpressions.RegexOptions.Singleline));
+            File.WriteAllText(consumerAppAsDlc, original.Replace("\"1392840\"", "\"294100\""));
+
+            Assert.That(
+                Assert.Throws<ReleaseProfileException>(() => ReleaseProfileCatalog.Load(root, missingDlcField))!.Message,
+                Does.Contain("requiredDlcAppIds"));
+            Assert.That(
+                Assert.Throws<ReleaseProfileException>(() => ReleaseProfileCatalog.Load(root, duplicateDlc))!.Message,
+                Does.Contain("unique"));
+            Assert.That(
+                Assert.Throws<ReleaseProfileException>(() => ReleaseProfileCatalog.Load(root, consumerAppAsDlc))!.Message,
+                Does.Contain("consumer application"));
+        }
+        finally
+        {
+            File.Delete(missingDlcField);
+            File.Delete(duplicateDlc);
+            File.Delete(consumerAppAsDlc);
+        }
     }
 
     [Test]
@@ -49,7 +94,37 @@ public sealed class ReleaseProfileTests
     }
 
     [Test]
-    public void ExistingPrivateItem_IsNotUpdatedWithoutVerifiableChangeHistory()
+    public void ExistingItemOwnerEvidence_UsesTheAuthenticatedOldTitleDuringATitleCorrection()
+    {
+        var root = TestRepository.FindRoot();
+        var guest = ReleaseProfileCatalog.Discover(root)
+            .Single(profile => profile.PackageId == "fumblesneeze.guestbedgizmo");
+        var baseline = WorkshopRemoteBaseline.Create(
+            guest.PublishedFileId!,
+            "Hospitality + Ideoligy Patch",
+            new string('A', 64),
+            100,
+            guest.Tags,
+            "prior-plan",
+            "Private",
+            "https://example.invalid/preview.png",
+            new string('B', 64),
+            guest.SteamUserId,
+            guest.SteamAppId,
+            100,
+            1,
+            guest.RequiredWorkshopItems,
+            [],
+            []);
+
+        var projected = ReleasePreparer.ProjectExistingOwnerEvidence(guest, baseline);
+
+        Assert.That(projected.Items.Single().Title, Is.EqualTo("Hospitality + Ideoligy Patch"));
+        Assert.That(projected.ExactTitleMatches, Is.Zero);
+    }
+
+    [Test]
+    public void ExistingPrivateItem_RequiresTheExactRetainedReviewedPublisherReceipt()
     {
         var root = TestRepository.FindRoot();
         var guest = ReleaseProfileCatalog.Discover(root)
@@ -60,9 +135,81 @@ public sealed class ReleaseProfileTests
             PreviousChangeNote = "Initial specific release note."
         };
 
-        var error = Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(guest, CancellationToken.None));
-        Assert.That(error!.Message, Does.Contain("private Workshop item"));
+        var fixture = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"private-history-{Guid.NewGuid():N}");
+        var packageRoot = Path.Combine(fixture, "artifacts", "Releases", guest.PackageId);
+        var plan = new string('A', 64);
+        var receipt = Path.Combine(packageRoot, "publication", "prior", "publication-receipt.json");
+        var worker = Path.Combine(packageRoot, "workers", plan, "worker-result.json");
+        var evidenceRoot = Path.Combine(packageRoot, "subscriber", "prior");
+        var before = Path.Combine(evidenceRoot, "before.png");
+        var after = Path.Combine(evidenceRoot, "after.png");
+        const string title = "Prior private title";
+        var candidateDigest = new string('B', 64);
+        Directory.CreateDirectory(Path.Combine(fixture, "mods"));
+        Directory.CreateDirectory(Path.Combine(fixture, "openspec"));
+        File.WriteAllText(Path.Combine(fixture, "AGENTS.md"), "fixture");
+        Directory.CreateDirectory(Path.GetDirectoryName(receipt)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(worker)!);
+        Directory.CreateDirectory(evidenceRoot);
+        File.WriteAllBytes(before, [1]);
+        File.WriteAllBytes(after, [2]);
+        File.WriteAllText(Path.Combine(packageRoot, "publication-state.txt"),
+            $"complete-reviewed|{plan}|{guest.PublishedFileId}");
+        File.WriteAllText(receipt, System.Text.Json.JsonSerializer.Serialize(new
+        {
+            schema = "RimWorldModReleaseReceipt/v1",
+            packageId = guest.PackageId,
+            title,
+            publishedFileId = guest.PublishedFileId,
+            publicationPlanSha256 = plan,
+            candidateDigest,
+            changeNote = guest.PreviousChangeNote,
+            subscriberEvidenceStatus = "awaiting-personal-review",
+            subscriber = new
+            {
+                status = "passed",
+                evidenceRoot,
+                screenshots = new[] { before, after }
+            },
+            changeNoteVerification = new
+            {
+                status = "steam-callback-confirmed-private-history-not-publicly-readable",
+                changeNote = guest.PreviousChangeNote
+            }
+        }));
+        var workerResult = new ReleasePublishResult(
+            "published-steam-verified-subscriber-evidence-awaiting-personal-review",
+            guest.PackageId,
+            title,
+            guest.PublishedFileId!,
+            $"https://steamcommunity.com/sharedfiles/filedetails/?id={guest.PublishedFileId}",
+            plan,
+            candidateDigest,
+            receipt,
+            ReleaseCandidateBuilder.Hash(receipt),
+            evidenceRoot,
+            "awaiting personal review",
+            "prior-identity-commit",
+            Path.Combine(fixture, "Mods", guest.PackageId),
+            true,
+            true);
+        File.WriteAllText(worker,
+            System.Text.Json.JsonSerializer.Serialize(workerResult, McpJsonContext.Default.ReleasePublishResult));
+        try
+        {
+            var evidence = WorkshopChangeHistoryVerifier.ValidateRetainedPrivateReceipt(fixture, guest);
+            Assert.That(evidence.WorkerResult.Sha256, Is.EqualTo(ReleaseCandidateBuilder.Hash(worker)));
+            Assert.That(evidence.Receipt.Sha256, Is.EqualTo(ReleaseCandidateBuilder.Hash(receipt)));
+
+            File.WriteAllText(Path.Combine(packageRoot, "publication-state.txt"),
+                $"subscriber-evidence-awaiting-review|{plan}|{guest.PublishedFileId}");
+            Assert.Throws<InvalidOperationException>(() =>
+                WorkshopChangeHistoryVerifier.ValidateRetainedPrivateReceipt(fixture, guest));
+        }
+        finally
+        {
+            Directory.Delete(fixture, recursive: true);
+        }
     }
 
     [Test]

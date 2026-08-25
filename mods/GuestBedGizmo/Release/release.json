@@ -2,7 +2,7 @@
   "schema": "RimWorldModRelease/v1",
   "project": "mods/GuestBedGizmo/GuestBedGizmo.csproj",
   "packageId": "fumblesneeze.guestbedgizmo",
-  "title": "Hospitality \u002B Ideoligy Patch",
+  "title": "Hospitality \u002B Ideology Patch",
   "author": "Fumblesneeze",
   "distributionKind": "Product",
   "rimWorldVersion": "1.6",
@@ -23,6 +23,9 @@
     "2009463077",
     "3509486825"
   ],
+  "requiredDlcAppIds": [
+    "1392840"
+  ],
   "hardRuntimeAssemblyReferences": [],
   "buildOperation": "mod_build",
   "presentationOperation": "presentation_render",
@@ -35,7 +38,7 @@
   ],
   "description": "workshop/description.bbcode.txt",
   "preview": "workshop/preview-main.png",
-  "changeNote": "",
+  "changeNote": "Corrected the title, simplified the Workshop page and preview around the four-choice bed menu, and declared Ideology as required DLC.",
   "verificationProfile": "mods/GuestBedGizmo/Release/subscriber-verification.json",
   "previousChangeNote": "Initial release."
 }

@@ -122,7 +122,7 @@ public static class ReleasePlanAdmission
         }
         if (plan.Schema != "RimWorldModReleasePlan/v2" || plan.MutatesSteam)
             throw new InvalidOperationException("Publication plan schema or mutation-free dry-run marker is invalid.");
-        ValidateFrozenProfile(root, plan);
+        ValidateFrozenProfile(root, plan, requirePreviousPrivateEvidence: true);
         if (!string.Equals(plan.ConfirmationNonce, confirmationNonce, StringComparison.Ordinal) ||
             confirmationNonce.Length < 32 || confirmationNonce.Any(character => !Uri.IsHexDigit(character)))
             throw new InvalidOperationException("Admission nonce does not match the exact prepared plan.");
@@ -207,7 +207,7 @@ public static class ReleasePlanAdmission
         if (plan.Schema != "RimWorldModReleasePlan/v2" || plan.MutatesSteam ||
             !string.Equals(plan.ConfirmationNonce, confirmationNonce, StringComparison.Ordinal))
             throw new InvalidOperationException("Publication recovery plan schema or nonce is invalid.");
-        ValidateFrozenProfile(root, plan);
+        ValidateFrozenProfile(root, plan, requirePreviousPrivateEvidence: false);
         if (durableId is null)
             durableId = TryResolveConsistentIdentity(root, plan);
 
@@ -256,7 +256,10 @@ public static class ReleasePlanAdmission
     private static bool IsHash(string value) =>
         value.Length == 64 && value.All(Uri.IsHexDigit);
 
-    private static void ValidateFrozenProfile(string root, ReleasePublicationPlan plan)
+    private static void ValidateFrozenProfile(
+        string root,
+        ReleasePublicationPlan plan,
+        bool requirePreviousPrivateEvidence)
     {
         var frozenPath = RepositoryRoot.ContainedPath(root, plan.FrozenReleaseProfilePath);
         RequireImmutableFile(frozenPath, plan.ReleaseProfileSha256, null, "Frozen release profile");
@@ -275,9 +278,62 @@ public static class ReleasePlanAdmission
             profile.AllowFirstPublication != plan.AllowFirstPublication ||
             !string.Equals(profile.ChangeNote, plan.ChangeNote, StringComparison.Ordinal) ||
             !profile.Tags.SequenceEqual(plan.Tags, StringComparer.Ordinal) ||
-            !profile.RequiredWorkshopItems.SequenceEqual(plan.RequiredWorkshopItems, StringComparer.Ordinal))
+            !profile.RequiredWorkshopItems.SequenceEqual(plan.RequiredWorkshopItems, StringComparer.Ordinal) ||
+            !(profile.RequiredDlcAppIds ?? []).SequenceEqual(plan.RequiredDlcAppIds ?? [], StringComparer.Ordinal))
             throw new InvalidOperationException("Frozen release profile does not match the reviewed publication plan.");
+        ValidatePreviousPrivateEvidence(root, plan, requirePreviousPrivateEvidence);
         _ = RepositoryRoot.ContainedPath(root, profile.Project);
+    }
+
+    private static void ValidatePreviousPrivateEvidence(
+        string root,
+        ReleasePublicationPlan plan,
+        bool requirePresence)
+    {
+        var evidence = plan.PreviousPrivateReleaseEvidence;
+        var isPrivateUpdate = plan.PublishedFileId is not null && plan.Visibility == "Private";
+        if (evidence is null)
+        {
+            if (requirePresence && isPrivateUpdate)
+                throw new InvalidOperationException("A Private update plan must bind the exact preceding reviewed release evidence.");
+            return;
+        }
+        if (!isPrivateUpdate ||
+            !string.Equals(evidence.PublishedFileId, plan.PublishedFileId, StringComparison.Ordinal) ||
+            !string.Equals(evidence.ChangeNote, plan.FrozenProfile.PreviousChangeNote, StringComparison.Ordinal) ||
+            evidence.PublicationPlanSha256.Length != 64 ||
+            evidence.PublicationPlanSha256.Any(character => !Uri.IsHexDigit(character)))
+            throw new InvalidOperationException("Previous Private release evidence identity does not match the publication plan.");
+        RequireImmutableFile(
+            RepositoryRoot.ContainedPath(root, evidence.FrozenWorkerResult.Path),
+            evidence.FrozenWorkerResult.Sha256,
+            evidence.FrozenWorkerResult.Bytes,
+            "Frozen preceding worker result");
+        RequireImmutableFile(
+            RepositoryRoot.ContainedPath(root, evidence.FrozenReceipt.Path),
+            evidence.FrozenReceipt.Sha256,
+            evidence.FrozenReceipt.Bytes,
+            "Frozen preceding publication receipt");
+        if (evidence.WorkerResult.Bytes != evidence.FrozenWorkerResult.Bytes ||
+            !string.Equals(evidence.WorkerResult.Sha256, evidence.FrozenWorkerResult.Sha256, StringComparison.OrdinalIgnoreCase) ||
+            evidence.Receipt.Bytes != evidence.FrozenReceipt.Bytes ||
+            !string.Equals(evidence.Receipt.Sha256, evidence.FrozenReceipt.Sha256, StringComparison.OrdinalIgnoreCase) ||
+            !plan.VerificationFiles.Contains(evidence.FrozenWorkerResult) ||
+            !plan.VerificationFiles.Contains(evidence.FrozenReceipt))
+            throw new InvalidOperationException("Previous Private release evidence is not frozen into the admitted verification inputs.");
+        if (requirePresence)
+        {
+            RequireImmutableFile(
+                RepositoryRoot.ContainedPath(root, evidence.WorkerResult.Path),
+                evidence.WorkerResult.Sha256,
+                evidence.WorkerResult.Bytes,
+                "Preceding worker result");
+            RequireImmutableFile(
+                RepositoryRoot.ContainedPath(root, evidence.Receipt.Path),
+                evidence.Receipt.Sha256,
+                evidence.Receipt.Bytes,
+                "Preceding publication receipt");
+        }
     }
 
     private static void RequireImmutableFile(string path, string expectedHash, long? expectedBytes, string label)

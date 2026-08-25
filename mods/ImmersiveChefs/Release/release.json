@@ -22,6 +22,7 @@
   "requiredWorkshopItems": [
     "2009463077"
   ],
+  "requiredDlcAppIds": [],
   "hardRuntimeAssemblyReferences": [],
   "buildOperation": "mod_build",
   "presentationOperation": "presentation_render",
