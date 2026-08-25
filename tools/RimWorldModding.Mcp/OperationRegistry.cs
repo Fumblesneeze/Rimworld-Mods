@@ -344,6 +344,7 @@ public sealed class OperationRegistry
             profile.PublishedFileId,
             profile.AllowFirstPublication,
             profile.RequiredWorkshopItems,
+            profile.RequiredDlcAppIds,
             Path.GetRelativePath(_repositoryRoot, profile.Project).Replace('\\', '/'),
             Path.GetRelativePath(_repositoryRoot, profile.PackageSource).Replace('\\', '/'),
             Path.GetRelativePath(_repositoryRoot, profile.Description).Replace('\\', '/'),

@@ -4,7 +4,7 @@
     <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
     <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
     <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
-    <RimWorldModName>Hospitality + Ideoligy Patch</RimWorldModName>
+    <RimWorldModName>Hospitality + Ideology Patch</RimWorldModName>
     <RimWorldPackageId>fumblesneeze.guestbedgizmo</RimWorldPackageId>
     <RimWorldDistributionKind>Product</RimWorldDistributionKind>
     <Authors>Fumblesneeze</Authors>

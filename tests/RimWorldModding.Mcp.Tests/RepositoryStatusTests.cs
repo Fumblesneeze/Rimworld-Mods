@@ -22,7 +22,7 @@ public sealed class RepositoryStatusTests
         Assert.That(status.RepositoryRoot, Is.EqualTo(root));
         Assert.That(status.Mods.Select(mod => mod.PackageId), Does.Contain("fumblesneeze.rimworlddevgateway"));
         Assert.That(status.Mods.Select(mod => mod.PackageId), Does.Contain("fumblesneeze.guestbedgizmo"));
-        Assert.That(status.Mods.Single(mod => mod.PackageId == "fumblesneeze.guestbedgizmo").DisplayName, Is.EqualTo("Hospitality + Ideoligy Patch"));
+        Assert.That(status.Mods.Single(mod => mod.PackageId == "fumblesneeze.guestbedgizmo").DisplayName, Is.EqualTo("Hospitality + Ideology Patch"));
     }
 
     [Test]

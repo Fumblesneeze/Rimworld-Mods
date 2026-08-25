@@ -24,6 +24,7 @@ public sealed record ReleaseProfile(
     string Visibility,
     IReadOnlyList<string> Tags,
     IReadOnlyList<string> RequiredWorkshopItems,
+    IReadOnlyList<string> RequiredDlcAppIds,
     IReadOnlyList<string> HardRuntimeAssemblyReferences,
     string BuildOperation,
     string PresentationOperation,
@@ -44,7 +45,7 @@ public static class ReleaseProfileCatalog
         "schema", "project", "packageId", "title", "author", "distributionKind",
         "rimWorldVersion", "rimWorldBuild", "rimWorldRuntimeBuild", "steamBuildId",
         "managedAssemblySha256", "steamAppId", "steamUserId", "publishedFileId",
-        "allowFirstPublication", "visibility", "tags", "requiredWorkshopItems", "hardRuntimeAssemblyReferences",
+        "allowFirstPublication", "visibility", "tags", "requiredWorkshopItems", "requiredDlcAppIds", "hardRuntimeAssemblyReferences",
         "buildOperation", "presentationOperation", "packageSource", "packageInclude",
         "description", "preview", "previousChangeNote", "changeNote", "verificationProfile"
     };
@@ -150,6 +151,7 @@ public static class ReleaseProfileCatalog
             var rimWorldRuntimeBuild = RequiredString(element, "rimWorldRuntimeBuild");
             var steamBuildId = RequiredString(element, "steamBuildId");
             var steamUserId = RequiredString(element, "steamUserId");
+            var steamAppId = RequiredInt32(element, "steamAppId");
             if (!Regex.IsMatch(rimWorldVersion, "^1\\.[0-9]+$") ||
                 !Regex.IsMatch(rimWorldBuild, "^1\\.[0-9]+\\.[0-9]+ rev[0-9]+$") ||
                 !Regex.IsMatch(rimWorldRuntimeBuild, "^1\\.[0-9]+\\.[0-9]+ rev[0-9]+$") ||
@@ -161,6 +163,9 @@ public static class ReleaseProfileCatalog
             var dependencies = RequiredStringArray(element, "requiredWorkshopItems", allowEmpty: true);
             if (dependencies.Any(value => !Regex.IsMatch(value, "^[1-9][0-9]{5,19}$")))
                 throw new ReleaseProfileException("requiredWorkshopItems must contain nonzero Steam item IDs.");
+            var requiredDlcAppIds = RequiredUniqueUInt32StringArray(element, "requiredDlcAppIds");
+            if (requiredDlcAppIds.Contains(steamAppId.ToString(), StringComparer.Ordinal))
+                throw new ReleaseProfileException("requiredDlcAppIds must not contain the Workshop consumer application itself.");
             var hardRuntimeReferences = RequiredStringArray(element, "hardRuntimeAssemblyReferences", allowEmpty: true);
             if (hardRuntimeReferences.Any(value => !Regex.IsMatch(value, "^[A-Za-z0-9_.-]{1,200}$")) ||
                 hardRuntimeReferences.Distinct(StringComparer.OrdinalIgnoreCase).Count() != hardRuntimeReferences.Length)
@@ -198,13 +203,14 @@ public static class ReleaseProfileCatalog
                 rimWorldRuntimeBuild,
                 steamBuildId,
                 managedHash,
-                RequiredInt32(element, "steamAppId"),
+                steamAppId,
                 steamUserId,
                 publishedFileId,
                 allowFirst,
                 visibility,
                 tags,
                 dependencies,
+                requiredDlcAppIds,
                 hardRuntimeReferences,
                 buildOperation,
                 presentationOperation,
@@ -301,6 +307,22 @@ public static class ReleaseProfileCatalog
             return value.GetString()!.Trim();
         }).Distinct(StringComparer.Ordinal).ToArray();
         if (!allowEmpty && values.Length == 0) throw new ReleaseProfileException($"Release profile '{name}' must not be empty.");
+        return values;
+    }
+
+    private static string[] RequiredUniqueUInt32StringArray(JsonElement root, string name)
+    {
+        if (!root.TryGetProperty(name, out var property) || property.ValueKind != JsonValueKind.Array)
+            throw new ReleaseProfileException($"Release profile requires string array '{name}'.");
+        var values = property.EnumerateArray().Select(value =>
+        {
+            if (value.ValueKind != JsonValueKind.String ||
+                !uint.TryParse(value.GetString(), out var parsed) || parsed == 0)
+                throw new ReleaseProfileException($"Release profile '{name}' must contain nonzero Steam application IDs.");
+            return parsed.ToString();
+        }).ToArray();
+        if (values.Distinct(StringComparer.Ordinal).Count() != values.Length)
+            throw new ReleaseProfileException($"Release profile '{name}' must contain unique Steam application IDs.");
         return values;
     }
 }

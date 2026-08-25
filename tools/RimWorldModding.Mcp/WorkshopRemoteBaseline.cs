@@ -20,6 +20,7 @@ public sealed record WorkshopRemoteBaseline(
     ulong ContentBytes,
     uint UpdatedUnixSeconds,
     IReadOnlyList<string> Dependencies,
+    IReadOnlyList<string> AppDependencies,
     IReadOnlyList<string> AdditionalPreviews,
     string StateDigest)
 {
@@ -36,6 +37,7 @@ public sealed record WorkshopRemoteBaseline(
         var tags = GatewayWorkshopClient.String(remote, "RemoteTags").Split(',')
             .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var dependencies = ReadUlongArray(remote, "RemoteDependencies");
+        var appDependencies = ReadUlongArray(remote, "RemoteAppDependencies");
         var additional = await ReadAdditionalPreviewsAsync(remote, http, cancellationToken);
         return Create(
             GatewayWorkshopClient.UInt64(remote, "PublishedFileId").ToString(),
@@ -52,6 +54,7 @@ public sealed record WorkshopRemoteBaseline(
             GatewayWorkshopClient.UInt64(remote, "RemoteContentBytes"),
             checked((uint)GatewayWorkshopClient.UInt64(remote, "RemoteUpdatedUnixSeconds")),
             dependencies,
+            appDependencies,
             additional);
     }
 
@@ -67,7 +70,7 @@ public sealed record WorkshopRemoteBaseline(
     {
         var rebuilt = Create(PublishedFileId, Title, DescriptionSha256, DescriptionUtf8Bytes, Tags, Metadata,
             Visibility, PreviewUrl, PreviewSha256, OwnerSteamId, ConsumerAppId, ContentBytes,
-            UpdatedUnixSeconds, Dependencies, AdditionalPreviews);
+            UpdatedUnixSeconds, Dependencies, AppDependencies, AdditionalPreviews);
         if (!string.Equals(rebuilt.StateDigest, StateDigest, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Publication plan remote baseline digest is invalid.");
     }
@@ -82,9 +85,9 @@ public sealed record WorkshopRemoteBaseline(
 
     public void AssertItemIdentity(ReleaseProfile profile)
     {
-        if (PublishedFileId != profile.PublishedFileId || Title != profile.Title ||
+        if (PublishedFileId != profile.PublishedFileId ||
             OwnerSteamId != profile.SteamUserId || ConsumerAppId != profile.SteamAppId)
-            throw new InvalidOperationException("Authenticated Workshop item ID/title/owner/app identity does not match the release profile.");
+            throw new InvalidOperationException("Authenticated Workshop item ID/owner/app identity does not match the release profile.");
     }
 
     public static IReadOnlyList<string> DescribeDiff(
@@ -103,6 +106,7 @@ public sealed record WorkshopRemoteBaseline(
             $"VISIBILITY {baseline.Visibility} -> {profile.Visibility}",
             $"PREVIEW {baseline.PreviewSha256} -> {desiredPreview}",
             $"DEPENDENCIES [{string.Join(", ", baseline.Dependencies)}] -> [{string.Join(", ", profile.RequiredWorkshopItems.OrderBy(value => value, StringComparer.Ordinal))}]",
+            $"APP DEPENDENCIES [{string.Join(", ", baseline.AppDependencies)}] -> [{string.Join(", ", profile.RequiredDlcAppIds.OrderBy(value => value, StringComparer.Ordinal))}]",
             $"CONTENT remote-bytes={baseline.ContentBytes},updated={baseline.UpdatedUnixSeconds} -> {candidate.Files.Count} files,digest={candidate.ContentDigest}",
             $"METADATA {baseline.Metadata} -> exact admitted publication-plan SHA-256",
             $"CHANGE NOTE -> {profile.ChangeNote}"
@@ -124,22 +128,24 @@ public sealed record WorkshopRemoteBaseline(
         ulong contentBytes,
         uint updatedUnixSeconds,
         IReadOnlyList<string> dependencies,
+        IReadOnlyList<string> appDependencies,
         IReadOnlyList<string> additionalPreviews)
     {
         var sortedTags = tags.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var sortedDependencies = dependencies.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+        var sortedAppDependencies = appDependencies.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var sortedAdditional = additionalPreviews.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var canonical = string.Join("\n", new[]
         {
             publishedFileId, title, descriptionSha256, descriptionUtf8Bytes.ToString(),
             string.Join("|", sortedTags), metadata, visibility, previewSha256,
             ownerSteamId, consumerAppId.ToString(), contentBytes.ToString(), updatedUnixSeconds.ToString(),
-            string.Join("|", sortedDependencies), string.Join("|", sortedAdditional)
+            string.Join("|", sortedDependencies), string.Join("|", sortedAppDependencies), string.Join("|", sortedAdditional)
         }) + "\n";
         var digest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
         return new WorkshopRemoteBaseline(publishedFileId, title, descriptionSha256, descriptionUtf8Bytes,
             sortedTags, metadata, visibility, previewUrl, previewSha256, ownerSteamId, consumerAppId,
-            contentBytes, updatedUnixSeconds, sortedDependencies, sortedAdditional, digest);
+            contentBytes, updatedUnixSeconds, sortedDependencies, sortedAppDependencies, sortedAdditional, digest);
     }
 
     private static string[] ReadUlongArray(JsonElement root, string name)

@@ -23,6 +23,22 @@ public sealed record ReleasePublishResult(
     bool LocalPackageRestored,
     bool SteamVerified);
 
+public static class WorkshopRelationshipReconciler
+{
+    public static string[] Plan(string operationPrefix, IReadOnlyCollection<ulong> expected, IReadOnlyCollection<ulong> actual)
+    {
+        if (operationPrefix is not ("dependency" or "app-dependency"))
+            throw new ArgumentException("Unknown Workshop relationship operation prefix.", nameof(operationPrefix));
+        var desired = expected.ToHashSet();
+        var observed = actual.ToHashSet();
+        return observed.Except(desired).OrderBy(value => value)
+            .Select(value => $"{operationPrefix}-remove:{value}")
+            .Concat(desired.Except(observed).OrderBy(value => value)
+                .Select(value => $"{operationPrefix}-add:{value}"))
+            .ToArray();
+    }
+}
+
 public sealed class ReleasePublisher(string repositoryRoot)
 {
     private readonly string _repositoryRoot = RepositoryRoot.Resolve(repositoryRoot);
@@ -51,7 +67,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
         ReleaseChangeNotePolicy.Validate(profile);
         _ = SubscriberVerificationProfiles.Load(_repositoryRoot, admission.Plan.VerificationProfile);
         ReleasePackageValidator.Validate(profile, admission.Candidate);
-        await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(profile, cancellationToken);
+        var previousReleaseEvidence = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
+            _repositoryRoot, profile, cancellationToken);
+        AssertPreviousReleaseEvidence(admission.Plan, previousReleaseEvidence);
 
         var mutexName = "Local\\RimWorldModdingMcp.Release." +
                         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(profile.PackageId)))[..24];
@@ -124,6 +142,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
             ReleaseChangeNotePolicy.Validate(profile);
             _ = SubscriberVerificationProfiles.Load(_repositoryRoot, admission.Plan.VerificationProfile);
             ReleasePackageValidator.Validate(profile, admission.Candidate);
+            previousReleaseEvidence = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
+                _repositoryRoot, profile, cancellationToken);
+            AssertPreviousReleaseEvidence(admission.Plan, previousReleaseEvidence);
             cancellationToken.ThrowIfCancellationRequested();
             var durableToken = CancellationToken.None;
             deadline = DateTimeOffset.UtcNow.AddMinutes(15);
@@ -314,7 +335,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
 
         var deadline = DateTimeOffset.UtcNow.AddMinutes(15);
         var remote = await WaitRemoteBaseAsync(client, admission, publishedId, deadline, cancellationToken);
-        remote = await ReconcileDependenciesAsync(client, admission, publishedId, remote, statePath, deadline, cancellationToken);
+        remote = await ReconcileRelationshipsAsync(client, admission, publishedId, remote, statePath, deadline, cancellationToken);
         await VerifyRemotePreviewAsync(remote, admission.Plan.PreviewSha256, cancellationToken);
         var changeNoteVerification = await WorkshopChangeHistoryVerifier.VerifyPublishedAsync(
             profile, publishedId.ToString(), cancellationToken);
@@ -509,7 +530,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         throw new TimeoutException("Remote Workshop metadata did not converge to the admitted plan.");
     }
 
-    private static async Task<JsonElement> ReconcileDependenciesAsync(
+    private static async Task<JsonElement> ReconcileRelationshipsAsync(
         GatewayWorkshopClient client,
         ReleaseAdmission admission,
         ulong publishedId,
@@ -518,41 +539,75 @@ public sealed class ReleasePublisher(string repositoryRoot)
         DateTimeOffset deadline,
         CancellationToken cancellationToken)
     {
-        var expected = admission.Plan.RequiredWorkshopItems.Select(ulong.Parse).ToHashSet();
-        var actual = Dependencies(remote);
-        foreach (var operation in actual.Except(expected).Select(id => ("dependency-remove", id))
-                     .Concat(expected.Except(actual).Select(id => ("dependency-add", id))))
+        var expectedWorkshopItems = admission.Plan.RequiredWorkshopItems.Select(ulong.Parse).ToHashSet();
+        var expectedApplications = (admission.Plan.RequiredDlcAppIds ?? []).Select(ulong.Parse).ToHashSet();
+        var operations = WorkshopRelationshipReconciler.Plan(
+                "dependency", expectedWorkshopItems, Dependencies(remote))
+            .Concat(WorkshopRelationshipReconciler.Plan(
+                "app-dependency", expectedApplications, AppDependencies(remote)));
+        foreach (var planned in operations)
         {
+            var separator = planned.LastIndexOf(':');
+            var operation = planned[..separator];
+            var id = ulong.Parse(planned[(separator + 1)..]);
             _ = await QueryAsync(client, admission, publishedId, deadline, cancellationToken);
-            _ = await client.InvokeAsync(new Dictionary<string, object?>
+            var arguments = new Dictionary<string, object?>
             {
-                ["operation"] = operation.Item1,
+                ["operation"] = operation,
                 ["planSha256"] = admission.PlanSha256,
                 ["publishedFileId"] = publishedId.ToString(),
-                ["requiredWorkshopItemId"] = operation.id.ToString(),
                 ["title"] = admission.Plan.Title,
                 ["statePath"] = statePath
-            }, cancellationToken);
+            };
+            arguments[operation.StartsWith("app-dependency-", StringComparison.Ordinal)
+                ? "requiredDlcAppId"
+                : "requiredWorkshopItemId"] = id.ToString();
+            _ = await client.InvokeAsync(arguments, cancellationToken);
             var terminal = await client.WaitTerminalAsync(
                 admission.PlanSha256,
                 new HashSet<string>(["succeeded", "failed"], StringComparer.Ordinal),
                 deadline,
                 cancellationToken);
             if (GatewayWorkshopClient.String(terminal, "Status") != "succeeded")
-                throw new InvalidOperationException($"Workshop {operation.Item1} failed for {operation.id}.");
+                throw new InvalidOperationException($"Workshop {operation} failed for {id}.");
         }
         while (DateTimeOffset.UtcNow < deadline)
         {
             remote = await QueryAsync(client, admission, publishedId, deadline, cancellationToken);
-            if (Dependencies(remote).SetEquals(expected)) return remote;
+            if (Dependencies(remote).SetEquals(expectedWorkshopItems) &&
+                AppDependencies(remote).SetEquals(expectedApplications)) return remote;
             await Task.Delay(1000, cancellationToken);
         }
-        throw new TimeoutException("Remote Workshop dependency graph did not converge.");
+        throw new TimeoutException("Remote Workshop item/application dependency graphs did not converge.");
     }
 
     private static HashSet<ulong> Dependencies(JsonElement remote)
     {
         if (!GatewayWorkshopClient.TryProperty(remote, "RemoteDependencies", out var property) || property.ValueKind != JsonValueKind.Array)
+            return [];
+        return property.EnumerateArray().Select(value => value.GetUInt64()).ToHashSet();
+    }
+
+    internal static void AssertPreviousReleaseEvidence(
+        ReleasePublicationPlan plan,
+        RetainedPrivateReleaseEvidence? actual)
+    {
+        var expected = plan.PreviousPrivateReleaseEvidence;
+        if (expected is null)
+        {
+            if (actual is not null || plan.PublishedFileId is not null && plan.Visibility == "Private")
+                throw new InvalidOperationException("Private update evidence is not bound into the exact publication plan.");
+            return;
+        }
+        if (actual is null)
+            throw new InvalidOperationException("The exact preceding Private release evidence is no longer available.");
+        WorkshopChangeHistoryVerifier.AssertMatches(expected, actual);
+    }
+
+    private static HashSet<ulong> AppDependencies(JsonElement remote)
+    {
+        if (!GatewayWorkshopClient.TryProperty(remote, "RemoteAppDependencies", out var property) ||
+            property.ValueKind != JsonValueKind.Array)
             return [];
         return property.EnumerateArray().Select(value => value.GetUInt64()).ToHashSet();
     }

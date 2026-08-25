@@ -57,7 +57,7 @@
 
 ## 8. Guest Bed rename and release use — `mods/RimWorldDevGateway`
 
-- [x] 8.1 Update the Guest Bed OpenSpec contract and all public metadata to the exact title `Hospitality + Ideoligy Patch` while retaining `fumblesneeze.guestbedgizmo` and internal assembly identity.
+- [x] 8.1 Update the Guest Bed OpenSpec contract and all public metadata to the initially ordered title while retaining `fumblesneeze.guestbedgizmo` and internal assembly identity; the corrected spelling is owned by the later annotated Workshop slice.
 - [x] 8.2 Regenerate the deterministic Steam/About preview with the exact title, update its pinned manifest/brief, inspect both outputs, and obtain context-free review against the retained raw in-game frames.
 - [x] 8.3 Build and package the renamed mod through the MCP, rerun focused tests, validate the product package, and repeat live acceptance only if runtime bytes changed.
 - [x] 8.4 Perform independent scoped code review, resolve every finding, and rerun affected tests/builds.
@@ -65,3 +65,9 @@
 - [x] 8.6 Publish the admitted first item Private, verify remote truth, persist/commit its ID, reacquire the subscribed copy, exercise and inspect the native subscriber workflow, restore the local package/mod list, and retain evidence.
 - [x] 8.7 Hibernate Windows only after all requested release and verification work is complete and no recovery action remains outstanding.
 - [x] 8.8 Reproduce the subscribed-copy startup race and direct screenshot-result mismatch; require a playing map with no active/waiting long event, bound every readiness request/delay by the workflow deadline, accept the Gateway CLI's exact direct screenshot metadata, add focused regression coverage, independently review the fixes, and resume verification against the same Private Workshop item.
+
+## 9. Universal Steam DLC/Application Relationships — `mods/RimWorldDevGateway`
+
+- [x] 9.1 RED: add focused profile, plan, baseline, and Gateway fixture tests that distinguish Workshop required items from required DLC/application IDs and reject invalid/duplicate app IDs.
+- [x] 9.2 GREEN: freeze, diff, reconcile, and verify the exact Steam app-dependency graph through the universal release profile and authenticated Gateway publisher without adding product-specific code.
+- [x] 9.3 Prove the existing required-item path remains exact, run focused MCP/compiler/OpenSpec checks, and independently review the scoped publisher change before using it on the retained Private Guest Bed item.

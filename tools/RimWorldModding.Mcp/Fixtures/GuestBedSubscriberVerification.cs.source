@@ -29,7 +29,7 @@ public static class Entry
                     ["operation"] = "arrange|open|choose|observe|cleanup",
                     ["expectedWorkshopPath"] = "Exact subscribed Workshop item root for arrange."
                 },
-                new[] { "Playable map", "Hospitality + Ideoligy Patch loaded from subscribed Workshop root" }),
+                new[] { "Playable map", "Hospitality + Ideology Patch loaded from subscribed Workshop root" }),
             Workflow.Handle);
         return "release.guestbed-subscriber registered";
     }

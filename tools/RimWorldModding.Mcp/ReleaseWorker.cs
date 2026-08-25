@@ -86,7 +86,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         {
             try
             {
-                _ = ReadValidatedResult(paths, packageId, planSha256, null, null);
+                _ = ReadValidatedResult(_repositoryRoot, paths.Result, packageId, planSha256, null, null);
                 return new ReleaseWorkerStatus("completed", paths.Lease, null, null, paths.Result, null);
             }
             catch
@@ -273,21 +273,28 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
     {
         result = null;
         if (!File.Exists(paths.Result)) return false;
-        var parsed = ReadValidatedResult(paths, planStatus.PackageId, planStatus.PlanSha256,
+        var parsed = ReadValidatedResult(_repositoryRoot, paths.Result, planStatus.PackageId, planStatus.PlanSha256,
             planStatus.Title, planStatus.CandidateDigest);
         result = parsed;
         return true;
     }
 
-    private ReleasePublishResult ReadValidatedResult(
-        WorkerPaths paths,
+    internal static ReleasePublishResult ReadValidatedResult(
+        string repositoryRoot,
+        string resultPath,
         string packageId,
         string planSha256,
         string? expectedTitle,
         string? expectedCandidateDigest)
     {
+        var root = RepositoryRoot.Resolve(repositoryRoot);
+        var result = RepositoryRoot.ContainedPath(root, resultPath);
+        var expectedResult = Path.GetFullPath(Path.Combine(
+            root, "artifacts", "Releases", packageId, "workers", planSha256.ToUpperInvariant(), "worker-result.json"));
+        if (!string.Equals(result, expectedResult, StringComparison.OrdinalIgnoreCase) || !File.Exists(result))
+            throw new InvalidOperationException("Release worker result is not the exact retained plan result.");
         var parsed = JsonSerializer.Deserialize(
-                         File.ReadAllText(paths.Result), McpJsonContext.Default.ReleasePublishResult) ??
+                         File.ReadAllText(result), McpJsonContext.Default.ReleasePublishResult) ??
                      throw new InvalidOperationException("Release worker result is empty.");
         if (!string.Equals(parsed.Status,
                 "published-steam-verified-subscriber-evidence-awaiting-personal-review", StringComparison.Ordinal) ||
@@ -299,7 +306,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
             !parsed.SteamVerified || !parsed.LocalPackageRestored ||
             !ulong.TryParse(parsed.PublishedFileId, out var publishedId) || publishedId == 0)
             throw new InvalidOperationException("Release worker result does not match the exact admitted plan and completed guarantees.");
-        var releaseRoot = Path.Combine(_repositoryRoot, "artifacts", "Releases", packageId);
+        var releaseRoot = Path.Combine(root, "artifacts", "Releases", packageId);
         var statePath = Path.Combine(releaseRoot, "publication-state.txt");
         var state = File.Exists(statePath) ? File.ReadAllText(statePath).Trim().Split('|') : [];
         if (state.Length != 3 || state[0] is not ("subscriber-evidence-awaiting-review" or "complete-reviewed") ||
@@ -308,7 +315,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
             throw new InvalidOperationException("Release worker result does not match a final subscriber-evidence durable state.");
         var publicationRoot = Path.Combine(releaseRoot, "publication") +
                                Path.DirectorySeparatorChar;
-        var receipt = Path.GetFullPath(parsed.ReceiptPath);
+        var receipt = RepositoryRoot.ContainedPath(root, parsed.ReceiptPath);
         if (!receipt.StartsWith(publicationRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(receipt) ||
             parsed.ReceiptSha256.Length != 64 ||
             !string.Equals(ReleaseCandidateBuilder.Hash(receipt), parsed.ReceiptSha256, StringComparison.OrdinalIgnoreCase))

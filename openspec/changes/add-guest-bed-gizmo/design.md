@@ -14,7 +14,7 @@ Hospitality and Ideology are activation prerequisites and remain optional packag
 - Preserve Hospitality's existing guest-bed representation and conversion behavior, including Stuff, quality, hit points, art, paint, style, fees, claiming, and room/visit logic.
 - Preserve vanilla `SetBedOwnerTypeByInterface` behavior, including multi-selection, room propagation, owner warnings, and native sound, for non-guest choices.
 - Install no product patch when Hospitality or Ideology is absent, or when Hospitality's supported runtime shape is incompatible.
-- Ship one small reproducible Workshop preview card based on the reviewed in-game owner menu.
+- Ship one small reproducible Workshop preview card that makes the reviewed in-game four-choice owner menu the only dominant subject.
 
 **Non-Goals:**
 

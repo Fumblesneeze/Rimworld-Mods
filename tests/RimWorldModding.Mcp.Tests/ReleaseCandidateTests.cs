@@ -17,7 +17,7 @@ public sealed class ReleaseCandidateTests
         Assert.That(scan.Total, Is.EqualTo(1));
         Assert.That(scan.Items.Single().PublishedFileId, Is.EqualTo("3782589902"));
         Assert.That(scan.Items.Single().Title, Is.EqualTo("Immersive Chefs"));
-        Assert.That(scan.Items.Count(item => item.Title == "Hospitality + Ideoligy Patch"), Is.Zero);
+        Assert.That(scan.Items.Count(item => item.Title == "Hospitality + Ideology Patch"), Is.Zero);
     }
 
     [Test]
@@ -103,7 +103,7 @@ public sealed class ReleaseCandidateTests
     {
         WorkshopRemoteBaseline Create(string url, string previewHash) => WorkshopRemoteBaseline.Create(
             "1234567890", "Example", new string('A', 64), 12, ["Mod"], "metadata", "Public",
-            url, previewHash, "76561198077136238", 294100, 1234, 5678, ["2009463077"], []);
+            url, previewHash, "76561198077136238", 294100, 1234, 5678, ["2009463077"], [], []);
 
         var first = Create("https://cdn.example/preview?token=one", new string('B', 64));
         var refreshedUrl = Create("https://cdn.example/preview?token=two", new string('B', 64));
@@ -111,6 +111,59 @@ public sealed class ReleaseCandidateTests
 
         Assert.That(refreshedUrl.StateDigest, Is.EqualTo(first.StateDigest));
         Assert.That(changedBytes.StateDigest, Is.Not.EqualTo(first.StateDigest));
+    }
+
+    [Test]
+    public void RemoteBaseline_BindsAndDiffsSteamApplicationDependenciesSeparately()
+    {
+        var root = TestRepository.FindRoot();
+        var profile = ReleaseProfileCatalog.Discover(root)
+            .Single(item => item.PackageId == "fumblesneeze.guestbedgizmo");
+        var baseline = WorkshopRemoteBaseline.Create(
+            profile.PublishedFileId!, profile.Title, new string('A', 64), 12, ["Mod", "1.6"],
+            "metadata", "Private", "https://cdn.example/preview", new string('B', 64),
+            profile.SteamUserId, profile.SteamAppId, 1234, 5678, profile.RequiredWorkshopItems, [], []);
+        var candidate = new ReleaseCandidateStage("package", new string('C', 64), []);
+
+        var appDependencies = typeof(WorkshopRemoteBaseline).GetProperty("AppDependencies");
+        var diff = WorkshopRemoteBaseline.DescribeDiff(baseline, profile, candidate);
+
+        Assert.That(appDependencies, Is.Not.Null);
+        Assert.That(diff, Has.One.StartsWith("APP DEPENDENCIES").And.Contains("1392840"));
+    }
+
+    [Test]
+    public void ExistingItemIdentity_AllowsAnAuthenticatedTitleChange()
+    {
+        var root = TestRepository.FindRoot();
+        var profile = ReleaseProfileCatalog.Discover(root)
+            .Single(item => item.PackageId == "fumblesneeze.guestbedgizmo");
+        var baseline = WorkshopRemoteBaseline.Create(
+            profile.PublishedFileId!, "Prior title", new string('A', 64), 12, ["Mod", "1.6"],
+            "metadata", "Private", "https://cdn.example/preview", new string('B', 64),
+            profile.SteamUserId, profile.SteamAppId, 1234, 5678, profile.RequiredWorkshopItems, [], []);
+
+        Assert.DoesNotThrow(() => baseline.AssertItemIdentity(profile));
+        Assert.That(WorkshopRemoteBaseline.DescribeDiff(
+                baseline, profile, new ReleaseCandidateStage("package", new string('C', 64), [])),
+            Has.One.EqualTo($"TITLE [Prior title] -> [{profile.Title}]"));
+    }
+
+    [Test]
+    public void RelationshipReconciliation_ProducesSeparateExactWorkshopAndApplicationOperations()
+    {
+        var reconciler = typeof(ReleasePreparer).Assembly.GetType(
+            "RimWorldModding.Mcp.WorkshopRelationshipReconciler", throwOnError: false);
+        var plan = reconciler?.GetMethod("Plan", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+        Assert.That(reconciler, Is.Not.Null);
+        Assert.That(plan, Is.Not.Null);
+        Assert.That(
+            (string[])plan!.Invoke(null, new object[] { "dependency", new ulong[] { 2 }, new ulong[] { 1 } })!,
+            Is.EqualTo(new[] { "dependency-remove:1", "dependency-add:2" }));
+        Assert.That(
+            (string[])plan.Invoke(null, new object[] { "app-dependency", new ulong[] { 1392840 }, Array.Empty<ulong>() })!,
+            Is.EqualTo(new[] { "app-dependency-add:1392840" }));
     }
 
     [Test]
@@ -141,7 +194,7 @@ public sealed class ReleaseCandidateTests
             "RimWorldModRelease/v1", Path.Combine(root, "release.json"), project,
             "example.mod", "Example", "Fumblesneeze", "Product", "1.6",
             "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
-            294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], [], CustomAssemblyReferences(),
+            294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], [], [], CustomAssemblyReferences(),
             "mod_build", "presentation_render", package, ["About/", "1.6/"], description,
             preview, null, "Initial release.", verification);
         try
@@ -209,7 +262,7 @@ public sealed class ReleaseCandidateTests
             "RimWorldModRelease/v1", Path.Combine(root, "release.json"), project,
             "example.mod", "Example", "Fumblesneeze", "Product", "1.6",
             "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
-            294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["3509486825"], CustomAssemblyReferences(),
+            294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["3509486825"], [], CustomAssemblyReferences(),
             "mod_build", "presentation_render", package, ["About/", "1.6/"], description,
             preview, null, "Initial release.", verification);
         try
