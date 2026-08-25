@@ -189,6 +189,42 @@ public sealed class ReleasePublicationAdmissionTests
     }
 
     [Test]
+    public void WorkerStart_TreatsOnlyADifferentCompletedPlanAsPriorHistory()
+    {
+        var current = new string('A', 64);
+        var previous = new string('B', 64);
+
+        Assert.That(
+            ReleaseWorkerCoordinator.NormalizeStartingDurableState(
+                $"complete-reviewed|{previous}|3789536584", current, "3789536584"),
+            Is.EqualTo("none"));
+        Assert.That(
+            ReleaseWorkerCoordinator.NormalizeStartingDurableState(
+                $"complete-reviewed|{current}|3789536584", current, "3789536584"),
+            Is.EqualTo($"complete-reviewed|{current}|3789536584"));
+        Assert.That(
+            ReleaseWorkerCoordinator.NormalizeStartingDurableState(
+                $"submitted|{previous}|3789536584", current, "3789536584"),
+            Is.EqualTo($"submitted|{previous}|3789536584"),
+            "A different nonterminal plan remains a conflict rather than being normalized away.");
+        Assert.That(
+            ReleaseWorkerCoordinator.NormalizeStartingDurableState(
+                "complete-reviewed|garbage|3789536584", current, "3789536584"),
+            Is.EqualTo("complete-reviewed|garbage|3789536584"),
+            "Malformed terminal history must remain a fail-closed conflict.");
+        Assert.That(
+            ReleaseWorkerCoordinator.NormalizeStartingDurableState(
+                $"complete-reviewed|{previous}|0", current, "3789536584"),
+            Is.EqualTo($"complete-reviewed|{previous}|0"),
+            "Terminal history without a valid retained Workshop item must remain a fail-closed conflict.");
+        Assert.That(
+            ReleaseWorkerCoordinator.NormalizeStartingDurableState(
+                $"complete-reviewed|{previous}|1234567890", current, "3789536584"),
+            Is.EqualTo($"complete-reviewed|{previous}|1234567890"),
+            "Terminal history for a different Workshop item must remain a fail-closed conflict.");
+    }
+
+    [Test]
     public void RecoveryAdmission_NormalizesMissingDlcGraphsFromAnAlreadyAdmittedV2Plan()
     {
         var root = TestRoot();
