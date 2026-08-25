@@ -213,7 +213,10 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
 
         var statePath = Path.Combine(_repositoryRoot, "artifacts", "Releases", planStatus.PackageId,
             "publication-state.txt");
-        var durableState = File.Exists(statePath) ? File.ReadAllText(statePath).Trim() : "none";
+        var durableState = NormalizeStartingDurableState(
+            File.Exists(statePath) ? File.ReadAllText(statePath).Trim() : "none",
+            planStatus.PlanSha256,
+            planStatus.TargetPublishedFileId);
         if (durableState.StartsWith("complete-reviewed|", StringComparison.Ordinal))
             throw new InvalidOperationException(
                 "The release is already complete-reviewed but its exact retained worker result is missing or invalid; refusing to manufacture a replacement.");
@@ -264,6 +267,21 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
             if (!File.Exists(paths.Lease)) DeleteIfExists(paths.Request);
             throw;
         }
+    }
+
+    internal static string NormalizeStartingDurableState(
+        string durableState,
+        string planSha256,
+        string? targetPublishedFileId)
+    {
+        var parts = durableState.Trim().Split('|');
+        var validPriorPlan = parts.Length == 3 && parts[1].Length == 64 && parts[1].All(Uri.IsHexDigit);
+        var validPriorItem = parts.Length == 3 && ulong.TryParse(parts[2], out var itemId) && itemId != 0 &&
+                             string.Equals(itemId.ToString(), targetPublishedFileId, StringComparison.Ordinal);
+        return parts.Length == 3 && parts[0] == "complete-reviewed" && validPriorPlan && validPriorItem &&
+               !string.Equals(parts[1], planSha256, StringComparison.OrdinalIgnoreCase)
+            ? "none"
+            : durableState.Trim();
     }
 
     private bool TryReadValidResult(
