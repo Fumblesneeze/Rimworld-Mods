@@ -1072,7 +1072,7 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         private static string FindRepositoryRoot()
         {
             for (var current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory); current is not null; current = current.Parent)
-                if (File.Exists(Path.Combine(current.FullName, "ImmersiveChefs.sln"))) return current.FullName;
+                if (File.Exists(Path.Combine(current.FullName, "RimWorldMods.sln"))) return current.FullName;
             throw new DirectoryNotFoundException("Could not find repository root.");
         }
     }

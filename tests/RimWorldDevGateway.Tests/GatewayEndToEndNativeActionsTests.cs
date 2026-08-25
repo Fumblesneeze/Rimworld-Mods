@@ -473,6 +473,23 @@ public sealed class GatewayEndToEndNativeActionsTests
         });
     }
 
+    [Test]
+    public void Escape_menu_action_uses_only_the_optional_semantic_backend()
+    {
+        var backend = new RecordingBackend();
+        var step = new EscapeMenuActionStep("open Escape menu", open: true);
+
+        var outcome = ((IGatewayEndToEndEscapeMenuNativeActions)
+                new GatewayEndToEndNativeActions(backend))
+            .Apply(step, Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(backend.EscapeMenuStep, Is.SameAs(step));
+        });
+    }
+
     private static GatewayEndToEndTestContext Context() => new(() => 0, () => 0, _ => null);
 
     private static GatewayGizmoDescriptor Gizmo(
@@ -504,6 +521,7 @@ public sealed class GatewayEndToEndNativeActionsTests
         IGatewayEndToEndActionBackend,
         IGatewayEndToEndDialogConfirmationBackend,
         IGatewayEndToEndArchitectCategoryBackend,
+        IGatewayEndToEndEscapeMenuBackend,
         IGatewayEndToEndCurrentFloatMenuBackend
     {
         public GatewayEndToEndCameraViewport Viewport { get; set; } =
@@ -548,6 +566,8 @@ public sealed class GatewayEndToEndNativeActionsTests
         public DialogConfirmationActionStep? DialogStep { get; private set; }
 
         public ArchitectCategoryActionStep? ArchitectStep { get; private set; }
+
+        public EscapeMenuActionStep? EscapeMenuStep { get; private set; }
 
         public bool RejectNextInteraction { get; set; }
 
@@ -667,6 +687,12 @@ public sealed class GatewayEndToEndNativeActionsTests
         public GatewayEndToEndStepOutcome ApplyArchitectCategory(ArchitectCategoryActionStep step)
         {
             ArchitectStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
+
+        public GatewayEndToEndStepOutcome ApplyEscapeMenu(EscapeMenuActionStep step)
+        {
+            EscapeMenuStep = step;
             return GatewayEndToEndStepOutcome.Pass();
         }
 

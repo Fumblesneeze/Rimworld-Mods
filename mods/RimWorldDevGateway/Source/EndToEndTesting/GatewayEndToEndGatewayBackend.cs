@@ -26,6 +26,7 @@ public sealed class GatewayEndToEndGatewayBackend :
     IGatewayEndToEndActionBackend,
     IGatewayEndToEndDialogConfirmationBackend,
     IGatewayEndToEndArchitectCategoryBackend,
+    IGatewayEndToEndEscapeMenuBackend,
     IGatewayEndToEndCurrentFloatMenuBackend,
     IGatewayEndToEndDesignatorSessionBackend,
     IGatewayEndToEndInspectionBackend
@@ -324,6 +325,12 @@ public sealed class GatewayEndToEndGatewayBackend :
         VerseGatewayEndToEndArchitectCategoryActions.Apply(
             step,
             new VerseGatewayEndToEndArchitectCategoryRuntime());
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndEscapeMenuBackend.ApplyEscapeMenu(
+        EscapeMenuActionStep step) =>
+        VerseGatewayEndToEndEscapeMenuActions.Apply(
+            step,
+            new VerseGatewayEndToEndEscapeMenuRuntime());
 
     GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyPawnInspectTab(
         PawnInspectTabActionStep step) =>

@@ -2,6 +2,11 @@
 
 ## Candidate discipline
 
+Do not begin with generation or a RED package test. First inspect structurally and conceptually
+similar Core and locally subscribed-mod art read-only, measure the fixed-camera/world/draw contract,
+and write the exact prompt plus measurable acceptance criteria. Renderer code remains TDD-backed;
+the visual asset loop is reference → measurement → prompt → candidates → comparison → live review.
+
 Keep one brief constant across generators: object identity, RimWorld-like hand-painted map view,
 camera, number of views, pure chroma background, no cast shadow outside the silhouette, and no text.
 Varying the brief while varying the model makes the comparison meaningless. Generate multiple
@@ -9,6 +14,24 @@ candidates, retain rejected outputs only under ignored artifacts, and select in 
 
 For local ComfyUI comparisons, use the installed `local-image-generation` skill and its headless
 workflow rather than inventing API payloads. For built-in generation, use the `imagegen` skill.
+
+The saved prompt must name the exact canvas, expected visible bounds, pixels/cell or draw size,
+camera elevation/azimuth or fixed-camera landmark, every required part, material-tinted versus fixed
+regions, exterior outline target measured from references, required junction/adjacency behavior, and
+close/ordinary/far zoom acceptance. For a damageable object, also name each progressive damage
+grade, its material response, and the exact silhouette/geometry to which it must remain attached.
+Reject a visually attractive response that violates any of those measurements.
+
+When the sprite paints apparent height, record and prompt each visible plane separately. At minimum,
+measure the top surface, south/front face, east/side face, bevel/transition, and contour in source
+pixels and final pixels per cell. Compare top:front and top:side ratios against both the structural
+reference and any shorter/taller conceptual comparator. Never use one whole-silhouette aspect ratio
+to stand in for those plane proportions.
+
+Record mean-luminance samples for the same planes and state the required ordering and maximum ratio
+in the prompt. Recheck it under every representative Stuff color: a top surface that is dimensionally
+correct but value-identical to the face disappears at map zoom. The exterior contour must remain
+darker than every modeled plane after tinting.
 
 ## Item prompt template
 

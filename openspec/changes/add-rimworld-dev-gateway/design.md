@@ -147,8 +147,10 @@ and candidate state, atomically cancels stale ownership, and lets a fresh begin 
 Reset cancels the registry session and verifies both registry and native designator-manager state empty.
 
 The E2E screenshot-mode action changes only RimWorld's native `ScreenshotModeHandler.Active` flag.
-The runtime host reads that same flag before `OnGUI` draws its unrestricted-execution and test-status
-boxes; while active it skips those Gateway-only overlays without stopping the server, discovery, or
+The runtime host draws its unrestricted-execution and test-status boxes only while the exact native
+`MainButtonDefOf.Menu` tab is current in `MainTabsRoot`, and reads the screenshot-mode flag before
+drawing even there. Ordinary map play and the title screen therefore remain free of Gateway overlays;
+while screenshot mode is active it also skips those boxes without stopping the server, discovery, or
 the running test. This keeps the action reversible and avoids a second private visibility state.
 Using fixtures retain and restore the prior native flag in guaranteed cleanup.
 
@@ -180,7 +182,7 @@ Scenario descriptors live outside the save and may be repository files consumed 
 
 ### 9. Isolation and warnings are part of the product contract
 
-The About metadata labels the mod as developer-only and dangerous. A startup warning, status field, session manifest warning, settings/about text, and visible main-menu indicator state that any local bearer-token holder can execute unrestricted code as the RimWorld process. The API never offers a non-loopback setting.
+The About metadata labels the mod as developer-only and dangerous. A startup warning, status field, session manifest warning, settings/about text, and indicator visible in RimWorld's in-play Escape menu state that any local bearer-token holder can execute unrestricted code as the RimWorld process. The indicator remains out of the ordinary map view. The API never offers a non-loopback setting.
 
 Host smoke/quickstart tooling uses an isolated `-savedatafolder` and isolated `ModsConfig.xml` containing only required official/core mods, the target product mod(s), and the gateway. If a future tool must touch the normal `ModsConfig.xml`, it must hash and back it up first, restore it in `finally`, and verify the restored hash. The current design does not require modifying the user's normal configuration.
 

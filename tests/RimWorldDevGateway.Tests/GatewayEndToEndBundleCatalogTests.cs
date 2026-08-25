@@ -409,7 +409,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
         var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "ImmersiveChefs.sln")))
+            if (File.Exists(Path.Combine(directory.FullName, "RimWorldMods.sln")))
             {
                 return directory.FullName;
             }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ThinWall.label>thin wall</TW_ThinWall.label>
+  <TW_ThinWall.description>A narrow wall mounted along one edge of a tile. It blocks pawn movement and building footprints across that edge while leaving the tile itself usable. Thin walls divide rooms but do not support roofs.</TW_ThinWall.description>
+  <TW_ThinDoor.label>thin door</TW_ThinDoor.label>
+  <TW_ThinDoor.description>A narrow door mounted along one edge of a tile. Its tile remains usable, and only crossing the door edge requires it to open. Thin doors divide rooms but do not support roofs.</TW_ThinDoor.description>
+</LanguageData>

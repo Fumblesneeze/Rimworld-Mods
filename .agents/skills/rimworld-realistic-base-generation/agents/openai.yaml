@@ -1,4 +1,4 @@
 interface:
   display_name: "RimWorld Realistic Base Generation"
-  short_description: "Ground colony scenes in player-built reference patterns"
-  default_prompt: "Use $rimworld-realistic-base-generation to research, design, and review a believable RimWorld colony or showcase scene."
+  short_description: "Design and placement-audit believable colonies and preview renders"
+  default_prompt: "Use $rimworld-realistic-base-generation to research, design, and review a believable RimWorld colony, gameplay preview rendering, or Workshop presentation scene."

@@ -45,6 +45,11 @@ internal interface IGatewayEndToEndArchitectCategoryNativeActions
     GatewayEndToEndStepOutcome Apply(ArchitectCategoryActionStep step, IEndToEndContext context);
 }
 
+internal interface IGatewayEndToEndEscapeMenuNativeActions
+{
+    GatewayEndToEndStepOutcome Apply(EscapeMenuActionStep step, IEndToEndContext context);
+}
+
 internal interface IGatewayEndToEndCurrentFloatMenuNativeActions
 {
     GatewayEndToEndStepOutcome Apply(CurrentFloatMenuActionStep step, IEndToEndContext context);
@@ -126,6 +131,12 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
                     : GatewayEndToEndCompletedStepOperation.Failed(
                         "unsupported_e2e_step",
                         "The native E2E adapter does not support Architect-category actions."),
+            EscapeMenuActionStep escapeMenu => actions is
+                IGatewayEndToEndEscapeMenuNativeActions escapeMenuActions
+                    ? Complete(escapeMenuActions.Apply(escapeMenu, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support Escape-menu actions."),
             PawnInspectTabActionStep inspectTab => actions is
                 IGatewayEndToEndInspectionNativeActions inspectionActions
                     ? Complete(inspectionActions.Apply(inspectTab, context))

@@ -97,8 +97,8 @@ During ordinary feature work, run the exact focused test or exact active-mod gro
 A normal build is repository-local:
 
 ```powershell
-dotnet restore .\ImmersiveChefs.sln
-dotnet build .\ImmersiveChefs.sln -c Release
+dotnet restore .\RimWorldMods.sln
+dotnet build .\RimWorldMods.sln -c Release
 ```
 
 Inspect distributable packages under `artifacts\Mods\<package-id>` and the SDK's non-live staging copy under `artifacts\GameMods\<package-id>`. `Directory.Build.targets` prevents a normal Zlepper ModSdk build from copying into the live game.

@@ -746,6 +746,14 @@ public sealed class ArchitectCategoryActionStep : EndToEndStep
     public bool Open { get; }
 }
 
+public sealed class EscapeMenuActionStep : EndToEndStep
+{
+    public EscapeMenuActionStep(string name, bool open)
+        : base(name, EndToEndStepKind.Act) => Open = open;
+
+    public bool Open { get; }
+}
+
 public sealed class CameraActionStep : EndToEndStep
 {
     public CameraActionStep(string name, IEnumerable<string> targetRuntimeIds, int paddingPixels)

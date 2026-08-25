@@ -165,7 +165,7 @@ public sealed class CeramicsContinuedContractTests
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ImmersiveChefs.sln")))
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "RimWorldMods.sln")))
         {
             directory = directory.Parent;
         }

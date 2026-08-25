@@ -34,7 +34,7 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
+    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
@@ -128,6 +128,21 @@ try {
             Project = Join-Path $repositoryRoot 'tests\ImmersiveChefs.Defs.Tests\ImmersiveChefs.Defs.Tests.csproj'
         },
         [pscustomobject]@{
+            Name = 'ThinWalls.Unit'
+            Group = 'ThinWalls'
+            Project = Join-Path $repositoryRoot 'tests\ThinWalls.Tests\ThinWalls.Tests.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'ThinWalls.Harmony'
+            Group = 'ThinWalls'
+            Project = Join-Path $repositoryRoot 'tests\ThinWalls.Harmony.Tests\ThinWalls.Harmony.Tests.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'ThinWalls.Defs'
+            Group = 'ThinWalls'
+            Project = Join-Path $repositoryRoot 'tests\ThinWalls.Defs.Tests\ThinWalls.Defs.Tests.csproj'
+        },
+        [pscustomobject]@{
             Name = 'GuestBedGizmo.Unit'
             Group = 'GuestBedGizmo'
             Project = Join-Path $repositoryRoot 'tests\GuestBedGizmo.Tests\GuestBedGizmo.Tests.csproj'
@@ -161,7 +176,7 @@ try {
     $selectedSuites = if ($Suite -eq 'All') {
         @($availableSuites)
     }
-    elseif ($Suite -in @('ImmersiveChefs', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
+    elseif ($Suite -in @('ImmersiveChefs', 'ThinWalls', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
         @($availableSuites | Where-Object Group -EQ $Suite)
     }
     else {

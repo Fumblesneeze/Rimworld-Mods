@@ -1,0 +1,408 @@
+{
+  "schema": "ThinWalls/WorkshopPresentation/v2",
+  "imageGenerationUsed": false,
+  "acceptedRuns": [
+    {
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed"
+    },
+    {
+      "runId": "20260820T020606902Z",
+      "sessionId": "3f7b3b5426ae495899118400e2612571",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed"
+    },
+    {
+      "runId": "20260820T021022450Z",
+      "sessionId": "6609d360a92d43a7b4ec6a7637bea1fc",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed"
+    }
+  ],
+  "renderer": {
+    "path": "scripts/Build-ThinWallsWorkshopPresentation.ps1",
+    "sha256": "67F1955754AA92681251FC59817A97A0BDCFEAFDBB64AB1F054B585B0DD2A759",
+    "imageMagickVersion": "7.1.2-18 Q16-HDRI x64",
+    "fontPath": "release/templates/workshop/fonts/Oswald-SemiBold.ttf",
+    "fontSha256": "5B38C246E255A12F5712D640D56BCCED0472466FC68983D2D0410EC0457C2817"
+  },
+  "title": {
+    "sourceTokens": [
+      "room-presentation-clean"
+    ],
+    "copy": {
+      "title": "THIN WALLS",
+      "kicker": "BUILD ON THE EDGE",
+      "lines": [
+        "Keep the cell. Divide the room.",
+        "Thin Doors • Square Wall Joins",
+        "Stone • Wood • Steel"
+      ],
+      "footers": [
+        "HALF COST  •  HALF HIT POINTS",
+        "NO ROOF SUPPORT"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "token": "workbenches",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T020606902Z/e2e-screenshot-000002.png",
+      "originalScreenshot": "e2e-screenshot-000002.png",
+      "runId": "20260820T020606902Z",
+      "sessionId": "3f7b3b5426ae495899118400e2612571",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 364,
+      "height": 323,
+      "sha256": "906C8138CE0A1C082673BC665A17563CE1D6D271D9C98E12F57C932FC2F8264F"
+    },
+    {
+      "token": "preview-south",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T021022450Z/e2e-screenshot-000002.png",
+      "originalScreenshot": "e2e-screenshot-000002.png",
+      "runId": "20260820T021022450Z",
+      "sessionId": "6609d360a92d43a7b4ec6a7637bea1fc",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 1600,
+      "height": 900,
+      "sha256": "492A7EE0407EADB68EE9C6802F13690DE961B1873D632322FCAD3EC9FE77B282"
+    },
+    {
+      "token": "preview-east",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T021022450Z/e2e-screenshot-000003.png",
+      "originalScreenshot": "e2e-screenshot-000003.png",
+      "runId": "20260820T021022450Z",
+      "sessionId": "6609d360a92d43a7b4ec6a7637bea1fc",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 1600,
+      "height": 900,
+      "sha256": "ADB6F4F4013CD7A4C6F6F0B8529570BAEB88BFD2D6D1EEE701839865D3D7C5A0"
+    },
+    {
+      "token": "junction-l",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000009.png",
+      "originalScreenshot": "e2e-screenshot-000009.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 356,
+      "height": 356,
+      "sha256": "B47CFD0851EBCE33FBC127F37D0CDAF711F51F61E7CC71655E7C0B37DF0CD09F"
+    },
+    {
+      "token": "junction-t",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000010.png",
+      "originalScreenshot": "e2e-screenshot-000010.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 356,
+      "height": 356,
+      "sha256": "24E34EC23C7E8AC5BA8AF9F0EFB4385E0905321D4E9D20C4A7DB65AFF330BA86"
+    },
+    {
+      "token": "junction-plus",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000011.png",
+      "originalScreenshot": "e2e-screenshot-000011.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 356,
+      "height": 356,
+      "sha256": "BD9D5860F60C3B71B9C90215C3BA2C5E924C677CF0824E5E6D636E6FADBC9FA5"
+    },
+    {
+      "token": "regular-union",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000020.png",
+      "originalScreenshot": "e2e-screenshot-000020.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 295,
+      "height": 295,
+      "sha256": "6E3785AB1C5589B9FA202F9D74AB53D9A88365D22B36EA0271B8AC858E736CDF"
+    },
+    {
+      "token": "room-closed",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000028.png",
+      "originalScreenshot": "e2e-screenshot-000028.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 1152,
+      "height": 580,
+      "sha256": "2A5ED56972B074A8930E6FC82F22918FB254AF2A27D49778926F955607961D5D"
+    },
+    {
+      "token": "room-presentation-clean",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000037.png",
+      "originalScreenshot": "e2e-screenshot-000037.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 1462,
+      "height": 890,
+      "sha256": "BEBABA76AB1FB3288575FB3C1763A60E50884F1E87982D19C5712EC151925ACF"
+    },
+    {
+      "token": "door-detail-closed",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000030.png",
+      "originalScreenshot": "e2e-screenshot-000030.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 508,
+      "height": 262,
+      "sha256": "C6BD688DA18F66C33E1E724FF942118DE54FE353DD422E25056C895F727669D1"
+    },
+    {
+      "token": "door-detail-open",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000031.png",
+      "originalScreenshot": "e2e-screenshot-000031.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 508,
+      "height": 262,
+      "sha256": "7D159183C6062FA7DDABB99EEC3B1D2265B5FEBFB891DF75B96E90C093D90EBE"
+    },
+    {
+      "token": "damage-stone",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000033.png",
+      "originalScreenshot": "e2e-screenshot-000033.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 296,
+      "height": 132,
+      "sha256": "ACBAC079EA7F7E5B04C0A82B0A05EE688A3F77B9DA698E505AF42C55F88674A3"
+    },
+    {
+      "token": "damage-wood",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000034.png",
+      "originalScreenshot": "e2e-screenshot-000034.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 296,
+      "height": 132,
+      "sha256": "3690AA5B58A6DD3521F109EE7590EC9AEAE6F2D5F8159590FB48BF405A48892A"
+    },
+    {
+      "token": "damage-steel",
+      "path": "mods/ThinWalls/Release/workshop/sources/in-game/accepted-20260820T013908908Z/e2e-screenshot-000035.png",
+      "originalScreenshot": "e2e-screenshot-000035.png",
+      "runId": "20260820T013908908Z",
+      "sessionId": "489b6eb405ee428fa2473995e8da2e31",
+      "launchWindowStyle": "Minimized",
+      "visibleWindow": false,
+      "reviewVerdict": "passed",
+      "width": 296,
+      "height": 132,
+      "sha256": "2F087D5362EDD74D4E4270989263FE1DD0307F7353256494F86A56AAC4965AF8"
+    }
+  ],
+  "carouselCards": [
+    "edge-placement",
+    "continuous-joins",
+    "thin-doors",
+    "materials-damage"
+  ],
+  "cards": [
+    {
+      "token": "edge-placement",
+      "title": "BUILD ON THE CELL EDGE",
+      "lines": [
+        "Q / E rotates one-cell preview",
+        "Furniture and workbenches stay on both sides"
+      ],
+      "sourceTokens": [
+        "preview-south",
+        "preview-east",
+        "workbenches"
+      ]
+    },
+    {
+      "token": "continuous-joins",
+      "title": "CONTINUOUS IN EVERY DIRECTION",
+      "lines": [
+        "L, T and + junctions • square joins to regular walls • no diagonal wedges"
+      ],
+      "sourceTokens": [
+        "junction-l",
+        "junction-t",
+        "junction-plus",
+        "regular-union"
+      ]
+    },
+    {
+      "token": "thin-doors",
+      "title": "REAL ROOMS. THIN DOORS.",
+      "lines": [
+        "The cell stays walkable; only crossing the owned edge opens the door"
+      ],
+      "sourceTokens": [
+        "room-closed",
+        "door-detail-closed",
+        "door-detail-open"
+      ]
+    },
+    {
+      "token": "materials-damage",
+      "title": "MATERIALS THAT READ AT A GLANCE",
+      "lines": [
+        "Core-derived stone • OSB timber panels • riveted metal • localized damage grades"
+      ],
+      "sourceTokens": [
+        "damage-stone",
+        "damage-wood",
+        "damage-steel"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "token": "title",
+      "role": "workshop-title",
+      "path": "mods/ThinWalls/Release/workshop/preview-main.png",
+      "alt": "Thin Walls title beside an in-game furnished room divided by a Thin Wall and Thin Door",
+      "width": 1280,
+      "height": 720,
+      "bytes": 411718,
+      "sha256": "79F9F75E91FBA491879C311840E19D2F7894315F379B094BB1899CE19040F474",
+      "sourceTokens": [
+        "room-presentation-clean"
+      ]
+    },
+    {
+      "token": "about",
+      "role": "about-preview",
+      "path": "mods/ThinWalls/About/Preview.png",
+      "alt": "Thin Walls title beside an in-game furnished room divided by a Thin Wall and Thin Door",
+      "width": 640,
+      "height": 360,
+      "bytes": 151280,
+      "sha256": "4441E8130D23E988FF67DCEAC3835FECD49AEDDE8B087448F54108351D6768D6",
+      "sourceTokens": [
+        "room-presentation-clean"
+      ]
+    },
+    {
+      "token": "edge-placement",
+      "role": "workshop-card",
+      "path": "mods/ThinWalls/Release/workshop/assets/feature-edge-placement.png",
+      "alt": "In-game Q and E Thin Wall previews beside workbenches placed on both sides of one edge wall",
+      "width": 1164,
+      "height": 655,
+      "bytes": 280697,
+      "sha256": "9077A6A96DB617A46202E8FF77802290616BCB07BE67010DE25E0009B56C7079",
+      "sourceTokens": [
+        "preview-south",
+        "preview-east",
+        "workbenches"
+      ]
+    },
+    {
+      "token": "continuous-joins",
+      "role": "workshop-card",
+      "path": "mods/ThinWalls/Release/workshop/assets/feature-continuous-joins.png",
+      "alt": "In-game L T and cross Thin Wall junctions with a square regular-wall union",
+      "width": 1164,
+      "height": 655,
+      "bytes": 586958,
+      "sha256": "BE1CD6A2746F0EA4EF18516049FD211BF7AACFBFB2EA1229411C257B75BBD94F",
+      "sourceTokens": [
+        "junction-l",
+        "junction-t",
+        "junction-plus",
+        "regular-union"
+      ]
+    },
+    {
+      "token": "thin-doors",
+      "role": "workshop-card",
+      "path": "mods/ThinWalls/Release/workshop/assets/feature-thin-doors.png",
+      "alt": "An in-game furnished Thin Wall room beside enlarged closed and open Thin Door edge views",
+      "width": 1164,
+      "height": 655,
+      "bytes": 408906,
+      "sha256": "2D192F1782D2E42E4BB351F0F517C7960093CB6A6F7930F3DFB6AE58EB10B8DC",
+      "sourceTokens": [
+        "room-closed",
+        "door-detail-closed",
+        "door-detail-open"
+      ]
+    },
+    {
+      "token": "materials-damage",
+      "role": "workshop-card",
+      "path": "mods/ThinWalls/Release/workshop/assets/feature-materials-damage.png",
+      "alt": "In-game stone wood and steel Thin Walls with localized moderate heavy and severe damage",
+      "width": 1164,
+      "height": 655,
+      "bytes": 275142,
+      "sha256": "72CECE183BFBBDB1FA2491FCC7E9A390F9C82DF18D75C94030747399128B5058",
+      "sourceTokens": [
+        "damage-stone",
+        "damage-wood",
+        "damage-steel"
+      ]
+    },
+    {
+      "token": "contact-sheet",
+      "role": "review-contact-sheet",
+      "path": "mods/ThinWalls/Release/workshop/assets/contact-sheet.png",
+      "alt": "Contact sheet of the four Thin Walls Workshop feature cards",
+      "width": 1164,
+      "height": 655,
+      "bytes": 553503,
+      "sha256": "CF5394CFBE6E55C70C06A4BFFA7F878B9234A25A6D96B6355348975A12D51C97",
+      "sourceTokens": [
+        "preview-south",
+        "preview-east",
+        "workbenches",
+        "junction-l",
+        "junction-t",
+        "junction-plus",
+        "regular-union",
+        "room-closed",
+        "door-detail-closed",
+        "door-detail-open",
+        "damage-stone",
+        "damage-wood",
+        "damage-steel"
+      ]
+    }
+  ]
+}

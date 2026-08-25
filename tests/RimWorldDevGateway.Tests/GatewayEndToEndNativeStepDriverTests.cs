@@ -37,6 +37,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
                 "dialog",
                 "Example.Dialog"),
             new ArchitectCategoryActionStep("architect", "Production", open: true),
+            new EscapeMenuActionStep("escape-menu", open: true),
             new PawnInspectTabActionStep("inspect-tab", "pawn_1", EndToEndPawnInspectTab.Gear),
             ThingInfoCardActionStep.Open("info-card", "thing_1"),
             new InspectPaneCloseActionStep("close-inspect", "thing_1", "Example.ContentsTab"),
@@ -57,12 +58,12 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "supporting-hit-points", "camera", "screenshot-mode", "shadow-rendering", "gizmo", "float", "current-float", "settlement-trade", "incident", "trade", "dialog", "architect", "inspect-tab", "info-card", "close-inspect", "cancel-window", "accept-window", "mod-settings", "save-load", "input", "screenshot"
+                "time", "selection", "supporting-hit-points", "camera", "screenshot-mode", "shadow-rendering", "gizmo", "float", "current-float", "settlement-trade", "incident", "trade", "dialog", "architect", "escape-menu", "inspect-tab", "info-card", "close-inspect", "cancel-window", "accept-window", "mod-settings", "save-load", "input", "screenshot"
             }));
-            Assert.That(operations.Take(20).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[20], Is.SameAs(actions.SaveLoadOperation));
-            Assert.That(operations[21], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[22], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations.Take(21).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[21], Is.SameAs(actions.SaveLoadOperation));
+            Assert.That(operations[22], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[23], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -87,6 +88,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         IGatewayEndToEndNativeActions,
         IGatewayEndToEndDialogConfirmationNativeActions,
         IGatewayEndToEndArchitectCategoryNativeActions,
+        IGatewayEndToEndEscapeMenuNativeActions,
         IGatewayEndToEndCurrentFloatMenuNativeActions,
         IGatewayEndToEndInspectionNativeActions
     {
@@ -149,6 +151,10 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         public GatewayEndToEndStepOutcome Apply(
             ArchitectCategoryActionStep step,
             IEndToEndContext context) => Record("architect");
+
+        GatewayEndToEndStepOutcome IGatewayEndToEndEscapeMenuNativeActions.Apply(
+            EscapeMenuActionStep step,
+            IEndToEndContext context) => Record("escape-menu");
 
         public GatewayEndToEndStepOutcome Apply(
             PawnInspectTabActionStep step,

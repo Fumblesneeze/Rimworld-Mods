@@ -249,3 +249,8 @@
 
 - [x] 34.1 SPEC/TDD: Expose the native active-or-waiting long-event signal in the immutable status snapshot and prove the state can coexist with a non-null map.
 - [x] 34.2 REGRESSION/REVIEW: Run focused Gateway/MCP readiness tests, strict OpenSpec validation, and independent review before using the field to resume the retained Workshop subscriber workflow.
+
+## 35. mods/RimWorldDevGateway — Escape-menu-only danger overlay
+
+- [x] 35.1 SPEC/TDD: Make the Gateway warning and test-status overlay render only while RimWorld's exact native in-play Escape-menu tab is current, retaining stopping and screenshot-mode suppression.
+- [x] 35.2 REVIEW/IN-GAME: Independently review the scoped change, then on the reviewed build observe the overlay absent during ordinary map play, present after the native Escape action opens the menu, and absent again after the native Escape action closes it.

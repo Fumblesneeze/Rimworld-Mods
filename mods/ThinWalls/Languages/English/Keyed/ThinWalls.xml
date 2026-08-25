@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ModName>Thin Walls</TW_ModName>
+  <TW_DesignatorLabel>thin wall</TW_DesignatorLabel>
+  <TW_DesignatorDescription>Build a narrow wall on a tile edge. Rotate the one-cell preview with Q or E; after the drag enters a second cell, the wall follows the right-hand side of the drag. The tile stays usable, but pawns and building footprints cannot cross the wall.</TW_DesignatorDescription>
+  <TW_ThinDoorDesignatorLabel>thin door</TW_ThinDoorDesignatorLabel>
+  <TW_ThinDoorDesignatorDescription>Build a narrow door on a tile edge. Rotate the one-cell preview with Q or E; after the drag enters a second cell, the door follows the right-hand side of the drag. Its tile stays usable; only crossing the door edge requires opening it.</TW_ThinDoorDesignatorDescription>
+  <TW_InspectEdge>Edge: {0}</TW_InspectEdge>
+  <TW_AlreadyOnEdge>There is already a thin wall planned or built on that edge.</TW_AlreadyOnEdge>
+  <TW_DoorNeedsExclusiveEdge>A thin door needs the edge to itself.</TW_DoorNeedsExclusiveEdge>
+  <TW_WallCrossesBuilding>A thin wall cannot pass through this building.</TW_WallCrossesBuilding>
+  <TW_BuildingCrossesWall>This building would cross a thin wall.</TW_BuildingCrossesWall>
+</LanguageData>

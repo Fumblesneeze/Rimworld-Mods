@@ -145,8 +145,12 @@ The authenticated `POST /api/v1/server/shutdown` route and RimWorld process tear
 - **THEN** the host requests a normal main-window close and waits before considering dump capture and exact-PID force fallback
 
 ### Requirement: Redundant danger warnings
-The mod SHALL state that its raw REPL and optional assembly fallback permit unrestricted code execution and are only for trusted local development in its About metadata, startup log, settings/about UI, session manifest, API status, and visible in-game gateway indicator. The status response SHALL report both `developerOnly: true` and `unrestrictedExecutionEnabled: true`.
+The mod SHALL state that its raw REPL and optional assembly fallback permit unrestricted code execution and are only for trusted local development in its About metadata, startup log, settings/about UI, session manifest, API status, and visible in-game gateway indicator. The status response SHALL report both `developerOnly: true` and `unrestrictedExecutionEnabled: true`. The Gateway-owned in-game warning and test-status overlay SHALL render only while RimWorld's native in-play Escape menu is open, identified by the exact `MainButtonDefOf.Menu` tab being current. It SHALL remain hidden during ordinary map play, at the title screen, while the runtime is stopping, and while native screenshot mode is active.
 
 #### Scenario: Developer checks that the gateway is active
-- **WHEN** the mod is loaded and the developer views either the in-game indicator or authenticated status
+- **WHEN** the mod is loaded and the developer opens RimWorld's native in-play Escape menu or views authenticated status
 - **THEN** the unrestricted-execution warning and enabled state are unambiguous
+
+#### Scenario: Developer returns to ordinary map play
+- **WHEN** the developer closes RimWorld's native in-play Escape menu while the Gateway remains active
+- **THEN** the Gateway-owned warning and test-status overlay are not rendered over the map

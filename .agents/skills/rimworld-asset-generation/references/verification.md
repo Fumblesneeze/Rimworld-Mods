@@ -8,6 +8,11 @@ Before launching RimWorld, run focused tests that assert the contract actually a
 - exact width, height, aspect, alpha bounds, and transparent corners;
 - diffuse/mask alpha equality and meaningful red/black regions;
 - no vivid background chroma or silhouette fringe;
+- projected top/front/side/bevel/contour pixel budgets match the recorded component measurements;
+- the declared top/front/side luminance ordering and ratios pass before and after representative
+  Stuff tinting, and each plane remains separately legible at ordinary and far useful zoom;
+- padded-canvas margins and runtime draw size match the comparator; a tight crop rendered on a short
+  compensating mesh is rejected because it changes apparent height and orientation;
 - base/variant and clean/dirty sprites are visibly distinct where required;
 - every selected cardinal frame has an explicit reviewed hash plus direction-specific equipment
   order; north/east order and reversed south/west order are consistent;
@@ -23,6 +28,15 @@ Use disposable comparison Defs only while selecting a generator/model. Render al
 fresh process beside the same Core references at the same camera zoom. Select each candidate through
 the native selection path so its footprint/bracket and inspect UI are visible. Remove comparison
 Defs and textures after choosing; do not ship the rejected catalog.
+
+Capture each viable candidate at close, ordinary, and far useful map zoom, with no selection brackets
+or debug labels in the identity frames. For Stuff assets, repeat the same camera framing with the
+representative material families. Record the exact camera/zoom state and do not resize one screenshot
+to impersonate another zoom.
+
+For damageable objects, include undamaged, moderate, and severe states and inspect straight,
+doubled, and junction cases. Reject damage projected at the owning-cell center, beside the object,
+beyond its silhouette, or with an orientation inconsistent with the fixed camera.
 
 ## Final native workflow
 
@@ -41,10 +55,35 @@ On the independently reviewed Release package:
    Frame multiple comparison objects through the camera first, then select only the target whose
    single-Thing inspect panel is evidence; a multi-selection screenshot does not show that panel.
 7. For Stuff masks, observe wood/stone/metal or other materially distinct Things; verify fixed
-   accents do not tint and dirty overlays remain visible.
+   accents do not tint and dirty overlays remain visible. For damageable art, verify undamaged,
+   moderate, and severe damage remains attached to its true draw geometry.
 8. Personally view the screenshots. Record concrete observations, not just automation assertions.
 9. Require a clean relevant log, exact build/package hash, restored settings, sanitized artifacts,
    and graceful exact-PID shutdown.
+
+## Blind independent visual review
+
+After personal inspection, give an independent reviewer sub-agent only the unlabeled, fresh in-game
+screenshots covering the required zoom and material states. Do not disclose the mod, asset name,
+intended identity, implementation, topology names, reference selection, or expected answer. Ask the
+reviewer to describe what it sees and infer the gameplay purpose, then assess fixed-camera
+perspective, silhouette, outline, material response, adjacency/connection coherence, surrounding
+RimWorld style, and degradation across zoom levels.
+
+The review passes only if the reviewer correctly recognizes the intended object and purpose without
+prompting and finds no perspective, outline, incoherent-style, material, connection, or zoom-level
+legibility defect. Any ambiguous identification, reliance on selection/UI text, or material defect
+returns the asset to candidate iteration. Retain the exact screenshot inventory, context-free review
+prompt, and reviewer response with the reviewed build evidence.
+
+For a publication rendering that includes a furnished or inhabited scene, also apply the independent
+placement-audit gate from `rimworld-realistic-base-generation`. The reviewer must enumerate visible beds,
+chairs, tables/counters, workbenches, doors, interaction spots, and main aisles and explicitly identify any
+non-aesthetic, implausible, blocked, floating, wrongly oriented, clipped, or rule-breaking placement. This is
+separate from object-identification review and cannot be satisfied by a generic visual-coherence verdict.
+Whenever a claimed placement, offset, boundary balance, or non-overlap can be measured from final in-game
+pixels, add a TDD-backed deterministic measurement over the exact promoted source capture and rendered card;
+manual inspection remains required but may not waive a failing mechanical gate.
 
 A direct spawn may arrange a catalog, but it does not prove player placement. A log saying a Graphic
 resolved, a checksum, an HTTP success, or a diagnostic query is supporting evidence only.

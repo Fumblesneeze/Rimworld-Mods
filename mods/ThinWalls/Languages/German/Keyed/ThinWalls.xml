@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ModName>Dünne Wände</TW_ModName>
+  <TW_DesignatorLabel>dünne Wand</TW_DesignatorLabel>
+  <TW_DesignatorDescription>Baut eine schmale Wand an einer Feldkante. Drehe die Vorschau für ein einzelnes Feld mit Q oder E; sobald die gezogene Linie ein zweites Feld erreicht, folgt die Wand ihrer rechten Seite. Das Feld bleibt nutzbar, aber Figuren und Gebäudegrundrisse können die Wand nicht durchqueren.</TW_DesignatorDescription>
+  <TW_ThinDoorDesignatorLabel>dünne Tür</TW_ThinDoorDesignatorLabel>
+  <TW_ThinDoorDesignatorDescription>Baut eine schmale Tür an einer Feldkante. Drehe die Vorschau für ein einzelnes Feld mit Q oder E; sobald die gezogene Linie ein zweites Feld erreicht, folgt die Tür ihrer rechten Seite. Das Feld bleibt nutzbar; nur beim Überqueren der Türkante muss sie geöffnet werden.</TW_ThinDoorDesignatorDescription>
+  <TW_InspectEdge>Kante: {0}</TW_InspectEdge>
+  <TW_AlreadyOnEdge>An dieser Kante ist bereits eine dünne Wand geplant oder gebaut.</TW_AlreadyOnEdge>
+  <TW_DoorNeedsExclusiveEdge>Eine dünne Tür benötigt die Kante für sich allein.</TW_DoorNeedsExclusiveEdge>
+  <TW_WallCrossesBuilding>Eine dünne Wand kann nicht durch dieses Gebäude verlaufen.</TW_WallCrossesBuilding>
+  <TW_BuildingCrossesWall>Dieses Gebäude würde eine dünne Wand kreuzen.</TW_BuildingCrossesWall>
+</LanguageData>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <JobDef>
+    <defName>TW_AttackThinWallEdge</defName>
+    <driverClass>ThinWalls.Pathing.JobDriver_AttackThinWallEdge</driverClass>
+    <reportString>melee attacking TargetA.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <casualInterruptible>false</casualInterruptible>
+    <collideWithPawns>true</collideWithPawns>
+  </JobDef>
+</Defs>

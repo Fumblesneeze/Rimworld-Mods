@@ -2,22 +2,28 @@ schema: spec-driven
 
 context: |
   This repository is a RimWorld mod monorepo. OpenSpec artifacts live at repository root under openspec/, while each playable mod lives under mods/<ModName>/.
-  The first mod is Immersive Chefs, package ID fumblesneeze.immersivechefs, owned at mods/ImmersiveChefs.
-  The development machine currently runs RimWorld 1.6 from F:\Steam\steamapps\common\RimWorld and stores Workshop content under F:\Steam\steamapps\workshop\content\294100.
-  Harmony is the only required third-party mod. All gameplay integrations must be optional and discovered by package ID without hard assembly references unless a future integration design explicitly isolates a reflection adapter.
+  Harmony is usually a required third-party mod used for code-patching. All DLC and third-party integrations and fixes must declare if the dependency is optional or required.
+  Optional dependencies shall be preferred, however depending on the semantics, a DLC or third party mod may be required when the mod is unplayable or has no effect/purpose without them.
+  Optional integrations must be discovered by package ID without hard assembly references. XML and C# Patches must be gated behind package id discovery for optional mods.
+  Required dependencies must declare such in the mod metadata and should assume, that the dependencies are thus correctly loaded. However, always assume that the actual C# or Def surface may change in the future.
+  Any patches should thus visibly fail when the expected surface changes, instead of silently gating behind specific versions or surfaces and then hiding any problems.
+  Never make guards for hashes, specific compiled or full-text files, etc. Assume that they may get patched in the future and try to make our adaptations as robust as possible, but fail loud if they do.
   Fast tests run outside RimWorld; Unity lifecycle, initialized Def databases, maps, jobs, rendering, and complete mod-load behavior require an in-game verification tier.
   Product specs may describe planned behavior, but proposals and task states must clearly distinguish implemented behavior from future scope.
 
 rules:
   proposal:
-    - Include an "Affected Mods" section with each mod's display name, package ID, and repository-relative path.
+    - Include an "Affected Mods" section with each mod's display name, package ID, and repository-relative path as well as "required" or "optional" labels.
     - State whether gameplay behavior is implemented by the change or only specified for later work.
   design:
     - Keep optional integrations behind package-ID detection and avoid compile-time references to optional mod assemblies.
     - Include rollback and restoration behavior for any process that changes RimWorld's ModsConfig.xml.
   specs:
     - Immediately below each delta-operation heading, identify the owning mod with display name, package ID, and repository-relative path.
-    - Give every normative requirement at least one observable WHEN/THEN scenario.
+    - Give every behavioural requirement at least one observable WHEN/THEN scenario.
+    - Costs, balancing, durations, categories, filters and all other values that we add or patch are requirements to be specified here.
   tasks:
     - Prefix implementation section headings with the owning repository-relative mod path.
-    - Separate TDD red, green, refactor, build, and in-game verification work.
+    - Separate TDD red, green, refactor, build, in-game verification work and the final common sense review pass.
+    - Do not add tests for non-behaviour except for automated asset verification like verifying outlines/measurements etc. Other non-behaviour like descriptions, translations, mod metadata, stats/balancing (raw numbers), etc. are not behaviour and thus automated tests are stupid for these.
+      - I.e. there should be no standalone test for "a wall costs 5 wood" even if that is specified, however another spec may state "when sufficient resources are delivered to the wall, and when a pawn with the construct job assigned is available, then it should work on and finish building the wall", which would require adding enough resources to the test scenario according to the other spec.

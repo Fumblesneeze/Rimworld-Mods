@@ -38,6 +38,10 @@ These are generation constraints, not a single optimal base. Confidence labels a
 - **Mechanical (scenario lifecycle):** Store one immutable map-cell origin for a generated scene and use it in
   every later phase. A named pawn may locate the scene for human review, but its changing `Position` must never
   become the origin for later furniture, utilities, checks, or camera framing.
+- **Mechanical/presentation acceptance (Core cardinal reachability and room boundaries):** Every enclosed
+  occupied building needs at least one functional door, airlock, or gate connected cardinally to outdoors or a
+  reachable circulation route. Reject a sealed showcase shell unless the requested story explicitly requires an
+  inaccessible ruin, containment room, or sealed structure and records that exception.
 
 ## Room scale and furnishing
 
@@ -50,12 +54,22 @@ These are generation constraints, not a single optimal base. Confidence labels a
 - **Mechanical/recurrent (Core Defs; RR-20260814, n=4,869 tables):** Size seating from the real occupied table
   footprint. Corpus medians are 2 chairs for 1x2, 4 for 2x2, 7 for 2x4 and 6 for 3x3 tables. Do not place more
   chairs than the selected table can visually and mechanically support.
+- **Mechanical/presentation acceptance (Core occupied rectangles and facing):** A chair shown as seating for a
+  table, counter, or workstation occupies a cardinal cell directly adjacent to that object's resolved
+  `OccupiedRect`, faces it, and has no empty-cell gap. A freestanding chair needs a recorded independent role and
+  intentional facing; reject an unexplained chair floated into circulation space for visual balance.
 
 - **Archetype starting heuristic (R17):** One community example cites a 7x3 interior for a two-station kitchen and 7x4
   for a freezer. Treat these as compact starting modules, then enlarge for Immersive Chefs stations,
   dishwashers, sinks, shelves, doors, and several simultaneous workers.
 - **Recurrent (R01, R02, R03, R07):** Furniture tends to line walls, form islands, or define one side of a passage. Do not center every
   object or fill every cell. Keep negative space for pawn traffic and readable sprites.
+- **Mechanical/presentation acceptance (Core bed footprint and interaction):** Put a bed's head end against a
+  solid wall or an intentional headboard/bay and leave a credible side or foot approach. A bed floating in open
+  floor space or blocked for compositional convenience is not an acceptable lived-in preview arrangement.
+- **Mechanical/presentation acceptance (Core door use):** Keep the door cell and both cardinal approach cells
+  free from furniture, decoration, storage, and interaction spots. The entrance must connect to a traceable
+  circulation route; merely placing a Door Def in an otherwise blocked shell does not make it functional.
 - **Recurrent (R01, R03, R06, R07):** Dining rooms provide at least several seats, not one test chair. Larger rooms combine seating
   clusters with art, plants, lights, temperature control, recreation, service counters, or nearby meal storage.
 - **Recurrent (R02, R03, R11):** Workshops and food-production rooms group compatible benches around shared storage and

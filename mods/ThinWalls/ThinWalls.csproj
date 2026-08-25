@@ -1,0 +1,45 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <RimWorldModName>Thin Walls</RimWorldModName>
+    <RimWorldPackageId>fumblesneeze.thinwalls</RimWorldPackageId>
+    <RimWorldDistributionKind>Product</RimWorldDistributionKind>
+    <Authors>Fumblesneeze</Authors>
+    <AssemblyName>ThinWalls</AssemblyName>
+    <RootNamespace>ThinWalls</RootNamespace>
+    <IncludeHarmony>true</IncludeHarmony>
+    <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
+    <Description>Build narrow, Stuff-made walls and doors along tile edges while keeping both adjacent cells usable. Edge structures block crossings and building footprints, join Thin and regular walls, and divide rooms with door-aware temperature exchange. Thin Walls cost 3 Stuff and have 150 base hit points; Thin Doors cost 13 Stuff and have 80. Neither supports roofs, and regular walls and doors remain available.</Description>
+  </PropertyGroup>
+
+  <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+
+  <!-- ModSdk 0.0.9 copies incrementally when deploying to the live Mods folder.
+       Thin Walls deliberately ships no structural raster assets, so a clean
+       exact-package deployment is required to prevent removed/rejected files
+       from surviving in the game and invalidating visual evidence. -->
+  <Target Name="ThinWallsPrepareCleanGameDeployment"
+          BeforeTargets="CopyMod"
+          Condition="'$(DeployToGame)' == 'true' and Exists('$(RimWorldModPackageFolder)')">
+    <RemoveDir Directories="$(RimWorldModPackageFolder)" />
+  </Target>
+
+  <!-- ModSdk 0.0.9 cannot traverse RimWorld 1.6's recursive Def graph. Finalized
+       XML is validated in an isolated game process instead. -->
+  <PropertyGroup>
+    <ThinWallsGenerateDefXsd Condition="'$(ThinWallsGenerateDefXsd)' == ''">false</ThinWallsGenerateDefXsd>
+  </PropertyGroup>
+  <Target Name="GenerateDefXsds"
+          AfterTargets="Build;CopyMod"
+          Inputs="@(RimWorldDefFiles);@(Reference);@(RimWorldCompilationResult)"
+          Outputs="$(DefsXsdFileName)"
+          Condition="'$(ThinWallsGenerateDefXsd)' == 'true' and '@(RimWorldResourceDefs)' != ''">
+    <GenerateXdsFilesForDefs References="@(Reference)"
+                             RimWorldCompilationResult="@(RimWorldCompilationResult)"
+                             RimWorldDefFiles="@(RimWorldDefFiles)"
+                             XmlSchemaFileName="$(DefsXsdFileName)" />
+  </Target>
+</Project>

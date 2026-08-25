@@ -1,3 +1,8 @@
+# This file is organized by repository role, not by mod name. A normal new
+# mods/<ModName> project should not need another rule: source, Defs, Languages,
+# Patches, Textures, About previews/identity, release profiles, and reviewed
+# Workshop sources remain trackable. Add a rule only for a new generated form.
+
 # Editors and operating-system metadata
 .vs/
 .idea/
@@ -10,32 +15,30 @@
 Thumbs.db
 Desktop.ini
 
-# .NET, NuGet, and compiled output
-artifacts/
+# Repository and per-project build output
+/artifacts/
 **/[Bb]in/
 **/[Oo]bj/
 **/[Oo]ut/
 **/[Dd]ist/
-TestResults/
 **/TestResults/
 **/*.received.*
 *.trx
 *.coverage
 *.coveragexml
-coverage/
 **/coverage/
 *.nupkg
 *.snupkg
-packages/
-.nuget/
+/packages/
+/.nuget/
 *.dll
 *.exe
 *.pdb
 *.deps.json
 *.runtimeconfig.json
 
-# Generated RimWorld and integration-test state
-mods/*/About/About.xml
+# Generated state for every mod under mods/<ModName> and every test owner
+/mods/*/About/About.xml
 **/Defs/DefsSchema.xsd
 **/DevIntegrationTests/
 **/DevEndToEndTests/
@@ -43,7 +46,6 @@ mods/*/About/About.xml
 **/.DevEndToEndTests.backup.*/
 .rimworld-integration-test-stage.owner
 .rimworld-integration-test-transaction.json
-SavedData/
 **/SavedData/
 Player.log
 ModsConfig.xml
@@ -51,28 +53,28 @@ ModsConfig.xml
 *.dmp
 *.dump
 
-# Logs, temporary data, screenshots, reports, and audits
+# Logs, temporary files, and repository-local reports
 *.log
 *.tmp
 *.bak
 *.cache
-reports/
-audits/
-screenshots/
-docs/LocalDependencies.md
-docs/RequirementsGaps.md
-docs/TddEvidence.md
+/reports/
+/audits/
+/screenshots/
+/docs/LocalDependencies.md
+/docs/RequirementsGaps.md
+/docs/TddEvidence.md
 
 # Local Codex runtime state. Repository skills are committed under .agents/skills.
-.codex/cache/
-.codex/tmp/
-.codex/state/
+/.codex/cache/
+/.codex/tmp/
+/.codex/state/
 
 # Downloaded tools, package-manager caches, and local environments
-.tools/
-.tooling/
-downloads/
-vendor/
+/.tools/
+/.tooling/
+/downloads/
+/vendor/
 node_modules/
 __pycache__/
 *.py[cod]

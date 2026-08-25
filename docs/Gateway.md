@@ -4,6 +4,8 @@ RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) is an intentionally dan
 
 Use it only in a disposable isolated `-savedatafolder`. Uploaded code runs with the RimWorld process's full access, can corrupt game state or files, and cannot be unloaded from the AppDomain. Code that blocks the main thread can freeze the game even after the HTTP caller times out.
 
+The Gateway warning and any integration/E2E status boxes are intentionally absent from ordinary map play. Open RimWorld's native in-play Escape menu to see them. Native screenshot mode, runtime shutdown, and the title screen keep the Gateway-owned overlay hidden; the authenticated API and startup/session warnings remain available independently.
+
 ## Transport and threat model
 
 The in-process server is EmbedIO 3.5.2 in managed-listener mode, bound only to a dynamically selected IPv4 `127.0.0.1` port. EmbedIO owns HTTP parsing and connection handling; the mod does not implement a raw HTTP parser. Kestrel is not used because current Kestrel expects the ASP.NET Core shared framework and a modern CoreCLR host, while RimWorld 1.6 loads `net48`-compatible mods in Unity Mono. EmbedIO supports the target runtime with a much smaller dependency graph.

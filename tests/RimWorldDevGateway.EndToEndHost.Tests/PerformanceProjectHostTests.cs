@@ -151,7 +151,7 @@ public sealed class PerformanceProjectHostTests
              directory is not null;
              directory = directory.Parent)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "ImmersiveChefs.sln"))) return directory.FullName;
+            if (File.Exists(Path.Combine(directory.FullName, "RimWorldMods.sln"))) return directory.FullName;
         }
 
         throw new InvalidOperationException("Could not locate the repository root.");

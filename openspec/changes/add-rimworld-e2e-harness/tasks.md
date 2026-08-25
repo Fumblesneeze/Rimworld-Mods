@@ -36,6 +36,7 @@
 - [x] 2.23 TDD: After an exact semantic gizmo callback opens exactly one native `FloatMenu`, hold and lease only that exact newly opened instance against mouse-distance vanishing, reject replacement/ambiguity, and clear or consume the lease through bounded action/isolation cleanup while restoring the leased menu's prior behavior and leaving pre-existing windows unchanged.
 - [x] 2.24 REVIEW TDD: Pass the open menu's actual `givesColonistOrders` value into `FloatMenuOption.Chosen` and cover both native modes instead of hard-coding a generic callback mode.
 - [x] 2.25 REVIEW TDD: Mirror `FloatMenuOption.DoGUI` tutorial gating by requiring `TutorSystem.AllowAction`, then chosen, tutorial notification, and close; prove rejection performs none of the latter three operations.
+- [x] 2.26 TDD/E2E: Add a typed native in-play Escape-menu open/close action through exact `MainTabsRoot` paths and use it to prove the Gateway overlay is absent during ordinary map play, present only in the open menu, and absent after close without desktop input.
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 

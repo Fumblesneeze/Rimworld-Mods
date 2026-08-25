@@ -114,6 +114,11 @@ internal interface IGatewayEndToEndArchitectCategoryBackend
     GatewayEndToEndStepOutcome ApplyArchitectCategory(ArchitectCategoryActionStep step);
 }
 
+internal interface IGatewayEndToEndEscapeMenuBackend
+{
+    GatewayEndToEndStepOutcome ApplyEscapeMenu(EscapeMenuActionStep step);
+}
+
 internal interface IGatewayEndToEndCurrentFloatMenuBackend
 {
     GatewayEndToEndStepOutcome ApplyCurrentFloatMenu(CurrentFloatMenuActionStep step);
@@ -149,6 +154,7 @@ public sealed class GatewayEndToEndNativeActions :
     IGatewayEndToEndNativeActions,
     IGatewayEndToEndDialogConfirmationNativeActions,
     IGatewayEndToEndArchitectCategoryNativeActions,
+    IGatewayEndToEndEscapeMenuNativeActions,
     IGatewayEndToEndCurrentFloatMenuNativeActions,
     IGatewayEndToEndDesignatorSessionNativeActions,
     IGatewayEndToEndInspectionNativeActions
@@ -487,6 +493,19 @@ public sealed class GatewayEndToEndNativeActions :
             : Fail(
                 "unsupported_e2e_step",
                 "The configured E2E backend does not support Architect-category actions.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndEscapeMenuNativeActions.Apply(
+        EscapeMenuActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndEscapeMenuBackend escapeMenuBackend
+            ? escapeMenuBackend.ApplyEscapeMenu(step) ??
+              throw new InvalidOperationException("The Escape-menu backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support Escape-menu actions.");
     }
 
     GatewayEndToEndStepOutcome IGatewayEndToEndInspectionNativeActions.Apply(

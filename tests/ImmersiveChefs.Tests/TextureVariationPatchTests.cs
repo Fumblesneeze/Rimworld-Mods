@@ -158,7 +158,7 @@ public sealed class TextureVariationPatchTests
         var current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
         while (current is not null)
         {
-            if (File.Exists(Path.Combine(current.FullName, "ImmersiveChefs.sln")))
+            if (File.Exists(Path.Combine(current.FullName, "RimWorldMods.sln")))
             {
                 return current.FullName;
             }

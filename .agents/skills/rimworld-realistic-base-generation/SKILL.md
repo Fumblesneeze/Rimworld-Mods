@@ -1,6 +1,6 @@
 ---
 name: rimworld-realistic-base-generation
-description: Research, design, arrange, and review believable RimWorld colonies and presentation scenes from player-built visual references, gameplay constraints, installed-mod Defs, and large Real Ruins blueprint corpora. Use when creating showcase colonies, E2E/performance fixtures meant to look lived-in, room layouts, kitchens, restaurants, prisons, workshops, settlements, or reusable base-generation rules; use it before writing scene setup code instead of guessing room shapes, placement, materials, decor, utilities, or traffic flow.
+description: Research, design, arrange, and review believable RimWorld colonies and presentation scenes from player-built visual references, gameplay constraints, installed-mod Defs, and large Real Ruins blueprint corpora. Use for gameplay preview renderings, About previews, Workshop/title/feature-card scenes, showcase colonies, E2E/performance fixtures meant to look lived-in, room layouts, kitchens, restaurants, prisons, workshops, settlements, or reusable base-generation rules; use it before writing scene setup code instead of guessing room shapes, placement, materials, decor, utilities, entrances, sleeping layouts, or traffic flow.
 ---
 
 # RimWorld Realistic Base Generation
@@ -22,7 +22,7 @@ waive native-action or live-observation requirements.
 - Read [references/real-ruins.md](references/real-ruins.md) whenever a new layout or placement rule could be
   measured from the Real Ruins corpus. Do not substitute a token sample for the bulk workflow.
 - Read [references/design-record.md](references/design-record.md) and create its per-scene record before writing
-  setup code for a showcase or other presentation fixture.
+  setup code for a showcase, gameplay preview rendering, About/Workshop card, or other presentation fixture.
 
 ## Research before arranging
 
@@ -96,6 +96,19 @@ only when the live state is genuinely unrecoverable or the fixture itself is the
   run does not fit, turn a fixture onto a second wall or redesign the room; never shrink the Defs mentally or
   allow spawning to replace walls.
 - Derive seating from the actual table footprint. Never place chairs from a guessed visual center.
+- A chair presented as table, counter, or workstation seating SHALL occupy a cardinal cell immediately
+  adjacent to the exact occupied rectangle it serves, face that object, and leave no empty-cell gap.
+  A freestanding chair needs a documented independent purpose and a plausible facing; otherwise reject it
+  as decorative fixture scatter.
+- Give every enclosed occupied building a functional cardinal entrance connected to outdoors or to a reachable
+  circulation route. A sealed shell is rejected unless the requested story is explicitly a sealed ruin,
+  containment space, or inaccessible structure and the design record says so.
+- Keep every door leaf/cell and both cardinal approach cells free of furniture, decoration, storage, and
+  interaction spots. A door that exists but opens into a blocked or implausible approach is not a functional
+  entrance.
+- Place a bed with its head end against a solid wall or an intentional built headboard/bay, and preserve a
+  believable side or foot approach. Do not float a bed in arbitrary open floor space or block its normal access
+  merely to balance a screenshot.
 - Treat `<rotatable>false</rotatable>` as an asset contract. Do not rotate a Graphic_Single object to make it fit.
 - Route visible conduits and plumbing through wall cells or service corridors unless an inspected reference and
   functional constraint justify a crossing.
@@ -131,6 +144,10 @@ Reject a scene when any answer is no:
 - Does the crop read as part of a colony before the showcased mechanic is explained?
 - Can a viewer tell where inputs come from, where work happens, and where outputs go?
 - Are room sizes, doors, work cells, paths, and storage plausible for the visible population?
+- Does every occupied enclosed building have a visible or clearly traceable functional entrance, rather than a
+  decorative sealed shell?
+- Is every bed oriented and approached like usable sleeping furniture, with its head against a wall or deliberate
+  headboard/bay and a clear side or foot route?
 - Are material and floor changes deliberate rather than a uniform fill or random patchwork?
 - Are chairs attached to the real occupied cells of a sufficiently large table, with believable circulation?
 - Are fixed-orientation utilities using their native sprite direction, and are tanks/generators in a plausible
@@ -140,6 +157,15 @@ Reject a scene when any answer is no:
 - Is there a believable amount of lighting, decor, wear, stored goods, and empty circulation space?
 - Are debug UI, learning helper, test labels, selection brackets, fixture names, and manufactured outcomes absent?
 - Does the native action remain legible at final crop size and during a sub-five-second GIF?
+
+For every image intended for About, Workshop, a title card, or another public presentation, perform a
+separate placement audit in addition to the blind visual-identity review. Enumerate every visible bed,
+chair, table/counter, workbench, door, interaction spot, and primary aisle. For each item, state whether its
+position, rotation, adjacency, and access are aesthetically intentional, mechanically usable, consistent
+with ordinary real-world/common-sense placement, and consistent with this skill. Explicitly list every
+violation—including awkward empty gaps, floating furniture, blocked doors, wrong bed heads, clipped sprites,
+and unexplained props—or state that none were found for each category. A generic verdict such as
+"coherent" or "looks lived-in" does not pass this audit.
 
 Capture a rejected-frame note and feed the reason back into the rule catalog. Do not patch a weak scene by adding
 more arbitrary clutter.

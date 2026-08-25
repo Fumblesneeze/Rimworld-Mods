@@ -289,7 +289,7 @@ public sealed class DpaRuntimeAdapterTests
     private static string FixtureAssemblyPath()
     {
         var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ImmersiveChefs.sln")))
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "RimWorldMods.sln")))
             directory = directory.Parent;
         if (directory is null) throw new DirectoryNotFoundException("Could not locate the repository root.");
         return Path.Combine(directory.FullName, "tests", "Fixtures", "Dpa.ValidFixtures", "bin",

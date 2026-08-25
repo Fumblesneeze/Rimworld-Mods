@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ThinWall.label>dünne Wand</TW_ThinWall.label>
+  <TW_ThinWall.description>Eine schmale Wand an einer Feldkante. Sie blockiert Figuren und Gebäudegrundrisse an dieser Kante, während das Feld selbst nutzbar bleibt. Dünne Wände teilen Räume, tragen aber keine Dächer.</TW_ThinWall.description>
+  <TW_ThinDoor.label>dünne Tür</TW_ThinDoor.label>
+  <TW_ThinDoor.description>Eine schmale Tür an einer Feldkante. Das Feld bleibt nutzbar; nur beim Überqueren der Türkante muss sie geöffnet werden. Dünne Türen teilen Räume, tragen aber keine Dächer.</TW_ThinDoor.description>
+</LanguageData>

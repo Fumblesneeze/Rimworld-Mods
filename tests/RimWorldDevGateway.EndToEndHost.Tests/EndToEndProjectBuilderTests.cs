@@ -141,7 +141,7 @@ public sealed class EndToEndProjectBuilderTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "ImmersiveChefs.sln")))
+            if (File.Exists(Path.Combine(directory.FullName, "RimWorldMods.sln")))
             {
                 return directory.FullName;
             }

@@ -396,6 +396,20 @@ public sealed class EndToEndTestingContractTests
     }
 
     [Test]
+    public void Escape_menu_action_declares_only_open_or_close_intent()
+    {
+        var open = new EscapeMenuActionStep("open Escape menu", open: true);
+        var close = new EscapeMenuActionStep("close Escape menu", open: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(open.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(open.Open, Is.True);
+            Assert.That(close.Open, Is.False);
+        });
+    }
+
+    [Test]
     public void Shared_steps_do_not_publish_an_unbounded_synchronous_delegate_action()
     {
         var unsafeProperties = typeof(EndToEndStep).Assembly

@@ -256,7 +256,7 @@ public sealed class DishwasherCapacityTests
     private static string FindRepositoryRoot()
     {
         var current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
-        while (current is not null && !File.Exists(Path.Combine(current.FullName, "ImmersiveChefs.sln")))
+        while (current is not null && !File.Exists(Path.Combine(current.FullName, "RimWorldMods.sln")))
         {
             current = current.Parent;
         }

@@ -45,6 +45,8 @@ Initial typed steps cover:
 - process-scoped click, drag, chord, key, and text input when no semantic path exists;
 - an exact native Architect-category action that opens/closes the main tab and selects one loaded
   `DesignationCategoryDef` without restoring or foregrounding the process;
+- an exact native in-play Escape-menu action that opens/closes `MainButtonDefOf.Menu` through
+  `MainTabsRoot` without restoring or foregrounding the process;
 - exact native trade-dialog transfer and acceptance actions that can run without restoring the minimized game window;
 - exact allowlisted optional-mod dialog confirmations that retain private assembly/type/callback shapes in the Gateway rather than accepting reflection details from test bundles;
 - pause and native speed control;

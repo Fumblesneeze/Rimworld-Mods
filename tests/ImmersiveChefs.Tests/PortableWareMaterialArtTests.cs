@@ -61,7 +61,7 @@ public sealed class PortableWareMaterialArtTests
         var current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
         while (current is not null)
         {
-            if (File.Exists(Path.Combine(current.FullName, "ImmersiveChefs.sln"))) return current.FullName;
+            if (File.Exists(Path.Combine(current.FullName, "RimWorldMods.sln"))) return current.FullName;
             current = current.Parent;
         }
         throw new DirectoryNotFoundException("Could not locate the Immersive Chefs repository root.");

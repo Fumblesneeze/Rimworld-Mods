@@ -339,7 +339,9 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
         if (!GatewayRuntimeOverlayPolicy.ShouldDraw(
                 runtime?.IsRunning == true,
                 Volatile.Read(ref stopping) != 0,
-                Find.ScreenshotModeHandler?.Active == true))
+                Find.ScreenshotModeHandler?.Active == true,
+                Current.ProgramState == ProgramState.Playing && Current.Root is Root_Play,
+                IsNativeEscapeMenuOpen))
         {
             return;
         }
@@ -368,6 +370,9 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             GUI.Box(new Rect(8f, 76f, 620f, 30f), state);
         }
     }
+
+    private static bool IsNativeEscapeMenuOpen() =>
+        Find.MainTabsRoot.OpenTab == MainButtonDefOf.Menu;
 
     internal void Initialize(
         GatewayRuntime value,
@@ -548,8 +553,17 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
 
 internal static class GatewayRuntimeOverlayPolicy
 {
-    internal static bool ShouldDraw(bool runtimeRunning, bool stopping, bool screenshotMode) =>
-        runtimeRunning && !stopping && !screenshotMode;
+    internal static bool ShouldDraw(
+        bool runtimeRunning,
+        bool stopping,
+        bool screenshotMode,
+        bool inPlayUi,
+        Func<bool> escapeMenuOpen) =>
+        runtimeRunning &&
+        !stopping &&
+        !screenshotMode &&
+        inPlayUi &&
+        escapeMenuOpen();
 }
 
 internal sealed class UnityGatewayLogSubscription : IDisposable

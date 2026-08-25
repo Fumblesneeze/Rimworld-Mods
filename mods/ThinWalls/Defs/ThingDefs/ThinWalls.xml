@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ThingDef ParentName="BuildingBase">
+    <defName>TW_ThinWall</defName>
+    <label>thin wall</label>
+    <description>A narrow wall mounted along one edge of a tile. It blocks crossing that edge while leaving the tile itself usable. Thin walls divide rooms but never support roofs.</description>
+    <thingClass>ThinWalls.Buildings.Building_ThinWall</thingClass>
+    <category>Building</category>
+    <drawerType>MapMeshOnly</drawerType>
+    <altitudeLayer>Building</altitudeLayer>
+    <graphicData>
+      <texPath>Things/Building/Linked/Wall</texPath>
+      <graphicClass>Graphic_Appearances</graphicClass>
+      <drawSize>(1,1)</drawSize>
+      <shaderType>CutoutComplex</shaderType>
+      <damageData>
+        <enabled>false</enabled>
+      </damageData>
+    </graphicData>
+    <uiIconPath>Things/Building/Linked/WallSmooth_MenuIcon</uiIconPath>
+    <castEdgeShadows>false</castEdgeShadows>
+    <staticSunShadowHeight>0</staticSunShadowHeight>
+    <selectable>true</selectable>
+    <rotatable>true</rotatable>
+    <pathCost>0</pathCost>
+    <passability>Standable</passability>
+    <fillPercent>0</fillPercent>
+    <coversFloor>false</coversFloor>
+    <blockWind>false</blockWind>
+    <holdsRoof>false</holdsRoof>
+    <terrainAffordanceNeeded>Light</terrainAffordanceNeeded>
+    <useHitPoints>true</useHitPoints>
+    <leaveResourcesWhenKilled>true</leaveResourcesWhenKilled>
+    <destroyable>true</destroyable>
+    <designationCategory>Structure</designationCategory>
+    <canGenerateDefaultDesignator>false</canGenerateDefaultDesignator>
+    <drawStyleCategory>TW_ThinWallLine</drawStyleCategory>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+      <li>Stony</li>
+    </stuffCategories>
+    <costStuffCount>3</costStuffCount>
+    <statBases>
+      <MaxHitPoints>150</MaxHitPoints>
+      <WorkToBuild>600</WorkToBuild>
+      <Mass>2.5</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>-1</Beauty>
+    </statBases>
+    <building>
+      <blueprintClass>ThinWalls.Buildings.Blueprint_ThinWall</blueprintClass>
+      <isEdifice>false</isEdifice>
+      <canBuildNonEdificesUnder>true</canBuildNonEdificesUnder>
+      <allowAutoroof>false</allowAutoroof>
+      <isWall>false</isWall>
+      <paintable>true</paintable>
+    </building>
+    <constructionSkillPrerequisite>0</constructionSkillPrerequisite>
+  </ThingDef>
+
+  <ThingDef ParentName="DoorBase">
+    <defName>TW_ThinDoor</defName>
+    <label>thin door</label>
+    <description>A narrow door mounted along one edge of a tile. The tile remains usable, and only crossing the door edge requires it to open. Thin doors divide rooms but never support roofs.</description>
+    <thingClass>ThinWalls.Buildings.Building_ThinDoor</thingClass>
+    <graphicData>
+      <texPath>Things/Building/Linked/Wall</texPath>
+      <graphicClass>Graphic_Appearances</graphicClass>
+      <drawSize>(1,1)</drawSize>
+      <shaderType>CutoutComplex</shaderType>
+      <damageData>
+        <enabled>false</enabled>
+      </damageData>
+    </graphicData>
+    <uiIconPath>Things/Building/Linked/WallSmooth_MenuIcon</uiIconPath>
+    <canGenerateDefaultDesignator>false</canGenerateDefaultDesignator>
+    <drawStyleCategory>TW_ThinWallLine</drawStyleCategory>
+    <rotatable>true</rotatable>
+    <drawerType>MapMeshAndRealTime</drawerType>
+    <passability>Standable</passability>
+    <pathCost>0</pathCost>
+    <fillPercent>0</fillPercent>
+    <coversFloor>false</coversFloor>
+    <blockWind>false</blockWind>
+    <blockLight>false</blockLight>
+    <holdsRoof>false</holdsRoof>
+    <staticSunShadowHeight>0</staticSunShadowHeight>
+    <forceMoveItemsBeforeConstruction>false</forceMoveItemsBeforeConstruction>
+    <leaveResourcesWhenKilled>true</leaveResourcesWhenKilled>
+    <costStuffCount>13</costStuffCount>
+    <statBases>
+      <MaxHitPoints>80</MaxHitPoints>
+      <WorkToBuild>425</WorkToBuild>
+      <Mass>2.5</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>-1</Beauty>
+    </statBases>
+    <building>
+      <blueprintClass>ThinWalls.Buildings.Blueprint_ThinDoor</blueprintClass>
+      <isEdifice>false</isEdifice>
+      <canBuildNonEdificesUnder>true</canBuildNonEdificesUnder>
+      <allowAutoroof>false</allowAutoroof>
+      <isWall>false</isWall>
+      <paintable>true</paintable>
+      <canExchangeVacuum>false</canExchangeVacuum>
+      <isStuffableAirtight>false</isStuffableAirtight>
+    </building>
+    <placeWorkers Inherit="False" />
+    <constructionSkillPrerequisite>0</constructionSkillPrerequisite>
+  </ThingDef>
+</Defs>

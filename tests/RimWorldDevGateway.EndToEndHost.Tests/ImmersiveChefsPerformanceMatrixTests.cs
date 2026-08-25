@@ -153,7 +153,7 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
              directory is not null;
              directory = directory.Parent)
-            if (File.Exists(Path.Combine(directory.FullName, "ImmersiveChefs.sln")))
+            if (File.Exists(Path.Combine(directory.FullName, "RimWorldMods.sln")))
                 return directory.FullName;
         throw new DirectoryNotFoundException("Could not find repository root.");
     }

@@ -1,0 +1,11 @@
+{
+  "ownerPackageId": "fumblesneeze.thinwalls",
+  "assembly": "ThinWalls.InGame.IntegrationTests.dll",
+  "activePackageSetMode": "exact",
+  "activePackageIds": [
+    "brrainz.harmony",
+    "ludeon.rimworld",
+    "fumblesneeze.thinwalls",
+    "fumblesneeze.rimworlddevgateway"
+  ]
+}
