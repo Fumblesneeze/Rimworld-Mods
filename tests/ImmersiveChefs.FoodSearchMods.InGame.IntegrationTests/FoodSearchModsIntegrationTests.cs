@@ -21,6 +21,7 @@ public static class FoodSearchModsIntegrationTests
         {
             "brrainz.harmony",
             "ludeon.rimworld",
+            "imranfish.xmlextensions",
             "Argon.CheapMeals",
             "Memegoddess.MealsOnWheels",
             "seekiworksmod.no10",

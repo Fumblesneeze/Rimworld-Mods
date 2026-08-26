@@ -3,6 +3,7 @@
   "name": "immersive-chefs-cutlery-free-map",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

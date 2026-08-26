@@ -7,7 +7,9 @@
     <Nullable>enable</Nullable>
     <RimWorldPerformanceTest>true</RimWorldPerformanceTest>
     <RimWorldPerformanceTestOwnerPackageId>fumblesneeze.immersivechefs</RimWorldPerformanceTestOwnerPackageId>
-    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(DefaultSteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
+    <RimWorldPath Condition="'$(RimWorldPath)' == ''">$(DefaultRimWorldPath)</RimWorldPath>
+    <SteamModContentFolder Condition="'$(SteamModContentFolder)' == ''">$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(SteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,11 +17,11 @@
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.PerformanceTesting\RimWorldDevGateway.PerformanceTesting.csproj" />
     <Reference Include="Assembly-CSharp">
-      <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(RimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(RimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">

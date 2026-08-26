@@ -49,6 +49,10 @@ public sealed record ReleaseProfileResult(
     string Description,
     string Preview);
 
+public sealed record ModBuildResult(
+    AdapterOperationResult Build,
+    LocalModInstallResult Installation);
+
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, WriteIndented = true)]
 [JsonSerializable(typeof(RepositoryStatusResult))]
 [JsonSerializable(typeof(List<OperationDescriptor>))]
@@ -61,6 +65,7 @@ public sealed record ReleaseProfileResult(
 [JsonSerializable(typeof(ReleaseProfile))]
 [JsonSerializable(typeof(ReleasePreparationResult))]
 [JsonSerializable(typeof(AdapterOperationResult))]
+[JsonSerializable(typeof(ModBuildResult))]
 [JsonSerializable(typeof(RunLeaseRecord))]
 [JsonSerializable(typeof(RunStartResult))]
 [JsonSerializable(typeof(RunStatusResult))]

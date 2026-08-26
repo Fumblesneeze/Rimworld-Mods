@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using Verse;
@@ -9,43 +8,41 @@ using Verse;
 namespace ImmersiveChefs.EndToEndTests;
 
 [RimWorldEndToEndTest(
-    "immersive-chefs.ceramics-continued-porcelain-plates",
+    "immersive-chefs.expanded-masonry-adobe-plates",
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
     "imranfish.xmlextensions",
-    "zal.ceramics",
+    "argon.corelib",
+    "oskarpotocki.vanillafactionsexpanded.core",
+    "argon.expandedmaterials.masonry",
     "fumblesneeze.immersivechefs",
     MaxFrames = 5_000,
     MaxGameTicks = 16_000,
     MaxWallClockSeconds = 150)]
-public sealed class CeramicsContinuedPorcelainPlateTest : IRimWorldEndToEndTest
+public sealed class ExpandedMasonryAdobePlateTest : IRimWorldEndToEndTest
 {
     private Map map = null!;
     private Pawn crafter = null!;
-    private Building_WorkTable bench = null!;
+    private Building_WorkTable craftingSpot = null!;
     private RecipeDef recipe = null!;
-    private Thing porcelain = null!;
+    private Thing adobeBricks = null!;
     private ThingWithComps? plates;
 
     public void Arrange(IEndToEndContext context)
     {
         map = Current.Game.CurrentMap;
         var center = FindFixtureCenter(map);
-        FinishResearchForFixture(context, "PrimitiveCeramics");
-        FinishResearchForFixture(context, "BasicCeramics");
 
         crafter = GenerateCrafter();
         GenSpawn.Spawn(crafter, center + (IntVec3.South * 3), map);
 
-        var benchDef = DefDatabase<ThingDef>.GetNamed("CeramicsBench_Basic");
-        bench = (Building_WorkTable)ThingMaker.MakeThing(
-            benchDef,
-            benchDef.MadeFromStuff ? ThingDefOf.WoodLog : null);
-        bench.SetFactionDirect(Faction.OfPlayer);
-        GenSpawn.Spawn(bench, center, map, Rot4.North);
+        var spotDef = DefDatabase<ThingDef>.GetNamed("CraftingSpot");
+        craftingSpot = (Building_WorkTable)ThingMaker.MakeThing(spotDef);
+        craftingSpot.SetFactionDirect(Faction.OfPlayer);
+        GenSpawn.Spawn(craftingSpot, center, map, Rot4.North);
 
-        recipe = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePorcelainPlates");
+        recipe = DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakeAdobePlates");
         var bill = new Bill_Production(recipe)
         {
             repeatMode = BillRepeatModeDefOf.RepeatCount,
@@ -54,46 +51,48 @@ public sealed class CeramicsContinuedPorcelainPlateTest : IRimWorldEndToEndTest
         };
         bill.SetStoreMode(BillStoreModeDefOf.DropOnFloor);
         bill.SetPawnRestriction(crafter);
-        bench.BillStack.AddBill(bill);
+        craftingSpot.BillStack.AddBill(bill);
 
-        porcelain = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("N7_Porcelain"));
-        porcelain.stackCount = 4;
-        GenSpawn.Spawn(porcelain, center + (IntVec3.West * 2), map);
+        adobeBricks = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("EM_AdobeBricks"));
+        adobeBricks.stackCount = 4;
+        GenSpawn.Spawn(adobeBricks, center + (IntVec3.West * 2), map);
         Find.TickManager.Pause();
     }
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
         yield return new CheckpointStep(
-            "finalized Ceramics porcelain plate contract",
+            "package-ID-gated Expanded Masonry adobe plate contract",
             _ => new Dictionary<string, string>
             {
                 ["package"] = LoadedModManager.RunningModsListForReading
-                    .Single(mod => string.Equals(mod.PackageId, "zal.ceramics", StringComparison.OrdinalIgnoreCase))
+                    .Single(mod => string.Equals(
+                        mod.PackageId,
+                        "argon.expandedmaterials.masonry",
+                        StringComparison.OrdinalIgnoreCase))
                     .PackageId,
                 ["recipe"] = recipe.defName,
-                ["bench"] = bench.def.defName,
-                ["input"] = porcelain.def.defName + ":" + porcelain.stackCount,
-                ["output"] = recipe.products.Single().thingDef.defName + ":" + recipe.products.Single().count,
-                ["research"] = recipe.researchPrerequisite?.defName ?? "missing"
+                ["bench"] = craftingSpot.def.defName,
+                ["input"] = adobeBricks.def.defName + ":" + adobeBricks.stackCount,
+                ["output"] = recipe.products.Single().thingDef.defName + ":" + recipe.products.Single().count
             });
 
-        var fixtureThings = new[] { crafter.ThingID, bench.ThingID, porcelain.ThingID };
+        var fixtureThings = new[] { crafter.ThingID, craftingSpot.ThingID, adobeBricks.ThingID };
         yield return new SelectionActionStep(
-            "select the ceramics crafting fixture",
+            "select the adobe crafting fixture",
             fixtureThings,
             additive: false);
         yield return new CameraActionStep(
-            "frame the ceramics bench and porcelain",
+            "frame the crafting spot and adobe bricks",
             fixtureThings,
             paddingPixels: 220);
         yield return new ScreenshotStep(
-            "before the native porcelain plate bill",
+            "before the native adobe plate bill",
             fixtureThings,
             paddingPixels: 220);
 
         var options = context.GetRequiredService<IEndToEndFloatMenuCatalog>()
-            .Query(crafter.ThingID, bench.ThingID);
+            .Query(crafter.ThingID, craftingSpot.ThingID);
         var prioritize = options.Where(option =>
                 !option.Disabled &&
                 option.Label.IndexOf("prioritize", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -101,87 +100,78 @@ public sealed class CeramicsContinuedPorcelainPlateTest : IRimWorldEndToEndTest
         EndToEndAssert.Equal(
             1,
             prioritize.Length,
-            "Expected one enabled native Prioritize option for the porcelain plate bill; observed " +
+            "Expected one enabled native Prioritize option for the adobe plate bill; observed " +
             string.Join(", ", options.Select(option => $"'{option.Label}' (disabled={option.Disabled})")));
         yield return new FloatMenuActionStep(
-            "prioritize the porcelain plate bill through the native float menu",
+            "prioritize the adobe plate bill through the native float menu",
             crafter.ThingID,
-            bench.ThingID,
+            craftingSpot.ThingID,
             prioritize[0].StableId);
         yield return new TimeControlActionStep(
-            "run the player-ordered ceramics work",
+            "run the player-ordered adobe work",
             paused: false,
             EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
-            "the crafter begins the native porcelain plate bill",
+            "the crafter begins the native adobe plate bill",
             _ => crafter.CurJobDef == JobDefOf.DoBill && crafter.CurJob?.RecipeDef == recipe,
             new EndToEndDeadline(1_200, 4_000, TimeSpan.FromSeconds(40)));
         yield return new ScreenshotStep(
-            "porcelain plate bill in progress",
-            new[] { crafter.ThingID, bench.ThingID },
+            "adobe plate bill in progress",
+            new[] { crafter.ThingID, craftingSpot.ThingID },
             paddingPixels: 220);
         yield return new WaitUntilStep(
-            "the native bill produces four porcelain plates",
-            _ => TryResolvePorcelainPlates(),
+            "the native bill produces four adobe plates",
+            _ => TryResolveAdobePlates(),
             new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(75)));
         yield return new TimeControlActionStep(
-            "pause after porcelain plate crafting",
+            "pause after adobe plate crafting",
             paused: true,
             EndToEndGameSpeed.Normal);
         yield return new AssertionStep(
-            "ordinary ceramics work consumes four porcelain and preserves it as plate Stuff",
+            "ordinary crafting consumes four bricks and produces fixed-material adobe plates",
             _ =>
             {
-                EndToEndAssert.True(porcelain.Destroyed, "The exact four-unit porcelain input must be consumed.");
-                EndToEndAssert.NotNull(plates, "The ordinary bill must produce porcelain plates.");
-                EndToEndAssert.Equal("N7_Porcelain", plates!.Stuff?.defName, "The product must retain porcelain as Stuff.");
+                EndToEndAssert.True(adobeBricks.Destroyed, "The exact four-unit adobe-brick input must be consumed.");
+                EndToEndAssert.NotNull(plates, "The ordinary bill must produce adobe plates.");
+                EndToEndAssert.True(plates!.Stuff is null, "Adobe plates are fixed-material products, not invented Stuff.");
                 EndToEndAssert.Equal(4, plates.stackCount, "One native bill must produce four plates.");
-                EndToEndAssert.Equal(
-                    plates.Stuff!.stuffProps.color,
-                    plates.DrawColor,
-                    "The rendered plate color must come from the exact porcelain Stuff mask.");
                 EndToEndAssert.NotNull(plates.GetComp<CompQuality>(), "Native crafting must assign plate quality.");
                 EndToEndAssert.Equal(
-                    75f,
+                    5f,
                     plates.GetComp<CompKitchenwareStats>().CurrentStats.MaterialCleanliness,
-                    "The crafted plates must use the ceramic profile rather than primitive stone.");
-                EndToEndAssert.False(
-                    DefDatabase<RecipeDef>.GetNamed("ImmersiveChefs_MakePrimitivePlates")
-                        .ingredients.Single().filter.Allows(DefDatabase<ThingDef>.GetNamed("N7_Porcelain")),
-                    "Porcelain must remain unavailable to the primitive stone recipe.");
+                    "The crafted plates must use the fixed adobe material profile.");
             });
         yield return new SelectionActionStep(
-            "select the crafted porcelain plates",
+            "select the crafted adobe plates",
             new[] { plates!.ThingID },
             additive: false);
         yield return new CameraActionStep(
-            "frame the crafted porcelain plates and ceramics bench",
-            new[] { plates.ThingID, bench.ThingID, crafter.ThingID },
+            "frame the crafted adobe plates and crafting spot",
+            new[] { plates.ThingID, craftingSpot.ThingID, crafter.ThingID },
             paddingPixels: 260);
         yield return new ScreenshotStep(
-            "crafted porcelain plates with player inspector",
+            "crafted adobe plates with player inspector",
             Array.Empty<string>(),
             paddingPixels: 0);
         yield return new CheckpointStep(
-            "native Ceramics porcelain plate result",
+            "native Expanded Masonry adobe plate result",
             _ => new Dictionary<string, string>
             {
                 ["plates"] = plates.ThingID + ":" + plates.LabelCap,
-                ["stuff"] = plates.Stuff?.defName ?? "missing",
-                ["stuffColor"] = plates.Stuff?.stuffProps.color.ToString() ?? "missing",
-                ["drawColor"] = plates.DrawColor.ToString(),
+                ["stuff"] = plates.Stuff?.defName ?? "fixed-adobe",
                 ["count"] = plates.stackCount.ToString(),
                 ["quality"] = plates.GetComp<CompQuality>()?.Quality.ToString() ?? "missing",
-                ["cleanliness"] = plates.GetComp<CompKitchenwareStats>().CurrentStats.MaterialCleanliness.ToString("0")
+                ["cleanliness"] = plates.GetComp<CompKitchenwareStats>()
+                    .CurrentStats.MaterialCleanliness.ToString("0")
             });
     }
 
-    private bool TryResolvePorcelainPlates()
+    private bool TryResolveAdobePlates()
     {
-        var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+        var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_AdobePlate");
         plates ??= map.listerThings.ThingsOfDef(plateDef)
             .OfType<ThingWithComps>()
-            .SingleOrDefault(thing => thing.Spawned && thing.Stuff?.defName == "N7_Porcelain");
+            .SingleOrDefault(thing => thing.Spawned);
         return plates is { stackCount: 4 };
     }
 
@@ -220,37 +210,7 @@ public sealed class CeramicsContinuedPorcelainPlateTest : IRimWorldEndToEndTest
             return pawn;
         }
 
-        throw new EndToEndAssertionException("Could not generate a capable ceramics crafter.");
-    }
-
-    private static void FinishResearchForFixture(IEndToEndContext context, string defName)
-    {
-        var project = DefDatabase<ResearchProjectDef>.GetNamed(defName);
-        var progressField = typeof(ResearchManager).GetField(
-            "progress",
-            BindingFlags.Instance | BindingFlags.NonPublic) ??
-            throw new EndToEndAssertionException("Could not resolve RimWorld's research progress store.");
-        var progress = (Dictionary<ResearchProjectDef, float>)progressField.GetValue(Find.ResearchManager);
-        var hadProgress = progress.TryGetValue(project, out var originalProgress);
-        context.DeferCleanup(() =>
-        {
-            if (hadProgress)
-            {
-                progress[project] = originalProgress;
-            }
-            else
-            {
-                progress.Remove(project);
-            }
-        });
-        if (!project.IsFinished)
-        {
-            Find.ResearchManager.FinishProject(
-                project,
-                doCompletionDialog: false,
-                researcher: null,
-                doCompletionLetter: false);
-        }
+        throw new EndToEndAssertionException("Could not generate a capable adobe crafter.");
     }
 
     private static IntVec3 FindFixtureCenter(Map map)
@@ -267,6 +227,6 @@ public sealed class CeramicsContinuedPorcelainPlateTest : IRimWorldEndToEndTest
             }
         }
 
-        throw new EndToEndAssertionException("Could not find a clear porcelain crafting fixture area.");
+        throw new EndToEndAssertionException("Could not find a clear adobe crafting fixture area.");
     }
 }

@@ -8,8 +8,9 @@ Immersive Chefs is a RimWorld 1.6 gameplay mod that makes cooking tools, reusabl
 
 - RimWorld 1.6
 - Harmony (`brrainz.harmony`)
+- XML Extensions (`imranfish.xmlextensions`, Workshop `2574315206`)
 
-Harmony is the only required third-party mod. All material, hygiene, restaurant, storage, food, texture, hauling, and dispenser integrations are optional, package-ID gated, shape guarded, and isolated behind narrow adapters. Load Harmony first and let RimWorld place Immersive Chefs after any active optional packages named in its metadata.
+Harmony provides runtime code patching, while XML Extensions provides package-ID-aware declarative compatibility patches. All material, hygiene, restaurant, storage, food, texture, hauling, and dispenser integration targets remain optional, package-ID gated, shape guarded, and isolated behind narrow adapters. Load Harmony before Core and XML Extensions after Core but before Immersive Chefs; RimWorld can place Immersive Chefs after any active optional packages named in its metadata.
 
 Never add the developer-only RimWorld Dev Gateway to an ordinary playthrough. Immersive Chefs does not reference or depend on it.
 
@@ -60,4 +61,3 @@ dotnet run --project $mcp -- tool call e2e_run_start `
 Host environments are intentionally separated into `ImmersiveChefs.Unit`, `ImmersiveChefs.Harmony`, and `ImmersiveChefs.Defs`; use only the environment that honestly owns the behavior under test. Real loaded mods, finalized Defs, PatchOperations, and player workflows belong in isolated RimWorld processes.
 
 The accepted gameplay contract is [`openspec/changes/specify-immersive-chefs-gameplay`](../../openspec/changes/specify-immersive-chefs-gameplay/). The status and replacements for legacy scenario descriptors are in [`docs/ScenarioMigrationInventory.md`](../../docs/ScenarioMigrationInventory.md).
-

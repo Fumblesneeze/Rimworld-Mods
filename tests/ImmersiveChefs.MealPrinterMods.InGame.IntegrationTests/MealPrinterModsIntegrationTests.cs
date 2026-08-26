@@ -15,6 +15,7 @@ public static class MealPrinterModsIntegrationTests
     {
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "Orion.Hospitality",
         "Mlie.MealPrinter",
         "Orion.CashRegister",

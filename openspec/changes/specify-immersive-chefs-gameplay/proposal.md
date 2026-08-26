@@ -11,7 +11,7 @@ Vanilla cooking largely treats tools, service ware, preparation, kitchen teamwor
 - Specify manned linked kitchen stations whose assistants contribute only while the lead cook is actively cooking.
 - Specify culinary quality, temperature, reheating, poisoning risk, dining thoughts, expectations, and Royalty standards.
 - Specify caravan cooling and reusable tableware, guest and Hospitality ware sourcing, child and patient feeding, wild-water sanitation provenance, missing-cutlery dirt, and clean/dirty stockpile filters.
-- Specify optional integrations for the locally installed material, hygiene, restaurant, dispenser/printer, recipe-replacement, food-selection, storage, variety, and meal-content ecosystem without making them hard dependencies.
+- Specify optional integrations for the locally installed material, hygiene, restaurant, dispenser/printer, recipe-replacement, food-selection, storage, variety, and meal-content ecosystem without making those integration targets hard dependencies. XML Extensions is the required declarative package-ID patch engine.
 - Specify an absent-safe Pick Up And Haul integration that gathers a nearby hand-washing batch, washes each physical dish separately, and returns the clean batch through that mod's tracked inventory/unload workflow.
 - Specify an absent-safe Cook for Yourself integration that preserves its one-off self/dependent meal decisions while routing its custom non-bill cooking job through the ordinary Immersive Chefs cookware, plating, quality, assistance, and dining lifecycle.
 - Make every distributed Immersive Chefs player-facing string localizable and ship complete context-authored English, German, Spanish, French, Simplified Chinese, and Russian catalogs guarded by the repository release checks.
@@ -44,7 +44,7 @@ None.
 
 ## Impact
 
-The implementation primarily affects `mods/ImmersiveChefs`, including Defs, XML patches, Harmony patches, serialized components, jobs/work givers, buildings, settings, language catalogs, compatibility adapters, and tests. Harmony remains the sole required third-party mod. Every inspected content, material, hygiene, hauling, restaurant, dispenser/printer, selection, storage, variety, replacement-meal, and framework package named by the optional-integration contract remains optional.
+The implementation primarily affects `mods/ImmersiveChefs`, including Defs, XML patches, Harmony patches, serialized components, jobs/work givers, buildings, settings, language catalogs, compatibility adapters, and tests. Harmony and XML Extensions are required third-party foundations. Every inspected content, material, hygiene, hauling, restaurant, dispenser/printer, selection, storage, variety, replacement-meal, and framework package named by the optional-integration contract remains optional.
 
 ## Affected Mods
 

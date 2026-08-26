@@ -10,6 +10,23 @@ public sealed record AdapterOperationResult(
 
 public static class RepositoryOperations
 {
+    internal static async Task<ModBuildResult> BuildAndInstallAsync(
+        AdapterCommand command,
+        string packageSource,
+        string packageId,
+        IReadOnlyList<string> packageInclude,
+        string modsRoot,
+        CancellationToken cancellationToken,
+        Func<AdapterCommand, CancellationToken, Task<AdapterOperationResult>>? execute = null)
+    {
+        var build = await (execute ?? ExecuteAsync)(command, cancellationToken);
+        if (build.ExitCode != 0)
+            throw new InvalidOperationException(
+                $"{command.Kind} returned a non-zero exit code ({build.ExitCode}); the local package was not synchronized.");
+        var installation = LocalModInstaller.Sync(packageSource, modsRoot, packageId, packageInclude);
+        return new ModBuildResult(build, installation);
+    }
+
     public static async Task<AdapterOperationResult> ExecuteAsync(
         AdapterCommand command,
         CancellationToken cancellationToken)

@@ -19,6 +19,7 @@ public static class FinalProductModsIntegrationTests
         {
             "brrainz.harmony",
             "ludeon.rimworld",
+            "imranfish.xmlextensions",
             "rabiosus.AdaptiveMealBill",
             "binchcannon.overcookedmeals",
             "fumblesneeze.immersivechefs",

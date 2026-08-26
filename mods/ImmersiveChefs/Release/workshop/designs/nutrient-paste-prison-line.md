@@ -6,7 +6,7 @@
 - Status: `draft`
 - Intended crop: `1280x720, fixed view containing cell doors, common room, plate shelf and dispenser`
 - Colony brief: `Established industrial prison wing for four named prisoners, durable and orderly rather than luxurious, with a staff-only raw-food service room.`
-- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> ocarina.prisonerjumpsuits -> fumblesneeze.immersivechefs`
+- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> imranfish.xmlextensions -> ocarina.prisonerjumpsuits -> fumblesneeze.immersivechefs`
 - Native workflow: `ordinary prisoner food search chooses a plate -> prisoners queue at the powered nutrient-paste dispenser -> paste is dispensed onto each plate without cutlery -> featured conscious prisoner eats -> native Needs thoughts reveal Ate without cutlery`
 
 ## References

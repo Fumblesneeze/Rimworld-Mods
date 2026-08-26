@@ -3,6 +3,7 @@
   "name": "immersive-chefs-kitchenware-route-matrix",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "argon.corelib",
     "oskarpotocki.vanillafactionsexpanded.core",
     "argon.expandedmaterials.masonry",

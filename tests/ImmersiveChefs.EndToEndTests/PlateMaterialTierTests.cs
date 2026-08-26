@@ -12,6 +12,7 @@ namespace ImmersiveChefs.EndToEndTests;
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs",
     MaxFrames = 3_600,
     MaxGameTicks = 12_000,
@@ -60,6 +61,17 @@ public sealed class PlateMaterialTierTest : IRimWorldEndToEndTest
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
+        yield return new AssertionStep(
+            "provider-specific XML recipes stay absent from the base package group",
+            _ =>
+            {
+                EndToEndAssert.True(
+                    DefDatabase<RecipeDef>.GetNamedSilentFail("ImmersiveChefs_MakeAdobePlates") is null,
+                    "The Expanded Masonry adobe recipe must not exist without its exact provider package.");
+                EndToEndAssert.True(
+                    DefDatabase<RecipeDef>.GetNamedSilentFail("ImmersiveChefs_MakePorcelainPlates") is null,
+                    "The Ceramics porcelain recipe must not exist without its exact provider package.");
+            });
         var allTargets = fixtures
             .SelectMany(fixture => new[]
             {

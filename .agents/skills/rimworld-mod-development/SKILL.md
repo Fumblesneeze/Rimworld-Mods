@@ -9,7 +9,7 @@ Follow the root `AGENTS.md`. Use the repository's OpenSpec, Zlepper ModSdk, TDD,
 
 ## Route the work
 
-1. Read the applicable root `openspec/changes/*` proposal, design, specs, and tasks. Confirm the `Owning mod` line before editing.
+1. Read the applicable root `openspec/changes/*` proposal, design, specs, and tasks. Confirm its single owner—one mod or one repository-tooling component—before editing.
 2. For a new behavior or bug fix, use the repo-local `tdd` skill and complete a red-green-refactor slice. Do not implement from the prose alone.
 3. For Harmony or optional C# integration work, read [references/harmony-compatibility.md](references/harmony-compatibility.md).
 4. For Defs, recipes, XML inheritance, stuff, or conditional patches, read [references/xml-defs-patching.md](references/xml-defs-patching.md).
@@ -20,9 +20,32 @@ Follow the root `AGENTS.md`. Use the repository's OpenSpec, Zlepper ModSdk, TDD,
 9. For launcher, REPL, camera/input, quicktest/scenario, screenshot, or Gateway-extension work, use the repo-local `rimworld-dev-gateway` skill.
 10. For Circinus, DPA, profiling, benchmark fixtures, or historical performance comparison, use the repo-local `rimworld-performance-benchmarking` skill and inspect its OpenSpec task state before naming commands.
 
-If no applicable OpenSpec names exactly one owning mod, create or clarify that change before choosing files. Treat downloaded or Workshop mod content as read-only inspection input: never edit it, commit it, or copy its assemblies into the owning mod's release.
+If no applicable OpenSpec names exactly one mod or tooling owner, create or clarify that change before choosing files. Treat downloaded or Workshop mod content as read-only inspection input: never edit it, commit it, or copy its assemblies into an owning mod's release.
 
-An accepted OpenSpec means a proposal/design/spec explicitly requested or confirmed by the user, naming exactly one owning mod and expressing observable acceptance scenarios. Such a contract satisfies the TDD skill's interface, behavior-priority, and plan-approval gates. Ask the user only when a material behavior or ownership choice remains ambiguous.
+An accepted OpenSpec means a proposal/design/spec explicitly requested or confirmed by the user, naming exactly one mod or tooling owner and expressing observable acceptance scenarios. Such a contract satisfies the TDD skill's interface, behavior-priority, and plan-approval gates. Ask the user only when a material behavior or ownership choice remains ambiguous.
+
+## Start a new distributable mod
+
+Use [docs/NewModChecklist.md](../../../docs/NewModChecklist.md) as the canonical template. In
+summary:
+
+1. Create `mods/<ModName>` with a pinned Zlepper ModSdk project, `Source`, `Defs`, `Patches`,
+   `Languages`, `Textures`, `About`, and `Release` folders as needed.
+2. Choose one stable lowercase `fumblesneeze.<mod-designator>` package ID, set `Authors` to
+   `Fumblesneeze`, and keep the generated `About/About.xml` owned by the project metadata.
+3. Create the owning OpenSpec change and a strict `Release/release.json` before using the universal
+   MCP operations. The profile is the source of truth for the project, package allowlist, supported
+   game build, dependencies, preview, and verification workflow.
+4. Route rules to Unit, owned patches to Harmony, scoped real Def fixtures to Defs, finalized loaded
+   Def/XML behavior to isolated in-game integration tests, and native player workflows to E2E. Keep
+   optional integrations package/Def-resolved and never reference the Dev Gateway from the product.
+5. Use `mod_build` as the default build loop. It installs a successful positive-allowlist package
+   into the configured local `Mods/<package-id>` directory, stages outside the scanned Mods folder,
+   and retains no install backup. Use `local_mod_sync` only when rebuilding is unnecessary; recover
+   an older package by rebuilding from the repository source.
+6. Validate the package, run focused tests, review the diff, and perform the required live player
+   workflow before accepting OpenSpec tasks. Use `release_prepare`/`release_publish` only after the
+   profile and reviewed package are ready.
 
 ### Compatibility file placement
 
@@ -42,12 +65,19 @@ Extend existing projects; do not create a new assembly unless the owning design 
 - Author metadata is `Fumblesneeze`.
 - Put `brrainz.harmony` before Core in isolated active-mod lists. Put Core before product/optional mods,
   keep their exact declared order, and append the Dev Gateway last only in gateway-assisted runs.
+- When an owning mod uses XML Extensions, order `imranfish.xmlextensions` after Core and before that mod.
 - Use the package ID as the Harmony owner ID. Do not bundle Harmony or optional-mod assemblies.
+
+## Prefer declarative XML
+
+Express static Def creation and changes through Def XML and patch operations. Do not mutate Defs manually in C# or Harmony when an equivalent load-time XML patch is available. Use C# only for runtime state, lifecycle-sensitive or computed behavior, or a documented seam with no suitable XML operation.
+
+Start with the narrowest vanilla operation, then use the most specific suitable XML Extensions operation. Any `XmlExtensions.*` use creates a hard runtime dependency for the owning mod. Read [references/xml-defs-patching.md](references/xml-defs-patching.md) for package-ID gating, dependency metadata, load order, operation selection, and verification before implementing a Def change in C#.
 
 ## Preserve module boundaries
 
 - Product mods live under `mods/<ModName>`; shared host-safe contracts live under `shared`; external tools live under `tools`; all OpenSpec artifacts stay at repository root.
-- Every OpenSpec capability and change must name its owning mod. Never make `fumblesneeze.rimworlddevgateway` a dependency, load-order hint, assembly reference, or release artifact of a gameplay mod.
+- Every OpenSpec capability and change must name exactly one mod or repository-tooling owner. Repository-owned mods do not depend on one another. Never make `fumblesneeze.rimworlddevgateway` a dependency, load-order hint, assembly reference, or release artifact of a gameplay mod.
 - Treat Workshop mods as runtime-optional unless the owning spec explicitly makes one required. Detect package IDs first; resolve external types, methods, and Defs only inside the active adapter.
 - Add an integration seam for each external mod and keep the core domain behavior usable without it.
 
@@ -55,7 +85,7 @@ Extend existing projects; do not create a new assembly unless the owning design 
 
 For each requirement:
 
-1. Identify a user-observable rule and its owning mod.
+1. Identify a user-observable rule and its owning mod or tooling component.
 2. Add the smallest focused failing test and run it to capture the intended RED.
 3. Add the minimum production/XML behavior to make that test GREEN.
 4. Run the focused test again. Run the owning suite only when the slice changes shared behavior across that suite; reserve broad regression for an explicit maintenance or release checkpoint.
@@ -92,7 +122,7 @@ Never edit the user's normal `ModsConfig.xml` for automation. Use `-savedatafold
 
 ## Extend verification safely
 
-The Dev Gateway is intentionally unrestricted and enabled whenever loaded. Use it only with a disposable isolated save-data folder. Prefer dedicated semantic routes in this order: game-state/camera, thing query/inspection/selection, native debug actions or gizmos, then versioned automations. Use raw C# for one-off inspection or to prototype a missing adapter; add a TDD-backed typed route when the operation becomes recurring. Extend the gateway when a missing control or observation prevents faithful verification, then use the extension to drive or observe the real player workflow. A direct mutation or synthetic state assertion proves only the gateway operation, not the product behavior. Product mods must never reference the gateway.
+The Dev Gateway is intentionally unrestricted and enabled whenever loaded. For development and acceptance, use it only with a fresh isolated save-data folder. Use it on an existing user process only for an explicitly requested live diagnostic or repair; bind every action to the exact PID/start identity and never treat that session as acceptance evidence. Prefer dedicated semantic routes in this order: game-state/camera, thing query/inspection/selection, native debug actions or gizmos, then versioned automations. Use raw C# for one-off inspection or to prototype a missing adapter; add a TDD-backed typed route when the operation becomes recurring. Extend the gateway when a missing control or observation prevents faithful verification, then use the extension to drive or observe the real player workflow. A direct mutation or synthetic state assertion proves only the gateway operation, not the product behavior. Product mods must never reference the gateway.
 
 Treat ThingID, debug-action, gizmo, and interaction handles as resolvable capabilities rather than object references. Re-query and expect explicit stale errors after map, selection, owner, or command-list changes. Native debug `ToolMap`, pawn, and world actions read the real pointer position: activate them semantically, then use the exact-PID process-scoped input route. Do not claim that their closure accepted a semantic coordinate.
 

@@ -1,5 +1,5 @@
 ## ADDED Requirements
-**Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
+**Owner:** Repository tooling — `RimWorldModding.Mcp` at `tools/RimWorldModding.Mcp`.
 
 ### Requirement: One repository-owned MCP and CLI surface
 The repository SHALL provide one C# executable named `RimWorldModding.Mcp` that exposes the same typed operation registry through local stdio MCP and a command-line interface. It MUST target the repository-pinned .NET SDK, publish as a single-file executable, reserve stdout for protocol or requested results, send diagnostics to stderr, and return CLI exit code `0` for success, `2` for invalid usage/validation, and `1` for runtime failure. CLI operations MUST support deterministic `json` and `table` output.

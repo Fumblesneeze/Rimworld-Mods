@@ -26,7 +26,7 @@ rg -n "<defName>|<costList>|<costStuffCount>|<workToMake>|<BaseMarketValue>" `
   "F:\Steam\steamapps\workshop\content\294100"
 
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
-  -AdditionalModIds @('brrainz.harmony','fumblesneeze.immersivechefs') `
+  -AdditionalModIds @('brrainz.harmony','imranfish.xmlextensions','fumblesneeze.immersivechefs') `
   -AdditionalModProjectPaths @('.\mods\ImmersiveChefs\ImmersiveChefs.csproj')
 ```
 

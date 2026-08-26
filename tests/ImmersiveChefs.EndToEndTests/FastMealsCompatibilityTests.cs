@@ -12,6 +12,7 @@ namespace ImmersiveChefs.EndToEndTests;
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "Argon.CheapMeals",
     "Memegoddess.MealsOnWheels",
     "seekiworksmod.no10",

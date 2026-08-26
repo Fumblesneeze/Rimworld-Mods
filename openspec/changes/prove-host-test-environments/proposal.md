@@ -10,7 +10,7 @@ Immersive Chefs will need fast tests with different global RimWorld conditions: 
 - Teach the guarded test wrapper to run the three Immersive Chefs environments together or individually.
 - Document the boundary between synthetic host tests and a genuinely loaded RimWorld/mod/Def environment.
 - Add a product-owned, separately staged in-game integration-test assembly that is selected only when Immersive Chefs is in the complete active-mod set.
-- Prove an Immersive Chefs XML `PatchOperation` against RimWorld's finalized live Def database with Core, Harmony, Immersive Chefs, and the Dev Gateway all active.
+- Prove an Immersive Chefs XML `PatchOperation` against RimWorld's finalized live Def database with Harmony, Core, XML Extensions, Immersive Chefs, and the Dev Gateway all active.
 
 ## Capabilities
 

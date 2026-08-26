@@ -72,7 +72,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
         var instrumented = tests.Single(test => test.Id.EndsWith(".instrumented", StringComparison.Ordinal));
         Assert.Multiple(() =>
         {
-            Assert.That(tests, Has.Count.EqualTo(4));
+            Assert.That(tests, Has.Count.EqualTo(3));
             Assert.That(tests, Has.All.Property(nameof(GatewayEndToEndRuntimeTestDescriptor.IsPerformance)).True);
             Assert.That(instrumented.PerformanceDescriptor, Is.Not.Null);
             Assert.That(instrumented.PerformanceDescriptor!.MeasuredSubjectPackageId,
@@ -96,6 +96,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
                 "brrainz.harmony",
                 "ludeon.rimworld",
                 PerformanceTestContract.CircinusPackageId,
+                "imranfish.xmlextensions",
                 EndToEndTestContract.GatewayPackageId
             });
 
@@ -125,6 +126,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
                 "brrainz.harmony",
                 "ludeon.rimworld",
                 PerformanceTestContract.CircinusPackageId,
+                "imranfish.xmlextensions",
                 EndToEndTestContract.GatewayPackageId
             });
 
@@ -150,6 +152,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
                 "brrainz.harmony",
                 "ludeon.rimworld",
                 PerformanceTestContract.CircinusPackageId,
+                "imranfish.xmlextensions",
                 "fumblesneeze.immersivechefs",
                 EndToEndTestContract.GatewayPackageId
             });
@@ -188,7 +191,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
         Assert.That(result.State, Is.EqualTo("loaded"), result.Failure?.Message);
         Assert.Multiple(() =>
         {
-            Assert.That(result.Source!.Tests, Has.Count.EqualTo(4));
+            Assert.That(result.Source!.Tests, Has.Count.EqualTo(3));
             Assert.That(result.Source.Tests.Select(test => test.PerformanceDescriptor!.Profiler),
                 Is.All.EqualTo(PerformanceProfilerKind.DpaDiagnostic));
             Assert.That(result.Source.Tests.SelectMany(test => test.PerformanceDescriptor!.ActivePackageIds),

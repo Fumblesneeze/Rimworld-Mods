@@ -6,7 +6,7 @@
 - Status: `draft`
 - Intended crop: `1280x720, fixed view containing freezer buffer, prep lane, stove and hot pass`
 - Colony brief: `Wealthy industrial kitchen serving an adjacent dining hall, with two named chefs, a compact cold store and a recently added Thermodynamics hot pass.`
-- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> mlie.dthermodynamicshotmeals -> fumblesneeze.immersivechefs`
+- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> imranfish.xmlextensions -> mlie.dthermodynamicshotmeals -> fumblesneeze.immersivechefs`
 - Native workflow: `repeat prep bill keeps one chef at the prep station -> second chef takes prepared food and meat from cold storage -> ordinary Fine-meal bill cooks quickly -> finished meal moves to Thermodynamics hot storage at the pass`
 
 ## References

@@ -26,9 +26,12 @@ again: it reattaches to the same callback or polls only the durable same item an
 first-item creation or update submission. Subscriber isolation also records its exact reserved run, backup, and normal
 configuration hash before moving the local package. Never delete durable state to force a retry.
 
-Local package synchronization and subscriber isolation keep recoverable prior copies under the
-sibling `RimWorld\.rimworld-modding-mcp\Mods` recovery root, outside RimWorld's scanned `Mods`
-directory.
+`mod_build` builds the selected profile and then installs the successful positive-allowlist package
+into the configured local RimWorld `Mods/<package-id>` directory by default. `local_mod_sync` is the
+explicit install-only equivalent. Both stage outside the scanned Mods directory, replace only the
+selected package, and retain no install backup; rebuild from the repository package to recover an
+older copy. Subscriber isolation is different: its temporary move is a release-verification safety
+record and remains recoverable while the subscribed Workshop copy is tested.
 
 The PowerShell launchers and older companion tools documented below are internal migration engines,
 not the agent-facing API. Before adding another script or repeating a workflow, inspect
@@ -92,18 +95,32 @@ During ordinary feature work, run the exact focused test or exact active-mod gro
 
 `-Suite ImmersiveChefs` is a group selection: it launches the unpatched unit, explicit-Harmony, and lightweight-Def projects as separate testhost processes. Select `ImmersiveChefs.Unit`, `ImmersiveChefs.Harmony`, or `ImmersiveChefs.Defs` to run one environment. The testing SDK does not load RimWorld mods or Def XML; read [TestingEnvironments.md](TestingEnvironments.md) before writing a test that needs patches, an optional assembly, or a Def database.
 
-## Build, package, and explicit deploy
+## Build, package, and local install
 
-A normal build is repository-local:
+Raw MSBuild remains repository-local and is useful while iterating on source:
 
 ```powershell
 dotnet restore .\RimWorldMods.sln
 dotnet build .\RimWorldMods.sln -c Release
 ```
 
-Inspect distributable packages under `artifacts\Mods\<package-id>` and the SDK's non-live staging copy under `artifacts\GameMods\<package-id>`. `Directory.Build.targets` prevents a normal Zlepper ModSdk build from copying into the live game.
+Inspect distributable packages under `artifacts\Mods\<package-id>` and the SDK's non-live staging copy under `artifacts\GameMods\<package-id>`. `Directory.Build.targets` prevents a raw Zlepper ModSdk build from copying into the live game.
 
-Only opt into a game deployment explicitly. For example:
+For the normal development loop, use the typed `mod_build` operation. It builds the selected release
+profile and, only after a successful build, installs the exact positive-allowlist package into the
+configured local RimWorld `Mods/<package-id>` directory. It stages outside the scanned Mods folder,
+replaces only that package, and retains no install backup; `local_mod_sync` is the install-only
+equivalent. A failed build does not touch the installed package:
+
+```powershell
+$mcp = '.\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj'
+dotnet run --project $mcp -- tool call mod_build `
+  --arguments '{"packageId":"fumblesneeze.immersivechefs","configuration":"Release","modsRoot":null}' -o json
+```
+
+The low-level SDK deployment switch remains available for migration/debugging, but is not the
+canonical new-mod workflow. If it is needed, target only the exact package folder and never a
+Workshop item:
 
 ```powershell
 dotnet build .\mods\ImmersiveChefs\ImmersiveChefs.csproj -c Release `
@@ -119,7 +136,9 @@ dotnet build .\mods\RimWorldDevGateway\RimWorldDevGateway.csproj -c Release `
   -p:SteamModContentFolder='F:\Steam\steamapps\workshop\content\294100'
 ```
 
-The live-game write target for each command is only its exact package folder, `fumblesneeze.immersivechefs` or `fumblesneeze.rimworlddevgateway`, beneath RimWorld's local `Mods` directory. Never edit or deploy into a Workshop item.
+The live-game write target for each command is only the exact package folder named by that command's
+profile beneath RimWorld's local `Mods` directory (for example, `fumblesneeze.immersivechefs`). Never
+edit or deploy into a Workshop item.
 
 Build the companion gateway client separately when needed:
 
@@ -148,12 +167,12 @@ First inspect what a smoke run will launch, then run it:
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -TimeoutSeconds 300
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow -InteractiveHoldSeconds 900
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
-  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModIds 'brrainz.harmony','imranfish.xmlextensions','fumblesneeze.immersivechefs' `
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.' `
   -TimeoutSeconds 300
 
 .\scripts\Invoke-GatewaySmoke.ps1 -RunIntegrationTests `
-  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModIds 'brrainz.harmony','imranfish.xmlextensions','fumblesneeze.immersivechefs' `
   -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.' `
   -ExpectedIntegrationTests 'fumblesneeze.immersivechefs|MainMenuLoaded|ImmersiveChefs.InGame.IntegrationTests.FinalizedImmersiveChefsIntegrationTests.ImmersiveChefsXmlProbeContainsItsFinalPatch' `
@@ -170,7 +189,7 @@ For an explicitly active package ID duplicated across immediate Workshop item di
 
 Evidence is retained at:
 
-- `artifacts\RimWorldSmoke\<UTC run id>` for Core + Harmony + Immersive Chefs;
+- `artifacts\RimWorldSmoke\<UTC run id>` for Harmony + Core + XML Extensions + Immersive Chefs;
 - `artifacts\GatewaySmoke\<UTC run id>` for Core + RimWorld Dev Gateway.
 
 Each run retains its isolated mod list, build log, Player log, and screenshots, and its command result reports the before/after normal-configuration hashes. Gateway runs additionally retain API responses, a bounded finalized Steel Def export, raw-C# declaration/state/mutation-restore evidence, and a credential-free stopped session record. `-RunIntegrationTests` passes the mandatory complete ordered active package sequence to the host builder. The builder rejects omitted/empty input, validates each strict source manifest's reusable required/forbidden constraints or exact package sequence before build, and builds/stages every matching opted-in owner beneath marker-owned `artifacts\InGameIntegrationTests\StagingMods`. Exact mode also rejects reordered packages, built-manifest drift, and a mismatched real loaded order before the Gateway loads the test assembly. The smoke starts RimWorld with the exact discovery flag, polls the exact retryable `integration_test_status_pending` response while initial attachment commits, and rejects zero discovery, a staged assembly with no same-owner descriptor, omitted results, or unexpected discovery/test failures. It requires the terminal endpoint object and token-free session artifact to describe the same durable snapshot and retains both. Product project evidence also binds the deployed product DLL, About metadata, and XML patch hashes to that run. `-Quicktest` proves the checked-in quickstart fixture and an idempotent terminal replay on a playable map, then exercises the semantic game-state/camera, thing query/inspection/selection, direct spawn, native debug-action, gizmo, and typed designator routes with exact request IDs and restoration/cleanup evidence. It captures a log cursor before setup and writes the correlated post-setup JSON and log page into the same bundle; a log page may report `PageTruncated`. These are gateway/control diagnostics. Gameplay acceptance additionally requires the acting agent to perform a real player action through its native UI/game-command/job path, personally observe the player-visible result, and retain the exact action plus before/action/after evidence. Loaded Defs, patches, logs, API results, raw-C# assertions, direct mutations, and a static screenshot do not satisfy that gate alone.
@@ -179,7 +198,8 @@ The historical combined gateway-control record is `artifacts\GatewaySmoke\202608
 
 ## Repository-local skills
 
-Start with `.agents/skills/rimworld-mod-development/SKILL.md`; it routes Harmony/XML, compatibility,
+For a new distributable mod, start with [NewModChecklist.md](NewModChecklist.md), then read
+`.agents/skills/rimworld-mod-development/SKILL.md`; it routes Harmony/XML, compatibility,
 player-facing UI, localization, TDD, and live verification. Use `rimworld-dev-gateway` for launcher,
 REPL, semantic/input control, scenarios, screenshots, or gateway failure diagnosis;
 `rimworld-performance-benchmarking` for Circinus/DPA work; and the asset, balance, or release skill for

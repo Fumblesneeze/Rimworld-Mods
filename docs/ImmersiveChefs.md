@@ -1,10 +1,10 @@
 # Immersive Chefs player guide
 
-Immersive Chefs is a pre-release RimWorld 1.6 mod that makes cooking, serving, eating, and washing reusable kitchenware part of the colony simulation. Harmony (`brrainz.harmony`) is its only required third-party mod. Every integration below is optional and guarded by the active package ID and the supported RimWorld 1.6 Def or assembly shape.
+Immersive Chefs is a pre-release RimWorld 1.6 mod that makes cooking, serving, eating, and washing reusable kitchenware part of the colony simulation. Harmony (`brrainz.harmony`) and XML Extensions (`imranfish.xmlextensions`) are its required third-party foundations. Every integration target below remains optional and is guarded by the active package ID and the supported RimWorld 1.6 Def or assembly shape.
 
 ## Loading the mod
 
-Load Harmony before Immersive Chefs. RimWorld's automatic ordering can place Immersive Chefs after the optional packages declared in its metadata; do not add the developer-only RimWorld Dev Gateway to an ordinary playthrough.
+Load Harmony before Core, then XML Extensions after Core and before Immersive Chefs. RimWorld's automatic ordering can place Immersive Chefs after the optional packages declared in its metadata; do not add the developer-only RimWorld Dev Gateway to an ordinary playthrough.
 
 The practical first steps in a new colony are:
 
@@ -106,9 +106,9 @@ Package-ID matching is case-insensitive; the canonical IDs below are the exact i
 | No Vanilla Meals | `Mlie.NoVanillaMeals` | Removed vanilla Defs are never resurrected or used by alerts/jobs. Remaining explicit replacement registries still work; external unplated meals remain safe and honestly unplated. |
 | Thermodynamics - Hot Meals | `Mlie.DThermodynamicsHotMeals` | Exclusive temperature, thermal UI/thought/risk, reheating, and microwave owner. Immersive Chefs removes its own microwave and thermal paths while keeping quality, ingredients, ware, sanitation, and non-temperature risk. |
 
-The maintained compatibility verification deliberately separates overlapping or incompatible concerns rather than loading every permutation together:
+The maintained compatibility verification deliberately separates overlapping or incompatible concerns rather than loading every permutation together. Every Immersive Chefs group starts with Harmony + Core + XML Extensions:
 
-1. Core + Harmony + Immersive Chefs.
+1. Immersive Chefs alone after the common required prefix.
 2. VEF + all installed VCE meal modules + Fried Meals + Adaptive Meal Bill + Overcooked Meals.
 3. VEF + matching VCE modules + FTV Core/main/add-ons + DMTR + Variety Matters + Vanilla Food Variety Expanded.
 4. Fast Meals + Meals on Wheels + Prioritize Meals over Preserved Foods.
@@ -118,8 +118,8 @@ The maintained compatibility verification deliberately separates overlapping or 
 8. Adaptive Storage Framework alone, proving the incomplete optional chain remains safe.
 9. Adaptive Storage Framework + [sbz] Fridge.
 10. RimFridge + Thermodynamics - Hot Meals.
-11. Harmony + Core + Cook for Yourself for covered self-cooking, conscious-patient feeding, interruption, and `Off` fallback around its custom non-bill job driver.
-12. Harmony + Core + Biotech + Cook for Yourself for native baby-food cooking and `BottleFeedBaby` pass-through with strict kitchenware enabled and no kitchenware present.
+11. Cook for Yourself for covered self-cooking, conscious-patient feeding, interruption, and `Off` fallback around its custom non-bill job driver.
+12. Biotech + Cook for Yourself for native baby-food cooking and `BottleFeedBaby` pass-through with strict kitchenware enabled and no kitchenware present.
 
 Each group also includes Immersive Chefs and the developer-only Gateway in isolated verification. Meal Printer/Adaptive vanilla-product paths are intentionally not combined with No Vanilla Meals.
 

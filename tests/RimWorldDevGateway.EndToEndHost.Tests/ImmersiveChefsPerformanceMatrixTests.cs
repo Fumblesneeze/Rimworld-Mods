@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml.Linq;
 using NUnit.Framework;
 
 namespace RimWorldDevGateway.EndToEndHost.Tests;
@@ -18,6 +19,30 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
 #endif
 
     [Test]
+    public void Product_fixture_honors_runner_dependency_path_overrides()
+    {
+        var project = XDocument.Load(Path.Combine(
+            RepositoryRoot,
+            "tests",
+            "ImmersiveChefs.PerformanceTests",
+            "ImmersiveChefs.PerformanceTests.csproj"));
+        var properties = project.Root?.Elements("PropertyGroup").Elements()
+            .ToDictionary(element => element.Name.LocalName, element => element.Value, StringComparer.Ordinal);
+        var hintPaths = project.Root?.Elements("ItemGroup").Elements("Reference").Elements("HintPath")
+            .Select(element => element.Value)
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(properties?["RimWorldPath"], Is.EqualTo("$(DefaultRimWorldPath)"));
+            Assert.That(properties?["SteamModContentFolder"], Is.EqualTo("$(DefaultSteamModContentFolder)"));
+            Assert.That(properties?["HarmonyAssemblyPath"], Does.StartWith("$(SteamModContentFolder)"));
+            Assert.That(hintPaths, Does.Contain("$(RimWorldPath)\\RimWorldWin64_Data\\Managed\\Assembly-CSharp.dll"));
+            Assert.That(hintPaths, Does.Contain("$(RimWorldPath)\\RimWorldWin64_Data\\Managed\\UnityEngine.CoreModule.dll"));
+        });
+    }
+
+    [Test]
     public void Product_fixture_declares_complete_exact_optional_comparison_families()
     {
         var candidate = BuildProductPerformanceCandidate();
@@ -29,19 +54,19 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
         {
             ["immersive-chefs.processor-dubs"] =
             [
-                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus",
+                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus", "imranfish.xmlextensions",
                 "syrchalis.processor.framework", "dubwise.dubsbadhygiene",
                 "fumblesneeze.immersivechefs"
             ],
             ["immersive-chefs.guest-service"] =
             [
-                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus",
+                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus", "imranfish.xmlextensions",
                 "orion.hospitality", "orion.cashregister", "orion.gastronomy",
                 "avilmask.commonsense", "fumblesneeze.immersivechefs"
             ],
             ["immersive-chefs.variety-vnpe-material-dlc"] =
             [
-                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus",
+                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus", "imranfish.xmlextensions",
                 "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "argon.corelib",
                 "oskarpotocki.vanillafactionsexpanded.core", "argon.expandedmaterials.masonry",
                 "argon.expandedmaterials.metals", "evyatar108.varietymattersimprovedredux",
@@ -50,7 +75,7 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
             ],
             ["immersive-chefs.all-supported"] =
             [
-                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus",
+                "brrainz.harmony", "ludeon.rimworld", "astryl.circinus", "imranfish.xmlextensions",
                 "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "argon.corelib",
                 "oskarpotocki.vanillafactionsexpanded.core", "syrchalis.processor.framework",
                 "argon.expandedmaterials.masonry", "argon.expandedmaterials.metals",
@@ -138,7 +163,7 @@ public sealed class ImmersiveChefsPerformanceMatrixTests
 
     private static string[] RequiredPackageCatalog() =>
     [
-        "brrainz.harmony", "ludeon.rimworld", "astryl.circinus",
+        "brrainz.harmony", "ludeon.rimworld", "astryl.circinus", "imranfish.xmlextensions",
         "syrchalis.processor.framework", "dubwise.dubsbadhygiene",
         "orion.hospitality", "orion.cashregister", "orion.gastronomy", "avilmask.commonsense",
         "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "argon.corelib",

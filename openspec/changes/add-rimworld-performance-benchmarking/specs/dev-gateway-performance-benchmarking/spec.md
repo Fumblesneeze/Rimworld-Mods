@@ -117,7 +117,7 @@ When specifically requested, a workload MAY additionally run compatible armed-di
 The initial Immersive Chefs fixture SHALL build a representative multi-room, non-trivial-pathing colony with roughly 36 human pawns across cooking, assistance, cleaning/hauling, nursing/patient, and dining roles; roughly 24 animals; simultaneous recipe tiers; prep/support stations; domestic and industrial dishwashing; microwaves; separated storage; patients and nurses; and caravans containing pawns, animals, meals, plates, and cutlery. The layout version, broad population/facility envelope, required active systems, and minimum successful outcomes SHALL be machine-verified. Exact pawn identities, paths, jobs, generated IDs, and terminal object locations SHALL be allowed to vary normally. Optional groups SHALL activate the corresponding installed integrations without changing unrelated package or workload identities.
 
 #### Scenario: Base Immersive Chefs performance run
-- **WHEN** Harmony, Core, Circinus, Immersive Chefs, and Gateway form the exact active set in that order
+- **WHEN** Harmony, Core, Circinus, XML Extensions, Immersive Chefs, and Gateway form the exact active set in that order
 - **THEN** the workload continuously exercises cooking, assistance, dining, temperature, tableware, sanitation, washing, hauling, patient feeding, animal exclusion, and caravan state without requiring an optional mod
 
 #### Scenario: Processor and Dubs group runs
@@ -126,7 +126,7 @@ The initial Immersive Chefs fixture SHALL build a representative multi-room, non
 
 #### Scenario: Optional performance matrices run
 - **WHEN** an optional Immersive Chefs performance family is selected
-- **THEN** it declares an instrumented repeated benchmark, with optional calibration lenses when requested, using one of these complete ordered non-Gateway package sequences after the mandatory Harmony/Core/Circinus prefix:
+- **THEN** it declares an instrumented repeated benchmark, with optional calibration lenses when requested, using one of these complete ordered non-Gateway package sequences after the mandatory Harmony/Core/Circinus/XML Extensions prefix:
   - Processor/Dubs: `syrchalis.processor.framework`, `Dubwise.DubsBadHygiene`, Immersive Chefs;
   - guest service: `Orion.Hospitality`, `Orion.CashRegister`, `Orion.Gastronomy`, `avilmask.CommonSense`, Immersive Chefs;
   - variety/VNPE/material/DLC: Royalty, Biotech, `Argon.CoreLib`, Vanilla Expanded Framework, Expanded Materials Masonry, Expanded Materials Metals, Variety Matters, Vanilla Food Variety Expanded, VNPE, Immersive Chefs;

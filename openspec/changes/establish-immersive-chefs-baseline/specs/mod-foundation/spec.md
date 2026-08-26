@@ -19,11 +19,11 @@ The build SHALL produce a RimWorld 1.6 mod package named Immersive Chefs with pa
 - **AND** the project and generated About manifest identify the author as `Fumblesneeze`
 
 ### Requirement: Minimal hard dependency surface
-Immersive Chefs SHALL declare Harmony package `brrainz.harmony` as its only required third-party mod, SHALL load after supported optional integrations when present, and SHALL NOT bundle Harmony or optional-mod assemblies.
+Immersive Chefs SHALL declare Harmony package `brrainz.harmony` and XML Extensions package `imranfish.xmlextensions` as its required third-party mods, SHALL load after supported optional integrations when present, and SHALL NOT bundle dependency or optional-mod assemblies.
 
 #### Scenario: Inspect generated dependency metadata
 - **WHEN** the mod package is built
-- **THEN** `About.xml` lists Harmony as required, treats all other integrations as optional load-order hints, and the mod output contains no `0Harmony.dll` or optional integration DLL
+- **THEN** `About.xml` lists Harmony and XML Extensions as required, treats all other integrations as optional load-order hints, and the mod output contains no dependency or optional integration DLL
 
 ### Requirement: Idempotent startup
 Immersive Chefs SHALL initialize its Harmony owner and compatibility snapshot once per game load and SHALL emit a stable startup log marker containing its package ID.

@@ -6,7 +6,7 @@
 - Status: `draft`
 - Intended crop: `1280x720, fixed view containing restaurant and adjacent kitchen`
 - Colony brief: `Established temperate industrial colony, six staff, one warm restaurant and an expanded professional kitchen beside the colony's central path.`
-- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> orion.hospitality -> orion.cashregister -> orion.gastronomy -> fumblesneeze.immersivechefs`
+- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> imranfish.xmlextensions -> orion.hospitality -> orion.cashregister -> orion.gastronomy -> fumblesneeze.immersivechefs`
 - Native workflow: `Hospitality guest takes a Gastronomy dining spot -> waiter receives the order and supplies cutlery -> lead cook begins the meal and linked assistants work -> the same waiter serves the finished meal`
 
 ## References

@@ -3,6 +3,7 @@
   "name": "immersive-chefs-meal-cooling-holders",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

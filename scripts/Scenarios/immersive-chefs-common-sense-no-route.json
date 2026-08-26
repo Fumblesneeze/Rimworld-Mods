@@ -3,6 +3,7 @@
   "name": "immersive-chefs-common-sense-no-route",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "avilmask.commonsense",
     "fumblesneeze.immersivechefs"
   ],

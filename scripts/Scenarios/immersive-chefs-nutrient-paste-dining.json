@@ -3,6 +3,7 @@
   "name": "immersive-chefs-nutrient-paste-dining",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

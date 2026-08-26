@@ -28,6 +28,6 @@ None. This change supersedes the still-unimplemented project-specific tool direc
 
 The change adds a .NET tool and tests under `tools/` and `tests/`, a trusted-repository `.codex/config.toml`, schemas/profiles under `release/` and `mods/<ModName>/Release/`, documentation and process rules, and typed adapters around existing build, test, runner, Gateway, and Steam publishing primitives. Existing reusable runners and the in-game authenticated Gateway remain execution backends during migration, while product packages remain free of the MCP, Gateway, test, host, and publishing assemblies.
 
-## Affected Mods
+## Ownership
 
-- **RimWorld Dev Gateway** — package ID `fumblesneeze.rimworlddevgateway`; repository path `mods/RimWorldDevGateway`; sole owning mod. Product mods are operated on by the companion tool but do not reference or ship it.
+- **Repository tooling: RimWorldModding.Mcp** — repository path `tools/RimWorldModding.Mcp`; sole owner. It operates on product and developer mods, but no repository-owned mod references, depends on, or ships it.

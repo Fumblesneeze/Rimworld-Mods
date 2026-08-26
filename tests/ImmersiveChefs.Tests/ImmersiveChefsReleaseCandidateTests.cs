@@ -1,5 +1,6 @@
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Web.Script.Serialization;
 using NUnit.Framework;
 
@@ -46,8 +47,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
                 Is.EqualTo(string.Empty),
                 "A successful Workshop update must clear its pending note while retaining the verified remote note as previousChangeNote.");
             Assert.That(
-                ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Single(),
-                Is.EqualTo("2009463077"));
+                ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Select(value => value.ToString()),
+                Is.EqualTo(new[] { "2009463077", "2574315206" }));
         });
 
         var script = File.ReadAllText(scriptPath);

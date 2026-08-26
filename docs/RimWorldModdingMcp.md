@@ -23,13 +23,21 @@ The launcher requires PowerShell 7 (`pwsh`) and the SDK pinned by `global.json`.
 | Family | Initial operations | Risk |
 |---|---|---|
 | Discovery | `repository_status`, `operation_list`, `evidence_read` | read |
-| Repository | `openspec_validate`, `mod_build`, `test_run`, `package_validate` | workspace-write |
+| Repository | `openspec_validate`, `test_run`, `package_validate` | workspace-write |
+| Repository | `mod_build` | destructive-local |
 | Runtime | `game_run_start`, `e2e_run_start`, `run_status`, `run_cancel` | workspace-write / destructive-local |
 | Gateway | `gateway_health`, `gateway_diagnostic`, `gateway_mutation`, `gateway_raw_mutation` | read / destructive-local |
 | User config | `modlist_inspect`, `modlist_enable`, `modlist_disable`, `modlist_restore`, `local_mod_sync` | read / destructive-local |
 | Release | `release_profile_validate`, `release_prepare`, `release_status`, `release_publish`, `release_accept_subscriber_evidence` | read / workspace-write / external-write |
 
 Operations never expose arbitrary shell execution. Allowlisted read-only Gateway diagnostics and explicit semantic/raw mutations are deliberately different operations. A direct mutation can prepare or diagnose a scene, but cannot serve as gameplay acceptance.
+
+For a new distributable mod, start with [NewModChecklist.md](NewModChecklist.md). It defines the
+standard `mods/<ModName>` layout, `fumblesneeze.<mod-designator>` identity, Zlepper project/About
+metadata, OpenSpec ownership, test-environment routing, release profile, and the canonical
+`release_profile_validate` → `mod_build` → `package_validate` loop. `mod_build` is the default
+build-and-install operation: it installs only after a successful build, stages outside the scanned
+Mods directory, and retains no install backup.
 
 ## Migration adapter inventory
 
@@ -52,7 +60,10 @@ An engine may remain only while its MCP operation owns validation, parsing, canc
 
 After dispatch, the publisher completes in a detached same-tool worker even if the initiating client is cancelled; `.codex/config.toml` allows 3900 seconds for the operation's 3600-second bound. Atomic worker and Gateway leases let a retry reattach to the exact callback or poll only the already known same item—never a second create or update submission. Subscriber isolation reserves and records its own exact game run and local-package backup before moving anything. The first returned Workshop ID is persisted and committed before later verification. `release_status` remains usable after plan expiry or subsequent local changes. A successful reacquired-copy automation ends at `subscriber-evidence-awaiting-review`; personally inspect its exact screenshots, then call `release_accept_subscriber_evidence` with the receipt and concrete observation. Only that operation records complete-reviewed evidence.
 
-`local_mod_sync` and subscriber isolation retain recoverable prior copies beneath RimWorld's sibling `.rimworld-modding-mcp/Mods` directory, never inside the scanned `Mods` folder.
+`mod_build` installs a successful build into the configured local `Mods/<package-id>` directory by
+default; `local_mod_sync` performs the same install without rebuilding. Both use temporary staging
+outside the scanned Mods folder and retain no install backup. Subscriber isolation still records a
+separate recoverable move while testing a subscribed Workshop copy.
 
 ## Common CLI diagnostics
 

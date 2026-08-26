@@ -11,7 +11,7 @@ This repository is the Windows development monorepo for Fumblesneeze's RimWorld 
 | [Thin Walls](mods/ThinWalls/README.md) | `fumblesneeze.thinwalls` | Adds Stuff-made walls and doors that occupy tile edges instead of whole cells. |
 | [RimWorld Dev Gateway](mods/RimWorldDevGateway/README.md) | `fumblesneeze.rimworlddevgateway` | Developer-only authenticated loopback control, observation, testing, and unrestricted C# execution. |
 
-Each OpenSpec change and capability names exactly one owning mod. Product mods never ship, reference, or load-order-hint the Gateway; it is isolated development infrastructure, not a gameplay dependency.
+Each OpenSpec change and capability has exactly one owner: either one mod or one repository-tooling component. Repository-owned mods do not depend on one another, and product mods never ship, reference, or load-order-hint the Gateway; it is isolated development infrastructure, not a gameplay dependency.
 
 ## Requirements
 
@@ -21,6 +21,7 @@ Each OpenSpec change and capability names exactly one owning mod. Product mods n
 | .NET 8 SDK | Restore, build, test, MCP server, and companion tools. `global.json` pins the supported SDK policy. |
 | RimWorld 1.6 from Steam | Managed assemblies and final live verification. |
 | Harmony Workshop item `2009463077` | Required by the three product mods; not required by the Gateway itself. |
+| XML Extensions Workshop item `2574315206` | Required by Immersive Chefs, and by any other owning mod that uses an `XmlExtensions.*` patch operation; never bundled. |
 | Node.js LTS and OpenSpec `1.2.0` | Contract validation. Install with `npm install -g @fission-ai/openspec@1.2.0`. |
 | FlaUiCli | Optional exact-window evidence for workflows that genuinely require desktop UI. |
 
@@ -63,6 +64,11 @@ dotnet run --project $mcp -- tool list -o table
 # Inspect repository and release state.
 dotnet run --project $mcp -- tool call repository_status --arguments '{}' -o json
 
+# Build and install the selected profile into the local RimWorld Mods directory.
+# The optional modsRoot override is useful when the Steam library is elsewhere.
+dotnet run --project $mcp -- tool call mod_build `
+  --arguments '{"packageId":"fumblesneeze.immersivechefs","configuration":"Release","modsRoot":null}' -o json
+
 # Run one registered host-test environment and reject zero-test results.
 dotnet run --project $mcp -- tool call test_run `
   --arguments '{"suite":"RimWorldDevGateway.Unit","filter":null,"configuration":"Release"}' -o json
@@ -77,15 +83,41 @@ dotnet run --project $mcp -- tool call e2e_run_start `
 
 Call `operation_list` or `tool list` before inventing orchestration. If a repeated workflow is missing, add an owning OpenSpec scenario and a typed MCP/CLI operation instead of adding another public script.
 
+## Starting a new mod
+
+Follow the repository's [new-mod checklist](docs/NewModChecklist.md) before writing gameplay code.
+Every distributable mod gets its own `mods/<ModName>` folder, a stable
+`fumblesneeze.<mod-designator>` package ID, a Zlepper ModSdk project, generated About metadata, and
+an owning OpenSpec change. Add the release profile before using the universal build operation; it is
+the source of truth for the project, package allowlist, dependencies, and verification inputs. Keep
+optional integrations package-gated and keep the Dev Gateway out of product dependencies.
+
+The standard edit/build loop for a new or existing mod is:
+
+```powershell
+$mcp = '.\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj'
+
+# Validate the profile and package before installing anything.
+dotnet run --project $mcp -- tool call release_profile_validate `
+  --arguments '{"packageId":"fumblesneeze.examplemod"}' -o json
+
+# Build and install the successful allowlisted package by default.
+# Use modsRoot only when the local Steam library is not the checked-in default.
+dotnet run --project $mcp -- tool call mod_build `
+  --arguments '{"packageId":"fumblesneeze.examplemod","configuration":"Release","modsRoot":null}' -o json
+
+# Inspect the exact package without changing the game installation.
+dotnet run --project $mcp -- tool call package_validate `
+  --arguments '{"packageId":"fumblesneeze.examplemod"}' -o json
+```
+
+`mod_build` and `local_mod_sync` replace only the selected local package, stage on the install
+volume outside the scanned `Mods` directory, and retain no install backup. Recover an older copy by
+rebuilding from the repository package. Do not use Workshop content as a build or deployment target.
+
 ## Development workflow
 
-Read [`AGENTS.md`](AGENTS.md) before changing game-facing behavior. The required path is:
-
-1. Identify the owning OpenSpec change and update its observable contract when necessary.
-2. Work vertically with focused RED/GREEN tests in the honest host environment.
-3. Build the owning project and run only the affected package or compatibility checks.
-4. Obtain an independent scoped review and resolve its findings.
-5. Verify the reviewed build in a fresh isolated RimWorld process through a real player workflow, then personally inspect the retained before/action/after evidence.
+[`AGENTS.md`](AGENTS.md) is authoritative for repository boundaries and acceptance. In brief: identify the single mod or tooling owner, update its observable OpenSpec contract, work through focused tests and package checks, resolve an independent review, then verify game-facing behavior through a real player workflow on the reviewed build and inspect the retained evidence personally.
 
 A convenient repository-level restore and build is:
 
@@ -94,9 +126,7 @@ dotnet restore .\RimWorldMods.sln
 dotnet build .\RimWorldMods.sln -c Release --nologo
 ```
 
-Host tests are deliberately split between ordinary unit contracts, explicitly owned Harmony patches, lightweight constructed Def fixtures, snapshots, and tool tests. Anything that depends on a real loaded mod, finalized Core/Workshop Defs, PatchOperations, or the complete Harmony set belongs in a fresh process-isolated RimWorld run. See [`docs/TestingEnvironments.md`](docs/TestingEnvironments.md).
-
-The grouped E2E operation discovers attributed workflows, builds and stages only their owning bundles, deploys repository-owned products, launches one fresh minimized process per exact mod group, retains step evidence, and removes its stage. A green result is supporting evidence; acceptance still requires inspecting the native screenshots from that exact build.
+Use [`docs/TestingEnvironments.md`](docs/TestingEnvironments.md) to choose the honest host or isolated-game tier. Grouped E2E results are supporting evidence until the native screenshots from that exact reviewed build have been personally inspected.
 
 ## Dev Gateway safety
 
@@ -105,9 +135,8 @@ The Gateway binds an authenticated API to a dynamic IPv4 loopback port and creat
 - Never enable it in an ordinary or untrusted play session.
 - Never commit or paste a live `SavedData\DevGateway\current.json`.
 - Keep automated runs minimized and bound to their exact PID and process-start identity.
-- Use a unique disposable `-savedatafolder`; never reuse a running RimWorld process.
+- Use a unique disposable `-savedatafolder` for development and acceptance. Touch an existing user process only for an explicitly requested live diagnostic or repair, never as acceptance evidence.
 - Request graceful shutdown first and retain cleanup/config-hash evidence.
-- The in-game danger/status overlay appears only while RimWorld's native in-play Escape menu is open.
 
 Use semantic Gateway operations for repeatable actions and observations. Raw C# is appropriate for one-off diagnosis or disposable setup, but direct mutation does not prove a player workflow. Read [`docs/Gateway.md`](docs/Gateway.md) for the protocol and evidence contract.
 
@@ -125,7 +154,7 @@ Preparation builds and stages repository artifacts and creates an immutable cand
 - `docs/` contains repository-wide development, testing, Gateway, and detailed player references.
 - `artifacts/` contains ignored builds, logs, screenshots, test results, and run evidence.
 
-Do not commit tokens, live Gateway manifests, normal RimWorld configuration or saves, Workshop assemblies, generated packages, or files from `artifacts/`. Normal builds stay repository-local; intentional live deployment is performed only by an owned isolated operation.
+Do not commit tokens, live Gateway manifests, normal RimWorld configuration or saves, Workshop assemblies, generated packages, or files from `artifacts/`. Raw builds stay repository-local; intentional local installation is performed by the owned `mod_build`/`local_mod_sync` operations, never by copying into Workshop content.
 
 ## Further reading
 
@@ -134,3 +163,4 @@ Do not commit tokens, live Gateway manifests, normal RimWorld configuration or s
 - [`docs/Gateway.md`](docs/Gateway.md) — Gateway security, API, control, and evidence
 - [`docs/ImmersiveChefs.md`](docs/ImmersiveChefs.md) — detailed Immersive Chefs player guide and compatibility matrix
 - [`docs/ScenarioMigrationInventory.md`](docs/ScenarioMigrationInventory.md) — legacy scenario status and E2E replacements
+- [`docs/NewModChecklist.md`](docs/NewModChecklist.md) — canonical layout, profile, test, build/install, and release steps for new mods

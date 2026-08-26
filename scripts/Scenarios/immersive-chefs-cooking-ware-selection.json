@@ -3,6 +3,7 @@
   "name": "immersive-chefs-cooking-ware-selection",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

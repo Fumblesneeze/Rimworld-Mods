@@ -19,14 +19,15 @@ public static class McpTools
     public static async Task<string> ValidateOpenSpec(OperationRegistry registry, CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync("openspec_validate", EmptyArguments(), cancellationToken));
 
-    [McpServerTool(Name = "mod_build"), Description("Build one canonical mod through its universal release profile.")]
+    [McpServerTool(Name = "mod_build"), Description("Build one canonical mod and install the successful package in the local RimWorld Mods directory.")]
     public static async Task<string> BuildMod(
         OperationRegistry registry,
         [Description("Canonical package ID.")] string packageId,
         [Description("Build configuration: Release or Debug.")] string? configuration,
+        [Description("Optional exact RimWorld Mods root; omit for the configured local installation.")] string? modsRoot,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
-            "mod_build", JsonSerializer.SerializeToElement(new { packageId, configuration }), cancellationToken));
+            "mod_build", JsonSerializer.SerializeToElement(new { packageId, configuration, modsRoot }), cancellationToken));
 
     [McpServerTool(Name = "test_run"), Description("Run one exact registered host-test suite and optional exact dotnet test filter.")]
     public static async Task<string> RunTests(
@@ -193,7 +194,7 @@ public static class McpTools
             JsonSerializer.SerializeToElement(new { backupPath, expectedCurrentSha256, configPath }),
             cancellationToken));
 
-    [McpServerTool(Name = "local_mod_sync"), Description("Atomically synchronize an allowlisted built mod package into the local RimWorld Mods directory and retain the prior copy as a recoverable backup.")]
+    [McpServerTool(Name = "local_mod_sync"), Description("Synchronize an allowlisted built mod package into the local RimWorld Mods directory without retaining an install backup.")]
     public static async Task<string> SyncLocalMod(
         OperationRegistry registry,
         [Description("Canonical package ID whose universal release profile selects the package files.")] string packageId,

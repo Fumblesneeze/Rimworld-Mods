@@ -1,36 +1,39 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Patch>
-  <Operation Class="PatchOperationFindMod">
-    <mods><li>Ceramics (Continued)</li></mods>
-    <match Class="PatchOperationConditional">
-      <xpath>/Defs[ThingDef/defName="N7_Porcelain" and ThingDef/defName="CeramicsBench_Basic" and ThingDef/defName="CeramicsBench_Electric" and ResearchProjectDef/defName="BasicCeramics"]</xpath>
-      <match Class="PatchOperationAdd">
-        <xpath>/Defs</xpath>
-        <value>
-        <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase" MayRequire="zal.ceramics">
-          <defName>ImmersiveChefs_MakePorcelainPlates</defName>
-          <label>make porcelain plates x4</label>
-          <description>Shape four plates from porcelain.</description>
-          <jobString>Making porcelain plates.</jobString>
-          <workAmount>900</workAmount>
-          <effectWorking>CutStone</effectWorking>
-          <soundWorking>Recipe_MakeStoneBlocks</soundWorking>
-          <ingredients><li><filter><thingDefs><li>N7_Porcelain</li></thingDefs></filter><count>4</count></li></ingredients>
-          <fixedIngredientFilter><thingDefs><li>N7_Porcelain</li></thingDefs></fixedIngredientFilter>
-          <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
-          <productHasIngredientStuff>true</productHasIngredientStuff>
-          <recipeUsers><li>CeramicsBench_Basic</li><li>CeramicsBench_Electric</li></recipeUsers>
-          <researchPrerequisite>BasicCeramics</researchPrerequisite>
-          <modExtensions>
-            <li Class="ImmersiveChefs.KitchenwareRecipeExtension">
-              <product>Plate</product>
-              <fabricationTier>Ceramic</fabricationTier>
-            </li>
-          </modExtensions>
-        </RecipeDef>
-        </value>
-      </match>
-      <nomatch Class="PatchOperationSequence"><operations /></nomatch>
-    </match>
+  <Operation Class="XmlExtensions.FindMod">
+    <mods><li>zal.ceramics</li></mods>
+    <packageId>true</packageId>
+    <caseTrue>
+      <Operation Class="PatchOperationConditional">
+        <xpath>/Defs[ThingDef/defName="N7_Porcelain" and ThingDef/defName="CeramicsBench_Basic" and ThingDef/defName="CeramicsBench_Electric" and ResearchProjectDef/defName="BasicCeramics"]</xpath>
+        <match Class="PatchOperationAdd">
+          <xpath>/Defs</xpath>
+          <value>
+          <RecipeDef ParentName="ImmersiveChefs_KitchenwareRecipeBase" MayRequire="zal.ceramics">
+            <defName>ImmersiveChefs_MakePorcelainPlates</defName>
+            <label>make porcelain plates x4</label>
+            <description>Shape four plates from porcelain.</description>
+            <jobString>Making porcelain plates.</jobString>
+            <workAmount>900</workAmount>
+            <effectWorking>CutStone</effectWorking>
+            <soundWorking>Recipe_MakeStoneBlocks</soundWorking>
+            <ingredients><li><filter><thingDefs><li>N7_Porcelain</li></thingDefs></filter><count>4</count></li></ingredients>
+            <fixedIngredientFilter><thingDefs><li>N7_Porcelain</li></thingDefs></fixedIngredientFilter>
+            <products><ImmersiveChefs_Plate>4</ImmersiveChefs_Plate></products>
+            <productHasIngredientStuff>true</productHasIngredientStuff>
+            <recipeUsers><li>CeramicsBench_Basic</li><li>CeramicsBench_Electric</li></recipeUsers>
+            <researchPrerequisite>BasicCeramics</researchPrerequisite>
+            <modExtensions>
+              <li Class="ImmersiveChefs.KitchenwareRecipeExtension">
+                <product>Plate</product>
+                <fabricationTier>Ceramic</fabricationTier>
+              </li>
+            </modExtensions>
+          </RecipeDef>
+          </value>
+        </match>
+        <nomatch Class="PatchOperationSequence"><operations /></nomatch>
+      </Operation>
+    </caseTrue>
   </Operation>
 </Patch>

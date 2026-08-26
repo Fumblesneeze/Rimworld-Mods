@@ -6,7 +6,7 @@
 - Status: `live-reviewed`
 - Intended crop: `1280x720, fixed gameplay room with the native Needs thought pane`
 - Colony brief: `Small established boreal colony dining nook with granite walls, wood floor, lighting and adjacent kitchen context.`
-- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> fumblesneeze.immersivechefs`
+- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> imranfish.xmlextensions -> fumblesneeze.immersivechefs`
 - Native workflow: `player invokes the enabled Consume simple meal float-menu option -> conscious colonist ingests one cold plated meal without cutlery or a usable table -> native Needs thoughts show all three memories`
 
 ## References

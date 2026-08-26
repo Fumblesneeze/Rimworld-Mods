@@ -3,6 +3,7 @@
   "name": "immersive-chefs-hidden-provenance",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

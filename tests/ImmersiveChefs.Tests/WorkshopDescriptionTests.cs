@@ -139,6 +139,7 @@ public sealed class WorkshopDescriptionTests
             Assert.That(normalized, Does.Contain("RimWorld 1.6"));
             Assert.That(normalized, Does.Contain("[h1]Required Mods[/h1]"));
             Assert.That(normalized, Does.Contain("Harmony"));
+            Assert.That(normalized, Does.Contain("XML Extensions"));
             Assert.That(normalized, Does.Contain("[h1]Recommended Mods[/h1]"));
             Assert.That(normalized, Does.Contain("[h1]Optional Mods[/h1]"));
             Assert.That(normalized, Does.Contain("[b]Royalty[/b] - "));
@@ -426,6 +427,15 @@ public sealed class WorkshopDescriptionTests
             Assert.That(manifest.captureDefaults.maximumDurationSeconds, Is.EqualTo(5));
             Assert.That(manifest.captureDefaults.maximumGifBytes, Is.EqualTo(1048575));
             Assert.That(manifest.captureDefaults.thingSelection, Is.False);
+            Assert.That(
+                manifest.showcases.All(showcase => showcase.requiredPackageIds.Take(3).SequenceEqual(new[]
+                {
+                    "brrainz.harmony",
+                    "ludeon.rimworld",
+                    "imranfish.xmlextensions"
+                })),
+                Is.True,
+                "Every Immersive Chefs showcase declaration must preserve its hard dependency order.");
         });
 
         var gastronomy = manifest!.showcases.Single(showcase => showcase.id == "gastronomy-service");

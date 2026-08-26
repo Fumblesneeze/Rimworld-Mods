@@ -5,7 +5,7 @@ Immersive Chefs needs a reproducible RimWorld 1.6 foundation before its interdep
 ## What Changes
 
 - Create a repository-level OpenSpec workspace and keep all RimWorld mods below `mods/`.
-- Add the loadable `mods/ImmersiveChefs` mod for RimWorld 1.6 with Harmony as its only hard mod dependency.
+- Add the loadable `mods/ImmersiveChefs` mod for RimWorld 1.6 with Harmony and XML Extensions as its hard mod dependencies.
 - Use the recovered RimWorld ModSdk/testing approach where it is compatible with the current game; preserve an explicit modern-.NET test runner where the framework cannot load current RimWorld assemblies reliably.
 - Add a small public compatibility boundary that detects supported optional mods by package ID without hard assembly references.
 - Add repeatable build, test, deploy, minimal-mod-list launch, log inspection, and desktop smoke-verification commands.
@@ -18,7 +18,7 @@ Immersive Chefs needs a reproducible RimWorld 1.6 foundation before its interdep
 
 ### New Capabilities
 
-- `mod-foundation`: Owns the repository layout, RimWorld metadata, build output, startup behavior, Harmony dependency, and optional-mod discovery for `mods/ImmersiveChefs`.
+- `mod-foundation`: Owns the repository layout, RimWorld metadata, build output, startup behavior, required Harmony/XML Extensions dependencies, and optional-mod discovery for `mods/ImmersiveChefs`.
 - `developer-verification`: Owns out-of-process tests, a reversible minimal-mod-list RimWorld launch and FlaUI/log smoke check, and the repo-local development/verification skill for `mods/ImmersiveChefs`.
 
 ### Modified Capabilities

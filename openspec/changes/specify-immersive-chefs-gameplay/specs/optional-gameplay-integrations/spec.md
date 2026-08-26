@@ -2,13 +2,13 @@
 
 **Owning mod:** Immersive Chefs (`fumblesneeze.immersivechefs`) at `mods/ImmersiveChefs`.
 
-### Requirement: Optional integrations never become hard dependencies
+### Requirement: Optional integration targets never become hard dependencies
 
-Harmony (`brrainz.harmony`) SHALL be the only required third-party mod. Every optional integration SHALL require a recognized active package ID plus expected Def or reflected member shape, SHALL avoid compile-time references to optional assemblies, and SHALL disable only itself with one actionable warning when validation fails.
+Harmony (`brrainz.harmony`) and XML Extensions (`imranfish.xmlextensions`, Workshop `2574315206`) SHALL be the only required third-party mods. XML Extensions SHALL provide package-ID-aware declarative patch conditions; it SHALL load after Core and before Immersive Chefs and SHALL never be bundled. Every optional integration target SHALL require a recognized active package ID plus expected Def or reflected member shape, SHALL avoid compile-time references to optional assemblies, and SHALL disable only itself with one actionable warning when validation fails.
 
 #### Scenario: Optional mod is absent
 
-- **WHEN** Immersive Chefs loads without any recognized optional package IDs
+- **WHEN** Immersive Chefs loads with Harmony, Core, and XML Extensions but without any recognized optional package IDs
 - **THEN** base behavior initializes without missing-assembly or missing-Def errors
 
 #### Scenario: Recognized package has changed shape
@@ -60,7 +60,7 @@ When `Argon.ExpandedMaterials.Metals` is active, cookware, metal plates, cutlery
 
 ### Requirement: Masonry and plastics use explicit classifiers
 
-When `Argon.ExpandedMaterials.Masonry` is active, `EM_AdobeBricks` SHALL enable the fixed adobe plate path even though it is not Stuff. When `Mlie.SimplySublimeABSPolymer` is active and compatible, ABS SHALL be classified explicitly as plastic instead of inferred from its broad Metallic, Woody, or Stony tags. Incompatible legacy packages `Argon.VMEuP` and `Argon.ExpandedMaterials.Stones` SHALL NOT be activated on RimWorld 1.6.
+When exact package `Argon.ExpandedMaterials.Masonry` is active, an `XmlExtensions.FindMod` condition using package-ID matching SHALL enable the fixed `EM_AdobeBricks` plate path even though the ingredient is not Stuff. When `Mlie.SimplySublimeABSPolymer` is active and compatible, ABS SHALL be classified explicitly as plastic instead of inferred from its broad Metallic, Woody, or Stony tags. Incompatible legacy packages `Argon.VMEuP` and `Argon.ExpandedMaterials.Stones` SHALL NOT be activated on RimWorld 1.6.
 
 #### Scenario: ABS does not become metal by tag
 
@@ -69,7 +69,7 @@ When `Argon.ExpandedMaterials.Masonry` is active, `EM_AdobeBricks` SHALL enable 
 
 ### Requirement: Ceramics (Continued) supplies porcelain plates without broad-tag leakage
 
-When exact package `zal.ceramics` is active and the expected finalized 1.6 Def shape is present, Immersive Chefs SHALL register only `N7_Porcelain` as ceramic plate material and add its plate recipe to `CeramicsBench_Basic` and `CeramicsBench_Electric` behind `BasicCeramics`. Product metadata SHALL order Immersive Chefs after `zal.ceramics` without declaring it as a hard dependency. The adapter SHALL use the package ID plus exact Def shape, SHALL NOT infer ceramic from translated labels or the upstream `Stony` category, and SHALL not make Processor Framework or Vanilla Expanded Framework required merely because Ceramics (Continued) can optionally use either framework. `Auto` SHALL enable this contribution and `Off` SHALL remove its recipe users and material admission after restart while leaving the upstream mod untouched.
+When exact package `zal.ceramics` is active and the expected finalized 1.6 Def shape is present, Immersive Chefs SHALL register only `N7_Porcelain` as ceramic plate material and add its plate recipe to `CeramicsBench_Basic` and `CeramicsBench_Electric` behind `BasicCeramics`. Product metadata SHALL order Immersive Chefs after `zal.ceramics` without declaring it as a hard dependency. The XML recipe condition SHALL use `XmlExtensions.FindMod` with package-ID matching, followed by the exact Def-shape guard. The adapter SHALL NOT infer ceramic from translated labels or the upstream `Stony` category, and SHALL not make Processor Framework or Vanilla Expanded Framework required merely because Ceramics (Continued) can optionally use either framework. `Auto` SHALL enable this contribution and `Off` SHALL remove its recipe users and material admission after restart while leaving the upstream mod untouched.
 
 #### Scenario: Exact porcelain path is active
 
@@ -524,9 +524,9 @@ When `syrchalis.processor.framework` is active and its expected local shape vali
 
 ### Requirement: Compatibility verification uses a bounded exact-mod matrix
 
-The integration runner SHALL group E2E tests by declared exact package requirements and exclusions, launch one fresh RimWorld process per distinct ordered group, run that group's tests sequentially, and aggregate the results. Before each E2E case it SHALL remove roofs including overhead mountain, then clear map contents and create only the declared fixture. The maintained behavior matrix SHALL contain these groups:
+The integration runner SHALL group E2E tests by declared exact package requirements and exclusions, launch one fresh RimWorld process per distinct ordered group, run that group's tests sequentially, and aggregate the results. Before each E2E case it SHALL remove roofs including overhead mountain, then clear map contents and create only the declared fixture. Unless a dependency-failure scenario says otherwise, every Immersive Chefs group SHALL include Harmony, Core, and XML Extensions in that order before any optional packages and Immersive Chefs. The maintained behavior matrix SHALL contain these groups:
 
-1. Harmony, Core, Immersive Chefs, and Gateway as the base inverse.
+1. Harmony, Core, XML Extensions, Immersive Chefs, and Gateway as the base inverse.
 2. Vanilla Expanded Framework; all installed Vanilla Cooking Expanded meal modules; Fried Meals; Adaptive Meal Bill; Overcooked Meals; Immersive Chefs; and Gateway for the shared final-product boundary.
 3. Vanilla Expanded Framework; matching Vanilla Cooking Expanded modules; Food Texture Variety Core/main/VCE add-ons; Dynamic Meal Texture Replacer; Variety Matters; Vanilla Food Variety Expanded; Immersive Chefs; and Gateway for ingredient and graphic provenance.
 4. Fast Meals; Meals on Wheels; Prioritize Meals over Preserved Foods; Immersive Chefs; and Gateway for food search, mobile holders, and fast-work exemptions.
@@ -538,9 +538,10 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 10. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
 11. Pick Up And Haul; Immersive Chefs; and Gateway for native tracked-inventory batch collection, sequential hand washing, interruption, and batch unloading.
 12. Processor Framework; Dubs Bad Hygiene; Pick Up And Haul; Immersive Chefs; and Gateway for one-trip tracked dishwasher loading, per-unit Processor admission, cycle completion, and later native clean-output hauling.
-12. Harmony; Core; Cook for Yourself; Immersive Chefs; and Gateway for one-off self-cooking, exact ware/session lifecycle, native self-ingestion, patient delivery, interruption, and an `Off`-setting run in which the upstream one-off job still completes unchanged.
-13. Harmony; Core; Biotech; Cook for Yourself; Immersive Chefs; and Gateway for native baby-food cooking and bottle feeding that remain entirely upstream-owned and kitchenware-free under strict ware settings. Package absence and changed-shape behavior remain host/base-process fail-closed gates rather than claims of either active-mod group.
-14. Harmony; Core; Ceramics (Continued); Immersive Chefs; and Gateway for exact porcelain registration, native ceramics-bench plate crafting, Stuff/color/quality retention, and broad-`Stony` non-leakage. Processor Framework and Vanilla Expanded Framework remain absent from this minimum group because the installed provider has its own legacy fallback.
+13. Harmony; Core; XML Extensions; Cook for Yourself; Immersive Chefs; and Gateway for one-off self-cooking, exact ware/session lifecycle, native self-ingestion, patient delivery, interruption, and an `Off`-setting run in which the upstream one-off job still completes unchanged.
+14. Harmony; Core; XML Extensions; Biotech; Cook for Yourself; Immersive Chefs; and Gateway for native baby-food cooking and bottle feeding that remain entirely upstream-owned and kitchenware-free under strict ware settings. Package absence and changed-shape behavior remain host/base-process fail-closed gates rather than claims of either active optional-mod group.
+15. Harmony; Core; XML Extensions; Ceramics (Continued); Immersive Chefs; and Gateway for exact porcelain registration, native ceramics-bench plate crafting, Stuff/color/quality retention, and broad-`Stony` non-leakage. Processor Framework and Vanilla Expanded Framework remain absent from this minimum group because the installed provider has its own legacy fallback.
+16. Harmony; Core; XML Extensions; Argonic Core; Vanilla Expanded Framework; Expanded Materials - Masonry; Immersive Chefs; and Gateway for package-ID-gated adobe registration, native crafting-spot plate production, exact brick consumption, quality, and fixed-material output without Stuff leakage.
 
 Every named supported food mod SHALL appear in at least one maintained exact group. Host tests SHALL cover pure policy and package grouping, loaded main-menu integration tests SHALL verify finalized Defs and Harmony ownership, and E2E tests SHALL prove native player-observable cooking, dispensing, selection, serving, storage, and eating behavior. A broad all-supported startup canary MAY be added, but it SHALL NOT substitute for these behavioral groups or claim that every unsupported permutation is compatible.
 

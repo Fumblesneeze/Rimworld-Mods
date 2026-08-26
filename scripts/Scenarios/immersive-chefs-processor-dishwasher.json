@@ -3,6 +3,7 @@
   "name": "immersive-chefs-processor-dishwasher",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "syrchalis.processor.framework",
     "fumblesneeze.immersivechefs"
   ],

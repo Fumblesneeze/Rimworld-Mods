@@ -65,7 +65,7 @@ Host tests SHALL distinguish simulated package presence, referenced assembly sha
 
 ### Requirement: Product-owned in-game integration tests
 
-Immersive Chefs SHALL own a separately compiled startup-gated integration-test assembly whose manifest owner is exactly `fumblesneeze.immersivechefs`. Its manifest SHALL use exact active-package mode for the ordered sequence Harmony, Core, Immersive Chefs, and Dev Gateway. The host builder SHALL select and stage that assembly only when the complete requested sequence matches every package and position, and the Dev Gateway SHALL re-evaluate the same exact sequence from the real active `ModContentPack` order before exposing the assembly for load or invocation through the active Immersive Chefs content pack. The ordinary Immersive Chefs package SHALL contain neither that test assembly, any case-insensitive `RimWorldDevGateway*.dll` filename, a metadata-bearing DLL without an assembly definition, nor a managed AssemblyRef whose simple name starts with `RimWorldDevGateway` case-insensitively. Its smoke evidence SHALL retain every ordinary package file by ordinal relative path/length/SHA-256 and every managed DLL's identity and complete metadata-only AssemblyRef-row inventory.
+Immersive Chefs SHALL own a separately compiled startup-gated integration-test assembly whose manifest owner is exactly `fumblesneeze.immersivechefs`. Its manifest SHALL use exact active-package mode for the ordered sequence Harmony, Core, XML Extensions, Immersive Chefs, and Dev Gateway. The host builder SHALL select and stage that assembly only when the complete requested sequence matches every package and position, and the Dev Gateway SHALL re-evaluate the same exact sequence from the real active `ModContentPack` order before exposing the assembly for load or invocation through the active Immersive Chefs content pack. The ordinary Immersive Chefs package SHALL contain neither that test assembly, any case-insensitive `RimWorldDevGateway*.dll` filename, a metadata-bearing DLL without an assembly definition, nor a managed AssemblyRef whose simple name starts with `RimWorldDevGateway` case-insensitively. Its smoke evidence SHALL retain every ordinary package file by ordinal relative path/length/SHA-256 and every managed DLL's identity and complete metadata-only AssemblyRef-row inventory.
 
 Every staged integration-test assembly admitted as smoke evidence SHALL contribute at least one discovered test descriptor with the same owning package ID and exact assembly identity. Merely loading an empty assembly SHALL not count as product-mod test evidence.
 
@@ -76,7 +76,7 @@ Every staged integration-test assembly admitted as smoke evidence SHALL contribu
 
 #### Scenario: Prove the loaded Immersive Chefs XML patch
 
-- **WHEN** RimWorld reaches its settled main menu with the exact ordered active set Harmony, Core, Immersive Chefs, and Dev Gateway
+- **WHEN** RimWorld reaches its settled main menu with the exact ordered active set Harmony, Core, XML Extensions, Immersive Chefs, and Dev Gateway
 - **THEN** the Gateway discovers the exact Immersive Chefs-owned test assembly from the active Immersive Chefs mod, runs its `MainMenuLoaded` tests, observes that the Immersive Chefs constructor initialized, and reads the expected Immersive Chefs XML-patch marker from the finalized live Core Steel `ThingDef`
 
 #### Scenario: Product test assembly has no tests

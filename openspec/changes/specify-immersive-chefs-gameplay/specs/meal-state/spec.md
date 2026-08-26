@@ -193,7 +193,7 @@ When exact package `Mlie.DThermodynamicsHotMeals` is active, Immersive Chefs SHA
 The exclusion SHALL be package-presence based and SHALL happen before Def and Harmony ownership is finalized. Validation of the inspected Thermodynamics 1.6.6 shape SHALL be diagnostic only: if its known Def, job, class, comp, or assembly shape changes, Immersive Chefs SHALL log one actionable warning but MUST NOT activate its competing fallback in the same process. Immersive Chefs culinary quality, ingredient provenance, physical plate/cutlery lifecycle, sanitation, comfort, expectations, and all non-temperature food-poisoning inputs SHALL continue to operate without reading or rewriting Thermodynamics' temperature state. Shared Immersive Chefs serving records MAY retain inert serialized temperature fields, but those fields MUST NOT progress, display, affect stacking, or contribute an outcome while Thermodynamics owns the concern.
 
 #### Scenario: Thermodynamics is active at startup
-- **WHEN** Harmony, Core, Thermodynamics - Hot Meals, and Immersive Chefs load in their declared order
+- **WHEN** Harmony, Core, XML Extensions, Thermodynamics - Hot Meals, and Immersive Chefs load in their declared order
 - **THEN** `DMicrowave` and `HeatMeal` exist, `ImmersiveChefs_Microwave` does not exist, and only Thermodynamics owns temperature progression, UI, thoughts, heating selection, jobs, and toils
 
 #### Scenario: Thermodynamics meal still uses physical service ware

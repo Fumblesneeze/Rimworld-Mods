@@ -2,7 +2,7 @@
 
 The repository has good individual safety mechanisms, but they are spread across PowerShell entry points, .NET hosts, raw Gateway HTTP, and mod-specific release scripts. Agents repeatedly rediscover argument shapes, output parsing, exact-PID rules, evidence paths, package identities, and Steam confirmation gates. The first concrete symptom is that a second distributable mod would otherwise receive a second publisher.
 
-The owning mod is RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`). The new executable is a repository companion under `tools/`; product mods never reference or ship it. It must work in local trusted Codex sessions on Windows, while retaining deterministic JSON contracts that can later support other hosts.
+The owner is repository tooling, specifically `RimWorldModding.Mcp` at `tools/RimWorldModding.Mcp`. Product and developer mods never reference, depend on, or ship it. It must work in local trusted Codex sessions on Windows, while retaining deterministic JSON contracts that can later support other hosts.
 
 ## Goals / Non-Goals
 
@@ -70,7 +70,11 @@ Subscriber automation success remains supporting evidence. Publication returns `
 
 `modlist_enable` resolves the normal RimWorld `ModsConfig.xml`, refuses to write while a non-owned RimWorld process is running, hashes and copies the exact file to a timestamped backup, parses XML, inserts one canonical package ID at the requested anchor without changing other entries, writes atomically, reparses, and reports before/after hashes and backup path. Any validation/write failure restores the backup. `modlist_restore` requires that exact recorded backup and refuses a mismatched target unless explicitly confirmed.
 
-Local package synchronization uses the same recoverable pattern, but retains staging and prior copies in a sibling `.rimworld-modding-mcp` recovery root outside RimWorld's scanned `Mods` directory. This prevents backup containers from being discovered as malformed mods.
+Local package synchronization stages in a temporary directory outside RimWorld's scanned `Mods`
+directory, replaces only the selected package, and retains no install backup. This keeps the normal
+build/deploy loop predictable: the repository package remains the recovery source and a successful
+build is immediately what the game will discover. Subscriber verification remains separately
+recoverable because it temporarily removes the local package while testing the subscribed Workshop copy.
 
 ### 7. Repetition becomes a process trigger, not technical debt
 

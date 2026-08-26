@@ -6,7 +6,7 @@
 - Status: `draft`
 - Intended crop: `1280x720, fixed view containing dining tables, service lane and clean shelf`
 - Colony brief: `Established arid industrial colony after breakfast rush, one compact dining hall joined to a newer sterile kitchen and outdoor utility lane.`
-- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> syrchalis.processor.framework -> dubwise.dubsbadhygiene -> mehni.pickupandhaul -> fumblesneeze.immersivechefs`
+- Exact presentation packages: `brrainz.harmony -> ludeon.rimworld -> imranfish.xmlextensions -> syrchalis.processor.framework -> dubwise.dubsbadhygiene -> mehni.pickupandhaul -> fumblesneeze.immersivechefs`
 - Native workflow: `player enables the named cleaner's ordinary cleaning work -> Pick Up And Haul groups nearby dirty settings -> Doing dishes loads the Processor dishwasher -> native cycle cleans them -> ordinary hauling returns the clean batch to the kitchen shelf`
 
 ## References

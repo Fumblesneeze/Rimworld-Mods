@@ -1,6 +1,8 @@
 # Repository instructions
 
-These instructions apply to the entire repository. More specific `AGENTS.md` files may add local constraints, but may not weaken the acceptance gate below.
+These instructions apply to the entire repository. More specific `AGENTS.md` files may specialize them,
+but may not contradict or weaken the root acceptance, credential, process-ownership, deployment, package,
+or repository-boundary invariants.
 
 When starting a thread in this repo, read the `README.md` first to understand the repo structure, contents and prerequisites.
 
@@ -11,34 +13,15 @@ This is a RimWorld mod monorepo:
 - OpenSpec proposals, designs, capability specs, and task lists live under `openspec/` at the repository root.
 - Playable mods live under `mods/<ModName>`.
 - Host-safe shared contracts live under `shared/`, companion tools under `tools/`, and NUnit projects under `tests/`.
-- Every OpenSpec change and capability must name exactly one owning mod or specifically the repo tooling like the mcp tool.
-- Other mods must never reference, depend on, load-order-hint, or ship `fumblesneeze.rimworlddevgateway`.
+- Every OpenSpec change and capability must name exactly one owner: either one mod or one repository-tooling component.
+- Repository-owned mods do not depend on one another. Shared build-time or host-safe code belongs under `shared/` or `tools/`, not in a runtime library mod.
+- Product mods must never reference, depend on, load-order-hint, or ship `fumblesneeze.rimworlddevgateway`.
 - Workshop/downloaded mods are read-only inspection inputs. Never edit them or copy their assemblies into a release package.
 - Optional integrations must be package-ID/Def-resolved, absent-safe, shape-guarded, and isolated behind narrow adapters.
 
-Before changing RimWorld C#, XML, Defs, Harmony patches, compatibility adapters, tests, smoke tooling, or the gateway, read and follow `.agents/skills/rimworld-mod-development/SKILL.md` and its routed references. Use the repository's `tdd` and `code-review` skills when they apply. TDD does not apply to content like translations, descriptions, screenshots or other things that don't change mod behaviour, but are simple presentation, a manual verification there is sufficient.
+Before changing RimWorld C#, XML, Defs, Harmony patches, compatibility adapters, tests, smoke tooling, or the gateway, read and follow `.agents/skills/rimworld-mod-development/SKILL.md` and its routed references. Use the repository's `tdd` and `code-review` skills when they apply. Pure prose, translation, and presentation edits do not need behavior-level TDD, but still require their applicable schema, package, asset, and manual verification. Metadata, Def values, balance boundaries, and dependency declarations are not automatically exempt when they affect behavior or packaging.
 
-Before creating, selecting, modifying, packaging, or accepting player-visible raster art, read and
-follow `.agents/skills/rimworld-asset-generation/SKILL.md`. Visual asset development is
-reference-first rather than test-first: inspect structurally and conceptually comparable Core and
-locally subscribed-mod assets read-only, measure their semantic dimensions like top layer and side layer coordinates, projection, fixed-camera
-angles, outline density, and zoom behavior, and only then author the exact generation brief and its
-acceptance criteria including these coordinates and angles, so that they can be asserted via tests.
-Compare generated candidates and references side by side at source and final map
-scale. Final acceptance, after the logical and formal requirements are met, requires fresh in-game screenshots at materially different zoom levels and,
-where applicable, representative Stuff/material and progressive damage states. Damage art must be
-verified on the object's actual rendered geometry and camera projection; a decal beside the object,
-at the owning-cell center, or detached at a junction is a failed asset. Give those screenshots without explanatory
-context to an independent reviewer sub-agent and require it to identify the object and purpose and to
-find no perspective, outline, style, coherence, or zoom-legibility defect. Static tests, manifests,
-generated illustrations, and a context-primed review cannot replace that blind in-game visual gate.
-For any projected/extruded object, measurements and prompts must record each visible plane separately
-(for example top surface, south/front face, east/side face, bevel, and contour). A whole-silhouette
-aspect ratio is not a substitute for plane proportions or apparent height. Compare both a low/short
-reference and the intended full-height structural comparator when height is changing; never derive a
-wall by applying one percentage to a fence silhouette. Record and preserve transparent canvas margins
-when they encode projection. Cropping a sprite and compensating with a shorter mesh changes its
-apparent height and is a failed normalization even when the tight alpha bounds look proportional.
+Before creating, selecting, modifying, packaging, or accepting player-visible raster art, read and follow `.agents/skills/rimworld-asset-generation/SKILL.md`. Its reference-first measurements, projection and canvas rules, representative material/damage captures, materially different in-game zooms, and context-free independent visual review are mandatory. Static tests, manifests, generated illustrations, and a context-primed review cannot replace that live visual gate.
 
 Before arranging a colony, gameplay showcase, or lived-in fixture whose visual credibility matters, read and follow `.agents/skills/rimworld-realistic-base-generation/SKILL.md`. Ground room geometry, materials, traffic, decor, and optional-mod placement in its inspected player-reference catalog and exact game contracts; do not improvise a decorated cleared-map box and call it a colony.
 
@@ -81,14 +64,14 @@ Read `docs/TestingEnvironments.md` before adding a test that depends on RimWorld
 
 ## Required change workflow
 
-1. **OpenSpec:** Identify the applicable change, confirm its owning mod, and read its proposal, design, capability specs, and tasks before editing. Add or correct observable scenarios when the contract is missing. Do not implement from an unowned requirement.
+1. **OpenSpec:** Identify the applicable change, confirm its single mod or tooling owner, and read its proposal, design, capability specs, and tasks before editing. Add or correct observable scenarios when the contract is missing. Do not implement from an unowned requirement.
 2. **Vertical TDD:** Work one behavior at a time: focused RED, minimum GREEN, then refactor while green. Test public behavior rather than private implementation. Record durable RED/GREEN evidence and reject zero-test runs.
     2.1 Any assumptions you make during development concerning stats, balance, durations, additional playability fixes, compatibility fixes and guards, etc. must be recorded in the spec.
-3. **Regression and package checks:** During feature work, run only the focused test IDs, exact active-mod groups, owning project build, and package checks affected by the current slice. Do not replay completed scenarios or run the guarded repository/full E2E suite merely because another feature changed. Reserve full-suite and full compatibility-matrix runs for explicit release preparation or deliberate maintenance/regression work. Run `openspec validate --all --strict --no-interactive` for specification changes.
+3. **Regression and package checks:** During feature work, run only the focused test IDs, exact active-mod groups, owning project build, and package checks affected by the current slice. Do not replay completed scenarios or run the guarded repository/full E2E suite merely because another feature changed. Reserve full-suite and full compatibility-matrix runs for explicit release preparation or deliberate maintenance/regression work. Run the typed `openspec_validate` operation for specification changes.
 4. **Independent review:** Use the `code-review` skill on the scoped diff. Resolve or explicitly reject each finding with evidence, then rerun affected tests and builds.
 5. **Final in-game acceptance:** On the reviewed build, run the isolated player workflow and personally observe its result. Earlier exploratory runs are not final evidence. If review fixes or later edits can affect runtime behavior, repeat the live acceptance run.
 6. **Evidence and task state:** Retain the action sequence and observed result with the tested revision/build identity. Check an OpenSpec task only after all of its required evidence exists.
-7. **Common sense review:** This final pass reviews the accumulated specs including gameplay stats, balance, fixes and guards, and compares it with related native Rimworld, DLC and locally subscribed mods for sensibility, and answers questions like "is this balanced via cost-reward", "are costs comparable to similar other things in-game", "are costs in relation to to other things in-game that are unrelated but give a feeling of size and dimensions and complexity, like a wall vs. a pot", "are the introduced things and mechanics required to be usable in early, mid or late-game, and if so, are there any blockers to those game stages that need to be addressed, like a missing neolithic thingdef and recipes for something that is required at that tech stage already.", "does it contain sensible research options for the things that got introduced", "are there any semantic gaps like a job that will never run because a different job always supercedes it or because a requirement for it will never be true?", "Is the mod metadata correctly stating required and optional mods and DLC? For example, is a mod marked as optional even though this mod depends on behaviour from it, and not having it would make the game unplayable, even if there may be guards that would make the game still load?" This review is *not* a code review, it is a semantic and logical pass over the specs for playability and balance issues.
+7. **Playability and balance review:** Use the `rimworld-game-balance` skill for a final semantic pass over the accumulated specs. Check progression, availability, cost/reward, research, job reachability, compatibility, and whether required/optional metadata matches actual playability. This is separate from code review.
 
 Never reuse live evidence from an older build to accept a changed runtime revision. Host tests should cover deterministic rules and failure cases, while the final RimWorld run proves engine wiring, real jobs/UI, loaded Defs, rendering, input, lifecycle, and supported optional-mod behavior together.
 
@@ -97,8 +80,8 @@ Never reuse live evidence from an older build to accept a changed runtime revisi
 - Use a unique disposable `-savedatafolder`, a dedicated log, and the smallest explicit mod list that proves the scenario.
 - Use separate installed-mod-present runs for compatibility claims.
 - Keep automated RimWorld processes minimized and use the Dev Gateway as the primary control, native-player-action, observation, and screenshot surface so verification does not disturb the user's desktop. Use direct OS-level screen, mouse, or keyboard input only when a faithful workflow is genuinely impossible through the Gateway and no practical Gateway extension can provide it.
-- Refuse to reuse an existing RimWorld process. Bind automation, screenshots, input, diagnostics, and cleanup to the exact launched PID and process start identity unless asked.
-- Hash the user's normal `ModsConfig.xml` before and after. Never use the normal save/configuration for automation. (this should be automated by the mcp tools and dev gateway)
+- Development and acceptance must use a fresh isolated RimWorld process. Reuse a user instance only when the user explicitly asks for live diagnostics or repair of that instance's current state; bind every action to its exact PID/start identity and never treat that session as acceptance evidence.
+- Hash the user's normal `ModsConfig.xml` before and after. Never use the normal save/configuration for automation.
 - Capture the tested build/package identity, ordered mod list, exact player actions, before/after observable state, screenshots, relevant supporting logs, request IDs where applicable, configuration hashes, and cleanup result in one evidence directory.
 - Restore camera, selection, developer/god mode, speed, and other mutated state. Delete only disposable objects created by that run.
 - Request graceful shutdown first. Use bounded diagnostics and an exact-PID fallback only when necessary; never kill an unrelated process.
@@ -109,21 +92,9 @@ Startup, a clean log, and one end-state screenshot are prerequisites, not proof 
 
 ## Extending and using the Dev Gateway
 
-Future agents are authorized to extend the Dev Gateway whenever a missing capability makes faithful game control or observation difficult. Treat a missing Gateway capability as specification and implementation work rather than a reason to take over the foreground desktop: update the owning Dev Gateway OpenSpec contract, implement and test the capability, then use it with RimWorld minimized. Prefer a small TDD-backed typed route or versioned automation for a recurring operation; use raw C# only to explore the needed seam or for a genuinely one-off diagnostic.
+Future agents are authorized to extend the Dev Gateway whenever a missing capability makes faithful game control or observation difficult. Update its owning OpenSpec contract and tests, then expose every recurring capability through the typed MCP surface so callers do not manage authentication, session state, or internal scripts themselves. Use raw C# only for bounded exploration or a genuinely one-off diagnostic.
 
-Gateway extensions must follow these rules:
-
-- Update the owning Dev Gateway OpenSpec contract and tests.
-- Keep the server dev-only, authenticated, loopback-bound, and unrestricted by default. EmbedIO owns HTTP parsing; the raw-text Mono.CSharp endpoint must remain directly usable without a companion client unless the user changes that contract.
-- Keep player-action controls semantically distinct from diagnostic reads and direct mutation helpers.
-- For control, invoke the native player path wherever possible. For observation, expose state that corresponds to something a player can perceive, and correlate it with the live view.
-- Use the new capability in an actual in-game verification. A route returning `ok`, or directly constructing the expected result, proves only the route—not the product behavior.
-- Never introduce a gateway reference into a product mod or package.
-- Implement client tools for all gateway functions in the mcp tools, do not require agents to call scripts or know state, i.e. if there is session authentication, that should be handled by the mcp tools, agents should just be able to use the mcp to check for running processes and run tools against the running processes directly.
-
-If verification needs clicking a custom window, choosing a material, drawing a zone, operating a multi-stage gizmo, inspecting a pawn thought, or following a job sequence and the gateway cannot do it reliably, extend the gateway rather than guessing. The extension should make the real workflow controllable or observable, not bypass it.
-
-Gateway work must remain bounded and robust: do not block the Unity thread with network I/O, sleeps, recursive lazy-menu evaluation, or unbounded enumeration. Serialize raw input, propagate cancellation, isolate failures from individual modded objects/providers, journal admitted requests, restore pressed inputs in cleanup, and preserve retryable lifecycle ownership after timeouts.
+Keep the Gateway dev-only, authenticated, loopback-bound, bounded on the Unity thread, and isolated from product packages. Player actions must remain distinct from diagnostics and direct mutation, use native game paths where possible, and expose player-observable results. A successful route proves only the route; final product acceptance still requires the real player workflow. Follow the `rimworld-dev-gateway` skill and `docs/Gateway.md` for implementation and protocol details.
 
 ## Repository automation surface
 
@@ -139,17 +110,13 @@ evidence-generation logic, inspect `operation_list`. If the capability is absent
 repeated, add an owning OpenSpec scenario and a typed MCP/CLI operation instead of another public
 script or ad hoc command sequence.
 
-## Common commands
-
-```powershell
-dotnet run --project .\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj -- serve --repository-root .
-dotnet run --project .\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj -- tool list -o table
-dotnet run --project .\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj -- tool call repository_status --arguments '{}' -o json
-```
-
 Use `operation_list` to discover the typed arguments for builds, tests, package validation, game and
 E2E runs, Gateway control, evidence reads, local mod-list changes, and release preparation/publication.
 
-Use the grouped E2E runner for repeatable multi-frame player workflows. Each attributed test declares its complete exact non-Gateway package order; the runner appends Gateway last, deploys before staging, starts one fresh isolated process per group, executes same-group tests sequentially, persists screenshots/results, and cleans its exact lease. Do not manually pre-stage E2E bundles for routine verification. A green group is supporting evidence until the acting agent personally inspects its exact-run screenshots and confirms the native action caused the visible outcome.
-
-Normal builds must remain repository-local. Deploy into only the exact local package-ID folder and only for an intentional isolated run; never deploy into Workshop content. Inspect `README.md`, `docs/Development.md`, and `docs/Gateway.md` for current commands, API details, and evidence conventions. Durable run evidence and its TDD ledger remain local under ignored artifact/report paths and must be regenerated for the revision under test.
+Raw `dotnet build` commands remain repository-local. The canonical `mod_build` operation is the
+intentional build-and-install path: after a successful build it installs the exact positive-allowlist
+package into the local `Mods/<package-id>` folder by default, stages outside the scanned Mods folder,
+and retains no install backup. Never deploy into Workshop content. Inspect `README.md`,
+`docs/Development.md`, and `docs/Gateway.md` for current commands, API details, and evidence
+conventions. Durable run evidence and its TDD ledger remain local under ignored artifact/report paths
+and must be regenerated for the revision under test.

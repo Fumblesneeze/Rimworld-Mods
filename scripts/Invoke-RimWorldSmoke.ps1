@@ -41,6 +41,7 @@ $ErrorActionPreference = 'Stop'
 $activeModIds = @(
     'brrainz.harmony',
     'ludeon.rimworld',
+    'imranfish.xmlextensions',
     'fumblesneeze.immersivechefs'
 )
 

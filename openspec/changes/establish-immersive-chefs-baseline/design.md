@@ -68,7 +68,7 @@ Alternative considered: commit generated DLLs and `About.xml`. Generated files a
 
 - `-savedatafolder=<artifact>/SavedData`
 - `-logFile <artifact>/Player.log`
-- a generated `ModsConfig.xml` containing Harmony, Core, and Immersive Chefs only.
+- a generated `ModsConfig.xml` containing Harmony, Core, XML Extensions, and Immersive Chefs only.
 
 It records the exact launched PID, starts and connects FlaUI to that PID, verifies the process's native main-window handle/title, captures a screenshot, checks the dedicated log for the startup marker and mod-scoped errors, then disconnects and terminates only the recorded process in `finally`. RimWorld's Unity canvas can yield an empty FlaUI element/window tree, so PID-bound connection, the native window, screenshot, and log are the evidence set. The script never writes the normal LocalLow configuration.
 

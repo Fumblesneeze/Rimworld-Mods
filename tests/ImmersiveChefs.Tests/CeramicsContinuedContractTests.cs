@@ -30,13 +30,14 @@ public sealed class CeramicsContinuedContractTests
         {
             Assert.That(
                 operation?.Attribute("Class")?.Value,
-                Is.EqualTo("PatchOperationFindMod"));
+                Is.EqualTo("XmlExtensions.FindMod"));
             Assert.That(
                 operation?.Element("mods")?.Elements("li").Select(element => element.Value),
-                Is.EqualTo(new[] { "Ceramics (Continued)" }));
+                Is.EqualTo(new[] { "zal.ceramics" }));
+            Assert.That(operation?.Element("packageId")?.Value, Is.EqualTo("true"));
         });
 
-        var conditional = operation?.Element("match");
+        var conditional = operation?.Element("caseTrue")?.Element("Operation");
         Assert.That(conditional?.Attribute("Class")?.Value, Is.EqualTo("PatchOperationConditional"));
         Assert.Multiple(() =>
         {
@@ -140,7 +141,7 @@ public sealed class CeramicsContinuedContractTests
     }
 
     [Test]
-    public void Product_metadata_orders_after_the_provider_without_making_it_required()
+    public void Product_metadata_requires_xml_extensions_but_keeps_ceramics_optional()
     {
         var about = XDocument.Load(Path.Combine(
             FindRepositoryRoot(),
@@ -159,6 +160,13 @@ public sealed class CeramicsContinuedContractTests
                 metadata.Element("modDependencies")?.Elements("li")
                     .Select(element => element.Element("packageId")?.Value),
                 Does.Not.Contain("zal.ceramics"));
+            Assert.That(
+                metadata.Element("modDependencies")?.Elements("li")
+                    .Select(element => element.Element("packageId")?.Value),
+                Does.Contain("imranfish.xmlextensions"));
+            Assert.That(
+                metadata.Element("loadAfter")?.Elements("li").Select(element => element.Value),
+                Does.Contain("imranfish.xmlextensions"));
         });
     }
 

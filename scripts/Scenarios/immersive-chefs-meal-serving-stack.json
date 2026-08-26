@@ -3,6 +3,7 @@
   "name": "immersive-chefs-meal-serving-stack",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

@@ -34,7 +34,7 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
+    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
@@ -161,6 +161,11 @@ try {
             Name = 'RimWorldDevGateway.Unit'
             Group = 'RimWorldDevGateway'
             Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Tests\RimWorldDevGateway.Tests.csproj'
+        }
+        [pscustomobject]@{
+            Name = 'RimWorldDevGateway.EndToEndHost.Unit'
+            Group = 'RimWorldDevGateway'
+            Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.EndToEndHost.Tests\RimWorldDevGateway.EndToEndHost.Tests.csproj'
         }
         [pscustomobject]@{
             Name = 'RimWorldDevGateway.Snapshots'

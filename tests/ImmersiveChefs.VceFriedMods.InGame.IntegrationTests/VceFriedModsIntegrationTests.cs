@@ -13,6 +13,7 @@ public static class VceFriedModsIntegrationTests
     {
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "OskarPotocki.VanillaFactionsExpanded.Core",
         "VanillaExpanded.VCookE",
         "VanillaExpanded.VCookEBakery",

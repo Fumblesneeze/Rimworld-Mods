@@ -14,6 +14,7 @@ namespace ImmersiveChefs.EndToEndTests;
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "rimfridge.kv.rw",
     "Mlie.DThermodynamicsHotMeals",
     "fumblesneeze.immersivechefs",

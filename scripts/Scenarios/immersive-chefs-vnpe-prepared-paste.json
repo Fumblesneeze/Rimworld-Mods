@@ -3,6 +3,7 @@
   "name": "immersive-chefs-vnpe-prepared-paste",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "oskarpotocki.vanillafactionsexpanded.core",
     "vanillaexpanded.vnutriente",
     "fumblesneeze.immersivechefs"

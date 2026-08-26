@@ -1,29 +1,22 @@
 schema: spec-driven
 
 context: |
-  This repository is a RimWorld mod monorepo. OpenSpec artifacts live at repository root under openspec/, while each playable mod lives under mods/<ModName>/.
-  Harmony is usually a required third-party mod used for code-patching. All DLC and third-party integrations and fixes must declare if the dependency is optional or required.
-  Optional dependencies shall be preferred, however depending on the semantics, a DLC or third party mod may be required when the mod is unplayable or has no effect/purpose without them.
-  Optional integrations must be discovered by package ID without hard assembly references. XML and C# Patches must be gated behind package id discovery for optional mods.
-  Required dependencies must declare such in the mod metadata and should assume, that the dependencies are thus correctly loaded. However, always assume that the actual C# or Def surface may change in the future.
-  Any patches should thus visibly fail when the expected surface changes, instead of silently gating behind specific versions or surfaces and then hiding any problems.
-  Never make guards for hashes, specific compiled or full-text files, etc. Assume that they may get patched in the future and try to make our adaptations as robust as possible, but fail loud if they do.
-  Fast tests run outside RimWorld; Unity lifecycle, initialized Def databases, maps, jobs, rendering, and complete mod-load behavior require an in-game verification tier.
-  Product specs may describe planned behavior, but proposals and task states must clearly distinguish implemented behavior from future scope.
+  This is a RimWorld 1.6 mod monorepo. Every change and capability has exactly one owner: either one mod or one repository-tooling component. Repository-owned mods do not depend on one another.
+  External runtime dependencies must be classified as required or optional according to actual playability. Product specs and task state must distinguish behavior delivered by the change from future scope.
 
 rules:
   proposal:
-    - Include an "Affected Mods" section with each mod's display name, package ID, and repository-relative path as well as "required" or "optional" labels.
-    - State whether gameplay behavior is implemented by the change or only specified for later work.
+    - State one owner. For a mod, give its display name, package ID, and repository-relative path; for tooling, give the component name and repository-relative path. Keep affected components and external dependencies separate from ownership.
+    - Classify each external runtime dependency as required or optional according to actual runtime semantics. If any `XmlExtensions.*` operation is used, declare XML Extensions (`imranfish.xmlextensions`, Workshop `2574315206`) as a required dependency.
+    - State whether gameplay behavior is delivered by the change or only specified for later work.
   design:
-    - Keep optional integrations behind package-ID detection and avoid compile-time references to optional mod assemblies.
-    - Include rollback and restoration behavior for any process that changes RimWorld's ModsConfig.xml.
+    - Prefer Defs and XML patch operations for declarative Def changes; use C# or Harmony only when the behavior cannot be expressed safely in XML. Prefer the most specific suitable XML Extensions operation when vanilla patch operations are insufficient.
+    - Detect optional C# integrations by canonical package ID and validate every consumed type/member/Def shape. For optional XML integrations, use `XmlExtensions.FindMod` with `packageId=true`. On shape drift, fail the adapter closed with one bounded diagnostic instead of partially patching.
+    - Do not use file hashes, exact mod versions, or full-text comparisons as the sole runtime compatibility probe. Hashes remain valid and required for artifact identity, concurrency, evidence, and recovery contracts.
   specs:
-    - Immediately below each delta-operation heading, identify the owning mod with display name, package ID, and repository-relative path.
     - Give every behavioural requirement at least one observable WHEN/THEN scenario.
-    - Costs, balancing, durations, categories, filters and all other values that we add or patch are requirements to be specified here.
+    - Specify player-visible, balance-significant, and compatibility-significant values; leave incidental implementation constants to the design.
+    - Automation that mutates user state must specify backup, atomicity, failure restoration, and verified postconditions.
   tasks:
-    - Prefix implementation section headings with the owning repository-relative mod path.
-    - Separate TDD red, green, refactor, build, in-game verification work and the final common sense review pass.
-    - Do not add tests for non-behaviour except for automated asset verification like verifying outlines/measurements etc. Other non-behaviour like descriptions, translations, mod metadata, stats/balancing (raw numbers), etc. are not behaviour and thus automated tests are stupid for these.
-      - I.e. there should be no standalone test for "a wall costs 5 wood" even if that is specified, however another spec may state "when sufficient resources are delivered to the wall, and when a pawn with the construct job assigned is available, then it should work on and finish building the wall", which would require adding enough resources to the test scenario according to the other spec.
+    - Avoid tests that merely repeat literals, but retain tests for derived behavior, schemas, package/dependency validity, and risky value boundaries in the honest test tier.
+    - Include a final task governed by the root `AGENTS.md` acceptance gate whenever runtime behavior changes.

@@ -12,6 +12,7 @@ namespace ImmersiveChefs.EndToEndTests;
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs",
     MaxFrames = 2_400,
     MaxGameTicks = 8_000,

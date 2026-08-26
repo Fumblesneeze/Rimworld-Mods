@@ -15,7 +15,7 @@ internal static class OptionalColonyContract
 // optional group look complete while permitting the substantial colony to stall.
 
 [RimWorldPerformanceTest("immersive-chefs.processor-dubs.instrumented", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "syrchalis.processor.framework", "Dubwise.DubsBadHygiene", ColonyContract.Owner,
     WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
     ComparisonId = OptionalColonyContract.ProcessorDubs, WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -46,7 +46,7 @@ internal static class OptionalColonyContract
 public sealed class ProcessorDubsInstrumentedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.processor-dubs.armed-disabled", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "syrchalis.processor.framework", "Dubwise.DubsBadHygiene", ColonyContract.Owner,
     WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
     ComparisonId = OptionalColonyContract.ProcessorDubs, WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -77,7 +77,7 @@ public sealed class ProcessorDubsInstrumentedBenchmark : ImmersiveChefsColonyBen
 public sealed class ProcessorDubsArmedDisabledBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.processor-dubs.disarmed", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "syrchalis.processor.framework", "Dubwise.DubsBadHygiene", ColonyContract.Owner,
     WorkloadVersion = "immersive-chefs-colony/processor-dubs/v1",
     ComparisonId = OptionalColonyContract.ProcessorDubs, WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -108,7 +108,7 @@ public sealed class ProcessorDubsArmedDisabledBenchmark : ImmersiveChefsColonyBe
 public sealed class ProcessorDubsDisarmedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.guest-service.instrumented", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense", ColonyContract.Owner,
     WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
     ComparisonId = OptionalColonyContract.GuestService, WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -139,7 +139,7 @@ public sealed class ProcessorDubsDisarmedBenchmark : ImmersiveChefsColonyBenchma
 public sealed class GuestServiceInstrumentedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.guest-service.armed-disabled", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense", ColonyContract.Owner,
     WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
     ComparisonId = OptionalColonyContract.GuestService, WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -170,7 +170,7 @@ public sealed class GuestServiceInstrumentedBenchmark : ImmersiveChefsColonyBenc
 public sealed class GuestServiceArmedDisabledBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.guest-service.disarmed", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "Orion.Hospitality", "Orion.CashRegister", "Orion.Gastronomy", "avilmask.CommonSense", ColonyContract.Owner,
     WorkloadVersion = "immersive-chefs-colony/guest-service/v1",
     ComparisonId = OptionalColonyContract.GuestService, WarmUpTicks = ColonyContract.WarmUpTicks,
@@ -201,7 +201,7 @@ public sealed class GuestServiceArmedDisabledBenchmark : ImmersiveChefsColonyBen
 public sealed class GuestServiceDisarmedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.variety-vnpe-material-dlc.instrumented", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "Argon.CoreLib",
     "OskarPotocki.VanillaFactionsExpanded.Core", "Argon.ExpandedMaterials.Masonry",
     "Argon.ExpandedMaterials.Metals", "Evyatar108.VarietyMattersImprovedRedux",
@@ -232,7 +232,7 @@ public sealed class GuestServiceDisarmedBenchmark : ImmersiveChefsColonyBenchmar
 public sealed class VarietyVnpeMaterialDlcInstrumentedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.variety-vnpe-material-dlc.armed-disabled", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "Argon.CoreLib",
     "OskarPotocki.VanillaFactionsExpanded.Core", "Argon.ExpandedMaterials.Masonry",
     "Argon.ExpandedMaterials.Metals", "Evyatar108.VarietyMattersImprovedRedux",
@@ -263,7 +263,7 @@ public sealed class VarietyVnpeMaterialDlcInstrumentedBenchmark : ImmersiveChefs
 public sealed class VarietyVnpeMaterialDlcArmedDisabledBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.variety-vnpe-material-dlc.disarmed", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "Argon.CoreLib",
     "OskarPotocki.VanillaFactionsExpanded.Core", "Argon.ExpandedMaterials.Masonry",
     "Argon.ExpandedMaterials.Metals", "Evyatar108.VarietyMattersImprovedRedux",
@@ -294,7 +294,7 @@ public sealed class VarietyVnpeMaterialDlcArmedDisabledBenchmark : ImmersiveChef
 public sealed class VarietyVnpeMaterialDlcDisarmedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.all-supported.instrumented", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "Argon.CoreLib",
     "OskarPotocki.VanillaFactionsExpanded.Core", "syrchalis.processor.framework",
     "Argon.ExpandedMaterials.Masonry", "Argon.ExpandedMaterials.Metals", "Dubwise.DubsBadHygiene",
@@ -333,7 +333,7 @@ public sealed class VarietyVnpeMaterialDlcDisarmedBenchmark : ImmersiveChefsColo
 public sealed class AllSupportedInstrumentedBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.all-supported.armed-disabled", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "Argon.CoreLib",
     "OskarPotocki.VanillaFactionsExpanded.Core", "syrchalis.processor.framework",
     "Argon.ExpandedMaterials.Masonry", "Argon.ExpandedMaterials.Metals", "Dubwise.DubsBadHygiene",
@@ -372,7 +372,7 @@ public sealed class AllSupportedInstrumentedBenchmark : ImmersiveChefsColonyBenc
 public sealed class AllSupportedArmedDisabledBenchmark : ImmersiveChefsColonyBenchmark { }
 
 [RimWorldPerformanceTest("immersive-chefs.all-supported.disarmed", ColonyContract.Owner,
-    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId,
+    ColonyContract.Owner, "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.CircinusPackageId, "imranfish.xmlextensions",
     "ludeon.rimworld.royalty", "ludeon.rimworld.biotech", "Argon.CoreLib",
     "OskarPotocki.VanillaFactionsExpanded.Core", "syrchalis.processor.framework",
     "Argon.ExpandedMaterials.Masonry", "Argon.ExpandedMaterials.Metals", "Dubwise.DubsBadHygiene",

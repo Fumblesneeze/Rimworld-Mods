@@ -65,6 +65,7 @@ public sealed class EndToEndTestingContractTests
             {
                 "brrainz.harmony",
                 "ludeon.rimworld",
+                "imranfish.xmlextensions",
                 "fumblesneeze.immersivechefs"
             }));
             Assert.That(descriptor.Deadline.MaxFrames, Is.EqualTo(900));
@@ -681,6 +682,7 @@ public sealed class EndToEndTestingContractTests
         "fumblesneeze.immersivechefs",
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "fumblesneeze.immersivechefs",
         MaxFrames = 900,
         MaxGameTicks = 2_500,

@@ -3,6 +3,7 @@
   "name": "immersive-chefs-glitterworld-trade",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

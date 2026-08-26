@@ -150,7 +150,7 @@ The active integration SHALL provide visibly appropriate wood and registered-sto
 Immersive Chefs SHALL expose `TextureVariationIntegration` as `Auto` or `Off`, defaulting to `Auto`, and `ShowDirtyWareTextures` as a boolean defaulting to `true`. Changing either setting SHALL require restart because it changes finalized graphic ownership or cached graphics. `TextureVariationIntegration=Off` SHALL retain the same complete masked base artwork and base-owned sanitation selector while adding no VEF comp and selecting no optional wood/stone family even when the optional packages remain active. `ShowDirtyWareTextures=false` SHALL keep the same base or optional clean material family while suppressing only its dirty sibling.
 
 #### Scenario: The optional package is absent
-- **WHEN** Core, Harmony, and Immersive Chefs load without VTEX Variations or Vanilla Expanded Framework
+- **WHEN** Harmony, Core, XML Extensions, and Immersive Chefs load without VTEX Variations or Vanilla Expanded Framework
 - **THEN** every item and building resolves its complete base custom texture, dirty cookware/plates/cutlery still select their base dirty siblings, no optional type is referenced by a finalized Def, and no texture or XML error is logged
 
 #### Scenario: The player disables cosmetic variation

@@ -3,6 +3,7 @@
   "name": "immersive-chefs-storage-dishwashing",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

@@ -15,6 +15,7 @@ public static class ReplimatModsIntegrationTests
     {
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "sumghai.Replimat",
         "sumghai.ReplimatMeals",
         "Dubwise.DubsBadHygiene",

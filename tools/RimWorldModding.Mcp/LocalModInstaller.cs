@@ -29,12 +29,26 @@ public static class LocalModInstaller
 
         var destination = Path.GetFullPath(Path.Combine(root, packageId.ToLowerInvariant()));
         AssertChild(root, destination, "destination");
-        var transactionRoot = RecoveryRoot(root);
-        Directory.CreateDirectory(transactionRoot);
-        var staging = Path.Combine(transactionRoot, $"stage-{packageId}-{Guid.NewGuid():N}");
-        var backup = Path.Combine(transactionRoot, $"backup-{packageId}-{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfffZ}");
-        AssertChild(transactionRoot, staging, "staging directory");
-        AssertChild(transactionRoot, backup, "backup directory");
+        // Stage beside the install, rather than under Mods or the process temp directory. The
+        // final move must stay on the same volume as the destination (Steam libraries commonly
+        // live on a different drive than the repository/temp directory). A normal build/deploy
+        // replaces the installed package in place and does not retain an install backup.
+        if (Directory.Exists(destination) &&
+            (File.GetAttributes(destination) & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidOperationException("The existing installed package is a reparse point; refusing to replace it.");
+        if (File.Exists(destination))
+            throw new InvalidOperationException("The installed package path is a file; refusing to replace it.");
+        var rimWorldRoot = Directory.GetParent(root)?.FullName ??
+                           throw new ArgumentException("RimWorld Mods root has no parent directory.");
+        var stagingContainer = Path.Combine(rimWorldRoot, ".rimworld-modding-mcp", "staging");
+        var stagingContainerExisted = Directory.Exists(stagingContainer);
+        var recoveryContainer = Directory.GetParent(stagingContainer)?.FullName ?? stagingContainer;
+        var recoveryContainerExisted = Directory.Exists(recoveryContainer);
+        Directory.CreateDirectory(stagingContainer);
+        var staging = Path.Combine(stagingContainer, $"stage-{packageId}-{Guid.NewGuid():N}");
+        if (!staging.StartsWith(Path.GetFullPath(stagingContainer).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Staging path escaped its temporary root.");
         Directory.CreateDirectory(staging);
 
         try
@@ -49,23 +63,10 @@ public static class LocalModInstaller
                 File.Copy(file, target, overwrite: false);
             }
 
-            string? retainedBackup = null;
             if (Directory.Exists(destination))
-            {
-                Directory.Move(destination, backup);
-                retainedBackup = backup;
-            }
+                Directory.Delete(destination, recursive: true);
 
-            try
-            {
-                Directory.Move(staging, destination);
-            }
-            catch
-            {
-                if (retainedBackup is not null && Directory.Exists(retainedBackup) && !Directory.Exists(destination))
-                    Directory.Move(retainedBackup, destination);
-                throw;
-            }
+            Directory.Move(staging, destination);
 
             try
             {
@@ -77,20 +78,31 @@ public static class LocalModInstaller
                         Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)))))
                     .ToArray();
                 if (manifest.Length == 0) throw new InvalidOperationException("Installed package produced an empty manifest.");
-                return new LocalModInstallResult(packageId.ToLowerInvariant(), source, destination, retainedBackup, manifest);
+                return new LocalModInstallResult(packageId.ToLowerInvariant(), source, destination, null, manifest);
             }
             catch
             {
                 if (Directory.Exists(destination)) Directory.Delete(destination, recursive: true);
-                if (retainedBackup is not null && Directory.Exists(retainedBackup))
-                    Directory.Move(retainedBackup, destination);
                 throw;
             }
         }
         finally
         {
             if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
+            TryDeleteEmptyDirectory(stagingContainer, stagingContainerExisted);
+            TryDeleteEmptyDirectory(recoveryContainer, recoveryContainerExisted);
         }
+    }
+
+    private static void TryDeleteEmptyDirectory(string path, bool existedBefore)
+    {
+        if (existedBefore || !Directory.Exists(path)) return;
+        try
+        {
+            if (!Directory.EnumerateFileSystemEntries(path).Any()) Directory.Delete(path);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     internal static string RecoveryRoot(string modsRoot)

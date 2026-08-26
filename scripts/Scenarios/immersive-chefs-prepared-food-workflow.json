@@ -3,6 +3,7 @@
   "name": "immersive-chefs-prepared-food-workflow",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

@@ -24,11 +24,11 @@ The isolated verification scripts SHALL derive the expected RimWorld version fro
 - **THEN** each applicable smoke command validates and records the new installed value without a source edit
 
 ### Requirement: Isolated minimal mod list
-In-game verification SHALL use a dedicated `-savedatafolder` containing a minimal `ModsConfig.xml` with only Harmony, RimWorld Core, and Immersive Chefs active; it SHALL NOT modify the user's normal RimWorld configuration or saves.
+In-game verification SHALL use a dedicated `-savedatafolder` containing a minimal `ModsConfig.xml` with only Harmony, RimWorld Core, XML Extensions, and Immersive Chefs active; it SHALL NOT modify the user's normal RimWorld configuration or saves.
 
 #### Scenario: Prepare an in-game smoke run
 - **WHEN** the verification script starts RimWorld
-- **THEN** it writes isolated test configuration beneath ignored build artifacts and launches the game with active packages `brrainz.harmony`, `ludeon.rimworld`, and `fumblesneeze.immersivechefs` in that order
+- **THEN** it writes isolated test configuration beneath ignored build artifacts and launches the game with active packages `brrainz.harmony`, `ludeon.rimworld`, `imranfish.xmlextensions`, and `fumblesneeze.immersivechefs` in that order
 
 #### Scenario: Verification fails partway through
 - **WHEN** launch, UI automation, or log validation fails

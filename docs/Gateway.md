@@ -471,7 +471,7 @@ For each `-AdditionalModProjectPaths` product, smoke evidence inventories every 
 
 .\scripts\Invoke-GatewaySmoke.ps1 `
   -RunIntegrationTests `
-  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModIds 'brrainz.harmony','imranfish.xmlextensions','fumblesneeze.immersivechefs' `
   -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.' `
   -ExpectedIntegrationTests 'fumblesneeze.immersivechefs|MainMenuLoaded|ImmersiveChefs.InGame.IntegrationTests.FinalizedImmersiveChefsIntegrationTests.ImmersiveChefsXmlProbeContainsItsFinalPatch' `
@@ -658,7 +658,7 @@ Named product scenarios are explicit descriptors in `scripts\Scenarios`. Version
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest `
   -Scenario immersive-chefs-caravan-dining `
   -InteractiveHoldSeconds 900 `
-  -AdditionalModIds 'brrainz.harmony','fumblesneeze.immersivechefs' `
+  -AdditionalModIds 'brrainz.harmony','imranfish.xmlextensions','fumblesneeze.immersivechefs' `
   -AdditionalModProjectPaths '.\mods\ImmersiveChefs\ImmersiveChefs.csproj' `
   -ExpectedLogMarkers '[ImmersiveChefs] Initialized fumblesneeze.immersivechefs.' `
   -TimeoutSeconds 300

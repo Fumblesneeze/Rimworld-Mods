@@ -3,6 +3,7 @@
   "name": "immersive-chefs-hospitality-guest-dining",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "orion.hospitality",
     "fumblesneeze.immersivechefs"
   ],

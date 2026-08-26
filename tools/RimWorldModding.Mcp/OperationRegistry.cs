@@ -49,19 +49,26 @@ public sealed class OperationRegistry
                     RepositoryOperationPlanner.OpenSpecValidate(registry._repositoryRoot), cancellationToken)),
             Register(
                 "mod_build",
-                "Build one mod selected by canonical package ID with the repository-local SDK.",
-                OperationRisk.WorkspaceWrite,
+                "Build one mod selected by canonical package ID and install the successful package in the local RimWorld Mods directory.",
+                OperationRisk.DestructiveLocal,
                 longRunning: false,
                 timeoutSeconds: 300,
-                "Writes only ordinary repository build/package artifacts.",
+                "Writes repository build artifacts and replaces only the selected local Mods/<package-id> directory; no install backup is retained.",
                 static async (registry, arguments, cancellationToken) =>
                 {
+                    RefuseRunningRimWorld();
                     var profile = registry.RequiredProfile(RequiredString(arguments, "packageId"));
-                    return await RepositoryOperations.ExecuteAsync(
+                    var modsRoot = OptionalString(arguments, "modsRoot") ??
+                                   Path.Combine(@"F:\Steam\steamapps\common\RimWorld", "Mods");
+                    return await RepositoryOperations.BuildAndInstallAsync(
                         RepositoryOperationPlanner.ModBuild(
                             registry._repositoryRoot,
                             profile.Project,
                             OptionalString(arguments, "configuration") ?? "Release"),
+                        profile.PackageSource,
+                        profile.PackageId,
+                        profile.PackageInclude,
+                        modsRoot,
                         cancellationToken);
                 }),
             Register(
@@ -230,11 +237,11 @@ public sealed class OperationRegistry
                 static (registry, arguments, _) => Task.FromResult<object>(registry.RestoreModList(arguments))),
             Register(
                 "local_mod_sync",
-                "Atomically synchronize one allowlisted built product package into the local RimWorld Mods directory with a recoverable backup.",
+                "Synchronize one allowlisted built product package into the local RimWorld Mods directory without retaining an install backup.",
                 OperationRisk.DestructiveLocal,
                 longRunning: false,
                 timeoutSeconds: 60,
-                "Retains the prior local package outside RimWorld's scanned Mods directory under the sibling .rimworld-modding-mcp recovery root.",
+                "Replaces only the selected local package directory; temporary staging is removed and no install backup is retained.",
                 static (registry, arguments, _) => Task.FromResult<object>(registry.SyncLocalMod(arguments))),
             Register(
                 "release_prepare",

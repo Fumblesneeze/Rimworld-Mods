@@ -27,6 +27,7 @@ public sealed class PerformanceTestingContractTests
                 "brrainz.harmony",
                 "ludeon.rimworld",
                 PerformanceTestContract.CircinusPackageId,
+                "imranfish.xmlextensions",
                 "fumblesneeze.immersivechefs"
             }));
             Assert.That(descriptor.LaunchedPackageIds.Last(), Is.EqualTo(EndToEndTestContract.GatewayPackageId));
@@ -65,6 +66,7 @@ public sealed class PerformanceTestingContractTests
             Assert.That(diagnostic.ActivePackageIds, Is.EqualTo(new[]
             {
                 "brrainz.harmony", "ludeon.rimworld", PerformanceTestContract.DpaPackageId,
+                "imranfish.xmlextensions",
                 "fumblesneeze.immersivechefs"
             }));
             Assert.That(diagnostic.ActivePackageIds, Does.Not.Contain(PerformanceTestContract.CircinusPackageId));
@@ -339,6 +341,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-colony/v1",
         WarmUpTicks = 2_500,
@@ -363,6 +366,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-colony/v1",
         ComparisonId = "immersive-chefs.base-colony",
@@ -387,6 +391,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-colony/v1",
         ComparisonId = "immersive-chefs.base-colony",
@@ -410,6 +415,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-neutral/v1",
         ComparisonId = "gateway.immersive-chefs-neutral-present",
@@ -428,6 +434,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-neutral/v1",
         ComparisonId = "gateway.immersive-chefs-neutral-present",
@@ -446,6 +453,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-neutral/v1",
         ComparisonId = "gateway.immersive-chefs-neutral-present",
@@ -464,6 +472,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "dubwise.dubsbadhygiene",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-colony/v1-dubs",
@@ -481,6 +490,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "dubwise.dubsbadhygiene",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-colony/v1-dubs",
@@ -499,6 +509,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "dubwise.dubsbadhygiene",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-colony/v1-dubs",
@@ -517,6 +528,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         "dubwise.dubsbadhygiene",
         "fumblesneeze.immersivechefs",
         WorkloadVersion = "immersive-chefs-colony/v1-dubs",
@@ -535,6 +547,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         WorkloadVersion = "immersive-chefs-neutral/v1",
         WarmUpTicks = 2500,
         SampleTicks = 12000,
@@ -552,6 +565,7 @@ public sealed class PerformanceTestingContractTests
         "brrainz.harmony",
         "ludeon.rimworld",
         PerformanceTestContract.CircinusPackageId,
+        "imranfish.xmlextensions",
         WorkloadVersion = "drifted/v2",
         WarmUpTicks = 2500,
         SampleTicks = 12000,

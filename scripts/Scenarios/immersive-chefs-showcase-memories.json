@@ -3,6 +3,7 @@
   "name": "immersive-chefs-showcase-memories",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

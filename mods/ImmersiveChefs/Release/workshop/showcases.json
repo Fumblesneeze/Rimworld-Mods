@@ -20,6 +20,7 @@
       "requiredPackageIds": [
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "orion.hospitality",
         "orion.cashregister",
         "orion.gastronomy",
@@ -43,6 +44,7 @@
       "requiredPackageIds": [
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "syrchalis.processor.framework",
         "dubwise.dubsbadhygiene",
         "mehni.pickupandhaul",
@@ -66,6 +68,7 @@
       "requiredPackageIds": [
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "ocarina.prisonerjumpsuits",
         "fumblesneeze.immersivechefs"
       ],
@@ -88,6 +91,7 @@
       "requiredPackageIds": [
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "mlie.dthermodynamicshotmeals",
         "fumblesneeze.immersivechefs"
       ],
@@ -109,6 +113,7 @@
       "requiredPackageIds": [
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "fumblesneeze.immersivechefs"
       ],
       "scene": "A named conscious colonist in an ordinary lived-in dining area immediately after eating a cold plated meal without cutlery and without a usable table.",

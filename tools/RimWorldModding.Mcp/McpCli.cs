@@ -191,6 +191,12 @@ public static class McpCli
                 parseResult.InvocationConfiguration.Output.WriteLine($"backup: {install.BackupPath ?? "(none)"}");
                 parseResult.InvocationConfiguration.Output.WriteLine($"files: {install.Files.Count}");
                 break;
+            case ModBuildResult build:
+                parseResult.InvocationConfiguration.Output.WriteLine($"build: {build.Build.Operation} ({build.Build.ExitCode})");
+                parseResult.InvocationConfiguration.Output.WriteLine($"package: {build.Installation.PackageId}");
+                parseResult.InvocationConfiguration.Output.WriteLine($"destination: {build.Installation.Destination}");
+                parseResult.InvocationConfiguration.Output.WriteLine($"files: {build.Installation.Files.Count}");
+                break;
             case ReleasePreparationResult preparation:
                 parseResult.InvocationConfiguration.Output.WriteLine($"status: {preparation.Status}");
                 parseResult.InvocationConfiguration.Output.WriteLine($"title: {preparation.Title}");

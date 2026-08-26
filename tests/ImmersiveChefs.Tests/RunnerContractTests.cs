@@ -78,6 +78,7 @@ public sealed class RunnerContractTests
             Assert.That(run.InvokedSuites, Is.EqualTo(new[]
             {
                 "RimWorldDevGateway.Unit",
+                "RimWorldDevGateway.EndToEndHost.Unit",
                 "RimWorldDevGateway.Snapshots",
                 "RimWorldDevGateway.CircinusShape"
             }));

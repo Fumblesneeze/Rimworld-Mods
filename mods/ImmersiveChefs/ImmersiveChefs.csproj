@@ -19,6 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <RimWorldSteamModDependency Include="imranfish.xmlextensions" />
     <RimWorldLoadAfter Include="Ludeon.RimWorld.Royalty" />
     <RimWorldLoadAfter Include="syrchalis.processor.framework" />
     <RimWorldLoadAfter Include="Argon.ExpandedMaterials.Metals" />

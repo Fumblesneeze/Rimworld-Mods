@@ -109,8 +109,15 @@ public sealed class ScenarioMigrationInventoryTests
                 StringComparison.OrdinalIgnoreCase)) != 1 ||
             descriptor.RequiredPackageIds.Count(packageId => string.Equals(
                 packageId,
+                "imranfish.xmlextensions",
+                StringComparison.OrdinalIgnoreCase)) != 1 ||
+            descriptor.RequiredPackageIds.Count(packageId => string.Equals(
+                packageId,
                 "fumblesneeze.immersivechefs",
                 StringComparison.OrdinalIgnoreCase)) != 1 ||
+            !descriptor.RequiredPackageIds.Take(2).SequenceEqual(
+                new[] { "brrainz.harmony", "imranfish.xmlextensions" },
+                StringComparer.OrdinalIgnoreCase) ||
             descriptor.RequiredPackageIds.Any(string.IsNullOrWhiteSpace) ||
             descriptor.RequiredPackageIds.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
                 descriptor.RequiredPackageIds.Length ||

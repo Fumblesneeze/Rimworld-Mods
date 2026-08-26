@@ -2,8 +2,9 @@
   "schemaVersion": 1,
   "name": "immersive-chefs-independent-child-dining",
   "requiredPackageIds": [
-    "ludeon.rimworld.biotech",
     "brrainz.harmony",
+    "imranfish.xmlextensions",
+    "ludeon.rimworld.biotech",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

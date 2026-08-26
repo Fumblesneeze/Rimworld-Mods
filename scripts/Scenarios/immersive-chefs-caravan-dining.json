@@ -3,6 +3,7 @@
   "name": "immersive-chefs-caravan-dining",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [

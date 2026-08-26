@@ -16,6 +16,7 @@ public static class CookForYourselfIntegrationTests
     {
         "brrainz.harmony",
         "ludeon.rimworld",
+        "imranfish.xmlextensions",
         "lordfelix.CookForYourself",
         "fumblesneeze.immersivechefs",
         "fumblesneeze.rimworlddevgateway"

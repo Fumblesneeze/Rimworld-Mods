@@ -3,6 +3,7 @@
   "name": "immersive-chefs-imported-meal-plating",
   "requiredPackageIds": [
     "brrainz.harmony",
+    "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs"
   ],
   "steps": [
