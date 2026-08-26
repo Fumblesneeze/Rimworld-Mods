@@ -42,10 +42,17 @@ summary:
 5. Use `mod_build` as the default build loop. It installs a successful positive-allowlist package
    into the configured local `Mods/<package-id>` directory, stages outside the scanned Mods folder,
    and retains no install backup. Use `local_mod_sync` only when rebuilding is unnecessary; recover
-   an older package by rebuilding from the repository source.
+   an older package by rebuilding from the repository source. Treat "install", "deploy locally", and
+   "copy to RimWorld" as synonyms for this local sync. Never translate them into a Steam Workshop
+   subscription: the author should not have simultaneous local and subscribed copies during development.
 6. Validate the package, run focused tests, review the diff, and perform the required live player
    workflow before accepting OpenSpec tasks. Use `release_prepare`/`release_publish` only after the
    profile and reviewed package are ready.
+
+Workshop subscriber verification is an exceptional release workflow, not an installation method. Use
+it only when the user explicitly requests verification of the downloaded Workshop copy. Keep the local
+package outside RimWorld discovery for that exact run, unsubscribe the repository-owned item during
+cleanup, and restore the canonical local package before returning to development.
 
 ### Compatibility file placement
 

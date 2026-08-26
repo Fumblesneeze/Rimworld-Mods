@@ -116,7 +116,13 @@ E2E runs, Gateway control, evidence reads, local mod-list changes, and release p
 Raw `dotnet build` commands remain repository-local. The canonical `mod_build` operation is the
 intentional build-and-install path: after a successful build it installs the exact positive-allowlist
 package into the local `Mods/<package-id>` folder by default, stages outside the scanned Mods folder,
-and retains no install backup. Never deploy into Workshop content. Inspect `README.md`,
+and retains no install backup. In this repository, "install", "deploy locally", and "copy to the
+game" always mean this canonical local package-ID folder; they never mean subscribing to the mod's
+Steam Workshop item. Do not leave the author subscribed to a repository-owned Workshop item during
+development, because the local and Workshop copies become duplicate discovered mods. A subscribed-copy
+release check is a separate, explicitly named verification workflow: it must keep the local copy out of
+discovery for that exact run, unsubscribe during cleanup, and restore the canonical local copy. Never
+deploy into Workshop content. Inspect `README.md`,
 `docs/Development.md`, and `docs/Gateway.md` for current commands, API details, and evidence
 conventions. Durable run evidence and its TDD ledger remain local under ignored artifact/report paths
 and must be regenerated for the revision under test.

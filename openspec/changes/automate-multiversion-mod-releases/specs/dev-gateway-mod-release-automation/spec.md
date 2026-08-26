@@ -257,15 +257,22 @@ A clean committed descendant release-tool revision MAY reconcile an older immuta
 - **THEN** the operation reports the actionable agreement state, changes no alternate item, and leaves the same reviewed bundle available for explicit retry
 
 ### Requirement: The subscribed Workshop copy receives final player acceptance
-After Steam reports a successful update and CDN propagation, the release workflow SHALL subscribe to or refresh the exact published item through the owning Steam client, reacquire it into the Steam Workshop content area, and compare its complete file manifest with the reviewed staged candidate. It SHALL then launch a fresh isolated RimWorld process using the subscribed Workshop package path rather than a repository-local or manually deployed copy, with the exact required dependencies and no Dev Gateway unless the verification profile explicitly tests it. The acting agent SHALL perform and personally inspect the mod's declared native player-workflow smoke test. Successful upload, remote metadata, subscription state, file presence, startup, logs, or diagnostics alone MUST NOT satisfy this final acceptance.
+After Steam reports a successful update and CDN propagation, the release workflow SHALL subscribe to or refresh the exact published item through the owning Steam client, reacquire it into the Steam Workshop content area, and compare its complete file manifest with the reviewed staged candidate. It SHALL then launch a fresh isolated RimWorld process using the subscribed Workshop package path rather than a repository-local or manually deployed copy, with the exact required dependencies and no Dev Gateway unless the verification profile explicitly tests it. The local package SHALL remain outside RimWorld discovery for that exact run. After verification, the workflow SHALL unsubscribe the repository-owned item and restore the canonical local package so normal development never retains simultaneous local and subscribed copies. The acting agent SHALL perform and personally inspect the mod's declared native player-workflow smoke test. Successful upload, remote metadata, subscription state, file presence, startup, logs, or diagnostics alone MUST NOT satisfy this final acceptance.
 
 #### Scenario: Published Immersive Chefs is verified as a subscriber receives it
 - **WHEN** the admitted RimWorld 1.6 Immersive Chefs update reaches Steam
-- **THEN** the exact item is subscribed or refreshed, its reacquired files match the reviewed candidate, and a fresh game loads that Workshop copy and passes the declared observable native cooking/dining smoke workflow
+- **THEN** the exact item is subscribed or refreshed only for the bounded check, its reacquired files match the reviewed candidate, a fresh game loads that Workshop copy and passes the declared observable native cooking/dining smoke workflow, and cleanup unsubscribes it before restoring the local copy
 
 #### Scenario: Steam returns stale or different content
 - **WHEN** the subscribed Workshop directory is absent, has not reached the published manifest, or differs from the staged candidate
-- **THEN** release verification fails without substituting a local package or claiming the release accepted
+- **THEN** release verification fails without substituting a local package or claiming the release accepted, and cleanup still unsubscribes the item and restores the local package
+
+### Requirement: Local installation never implies Workshop subscription
+Development installation SHALL synchronize the reviewed package into RimWorld's canonical local `Mods/<package-id>` folder. The words "install", "deploy locally", and "copy to the game" MUST NOT authorize Steam Workshop subscription. Workshop subscription is permitted only as the explicitly named, bounded subscribed-copy release verification above and MUST NOT persist into ordinary development.
+
+#### Scenario: A developer asks to install the latest mod
+- **WHEN** the user asks to install, deploy, or copy a repository-owned mod to their game without explicitly requesting subscribed-copy release verification
+- **THEN** the workflow updates only the canonical local package-ID folder and performs no Steam subscribe operation
 
 ### Requirement: Release evidence is complete and secret-free
 Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, verification results, presentation provenance, publication authorization and plan admission, Gateway process identity, Steam item/dependency results, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.

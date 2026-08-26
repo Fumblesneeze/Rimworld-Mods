@@ -125,7 +125,11 @@ for an already-built package. Use `package_validate` to inspect the exact manife
 Never deploy to Steam Workshop content. Never use a retained install backup as a second mod copy;
 rebuild the repository package if an older local build is needed. Subscriber release verification is
 the one separate workflow that temporarily moves the local package so the subscribed copy can be
-tested and then restored.
+tested, unsubscribes the item during cleanup, and then restores the local package. In every other
+context, "install", "deploy locally", and "copy to the game" mean `mod_build`/`local_mod_sync` into
+the canonical local `Mods/<package-id>` folder and never mean Steam subscription. Do not leave the
+author subscribed to a repository-owned mod during development, because that creates duplicate mod
+copies in RimWorld.
 
 ## 6. Verify and release
 

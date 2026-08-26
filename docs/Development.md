@@ -118,6 +118,12 @@ dotnet run --project $mcp -- tool call mod_build `
   --arguments '{"packageId":"fumblesneeze.immersivechefs","configuration":"Release","modsRoot":null}' -o json
 ```
 
+Here and throughout the repository, "install", "deploy locally", or "copy to the game" means that
+local `Mods/<package-id>` synchronization. It does not mean subscribing through Steam. Do not keep a
+repository-owned mod both locally installed and Workshop-subscribed during development; RimWorld sees
+duplicate copies. A subscribed-copy release check must be requested as such, temporarily remove the
+local copy from discovery, unsubscribe during cleanup, and restore the local package afterward.
+
 The low-level SDK deployment switch remains available for migration/debugging, but is not the
 canonical new-mod workflow. If it is needed, target only the exact package folder and never a
 Workshop item:
@@ -138,7 +144,7 @@ dotnet build .\mods\RimWorldDevGateway\RimWorldDevGateway.csproj -c Release `
 
 The live-game write target for each command is only the exact package folder named by that command's
 profile beneath RimWorld's local `Mods` directory (for example, `fumblesneeze.immersivechefs`). Never
-edit or deploy into a Workshop item.
+edit or deploy into a Workshop item, and never substitute Workshop subscription for local installation.
 
 Build the companion gateway client separately when needed:
 
