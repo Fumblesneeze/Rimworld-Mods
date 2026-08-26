@@ -13,6 +13,7 @@ namespace ImmersiveChefs.EndToEndTests;
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "avilmask.CommonSense",
     "fumblesneeze.immersivechefs",
     MaxFrames = 4_800,
@@ -237,7 +238,7 @@ public sealed class CommonSensePostCookingCleanupTest : IRimWorldEndToEndTest
         return meal is not null;
     }
 
-    private static EndToEndFloatMenuOption FindPrioritizeCooking(
+    internal static EndToEndFloatMenuOption FindPrioritizeCooking(
         IReadOnlyList<EndToEndFloatMenuOption> options)
     {
         var matches = options.Where(option =>
@@ -254,7 +255,7 @@ public sealed class CommonSensePostCookingCleanupTest : IRimWorldEndToEndTest
         return matches[0];
     }
 
-    private static Pawn CreateCookingAndCleaningCapablePawn(string name)
+    internal static Pawn CreateCookingAndCleaningCapablePawn(string name)
     {
         var cooking = DefDatabase<WorkTypeDef>.GetNamed("Cooking");
         for (var attempt = 0; attempt < 96; attempt++)
@@ -285,7 +286,7 @@ public sealed class CommonSensePostCookingCleanupTest : IRimWorldEndToEndTest
             "Could not generate a pawn capable of both Cooking and Cleaning.");
     }
 
-    private static void SetOnlyCookingAndCleaning(Pawn pawn)
+    internal static void SetOnlyCookingAndCleaning(Pawn pawn)
     {
         foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
         {
@@ -336,10 +337,327 @@ public sealed class CommonSensePostCookingCleanupTest : IRimWorldEndToEndTest
 }
 
 [RimWorldEndToEndTest(
+    "immersive-chefs.common-sense-active-processor-dishwasher",
+    "fumblesneeze.immersivechefs",
+    "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
+    "syrchalis.processor.framework",
+    "Dubwise.DubsBadHygiene",
+    "avilmask.CommonSense",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 9_600,
+    MaxGameTicks = 36_000,
+    MaxWallClockSeconds = 330)]
+public sealed class CommonSenseActiveProcessorDishwasherTest : IRimWorldEndToEndTest
+{
+    private PickUpAndHaulDishwasherFixture dishwasherFixture = null!;
+    private Map map = null!;
+    private Pawn cook = null!;
+    private Thing stove = null!;
+    private ThingWithComps cookware = null!;
+    private ThingWithComps mealPlate = null!;
+    private ThingWithComps? meal;
+    private bool observedCommonSenseJob;
+    private float firstProgressBeforeCooking;
+    private float firstProgressAfterAdmission;
+    private float cookwareProgressAfterAdmission;
+    private float waterAfterFirstAdmission;
+    private float waterAfterCookwareAdmission;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        dishwasherFixture = PickUpAndHaulDishwasherFixture.Create(
+            context,
+            requireProcessor: true,
+            requirePickUpAndHaul: false);
+        dishwasherFixture.PrepareContinuousAdmission();
+        map = Current.Game.CurrentMap;
+
+        var settings = ImmersiveChefsMod.Settings;
+        var priorCommonSense = settings.CommonSense;
+        var priorWorkScale = settings.DishwashingWorkScale;
+        var priorTemperature = settings.MealTemperatureEnabled;
+        var priorAssistants = settings.AutoCallAssistants;
+        context.DeferCleanup(() =>
+        {
+            settings.CommonSense = priorCommonSense;
+            settings.DishwashingWorkScale = priorWorkScale;
+            settings.MealTemperatureEnabled = priorTemperature;
+            settings.AutoCallAssistants = priorAssistants;
+        });
+        settings.CommonSense = OptionalIntegrationMode.Auto;
+        settings.DishwashingWorkScale = 8f;
+        settings.MealTemperatureEnabled = false;
+        settings.AutoCallAssistants = false;
+
+        var center = dishwasherFixture.Dishwasher.Position + new IntVec3(-2, 0, -1);
+        stove = SpawnFurniture(map, "FueledStove", center + new IntVec3(0, 0, 2), Rot4.North);
+        stove.TryGetComp<CompRefuelable>()?.Refuel(999f);
+
+        cook = CommonSensePostCookingCleanupTest.CreateCookingAndCleaningCapablePawn(
+            "Common Sense processor chef");
+        cook.skills.GetSkill(SkillDefOf.Cooking).Level = 20;
+        FoodSearchE2EFixture.SetHunger(cook, 1f);
+        GenSpawn.Spawn(cook, stove.InteractionCell + IntVec3.South, map);
+        CommonSensePostCookingCleanupTest.SetOnlyCookingAndCleaning(cook);
+
+        cookware = FoodSearchE2EFixture.MakeCleanWare(
+            "ImmersiveChefs_Cookware",
+            ThingDefOf.Steel);
+        mealPlate = FoodSearchE2EFixture.MakeCleanWare(
+            "ImmersiveChefs_Plate",
+            ThingDefOf.Steel);
+        GenSpawn.Spawn(cookware, center + new IntVec3(-1, 0, 1), map);
+        GenSpawn.Spawn(mealPlate, center, map);
+        var rice = ThingMaker.MakeThing(DefDatabase<ThingDef>.GetNamed("RawRice"));
+        rice.stackCount = 20;
+        GenSpawn.Spawn(rice, center + new IntVec3(1, 0, 0), map);
+
+        var bill = new Bill_Production(DefDatabase<RecipeDef>.GetNamed("CookMealSimple"))
+        {
+            repeatMode = BillRepeatModeDefOf.RepeatCount,
+            repeatCount = 1,
+            ingredientSearchRadius = 8f
+        };
+        bill.SetStoreMode(BillStoreModeDefOf.DropOnFloor);
+        bill.SetPawnRestriction(cook);
+        ((IBillGiver)stove).BillStack.AddBill(bill);
+        cook.jobs.EndCurrentJob(JobCondition.InterruptForced);
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        if (Find.WindowStack.Windows.Any(window =>
+                string.Equals(
+                    window.GetType().FullName,
+                    "LudeonTK.EditWindow_Log",
+                    StringComparison.Ordinal)))
+        {
+            yield return new WindowCancelActionStep(
+                "close the startup developer log before observing gameplay",
+                "LudeonTK.EditWindow_Log");
+        }
+
+        yield return new TimeControlActionStep(
+            "pause before the established dishwasher load",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "the exact optional integrations are active without Pick Up And Haul",
+            _ =>
+            {
+                EndToEndAssert.True(CommonSenseAdapter.Enabled,
+                    "Common Sense must bind before cooking cleanup is exercised.");
+                EndToEndAssert.True(ProcessorFrameworkAdapter.Controls(dishwasherFixture.Dishwasher),
+                    "The supplied dishwasher must use the exact Processor Framework path.");
+                EndToEndAssert.Equal(0,
+                    cook.AllComps.Count(comp =>
+                        comp.GetType().FullName == "PickUpAndHaul.CompHauledToInventory"),
+                    "The Common Sense cook must have no Pick Up And Haul tracker in this exact group.");
+            });
+        yield return new AssertionStep(
+            "enable ordinary Cleaning for the earlier dirty plate",
+            _ => dishwasherFixture.ActivateCleaning());
+        yield return new TimeControlActionStep(
+            "let the earlier plate enter and start washing",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the earlier exact plate is visibly partway through washing",
+            _ => dishwasherFixture.FirstContinuousLoadHasProgress(),
+            new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(80)));
+        yield return new TimeControlActionStep(
+            "pause on the already-active dishwasher",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "capture the earlier load progress and water debit",
+            _ =>
+            {
+                dishwasherFixture.CaptureFirstContinuousLoad();
+                firstProgressBeforeCooking = ProcessorFrameworkAdapter.ProgressPercent(
+                    dishwasherFixture.Dishwasher,
+                    dishwasherFixture.FirstContinuousWare);
+                waterAfterFirstAdmission = HandwashingE2EFixture.ReadDubsNetworkWater(
+                    dishwasherFixture.Dishwasher);
+                dishwasherFixture.DisableCleanerWork();
+            });
+        yield return new SelectionActionStep(
+            "select the dishwasher already washing the earlier plate",
+            new[] { dishwasherFixture.Dishwasher.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the active dishwasher stove cook and exact cookware",
+            new[]
+            {
+                dishwasherFixture.Dishwasher.ThingID,
+                dishwasherFixture.FirstContinuousWare.ThingID,
+                cook.ThingID,
+                stove.ThingID,
+                cookware.ThingID
+            },
+            paddingPixels: 190);
+        yield return new ScreenshotStep(
+            "an earlier exact plate is already washing before Common Sense cooking",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        var options = context.GetRequiredService<IEndToEndFloatMenuCatalog>()
+            .Query(cook.ThingID, stove.ThingID);
+        var prioritize = CommonSensePostCookingCleanupTest.FindPrioritizeCooking(options);
+        yield return new FloatMenuActionStep(
+            "prioritize the native cooking bill while the dishwasher remains active",
+            cook.ThingID,
+            stove.ThingID,
+            prioritize.StableId);
+        yield return new TimeControlActionStep(
+            "run native cooking into Common Sense Processor admission",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the same cook carries the exact returned cookware into the active dishwasher",
+            _ => ObserveCommonSenseAdmission(),
+            new EndToEndDeadline(3_600, 14_000, TimeSpan.FromSeconds(130)));
+        yield return new TimeControlActionStep(
+            "pause after Common Sense joins the active dishwasher",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "the active appliance owns both independently timed exact loads",
+            _ =>
+            {
+                EndToEndAssert.NotNull(meal,
+                    "The native bill must finish one real plated meal before cookware cleanup.");
+                EndToEndAssert.True(observedCommonSenseJob,
+                    "The cooking pawn must be observed in its real Common Sense Doing dishes job.");
+                EndToEndAssert.True(firstProgressAfterAdmission + 0.01f >= firstProgressBeforeCooking,
+                    "Common Sense admission must not reset the earlier plate's progress.");
+                EndToEndAssert.True(cookwareProgressAfterAdmission + 5f < firstProgressAfterAdmission,
+                    "The newly admitted cookware must begin on a younger independent progress clock.");
+                EndToEndAssert.True(waterAfterCookwareAdmission < waterAfterFirstAdmission - 0.001f,
+                    "The cookware admission must debit its own Dubs water after the earlier plate debit.");
+            });
+        yield return new SelectionActionStep(
+            "select the active dishwasher containing both exact loads",
+            new[] { dishwasherFixture.Dishwasher.ThingID },
+            additive: false);
+        yield return new ScreenshotStep(
+            "Common Sense adds exact dirty cookware to the dishwasher already washing",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+
+        yield return new AssertionStep(
+            "enable native output hauling after both admissions",
+            _ => dishwasherFixture.ActivateHaulingWhileCleaningRemainsEnabled());
+        yield return new TimeControlActionStep(
+            "finish both independently timed dishwasher loads",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "the earlier plate and Common Sense cookware both return clean",
+            _ => BothExactLoadsReturnedClean(),
+            new EndToEndDeadline(2_400, 10_000, TimeSpan.FromSeconds(95)));
+        yield return new TimeControlActionStep(
+            "pause after both exact loads return clean",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the exact cleaned plate and cookware",
+            new[]
+            {
+                dishwasherFixture.FirstContinuousWare.ThingID,
+                cookware.ThingID
+            },
+            additive: false);
+        yield return new ScreenshotStep(
+            "both exact identities return clean after independent washing",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new CheckpointStep(
+            "Common Sense active Processor dishwasher result",
+            _ => new Dictionary<string, string>
+            {
+                ["dishwasher"] = dishwasherFixture.Dishwasher.ThingID,
+                ["earlierPlate"] = dishwasherFixture.FirstContinuousWare.ThingID,
+                ["commonSenseCookware"] = cookware.ThingID,
+                ["commonSenseCook"] = cook.ThingID,
+                ["commonSenseJobObserved"] = observedCommonSenseJob.ToString(),
+                ["firstProgressBeforeCooking"] = firstProgressBeforeCooking.ToString("R"),
+                ["firstProgressAfterAdmission"] = firstProgressAfterAdmission.ToString("R"),
+                ["cookwareProgressAfterAdmission"] = cookwareProgressAfterAdmission.ToString("R"),
+                ["waterAfterFirstAdmission"] = waterAfterFirstAdmission.ToString("R"),
+                ["waterAfterCookwareAdmission"] = waterAfterCookwareAdmission.ToString("R")
+            });
+    }
+
+    private bool ObserveCommonSenseAdmission()
+    {
+        meal ??= map.listerThings.ThingsOfDef(ThingDefOf.MealSimple)
+            .OfType<ThingWithComps>()
+            .FirstOrDefault(candidate => ReferenceEquals(
+                candidate.GetComp<CompEmbeddedWare>()?.PeekPlateThing(),
+                mealPlate));
+
+        if (cook.CurJobDef == ImmersiveChefsDefOf.ImmersiveChefs_DoDishes &&
+            ReferenceEquals(cook.CurJob?.targetA.Thing, cookware) &&
+            ReferenceEquals(cook.CurJob?.targetB.Thing, dishwasherFixture.Dishwasher))
+        {
+            observedCommonSenseJob = true;
+        }
+
+        var held = ProcessorFrameworkAdapter.HeldWare(dishwasherFixture.Dishwasher);
+        if (!observedCommonSenseJob ||
+            !held.Any(item => ReferenceEquals(item, dishwasherFixture.FirstContinuousWare)) ||
+            !held.Any(item => ReferenceEquals(item, cookware)))
+        {
+            return false;
+        }
+
+        firstProgressAfterAdmission = ProcessorFrameworkAdapter.ProgressPercent(
+            dishwasherFixture.Dishwasher,
+            dishwasherFixture.FirstContinuousWare);
+        cookwareProgressAfterAdmission = ProcessorFrameworkAdapter.ProgressPercent(
+            dishwasherFixture.Dishwasher,
+            cookware);
+        waterAfterCookwareAdmission = HandwashingE2EFixture.ReadDubsNetworkWater(
+            dishwasherFixture.Dishwasher);
+        return firstProgressAfterAdmission + 0.01f >= firstProgressBeforeCooking &&
+               cookwareProgressAfterAdmission > 0f &&
+               cookwareProgressAfterAdmission + 5f < firstProgressAfterAdmission;
+    }
+
+    private bool BothExactLoadsReturnedClean()
+    {
+        return dishwasherFixture.FirstContinuousWare.Spawned &&
+               dishwasherFixture.FirstContinuousWare.GetComp<CompSanitation>() is
+                   { IsDirty: false, WashProvenance: WashProvenance.Safe } &&
+               cookware.Spawned && cookware.Map == map &&
+               cookware.GetComp<CompSanitation>() is
+                   { IsDirty: false, WashProvenance: WashProvenance.Safe } &&
+               dishwasherFixture.FirstContinuousWare.stackCount == 1 &&
+               cookware.stackCount == 1;
+    }
+
+    private static Thing SpawnFurniture(
+        Map map,
+        string defName,
+        IntVec3 cell,
+        Rot4 rotation)
+    {
+        var def = DefDatabase<ThingDef>.GetNamed(defName);
+        var thing = ThingMaker.MakeThing(def, def.MadeFromStuff ? ThingDefOf.Steel : null);
+        thing.SetFactionDirect(Faction.OfPlayer);
+        return GenSpawn.Spawn(thing, cell, map, rotation);
+    }
+}
+
+[RimWorldEndToEndTest(
     "immersive-chefs.common-sense-cook-for-yourself-cleanup-order",
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "avilmask.CommonSense",
     "lordfelix.CookForYourself",
     "fumblesneeze.immersivechefs",

@@ -142,6 +142,12 @@ When `avilmask.CommonSense` is active and the locally supported `CommonSense` as
 - **WHEN** a self-diner completes an eligible meal with Common Sense active and the exact resulting dirty plate and cutlery can enter an accepting dishwasher
 - **THEN** that diner claims both items after eating and hauls them to the dishwasher before considering a hand-washing source
 
+#### Scenario: Common Sense uses a dishwasher that is already washing
+
+- **WHEN** Common Sense claims newly dirtied plate, cutlery, or cookware while a reachable dishwasher is already washing an earlier load but still has live power, required supplied water, and remaining capacity
+- **THEN** that active dishwasher remains the preferred destination and accepts the later ware as an independently timed load
+- **AND** the responsible pawn does not choose a sink or other hand-washing source merely because an earlier dishwasher load is in progress
+
 #### Scenario: Diner clears the exact table setting
 
 - **WHEN** native dining left the exact dirty plate and cutlery on its selected table cell and Common Sense cleanup is eligible
@@ -591,10 +597,12 @@ The integration runner SHALL group E2E tests by declared exact package requireme
 10. RimFridge; Thermodynamics - Hot Meals; Immersive Chefs; and Gateway for single-owner temperature behavior.
 11. Pick Up And Haul; Immersive Chefs; and Gateway for native tracked-inventory batch collection, sequential hand washing, interruption, and batch unloading.
 12. Processor Framework; Dubs Bad Hygiene; Pick Up And Haul; Immersive Chefs; and Gateway for one-trip tracked dishwasher loading, per-unit Processor admission, cycle completion, and later native clean-output hauling.
-13. Harmony; Core; XML Extensions; Cook for Yourself; Pick Up And Haul; Stack Gap; Immersive Chefs; and Gateway for one-off self-cooking, exact ingredient placement, exact ware/session lifecycle, native self-ingestion, patient delivery, no same-tick restart, and exact dirty return. Interruption and an `Off`-setting run in which the upstream one-off job still completes unchanged MAY remain in the smaller Harmony/Core/XML Extensions/Cook for Yourself/Immersive Chefs group.
-14. Harmony; Core; XML Extensions; Biotech; Cook for Yourself; Immersive Chefs; and Gateway for native baby-food cooking and bottle feeding that remain entirely upstream-owned and kitchenware-free under strict ware settings. Package absence and changed-shape behavior remain host/base-process fail-closed gates rather than claims of either active optional-mod group.
-15. Harmony; Core; XML Extensions; Ceramics (Continued); Immersive Chefs; and Gateway for exact porcelain registration, native ceramics-bench plate crafting, Stuff/color/quality retention, and broad-`Stony` non-leakage. Processor Framework and Vanilla Expanded Framework remain absent from this minimum group because the installed provider has its own legacy fallback.
-16. Harmony; Core; XML Extensions; Argonic Core; Vanilla Expanded Framework; Expanded Materials - Masonry; Immersive Chefs; and Gateway for package-ID-gated adobe registration, native crafting-spot plate production, exact brick consumption, quality, and fixed-material output without Stuff leakage.
+13. Processor Framework; Dubs Bad Hygiene; Immersive Chefs; and Gateway, with Pick Up And Haul absent, for ordinary one-item hauling into an already-washing dishwasher, staggered independent progress, separate water debit, and exact clean return.
+14. Processor Framework; Dubs Bad Hygiene; Common Sense; Immersive Chefs; and Gateway, with Pick Up And Haul absent, for a native completed cooking bill whose Common Sense cleanup sends the exact returned cookware into a dishwasher already washing an earlier exact load without resetting it or hand-washing instead.
+15. Harmony; Core; XML Extensions; Cook for Yourself; Pick Up And Haul; Stack Gap; Immersive Chefs; and Gateway for one-off self-cooking, exact ingredient placement, exact ware/session lifecycle, native self-ingestion, patient delivery, no same-tick restart, and exact dirty return. Interruption and an `Off`-setting run in which the upstream one-off job still completes unchanged MAY remain in the smaller Harmony/Core/XML Extensions/Cook for Yourself/Immersive Chefs group.
+16. Harmony; Core; XML Extensions; Biotech; Cook for Yourself; Immersive Chefs; and Gateway for native baby-food cooking and bottle feeding that remain entirely upstream-owned and kitchenware-free under strict ware settings. Package absence and changed-shape behavior remain host/base-process fail-closed gates rather than claims of either active optional-mod group.
+17. Harmony; Core; XML Extensions; Ceramics (Continued); Immersive Chefs; and Gateway for exact porcelain registration, native ceramics-bench plate crafting, Stuff/color/quality retention, and broad-`Stony` non-leakage. Processor Framework and Vanilla Expanded Framework remain absent from this minimum group because the installed provider has its own legacy fallback.
+18. Harmony; Core; XML Extensions; Argonic Core; Vanilla Expanded Framework; Expanded Materials - Masonry; Immersive Chefs; and Gateway for package-ID-gated adobe registration, native crafting-spot plate production, exact brick consumption, quality, and fixed-material output without Stuff leakage.
 
 Every named supported food mod SHALL appear in at least one maintained exact group. Host tests SHALL cover pure policy and package grouping, loaded main-menu integration tests SHALL verify finalized Defs and Harmony ownership, and E2E tests SHALL prove native player-observable cooking, dispensing, selection, serving, storage, and eating behavior. A broad all-supported startup canary MAY be added, but it SHALL NOT substitute for these behavioral groups or claim that every unsupported permutation is compatible.
 

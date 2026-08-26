@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Read-only structural measurements from the locally subscribed Thermodynamics - Hot Meals 1.6
+  microwave. This records identities and geometry only; no Workshop pixels are redistributed.
+-->
+<microwaveProjectionBaseline
+  packageId="Mlie.DThermodynamicsHotMeals"
+  workshopId="2909103255"
+  modVersion="1.6.6"
+  defName="DMicrowave"
+  sourceCanvas="188,188"
+  drawSize="1.25,1"
+  measured="2026-08-26">
+  <frame direction="south" sha256="da44510b257d51613b3ce0852d0b66e89d91bda24096d3bda826cd53dda3e43b" alphaBounds="25,12,138,151" topDepth="73" casingDepth="42" />
+  <frame direction="east" sha256="82d739b34eb04d4b7cea6681107564f53a6ba623c82c367d05cc0736ed905410" alphaBounds="25,12,137,151" topDepth="77" casingDepth="45" />
+  <frame direction="north" sha256="205c417006f5564bcaa3da153ef63c709e6a2ccc05a498881388e4bec2c57a77" alphaBounds="26,18,138,144" />
+  <projectionContract minimumCasingToTopRatio="0.50" maximumCasingToTopRatio="0.68" />
+</microwaveProjectionBaseline>

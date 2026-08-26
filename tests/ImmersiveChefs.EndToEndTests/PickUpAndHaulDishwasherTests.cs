@@ -255,6 +255,7 @@ public sealed class PickUpAndHaulProcessorDishwasherBatchTest : IRimWorldEndToEn
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "syrchalis.processor.framework",
     "Dubwise.DubsBadHygiene",
     "Mehni.PickUpAndHaul",
@@ -412,6 +413,7 @@ public sealed class PickUpAndHaulProcessorDishwasherCapacityBoundaryTest : IRimW
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "syrchalis.processor.framework",
     "Dubwise.DubsBadHygiene",
     "Mehni.PickUpAndHaul",
@@ -522,9 +524,9 @@ public sealed class PickUpAndHaulProcessorDishwasherCapacityRaceFallbackTest : I
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "syrchalis.processor.framework",
     "Dubwise.DubsBadHygiene",
-    "Mehni.PickUpAndHaul",
     "fumblesneeze.immersivechefs",
     MaxFrames = 7_200,
     MaxGameTicks = 24_000,
@@ -535,7 +537,10 @@ public sealed class ProcessorDishwasherContinuousAdmissionTest : IRimWorldEndToE
 
     public void Arrange(IEndToEndContext context)
     {
-        fixture = PickUpAndHaulDishwasherFixture.Create(context, requireProcessor: true);
+        fixture = PickUpAndHaulDishwasherFixture.Create(
+            context,
+            requireProcessor: true,
+            requirePickUpAndHaul: false);
         fixture.PrepareContinuousAdmission();
     }
 
@@ -814,6 +819,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
     internal Pawn Cleaner { get; }
     internal ThingWithComps Dishwasher { get; }
+    internal ThingWithComps FirstContinuousWare => ware[0];
     internal string[] WareIds => ware.Select(item => item.ThingID).ToArray();
     internal string[] VisibleThingIds => WareIds.Concat(new[]
     {
@@ -845,7 +851,8 @@ internal sealed class PickUpAndHaulDishwasherFixture
         IEndToEndContext context,
         bool requireProcessor,
         bool plateOnly = false,
-        int plateCount = 1)
+        int plateCount = 1,
+        bool requirePickUpAndHaul = true)
     {
         var map = Current.Game.CurrentMap;
         var center = FoodSearchE2EFixture.FindRoomCenter(map);
@@ -854,7 +861,9 @@ internal sealed class PickUpAndHaulDishwasherFixture
         var settings = ImmersiveChefsMod.Settings;
         var priorPickUpAndHaul = settings.PickUpAndHaul;
         context.DeferCleanup(() => settings.PickUpAndHaul = priorPickUpAndHaul);
-        settings.PickUpAndHaul = OptionalIntegrationMode.Auto;
+        settings.PickUpAndHaul = requirePickUpAndHaul
+            ? OptionalIntegrationMode.Auto
+            : OptionalIntegrationMode.Off;
         settings.DubsBadHygiene = OptionalIntegrationMode.Auto;
         settings.PreferDishwashers = true;
         settings.DishwashingWorkScale = requireProcessor ? 0.25f : 4f;
@@ -874,9 +883,11 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
         var cleaner = HandwashingE2EFixture.CreateInactiveCleaner("Mara Dishrunner");
         GenSpawn.Spawn(cleaner, center + new IntVec3(-4, 0, -2), map);
-        EndToEndAssert.Equal(1,
+        EndToEndAssert.Equal(requirePickUpAndHaul ? 1 : 0,
             cleaner.AllComps.Count(comp => comp.GetType().FullName == TrackerTypeName),
-            "The supported Pick Up And Haul tracker must attach exactly once.");
+            requirePickUpAndHaul
+                ? "The supported Pick Up And Haul tracker must attach exactly once."
+                : "The no-Pick-Up-And-Haul Processor group must not attach its tracker.");
 
         var plate = MakeDirtyWare("ImmersiveChefs_Plate", ThingDefOf.Steel);
         plate.stackCount = plateCount;
@@ -922,6 +933,19 @@ internal sealed class PickUpAndHaulDishwasherFixture
     internal void ActivateCleaning()
     {
         Cleaner.workSettings.SetPriority(WorkTypeDefOf.Cleaning, 1);
+        Cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
+    }
+
+    internal void DisableCleanerWork()
+    {
+        foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+        {
+            if (!Cleaner.WorkTypeIsDisabled(workType))
+            {
+                Cleaner.workSettings.SetPriority(workType, 0);
+            }
+        }
+
         Cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
     }
 

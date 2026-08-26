@@ -202,8 +202,7 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
         var dishwashers = FindAcceptingDishwashers(
                 pawn,
                 new[] { dirtyWare },
-                dirtyWare.Position,
-                includeProcessor: PickUpAndHaulAdapter.CanTrack(pawn))
+                dirtyWare.Position)
             .ToList();
         if (dishwashers.Count > 0 && ImmersiveChefsMod.Settings.PreferDishwashers)
         {
@@ -244,8 +243,7 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
         var dishwashers = FindAcceptingDishwashers(
             pawn,
             exactWare,
-            origin,
-            includeProcessor: false).ToList();
+            origin).ToList();
         if (dishwashers.Count > 0 && ImmersiveChefsMod.Settings.PreferDishwashers)
         {
             destination = DishwashingDestination.ForDishwasher(dishwashers[0]);
@@ -272,11 +270,12 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
         IReadOnlyList<Thing> exactWare)
     {
         if (pawn.Map.listerThings.AllThings.Any(thing =>
-                (thing.def == ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher ||
-                 thing.def == ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher) &&
-                !thing.IsForbidden(pawn) &&
-                pawn.CanReach(thing, PathEndMode.Touch, Danger.Some) &&
-                !ProcessorFrameworkAdapter.Controls(thing)))
+                PotentialDishwasherDestinationPolicy.IsPotential(
+                    thing.def == ImmersiveChefsDefOf.ImmersiveChefs_Dishwasher ||
+                    thing.def == ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher,
+                    thing.IsForbidden(pawn),
+                    pawn.CanReach(thing, PathEndMode.Touch, Danger.Some),
+                    ProcessorFrameworkAdapter.Controls(thing))))
         {
             return true;
         }
@@ -290,8 +289,7 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
     private static IEnumerable<Thing> FindAcceptingDishwashers(
         Pawn pawn,
         IReadOnlyList<Thing> exactWare,
-        IntVec3 origin,
-        bool includeProcessor)
+        IntVec3 origin)
     {
         var requiredCapacity = exactWare.Sum(thing =>
             thing.def.GetModExtension<KitchenwareExtension>()?.plateEquivalent ?? 1f);
@@ -305,8 +303,7 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
             {
                 if (ProcessorFrameworkAdapter.Controls(thing))
                 {
-                    return includeProcessor &&
-                           exactWare.All(ware => ProcessorFrameworkAdapter.CanAcceptTrackedWare(thing, ware)) &&
+                    return exactWare.All(ware => ProcessorFrameworkAdapter.CanAcceptTrackedWare(thing, ware)) &&
                            ProcessorFrameworkAdapter.AvailablePlateEquivalentCapacity(thing) + 0.0001f >=
                            requiredCapacity;
                 }

@@ -37,6 +37,41 @@ public static class DishwasherCapacityPolicy
     }
 }
 
+public enum DishwasherAdmissionRoute
+{
+    LocalCarry,
+    ProcessorCarry,
+    ProcessorTracked
+}
+
+public static class DishwasherAdmissionRoutingPolicy
+{
+    public static DishwasherAdmissionRoute Select(bool processorControls, bool trackedBatch)
+    {
+        if (!processorControls)
+        {
+            return DishwasherAdmissionRoute.LocalCarry;
+        }
+
+        return trackedBatch
+            ? DishwasherAdmissionRoute.ProcessorTracked
+            : DishwasherAdmissionRoute.ProcessorCarry;
+    }
+}
+
+public static class PotentialDishwasherDestinationPolicy
+{
+    public static bool IsPotential(
+        bool isDishwasher,
+        bool forbidden,
+        bool reachable,
+        bool processorControlled)
+    {
+        _ = processorControlled;
+        return isDishwasher && !forbidden && reachable;
+    }
+}
+
 public static class DishwasherCyclePolicy
 {
     public static int CaptureLoadDuration(int baseCycleTicks, float workScale)

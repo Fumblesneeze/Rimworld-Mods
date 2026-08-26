@@ -6,7 +6,7 @@ This is the retained source contract for the fallback microwave's two cosmetic `
 
 ## Runtime contract and measured references
 
-- Runtime Def: `ImmersiveChefs_Microwave`, one cell, `drawSize=(0.82,0.82)`, `BuildingOnTop`, and `interactionCellOffset=(0,0,-1)`.
+- Runtime Def: `ImmersiveChefs_Microwave`, one cell, `drawSize=(1.25,1.35)`, `BuildingOnTop`, and `interactionCellOffset=(0,0,-1)`. The anisotropic mesh size compensates for the selected family's transparent canvas and preserves a Thermodynamics-comparable visible world-space aspect without stretching the painted casing face. The selected Immersive Chefs appliance is intentionally about 19% wider and 16% deeper than that comparator; live table/workbench views remain authoritative for whether that larger footprint fits the support.
 - Package canvas: 512x512 RGBA for every cardinal frame, with at least 24 fully transparent pixels at every edge after the contour.
 - Read-only runtime comparators:
   - `Vanilla Furniture Expanded - Props and Decor`: `Microwave_south.png`, `Microwave_north.png`, and `Microwave_east.png` on 188x188 canvases. Their nontrivial-alpha bounds are approximately 138x152, 139x145, and 139x153.
@@ -44,7 +44,7 @@ Candidate B appended this exact identity:
 Candidate B identity: warm ivory enamel, charcoal door glass, black gasket, two large square dark buttons and one amber indicator, muted grey vents, slightly squarer industrial appliance corners.
 ```
 
-The initial outputs established the correct cardinal axes and recognizable microwave identity. They were not promoted because their top and casing planes were still too flat.
+The initial outputs established the correct cardinal axes and recognizable microwave identity. They were not promoted because their top and casing planes were still too close to one-to-one and read as a tall cube in game.
 
 ## Exact successful top-and-casing refinement prompt
 
@@ -74,24 +74,23 @@ Candidate B appended:
 Preserve Candidate B's warm ivory enamel, large square buttons, amber indicator, muted vents, and slightly squarer industrial casing identity.
 ```
 
-The selected refined sheets are:
-
-- Candidate A / base family: `exec-74753597-4b0e-4496-83ef-d662a430ee00.png`.
-- Candidate B / `_Variant01` family: `exec-4d1ff76f-27c0-4162-a92b-90d386db6d50.png`.
+The first correction overcompensated and made the casing read as a thin tray. That draft is retained only as rejected local evidence under `artifacts/VisualAssets/MicrowavePerspective-20260826/candidates/candidate-d-*`. The selected `v3` family instead uses the original generated Candidate C door, controls, vents, feet, and independently authored cardinal faces, then applies a deterministic plane-only projection correction. It targets a casing depth of approximately `0.65` times the visible top depth: deep enough to read as an appliance, but still visibly lower than the top plane. Candidate C is retained at `artifacts/VisualAssets/MicrowavePerspective-20260826/candidates/candidate-c-selected-source.png`; no comparator pixels enter the selected art.
 
 ## Deterministic normalization
 
-The generator emitted 1254x1254 sheets and allowed some silhouettes to cross conceptual quadrant boundaries. Equal quadrant crops would clip or contaminate the card, so processing uses recorded non-overlapping source windows around each independently generated object, removes the measured green border with a soft matte and spill cleanup, and trims each object to its alpha bounds.
+The generator emitted a 1254x1254 Candidate C sheet. Processing uses recorded non-overlapping source windows around each independently generated cardinal object, removes the measured green border with a soft matte and spill cleanup, and trims each object to its alpha bounds.
 
-One family-wide scale is applied before centering each view on a transparent 512x512 canvas. The largest pre-contour dimension is capped at 400 pixels. A one-source-pixel edge cleanup precedes the approved 24-source-pixel `#171412` building contour, which becomes three readable pixels at the 64x64 proxy. No raster rotation or mirroring creates a missing view.
+North and South are split only at the existing top/casing seam: the generated top is scaled to 153-154 source pixels and the lower casing to 134-144 source pixels before the combined body is normalized to 400 pixels wide. East and West use their independently generated side faces; the elongated top is scaled to 200 source pixels and the lower casing to 190 source pixels before normalizing the body to 356 pixels wide. This preserves authored door/control/vent content while moving only the two physical planes toward the measured Thermodynamics projection. No raster rotation or mirroring creates a missing view.
+
+Each corrected view is centered on a transparent 512x512 canvas. A one-source-pixel edge cleanup precedes the approved 24-source-pixel `#171412` building contour, which becomes three readable pixels at the 64x64 proxy. The warm `_Variant01` family is derived from the same geometry with a restrained fixed-color enamel treatment so both cosmetic families retain identical projection and silhouette.
 
 Final exterior alpha bounds are:
 
-- base: North `29,86,454,340`; East `89,62,334,387`; South `31,87,450,338`; West `95,60,322,392`;
-- variant: North `31,64,450,384`; East `86,32,339,448`; South `29,55,454,402`; West `83,33,346,445`.
+- base: North `32,82,448,348`; East `54,32,404,448`; South `32,79,448,353`; West `54,33,404,446`;
+- variant: North `32,82,448,348`; East `54,32,404,448`; South `32,79,448,353`; West `54,33,404,446`.
 
-Exact per-frame crop hashes, packaged hashes, alpha bounds, top/side/casing/feature probes, projection-pair identities, and all three proxy contour rings are retained in `DirectionalSpriteApprovals.xml` and `SpriteOutlineApprovals.xml`. The source/map-scale comparison is retained at `artifacts/VisualAssets/MicrowavePerspective-20260823/generated/selected-axis-source.png` and `selected-axis-64.png`.
+Exact per-frame input hashes, packaged hashes, alpha bounds, top/side/casing/feature probes, projection-pair identities, and all three proxy contour rings are retained in `DirectionalSpriteApprovals.xml` and `SpriteOutlineApprovals.xml`. The selected family contact is retained at `artifacts/VisualAssets/MicrowavePerspective-20260826/outlined-v3/contact-dark.png`, and the read-only structural comparison against Thermodynamics at `artifacts/VisualAssets/MicrowavePerspective-20260826/outlined-v3/reference-contact-light.png`.
 
 ## Rejection criteria
 
-Reject the family if South is not the full door/front; North is not a blank rear apart from vents; East does not terminate at the front on screen-right; West does not terminate at the front on screen-left; any long silhouette edge becomes a diagonal isometric diamond; the top and casing are not visibly separate planes; the South cavity ratio leaves the microwave looking like a VHS/VCR; the outline or internal edge stair-steps at map scale; chroma remains; the support surface is swallowed at `drawSize 0.82`; or the door, controls, vents, and cardinal orientation disappear at the 64x64 proxy.
+Reject the family if South is not the full door/front; North is not a blank rear apart from vents; East does not terminate at the front on screen-right; West does not terminate at the front on screen-left; any long silhouette edge becomes a diagonal isometric diamond; the top and casing are not visibly separate planes; the casing/top ratio leaves the appliance either cube-like or tray-flat; the South cavity ratio leaves the microwave looking like a VHS/VCR; the outline or internal edge stair-steps at map scale; chroma remains; the support surface is swallowed at `drawSize (1.25,1.35)`; or the door, controls, vents, and cardinal orientation disappear at the 64x64 proxy.

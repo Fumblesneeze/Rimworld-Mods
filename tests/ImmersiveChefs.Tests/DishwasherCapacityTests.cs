@@ -67,6 +67,33 @@ public sealed class DishwasherCapacityTests
         });
     }
 
+    [TestCase(false, false, DishwasherAdmissionRoute.LocalCarry)]
+    [TestCase(true, false, DishwasherAdmissionRoute.ProcessorCarry)]
+    [TestCase(true, true, DishwasherAdmissionRoute.ProcessorTracked)]
+    public void Processor_dishwasher_admission_does_not_require_pick_up_and_haul(
+        bool processorControls,
+        bool trackedBatch,
+        DishwasherAdmissionRoute expected)
+    {
+        Assert.That(
+            DishwasherAdmissionRoutingPolicy.Select(processorControls, trackedBatch),
+            Is.EqualTo(expected));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Reachable_dishwasher_remains_a_potential_destination_while_temporarily_full(
+        bool processorControlled)
+    {
+        Assert.That(
+            PotentialDishwasherDestinationPolicy.IsPotential(
+                isDishwasher: true,
+                forbidden: false,
+                reachable: true,
+                processorControlled),
+            Is.True);
+    }
+
     [Test]
     public void Processor_charges_each_admission_for_only_its_own_load()
     {

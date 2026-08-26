@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -1199,6 +1200,15 @@ public sealed class VisualAssetPackageTests
             .Elements("frame")
             .Where(element => ((string?)element.Attribute("path"))?.StartsWith("Appliance/Microwave", StringComparison.Ordinal) == true)
             .ToDictionary(element => (string)element.Attribute("path")!, StringComparer.Ordinal);
+        var projectionContract = XDocument.Load(Path.Combine(root, "docs", "MicrowaveProjectionBaseline.xml"))
+            .Root!
+            .Element("projectionContract")!;
+        var minimumCasingToTopRatio = double.Parse(
+            (string)projectionContract.Attribute("minimumCasingToTopRatio")!,
+            CultureInfo.InvariantCulture);
+        var maximumCasingToTopRatio = double.Parse(
+            (string)projectionContract.Attribute("maximumCasingToTopRatio")!,
+            CultureInfo.InvariantCulture);
         var measuredFrames = new Dictionary<string, List<(string Direction, int TopDepth, int CasingDepth)>>(
             StringComparer.Ordinal);
 
@@ -1237,8 +1247,10 @@ public sealed class VisualAssetPackageTests
                     Assert.That(AlphaCoverage(bitmap, nearCasing), Is.GreaterThanOrEqualTo(0.98), family + "_" + direction + " measured near casing");
                     Assert.That(AlphaCoverage(bitmap, bevelBand), Is.GreaterThanOrEqualTo(0.90), family + "_" + direction + " measured bevel band");
                     Assert.That(Math.Max(bounds.Width, bounds.Height), Is.LessThanOrEqualTo(456), family + "_" + direction + " compact long axis");
-                    Assert.That(casingDepth, Is.GreaterThanOrEqualTo(topDepth * 0.50), family + "_" + direction + " must retain a substantial microwave casing rather than a VHS-thin band");
-                    Assert.That(casingDepth, Is.LessThanOrEqualTo(topDepth * 1.35), family + "_" + direction + " must still expose a distinct top surface");
+                    Assert.That(
+                        casingDepth / (double)topDepth,
+                        Is.InRange(minimumCasingToTopRatio, maximumCasingToTopRatio),
+                        family + "_" + direction + " must match the measured Thermodynamics countertop-microwave top/casing projection rather than becoming a tall cube or flat deck");
                     Assert.That(
                         direction is "north" or "south" ? bounds.Width / (double)bounds.Height : bounds.Height / (double)bounds.Width,
                         Is.GreaterThanOrEqualTo(1.10),
@@ -1892,7 +1904,7 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(MicrowaveTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(0.82,0.82)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(1.25,1.35)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(packagedPath), Is.True);
             Assert.That(File.Exists(obsoleteSourcePath), Is.False);

@@ -891,10 +891,95 @@ internal static class ProcessorFrameworkAdapter
         }
     }
 
+    internal static bool TryAcceptCarriedWare(Pawn pawn, Thing dishwasherThing, out string reason)
+    {
+        var processor = ProcessorOf(dishwasherThing);
+        var carry = pawn.carryTracker?.innerContainer;
+        var ware = pawn.carryTracker?.CarriedThing;
+        if (processor is null || carry is null || ware is null ||
+            !ReferenceEquals(ware.holdingOwner, carry) ||
+            !CanAcceptTrackedWare(dishwasherThing, ware) || addIngredient is null)
+        {
+            reason = "the carried kitchenware can no longer enter the selected Processor dishwasher";
+            return false;
+        }
+
+        var enabled = processorEnabledProcesses!.GetValue(processor) as IDictionary;
+        var process = enabled?.Keys.Cast<object>().FirstOrDefault(candidate =>
+            (processIngredientFilter!.GetValue(candidate) as ThingFilter)?.Allows(ware.def) == true);
+        if (process is null)
+        {
+            reason = "Processor Framework no longer exposes an enabled process for the carried kitchenware";
+            return false;
+        }
+
+        try
+        {
+            addIngredient.Invoke(processor, new[] { ware, process });
+            if (!ReferenceEquals(ware.holdingOwner, carry) &&
+                IsOwnedByProcessor(processor, ware) &&
+                HeldWare(dishwasherThing).Any(item => ReferenceEquals(item, ware)))
+            {
+                reason = string.Empty;
+                return true;
+            }
+
+            RemoveDanglingProcessorReference(processor, ware);
+            RestoreCarryOrDrop(pawn, processor, ware, carry);
+            reason = "Processor Framework declined the carried kitchenware admission";
+            return false;
+        }
+        catch (Exception exception)
+        {
+            var root = exception is TargetInvocationException { InnerException: { } inner }
+                ? inner
+                : exception;
+            if (IsOwnedByProcessor(processor, ware) &&
+                HeldWare(dishwasherThing).Any(item => ReferenceEquals(item, ware)))
+            {
+                reason = string.Empty;
+                return true;
+            }
+
+            RemoveDanglingProcessorReference(processor, ware);
+            RestoreCarryOrDrop(pawn, processor, ware, carry);
+            reason = $"Processor carried admission failed ({root.GetType().Name}: {root.Message})";
+            OptionalIntegrationDiagnostics.WarnOnce(OptionalIntegration.ProcessorFramework, reason);
+            return false;
+        }
+    }
+
     private static bool IsOwnedByProcessor(object processor, Thing ware)
     {
         return processorInnerContainer!.GetValue(processor) is ThingOwner owner &&
                ReferenceEquals(ware.holdingOwner, owner);
+    }
+
+    private static bool RestoreCarryOrDrop(
+        Pawn pawn,
+        object processor,
+        Thing ware,
+        ThingOwner carry)
+    {
+        if (ReferenceEquals(ware.holdingOwner, carry))
+        {
+            return true;
+        }
+
+        if (processorInnerContainer!.GetValue(processor) is ThingOwner processorOwner &&
+            ReferenceEquals(ware.holdingOwner, processorOwner))
+        {
+            processorOwner.Remove(ware);
+        }
+
+        if (ware.holdingOwner is null && carry.TryAdd(ware, canMergeWithExistingStacks: false))
+        {
+            return true;
+        }
+
+        return ware.Spawned ||
+               (ware.holdingOwner is null && pawn.MapHeld is { } map &&
+                GenPlace.TryPlaceThing(ware, pawn.PositionHeld, map, ThingPlaceMode.Near));
     }
 
     private static void RemoveDanglingProcessorReference(object processor, Thing ware)

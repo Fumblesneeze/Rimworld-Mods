@@ -15,6 +15,7 @@ namespace ImmersiveChefs.EndToEndTests;
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
     "Orion.Hospitality",
     "Orion.CashRegister",
     "Orion.Gastronomy",

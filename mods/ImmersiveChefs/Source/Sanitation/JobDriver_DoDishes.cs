@@ -47,7 +47,13 @@ public sealed class JobDriver_DoDishes : JobDriver
         {
             yield return Toils_General.DoAtomic(() =>
             {
-                if (!dishwasher.TryAcceptFrom(pawn))
+                var route = DishwasherAdmissionRoutingPolicy.Select(
+                    ProcessorFrameworkAdapter.Controls(building),
+                    trackedBatch: false);
+                var accepted = route == DishwasherAdmissionRoute.ProcessorCarry
+                    ? ProcessorFrameworkAdapter.TryAcceptCarriedWare(pawn, building, out _)
+                    : dishwasher.TryAcceptFrom(pawn);
+                if (!accepted)
                 {
                     TryDropCarriedThingIfPresent(pawn);
                 }

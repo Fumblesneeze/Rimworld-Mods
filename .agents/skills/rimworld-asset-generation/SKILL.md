@@ -47,6 +47,10 @@ generate the art before completing the reference and measurement brief below.
      south/front face, east/side face, bevel/transition, and contour as separate pixel and world-space
      components for every materially different orientation. Never infer height from only the total
      alpha bounds or a whole-object aspect ratio.
+   - For low countertop appliances, measure and pin both a minimum and maximum casing-to-visible-top
+     depth ratio from a structurally equivalent in-game comparator. "Low" does not mean that the
+     casing may collapse into a decorative bevel: reject both the tall cube and the tray-flat
+     overcorrection, and compare the result at final map scale before promotion.
    - When adapting a low object into a full-height one, inspect and measure both the low material
      reference and a real full-height structural comparator in game. Do not extrapolate height with a
      single scale factor. Treat transparent margins and the draw plane as part of the projection:
