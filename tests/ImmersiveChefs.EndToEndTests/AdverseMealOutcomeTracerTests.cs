@@ -222,7 +222,9 @@ public sealed class AdverseMealOutcomeTracerTest : IRimWorldEndToEndTest
         });
         settings.CulinaryQualityEnabled = true;
         settings.QualityMoodScale = 1f;
-        settings.FoodPoisoningEffectScale = 3f;
+        // This acceptance fixture deliberately amplifies the already-halved production
+        // contributions far enough to force one visible vanilla poisoning outcome.
+        settings.FoodPoisoningEffectScale = 4f;
         settings.MaximumCustomPoisonChance = 1f;
         settings.MealTemperatureEnabled = true;
         settings.AutoMicrowaveBelow = -100f;
@@ -274,7 +276,7 @@ public sealed class AdverseMealOutcomeTracerTest : IRimWorldEndToEndTest
                 effectScale: ImmersiveChefsMod.Settings.FoodPoisoningEffectScale,
                 maximumChance: ImmersiveChefsMod.Settings.MaximumCustomPoisonChance));
         EndToEndAssert.Equal(1f, configuredPoisonChance,
-            "Even a zero vanilla base chance must calculate to a deterministic 100% adverse-meal risk.");
+            "The acceptance-only amplification must force a deterministic 100% adverse-meal risk.");
         AssertWareConservation();
     }
 

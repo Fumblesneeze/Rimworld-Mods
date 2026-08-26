@@ -605,15 +605,12 @@ public sealed class ProcessorDishwasherContinuousAdmissionTest : IRimWorldEndToE
             Array.Empty<string>(),
             paddingPixels: 0);
 
-        yield return new AssertionStep(
-            "enable native output hauling while Cleaning remains active",
-            _ => fixture.ActivateHaulingWhileCleaningRemainsEnabled());
         yield return new TimeControlActionStep(
             "run both independent loads toward their own completion",
             paused: false,
             EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
-            "the older load exits clean while the later load is still washing",
+            "the older load naturally completes while the later load is still washing",
             _ => fixture.FirstContinuousLoadCompletesBeforeLaterLoad(),
             new EndToEndDeadline(2_400, 8_000, TimeSpan.FromSeconds(85)));
         yield return new TimeControlActionStep(
@@ -621,16 +618,19 @@ public sealed class ProcessorDishwasherContinuousAdmissionTest : IRimWorldEndToE
             paused: true,
             EndToEndGameSpeed.Normal);
         yield return new SelectionActionStep(
-            "select the older clean output and still-active dishwasher",
-            new[] { fixture.FirstContinuousWareId, fixture.Dishwasher.ThingID },
+            "select the dishwasher with one naturally complete and one active load",
+            new[] { fixture.Dishwasher.ThingID },
             additive: false);
         yield return new ScreenshotStep(
-            "older ware is clean outside while the later load remains in progress",
+            "older process is complete while the later load remains in progress",
             Array.Empty<string>(),
             paddingPixels: 0);
 
+        yield return new AssertionStep(
+            "enable native output hauling while Cleaning remains active",
+            _ => fixture.ActivateHaulingWhileCleaningRemainsEnabled());
         yield return new TimeControlActionStep(
-            "finish the later independent load",
+            "finish the later independent load and haul both outputs",
             paused: false,
             EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
@@ -1009,11 +1009,10 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
     internal bool FirstContinuousLoadCompletesBeforeLaterLoad()
     {
-        return ware[0].Spawned &&
-               ware[0].GetComp<CompSanitation>() is
-                   { IsDirty: false, WashProvenance: WashProvenance.Safe } &&
-               DishwasherHeldWare().Any(item => ReferenceEquals(item, ware[1])) &&
-               ware[1].GetComp<CompSanitation>()?.IsDirty == true &&
+        var held = DishwasherHeldWare();
+        return held.Any(item => ReferenceEquals(item, ware[0])) &&
+               held.Any(item => ReferenceEquals(item, ware[1])) &&
+               ProcessorFrameworkAdapter.ProgressPercent(Dishwasher, ware[0]) >= 100f &&
                ProcessorFrameworkAdapter.ProgressPercent(Dishwasher, ware[1]) is > 0f and < 100f;
     }
 

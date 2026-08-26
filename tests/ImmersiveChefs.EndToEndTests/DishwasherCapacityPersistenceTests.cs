@@ -493,7 +493,10 @@ public sealed class LocalDishwasherCapacityPersistenceTest : IRimWorldEndToEndTe
             EndToEndGameSpeed.Normal);
         domesticOverflow.SetForbidden(false, warnOnFail: false);
         domesticWorker.jobs.EndCurrentJob(JobCondition.InterruptForced);
-        var domesticProbeEndTick = Find.TickManager.TicksGame + 500;
+        // Independent loads can finish while the appliance remains open to later admissions.
+        // Give the ordinary work scanner one think interval to reject the overflow without
+        // waiting most of a default wash cycle and racing the persistence assertion below.
+        var domesticProbeEndTick = Find.TickManager.TicksGame + 60;
         yield return new TimeControlActionStep(
             "let ordinary Cleaning reconsider the allowed domestic overflow",
             paused: false,
@@ -613,7 +616,7 @@ public sealed class LocalDishwasherCapacityPersistenceTest : IRimWorldEndToEndTe
             EndToEndGameSpeed.Normal);
         industrialOverflow.SetForbidden(false, warnOnFail: false);
         industrialWorker.jobs.EndCurrentJob(JobCondition.InterruptForced);
-        var industrialProbeEndTick = Find.TickManager.TicksGame + 500;
+        var industrialProbeEndTick = Find.TickManager.TicksGame + 60;
         yield return new TimeControlActionStep(
             "let ordinary Cleaning reconsider the allowed industrial overflow",
             paused: false,
@@ -768,11 +771,17 @@ public sealed class LocalDishwasherCapacityPersistenceTest : IRimWorldEndToEndTe
         industrialWorker = ResolvePawn(industrialWorkerId);
         domesticOverflow = ResolveSpawned<ThingWithComps>(domesticOverflowId);
         industrialOverflow = ResolveSpawned<ThingWithComps>(industrialOverflowId);
-        var held = domestic.GetComp<CompDishwasher>()!.GetDirectlyHeldThings()
+        var heldThings = domestic.GetComp<CompDishwasher>()!.GetDirectlyHeldThings()
             .OfType<ThingWithComps>()
-            .SingleOrDefault(thing => thing.ThingID == domesticSnapshot.ThingId) ??
+            .ToList();
+        var held = heldThings.SingleOrDefault(thing => thing.ThingID == domesticSnapshot.ThingId) ??
             throw new EndToEndAssertionException(
-                "Native save/load lost the exact held domestic stack " + domesticSnapshot.ThingId + ".");
+                "Native save/load lost the exact held domestic stack " + domesticSnapshot.ThingId +
+                "; reloaded holder contains " +
+                (heldThings.Count == 0
+                    ? "no Things"
+                    : string.Join(", ", heldThings.Select(thing =>
+                        thing.ThingID + " x" + thing.stackCount + " (" + thing.def.defName + ")"))) + ".");
         domesticLoad = held;
 
         industrialLoads.Clear();
