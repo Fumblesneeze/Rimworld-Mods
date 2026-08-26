@@ -109,10 +109,17 @@ internal sealed class ImmersiveChefsSettingsUi
                 listing,
                 "ImmersiveChefs_Settings_MicrowaveQualityLoss".Translate(settings.MicrowaveQualityLoss),
                 settings.MicrowaveQualityLoss, 0f, 20f, 1f);
-            settings.MicrowaveExtraPoisonChance = Slider(
+            var effectiveMicrowavePoisonChance =
+                settings.MicrowaveExtraPoisonChance * DiningOutcomeCalculator.CustomRiskBalanceFactor;
+            effectiveMicrowavePoisonChance = Slider(
                 listing,
-                "ImmersiveChefs_Settings_MicrowavePoisonChance".Translate(settings.MicrowaveExtraPoisonChance.ToString("0.0")),
-                settings.MicrowaveExtraPoisonChance, 0f, 5f, 0.1f);
+                "ImmersiveChefs_Settings_MicrowavePoisonChance".Translate(effectiveMicrowavePoisonChance.ToString("0.00")),
+                effectiveMicrowavePoisonChance,
+                0f,
+                5f * DiningOutcomeCalculator.CustomRiskBalanceFactor,
+                0.05f);
+            settings.MicrowaveExtraPoisonChance =
+                effectiveMicrowavePoisonChance / DiningOutcomeCalculator.CustomRiskBalanceFactor;
         }
         else
         {

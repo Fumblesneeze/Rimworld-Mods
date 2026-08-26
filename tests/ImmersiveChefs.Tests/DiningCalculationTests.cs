@@ -5,6 +5,62 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class DiningCalculationTests
 {
+    private static System.Collections.Generic.IEnumerable<TestCaseData> HalvedCustomRiskCases()
+    {
+        yield return RiskCase("low culinary quality", 0, ThermalBand.Warm, ContaminationSources.None, null, null, 0, 0.5f, 0.05f, FoodPoisonRiskContributor.LowCulinaryQuality, 5f);
+        yield return RiskCase("cold meal", 50, ThermalBand.Cold, ContaminationSources.None, null, null, 0, 0.5f, 0.015f, FoodPoisonRiskContributor.ColdMeal, 1.5f);
+        yield return RiskCase("frozen meal", 50, ThermalBand.Frozen, ContaminationSources.None, null, null, 0, 0.5f, 0.04f, FoodPoisonRiskContributor.FrozenMeal, 4f);
+        yield return RiskCase("dirty cookware", 50, ThermalBand.Warm, ContaminationSources.DirtyCookware, null, null, 0, 0.5f, 0.075f, FoodPoisonRiskContributor.DirtyCookware, 7.5f);
+        yield return RiskCase("dirty plate", 50, ThermalBand.Warm, ContaminationSources.DirtyPlate, null, null, 0, 0.5f, 0.075f, FoodPoisonRiskContributor.DirtyPlate, 7.5f);
+        yield return RiskCase("dirty cutlery", 50, ThermalBand.Warm, ContaminationSources.DirtyCutlery, null, null, 0, 0.5f, 0.05f, FoodPoisonRiskContributor.DirtyCutlery, 5f);
+        yield return RiskCase("wild-water cookware", 50, ThermalBand.Warm, ContaminationSources.WildWaterCookware, null, null, 0, 0.5f, 0.025f, FoodPoisonRiskContributor.WildWaterCookware, 2.5f);
+        yield return RiskCase("wild-water plate", 50, ThermalBand.Warm, ContaminationSources.WildWaterPlate, null, null, 0, 0.5f, 0.02f, FoodPoisonRiskContributor.WildWaterPlate, 2f);
+        yield return RiskCase("wild-water cutlery", 50, ThermalBand.Warm, ContaminationSources.WildWaterCutlery, null, null, 0, 0.5f, 0.015f, FoodPoisonRiskContributor.WildWaterCutlery, 1.5f);
+        yield return RiskCase("poor plate", 50, ThermalBand.Warm, ContaminationSources.None, 0f, null, 0, 0.5f, 0.0075f, FoodPoisonRiskContributor.PoorPlate, 0.75f);
+        yield return RiskCase("poor cutlery", 50, ThermalBand.Warm, ContaminationSources.None, null, 0f, 0, 0.5f, 0.0075f, FoodPoisonRiskContributor.PoorCutlery, 0.75f);
+        yield return RiskCase("microwave reheat", 50, ThermalBand.Warm, ContaminationSources.None, null, null, 1, 0.5f, 0.0025f, FoodPoisonRiskContributor.MicrowaveReheating, 0.25f);
+    }
+
+    [TestCaseSource(nameof(HalvedCustomRiskCases))]
+    public void Every_custom_food_poisoning_contributor_uses_half_the_released_baseline_once(
+        DiningRiskInputs inputs,
+        float expectedChance,
+        FoodPoisonRiskContributor expectedContributor,
+        float expectedContributionPercentagePoints)
+    {
+        var result = DiningOutcomeCalculator.CalculatePoisonRisk(inputs);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.FinalChance, Is.EqualTo(expectedChance).Within(0.0001f));
+            Assert.That(result.LargestPositiveContributor, Is.EqualTo(expectedContributor));
+            Assert.That(result.LargestPositiveContributionPercentagePoints,
+                Is.EqualTo(expectedContributionPercentagePoints).Within(0.0001f));
+        });
+    }
+
+    [Test]
+    public void Halved_balance_applies_once_to_combined_and_favorable_custom_deltas_but_not_the_base()
+    {
+        var dirtySetting = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
+            0.02f, 50, ThermalBand.Warm,
+            ContaminationSources.DirtyCookware | ContaminationSources.DirtyPlate | ContaminationSources.DirtyCutlery,
+            null, null, 0, 0.5f, 1f, 0.50f));
+        var favorableQuality = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
+            0.20f, 80, ThermalBand.Warm, ContaminationSources.None,
+            null, null, 0, 0.5f, 1f, 0.50f));
+        var favorablePlate = DiningOutcomeCalculator.FinalPoisonChance(new DiningRiskInputs(
+            0.20f, 50, ThermalBand.Warm, ContaminationSources.None,
+            100f, null, 0, 0.5f, 1f, 0.50f));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dirtySetting, Is.EqualTo(0.22f).Within(0.0001f));
+            Assert.That(favorableQuality, Is.EqualTo(0.17f).Within(0.0001f));
+            Assert.That(favorablePlate, Is.EqualTo(0.1925f).Within(0.0001f));
+        });
+    }
+
     [Test]
     public void Poisoning_combines_one_bounded_roll_without_lowering_an_already_higher_base_risk()
     {
@@ -29,7 +85,7 @@ public sealed class DiningCalculationTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(dirtySetting, Is.EqualTo(0.42f).Within(0.0001f));
+            Assert.That(dirtySetting, Is.EqualTo(0.22f).Within(0.0001f));
             Assert.That(capped, Is.EqualTo(0.50f).Within(0.0001f));
             Assert.That(highCompatibleBase, Is.EqualTo(0.72f).Within(0.0001f));
         });
@@ -66,7 +122,7 @@ public sealed class DiningCalculationTests
             effectScale: 1f,
             maximumChance: 0.50f));
 
-        Assert.That(chance, Is.EqualTo(0.09f).Within(0.0001f));
+        Assert.That(chance, Is.EqualTo(0.055f).Within(0.0001f));
     }
 
     [Test]
@@ -109,11 +165,11 @@ public sealed class DiningCalculationTests
         {
             Assert.That(result.FinalChance,
                 Is.EqualTo(DiningOutcomeCalculator.FinalPoisonChance(inputs)).Within(0.0001f));
-            Assert.That(result.FinalChance, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(result.FinalChance, Is.EqualTo(0.63f).Within(0.0001f));
             Assert.That(result.LargestPositiveContributor,
                 Is.EqualTo(FoodPoisonRiskContributor.DirtyCookware));
             Assert.That(result.LargestPositiveContributionPercentagePoints,
-                Is.EqualTo(30f).Within(0.0001f));
+                Is.EqualTo(15f).Within(0.0001f));
         });
     }
 
@@ -133,7 +189,7 @@ public sealed class DiningCalculationTests
             ContaminationSources.DirtyCutlery,
             null, null, 0, 0.5f, 1f, 0.50f));
         var physicalTieBeatsBase = DiningOutcomeCalculator.CalculatePoisonRisk(new DiningRiskInputs(
-            0.15f, 50, ThermalBand.Warm,
+            0.075f, 50, ThermalBand.Warm,
             ContaminationSources.DirtyCookware,
             null, null, 0, 0.5f, 1f, 0.50f));
 
@@ -143,7 +199,7 @@ public sealed class DiningCalculationTests
                 Is.EqualTo(FoodPoisonRiskContributor.DirtyCookware));
             Assert.That(vanillaDominates.LargestPositiveContributor,
                 Is.EqualTo(FoodPoisonRiskContributor.VanillaBase));
-            Assert.That(vanillaDominates.FinalChance, Is.EqualTo(0.45f).Within(0.0001f));
+            Assert.That(vanillaDominates.FinalChance, Is.EqualTo(0.375f).Within(0.0001f));
             Assert.That(physicalTieBeatsQuality.LargestPositiveContributor,
                 Is.EqualTo(FoodPoisonRiskContributor.DirtyCutlery));
             Assert.That(physicalTieBeatsBase.LargestPositiveContributor,
@@ -166,6 +222,37 @@ public sealed class DiningCalculationTests
                 Is.EqualTo(FoodPoisonRiskContributor.None));
             Assert.That(result.LargestPositiveContributionPercentagePoints, Is.Zero);
         });
+    }
+
+    private static TestCaseData RiskCase(
+        string name,
+        int qualityScore,
+        ThermalBand thermalBand,
+        ContaminationSources contamination,
+        float? plateServiceScore,
+        float? cutleryServiceScore,
+        int microwaveReheatCount,
+        float microwaveExtraPercentagePoints,
+        float expectedChance,
+        FoodPoisonRiskContributor expectedContributor,
+        float expectedContributionPercentagePoints)
+    {
+        return new TestCaseData(
+                new DiningRiskInputs(
+                    0f,
+                    qualityScore,
+                    thermalBand,
+                    contamination,
+                    plateServiceScore,
+                    cutleryServiceScore,
+                    microwaveReheatCount,
+                    microwaveExtraPercentagePoints,
+                    1f,
+                    1f),
+                expectedChance,
+                expectedContributor,
+                expectedContributionPercentagePoints)
+            .SetName($"Custom_food_poisoning_risk_is_halved_for_{name.Replace(' ', '_')}");
     }
 
 }

@@ -47,7 +47,7 @@ Open `Options > Mod settings > Immersive Chefs`. Restart-required settings chang
 | Thermal half-life | 2 h | 0.25–12 h | Live when Immersive Chefs owns temperature |
 | Automatically microwave below | 10 °C | -10–30 °C | Live when Immersive Chefs owns temperature |
 | Microwave quality loss | 5 | 0–20 | Live when Immersive Chefs owns temperature |
-| Microwave poison chance | 0.5 percentage points | 0–5 pp | Live when Immersive Chefs owns temperature |
+| Microwave poison chance | 0.25 percentage points | 0–2.5 pp | Live when Immersive Chefs owns temperature |
 | Colony dining standards | On | On / Off | Live |
 | Royalty dining standards | On | On / Off | Live |
 

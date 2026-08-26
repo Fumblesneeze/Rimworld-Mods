@@ -75,6 +75,8 @@ public readonly struct DiningPoisonRiskResult
 
 public static class DiningOutcomeCalculator
 {
+    public const float CustomRiskBalanceFactor = 0.5f;
+
     private const ContaminationSources DirtyWare =
         ContaminationSources.DirtyCookware |
         ContaminationSources.DirtyPlate |
@@ -101,7 +103,9 @@ public static class DiningOutcomeCalculator
         var largestContributor = FoodPoisonRiskContributor.None;
         var largestContribution = 0f;
 
-        var qualityPoints = (50 - Clamp(inputs.QualityScore, 0, 100)) * 0.20f;
+        var qualityPoints = (50 - Clamp(inputs.QualityScore, 0, 100)) *
+                            0.20f *
+                            CustomRiskBalanceFactor;
         var percentagePoints = qualityPoints;
         Consider(
             FoodPoisonRiskContributor.LowCulinaryQuality,
@@ -111,8 +115,8 @@ public static class DiningOutcomeCalculator
 
         var thermalPoints = inputs.ThermalBand switch
         {
-            ThermalBand.Cold => 3f,
-            ThermalBand.Frozen => 8f,
+            ThermalBand.Cold => 3f * CustomRiskBalanceFactor,
+            ThermalBand.Frozen => 8f * CustomRiskBalanceFactor,
             _ => 0f
         };
         percentagePoints += thermalPoints;
@@ -128,7 +132,7 @@ public static class DiningOutcomeCalculator
             inputs.Contamination,
             ContaminationSources.DirtyCookware,
             FoodPoisonRiskContributor.DirtyCookware,
-            15f,
+            15f * CustomRiskBalanceFactor,
             scale,
             ref percentagePoints,
             ref largestContributor,
@@ -137,7 +141,7 @@ public static class DiningOutcomeCalculator
             inputs.Contamination,
             ContaminationSources.DirtyPlate,
             FoodPoisonRiskContributor.DirtyPlate,
-            15f,
+            15f * CustomRiskBalanceFactor,
             scale,
             ref percentagePoints,
             ref largestContributor,
@@ -146,7 +150,7 @@ public static class DiningOutcomeCalculator
             inputs.Contamination,
             ContaminationSources.DirtyCutlery,
             FoodPoisonRiskContributor.DirtyCutlery,
-            10f,
+            10f * CustomRiskBalanceFactor,
             scale,
             ref percentagePoints,
             ref largestContributor,
@@ -155,7 +159,7 @@ public static class DiningOutcomeCalculator
             inputs.Contamination,
             ContaminationSources.WildWaterCookware,
             FoodPoisonRiskContributor.WildWaterCookware,
-            5f,
+            5f * CustomRiskBalanceFactor,
             scale,
             ref percentagePoints,
             ref largestContributor,
@@ -164,7 +168,7 @@ public static class DiningOutcomeCalculator
             inputs.Contamination,
             ContaminationSources.WildWaterPlate,
             FoodPoisonRiskContributor.WildWaterPlate,
-            4f,
+            4f * CustomRiskBalanceFactor,
             scale,
             ref percentagePoints,
             ref largestContributor,
@@ -173,7 +177,7 @@ public static class DiningOutcomeCalculator
             inputs.Contamination,
             ContaminationSources.WildWaterCutlery,
             FoodPoisonRiskContributor.WildWaterCutlery,
-            3f,
+            3f * CustomRiskBalanceFactor,
             scale,
             ref percentagePoints,
             ref largestContributor,
@@ -196,7 +200,8 @@ public static class DiningOutcomeCalculator
             ref largestContribution);
 
         var microwavePoints = Math.Max(0, inputs.MicrowaveReheatCount) *
-                              Math.Max(0f, inputs.MicrowaveExtraPercentagePoints);
+                              Math.Max(0f, inputs.MicrowaveExtraPercentagePoints) *
+                              CustomRiskBalanceFactor;
         percentagePoints += microwavePoints;
         Consider(
             FoodPoisonRiskContributor.MicrowaveReheating,
@@ -252,7 +257,9 @@ public static class DiningOutcomeCalculator
     private static float ServiceDelta(float? serviceScore)
     {
         return serviceScore.HasValue
-            ? (50f - Clamp(serviceScore.Value, 0f, 100f)) * 0.03f
+            ? (50f - Clamp(serviceScore.Value, 0f, 100f)) *
+              0.03f *
+              CustomRiskBalanceFactor
             : 0f;
     }
 

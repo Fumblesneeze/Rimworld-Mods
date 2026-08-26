@@ -91,20 +91,30 @@ At ingestion the mod SHALL begin with the compatible base-game poisoning probabi
 
 | Source | Delta |
 | --- | --- |
-| Culinary quality | `(50 - quality score) * 0.20` |
-| Cold temperature | `+3` |
-| Frozen temperature | `+8` |
-| Dirty cookware used to cook the serving | `+15` |
-| Dirty plate | `+15` |
-| Dirty cutlery | `+10` |
-| Wild-water-washed cookware | `+5` |
-| Wild-water-washed plate | `+4` |
-| Wild-water-washed cutlery | `+3` |
-| Plate service score | `(50 - normalized service score) * 0.03` |
-| Cutlery service score | `(50 - normalized service score) * 0.03` |
-| Microwave reheating | `MicrowaveExtraPoisonChance` for each completed reheat |
+| Culinary quality | `(50 - quality score) * 0.10` |
+| Cold temperature | `+1.5` |
+| Frozen temperature | `+4` |
+| Dirty cookware used to cook the serving | `+7.5` |
+| Dirty plate | `+7.5` |
+| Dirty cutlery | `+5` |
+| Wild-water-washed cookware | `+2.5` |
+| Wild-water-washed plate | `+2` |
+| Wild-water-washed cutlery | `+1.5` |
+| Plate service score | `(50 - normalized service score) * 0.015` |
+| Cutlery service score | `(50 - normalized service score) * 0.015` |
+| Microwave reheating | `0.5 * MicrowaveExtraPoisonChance` for each completed reheat |
 
-The normalized plate or cutlery service score SHALL be `clamp(0.75 * craftsmanship score + 0.25 * material-cleanliness score, 0, 100)`, using the kitchenware system's normalized values; an absent item contributes no service-score delta. Cold, Frozen, and Microwave rows SHALL be included only while Immersive Chefs owns temperature and SHALL contribute nothing when Thermodynamics is active. The sum of custom deltas SHALL be multiplied by `FoodPoisoningEffectScale`, the final probability SHALL be clamped from zero through `MaximumCustomPoisonChance`, and the mod MUST NOT lower a compatible base probability that already exceeds that configured cap. Dirty cookware contamination SHALL remain on the serving record even after the cookware itself is dropped. A pawn eating a serving involving any dirty cookware, plate, or cutlery SHALL additionally receive one non-stacking `Ate with dirty kitchenware` thought at mood `-6` for one in-game day.
+The normalized plate or cutlery service score SHALL be `clamp(0.75 * craftsmanship score + 0.25 * material-cleanliness score, 0, 100)`, using the kitchenware system's normalized values; an absent item contributes no service-score delta. These effective deltas SHALL be exactly one half of the preceding released balance across every Immersive Chefs food-poisoning contributor, including favorable negative service or quality deltas and the reported contribution used for cause attribution. The compatible base-game or upstream-mod probability SHALL NOT be halved. Cold, Frozen, and Microwave rows SHALL be included only while Immersive Chefs owns temperature and SHALL contribute nothing when Thermodynamics is active. The sum of custom deltas SHALL be multiplied by `FoodPoisoningEffectScale`, the final probability SHALL be clamped from zero through `MaximumCustomPoisonChance`, and the mod MUST NOT lower a compatible base probability that already exceeds that configured cap. The configured cap remains a player override rather than a risk contributor and SHALL NOT itself be halved. Dirty cookware contamination SHALL remain on the serving record even after the cookware itself is dropped. A pawn eating a serving involving any dirty cookware, plate, or cutlery SHALL additionally receive one non-stacking `Ate with dirty kitchenware` thought at mood `-6` for one in-game day.
+
+#### Scenario: Every custom contributor uses the lower balance once
+- **WHEN** otherwise identical ingestion calculations isolate culinary quality, Cold, Frozen, each dirty-ware flag, each wild-water flag, plate service, cutlery service, and microwave reheating one at a time at effect scale `1`
+- **THEN** each Immersive Chefs percentage-point delta and its attribution magnitude is exactly one half of the preceding released value
+- **THEN** combining contributors sums those already-halved deltas once without applying a second reduction
+
+#### Scenario: Compatible base risk is preserved
+- **WHEN** an ingested serving already carries a base-game or upstream-mod food-poisoning probability
+- **THEN** Immersive Chefs adds its halved custom adjustment without reducing that compatible base probability merely because of the balance change
+- **THEN** the existing configured maximum remains the final custom-risk safety cap
 
 The meal's ordinary inspect text MUST NOT reveal whether the serving is food-poisoned or explicitly state that it is not food-poisoned, even when developer mode is enabled; discovering latent food poisoning SHALL remain a consequence of ingestion. When ingestion actually causes food poisoning, Immersive Chefs SHALL attribute the resulting notification/health cause to the single largest positive contributor present in the final calculation. Dirty cookware, dirty plate, dirty cutlery, unsafe wild-water washing, cold/frozen temperature, low culinary quality, microwave reheating, and the compatible vanilla base source SHALL be eligible contributors. Ties SHALL use a deterministic priority matching the risk table's physical severity. The cause text SHALL use a readable label such as `dirty cookware`, `dirty plate`, or `frozen meal`, never `unknown` when the mod supplied a positive risk contributor. This food-poisoning attribution MUST NOT expose latent food-poison state before ingestion or change the actual probability, and is independent from material-specific vanilla toxic buildup owned by the material-kitchenware capability.
 
@@ -112,12 +122,12 @@ Wild-water provenance SHALL be evaluated independently from dirty state, SHALL b
 
 #### Scenario: Dirty full place setting is dramatically riskier
 - **WHEN** a pawn eats a serving cooked with dirty cookware from a dirty plate using dirty cutlery at default settings
-- **THEN** the custom risk includes `+40` percentage points from dirty-state sources before other deltas and the configured cap
+- **THEN** the custom risk includes `+20` percentage points from dirty-state sources before other deltas and the configured cap
 - **THEN** the pawn receives one dirty-kitchenware thought rather than one thought per dirty item
 
 #### Scenario: High quality can reduce custom risk
 - **WHEN** a pawn eats a score-`80` serving that is warm, clean, and not reheated
-- **THEN** culinary quality contributes `-6` percentage points before scaling and clamping
+- **THEN** culinary quality contributes `-3` percentage points before scaling and clamping
 
 #### Scenario: Configured risk cap is enforced
 - **WHEN** the scaled custom deltas would raise a base poisoning probability below the configured cap to more than `MaximumCustomPoisonChance`
@@ -125,7 +135,7 @@ Wild-water provenance SHALL be evaluated independently from dirty state, SHALL b
 
 #### Scenario: Wild-water place setting adds bounded risk
 - **WHEN** a pawn eats a warm, otherwise clean serving cooked without dirty cookware from a wild-water-washed plate using wild-water-washed cutlery
-- **THEN** the custom risk includes `+7` percentage points from wash provenance before scaling and the configured cap
+- **THEN** the custom risk includes `+3.5` percentage points from wash provenance before scaling and the configured cap
 
 #### Scenario: Inspect a poisoned serving before eating
 - **WHEN** a covered meal's vanilla poison component has already selected it as poisoned and the player inspects it, including in developer mode
@@ -233,7 +243,7 @@ The exclusion SHALL be package-presence based and SHALL happen before Def and Ha
 - **THEN** Immersive Chefs adds no microwave step or thermal toil and does not compete with whichever delivery/heating behavior those two upstream mods resolve
 
 ### Requirement: Meal-state settings are bounded and apply safely
-The mod SHALL expose `CulinaryQualityEnabled` (default `On`), `QualityMoodScale` (default `1.0`, range `0.0`–`2.0`), `FoodPoisoningEffectScale` (default `1.0`, range `0.0`–`3.0`), `MaximumCustomPoisonChance` (default `50%`, range `5%`–`100%`), `MealTemperatureEnabled` (default `On`), `ThermalHalfLifeHours` (default `2.0`, range `0.25`–`12.0`), serialized `AutoMicrowaveBelow` presented as `Auto-reheat below` (default `10°C`, range `-10°C`–`30°C`, effective upper bound `15°C`), `MicrowaveQualityLoss` used as the common base loss (default `5`, range `0`–`20`), and `MicrowaveExtraPoisonChance` (default `0.5` percentage points, range `0`–`5`). Disabling culinary quality SHALL retain serialized scores but suppress the custom quality gauge, mood, and poisoning delta. Disabling meal temperature SHALL suppress thermal progression, temperature thoughts and risk, and automatic reheating. Scalar changes SHALL apply immediately to future calculations and heating cycles without rewriting stored records. When Thermodynamics - Hot Meals is active, the Immersive Chefs temperature and reheating controls SHALL be disabled or replaced by one informational ownership notice; their persisted values SHALL remain untouched and have no runtime effect.
+The mod SHALL expose `CulinaryQualityEnabled` (default `On`), `QualityMoodScale` (default `1.0`, range `0.0`–`2.0`), `FoodPoisoningEffectScale` (default `1.0`, range `0.0`–`3.0`), `MaximumCustomPoisonChance` (default `50%`, range `5%`–`100%`), `MealTemperatureEnabled` (default `On`), `ThermalHalfLifeHours` (default `2.0`, range `0.25`–`12.0`), serialized `AutoMicrowaveBelow` presented as `Auto-reheat below` (default `10°C`, range `-10°C`–`30°C`, effective upper bound `15°C`), `MicrowaveQualityLoss` used as the common base loss (default `5`, range `0`–`20`), and the effective microwave food-poisoning increment (default `0.25` percentage points, range `0`–`2.5`) backed by the existing `MicrowaveExtraPoisonChance` serialized compatibility value. Disabling culinary quality SHALL retain serialized scores but suppress the custom quality gauge, mood, and poisoning delta. Disabling meal temperature SHALL suppress thermal progression, temperature thoughts and risk, and automatic reheating. Scalar changes SHALL apply immediately to future calculations and heating cycles without rewriting stored records. When Thermodynamics - Hot Meals is active, the Immersive Chefs temperature and reheating controls SHALL be disabled or replaced by one informational ownership notice; their persisted values SHALL remain untouched and have no runtime effect.
 
 #### Scenario: Culinary quality is disabled
 - **WHEN** `CulinaryQualityEnabled` is changed to `Off`

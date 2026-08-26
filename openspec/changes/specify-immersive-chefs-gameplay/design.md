@@ -159,7 +159,7 @@ Dirty ware remains ordinarily haulable and is not automatically forbidden. Playe
 | Thermal half-life hours | 2 | 0.25–12 | Live |
 | Auto-reheat below | 10 °C | -10–30 °C; effective upper bound 15 °C | Live |
 | Microwave quality loss | 5 | 0–20 | Live |
-| Microwave extra poison chance | 0.5 pp | 0–5 pp | Live |
+| Effective microwave extra poison chance | 0.25 pp | 0–2.5 pp | Live; the existing serialized value remains backward-compatible |
 | Colony dining standards | On | On / Off | Live |
 | Royalty dining standards | On | On / Off | Live |
 | Each optional integration | Auto | Auto / Off | Restart |
@@ -177,6 +177,8 @@ Kitchenware recipes have no Immersive Chefs research prerequisite. The actual va
 The complete pot/pan/lid abstraction is always player-facing `cookware set`; `tableware` means plates plus cutlery, while `kitchenware` is only the umbrella catalog/category. Ingredient requirements are rendered from product/tier semantics rather than the implementation filter summary, so internal categories such as `Root` never leak into bills.
 
 Recipe costs are comparator decisions rather than isolated numbers. The retained Core 1.6 anchors are a 5-unit material wall and a 30-unit steel combat knife: primitive cookware costs 5 stone plus 1 wood, medieval/modern cookware 6 material plus 1 wood, the non-weapon chef's knife set 6 material, plates 4 material per four, and cutlery 2 per four. The stone path accepts finalized `Stony` Stuff after explicit registration/exclusion precedence so loaded material packs work without Def-name enumeration. Primitive stone cookware is a distinct product Def and sprite because it is a rough carved set, not a gray modern pan.
+
+Food-poisoning balance likewise uses player-recognizable 1.6 anchors instead of treating the old custom table as self-justifying. Core raw plant food and milk each carry a fixed `2%` human chance, Odyssey raw fish uses `1%`, and Biotech raw toxipotato uses `4%`. Against those references, the preceding full dirty setting added `40` percentage points, wild-water plate plus cutlery added `7`, and Frozen added `8`; at a representative compatible `2%` base those became `42%`, `9%`, and `10%`. The revised `22%`, `5.5%`, and `6%` results remain serious warnings rather than routine equivalents of ordinary raw-food risk, while the exact one-half reduction responds to observed playtest frequency. The compatible source probability and difficulty/pawn factors remain upstream-owned.
 
 Trade injection follows product/era intent: neolithic bulk traders carry only primitive/soft wares, outlander bulk traders carry small quantities of ordinary portable wares, and exotic traders very rarely carry self-cleaning glitterworld cookware. All portable wares are sellable; prepared ingredients and installed buildings are not added as ordinary stock. Exact trader Defs and counts are regression-tested so the matrix does not silently grow.
 
