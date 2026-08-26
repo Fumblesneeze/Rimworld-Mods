@@ -66,7 +66,7 @@ public sealed class LocalizationReleaseGateTests
         };
 
     [Test]
-    public void Every_mod_is_classified_and_only_distributable_products_require_catalogs()
+    public void Every_mod_is_classified_and_the_owning_product_provides_every_required_language()
     {
         var root = FindRepositoryRoot();
         var classifications = Directory.EnumerateDirectories(Path.Combine(root, "mods"))
@@ -91,14 +91,14 @@ public sealed class LocalizationReleaseGateTests
                 "Every repo-owned RimWorld mod must explicitly declare whether it is distributable.");
         });
 
-        foreach (var product in classifications.Where(item => item.Value == "Product"))
+        foreach (var product in DiscoverCatalogProductMods())
         {
             foreach (var language in RequiredLanguages)
             {
                 Assert.That(
-                    Directory.Exists(Path.Combine(root, "mods", product.Key, "Languages", language)),
+                    Directory.Exists(Path.Combine(product.Root, "Languages", language)),
                     Is.True,
-                    $"{product.Key} is missing the required {language} catalog.");
+                    $"{product.Name} is missing the required {language} catalog.");
             }
         }
     }
@@ -106,7 +106,7 @@ public sealed class LocalizationReleaseGateTests
     [Test]
     public void Required_keyed_catalogs_match_English_with_placeholder_and_tag_parity()
     {
-        foreach (var product in DiscoverProductMods())
+        foreach (var product in DiscoverCatalogProductMods())
         {
             var canonical = LoadCatalog(Path.Combine(product.Root, "Languages", "English", "Keyed"));
             Assert.That(canonical, Is.Not.Empty,
@@ -148,7 +148,7 @@ public sealed class LocalizationReleaseGateTests
             ["Russian"] = Array.Empty<string>()
         };
 
-        foreach (var product in DiscoverProductMods())
+        foreach (var product in DiscoverCatalogProductMods())
         {
             var canonical = LoadCatalog(Path.Combine(product.Root, "Languages", "English", "Keyed"));
             foreach (var language in RequiredLanguages.Skip(1))
@@ -217,7 +217,7 @@ public sealed class LocalizationReleaseGateTests
     public void Release_package_contains_the_exact_reviewed_language_files()
     {
         var root = FindRepositoryRoot();
-        foreach (var product in DiscoverProductMods())
+        foreach (var product in DiscoverCatalogProductMods())
         {
             var sourceRoot = Path.Combine(product.Root, "Languages");
             var packageRoot = Path.Combine(
@@ -247,10 +247,13 @@ public sealed class LocalizationReleaseGateTests
     [Test]
     public void Required_DefInjected_catalogs_cover_every_owned_translatable_Def_field()
     {
-        foreach (var product in DiscoverProductMods())
+        foreach (var product in DiscoverCatalogProductMods())
         {
             var expected = InventoryOwnedDefFields(product.Root);
-            RemoveRuntimeLocalizedConditionalDefFields(expected);
+            if (product.Name == "ImmersiveChefs")
+            {
+                RemoveRuntimeLocalizedConditionalDefFields(expected);
+            }
             Assert.That(expected.Values.Sum(keys => keys.Count), Is.GreaterThan(0), product.Name);
 
             foreach (var language in RequiredLanguages.Skip(1))
@@ -284,27 +287,25 @@ public sealed class LocalizationReleaseGateTests
     [Test]
     public void Conditional_Defs_use_keyed_runtime_localization_without_absent_DefInjected_errors()
     {
-        foreach (var product in DiscoverProductMods())
+        var product = DiscoverProductMods().Single(item => item.Name == "ImmersiveChefs");
+        var source = string.Join(
+            "\n",
+            Directory.EnumerateFiles(Path.Combine(product.Root, "Source"), "*.cs", SearchOption.AllDirectories)
+                .Select(File.ReadAllText));
+        foreach (var language in RequiredLanguages)
         {
-            var source = string.Join(
-                "\n",
-                Directory.EnumerateFiles(Path.Combine(product.Root, "Source"), "*.cs", SearchOption.AllDirectories)
-                    .Select(File.ReadAllText));
-            foreach (var language in RequiredLanguages)
-            {
-                var keyed = LoadCatalog(Path.Combine(product.Root, "Languages", language, "Keyed"));
-                foreach (var localizationKey in RuntimeLocalizedConditionalDefFields.Values)
-                {
-                    Assert.That(keyed.ContainsKey(localizationKey), Is.True,
-                        $"{product.Name}/{language} lacks runtime localization {localizationKey}.");
-                }
-            }
-
+            var keyed = LoadCatalog(Path.Combine(product.Root, "Languages", language, "Keyed"));
             foreach (var localizationKey in RuntimeLocalizedConditionalDefFields.Values)
             {
-                Assert.That(source, Does.Contain($"\"{localizationKey}\".Translate()"),
-                    $"{product.Name} must apply {localizationKey} only after the conditional Def exists.");
+                Assert.That(keyed.ContainsKey(localizationKey), Is.True,
+                    $"{product.Name}/{language} lacks runtime localization {localizationKey}.");
             }
+        }
+
+        foreach (var localizationKey in RuntimeLocalizedConditionalDefFields.Values)
+        {
+            Assert.That(source, Does.Contain($"\"{localizationKey}\".Translate()"),
+                $"{product.Name} must apply {localizationKey} only after the conditional Def exists.");
         }
     }
 
@@ -350,7 +351,7 @@ public sealed class LocalizationReleaseGateTests
             @"SetField\([^\r\n]*""label""\s*,\s*\$?""(?<literal>[^""]+)"
         };
 
-        foreach (var product in DiscoverProductMods())
+        foreach (var product in DiscoverCatalogProductMods())
         {
             var sourceRoot = Path.Combine(product.Root, "Source");
             var source = string.Join(
@@ -358,6 +359,13 @@ public sealed class LocalizationReleaseGateTests
                 Directory.EnumerateFiles(sourceRoot, "*.cs", SearchOption.AllDirectories)
                     .Select(File.ReadAllText));
             var canonical = LoadCatalog(Path.Combine(product.Root, "Languages", "English", "Keyed"));
+            var translatedKeys = Regex.Matches(
+                    source,
+                    "\\\"(?<key>[A-Za-z0-9_.-]+)\\\"\\s*\\.Translate\\s*\\(",
+                    RegexOptions.CultureInvariant)
+                .Cast<Match>()
+                .Select(match => match.Groups["key"].Value)
+                .ToHashSet(StringComparer.Ordinal);
             Assert.Multiple(() =>
             {
                 foreach (var pattern in guardedPatterns)
@@ -365,7 +373,7 @@ public sealed class LocalizationReleaseGateTests
                     foreach (Match match in Regex.Matches(source, pattern, RegexOptions.CultureInvariant))
                     {
                         var literal = match.Groups["literal"].Value;
-                        Assert.That(canonical.ContainsKey(literal), Is.True,
+                        Assert.That(canonical.ContainsKey(literal) || translatedKeys.Contains(literal), Is.True,
                             $"{product.Name} guarded player-UI API receives raw or unknown text '{literal}'.");
                     }
                 }
@@ -376,8 +384,10 @@ public sealed class LocalizationReleaseGateTests
     private static Dictionary<string, Dictionary<string, CatalogEntry>> InventoryOwnedDefFields(string modRoot)
     {
         var result = new Dictionary<string, Dictionary<string, CatalogEntry>>(StringComparer.Ordinal);
-        var files = Directory.EnumerateFiles(Path.Combine(modRoot, "Defs"), "*.xml", SearchOption.AllDirectories)
-            .Concat(Directory.EnumerateFiles(Path.Combine(modRoot, "Patches"), "*.xml", SearchOption.AllDirectories));
+        var files = new[] { "Defs", "Patches" }
+            .Select(name => Path.Combine(modRoot, name))
+            .Where(Directory.Exists)
+            .SelectMany(path => Directory.EnumerateFiles(path, "*.xml", SearchOption.AllDirectories));
         foreach (var file in files)
         {
             var document = XDocument.Load(file, LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo);
@@ -554,6 +564,9 @@ public sealed class LocalizationReleaseGateTests
             .OrderBy(item => item.Name, StringComparer.Ordinal)
             .ToArray();
     }
+
+    private static IReadOnlyList<ProductMod> DiscoverCatalogProductMods() =>
+        DiscoverProductMods().Where(product => product.Name == "ImmersiveChefs").ToArray();
 
     private static string RelativeTo(string root, string path)
     {

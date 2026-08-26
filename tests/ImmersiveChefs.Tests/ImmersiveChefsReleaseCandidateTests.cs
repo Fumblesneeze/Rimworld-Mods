@@ -44,8 +44,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["previousChangeNote"], Is.EqualTo("Dirty kitchenware is now much easier to spot. Dubs Bad Hygiene sinks, prep stations, and dishwashing now use real water; meals spawned without plates no longer interrupt eating or patient feeding; and Ceramics (Continued) porcelain can be crafted into plates."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo(string.Empty),
-                "A successful Workshop update must clear its pending note while retaining the verified remote note as previousChangeNote.");
+                Is.EqualTo("Dishwashers can now accept new loads while already washing, and Common Sense cooks and diners prefer available dishwashers. Meal reheating works reliably from inventory and at stoves, campfires, heaters, and the fallback microwave; microwave artwork and facing are corrected. Several cooking, feeding, and ware-placement bugs were fixed, and Immersive Chefs' added food-poisoning chances were halved."),
+                "The pending Workshop update must carry its exact reviewed player-facing change note.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Select(value => value.ToString()),
                 Is.EqualTo(new[] { "2009463077", "2574315206" }));
