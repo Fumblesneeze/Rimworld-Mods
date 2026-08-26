@@ -86,6 +86,10 @@ RimWorld rotates the object in map space; it does not rotate the player's camera
 
 - the visible apron, legs, or underframe stays on the **screen-bottom** edge in north, east, south,
   and west PNGs;
+- `Graphic_Multi` suffixes name `Thing.Rotation`, not the direction of `InteractionCell`, a door,
+  controls, or the pawn. Rotate the Def's local `interactionCellOffset` explicitly before assigning
+  faces. With local south `(0,0,-1)`, `_north` interacts from world south, `_south` from north,
+  `_east` from west, and `_west` from east;
 - the tabletop changes from horizontal to vertical, but its apparent depth and the underframe depth
   remain consistent;
 - equipment rotates in world space. If north's canonical long-axis order is `A|B|C`, east keeps

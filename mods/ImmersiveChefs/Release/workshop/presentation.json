@@ -68,7 +68,7 @@
       ],
       "art": [
         { "source": "Things/Item/Food/PreparedIngredients/PreparedIngredients.png", "x": 580, "y": 110, "width": 225 },
-        { "source": "Things/Building/Appliance/Microwave_south.png", "x": 790, "y": 60, "width": 320 },
+        { "source": "Things/Building/Appliance/Microwave_north.png", "x": 790, "y": 60, "width": 320 },
         { "source": "Things/Item/Kitchenware/Plate/Plate.png", "stuffColor": "#696969", "x": 600, "y": 380, "width": 190 },
         { "source": "Things/Item/Kitchenware/Cutlery/Cutlery.png", "stuffColor": "#696969", "x": 790, "y": 390, "width": 175 },
         { "source": "Things/Item/Kitchenware/Cookware/Cookware_Dirty.png", "stuffColor": "#696969", "x": 945, "y": 380, "width": 175 }

@@ -11,7 +11,7 @@ This is the retained source contract for the fallback microwave's two cosmetic `
 - Read-only runtime comparators:
   - `Vanilla Furniture Expanded - Props and Decor`: `Microwave_south.png`, `Microwave_north.png`, and `Microwave_east.png` on 188x188 canvases. Their nontrivial-alpha bounds are approximately 138x152, 139x145, and 139x153.
   - `[D] Thermodynamics - Hot Meals`: `DMicrowave_south.png`, `DMicrowave_north.png`, and `DMicrowave_east.png`, using the same structural convention.
-- Both comparator families establish RimWorld's actual axis-aligned `Graphic_Multi` convention: South is the full door/front, North is the rear, East is a vertical side profile with the narrow front terminal at screen-right, and West is a vertical side profile with the narrow front terminal at screen-left. East and West are not diagonal or isometric diamonds.
+- Both comparator families establish the axis-aligned source-art projections: their raw South file is the full door/front, North is the rear, East has the narrow front terminal at screen-right, and West has it at screen-left. Those source labels are not the Immersive Chefs runtime assignment. `Graphic_Multi` suffixes follow `Thing.Rotation`; with this Def's local-south interaction/front offset, the front source art must be reassigned to `_north`, rear to `_south`, source West/left-terminal to `_east`, and source East/right-terminal to `_west`.
 - The front view needs a normal microwave cavity and separate controls. A thin letterbox door and shallow deck silhouette read as a VHS/VCR and are rejected.
 
 The initial square/front-elevation family, the subsequent diagonal three-quarter family, and the ultra-thin low-body refinement are rejected intermediates. None is a reusable prompt or source asset.
@@ -19,6 +19,8 @@ The initial square/front-elevation family, the subsequent diagonal three-quarter
 ## Exact successful initial-generation prompt
 
 The following prompt was submitted once per identity with the three measured read-only comparator images supplied as references:
+
+The prompt below is preserved verbatim as generation provenance. Its North/East/South/West words label the four source-sheet cards as they were requested; they were not a verified RimWorld runtime-filename contract. After the later engine-contract correction, those independently authored faces were reassigned to the opposite `Graphic_Multi` suffixes without rotating or regenerating their pixels.
 
 ```text
 Generate a NEW original 2x2 production sprite sheet for a RimWorld countertop microwave. Use the three referenced read-only microwave sprites ONLY to match their fixed map-camera projection and cardinal axes; do not copy their pixels, exact shapes, or palette. The output has four equal square cards, no labels, gutters, dividers, frames, text, arrows, or shadows. Background is one flat chroma green color. Exactly one microwave per card; no counter, table, cabinet, floor, wall, cord, food, person, or detached object.
@@ -86,11 +88,11 @@ Each corrected view is centered on a transparent 512x512 canvas. A one-source-pi
 
 Final exterior alpha bounds are:
 
-- base: North `32,82,448,348`; East `54,32,404,448`; South `32,79,448,353`; West `54,33,404,446`;
-- variant: North `32,82,448,348`; East `54,32,404,448`; South `32,79,448,353`; West `54,33,404,446`.
+- base: North `32,79,448,353`; East `54,33,404,446`; South `32,82,448,348`; West `54,32,404,448`;
+- variant: North `32,79,448,353`; East `54,33,404,446`; South `32,82,448,348`; West `54,32,404,448`.
 
 Exact per-frame input hashes, packaged hashes, alpha bounds, top/side/casing/feature probes, projection-pair identities, and all three proxy contour rings are retained in `DirectionalSpriteApprovals.xml` and `SpriteOutlineApprovals.xml`. The selected family contact is retained at `artifacts/VisualAssets/MicrowavePerspective-20260826/outlined-v3/contact-dark.png`, and the read-only structural comparison against Thermodynamics at `artifacts/VisualAssets/MicrowavePerspective-20260826/outlined-v3/reference-contact-light.png`.
 
 ## Rejection criteria
 
-Reject the family if South is not the full door/front; North is not a blank rear apart from vents; East does not terminate at the front on screen-right; West does not terminate at the front on screen-left; any long silhouette edge becomes a diagonal isometric diamond; the top and casing are not visibly separate planes; the casing/top ratio leaves the appliance either cube-like or tray-flat; the South cavity ratio leaves the microwave looking like a VHS/VCR; the outline or internal edge stair-steps at map scale; chroma remains; the support surface is swallowed at `drawSize (1.25,1.35)`; or the door, controls, vents, and cardinal orientation disappear at the 64x64 proxy.
+Reject the family if North rotation is not the full door/front beside its south interaction cell; South rotation is not a blank rear apart from vents; East does not terminate at the front on screen-left; West does not terminate at the front on screen-right; any long silhouette edge becomes a diagonal isometric diamond; the top and casing are not visibly separate planes; the casing/top ratio leaves the appliance either cube-like or tray-flat; the North cavity ratio leaves the microwave looking like a VHS/VCR; the outline or internal edge stair-steps at map scale; chroma remains; the support surface is swallowed at `drawSize (1.25,1.35)`; or the door, controls, vents, and cardinal orientation disappear at the 64x64 proxy.

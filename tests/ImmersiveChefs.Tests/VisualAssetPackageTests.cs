@@ -1158,13 +1158,13 @@ public sealed class VisualAssetPackageTests
             Assert.Multiple(() =>
             {
                 Assert.That((string?)approvedFrames[family + "_north.png"].Attribute("visibleFace"),
-                    Is.EqualTo("rear-bottom-full"), family + " north must show the blank rear under RimWorld's fixed camera.");
+                    Is.EqualTo("door-bottom-full"), family + " north must show the local-south front beside its south interaction cell.");
                 Assert.That((string?)approvedFrames[family + "_south.png"].Attribute("visibleFace"),
-                    Is.EqualTo("door-bottom-full"), family + " south must show the local-south microwave front.");
+                    Is.EqualTo("rear-bottom-full"), family + " south must show the blank rear while its interaction cell is north.");
                 Assert.That((string?)approvedFrames[family + "_east.png"].Attribute("visibleFace"),
-                    Is.EqualTo("door-edge-right"), family + " east must show the front terminal edge at screen right.");
+                    Is.EqualTo("door-edge-left"), family + " east must show the local-south front at world west/screen left.");
                 Assert.That((string?)approvedFrames[family + "_west.png"].Attribute("visibleFace"),
-                    Is.EqualTo("door-edge-left"), family + " west must show the front terminal edge at screen left.");
+                    Is.EqualTo("door-edge-right"), family + " west must show the local-south front at world east/screen right.");
             });
         }
     }
@@ -1270,27 +1270,27 @@ public sealed class VisualAssetPackageTests
                         family + "_" + direction + " measured axis-aligned side plane");
                 }
 
-                if (direction == "north")
+                if (direction == "south")
                 {
                     var rearFeature = ParseRectangle((string)approval.Attribute("rearFeature")!);
                     Assert.That(
                         DarkPixelFraction(bitmap, rearFeature),
                         Is.LessThan(0.18),
-                        family + "_north must retain a blank rear field rather than painting the door onto it.");
+                        family + "_south must retain a blank rear field rather than painting the door onto it.");
                     continue;
                 }
 
                 var frontFeature = ParseRectangle((string)approval.Attribute("frontFeature")!);
                 Assert.That(
                     DarkPixelFraction(bitmap, frontFeature),
-                    Is.GreaterThan(direction == "south" ? 0.45 : 0.08),
+                    Is.GreaterThan(direction == "north" ? 0.45 : 0.08),
                     family + "_" + direction + " must retain its readable door/control landmark on the approved front face.");
-                if (direction == "south")
+                if (direction == "north")
                 {
                     Assert.That(
                         frontFeature.Width / (double)frontFeature.Height,
                         Is.InRange(2.0, 3.0),
-                        family + "_south must retain a microwave-shaped cavity instead of a VHS/VCR letterbox slot.");
+                        family + "_north must retain a microwave-shaped cavity instead of a VHS/VCR letterbox slot.");
                 }
             }
         }

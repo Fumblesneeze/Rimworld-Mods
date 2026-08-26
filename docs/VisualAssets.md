@@ -254,7 +254,8 @@ for all four cards, required the apron/underframe at screen bottom in every card
 forbade manufacturing vertical or opposite views by pixel rotation. North places the worker below,
 East left, South above, and West right. The countertop microwave was separately reopened and
 regenerated on 2026-08-23 after its earlier square cardinal art proved too flat and lacked a measured
-top/casing projection. The replacement preserves the already-correct local-south front mapping. Its
+top/casing projection. The replacement preserves the published local-south interaction offset; the later
+task 26 correction remaps the independently authored faces to the correct runtime rotation suffixes. Its
 retained numeric plane contract and exact prompts are in `docs/MicrowaveSpriteGeneration.md`.
 
 The raw sheets and normalization pipeline remain ignored under
@@ -400,10 +401,11 @@ family with round controls is the base; the warm ivory family with square contro
 `_Variant01`. Both are fixed-color 512×512 `Graphic_Multi`/`Cutout` families with four independently
 illustrated fixed-camera views.
 
-The frames now follow the convention measured from two installed runtime comparator families:
-South is the full door/front, North is the rear, East is an axis-aligned vertical side with its narrow
-front terminal on screen-right, and West is an axis-aligned vertical side with its narrow front
-terminal on screen-left. The selected outlined bounds span 322–454 pixels wide and 338–448 pixels
+The frames use the projections measured from two installed runtime comparator families but assign
+them to Immersive Chefs' actual rotation contract. `Graphic_Multi` suffixes name `Thing.Rotation`,
+while the local-south interaction/front offset points to the opposite world side: North rotation is
+the full door/front beside its south interaction cell, South is the rear, East has its narrow front
+terminal on screen-left/world west, and West has it on screen-right/world east. The selected outlined bounds span 322–454 pixels wide and 338–448 pixels
 high, retain at least 29 transparent source pixels at every edge, and satisfy the building contour's
 three final-scale dark rings. Their substantial casing, distinct top/casing seam, normal microwave
 cavity ratio, controls, and vents remain legible at the 64×64 proxy. They contain no counter,
@@ -412,14 +414,13 @@ and numeric plane contracts are retained in `docs/MicrowaveSpriteGeneration.md`;
 proportions, chroma normalization, source/map-scale contacts, and outline candidates remain ignored
 under `artifacts/VisualAssets/MicrowavePerspective-20260823`.
 
-Final reviewed-build live acceptance is
+The earlier reviewed-build live acceptance is retained at
 `artifacts/EndToEndRuns/Grouped/20260823T195055338Z`. In isolated PID 67420, the exact ordered
 Core/Harmony/Immersive Chefs/Gateway group used the native Production designator to place North,
 East, South, and West microwaves on real steel tables. The acting agent personally inspected the
 wide rotation rows in screenshots 2–5 and the unobstructed native after-placement frames 50, 52, 54,
-and 56. North visibly shows the blank vented rear, East and West remain axis-aligned opposing side
-profiles with their front terminals at opposite screen ends, and South visibly shows a normal dark
-microwave cavity and separate controls. Every orientation retains the support table, a coherent
+and 56. That run established projection and legibility but is superseded for interaction-facing
+semantics because it accepted the suffix/front mapping backwards. Every orientation retained the support table, a coherent
 fixed-camera top/casing projection, and a continuous readable contour at the closest practical map
 zoom.
 

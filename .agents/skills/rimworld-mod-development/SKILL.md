@@ -74,6 +74,12 @@ Extend existing projects; do not create a new assembly unless the owning design 
   keep their exact declared order, and append the Dev Gateway last only in gateway-assisted runs.
 - When an owning mod uses XML Extensions, order `imranfish.xmlextensions` after Core and before that mod.
 - Use the package ID as the Harmony owner ID. Do not bundle Harmony or optional-mod assemblies.
+- Treat `Graphic_Multi` suffixes as `Thing.Rotation`, never as the direction of an interaction cell,
+  door, controls, or pawn. Resolve `interactionCellOffset` through each rotation before assigning
+  directional art. For the common local-south offset `(0,0,-1)`, `_north` interacts from world south,
+  `_south` from north, `_east` from west, and `_west` from east; a worker-facing appliance therefore
+  puts its front in the opposite cardinal file from a filename-by-front convention. Pin this mapping
+  in tests and inspect the actual interaction cell beside every rotated live object.
 
 ## Prefer declarative XML
 

@@ -397,11 +397,11 @@ public sealed class WorkshopDescriptionTests
             Assert.That(compatibilityCard.art.Select(art => art.source),
                 Is.EqualTo(new[] { "workshop:illustrations/compatibility-loop.png" }));
             Assert.That(mealsCard.art.Select(art => art.source),
-                Does.Contain("Things/Building/Appliance/Microwave_south.png"),
-                "The Workshop meal card must use RimWorld's reviewed South/front microwave frame.");
+                Does.Contain("Things/Building/Appliance/Microwave_north.png"),
+                "The Workshop meal card must use the reviewed North-rotation frame whose front faces its south interaction cell.");
             Assert.That(mealsCard.art.Select(art => art.source),
-                Does.Not.Contain("Things/Building/Appliance/Microwave_north.png"),
-                "The Workshop meal card must not present the North/rear microwave frame as its front.");
+                Does.Not.Contain("Things/Building/Appliance/Microwave_south.png"),
+                "The Workshop meal card must not present the South-rotation rear frame as its front.");
         });
     }
 
