@@ -97,7 +97,8 @@ public sealed class RunLeaseManager
         IReadOnlyList<string> packageIds,
         IReadOnlyList<string> projectPaths,
         int holdSeconds,
-        string? reservedRunId = null)
+        string? reservedRunId = null,
+        bool enableAudio = false)
     {
         RefuseRunningRimWorld();
         var runId = reservedRunId ?? ReserveRunId();
@@ -111,7 +112,8 @@ public sealed class RunLeaseManager
             runRoot,
             packageIds,
             projectPaths,
-            holdSeconds);
+            holdSeconds,
+            enableAudio);
         var stdoutPath = Path.Combine(runRoot, "launcher.stdout.log");
         var stderrPath = Path.Combine(runRoot, "launcher.stderr.log");
         var info = new ProcessStartInfo

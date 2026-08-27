@@ -32,6 +32,12 @@ The launcher requires PowerShell 7 (`pwsh`) and the SDK pinned by `global.json`.
 
 Operations never expose arbitrary shell execution. Allowlisted read-only Gateway diagnostics and explicit semantic/raw mutations are deliberately different operations. A direct mutation can prepare or diagnose a scene, but cannot serve as gameplay acceptance.
 
+`game_run_start` and `e2e_run_start` mute RimWorld through the isolated process's own master-volume
+preference by default. Both expose optional `enableAudio`; set it to `true` only when implementing or
+verifying sounds. The opt-in restores master volume to `1` while keeping music at `0`, and dry/final
+evidence records the requested mode and effective values without changing the user's normal
+`Prefs.xml`.
+
 For a new distributable mod, start with [NewModChecklist.md](NewModChecklist.md). It defines the
 standard `mods/<ModName>` layout, `fumblesneeze.<mod-designator>` identity, Zlepper project/About
 metadata, OpenSpec ownership, test-environment routing, release profile, and the canonical

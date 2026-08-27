@@ -139,6 +139,11 @@ Use E2E tests for repeatable workflows that span multiple Unity frames: ordinary
 .\scripts\Invoke-RimWorldEndToEndTests.ps1 -TestId immersive-chefs.countertop-microwave-support-loss -Output json
 ```
 
+These isolated Gateway-backed launches set RimWorld `volumeMaster=0` and `volumeMusic=0` by default.
+For a workflow whose subject is sound, pass `-EnableAudio`; the grouped runner forwards it to every
+selected child, records `AudioEnabled=true`, sets master volume to `1`, and keeps music muted. MCP
+callers use the equivalent `enableAudio:true` argument on `game_run_start` or `e2e_run_start`.
+
 Every attributed test declares the complete ordered active package sequence excluding Gateway; the host appends `fumblesneeze.rimworlddevgateway` last and starts one fresh process per exact group. During active development, select only the current stable test IDs with `-TestId`; the Gateway validates and executes exactly those tests inside their required group. Run complete groups or the complete matrix only for deliberate regression maintenance and release preparation. Same-group tests otherwise run sequentially on one disposable quicktest map. Reset removes every destroyable Thing/Pawn plus jobs, zones, designations, selections, interactions, and test windows, then clears and verifies live messages, visible and delayed letters, and active alert-readout entries; permanent non-destroyable map features such as steam geysers remain environment. An unverifiable cleanup taints the process and skips later tests. Host deployment happens before atomic marker-owned staging, and the exact lease is cleaned in `finally`.
 
 `SaveLoadActionStep` is the typed E2E persistence boundary. It uses a safe leaf in the isolated save folder, refuses an existing name, verifies a nonempty native save, and waits for a replacement `Current.Game` with player control and a current map. Tests must reacquire Things by stable `ThingID`; references from the pre-load game are disposed state. Register deferred cleanup for the exact save before invoking the action, then retain before/after screenshots and checkpoints. A component-only Scribe round trip is useful supporting integration evidence, but it is not a substitute for observing the same gameplay object across native player-save behavior.

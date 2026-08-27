@@ -4,7 +4,8 @@ Proves the packaged RimWorld Dev Gateway inside an isolated RimWorld process.
 
 .DESCRIPTION
 Builds and deploys only the developer gateway, writes an isolated Core-plus-gateway ModsConfig,
-forces windowed 1600x900 background rendering with music muted in isolated preferences, launches one exact RimWorld PID minimized by default,
+forces windowed 1600x900 background rendering with RimWorld master audio and music muted in
+isolated preferences, and launches one exact RimWorld PID minimized by default,
 discovers its session manifest, exercises authenticated EmbedIO
 status/UI/log routes and the in-process raw C# REPL, rejects an unauthenticated call, and verifies
 that the normal ModsConfig hash did not change. With -Quicktest it waits for a playable map without
@@ -18,6 +19,7 @@ their durable terminal result. -SkipBuildDeploy is intended for the E2E group ru
 deploy product assemblies before publishing test bundles.
 Pass -VisibleWindow only when desktop UI or computer-use interaction is required; the explicit
 gateway-regression scenario selects a normal visible window automatically.
+Pass -EnableAudio only for sound-focused work; it enables master audio while music remains muted.
 Exit codes: 0 success,
 1 verification/runtime failure, 2 for a path or semantic input rejected after parameter binding.
 PowerShell rejects invalid ValidateRange or ValidateSet values before the script runs and reports
@@ -48,6 +50,9 @@ its own nonzero parameter-binding exit (normally 1).
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -VisibleWindow -InteractiveHoldSeconds 900
 
 .EXAMPLE
+.\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -EnableAudio -InteractiveHoldSeconds 900
+
+.EXAMPLE
 .\scripts\Invoke-GatewaySmoke.ps1 -Quicktest -Scenario gateway-regression -TimeoutSeconds 300
 
 .EXAMPLE
@@ -72,6 +77,8 @@ param(
     [switch]$RequireRawClick,
 
     [switch]$VisibleWindow,
+
+    [switch]$EnableAudio,
 
     [string]$ArtifactsPath,
 
@@ -2804,6 +2811,7 @@ function Write-MinimalPrefs {
         [Parameter(Mandatory)][string]$Path,
         [Parameter(Mandatory)][ValidateRange(640, 7680)][int]$RenderWidth,
         [Parameter(Mandatory)][ValidateRange(480, 4320)][int]$RenderHeight,
+        [Parameter(Mandatory)][ValidateSet(0, 1)][int]$MasterVolume,
         [Parameter(Mandatory)][ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')][string]$Language
     )
 
@@ -2814,6 +2822,9 @@ function Write-MinimalPrefs {
     try {
         $writer.WriteStartDocument()
         $writer.WriteStartElement('PrefsData')
+        $writer.WriteElementString(
+            'volumeMaster',
+            $MasterVolume.ToString([Globalization.CultureInfo]::InvariantCulture))
         $writer.WriteElementString('volumeMusic', '0')
         $writer.WriteElementString('runInBackground', 'True')
         $writer.WriteElementString(
@@ -5593,10 +5604,12 @@ $null = New-Item -Path $configDirectory -ItemType Directory -Force
 Write-MinimalModsConfig -Path $modsConfigPath -Version $rimWorldVersion
 $renderWidth = 1600
 $renderHeight = 900
+$masterVolume = if ($EnableAudio) { 1 } else { 0 }
 Write-MinimalPrefs `
     -Path $prefsPath `
     -RenderWidth $renderWidth `
     -RenderHeight $renderHeight `
+    -MasterVolume $masterVolume `
     -Language $Language
 try {
     $prelaunchConfigFiles = @(Copy-GatewayPrelaunchConfig `
@@ -5675,6 +5688,8 @@ if ($DryRun) {
         Prefs = $prefsPath
         PrelaunchConfigFiles = @($prelaunchConfigFiles)
         RunInBackground = $true
+        AudioEnabled = [bool]$EnableAudio
+        MasterVolume = $masterVolume
         MusicVolume = 0
         DeveloperMode = $true
         RenderWidth = $renderWidth
@@ -8055,6 +8070,8 @@ try {
         Prefs = $prefsPath
         PrelaunchConfigFiles = @($prelaunchConfigFiles)
         RunInBackground = $true
+        AudioEnabled = [bool]$EnableAudio
+        MasterVolume = $masterVolume
         MusicVolume = 0
         DeveloperMode = $true
         RenderWidth = $renderWidth

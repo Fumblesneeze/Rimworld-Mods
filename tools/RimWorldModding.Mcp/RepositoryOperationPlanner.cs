@@ -103,7 +103,8 @@ public static class RepositoryOperationPlanner
         string? testId,
         string language,
         int timeoutSeconds,
-        bool dryRun)
+        bool dryRun,
+        bool enableAudio = false)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         if ((groupId is null) == (testId is null))
@@ -131,6 +132,7 @@ public static class RepositoryOperationPlanner
             "-Output", "json"
         };
         if (dryRun) arguments.Add("-DryRun");
+        if (enableAudio) arguments.Add("-EnableAudio");
         return new AdapterCommand(
             "e2e_run",
             "pwsh",
@@ -145,7 +147,8 @@ public static class RepositoryOperationPlanner
         string runRoot,
         IReadOnlyList<string> packageIds,
         IReadOnlyList<string> projectPaths,
-        int holdSeconds)
+        int holdSeconds,
+        bool enableAudio = false)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var artifacts = RepositoryRoot.ContainedPath(root, runRoot);
@@ -184,6 +187,7 @@ public static class RepositoryOperationPlanner
             arguments.Add("-AdditionalModProjectPaths");
             arguments.Add(string.Join(',', projects));
         }
+        if (enableAudio) arguments.Add("-EnableAudio");
         return new AdapterCommand(
             "game_run_start",
             "pwsh",

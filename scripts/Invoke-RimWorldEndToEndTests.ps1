@@ -6,7 +6,8 @@ Runs dynamically loaded RimWorld E2E tests once per exact active-mod group.
 Discovers and builds marked E2E projects through the Gateway host tool, groups tests by their
 complete active package set, deploys repo-owned product mods before staging tests, launches the
 existing isolated Gateway smoke harness once per selected group, and writes aggregate JSON plus
-JUnit. Test stages are marker/lease-owned and are cleaned in a finally block.
+JUnit. Test stages are marker/lease-owned and are cleaned in a finally block. Child processes mute
+RimWorld master audio by default; pass -EnableAudio only for sound-focused tests.
 
 -DryRun builds/discovers test assemblies and prints the deterministic launch plan without changing
 the installed game, staging a bundle, writing run artifacts, or launching RimWorld.
@@ -21,6 +22,9 @@ Exit codes: 0 all selected groups passed, 1 execution/infrastructure failure, 2 
 
 .EXAMPLE
 .\scripts\Invoke-RimWorldEndToEndTests.ps1 -TestId immersive-chefs.countertop-microwave-support-loss -Output table
+
+.EXAMPLE
+.\scripts\Invoke-RimWorldEndToEndTests.ps1 -TestId example.sound-workflow -EnableAudio -Output table
 #>
 [CmdletBinding()]
 param(
@@ -43,6 +47,8 @@ param(
 
     [ValidateRange(30, 600)]
     [int]$TimeoutSeconds = 300,
+
+    [switch]$EnableAudio,
 
     [switch]$DryRun,
 
@@ -440,16 +446,20 @@ foreach ($group in $selectedGroups) {
     if ($null -ne $plannedAdditionalIdsFile) {
         $plannedCommand += @('-AdditionalModIdsFile', $plannedAdditionalIdsFile)
     }
+    $plannedSmokeLaunch = New-RimWorldEndToEndSmokeLaunch `
+        -Arguments $plannedCommand `
+        -EnableAudio:$EnableAudio
 
     $launchPlans.Add([pscustomobject]@{
         GroupId = [string]$group.groupId
         Language = $Language
+        AudioEnabled = [bool]$plannedSmokeLaunch.AudioEnabled
         ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
         Tests = @($group.tests)
         AdditionalModIds = $additionalIds
         AdditionalModIdsFile = $plannedAdditionalIdsFile
         ArtifactsPath = $plannedGroupDirectory
-        Command = $plannedCommand
+        Command = @($plannedSmokeLaunch.Arguments)
     })
 }
 
@@ -457,6 +467,7 @@ if ($DryRun) {
     Write-RunnerResult ([pscustomobject]@{
         Status = 'dry-run'
         AvailablePackageCount = $packageIds.Count
+        AudioEnabled = [bool]$EnableAudio
         Groups = @($launchPlans)
         StageOwners = @($plan.owners)
         MutatedGame = $false
@@ -578,11 +589,14 @@ try {
             $smokeArguments.Add('-AdditionalModIdsFile')
             $smokeArguments.Add($additionalModIdsPath)
         }
+        $smokeLaunch = New-RimWorldEndToEndSmokeLaunch `
+            -Arguments @($smokeArguments) `
+            -EnableAudio:$EnableAudio
 
         try {
             $smoke = Invoke-BoundedProcess `
                 -ExecutablePath 'pwsh' `
-                -Arguments @($smokeArguments) `
+                -Arguments @($smokeLaunch.Arguments) `
                 -TimeoutMilliseconds (($TimeoutSeconds + 180) * 1000) `
                 -Description "RimWorld E2E group '$($group.groupId)'"
             [System.IO.File]::WriteAllText($stdoutPath, $smoke.StandardOutput, [System.Text.UTF8Encoding]::new($false))
@@ -609,6 +623,7 @@ try {
             $groupResults.Add([pscustomobject]@{
                 GroupId = [string]$group.groupId
                 Language = $Language
+                AudioEnabled = [bool]$smokeLaunch.AudioEnabled
                 ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
                 PlannedTests = @($group.tests)
                 Status = if ($groupPassed) { 'passed' } else { 'failed' }
@@ -633,6 +648,7 @@ try {
             $groupResults.Add([pscustomobject]@{
                 GroupId = [string]$group.groupId
                 Language = $Language
+                AudioEnabled = [bool]$smokeLaunch.AudioEnabled
                 ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
                 PlannedTests = @($group.tests)
                 Status = 'failed'
@@ -685,6 +701,7 @@ $aggregate = [pscustomobject]@{
     RunId = $runId
     RunDirectory = $runDirectory
     Language = $Language
+    AudioEnabled = [bool]$EnableAudio
     AvailablePackageCount = $packageIds.Count
     PlannedGroupCount = $selectedGroups.Count
     CompletedGroupCount = $groupResults.Count
@@ -717,6 +734,7 @@ Write-RunnerResult ([pscustomobject]@{
     RunId = $aggregate.RunId
     RunDirectory = $aggregate.RunDirectory
     Language = $aggregate.Language
+    AudioEnabled = $aggregate.AudioEnabled
     PlannedGroupCount = $aggregate.PlannedGroupCount
     CompletedGroupCount = $aggregate.CompletedGroupCount
     StageCleaned = $aggregate.StageCleaned

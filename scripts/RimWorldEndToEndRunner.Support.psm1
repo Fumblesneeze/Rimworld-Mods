@@ -177,8 +177,33 @@ function ConvertTo-RimWorldProductEvidenceJson {
     return ConvertTo-Json -InputObject @($Evidence) -Depth 8 -Compress
 }
 
+function New-RimWorldEndToEndSmokeLaunch {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [string[]]$Arguments,
+
+        [switch]$EnableAudio
+    )
+
+    $projectedArguments = [System.Collections.Generic.List[string]]::new()
+    foreach ($argument in $Arguments) {
+        $projectedArguments.Add($argument)
+    }
+    if ($EnableAudio) {
+        $projectedArguments.Add('-EnableAudio')
+    }
+
+    return [pscustomobject]@{
+        AudioEnabled = [bool]$EnableAudio
+        Arguments = @($projectedArguments)
+    }
+}
+
 Export-ModuleMember -Function `
     ConvertTo-RimWorldXml10Text, `
     Write-RimWorldEndToEndJUnitReport, `
     Get-RimWorldDeployedProductEvidence, `
-    ConvertTo-RimWorldProductEvidenceJson
+    ConvertTo-RimWorldProductEvidenceJson, `
+    New-RimWorldEndToEndSmokeLaunch

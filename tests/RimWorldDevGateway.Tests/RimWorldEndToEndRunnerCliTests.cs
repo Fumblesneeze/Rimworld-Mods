@@ -47,6 +47,45 @@ public sealed class RimWorldEndToEndRunnerCliTests
     }
 
     [Test]
+    public void Smoke_launch_projection_defaults_to_muted_and_forwards_explicit_audio_opt_in()
+    {
+        var temporaryRoot = Path.Combine(
+            Path.GetTempPath(),
+            "RimWorldEndToEndRunnerCliTests",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryRoot);
+        try
+        {
+            var invocation = string.Join(Environment.NewLine, new[]
+            {
+                $"Import-Module {PowerShellLiteral(SupportModulePath())} -Force",
+                "$default = New-RimWorldEndToEndSmokeLaunch -Arguments @('-File', 'smoke.ps1')",
+                "$enabled = New-RimWorldEndToEndSmokeLaunch -Arguments @('-File', 'smoke.ps1') -EnableAudio",
+                "[pscustomobject]@{ " +
+                "Default = [pscustomobject]@{ AudioEnabled = $default.AudioEnabled; EnableAudioArgumentCount = @($default.Arguments | Where-Object { $_ -ceq '-EnableAudio' }).Count }; " +
+                "Enabled = [pscustomobject]@{ AudioEnabled = $enabled.AudioEnabled; EnableAudioArgumentCount = @($enabled.Arguments | Where-Object { $_ -ceq '-EnableAudio' }).Count; Arguments = @($enabled.Arguments) } " +
+                "} | ConvertTo-Json -Depth 4 -Compress"
+            });
+
+            var run = InvokeSource(invocation, temporaryRoot);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(run.ExitCode, Is.EqualTo(0), run.StandardError);
+                Assert.That(run.StandardOutput, Does.Contain("\"AudioEnabled\":false"));
+                Assert.That(run.StandardOutput, Does.Contain("\"AudioEnabled\":true"));
+                Assert.That(run.StandardOutput, Does.Contain("\"EnableAudioArgumentCount\":0"));
+                Assert.That(run.StandardOutput, Does.Contain("\"EnableAudioArgumentCount\":1"));
+                Assert.That(run.StandardOutput, Does.Contain("-EnableAudio"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(temporaryRoot, recursive: true);
+        }
+    }
+
+    [Test]
     public void Unsafe_language_is_rejected_by_parameter_binding_before_game_path_validation()
     {
         var missing = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));

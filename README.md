@@ -78,10 +78,13 @@ dotnet run --project $mcp -- tool call openspec_validate --arguments '{}' -o jso
 
 # Dry-run one exact native E2E workflow without launching RimWorld.
 dotnet run --project $mcp -- tool call e2e_run_start `
-  --arguments '{"testId":"gateway.escape-menu-overlay","language":"English","timeoutSeconds":300,"dryRun":true}' -o json
+  --arguments '{"testId":"gateway.escape-menu-overlay","language":"English","timeoutSeconds":300,"dryRun":true,"enableAudio":false}' -o json
 ```
 
 Call `operation_list` or `tool list` before inventing orchestration. If a repeated workflow is missing, add an owning OpenSpec scenario and a typed MCP/CLI operation instead of adding another public script.
+Automated game and E2E launches mute RimWorld master audio by default. Set `enableAudio:true` only
+for sound-focused implementation or verification; music remains muted and the choice is retained in
+launch evidence.
 
 ## Starting a new mod
 

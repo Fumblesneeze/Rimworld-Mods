@@ -31,6 +31,8 @@ public sealed class GatewaySmokeBackgroundLaunchTests
             Assert.Multiple(() =>
             {
                 Assert.That(result.StandardOutput, Does.Contain("\"RunInBackground\":true"));
+                Assert.That(result.StandardOutput, Does.Contain("\"AudioEnabled\":false"));
+                Assert.That(result.StandardOutput, Does.Contain("\"MasterVolume\":0"));
                 Assert.That(result.StandardOutput, Does.Contain("\"MusicVolume\":0"));
                 Assert.That(result.StandardOutput, Does.Contain("\"RenderWidth\":1600"));
                 Assert.That(result.StandardOutput, Does.Contain("\"RenderHeight\":900"));
@@ -50,6 +52,9 @@ public sealed class GatewaySmokeBackgroundLaunchTests
                 preferences.SelectSingleNode("/PrefsData/runInBackground")?.InnerText,
                 Is.EqualTo("True"));
             Assert.That(
+                preferences.SelectSingleNode("/PrefsData/volumeMaster")?.InnerText,
+                Is.EqualTo("0"));
+            Assert.That(
                 preferences.SelectSingleNode("/PrefsData/volumeMusic")?.InnerText,
                 Is.EqualTo("0"));
             Assert.That(
@@ -67,6 +72,40 @@ public sealed class GatewaySmokeBackgroundLaunchTests
             Assert.That(
                 preferences.SelectSingleNode("/PrefsData/devMode")?.InnerText,
                 Is.EqualTo("True"));
+        }
+        finally
+        {
+            Directory.Delete(artifactRoot, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Audio_opt_in_enables_master_volume_but_keeps_music_muted()
+    {
+        var artifactRoot = Path.Combine(
+            Path.GetTempPath(),
+            nameof(GatewaySmokeBackgroundLaunchTests),
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(artifactRoot);
+        try
+        {
+            var result = RunDryRun(artifactRoot, "-EnableAudio");
+            var preferences = new XmlDocument();
+            preferences.Load(Directory.GetFiles(artifactRoot, "Prefs.xml", SearchOption.AllDirectories).Single());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.ExitCode, Is.Zero, result.StandardError);
+                Assert.That(result.StandardOutput, Does.Contain("\"AudioEnabled\":true"));
+                Assert.That(result.StandardOutput, Does.Contain("\"MasterVolume\":1"));
+                Assert.That(result.StandardOutput, Does.Contain("\"MusicVolume\":0"));
+                Assert.That(
+                    preferences.SelectSingleNode("/PrefsData/volumeMaster")?.InnerText,
+                    Is.EqualTo("1"));
+                Assert.That(
+                    preferences.SelectSingleNode("/PrefsData/volumeMusic")?.InnerText,
+                    Is.EqualTo("0"));
+            });
         }
         finally
         {

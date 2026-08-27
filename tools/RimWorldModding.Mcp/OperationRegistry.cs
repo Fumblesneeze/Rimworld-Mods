@@ -113,7 +113,8 @@ public sealed class OperationRegistry
                         OptionalString(arguments, "testId"),
                         OptionalString(arguments, "language") ?? "English",
                         OptionalInt32(arguments, "timeoutSeconds", 300),
-                        OptionalBoolean(arguments, "dryRun", false)),
+                        OptionalBoolean(arguments, "dryRun", false),
+                        OptionalBoolean(arguments, "enableAudio", false)),
                     cancellationToken)),
             Register(
                 "game_run_start",
@@ -125,7 +126,8 @@ public sealed class OperationRegistry
                 static (registry, arguments, _) => Task.FromResult<object>(new RunLeaseManager(registry._repositoryRoot).StartGateway(
                     OptionalStringArray(arguments, "packageIds"),
                     OptionalStringArray(arguments, "projectPaths"),
-                    OptionalInt32(arguments, "holdSeconds", 1800)))),
+                    OptionalInt32(arguments, "holdSeconds", 1800),
+                    enableAudio: OptionalBoolean(arguments, "enableAudio", false)))),
             Register(
                 "run_status",
                 "Inspect one exact leased run without touching any process.",

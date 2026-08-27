@@ -55,10 +55,11 @@ public static class McpTools
         [Description("RimWorld language folder, default English.")] string? language,
         [Description("Scenario timeout in seconds, 60-3600.")] int? timeoutSeconds,
         [Description("True validates discovery and launch inputs without launching RimWorld.")] bool? dryRun,
+        [Description("True enables RimWorld master audio for sound-focused work; omitted or false keeps the isolated run muted.")] bool? enableAudio,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "e2e_run_start",
-            JsonSerializer.SerializeToElement(new { groupId, testId, language, timeoutSeconds, dryRun }),
+            JsonSerializer.SerializeToElement(new { groupId, testId, language, timeoutSeconds, dryRun, enableAudio }),
             cancellationToken));
 
     [McpServerTool(Name = "game_run_start"), Description("Start one leased isolated minimized Gateway-backed RimWorld process.")]
@@ -67,10 +68,11 @@ public static class McpTools
         [Description("Optional ordered additional package IDs; Gateway remains last.")] string[]? packageIds,
         [Description("Optional matching repository-owned mod project paths to build/deploy.")] string[]? projectPaths,
         [Description("Interactive hold duration in seconds, 60-7200.")] int? holdSeconds,
+        [Description("True enables RimWorld master audio for sound-focused work; omitted or false keeps the isolated run muted.")] bool? enableAudio,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "game_run_start",
-            JsonSerializer.SerializeToElement(new { packageIds, projectPaths, holdSeconds }),
+            JsonSerializer.SerializeToElement(new { packageIds, projectPaths, holdSeconds, enableAudio }),
             cancellationToken));
 
     [McpServerTool(Name = "run_status"), Description("Inspect one exact leased run, process identities, Gateway manifest, and bounded log tails.")]

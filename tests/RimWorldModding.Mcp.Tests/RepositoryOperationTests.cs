@@ -88,6 +88,44 @@ public sealed class RepositoryOperationTests
     }
 
     [Test]
+    public void RimWorldLaunchPlans_DefaultToMutedAndForwardExplicitAudioOptIn()
+    {
+        var defaultEndToEnd = RepositoryOperationPlanner.EndToEnd(
+            _root, null, "guest-bed-owner-menu", "English", 300, dryRun: true);
+        var enabledEndToEnd = RepositoryOperationPlanner.EndToEnd(
+            _root, null, "guest-bed-owner-menu", "English", 300, dryRun: true, enableAudio: true);
+        var defaultGateway = RepositoryOperationPlanner.GatewayRun(
+            _root,
+            Path.Combine(_root, "artifacts", "McpRuns", "muted"),
+            [],
+            [],
+            900);
+        var enabledGateway = RepositoryOperationPlanner.GatewayRun(
+            _root,
+            Path.Combine(_root, "artifacts", "McpRuns", "enabled"),
+            [],
+            [],
+            900,
+            enableAudio: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(defaultEndToEnd.Arguments.Count(argument => argument == "-EnableAudio"), Is.Zero);
+            Assert.That(enabledEndToEnd.Arguments.Count(argument => argument == "-EnableAudio"), Is.EqualTo(1));
+            Assert.That(defaultGateway.Arguments.Count(argument => argument == "-EnableAudio"), Is.Zero);
+            Assert.That(enabledGateway.Arguments.Count(argument => argument == "-EnableAudio"), Is.EqualTo(1));
+            Assert.That(
+                typeof(McpTools).GetMethod(nameof(McpTools.RunEndToEnd))!.GetParameters(),
+                Has.Exactly(1).Matches<System.Reflection.ParameterInfo>(parameter =>
+                    parameter.Name == "enableAudio" && parameter.ParameterType == typeof(bool?)));
+            Assert.That(
+                typeof(McpTools).GetMethod(nameof(McpTools.StartGame))!.GetParameters(),
+                Has.Exactly(1).Matches<System.Reflection.ParameterInfo>(parameter =>
+                    parameter.Name == "enableAudio" && parameter.ParameterType == typeof(bool?)));
+        });
+    }
+
+    [Test]
     public void GatewayRunPlan_UsesOwnedArtifactsCompletionAndLeasePaths()
     {
         var runRoot = Path.Combine(_root, "artifacts", "McpRuns", "run-1");
