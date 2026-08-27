@@ -275,6 +275,10 @@ After Steam reports a successful update and CDN propagation, the release workflo
 - **WHEN** an immutable plan copies the exact adapter bytes away from their canonical `scripts` directory
 - **THEN** execution stages those same bytes at a contained transient location that preserves the adapter's repository-root relationship, rejects collisions, and removes only that run-owned transient copy afterward
 
+#### Scenario: Nested subscriber evidence remains within the legacy Windows path limit
+- **WHEN** the Immersive Chefs adapter launches the grouped E2E runner beneath its release subscriber-evidence root
+- **THEN** the outer run uses a 12-character lowercase hexadecimal entropy segment, rejects an existing leaf, and leaves enough path budget for the runner's timestamp, smoke, saved-data, Gateway-session, and final filename segments
+
 ### Requirement: Local installation never implies Workshop subscription
 Development installation SHALL synchronize the reviewed package into RimWorld's canonical local `Mods/<package-id>` folder. The words "install", "deploy locally", and "copy to the game" MUST NOT authorize Steam Workshop subscription. Workshop subscription is permitted only as the explicitly named, bounded subscribed-copy release verification above and MUST NOT persist into ordinary development.
 

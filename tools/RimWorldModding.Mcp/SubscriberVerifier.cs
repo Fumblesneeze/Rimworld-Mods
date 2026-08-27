@@ -28,6 +28,8 @@ internal sealed record SubscriberRecoveryRecord(
 
 public sealed class SubscriberVerifier(string repositoryRoot)
 {
+    private const int LegacyWindowsMaximumPathCharacters = 259;
+    private const int PowerShellSubscriberNestedSuffixCharacters = 126;
     private readonly string _repositoryRoot = RepositoryRoot.Resolve(repositoryRoot);
 
     public async Task<SubscriberVerificationResult> VerifyAsync(
@@ -166,8 +168,9 @@ public sealed class SubscriberVerifier(string repositoryRoot)
     {
         var normalConfig = ModListEditor.DefaultConfigPath();
         var normalBefore = Hash(normalConfig);
-        var runId = NewRunId();
+        var runId = CreatePowerShellRunId(Guid.NewGuid());
         var evidenceRoot = PrepareEvidenceRoot(profile.PackageId, runId, createDirectory: false);
+        RequirePowerShellEvidencePathBudget(evidenceRoot);
         var executionScript = StagePowerShellAdapter(plan.Script!, runId);
         ProcessResult result;
         try
@@ -231,6 +234,21 @@ public sealed class SubscriberVerifier(string repositoryRoot)
         var destination = Path.Combine(artifacts, $"subscriber-adapter-{runId}.ps1");
         File.Copy(source, destination, overwrite: false);
         return destination;
+    }
+
+    internal static string CreatePowerShellRunId(Guid entropy) =>
+        entropy.ToString("N")[..12];
+
+    internal static void RequirePowerShellEvidencePathBudget(string evidenceRoot)
+    {
+        // Two 19-character timestamps, smoke-001, SavedData/DevGateway/Sessions,
+        // one 32-character Gateway run ID, separators, and session.json total 126.
+        if (evidenceRoot.Length + PowerShellSubscriberNestedSuffixCharacters >
+            LegacyWindowsMaximumPathCharacters)
+        {
+            throw new InvalidOperationException(
+                "Subscriber evidence root leaves insufficient room for the nested legacy Windows path.");
+        }
     }
 
     private async Task RecoverInterruptedAsync(ReleaseProfile profile, CancellationToken cancellationToken)

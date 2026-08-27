@@ -131,4 +131,32 @@ public sealed class SubscriberVerificationProfileTests
             if (File.Exists(source)) File.Delete(source);
         }
     }
+
+    [Test]
+    public void PowerShellSubscriberRunId_IsShortEnoughForTheNestedLegacyWindowsEvidencePath()
+    {
+        var runId = SubscriberVerifier.CreatePowerShellRunId(
+            Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(runId, Is.EqualTo("001122334455"));
+            Assert.That(runId, Has.Length.EqualTo(12));
+            Assert.That(runId, Does.Match("^[0-9a-f]{12}$"));
+        });
+    }
+
+    [Test]
+    public void PowerShellSubscriberEvidenceBudget_AccountsForEveryNestedRunnerAndGatewaySegment()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                () => SubscriberVerifier.RequirePowerShellEvidencePathBudget(new string('a', 133)),
+                Throws.Nothing);
+            Assert.That(
+                () => SubscriberVerifier.RequirePowerShellEvidencePathBudget(new string('a', 134)),
+                Throws.InvalidOperationException.With.Message.Contains("legacy Windows path"));
+        });
+    }
 }
