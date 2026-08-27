@@ -130,12 +130,24 @@ public sealed class WorkshopDescriptionTests
         var description = new UTF8Encoding(false, true).GetString(descriptionBytes);
         var normalized = description.TrimEnd('\r', '\n');
         var steamLimit = ReadSteamDescriptionLimit();
+        var resolvedPath = Path.Combine(
+            root,
+            "mods",
+            "ImmersiveChefs",
+            "Release",
+            "workshop",
+            "description.bbcode");
+        var resolvedBytes = File.ReadAllBytes(resolvedPath);
+        var resolved = new UTF8Encoding(false, true).GetString(resolvedBytes);
 
         Assert.Multiple(() =>
         {
             Assert.That(description.IndexOf('\0'), Is.EqualTo(-1), "Steam descriptions may not contain NUL bytes.");
             Assert.That(descriptionBytes.Length + 1, Is.LessThanOrEqualTo(steamLimit),
                 "Steam reserves the terminating null inside k_cchPublishedDocumentDescriptionMax.");
+            Assert.That(resolved.IndexOf('\0'), Is.EqualTo(-1), "The submitted description may not contain NUL bytes.");
+            Assert.That(resolvedBytes.Length + 1, Is.LessThanOrEqualTo(steamLimit),
+                "The resolved BBCode file handed to Steam, not only its shorter tokenized template, must fit Steam's exact limit.");
             Assert.That(normalized, Does.Contain("RimWorld 1.6"));
             Assert.That(normalized, Does.Contain("[h1]Required Mods[/h1]"));
             Assert.That(normalized, Does.Contain("Harmony"));

@@ -1,8 +1,46 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Text;
 using System.Xml.Linq;
 
 namespace RimWorldModding.Mcp;
+
+public static class ReleasePresentationPolicy
+{
+    public const int SteamDescriptionUtf8Limit = 8_000;
+
+    public static void ValidateDescription(string path)
+    {
+        if (!File.Exists(path))
+            throw new InvalidOperationException("Workshop description is missing: " + path);
+        ValidateDescriptionBytes(File.ReadAllBytes(path));
+    }
+
+    public static void ValidateDescriptionBytes(byte[] bytes)
+    {
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+            throw new InvalidOperationException("Workshop description must be UTF-8 without a byte-order mark.");
+        string text;
+        try
+        {
+            text = new UTF8Encoding(false, true).GetString(bytes);
+        }
+        catch (DecoderFallbackException exception)
+        {
+            throw new InvalidOperationException("Workshop description is not valid UTF-8.", exception);
+        }
+        if (text.IndexOf('\0') >= 0)
+            throw new InvalidOperationException("Workshop description contains a NUL character.");
+        var submittedBytes = Encoding.UTF8.GetByteCount(text);
+        if (submittedBytes + 1 > SteamDescriptionUtf8Limit)
+            throw new InvalidOperationException(
+                string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "Workshop description uses {0:N0} UTF-8 bytes including Steam's terminator; the exact limit is {1:N0}.",
+                    submittedBytes + 1,
+                    SteamDescriptionUtf8Limit));
+    }
+}
 
 public sealed record ReleaseProfile(
     string Schema,
@@ -182,6 +220,7 @@ public static class ReleaseProfileCatalog
             var preview = ContainedProfilePath(releaseDirectory, RequiredString(element, "preview"));
             if (!File.Exists(description)) throw new ReleaseProfileException($"Workshop description does not exist: {description}");
             if (!File.Exists(preview)) throw new ReleaseProfileException($"Workshop preview does not exist: {preview}");
+            ReleasePresentationPolicy.ValidateDescription(description);
 
             ValidateProjectIdentity(project, packageId, title, author, distributionKind);
 

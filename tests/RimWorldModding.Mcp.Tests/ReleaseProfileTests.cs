@@ -6,6 +6,32 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class ReleaseProfileTests
 {
     [Test]
+    public void ResolvedWorkshopDescriptions_FitSteamsExactUtf8Boundary()
+    {
+        var root = TestRepository.FindRoot();
+        var profiles = ReleaseProfileCatalog.Discover(root);
+
+        foreach (var profile in profiles)
+        {
+            Assert.DoesNotThrow(
+                () => ReleasePresentationPolicy.ValidateDescription(profile.Description),
+                profile.PackageId);
+        }
+
+        Assert.DoesNotThrow(() => ReleasePresentationPolicy.ValidateDescriptionBytes(
+            Enumerable.Repeat((byte)'a', 7_999).ToArray()));
+        Assert.That(
+            Assert.Throws<InvalidOperationException>(
+                () => ReleasePresentationPolicy.ValidateDescriptionBytes(
+                    Enumerable.Repeat((byte)'a', 8_000).ToArray()))!.Message,
+            Does.Contain("8,000"));
+        Assert.That(
+            Assert.Throws<InvalidOperationException>(
+                () => ReleasePresentationPolicy.ValidateDescriptionBytes(new byte[] { 65, 0, 66 }))!.Message,
+            Does.Contain("NUL"));
+    }
+
+    [Test]
     public void RepositoryProfiles_AreUniversalAndIdentityConsistent()
     {
         var root = TestRepository.FindRoot();
