@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace RimWorldModding.Mcp;
 
@@ -24,6 +25,9 @@ public sealed record WorkshopRemoteBaseline(
     IReadOnlyList<string> AdditionalPreviews,
     string StateDigest)
 {
+    private const int MaximumCommunityPageBytes = 2 * 1024 * 1024;
+    private const int MaximumPreviewBytes = 1024 * 1024;
+
     public static async Task<WorkshopRemoteBaseline> CaptureAsync(
         JsonElement remote,
         CancellationToken cancellationToken)
@@ -31,16 +35,31 @@ public sealed record WorkshopRemoteBaseline(
         var previewUrl = GatewayWorkshopClient.String(remote, "RemotePreviewUrl");
         if (string.IsNullOrWhiteSpace(previewUrl))
             throw new InvalidOperationException("Steam query did not return a primary preview URL.");
-        using var http = new HttpClient(new SocketsHttpHandler { AutomaticDecompression = DecompressionMethods.All });
+        using var http = new HttpClient(new SocketsHttpHandler
+        {
+            AutomaticDecompression = DecompressionMethods.All,
+            AllowAutoRedirect = false
+        });
         http.DefaultRequestHeaders.UserAgent.ParseAdd("RimWorldModding.Mcp/0.1");
-        var previewBytes = await http.GetByteArrayAsync(previewUrl, cancellationToken);
+        var previewBytes = await DownloadBoundedAsync(
+            http,
+            previewUrl,
+            MaximumPreviewBytes,
+            "images.steamusercontent.com",
+            "/ugc/",
+            cancellationToken);
         var tags = GatewayWorkshopClient.String(remote, "RemoteTags").Split(',')
             .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var dependencies = ReadUlongArray(remote, "RemoteDependencies");
         var appDependencies = ReadUlongArray(remote, "RemoteAppDependencies");
-        var additional = await ReadAdditionalPreviewsAsync(remote, http, cancellationToken);
+        var publishedFileId = GatewayWorkshopClient.UInt64(remote, "PublishedFileId").ToString();
+        var additional = await ReadAdditionalPreviewsAsync(
+            remote,
+            http,
+            publishedFileId,
+            cancellationToken);
         return Create(
-            GatewayWorkshopClient.UInt64(remote, "PublishedFileId").ToString(),
+            publishedFileId,
             GatewayWorkshopClient.String(remote, "RemoteTitle"),
             GatewayWorkshopClient.String(remote, "RemoteDescriptionSha256"),
             ReadInt32(remote, "RemoteDescriptionUtf8Bytes"),
@@ -134,18 +153,18 @@ public sealed record WorkshopRemoteBaseline(
         var sortedTags = tags.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var sortedDependencies = dependencies.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var sortedAppDependencies = appDependencies.OrderBy(value => value, StringComparer.Ordinal).ToArray();
-        var sortedAdditional = additionalPreviews.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+        var orderedAdditional = additionalPreviews.ToArray();
         var canonical = string.Join("\n", new[]
         {
             publishedFileId, title, descriptionSha256, descriptionUtf8Bytes.ToString(),
             string.Join("|", sortedTags), metadata, visibility, previewSha256,
             ownerSteamId, consumerAppId.ToString(), contentBytes.ToString(), updatedUnixSeconds.ToString(),
-            string.Join("|", sortedDependencies), string.Join("|", sortedAppDependencies), string.Join("|", sortedAdditional)
+            string.Join("|", sortedDependencies), string.Join("|", sortedAppDependencies), string.Join("|", orderedAdditional)
         }) + "\n";
         var digest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
         return new WorkshopRemoteBaseline(publishedFileId, title, descriptionSha256, descriptionUtf8Bytes,
             sortedTags, metadata, visibility, previewUrl, previewSha256, ownerSteamId, consumerAppId,
-            contentBytes, updatedUnixSeconds, sortedDependencies, sortedAppDependencies, sortedAdditional, digest);
+            contentBytes, updatedUnixSeconds, sortedDependencies, sortedAppDependencies, orderedAdditional, digest);
     }
 
     private static string[] ReadUlongArray(JsonElement root, string name)
@@ -158,29 +177,161 @@ public sealed record WorkshopRemoteBaseline(
     private static async Task<string[]> ReadAdditionalPreviewsAsync(
         JsonElement root,
         HttpClient http,
+        string publishedFileId,
         CancellationToken cancellationToken)
     {
         if (!GatewayWorkshopClient.TryProperty(root, "RemoteAdditionalPreviews", out var property) ||
             property.ValueKind != JsonValueKind.Array) return [];
+        var items = property.EnumerateArray().ToArray();
+        var imageItems = items.Where(item =>
+            ReadProperty(item, "Type").Contains("Image", StringComparison.OrdinalIgnoreCase)).ToArray();
+        string[] communityImageUrls = [];
+        if (imageItems.Any(item => string.IsNullOrWhiteSpace(ReadProperty(item, "Url"))))
+        {
+            var communityUri = $"https://steamcommunity.com/sharedfiles/filedetails/?id={publishedFileId}";
+            var htmlBytes = await DownloadBoundedAsync(
+                http,
+                communityUri,
+                MaximumCommunityPageBytes,
+                "steamcommunity.com",
+                "/sharedfiles/filedetails/",
+                cancellationToken);
+            var html = Encoding.UTF8.GetString(htmlBytes);
+            communityImageUrls = ParseCommunityImagePreviewUrls(html, imageItems.Length);
+        }
+
+        var selectedImageUrls = SelectAdditionalImageUrls(
+            imageItems.Select(item => ReadProperty(item, "Url")).ToArray(),
+            communityImageUrls);
+
         var previews = new List<string>();
-        foreach (var item in property.EnumerateArray())
+        var imageIndex = 0;
+        foreach (var item in items)
         {
             var type = ReadProperty(item, "Type");
             var url = ReadProperty(item, "Url");
             var contentIdentity = url;
             if (type.Contains("Image", StringComparison.OrdinalIgnoreCase))
             {
-                if (string.IsNullOrWhiteSpace(url))
-                    throw new InvalidOperationException("Steam query returned an image preview without a URL.");
+                url = selectedImageUrls[imageIndex];
+                imageIndex++;
                 contentIdentity = Convert.ToHexString(SHA256.HashData(
-                    await http.GetByteArrayAsync(url, cancellationToken)));
+                    await DownloadBoundedAsync(
+                        http,
+                        url,
+                        MaximumPreviewBytes,
+                        "images.steamusercontent.com",
+                        "/ugc/",
+                        cancellationToken)));
             }
             previews.Add(string.Join("|", new[]
             {
                 ReadProperty(item, "Index"), ReadProperty(item, "OriginalFileName"), type, contentIdentity
             }));
         }
-        return previews.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+        return previews.ToArray();
+    }
+
+    internal static string[] SelectAdditionalImageUrls(
+        IReadOnlyList<string> authenticatedUrls,
+        IReadOnlyList<string> communityUrls)
+    {
+        if (authenticatedUrls.Count == 0)
+        {
+            if (communityUrls.Count != 0)
+                throw new InvalidOperationException("Steam Community returned images for an empty authenticated preview inventory.");
+            return [];
+        }
+        if (authenticatedUrls.Count > 10)
+            throw new InvalidOperationException("The authenticated Steam image preview count is outside the reviewed bound.");
+        if (authenticatedUrls.Any(string.IsNullOrWhiteSpace))
+        {
+            if (communityUrls.Count != authenticatedUrls.Count)
+                throw new InvalidOperationException("Steam Community did not return the exact image preview inventory.");
+            return communityUrls.ToArray();
+        }
+        return authenticatedUrls.ToArray();
+    }
+
+    internal static async Task<byte[]> DownloadBoundedAsync(
+        HttpClient http,
+        string url,
+        int maximumBytes,
+        string requiredHost,
+        string requiredPathPrefix,
+        CancellationToken cancellationToken)
+    {
+        if (maximumBytes < 1 ||
+            !Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            !string.Equals(uri.Host, requiredHost, StringComparison.OrdinalIgnoreCase) ||
+            !uri.AbsolutePath.StartsWith(requiredPathPrefix, StringComparison.Ordinal))
+            throw new InvalidOperationException("Steam remote evidence URL is outside the admitted HTTPS origin.");
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.Accept.ParseAdd(requiredHost == "steamcommunity.com"
+            ? "text/html,application/xhtml+xml"
+            : "image/*");
+        using var response = await http.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+        if ((int)response.StatusCode is >= 300 and < 400)
+            throw new InvalidOperationException("Steam remote evidence request attempted a redirect.");
+        response.EnsureSuccessStatusCode();
+        if (response.Content.Headers.ContentLength is { } declaredLength && declaredLength > maximumBytes)
+            throw new InvalidOperationException("Steam remote evidence exceeds the reviewed byte bound.");
+
+        await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var destination = new MemoryStream();
+        var buffer = new byte[16 * 1024];
+        while (true)
+        {
+            var read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+            if (read == 0) break;
+            if (destination.Length + read > maximumBytes)
+                throw new InvalidOperationException("Steam remote evidence exceeds the reviewed byte bound.");
+            destination.Write(buffer, 0, read);
+        }
+        return destination.ToArray();
+    }
+
+    internal static string[] ParseCommunityImagePreviewUrls(string html, int expectedCount)
+    {
+        if (expectedCount < 1 || expectedCount > 10)
+            throw new InvalidOperationException("The expected Steam image preview count is outside the reviewed bound.");
+        if (string.IsNullOrWhiteSpace(html) || html.Length > 2 * 1024 * 1024)
+            throw new InvalidOperationException("The Steam Community item page is empty or exceeds the reviewed bound.");
+
+        var inventory = Regex.Match(
+            html,
+            @"var\s+rgFullScreenshotURLs\s*=\s*\[(?<body>.*?)\]\s*;",
+            RegexOptions.Singleline | RegexOptions.CultureInvariant,
+            TimeSpan.FromSeconds(1));
+        if (!inventory.Success)
+            throw new InvalidOperationException("Steam Community omitted the exact image preview inventory.");
+
+        var matches = Regex.Matches(
+            inventory.Groups["body"].Value,
+            "['\"]url['\"]\\s*:\\s*['\"](?<url>[^'\"]+)['\"]",
+            RegexOptions.CultureInvariant,
+            TimeSpan.FromSeconds(1));
+        if (matches.Count != expectedCount)
+            throw new InvalidOperationException("Steam Community did not return the exact image preview inventory.");
+
+        var urls = matches.Select(match => WebUtility.HtmlDecode(match.Groups["url"].Value)).ToArray();
+        foreach (var url in urls)
+        {
+            if (url.Length > 4096 ||
+                !Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+                uri.Scheme != Uri.UriSchemeHttps ||
+                !string.Equals(uri.Host, "images.steamusercontent.com", StringComparison.OrdinalIgnoreCase) ||
+                !uri.AbsolutePath.StartsWith("/ugc/", StringComparison.Ordinal))
+                throw new InvalidOperationException("Steam Community returned an image preview outside the Steam CDN.");
+        }
+        if (urls.Distinct(StringComparer.Ordinal).Count() != urls.Length)
+            throw new InvalidOperationException("Steam Community returned duplicate image preview URLs.");
+        return urls;
     }
 
     private static int ReadInt32(JsonElement root, string name)

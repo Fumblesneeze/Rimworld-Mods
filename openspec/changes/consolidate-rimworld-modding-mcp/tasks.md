@@ -89,3 +89,8 @@
 - [x] 12.1 Document the canonical new-mod folder/project/profile layout, package identity, OpenSpec ownership, test-layer routing, and optional-integration boundaries.
 - [x] 12.2 Make the no-backup, successful-build-to-local-install behavior explicit in AGENTS, README, development docs, and the repo-local mod-development skill.
 - [x] 12.3 Add the repeatable new-mod checklist with typed MCP/CLI commands for profile validation, build/install, package validation, focused verification, and release preparation.
+
+## 13. Steam additional-preview query resilience — `tools/RimWorldModding.Mcp`
+
+- [x] 13.1 RED/GREEN: reproduce authenticated SteamUGC image entries with empty URLs; add an exact-count, bounded, Steam-CDN-only Community-page fallback parser and use its ordered URLs to hash the same remote preview bytes without weakening the immutable baseline.
+- [ ] 13.2 REVIEW/LIVE: independently review the fallback, run the focused MCP tests and strict OpenSpec validation, then prepare and publish the retained Immersive Chefs update through the exact live Steam response that triggered the regression.
