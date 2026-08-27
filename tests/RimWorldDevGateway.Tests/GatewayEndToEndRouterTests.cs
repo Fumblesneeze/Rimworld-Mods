@@ -204,6 +204,32 @@ public sealed class GatewayEndToEndRouterTests
         }
     }
 
+    [Test]
+    public void Atomic_temporary_sibling_recovers_when_its_session_directory_is_not_yet_present()
+    {
+        var root = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "e2e-temp-missing-parent",
+            Guid.NewGuid().ToString("N"));
+        var destination = Path.Combine(root, "DevGateway", "Sessions", "run", "session.json");
+        try
+        {
+            using (var stream = GatewayTemporaryFile.CreateSibling(
+                       destination,
+                       leafFactory: () => ".owned.tmp"))
+            {
+                Assert.That(Path.GetDirectoryName(stream.Name),
+                    Is.EqualTo(Path.GetDirectoryName(destination)).IgnoreCase);
+            }
+
+            Assert.That(File.Exists(Path.Combine(Path.GetDirectoryName(destination)!, ".owned.tmp")), Is.True);
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static string MakeLegacyPathBoundaryRoot(string baseRoot, string runId)
     {
         var fixedSuffixLength = Path.Combine(
