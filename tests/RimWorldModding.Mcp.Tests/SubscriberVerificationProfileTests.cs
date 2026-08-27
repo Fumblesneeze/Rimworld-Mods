@@ -71,4 +71,31 @@ public sealed class SubscriberVerificationProfileTests
             File.Delete(temporary);
         }
     }
+
+    [Test]
+    public void PowerShellSubscriberEvidencePath_IsReservedWithoutPrecreatingAdapterOwnedDirectory()
+    {
+        var root = TestRepository.FindRoot();
+        var packageId = "test.subscriber." + Guid.NewGuid().ToString("N");
+        var runId = "subscriber-path-" + Guid.NewGuid().ToString("N");
+        var verifier = new SubscriberVerifier(root);
+        var packageRoot = Path.Combine(root, "artifacts", "Releases", packageId);
+        try
+        {
+            var path = verifier.PrepareEvidenceRoot(packageId, runId, createDirectory: false);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(path, Does.StartWith(Path.Combine(root, "artifacts", "Releases") + Path.DirectorySeparatorChar));
+                Assert.That(Directory.Exists(Path.GetDirectoryName(path)), Is.True,
+                    "the adapter's parent directory must exist before process launch");
+                Assert.That(Directory.Exists(path), Is.False,
+                    "the frozen PowerShell adapter must acquire its own new output directory");
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(packageRoot)) Directory.Delete(packageRoot, recursive: true);
+        }
+    }
 }

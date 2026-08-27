@@ -267,6 +267,10 @@ After Steam reports a successful update and CDN propagation, the release workflo
 - **WHEN** the subscribed Workshop directory is absent, has not reached the published manifest, or differs from the staged candidate
 - **THEN** release verification fails without substituting a local package or claiming the release accepted, and cleanup still unsubscribes the item and restores the local package
 
+#### Scenario: Subscriber verification is retried after Steam is already verified
+- **WHEN** a prior subscribed-copy smoke attempt retained incomplete evidence and the exact Steam-verified plan is recovered without resubmission
+- **THEN** the verifier gives the new adapter invocation a fresh contained output path that does not exist yet, preserves every prior attempt directory, and lets that invocation exclusively create and own its evidence directory
+
 ### Requirement: Local installation never implies Workshop subscription
 Development installation SHALL synchronize the reviewed package into RimWorld's canonical local `Mods/<package-id>` folder. The words "install", "deploy locally", and "copy to the game" MUST NOT authorize Steam Workshop subscription. Workshop subscription is permitted only as the explicitly named, bounded subscribed-copy release verification above and MUST NOT persist into ordinary development.
 

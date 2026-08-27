@@ -64,7 +64,7 @@ public sealed class SubscriberVerifier(string repositoryRoot)
         var normalConfig = ModListEditor.DefaultConfigPath();
         var normalBefore = Hash(normalConfig);
         var runId = NewRunId();
-        var evidenceRoot = EvidenceRoot(profile.PackageId, runId);
+        var evidenceRoot = PrepareEvidenceRoot(profile.PackageId, runId, createDirectory: true);
         var recoveryRoot = LocalModInstaller.RecoveryRoot(modsRoot);
         Directory.CreateDirectory(recoveryRoot);
         var backup = Path.Combine(recoveryRoot, $"subscriber-{profile.PackageId}-{runId}");
@@ -166,7 +166,7 @@ public sealed class SubscriberVerifier(string repositoryRoot)
     {
         var normalConfig = ModListEditor.DefaultConfigPath();
         var normalBefore = Hash(normalConfig);
-        var evidenceRoot = EvidenceRoot(profile.PackageId, NewRunId());
+        var evidenceRoot = PrepareEvidenceRoot(profile.PackageId, NewRunId(), createDirectory: false);
         var result = await ProcessRunner.RunAsync(
             "pwsh",
             [
@@ -204,10 +204,12 @@ public sealed class SubscriberVerifier(string repositoryRoot)
             evidenceRoot, screenshots, plan.ExpectedObservation, null, true, normalBefore, normalAfter);
     }
 
-    private string EvidenceRoot(string packageId, string runId)
+    internal string PrepareEvidenceRoot(string packageId, string runId, bool createDirectory)
     {
-        var path = Path.Combine(_repositoryRoot, "artifacts", "Releases", packageId, "subscriber", runId);
-        Directory.CreateDirectory(path);
+        var parent = Path.Combine(_repositoryRoot, "artifacts", "Releases", packageId, "subscriber");
+        Directory.CreateDirectory(parent);
+        var path = Path.Combine(parent, runId);
+        if (createDirectory) Directory.CreateDirectory(path);
         return path;
     }
 
