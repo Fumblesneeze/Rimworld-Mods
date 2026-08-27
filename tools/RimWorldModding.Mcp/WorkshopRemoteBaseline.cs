@@ -27,6 +27,9 @@ public sealed record WorkshopRemoteBaseline(
 {
     private const int MaximumCommunityPageBytes = 2 * 1024 * 1024;
     private const int MaximumPreviewBytes = 1024 * 1024;
+    private const string BrowserUserAgent =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+        "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 
     public static async Task<WorkshopRemoteBaseline> CaptureAsync(
         JsonElement remote,
@@ -269,9 +272,16 @@ public sealed record WorkshopRemoteBaseline(
             throw new InvalidOperationException("Steam remote evidence URL is outside the admitted HTTPS origin.");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        request.Headers.Accept.ParseAdd(requiredHost == "steamcommunity.com"
-            ? "text/html,application/xhtml+xml"
-            : "image/*");
+        if (uri.Host.Equals("steamcommunity.com", StringComparison.OrdinalIgnoreCase))
+        {
+            request.Headers.UserAgent.ParseAdd(BrowserUserAgent);
+            request.Headers.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
+            request.Headers.Accept.ParseAdd("text/html,application/xhtml+xml");
+        }
+        else
+        {
+            request.Headers.Accept.ParseAdd("image/*");
+        }
         using var response = await http.SendAsync(
             request,
             HttpCompletionOption.ResponseHeadersRead,

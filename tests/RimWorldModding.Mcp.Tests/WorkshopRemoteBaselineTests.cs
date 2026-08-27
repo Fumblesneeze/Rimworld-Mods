@@ -152,6 +152,40 @@ public sealed class WorkshopRemoteBaselineTests
         });
     }
 
+    [Test]
+    public async Task Community_evidence_uses_the_reviewed_browser_request_shape()
+    {
+        string? observedUserAgent = null;
+        string? observedAcceptLanguage = null;
+        string? observedAccept = null;
+        using var client = new HttpClient(new ResponseHandler(request =>
+        {
+            observedUserAgent = request.Headers.UserAgent.ToString();
+            observedAcceptLanguage = request.Headers.AcceptLanguage.ToString();
+            observedAccept = request.Headers.Accept.ToString();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(Encoding.ASCII.GetBytes("page"))
+            };
+        }));
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("RimWorldModding.Mcp/0.1");
+
+        _ = await WorkshopRemoteBaseline.DownloadBoundedAsync(
+            client,
+            "https://steamcommunity.com/sharedfiles/filedetails/?id=3782589902",
+            4,
+            "steamcommunity.com",
+            "/sharedfiles/filedetails/",
+            CancellationToken.None);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(observedUserAgent, Does.StartWith("Mozilla/5.0"));
+            Assert.That(observedAcceptLanguage, Does.Contain("en-US"));
+            Assert.That(observedAccept, Does.Contain("text/html"));
+        });
+    }
+
     private sealed class ResponseHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
         : HttpMessageHandler
     {
