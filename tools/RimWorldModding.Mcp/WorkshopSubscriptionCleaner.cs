@@ -89,13 +89,18 @@ public sealed class WorkshopSubscriptionCleaner(string repositoryRoot)
                 }, cancellationToken);
                 var terminal = await client.WaitTerminalAsync(
                     correlation,
-                    new HashSet<string>(["unsubscribed", "failed"], StringComparer.Ordinal),
+                    new HashSet<string>(["unsubscribe-callback-confirmed", "failed"], StringComparer.Ordinal),
                     DateTimeOffset.UtcNow.AddMinutes(5),
                     cancellationToken);
-                if (GatewayWorkshopClient.String(terminal, "Status") != "unsubscribed")
+                if (GatewayWorkshopClient.String(terminal, "Status") != "unsubscribe-callback-confirmed")
                     throw new InvalidOperationException("Steam did not confirm the exact Workshop unsubscribe callback.");
             }
-            afterState = await ReadItemStateAsync(client, correlation, publishedId, cancellationToken);
+            afterState = await WaitForUnsubscribedStateAsync(
+                client,
+                correlation,
+                publishedId,
+                DateTimeOffset.UtcNow.AddSeconds(30),
+                cancellationToken);
             if (IsSubscribed(afterState))
                 throw new InvalidOperationException("Steam still reports the exact Workshop item as subscribed.");
 
@@ -127,6 +132,24 @@ public sealed class WorkshopSubscriptionCleaner(string repositoryRoot)
     }
 
     internal static bool IsSubscribed(uint state) => (state & SubscribedItemState) != 0;
+
+    private static async Task<uint> WaitForUnsubscribedStateAsync(
+        GatewayWorkshopClient client,
+        string correlation,
+        ulong publishedId,
+        DateTimeOffset deadline,
+        CancellationToken cancellationToken)
+    {
+        uint state;
+        do
+        {
+            state = await ReadItemStateAsync(client, correlation, publishedId, cancellationToken);
+            if (!IsSubscribed(state)) return state;
+            await Task.Delay(500, cancellationToken);
+        } while (DateTimeOffset.UtcNow < deadline);
+
+        return state;
+    }
 
     private static async Task<uint> ReadItemStateAsync(
         GatewayWorkshopClient client,

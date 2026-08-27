@@ -262,6 +262,7 @@ public static class TestSnippet
                     "A cached installed copy is not itself an active Workshop subscription.");
                 Assert.That(publisherSource, Does.Contain("SteamUGC.UnsubscribeItem"));
                 Assert.That(publisherSource, Does.Contain("RemoteStorageUnsubscribePublishedFileResult_t"));
+                Assert.That(publisherSource, Does.Contain("unsubscribe-callback-confirmed"));
             });
         }
         finally

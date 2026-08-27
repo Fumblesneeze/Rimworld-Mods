@@ -636,14 +636,10 @@ internal static class Publisher
                 activeRequest = null;
                 return;
             }
-            var state = SteamUGC.GetItemState(new PublishedFileId_t(id));
-            if (PublisherSafety.IsSubscribedState(state))
-            {
-                snapshot = Snapshot.Failed(request.PlanSha256, id, "Steam retained the subscribed item-state flag after the unsubscribe callback.");
-                activeRequest = null;
-                return;
-            }
-            snapshot = Snapshot.Unsubscribed(request.PlanSha256, id, state);
+            snapshot = Snapshot.UnsubscribeCallbackConfirmed(
+                request.PlanSha256,
+                id,
+                SteamUGC.GetItemState(new PublishedFileId_t(id)));
             activeRequest = null;
         }
     }
@@ -1327,6 +1323,7 @@ internal static class Publisher
         public static Snapshot Installed(ulong id, string folder, ulong bytes, uint state) => new() { Status = "installed", Stage = "installed", PublishedFileId = id, InstallFolder = folder, InstallBytes = bytes, ItemState = state.ToString() };
         public static Snapshot ItemStateSnapshot(string plan, ulong id, uint state) => new() { Status = "item-state", Stage = "item-state", PlanSha256 = plan, PublishedFileId = id, ItemState = state.ToString() };
         public static Snapshot Unsubscribed(string plan, ulong id, uint state) => new() { Status = "unsubscribed", Stage = "unsubscribed", PlanSha256 = plan, PublishedFileId = id, ItemState = state.ToString() };
+        public static Snapshot UnsubscribeCallbackConfirmed(string plan, ulong id, uint state) => new() { Status = "unsubscribe-callback-confirmed", Stage = "unsubscribe-callback-confirmed", PlanSha256 = plan, PublishedFileId = id, ItemState = state.ToString() };
         public static Snapshot OwnerScan(string plan, ulong id) => new() { Status = id == 0 ? "owner-scan-complete" : "owner-scan-found", Stage = "owner-scan", PlanSha256 = plan, PublishedFileId = id };
         public static Snapshot Queried(string plan, SteamUGCDetails_t details, string metadata, string previewUrl, RemoteAdditionalPreview[] additionalPreviews, ulong[] dependencies)
         {
