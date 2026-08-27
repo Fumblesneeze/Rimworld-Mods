@@ -150,6 +150,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
             deadline = DateTimeOffset.UtcNow.AddMinutes(15);
             var repositoryIdentityPath = Path.Combine(Path.GetDirectoryName(profile.Project)!, "About", "PublishedFileId.txt");
             var packageIdentityPath = Path.Combine(admission.Plan.PackagePath, "About", "PublishedFileId.txt");
+            if (publishedId != 0)
+                EnsureExistingPublicationIdentity(
+                    identityPath, repositoryIdentityPath, packageIdentityPath, publishedId);
             var admissionProof = ReleasePlanAdmission.AdmissionText(admission);
             _ = await client.InvokeAsync(new Dictionary<string, object?>
             {
@@ -848,5 +851,51 @@ public sealed class ReleasePublisher(string repositoryRoot)
     {
         if (!File.Exists(path) || !ulong.TryParse(File.ReadAllText(path).Trim(), out var actual) || actual != expected)
             throw new InvalidOperationException("Workshop identity is missing or inconsistent: " + path);
+    }
+
+    internal static void EnsureExistingPublicationIdentity(
+        string durableIdentityPath,
+        string repositoryIdentityPath,
+        string packageIdentityPath,
+        ulong expected)
+    {
+        if (expected == 0) throw new ArgumentException("Existing Workshop identity must be nonzero.");
+        AssertIdentity(repositoryIdentityPath, expected);
+        AssertIdentity(packageIdentityPath, expected);
+        if (File.Exists(durableIdentityPath))
+        {
+            AssertIdentity(durableIdentityPath, expected);
+            return;
+        }
+
+        var exact = Path.GetFullPath(durableIdentityPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(exact)!);
+        var temporary = exact + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            using (var stream = new FileStream(
+                       temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                       4096, FileOptions.WriteThrough))
+            using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+            {
+                writer.Write(expected.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                writer.Flush();
+                stream.Flush(flushToDisk: true);
+            }
+
+            try
+            {
+                File.Move(temporary, exact);
+            }
+            catch (IOException) when (File.Exists(exact))
+            {
+                AssertIdentity(exact, expected);
+            }
+        }
+        finally
+        {
+            if (File.Exists(temporary)) File.Delete(temporary);
+        }
+        AssertIdentity(exact, expected);
     }
 }

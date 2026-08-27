@@ -10,6 +10,46 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class ReleasePublicationAdmissionTests
 {
     [Test]
+    public void Existing_publication_seeds_only_a_missing_durable_identity_from_two_exact_immutable_identities()
+    {
+        var root = TestRoot();
+        try
+        {
+            var durable = Path.Combine(root, "artifacts", "PublishedFileId.txt");
+            var repository = Path.Combine(root, "mod", "About", "PublishedFileId.txt");
+            var package = Path.Combine(root, "candidate", "About", "PublishedFileId.txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(repository)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(package)!);
+            File.WriteAllText(repository, "3782589902");
+            File.WriteAllText(package, "3782589902");
+
+            ReleasePublisher.EnsureExistingPublicationIdentity(
+                durable, repository, package, 3782589902);
+
+            Assert.That(File.ReadAllText(durable).Trim(), Is.EqualTo("3782589902"));
+
+            File.WriteAllText(durable, "999");
+            Assert.That(
+                () => ReleasePublisher.EnsureExistingPublicationIdentity(
+                    durable, repository, package, 3782589902),
+                Throws.InvalidOperationException.With.Message.Contains("Workshop identity"));
+            Assert.That(File.ReadAllText(durable).Trim(), Is.EqualTo("999"));
+
+            File.Delete(durable);
+            File.WriteAllText(repository, "999");
+            Assert.That(
+                () => ReleasePublisher.EnsureExistingPublicationIdentity(
+                    durable, repository, package, 3782589902),
+                Throws.InvalidOperationException.With.Message.Contains("Workshop identity"));
+            Assert.That(File.Exists(durable), Is.False);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
     public void Admission_BindsExactPlanDigestNonceExpiryAndCandidateFiles()
     {
         var root = TestRoot();
