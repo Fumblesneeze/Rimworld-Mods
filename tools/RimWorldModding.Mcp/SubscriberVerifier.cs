@@ -166,20 +166,30 @@ public sealed class SubscriberVerifier(string repositoryRoot)
     {
         var normalConfig = ModListEditor.DefaultConfigPath();
         var normalBefore = Hash(normalConfig);
-        var evidenceRoot = PrepareEvidenceRoot(profile.PackageId, NewRunId(), createDirectory: false);
-        var result = await ProcessRunner.RunAsync(
-            "pwsh",
-            [
-                "-NoProfile", "-NonInteractive", "-File", plan.Script!,
-                "-PublishedFileId", publishedFileId,
-                "-ExpectedInstallPath", plan.WorkshopPackagePath,
-                "-ArtifactsPath", evidenceRoot,
-                "-TimeoutSeconds", plan.TimeoutSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                "-Output", "json"
-            ],
-            _repositoryRoot,
-            TimeSpan.FromSeconds(plan.TimeoutSeconds + 120),
-            cancellationToken);
+        var runId = NewRunId();
+        var evidenceRoot = PrepareEvidenceRoot(profile.PackageId, runId, createDirectory: false);
+        var executionScript = StagePowerShellAdapter(plan.Script!, runId);
+        ProcessResult result;
+        try
+        {
+            result = await ProcessRunner.RunAsync(
+                "pwsh",
+                [
+                    "-NoProfile", "-NonInteractive", "-File", executionScript,
+                    "-PublishedFileId", publishedFileId,
+                    "-ExpectedInstallPath", plan.WorkshopPackagePath,
+                    "-ArtifactsPath", evidenceRoot,
+                    "-TimeoutSeconds", plan.TimeoutSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    "-Output", "json"
+                ],
+                _repositoryRoot,
+                TimeSpan.FromSeconds(plan.TimeoutSeconds + 120),
+                cancellationToken);
+        }
+        finally
+        {
+            if (File.Exists(executionScript)) File.Delete(executionScript);
+        }
         if (result.ExitCode != 0)
             throw new InvalidOperationException("Subscriber adapter failed: " + Bound(result.StandardError + result.StandardOutput));
         var json = result.StandardOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).LastOrDefault()
@@ -211,6 +221,16 @@ public sealed class SubscriberVerifier(string repositoryRoot)
         var path = Path.Combine(parent, runId);
         if (createDirectory) Directory.CreateDirectory(path);
         return path;
+    }
+
+    internal string StagePowerShellAdapter(string sourcePath, string runId)
+    {
+        var source = RepositoryRoot.ContainedPath(_repositoryRoot, sourcePath);
+        var artifacts = Path.Combine(_repositoryRoot, "artifacts");
+        Directory.CreateDirectory(artifacts);
+        var destination = Path.Combine(artifacts, $"subscriber-adapter-{runId}.ps1");
+        File.Copy(source, destination, overwrite: false);
+        return destination;
     }
 
     private async Task RecoverInterruptedAsync(ReleaseProfile profile, CancellationToken cancellationToken)

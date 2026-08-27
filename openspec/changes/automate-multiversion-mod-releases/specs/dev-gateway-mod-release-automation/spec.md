@@ -271,6 +271,10 @@ After Steam reports a successful update and CDN propagation, the release workflo
 - **WHEN** a prior subscribed-copy smoke attempt retained incomplete evidence and the exact Steam-verified plan is recovered without resubmission
 - **THEN** the verifier gives the new adapter invocation a fresh contained output path that does not exist yet, preserves every prior attempt directory, and lets that invocation exclusively create and own its evidence directory
 
+#### Scenario: A frozen PowerShell subscriber adapter derives repository-relative inputs
+- **WHEN** an immutable plan copies the exact adapter bytes away from their canonical `scripts` directory
+- **THEN** execution stages those same bytes at a contained transient location that preserves the adapter's repository-root relationship, rejects collisions, and removes only that run-owned transient copy afterward
+
 ### Requirement: Local installation never implies Workshop subscription
 Development installation SHALL synchronize the reviewed package into RimWorld's canonical local `Mods/<package-id>` folder. The words "install", "deploy locally", and "copy to the game" MUST NOT authorize Steam Workshop subscription. Workshop subscription is permitted only as the explicitly named, bounded subscribed-copy release verification above and MUST NOT persist into ordinary development.
 

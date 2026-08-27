@@ -98,4 +98,37 @@ public sealed class SubscriberVerificationProfileTests
             if (Directory.Exists(packageRoot)) Directory.Delete(packageRoot, recursive: true);
         }
     }
+
+    [Test]
+    public void FrozenPowerShellSubscriberAdapter_IsStagedWithRepositoryRootAsItsParent()
+    {
+        var root = TestRepository.FindRoot();
+        var source = Path.Combine(root, "artifacts", "subscriber-source-" + Guid.NewGuid().ToString("N") + ".ps1");
+        var runId = "adapter-" + Guid.NewGuid().ToString("N");
+        File.WriteAllText(source, "$repositoryRoot = Join-Path $PSScriptRoot '..'\n");
+        string? staged = null;
+        try
+        {
+            staged = new SubscriberVerifier(root).StagePowerShellAdapter(source, runId);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.ReadAllBytes(staged), Is.EqualTo(File.ReadAllBytes(source)));
+                Assert.That(
+                    Path.GetFullPath(Path.Combine(Path.GetDirectoryName(staged)!, "..")),
+                    Is.EqualTo(Path.GetFullPath(root)).IgnoreCase,
+                    "the frozen adapter's existing PSScriptRoot contract must still resolve the repository root");
+                Assert.That(staged, Is.Not.EqualTo(source).IgnoreCase);
+                Assert.That(
+                    () => new SubscriberVerifier(root).StagePowerShellAdapter(source, runId),
+                    Throws.TypeOf<IOException>(),
+                    "a retained run-owned transient adapter must never be overwritten");
+            });
+        }
+        finally
+        {
+            if (staged is not null && File.Exists(staged)) File.Delete(staged);
+            if (File.Exists(source)) File.Delete(source);
+        }
+    }
 }
