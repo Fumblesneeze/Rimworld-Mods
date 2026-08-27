@@ -200,7 +200,10 @@ public sealed record WorkshopRemoteBaseline(
                 "/sharedfiles/filedetails/",
                 cancellationToken);
             var html = Encoding.UTF8.GetString(htmlBytes);
-            communityImageUrls = ParseCommunityImagePreviewUrls(html, imageItems.Length);
+            communityImageUrls = ParseCommunityImagePreviewUrls(
+                html,
+                imageItems.Count(item => !string.IsNullOrWhiteSpace(ReadProperty(item, "Url"))),
+                imageItems.Length);
         }
 
         var selectedImageUrls = SelectAdditionalImageUrls(
@@ -218,14 +221,16 @@ public sealed record WorkshopRemoteBaseline(
             {
                 url = selectedImageUrls[imageIndex];
                 imageIndex++;
-                contentIdentity = Convert.ToHexString(SHA256.HashData(
-                    await DownloadBoundedAsync(
-                        http,
-                        url,
-                        MaximumPreviewBytes,
-                        "images.steamusercontent.com",
-                        "/ugc/",
-                        cancellationToken)));
+                contentIdentity = string.IsNullOrEmpty(url)
+                    ? "missing"
+                    : Convert.ToHexString(SHA256.HashData(
+                        await DownloadBoundedAsync(
+                            http,
+                            url,
+                            MaximumPreviewBytes,
+                            "images.steamusercontent.com",
+                            "/ugc/",
+                            cancellationToken)));
             }
             previews.Add(string.Join("|", new[]
             {
@@ -249,11 +254,68 @@ public sealed record WorkshopRemoteBaseline(
             throw new InvalidOperationException("The authenticated Steam image preview count is outside the reviewed bound.");
         if (authenticatedUrls.Any(string.IsNullOrWhiteSpace))
         {
-            if (communityUrls.Count != authenticatedUrls.Count)
+            if (communityUrls.Count > authenticatedUrls.Count)
                 throw new InvalidOperationException("Steam Community did not return the exact image preview inventory.");
-            return communityUrls.ToArray();
+            if (communityUrls.Count == authenticatedUrls.Count)
+                return communityUrls.ToArray();
+
+            var aligned = new string[authenticatedUrls.Count];
+            var communityIndex = 0;
+            for (var authenticatedIndex = 0; authenticatedIndex < authenticatedUrls.Count; authenticatedIndex++)
+            {
+                var authenticatedUrl = authenticatedUrls[authenticatedIndex];
+                if (!string.IsNullOrWhiteSpace(authenticatedUrl))
+                {
+                    if (communityIndex >= communityUrls.Count ||
+                        !SameSteamPreview(authenticatedUrl, communityUrls[communityIndex]))
+                        throw new InvalidOperationException(
+                            "Steam Community image previews do not unambiguously align with the authenticated inventory.");
+                    aligned[authenticatedIndex] = communityUrls[communityIndex++];
+                    continue;
+                }
+
+                var nextAuthenticatedAnchor = authenticatedUrls
+                    .Skip(authenticatedIndex + 1)
+                    .FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate));
+                if (nextAuthenticatedAnchor is not null &&
+                    communityIndex < communityUrls.Count &&
+                    SameSteamPreview(nextAuthenticatedAnchor, communityUrls[communityIndex]))
+                {
+                    aligned[authenticatedIndex] = "";
+                    continue;
+                }
+
+                if (communityIndex < communityUrls.Count)
+                {
+                    aligned[authenticatedIndex] = communityUrls[communityIndex++];
+                    continue;
+                }
+
+                throw new InvalidOperationException(
+                    "Steam Community image previews do not unambiguously align with the authenticated inventory.");
+            }
+
+            if (communityIndex != communityUrls.Count)
+                throw new InvalidOperationException(
+                    "Steam Community image previews do not unambiguously align with the authenticated inventory.");
+            return aligned;
         }
         return authenticatedUrls.ToArray();
+    }
+
+    private static bool SameSteamPreview(string left, string right)
+    {
+        static string Identity(string value)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+                uri.Scheme != Uri.UriSchemeHttps ||
+                !uri.Host.Equals("images.steamusercontent.com", StringComparison.OrdinalIgnoreCase) ||
+                !uri.AbsolutePath.StartsWith("/ugc/", StringComparison.Ordinal))
+                throw new InvalidOperationException("Steam image preview alignment encountered a URL outside the Steam CDN.");
+            return uri.AbsolutePath.TrimEnd('/');
+        }
+
+        return string.Equals(Identity(left), Identity(right), StringComparison.Ordinal);
     }
 
     internal static async Task<byte[]> DownloadBoundedAsync(
@@ -306,10 +368,17 @@ public sealed record WorkshopRemoteBaseline(
         return destination.ToArray();
     }
 
-    internal static string[] ParseCommunityImagePreviewUrls(string html, int expectedCount)
+    internal static string[] ParseCommunityImagePreviewUrls(string html, int expectedCount) =>
+        ParseCommunityImagePreviewUrls(html, expectedCount, expectedCount);
+
+    internal static string[] ParseCommunityImagePreviewUrls(
+        string html,
+        int minimumExpectedCount,
+        int maximumExpectedCount)
     {
-        if (expectedCount < 1 || expectedCount > 10)
-            throw new InvalidOperationException("The expected Steam image preview count is outside the reviewed bound.");
+        if (minimumExpectedCount < 0 || maximumExpectedCount < 1 ||
+            minimumExpectedCount > maximumExpectedCount || maximumExpectedCount > 10)
+            throw new InvalidOperationException("The expected Steam image preview count range is outside the reviewed bound.");
         if (string.IsNullOrWhiteSpace(html) || html.Length > 2 * 1024 * 1024)
             throw new InvalidOperationException("The Steam Community item page is empty or exceeds the reviewed bound.");
 
@@ -326,8 +395,9 @@ public sealed record WorkshopRemoteBaseline(
             "['\"]url['\"]\\s*:\\s*['\"](?<url>[^'\"]+)['\"]",
             RegexOptions.CultureInvariant,
             TimeSpan.FromSeconds(1));
-        if (matches.Count != expectedCount)
-            throw new InvalidOperationException("Steam Community did not return the exact image preview inventory.");
+        if (matches.Count < minimumExpectedCount || matches.Count > maximumExpectedCount)
+            throw new InvalidOperationException(
+                "Steam Community did not return the exact image preview inventory within the reviewed count range.");
 
         var urls = matches.Select(match => WebUtility.HtmlDecode(match.Groups["url"].Value)).ToArray();
         foreach (var url in urls)

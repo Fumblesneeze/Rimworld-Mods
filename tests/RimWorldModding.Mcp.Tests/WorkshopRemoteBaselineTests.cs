@@ -93,6 +93,36 @@ public sealed class WorkshopRemoteBaselineTests
     }
 
     [Test]
+    public void Community_fallback_preserves_one_API_declared_hidden_slot_only_when_visible_URL_anchors_align()
+    {
+        var first = "https://images.steamusercontent.com/ugc/201/FIRST/";
+        var last = "https://images.steamusercontent.com/ugc/203/LAST/";
+        var twoVisible = $$"""
+            <script>var rgFullScreenshotURLs = [
+                { 'url': '{{first}}' },
+                { 'url': '{{last}}' }
+            ];</script>
+            """;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                WorkshopRemoteBaseline.ParseCommunityImagePreviewUrls(twoVisible, 2, 3),
+                Is.EqualTo(new[] { first, last }));
+            Assert.That(
+                WorkshopRemoteBaseline.SelectAdditionalImageUrls(
+                    [first, "", last],
+                    [first + "?imw=5000", last + "?imw=5000"]),
+                Is.EqualTo(new[] { first + "?imw=5000", "", last + "?imw=5000" }));
+            Assert.That(
+                () => WorkshopRemoteBaseline.SelectAdditionalImageUrls(
+                    ["", ""],
+                    [first]),
+                Throws.InvalidOperationException.With.Message.Contains("unambiguously align"));
+        });
+    }
+
+    [Test]
     public void Empty_or_non_image_preview_inventories_need_no_image_fallback()
     {
         Assert.Multiple(() =>
