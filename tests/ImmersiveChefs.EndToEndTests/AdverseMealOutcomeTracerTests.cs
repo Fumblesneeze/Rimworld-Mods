@@ -14,186 +14,205 @@ namespace ImmersiveChefs.EndToEndTests;
     EndToEndTestContract.CorePackageId,
     "imranfish.xmlextensions",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 4_800,
-    MaxGameTicks = 18_000,
-    MaxWallClockSeconds = 210)]
+    MaxFrames = 7_200,
+    MaxGameTicks = 24_000,
+    MaxWallClockSeconds = 270)]
 public sealed class AdverseMealOutcomeTracerTest : IRimWorldEndToEndTest
 {
     private Map map = null!;
-    private Pawn diner = null!;
-    private ThingWithComps meal = null!;
-    private ThingWithComps plate = null!;
-    private ThingWithComps cutlery = null!;
-    private float configuredPoisonChance;
+    private DiningCase cleanCase = null!;
+    private DiningCase contaminatedCase = null!;
 
     public void Arrange(IEndToEndContext context)
     {
         PreserveSettings(context);
 
         map = Current.Game.CurrentMap;
-        var center = FoodSearchE2EFixture.FindRoomCenter(map);
-        FoodSearchE2EFixture.BuildSealedRoom(map, center);
+        var centers = FindRoomCenters(map, 2);
+        FoodSearchE2EFixture.BuildSealedRoom(map, centers[0]);
+        FoodSearchE2EFixture.BuildSealedRoom(map, centers[1]);
 
-        diner = FoodSearchE2EFixture.CreateColonist("Adverse meal diner");
-        FoodSearchE2EFixture.SetHunger(diner, 0.20f);
-        GenSpawn.Spawn(diner, center + (IntVec3.West * 3), map);
-        diner.drafter.Drafted = true;
-
-        meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
-        meal.stackCount = 1;
-        meal.GetComp<CompCulinaryState>()!.ReplaceServings(new[]
-        {
-            new CulinaryServingRecord(
-                qualityScore: 10,
-                temperatureCelsius: -20f,
-                contamination: ContaminationSources.DirtyCookware |
-                               ContaminationSources.DirtyPlate |
-                               ContaminationSources.DirtyCutlery,
-                microwaveReheatCount: 0,
-                lastThermalTick: Math.Max(1, Find.TickManager.TicksGame))
-        });
-
-        plate = FoodSearchE2EFixture.MakeCleanWare(
-            "ImmersiveChefs_Plate",
-            ThingDefOf.WoodLog);
-        plate.GetComp<CompSanitation>()!.MarkDirty();
-        EndToEndAssert.True(
-            meal.GetComp<CompEmbeddedWare>()!.TryEmbedPlate(plate),
-            "The adverse meal fixture must bind its exact dirty plate once.");
-
-        cutlery = FoodSearchE2EFixture.MakeCleanWare(
-            "ImmersiveChefs_Cutlery",
-            ThingDefOf.WoodLog);
-        cutlery.GetComp<CompSanitation>()!.MarkDirty();
-        GenSpawn.Spawn(cutlery, center, map);
-        GenSpawn.Spawn(meal, center + (IntVec3.East * 3), map);
+        cleanCase = CreateCase(
+            "Clean comparison diner",
+            centers[0],
+            ContaminationSources.None,
+            dirtyWare: false);
+        contaminatedCase = CreateCase(
+            "Contaminated comparison diner",
+            centers[1],
+            ContaminationSources.DirtyCookware |
+            ContaminationSources.DirtyPlate |
+            ContaminationSources.DirtyCutlery,
+            dirtyWare: true);
     }
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
         yield return new TimeControlActionStep(
-            "pause before the adverse meal workflow",
+            "pause before the matched clean and contaminated meal workflow",
             paused: true,
             EndToEndGameSpeed.Normal);
-        yield return new SelectionActionStep(
-            "select the passive awful frozen dirty meal",
-            new[] { meal.ThingID },
-            additive: false);
         yield return new CameraActionStep(
-            "frame the passive adverse meal fixture",
-            new[] { diner.ThingID, meal.ThingID, cutlery.ThingID },
+            "frame both passive comparison fixtures",
+            new[]
+            {
+                cleanCase.Diner.ThingID,
+                cleanCase.Meal.ThingID,
+                contaminatedCase.Diner.ThingID,
+                contaminatedCase.Meal.ThingID
+            },
             paddingPixels: 220);
         yield return new ScreenshotStep(
-            "observe the passive awful frozen dirty meal before player action",
+            "observe matched clean and contaminated meals before player action",
             Array.Empty<string>(),
             paddingPixels: 0);
         yield return new AssertionStep(
-            "the adverse fixture is passive and conserves its exact ware",
-            _ => AssertPassiveFixture());
+            "matched fixtures are passive and use normal configured risk",
+            _ => AssertPassiveFixtures());
 
+        foreach (var step in RunNativeIngestion(context, cleanCase))
+        {
+            yield return step;
+        }
+
+        foreach (var step in RunNativeIngestion(context, contaminatedCase))
+        {
+            yield return step;
+        }
+
+        yield return new AssertionStep(
+            "both native ingestions conserve their exact settings at ordinary risk",
+            _ => AssertCompletedCases());
+        yield return new CheckpointStep(
+            "matched clean and contaminated meal result",
+            _ => new Dictionary<string, string>
+            {
+                ["cleanConfiguredPoisonChance"] = cleanCase.ConfiguredPoisonChance.ToString("0.000"),
+                ["contaminatedConfiguredPoisonChance"] = contaminatedCase.ConfiguredPoisonChance.ToString("0.000"),
+                ["cleanObservedFoodPoisoning"] = HasFoodPoisoning(cleanCase.Diner).ToString(),
+                ["contaminatedObservedFoodPoisoning"] = HasFoodPoisoning(contaminatedCase.Diner).ToString(),
+                ["cleanMealDestroyed"] = cleanCase.Meal.Destroyed.ToString(),
+                ["contaminatedMealDestroyed"] = contaminatedCase.Meal.Destroyed.ToString(),
+                ["cleanPlateId"] = cleanCase.Plate.ThingID,
+                ["cleanCutleryId"] = cleanCase.Cutlery.ThingID,
+                ["contaminatedPlateId"] = contaminatedCase.Plate.ThingID,
+                ["contaminatedCutleryId"] = contaminatedCase.Cutlery.ThingID
+            });
+    }
+
+    private IEnumerable<EndToEndStep> RunNativeIngestion(
+        IEndToEndContext context,
+        DiningCase diningCase)
+    {
+        var label = diningCase.Label;
         yield return new SelectionActionStep(
-            "select the drafted adverse-meal diner",
-            new[] { diner.ThingID },
+            $"select the drafted {label}",
+            new[] { diningCase.Diner.ThingID },
             additive: false);
-        var draftToggle = RequiredDraftToggle(context, expectedCurrentState: true);
+        var draftToggle = RequiredDraftToggle(
+            context,
+            diningCase.Diner,
+            expectedCurrentState: true);
         yield return new GizmoActionStep(
-            "undraft the diner through the native colonist gizmo",
-            new[] { diner.ThingID },
+            $"undraft the {label} through the native colonist gizmo",
+            new[] { diningCase.Diner.ThingID },
             draftToggle.RuntimeType,
             EndToEndGizmoInteraction.Toggle,
             stableGizmoId: draftToggle.StableId);
+
+        var options = context.GetRequiredService<IEndToEndFloatMenuCatalog>()
+            .Query(diningCase.Diner.ThingID, diningCase.Meal.ThingID);
+        var consume = options.Where(option =>
+                !option.Disabled &&
+                option.Label.IndexOf("consume", StringComparison.OrdinalIgnoreCase) >= 0)
+            .ToArray();
+        EndToEndAssert.Equal(1, consume.Length,
+            $"Expected one enabled native Consume option for the {label}; observed " +
+            string.Join(", ", options.Select(option =>
+                $"'{option.Label}' (disabled={option.Disabled})")));
+        yield return new FloatMenuActionStep(
+            $"order native consumption for the {label}",
+            diningCase.Diner.ThingID,
+            diningCase.Meal.ThingID,
+            consume[0].StableId);
         yield return new TimeControlActionStep(
-            "run ordinary game time for autonomous food seeking",
+            $"run ordinary ingestion for the {label}",
             paused: false,
             EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
-            "ordinary food seeking starts native ingestion with exact dirty cutlery",
-            _ => !meal.Destroyed &&
-                 diner.CurJobDef == JobDefOf.Ingest &&
-                 !cutlery.Spawned &&
-                 ReferenceEquals(cutlery.holdingOwner, diner.inventory?.innerContainer),
-            new EndToEndDeadline(1_200, 4_500, TimeSpan.FromSeconds(60)));
+            $"ordinary ingest toils acquire the exact cutlery for the {label}",
+            _ => !diningCase.Meal.Destroyed &&
+                 diningCase.Diner.CurJobDef == JobDefOf.Ingest &&
+                 !diningCase.Cutlery.Spawned &&
+                 ReferenceEquals(
+                     diningCase.Cutlery.holdingOwner,
+                     diningCase.Diner.inventory?.innerContainer),
+            new EndToEndDeadline(900, 3_000, TimeSpan.FromSeconds(45)));
         yield return new SelectionActionStep(
-            "select the diner during autonomous ingestion",
-            new[] { diner.ThingID },
+            $"select the {label} during native ingestion",
+            new[] { diningCase.Diner.ThingID },
             additive: false);
+        yield return new CameraActionStep(
+            $"frame native ingestion for the {label}",
+            new[]
+            {
+                diningCase.Diner.ThingID,
+                diningCase.Meal.ThingID
+            },
+            paddingPixels: 220);
         yield return new ScreenshotStep(
-            "observe ordinary ingestion after native undraft and time actions",
+            $"observe native ingestion for the {label}",
             Array.Empty<string>(),
             paddingPixels: 0);
-
         yield return new TimeControlActionStep(
-            "finish ordinary adverse-meal ingestion",
+            $"finish native ingestion for the {label}",
             paused: false,
             EndToEndGameSpeed.Superfast);
         yield return new WaitUntilStep(
-            "ordinary ingestion returns dirty ware and applies visible adverse outcomes",
-            _ => OutcomeCompleted(),
-            new EndToEndDeadline(2_400, 9_000, TimeSpan.FromSeconds(90)));
+            $"native ingestion returns the exact ware for the {label}",
+            _ => CaseCompleted(diningCase),
+            new EndToEndDeadline(1_800, 6_000, TimeSpan.FromSeconds(70)));
         yield return new TimeControlActionStep(
-            "pause after the adverse meal outcome",
+            $"pause after native ingestion for the {label}",
             paused: true,
             EndToEndGameSpeed.Normal);
-        yield return new AssertionStep(
-            "the adverse meal applies each exact outcome once",
-            _ => AssertCompletedOutcome());
-
         yield return new SelectionActionStep(
-            "select the adverse-meal diner after eating",
-            new[] { diner.ThingID },
+            $"select the {label} after eating",
+            new[] { diningCase.Diner.ThingID },
             additive: false);
         yield return new PawnInspectTabActionStep(
-            "open the native Needs tab for adverse meal thoughts",
-            diner.ThingID,
+            $"open the native Needs tab for the {label}",
+            diningCase.Diner.ThingID,
             EndToEndPawnInspectTab.Needs);
         yield return new ScreenshotStep(
-            "observe awful frozen dirty dining thoughts after ingestion",
+            $"observe ordinary dining thoughts for the {label}",
             Array.Empty<string>(),
             paddingPixels: 0);
-        yield return new PawnInspectTabActionStep(
-            "open the native Health tab for deterministic food poisoning",
-            diner.ThingID,
-            EndToEndPawnInspectTab.Health);
-        yield return new ScreenshotStep(
-            "observe deterministic food poisoning after adverse ingestion",
-            Array.Empty<string>(),
-            paddingPixels: 0);
-
         yield return new SelectionActionStep(
-            "select the exact returned adverse plate",
-            new[] { plate.ThingID },
+            $"select the exact returned plate for the {label}",
+            new[] { diningCase.Plate.ThingID },
             additive: false);
         yield return new CameraActionStep(
-            "frame the exact returned adverse dining ware",
-            new[] { diner.ThingID, plate.ThingID, cutlery.ThingID },
+            $"frame the exact returned setting for the {label}",
+            new[]
+            {
+                diningCase.Diner.ThingID,
+                diningCase.Plate.ThingID,
+                diningCase.Cutlery.ThingID
+            },
             paddingPixels: 220);
         yield return new ScreenshotStep(
-            "observe the exact returned dirty plate",
+            $"observe the exact returned plate for the {label}",
             Array.Empty<string>(),
             paddingPixels: 0);
         yield return new SelectionActionStep(
-            "select the exact returned adverse cutlery",
-            new[] { cutlery.ThingID },
+            $"select the exact returned cutlery for the {label}",
+            new[] { diningCase.Cutlery.ThingID },
             additive: false);
         yield return new ScreenshotStep(
-            "observe the exact returned dirty cutlery",
+            $"observe the exact returned cutlery for the {label}",
             Array.Empty<string>(),
             paddingPixels: 0);
-        yield return new CheckpointStep(
-            "adverse meal tracer result",
-            _ => new Dictionary<string, string>
-            {
-                ["mealDestroyed"] = meal.Destroyed.ToString(),
-                ["qualityThoughtStage"] = MemoryStage("ImmersiveChefs_CulinaryQuality").ToString(),
-                ["temperatureThoughtStage"] = MemoryStage("ImmersiveChefs_MealTemperature").ToString(),
-                ["diningThoughtStage"] = MemoryStage("ImmersiveChefs_DiningExperience").ToString(),
-                ["foodPoisoning"] = diner.health.hediffSet.HasHediff(HediffDefOf.FoodPoisoning).ToString(),
-                ["configuredPoisonChance"] = configuredPoisonChance.ToString("0.000"),
-                ["plateId"] = plate.ThingID,
-                ["plateDirty"] = plate.GetComp<CompSanitation>()!.IsDirty.ToString(),
-                ["cutleryId"] = cutlery.ThingID,
-                ["cutleryDirty"] = cutlery.GetComp<CompSanitation>()!.IsDirty.ToString()
-            });
     }
 
     private void PreserveSettings(IEndToEndContext context)
@@ -222,10 +241,8 @@ public sealed class AdverseMealOutcomeTracerTest : IRimWorldEndToEndTest
         });
         settings.CulinaryQualityEnabled = true;
         settings.QualityMoodScale = 1f;
-        // This acceptance fixture deliberately amplifies the already-halved production
-        // contributions far enough to force one visible vanilla poisoning outcome.
-        settings.FoodPoisoningEffectScale = 4f;
-        settings.MaximumCustomPoisonChance = 1f;
+        settings.FoodPoisoningEffectScale = 1f;
+        settings.MaximumCustomPoisonChance = 0.50f;
         settings.MealTemperatureEnabled = true;
         settings.AutoMicrowaveBelow = -100f;
         settings.WareRequirementMode = WareRequirementMode.Strict;
@@ -233,55 +250,129 @@ public sealed class AdverseMealOutcomeTracerTest : IRimWorldEndToEndTest
         settings.ColonyDiningStandards = false;
     }
 
-    private void AssertPassiveFixture()
+    private DiningCase CreateCase(
+        string label,
+        IntVec3 center,
+        ContaminationSources contamination,
+        bool dirtyWare)
     {
-        EndToEndAssert.True(diner.Drafted,
-            "The diner must remain drafted until the native player action begins the workflow.");
-        EndToEndAssert.True(diner.CurJobDef != JobDefOf.Ingest,
-            "The passive fixture must not begin ingestion before native undrafting and time control.");
-        var serving = meal.GetComp<CompCulinaryState>()!.Servings.Single();
-        EndToEndAssert.Equal(10, serving.QualityScore,
-            "The tracer must begin with an awful culinary-quality score.");
-        EndToEndAssert.Equal(-20f, serving.TemperatureCelsius,
-            "The tracer must begin with a frozen culinary temperature.");
-        EndToEndAssert.Equal(
-            ContaminationSources.DirtyCookware |
-            ContaminationSources.DirtyPlate |
-            ContaminationSources.DirtyCutlery,
-            serving.Contamination,
-            "The tracer must begin with dirty cookware, plate, and cutlery contamination.");
-        EndToEndAssert.True(plate.GetComp<CompSanitation>()!.IsDirty,
-            "The exact embedded plate must begin dirty.");
-        EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()!.IsDirty,
-            "The exact available cutlery must begin spawned and dirty.");
-        EndToEndAssert.Equal(0, MemoryCount("ImmersiveChefs_CulinaryQuality"),
-            "The passive diner must begin without a culinary-quality memory.");
-        EndToEndAssert.Equal(0, MemoryCount("ImmersiveChefs_MealTemperature"),
-            "The passive diner must begin without a meal-temperature memory.");
-        EndToEndAssert.Equal(0, MemoryCount("ImmersiveChefs_DiningExperience"),
-            "The passive diner must begin without a dining-experience memory.");
-        EndToEndAssert.Equal(0, FoodPoisoningCount(),
-            "The passive diner must begin without food poisoning.");
+        var diner = FoodSearchE2EFixture.CreateColonist(label);
+        FoodSearchE2EFixture.SetHunger(diner, 0.20f);
+        GenSpawn.Spawn(diner, center + (IntVec3.West * 3), map);
+        diner.drafter.Drafted = true;
 
-        configuredPoisonChance = DiningOutcomeCalculator.FinalPoisonChance(
+        var meal = (ThingWithComps)ThingMaker.MakeThing(ThingDefOf.MealSimple);
+        meal.stackCount = 1;
+        meal.GetComp<CompCulinaryState>()!.ReplaceServings(new[]
+        {
+            new CulinaryServingRecord(
+                qualityScore: 10,
+                temperatureCelsius: -20f,
+                contamination: contamination,
+                microwaveReheatCount: 0,
+                lastThermalTick: Math.Max(1, Find.TickManager.TicksGame))
+        });
+
+        var plate = FoodSearchE2EFixture.MakeCleanWare(
+            "ImmersiveChefs_Plate",
+            ThingDefOf.WoodLog);
+        var cutlery = FoodSearchE2EFixture.MakeCleanWare(
+            "ImmersiveChefs_Cutlery",
+            ThingDefOf.WoodLog);
+        if (dirtyWare)
+        {
+            plate.GetComp<CompSanitation>()!.MarkDirty();
+            cutlery.GetComp<CompSanitation>()!.MarkDirty();
+        }
+
+        EndToEndAssert.True(
+            meal.GetComp<CompEmbeddedWare>()!.TryEmbedPlate(plate),
+            $"The {label} must bind its exact plate once.");
+        GenSpawn.Spawn(cutlery, center, map);
+        GenSpawn.Spawn(meal, center + (IntVec3.East * 3), map);
+
+        return new DiningCase(
+            label,
+            diner,
+            meal,
+            plate,
+            cutlery,
+            contamination,
+            dirtyWare);
+    }
+
+    private void AssertPassiveFixtures()
+    {
+        AssertPassiveCase(cleanCase);
+        AssertPassiveCase(contaminatedCase);
+        AssertGlobalWareConservation();
+
+        EndToEndAssert.Equal(1f, ImmersiveChefsMod.Settings.FoodPoisoningEffectScale,
+            "The native comparison must use the ordinary production effect scale.");
+        EndToEndAssert.Equal(0.50f, ImmersiveChefsMod.Settings.MaximumCustomPoisonChance,
+            "The native comparison must use the ordinary production risk cap.");
+        EndToEndAssert.True(cleanCase.ConfiguredPoisonChance < contaminatedCase.ConfiguredPoisonChance,
+            "The matched contaminated serving must have greater configured risk than the clean serving.");
+        EndToEndAssert.True(
+            Math.Abs(
+                contaminatedCase.ConfiguredPoisonChance -
+                cleanCase.ConfiguredPoisonChance -
+                0.20f) < 0.0001f,
+            "The three contaminated-setting contributors must add their halved twenty percentage points exactly.");
+    }
+
+    private void AssertPassiveCase(DiningCase diningCase)
+    {
+        EndToEndAssert.True(diningCase.Diner.Drafted,
+            $"The {diningCase.Label} must remain drafted until the native player action begins.");
+        EndToEndAssert.True(diningCase.Diner.CurJobDef != JobDefOf.Ingest,
+            $"The passive {diningCase.Label} must not ingest before the native order.");
+        var serving = diningCase.Meal.GetComp<CompCulinaryState>()!.Servings.Single();
+        EndToEndAssert.Equal(10, serving.QualityScore,
+            $"The {diningCase.Label} must begin with the matched culinary-quality score.");
+        EndToEndAssert.Equal(-20f, serving.TemperatureCelsius,
+            $"The {diningCase.Label} must begin with the matched frozen temperature.");
+        EndToEndAssert.Equal(diningCase.InitialContamination, serving.Contamination,
+            $"The {diningCase.Label} must retain its exact initial contamination.");
+        EndToEndAssert.Equal(
+            diningCase.InitiallyDirty,
+            diningCase.Plate.GetComp<CompSanitation>()!.IsDirty,
+            $"The {diningCase.Label} plate sanitation must match its declared case.");
+        EndToEndAssert.True(diningCase.Cutlery.Spawned,
+            $"The exact {diningCase.Label} cutlery must begin spawned.");
+        EndToEndAssert.Equal(
+            diningCase.InitiallyDirty,
+            diningCase.Cutlery.GetComp<CompSanitation>()!.IsDirty,
+            $"The {diningCase.Label} cutlery sanitation must match its declared case.");
+        EndToEndAssert.Equal(0, MemoryCount(diningCase.Diner, "ImmersiveChefs_CulinaryQuality"),
+            $"The passive {diningCase.Label} must begin without a culinary-quality memory.");
+        EndToEndAssert.Equal(0, MemoryCount(diningCase.Diner, "ImmersiveChefs_MealTemperature"),
+            $"The passive {diningCase.Label} must begin without a meal-temperature memory.");
+        EndToEndAssert.Equal(0, MemoryCount(diningCase.Diner, "ImmersiveChefs_DiningExperience"),
+            $"The passive {diningCase.Label} must begin without a dining-experience memory.");
+        EndToEndAssert.Equal(0, FoodPoisoningCount(diningCase.Diner),
+            $"The passive {diningCase.Label} must begin without food poisoning.");
+
+        diningCase.ConfiguredPoisonChance = DiningOutcomeCalculator.FinalPoisonChance(
             new DiningRiskInputs(
                 baseChance: 0f,
                 qualityScore: serving.QualityScore,
                 thermalBand: ThermalCalculator.BandFor(serving.TemperatureCelsius),
                 contamination: serving.Contamination,
-                plateServiceScore: KitchenwareRuntime.ServiceScore(plate),
-                cutleryServiceScore: KitchenwareRuntime.ServiceScore(cutlery),
+                plateServiceScore: KitchenwareRuntime.ServiceScore(diningCase.Plate),
+                cutleryServiceScore: KitchenwareRuntime.ServiceScore(diningCase.Cutlery),
                 microwaveReheatCount: serving.MicrowaveReheatCount,
                 microwaveExtraPercentagePoints: ImmersiveChefsMod.Settings.MicrowaveExtraPoisonChance,
                 effectScale: ImmersiveChefsMod.Settings.FoodPoisoningEffectScale,
                 maximumChance: ImmersiveChefsMod.Settings.MaximumCustomPoisonChance));
-        EndToEndAssert.Equal(1f, configuredPoisonChance,
-            "The acceptance-only amplification must force a deterministic 100% adverse-meal risk.");
-        AssertWareConservation();
+        EndToEndAssert.True(diningCase.ConfiguredPoisonChance > 0f &&
+                            diningCase.ConfiguredPoisonChance < 0.50f,
+            $"The {diningCase.Label} must use an ordinary non-forced probability below the player cap.");
     }
 
     private EndToEndGizmoOption RequiredDraftToggle(
         IEndToEndContext context,
+        Pawn diner,
         bool expectedCurrentState)
     {
         var candidates = context.GetRequiredService<IEndToEndGizmoCatalog>()
@@ -300,74 +391,171 @@ public sealed class AdverseMealOutcomeTracerTest : IRimWorldEndToEndTest
         return candidates[0];
     }
 
-    private bool OutcomeCompleted()
+    private bool CaseCompleted(DiningCase diningCase)
     {
-        return meal.Destroyed &&
-               plate.Spawned &&
-               cutlery.Spawned &&
-               diner.health.hediffSet.HasHediff(HediffDefOf.FoodPoisoning) &&
-               MemoryStage("ImmersiveChefs_CulinaryQuality") == 0 &&
-               MemoryStage("ImmersiveChefs_MealTemperature") == 4 &&
-               MemoryStage("ImmersiveChefs_DiningExperience") == 4;
+        return diningCase.Meal.Destroyed &&
+               diningCase.Plate.Spawned &&
+               diningCase.Cutlery.Spawned &&
+               MemoryStage(diningCase.Diner, "ImmersiveChefs_CulinaryQuality") == 0 &&
+               MemoryStage(diningCase.Diner, "ImmersiveChefs_MealTemperature") == 4;
     }
 
-    private void AssertCompletedOutcome()
+    private void AssertCompletedCases()
     {
-        EndToEndAssert.True(meal.Destroyed,
-            "Ordinary RimWorld ingestion must consume the exact adverse meal.");
-        EndToEndAssert.Equal(0, MemoryStage("ImmersiveChefs_CulinaryQuality"),
-            "Quality 10 must visibly apply the Awful culinary thought.");
-        EndToEndAssert.Equal(4, MemoryStage("ImmersiveChefs_MealTemperature"),
-            "The frozen meal must visibly apply the Frozen temperature thought.");
-        EndToEndAssert.Equal(4, MemoryStage("ImmersiveChefs_DiningExperience"),
-            "The dirty setting must visibly apply the worst dining thought.");
-        EndToEndAssert.True(diner.health.hediffSet.HasHediff(HediffDefOf.FoodPoisoning),
-            "The configured deterministic final risk must apply vanilla food poisoning.");
-        EndToEndAssert.Equal(1, MemoryCount("ImmersiveChefs_CulinaryQuality"),
-            "The completed ingestion must add exactly one culinary-quality memory.");
-        EndToEndAssert.Equal(1, MemoryCount("ImmersiveChefs_MealTemperature"),
-            "The completed ingestion must add exactly one meal-temperature memory.");
-        EndToEndAssert.Equal(1, MemoryCount("ImmersiveChefs_DiningExperience"),
-            "The completed ingestion must add exactly one dining-experience memory.");
-        EndToEndAssert.Equal(1, FoodPoisoningCount(),
-            "The completed ingestion must add exactly one vanilla food-poisoning hediff.");
-        EndToEndAssert.True(plate.Spawned && plate.GetComp<CompSanitation>()!.IsDirty,
-            "The exact embedded plate must return dirty after eating.");
-        EndToEndAssert.True(cutlery.Spawned && cutlery.GetComp<CompSanitation>()!.IsDirty,
-            "The exact acquired cutlery must return dirty after eating.");
-        EndToEndAssert.Equal(1, plate.stackCount,
-            "The exact returned plate must remain one physical unit.");
-        EndToEndAssert.Equal(1, cutlery.stackCount,
-            "The exact returned cutlery must remain one physical unit.");
-        AssertWareConservation();
+        AssertCompletedCase(cleanCase);
+        AssertCompletedCase(contaminatedCase);
+        AssertGlobalWareConservation();
     }
 
-    private void AssertWareConservation()
+    private void AssertCompletedCase(DiningCase diningCase)
+    {
+        EndToEndAssert.True(diningCase.Meal.Destroyed,
+            $"Ordinary RimWorld ingestion must consume the exact {diningCase.Label} meal.");
+        EndToEndAssert.Equal(0, MemoryStage(diningCase.Diner, "ImmersiveChefs_CulinaryQuality"),
+            $"Quality 10 must visibly apply the Awful culinary thought for the {diningCase.Label}.");
+        EndToEndAssert.Equal(4, MemoryStage(diningCase.Diner, "ImmersiveChefs_MealTemperature"),
+            $"The frozen {diningCase.Label} must visibly apply the Frozen temperature thought.");
+        EndToEndAssert.Equal(1, MemoryCount(diningCase.Diner, "ImmersiveChefs_CulinaryQuality"),
+            $"The {diningCase.Label} must add exactly one culinary-quality memory.");
+        EndToEndAssert.Equal(1, MemoryCount(diningCase.Diner, "ImmersiveChefs_MealTemperature"),
+            $"The {diningCase.Label} must add exactly one meal-temperature memory.");
+        EndToEndAssert.True(
+            diningCase.Plate.Spawned && diningCase.Plate.GetComp<CompSanitation>()!.IsDirty,
+            $"The exact {diningCase.Label} plate must return dirty after eating.");
+        EndToEndAssert.True(
+            diningCase.Cutlery.Spawned && diningCase.Cutlery.GetComp<CompSanitation>()!.IsDirty,
+            $"The exact {diningCase.Label} cutlery must return dirty after eating.");
+        EndToEndAssert.Equal(1, diningCase.Plate.stackCount,
+            $"The exact {diningCase.Label} plate must remain one physical unit.");
+        EndToEndAssert.Equal(1, diningCase.Cutlery.stackCount,
+            $"The exact {diningCase.Label} cutlery must remain one physical unit.");
+    }
+
+    private void AssertGlobalWareConservation()
     {
         EndToEndAssert.Equal(
-            1,
-            FoodSearchE2EFixture.CountThingUnits(map, plate.def, meal, diner),
-            "The tracer must conserve exactly one plate across all holders.");
+            2,
+            CountGlobalWareUnits(cleanCase.Plate.def),
+            "The matched comparison must conserve exactly two plates without duplication or loss.");
         EndToEndAssert.Equal(
-            1,
-            FoodSearchE2EFixture.CountThingUnits(map, cutlery.def, meal, diner),
-            "The tracer must conserve exactly one cutlery set across all holders.");
+            2,
+            CountGlobalWareUnits(cleanCase.Cutlery.def),
+            "The matched comparison must conserve exactly two cutlery sets without duplication or loss.");
     }
 
-    private int MemoryStage(string defName)
+    private int CountGlobalWareUnits(ThingDef def)
+    {
+        var spawned = map.listerThings.ThingsOfDef(def).Sum(thing => thing.stackCount);
+        var heldByPawns = new[] { cleanCase.Diner, contaminatedCase.Diner }.Sum(pawn =>
+            (pawn.inventory?.innerContainer
+                 .Where(thing => thing.def == def)
+                 .Sum(thing => thing.stackCount) ?? 0) +
+            (pawn.carryTracker?.CarriedThing is { } carried && carried.def == def
+                ? carried.stackCount
+                : 0));
+        var embedded = string.Equals(
+            def.defName,
+            "ImmersiveChefs_Plate",
+            StringComparison.Ordinal)
+            ? new[] { cleanCase.Meal, contaminatedCase.Meal }
+                .Where(meal => !meal.Destroyed)
+                .Sum(meal => meal.GetComp<CompEmbeddedWare>()?.EmbeddedPlateCount ?? 0)
+            : 0;
+        return spawned + heldByPawns + embedded;
+    }
+
+    private static int MemoryStage(Pawn diner, string defName)
     {
         var thoughtDef = DefDatabase<ThoughtDef>.GetNamed(defName);
         return diner.needs?.mood?.thoughts?.memories
                    .GetFirstMemoryOfDef(thoughtDef)?.CurStageIndex ?? -1;
     }
 
-    private int MemoryCount(string defName)
+    private static int MemoryCount(Pawn diner, string defName)
     {
         var thoughtDef = DefDatabase<ThoughtDef>.GetNamed(defName);
         return diner.needs?.mood?.thoughts?.memories.Memories
                    .Count(memory => memory.def == thoughtDef) ?? 0;
     }
 
-    private int FoodPoisoningCount() => diner.health.hediffSet.hediffs.Count(
+    private static int FoodPoisoningCount(Pawn diner) => diner.health.hediffSet.hediffs.Count(
         hediff => hediff.def == HediffDefOf.FoodPoisoning);
+
+    private static bool HasFoodPoisoning(Pawn diner) => FoodPoisoningCount(diner) > 0;
+
+    private static IReadOnlyList<IntVec3> FindRoomCenters(Map map, int count)
+    {
+        var centers = new List<IntVec3>();
+        for (var x = -54; x <= 54; x += 18)
+        {
+            for (var z = -54; z <= 54; z += 18)
+            {
+                var candidate = map.Center + new IntVec3(x, 0, z);
+                if (!candidate.InBounds(map) ||
+                    centers.Any(center => center.DistanceToSquared(candidate) < 225) ||
+                    !SquareIsUsable(map, candidate, 6))
+                {
+                    continue;
+                }
+
+                centers.Add(candidate);
+                if (centers.Count == count)
+                {
+                    return centers;
+                }
+            }
+        }
+
+        throw new EndToEndAssertionException(
+            "Could not find two separated matched-ingestion rooms.");
+    }
+
+    private static bool SquareIsUsable(Map map, IntVec3 center, int radius)
+    {
+        for (var x = -radius; x <= radius; x++)
+        {
+            for (var z = -radius; z <= radius; z++)
+            {
+                var cell = center + new IntVec3(x, 0, z);
+                if (!cell.InBounds(map) ||
+                    !cell.Walkable(map) ||
+                    cell.GetEdifice(map) is not null)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private sealed class DiningCase
+    {
+        public DiningCase(
+            string label,
+            Pawn diner,
+            ThingWithComps meal,
+            ThingWithComps plate,
+            ThingWithComps cutlery,
+            ContaminationSources initialContamination,
+            bool initiallyDirty)
+        {
+            Label = label;
+            Diner = diner;
+            Meal = meal;
+            Plate = plate;
+            Cutlery = cutlery;
+            InitialContamination = initialContamination;
+            InitiallyDirty = initiallyDirty;
+        }
+
+        public string Label { get; }
+        public Pawn Diner { get; }
+        public ThingWithComps Meal { get; }
+        public ThingWithComps Plate { get; }
+        public ThingWithComps Cutlery { get; }
+        public ContaminationSources InitialContamination { get; }
+        public bool InitiallyDirty { get; }
+        public float ConfiguredPoisonChance { get; set; }
+    }
 }

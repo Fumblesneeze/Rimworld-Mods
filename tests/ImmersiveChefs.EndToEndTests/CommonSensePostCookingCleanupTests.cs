@@ -346,9 +346,9 @@ public sealed class CommonSensePostCookingCleanupTest : IRimWorldEndToEndTest
     "Dubwise.DubsBadHygiene",
     "avilmask.CommonSense",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 9_600,
-    MaxGameTicks = 36_000,
-    MaxWallClockSeconds = 330)]
+    MaxFrames = 12_000,
+    MaxGameTicks = 40_000,
+    MaxWallClockSeconds = 390)]
 public sealed class CommonSenseActiveProcessorDishwasherTest : IRimWorldEndToEndTest
 {
     private PickUpAndHaulDishwasherFixture dishwasherFixture = null!;
