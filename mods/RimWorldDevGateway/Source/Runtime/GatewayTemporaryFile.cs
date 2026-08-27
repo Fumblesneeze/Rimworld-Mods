@@ -16,7 +16,6 @@ internal static class GatewayTemporaryFile
         var createLeaf = leafFactory ?? CreateLeaf;
         for (var attempt = 0; attempt < MaximumCreateAttempts; attempt++)
         {
-            Directory.CreateDirectory(directory);
             var leaf = createLeaf();
             if (string.IsNullOrWhiteSpace(leaf) ||
                 leaf.Length > 24 ||
@@ -36,11 +35,6 @@ internal static class GatewayTemporaryFile
                     FileShare.None,
                     bufferSize: 64 * 1024,
                     options);
-            }
-            catch (DirectoryNotFoundException)
-            {
-                // Startup and shutdown cleanup can remove the exact run-owned directory
-                // between preparation and CreateNew. Re-establish it on the next bounded try.
             }
             catch (IOException) when (File.Exists(path))
             {
