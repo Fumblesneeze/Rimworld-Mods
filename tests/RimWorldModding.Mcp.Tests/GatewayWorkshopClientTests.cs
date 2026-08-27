@@ -122,6 +122,24 @@ public sealed class GatewayWorkshopClientTests
     }
 
     [Test]
+    public void AutomationFailureDiagnostic_retains_the_bounded_Gateway_run_error()
+    {
+        using var payload = JsonDocument.Parse("""
+            {
+              "ok": true,
+              "result": {
+                "state": "failed",
+                "error": { "code": "steam-query-failed", "message": "Steam rejected the query" }
+              }
+            }
+            """);
+
+        Assert.That(
+            GatewayWorkshopClient.DescribeAutomationFailure(payload.RootElement),
+            Does.Contain("steam-query-failed").And.Contain("Steam rejected the query"));
+    }
+
+    [Test]
     public void CompanionBuildPlan_IsRepositoryLocalAndProducesTheExactRequiredOutputs()
     {
         var root = TestRepository.FindRoot();

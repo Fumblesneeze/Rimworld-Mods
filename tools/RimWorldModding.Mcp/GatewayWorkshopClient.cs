@@ -60,7 +60,7 @@ public sealed class GatewayWorkshopClient(
         if (!outer.TryGetProperty("result", out var result) ||
             !TryProperty(result, "State", out var state) || state.GetString() != "succeeded" ||
             !TryProperty(result, "Result", out var resultJson) || resultJson.ValueKind != JsonValueKind.String)
-            throw new InvalidOperationException("Workshop automation did not return one succeeded result.");
+            throw new InvalidOperationException(DescribeAutomationFailure(outer));
         using var snapshot = JsonDocument.Parse(resultJson.GetString()!);
         return snapshot.RootElement.Clone();
     }
@@ -111,6 +111,9 @@ public sealed class GatewayWorkshopClient(
         map.ValueKind == JsonValueKind.Object &&
         TryProperty(status, "longEventActive", out var longEventActive) &&
         longEventActive.ValueKind == JsonValueKind.False;
+
+    internal static string DescribeAutomationFailure(JsonElement outer) =>
+        "Workshop automation did not return one succeeded result: " + Bound(outer.ToString());
 
     public async Task CaptureScreenshotAsync(string outputPath, CancellationToken cancellationToken)
     {
