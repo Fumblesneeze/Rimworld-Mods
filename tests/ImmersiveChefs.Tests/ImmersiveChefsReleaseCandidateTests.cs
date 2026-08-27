@@ -41,7 +41,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Dirty kitchenware is now much easier to spot. Dubs Bad Hygiene sinks, prep stations, and dishwashing now use real water; meals spawned without plates no longer interrupt eating or patient feeding; and Ceramics (Continued) porcelain can be crafted into plates."));
+            Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwasher unloading is now nearly instant, and Pick Up And Haul carries every finished item that fits before hauling the batch to storage."));
             Assert.That(
                 release["changeNote"],
                 Is.EqualTo("Dishwashers can now accept new loads while already washing, and Common Sense cooks and diners prefer available dishwashers. Meal reheating works reliably from inventory and at stoves, campfires, heaters, and the fallback microwave; microwave artwork and facing are corrected. Several cooking, feeding, and ware-placement bugs were fixed, and Immersive Chefs' added food-poisoning chances were halved."),
