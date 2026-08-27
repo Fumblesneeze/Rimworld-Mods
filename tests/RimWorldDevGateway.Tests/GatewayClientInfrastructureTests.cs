@@ -238,6 +238,7 @@ public static class TestSnippet
             var correlation = safety.GetMethod("CallbackIdsMatch", BindingFlags.Public | BindingFlags.Static)!;
             var invalid = safety.GetMethod("IsInvalidCallHandle", BindingFlags.Public | BindingFlags.Static)!;
             var ownerAbsence = safety.GetMethod("OwnerScanProvesAbsence", BindingFlags.Public | BindingFlags.Static)!;
+            var subscribed = safety.GetMethod("IsSubscribedState", BindingFlags.Public | BindingFlags.Static)!;
 
             Assert.Multiple(() =>
             {
@@ -254,6 +255,13 @@ public static class TestSnippet
                 Assert.That(ownerAbsence.Invoke(null, new object[] { 0u, 0u, 0 }), Is.True);
                 Assert.That(ownerAbsence.Invoke(null, new object[] { 2u, 1u, 0 }), Is.False);
                 Assert.That(ownerAbsence.Invoke(null, new object[] { 1u, 1u, 1 }), Is.False);
+                Assert.That(subscribed.Invoke(null, new object[] { 0u }), Is.False);
+                Assert.That(subscribed.Invoke(null, new object[] { 1u }), Is.True);
+                Assert.That(subscribed.Invoke(null, new object[] { 5u }), Is.True);
+                Assert.That(subscribed.Invoke(null, new object[] { 4u }), Is.False,
+                    "A cached installed copy is not itself an active Workshop subscription.");
+                Assert.That(publisherSource, Does.Contain("SteamUGC.UnsubscribeItem"));
+                Assert.That(publisherSource, Does.Contain("RemoteStorageUnsubscribePublishedFileResult_t"));
             });
         }
         finally

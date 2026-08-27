@@ -79,4 +79,5 @@ public sealed record ModBuildResult(
 [JsonSerializable(typeof(ReleaseWorkerRequest))]
 [JsonSerializable(typeof(ReleaseWorkerLease))]
 [JsonSerializable(typeof(SubscriberRecoveryRecord))]
+[JsonSerializable(typeof(WorkshopSubscriptionCleanupResult))]
 internal sealed partial class McpJsonContext : JsonSerializerContext;

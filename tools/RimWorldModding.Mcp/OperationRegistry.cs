@@ -282,6 +282,15 @@ public sealed class OperationRegistry
                         RequiredString(arguments, "confirmationNonce"),
                         cancellationToken)),
             Register(
+                "release_subscription_cleanup",
+                "Remove a repository-owned mod's temporary Workshop subscription and verify Steam's subscribed item-state flag is absent.",
+                OperationRisk.ExternalWrite,
+                longRunning: true,
+                timeoutSeconds: 900,
+                "Retains the exact item-state before/after result and bounded Gateway process cleanup without retaining credentials.",
+                static async (registry, arguments, cancellationToken) => await new WorkshopSubscriptionCleaner(registry._repositoryRoot)
+                    .CleanAsync(RequiredString(arguments, "packageId"), cancellationToken)),
+            Register(
                 "release_accept_subscriber_evidence",
                 "Record a caller's concrete personal inspection of the exact retained subscriber screenshots and complete the local release receipt.",
                 OperationRisk.WorkspaceWrite,

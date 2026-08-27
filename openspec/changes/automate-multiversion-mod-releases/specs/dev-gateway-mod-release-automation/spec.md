@@ -286,6 +286,10 @@ Development installation SHALL synchronize the reviewed package into RimWorld's 
 - **WHEN** the user asks to install, deploy, or copy a repository-owned mod to their game without explicitly requesting subscribed-copy release verification
 - **THEN** the workflow updates only the canonical local package-ID folder and performs no Steam subscribe operation
 
+#### Scenario: Temporary subscribed-copy verification finishes or fails
+- **WHEN** the release workflow has temporarily subscribed to the repository-owned Workshop item and its native subscriber workflow reaches either success or failure
+- **THEN** mandatory cleanup uses Steam's exact `UnsubscribeItem` callback, verifies the item's `Subscribed` client-state flag is absent, treats an installed-only cache flag as non-subscribed, retains before/after evidence, and restores the canonical local package without leaving a duplicate active subscription
+
 ### Requirement: Release evidence is complete and secret-free
 Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, verification results, presentation provenance, publication authorization and plan admission, Gateway process identity, Steam item/dependency results, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.
 

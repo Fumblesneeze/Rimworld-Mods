@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -362,8 +363,13 @@ public sealed class ReleasePublisher(string repositoryRoot)
         _ = await manager.CancelAsync(gatewayRunId, cancellationToken);
         var frozenSubscriberManifest = SubscriberVerificationProfiles.Load(
             _repositoryRoot, admission.Plan.VerificationProfile);
-        var subscriber = await new SubscriberVerifier(_repositoryRoot)
-            .VerifyAsync(profile, frozenSubscriberManifest, publishedId.ToString(), installedPath, cancellationToken);
+        var subscriberOutcome = await RunWithMandatoryCleanupAsync(
+            () => new SubscriberVerifier(_repositoryRoot)
+                .VerifyAsync(profile, frozenSubscriberManifest, publishedId.ToString(), installedPath, cancellationToken),
+            () => new WorkshopSubscriptionCleaner(_repositoryRoot)
+                .CleanAsync(profile.PackageId, CancellationToken.None));
+        var subscriber = subscriberOutcome.Primary;
+        var subscriptionCleanup = subscriberOutcome.Cleanup;
         VerifyExactPublishedCandidate(admission, publishedId);
         var exactIncludes = admission.Plan.Files.Select(file => file.Path)
             .Append("About/PublishedFileId.txt")
@@ -390,6 +396,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             ["remote"] = JsonNode.Parse(remote.GetRawText()),
             ["installedPackagePath"] = installedPath,
             ["subscriber"] = subscriber,
+            ["subscriptionCleanup"] = subscriptionCleanup,
             ["subscriberEvidenceStatus"] = "awaiting-personal-review",
             ["changeNote"] = admission.Plan.ChangeNote,
             ["changeNoteVerification"] = changeNoteVerification,
@@ -465,6 +472,37 @@ public sealed class ReleasePublisher(string repositoryRoot)
     private static bool ShouldPreserveGatewayForRecovery(string statePath, string planSha256) =>
         File.Exists(statePath) &&
         ReleasePlanAdmission.IsRecoverableDurableState(File.ReadAllText(statePath), planSha256, out _);
+
+    internal static async Task<(TPrimary Primary, TCleanup Cleanup)> RunWithMandatoryCleanupAsync<TPrimary, TCleanup>(
+        Func<Task<TPrimary>> primary,
+        Func<Task<TCleanup>> cleanup)
+    {
+        TPrimary? primaryResult = default;
+        Exception? primaryFailure = null;
+        try
+        {
+            primaryResult = await primary();
+        }
+        catch (Exception exception)
+        {
+            primaryFailure = exception;
+        }
+
+        TCleanup cleanupResult;
+        try
+        {
+            cleanupResult = await cleanup();
+        }
+        catch (Exception cleanupFailure) when (primaryFailure is not null)
+        {
+            throw new AggregateException(
+                "Subscriber verification and mandatory Workshop unsubscribe cleanup both failed.",
+                primaryFailure,
+                cleanupFailure);
+        }
+        if (primaryFailure is not null) ExceptionDispatchInfo.Capture(primaryFailure).Throw();
+        return (primaryResult!, cleanupResult);
+    }
 
     private static async Task<RunStatusResult> WaitReadyAsync(
         RunLeaseManager manager,

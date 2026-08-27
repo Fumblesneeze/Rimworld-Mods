@@ -15,6 +15,13 @@ public sealed class RepositoryStatusTests
         var descriptor = registry.Descriptors.Single(item => item.Name == "repository_status");
         Assert.That(descriptor.Risk, Is.EqualTo(OperationRisk.Read));
         Assert.That(descriptor.LongRunning, Is.False);
+        var subscriptionCleanup = registry.Descriptors.Single(item => item.Name == "release_subscription_cleanup");
+        Assert.Multiple(() =>
+        {
+            Assert.That(subscriptionCleanup.Risk, Is.EqualTo(OperationRisk.ExternalWrite));
+            Assert.That(subscriptionCleanup.LongRunning, Is.True);
+            Assert.That(subscriptionCleanup.TimeoutSeconds, Is.EqualTo(900));
+        });
 
         var result = await registry.InvokeAsync("repository_status", JsonDocument.Parse("{}").RootElement, CancellationToken.None);
         var status = (RepositoryStatusResult)result;

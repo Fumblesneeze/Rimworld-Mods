@@ -241,6 +241,16 @@ public static class McpTools
             JsonSerializer.SerializeToElement(new { planPath, planSha256, confirmationNonce }),
             cancellationToken));
 
+    [McpServerTool(Name = "release_subscription_cleanup"), Description("Remove a repository-owned mod's temporary Workshop subscription and verify the exact client item-state is no longer subscribed.")]
+    public static async Task<string> CleanupReleaseSubscription(
+        OperationRegistry registry,
+        [Description("Canonical package ID whose checked-in release profile owns the Workshop item.")] string packageId,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync(
+            "release_subscription_cleanup",
+            JsonSerializer.SerializeToElement(new { packageId }),
+            cancellationToken));
+
     [McpServerTool(Name = "release_accept_subscriber_evidence"), Description("After personally inspecting the exact fresh subscriber screenshots, hash and retain that concrete observation to complete the local release evidence. Never infers visual acceptance.")]
     public static async Task<string> AcceptSubscriberEvidence(
         OperationRegistry registry,
