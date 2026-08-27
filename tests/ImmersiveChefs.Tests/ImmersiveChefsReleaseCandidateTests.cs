@@ -41,11 +41,11 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwasher unloading is now nearly instant, and Pick Up And Haul carries every finished item that fits before hauling the batch to storage."));
+            Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwashers can now accept new loads while already washing, and Common Sense cooks and diners prefer available dishwashers. Meal reheating works reliably from inventory and at stoves, campfires, heaters, and the fallback microwave; microwave artwork and facing are corrected. Several cooking, feeding, and ware-placement bugs were fixed, and Immersive Chefs' added food-poisoning chances were halved."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo("Dishwashers can now accept new loads while already washing, and Common Sense cooks and diners prefer available dishwashers. Meal reheating works reliably from inventory and at stoves, campfires, heaters, and the fallback microwave; microwave artwork and facing are corrected. Several cooking, feeding, and ware-placement bugs were fixed, and Immersive Chefs' added food-poisoning chances were halved."),
-                "The pending Workshop update must carry its exact reviewed player-facing change note.");
+                Is.EqualTo(string.Empty),
+                "A completed Workshop update must not retain a pending change note that could be submitted again.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Select(value => value.ToString()),
                 Is.EqualTo(new[] { "2009463077", "2574315206" }));
