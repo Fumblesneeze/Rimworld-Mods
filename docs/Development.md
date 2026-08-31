@@ -26,6 +26,14 @@ again: it reattaches to the same callback or polls only the durable same item an
 first-item creation or update submission. Subscriber isolation also records its exact reserved run, backup, and normal
 configuration hash before moving the local package. Never delete durable state to force a retry.
 
+Workshop descriptions that embed Steam-hosted feature cards use a separate typed first phase. Run
+`release_presentation_sync` for the existing package when card bytes/order change, a gallery slot is
+missing, or a retained CDN URL no longer resolves. It synchronizes the ordered additional previews,
+downloads and hashes every current Steam image, and rewrites the checked-in description/provenance
+without consuming the player-facing change note. Review and commit those resolved files before
+`release_prepare`; preparation downloads them again and fails before publication on stale links,
+redirects, origin drift, excess bytes, or hash mismatch.
+
 `mod_build` builds the selected profile and then installs the successful positive-allowlist package
 into the configured local RimWorld `Mods/<package-id>` directory by default. `local_mod_sync` is the
 explicit install-only equivalent. Both stage outside the scanned Mods directory, replace only the

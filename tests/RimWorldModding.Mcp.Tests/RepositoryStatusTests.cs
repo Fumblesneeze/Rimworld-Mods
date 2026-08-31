@@ -16,11 +16,15 @@ public sealed class RepositoryStatusTests
         Assert.That(descriptor.Risk, Is.EqualTo(OperationRisk.Read));
         Assert.That(descriptor.LongRunning, Is.False);
         var subscriptionCleanup = registry.Descriptors.Single(item => item.Name == "release_subscription_cleanup");
+        var presentationSync = registry.Descriptors.Single(item => item.Name == "release_presentation_sync");
         Assert.Multiple(() =>
         {
             Assert.That(subscriptionCleanup.Risk, Is.EqualTo(OperationRisk.ExternalWrite));
             Assert.That(subscriptionCleanup.LongRunning, Is.True);
             Assert.That(subscriptionCleanup.TimeoutSeconds, Is.EqualTo(900));
+            Assert.That(presentationSync.Risk, Is.EqualTo(OperationRisk.ExternalWrite));
+            Assert.That(presentationSync.LongRunning, Is.True);
+            Assert.That(presentationSync.TimeoutSeconds, Is.EqualTo(1800));
         });
 
         var result = await registry.InvokeAsync("repository_status", JsonDocument.Parse("{}").RootElement, CancellationToken.None);

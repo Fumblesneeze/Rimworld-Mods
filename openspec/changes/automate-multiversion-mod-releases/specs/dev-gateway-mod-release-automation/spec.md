@@ -321,3 +321,14 @@ Workshop feature-card sources SHALL retain their rounded card composition, but t
 #### Scenario: A generated card is viewed on the Workshop page
 - **WHEN** Steam renders an uploaded feature card in the description and preview carousel
 - **THEN** its rounded outer corners visually blend into the surrounding dark Workshop page rather than appearing as white wedges or a white rectangle
+
+### Requirement: Inline Workshop images use the current synchronized Steam identities
+The repository automation surface SHALL expose the reviewed two-phase presentation update as one typed operation. For an existing Workshop item it SHALL synchronize the exact ordered additional-preview inventory first, wait for every current Steam CDN identity, download each current image through a bounded no-redirect request, compare its bytes with the reviewed local image, and only then resolve the versioned description template and provenance. The final release preparation and publication path SHALL reject a missing gallery slot, a stale or unreachable inline image URL, a non-Steam image host, an order mismatch, or a remote image whose bytes differ from the reviewed card. Preview synchronization SHALL NOT consume the authored player-facing change note; the final metadata/content update SHALL submit that note exactly once.
+
+#### Scenario: Steam replaces or drops an additional preview identity
+- **WHEN** a retained description refers to an expired CDN URL or the remote gallery is missing one reviewed card
+- **THEN** the typed presentation-sync operation restores the complete ordered gallery, resolves all inline tokens to the newly observed Steam URLs, and final publication is blocked until every inline image returns the exact reviewed bytes
+
+#### Scenario: A synchronized card URL becomes unreachable before final publication
+- **WHEN** release preparation validates the resolved Workshop presentation and any inline Steam image returns a non-success response, redirects away from the reviewed host, or exceeds the image byte ceiling
+- **THEN** preparation fails before Steam metadata/content mutation and reports the broken presentation identity

@@ -250,6 +250,10 @@ public static class McpCli
                 parseResult.InvocationConfiguration.Output.WriteLine($"receipt: {releasePublish.ReceiptPath}");
                 parseResult.InvocationConfiguration.Output.WriteLine($"subscriber evidence: {releasePublish.SubscriberEvidenceRoot}");
                 break;
+            case WorkshopPresentationSyncResult presentationSync:
+                foreach (var line in DescribePresentationSync(presentationSync))
+                    parseResult.InvocationConfiguration.Output.WriteLine(line);
+                break;
             case GatewayRawMutationResult rawMutation:
                 parseResult.InvocationConfiguration.Output.WriteLine($"run: {rawMutation.RunId}");
                 parseResult.InvocationConfiguration.Output.WriteLine($"source sha256: {rawMutation.SourceSha256}");
@@ -260,6 +264,16 @@ public static class McpCli
                 throw new InvalidOperationException($"No table projection is registered for {value.GetType().FullName}.");
         }
     }
+
+    internal static string[] DescribePresentationSync(WorkshopPresentationSyncResult result) =>
+    [
+        $"status: {result.Status}",
+        $"item: {result.PublishedFileId}",
+        $"url: {result.WorkshopUrl}",
+        $"previews: {result.PreviewCount}",
+        $"description: {result.DescriptionPath}",
+        $"inventory: {result.InventoryPath}"
+    ];
 
     private static string NormalizeOutput(string? value)
     {

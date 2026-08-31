@@ -257,6 +257,17 @@ public sealed class OperationRegistry
                         RequiredString(arguments, "packageId"),
                         cancellationToken)),
             Register(
+                "release_presentation_sync",
+                "Synchronize an existing Workshop item's reviewed additional previews and resolve its description against the current Steam image identities.",
+                OperationRisk.ExternalWrite,
+                longRunning: true,
+                timeoutSeconds: 1800,
+                "Retains the exact ordered remote preview inventory and resolves the checked-in description/provenance without consuming a player-facing change note.",
+                static async (registry, arguments, cancellationToken) =>
+                    await new WorkshopPresentationSynchronizer(registry._repositoryRoot).SynchronizeAsync(
+                        RequiredString(arguments, "packageId"),
+                        cancellationToken)),
+            Register(
                 "release_status",
                 "Revalidate one exact release plan/digest/nonce and inspect its durable publication state without mutating Steam.",
                 OperationRisk.Read,

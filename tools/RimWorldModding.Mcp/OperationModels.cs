@@ -53,6 +53,21 @@ public sealed record ModBuildResult(
     AdapterOperationResult Build,
     LocalModInstallResult Installation);
 
+public sealed record WorkshopPresentationSyncResult(
+    string Status,
+    string PackageId,
+    string PublishedFileId,
+    string WorkshopUrl,
+    string PresentationPlanSha256,
+    string InventoryPath,
+    int PreviewCount,
+    string DescriptionPath,
+    string DescriptionSha256,
+    string ProvenancePath,
+    bool PlayerFacingChangeNoteConsumed,
+    string GatewayRunId,
+    bool GatewayStopped);
+
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, WriteIndented = true)]
 [JsonSerializable(typeof(RepositoryStatusResult))]
 [JsonSerializable(typeof(List<OperationDescriptor>))]
@@ -66,6 +81,7 @@ public sealed record ModBuildResult(
 [JsonSerializable(typeof(ReleasePreparationResult))]
 [JsonSerializable(typeof(AdapterOperationResult))]
 [JsonSerializable(typeof(ModBuildResult))]
+[JsonSerializable(typeof(WorkshopPresentationSyncResult))]
 [JsonSerializable(typeof(RunLeaseRecord))]
 [JsonSerializable(typeof(RunStartResult))]
 [JsonSerializable(typeof(RunStatusResult))]

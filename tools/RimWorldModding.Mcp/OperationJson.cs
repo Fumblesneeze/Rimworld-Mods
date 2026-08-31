@@ -13,6 +13,7 @@ internal static class OperationJson
         ModListMutationResult mutation => JsonSerializer.Serialize(mutation, McpJsonContext.Default.ModListMutationResult),
         LocalModInstallResult install => JsonSerializer.Serialize(install, McpJsonContext.Default.LocalModInstallResult),
         ModBuildResult build => JsonSerializer.Serialize(build, McpJsonContext.Default.ModBuildResult),
+        WorkshopPresentationSyncResult presentationSync => JsonSerializer.Serialize(presentationSync, McpJsonContext.Default.WorkshopPresentationSyncResult),
         ReleasePreparationResult preparation => JsonSerializer.Serialize(preparation, McpJsonContext.Default.ReleasePreparationResult),
         AdapterOperationResult adapter => JsonSerializer.Serialize(adapter, McpJsonContext.Default.AdapterOperationResult),
         RunStartResult runStart => JsonSerializer.Serialize(runStart, McpJsonContext.Default.RunStartResult),

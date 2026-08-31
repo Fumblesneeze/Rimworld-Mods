@@ -368,6 +368,13 @@ public sealed class ReleasePreparer(string repositoryRoot)
         WorkshopRemoteBaseline? remoteBaseline = profile.PublishedFileId is null
             ? null
             : await InspectExistingRemoteAsync(profile, cancellationToken);
+        var presentationProvenance = Path.ChangeExtension(profile.Description, ".provenance.json");
+        var requiresResolvedPresentation = string.Equals(
+            profile.PackageId,
+            "fumblesneeze.immersivechefs",
+            StringComparison.OrdinalIgnoreCase);
+        if (remoteBaseline is not null && requiresResolvedPresentation)
+            WorkshopResolvedPresentation.AssertRemoteGallery(presentationProvenance, remoteBaseline);
         if (remoteBaseline is not null)
             (ownerItems, exactMatches) = ProjectExistingOwnerEvidence(profile, remoteBaseline);
         var finalPrivateHistory = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
@@ -640,31 +647,58 @@ public sealed class ReleasePreparer(string repositoryRoot)
             throw new InvalidOperationException("Workshop description is missing or empty.");
 
         var manifest = Path.Combine(Path.GetDirectoryName(profile.Preview)!, "presentation.json");
-        if (!File.Exists(manifest)) return;
-        using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-        if (!document.RootElement.TryGetProperty("renderer", out var renderer) ||
-            !renderer.TryGetProperty("path", out var rendererPath) ||
-            rendererPath.ValueKind != JsonValueKind.String ||
-            !renderer.TryGetProperty("sha256", out var rendererHash) ||
-            rendererHash.ValueKind != JsonValueKind.String)
-            return;
-        var relative = rendererPath.GetString()!;
-        var script = RepositoryRoot.ContainedPath(_repositoryRoot, relative);
-        var scriptsRoot = Path.Combine(_repositoryRoot, "scripts") + Path.DirectorySeparatorChar;
-        if (!script.StartsWith(scriptsRoot, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(Path.GetExtension(script), ".ps1", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"Presentation renderer is not a contained PowerShell migration adapter: {relative}");
-        if (!File.Exists(script) ||
-            !string.Equals(ReleaseCandidateBuilder.Hash(script), rendererHash.GetString(), StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Presentation renderer does not match the hash pinned by its manifest.");
-        var render = await ProcessRunner.RunAsync(
-            "pwsh",
-            ["-NoProfile", "-NonInteractive", "-File", script, "-ManifestPath", manifest, "-Output", "json"],
-            _repositoryRoot,
-            TimeSpan.FromMinutes(2),
-            cancellationToken);
-        if (render.ExitCode != 0)
-            throw new InvalidOperationException($"Presentation render validation failed: {Bounded(render.StandardError + render.StandardOutput)}");
+        if (File.Exists(manifest))
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(manifest));
+            if (document.RootElement.TryGetProperty("renderer", out var renderer))
+            {
+                if (!renderer.TryGetProperty("path", out var rendererPath) ||
+                    rendererPath.ValueKind != JsonValueKind.String ||
+                    !renderer.TryGetProperty("sha256", out var rendererHash) ||
+                    rendererHash.ValueKind != JsonValueKind.String)
+                    throw new InvalidOperationException("Presentation renderer declaration is incomplete.");
+                var relative = rendererPath.GetString()!;
+                var script = RepositoryRoot.ContainedPath(_repositoryRoot, relative);
+                var scriptsRoot = Path.Combine(_repositoryRoot, "scripts") + Path.DirectorySeparatorChar;
+                if (!script.StartsWith(scriptsRoot, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(Path.GetExtension(script), ".ps1", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Presentation renderer is not a contained PowerShell migration adapter: {relative}");
+                if (!File.Exists(script) ||
+                    !string.Equals(ReleaseCandidateBuilder.Hash(script), rendererHash.GetString(), StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Presentation renderer does not match the hash pinned by its manifest.");
+                var render = await ProcessRunner.RunAsync(
+                    "pwsh",
+                    ["-NoProfile", "-NonInteractive", "-File", script, "-ManifestPath", manifest, "-Output", "json"],
+                    _repositoryRoot,
+                    TimeSpan.FromMinutes(2),
+                    cancellationToken);
+                if (render.ExitCode != 0)
+                    throw new InvalidOperationException($"Presentation render validation failed: {Bounded(render.StandardError + render.StandardOutput)}");
+            }
+        }
+        var provenance = Path.ChangeExtension(profile.Description, ".provenance.json");
+        var requiresResolvedPresentation = string.Equals(
+            profile.PackageId,
+            "fumblesneeze.immersivechefs",
+            StringComparison.OrdinalIgnoreCase);
+        if (profile.PublishedFileId is not null && requiresResolvedPresentation)
+        {
+            if (!File.Exists(provenance))
+                throw new InvalidOperationException("Immersive Chefs requires resolved Workshop-description provenance before release preparation.");
+            using var http = new HttpClient(new SocketsHttpHandler
+            {
+                AutomaticDecompression = System.Net.DecompressionMethods.All,
+                AllowAutoRedirect = false
+            });
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("RimWorldModding.Mcp/0.1");
+            await WorkshopResolvedPresentation.ValidateAsync(
+                profile.Description,
+                provenance,
+                Path.GetDirectoryName(profile.Preview)!,
+                profile.PublishedFileId,
+                http,
+                cancellationToken);
+        }
     }
 
     private static string Bounded(string value) => value.Length <= 8192 ? value.Trim() : value[..8192].Trim();

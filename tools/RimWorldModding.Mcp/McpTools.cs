@@ -217,6 +217,16 @@ public static class McpTools
             JsonSerializer.SerializeToElement(new { packageId }),
             cancellationToken));
 
+    [McpServerTool(Name = "release_presentation_sync"), Description("Synchronize reviewed additional Workshop previews, verify their current Steam-hosted bytes, and resolve the versioned description against those current identities. This mutates Steam previews but does not consume a player-facing change note.")]
+    public static async Task<string> SynchronizeReleasePresentation(
+        OperationRegistry registry,
+        [Description("Canonical package ID selected from a universal release profile.")] string packageId,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync(
+            "release_presentation_sync",
+            JsonSerializer.SerializeToElement(new { packageId }),
+            cancellationToken));
+
     [McpServerTool(Name = "release_status"), Description("Revalidate one exact release plan/digest/nonce and inspect durable publication state without mutating Steam.")]
     public static async Task<string> ReleaseStatus(
         OperationRegistry registry,
