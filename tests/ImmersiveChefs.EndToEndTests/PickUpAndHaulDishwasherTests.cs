@@ -572,7 +572,7 @@ public sealed class ProcessorDishwasherNativeFillAndEmptyTimingTest : IRimWorldE
             additive: false);
         yield return new CameraActionStep(
             "frame the native Processor transfer",
-            fixture.VisibleThingIds,
+            fixture.NativeTransferVisibleThingIds,
             paddingPixels: 220);
         yield return new ScreenshotStep(
             "the exact dirty plate is appliance-owned without a loading-work wait",
@@ -916,6 +916,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
     private int inputAdmissionStartedTick = -1;
     private int inputAdmissionCompletedTick = -1;
     private int inputAdmissionUnitCount;
+    private int nativeFillObservationStartedTick = -1;
 
     private PickUpAndHaulDishwasherFixture(
         Map map,
@@ -946,6 +947,12 @@ internal sealed class PickUpAndHaulDishwasherFixture
         Dishwasher.ThingID,
         waterTower.ThingID
     }).ToArray();
+    internal string[] NativeTransferVisibleThingIds => new[]
+    {
+        Cleaner.ThingID,
+        Dishwasher.ThingID,
+        waterTower.ThingID
+    };
     internal string[] ReturnedUnadmittedWareIds => ware
         .Where(item => !ReferenceEquals(item, admittedBeforeInterruption))
         .Select(item => item.ThingID)
@@ -1039,7 +1046,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
         zone.settings.Priority = StoragePriority.Critical;
         zone.settings.filter.SetDisallowAll();
         map.resourceCounter.UpdateResourceCounts();
-        return new PickUpAndHaulDishwasherFixture(
+        var fixture = new PickUpAndHaulDishwasherFixture(
             map,
             cleaner,
             dishwasher,
@@ -1047,6 +1054,10 @@ internal sealed class PickUpAndHaulDishwasherFixture
             ware,
             zone,
             cells);
+        var timingObserver = new ProcessorDishwasherTimingObserver(map, fixture);
+        map.components.Add(timingObserver);
+        context.DeferCleanup(() => map.components.Remove(timingObserver));
+        return fixture;
     }
 
     internal void ActivateCleaning()
@@ -1084,6 +1095,11 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
     internal bool ObserveNativeProcessorFillAdmission()
     {
+        if (nativeFillObservationStartedTick < 0)
+        {
+            nativeFillObservationStartedTick = Find.TickManager.TicksGame;
+        }
+
         ObserveInputJobTiming();
         var applianceOwnsExactPlate = AllExactWareOwnedByDishwasherWithoutTracking();
         if (applianceOwnsExactPlate && inputAdmissionCompletedTick < 0)
@@ -1091,10 +1107,33 @@ internal sealed class PickUpAndHaulDishwasherFixture
             inputAdmissionCompletedTick = Find.TickManager.TicksGame;
         }
 
-        return applianceOwnsExactPlate &&
-               observedInputFillJobIds.Count == 1 &&
-               InputTransferWasImmediate() &&
-               Cleaner.CurJobDef != ImmersiveChefsDefOf.ImmersiveChefs_DoDishes;
+        var completed = applianceOwnsExactPlate &&
+                        observedInputFillJobIds.Count == 1 &&
+                        InputTransferWasImmediate() &&
+                        Cleaner.CurJobDef != ImmersiveChefsDefOf.ImmersiveChefs_DoDishes;
+        if (!completed && Find.TickManager.TicksGame - nativeFillObservationStartedTick >= 900)
+        {
+            throw new EndToEndAssertionException(NativeFillFailureDiagnostic());
+        }
+
+        return completed;
+    }
+
+    private string NativeFillFailureDiagnostic()
+    {
+        var worker = DefDatabase<WorkGiverDef>.GetNamed("FillProcessor").Worker;
+        var scanner = worker as WorkGiver_Scanner;
+        var shouldSkip = worker.ShouldSkip(Cleaner);
+        var hasJob = scanner?.HasJobOnThing(Cleaner, Dishwasher, forced: false);
+        return "Native Processor fill did not reach the exact admission seam: " +
+               $"curJob={Cleaner.CurJobDef?.defName ?? "none"}; " +
+               $"shouldSkip={shouldSkip}; hasJobOnDishwasher={hasJob?.ToString() ?? "not-a-scanner"}; " +
+               $"plateSpawned={ware[0].Spawned}; platePosition={ware[0].Position}; " +
+               $"heldWare={DishwasherHeldWare().Count}; processorHasContents={ProcessorFrameworkAdapter.HasContents(Dishwasher)}; " +
+               $"powerOn={Dishwasher.TryGetComp<CompPowerTrader>()?.PowerOn}; " +
+               $"water={HandwashingE2EFixture.ReadDubsNetworkWater(Dishwasher):R}; " +
+               $"observedFillJobs={observedInputFillJobIds.Count}; arrivals={inputArrivalTicks.Count}; " +
+               $"transfers={inputTransferTicks.Count}; delayedJobs={inputJobsWithStockDelay.Count}.";
     }
 
     internal bool ObserveImmediateUntrackedOutputStored()
@@ -1878,37 +1917,36 @@ internal sealed class PickUpAndHaulDishwasherFixture
     private void ObserveInputJobTiming()
     {
         var driver = Cleaner.jobs.curDriver;
-        if (driver?.GetType().FullName != FillProcessorDriverTypeName)
+        if (driver?.GetType().FullName == FillProcessorDriverTypeName)
         {
-            return;
-        }
-
-        var jobId = driver.job.loadID;
-        observedInputFillJobIds.Add(jobId);
-        if (!inputJobStartTicks.ContainsKey(jobId))
-        {
-            inputJobStartTicks[jobId] = Find.TickManager.TicksGame;
-        }
-
-        lastInputFillJobId = jobId;
-        if (driver.ticksLeftThisToil > 0)
-        {
-            if (!inputArrivalTicks.ContainsKey(jobId))
+            var jobId = driver.job.loadID;
+            observedInputFillJobIds.Add(jobId);
+            if (!inputJobStartTicks.ContainsKey(jobId))
             {
-                inputArrivalTicks[jobId] = Find.TickManager.TicksGame;
+                inputJobStartTicks[jobId] = Find.TickManager.TicksGame;
             }
 
-            if (driver.ticksLeftThisToil > ProcessorDishwasherTransferPolicy.ArrivalLatchTicks)
+            lastInputFillJobId = jobId;
+            if (driver.ticksLeftThisToil > 0)
             {
-                inputJobsWithStockDelay.Add(jobId);
+                if (!inputArrivalTicks.ContainsKey(jobId))
+                {
+                    inputArrivalTicks[jobId] = Find.TickManager.TicksGame;
+                }
+
+                if (driver.ticksLeftThisToil > ProcessorDishwasherTransferPolicy.ArrivalLatchTicks)
+                {
+                    inputJobsWithStockDelay.Add(jobId);
+                }
             }
         }
 
-        if (inputArrivalTicks.ContainsKey(jobId) &&
+        if (lastInputFillJobId >= 0 &&
+            inputArrivalTicks.ContainsKey(lastInputFillJobId) &&
             AllExactWareOwnedByDishwasherWithoutTracking() &&
-            !inputTransferTicks.ContainsKey(jobId))
+            !inputTransferTicks.ContainsKey(lastInputFillJobId))
         {
-            inputTransferTicks[jobId] = Find.TickManager.TicksGame;
+            inputTransferTicks[lastInputFillJobId] = Find.TickManager.TicksGame;
         }
     }
 
@@ -1932,37 +1970,41 @@ internal sealed class PickUpAndHaulDishwasherFixture
     private void ObserveOutputJobTiming()
     {
         var driver = Cleaner.jobs.curDriver;
-        if (driver?.GetType().FullName != EmptyProcessorDriverTypeName)
+        if (driver?.GetType().FullName == EmptyProcessorDriverTypeName)
         {
-            return;
-        }
-
-        var jobId = driver.job.loadID;
-        observedOutputEmptyJobIds.Add(jobId);
-        if (!outputJobStartTicks.ContainsKey(jobId))
-        {
-            outputJobStartTicks[jobId] = Find.TickManager.TicksGame;
-        }
-        lastOutputEmptyJobId = jobId;
-        if (driver.ticksLeftThisToil > 0)
-        {
-            if (!outputArrivalTicks.ContainsKey(jobId))
+            var jobId = driver.job.loadID;
+            observedOutputEmptyJobIds.Add(jobId);
+            if (!outputJobStartTicks.ContainsKey(jobId))
             {
-                outputArrivalTicks[jobId] = Find.TickManager.TicksGame;
+                outputJobStartTicks[jobId] = Find.TickManager.TicksGame;
             }
-            if (driver.ticksLeftThisToil > ProcessorDishwasherTransferPolicy.ArrivalLatchTicks)
+            lastOutputEmptyJobId = jobId;
+            if (driver.ticksLeftThisToil > 0)
             {
-                outputJobsWithStockDelay.Add(jobId);
+                if (!outputArrivalTicks.ContainsKey(jobId))
+                {
+                    outputArrivalTicks[jobId] = Find.TickManager.TicksGame;
+                }
+                if (driver.ticksLeftThisToil > ProcessorDishwasherTransferPolicy.ArrivalLatchTicks)
+                {
+                    outputJobsWithStockDelay.Add(jobId);
+                }
             }
-
         }
 
-        if (outputArrivalTicks.ContainsKey(jobId) &&
+        if (lastOutputEmptyJobId >= 0 &&
+            outputArrivalTicks.ContainsKey(lastOutputEmptyJobId) &&
             !ProcessorFrameworkAdapter.HasContents(Dishwasher) &&
-            !outputTransferTicks.ContainsKey(jobId))
+            !outputTransferTicks.ContainsKey(lastOutputEmptyJobId))
         {
-            outputTransferTicks[jobId] = Find.TickManager.TicksGame;
+            outputTransferTicks[lastOutputEmptyJobId] = Find.TickManager.TicksGame;
         }
+    }
+
+    internal void ObserveProcessorJobTimingEveryGameTick()
+    {
+        ObserveInputJobTiming();
+        ObserveOutputJobTiming();
     }
 
     private bool OutputTransferWasImmediate()
@@ -2020,6 +2062,15 @@ internal sealed class PickUpAndHaulDishwasherFixture
             var pawn = HandwashingE2EFixture.CreateInactiveCleaner(name);
             if (!pawn.WorkTypeIsDisabled(WorkTypeDefOf.Hauling))
             {
+                foreach (var need in pawn.needs?.AllNeeds.Where(candidate =>
+                             string.Equals(
+                                 candidate.GetType().Assembly.GetName().Name,
+                                 "BadHygiene",
+                                 StringComparison.Ordinal)) ?? Enumerable.Empty<Need>())
+                {
+                    need.CurLevelPercentage = 1f;
+                }
+
                 return pawn;
             }
 
@@ -2070,4 +2121,16 @@ internal sealed class PickUpAndHaulDishwasherFixture
             }
         }
     }
+}
+
+internal sealed class ProcessorDishwasherTimingObserver : MapComponent
+{
+    private readonly PickUpAndHaulDishwasherFixture fixture;
+
+    internal ProcessorDishwasherTimingObserver(Map map, PickUpAndHaulDishwasherFixture fixture) : base(map)
+    {
+        this.fixture = fixture;
+    }
+
+    public override void MapComponentTick() => fixture.ObserveProcessorJobTimingEveryGameTick();
 }
