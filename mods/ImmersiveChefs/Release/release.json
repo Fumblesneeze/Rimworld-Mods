@@ -38,7 +38,7 @@
   ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
-  "previousChangeNote": "Dishwashers can now accept new loads while already washing, and Common Sense cooks and diners prefer available dishwashers. Meal reheating works reliably from inventory and at stoves, campfires, heaters, and the fallback microwave; microwave artwork and facing are corrected. Several cooking, feeding, and ware-placement bugs were fixed, and Immersive Chefs' added food-poisoning chances were halved.",
-  "changeNote": "Dishwasher loading and unloading is now immediate once a pawn reaches the appliance, including Processor Framework jobs without Pick Up And Haul and capacity-race fallbacks. Restored the Workshop feature images and gallery after Steam invalidated their preview links.",
+  "previousChangeNote": "Dishwasher loading and unloading is now immediate once a pawn reaches the appliance, including Processor Framework jobs without Pick Up And Haul and capacity-race fallbacks. Restored the Workshop feature images and gallery after Steam invalidated their preview links.",
+  "changeNote": "",
   "verificationProfile": "mods/ImmersiveChefs/Release/subscriber-verification.json"
 }

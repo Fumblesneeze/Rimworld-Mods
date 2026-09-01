@@ -41,7 +41,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwashers can now accept new loads while already washing, and Common Sense cooks and diners prefer available dishwashers. Meal reheating works reliably from inventory and at stoves, campfires, heaters, and the fallback microwave; microwave artwork and facing are corrected. Several cooking, feeding, and ware-placement bugs were fixed, and Immersive Chefs' added food-poisoning chances were halved."));
+            Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwasher loading and unloading is now immediate once a pawn reaches the appliance, including Processor Framework jobs without Pick Up And Haul and capacity-race fallbacks. Restored the Workshop feature images and gallery after Steam invalidated their preview links."));
             Assert.That(
                 release["changeNote"],
                 Is.EqualTo(string.Empty),
