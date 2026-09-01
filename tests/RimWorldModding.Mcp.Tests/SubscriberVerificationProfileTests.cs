@@ -159,4 +159,58 @@ public sealed class SubscriberVerificationProfileTests
                 Throws.InvalidOperationException.With.Message.Contains("legacy Windows path"));
         });
     }
+
+    [Test]
+    public void DeepCanonicalSubscriberEvidence_IsExecutedFromAShortRootThenPromotedAndRebased()
+    {
+        var root = TestRepository.FindRoot();
+        var packageId = "test.subscriber." + new string('x', 96) + Guid.NewGuid().ToString("N");
+        var runId = SubscriberVerifier.CreatePowerShellRunId(Guid.NewGuid());
+        var verifier = new SubscriberVerifier(root);
+        var packageRoot = Path.Combine(root, "artifacts", "Releases", packageId);
+        PowerShellSubscriberEvidencePaths? paths = null;
+        try
+        {
+            paths = verifier.PreparePowerShellEvidencePaths(packageId, runId);
+            Assert.That(
+                () => SubscriberVerifier.RequirePowerShellEvidencePathBudget(paths.CanonicalRoot),
+                Throws.InvalidOperationException.With.Message.Contains("legacy Windows path"));
+            Assert.That(
+                () => SubscriberVerifier.RequirePowerShellEvidencePathBudget(paths.ExecutionRoot),
+                Throws.Nothing);
+            Assert.That(Directory.Exists(paths.ExecutionRoot), Is.False);
+            Assert.That(Directory.Exists(paths.CanonicalRoot), Is.False);
+            Assert.That(Directory.Exists(paths.PromotionRoot), Is.False);
+
+            var retainedRunId = SubscriberVerifier.CreatePowerShellRunId(Guid.NewGuid());
+            var retainedPaths = verifier.PreparePowerShellEvidencePaths(packageId, retainedRunId);
+            Directory.CreateDirectory(retainedPaths.CanonicalRoot);
+            Assert.That(
+                () => verifier.PreparePowerShellEvidencePaths(packageId, retainedRunId),
+                Throws.InvalidOperationException.With.Message.Contains("Canonical subscriber evidence root already exists"),
+                "prior attempt evidence must be rejected before launching the external adapter");
+
+            var relativeScreenshot = Path.Combine("smoke", "e2e-screenshot-after.png");
+            var executionScreenshot = Path.Combine(paths.ExecutionRoot, relativeScreenshot);
+            Directory.CreateDirectory(Path.GetDirectoryName(executionScreenshot)!);
+            File.WriteAllBytes(executionScreenshot, [1, 2, 3]);
+
+            verifier.PromotePowerShellEvidence(paths);
+            var retainedScreenshot = verifier.RebasePowerShellEvidencePath(paths, executionScreenshot);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Directory.Exists(paths.ExecutionRoot), Is.False);
+                Assert.That(Directory.Exists(paths.PromotionRoot), Is.False);
+                Assert.That(retainedScreenshot, Is.EqualTo(Path.Combine(paths.CanonicalRoot, relativeScreenshot)).IgnoreCase);
+                Assert.That(File.ReadAllBytes(retainedScreenshot), Is.EqualTo(new byte[] { 1, 2, 3 }));
+            });
+        }
+        finally
+        {
+            if (paths is not null && Directory.Exists(paths.ExecutionRoot))
+                Directory.Delete(paths.ExecutionRoot, recursive: true);
+            if (Directory.Exists(packageRoot)) Directory.Delete(packageRoot, recursive: true);
+        }
+    }
 }

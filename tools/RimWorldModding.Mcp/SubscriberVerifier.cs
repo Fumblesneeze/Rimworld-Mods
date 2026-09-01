@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace RimWorldModding.Mcp;
@@ -25,6 +26,11 @@ internal sealed record SubscriberRecoveryRecord(
     string NormalConfigPath,
     string NormalConfigSha256,
     string GatewayRunId);
+
+internal sealed record PowerShellSubscriberEvidencePaths(
+    string CanonicalRoot,
+    string ExecutionRoot,
+    string PromotionRoot);
 
 public sealed class SubscriberVerifier(string repositoryRoot)
 {
@@ -169,10 +175,12 @@ public sealed class SubscriberVerifier(string repositoryRoot)
         var normalConfig = ModListEditor.DefaultConfigPath();
         var normalBefore = Hash(normalConfig);
         var runId = CreatePowerShellRunId(Guid.NewGuid());
-        var evidenceRoot = PrepareEvidenceRoot(profile.PackageId, runId, createDirectory: false);
-        RequirePowerShellEvidencePathBudget(evidenceRoot);
+        var evidencePaths = PreparePowerShellEvidencePaths(profile.PackageId, runId);
+        var evidenceRoot = evidencePaths.CanonicalRoot;
+        RequirePowerShellEvidencePathBudget(evidencePaths.ExecutionRoot);
         var executionScript = StagePowerShellAdapter(plan.Script!, runId);
-        ProcessResult result;
+        ProcessResult? result = null;
+        Exception? processFailure = null;
         try
         {
             result = await ProcessRunner.RunAsync(
@@ -181,7 +189,7 @@ public sealed class SubscriberVerifier(string repositoryRoot)
                     "-NoProfile", "-NonInteractive", "-File", executionScript,
                     "-PublishedFileId", publishedFileId,
                     "-ExpectedInstallPath", plan.WorkshopPackagePath,
-                    "-ArtifactsPath", evidenceRoot,
+                    "-ArtifactsPath", evidencePaths.ExecutionRoot,
                     "-TimeoutSeconds", plan.TimeoutSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     "-Output", "json"
                 ],
@@ -189,12 +197,77 @@ public sealed class SubscriberVerifier(string repositoryRoot)
                 TimeSpan.FromSeconds(plan.TimeoutSeconds + 120),
                 cancellationToken);
         }
-        finally
+        catch (Exception exception)
+        {
+            processFailure = exception;
+        }
+        Exception? adapterCleanupFailure = null;
+        try
         {
             if (File.Exists(executionScript)) File.Delete(executionScript);
         }
+        catch (Exception exception)
+        {
+            adapterCleanupFailure = new InvalidOperationException(
+                "The run-owned staged subscriber adapter could not be removed: " + executionScript, exception);
+        }
+
+        if (processFailure is not null)
+        {
+            Exception? retentionFailure = null;
+            try
+            {
+                if (Directory.Exists(evidencePaths.ExecutionRoot)) PromotePowerShellEvidence(evidencePaths);
+            }
+            catch (Exception exception)
+            {
+                retentionFailure = exception;
+            }
+            throw CombineFailures(
+                "Subscriber execution failed and its run-owned evidence or adapter cleanup also failed.",
+                processFailure,
+                retentionFailure,
+                adapterCleanupFailure);
+        }
+
+        if (result is null) throw new InvalidOperationException("Subscriber process returned no result or failure.");
         if (result.ExitCode != 0)
-            throw new InvalidOperationException("Subscriber adapter failed: " + Bound(result.StandardError + result.StandardOutput));
+        {
+            var primary = new InvalidOperationException(
+                "Subscriber adapter failed: " + Bound(result.StandardError + result.StandardOutput));
+            Exception? retentionFailure = null;
+            try
+            {
+                if (Directory.Exists(evidencePaths.ExecutionRoot)) PromotePowerShellEvidence(evidencePaths);
+            }
+            catch (Exception exception)
+            {
+                retentionFailure = exception;
+            }
+            throw CombineFailures(
+                "Subscriber adapter failed and its run-owned evidence or adapter cleanup also failed at " +
+                evidencePaths.ExecutionRoot + ".",
+                primary,
+                retentionFailure,
+                adapterCleanupFailure);
+        }
+        if (!Directory.Exists(evidencePaths.ExecutionRoot))
+            throw CombineFailures(
+                "Subscriber adapter did not create its run-owned evidence root.",
+                new InvalidOperationException("Subscriber adapter did not create its run-owned evidence root."),
+                adapterCleanupFailure);
+        try
+        {
+            PromotePowerShellEvidence(evidencePaths);
+        }
+        catch (Exception promotionFailure)
+        {
+            throw CombineFailures(
+                "Subscriber evidence promotion or adapter cleanup failed.",
+                promotionFailure,
+                adapterCleanupFailure);
+        }
+        if (adapterCleanupFailure is not null) throw adapterCleanupFailure;
         var json = result.StandardOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).LastOrDefault()
                    ?? throw new InvalidOperationException("Subscriber adapter returned no result.");
         using var document = JsonDocument.Parse(json);
@@ -204,7 +277,7 @@ public sealed class SubscriberVerifier(string repositoryRoot)
         var loadedPackagePath = GatewayWorkshopClient.String(response, "loadedPackagePath");
         RequireExactPath(loadedPackagePath, plan.WorkshopPackagePath);
         var screenshots = response.GetProperty("screenshots").EnumerateArray()
-            .Select(item => Path.GetFullPath(item.GetString()!)).ToArray();
+            .Select(item => RebasePowerShellEvidencePath(evidencePaths, item.GetString()!)).ToArray();
         if (screenshots.Length == 0 || screenshots.Any(path => !File.Exists(path)))
             throw new InvalidOperationException("Subscriber adapter did not retain its declared screenshots.");
         var restored = response.GetProperty("localProductRestored").GetBoolean();
@@ -224,6 +297,154 @@ public sealed class SubscriberVerifier(string repositoryRoot)
         var path = Path.Combine(parent, runId);
         if (createDirectory) Directory.CreateDirectory(path);
         return path;
+    }
+
+    internal PowerShellSubscriberEvidencePaths PreparePowerShellEvidencePaths(string packageId, string runId)
+    {
+        var canonical = PrepareEvidenceRoot(packageId, runId, createDirectory: false);
+        if (Directory.Exists(canonical) || File.Exists(canonical))
+            throw new InvalidOperationException("Canonical subscriber evidence root already exists.");
+        var promotion = canonical + ".incoming";
+        if (Directory.Exists(promotion) || File.Exists(promotion))
+            throw new InvalidOperationException("Canonical subscriber evidence promotion root already exists.");
+        var temporaryParent = Path.Combine(Path.GetTempPath(), "rwsub");
+        Directory.CreateDirectory(temporaryParent);
+        var repositoryIdentity = Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(_repositoryRoot)))
+            .ToLowerInvariant()[..8];
+        var execution = Path.Combine(temporaryParent, $"{repositoryIdentity}-{runId}");
+        if (Directory.Exists(execution) || File.Exists(execution))
+            throw new InvalidOperationException("Subscriber execution evidence path already exists.");
+        RequirePowerShellEvidencePathBudget(execution);
+        return new PowerShellSubscriberEvidencePaths(canonical, execution, promotion);
+    }
+
+    internal void PromotePowerShellEvidence(PowerShellSubscriberEvidencePaths paths)
+    {
+        if (!Directory.Exists(paths.ExecutionRoot))
+            throw new InvalidOperationException("Subscriber execution evidence root does not exist.");
+        if (Directory.Exists(paths.CanonicalRoot) || File.Exists(paths.CanonicalRoot))
+            throw new InvalidOperationException("Canonical subscriber evidence root already exists.");
+        if (Directory.Exists(paths.PromotionRoot) || File.Exists(paths.PromotionRoot))
+            throw new InvalidOperationException("Canonical subscriber evidence promotion root already exists.");
+
+        try
+        {
+            CopyAndVerifyEvidenceTree(paths.ExecutionRoot, paths.PromotionRoot);
+            Directory.Move(paths.PromotionRoot, paths.CanonicalRoot);
+        }
+        catch (Exception promotionFailure)
+        {
+            try
+            {
+                if (Directory.Exists(paths.PromotionRoot)) Directory.Delete(paths.PromotionRoot, recursive: true);
+            }
+            catch (Exception cleanupFailure)
+            {
+                throw new AggregateException(
+                    "Subscriber evidence promotion failed and its run-owned partial copy could not be removed.",
+                    promotionFailure,
+                    cleanupFailure);
+            }
+            throw;
+        }
+
+        try { Directory.Delete(paths.ExecutionRoot, recursive: true); }
+        catch { /* canonical verified evidence is authoritative; never mutate or reject it for duplicate cleanup */ }
+    }
+
+    internal string RebasePowerShellEvidencePath(PowerShellSubscriberEvidencePaths paths, string executionPath)
+    {
+        var executionRoot = Path.GetFullPath(paths.ExecutionRoot).TrimEnd(Path.DirectorySeparatorChar);
+        var source = Path.GetFullPath(executionPath);
+        var prefix = executionRoot + Path.DirectorySeparatorChar;
+        if (!source.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Subscriber screenshot escapes its run-owned execution evidence root.");
+        var relative = Path.GetRelativePath(executionRoot, source);
+        if (relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Any(part => part == ".."))
+            throw new InvalidOperationException("Subscriber screenshot escapes its run-owned execution evidence root.");
+        return Path.Combine(paths.CanonicalRoot, relative);
+    }
+
+    private static void CopyAndVerifyEvidenceTree(string sourceRoot, string destinationRoot)
+    {
+        Directory.CreateDirectory(destinationRoot);
+        var sourceInventory = InventoryEvidenceTree(sourceRoot);
+        var sourceDirectories = sourceInventory.Directories;
+        foreach (var sourceDirectory in sourceDirectories)
+        {
+            Directory.CreateDirectory(Path.Combine(destinationRoot, Path.GetRelativePath(sourceRoot, sourceDirectory)));
+        }
+
+        var sourceFiles = sourceInventory.Files;
+        foreach (var sourceFile in sourceFiles)
+        {
+            var destinationFile = Path.Combine(destinationRoot, Path.GetRelativePath(sourceRoot, sourceFile));
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationFile)!);
+            File.Copy(sourceFile, destinationFile, overwrite: false);
+            if (new FileInfo(sourceFile).Length != new FileInfo(destinationFile).Length ||
+                !string.Equals(Hash(sourceFile), Hash(destinationFile), StringComparison.Ordinal))
+                throw new InvalidOperationException("Subscriber evidence copy verification failed.");
+        }
+
+        var destinationInventory = InventoryEvidenceTree(destinationRoot);
+        var destinationDirectories = destinationInventory.Directories
+            .Select(path => Path.GetRelativePath(destinationRoot, path))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var expectedDirectories = sourceDirectories
+            .Select(path => Path.GetRelativePath(sourceRoot, path))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var destinationFiles = destinationInventory.Files
+            .Select(path => Path.GetRelativePath(destinationRoot, path))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var expectedFiles = sourceFiles
+            .Select(path => Path.GetRelativePath(sourceRoot, path))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (!destinationDirectories.SequenceEqual(expectedDirectories, StringComparer.OrdinalIgnoreCase) ||
+            !destinationFiles.SequenceEqual(expectedFiles, StringComparer.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Subscriber evidence tree copy is incomplete.");
+    }
+
+    private static (string[] Directories, string[] Files) InventoryEvidenceTree(string root)
+    {
+        if ((File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidOperationException("Subscriber evidence root is a reparse point.");
+        var directories = new List<string>();
+        var files = new List<string>();
+        var pending = new Stack<string>();
+        pending.Push(root);
+        while (pending.Count > 0)
+        {
+            var directory = pending.Pop();
+            foreach (var entry in Directory.GetFileSystemEntries(directory, "*", SearchOption.TopDirectoryOnly))
+            {
+                var attributes = File.GetAttributes(entry);
+                if ((attributes & FileAttributes.ReparsePoint) != 0)
+                    throw new InvalidOperationException("Subscriber evidence contains a reparse point.");
+                if ((attributes & FileAttributes.Directory) != 0)
+                {
+                    directories.Add(entry);
+                    pending.Push(entry);
+                }
+                else
+                {
+                    files.Add(entry);
+                }
+            }
+        }
+        directories.Sort(StringComparer.OrdinalIgnoreCase);
+        files.Sort(StringComparer.OrdinalIgnoreCase);
+        return (directories.ToArray(), files.ToArray());
+    }
+
+    private static Exception CombineFailures(string message, Exception primary, params Exception?[] secondary)
+    {
+        var failures = new[] { primary }.Concat(secondary.OfType<Exception>()).ToArray();
+        return failures.Length == 1 ? primary : new AggregateException(message, failures);
     }
 
     internal string StagePowerShellAdapter(string sourcePath, string runId)

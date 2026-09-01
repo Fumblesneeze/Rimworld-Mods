@@ -279,6 +279,10 @@ After Steam reports a successful update and CDN propagation, the release workflo
 - **WHEN** the Immersive Chefs adapter launches the grouped E2E runner beneath its release subscriber-evidence root
 - **THEN** the outer run uses a 12-character lowercase hexadecimal entropy segment, rejects an existing leaf, and leaves enough path budget for the runner's timestamp, smoke, saved-data, Gateway-session, and final filename segments
 
+#### Scenario: A clean release worktree is itself too deep for subscriber execution
+- **WHEN** the canonical retained subscriber-evidence path would leave insufficient legacy Windows path budget because publication is recovering from a nested clean release worktree
+- **THEN** the verifier runs the exact frozen adapter against a fresh short run-owned staging root, rejects staging collisions, promotes the complete evidence tree into the canonical repository release root before acceptance, rewrites every retained screenshot identity to that promoted tree, preserves failed evidence when possible, and resumes the exact Steam-verified plan without another Workshop submission
+
 ### Requirement: Local installation never implies Workshop subscription
 Development installation SHALL synchronize the reviewed package into RimWorld's canonical local `Mods/<package-id>` folder. The words "install", "deploy locally", and "copy to the game" MUST NOT authorize Steam Workshop subscription. Workshop subscription is permitted only as the explicitly named, bounded subscribed-copy release verification above and MUST NOT persist into ordinary development.
 
