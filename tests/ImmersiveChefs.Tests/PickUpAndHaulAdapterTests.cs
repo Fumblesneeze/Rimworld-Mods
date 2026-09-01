@@ -229,18 +229,44 @@ public sealed class PickUpAndHaulAdapterTests
         }));
     }
 
+    [TestCase(true, true)]
+    [TestCase(false, false)]
+    public void Processor_dishwasher_fill_and_empty_drivers_replace_only_the_appliance_delay(
+        bool processorDishwasher,
+        bool expected)
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                ProcessorDishwasherTransferPolicy.ShouldReplaceFillDriver(processorDishwasher),
+                Is.EqualTo(expected));
+            Assert.That(
+                ProcessorDishwasherTransferPolicy.ShouldReplaceEmptyDriver(processorDishwasher),
+                Is.EqualTo(expected));
+        });
+    }
+
+    [Test]
+    public void Processor_dishwasher_arrival_latch_matches_direct_delivery()
+    {
+        Assert.That(
+            ProcessorDishwasherTransferPolicy.ArrivalLatchTicks,
+            Is.EqualTo(DishwashingBatchPolicy.DishwasherAdmissionTicksPerUnit));
+        Assert.That(ProcessorDishwasherTransferPolicy.ArrivalLatchTicks, Is.EqualTo(2));
+    }
+
     [TestCase(true, true, true, true)]
     [TestCase(true, true, false, false)]
     [TestCase(true, false, true, false)]
     [TestCase(false, true, true, false)]
-    public void Instant_output_batch_requires_both_validated_integrations(
+    public void Tracked_output_batch_requires_both_validated_integrations(
         bool processorDishwasher,
         bool canTrack,
         bool hasFittingNaturalOutput,
         bool expected)
     {
         Assert.That(
-            DishwasherOutputBatchPolicy.ShouldReplaceStockEmptying(
+            ProcessorDishwasherTransferPolicy.ShouldUseTrackedOutputBatch(
                 processorDishwasher,
                 canTrack,
                 hasFittingNaturalOutput),
@@ -265,15 +291,20 @@ public sealed class PickUpAndHaulAdapterTests
         Assert.That(selected, Is.Empty);
     }
 
-    [TestCase(true, false)]
-    [TestCase(false, true)]
-    public void Appliance_arrival_revalidation_selects_the_stock_tail_when_nothing_fits(
+    [TestCase(true, true, false)]
+    [TestCase(true, false, true)]
+    [TestCase(false, true, true)]
+    [TestCase(false, false, true)]
+    public void Appliance_arrival_revalidation_selects_immediate_one_output_when_nothing_fits(
+        bool canTrack,
         bool hasFittingNaturalOutput,
-        bool expectedStockFallback)
+        bool expectedImmediateOneOutput)
     {
         Assert.That(
-            DishwasherOutputBatchPolicy.ShouldUseStockFallbackAtAppliance(hasFittingNaturalOutput),
-            Is.EqualTo(expectedStockFallback));
+            ProcessorDishwasherTransferPolicy.ShouldUseImmediateOneOutputFallback(
+                canTrack,
+                hasFittingNaturalOutput),
+            Is.EqualTo(expectedImmediateOneOutput));
     }
 
     [TestCase(true, false, false, false)]
@@ -298,6 +329,53 @@ public sealed class PickUpAndHaulAdapterTests
         bool expectedSuccess)
     {
         Assert.That(ProcessorEmptyLifecyclePolicy.ShouldSucceed(empty), Is.EqualTo(expectedSuccess));
+    }
+
+    [Test]
+    public void Installed_processor_filling_shape_is_supported()
+    {
+        Assert.That(
+            ProcessorDishwasherInputCompatibility.IsSupported(
+                assemblyName: "ProcessorFramework",
+                assemblyVersion: new Version(1, 0, 0, 0),
+                driverTypeName: "ProcessorFramework.JobDriver_FillProcessor",
+                driverIsPublicJobDriver: true,
+                makeNewToilsIsProtectedInstanceEnumerable: true,
+                fillJobUsesDriver: true,
+                reservationsArePublicInstanceBoolean: true,
+                processFilterHasAllowedIngredientList: true),
+            Is.True);
+    }
+
+    [TestCase("ChangedFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, true, true, true, true)]
+    [TestCase("ProcessorFramework", "2.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, true, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "Changed.FillDriver", true, true, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", false, true, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, false, true, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, true, false, true, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, true, true, false, true)]
+    [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, true, true, true, false)]
+    public void Changed_processor_filling_shape_falls_back_to_stock(
+        string assemblyName,
+        string version,
+        string driverTypeName,
+        bool driverShape,
+        bool toilShape,
+        bool jobShape,
+        bool reservationShape,
+        bool processFilterShape)
+    {
+        Assert.That(
+            ProcessorDishwasherInputCompatibility.IsSupported(
+                assemblyName,
+                Version.Parse(version),
+                driverTypeName,
+                driverShape,
+                toilShape,
+                jobShape,
+                reservationShape,
+                processFilterShape),
+            Is.False);
     }
 
     [Test]

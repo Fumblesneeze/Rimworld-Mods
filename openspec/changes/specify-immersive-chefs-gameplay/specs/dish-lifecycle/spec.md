@@ -131,7 +131,11 @@ For hand washing, the pawn SHALL travel to the selected source once, wash each a
 
 For a dishwasher, the pawn SHALL travel to that appliance once and admit each tracked physical unit separately through the appliance owner's validated admission seam. Admission SHALL preserve each exact Thing identity, SHALL stop before the appliance's remaining capacity is exceeded, and SHALL remove an admitted unit from Pick Up And Haul tracking because the dishwasher now owns its lifecycle. Interruption before admission SHALL return the still-carried dirty units through Pick Up And Haul's native unload workflow; interruption after admission SHALL leave those exact units owned by the dishwasher and governed by its ordinary pause, completion, ejection, and hauling behavior.
 
-Completed appliance output SHALL remain ordinary clean haulable ware. When exact Processor Framework and Pick Up And Haul shapes are both active, Processor Framework's native `EmptyProcessor` work scan and appliance reservation SHALL remain authoritative, but the admitted dishwasher-emptying job SHALL remove naturally completed outputs (`ActiveProcessPercent >= 1`) after no more than a two-engine-tick arrival latch and with no simulated washing delay. At the appliance, that one job SHALL prefer lighter eligible output to maximize the whole-unit count fitting the pawn's remaining mass capacity, transfer that batch into pawn inventory, register every transferred Thing immediately with Pick Up And Haul, and invoke its native unload workflow once. It SHALL never interpret Processor Framework's `EmptyNow` completion override as natural completion, take an active or ruined load, over-encumber the pawn, merge away exact Thing identity, or leave one physical item simultaneously owned by the appliance and pawn inventory. If only part of a completed stack fits, that exact count SHALL enter inventory and the completed remainder SHALL stay in the dishwasher for a later job. Without the validated joint shape, or when no naturally completed non-ruined output fits at admission, Processor Framework's ordinary one-output emptying job SHALL remain the fallback. If capacity becomes unavailable while that admitted pawn walks to the appliance, the job SHALL retain the validated stock 200-tick one-output tail, including its complete fail/end lifecycle, rather than restart or force a tracked transfer.
+Completed appliance output SHALL remain ordinary clean haulable ware. For every admitted job targeting an Immersive Chefs Processor dishwasher, Processor Framework's native work scan, appliance reservation, selected JobDef, storage search, and ordinary hauling SHALL remain authoritative, but both `FillProcessor` loading and `EmptyProcessor` extraction at the appliance SHALL complete after no more than a two-engine-tick arrival latch. Neither path SHALL apply Processor Framework's stock 200-tick simulated processor-work delay because the dishwasher's own independent cycle already owns the cleaning work. Unrelated Processor Framework buildings SHALL retain their upstream timing unchanged.
+
+When exact Pick Up And Haul tracking is also active and natural output fits, one admitted emptying job SHALL prefer lighter naturally completed outputs (`ActiveProcessPercent >= 1`) to maximize the whole-unit count fitting the pawn's remaining mass capacity, transfer that batch into pawn inventory, register every transferred Thing immediately with Pick Up And Haul, and invoke its native unload workflow once. It SHALL never interpret Processor Framework's `EmptyNow` completion override as natural completion, take an active or ruined load into the tracked batch, over-encumber the pawn, merge away exact Thing identity, or leave one physical item simultaneously owned by the appliance and pawn inventory. If only part of a completed stack fits, that exact count SHALL enter inventory and the completed remainder SHALL stay in the dishwasher for a later job.
+
+Without validated Pick Up And Haul tracking, when no naturally completed non-ruined unit fits tracked inventory, or when capacity disappears during transit, the already-admitted dishwasher job SHALL revalidate at arrival and immediately use Processor Framework's ordinary one-output selection, extraction, reservation, and haul tail without the stock 200-tick delay. This fallback MAY preserve Processor Framework's active `EmptyNow` and ruined-output selection semantics, but it SHALL preserve exact identity and its complete fail/end lifecycle. If Processor Framework's validated driver shape itself is absent, disabled, or changed, Immersive Chefs SHALL leave the original upstream job unchanged rather than patching an unknown lifecycle.
 
 #### Scenario: Mixed batch retains per-item washing time
 
@@ -145,6 +149,12 @@ Completed appliance output SHALL remain ordinary clean haulable ware. When exact
 - **THEN** one ordinary `Doing dishes` job collects the bounded exact batch, travels to that dishwasher once, and admits each physical unit separately without exceeding its remaining capacity
 - **AND** the appliance, rather than the pawn inventory, owns every admitted exact unit through its normal cycle
 
+#### Scenario: Processor Framework natively fills one dishwasher load
+
+- **WHEN** Pick Up And Haul is absent or disabled and Processor Framework assigns its ordinary `FillProcessor` job for one dirty ware unit to an Immersive Chefs dishwasher
+- **THEN** the pawn uses Processor Framework's normal reservation, ingredient pickup, and walk to the appliance, but the exact carried unit enters the dishwasher no more than two engine ticks after arrival
+- **AND** the dishwasher performs its independently timed wash while the pawn is free to leave, with no separate 200-tick loading work
+
 #### Scenario: Dishwasher admission is interrupted partway through a batch
 
 - **WHEN** the pawn is interrupted after some collected units enter the selected dishwasher but before all collected units are admitted
@@ -156,6 +166,12 @@ Completed appliance output SHALL remain ordinary clean haulable ware. When exact
 - **WHEN** a Processor-backed dishwasher contains several completed clean ware units, Pick Up And Haul is active, and the cleaner has enough remaining mass capacity for all of them
 - **THEN** the native `EmptyProcessor` work assignment sends the cleaner to that dishwasher once, extraction completes without the stock 200-tick emptying delay, and every completed exact unit enters that pawn's tracked inventory
 - **AND** Pick Up And Haul performs one native unload workflow for the collected batch instead of one appliance-emptying and storage trip per unit
+
+#### Scenario: Ordinary Processor output hauling has no appliance-work delay
+
+- **WHEN** a naturally complete, `EmptyNow`, or ruined dishwasher output is assigned through Processor Framework without an eligible tracked output batch
+- **THEN** the pawn reaches the appliance, extracts the one output selected by Processor Framework after no more than two engine ticks, and follows its ordinary reservation and storage-haul tail
+- **AND** an admitted capacity race MAY select this same immediate one-output path but MUST NOT restore the stock 200-tick wait
 
 #### Scenario: Completed output exceeds pawn inventory capacity
 

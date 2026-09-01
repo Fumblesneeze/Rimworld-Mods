@@ -203,15 +203,6 @@ internal readonly struct DishwasherOutputBatchSelection : IEquatable<DishwasherO
 
 internal static class DishwasherOutputBatchPolicy
 {
-    internal static bool ShouldReplaceStockEmptying(
-        bool processorDishwasher,
-        bool canTrack,
-        bool hasFittingNaturalOutput) =>
-        processorDishwasher && canTrack && hasFittingNaturalOutput;
-
-    internal static bool ShouldUseStockFallbackAtAppliance(bool hasFittingNaturalOutput) =>
-        !hasFittingNaturalOutput;
-
     internal static IReadOnlyList<DishwasherOutputBatchSelection> Select(
         IEnumerable<DishwasherOutputBatchCandidate> candidates,
         float availableMass)

@@ -4154,6 +4154,19 @@ public static class FinalizedImmersiveChefsIntegrationTests
             binder: null,
             types: new[] { typeof(bool) },
             modifiers: null);
+        var fillToils = fillDriverType?.GetMethod(
+            "MakeNewToils",
+            BindingFlags.NonPublic | BindingFlags.Instance,
+            binder: null,
+            types: Type.EmptyTypes,
+            modifiers: null);
+        var emptyDriverType = AccessTools.TypeByName("ProcessorFramework.JobDriver_EmptyProcessor");
+        var emptyToils = emptyDriverType?.GetMethod(
+            "MakeNewToils",
+            BindingFlags.NonPublic | BindingFlags.Instance,
+            binder: null,
+            types: Type.EmptyTypes,
+            modifiers: null);
         var addIngredientPatches = Harmony.GetPatchInfo(addIngredient);
         var owners = Harmony.GetPatchInfo(takeOut)?.Owners
             .Count(owner => owner == ImmersiveChefsMod.PackageId) ?? 0;
@@ -4173,6 +4186,12 @@ public static class FinalizedImmersiveChefsIntegrationTests
         IntegrationAssert.Equal(1, Harmony.GetPatchInfo(fillReservations)?.Prefixes
             .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
             "Processor fill jobs must have one Immersive Chefs stale-clean reservation guard.");
+        IntegrationAssert.Equal(1, Harmony.GetPatchInfo(fillToils)?.Prefixes
+            .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
+            "Processor dishwasher fill jobs must have one Immersive Chefs immediate-transfer prefix.");
+        IntegrationAssert.Equal(1, Harmony.GetPatchInfo(emptyToils)?.Prefixes
+            .Count(patch => patch.owner == ImmersiveChefsMod.PackageId) ?? 0,
+            "Processor dishwasher empty jobs must have one Immersive Chefs immediate-transfer prefix.");
     }
 
     [IntegrationTest(RunAt.PlayableMapLoaded)]

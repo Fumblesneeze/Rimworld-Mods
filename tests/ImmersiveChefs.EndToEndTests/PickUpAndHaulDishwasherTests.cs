@@ -409,7 +409,7 @@ public sealed class PickUpAndHaulProcessorDishwasherCapacityBoundaryTest : IRimW
 }
 
 [RimWorldEndToEndTest(
-    "immersive-chefs.pick-up-and-haul-processor-dishwasher-capacity-race-fallback",
+    "immersive-chefs.pick-up-and-haul-processor-dishwasher-capacity-race-immediate-fallback",
     "fumblesneeze.immersivechefs",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
@@ -418,10 +418,10 @@ public sealed class PickUpAndHaulProcessorDishwasherCapacityBoundaryTest : IRimW
     "Dubwise.DubsBadHygiene",
     "Mehni.PickUpAndHaul",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 7_200,
-    MaxGameTicks = 30_000,
-    MaxWallClockSeconds = 300)]
-public sealed class PickUpAndHaulProcessorDishwasherCapacityRaceFallbackTest : IRimWorldEndToEndTest
+    MaxFrames = 10_000,
+    MaxGameTicks = 34_000,
+    MaxWallClockSeconds = 330)]
+public sealed class PickUpAndHaulProcessorDishwasherCapacityRaceImmediateFallbackTest : IRimWorldEndToEndTest
 {
     private PickUpAndHaulDishwasherFixture fixture = null!;
 
@@ -495,11 +495,11 @@ public sealed class PickUpAndHaulProcessorDishwasherCapacityRaceFallbackTest : I
             paused: false,
             EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
-            "the appliance-arrival branch retains Processor Framework's stock output path",
-            _ => fixture.ObserveStockCapacityRaceFallback(),
+            "the appliance-arrival branch uses Processor Framework's immediate one-output path",
+            _ => fixture.ObserveImmediateCapacityRaceFallback(),
             new EndToEndDeadline(1_800, 7_000, TimeSpan.FromSeconds(70)));
         yield return new TimeControlActionStep(
-            "pause after the stock one-output haul",
+            "pause after the immediate one-output haul",
             paused: true,
             EndToEndGameSpeed.Normal);
         yield return new SelectionActionStep(
@@ -507,15 +507,126 @@ public sealed class PickUpAndHaulProcessorDishwasherCapacityRaceFallbackTest : I
             fixture.PartialOutputStoredIds,
             additive: false);
         yield return new ScreenshotStep(
-            "the capacity race falls back to Processor Framework storage without tracked inventory",
+            "the capacity race immediately falls back to Processor Framework storage without tracked inventory",
             Array.Empty<string>(),
             paddingPixels: 0);
         yield return new AssertionStep(
-            "retain one stock empty job without PUAH tracking or over-encumbrance",
-            _ => fixture.AssertStockCapacityRaceFallback());
+            "retain one immediate empty job without PUAH tracking or over-encumbrance",
+            _ => fixture.AssertImmediateCapacityRaceFallback());
         yield return new CheckpointStep(
-            "runtime capacity-race stock fallback",
-            _ => fixture.StockFallbackCheckpoint());
+            "runtime capacity-race immediate fallback",
+            _ => fixture.ImmediateFallbackCheckpoint());
+    }
+}
+
+[RimWorldEndToEndTest(
+    "immersive-chefs.processor-dishwasher-native-fill-and-empty-timing",
+    "fumblesneeze.immersivechefs",
+    "brrainz.harmony",
+    EndToEndTestContract.CorePackageId,
+    "imranfish.xmlextensions",
+    "syrchalis.processor.framework",
+    "Dubwise.DubsBadHygiene",
+    "fumblesneeze.immersivechefs",
+    MaxFrames = 8_000,
+    MaxGameTicks = 30_000,
+    MaxWallClockSeconds = 270)]
+public sealed class ProcessorDishwasherNativeFillAndEmptyTimingTest : IRimWorldEndToEndTest
+{
+    private PickUpAndHaulDishwasherFixture fixture = null!;
+
+    public void Arrange(IEndToEndContext context)
+    {
+        fixture = PickUpAndHaulDishwasherFixture.Create(
+            context,
+            requireProcessor: true,
+            plateOnly: true,
+            plateCount: 1,
+            requirePickUpAndHaul: false);
+    }
+
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        yield return new TimeControlActionStep(
+            "pause before native Processor dishwasher filling",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "enable only native Processor hauling work",
+            _ => fixture.ActivateProcessorHaulingOnly());
+        yield return new TimeControlActionStep(
+            "let the native FillProcessor job carry the exact dirty plate",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the native FillProcessor job admits the plate immediately after arrival",
+            _ => fixture.ObserveNativeProcessorFillAdmission(),
+            new EndToEndDeadline(2_400, 7_000, TimeSpan.FromSeconds(75)));
+        yield return new TimeControlActionStep(
+            "pause on the admitted native Processor load",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the dishwasher after native Processor filling",
+            new[] { fixture.Dishwasher.ThingID },
+            additive: false);
+        yield return new CameraActionStep(
+            "frame the native Processor transfer",
+            fixture.VisibleThingIds,
+            paddingPixels: 220);
+        yield return new ScreenshotStep(
+            "the exact dirty plate is appliance-owned without a loading-work wait",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new AssertionStep(
+            "suspend output work while the native load washes",
+            _ => fixture.SuspendOutputWork());
+        yield return new TimeControlActionStep(
+            "run the independently timed dishwasher process",
+            paused: false,
+            EndToEndGameSpeed.Superfast);
+        yield return new WaitUntilStep(
+            "the exact plate naturally completes inside the appliance",
+            _ => fixture.AllProcessorOutputsNaturallyComplete(),
+            new EndToEndDeadline(2_400, 12_000, TimeSpan.FromSeconds(90)));
+        yield return new TimeControlActionStep(
+            "pause before native Processor emptying",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new AssertionStep(
+            "open clean storage and enable only native Processor hauling",
+            _ =>
+            {
+                fixture.EnableCleanStorage();
+                fixture.RelocateCleanerForOutputTransit();
+                fixture.ActivateProcessorHaulingOnly();
+            });
+        yield return new TimeControlActionStep(
+            "let the native EmptyProcessor job extract and store the exact plate",
+            paused: false,
+            EndToEndGameSpeed.Normal);
+        yield return new WaitUntilStep(
+            "the native EmptyProcessor job extracts without an unloading-work wait",
+            _ => fixture.ObserveImmediateUntrackedOutputStored(),
+            new EndToEndDeadline(1_800, 7_000, TimeSpan.FromSeconds(70)));
+        yield return new TimeControlActionStep(
+            "pause after native Processor storage",
+            paused: true,
+            EndToEndGameSpeed.Normal);
+        yield return new SelectionActionStep(
+            "select the exact clean output",
+            fixture.WareIds,
+            additive: false);
+        yield return new ScreenshotStep(
+            "the exact clean plate reaches ordinary storage after immediate extraction",
+            Array.Empty<string>(),
+            paddingPixels: 0);
+        yield return new AssertionStep(
+            "native Processor filling and emptying retain timing identity and water",
+            _ => fixture.AssertNativeProcessorTransferTiming());
+        yield return new CheckpointStep(
+            "native Processor dishwasher transfer timing",
+            _ => fixture.NativeProcessorTransferCheckpoint());
     }
 }
 
@@ -528,9 +639,9 @@ public sealed class PickUpAndHaulProcessorDishwasherCapacityRaceFallbackTest : I
     "syrchalis.processor.framework",
     "Dubwise.DubsBadHygiene",
     "fumblesneeze.immersivechefs",
-    MaxFrames = 7_200,
-    MaxGameTicks = 24_000,
-    MaxWallClockSeconds = 240)]
+    MaxFrames = 11_200,
+    MaxGameTicks = 35_000,
+    MaxWallClockSeconds = 390)]
 public sealed class ProcessorDishwasherContinuousAdmissionTest : IRimWorldEndToEndTest
 {
     private PickUpAndHaulDishwasherFixture fixture = null!;
@@ -762,8 +873,10 @@ public sealed class PickUpAndHaulProcessorDishwasherInterruptionTest : IRimWorld
 
 internal sealed class PickUpAndHaulDishwasherFixture
 {
-    private const int MaxObservedImmediateTransferTicks = 30;
+    private const int MaxObservedImmediateTransferTicks =
+        ProcessorDishwasherTransferPolicy.ArrivalLatchTicks;
     private const string TrackerTypeName = "PickUpAndHaul.CompHauledToInventory";
+    private const string FillProcessorDriverTypeName = "ProcessorFramework.JobDriver_FillProcessor";
     private const string EmptyProcessorDriverTypeName = "ProcessorFramework.JobDriver_EmptyProcessor";
     private const string UnloadDriverTypeName = "PickUpAndHaul.JobDriver_UnloadYourHauledInventory";
     private readonly Map map;
@@ -791,9 +904,15 @@ internal sealed class PickUpAndHaulDishwasherFixture
     private readonly Dictionary<int, int> outputArrivalTicks = new();
     private readonly Dictionary<int, int> outputTransferTicks = new();
     private readonly HashSet<int> outputJobsWithStockDelay = new();
+    private readonly HashSet<int> observedInputFillJobIds = new();
+    private readonly Dictionary<int, int> inputJobStartTicks = new();
+    private readonly Dictionary<int, int> inputArrivalTicks = new();
+    private readonly Dictionary<int, int> inputTransferTicks = new();
+    private readonly HashSet<int> inputJobsWithStockDelay = new();
+    private int lastInputFillJobId = -1;
     private int lastOutputEmptyJobId = -1;
     private int naturalCompletionObservationStartedTick = -1;
-    private int stockFallbackCompletedTick = -1;
+    private int immediateFallbackCompletedTick = -1;
     private int inputAdmissionStartedTick = -1;
     private int inputAdmissionCompletedTick = -1;
     private int inputAdmissionUnitCount;
@@ -949,6 +1068,84 @@ internal sealed class PickUpAndHaulDishwasherFixture
         Cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
     }
 
+    internal void ActivateProcessorHaulingOnly()
+    {
+        foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+        {
+            if (!Cleaner.WorkTypeIsDisabled(workType))
+            {
+                Cleaner.workSettings.SetPriority(workType, 0);
+            }
+        }
+
+        Cleaner.workSettings.SetPriority(WorkTypeDefOf.Hauling, 1);
+        Cleaner.jobs.EndCurrentJob(JobCondition.InterruptForced);
+    }
+
+    internal bool ObserveNativeProcessorFillAdmission()
+    {
+        ObserveInputJobTiming();
+        return AllWareOwnedByDishwasher() &&
+               observedInputFillJobIds.Count == 1 &&
+               InputTransferWasImmediate();
+    }
+
+    internal bool ObserveImmediateUntrackedOutputStored()
+    {
+        ObserveOutputJobTiming();
+        return !ProcessorFrameworkAdapter.HasContents(Dishwasher) &&
+               ware.All(item => item.Spawned && cleanStorageCells.Contains(item.Position)) &&
+               ware.All(item => item.GetComp<CompSanitation>() is
+                   { IsDirty: false, WashProvenance: WashProvenance.Safe }) &&
+               observedOutputEmptyJobIds.Count == 1 &&
+               outputJobsWithStockDelay.Count == 0 &&
+               OutputTransferWasImmediate() &&
+               CurrentAndQueuedUnloadJobs().Length == 0;
+    }
+
+    internal void AssertNativeProcessorTransferTiming()
+    {
+        EndToEndAssert.True(ObserveImmediateUntrackedOutputStored(),
+            "The native no-Pick-Up-And-Haul Processor output must remain one immediate exact storage haul.");
+        EndToEndAssert.Equal(1, observedInputFillJobIds.Count,
+            "The exact dirty plate must use one native FillProcessor assignment.");
+        EndToEndAssert.Equal(0, inputJobsWithStockDelay.Count,
+            "The native FillProcessor dishwasher path must not retain its stock 200-tick wait.");
+        EndToEndAssert.True(InputTransferWasImmediate(),
+            "The native FillProcessor transfer must begin within the bounded arrival latch.");
+        EndToEndAssert.Equal(1, observedOutputEmptyJobIds.Count,
+            "The exact clean plate must use one native EmptyProcessor assignment.");
+        EndToEndAssert.Equal(0, outputJobsWithStockDelay.Count,
+            "The native EmptyProcessor dishwasher path must not retain its stock 200-tick wait.");
+        EndToEndAssert.Equal(1, ware.Sum(item => item.stackCount),
+            "Native Processor filling and emptying must conserve the exact physical unit.");
+        EndToEndAssert.True(HandwashingE2EFixture.Nearly(
+                HandwashingE2EFixture.ReadDubsNetworkWater(Dishwasher),
+                9.9f),
+            "Native Processor filling must debit the exact plate water charge once.");
+    }
+
+    internal Dictionary<string, string> NativeProcessorTransferCheckpoint()
+    {
+        return new Dictionary<string, string>
+        {
+            ["fillJobId"] = lastInputFillJobId.ToString(),
+            ["fillJobStartTick"] = inputJobStartTicks[lastInputFillJobId].ToString(),
+            ["fillArrivalTick"] = inputArrivalTicks[lastInputFillJobId].ToString(),
+            ["fillTransferTick"] = inputTransferTicks[lastInputFillJobId].ToString(),
+            ["fillArrivalToTransferTicks"] =
+                (inputTransferTicks[lastInputFillJobId] - inputArrivalTicks[lastInputFillJobId]).ToString(),
+            ["emptyJobId"] = lastOutputEmptyJobId.ToString(),
+            ["emptyJobStartTick"] = outputJobStartTicks[lastOutputEmptyJobId].ToString(),
+            ["emptyArrivalTick"] = outputArrivalTicks[lastOutputEmptyJobId].ToString(),
+            ["emptyTransferTick"] = outputTransferTicks[lastOutputEmptyJobId].ToString(),
+            ["emptyArrivalToTransferTicks"] =
+                (outputTransferTicks[lastOutputEmptyJobId] - outputArrivalTicks[lastOutputEmptyJobId]).ToString(),
+            ["waterAfterAdmission"] =
+                HandwashingE2EFixture.ReadDubsNetworkWater(Dishwasher).ToString("R")
+        };
+    }
+
     internal void PrepareContinuousAdmission()
     {
         ware[1].SetForbidden(true, warnOnFail: false);
@@ -1018,6 +1215,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
     internal bool BothContinuousLoadsAreCleanOutputs()
     {
+        ObserveOutputJobTiming();
         return ware.Take(2).All(item =>
             item.Spawned && item.Map == map &&
             item.GetComp<CompSanitation>() is
@@ -1046,6 +1244,10 @@ internal sealed class PickUpAndHaulDishwasherFixture
             "Continuous admission must preserve both exact identities.");
         EndToEndAssert.True(ware.Take(2).All(item => item.stackCount == 1),
             "Continuous admission must conserve one physical unit for each exact load.");
+        EndToEndAssert.True(observedOutputEmptyJobIds.Count >= 1,
+            "The no-Pick-Up-And-Haul workflow must use native Processor empty assignments.");
+        EndToEndAssert.Equal(0, outputJobsWithStockDelay.Count,
+            "No native Processor dishwasher output may retain the stock 200-tick appliance delay.");
     }
 
     internal Dictionary<string, string> ContinuousAdmissionCheckpoint()
@@ -1478,7 +1680,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
                        { IsDirty: false, WashProvenance: WashProvenance.Safe } && !IsTracked(item));
     }
 
-    internal bool ObserveStockCapacityRaceFallback()
+    internal bool ObserveImmediateCapacityRaceFallback()
     {
         ObserveOutputJobTiming();
         var stored = partialOutputDef is not null &&
@@ -1489,13 +1691,14 @@ internal sealed class PickUpAndHaulDishwasherFixture
                          .Sum(item => item.stackCount) == partialOutputInitialCount;
         if (stored &&
             observedOutputEmptyJobIds.Count == 1 &&
-            outputJobsWithStockDelay.SetEquals(observedOutputEmptyJobIds) &&
+            outputJobsWithStockDelay.Count == 0 &&
+            OutputTransferWasImmediate() &&
             CurrentAndQueuedUnloadJobs().Length == 0 &&
             map.listerThings.AllThings.Where(MatchesPartialOutput).All(item => !IsTracked(item)))
         {
-            if (stockFallbackCompletedTick < 0)
+            if (immediateFallbackCompletedTick < 0)
             {
-                stockFallbackCompletedTick = Find.TickManager.TicksGame;
+                immediateFallbackCompletedTick = Find.TickManager.TicksGame;
             }
             return true;
         }
@@ -1531,29 +1734,35 @@ internal sealed class PickUpAndHaulDishwasherFixture
             "Neither naturally completed fitting output batch may enter Processor Framework's 200-tick stock wait.");
     }
 
-    internal void AssertStockCapacityRaceFallback()
+    internal void AssertImmediateCapacityRaceFallback()
     {
-        EndToEndAssert.True(ObserveStockCapacityRaceFallback(),
-            "The post-admission capacity race must complete through Processor Framework's stock one-output path.");
+        EndToEndAssert.True(ObserveImmediateCapacityRaceFallback(),
+            "The post-admission capacity race must complete through Processor Framework's immediate one-output path.");
         EndToEndAssert.Equal(0, observedOutputUnloadJobIds.Count,
-            "The stock fallback must not fabricate a Pick Up And Haul tracked unload.");
-        EndToEndAssert.Equal(0, outputTransferTicks.Count,
-            "The stock fallback output must never enter tracked pawn inventory.");
+            "The immediate fallback must not fabricate a Pick Up And Haul tracked unload.");
+        EndToEndAssert.Equal(1, outputTransferTicks.Count,
+            "The immediate fallback must retain one exact at-appliance extraction observation.");
+        EndToEndAssert.Equal(0, outputJobsWithStockDelay.Count,
+            "The immediate fallback must not enter Processor Framework's 200-tick stock wait.");
         EndToEndAssert.True(
             partialOutputDef is not null &&
             RemainingMassCapacity(Cleaner) + 0.0001f <
             partialOutputDef.GetStatValueAbstract(StatDefOf.Mass, partialOutputStuff),
-            "The stock fallback must complete while ordinary inventory remains unable to fit the output.");
+            "The immediate fallback must complete while ordinary inventory remains unable to fit the output.");
     }
 
-    internal Dictionary<string, string> StockFallbackCheckpoint()
+    internal Dictionary<string, string> ImmediateFallbackCheckpoint()
     {
         return new Dictionary<string, string>
         {
             ["emptyJobId"] = lastOutputEmptyJobId.ToString(),
             ["emptyJobStartTick"] = outputJobStartTicks[lastOutputEmptyJobId].ToString(),
             ["emptyJobArrivalTick"] = outputArrivalTicks[lastOutputEmptyJobId].ToString(),
-            ["stockFallbackCompletedTick"] = stockFallbackCompletedTick.ToString(),
+            ["immediateFallbackCompletedTick"] = immediateFallbackCompletedTick.ToString(),
+            ["arrivalToExtractionTicks"] = outputArrivalTicks.TryGetValue(lastOutputEmptyJobId, out var arrival) &&
+                                           outputTransferTicks.TryGetValue(lastOutputEmptyJobId, out var transfer)
+                ? (transfer - arrival).ToString()
+                : "within-frame-poll-gap",
             ["stockDelayObserved"] = outputJobsWithStockDelay.Contains(lastOutputEmptyJobId).ToString(),
             ["trackedUnloadCount"] = observedOutputUnloadJobIds.Count.ToString()
         };
@@ -1659,6 +1868,52 @@ internal sealed class PickUpAndHaulDishwasherFixture
                ReferenceEquals(item.holdingOwner, Cleaner.carryTracker?.innerContainer);
     }
 
+    private void ObserveInputJobTiming()
+    {
+        var driver = Cleaner.jobs.curDriver;
+        if (driver?.GetType().FullName != FillProcessorDriverTypeName)
+        {
+            return;
+        }
+
+        var jobId = driver.job.loadID;
+        observedInputFillJobIds.Add(jobId);
+        if (!inputJobStartTicks.ContainsKey(jobId))
+        {
+            inputJobStartTicks[jobId] = Find.TickManager.TicksGame;
+        }
+
+        lastInputFillJobId = jobId;
+        if (driver.ticksLeftThisToil > 0)
+        {
+            if (!inputArrivalTicks.ContainsKey(jobId))
+            {
+                inputArrivalTicks[jobId] = Find.TickManager.TicksGame;
+            }
+
+            if (driver.ticksLeftThisToil > ProcessorDishwasherTransferPolicy.ArrivalLatchTicks)
+            {
+                inputJobsWithStockDelay.Add(jobId);
+            }
+        }
+
+        if (inputArrivalTicks.ContainsKey(jobId) &&
+            AllWareOwnedByDishwasher() &&
+            !inputTransferTicks.ContainsKey(jobId))
+        {
+            inputTransferTicks[jobId] = Find.TickManager.TicksGame;
+        }
+    }
+
+    private bool InputTransferWasImmediate()
+    {
+        return lastInputFillJobId >= 0 &&
+               !inputJobsWithStockDelay.Contains(lastInputFillJobId) &&
+               inputArrivalTicks.TryGetValue(lastInputFillJobId, out var arrivalTick) &&
+               inputTransferTicks.TryGetValue(lastInputFillJobId, out var transferTick) &&
+               transferTick - arrivalTick <= MaxObservedImmediateTransferTicks;
+    }
+
     private void ObserveOutputJobTiming()
     {
         var driver = Cleaner.jobs.curDriver;
@@ -1674,16 +1929,24 @@ internal sealed class PickUpAndHaulDishwasherFixture
             outputJobStartTicks[jobId] = Find.TickManager.TicksGame;
         }
         lastOutputEmptyJobId = jobId;
-        if (Cleaner.Position.DistanceToSquared(Dishwasher.InteractionCell) <= 2)
+        if (driver.ticksLeftThisToil > 0)
         {
             if (!outputArrivalTicks.ContainsKey(jobId))
             {
                 outputArrivalTicks[jobId] = Find.TickManager.TicksGame;
             }
-            if (driver.ticksLeftThisToil > 5)
+            if (driver.ticksLeftThisToil > ProcessorDishwasherTransferPolicy.ArrivalLatchTicks)
             {
                 outputJobsWithStockDelay.Add(jobId);
             }
+
+        }
+
+        if (outputArrivalTicks.ContainsKey(jobId) &&
+            !ProcessorFrameworkAdapter.HasContents(Dishwasher) &&
+            !outputTransferTicks.ContainsKey(jobId))
+        {
+            outputTransferTicks[jobId] = Find.TickManager.TicksGame;
         }
     }
 
@@ -1694,14 +1957,10 @@ internal sealed class PickUpAndHaulDishwasherFixture
             return false;
         }
 
-        if (!outputTransferTicks.ContainsKey(lastOutputEmptyJobId))
-        {
-            outputTransferTicks[lastOutputEmptyJobId] = Find.TickManager.TicksGame;
-        }
-
         return !outputJobsWithStockDelay.Contains(lastOutputEmptyJobId) &&
-               (!outputArrivalTicks.TryGetValue(lastOutputEmptyJobId, out var arrivalTick) ||
-                outputTransferTicks[lastOutputEmptyJobId] - arrivalTick <= MaxObservedImmediateTransferTicks);
+               outputArrivalTicks.TryGetValue(lastOutputEmptyJobId, out var arrivalTick) &&
+               outputTransferTicks.TryGetValue(lastOutputEmptyJobId, out var transferTick) &&
+               transferTick - arrivalTick <= MaxObservedImmediateTransferTicks;
     }
 
     private Job[] CurrentAndQueuedUnloadJobs()
