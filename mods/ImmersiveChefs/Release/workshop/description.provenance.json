@@ -1,13 +1,13 @@
 {
   "schema": "ImmersiveChefs/WorkshopDescriptionProvenance/v1",
   "publishedFileId": "3782589902",
-  "previewPublicationPlanSha256": "DDD615F664BF90337AF5EB563589557C711FE7A1D3822C91FC4FB69330736F08",
-  "descriptionSha256": "9D8EE03E60E3C510C40CD82179BB130EA4854A7D24392E0BADA8A4230AB4532E",
+  "previewPublicationPlanSha256": "CB3A52879B69CA6767BF6849268D7FBD23927E391AFABBE830342844D9708288",
+  "descriptionSha256": "24FCBFEC6B5A4202F778A7D94E967EC2E4B61FDB27A39A907BA8A49D6DB9FA78",
   "previews": [
     {
       "token": "immersive-chefs",
       "remoteIndex": 0,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/16183931520192915678/0961B265A253ABE7BAE3BB904CCF0612E78A6EA0/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/14776242877087781510/0961B265A253ABE7BAE3BB904CCF0612E78A6EA0/",
       "localPath": "preview-main.png",
       "localSha256": "B61BC0C7E4C626C0C7643278C077466FCEF8BCDBB23092897550490004CDB936",
       "remoteSha256": "B61BC0C7E4C626C0C7643278C077466FCEF8BCDBB23092897550490004CDB936",
@@ -16,7 +16,7 @@
     {
       "token": "kitchenware",
       "remoteIndex": 1,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/16065453260204385851/EE9080A68BAB28F9053DB9C2DBD7BED228910F66/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/10557042170922753510/EE9080A68BAB28F9053DB9C2DBD7BED228910F66/",
       "localPath": "feature-kitchenware.png",
       "localSha256": "72B5EE204EB79C34EFFEAF1FB2670BD77F375FCE41893BB0FE62C7AA7E6510BE",
       "remoteSha256": "72B5EE204EB79C34EFFEAF1FB2670BD77F375FCE41893BB0FE62C7AA7E6510BE",
@@ -25,7 +25,7 @@
     {
       "token": "teamwork",
       "remoteIndex": 2,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/13210399485287610675/07F935B974C098924B64F63F2B2D009BEDA574D9/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/10595014367887970089/07F935B974C098924B64F63F2B2D009BEDA574D9/",
       "localPath": "feature-teamwork.png",
       "localSha256": "562B6E55FF269175437989D65EECF2D6270676D778D65C30D7121CA1824F9657",
       "remoteSha256": "562B6E55FF269175437989D65EECF2D6270676D778D65C30D7121CA1824F9657",
@@ -34,7 +34,7 @@
     {
       "token": "dishwashing",
       "remoteIndex": 3,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/11884164053730057919/6F61AD9217541F194847E28F8AE5DF0EA13A2426/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/9402614076826008064/6F61AD9217541F194847E28F8AE5DF0EA13A2426/",
       "localPath": "feature-dishwashing.png",
       "localSha256": "F468795A4D64E941E90BFF8334A010174F425F080969D3DB9C1F01527C50BCDF",
       "remoteSha256": "F468795A4D64E941E90BFF8334A010174F425F080969D3DB9C1F01527C50BCDF",
@@ -43,7 +43,7 @@
     {
       "token": "meals",
       "remoteIndex": 4,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/13013103752584829953/BBAF198C868232E50C00F051F680A766441B25FF/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/17722103090486615794/BBAF198C868232E50C00F051F680A766441B25FF/",
       "localPath": "feature-meals.png",
       "localSha256": "4822D6630F907730D000D6D39BABDF5DB402C6ED567CF97961A29D8DE6B27DC0",
       "remoteSha256": "4822D6630F907730D000D6D39BABDF5DB402C6ED567CF97961A29D8DE6B27DC0",
@@ -52,7 +52,7 @@
     {
       "token": "colony",
       "remoteIndex": 5,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/10349151868697052295/1394EBA094EB853E3E71249E8F3B581900348911/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/15319281986753242149/1394EBA094EB853E3E71249E8F3B581900348911/",
       "localPath": "feature-colony.png",
       "localSha256": "A678AFC699128D12BE578CABD3ECCC125273FEB0E72ABC96BCD6A9DCFBCBC0D0",
       "remoteSha256": "A678AFC699128D12BE578CABD3ECCC125273FEB0E72ABC96BCD6A9DCFBCBC0D0",
@@ -61,7 +61,7 @@
     {
       "token": "compatibility",
       "remoteIndex": 6,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/9581679617471171628/B9A0FEB55759677B102509FFD8D30A4C149D81EA/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/14006664955242215432/B9A0FEB55759677B102509FFD8D30A4C149D81EA/",
       "localPath": "feature-compatibility.png",
       "localSha256": "824B5FC972C3E79E8EC79A6018094A692391BAFE22D8915E65A389EE1D8768AA",
       "remoteSha256": "824B5FC972C3E79E8EC79A6018094A692391BAFE22D8915E65A389EE1D8768AA",
