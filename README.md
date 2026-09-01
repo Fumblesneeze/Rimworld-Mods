@@ -145,9 +145,9 @@ Use semantic Gateway operations for repeatable actions and observations. Raw C# 
 
 ## Release operations
 
-Release-capable mods with a `mods/<Mod>/Release/release.json` profile bind the project, package inventory, exact RimWorld/Steam build, Workshop metadata, dependencies, preview, change note, and subscriber-verification workflow. Use the typed `release_profile_validate`, `release_prepare`, `release_publish`, `release_status`, and `release_accept_subscriber_evidence` operations; do not call Workshop publishing scripts directly.
+Release-capable mods with a `mods/<Mod>/Release/release.json` profile bind the project, package inventory, exact RimWorld/Steam build, Workshop metadata, dependencies, preview, and change note. Use the typed `release_profile_validate`, `release_prepare`, `release_publish`, and `release_status` operations; do not call product-specific Workshop publishing scripts directly.
 
-Preparation builds and stages repository artifacts and creates an immutable candidate/plan, but does not mutate Steam. Publication consumes that admitted plan, persists durable recovery state, verifies the remote graph and reacquired subscriber copy, and leaves visual acceptance separate until the exact retained screenshots have been personally reviewed.
+Preparation builds and stages repository artifacts and creates an immutable candidate/plan, but does not mutate Steam. Triggering publication asserts that testing and native player-workflow acceptance already happened. Publication consumes the admitted plan, persists durable recovery state, and completes only after the exact Steam item has the expected remote graph and a strictly newer nonzero modified timestamp. It never subscribes to the item or launches a product-specific smoke workflow.
 
 ## Repository boundaries and output
 

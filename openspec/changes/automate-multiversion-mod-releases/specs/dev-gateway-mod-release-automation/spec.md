@@ -3,7 +3,7 @@
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: Release manifests are explicit and repository-owned
-The repository SHALL define one reviewable release manifest per publishable mod. It SHALL declare the package ID, an existing Steam Workshop item identity or one explicit first-publication bootstrap, authoritative supported RimWorld targets, current development target, required and optional mod relationships, exact Steam build/depot/manifest inputs directly or by committed target ID, per-target package mapping, presentation sources, and required verification profiles. Each uploaded RimWorld compatibility folder SHALL map to exactly one exact compile target; additional exact builds MAY be regression-only and reuse that folder's compiled product. A release command MUST reject undeclared targets, duplicate package IDs or compatibility folders, a development target outside the supported set, invalid dependency metadata, a missing publication identity without the explicit bootstrap, and manifest/source disagreement before downloading, building, launching, or publishing.
+The repository SHALL define one reviewable release manifest per publishable mod. It SHALL declare the package ID, an existing Steam Workshop item identity or one explicit first-publication bootstrap, authoritative supported RimWorld targets, current development target, required and optional mod relationships, exact Steam build/depot/manifest inputs directly or by committed target ID, per-target package mapping, and presentation sources. It MUST NOT select a product-specific subscriber, gameplay, or smoke-test workflow. Each uploaded RimWorld compatibility folder SHALL map to exactly one exact compile target; additional exact builds MAY be regression-only and reuse that folder's compiled product. A release command MUST reject undeclared targets, duplicate package IDs or compatibility folders, a development target outside the supported set, invalid dependency metadata, a missing publication identity without the explicit bootstrap, and manifest/source disagreement before downloading, building, launching, or publishing.
 
 #### Scenario: Undeclared target is rejected without side effects
 - **WHEN** an operator requests a RimWorld version absent from the selected mod's release manifest
@@ -154,7 +154,7 @@ Every publishable release profile SHALL declare a bounded, unique, possibly empt
 #### Scenario: Already-submitted unsupported immutable plan is recovered honestly
 
 - **WHEN** an admitted plan reached Steam before the platform limitation was discovered, durable state proves the exact item and plan, and the unsupported custom key is either absent or retained with its exact URL as generic non-player-facing metadata
-- **THEN** recovery does not resubmit the update, rejects conflicting or duplicate values, records whether the exact generic metadata was retained plus the platform limitation in the receipt, and continues subscriber verification without claiming that Steam rendered it in Links
+- **THEN** recovery does not resubmit the update, rejects conflicting or duplicate values, records whether the exact generic metadata was retained plus the platform limitation in the receipt, and continues remote modified-time verification without claiming that Steam rendered it in Links
 
 #### Scenario: Link metadata crosses the legacy in-game automation boundary
 
@@ -256,7 +256,7 @@ The Dev Gateway SHALL expose an authenticated, loopback-only typed publication o
 ### Requirement: Publication failure is retryable and cannot target another item
 The publication workflow SHALL fail closed on Steam authentication, legal-agreement, connectivity, quota, callback, ownership, or item-identity errors. It MUST NOT create a new Workshop item implicitly or change a different item. It MAY create exactly one item when the reviewed manifest explicitly opts into first publication, the mutation-free dry-run declared no item ID, the user's explicit publication order materially matches that exact create operation, and no prior publication receipt or local item identity exists. Every first publication MUST submit the new item with Steam visibility `Private`, regardless of the eventual release visibility declared for later updates. Making that retained item Friends-only, Unlisted, or Public SHALL require a separate explicitly ordered update after the user has inspected the private item. The returned nonzero identity MUST be persisted before upload continuation and every later release MUST be update-only. The workflow SHALL preserve the reviewed local bundle plus diagnostic state for an explicit retry without claiming rollback of an already accepted Steam update.
 
-One cross-process lease SHALL cover identity recovery, mutation admission, remote reconciliation, dependency reconciliation, subscription, and receipt creation. Before an ID-less first publication, a bounded native query of every item published by the owning account SHALL prove that no exact-title RimWorld item exists; an incomplete query, one exact-title item, or more than one exact-title item SHALL fail before `CreateItem`. Every async Steam call MUST reject an invalid handle and correlate callback parent/child/item identities with the admitted request. A duplicate-create callback carrying one nonzero identity SHALL be treated as an already-created identity and persisted, not as permission for another create. Steam's legal-agreement flag SHALL stop before submission on creation as well as after submission. Definite callback failures MAY be retried from a fresh reviewed invocation; I/O failure, a timeout after admission, or a completed upload whose subscription/smoke/receipt phase did not finish is indeterminate and MUST block a different plan until the exact prior plan is reconciled. Existing receipts participate in identity recovery and conflicting identities fail closed. Remote acceptance SHALL require exact title, owner, app, visibility, description hash, metadata, tags, dependency set, and downloaded preview hash before subscription.
+One cross-process lease SHALL cover identity recovery, mutation admission, remote reconciliation, dependency reconciliation, modified-time verification, and receipt creation. Before an ID-less first publication, a bounded native query of every item published by the owning account SHALL prove that no exact-title RimWorld item exists; an incomplete query, one exact-title item, or more than one exact-title item SHALL fail before `CreateItem`. Every async Steam call MUST reject an invalid handle and correlate callback parent/child/item identities with the admitted request. A duplicate-create callback carrying one nonzero identity SHALL be treated as an already-created identity and persisted, not as permission for another create. Steam's legal-agreement flag SHALL stop before submission on creation as well as after submission. Definite callback failures MAY be retried from a fresh reviewed invocation; I/O failure, a timeout after admission, or a completed upload whose remote verification or receipt phase did not finish is indeterminate and MUST block a different plan until the exact prior plan is reconciled. Existing receipts participate in identity recovery and conflicting identities fail closed. Remote acceptance SHALL require exact title, owner, app, visibility, description hash, metadata, tags, dependency set, downloaded preview hash, and a strictly newer nonzero Steam modified timestamp than the immutable pre-submit baseline.
 
 A clean committed descendant release-tool revision MAY reconcile an older immutable plan only when that exact plan has persisted a post-submit state whose nonzero Workshop identity exactly matches the recovered package/release identity. This recovery path MUST remain query/reconciliation-only: it MUST NOT call `CreateItem`, submit content, or admit a different or divergent plan. Its receipt SHALL identify both the immutable candidate source revision and the recovery-tool revision.
 
@@ -280,46 +280,36 @@ A clean committed descendant release-tool revision MAY reconcile an older immuta
 - **WHEN** Steam rejects or withholds publication until the account accepts an updated Workshop agreement
 - **THEN** the operation reports the actionable agreement state, changes no alternate item, and leaves the same reviewed bundle available for explicit retry
 
-### Requirement: The subscribed Workshop copy receives final player acceptance
-After Steam reports a successful update and CDN propagation, the release workflow SHALL subscribe to or refresh the exact published item through the owning Steam client, reacquire it into the Steam Workshop content area, and compare its complete file manifest with the reviewed staged candidate. It SHALL then launch a fresh isolated RimWorld process using the subscribed Workshop package path rather than a repository-local or manually deployed copy, with the exact required dependencies and no Dev Gateway unless the verification profile explicitly tests it. The local package SHALL remain outside RimWorld discovery for that exact run. After verification, the workflow SHALL unsubscribe the repository-owned item and restore the canonical local package so normal development never retains simultaneous local and subscribed copies. The acting agent SHALL perform and personally inspect the mod's declared native player-workflow smoke test. Successful upload, remote metadata, subscription state, file presence, startup, logs, or diagnostics alone MUST NOT satisfy this final acceptance.
+### Requirement: Steam's modified time completes generic publication
+The release workflow SHALL treat applicable gameplay tests and native player acceptance as pre-release work that has already been completed before publication is triggered. It MUST NOT subscribe to the published item, wait for Workshop installation, move or restore the local mod package, launch a product-specific game process, run a cooking/dining or other per-mod smoke workflow, or require a later personal screenshot-acceptance step.
 
-#### Scenario: Published Immersive Chefs is verified as a subscriber receives it
-- **WHEN** the admitted RimWorld 1.6 Immersive Chefs update reaches Steam
-- **THEN** the exact item is subscribed or refreshed only for the bounded check, its reacquired files match the reviewed candidate, a fresh game loads that Workshop copy and passes the declared observable native cooking/dining smoke workflow, and cleanup unsubscribes it before restoring the local copy
+The immutable plan SHALL retain the exact nonzero Steam `time_updated` value observed for an existing item before mutation. After Steam reports a successful update, the publisher SHALL poll the authenticated exact-item query until the expected remote graph is present and `time_updated` is strictly greater than that baseline. For a first publication, the returned item SHALL report a nonzero modified time. Publication is terminally successful only after this observation and a credential-free receipt SHALL retain the before and after values.
 
-#### Scenario: Steam returns stale or different content
-- **WHEN** the subscribed Workshop directory is absent, has not reached the published manifest, or differs from the staged candidate
-- **THEN** release verification fails without substituting a local package or claiming the release accepted, and cleanup still unsubscribes the item and restores the local package
+#### Scenario: Existing item exposes its new modified time
+- **WHEN** Steam accepts the exact admitted update and the authenticated item query reports the expected metadata, dependencies, previews, and a `time_updated` value greater than the immutable baseline
+- **THEN** the generic publisher records the before/after timestamps and completes the release without subscribing, launching a product workflow, or awaiting another acceptance operation
 
-#### Scenario: Subscriber verification is retried after Steam is already verified
-- **WHEN** a prior subscribed-copy smoke attempt retained incomplete evidence and the exact Steam-verified plan is recovered without resubmission
-- **THEN** the verifier gives the new adapter invocation a fresh contained output path that does not exist yet, preserves every prior attempt directory, and lets that invocation exclusively create and own its evidence directory
+#### Scenario: Steam callback succeeds but modified time is unchanged
+- **WHEN** `SubmitItemUpdate` reports success but the exact item's authenticated `time_updated` value is absent, zero, or not greater than the pre-submit baseline
+- **THEN** the publisher keeps polling within its bound and does not mark the release complete; exhaustion remains an exact-plan remote-verification failure that cannot trigger a blind resubmission
 
-#### Scenario: A frozen PowerShell subscriber adapter derives repository-relative inputs
-- **WHEN** an immutable plan copies the exact adapter bytes away from their canonical `scripts` directory
-- **THEN** execution stages those same bytes at a contained transient location that preserves the adapter's repository-root relationship, rejects collisions, and removes only that run-owned transient copy afterward
-
-#### Scenario: Nested subscriber evidence remains within the legacy Windows path limit
-- **WHEN** the Immersive Chefs adapter launches the grouped E2E runner beneath its release subscriber-evidence root
-- **THEN** the outer run uses a 12-character lowercase hexadecimal entropy segment, rejects an existing leaf, and leaves enough path budget for the runner's timestamp, smoke, saved-data, Gateway-session, and final filename segments
-
-#### Scenario: A clean release worktree is itself too deep for subscriber execution
-- **WHEN** the canonical retained subscriber-evidence path would leave insufficient legacy Windows path budget because publication is recovering from a nested clean release worktree
-- **THEN** the verifier runs the exact frozen adapter against a fresh short run-owned staging root, rejects staging collisions, promotes the complete evidence tree into the canonical repository release root before acceptance, rewrites every retained screenshot identity to that promoted tree, preserves failed evidence when possible, and resumes the exact Steam-verified plan without another Workshop submission
+#### Scenario: Different mods share one publication workflow
+- **WHEN** any publishable repository mod supplies a valid immutable plan
+- **THEN** the release pipeline uses the same metadata/content/dependency/modified-time path and does not load a mod-specific verification profile or test ID
 
 ### Requirement: Local installation never implies Workshop subscription
-Development installation SHALL synchronize the reviewed package into RimWorld's canonical local `Mods/<package-id>` folder. The words "install", "deploy locally", and "copy to the game" MUST NOT authorize Steam Workshop subscription. Workshop subscription is permitted only as the explicitly named, bounded subscribed-copy release verification above and MUST NOT persist into ordinary development.
+Development installation SHALL synchronize the reviewed package into RimWorld's canonical local `Mods/<package-id>` folder. The words "install", "deploy locally", and "copy to the game" MUST NOT authorize Steam Workshop subscription. Workshop subscription is never part of the release pipeline and MUST NOT persist into ordinary development. A separately and explicitly requested subscribed-copy diagnostic MAY exist outside publication, but it does not determine release success.
 
 #### Scenario: A developer asks to install the latest mod
 - **WHEN** the user asks to install, deploy, or copy a repository-owned mod to their game without explicitly requesting subscribed-copy release verification
 - **THEN** the workflow updates only the canonical local package-ID folder and performs no Steam subscribe operation
 
-#### Scenario: Temporary subscribed-copy verification finishes or fails
-- **WHEN** the release workflow has temporarily subscribed to the repository-owned Workshop item and its native subscriber workflow reaches either success or failure
-- **THEN** mandatory cleanup uses Steam's exact `UnsubscribeItem` callback, verifies the item's `Subscribed` client-state flag is absent, treats an installed-only cache flag as non-subscribed, retains before/after evidence, and restores the canonical local package without leaving a duplicate active subscription
+#### Scenario: Publishing an installed local mod
+- **WHEN** the canonical local package is present and an operator publishes an admitted update
+- **THEN** publication leaves that local package untouched and never subscribes to the repository-owned Workshop item
 
 ### Requirement: Release evidence is complete and secret-free
-Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, verification results, presentation provenance, publication authorization and plan admission, Gateway process identity, Steam item/dependency results, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.
+Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, presentation provenance, publication authorization and plan admission, Gateway process identity, Steam item/dependency results, the before/after modified timestamps, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.
 
 #### Scenario: Release receipt is audited
 - **WHEN** a publication attempt reaches a terminal state

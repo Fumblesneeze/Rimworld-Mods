@@ -47,7 +47,10 @@ public sealed record ReleaseProfileResult(
     string Project,
     string PackageSource,
     string Description,
-    string Preview);
+    string Preview)
+{
+    public IReadOnlyList<WorkshopLink> WorkshopLinks { get; init; } = [];
+}
 
 public sealed record ModBuildResult(
     AdapterOperationResult Build,
@@ -89,11 +92,8 @@ public sealed record WorkshopPresentationSyncResult(
 [JsonSerializable(typeof(EvidenceReadResult))]
 [JsonSerializable(typeof(ReleasePlanStatusResult))]
 [JsonSerializable(typeof(ReleasePublishResult))]
-[JsonSerializable(typeof(ReleaseReviewResult))]
-[JsonSerializable(typeof(SubscriberVerificationResult))]
 [JsonSerializable(typeof(GatewayRawMutationResult))]
 [JsonSerializable(typeof(ReleaseWorkerRequest))]
 [JsonSerializable(typeof(ReleaseWorkerLease))]
-[JsonSerializable(typeof(SubscriberRecoveryRecord))]
 [JsonSerializable(typeof(WorkshopSubscriptionCleanupResult))]
 internal sealed partial class McpJsonContext : JsonSerializerContext;

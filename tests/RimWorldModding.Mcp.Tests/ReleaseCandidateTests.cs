@@ -186,17 +186,15 @@ public sealed class ReleaseCandidateTests
             Path.Combine(package, "1.6", "Assemblies", "RimWorldModding.Mcp.dll"));
         var description = Path.Combine(root, "description.txt");
         var preview = Path.Combine(root, "preview.png");
-        var verification = Path.Combine(root, "verification.json");
         File.WriteAllText(description, "description");
         File.WriteAllText(preview, "preview");
-        File.WriteAllText(verification, "{}");
         var profile = new ReleaseProfile(
             "RimWorldModRelease/v1", Path.Combine(root, "release.json"), project,
             "example.mod", "Example", "Fumblesneeze", "Product", "1.6",
             "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
             294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], [], [], CustomAssemblyReferences(),
             "mod_build", "presentation_render", package, ["About/", "1.6/"], description,
-            preview, null, "Initial release.", verification);
+            preview, null, "Initial release.");
         try
         {
             var valid = ReleaseCandidateBuilder.Inspect(package, profile.PackageInclude);
@@ -254,17 +252,15 @@ public sealed class ReleaseCandidateTests
             Path.Combine(package, "1.6", "Assemblies", "RimWorldModding.Mcp.dll"));
         var description = Path.Combine(root, "description.txt");
         var preview = Path.Combine(root, "preview.png");
-        var verification = Path.Combine(root, "verification.json");
         File.WriteAllText(description, "description");
         File.WriteAllText(preview, "preview");
-        File.WriteAllText(verification, "{}");
         var profile = new ReleaseProfile(
             "RimWorldModRelease/v1", Path.Combine(root, "release.json"), project,
             "example.mod", "Example", "Fumblesneeze", "Product", "1.6",
             "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
             294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["3509486825"], [], CustomAssemblyReferences(),
             "mod_build", "presentation_render", package, ["About/", "1.6/"], description,
-            preview, null, "Initial release.", verification);
+            preview, null, "Initial release.");
         try
         {
             var candidate = ReleaseCandidateBuilder.Inspect(package, profile.PackageInclude);

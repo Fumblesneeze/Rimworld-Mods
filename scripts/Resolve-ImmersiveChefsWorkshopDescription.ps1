@@ -38,7 +38,7 @@ foreach ($path in @($InventoryPath, $TemplatePath)) {
 
 try { $inventory = Get-Content -LiteralPath $InventoryPath -Raw -Encoding UTF8 | ConvertFrom-Json }
 catch { Exit-InvalidInput "The remote preview inventory is invalid JSON: $($_.Exception.Message)" }
-if ([string]$inventory.schema -cne 'ImmersiveChefs/WorkshopRemotePreviewInventory/v1') {
+if ([string]$inventory.schema -cne 'RimWorldModdingMcp/WorkshopRemotePreviewInventory/v1') {
     Exit-InvalidInput 'The remote preview inventory schema is invalid.'
 }
 [ulong]$publishedFileId = 0

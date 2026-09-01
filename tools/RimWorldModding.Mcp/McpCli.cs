@@ -248,7 +248,8 @@ public static class McpCli
                 parseResult.InvocationConfiguration.Output.WriteLine($"item: {releasePublish.PublishedFileId}");
                 parseResult.InvocationConfiguration.Output.WriteLine($"url: {releasePublish.WorkshopUrl}");
                 parseResult.InvocationConfiguration.Output.WriteLine($"receipt: {releasePublish.ReceiptPath}");
-                parseResult.InvocationConfiguration.Output.WriteLine($"subscriber evidence: {releasePublish.SubscriberEvidenceRoot}");
+                parseResult.InvocationConfiguration.Output.WriteLine($"steam modified before: {releasePublish.SteamModifiedBeforeUnixSeconds?.ToString() ?? "first publication"}");
+                parseResult.InvocationConfiguration.Output.WriteLine($"steam modified after: {releasePublish.SteamModifiedAfterUnixSeconds}");
                 break;
             case WorkshopPresentationSyncResult presentationSync:
                 foreach (var line in DescribePresentationSync(presentationSync))

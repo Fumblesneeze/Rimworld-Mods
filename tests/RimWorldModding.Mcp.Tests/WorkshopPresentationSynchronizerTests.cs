@@ -10,6 +10,23 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class WorkshopPresentationSynchronizerTests
 {
     [Test]
+    public void Description_resolver_is_declared_and_hash_bound_by_the_mod_presentation_manifest()
+    {
+        var root = TestRepository.FindRoot();
+        var profile = ReleaseProfileCatalog.Discover(root)
+            .Single(item => item.PackageId == "fumblesneeze.immersivechefs");
+
+        var resolver = new WorkshopPresentationSynchronizer(root)
+            .ReadDescriptionResolver(Path.GetDirectoryName(profile.Preview)!);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(resolver.Path, Does.EndWith("Resolve-ImmersiveChefsWorkshopDescription.ps1"));
+            Assert.That(resolver.Sha256, Is.EqualTo(ReleaseCandidateBuilder.Hash(resolver.Path)));
+        });
+    }
+
+    [Test]
     public void Preview_plan_keeps_title_first_and_exact_declared_card_order()
     {
         var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "presentation-plan-" + Guid.NewGuid().ToString("N"));
@@ -21,14 +38,15 @@ public sealed class WorkshopPresentationSynchronizerTests
         foreach (var token in tokens) File.WriteAllBytes(Path.Combine(assets, $"feature-{token}.png"), [4, 5, 6]);
         File.WriteAllText(Path.Combine(root, "presentation.json"), JsonSerializer.Serialize(new
         {
-            schema = "ImmersiveChefs/WorkshopPresentation/v1",
+            schema = "ExampleMod/WorkshopPresentation/v1",
+            titleToken = "example-title",
             carouselCards = tokens,
             cards = tokens.Select(token => new { token, path = $"assets/feature-{token}.png" })
         }));
 
         var plan = WorkshopPresentationSynchronizer.ReadPreviewInputs(root, title);
 
-        Assert.That(plan.Select(item => item.Token), Is.EqualTo(new[] { "immersive-chefs" }.Concat(tokens)));
+        Assert.That(plan.Select(item => item.Token), Is.EqualTo(new[] { "example-title" }.Concat(tokens)));
         Assert.That(plan.Select(item => item.Index), Is.EqualTo(Enumerable.Range(0, 7)));
         Assert.That(plan.Select(item => item.Path), Has.All.Matches<string>(Path.IsPathFullyQualified));
     }
@@ -49,7 +67,7 @@ public sealed class WorkshopPresentationSynchronizerTests
             var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
             return new
             {
-                token = index == 0 ? "immersive-chefs" : $"card-{index}",
+                token = index == 0 ? "example-title" : $"card-{index}",
                 remoteIndex = index,
                 remoteUrl = url,
                 localPath = localName,
@@ -60,7 +78,8 @@ public sealed class WorkshopPresentationSynchronizerTests
         }).ToArray();
         File.WriteAllText(Path.Combine(root, "presentation.json"), JsonSerializer.Serialize(new
         {
-            schema = "ImmersiveChefs/WorkshopPresentation/v1",
+            schema = "ExampleMod/WorkshopPresentation/v1",
+            titleToken = "example-title",
             carouselCards = cardTokens,
             cards = cardTokens.Select((token, index) => new
             {
@@ -74,7 +93,7 @@ public sealed class WorkshopPresentationSynchronizerTests
         var provenance = Path.Combine(root, "description.provenance.json");
         File.WriteAllText(provenance, JsonSerializer.Serialize(new
         {
-            schema = "ImmersiveChefs/WorkshopDescriptionProvenance/v1",
+            schema = "ExampleMod/WorkshopDescriptionProvenance/v1",
             publishedFileId = "3782589902",
             descriptionSha256 = descriptionHash,
             previews = previewRecords

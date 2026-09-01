@@ -239,7 +239,7 @@ public static class McpTools
             JsonSerializer.SerializeToElement(new { planPath, planSha256, confirmationNonce }),
             cancellationToken));
 
-    [McpServerTool(Name = "release_publish"), Description("Publish one exact admitted plan, verify Steam, reacquire the subscriber copy, run its native player workflow, persist identity, and restore the local package. This mutates Steam.")]
+    [McpServerTool(Name = "release_publish"), Description("Publish one exact admitted plan and complete only after Steam reports the expected item with a newer modified time. This mutates Steam; gameplay testing is a pre-release responsibility.")]
     public static async Task<string> PublishRelease(
         OperationRegistry registry,
         [Description("Exact retained prepared publication-plan path matching the user's publication order.")] string planPath,
@@ -259,20 +259,6 @@ public static class McpTools
         OperationJson.Serialize(await registry.InvokeAsync(
             "release_subscription_cleanup",
             JsonSerializer.SerializeToElement(new { packageId }),
-            cancellationToken));
-
-    [McpServerTool(Name = "release_accept_subscriber_evidence"), Description("After personally inspecting the exact fresh subscriber screenshots, hash and retain that concrete observation to complete the local release evidence. Never infers visual acceptance.")]
-    public static async Task<string> AcceptSubscriberEvidence(
-        OperationRegistry registry,
-        [Description("Exact retained publication-plan path.")] string planPath,
-        [Description("Exact publication-plan SHA-256.")] string planSha256,
-        [Description("Legacy-named exact one-time admission nonce for the published release plan.")] string confirmationNonce,
-        [Description("Exact publication receipt returned by release_publish.")] string receiptPath,
-        [Description("Concrete personally observed action/result in the retained subscriber screenshots.")] string observation,
-        CancellationToken cancellationToken) =>
-        OperationJson.Serialize(await registry.InvokeAsync(
-            "release_accept_subscriber_evidence",
-            JsonSerializer.SerializeToElement(new { planPath, planSha256, confirmationNonce, receiptPath, observation }),
             cancellationToken));
 
     private static JsonElement EmptyArguments() => JsonDocument.Parse("{}").RootElement.Clone();

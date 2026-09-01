@@ -1,5 +1,10 @@
 {
   "schema": "ImmersiveChefs/WorkshopPresentation/v1",
+  "titleToken": "immersive-chefs",
+  "descriptionResolver": {
+    "path": "scripts/Resolve-ImmersiveChefsWorkshopDescription.ps1",
+    "sha256": "EEA9E12D272B65B94D838C452BF742BC80DFB2C17BCCE1F82158E95BC4E7F510"
+  },
   "carouselCards": [ "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" ],
   "cards": [
     {

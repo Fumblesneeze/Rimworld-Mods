@@ -14,7 +14,7 @@ Use this reference with the repository root instructions and the active OpenSpec
 | Input | Purpose |
 | --- | --- |
 | `release/rimworld-targets.yaml` | Stable target IDs, exact depot/manifest set, selected compile files, approved hashes |
-| `mods/<ModName>/Release/release.yaml` | Package/Workshop identity, supported targets, file allowlists, verification and presentation policy |
+| `mods/<ModName>/Release/release.json` | Package/Workshop identity, supported targets, file allowlists, and presentation policy; never a gameplay-test selector |
 | `release/templates/` | Reusable BBCode and graphic layouts plus licensed pinned fonts where applicable |
 | `mods/<ModName>/Release/workshop/` | Mod-owned copy, sprite mappings, image ordering, and presentation definitions |
 
@@ -80,18 +80,17 @@ A publishable candidate has all of the following:
   Steam ID/owner/app/title query first, and an admitted-but-indeterminate submit is query-reconciled
   before any further mutation.
 - Check every SteamUGC setter, submit result, legal-agreement flag, and remote identity.
-- Verify remote metadata/previews and reacquired package contents after propagation.
-- Run the declared native workflow from the exact subscribed Workshop root while every local copy
-  of the product is absent from RimWorld discovery; restore local state in guaranteed cleanup.
+- Verify remote metadata/previews after propagation and require the exact item's nonzero
+  `time_updated` to be strictly newer than the immutable pre-submit baseline.
+- Assume applicable tests and native player-workflow acceptance completed before the release trigger.
+  Do not subscribe, reacquire, move the local package, or run a mod-specific smoke in publication.
 - Preserve a secret-free receipt and exact cleanup outcome.
 - After a verified first publication, commit the returned ID to the mod's release descriptor and disable first publication. Ignored artifacts are recovery evidence, never the cross-clone identity authority.
 
 ## Current implementation status
 
-The architecture is specified under `openspec/changes/automate-multiversion-mod-releases/`. The
-Immersive Chefs 1.6 bootstrap currently implements clean positive-allowlist staging with
-`scripts/Build-ImmersiveChefsRelease.ps1` and a guarded Steamworks publish/query/subscribe flow with
-`scripts/Invoke-ImmersiveChefsWorkshopRelease.ps1`. Broader target-catalog, historical-build,
-presentation-compiler, and reusable multi-mod release tasks remain unchecked; do not imply that this
-one-mod bootstrap implements them. Inspect `tasks.md`, repository scripts, and command help on every
+The architecture is specified under `openspec/changes/automate-multiversion-mod-releases/`. Use the
+repository-owned typed `release_profile_validate`, `release_prepare`, `release_publish`, and
+`release_status` operations for every mod. Product-specific publisher/subscriber scripts are retired
+and are not release entry points. Inspect `tasks.md`, the operation catalog, and command help on every
 invocation.

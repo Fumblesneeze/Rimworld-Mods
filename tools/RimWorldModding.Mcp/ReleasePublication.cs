@@ -21,8 +21,7 @@ public sealed record ReleasePlanStatusResult(
     string? DurablePublishedFileId,
     string ReleaseWorkerState,
     int? ReleaseWorkerProcessId,
-    bool AwaitingPersonalSubscriberReview,
-    bool PersonallyReviewed);
+    bool SteamVerified);
 
 public static class ReleasePlanAdmission
 {
@@ -30,7 +29,7 @@ public static class ReleasePlanAdmission
     {
         "create-admitted", "created", "submit-admitted", "submit-indeterminate", "submitted",
         "dependency-indeterminate", "steam-item-persisted", "steam-verified",
-        "subscriber-evidence-awaiting-review", "complete-reviewed"
+        "complete-steam-verified"
     };
 
     public static bool IsRecoverableDurableState(string value, string expectedPlanSha256, out string? publishedFileId)
@@ -77,12 +76,11 @@ public static class ReleasePlanAdmission
         var durableId = stateParts.Length == 3 && ulong.TryParse(stateParts[2], out var parsedId) && parsedId != 0
             ? parsedId.ToString()
             : null;
-        var awaitingReview = stateParts.Length == 3 && stateParts[0] == "subscriber-evidence-awaiting-review";
-        var reviewed = stateParts.Length == 3 && stateParts[0] == "complete-reviewed";
         var worker = new ReleaseWorkerCoordinator(root).Status(plan.PackageId, expectedPlanSha256);
+        var verified = stateParts.Length == 3 && stateParts[0] == "complete-steam-verified" &&
+                       worker.State == "completed";
         return new ReleasePlanStatusResult(
-            reviewed ? "published-complete-personally-reviewed" :
-            awaitingReview ? "published-awaiting-personal-subscriber-review" : "admitted-local-or-publication-in-progress",
+            verified ? "published-complete-steam-verified" : "admitted-local-or-publication-in-progress",
             plan.PackageId,
             plan.Title,
             exactPath,
@@ -94,8 +92,7 @@ public static class ReleasePlanAdmission
             durableId,
             worker.State,
             worker.ProcessId,
-            awaitingReview,
-            reviewed);
+            verified);
     }
 
     public static ReleaseAdmission ValidateLocal(
@@ -122,7 +119,7 @@ public static class ReleasePlanAdmission
         {
             throw new InvalidOperationException($"Publication plan is invalid JSON: {exception.Message}");
         }
-        if (plan.Schema != "RimWorldModReleasePlan/v2" || plan.MutatesSteam)
+        if (plan.Schema != "RimWorldModReleasePlan/v3" || plan.MutatesSteam)
             throw new InvalidOperationException("Publication plan schema or mutation-free dry-run marker is invalid.");
         ValidateFrozenProfile(root, plan, requirePreviousPrivateEvidence: true);
         if (!string.Equals(plan.ConfirmationNonce, confirmationNonce, StringComparison.Ordinal) ||
@@ -152,17 +149,14 @@ public static class ReleasePlanAdmission
             new FileInfo(plan.PreviewPath).Length != plan.PreviewBytes)
             throw new InvalidOperationException("Workshop preview changed after preparation.");
         if (plan.VerificationFiles.Count == 0)
-            throw new InvalidOperationException("Subscriber verification inputs are missing from the admitted plan.");
+            throw new InvalidOperationException("Immutable release inputs are missing from the admitted plan.");
         foreach (var input in plan.VerificationFiles)
         {
             var inputPath = RepositoryRoot.ContainedPath(root, input.Path);
             if (!File.Exists(inputPath) || new FileInfo(inputPath).Length != input.Bytes || !IsHash(input.Sha256) ||
                 !string.Equals(ReleaseCandidateBuilder.Hash(inputPath), input.Sha256, StringComparison.Ordinal))
-                throw new InvalidOperationException("Subscriber verification input changed after preparation: " + input.Path);
+                throw new InvalidOperationException("Immutable release input changed after preparation: " + input.Path);
         }
-        var verificationRelative = Path.GetRelativePath(root, plan.VerificationProfile).Replace('\\', '/');
-        if (!plan.VerificationFiles.Any(file => string.Equals(file.Path, verificationRelative, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("Subscriber verification manifest is not bound into the admitted plan.");
 
         var includes = plan.Files.Select(file => file.Path).ToArray();
         var candidate = ReleaseCandidateBuilder.Inspect(plan.PackagePath, includes);
@@ -206,7 +200,7 @@ public static class ReleasePlanAdmission
         var path = RepositoryRoot.ContainedPath(root, planPath);
         var plan = JsonSerializer.Deserialize(File.ReadAllText(path), McpJsonContext.Default.ReleasePublicationPlan) ??
                    throw new InvalidOperationException("Publication plan is empty.");
-        if (plan.Schema != "RimWorldModReleasePlan/v2" || plan.MutatesSteam ||
+        if (plan.Schema is not ("RimWorldModReleasePlan/v2" or "RimWorldModReleasePlan/v3") || plan.MutatesSteam ||
             !string.Equals(plan.ConfirmationNonce, confirmationNonce, StringComparison.Ordinal))
             throw new InvalidOperationException("Publication recovery plan schema or nonce is invalid.");
         ValidateFrozenProfile(root, plan, requirePreviousPrivateEvidence: false);
@@ -217,7 +211,7 @@ public static class ReleasePlanAdmission
         RequireImmutableFile(plan.PreviewPath, plan.PreviewSha256, plan.PreviewBytes, "Workshop preview");
         foreach (var input in plan.VerificationFiles)
             RequireImmutableFile(RepositoryRoot.ContainedPath(root, input.Path), input.Sha256, input.Bytes,
-                "Subscriber verification input");
+                "Immutable release input");
         foreach (var file in plan.Files)
             RequireImmutableFile(Path.Combine(plan.PackagePath, file.Path.Replace('/', Path.DirectorySeparatorChar)),
                 file.Sha256, file.Bytes, "Release candidate file");

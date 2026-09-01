@@ -281,11 +281,11 @@ public sealed class OperationRegistry
                     RequiredString(arguments, "confirmationNonce")))),
             Register(
                 "release_publish",
-                "Publish one exact admitted plan through Steamworks, verify remote truth, subscribe/reacquire, run the native subscriber workflow, persist identity, and restore the local package.",
+                "Publish one exact admitted plan through Steamworks and complete when the exact remote item converges with a newer modified time.",
                 OperationRisk.ExternalWrite,
                 longRunning: true,
                 timeoutSeconds: 3600,
-                "Retains durable Steam callback state, remote/subscriber receipts, exact process evidence, and a committed Workshop identity.",
+                "Retains durable Steam callback state, before/after modified times, remote receipts, exact process evidence, and a committed Workshop identity; it never runs product gameplay tests.",
                 static async (registry, arguments, cancellationToken) => await new ReleaseWorkerCoordinator(registry._repositoryRoot)
                     .PublishAsync(
                         RequiredString(arguments, "planPath"),
@@ -301,20 +301,6 @@ public sealed class OperationRegistry
                 "Retains the exact item-state before/after result and bounded Gateway process cleanup without retaining credentials.",
                 static async (registry, arguments, cancellationToken) => await new WorkshopSubscriptionCleaner(registry._repositoryRoot)
                     .CleanAsync(RequiredString(arguments, "packageId"), cancellationToken)),
-            Register(
-                "release_accept_subscriber_evidence",
-                "Record a caller's concrete personal inspection of the exact retained subscriber screenshots and complete the local release receipt.",
-                OperationRisk.WorkspaceWrite,
-                longRunning: false,
-                timeoutSeconds: 30,
-                "Hashes the exact receipt screenshots and retains the caller's observation; it cannot manufacture or infer visual acceptance.",
-                static (registry, arguments, _) => Task.FromResult<object>(ReleaseReview.Accept(
-                    registry._repositoryRoot,
-                    RequiredString(arguments, "planPath"),
-                    RequiredString(arguments, "planSha256"),
-                    RequiredString(arguments, "confirmationNonce"),
-                    RequiredString(arguments, "receiptPath"),
-                    RequiredString(arguments, "observation"))))
         };
         return new OperationRegistry(repositoryRoot, registrations);
     }
@@ -377,7 +363,10 @@ public sealed class OperationRegistry
             Path.GetRelativePath(_repositoryRoot, profile.Project).Replace('\\', '/'),
             Path.GetRelativePath(_repositoryRoot, profile.PackageSource).Replace('\\', '/'),
             Path.GetRelativePath(_repositoryRoot, profile.Description).Replace('\\', '/'),
-            Path.GetRelativePath(_repositoryRoot, profile.Preview).Replace('\\', '/'));
+            Path.GetRelativePath(_repositoryRoot, profile.Preview).Replace('\\', '/'))
+        {
+            WorkshopLinks = profile.WorkshopLinks
+        };
     }
 
     private ModListState InspectModList(JsonElement arguments)

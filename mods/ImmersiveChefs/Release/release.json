@@ -40,6 +40,5 @@
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
   "previousChangeNote": "Silver and gold kitchenware recipes now use RimWorld's small-volume material counts. Uranium tableware now uses Dubs Rimatomics or Crash Landing radiation when available, with toxic buildup as the Core fallback. Added complete Japanese localization and linked the public GitHub repository from the Workshop page.",
-  "changeNote": "",
-  "verificationProfile": "mods/ImmersiveChefs/Release/subscriber-verification.json"
+  "changeNote": ""
 }

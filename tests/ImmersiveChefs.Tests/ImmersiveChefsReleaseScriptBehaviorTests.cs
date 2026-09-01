@@ -459,7 +459,7 @@ public sealed class ImmersiveChefsReleaseScriptBehaviorTests
         }).ToArray();
         File.WriteAllText(
             inventoryPath,
-            "{\"schema\":\"ImmersiveChefs/WorkshopRemotePreviewInventory/v1\",\"publishedFileId\":\"3782589902\",\"publicationPlanSha256\":\"" +
+            "{\"schema\":\"RimWorldModdingMcp/WorkshopRemotePreviewInventory/v1\",\"publishedFileId\":\"3782589902\",\"publicationPlanSha256\":\"" +
             previewPlan + "\",\"previews\":[" + string.Join(",", previewEntries) +
             "]}",
             new UTF8Encoding(false));

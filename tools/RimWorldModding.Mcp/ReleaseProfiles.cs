@@ -72,8 +72,7 @@ public sealed record ReleaseProfile(
     string Description,
     string Preview,
     string? PreviousChangeNote,
-    string ChangeNote,
-    string VerificationProfile)
+    string ChangeNote)
 {
     public IReadOnlyList<WorkshopLink> WorkshopLinks { get; init; } = [];
 }
@@ -281,11 +280,6 @@ public static class ReleaseProfileCatalog
 
             ValidateProjectIdentity(project, packageId, title, author, distributionKind);
 
-            var verificationProfile = ContainedProfilePath(root, RequiredString(element, "verificationProfile"));
-            if (!File.Exists(verificationProfile))
-                throw new ReleaseProfileException("Subscriber verification profile does not exist.");
-            _ = SubscriberVerificationProfiles.Load(root, verificationProfile);
-
             var workshopLinks = ReadWorkshopLinks(element);
             return new ReleaseProfile(
                 schema,
@@ -316,8 +310,7 @@ public static class ReleaseProfileCatalog
                 description,
                 preview,
                 OptionalString(element, "previousChangeNote"),
-                RequiredStringAllowEmpty(element, "changeNote"),
-                verificationProfile)
+                RequiredStringAllowEmpty(element, "changeNote"))
             {
                 WorkshopLinks = workshopLinks
             };

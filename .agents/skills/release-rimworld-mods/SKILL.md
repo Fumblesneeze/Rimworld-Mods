@@ -74,39 +74,27 @@ normal review/provenance gates are satisfied. Immersive Chefs is currently human
 
 ## Publish deliberately
 
-Keep local installation and Workshop subscription semantically distinct. An instruction to install,
+Keep local installation and Workshop publication semantically distinct. An instruction to install,
 deploy, or copy a mod means synchronizing the reviewed package to RimWorld's canonical local
-`Mods/<package-id>` folder; it never authorizes `SubscribeItem`. Subscriber verification is a separately
-named release action. When that verification is explicitly in scope, prevent duplicate discovery by
-temporarily moving the local package, then unsubscribe during cleanup and restore the local package so
-ordinary development never leaves the author subscribed to their own mod.
+`Mods/<package-id>` folder; it never authorizes `SubscribeItem`. The release pipeline itself never
+subscribes to a repository-owned item, moves the local package, or launches a gameplay smoke. If an
+explicit standalone diagnostic ever needs a subscribed copy, treat that as a separate operation with
+guaranteed unsubscribe/restore cleanup, never as a publication gate.
 
 1. Use the implemented Gateway publisher as the primary path only from a fresh isolated RimWorld process with Steam initialized. SteamCMD may be a documented recovery path, but it is not equivalent Gateway evidence.
-2. Address an existing declared Workshop item by default. A first publication is allowed only when the manifest explicitly opts in, the mutation-free dry-run has no item ID, the user has explicitly ordered publication and the prepared title/item/visibility/dependency scope matches that order, no prior receipt or local identity exists, and one bounded native query proves the owning account has no exact-title item. Do not ask for a second confirmation merely because preparation produced a digest or nonce. Regardless of an eventual Public declaration, force that first submission to Private so the user can inspect it; promotion is a separate reviewed update of the retained ID. Persist the returned nonzero ID before continuing; immediately after a successful first release, write and commit the same ID in both the release descriptor and `About/PublishedFileId.txt`, disable first publication, and make later staging fail closed if those tracked identities differ. The uploaded/subscribed package must carry that same About identity so RimWorld and Steam treat local and Workshop copies as one mod. Never delete ignored release state as a substitute for that tracked transition.
+2. Address an existing declared Workshop item by default. A first publication is allowed only when the manifest explicitly opts in, the mutation-free dry-run has no item ID, the user has explicitly ordered publication and the prepared title/item/visibility/dependency scope matches that order, no prior receipt or local identity exists, and one bounded native query proves the owning account has no exact-title item. Do not ask for a second confirmation merely because preparation produced a digest or nonce. Regardless of an eventual Public declaration, force that first submission to Private so the user can inspect it; promotion is a separate reviewed update of the retained ID. Persist the returned nonzero ID before continuing; immediately after a successful first release, write and commit the same ID in both the release descriptor and `About/PublishedFileId.txt`, disable first publication, and make later staging fail closed if those tracked identities differ. The uploaded package must carry that same About identity so RimWorld and Steam treat local and Workshop copies as one mod. Never delete ignored release state as a substitute for that tracked transition.
 3. Run a mutation-free dry-run and retain the exact remote item, metadata diff, content/presentation digests, and change note. Report them to the user without pausing an already authorized publish workflow.
    Every update after initial publication needs a short authored change note describing the visible player-facing change. Reject empty, generic (`update`, `fixes`, `various changes`), automatically synthesized, or unchanged notes. Bind the exact note to the immutable dry-run and pass it to Steam's `SubmitItemUpdate`; record it in the receipt and verify the corresponding Workshop change-note entry after propagation.
 4. Feed the dry-run's bound nonce and digests directly into publication when an explicit publish order is already in scope. Ask only when no publish order exists or the prepared title, target item, visibility, dependency scope, or other material mutation differs from that order. Changed files, presentation, or remote state require a new dry-run and revalidation against the standing order, not a redundant prompt.
 5. Observe progress and the terminal Steam callback. Report legal-agreement, authentication, quota, connectivity, and indeterminate-callback states without blind retries or false rollback claims.
-6. Query the resulting remote metadata/previews and reacquire the published item into an ignored verification directory. Compare it with the staged file manifest before calling publication verified.
-
-For the current Immersive Chefs 1.6 bootstrap, stage the clean committed candidate with
-`.\scripts\Build-ImmersiveChefsRelease.ps1 -Output json`. After personally reviewing the emitted
-`publication-plan.json`, invoke `.\scripts\Invoke-ImmersiveChefsWorkshopRelease.ps1` only with that
-file's exact SHA-256 and the exact admission phrase printed by its help. When publication was already
-ordered, pass those values without another user prompt. The publisher revalidates
-the source and presentation, proves exact-title absence on the owning account before first creation, uploads through RimWorld's initialized Steamworks session, queries the
-remote title/description/tags/preview/owner/dependency graph and compares the downloaded package. The
-subscriber-verification stage must remove the repository-local product from RimWorld's discovery path
-under a recoverable exact-path move, subscribe only for the bounded verification run, launch the
-Workshop copy, invoke the checked-in native Prioritize and Consume float-menu workflow, capture
-before/cooking/plated/dining/dirty-ware evidence, unsubscribe the item, restore the local mod, and only
-then retain a token-free receipt. Do not run a subscriber verifier that cannot prove that cleanup. The
-publisher durably records creation/submission
-admission and reconciles an indeterminate submit by querying Steam; never delete that ignored state
-to force a second CreateItem. After successful first-publication verification, update
-`mods/ImmersiveChefs/Release/release.json` with the returned `publishedFileId`, set
-`allowFirstPublication` to `false`, rerun its focused descriptor checks, and commit that tracked
-identity before declaring release administration complete.
+6. Query the resulting remote metadata/previews and the exact item's Steam `time_updated`. Publication
+   is verified only when the remote graph matches the admitted plan and the observed nonzero modified
+   time is strictly newer than the frozen pre-submit baseline. An unchanged timestamp is not success,
+   even when Steam's submit callback succeeded.
+7. Treat a release trigger as an assertion that the candidate was already tested. Keep mod-specific
+   cooking, dining, UI, compatibility, and other native acceptance workflows in their owning
+   pre-release test operations; never encode them in `release.json` or dispatch them from
+   `release_publish`.
 
 ## Preserve evidence and clean up
 

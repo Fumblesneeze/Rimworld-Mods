@@ -217,9 +217,10 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
             File.Exists(statePath) ? File.ReadAllText(statePath).Trim() : "none",
             planStatus.PlanSha256,
             planStatus.TargetPublishedFileId);
-        if (durableState.StartsWith("complete-reviewed|", StringComparison.Ordinal))
+        if (durableState.StartsWith("complete-reviewed|", StringComparison.Ordinal) ||
+            durableState.StartsWith("complete-steam-verified|", StringComparison.Ordinal))
             throw new InvalidOperationException(
-                "The release is already complete-reviewed but its exact retained worker result is missing or invalid; refusing to manufacture a replacement.");
+                "The release is already complete but its exact retained worker result is missing or invalid; refusing to manufacture a replacement.");
         var priorAttempt = File.Exists(paths.Request)
             ? ReadRequest(paths.Request, planStatus.PlanSha256).Attempt
             : 0;
@@ -278,7 +279,8 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         var validPriorPlan = parts.Length == 3 && parts[1].Length == 64 && parts[1].All(Uri.IsHexDigit);
         var validPriorItem = parts.Length == 3 && ulong.TryParse(parts[2], out var itemId) && itemId != 0 &&
                              string.Equals(itemId.ToString(), targetPublishedFileId, StringComparison.Ordinal);
-        return parts.Length == 3 && parts[0] == "complete-reviewed" && validPriorPlan && validPriorItem &&
+        return parts.Length == 3 && (parts[0] is "complete-reviewed" or "complete-steam-verified") &&
+               validPriorPlan && validPriorItem &&
                !string.Equals(parts[1], planSha256, StringComparison.OrdinalIgnoreCase)
             ? "none"
             : durableState.Trim();
@@ -303,7 +305,8 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         string packageId,
         string planSha256,
         string? expectedTitle,
-        string? expectedCandidateDigest)
+        string? expectedCandidateDigest,
+        bool allowLegacySubscriberResult = false)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var result = RepositoryRoot.ContainedPath(root, resultPath);
@@ -314,23 +317,29 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         var parsed = JsonSerializer.Deserialize(
                          File.ReadAllText(result), McpJsonContext.Default.ReleasePublishResult) ??
                      throw new InvalidOperationException("Release worker result is empty.");
-        if (!string.Equals(parsed.Status,
-                "published-steam-verified-subscriber-evidence-awaiting-personal-review", StringComparison.Ordinal) ||
+        var currentResult = string.Equals(parsed.Status, "published-complete-steam-verified", StringComparison.Ordinal);
+        var legacyResult = allowLegacySubscriberResult && string.Equals(parsed.Status,
+            "published-steam-verified-subscriber-evidence-awaiting-personal-review", StringComparison.Ordinal);
+        if ((!currentResult && !legacyResult) ||
             !string.Equals(parsed.PackageId, packageId, StringComparison.OrdinalIgnoreCase) ||
             (expectedTitle is not null && !string.Equals(parsed.Title, expectedTitle, StringComparison.Ordinal)) ||
             !string.Equals(parsed.PublicationPlanSha256, planSha256, StringComparison.OrdinalIgnoreCase) ||
             (expectedCandidateDigest is not null &&
              !string.Equals(parsed.CandidateDigest, expectedCandidateDigest, StringComparison.Ordinal)) ||
-            !parsed.SteamVerified || !parsed.LocalPackageRestored ||
-            !ulong.TryParse(parsed.PublishedFileId, out var publishedId) || publishedId == 0)
+            !parsed.SteamVerified ||
+            !ulong.TryParse(parsed.PublishedFileId, out var publishedId) || publishedId == 0 ||
+            (currentResult && (parsed.SteamModifiedAfterUnixSeconds == 0 ||
+                               parsed.SteamModifiedBeforeUnixSeconds is uint resultBaseline &&
+                               parsed.SteamModifiedAfterUnixSeconds <= resultBaseline)))
             throw new InvalidOperationException("Release worker result does not match the exact admitted plan and completed guarantees.");
         var releaseRoot = Path.Combine(root, "artifacts", "Releases", packageId);
         var statePath = Path.Combine(releaseRoot, "publication-state.txt");
         var state = File.Exists(statePath) ? File.ReadAllText(statePath).Trim().Split('|') : [];
-        if (state.Length != 3 || state[0] is not ("subscriber-evidence-awaiting-review" or "complete-reviewed") ||
+        var expectedState = currentResult ? "complete-steam-verified" : "complete-reviewed";
+        if (state.Length != 3 || state[0] != expectedState ||
             !string.Equals(state[1], planSha256, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(state[2], parsed.PublishedFileId, StringComparison.Ordinal))
-            throw new InvalidOperationException("Release worker result does not match a final subscriber-evidence durable state.");
+            throw new InvalidOperationException("Release worker result does not match its final durable publication state.");
         var publicationRoot = Path.Combine(releaseRoot, "publication") +
                                Path.DirectorySeparatorChar;
         var receipt = RepositoryRoot.ContainedPath(root, parsed.ReceiptPath);
@@ -345,29 +354,39 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
             GatewayWorkshopClient.String(response, "title") != parsed.Title ||
             GatewayWorkshopClient.String(response, "candidateDigest") != parsed.CandidateDigest ||
             GatewayWorkshopClient.String(response, "publicationPlanSha256") != parsed.PublicationPlanSha256 ||
-            GatewayWorkshopClient.String(response, "publishedFileId") != parsed.PublishedFileId ||
-            GatewayWorkshopClient.String(response, "subscriberEvidenceStatus") != "awaiting-personal-review" ||
-            !GatewayWorkshopClient.TryProperty(response, "subscriber", out var subscriber) ||
-            GatewayWorkshopClient.String(subscriber, "status") != "passed" ||
-            !GatewayWorkshopClient.TryProperty(subscriber, "screenshots", out var screenshotArray) ||
-            screenshotArray.ValueKind != JsonValueKind.Array)
-            throw new InvalidOperationException("Release worker receipt does not prove exact successful subscriber evidence.");
-        var expectedEvidencePrefix = Path.Combine(releaseRoot, "subscriber") + Path.DirectorySeparatorChar;
-        var evidenceRoot = Path.GetFullPath(GatewayWorkshopClient.String(subscriber, "evidenceRoot"))
-            .TrimEnd(Path.DirectorySeparatorChar);
-        if (!evidenceRoot.StartsWith(expectedEvidencePrefix, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(evidenceRoot,
-                Path.GetFullPath(parsed.SubscriberEvidenceRoot).TrimEnd(Path.DirectorySeparatorChar),
-                StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Release worker receipt does not bind the exact subscriber evidence root.");
-        var evidencePrefix = evidenceRoot + Path.DirectorySeparatorChar;
-        var screenshots = screenshotArray.EnumerateArray()
-            .Select(value => Path.GetFullPath(value.GetString() ?? ""))
-            .ToArray();
-        if (screenshots.Length < 2 || screenshots.Distinct(StringComparer.OrdinalIgnoreCase).Count() != screenshots.Length ||
-            screenshots.Any(path => !path.StartsWith(evidencePrefix, StringComparison.OrdinalIgnoreCase) || !File.Exists(path)))
-            throw new InvalidOperationException("Release worker receipt does not retain at least two exact subscriber screenshots.");
+            GatewayWorkshopClient.String(response, "publishedFileId") != parsed.PublishedFileId)
+            throw new InvalidOperationException("Release worker receipt does not match the exact published plan.");
+        if (currentResult)
+        {
+            if (!GatewayWorkshopClient.TryProperty(response, "steamModifiedTime", out var modified) ||
+                modified.ValueKind != JsonValueKind.Object ||
+                !GatewayWorkshopClient.TryProperty(modified, "Advanced", out var advanced) ||
+                advanced.ValueKind != JsonValueKind.True ||
+                GatewayWorkshopClient.UInt64(modified, "AfterUnixSeconds") != parsed.SteamModifiedAfterUnixSeconds ||
+                !SteamModifiedBeforeMatches(modified, parsed.SteamModifiedBeforeUnixSeconds) ||
+                !GatewayWorkshopClient.TryProperty(response, "remote", out var remote) ||
+                remote.ValueKind != JsonValueKind.Object ||
+                GatewayWorkshopClient.UInt64(remote, "PublishedFileId").ToString() != parsed.PublishedFileId ||
+                GatewayWorkshopClient.UInt64(remote, "RemoteUpdatedUnixSeconds") != parsed.SteamModifiedAfterUnixSeconds ||
+                GatewayWorkshopClient.TryProperty(response, "subscriber", out _) ||
+                GatewayWorkshopClient.TryProperty(response, "subscriberEvidenceStatus", out _) ||
+                GatewayWorkshopClient.TryProperty(response, "installedPackagePath", out _) ||
+                GatewayWorkshopClient.TryProperty(response, "localInstall", out _))
+                throw new InvalidOperationException("Release worker receipt does not prove Steam's newer modified time or still contains removed subscriber workflow evidence.");
+        }
+        else if (GatewayWorkshopClient.String(response, "subscriberEvidenceStatus") != "awaiting-personal-review")
+        {
+            throw new InvalidOperationException("Legacy release worker receipt does not prove its retained subscriber workflow state.");
+        }
         return parsed;
+    }
+
+    private static bool SteamModifiedBeforeMatches(JsonElement modified, uint? expected)
+    {
+        if (!GatewayWorkshopClient.TryProperty(modified, "BeforeUnixSeconds", out var property)) return false;
+        return expected is uint value
+            ? property.TryGetUInt64(out var actual) && actual == value
+            : property.ValueKind == JsonValueKind.Null;
     }
 
     private void CleanupPreAdmissionGateway(ReleasePlanStatusResult planStatus)

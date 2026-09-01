@@ -40,6 +40,5 @@
   "description": "workshop/description.bbcode.txt",
   "preview": "workshop/preview-main.png",
   "changeNote": "Corrected the title, simplified the Workshop page and preview around the four-choice bed menu, and declared Ideology as required DLC.",
-  "verificationProfile": "mods/GuestBedGizmo/Release/subscriber-verification.json",
   "previousChangeNote": "Initial release."
 }

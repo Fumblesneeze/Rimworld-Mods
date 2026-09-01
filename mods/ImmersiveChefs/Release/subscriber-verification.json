@@ -1,9 +1,0 @@
-{
-  "schema": "RimWorldSubscriberVerification/v1",
-  "engine": "powershell-subscriber",
-  "script": "scripts/Invoke-ImmersiveChefsSubscribedSmoke.ps1",
-  "additionalPackageIds": [],
-  "steps": [],
-  "expectedObservation": "The exact Workshop-loaded mod should complete its registered native cooking and dining subscriber workflow and restore the local product package.",
-  "timeoutSeconds": 900
-}

@@ -58,7 +58,6 @@ public sealed record ReleasePublicationPlan(
     IReadOnlyList<string> RequiredWorkshopItems,
     IReadOnlyList<string> RequiredDlcAppIds,
     string ChangeNote,
-    string VerificationProfile,
     IReadOnlyList<CandidateFile> VerificationFiles,
     PreviousPrivateReleaseEvidence? PreviousPrivateReleaseEvidence,
     string OwnerScanUrl,
@@ -336,7 +335,6 @@ public sealed class ReleasePreparer(string repositoryRoot)
         _ = WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport(profile.WorkshopLinks);
         ReleaseEnvironmentValidator.Validate(profile);
         ReleaseChangeNotePolicy.Validate(profile);
-        _ = SubscriberVerificationProfiles.Load(_repositoryRoot, profile.VerificationProfile);
         var initialPrivateHistory = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
             _repositoryRoot, profile, cancellationToken);
         var revision = await RequireCleanRevisionAsync(cancellationToken);
@@ -373,11 +371,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
             ? null
             : await InspectExistingRemoteAsync(profile, cancellationToken);
         var presentationProvenance = Path.ChangeExtension(profile.Description, ".provenance.json");
-        var requiresResolvedPresentation = string.Equals(
-            profile.PackageId,
-            "fumblesneeze.immersivechefs",
-            StringComparison.OrdinalIgnoreCase);
-        if (remoteBaseline is not null && requiresResolvedPresentation)
+        if (remoteBaseline is not null && File.Exists(presentationProvenance))
             WorkshopResolvedPresentation.AssertRemoteGallery(presentationProvenance, remoteBaseline);
         if (remoteBaseline is not null)
             (ownerItems, exactMatches) = ProjectExistingOwnerEvidence(profile, remoteBaseline);
@@ -390,17 +384,13 @@ public sealed class ReleasePreparer(string repositoryRoot)
         Directory.CreateDirectory(verificationRoot);
         var frozenReleaseProfile = Path.Combine(verificationRoot, "release-profile.json");
         File.Copy(profile.Path, frozenReleaseProfile, overwrite: false);
-        var canonicalManifest = SubscriberVerificationProfiles.Load(_repositoryRoot, profile.VerificationProfile);
-        var frozenProfile = Path.Combine(verificationRoot, "subscriber-verification.json");
-        var finalManifest = SubscriberVerificationProfiles.Freeze(
-            _repositoryRoot, canonicalManifest, frozenProfile);
-        var verificationFiles = SubscriberVerificationProfiles.CaptureInputs(
-                _repositoryRoot, frozenProfile, finalManifest)
-            .Append(new CandidateFile(
+        var verificationFiles = new List<CandidateFile>
+        {
+            new(
                 Path.GetRelativePath(_repositoryRoot, frozenReleaseProfile).Replace('\\', '/'),
                 new FileInfo(frozenReleaseProfile).Length,
-                ReleaseCandidateBuilder.Hash(frozenReleaseProfile)))
-            .ToList();
+                ReleaseCandidateBuilder.Hash(frozenReleaseProfile))
+        };
         PreviousPrivateReleaseEvidence? previousPrivateReleaseEvidence = null;
         if (finalPrivateHistory is not null)
         {
@@ -459,7 +449,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
             }
             : WorkshopRemoteBaseline.DescribeDiff(remoteBaseline!, profile, stage);
         var plan = new ReleasePublicationPlan(
-            "RimWorldModReleasePlan/v2",
+            "RimWorldModReleasePlan/v3",
             profile.PackageId,
             profile.Title,
             profile.Author,
@@ -485,7 +475,6 @@ public sealed class ReleasePreparer(string repositoryRoot)
             profile.RequiredWorkshopItems,
             profile.RequiredDlcAppIds,
             profile.ChangeNote,
-            frozenProfile,
             orderedVerificationFiles,
             previousPrivateReleaseEvidence,
             $"steam-authenticated://owner/{profile.SteamUserId}/app/{profile.SteamAppId}",
@@ -655,9 +644,12 @@ public sealed class ReleasePreparer(string repositoryRoot)
             throw new InvalidOperationException("Workshop description is missing or empty.");
 
         var manifest = Path.Combine(Path.GetDirectoryName(profile.Preview)!, "presentation.json");
+        var requiresResolvedDescription = false;
         if (File.Exists(manifest))
         {
             using var document = JsonDocument.Parse(File.ReadAllText(manifest));
+            requiresResolvedDescription = document.RootElement.TryGetProperty("descriptionResolver", out var resolverDeclaration) &&
+                                          resolverDeclaration.ValueKind == JsonValueKind.Object;
             if (document.RootElement.TryGetProperty("renderer", out var renderer))
             {
                 if (!renderer.TryGetProperty("path", out var rendererPath) ||
@@ -685,14 +677,11 @@ public sealed class ReleasePreparer(string repositoryRoot)
             }
         }
         var provenance = Path.ChangeExtension(profile.Description, ".provenance.json");
-        var requiresResolvedPresentation = string.Equals(
-            profile.PackageId,
-            "fumblesneeze.immersivechefs",
-            StringComparison.OrdinalIgnoreCase);
-        if (profile.PublishedFileId is not null && requiresResolvedPresentation)
+        if (profile.PublishedFileId is not null && requiresResolvedDescription && !File.Exists(provenance))
+            throw new InvalidOperationException(
+                "Workshop presentation declares a description resolver but its resolved provenance is missing.");
+        if (profile.PublishedFileId is not null && File.Exists(provenance))
         {
-            if (!File.Exists(provenance))
-                throw new InvalidOperationException("Immersive Chefs requires resolved Workshop-description provenance before release preparation.");
             using var http = new HttpClient(new SocketsHttpHandler
             {
                 AutomaticDecompression = System.Net.DecompressionMethods.All,

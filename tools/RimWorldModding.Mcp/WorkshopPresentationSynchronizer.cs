@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 namespace RimWorldModding.Mcp;
 
 internal sealed record WorkshopPreviewInput(int Index, string Token, string Path, string Sha256);
+internal sealed record WorkshopDescriptionResolverInput(string Path, string Sha256);
 internal sealed record WorkshopPresentationState(string State, string PlanSha256);
 
 internal static class WorkshopResolvedPresentation
@@ -25,16 +26,17 @@ internal static class WorkshopResolvedPresentation
         var description = await File.ReadAllTextAsync(descriptionPath, cancellationToken);
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(provenancePath, cancellationToken));
         var root = document.RootElement;
-        if (root.GetProperty("schema").GetString() != "ImmersiveChefs/WorkshopDescriptionProvenance/v1" ||
+        if (!Regex.IsMatch(root.GetProperty("schema").GetString() ?? "",
+                "^[A-Za-z0-9.-]{1,100}/WorkshopDescriptionProvenance/v1$") ||
             root.GetProperty("publishedFileId").GetString() != publishedFileId ||
             root.GetProperty("descriptionSha256").GetString() != ReleaseCandidateBuilder.Hash(descriptionPath))
             throw new InvalidOperationException("Resolved Workshop description provenance identity is invalid.");
         var previews = root.GetProperty("previews").EnumerateArray().ToArray();
-        if (previews.Length != 7)
-            throw new InvalidOperationException("Resolved Immersive Chefs presentation must bind the title plus six feature cards.");
         var inputs = WorkshopPresentationSynchronizer.ReadPreviewInputs(
             workshopRoot,
             Path.Combine(workshopRoot, "preview-main.png"));
+        if (previews.Length != inputs.Count)
+            throw new InvalidOperationException("Resolved Workshop presentation does not bind the exact declared preview inventory.");
         var indices = new HashSet<int>();
         var tokens = new HashSet<string>(StringComparer.Ordinal);
         for (var index = 0; index < previews.Length; index++)
@@ -82,9 +84,9 @@ internal static class WorkshopResolvedPresentation
     {
         using var document = JsonDocument.Parse(File.ReadAllText(provenancePath));
         var previews = document.RootElement.GetProperty("previews").EnumerateArray().ToArray();
-        if (previews.Length != 7 || baseline.AdditionalPreviews.Count != previews.Length ||
+        if (previews.Length == 0 || previews.Length > 10 || baseline.AdditionalPreviews.Count != previews.Length ||
             baseline.AdditionalPreviewUrls.Count != previews.Length)
-            throw new InvalidOperationException("Authenticated Workshop gallery does not contain the title plus six feature cards.");
+            throw new InvalidOperationException("Authenticated Workshop gallery does not contain the exact resolved preview inventory.");
         for (var index = 0; index < previews.Length; index++)
         {
             var parts = baseline.AdditionalPreviews[index].Split('|');
@@ -106,8 +108,6 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
         string packageId,
         CancellationToken cancellationToken)
     {
-        if (!string.Equals(packageId, "fumblesneeze.immersivechefs", StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("The checked-in presentation synchronizer currently supports only fumblesneeze.immersivechefs.");
         await RequireCleanRevisionAsync(cancellationToken);
         var profile = ReleaseProfileCatalog.Discover(_repositoryRoot)
             .Single(item => string.Equals(item.PackageId, packageId, StringComparison.OrdinalIgnoreCase));
@@ -116,6 +116,7 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
         ReleaseEnvironmentValidator.Validate(profile);
         var workshopRoot = Path.GetDirectoryName(profile.Preview)!;
         var previews = ReadPreviewInputs(workshopRoot, profile.Preview);
+        var resolverInput = ReadDescriptionResolver(workshopRoot);
         var sourceRevision = (await RunGitAsync(["rev-parse", "HEAD"], cancellationToken)).Trim();
         var planSha256 = HashText(string.Join("\n", new[]
         {
@@ -124,7 +125,8 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
             profile.PackageId,
             publishedFileId.ToString(),
             profile.Title
-        }.Concat(previews.Select(item => $"{item.Index}|{item.Token}|{item.Sha256}"))) + "\n");
+        }.Concat(previews.Select(item => $"{item.Index}|{item.Token}|{item.Sha256}"))
+            .Append($"resolver|{resolverInput.Sha256}")) + "\n");
         var runId = $"{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfffZ}-{Guid.NewGuid():N}";
         var evidenceRoot = Path.Combine(_repositoryRoot, "artifacts", "Releases", profile.PackageId,
             "presentation-sync", runId);
@@ -188,10 +190,9 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
                 remote, previews, publishedFileId, planSha256, evidenceRoot, cancellationToken);
             DurableFile.WriteAllText(statePath, $"succeeded|{planSha256}|{publishedFileId}");
             await RequirePlanInputsUnchangedAsync(sourceRevision, workshopRoot, profile.Preview, previews, cancellationToken);
-            var resolverPath = Path.Combine(_repositoryRoot, "scripts", "Resolve-ImmersiveChefsWorkshopDescription.ps1");
             var resolver = await ProcessRunner.RunAsync(
                 "pwsh",
-                ["-NoProfile", "-NonInteractive", "-File", resolverPath,
+                ["-NoProfile", "-NonInteractive", "-File", resolverInput.Path,
                     "-InventoryPath", inventoryPath,
                     "-DestinationPath", profile.Description,
                     "-Output", "json"],
@@ -259,16 +260,20 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
         using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var manifest = document.RootElement;
         if (!manifest.TryGetProperty("schema", out var schema) ||
-            schema.GetString() != "ImmersiveChefs/WorkshopPresentation/v1" ||
+            !Regex.IsMatch(schema.GetString() ?? "", "^[A-Za-z0-9.-]{1,100}/WorkshopPresentation/v1$") ||
+            !manifest.TryGetProperty("titleToken", out var titleTokenProperty) ||
+            titleTokenProperty.ValueKind != JsonValueKind.String ||
             !manifest.TryGetProperty("carouselCards", out var carousel) ||
             carousel.ValueKind != JsonValueKind.Array ||
             !manifest.TryGetProperty("cards", out var cards) ||
             cards.ValueKind != JsonValueKind.Array)
             throw new InvalidOperationException("Workshop presentation manifest is invalid.");
         var tokens = carousel.EnumerateArray().Select(item => item.GetString() ?? "").ToArray();
-        if (tokens.Length != 6 || tokens.Distinct(StringComparer.Ordinal).Count() != tokens.Length ||
+        var titleToken = titleTokenProperty.GetString() ?? "";
+        if (!Regex.IsMatch(titleToken, "^[a-z0-9-]{1,32}$") ||
+            tokens.Length > 9 || tokens.Distinct(StringComparer.Ordinal).Count() != tokens.Length ||
             tokens.Any(token => !Regex.IsMatch(token, "^[a-z0-9-]{1,32}$")))
-            throw new InvalidOperationException("Immersive Chefs requires exactly six unique ordered feature cards.");
+            throw new InvalidOperationException("Workshop presentation requires zero to nine unique ordered feature cards and a safe title token.");
         var cardPaths = cards.EnumerateArray().ToDictionary(
             card => card.GetProperty("token").GetString() ?? "",
             card => card.GetProperty("path").GetString() ?? "",
@@ -278,7 +283,7 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
 
         var inputs = new List<WorkshopPreviewInput>
         {
-            CreateInput(0, "immersive-chefs", titlePath)
+            CreateInput(0, titleToken, titlePath)
         };
         for (var index = 0; index < tokens.Length; index++)
         {
@@ -289,6 +294,28 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
             inputs.Add(CreateInput(index + 1, token, RequireContainedFile(root, Path.Combine(root, relative))));
         }
         return inputs;
+    }
+
+    internal WorkshopDescriptionResolverInput ReadDescriptionResolver(string workshopRoot)
+    {
+        var manifestPath = Path.Combine(Path.GetFullPath(workshopRoot), "presentation.json");
+        using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        if (!document.RootElement.TryGetProperty("descriptionResolver", out var resolver) ||
+            resolver.ValueKind != JsonValueKind.Object ||
+            !resolver.TryGetProperty("path", out var pathProperty) ||
+            pathProperty.ValueKind != JsonValueKind.String ||
+            !resolver.TryGetProperty("sha256", out var hashProperty) ||
+            hashProperty.ValueKind != JsonValueKind.String)
+            throw new InvalidOperationException("Workshop presentation description resolver declaration is incomplete.");
+        var path = RepositoryRoot.ContainedPath(_repositoryRoot, pathProperty.GetString()!);
+        var hash = hashProperty.GetString() ?? "";
+        if (!path.StartsWith(Path.Combine(_repositoryRoot, "scripts") + Path.DirectorySeparatorChar,
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.GetExtension(path), ".ps1", StringComparison.OrdinalIgnoreCase) ||
+            !File.Exists(path) || !Regex.IsMatch(hash, "^[A-F0-9]{64}$") ||
+            !string.Equals(ReleaseCandidateBuilder.Hash(path), hash, StringComparison.Ordinal))
+            throw new InvalidOperationException("Workshop presentation description resolver is missing, unsafe, or has drifted.");
+        return new WorkshopDescriptionResolverInput(path, hash);
     }
 
     private static WorkshopPreviewInput CreateInput(int index, string token, string path)
@@ -457,7 +484,7 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
         var inventoryPath = Path.Combine(evidenceRoot, "presentation-preview-inventory.json");
         DurableFile.WriteAllText(inventoryPath, JsonSerializer.Serialize(new
         {
-            schema = "ImmersiveChefs/WorkshopRemotePreviewInventory/v1",
+            schema = "RimWorldModdingMcp/WorkshopRemotePreviewInventory/v1",
             publishedFileId = publishedFileId.ToString(),
             publicationPlanSha256 = planSha256,
             previews = retained

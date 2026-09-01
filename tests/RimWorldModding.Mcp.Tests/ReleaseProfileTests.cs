@@ -9,6 +9,24 @@ public sealed class ReleaseProfileTests
     private const string RepositoryUrl = "https://github.com/Fumblesneeze/Rimworld-Mods";
 
     [Test]
+    public void Release_profiles_and_plans_do_not_select_a_product_specific_verification_workflow()
+    {
+        var root = TestRepository.FindRoot();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(typeof(ReleaseProfile).GetProperty("VerificationProfile"), Is.Null);
+            Assert.That(typeof(ReleasePublicationPlan).GetProperty("VerificationProfile"), Is.Null);
+            Assert.That(
+                File.ReadAllText(Path.Combine(root, "mods", "GuestBedGizmo", "Release", "release.json")),
+                Does.Not.Contain("verificationProfile"));
+            Assert.That(
+                File.ReadAllText(Path.Combine(root, "mods", "ImmersiveChefs", "Release", "release.json")),
+                Does.Not.Contain("verificationProfile"));
+        });
+    }
+
+    [Test]
     public void Repository_profiles_do_not_claim_an_unsupported_GitHub_Workshop_link()
     {
         var root = TestRepository.FindRoot();
@@ -260,24 +278,24 @@ public sealed class ReleaseProfileTests
                 changeNote = guest.PreviousChangeNote
             }
         }));
-        var workerResult = new ReleasePublishResult(
-            "published-steam-verified-subscriber-evidence-awaiting-personal-review",
-            guest.PackageId,
+        File.WriteAllText(worker, System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = "published-steam-verified-subscriber-evidence-awaiting-personal-review",
+            packageId = guest.PackageId,
             title,
-            guest.PublishedFileId!,
-            $"https://steamcommunity.com/sharedfiles/filedetails/?id={guest.PublishedFileId}",
-            plan,
+            publishedFileId = guest.PublishedFileId,
+            workshopUrl = $"https://steamcommunity.com/sharedfiles/filedetails/?id={guest.PublishedFileId}",
+            publicationPlanSha256 = plan,
             candidateDigest,
-            receipt,
-            ReleaseCandidateBuilder.Hash(receipt),
-            evidenceRoot,
-            "awaiting personal review",
-            "prior-identity-commit",
-            Path.Combine(fixture, "Mods", guest.PackageId),
-            true,
-            true);
-        File.WriteAllText(worker,
-            System.Text.Json.JsonSerializer.Serialize(workerResult, McpJsonContext.Default.ReleasePublishResult));
+            receiptPath = receipt,
+            receiptSha256 = ReleaseCandidateBuilder.Hash(receipt),
+            subscriberEvidenceRoot = evidenceRoot,
+            subscriberEvidenceStatus = "awaiting personal review",
+            identityCommit = "prior-identity-commit",
+            localPackagePath = Path.Combine(fixture, "Mods", guest.PackageId),
+            localPackageRestored = true,
+            steamVerified = true
+        }));
         try
         {
             var evidence = WorkshopChangeHistoryVerifier.ValidateRetainedPrivateReceipt(fixture, guest);

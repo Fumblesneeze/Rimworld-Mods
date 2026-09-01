@@ -95,14 +95,15 @@ public static class WorkshopChangeHistoryVerifier
         if (!File.Exists(statePath))
             throw new InvalidOperationException("Private update requires the retained preceding release state.");
         var state = File.ReadAllText(statePath).Trim().Split('|');
-        if (state.Length != 3 || state[0] != "complete-reviewed" ||
+        if (state.Length != 3 || state[0] is not ("complete-reviewed" or "complete-steam-verified") ||
             state[1].Length != 64 || state[1].Any(character => !Uri.IsHexDigit(character)) ||
             state[2] != profile.PublishedFileId)
-            throw new InvalidOperationException("Private update requires the exact complete-reviewed preceding release state.");
+            throw new InvalidOperationException("Private update requires the exact completed preceding release state.");
 
         var workerPath = Path.Combine(packageRoot, "workers", state[1], "worker-result.json");
         var worker = ReleaseWorkerCoordinator.ReadValidatedResult(
-            root, workerPath, profile.PackageId, state[1], null, null);
+            root, workerPath, profile.PackageId, state[1], null, null,
+            allowLegacySubscriberResult: state[0] == "complete-reviewed");
         if (!string.Equals(worker.PublishedFileId, profile.PublishedFileId, StringComparison.Ordinal))
             throw new InvalidOperationException("Retained preceding publisher result does not match the Private update identity.");
 
@@ -119,12 +120,19 @@ public static class WorkshopChangeHistoryVerifier
             verification.ValueKind != JsonValueKind.Object)
             throw new InvalidOperationException("Retained preceding receipt omitted change-note verification.");
         var previous = profile.PreviousChangeNote ?? "";
+        var legacySubscriberReceipt = state[0] == "complete-reviewed";
+        var currentSteamReceipt = GatewayWorkshopClient.TryProperty(receipt, "steamModifiedTime", out var modified) &&
+                                  modified.ValueKind == JsonValueKind.Object &&
+                                  GatewayWorkshopClient.TryProperty(modified, "Advanced", out var advanced) &&
+                                  advanced.ValueKind == JsonValueKind.True;
         if (GatewayWorkshopClient.String(receipt, "schema") != "RimWorldModReleaseReceipt/v1" ||
             GatewayWorkshopClient.String(receipt, "packageId") != profile.PackageId ||
             GatewayWorkshopClient.String(receipt, "publishedFileId") != profile.PublishedFileId ||
             GatewayWorkshopClient.String(receipt, "publicationPlanSha256") != state[1] ||
             GatewayWorkshopClient.String(receipt, "changeNote") != previous ||
-            GatewayWorkshopClient.String(receipt, "subscriberEvidenceStatus") != "awaiting-personal-review" ||
+            (legacySubscriberReceipt
+                ? GatewayWorkshopClient.String(receipt, "subscriberEvidenceStatus") != "awaiting-personal-review"
+                : !currentSteamReceipt) ||
             GatewayWorkshopClient.String(verification, "status") != "steam-callback-confirmed-private-history-not-publicly-readable" ||
             GatewayWorkshopClient.String(verification, "changeNote") != previous)
             throw new InvalidOperationException("Retained preceding receipt does not bind the pinned Private change note.");

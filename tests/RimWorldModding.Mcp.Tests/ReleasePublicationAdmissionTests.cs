@@ -10,6 +10,57 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class ReleasePublicationAdmissionTests
 {
     [Test]
+    public void Steam_modified_time_must_advance_beyond_the_frozen_existing_item_baseline()
+    {
+        var baseline = WorkshopRemoteBaseline.Create(
+            "1234567890", "Example", new string('A', 64), 10, ["Mod"], "prior-plan", "Public",
+            "https://images.steamusercontent.com/ugc/example/preview.png", new string('B', 64),
+            "76561198077136238", 294100, 1, 100, [], [], [], []);
+
+        static JsonElement Remote(uint updated) => JsonSerializer.SerializeToElement(new
+        {
+            RemoteUpdatedUnixSeconds = updated
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ReleasePublisher.RemoteModifiedTimeAdvanced(Remote(101), baseline), Is.True);
+            Assert.That(ReleasePublisher.RemoteModifiedTimeAdvanced(Remote(100), baseline), Is.False);
+            Assert.That(ReleasePublisher.RemoteModifiedTimeAdvanced(Remote(99), baseline), Is.False);
+            Assert.That(ReleasePublisher.RemoteModifiedTimeAdvanced(Remote(0), baseline), Is.False);
+            Assert.That(ReleasePublisher.RemoteModifiedTimeAdvanced(Remote(1), null), Is.True,
+                "A first publication has no prior item timestamp, but Steam must still return a nonzero modified time.");
+        });
+    }
+
+    [Test]
+    public void Generic_release_operation_exposes_no_subscribe_smoke_or_personal_review_stage()
+    {
+        var root = FindRepositoryRoot();
+        var operations = OperationRegistry.CreateDefault(root).Descriptors;
+        var publisher = File.ReadAllText(Path.Combine(root, "tools", "RimWorldModding.Mcp", "ReleasePublisher.cs"));
+        var preparer = File.ReadAllText(Path.Combine(root, "tools", "RimWorldModding.Mcp", "ReleasePreparation.cs"));
+        var presentationSync = File.ReadAllText(Path.Combine(root, "tools", "RimWorldModding.Mcp", "WorkshopPresentationSynchronizer.cs"));
+        var steamAdapter = File.ReadAllText(Path.Combine(root, "scripts", "Fixtures", "GatewaySteamWorkshopPublisher.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(operations.Select(operation => operation.Name),
+                Does.Not.Contain("release_accept_subscriber_evidence"));
+            Assert.That(publisher, Does.Not.Contain("SubscriberVerifier"));
+            Assert.That(publisher, Does.Not.Contain("LocalModInstaller.Sync"));
+            Assert.That(publisher, Does.Not.Match("\\[\\\"operation\\\"\\]\\s*=\\s*\\\"subscribe\\\""));
+            Assert.That(preparer, Does.Not.Contain("fumblesneeze.immersivechefs"));
+            Assert.That(preparer, Does.Not.Contain("fumblesneeze.guestbedgizmo"));
+            Assert.That(presentationSync, Does.Not.Contain("fumblesneeze.immersivechefs"));
+            Assert.That(presentationSync, Does.Not.Contain("fumblesneeze.guestbedgizmo"));
+            Assert.That(steamAdapter, Does.Not.Match(@"SteamUGC\.SubscribeItem\("));
+            Assert.That(operations.Single(operation => operation.Name == "release_publish").Description,
+                Does.Contain("newer modified time"));
+        });
+    }
+
+    [Test]
     public void Workshop_links_use_a_nested_object_free_gateway_wire_that_the_legacy_contract_serializes()
     {
         var arguments = ReleasePublisher.WorkshopLinkGatewayArguments(
@@ -111,7 +162,7 @@ public sealed class ReleasePublicationAdmissionTests
     }
 
     [Test]
-    public void Admission_RejectsChangedSubscriberManifestBytes()
+    public void Admission_RejectsChangedImmutableReleaseInputBytes()
     {
         var root = TestRoot();
         try
@@ -119,12 +170,12 @@ public sealed class ReleasePublicationAdmissionTests
             var nonce = new string('E', 64);
             var planPath = WritePlan(root, DateTimeOffset.UtcNow.AddMinutes(30), nonce, "dll");
             var hash = ReleaseCandidateBuilder.Hash(planPath);
-            File.WriteAllText(Path.Combine(root, "subscriber.json"), "changed");
+            File.WriteAllText(Path.Combine(root, "frozen-release-profile.json"), "changed");
 
             Assert.That(
                 Assert.Throws<InvalidOperationException>(() => ReleasePlanAdmission.ValidateLocal(
                     root, planPath, hash, nonce, DateTimeOffset.UtcNow, requireCleanRevision: false))!.Message,
-                Does.Contain("Subscriber"));
+                Does.Contain("Frozen release profile"));
         }
         finally
         {
@@ -178,6 +229,14 @@ public sealed class ReleasePublicationAdmissionTests
             Assert.That(ReleasePlanAdmission.IsRecoverableDurableState(
                 "submit-indeterminate|" + new string('A', 64) + "|123", new string('A', 64), out var sameId), Is.True);
             Assert.That(sameId, Is.EqualTo("123"));
+            Assert.That(ReleasePlanAdmission.IsRecoverableDurableState(
+                "subscriber-evidence-awaiting-review|" + new string('A', 64) + "|123",
+                new string('A', 64), out _), Is.False,
+                "The removed subscriber workflow must not remain a current release recovery stage.");
+            Assert.That(ReleasePlanAdmission.IsRecoverableDurableState(
+                "complete-reviewed|" + new string('A', 64) + "|123",
+                new string('A', 64), out _), Is.False,
+                "A historical subscriber-reviewed state must not satisfy the current timestamp-based release transaction.");
             Assert.That(ReleasePlanAdmission.IsRecoverableDurableState(
                 "create-failed-definite|" + new string('A', 64) + "|0", new string('A', 64), out _), Is.False);
         });
@@ -414,27 +473,6 @@ public sealed class ReleasePublicationAdmissionTests
     }
 
     [Test]
-    public void ExistingItemLocalInventory_DoesNotCountPublishedIdentityTwice()
-    {
-        var root = TestRoot();
-        try
-        {
-            var planPath = WritePlan(root, DateTimeOffset.UtcNow.AddMinutes(30), new string('4', 64), "dll");
-            var plan = JsonSerializer.Deserialize(
-                File.ReadAllText(planPath), McpJsonContext.Default.ReleasePublicationPlan)!;
-            var identity = new CandidateFile("About/PublishedFileId.txt", 10, new string('A', 64));
-
-            Assert.That(ReleasePublisher.ExpectedLocalInventoryCount(plan), Is.EqualTo(plan.Files.Count + 1));
-            Assert.That(ReleasePublisher.ExpectedLocalInventoryCount(plan with { Files = [.. plan.Files, identity] }),
-                Is.EqualTo(plan.Files.Count + 1));
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
-    }
-
-    [Test]
     public void IdentityCommitRecovery_ConsidersOnlyDirectChildrenOfTheAdmittedRevision()
     {
         const string source = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -447,7 +485,7 @@ public sealed class ReleasePublicationAdmissionTests
     }
 
     [Test]
-    public void NewPlan_RefusesAnUnresolvedPriorUpdateButAllowsReviewedOrDefiniteFailure()
+    public void NewPlan_RefusesAnUnresolvedPriorUpdateButAllowsCompletedOrDefiniteFailure()
     {
         var path = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"publication-state-{Guid.NewGuid():N}.txt");
         try
@@ -458,6 +496,9 @@ public sealed class ReleasePublicationAdmissionTests
                 Throws.InvalidOperationException.With.Message.Contains("previous Workshop update"));
 
             File.WriteAllText(path, "complete-reviewed|" + new string('A', 64) + "|123");
+            Assert.DoesNotThrow(() => ReleasePublisher.RefuseIndeterminateDuplicate(
+                path, new string('B', 64), "123"));
+            File.WriteAllText(path, "complete-steam-verified|" + new string('A', 64) + "|123");
             Assert.DoesNotThrow(() => ReleasePublisher.RefuseIndeterminateDuplicate(
                 path, new string('B', 64), "123"));
             File.WriteAllText(path, "submit-failed-definite|" + new string('A', 64) + "|123");
@@ -471,7 +512,7 @@ public sealed class ReleasePublicationAdmissionTests
     }
 
     [Test]
-    public void Status_RecoversAnAdmittedPublicationAfterExpiryAndReviewCompletesExactEvidence()
+    public void Status_RecoversAnAdmittedPublicationAfterExpiry_WhenSteamModifiedTimeWasVerified()
     {
         var root = TestRoot();
         try
@@ -482,15 +523,7 @@ public sealed class ReleasePublicationAdmissionTests
             var stateRoot = Path.Combine(root, "artifacts", "Releases", "fumblesneeze.example");
             Directory.CreateDirectory(stateRoot);
             File.WriteAllText(Path.Combine(stateRoot, "publication-state.txt"),
-                $"subscriber-evidence-awaiting-review|{hash}|1234567890");
-            var evidence = Path.Combine(stateRoot, "subscriber", "run");
-            Directory.CreateDirectory(evidence);
-            var before = Path.Combine(evidence, "before.png");
-            var after = Path.Combine(evidence, "after.png");
-            var png = Convert.FromBase64String(
-                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
-            File.WriteAllBytes(before, png);
-            File.WriteAllBytes(after, png);
+                $"complete-steam-verified|{hash}|1234567890");
             var receiptRoot = Path.Combine(stateRoot, "publication", "run");
             Directory.CreateDirectory(receiptRoot);
             var receipt = Path.Combine(receiptRoot, "publication-receipt.json");
@@ -502,28 +535,55 @@ public sealed class ReleasePublicationAdmissionTests
                 publicationPlanSha256 = hash,
                 candidateDigest = ReleasePlanAdmission.Status(root, planPath, hash, nonce).CandidateDigest,
                 publishedFileId = "1234567890",
-                subscriberEvidenceStatus = "awaiting-personal-review",
-                subscriber = new { status = "passed", evidenceRoot = evidence, screenshots = new[] { before, after } }
+                remote = new { PublishedFileId = 1234567890UL, RemoteUpdatedUnixSeconds = 101u },
+                steamModifiedTime = new { BeforeUnixSeconds = 100u, AfterUnixSeconds = 101u, Advanced = true }
             }));
             var workerRoot = Path.Combine(stateRoot, "workers", hash);
             Directory.CreateDirectory(workerRoot);
             var workerResult = new ReleasePublishResult(
-                "published-steam-verified-subscriber-evidence-awaiting-personal-review",
+                "published-complete-steam-verified",
                 "fumblesneeze.example", "Example", "1234567890", "https://example.invalid", hash,
                 ReleasePlanAdmission.Status(root, planPath, hash, nonce).CandidateDigest,
-                receipt, ReleaseCandidateBuilder.Hash(receipt), evidence, "awaiting", "commit", "local", true, true);
+                receipt, ReleaseCandidateBuilder.Hash(receipt), "commit", 100u, 101u, true);
             File.WriteAllText(Path.Combine(workerRoot, "worker-result.json"),
                 JsonSerializer.Serialize(workerResult, McpJsonContext.Default.ReleasePublishResult));
 
             var status = ReleasePlanAdmission.Status(root, planPath, hash, nonce);
-            Assert.That(status.AwaitingPersonalSubscriberReview, Is.True);
-            Assert.That(status.DurablePublishedFileId, Is.EqualTo("1234567890"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(status.SteamVerified, Is.True);
+                Assert.That(status.DurablePublishedFileId, Is.EqualTo("1234567890"));
+                Assert.That(status.ReleaseWorkerState, Is.EqualTo("completed"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
 
-            var reviewed = ReleaseReview.Accept(root, planPath, hash, nonce, receipt,
-                "I inspected the before and after frames and observed the native action change the result.");
-            Assert.That(reviewed.Status, Is.EqualTo("complete-personally-reviewed"));
-            Assert.That(reviewed.Screenshots, Has.Count.EqualTo(2));
-            Assert.That(ReleasePlanAdmission.Status(root, planPath, hash, nonce).PersonallyReviewed, Is.True);
+    [Test]
+    public void Status_DoesNotTrustATerminalStateWithoutTheTimestampBoundWorkerReceipt()
+    {
+        var root = TestRoot();
+        try
+        {
+            var nonce = new string('E', 64);
+            var planPath = WritePlan(root, DateTimeOffset.UtcNow.AddMinutes(-1), nonce, "dll");
+            var hash = ReleaseCandidateBuilder.Hash(planPath);
+            var stateRoot = Path.Combine(root, "artifacts", "Releases", "fumblesneeze.example");
+            Directory.CreateDirectory(stateRoot);
+            File.WriteAllText(Path.Combine(stateRoot, "publication-state.txt"),
+                $"complete-steam-verified|{hash}|1234567890");
+
+            var status = ReleasePlanAdmission.Status(root, planPath, hash, nonce);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(status.SteamVerified, Is.False);
+                Assert.That(status.Status, Is.Not.EqualTo("published-complete-steam-verified"));
+                Assert.That(status.ReleaseWorkerState, Is.EqualTo("none"));
+            });
         }
         finally
         {
@@ -551,9 +611,9 @@ public sealed class ReleasePublicationAdmissionTests
             File.WriteAllText(receipt, "{}");
             var status = ReleasePlanAdmission.Status(root, planPath, hash, nonce);
             var expected = new ReleasePublishResult(
-                "published-steam-verified-subscriber-evidence-awaiting-personal-review",
+                "published-complete-steam-verified",
                 "fumblesneeze.example", "Example", "1234567890", "https://example.invalid", hash,
-                status.CandidateDigest, receipt, ReleaseCandidateBuilder.Hash(receipt), "evidence", "awaiting", "commit", "local", true, true);
+                status.CandidateDigest, receipt, ReleaseCandidateBuilder.Hash(receipt), "commit", 100u, 101u, true);
             File.WriteAllText(Path.Combine(workerRoot, "worker-result.json"),
                 JsonSerializer.Serialize(expected, McpJsonContext.Default.ReleasePublishResult));
 
@@ -561,7 +621,7 @@ public sealed class ReleasePublicationAdmissionTests
                 Assert.ThrowsAsync<InvalidOperationException>(async () =>
                     await new ReleaseWorkerCoordinator(root).PublishAsync(
                         planPath, hash, nonce, CancellationToken.None))!.Message,
-                Does.Contain("final subscriber-evidence durable state"));
+                Does.Contain("final durable publication state"));
             Assert.That(ReleasePlanAdmission.Status(root, planPath, hash, nonce).ReleaseWorkerState,
                 Is.EqualTo("invalid-result"));
         }
@@ -586,9 +646,9 @@ public sealed class ReleasePublicationAdmissionTests
             var workerRoot = Path.Combine(releaseRoot, "workers", hash);
             Directory.CreateDirectory(workerRoot);
             var fabricated = new ReleasePublishResult(
-                "published-steam-verified-subscriber-evidence-awaiting-personal-review",
+                "published-complete-steam-verified",
                 "fumblesneeze.example", "Example", "1234567890", "https://example.invalid", hash,
-                "wrong-candidate", "outside.json", new string('A', 64), "evidence", "awaiting", "commit", "local", true, true);
+                "wrong-candidate", "outside.json", new string('A', 64), "commit", 100u, 101u, true);
             File.WriteAllText(Path.Combine(workerRoot, "worker-result.json"),
                 JsonSerializer.Serialize(fabricated, McpJsonContext.Default.ReleasePublishResult));
 
@@ -627,14 +687,8 @@ public sealed class ReleasePublicationAdmissionTests
         File.WriteAllText(profile, profileJson);
         File.WriteAllText(description, "description");
         File.WriteAllText(preview, "preview");
-        var subscriber = Path.Combine(root, "subscriber.json");
-        File.WriteAllText(subscriber, "subscriber");
         var frozenProfile = Path.Combine(root, "frozen-release-profile.json");
         File.WriteAllText(frozenProfile, profileJson);
-        var subscriberFile = new CandidateFile(
-            Path.GetRelativePath(root, subscriber).Replace('\\', '/'),
-            new FileInfo(subscriber).Length,
-            ReleaseCandidateBuilder.Hash(subscriber));
         var frozenProfileFile = new CandidateFile(
             Path.GetRelativePath(root, frozenProfile).Replace('\\', '/'),
             new FileInfo(frozenProfile).Length,
@@ -644,16 +698,16 @@ public sealed class ReleasePublicationAdmissionTests
             "Product", "1.6", "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
             294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["2009463077"], [], [],
             "mod_build", "presentation_render", candidate, ["1.6/Assemblies/Product.dll"], description, preview,
-            null, "Initial release.", subscriber)
+            null, "Initial release.")
         {
             WorkshopLinks = [new WorkshopLink("github", WorkshopLinkPolicy.RepositoryUrl)]
         };
         var plan = new ReleasePublicationPlan(
-            "RimWorldModReleasePlan/v2", "fumblesneeze.example", "Example", "Fumblesneeze", "revision",
+            "RimWorldModReleasePlan/v3", "fumblesneeze.example", "Example", "Fumblesneeze", "revision",
             digest, candidate, files, profile, ReleaseCandidateBuilder.Hash(profile), frozenProfile, frozen,
             description, ReleaseCandidateBuilder.Hash(description), preview, ReleaseCandidateBuilder.Hash(preview),
             new FileInfo(preview).Length, 294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"],
-            ["2009463077"], [], "Initial release.", subscriber, [subscriberFile, frozenProfileFile], null,
+            ["2009463077"], [], "Initial release.", [frozenProfileFile], null,
             "https://example.invalid", 0, [], 0,
             null, ["CREATE"], nonce, expiry, false)
         {

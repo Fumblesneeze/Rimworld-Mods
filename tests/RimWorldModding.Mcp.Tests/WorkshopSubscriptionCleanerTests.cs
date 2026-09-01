@@ -16,41 +16,6 @@ public sealed class WorkshopSubscriptionCleanerTests
     }
 
     [Test]
-    public void SubscriberFailure_StillRunsMandatoryUnsubscribeCleanup()
-    {
-        var cleanupCalls = 0;
-
-        var error = Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await ReleasePublisher.RunWithMandatoryCleanupAsync(
-                () => Task.FromException<string>(new InvalidOperationException("subscriber failed")),
-                () =>
-                {
-                    cleanupCalls++;
-                    return Task.FromResult("unsubscribed");
-                }));
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(error!.Message, Is.EqualTo("subscriber failed"));
-            Assert.That(cleanupCalls, Is.EqualTo(1));
-        });
-    }
-
-    [Test]
-    public async Task SuccessfulSubscriber_ReturnsVerifiedCleanupResult()
-    {
-        var result = await ReleasePublisher.RunWithMandatoryCleanupAsync(
-            () => Task.FromResult("subscriber passed"),
-            () => Task.FromResult("unsubscribed"));
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.Primary, Is.EqualTo("subscriber passed"));
-            Assert.That(result.Cleanup, Is.EqualTo("unsubscribed"));
-        });
-    }
-
-    [Test]
     public void CleanupResult_HasOneDeterministicCliProjection()
     {
         var result = new WorkshopSubscriptionCleanupResult(

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -17,11 +16,9 @@ public sealed record ReleasePublishResult(
     string CandidateDigest,
     string ReceiptPath,
     string ReceiptSha256,
-    string SubscriberEvidenceRoot,
-    string SubscriberEvidenceStatus,
     string IdentityCommit,
-    string LocalPackagePath,
-    bool LocalPackageRestored,
+    uint? SteamModifiedBeforeUnixSeconds,
+    uint SteamModifiedAfterUnixSeconds,
     bool SteamVerified);
 
 public static class WorkshopRelationshipReconciler
@@ -67,7 +64,6 @@ public sealed class ReleasePublisher(string repositoryRoot)
         _ = WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport(admission.Plan.WorkshopLinks);
         ReleaseEnvironmentValidator.Validate(profile);
         ReleaseChangeNotePolicy.Validate(profile);
-        _ = SubscriberVerificationProfiles.Load(_repositoryRoot, admission.Plan.VerificationProfile);
         ReleasePackageValidator.Validate(profile, admission.Candidate);
         var previousReleaseEvidence = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
             _repositoryRoot, profile, cancellationToken);
@@ -142,7 +138,6 @@ public sealed class ReleasePublisher(string repositoryRoot)
             profile = admission.Plan.FrozenProfile;
             ReleaseEnvironmentValidator.Validate(profile);
             ReleaseChangeNotePolicy.Validate(profile);
-            _ = SubscriberVerificationProfiles.Load(_repositoryRoot, admission.Plan.VerificationProfile);
             ReleasePackageValidator.Validate(profile, admission.Candidate);
             previousReleaseEvidence = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
                 _repositoryRoot, profile, cancellationToken);
@@ -217,8 +212,6 @@ public sealed class ReleasePublisher(string repositoryRoot)
             _repositoryRoot, planPath, planSha256, confirmationNonce);
         var profile = admission.Plan.FrozenProfile;
         ReleaseEnvironmentValidator.Validate(profile);
-        _ = SubscriberVerificationProfiles.Load(_repositoryRoot, admission.Plan.VerificationProfile);
-
         var mutexName = "Local\\RimWorldModdingMcp.Release." +
                         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(profile.PackageId)))[..24];
         using var mutex = new Semaphore(1, 1, mutexName);
@@ -350,46 +343,20 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var remote = await WaitRemoteBaseAsync(client, admission, publishedId, deadline,
             allowUnsupportedWorkshopLinkRecovery, cancellationToken);
         remote = await ReconcileRelationshipsAsync(client, admission, publishedId, remote, statePath, deadline, cancellationToken);
+        remote = await WaitRemoteBaseAsync(client, admission, publishedId, deadline,
+            allowUnsupportedWorkshopLinkRecovery, cancellationToken, requireRelationships: true);
         await VerifyRemotePreviewAsync(remote, admission.Plan.PreviewSha256, cancellationToken);
         var changeNoteVerification = await WorkshopChangeHistoryVerifier.VerifyPublishedAsync(
             profile, publishedId.ToString(), cancellationToken);
 
-        _ = await client.InvokeAsync(new Dictionary<string, object?>
-        {
-            ["operation"] = "subscribe",
-            ["planSha256"] = admission.PlanSha256,
-            ["publishedFileId"] = publishedId.ToString()
-        }, cancellationToken);
-        var installed = await client.WaitTerminalAsync(
-            admission.PlanSha256,
-            new HashSet<string>(["installed", "failed"], StringComparer.Ordinal),
-            deadline,
-            cancellationToken);
-        if (GatewayWorkshopClient.String(installed, "Status") != "installed")
-            throw new InvalidOperationException("Steam did not install the subscribed item.");
-        var installedPath = VerifyInstalledPackage(installed, admission, publishedId);
+        VerifyExactPublishedCandidate(admission, publishedId);
+        var modifiedBefore = admission.Plan.RemoteBaseline?.UpdatedUnixSeconds;
+        var modifiedAfter = checked((uint)GatewayWorkshopClient.UInt64(remote, "RemoteUpdatedUnixSeconds"));
+        if (!RemoteModifiedTimeAdvanced(remote, admission.Plan.RemoteBaseline))
+            throw new InvalidOperationException("Steam did not expose a newer modified time for the exact published item.");
         DurableFile.WriteAllText(statePath, $"steam-verified|{admission.PlanSha256}|{publishedId}");
 
         _ = await manager.CancelAsync(gatewayRunId, cancellationToken);
-        var frozenSubscriberManifest = SubscriberVerificationProfiles.Load(
-            _repositoryRoot, admission.Plan.VerificationProfile);
-        var subscriberOutcome = await RunWithMandatoryCleanupAsync(
-            () => new SubscriberVerifier(_repositoryRoot)
-                .VerifyAsync(profile, frozenSubscriberManifest, publishedId.ToString(), installedPath, cancellationToken),
-            () => new WorkshopSubscriptionCleaner(_repositoryRoot)
-                .CleanAsync(profile.PackageId, CancellationToken.None));
-        var subscriber = subscriberOutcome.Primary;
-        var subscriptionCleanup = subscriberOutcome.Cleanup;
-        VerifyExactPublishedCandidate(admission, publishedId);
-        var exactIncludes = admission.Plan.Files.Select(file => file.Path)
-            .Append("About/PublishedFileId.txt")
-            .ToArray();
-        var localInstall = LocalModInstaller.Sync(
-            admission.Plan.PackagePath,
-            @"F:\Steam\steamapps\common\RimWorld\Mods",
-            admission.Plan.PackageId,
-            exactIncludes);
-        VerifyExactLocalInstall(localInstall, admission, publishedId);
         var receiptRoot = Path.Combine(stateRoot, "publication", $"{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfffZ}");
         Directory.CreateDirectory(receiptRoot);
         var receiptPath = Path.Combine(receiptRoot, "publication-receipt.json");
@@ -408,14 +375,15 @@ public sealed class ReleasePublisher(string repositoryRoot)
             ["publicationPlanSha256"] = admission.PlanSha256,
             ["candidateDigest"] = admission.Plan.CandidateDigest,
             ["remote"] = JsonNode.Parse(remote.GetRawText()),
-            ["installedPackagePath"] = installedPath,
-            ["subscriber"] = subscriber,
-            ["subscriptionCleanup"] = subscriptionCleanup,
-            ["subscriberEvidenceStatus"] = "awaiting-personal-review",
+            ["steamModifiedTime"] = new
+            {
+                BeforeUnixSeconds = modifiedBefore,
+                AfterUnixSeconds = modifiedAfter,
+                Advanced = modifiedBefore.HasValue ? modifiedAfter > modifiedBefore.Value : modifiedAfter > 0
+            },
             ["changeNote"] = admission.Plan.ChangeNote,
             ["changeNoteVerification"] = changeNoteVerification,
             ["identityCommit"] = commit,
-            ["localInstall"] = localInstall,
             ["unsupportedWorkshopLinks"] = unsupportedWorkshopLinks.Select(link => new
             {
                 link.Key,
@@ -431,9 +399,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
         DurableFile.WriteAllText(receiptPath,
             JsonSerializer.Serialize(receipt, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
         var receiptSha256 = ReleaseCandidateBuilder.Hash(receiptPath);
-        DurableFile.WriteAllText(statePath, $"subscriber-evidence-awaiting-review|{admission.PlanSha256}|{publishedId}");
+        DurableFile.WriteAllText(statePath, $"complete-steam-verified|{admission.PlanSha256}|{publishedId}");
         return new ReleasePublishResult(
-            "published-steam-verified-subscriber-evidence-awaiting-personal-review",
+            "published-complete-steam-verified",
             profile.PackageId,
             profile.Title,
             publishedId.ToString(),
@@ -442,11 +410,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
             admission.Plan.CandidateDigest,
             receiptPath,
             receiptSha256,
-            subscriber.EvidenceRoot,
-            "Fresh subscriber screenshots require personal review; expected observation: " + subscriber.ExpectedObservation,
             commit,
-            localInstall.Destination,
-            subscriber.LocalPackageRestored,
+            modifiedBefore,
+            modifiedAfter,
             true);
     }
 
@@ -489,7 +455,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
     {
         var tags = GatewayWorkshopClient.String(remote, "RemoteTags").Split(',')
             .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal);
-        return GatewayWorkshopClient.String(remote, "RemoteTitle") == admission.Plan.Title &&
+        return RemoteModifiedTimeAdvanced(remote, admission.Plan.RemoteBaseline) &&
+               GatewayWorkshopClient.String(remote, "RemoteTitle") == admission.Plan.Title &&
                GatewayWorkshopClient.String(remote, "RemoteDescriptionSha256") == admission.Plan.DescriptionSha256 &&
                GatewayWorkshopClient.String(remote, "RemoteMetadata") == admission.PlanSha256 &&
                GatewayWorkshopClient.String(remote, "RemoteVisibility").EndsWith(admission.Plan.Visibility, StringComparison.Ordinal) &&
@@ -502,37 +469,6 @@ public sealed class ReleasePublisher(string repositoryRoot)
     private static bool ShouldPreserveGatewayForRecovery(string statePath, string planSha256) =>
         File.Exists(statePath) &&
         ReleasePlanAdmission.IsRecoverableDurableState(File.ReadAllText(statePath), planSha256, out _);
-
-    internal static async Task<(TPrimary Primary, TCleanup Cleanup)> RunWithMandatoryCleanupAsync<TPrimary, TCleanup>(
-        Func<Task<TPrimary>> primary,
-        Func<Task<TCleanup>> cleanup)
-    {
-        TPrimary? primaryResult = default;
-        Exception? primaryFailure = null;
-        try
-        {
-            primaryResult = await primary();
-        }
-        catch (Exception exception)
-        {
-            primaryFailure = exception;
-        }
-
-        TCleanup cleanupResult;
-        try
-        {
-            cleanupResult = await cleanup();
-        }
-        catch (Exception cleanupFailure) when (primaryFailure is not null)
-        {
-            throw new AggregateException(
-                "Subscriber verification and mandatory Workshop unsubscribe cleanup both failed.",
-                primaryFailure,
-                cleanupFailure);
-        }
-        if (primaryFailure is not null) ExceptionDispatchInfo.Capture(primaryFailure).Throw();
-        return (primaryResult!, cleanupResult);
-    }
 
     internal static Dictionary<string, object?> WorkshopLinkGatewayArguments(IReadOnlyList<WorkshopLink> links)
     {
@@ -589,7 +525,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
         ulong publishedId,
         DateTimeOffset deadline,
         bool allowUnsupportedWorkshopLinkRecovery,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool requireRelationships = false)
     {
         JsonElement remote = default;
         while (DateTimeOffset.UtcNow < deadline)
@@ -598,6 +535,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             var remoteTags = GatewayWorkshopClient.String(remote, "RemoteTags").Split(',')
                 .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal).ToArray();
             if (GatewayWorkshopClient.String(remote, "RemoteTitle") == admission.Plan.Title &&
+                RemoteModifiedTimeAdvanced(remote, admission.Plan.RemoteBaseline) &&
                 GatewayWorkshopClient.String(remote, "RemoteDescriptionSha256") == admission.Plan.DescriptionSha256 &&
                 GatewayWorkshopClient.String(remote, "RemoteMetadata") == admission.PlanSha256 &&
                 GatewayWorkshopClient.UInt64(remote, "RemoteOwnerSteamId").ToString() == admission.Plan.SteamUserId &&
@@ -607,11 +545,23 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 (allowUnsupportedWorkshopLinkRecovery
                     ? RemoteLinksMatchRecovery(remote, admission.Plan.WorkshopLinks)
                     : RemoteLinksMatchPlan(remote, admission.Plan.WorkshopLinks)) &&
+                (!requireRelationships ||
+                 Dependencies(remote).SetEquals(admission.Plan.RequiredWorkshopItems.Select(ulong.Parse)) &&
+                 AppDependencies(remote).SetEquals((admission.Plan.RequiredDlcAppIds ?? []).Select(ulong.Parse))) &&
                 remoteTags.SequenceEqual(admission.Plan.Tags.OrderBy(value => value, StringComparer.Ordinal), StringComparer.Ordinal))
                 return remote;
             await Task.Delay(1500, cancellationToken);
         }
         throw new TimeoutException("Remote Workshop metadata did not converge to the admitted plan.");
+    }
+
+    internal static bool RemoteModifiedTimeAdvanced(
+        JsonElement remote,
+        WorkshopRemoteBaseline? baseline)
+    {
+        var observed = GatewayWorkshopClient.UInt64(remote, "RemoteUpdatedUnixSeconds");
+        return observed is > 0 and <= uint.MaxValue &&
+               (baseline is null || observed > baseline.UpdatedUnixSeconds);
     }
 
     internal static bool RemoteLinksMatchPlan(JsonElement remote, IReadOnlyList<WorkshopLink> expected)
@@ -732,26 +682,6 @@ public sealed class ReleasePublisher(string repositoryRoot)
             throw new InvalidOperationException("Steam serves preview bytes different from the reviewed image.");
     }
 
-    private static string VerifyInstalledPackage(JsonElement installed, ReleaseAdmission admission, ulong publishedId)
-    {
-        var path = Path.GetFullPath(GatewayWorkshopClient.String(installed, "InstallFolder"));
-        var expected = Path.GetFullPath(Path.Combine(@"F:\Steam\steamapps\workshop\content\294100", publishedId.ToString()));
-        if (!string.Equals(path, expected, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Steam installed the item in an unexpected folder.");
-        foreach (var file in admission.Plan.Files)
-        {
-            var installedFile = Path.Combine(path, file.Path.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(installedFile) || ReleaseCandidateBuilder.Hash(installedFile) != file.Sha256)
-                throw new InvalidOperationException($"Subscribed Workshop file differs from the candidate: {file.Path}");
-        }
-        AssertIdentity(Path.Combine(path, "About", "PublishedFileId.txt"), publishedId);
-        var allowed = admission.Plan.Files.Select(file => file.Path).Append("About/PublishedFileId.txt").ToHashSet(StringComparer.Ordinal);
-        var actual = Directory.GetFiles(path, "*", SearchOption.AllDirectories)
-            .Select(file => Path.GetRelativePath(path, file).Replace('\\', '/')).ToHashSet(StringComparer.Ordinal);
-        if (!actual.SetEquals(allowed)) throw new InvalidOperationException("Subscribed Workshop package has unexpected or missing files.");
-        return path;
-    }
-
     private static void VerifyExactPublishedCandidate(
         ReleaseAdmission admission,
         ulong publishedId)
@@ -772,30 +702,6 @@ public sealed class ReleasePublisher(string repositoryRoot)
         }
         AssertIdentity(Path.Combine(admission.Plan.PackagePath, "About", "PublishedFileId.txt"), publishedId);
     }
-
-    private static void VerifyExactLocalInstall(
-        LocalModInstallResult install,
-        ReleaseAdmission admission,
-        ulong publishedId)
-    {
-        var expected = admission.Plan.Files.ToDictionary(file => file.Path, StringComparer.Ordinal);
-        var expectedPaths = expected.Keys.Append("About/PublishedFileId.txt").ToHashSet(StringComparer.Ordinal);
-        if (!install.Files.Select(file => file.Path).ToHashSet(StringComparer.Ordinal).SetEquals(expectedPaths))
-            throw new InvalidOperationException("Local installation differs from the exact published inventory.");
-        foreach (var file in install.Files)
-        {
-            if (file.Path == "About/PublishedFileId.txt") continue;
-            if (!expected.TryGetValue(file.Path, out var planned) || planned.Bytes != file.Bytes ||
-                !string.Equals(planned.Sha256, file.Sha256, StringComparison.Ordinal))
-                throw new InvalidOperationException("Local installation differs from the exact published bytes: " + file.Path);
-        }
-        if (install.Files.Count != ExpectedLocalInventoryCount(admission.Plan))
-            throw new InvalidOperationException("Local installation contains a duplicate or missing published identity.");
-        AssertIdentity(Path.Combine(install.Destination, "About", "PublishedFileId.txt"), publishedId);
-    }
-
-    internal static int ExpectedLocalInventoryCount(ReleasePublicationPlan plan) =>
-        plan.Files.Any(file => file.Path == "About/PublishedFileId.txt") ? plan.Files.Count : plan.Files.Count + 1;
 
     private async Task<string> PersistIdentityAsync(
         ReleaseAdmission admission,
@@ -946,7 +852,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         if (parts[1].Equals(planSha256, StringComparison.OrdinalIgnoreCase) &&
             ReleasePlanAdmission.IsRecoverableDurableState(string.Join('|', parts), planSha256, out _))
             throw new InvalidOperationException("This exact plan is already admitted; use durable recovery instead of redispatch.");
-        if (parts[0] is "complete-reviewed" or "create-failed-definite" or "submit-failed-definite" or "dependency-failed-definite")
+        if (parts[0] is "complete-reviewed" or "complete-steam-verified" or "create-failed-definite" or "submit-failed-definite" or "dependency-failed-definite")
             return;
         var operation = publishedFileId is null ? "creation" : "update";
         throw new InvalidOperationException(

@@ -18,13 +18,12 @@ and expiry. Only the later `release_publish` operation may mutate Steam, and onl
 reviewed plan hash and nonce. It uses an isolated initialized-Steam Gateway process, persists admitted
 callback state and an exact detached worker/Gateway lease atomically, persists the first returned
 Workshop identity before later verification, verifies the
-exact metadata/preview/dependencies/content baseline, reacquires the Workshop copy, runs the
-prevalidated profile native subscriber workflow with the local product temporarily absent, restores
-it, and leaves its screenshots awaiting personal review. Use `release_accept_subscriber_evidence`
-only after inspecting those exact frames. A timed-out caller may invoke the same `release_publish`
+exact metadata/preview/dependencies/content baseline, and waits until Steam reports a strictly newer
+nonzero modified timestamp for the exact item. A release trigger assumes the owning tests and native
+player-workflow acceptance were completed beforehand; publication never subscribes, moves the local
+product, or launches a product-specific smoke. A timed-out caller may invoke the same `release_publish`
 again: it reattaches to the same callback or polls only the durable same item and never repeats
-first-item creation or update submission. Subscriber isolation also records its exact reserved run, backup, and normal
-configuration hash before moving the local package. Never delete durable state to force a retry.
+first-item creation or update submission. Never delete durable state to force a retry.
 
 Workshop descriptions that embed Steam-hosted feature cards use a separate typed first phase. Run
 `release_presentation_sync` for the existing package when card bytes/order change, a gallery slot is
