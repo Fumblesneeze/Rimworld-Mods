@@ -176,7 +176,13 @@ internal sealed class LocalizationRenderingFixture
                 "тарелка",
                 "Моет посуду.",
                 "Не хватает следующего: Наборы посуды для готовки",
-                "Выгрузить посуду")
+                "Выгрузить посуду"),
+            ["Japanese"] = new(
+                "再起動が必要な分類・定義設定",
+                "皿",
+                "食器を洗っています。",
+                "調理器具セットが不足",
+                "食器を取り出す")
         };
 
     private readonly string language;

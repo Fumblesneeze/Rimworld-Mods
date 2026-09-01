@@ -721,9 +721,17 @@ public static class FinalizedImmersiveChefsIntegrationTests
             softCutlery.ingredients[0].GetBaseCount(),
             "Four cutlery settings must cost two material units.");
         IntegrationAssert.Equal(
-            1f,
+            0.1f,
             medieval.IngredientValueGetter.ValuePerUnitOf(ThingDefOf.Silver),
-            "Small-volume silver must contribute one whole recipe unit per item.");
+            "Small-volume silver must contribute one tenth of an ordinary material unit per item.");
+        IntegrationAssert.Equal(
+            0.1f,
+            medieval.IngredientValueGetter.ValuePerUnitOf(ThingDefOf.Gold),
+            "Small-volume gold must contribute one tenth of an ordinary material unit per item.");
+        IntegrationAssert.Equal(
+            1f,
+            medieval.IngredientValueGetter.ValuePerUnitOf(ThingDefOf.Uranium),
+            "Ordinary-volume metal must continue contributing one whole recipe unit per item.");
         IntegrationAssert.Equal(
             "5x any stony material",
             primitive.IngredientValueGetter!.BillRequirementsDescription(primitive, primitive.ingredients[0]),
@@ -771,11 +779,11 @@ public static class FinalizedImmersiveChefsIntegrationTests
     }
 
     [IntegrationTest(RunAt.MainMenuLoaded)]
-    public static void ExistingSteelPlateInfoUsesItsActualMachiningMaterial()
+    public static void ExistingPlateInfoUsesItsActualMaterialAndPhysicalCount()
     {
-        var plate = ThingMaker.MakeThing(
-            DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate"),
-            ThingDefOf.Steel);
+        var plateDef = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Plate");
+        var plate = ThingMaker.MakeThing(plateDef, ThingDefOf.Steel);
+        var silverPlate = ThingMaker.MakeThing(plateDef, ThingDefOf.Silver);
         try
         {
             var request = StatRequest.For(plate);
@@ -801,6 +809,13 @@ public static class FinalizedImmersiveChefsIntegrationTests
                 ThingDefOf.Steel,
                 ingredientLinks[0],
                 "The corrected native row must link to actual steel, not a primitive recipe material.");
+            var silverRequest = StatRequest.For(silverPlate);
+            var silverIngredients = silverPlate.def.SpecialDisplayStats(silverRequest)
+                .Single(entry => entry.DisplayPriorityWithinCategory == 1102);
+            IntegrationAssert.Equal(
+                "40x silver",
+                silverIngredients.ValueString,
+                "A Silver plate must report the forty physical small-volume items used by its native bill.");
             IntegrationAssert.Equal(
                 "4x any stony material",
                 primitive.IngredientValueGetter!.BillRequirementsDescription(primitive, primitive.ingredients[0]),
@@ -811,6 +826,11 @@ public static class FinalizedImmersiveChefsIntegrationTests
             if (!plate.Destroyed)
             {
                 plate.Destroy(DestroyMode.Vanish);
+            }
+
+            if (!silverPlate.Destroyed)
+            {
+                silverPlate.Destroy(DestroyMode.Vanish);
             }
         }
     }

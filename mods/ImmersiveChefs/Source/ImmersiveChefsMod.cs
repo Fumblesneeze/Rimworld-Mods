@@ -26,6 +26,8 @@ public sealed class ImmersiveChefsMod : Mod
             LoadedModManager.RunningModsListForReading.Select(mod => mod.PackageId));
 
         ImmersiveChefsDefBootstrap.Apply();
+        RimatomicsRadiationAdapter.ValidateActiveProviderShape();
+        LongEventHandler.ExecuteWhenFinished(CrashLandingRadiationAdapter.ValidateActiveProviderShape);
 
         HarmonyInstance = new Harmony(PackageId);
         HarmonyInstance.PatchAll(Assembly.GetExecutingAssembly());

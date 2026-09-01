@@ -44,8 +44,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["previousChangeNote"], Is.EqualTo("Dishwasher loading and unloading is now immediate once a pawn reaches the appliance, including Processor Framework jobs without Pick Up And Haul and capacity-race fallbacks. Restored the Workshop feature images and gallery after Steam invalidated their preview links."));
             Assert.That(
                 release["changeNote"],
-                Is.EqualTo(string.Empty),
-                "A completed Workshop update must not retain a pending change note that could be submitted again.");
+                Is.EqualTo("Silver and gold kitchenware recipes now use RimWorld's small-volume material counts. Uranium tableware now uses Dubs Rimatomics or Crash Landing radiation when available, with toxic buildup as the Core fallback. Added complete Japanese localization and linked the public GitHub repository from the Workshop page."),
+                "The pending release must retain the exact reviewed player-facing update note.");
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Select(value => value.ToString()),
                 Is.EqualTo(new[] { "2009463077", "2574315206" }));

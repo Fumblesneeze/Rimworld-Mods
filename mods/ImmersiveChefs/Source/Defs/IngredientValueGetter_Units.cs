@@ -7,7 +7,7 @@ public sealed class IngredientValueGetter_Units : IngredientValueGetter
 {
     public override float ValuePerUnitOf(ThingDef thingDef)
     {
-        return 1f;
+        return thingDef.smallVolume ? 0.1f : 1f;
     }
 
     public override string BillRequirementsDescription(RecipeDef recipe, IngredientCount ingredient)

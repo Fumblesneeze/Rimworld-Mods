@@ -57,6 +57,8 @@
   <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
   <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
   <ImmersiveChefs_Integration_CookForYourself>Cook for Yourself</ImmersiveChefs_Integration_CookForYourself>
+  <ImmersiveChefs_Integration_Rimatomics>Dubs Rimatomics</ImmersiveChefs_Integration_Rimatomics>
+  <ImmersiveChefs_Integration_CrashLanding>Crash Landing</ImmersiveChefs_Integration_CrashLanding>
 
   <ImmersiveChefs_Enum_WareRequirementMode_Strict>Streng</ImmersiveChefs_Enum_WareRequirementMode_Strict>
   <ImmersiveChefs_Enum_WareRequirementMode_Prefer>Bevorzugen</ImmersiveChefs_Enum_WareRequirementMode_Prefer>
@@ -95,6 +97,9 @@
   <ImmersiveChefs_Recipe_MakeAdobePlates_Label>4 Lehmteller formen</ImmersiveChefs_Recipe_MakeAdobePlates_Label>
   <ImmersiveChefs_Recipe_MakeAdobePlates_Description>Formt vier grobe Teller aus Lehmziegeln.</ImmersiveChefs_Recipe_MakeAdobePlates_Description>
   <ImmersiveChefs_Recipe_MakeAdobePlates_JobString>Formt Lehmteller.</ImmersiveChefs_Recipe_MakeAdobePlates_JobString>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Label>4 Porzellanteller formen</ImmersiveChefs_Recipe_MakePorcelainPlates_Label>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Description>Formt vier Teller aus Porzellan.</ImmersiveChefs_Recipe_MakePorcelainPlates_Description>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>Formt Porzellanteller.</ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>
 
   <ImmersiveChefs_Product_CookwarePlural>Kochgeschirrsets</ImmersiveChefs_Product_CookwarePlural>
   <ImmersiveChefs_Product_Plates>Teller</ImmersiveChefs_Product_Plates>

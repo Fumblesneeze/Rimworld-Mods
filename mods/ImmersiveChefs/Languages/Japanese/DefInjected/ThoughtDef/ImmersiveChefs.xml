@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_CulinaryQuality.stages.0.label>ひどい出来の料理</ImmersiveChefs_CulinaryQuality.stages.0.label>
+  <ImmersiveChefs_CulinaryQuality.stages.0.description>この料理は最悪だった。</ImmersiveChefs_CulinaryQuality.stages.0.description>
+  <ImmersiveChefs_CulinaryQuality.stages.1.label>出来の悪い料理</ImmersiveChefs_CulinaryQuality.stages.1.label>
+  <ImmersiveChefs_CulinaryQuality.stages.1.description>この料理は上手に作られていなかった。</ImmersiveChefs_CulinaryQuality.stages.1.description>
+  <ImmersiveChefs_CulinaryQuality.stages.2.label>平凡な出来の料理</ImmersiveChefs_CulinaryQuality.stages.2.label>
+  <ImmersiveChefs_CulinaryQuality.stages.2.description>特に印象に残らない料理だった。</ImmersiveChefs_CulinaryQuality.stages.2.description>
+  <ImmersiveChefs_CulinaryQuality.stages.3.label>出来の良い料理</ImmersiveChefs_CulinaryQuality.stages.3.label>
+  <ImmersiveChefs_CulinaryQuality.stages.3.description>良い料理だった。</ImmersiveChefs_CulinaryQuality.stages.3.description>
+  <ImmersiveChefs_CulinaryQuality.stages.4.label>素晴らしい出来の料理</ImmersiveChefs_CulinaryQuality.stages.4.label>
+  <ImmersiveChefs_CulinaryQuality.stages.4.description>素晴らしい料理だった。</ImmersiveChefs_CulinaryQuality.stages.4.description>
+  <ImmersiveChefs_CulinaryQuality.stages.5.label>名品級の料理</ImmersiveChefs_CulinaryQuality.stages.5.label>
+  <ImmersiveChefs_CulinaryQuality.stages.5.description>見事に作られた料理だった。</ImmersiveChefs_CulinaryQuality.stages.5.description>
+  <ImmersiveChefs_CulinaryQuality.stages.6.label>伝説級の料理</ImmersiveChefs_CulinaryQuality.stages.6.label>
+  <ImmersiveChefs_CulinaryQuality.stages.6.description>忘れられない料理だった。</ImmersiveChefs_CulinaryQuality.stages.6.description>
+  <ImmersiveChefs_MealTemperature.stages.0.label>湯気が立つ熱い料理</ImmersiveChefs_MealTemperature.stages.0.label>
+  <ImmersiveChefs_MealTemperature.stages.0.description>料理が湯気の立つ熱さで出された。</ImmersiveChefs_MealTemperature.stages.0.description>
+  <ImmersiveChefs_MealTemperature.stages.1.label>温かい料理</ImmersiveChefs_MealTemperature.stages.1.label>
+  <ImmersiveChefs_MealTemperature.stages.1.description>料理が心地よく温かかった。</ImmersiveChefs_MealTemperature.stages.1.description>
+  <ImmersiveChefs_MealTemperature.stages.2.label>室温の料理</ImmersiveChefs_MealTemperature.stages.2.label>
+  <ImmersiveChefs_MealTemperature.stages.2.description>料理は温かくも冷たくもなかった。</ImmersiveChefs_MealTemperature.stages.2.description>
+  <ImmersiveChefs_MealTemperature.stages.3.label>冷たい料理</ImmersiveChefs_MealTemperature.stages.3.label>
+  <ImmersiveChefs_MealTemperature.stages.3.description>冷たい料理を食べる羽目になった。</ImmersiveChefs_MealTemperature.stages.3.description>
+  <ImmersiveChefs_MealTemperature.stages.4.label>凍った料理</ImmersiveChefs_MealTemperature.stages.4.label>
+  <ImmersiveChefs_MealTemperature.stages.4.description>凍った料理を食べる羽目になった。</ImmersiveChefs_MealTemperature.stages.4.description>
+  <ImmersiveChefs_DiningExperience.stages.0.label>きちんとした食器</ImmersiveChefs_DiningExperience.stages.0.label>
+  <ImmersiveChefs_DiningExperience.stages.0.description>きちんとした皿とカトラリーで食事をした。</ImmersiveChefs_DiningExperience.stages.0.description>
+  <ImmersiveChefs_DiningExperience.stages.1.label>カトラリーなしで食べた</ImmersiveChefs_DiningExperience.stages.1.label>
+  <ImmersiveChefs_DiningExperience.stages.1.description>食事に使うカトラリーがなかった。</ImmersiveChefs_DiningExperience.stages.1.description>
+  <ImmersiveChefs_DiningExperience.stages.2.label>皿なしで食べた</ImmersiveChefs_DiningExperience.stages.2.label>
+  <ImmersiveChefs_DiningExperience.stages.2.description>食事に使う皿がなかった。</ImmersiveChefs_DiningExperience.stages.2.description>
+  <ImmersiveChefs_DiningExperience.stages.3.label>食器なしで食べた</ImmersiveChefs_DiningExperience.stages.3.label>
+  <ImmersiveChefs_DiningExperience.stages.3.description>皿もカトラリーもなかった。</ImmersiveChefs_DiningExperience.stages.3.description>
+  <ImmersiveChefs_DiningExperience.stages.4.label>汚れた食器で食べた</ImmersiveChefs_DiningExperience.stages.4.label>
+  <ImmersiveChefs_DiningExperience.stages.4.description>食器が汚れていた。</ImmersiveChefs_DiningExperience.stages.4.description>
+  <ImmersiveChefs_DiningExperience.stages.5.label>期待外れの食事環境</ImmersiveChefs_DiningExperience.stages.5.label>
+  <ImmersiveChefs_DiningExperience.stages.5.description>食器が期待していたほど快適ではなかった。</ImmersiveChefs_DiningExperience.stages.5.description>
+  <ImmersiveChefs_DiningExperience.stages.6.label>質の悪い食器</ImmersiveChefs_DiningExperience.stages.6.label>
+  <ImmersiveChefs_DiningExperience.stages.6.description>食器の素材と出来が、自分の基準に達していなかった。</ImmersiveChefs_DiningExperience.stages.6.description>
+  <ImmersiveChefs_DiningExperience.stages.7.label>料理が質素すぎる</ImmersiveChefs_DiningExperience.stages.7.label>
+  <ImmersiveChefs_DiningExperience.stages.7.description>現在の地位には質素すぎる料理だった。</ImmersiveChefs_DiningExperience.stages.7.description>
+  <ImmersiveChefs_DiningExperience.stages.8.label>料理水準が低い</ImmersiveChefs_DiningExperience.stages.8.label>
+  <ImmersiveChefs_DiningExperience.stages.8.description>料理の出来栄えが、今の期待に達していなかった。</ImmersiveChefs_DiningExperience.stages.8.description>
+  <ImmersiveChefs_DiningExperience.stages.9.label>複数の食事基準を満たさなかった</ImmersiveChefs_DiningExperience.stages.9.label>
+  <ImmersiveChefs_DiningExperience.stages.9.description>食事体験のすべてが、自分の基準を下回っていた。</ImmersiveChefs_DiningExperience.stages.9.description>
+</LanguageData>

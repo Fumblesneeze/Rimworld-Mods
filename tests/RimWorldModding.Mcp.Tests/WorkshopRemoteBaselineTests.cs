@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace RimWorldModding.Mcp.Tests;
 
@@ -70,6 +71,45 @@ public sealed class WorkshopRemoteBaselineTests
             Assert.That(first.AdditionalPreviews,
                 Is.EqualTo(new[] { "0|first.png|Image|AAA", "1|second.png|Image|BBB" }));
             Assert.That(reversed.StateDigest, Is.Not.EqualTo(first.StateDigest));
+        });
+    }
+
+    [Test]
+    public void Remote_baseline_binds_links_and_plan_matching_preserves_unrelated_keys()
+    {
+        WorkshopRemoteBaseline Create(WorkshopLink[] links) => WorkshopRemoteBaseline.Create(
+            "7", "title", "description", 11, ["1.6"], "metadata", "Public",
+            "https://images.steamusercontent.com/ugc/1/PRIMARY/", "PRIMARY", "9", 294100,
+            100, 200, [], [], [], [], links);
+        var expected = new[] { new WorkshopLink("github", WorkshopLinkPolicy.RepositoryUrl) };
+        var baseline = Create(expected);
+        var changed = Create([new WorkshopLink("github", WorkshopLinkPolicy.RepositoryUrl + "/issues")]);
+        using var matching = JsonDocument.Parse($$"""
+            { "RemoteLinks": [
+                { "Key": "twitter", "Url": "https://example.invalid/profile" },
+                { "Key": "github", "Url": "{{WorkshopLinkPolicy.RepositoryUrl}}" }
+            ] }
+            """);
+        using var duplicate = JsonDocument.Parse($$"""
+            { "RemoteLinks": [
+                { "Key": "github", "Url": "{{WorkshopLinkPolicy.RepositoryUrl}}" },
+                { "Key": "GitHub", "Url": "{{WorkshopLinkPolicy.RepositoryUrl}}" }
+            ] }
+            """);
+        using var conflicting = JsonDocument.Parse($$"""
+            { "RemoteLinks": [
+                { "Key": "github", "Url": "{{WorkshopLinkPolicy.RepositoryUrl}}" },
+                { "Key": "GitHub", "Url": "https://example.invalid/other" }
+            ] }
+            """);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(baseline.Links, Is.EqualTo(expected));
+            Assert.That(changed.StateDigest, Is.Not.EqualTo(baseline.StateDigest));
+            Assert.That(ReleasePublisher.RemoteLinksMatchPlan(matching.RootElement, expected), Is.True);
+            Assert.That(ReleasePublisher.RemoteLinksMatchPlan(duplicate.RootElement, expected), Is.False);
+            Assert.That(ReleasePublisher.RemoteLinksMatchPlan(conflicting.RootElement, expected), Is.False);
         });
     }
 

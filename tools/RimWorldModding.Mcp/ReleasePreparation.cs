@@ -69,7 +69,10 @@ public sealed record ReleasePublicationPlan(
     IReadOnlyList<string> RemoteDiff,
     string ConfirmationNonce,
     DateTimeOffset ExpiresUtc,
-    bool MutatesSteam);
+    bool MutatesSteam)
+{
+    public IReadOnlyList<WorkshopLink> WorkshopLinks { get; init; } = [];
+}
 
 public sealed record ReleasePreparationResult(
     string Status,
@@ -449,6 +452,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
                 $"CREATE Private Workshop item '{profile.Title}'",
                 $"UPLOAD {stage.Files.Count} package files with digest {stage.ContentDigest}",
                 $"SET primary preview SHA-256 {ReleaseCandidateBuilder.Hash(profile.Preview)}",
+                $"SET Workshop links [{string.Join(", ", profile.WorkshopLinks.Select(link => $"{link.Key}={link.Url}"))}]",
                 $"SET required items [{string.Join(", ", profile.RequiredWorkshopItems)}]",
                 $"SET required DLC applications [{string.Join(", ", profile.RequiredDlcAppIds)}]"
             }
@@ -491,7 +495,10 @@ public sealed class ReleasePreparer(string repositoryRoot)
             remoteDiff,
             nonce,
             expires,
-            false);
+            false)
+        {
+            WorkshopLinks = profile.WorkshopLinks
+        };
         var planPath = Path.Combine(runRoot, "publication-plan.json");
         var planJson = JsonSerializer.Serialize(plan, McpJsonContext.Default.ReleasePublicationPlan);
         DurableFile.WriteAllText(planPath, planJson + Environment.NewLine);

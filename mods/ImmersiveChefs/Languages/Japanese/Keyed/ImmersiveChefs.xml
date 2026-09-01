@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_SettingsCategory>Immersive Chefs</ImmersiveChefs_SettingsCategory>
+  <ImmersiveChefs_Settings_RestartHeading>再起動が必要な分類・定義設定</ImmersiveChefs_Settings_RestartHeading>
+  <ImmersiveChefs_Settings_WareRequirement>調理用品の必須モード（再起動が必要）</ImmersiveChefs_Settings_WareRequirement>
+  <ImmersiveChefs_Settings_SimpleRecipeTime>簡単な料理の調理時間：{0}倍（再起動が必要）</ImmersiveChefs_Settings_SimpleRecipeTime>
+  <ImmersiveChefs_Settings_FineRecipeTime>手の込んだ料理の調理時間：{0}倍（再起動が必要）</ImmersiveChefs_Settings_FineRecipeTime>
+  <ImmersiveChefs_Settings_LavishRecipeTime>豪華な料理の調理時間：{0}倍（再起動が必要）</ImmersiveChefs_Settings_LavishRecipeTime>
+  <ImmersiveChefs_Settings_PreparedRot>下ごしらえ済み食材の腐敗速度：{0}倍（再起動が必要）</ImmersiveChefs_Settings_PreparedRot>
+  <ImmersiveChefs_Settings_DishwasherCapacity>食器洗い機の容量：{0}倍（再起動が必要）</ImmersiveChefs_Settings_DishwasherCapacity>
+  <ImmersiveChefs_Settings_TextureVariation>テクスチャ差分との連携（再起動が必要）</ImmersiveChefs_Settings_TextureVariation>
+  <ImmersiveChefs_Settings_ShowDirtyTextures>汚れた調理用品のテクスチャを表示（再起動が必要）</ImmersiveChefs_Settings_ShowDirtyTextures>
+  <ImmersiveChefs_Settings_LiveHeading>シミュレーション設定</ImmersiveChefs_Settings_LiveHeading>
+  <ImmersiveChefs_Settings_DirtyFallback>汚れた調理用品の代用</ImmersiveChefs_Settings_DirtyFallback>
+  <ImmersiveChefs_Settings_EmergencyHunger>緊急とみなす空腹度：{0}</ImmersiveChefs_Settings_EmergencyHunger>
+  <ImmersiveChefs_Settings_PreparedWorkReduction>下ごしらえによる作業短縮：{0}</ImmersiveChefs_Settings_PreparedWorkReduction>
+  <ImmersiveChefs_Settings_PasteQuality>ペーストの下ごしらえ品質：{0}</ImmersiveChefs_Settings_PasteQuality>
+  <ImmersiveChefs_Settings_AutoAssistants>調理助手を自動的に呼ぶ</ImmersiveChefs_Settings_AutoAssistants>
+  <ImmersiveChefs_Settings_MaxAssistants>助手の最大人数：{0}</ImmersiveChefs_Settings_MaxAssistants>
+  <ImmersiveChefs_Settings_AssistantEffect>助手の効果：{0}倍</ImmersiveChefs_Settings_AssistantEffect>
+  <ImmersiveChefs_Settings_PreferDishwashers>食器洗い機を優先</ImmersiveChefs_Settings_PreferDishwashers>
+  <ImmersiveChefs_Settings_TerrainHandwashing>天然水での手洗いを許可</ImmersiveChefs_Settings_TerrainHandwashing>
+  <ImmersiveChefs_Settings_DishwashingWork>食器洗いの作業量：{0}倍</ImmersiveChefs_Settings_DishwashingWork>
+  <ImmersiveChefs_Settings_CulinaryQuality>料理の出来栄え</ImmersiveChefs_Settings_CulinaryQuality>
+  <ImmersiveChefs_Settings_QualityMood>出来栄えによる心情効果：{0}倍</ImmersiveChefs_Settings_QualityMood>
+  <ImmersiveChefs_Settings_FoodPoisoningEffect>食中毒への影響：{0}倍</ImmersiveChefs_Settings_FoodPoisoningEffect>
+  <ImmersiveChefs_Settings_MaxPoisonChance>追加の食中毒確率の上限：{0}</ImmersiveChefs_Settings_MaxPoisonChance>
+  <ImmersiveChefs_Settings_ToxicExposure>有毒な調理用品による曝露：{0}倍</ImmersiveChefs_Settings_ToxicExposure>
+  <ImmersiveChefs_Settings_MealTemperature>料理の温度</ImmersiveChefs_Settings_MealTemperature>
+  <ImmersiveChefs_Settings_ThermalHalfLife>温度半減期：{0}時間</ImmersiveChefs_Settings_ThermalHalfLife>
+  <ImmersiveChefs_Settings_AutoMicrowaveBelow>自動で温め直す温度：{0}℃未満</ImmersiveChefs_Settings_AutoMicrowaveBelow>
+  <ImmersiveChefs_Settings_MicrowaveQualityLoss>温め直しによる基本品質低下：{0}</ImmersiveChefs_Settings_MicrowaveQualityLoss>
+  <ImmersiveChefs_Settings_MicrowavePoisonChance>電子レンジによる食中毒確率：{0}ポイント</ImmersiveChefs_Settings_MicrowavePoisonChance>
+  <ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>料理の温度と温め直し：Thermodynamics - Hot Meals が担当</ImmersiveChefs_Settings_ThermodynamicsOwnsTemperature>
+  <ImmersiveChefs_Settings_ColonyStandards>コロニーの食事基準</ImmersiveChefs_Settings_ColonyStandards>
+  <ImmersiveChefs_Settings_RoyaltyStandards>貴族の食事基準</ImmersiveChefs_Settings_RoyaltyStandards>
+  <ImmersiveChefs_Settings_IntegrationsHeading>オプション連携（再起動が必要、自動または無効）</ImmersiveChefs_Settings_IntegrationsHeading>
+
+  <ImmersiveChefs_Integration_ProcessorFramework>Processor Framework</ImmersiveChefs_Integration_ProcessorFramework>
+  <ImmersiveChefs_Integration_ExpandedMaterials>Expanded Materials</ImmersiveChefs_Integration_ExpandedMaterials>
+  <ImmersiveChefs_Integration_CeramicsContinued>Ceramics (Continued)</ImmersiveChefs_Integration_CeramicsContinued>
+  <ImmersiveChefs_Integration_AbsPolymer>ABS Polymer</ImmersiveChefs_Integration_AbsPolymer>
+  <ImmersiveChefs_Integration_DubsBadHygiene>Dubs Bad Hygiene</ImmersiveChefs_Integration_DubsBadHygiene>
+  <ImmersiveChefs_Integration_Gastronomy>Gastronomy</ImmersiveChefs_Integration_Gastronomy>
+  <ImmersiveChefs_Integration_CommonSense>Common Sense</ImmersiveChefs_Integration_CommonSense>
+  <ImmersiveChefs_Integration_Hospitality>Hospitality</ImmersiveChefs_Integration_Hospitality>
+  <ImmersiveChefs_Integration_VarietyMatters>Variety Matters</ImmersiveChefs_Integration_VarietyMatters>
+  <ImmersiveChefs_Integration_VanillaFoodVarietyExpanded>Vanilla Food Variety Expanded</ImmersiveChefs_Integration_VanillaFoodVarietyExpanded>
+  <ImmersiveChefs_Integration_VanillaExpandedFramework>Vanilla Expanded Framework</ImmersiveChefs_Integration_VanillaExpandedFramework>
+  <ImmersiveChefs_Integration_VanillaNutrientPasteExpanded>Vanilla Nutrient Paste Expanded</ImmersiveChefs_Integration_VanillaNutrientPasteExpanded>
+  <ImmersiveChefs_Integration_AdaptiveMealBill>Adaptive Meal Bill</ImmersiveChefs_Integration_AdaptiveMealBill>
+  <ImmersiveChefs_Integration_OvercookedMeals>Overcooked Meals</ImmersiveChefs_Integration_OvercookedMeals>
+  <ImmersiveChefs_Integration_MealsOnWheels>Meals on Wheels</ImmersiveChefs_Integration_MealsOnWheels>
+  <ImmersiveChefs_Integration_PrioritizeMeals>Prioritize Meals over Preserved Foods</ImmersiveChefs_Integration_PrioritizeMeals>
+  <ImmersiveChefs_Integration_Replimat>Replimat + Replimat Meals</ImmersiveChefs_Integration_Replimat>
+  <ImmersiveChefs_Integration_MealPrinter>Meal Printer</ImmersiveChefs_Integration_MealPrinter>
+  <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
+  <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
+  <ImmersiveChefs_Integration_CookForYourself>Cook for Yourself</ImmersiveChefs_Integration_CookForYourself>
+  <ImmersiveChefs_Integration_Rimatomics>Dubs Rimatomics</ImmersiveChefs_Integration_Rimatomics>
+  <ImmersiveChefs_Integration_CrashLanding>Crash Landing</ImmersiveChefs_Integration_CrashLanding>
+
+  <ImmersiveChefs_Enum_WareRequirementMode_Strict>必須</ImmersiveChefs_Enum_WareRequirementMode_Strict>
+  <ImmersiveChefs_Enum_WareRequirementMode_Prefer>優先</ImmersiveChefs_Enum_WareRequirementMode_Prefer>
+  <ImmersiveChefs_Enum_WareRequirementMode_Off>無効</ImmersiveChefs_Enum_WareRequirementMode_Off>
+  <ImmersiveChefs_Enum_DirtyWareFallback_Never>使用しない</ImmersiveChefs_Enum_DirtyWareFallback_Never>
+  <ImmersiveChefs_Enum_DirtyWareFallback_UrgentOnly>緊急時のみ</ImmersiveChefs_Enum_DirtyWareFallback_UrgentOnly>
+  <ImmersiveChefs_Enum_DirtyWareFallback_Always>常に使用</ImmersiveChefs_Enum_DirtyWareFallback_Always>
+  <ImmersiveChefs_Enum_OptionalIntegrationMode_Auto>自動</ImmersiveChefs_Enum_OptionalIntegrationMode_Auto>
+  <ImmersiveChefs_Enum_OptionalIntegrationMode_Off>無効</ImmersiveChefs_Enum_OptionalIntegrationMode_Off>
+
+  <ImmersiveChefs_Microwave_MissingSupport>食事用または物置用の天板を持つ、完成済みのテーブルか作業台が必要です。</ImmersiveChefs_Microwave_MissingSupport>
+  <ImmersiveChefs_Microwave_BlockedInteraction>操作位置が天板の隣になるよう、電子レンジを回転または移動してください。</ImmersiveChefs_Microwave_BlockedInteraction>
+  <ImmersiveChefs_DispensePreparedPaste>下ごしらえ済み栄養ペーストを取り出す</ImmersiveChefs_DispensePreparedPaste>
+  <ImmersiveChefs_ForceCookDirtyCookware>汚れた調理器具で強制調理</ImmersiveChefs_ForceCookDirtyCookware>
+  <ImmersiveChefs_ForceCookDirtyCookwareUnavailable>強制調理不可：この製造指示は、汚れた調理器具では実行できなくなりました。</ImmersiveChefs_ForceCookDirtyCookwareUnavailable>
+  <ImmersiveChefs_MissingKitchenware>{0}が不足（Immersive Chefs）</ImmersiveChefs_MissingKitchenware>
+  <ImmersiveChefs_Missing_AdaptiveRecipe>利用可能な具体的レシピ</ImmersiveChefs_Missing_AdaptiveRecipe>
+  <ImmersiveChefs_Missing_CookwareAndPlates>清潔な調理器具セットと清潔な皿</ImmersiveChefs_Missing_CookwareAndPlates>
+  <ImmersiveChefs_Missing_Cookware>清潔な調理器具セット</ImmersiveChefs_Missing_Cookware>
+  <ImmersiveChefs_Missing_Plates>清潔な皿</ImmersiveChefs_Missing_Plates>
+
+  <ImmersiveChefs_Cleanliness_SelfCleaning>清潔度：自浄式</ImmersiveChefs_Cleanliness_SelfCleaning>
+  <ImmersiveChefs_Cleanliness_Dirty>清潔度：汚れている</ImmersiveChefs_Cleanliness_Dirty>
+  <ImmersiveChefs_Cleanliness_Clean>清潔度：清潔</ImmersiveChefs_Cleanliness_Clean>
+  <ImmersiveChefs_ServiceWare_Unplated>食器：皿なし</ImmersiveChefs_ServiceWare_Unplated>
+  <ImmersiveChefs_ServiceWare_BoundPlates>使用中の皿：{0}</ImmersiveChefs_ServiceWare_BoundPlates>
+  <ImmersiveChefs_IngredientRequirement>{0}x {1}</ImmersiveChefs_IngredientRequirement>
+  <ImmersiveChefs_Ingredient_Wood>木材</ImmersiveChefs_Ingredient_Wood>
+  <ImmersiveChefs_Ingredient_AnyEligibleMetal>使用可能ないずれかの金属</ImmersiveChefs_Ingredient_AnyEligibleMetal>
+  <ImmersiveChefs_Ingredient_AnyStonyMaterial>いずれかの石質材料</ImmersiveChefs_Ingredient_AnyStonyMaterial>
+  <ImmersiveChefs_Ingredient_WoodOrSoftMaterial>木材または柔らかい材料</ImmersiveChefs_Ingredient_WoodOrSoftMaterial>
+  <ImmersiveChefs_Ingredient_AnyIntermediateMetal>いずれかの中級金属</ImmersiveChefs_Ingredient_AnyIntermediateMetal>
+  <ImmersiveChefs_Ingredient_Porcelain>磁器</ImmersiveChefs_Ingredient_Porcelain>
+  <ImmersiveChefs_Ingredient_AnyMetalOrPlastic>使用可能ないずれかの金属またはプラスチック</ImmersiveChefs_Ingredient_AnyMetalOrPlastic>
+  <ImmersiveChefs_Ingredient_AnyModernMetal>いずれかの近代金属</ImmersiveChefs_Ingredient_AnyModernMetal>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_Label>日干しレンガの皿を4枚作る</ImmersiveChefs_Recipe_MakeAdobePlates_Label>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_Description>日干しレンガから粗末な皿を4枚成形します。</ImmersiveChefs_Recipe_MakeAdobePlates_Description>
+  <ImmersiveChefs_Recipe_MakeAdobePlates_JobString>日干しレンガの皿を作っています。</ImmersiveChefs_Recipe_MakeAdobePlates_JobString>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Label>磁器の皿を4枚成形する</ImmersiveChefs_Recipe_MakePorcelainPlates_Label>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Description>磁器から皿を4枚成形します。</ImmersiveChefs_Recipe_MakePorcelainPlates_Description>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>磁器の皿を成形しています。</ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>
+
+  <ImmersiveChefs_Product_CookwarePlural>調理器具セット</ImmersiveChefs_Product_CookwarePlural>
+  <ImmersiveChefs_Product_Plates>皿</ImmersiveChefs_Product_Plates>
+  <ImmersiveChefs_Product_Cutlery>カトラリー</ImmersiveChefs_Product_Cutlery>
+  <ImmersiveChefs_Product_Kitchenware>調理用品</ImmersiveChefs_Product_Kitchenware>
+  <ImmersiveChefs_ListAnd>{0}と{1}</ImmersiveChefs_ListAnd>
+  <ImmersiveChefs_AlertMissingKitchenware_DefaultLabel>調理器具セットまたは皿が不足</ImmersiveChefs_AlertMissingKitchenware_DefaultLabel>
+  <ImmersiveChefs_AlertMissingKitchenware_Label>{0}が不足</ImmersiveChefs_AlertMissingKitchenware_Label>
+  <ImmersiveChefs_AlertMissingKitchenware_DefaultExplanation>稼働中の必須モードの調理指示には、コロニーが所有していない調理器具セットまたは皿が必要です。</ImmersiveChefs_AlertMissingKitchenware_DefaultExplanation>
+  <ImmersiveChefs_AlertMissingKitchenware_Explanation>稼働可能なキッチン設備にある必須モードの調理指示には、このマップに存在しない{0}が必要です。汚れ、禁止、予約、または一時的に到達不能な用品も、存在するものとして数えます。警告を選択すると、該当する調理設備を順に表示します。</ImmersiveChefs_AlertMissingKitchenware_Explanation>
+
+  <ImmersiveChefs_CulinaryBand_Awful>ひどい</ImmersiveChefs_CulinaryBand_Awful>
+  <ImmersiveChefs_CulinaryBand_Poor>粗末</ImmersiveChefs_CulinaryBand_Poor>
+  <ImmersiveChefs_CulinaryBand_Normal>標準</ImmersiveChefs_CulinaryBand_Normal>
+  <ImmersiveChefs_CulinaryBand_Good>良い</ImmersiveChefs_CulinaryBand_Good>
+  <ImmersiveChefs_CulinaryBand_Excellent>素晴らしい</ImmersiveChefs_CulinaryBand_Excellent>
+  <ImmersiveChefs_CulinaryBand_Masterwork>名品</ImmersiveChefs_CulinaryBand_Masterwork>
+  <ImmersiveChefs_CulinaryBand_Legendary>幻</ImmersiveChefs_CulinaryBand_Legendary>
+  <ImmersiveChefs_ThermalBand_SteamingHot>湯気が立つほど熱い</ImmersiveChefs_ThermalBand_SteamingHot>
+  <ImmersiveChefs_ThermalBand_Warm>温かい</ImmersiveChefs_ThermalBand_Warm>
+  <ImmersiveChefs_ThermalBand_RoomTemperature>室温</ImmersiveChefs_ThermalBand_RoomTemperature>
+  <ImmersiveChefs_ThermalBand_Cold>冷たい</ImmersiveChefs_ThermalBand_Cold>
+  <ImmersiveChefs_ThermalBand_Frozen>凍っている</ImmersiveChefs_ThermalBand_Frozen>
+  <ImmersiveChefs_CulinaryQualityInspect>料理の出来栄え：{0}（{1}）</ImmersiveChefs_CulinaryQualityInspect>
+  <ImmersiveChefs_MealTemperatureInspect>料理の温度：{0}（{1}℃）</ImmersiveChefs_MealTemperatureInspect>
+  <ImmersiveChefs_PreparedSource_NutrientPaste>栄養ペースト</ImmersiveChefs_PreparedSource_NutrientPaste>
+  <ImmersiveChefs_PreparedSource_Unknown>不明な食材</ImmersiveChefs_PreparedSource_Unknown>
+  <ImmersiveChefs_PreparedFoodInspect>下ごしらえ品質：{0}/100\n素材：{1}\n1単位あたりの栄養価：{2}</ImmersiveChefs_PreparedFoodInspect>
+
+  <ImmersiveChefs_Stat_KitchenCleanliness>キッチンの清潔さ</ImmersiveChefs_Stat_KitchenCleanliness>
+  <ImmersiveChefs_Stat_KitchenComfort>キッチンの快適さ</ImmersiveChefs_Stat_KitchenComfort>
+  <ImmersiveChefs_Stat_DiningComfort>食事の快適さ</ImmersiveChefs_Stat_DiningComfort>
+  <ImmersiveChefs_Stat_CookingSpeed>調理速度係数</ImmersiveChefs_Stat_CookingSpeed>
+  <ImmersiveChefs_Stat_CulinaryModifier>料理の出来栄え補正</ImmersiveChefs_Stat_CulinaryModifier>
+  <ImmersiveChefs_Stat_EatingSpeed>食事速度係数</ImmersiveChefs_Stat_EatingSpeed>
+  <ImmersiveChefs_Stat_KitchenCleanlinessValue>キッチンの清潔さ：{0}</ImmersiveChefs_Stat_KitchenCleanlinessValue>
+  <ImmersiveChefs_Stat_KitchenComfortValue>キッチンの快適さ：{0}</ImmersiveChefs_Stat_KitchenComfortValue>
+  <ImmersiveChefs_Stat_DiningComfortValue>食事の快適さ：{0}</ImmersiveChefs_Stat_DiningComfortValue>
+  <ImmersiveChefs_Stat_CookingSpeedValue>調理速度係数：{0}</ImmersiveChefs_Stat_CookingSpeedValue>
+  <ImmersiveChefs_Stat_CulinaryModifierValue>料理の出来栄え補正：{0}</ImmersiveChefs_Stat_CulinaryModifierValue>
+  <ImmersiveChefs_Stat_EatingSpeedValue>食事速度係数：{0}</ImmersiveChefs_Stat_EatingSpeedValue>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs は、素材と製作品質からこの値を算出します。</ImmersiveChefs_Stat_Explanation>
+
+  <ImmersiveChefs_Dishwasher_StatusIdle>待機中</ImmersiveChefs_Dishwasher_StatusIdle>
+  <ImmersiveChefs_Dishwasher_StatusWashing>洗浄中（{0}%）</ImmersiveChefs_Dishwasher_StatusWashing>
+  <ImmersiveChefs_Dishwasher_StatusPaused>一時停止：{0}</ImmersiveChefs_Dishwasher_StatusPaused>
+  <ImmersiveChefs_Dishwasher_PauseNoPower>電力不足</ImmersiveChefs_Dishwasher_PauseNoPower>
+  <ImmersiveChefs_Dishwasher_PauseNoWater>給水なし</ImmersiveChefs_Dishwasher_PauseNoWater>
+  <ImmersiveChefs_Dishwasher_Inspect>食器洗い機：{0}\n容量：{1}/{2}人分</ImmersiveChefs_Dishwasher_Inspect>
+  <ImmersiveChefs_Dishwasher_EjectLabel>食器を取り出す</ImmersiveChefs_Dishwasher_EjectLabel>
+  <ImmersiveChefs_Dishwasher_EjectDescription>この洗浄を中止し、洗わずに同じ食器を返却します。</ImmersiveChefs_Dishwasher_EjectDescription>
+  <ImmersiveChefs_Processor_Wash>{0}を洗う</ImmersiveChefs_Processor_Wash>
+
+  <ImmersiveChefs_PoisonCause_LowQuality>出来の悪い料理</ImmersiveChefs_PoisonCause_LowQuality>
+  <ImmersiveChefs_PoisonCause_ColdMeal>冷たい料理</ImmersiveChefs_PoisonCause_ColdMeal>
+  <ImmersiveChefs_PoisonCause_FrozenMeal>凍った料理</ImmersiveChefs_PoisonCause_FrozenMeal>
+  <ImmersiveChefs_PoisonCause_DirtyCookware>汚れた調理器具</ImmersiveChefs_PoisonCause_DirtyCookware>
+  <ImmersiveChefs_PoisonCause_DirtyPlate>汚れた皿</ImmersiveChefs_PoisonCause_DirtyPlate>
+  <ImmersiveChefs_PoisonCause_DirtyCutlery>汚れたカトラリー</ImmersiveChefs_PoisonCause_DirtyCutlery>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedCookware>安全でない水で洗った調理器具</ImmersiveChefs_PoisonCause_UnsafeWashedCookware>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedPlate>安全でない水で洗った皿</ImmersiveChefs_PoisonCause_UnsafeWashedPlate>
+  <ImmersiveChefs_PoisonCause_UnsafeWashedCutlery>安全でない水で洗ったカトラリー</ImmersiveChefs_PoisonCause_UnsafeWashedCutlery>
+  <ImmersiveChefs_PoisonCause_PoorPlate>質の悪い皿</ImmersiveChefs_PoisonCause_PoorPlate>
+  <ImmersiveChefs_PoisonCause_PoorCutlery>質の悪いカトラリー</ImmersiveChefs_PoisonCause_PoorCutlery>
+  <ImmersiveChefs_PoisonCause_ReheatedMeal>温め直した料理</ImmersiveChefs_PoisonCause_ReheatedMeal>
+  <ImmersiveChefs_PoisonCause_PoisonedMeal>毒入りの料理</ImmersiveChefs_PoisonCause_PoisonedMeal>
+</LanguageData>

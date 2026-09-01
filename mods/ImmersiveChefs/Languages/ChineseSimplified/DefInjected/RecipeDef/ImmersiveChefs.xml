@@ -12,7 +12,4 @@
   <ImmersiveChefs_MachinePlates.label>机加工4个餐盘</ImmersiveChefs_MachinePlates.label><ImmersiveChefs_MachinePlates.description>用任意可用金属或已登记塑料机加工四个餐盘。</ImmersiveChefs_MachinePlates.description><ImmersiveChefs_MachinePlates.jobString>正在机加工餐盘。</ImmersiveChefs_MachinePlates.jobString>
   <ImmersiveChefs_MachineCutlery.label>机加工4套餐具</ImmersiveChefs_MachineCutlery.label><ImmersiveChefs_MachineCutlery.description>用任意可用金属或已登记塑料机加工四套餐具。</ImmersiveChefs_MachineCutlery.description><ImmersiveChefs_MachineCutlery.jobString>正在机加工餐具。</ImmersiveChefs_MachineCutlery.jobString>
   <ImmersiveChefs_PrepareIngredients.label>预处理食材</ImmersiveChefs_PrepareIngredients.label><ImmersiveChefs_PrepareIngredients.description>将半单位营养的可食用原料处理为十份烹饪用量，同时保留原料来源。</ImmersiveChefs_PrepareIngredients.description><ImmersiveChefs_PrepareIngredients.jobString>正在预处理食材。</ImmersiveChefs_PrepareIngredients.jobString>
-  <ImmersiveChefs_MakePorcelainPlates.label>制作4个瓷盘</ImmersiveChefs_MakePorcelainPlates.label>
-  <ImmersiveChefs_MakePorcelainPlates.description>用瓷料塑制四个盘子。</ImmersiveChefs_MakePorcelainPlates.description>
-  <ImmersiveChefs_MakePorcelainPlates.jobString>正在制作瓷盘。</ImmersiveChefs_MakePorcelainPlates.jobString>
 </LanguageData>

@@ -151,6 +151,8 @@ internal sealed class ImmersiveChefsSettingsUi
         Cycle(listing, "ImmersiveChefs_Integration_FoodTextureVariety".Translate(), ref settings.FoodTextureVariety);
         Cycle(listing, "ImmersiveChefs_Integration_PickUpAndHaul".Translate(), ref settings.PickUpAndHaul);
         Cycle(listing, "ImmersiveChefs_Integration_CookForYourself".Translate(), ref settings.CookForYourself);
+        Cycle(listing, "ImmersiveChefs_Integration_Rimatomics".Translate(), ref settings.Rimatomics);
+        Cycle(listing, "ImmersiveChefs_Integration_CrashLanding".Translate(), ref settings.CrashLanding);
 
         listing.End();
         Widgets.EndScrollView();

@@ -38,7 +38,7 @@ public sealed class KitchenwareRecipeDefContractTests
     }
 
     [Test]
-    public void Kitchenware_unit_costs_ignore_vanilla_small_volume_scaling()
+    public void Kitchenware_unit_costs_honor_vanilla_small_volume_scaling()
     {
         var getter = new IngredientValueGetter_Units();
         var normalVolume = (ThingDef)System.Runtime.Serialization.FormatterServices
@@ -51,7 +51,7 @@ public sealed class KitchenwareRecipeDefContractTests
         Assert.Multiple(() =>
         {
             Assert.That(getter.ValuePerUnitOf(normalVolume), Is.EqualTo(1f));
-            Assert.That(getter.ValuePerUnitOf(smallVolume), Is.EqualTo(1f));
+            Assert.That(getter.ValuePerUnitOf(smallVolume), Is.EqualTo(0.1f));
         });
     }
 

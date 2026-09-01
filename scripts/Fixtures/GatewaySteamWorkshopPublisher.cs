@@ -233,6 +233,7 @@ internal static class Publisher
                 if (!SteamUGC.SetReturnLongDescription(queryHandle, true) ||
                     !SteamUGC.SetReturnMetadata(queryHandle, true) ||
                     !SteamUGC.SetReturnChildren(queryHandle, true) ||
+                    !SteamUGC.SetReturnKeyValueTags(queryHandle, true) ||
                     !SteamUGC.SetReturnAdditionalPreviews(queryHandle, true))
                 {
                     ReleaseQuery();
@@ -466,6 +467,12 @@ internal static class Publisher
             !AcceptSetter(SteamUGC.SetItemMetadata(handle, request.PlanSha256), "SetItemMetadata"))
         {
             return;
+        }
+        foreach (var link in request.WorkshopLinks)
+        {
+            if (!AcceptSetter(SteamUGC.RemoveItemKeyValueTags(handle, link.Key), "RemoveItemKeyValueTags-" + link.Key) ||
+                !AcceptSetter(SteamUGC.AddItemKeyValueTag(handle, link.Key, link.Url), "AddItemKeyValueTag-" + link.Key))
+                return;
         }
         snapshot = Snapshot.Pending("submitting", request.PlanSha256, publishedFileId);
         WriteStateAtomically(request.StatePath, "submit-admitted|" + request.PlanSha256 + "|" + publishedFileId);
@@ -797,12 +804,34 @@ internal static class Publisher
                     });
                 }
 
+                var linkCount = SteamUGC.GetQueryUGCNumKeyValueTags(queryHandle, 0u);
+                if (linkCount > 64u)
+                {
+                    snapshot = Snapshot.Failed(request.PlanSha256, request.PublishedFileId, "Steam Workshop link inventory exceeds the exact 64-entry bound.");
+                    activeRequest = null;
+                    return;
+                }
+                var links = new List<RemoteWorkshopLink>((int)linkCount);
+                for (uint index = 0; index < linkCount; index++)
+                {
+                    string key;
+                    string value;
+                    if (!SteamUGC.GetQueryUGCKeyValueTag(queryHandle, 0u, index, out key, 65u, out value, 1025u))
+                    {
+                        snapshot = Snapshot.Failed(request.PlanSha256, request.PublishedFileId, "Steam did not return the Workshop link inventory.");
+                        activeRequest = null;
+                        return;
+                    }
+                    links.Add(new RemoteWorkshopLink { Key = key ?? "", Url = value ?? "" });
+                }
+
                 pendingQueriedSnapshot = Snapshot.Queried(
                     request.PlanSha256,
                     details,
                     metadata,
                     previewUrl,
                     additionalPreviews.ToArray(),
+                    links.ToArray(),
                     children.Select(child => child.m_PublishedFileId).ToArray());
                 lastQueriedId = details.m_nPublishedFileId.m_PublishedFileId;
                 lastQueriedOwner = details.m_ulSteamIDOwner;
@@ -1092,6 +1121,7 @@ internal static class Publisher
         public ulong RequiredWorkshopItemId;
         public uint RequiredDlcAppId;
         public List<string> Tags = new();
+        public List<WorkshopLinkValue> WorkshopLinks = new();
         public List<string> AdditionalPreviewPaths = new();
         public ERemoteStoragePublishedFileVisibility Visibility;
 
@@ -1122,6 +1152,8 @@ internal static class Publisher
                 RequiredWorkshopItemId = ParseId(objectValue.requiredWorkshopItemId, allowEmpty: true),
                 RequiredDlcAppId = ParseAppId(objectValue.requiredDlcAppId),
                 Tags = (objectValue.tags ?? Array.Empty<string>()).ToList(),
+                WorkshopLinks = (objectValue.workshopLinks ?? Array.Empty<WorkshopLinkJson>())
+                    .Select(link => new WorkshopLinkValue { Key = link.key ?? "", Url = link.url ?? "" }).ToList(),
                 AdditionalPreviewPaths = (objectValue.additionalPreviewPaths ?? Array.Empty<string>()).ToList(),
                 Visibility = ParseVisibility(PublisherSafety.EffectiveVisibility(
                     ParseId(objectValue.publishedFileId, allowEmpty: true) == 0,
@@ -1146,6 +1178,22 @@ internal static class Publisher
             if (string.IsNullOrWhiteSpace(PackageIdentityPath) || Path.GetFileName(PackageIdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("packageIdentityPath is invalid.");
             if (string.IsNullOrWhiteSpace(StatePath) || Path.GetFileName(StatePath) != "publication-state.txt") throw new InvalidOperationException("statePath is invalid.");
             if (Tags.Count == 0 || Tags.Count > 16 || Tags.Any(string.IsNullOrWhiteSpace)) throw new InvalidOperationException("tags are invalid.");
+            if (WorkshopLinks.Count < 1 || WorkshopLinks.Count > 8 ||
+                WorkshopLinks.Select(link => link.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count() != WorkshopLinks.Count)
+                throw new InvalidOperationException("workshopLinks are invalid.");
+            foreach (var link in WorkshopLinks)
+            {
+                Uri uri;
+                if (string.IsNullOrWhiteSpace(link.Key) || link.Key.Length > 64 ||
+                    link.Key.Any(character => !char.IsLetterOrDigit(character) && character != '_') ||
+                    string.IsNullOrWhiteSpace(link.Url) || link.Url.Length > 255 ||
+                    !Uri.TryCreate(link.Url, UriKind.Absolute, out uri) || uri.Scheme != Uri.UriSchemeHttps ||
+                    !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Fragment))
+                    throw new InvalidOperationException("workshopLinks contain an invalid key or URL.");
+                if (link.Key.Equals("github", StringComparison.OrdinalIgnoreCase) &&
+                    link.Url != "https://github.com/Fumblesneeze/Rimworld-Mods")
+                    throw new InvalidOperationException("The github Workshop link is not the canonical repository URL.");
+            }
         }
 
         public void ValidatePreviewSync()
@@ -1249,10 +1297,27 @@ internal static class Publisher
         public string? requiredDlcAppId;
         [DataMember(Name = "tags")]
         public string[]? tags;
+        [DataMember(Name = "workshopLinks")]
+        public WorkshopLinkJson[]? workshopLinks;
         [DataMember(Name = "visibility")]
         public string? visibility;
         [DataMember(Name = "additionalPreviewPaths")]
         public string[]? additionalPreviewPaths;
+    }
+
+    internal sealed class WorkshopLinkValue
+    {
+        public string Key = "";
+        public string Url = "";
+    }
+
+    [DataContract]
+    internal sealed class WorkshopLinkJson
+    {
+        [DataMember(Name = "key")]
+        public string? key;
+        [DataMember(Name = "url")]
+        public string? url;
     }
 
     [DataContract]
@@ -1266,6 +1331,15 @@ internal static class Publisher
         public string OriginalFileName = "";
         [DataMember]
         public string Type = "";
+    }
+
+    [DataContract]
+    internal sealed class RemoteWorkshopLink
+    {
+        [DataMember]
+        public string Key = "";
+        [DataMember]
+        public string Url = "";
     }
 
     [DataContract]
@@ -1321,6 +1395,8 @@ internal static class Publisher
         public uint[] RemoteAppDependencies = Array.Empty<uint>();
         [DataMember]
         public RemoteAdditionalPreview[] RemoteAdditionalPreviews = Array.Empty<RemoteAdditionalPreview>();
+        [DataMember]
+        public RemoteWorkshopLink[] RemoteLinks = Array.Empty<RemoteWorkshopLink>();
 
         public string ToJson() => Json.Write(this);
         public static Snapshot Idle() => new();
@@ -1333,7 +1409,7 @@ internal static class Publisher
         public static Snapshot Unsubscribed(string plan, ulong id, uint state) => new() { Status = "unsubscribed", Stage = "unsubscribed", PlanSha256 = plan, PublishedFileId = id, ItemState = state.ToString() };
         public static Snapshot UnsubscribeCallbackConfirmed(string plan, ulong id, uint state) => new() { Status = "unsubscribe-callback-confirmed", Stage = "unsubscribe-callback-confirmed", PlanSha256 = plan, PublishedFileId = id, ItemState = state.ToString() };
         public static Snapshot OwnerScan(string plan, ulong id) => new() { Status = id == 0 ? "owner-scan-complete" : "owner-scan-found", Stage = "owner-scan", PlanSha256 = plan, PublishedFileId = id };
-        public static Snapshot Queried(string plan, SteamUGCDetails_t details, string metadata, string previewUrl, RemoteAdditionalPreview[] additionalPreviews, ulong[] dependencies)
+        public static Snapshot Queried(string plan, SteamUGCDetails_t details, string metadata, string previewUrl, RemoteAdditionalPreview[] additionalPreviews, RemoteWorkshopLink[] links, ulong[] dependencies)
         {
             var description = details.m_rgchDescription ?? "";
             var bytes = Encoding.UTF8.GetBytes(description);
@@ -1353,6 +1429,7 @@ internal static class Publisher
                 RemoteVisibility = details.m_eVisibility.ToString(),
                 RemotePreviewUrl = previewUrl ?? "",
                 RemoteAdditionalPreviews = additionalPreviews ?? Array.Empty<RemoteAdditionalPreview>(),
+                RemoteLinks = links ?? Array.Empty<RemoteWorkshopLink>(),
                 RemoteOwnerSteamId = details.m_ulSteamIDOwner,
                 RemoteConsumerAppId = details.m_nConsumerAppID.m_AppId,
                 RemoteContentBytes = checked((ulong)details.m_nFileSize),

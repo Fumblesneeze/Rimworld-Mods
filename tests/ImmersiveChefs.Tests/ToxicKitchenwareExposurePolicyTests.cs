@@ -105,6 +105,25 @@ public sealed class ToxicKitchenwareExposurePolicyTests
         });
     }
 
+    [Test]
+    public void Lead_and_uranium_components_are_split_for_distinct_health_providers()
+    {
+        var dose = ToxicKitchenwareExposurePolicy.CalculateByProvider(
+            KitchenMaterialKind.Lead,
+            KitchenMaterialKind.Uranium,
+            KitchenMaterialKind.Lead,
+            exposureScale: 1f,
+            humanlike: true,
+            nutritionIngested: 0.9f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dose.LeadDose, Is.EqualTo(0.030f).Within(0.0001f));
+            Assert.That(dose.UraniumDose, Is.EqualTo(0.015f).Within(0.0001f));
+            Assert.That(dose.TotalDose, Is.EqualTo(0.045f).Within(0.0001f));
+        });
+    }
+
     [TestCase(false, 0.9f)]
     [TestCase(true, 0f)]
     [TestCase(true, float.NaN)]

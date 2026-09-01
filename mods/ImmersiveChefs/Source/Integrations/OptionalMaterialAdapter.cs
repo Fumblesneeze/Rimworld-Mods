@@ -89,6 +89,13 @@ internal static class OptionalMaterialAdapter
         }
 
         var porcelainRecipe = DefDatabase<RecipeDef>.GetNamedSilentFail(PorcelainRecipeDefName);
+        if (porcelainRecipe is not null)
+        {
+            porcelainRecipe.label = "ImmersiveChefs_Recipe_MakePorcelainPlates_Label".Translate();
+            CachedLabelCapField.SetValue(porcelainRecipe, default(TaggedString));
+            porcelainRecipe.description = "ImmersiveChefs_Recipe_MakePorcelainPlates_Description".Translate();
+            porcelainRecipe.jobString = "ImmersiveChefs_Recipe_MakePorcelainPlates_JobString".Translate();
+        }
         if (ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.CeramicsContinued))
         {
             if (!HasSupportedCeramicsShape(out var ceramicsReason))

@@ -11,13 +11,18 @@ Immersive Chefs SHALL route every player-facing string through RimWorld's keyed 
 - **WHEN** settings, inspect panes, alerts, float menus, work reports, and player messages are rendered in a non-English language
 - **THEN** no Immersive Chefs user-facing literal bypasses a translation key and no missing-key marker or unintended English fallback appears
 
-### Requirement: Six complete context-authored languages ship
+#### Scenario: An optional integration owns a conditional Def
 
-The package SHALL provide complete English, German, Spanish, French, Simplified Chinese, and Russian coverage using RimWorld folder names `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`. English source Def values and English keyed entries form the canonical meaning. The five translated catalogs SHALL be written by the implementing agent from the gameplay context, not produced by a machine-translation service, and SHALL preserve placeholders, numeric units, rich-text tags, proper names, tone, and the distinction between cookware, tableware, cutlery, sanitation, culinary quality, food poisoning, and toxic buildup. Identical proper names and technical tokens MAY remain unchanged where translation would be incorrect.
+- **WHEN** a translated recipe or Thing Def exists only while its optional package is active
+- **THEN** the absent package produces no stale Def-injection error, while the present compatible package receives the same contextual translation through a package-safe runtime key
+
+### Requirement: Seven complete context-authored languages ship
+
+The package SHALL provide complete English, German, Spanish, French, Simplified Chinese, Russian, and Japanese coverage using RimWorld folder names `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, `Russian`, and `Japanese`. English source Def values and English keyed entries form the canonical meaning. The six translated catalogs SHALL be written by the implementing agent from the gameplay context, not produced by a machine-translation service, and SHALL preserve placeholders, numeric units, rich-text tags, proper names, tone, and the distinction between cookware, tableware, cutlery, sanitation, culinary quality, food poisoning, and toxic buildup. Identical proper names and technical tokens MAY remain unchanged where translation would be incorrect.
 
 #### Scenario: Compare required catalogs
 
-- **WHEN** the six packaged language catalogs are compared
+- **WHEN** the seven packaged language catalogs are compared
 - **THEN** every canonical keyed entry and every translatable Immersive Chefs Def field has one valid entry in every required locale, with matching placeholders and tags
 
 #### Scenario: Agent authors a contextual term
@@ -27,11 +32,11 @@ The package SHALL provide complete English, German, Spanish, French, Simplified 
 
 ### Requirement: Distributable-mod release checks reject localization drift
 
-The repository's release/package gate SHALL explicitly classify distributable RimWorld mods and SHALL exempt development-only tools such as `fumblesneeze.rimworlddevgateway`. For every distributable mod, the gate SHALL parse package source/output XML, derive the canonical keyed and translatable Def-field inventories, require all six language catalogs, validate XML plus placeholder/rich-text parity, and reject missing, duplicate, malformed, stale, or raw guarded user-interface strings. A directory's presence or a nonzero file count is insufficient. Immersive Chefs SHALL pass this gate before a release candidate can be accepted.
+The repository's release/package gate SHALL explicitly classify distributable RimWorld mods and SHALL exempt development-only tools such as `fumblesneeze.rimworlddevgateway`. For every distributable mod, the gate SHALL parse package source/output XML, derive the canonical keyed and translatable Def-field inventories, require all seven language catalogs, validate XML plus placeholder/rich-text parity, and reject missing, duplicate, malformed, stale, or raw guarded user-interface strings. A directory's presence or a nonzero file count is insufficient. Immersive Chefs SHALL pass this gate before a release candidate can be accepted.
 
 #### Scenario: A new setting is added only in English
 
-- **WHEN** a distributable mod adds a keyed setting label without adding the corresponding five translated entries
+- **WHEN** a distributable mod adds a keyed setting label without adding the corresponding six translated entries
 - **THEN** the release/package gate fails and identifies the missing key per language
 
 #### Scenario: Gateway remains development-only
@@ -45,5 +50,5 @@ Final localization acceptance SHALL use the reviewed packaged build in fresh iso
 
 #### Scenario: German through Russian are inspected in game
 
-- **WHEN** the final reviewed package is opened under English, German, Spanish, French, Simplified Chinese, and Russian
+- **WHEN** the final reviewed package is opened under English, German, Spanish, French, Simplified Chinese, Russian, and Japanese
 - **THEN** representative Immersive Chefs text renders in each language without missing keys, tofu, broken placeholders/tags, clipping that destroys meaning, or unintended fallback text

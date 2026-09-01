@@ -26,6 +26,7 @@ public sealed record WorkshopRemoteBaseline(
     IReadOnlyList<string> AdditionalPreviewUrls,
     string StateDigest)
 {
+    public IReadOnlyList<WorkshopLink> Links { get; init; } = [];
     private const int MaximumCommunityPageBytes = 2 * 1024 * 1024;
     private const int MaximumPreviewBytes = 1024 * 1024;
     private const string BrowserUserAgent =
@@ -56,6 +57,7 @@ public sealed record WorkshopRemoteBaseline(
             .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var dependencies = ReadUlongArray(remote, "RemoteDependencies");
         var appDependencies = ReadUlongArray(remote, "RemoteAppDependencies");
+        var links = ReadWorkshopLinks(remote);
         var publishedFileId = GatewayWorkshopClient.UInt64(remote, "PublishedFileId").ToString();
         var additional = await ReadAdditionalPreviewsAsync(
             remote,
@@ -79,7 +81,8 @@ public sealed record WorkshopRemoteBaseline(
             dependencies,
             appDependencies,
             additional.Identities,
-            additional.Urls);
+            additional.Urls,
+            links);
     }
 
     public static void AssertRuntimeIdentity(JsonElement status, ReleaseProfile profile)
@@ -94,7 +97,7 @@ public sealed record WorkshopRemoteBaseline(
     {
         var rebuilt = Create(PublishedFileId, Title, DescriptionSha256, DescriptionUtf8Bytes, Tags, Metadata,
             Visibility, PreviewUrl, PreviewSha256, OwnerSteamId, ConsumerAppId, ContentBytes,
-            UpdatedUnixSeconds, Dependencies, AppDependencies, AdditionalPreviews, AdditionalPreviewUrls);
+            UpdatedUnixSeconds, Dependencies, AppDependencies, AdditionalPreviews, AdditionalPreviewUrls, Links);
         if (!string.Equals(rebuilt.StateDigest, StateDigest, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Publication plan remote baseline digest is invalid.");
     }
@@ -129,6 +132,7 @@ public sealed record WorkshopRemoteBaseline(
             $"TAGS [{string.Join(", ", baseline.Tags)}] -> [{string.Join(", ", profile.Tags.OrderBy(value => value, StringComparer.Ordinal))}]",
             $"VISIBILITY {baseline.Visibility} -> {profile.Visibility}",
             $"PREVIEW {baseline.PreviewSha256} -> {desiredPreview}",
+            $"LINKS [{string.Join(", ", baseline.Links.Select(link => $"{link.Key}={link.Url}"))}] -> [{string.Join(", ", profile.WorkshopLinks.Select(link => $"{link.Key}={link.Url}"))}] (declared keys only; unrelated keys preserved)",
             $"DEPENDENCIES [{string.Join(", ", baseline.Dependencies)}] -> [{string.Join(", ", profile.RequiredWorkshopItems.OrderBy(value => value, StringComparer.Ordinal))}]",
             $"APP DEPENDENCIES [{string.Join(", ", baseline.AppDependencies)}] -> [{string.Join(", ", profile.RequiredDlcAppIds.OrderBy(value => value, StringComparer.Ordinal))}]",
             $"CONTENT remote-bytes={baseline.ContentBytes},updated={baseline.UpdatedUnixSeconds} -> {candidate.Files.Count} files,digest={candidate.ContentDigest}",
@@ -154,13 +158,16 @@ public sealed record WorkshopRemoteBaseline(
         IReadOnlyList<string> dependencies,
         IReadOnlyList<string> appDependencies,
         IReadOnlyList<string> additionalPreviews,
-        IReadOnlyList<string>? additionalPreviewUrls = null)
+        IReadOnlyList<string>? additionalPreviewUrls = null,
+        IReadOnlyList<WorkshopLink>? links = null)
     {
         var sortedTags = tags.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var sortedDependencies = dependencies.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var sortedAppDependencies = appDependencies.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var orderedAdditional = additionalPreviews.ToArray();
         var orderedAdditionalUrls = additionalPreviewUrls?.ToArray() ?? [];
+        var orderedLinks = (links ?? []).OrderBy(link => link.Key, StringComparer.Ordinal)
+            .ThenBy(link => link.Url, StringComparer.Ordinal).ToArray();
         if (orderedAdditionalUrls.Length != 0 && orderedAdditionalUrls.Length != orderedAdditional.Length)
             throw new InvalidOperationException("Additional-preview URL inventory does not match the retained preview inventory.");
         var canonical = string.Join("\n", new[]
@@ -169,13 +176,17 @@ public sealed record WorkshopRemoteBaseline(
             string.Join("|", sortedTags), metadata, visibility, previewSha256,
             ownerSteamId, consumerAppId.ToString(), contentBytes.ToString(), updatedUnixSeconds.ToString(),
             string.Join("|", sortedDependencies), string.Join("|", sortedAppDependencies),
-            string.Join("|", orderedAdditional), string.Join("|", orderedAdditionalUrls)
+            string.Join("|", orderedAdditional), string.Join("|", orderedAdditionalUrls),
+            JsonSerializer.Serialize(orderedLinks)
         }) + "\n";
         var digest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
         return new WorkshopRemoteBaseline(publishedFileId, title, descriptionSha256, descriptionUtf8Bytes,
             sortedTags, metadata, visibility, previewUrl, previewSha256, ownerSteamId, consumerAppId,
             contentBytes, updatedUnixSeconds, sortedDependencies, sortedAppDependencies,
-            orderedAdditional, orderedAdditionalUrls, digest);
+            orderedAdditional, orderedAdditionalUrls, digest)
+        {
+            Links = orderedLinks
+        };
     }
 
     private static string[] ReadUlongArray(JsonElement root, string name)
@@ -250,6 +261,18 @@ public sealed record WorkshopRemoteBaseline(
             urls.Add(url);
         }
         return new AdditionalPreviewInventory(previews.ToArray(), urls.ToArray());
+    }
+
+    internal static WorkshopLink[] ReadWorkshopLinks(JsonElement root)
+    {
+        if (!GatewayWorkshopClient.TryProperty(root, "RemoteLinks", out var property) ||
+            property.ValueKind != JsonValueKind.Array) return [];
+        var links = property.EnumerateArray().Select(item => new WorkshopLink(
+            ReadProperty(item, "Key"),
+            ReadProperty(item, "Url"))).ToArray();
+        if (links.Length > 64 || links.Any(link => link.Key.Length is < 1 or > 64 || link.Url.Length > 1024))
+            throw new InvalidOperationException("Steam Workshop link inventory exceeds the reviewed bounds.");
+        return links;
     }
 
     internal static string[] SelectAdditionalImageUrls(

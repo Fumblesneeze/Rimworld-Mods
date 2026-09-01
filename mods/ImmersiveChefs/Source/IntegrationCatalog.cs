@@ -27,7 +27,9 @@ public enum OptionalIntegration
     FoodTextureVariety,
     TextureVariations,
     PickUpAndHaul,
-    CookForYourself
+    CookForYourself,
+    Rimatomics,
+    CrashLanding
 }
 
 public sealed class IntegrationSnapshot
@@ -87,7 +89,9 @@ public static class IntegrationCatalog
             [OptionalIntegration.FoodTextureVariety] = "Goat.Food.Texture.Variety",
             [OptionalIntegration.TextureVariations] = "VanillaExpanded.VTEXVariations",
             [OptionalIntegration.PickUpAndHaul] = "Mehni.PickUpAndHaul",
-            [OptionalIntegration.CookForYourself] = "lordfelix.CookForYourself"
+            [OptionalIntegration.CookForYourself] = "lordfelix.CookForYourself",
+            [OptionalIntegration.Rimatomics] = RimatomicsRadiationPolicy.PackageId,
+            [OptionalIntegration.CrashLanding] = CrashLandingRadiationPolicy.PackageId
         };
 
     public static IntegrationSnapshot Detect(IEnumerable<string> loadedPackageIds)
@@ -178,6 +182,8 @@ public static class OptionalIntegrationPolicy
             OptionalIntegration.TextureVariations => settings.TextureVariationIntegration,
             OptionalIntegration.PickUpAndHaul => settings.PickUpAndHaul,
             OptionalIntegration.CookForYourself => settings.CookForYourself,
+            OptionalIntegration.Rimatomics => settings.Rimatomics,
+            OptionalIntegration.CrashLanding => settings.CrashLanding,
             _ => OptionalIntegrationMode.Auto
         };
     }

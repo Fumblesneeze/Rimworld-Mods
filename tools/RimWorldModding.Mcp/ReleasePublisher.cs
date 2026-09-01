@@ -173,6 +173,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 ["previewPath"] = admission.Plan.PreviewPath,
                 ["changeNote"] = admission.Plan.ChangeNote,
                 ["tags"] = admission.Plan.Tags,
+                ["workshopLinks"] = admission.Plan.WorkshopLinks,
                 ["visibility"] = admission.Plan.Visibility
             }, durableToken);
             var publish = await client.WaitTerminalAsync(
@@ -466,6 +467,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
                GatewayWorkshopClient.String(remote, "RemoteDescriptionSha256") == admission.Plan.DescriptionSha256 &&
                GatewayWorkshopClient.String(remote, "RemoteMetadata") == admission.PlanSha256 &&
                GatewayWorkshopClient.String(remote, "RemoteVisibility").EndsWith(admission.Plan.Visibility, StringComparison.Ordinal) &&
+               RemoteLinksMatchPlan(remote, admission.Plan.WorkshopLinks) &&
                tags.SequenceEqual(admission.Plan.Tags.OrderBy(value => value, StringComparer.Ordinal), StringComparer.Ordinal);
     }
 
@@ -564,11 +566,23 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 GatewayWorkshopClient.UInt64(remote, "RemoteConsumerAppId") == (ulong)admission.Plan.SteamAppId &&
                 GatewayWorkshopClient.String(remote, "RemoteVisibility").EndsWith(admission.Plan.Visibility, StringComparison.Ordinal) &&
                 !string.IsNullOrWhiteSpace(GatewayWorkshopClient.String(remote, "RemotePreviewUrl")) &&
+                RemoteLinksMatchPlan(remote, admission.Plan.WorkshopLinks) &&
                 remoteTags.SequenceEqual(admission.Plan.Tags.OrderBy(value => value, StringComparer.Ordinal), StringComparer.Ordinal))
                 return remote;
             await Task.Delay(1500, cancellationToken);
         }
         throw new TimeoutException("Remote Workshop metadata did not converge to the admitted plan.");
+    }
+
+    internal static bool RemoteLinksMatchPlan(JsonElement remote, IReadOnlyList<WorkshopLink> expected)
+    {
+        var actual = WorkshopRemoteBaseline.ReadWorkshopLinks(remote);
+        return expected.All(link =>
+        {
+            var sameKey = actual.Where(candidate =>
+                candidate.Key.Equals(link.Key, StringComparison.OrdinalIgnoreCase)).ToArray();
+            return sameKey.Length == 1 && sameKey[0].Url.Equals(link.Url, StringComparison.Ordinal);
+        });
     }
 
     private static async Task<JsonElement> ReconcileRelationshipsAsync(

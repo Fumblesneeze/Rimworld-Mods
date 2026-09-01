@@ -57,6 +57,8 @@
   <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
   <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
   <ImmersiveChefs_Integration_CookForYourself>Cook for Yourself</ImmersiveChefs_Integration_CookForYourself>
+  <ImmersiveChefs_Integration_Rimatomics>Dubs Rimatomics</ImmersiveChefs_Integration_Rimatomics>
+  <ImmersiveChefs_Integration_CrashLanding>Crash Landing</ImmersiveChefs_Integration_CrashLanding>
 
   <ImmersiveChefs_Enum_WareRequirementMode_Strict>Strict</ImmersiveChefs_Enum_WareRequirementMode_Strict>
   <ImmersiveChefs_Enum_WareRequirementMode_Prefer>Préférer</ImmersiveChefs_Enum_WareRequirementMode_Prefer>
@@ -95,6 +97,9 @@
   <ImmersiveChefs_Recipe_MakeAdobePlates_Label>former 4 assiettes en adobe</ImmersiveChefs_Recipe_MakeAdobePlates_Label>
   <ImmersiveChefs_Recipe_MakeAdobePlates_Description>Forme quatre assiettes grossières avec des briques d'adobe.</ImmersiveChefs_Recipe_MakeAdobePlates_Description>
   <ImmersiveChefs_Recipe_MakeAdobePlates_JobString>Forme des assiettes en adobe.</ImmersiveChefs_Recipe_MakeAdobePlates_JobString>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Label>façonner 4 assiettes en porcelaine</ImmersiveChefs_Recipe_MakePorcelainPlates_Label>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Description>Façonne quatre assiettes en porcelaine.</ImmersiveChefs_Recipe_MakePorcelainPlates_Description>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>Façonnage d'assiettes en porcelaine.</ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>
 
   <ImmersiveChefs_Product_CookwarePlural>batteries de cuisine</ImmersiveChefs_Product_CookwarePlural>
   <ImmersiveChefs_Product_Plates>assiettes</ImmersiveChefs_Product_Plates>

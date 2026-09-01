@@ -18,7 +18,8 @@ public sealed class LocalizationReleaseGateTests
         "Spanish",
         "French",
         "ChineseSimplified",
-        "Russian"
+        "Russian",
+        "Japanese"
     };
 
     private static readonly HashSet<string> TranslatableDefFields = new(StringComparer.Ordinal)
@@ -54,6 +55,8 @@ public sealed class LocalizationReleaseGateTests
         "ImmersiveChefs_Integration_FoodTextureVariety",
         "ImmersiveChefs_Integration_PickUpAndHaul",
         "ImmersiveChefs_Integration_CookForYourself",
+        "ImmersiveChefs_Integration_Rimatomics",
+        "ImmersiveChefs_Integration_CrashLanding",
         "ImmersiveChefs_IngredientRequirement"
     };
 
@@ -62,7 +65,10 @@ public sealed class LocalizationReleaseGateTests
         {
             ["RecipeDef:ImmersiveChefs_MakeAdobePlates.label"] = "ImmersiveChefs_Recipe_MakeAdobePlates_Label",
             ["RecipeDef:ImmersiveChefs_MakeAdobePlates.description"] = "ImmersiveChefs_Recipe_MakeAdobePlates_Description",
-            ["RecipeDef:ImmersiveChefs_MakeAdobePlates.jobString"] = "ImmersiveChefs_Recipe_MakeAdobePlates_JobString"
+            ["RecipeDef:ImmersiveChefs_MakeAdobePlates.jobString"] = "ImmersiveChefs_Recipe_MakeAdobePlates_JobString",
+            ["RecipeDef:ImmersiveChefs_MakePorcelainPlates.label"] = "ImmersiveChefs_Recipe_MakePorcelainPlates_Label",
+            ["RecipeDef:ImmersiveChefs_MakePorcelainPlates.description"] = "ImmersiveChefs_Recipe_MakePorcelainPlates_Description",
+            ["RecipeDef:ImmersiveChefs_MakePorcelainPlates.jobString"] = "ImmersiveChefs_Recipe_MakePorcelainPlates_JobString"
         };
 
     [Test]
@@ -145,7 +151,8 @@ public sealed class LocalizationReleaseGateTests
                 "ImmersiveChefs_Enum_OptionalIntegrationMode_Auto"
             },
             ["ChineseSimplified"] = Array.Empty<string>(),
-            ["Russian"] = Array.Empty<string>()
+            ["Russian"] = Array.Empty<string>(),
+            ["Japanese"] = new[] { "ImmersiveChefs_SettingsCategory" }
         };
 
         foreach (var product in DiscoverCatalogProductMods())
@@ -306,6 +313,34 @@ public sealed class LocalizationReleaseGateTests
         {
             Assert.That(source, Does.Contain($"\"{localizationKey}\".Translate()"),
                 $"{product.Name} must apply {localizationKey} only after the conditional Def exists.");
+        }
+    }
+
+    [Test]
+    public void Ceramics_only_recipe_translations_do_not_enter_absent_DefInjected_loading()
+    {
+        var product = DiscoverProductMods().Single(item => item.Name == "ImmersiveChefs");
+        var keys = new[]
+        {
+            "ImmersiveChefs_MakePorcelainPlates.label",
+            "ImmersiveChefs_MakePorcelainPlates.description",
+            "ImmersiveChefs_MakePorcelainPlates.jobString"
+        };
+
+        foreach (var language in RequiredLanguages.Skip(1))
+        {
+            var path = Path.Combine(
+                product.Root,
+                "Languages",
+                language,
+                "DefInjected",
+                "RecipeDef",
+                "ImmersiveChefs.xml");
+            Assert.That(
+                XDocument.Load(path).Root!.Elements()
+                    .Select(element => element.Name.LocalName),
+                Has.None.Matches<string>(key => keys.Contains(key, StringComparer.Ordinal)),
+                $"{language} must not inject translations for the absent Ceramics-only recipe.");
         }
     }
 

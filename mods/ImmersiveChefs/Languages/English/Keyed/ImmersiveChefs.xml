@@ -57,6 +57,8 @@
   <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
   <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
   <ImmersiveChefs_Integration_CookForYourself>Cook for Yourself</ImmersiveChefs_Integration_CookForYourself>
+  <ImmersiveChefs_Integration_Rimatomics>Dubs Rimatomics</ImmersiveChefs_Integration_Rimatomics>
+  <ImmersiveChefs_Integration_CrashLanding>Crash Landing</ImmersiveChefs_Integration_CrashLanding>
 
   <ImmersiveChefs_Enum_WareRequirementMode_Strict>Strict</ImmersiveChefs_Enum_WareRequirementMode_Strict>
   <ImmersiveChefs_Enum_WareRequirementMode_Prefer>Prefer</ImmersiveChefs_Enum_WareRequirementMode_Prefer>
@@ -95,6 +97,9 @@
   <ImmersiveChefs_Recipe_MakeAdobePlates_Label>make adobe plates x4</ImmersiveChefs_Recipe_MakeAdobePlates_Label>
   <ImmersiveChefs_Recipe_MakeAdobePlates_Description>Form four crude plates from adobe bricks.</ImmersiveChefs_Recipe_MakeAdobePlates_Description>
   <ImmersiveChefs_Recipe_MakeAdobePlates_JobString>Making adobe plates.</ImmersiveChefs_Recipe_MakeAdobePlates_JobString>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Label>make porcelain plates x4</ImmersiveChefs_Recipe_MakePorcelainPlates_Label>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Description>Shape four plates from porcelain.</ImmersiveChefs_Recipe_MakePorcelainPlates_Description>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>Making porcelain plates.</ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>
 
   <ImmersiveChefs_Product_CookwarePlural>cookware sets</ImmersiveChefs_Product_CookwarePlural>
   <ImmersiveChefs_Product_Plates>plates</ImmersiveChefs_Product_Plates>

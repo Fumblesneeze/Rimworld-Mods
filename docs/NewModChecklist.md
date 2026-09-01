@@ -27,7 +27,7 @@ mods/<ModName>/
   Source/
   Defs/
   Patches/Compatibility/
-  Languages/English/Keyed/
+  Languages/{English,German,Spanish,French,ChineseSimplified,Russian,Japanese}/
   Textures/
   Release/release.json             # required for universal build/release operations
 ```
@@ -64,9 +64,15 @@ conditional PatchOperations in XML; put lifecycle/computed behavior in a narrow 
 Create `Release/release.json` before the first package build. It must use schema
 `RimWorldModRelease/v1`, point to the exact project and package source, declare the positive
 `packageInclude` allowlist, supported RimWorld build, Workshop dependencies/DLC separately, player
-description/preview, and verification profile. A new unpublished item is explicitly `Private` with
+description/preview, the canonical `github` Workshop link to
+`https://github.com/Fumblesneeze/Rimworld-Mods`, and verification profile. Keep the repository URL
+in Workshop link metadata rather than duplicating it in the description. A new unpublished item is explicitly `Private` with
 `allowFirstPublication: true`; later updates set the committed Workshop ID and disable first
 publication. Keep change notes player-facing and specific.
+
+Start every distributable product with complete contextual catalogs for `English`, `German`,
+`Spanish`, `French`, `ChineseSimplified`, `Russian`, and `Japanese`. Add both keyed runtime strings
+and DefInjected fields as applicable; folder placeholders are not a release-ready translation.
 
 Run profile validation before a build:
 

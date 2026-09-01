@@ -16,7 +16,7 @@ Use these rules for every distributable RimWorld mod in this repository. Develop
 - Include player-facing Defs introduced by conditional `PatchOperation` XML. An optional Def is still part of the product's translation inventory.
 - Leave package IDs, Def names, internal diagnostics, exceptions, and log-only messages invariant. Proper names and technical tokens may be identical across languages when translation would be wrong.
 
-Required RimWorld language folder names for Immersive Chefs are `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`.
+The repository baseline for every new distributable mod is `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, `Russian`, and `Japanese`. A product may add more locales, but it may not omit one of these seven defaults.
 
 ## Author contextual catalogs
 

@@ -17,18 +17,33 @@ internal static class ToxicKitchenwareExposureRuntime
             throw new ArgumentNullException(nameof(ingester));
         }
 
-        var dose = ToxicKitchenwareExposurePolicy.Calculate(
+        var dose = ToxicKitchenwareExposurePolicy.CalculateByProvider(
             cookwareMaterial,
             plateMaterial,
             cutleryMaterial,
             ImmersiveChefsMod.Settings.ToxicKitchenwareExposureScale,
             ingester.RaceProps.Humanlike,
             nutritionIngested);
-        if (dose > 0f)
+        var coreDose = dose.LeadDose;
+        if (dose.UraniumDose > 0f)
         {
-            HealthUtility.AdjustSeverity(ingester, HediffDefOf.ToxicBuildup, dose);
+            var uraniumApplication = RimatomicsRadiationAdapter.Apply(ingester, dose.UraniumDose);
+            if (uraniumApplication == RimatomicsRadiationApplication.UseCoreFallback)
+            {
+                var crashLandingApplication =
+                    CrashLandingRadiationAdapter.Apply(ingester, dose.UraniumDose);
+                if (crashLandingApplication == CrashLandingRadiationApplication.UseNextProvider)
+                {
+                    coreDose += dose.UraniumDose;
+                }
+            }
         }
 
-        return dose;
+        if (coreDose > 0f)
+        {
+            HealthUtility.AdjustSeverity(ingester, HediffDefOf.ToxicBuildup, coreDose);
+        }
+
+        return dose.TotalDose;
     }
 }

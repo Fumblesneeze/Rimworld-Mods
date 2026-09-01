@@ -16,7 +16,8 @@ public sealed class GatewayLocaleProviderContractTests
         "Spanish",
         "French",
         "ChineseSimplified",
-        "Russian"
+        "Russian",
+        "Japanese"
     };
 
     [Test]

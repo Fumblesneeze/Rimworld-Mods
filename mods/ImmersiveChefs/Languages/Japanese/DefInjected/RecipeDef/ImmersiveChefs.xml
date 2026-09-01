@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_MakePrimitiveCookware.label>原始的な石の調理器具セットを作る</ImmersiveChefs_MakePrimitiveCookware.label>
+  <ImmersiveChefs_MakePrimitiveCookware.description>石材ブロックと、取っ手や小道具用の木材から原始的な調理器具セットを作ります。</ImmersiveChefs_MakePrimitiveCookware.description>
+  <ImmersiveChefs_MakePrimitiveCookware.jobString>原始的な石の調理器具を作っています。</ImmersiveChefs_MakePrimitiveCookware.jobString>
+  <ImmersiveChefs_MakePrimitivePlates.label>原始的な石皿を4枚作る</ImmersiveChefs_MakePrimitivePlates.label>
+  <ImmersiveChefs_MakePrimitivePlates.description>石材ブロックから粗末な皿を4枚作ります。</ImmersiveChefs_MakePrimitivePlates.description>
+  <ImmersiveChefs_MakePrimitivePlates.jobString>原始的な石皿を作っています。</ImmersiveChefs_MakePrimitivePlates.jobString>
+  <ImmersiveChefs_MakeMedievalCookware.label>中世の調理器具セットを鍛造する</ImmersiveChefs_MakeMedievalCookware.label>
+  <ImmersiveChefs_MakeMedievalCookware.description>中級金属と、取っ手や小道具用の木材から一式の調理器具セットを鍛造します。</ImmersiveChefs_MakeMedievalCookware.description>
+  <ImmersiveChefs_MakeMedievalCookware.jobString>調理器具セットを鍛造しています。</ImmersiveChefs_MakeMedievalCookware.jobString>
+  <ImmersiveChefs_MakeModernCookware.label>近代的な調理器具セットを製造する</ImmersiveChefs_MakeModernCookware.label>
+  <ImmersiveChefs_MakeModernCookware.description>近代金属と、取っ手や小道具用の木材から一式の調理器具セットを製造します。</ImmersiveChefs_MakeModernCookware.description>
+  <ImmersiveChefs_MakeModernCookware.jobString>調理器具セットを製造しています。</ImmersiveChefs_MakeModernCookware.jobString>
+  <ImmersiveChefs_MakeChefsKnife.label>料理人用ナイフセットを作る</ImmersiveChefs_MakeChefsKnife.label>
+  <ImmersiveChefs_MakeChefsKnife.description>金属から個人用の料理人ナイフセットを作ります。</ImmersiveChefs_MakeChefsKnife.description>
+  <ImmersiveChefs_MakeChefsKnife.jobString>料理人用ナイフセットを作っています。</ImmersiveChefs_MakeChefsKnife.jobString>
+  <ImmersiveChefs_MakeSoftPlates.label>柔らかい素材の皿を4枚作る</ImmersiveChefs_MakeSoftPlates.label>
+  <ImmersiveChefs_MakeSoftPlates.description>木材または登録済みの柔らかい素材から皿を4枚作ります。</ImmersiveChefs_MakeSoftPlates.description>
+  <ImmersiveChefs_MakeSoftPlates.jobString>皿を作っています。</ImmersiveChefs_MakeSoftPlates.jobString>
+  <ImmersiveChefs_MakeSoftCutlery.label>柔らかい素材のカトラリーを4組作る</ImmersiveChefs_MakeSoftCutlery.label>
+  <ImmersiveChefs_MakeSoftCutlery.description>木材または登録済みの柔らかい素材からカトラリーを4組作ります。</ImmersiveChefs_MakeSoftCutlery.description>
+  <ImmersiveChefs_MakeSoftCutlery.jobString>カトラリーを作っています。</ImmersiveChefs_MakeSoftCutlery.jobString>
+  <ImmersiveChefs_SmithPlates.label>金属の皿を4枚鍛造する</ImmersiveChefs_SmithPlates.label>
+  <ImmersiveChefs_SmithPlates.description>中級金属から皿を4枚鍛造します。</ImmersiveChefs_SmithPlates.description>
+  <ImmersiveChefs_SmithPlates.jobString>皿を鍛造しています。</ImmersiveChefs_SmithPlates.jobString>
+  <ImmersiveChefs_SmithCutlery.label>金属のカトラリーを4組鍛造する</ImmersiveChefs_SmithCutlery.label>
+  <ImmersiveChefs_SmithCutlery.description>中級金属からカトラリーを4組鍛造します。</ImmersiveChefs_SmithCutlery.description>
+  <ImmersiveChefs_SmithCutlery.jobString>カトラリーを鍛造しています。</ImmersiveChefs_SmithCutlery.jobString>
+  <ImmersiveChefs_MachinePlates.label>皿を4枚機械加工する</ImmersiveChefs_MachinePlates.label>
+  <ImmersiveChefs_MachinePlates.description>使用可能な金属または登録済みのプラスチックから皿を4枚製造します。</ImmersiveChefs_MachinePlates.description>
+  <ImmersiveChefs_MachinePlates.jobString>皿を製造しています。</ImmersiveChefs_MachinePlates.jobString>
+  <ImmersiveChefs_MachineCutlery.label>カトラリーを4組機械加工する</ImmersiveChefs_MachineCutlery.label>
+  <ImmersiveChefs_MachineCutlery.description>使用可能な金属または登録済みのプラスチックからカトラリーを4組製造します。</ImmersiveChefs_MachineCutlery.description>
+  <ImmersiveChefs_MachineCutlery.jobString>カトラリーを製造しています。</ImmersiveChefs_MachineCutlery.jobString>
+  <ImmersiveChefs_PrepareIngredients.label>食材を下ごしらえする</ImmersiveChefs_PrepareIngredients.label>
+  <ImmersiveChefs_PrepareIngredients.description>栄養価0.5の食用食材を、由来を保ったまま10回分の調理用食材に加工します。</ImmersiveChefs_PrepareIngredients.description>
+  <ImmersiveChefs_PrepareIngredients.jobString>食材を下ごしらえしています。</ImmersiveChefs_PrepareIngredients.jobString>
+</LanguageData>

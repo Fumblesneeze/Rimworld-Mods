@@ -629,7 +629,10 @@ public sealed class ReleasePublicationAdmissionTests
             "Product", "1.6", "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
             294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["2009463077"], [], [],
             "mod_build", "presentation_render", candidate, ["1.6/Assemblies/Product.dll"], description, preview,
-            null, "Initial release.", subscriber);
+            null, "Initial release.", subscriber)
+        {
+            WorkshopLinks = [new WorkshopLink("github", WorkshopLinkPolicy.RepositoryUrl)]
+        };
         var plan = new ReleasePublicationPlan(
             "RimWorldModReleasePlan/v2", "fumblesneeze.example", "Example", "Fumblesneeze", "revision",
             digest, candidate, files, profile, ReleaseCandidateBuilder.Hash(profile), frozenProfile, frozen,
@@ -637,7 +640,10 @@ public sealed class ReleasePublicationAdmissionTests
             new FileInfo(preview).Length, 294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"],
             ["2009463077"], [], "Initial release.", subscriber, [subscriberFile, frozenProfileFile], null,
             "https://example.invalid", 0, [], 0,
-            null, ["CREATE"], nonce, expiry, false);
+            null, ["CREATE"], nonce, expiry, false)
+        {
+            WorkshopLinks = frozen.WorkshopLinks
+        };
         var path = Path.Combine(root, "publication-plan.json");
         File.WriteAllText(path, JsonSerializer.Serialize(plan));
         return path;

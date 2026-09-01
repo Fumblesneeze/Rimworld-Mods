@@ -68,6 +68,8 @@ public sealed class WorkshopDescriptionTests
         "Expanded Materials - Metals",
         "Expanded Materials - Masonry",
         "Ceramics (Continued)",
+        "Dubs Rimatomics",
+        "Crash Landing",
         "Simply Sublime ABS Polymer",
         "Dubs Bad Hygiene",
         "Gastronomy",

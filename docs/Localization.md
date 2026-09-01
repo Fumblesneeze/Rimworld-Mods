@@ -1,6 +1,6 @@
 # Localization
 
-Immersive Chefs is a distributable product mod and ships complete English, German, Spanish, French, Simplified Chinese, and Russian catalogs. RimWorld Dev Gateway is explicitly development-only and is not localized for distribution.
+Immersive Chefs is a distributable product mod and ships complete English, German, Spanish, French, Simplified Chinese, Russian, and Japanese catalogs. RimWorld Dev Gateway is explicitly development-only and is not localized for distribution.
 
 ## Catalog layout
 
@@ -9,7 +9,7 @@ Immersive Chefs is a distributable product mod and ships complete English, Germa
 - Translated Def fields: `mods/ImmersiveChefs/Languages/<Language>/DefInjected/<DefType>/*.xml`
 - Canonical Def wording: the owned XML under `mods/ImmersiveChefs/Defs` and `mods/ImmersiveChefs/Patches`
 
-The required RimWorld folder names are `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`. Source and packaged catalogs must remain byte-identical.
+The required RimWorld folder names are `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, `Russian`, and `Japanese`. Source and packaged catalogs must remain byte-identical.
 
 ## Terminology
 
@@ -24,14 +24,15 @@ The catalogs were authored from the in-game contexts by the implementing agent w
 | sanitation | Clean/dirty state and how an item was washed. Wild-water provenance remains hidden from ordinary inspection. |
 | culinary quality | The mod's accumulated meal-quality result, distinct from a Thing's crafting quality. |
 | food poisoning | The vanilla illness risk and consequence. Do not label it poison or toxicity. |
-| toxic buildup | The hidden, slow exposure caused only by supported lead or uranium food-contact ware and revealed through the pawn's vanilla hediff thresholds. |
+| toxic buildup | The hidden, slow exposure caused by supported lead food-contact ware, and the Core fallback for uranium when no supported radiation provider is active. It is revealed through the pawn's vanilla hediff thresholds. |
+| radiation | Uranium food-contact exposure supplied through optional Dubs Rimatomics or Crash Landing integration when either provider is active. |
 
 Proper names such as mod names may remain invariant. Technical values such as `Auto` may remain invariant where that is the normal UI term, but any such equality should be deliberate and reviewable.
 
 ## Adding or changing player text
 
 1. Put C# UI text behind a stable keyed translation entry. Put Def-owned fields in the appropriate `DefInjected` catalog; include Defs created by compatibility patches.
-2. Update all six catalogs together and preserve placeholder indices and rich-text tags exactly.
+2. Update all seven catalogs together and preserve placeholder indices and rich-text tags exactly.
 3. Do not call `Translate()` from host-safe unit tests. Test the pure key-selection rule and let the localization release gate parse the catalogs.
 4. Run the focused localization gate:
 
@@ -50,6 +51,6 @@ Proper names such as mod names may remain invariant. Technical values such as `A
      -Output json
    ```
 
-   Repeat with `English`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`. The option changes only the run's disposable `Prefs.xml`; it does not touch the normal game preference.
+   Repeat with `English`, `Spanish`, `French`, `ChineseSimplified`, `Russian`, and `Japanese`. The option changes only the run's disposable `Prefs.xml`; it does not touch the normal game preference.
 
 The release gate derives exact keyed and Def-field inventories. It must reject missing, stale, duplicate, malformed, placeholder/tag-mismatched, or guarded raw player-facing strings; folder presence alone is never sufficient.

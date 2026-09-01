@@ -57,6 +57,8 @@
   <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
   <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
   <ImmersiveChefs_Integration_CookForYourself>Cook for Yourself</ImmersiveChefs_Integration_CookForYourself>
+  <ImmersiveChefs_Integration_Rimatomics>Dubs Rimatomics</ImmersiveChefs_Integration_Rimatomics>
+  <ImmersiveChefs_Integration_CrashLanding>Crash Landing</ImmersiveChefs_Integration_CrashLanding>
 
   <ImmersiveChefs_Enum_WareRequirementMode_Strict>严格</ImmersiveChefs_Enum_WareRequirementMode_Strict>
   <ImmersiveChefs_Enum_WareRequirementMode_Prefer>优先</ImmersiveChefs_Enum_WareRequirementMode_Prefer>
@@ -95,6 +97,9 @@
   <ImmersiveChefs_Recipe_MakeAdobePlates_Label>制作4个土坯餐盘</ImmersiveChefs_Recipe_MakeAdobePlates_Label>
   <ImmersiveChefs_Recipe_MakeAdobePlates_Description>用土坯砖塑成四个粗糙餐盘。</ImmersiveChefs_Recipe_MakeAdobePlates_Description>
   <ImmersiveChefs_Recipe_MakeAdobePlates_JobString>正在制作土坯餐盘。</ImmersiveChefs_Recipe_MakeAdobePlates_JobString>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Label>制作4个瓷盘</ImmersiveChefs_Recipe_MakePorcelainPlates_Label>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Description>用瓷料塑制四个盘子。</ImmersiveChefs_Recipe_MakePorcelainPlates_Description>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>正在制作瓷盘。</ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>
 
   <ImmersiveChefs_Product_CookwarePlural>炊具套装</ImmersiveChefs_Product_CookwarePlural>
   <ImmersiveChefs_Product_Plates>餐盘</ImmersiveChefs_Product_Plates>

@@ -1,10 +1,56 @@
 using NUnit.Framework;
+using System.Text.Json;
 
 namespace RimWorldModding.Mcp.Tests;
 
 [TestFixture]
 public sealed class ReleaseProfileTests
 {
+    private const string RepositoryUrl = "https://github.com/Fumblesneeze/Rimworld-Mods";
+
+    [Test]
+    public void Every_repository_release_profile_declares_the_exact_GitHub_Workshop_link()
+    {
+        var root = TestRepository.FindRoot();
+
+        foreach (var profile in ReleaseProfileCatalog.Discover(root))
+        {
+            Assert.That(
+                profile.WorkshopLinks,
+                Is.EqualTo(new[] { new WorkshopLink("github", RepositoryUrl) }),
+                profile.PackageId + " must publish the repository through Workshop link metadata.");
+            Assert.That(File.ReadAllText(profile.Description), Does.Not.Contain(RepositoryUrl),
+                "The repository URL belongs in Steam's Links section, not the description.");
+        }
+    }
+
+    [Test]
+    public void Workshop_links_use_the_exact_lowercase_publisher_wire_shape()
+    {
+        Assert.That(
+            JsonSerializer.Serialize(new[] { new WorkshopLink("github", RepositoryUrl) }),
+            Is.EqualTo("[{\"key\":\"github\",\"url\":\"https://github.com/Fumblesneeze/Rimworld-Mods\"}]"));
+    }
+
+    [Test]
+    public void Workshop_links_reject_duplicate_keys_non_https_and_non_GitHub_repository_targets()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                () => WorkshopLinkPolicy.Validate([
+                    new WorkshopLink("github", RepositoryUrl),
+                    new WorkshopLink("GitHub", RepositoryUrl)]),
+                Throws.TypeOf<ReleaseProfileException>().With.Message.Contains("unique"));
+            Assert.That(
+                () => WorkshopLinkPolicy.Validate([new WorkshopLink("github", "http://github.com/Fumblesneeze/Rimworld-Mods")]),
+                Throws.TypeOf<ReleaseProfileException>().With.Message.Contains("HTTPS"));
+            Assert.That(
+                () => WorkshopLinkPolicy.Validate([new WorkshopLink("github", "https://example.invalid/not-the-repository")]),
+                Throws.TypeOf<ReleaseProfileException>().With.Message.Contains("github.com"));
+        });
+    }
+
     [Test]
     public void ResolvedWorkshopDescriptions_FitSteamsExactUtf8Boundary()
     {

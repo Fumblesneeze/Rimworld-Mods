@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_AssistCooking.label>調理を手伝う</ImmersiveChefs_AssistCooking.label>
+  <ImmersiveChefs_AssistCooking.verb>調理を手伝う</ImmersiveChefs_AssistCooking.verb>
+  <ImmersiveChefs_AssistCooking.gerund>調理を手伝っています</ImmersiveChefs_AssistCooking.gerund>
+  <ImmersiveChefs_PlateMeals.label>料理を盛り付ける</ImmersiveChefs_PlateMeals.label>
+  <ImmersiveChefs_PlateMeals.verb>盛り付ける</ImmersiveChefs_PlateMeals.verb>
+  <ImmersiveChefs_PlateMeals.gerund>料理を盛り付けています</ImmersiveChefs_PlateMeals.gerund>
+  <ImmersiveChefs_PrepareIngredients.label>食材を下ごしらえする</ImmersiveChefs_PrepareIngredients.label>
+  <ImmersiveChefs_PrepareIngredients.verb>食材を下ごしらえする</ImmersiveChefs_PrepareIngredients.verb>
+  <ImmersiveChefs_PrepareIngredients.gerund>食材を下ごしらえしています</ImmersiveChefs_PrepareIngredients.gerund>
+  <ImmersiveChefs_DoDishes.label>食器を洗う</ImmersiveChefs_DoDishes.label>
+  <ImmersiveChefs_DoDishes.verb>洗う</ImmersiveChefs_DoDishes.verb>
+  <ImmersiveChefs_DoDishes.gerund>食器を洗っています</ImmersiveChefs_DoDishes.gerund>
+</LanguageData>

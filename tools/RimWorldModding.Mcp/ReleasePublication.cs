@@ -280,9 +280,11 @@ public static class ReleasePlanAdmission
             profile.AllowFirstPublication != plan.AllowFirstPublication ||
             !string.Equals(profile.ChangeNote, plan.ChangeNote, StringComparison.Ordinal) ||
             !profile.Tags.SequenceEqual(plan.Tags, StringComparer.Ordinal) ||
+            !profile.WorkshopLinks.SequenceEqual(plan.WorkshopLinks) ||
             !profile.RequiredWorkshopItems.SequenceEqual(plan.RequiredWorkshopItems, StringComparer.Ordinal) ||
             !(profile.RequiredDlcAppIds ?? []).SequenceEqual(plan.RequiredDlcAppIds ?? [], StringComparer.Ordinal))
             throw new InvalidOperationException("Frozen release profile does not match the reviewed publication plan.");
+        _ = WorkshopLinkPolicy.Validate(plan.WorkshopLinks);
         ValidatePreviousPrivateEvidence(root, plan, requirePreviousPrivateEvidence);
         _ = RepositoryRoot.ContainedPath(root, profile.Project);
     }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_SauceStation.label>ソース調理台</ImmersiveChefs_SauceStation.label>
+  <ImmersiveChefs_SauceStation.description>ソース、味付け、仕上げを担当する連結式の専用調理台。</ImmersiveChefs_SauceStation.description>
+  <ImmersiveChefs_MeatStation.label>肉調理台</ImmersiveChefs_MeatStation.label>
+  <ImmersiveChefs_MeatStation.description>肉の整形や並行した下ごしらえを担当する連結式の専用調理台。</ImmersiveChefs_MeatStation.description>
+  <ImmersiveChefs_VegetableStation.label>野菜調理台</ImmersiveChefs_VegetableStation.label>
+  <ImmersiveChefs_VegetableStation.description>野菜の下ごしらえや盛り付けを担当する連結式の専用調理台。</ImmersiveChefs_VegetableStation.description>
+  <ImmersiveChefs_PastryStation.label>製菓台</ImmersiveChefs_PastryStation.label>
+  <ImmersiveChefs_PastryStation.description>生地、焼き菓子、デザートを担当する連結式の専用調理台。</ImmersiveChefs_PastryStation.description>
+  <ImmersiveChefs_Dishwasher.label>食器洗い機</ImmersiveChefs_Dishwasher.label>
+  <ImmersiveChefs_Dishwasher.description>家庭用の電動食器洗い機。最大16人分の食器について、個体、素材、品質、耐久値を保ったまま洗浄し、停電しても洗浄工程を安全に保持します。</ImmersiveChefs_Dishwasher.description>
+  <ImmersiveChefs_IndustrialDishwasher.label>業務用食器洗い機</ImmersiveChefs_IndustrialDishwasher.label>
+  <ImmersiveChefs_IndustrialDishwasher.description>64人分の食器を収容できる、高性能な電動食器洗い機。</ImmersiveChefs_IndustrialDishwasher.description>
+  <ImmersiveChefs_PrimitiveCookware.label>原始的な石の調理器具セット</ImmersiveChefs_PrimitiveCookware.label>
+  <ImmersiveChefs_PrimitiveCookware.description>荒削りの石鍋、浅いフライパン、ふたに、簡素な木製の取っ手と小道具を組み合わせた一式。調理は遅く、壊れやすく、清潔に保つのも難しい。</ImmersiveChefs_PrimitiveCookware.description>
+  <ImmersiveChefs_Cookware.label>調理器具セット</ImmersiveChefs_Cookware.label>
+  <ImmersiveChefs_Cookware.description>鍋、フライパン、ふた、取っ手、小道具をまとめた、再利用可能な一式の調理用品。素材と製作品質は、調理速度、清潔さ、快適さ、料理の出来栄えに影響します。</ImmersiveChefs_Cookware.description>
+  <ImmersiveChefs_Plate.label>皿</ImmersiveChefs_Plate.label>
+  <ImmersiveChefs_Plate.description>料理一食分を載せる再利用可能な皿。素材と製作品質は、食事の快適さ、食事速度、衛生に影響します。</ImmersiveChefs_Plate.description>
+  <ImmersiveChefs_AdobePlate.label>日干しレンガの皿</ImmersiveChefs_AdobePlate.label>
+  <ImmersiveChefs_AdobePlate.description>日干しレンガで作られた粗末な皿。多孔質でもろく、清潔に保つのが非常に難しい。</ImmersiveChefs_AdobePlate.description>
+  <ImmersiveChefs_Cutlery.label>カトラリー</ImmersiveChefs_Cutlery.label>
+  <ImmersiveChefs_Cutlery.description>1人分のフォーク、スプーン、ナイフを揃えた再利用可能な一式。素材と製作品質は、食事の快適さと衛生に影響します。</ImmersiveChefs_Cutlery.description>
+  <ImmersiveChefs_GlitterworldCookware.label>グリッターワールド製調理器具セット</ImmersiveChefs_GlitterworldCookware.label>
+  <ImmersiveChefs_GlitterworldCookware.description>グリッターワールドで作られた、自浄式で不燃性の調理器具セット。現地では製造できません。</ImmersiveChefs_GlitterworldCookware.description>
+  <ImmersiveChefs_ChefsKnife.label>料理人用ナイフセット</ImmersiveChefs_ChefsKnife.label>
+  <ImmersiveChefs_ChefsKnife.description>料理人用の個人ナイフ一式。工具ベルトに携帯し、武器の代わりにはならずにキッチン作業を向上させます。</ImmersiveChefs_ChefsKnife.description>
+  <ImmersiveChefs_PreparedFood.label>下ごしらえ済み食材</ImmersiveChefs_PreparedFood.label>
+  <ImmersiveChefs_PreparedFood.description>仕上げの調理に備えて、刻み、整形し、小分けにした食材。情報画面には栄養価、由来、下ごしらえ品質が表示されます。</ImmersiveChefs_PreparedFood.description>
+  <ImmersiveChefs_PrepStation.label>下ごしらえ台</ImmersiveChefs_PrepStation.label>
+  <ImmersiveChefs_PrepStation.description>調理前に食材を洗い、整形し、刻み、小分けにするための業務用作業台。</ImmersiveChefs_PrepStation.description>
+  <ImmersiveChefs_Microwave.label>電子レンジ</ImmersiveChefs_Microwave.label>
+  <ImmersiveChefs_Microwave.description>皿に盛られた冷たい料理を食べる前に温める、小型の電気器具。温め直すことで温度は戻りますが、料理の出来栄えと安全性がわずかに低下します。</ImmersiveChefs_Microwave.description>
+</LanguageData>

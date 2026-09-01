@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Xml.Linq;
@@ -72,7 +73,48 @@ public sealed record ReleaseProfile(
     string Preview,
     string? PreviousChangeNote,
     string ChangeNote,
-    string VerificationProfile);
+    string VerificationProfile)
+{
+    public IReadOnlyList<WorkshopLink> WorkshopLinks { get; init; } = [];
+}
+
+public sealed record WorkshopLink(
+    [property: JsonPropertyName("key")] string Key,
+    [property: JsonPropertyName("url")] string Url);
+
+public static class WorkshopLinkPolicy
+{
+    public const int MaximumLinks = 8;
+    public const int MaximumKeyCharacters = 64;
+    public const int MaximumUrlCharacters = 255;
+    public const string RepositoryUrl = "https://github.com/Fumblesneeze/Rimworld-Mods";
+
+    public static WorkshopLink[] Validate(IEnumerable<WorkshopLink> links)
+    {
+        ArgumentNullException.ThrowIfNull(links);
+        var values = links.ToArray();
+        if (values.Length is < 1 or > MaximumLinks)
+            throw new ReleaseProfileException($"workshopLinks must contain between 1 and {MaximumLinks} entries.");
+        if (values.Select(link => link.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count() != values.Length)
+            throw new ReleaseProfileException("workshopLinks must use unique case-insensitive keys.");
+
+        foreach (var link in values)
+        {
+            if (link is null || string.IsNullOrWhiteSpace(link.Key) ||
+                link.Key.Length > MaximumKeyCharacters ||
+                !Regex.IsMatch(link.Key, "^[A-Za-z0-9_]+$"))
+                throw new ReleaseProfileException("Every Workshop link key must be a bounded alphanumeric identifier.");
+            if (string.IsNullOrWhiteSpace(link.Url) || link.Url.Length > MaximumUrlCharacters ||
+                !Uri.TryCreate(link.Url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps ||
+                !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Fragment))
+                throw new ReleaseProfileException("Every Workshop link must be one bounded absolute HTTPS URL without credentials or a fragment.");
+            if (link.Key.Equals("github", StringComparison.OrdinalIgnoreCase) &&
+                !link.Url.Equals(RepositoryUrl, StringComparison.Ordinal))
+                throw new ReleaseProfileException($"The github Workshop link must be exactly '{RepositoryUrl}'.");
+        }
+        return values;
+    }
+}
 
 public sealed class ReleaseProfileException(string message) : Exception(message);
 
@@ -85,7 +127,7 @@ public static class ReleaseProfileCatalog
         "managedAssemblySha256", "steamAppId", "steamUserId", "publishedFileId",
         "allowFirstPublication", "visibility", "tags", "requiredWorkshopItems", "requiredDlcAppIds", "hardRuntimeAssemblyReferences",
         "buildOperation", "presentationOperation", "packageSource", "packageInclude",
-        "description", "preview", "previousChangeNote", "changeNote", "verificationProfile"
+        "description", "preview", "previousChangeNote", "changeNote", "verificationProfile", "workshopLinks"
     };
 
     private static readonly HashSet<string> RegisteredBuildOperations = new(StringComparer.Ordinal)
@@ -229,6 +271,7 @@ public static class ReleaseProfileCatalog
                 throw new ReleaseProfileException("Subscriber verification profile does not exist.");
             _ = SubscriberVerificationProfiles.Load(root, verificationProfile);
 
+            var workshopLinks = ReadWorkshopLinks(element);
             return new ReleaseProfile(
                 schema,
                 Path.GetFullPath(profilePath),
@@ -259,7 +302,10 @@ public static class ReleaseProfileCatalog
                 preview,
                 OptionalString(element, "previousChangeNote"),
                 RequiredStringAllowEmpty(element, "changeNote"),
-                verificationProfile);
+                verificationProfile)
+            {
+                WorkshopLinks = workshopLinks
+            };
         }
     }
 
@@ -363,5 +409,21 @@ public static class ReleaseProfileCatalog
         if (values.Distinct(StringComparer.Ordinal).Count() != values.Length)
             throw new ReleaseProfileException($"Release profile '{name}' must contain unique Steam application IDs.");
         return values;
+    }
+
+    private static WorkshopLink[] ReadWorkshopLinks(JsonElement root)
+    {
+        if (!root.TryGetProperty("workshopLinks", out var property) || property.ValueKind != JsonValueKind.Array)
+            throw new ReleaseProfileException("Release profile requires array 'workshopLinks'.");
+        var links = property.EnumerateArray().Select(item =>
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+                throw new ReleaseProfileException("Every workshopLinks entry must be an object.");
+            var names = item.EnumerateObject().Select(value => value.Name).ToArray();
+            if (names.Length != 2 || !names.Contains("key", StringComparer.Ordinal) || !names.Contains("url", StringComparer.Ordinal))
+                throw new ReleaseProfileException("Every workshopLinks entry must contain exactly key and url.");
+            return new WorkshopLink(RequiredString(item, "key"), RequiredString(item, "url"));
+        });
+        return WorkshopLinkPolicy.Validate(links);
     }
 }

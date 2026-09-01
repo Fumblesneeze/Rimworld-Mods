@@ -57,6 +57,8 @@
   <ImmersiveChefs_Integration_FoodTextureVariety>Food Texture Variety</ImmersiveChefs_Integration_FoodTextureVariety>
   <ImmersiveChefs_Integration_PickUpAndHaul>Pick Up And Haul</ImmersiveChefs_Integration_PickUpAndHaul>
   <ImmersiveChefs_Integration_CookForYourself>Cook for Yourself</ImmersiveChefs_Integration_CookForYourself>
+  <ImmersiveChefs_Integration_Rimatomics>Dubs Rimatomics</ImmersiveChefs_Integration_Rimatomics>
+  <ImmersiveChefs_Integration_CrashLanding>Crash Landing</ImmersiveChefs_Integration_CrashLanding>
 
   <ImmersiveChefs_Enum_WareRequirementMode_Strict>Estricto</ImmersiveChefs_Enum_WareRequirementMode_Strict>
   <ImmersiveChefs_Enum_WareRequirementMode_Prefer>Preferir</ImmersiveChefs_Enum_WareRequirementMode_Prefer>
@@ -95,6 +97,9 @@
   <ImmersiveChefs_Recipe_MakeAdobePlates_Label>hacer 4 platos de adobe</ImmersiveChefs_Recipe_MakeAdobePlates_Label>
   <ImmersiveChefs_Recipe_MakeAdobePlates_Description>Forma cuatro platos toscos con ladrillos de adobe.</ImmersiveChefs_Recipe_MakeAdobePlates_Description>
   <ImmersiveChefs_Recipe_MakeAdobePlates_JobString>Formando platos de adobe.</ImmersiveChefs_Recipe_MakeAdobePlates_JobString>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Label>hacer 4 platos de porcelana</ImmersiveChefs_Recipe_MakePorcelainPlates_Label>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_Description>Moldea cuatro platos con porcelana.</ImmersiveChefs_Recipe_MakePorcelainPlates_Description>
+  <ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>Moldeando platos de porcelana.</ImmersiveChefs_Recipe_MakePorcelainPlates_JobString>
 
   <ImmersiveChefs_Product_CookwarePlural>baterías de cocina</ImmersiveChefs_Product_CookwarePlural>
   <ImmersiveChefs_Product_Plates>platos</ImmersiveChefs_Product_Plates>

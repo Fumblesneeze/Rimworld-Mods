@@ -86,6 +86,8 @@ Kitchenware recipes SHALL use the following baseline resource costs and outputs:
 | Universal metal/plastic plates | `TableMachining` | 4 units of any eligible metal or registered plastic Stuff | 4 plates |
 | Universal metal/plastic cutlery | `TableMachining` | 2 units of any eligible metal or registered plastic Stuff | 4 cutlery settings |
 
+The table expresses ordinary material-volume units, not raw stack items. Every kitchenware recipe SHALL honor RimWorld's `ThingDef.smallVolume` convention: one physical unit of a small-volume Stuff contributes `0.1` recipe unit, while one physical unit of ordinary Stuff contributes `1`. Consequently, choosing vanilla Silver or Gold SHALL require ten times the physical stack count shown in the table: 60 Silver or Gold for a 6-unit cookware or chef's-knife requirement, 40 for a 4-unit plate requirement, and 20 for a 2-unit cutlery requirement. This conversion SHALL apply through the shared ingredient-value calculation to any compatible small-volume Stuff and SHALL NOT multiply wood, stone, steel, porcelain, adobe, plastic, or other ordinary-volume ingredients.
+
 These costs SHALL remain benchmarked against same-era Core objects instead of being treated as isolated tuning constants: one Core wall consumes 5 material units and one Core steel knife consumes 30, so primitive cookware costs one wall-equivalent of stone, metal cookware costs only 1.2 wall-equivalents, a non-weapon chef's knife set costs 20% of the combat knife, and one complete place setting costs 1.5 material units. A future rebalance SHALL record its comparator Defs and ratios before changing the table.
 
 Every recipe SHALL use the completing pawn's Crafting skill to assign a vanilla `QualityCategory` to all items in its output batch. The wood in each cookware recipe SHALL represent handles, spatulas, and related non-metal parts rather than a second selectable Stuff. Every ingredient requirement SHALL use a semantic player label such as `any stony material`, `any intermediate metal`, or `wood`; no generated bill requirement MAY expose an internal category such as `root`. Plate and cutlery recipes SHALL have no Immersive Chefs research prerequisite: progression comes from access to `CraftingSpot`, vanilla `Smithing`/`Electricity` for the smithies, and vanilla `Machining` for `TableMachining`. The machining recipes SHALL remain a late universal route even for materials also available at an earlier station.
@@ -107,6 +109,11 @@ The bill-configuration requirement SHALL remain a semantic description of the ma
 #### Scenario: Smith intermediate place settings
 - **WHEN** a colony with a fueled smithy crafts bronze plates and cutlery from registered bronze
 - **THEN** the smithy produces four of each with bronze Stuff and one crafting quality per output batch without requiring an Immersive Chefs research project
+
+#### Scenario: Craft kitchenware from Silver or Gold
+- **WHEN** the player restricts a 6-unit, 4-unit, or 2-unit metal kitchenware bill to vanilla Silver or Gold
+- **THEN** the native bill requires and consumes exactly 60, 40, or 20 physical material units respectively
+- **THEN** choosing an ordinary-volume eligible metal for the same recipe continues to require exactly 6, 4, or 2 physical units
 
 #### Scenario: Craft a batch of wood place settings
 - **WHEN** a pawn completes each wood place-setting recipe at a crafting spot
@@ -173,10 +180,12 @@ Primitive stone cookware SHALL have intrinsic material-cleanliness `15`, Cooking
 - **WHEN** a player deliberately crafts kitchenware from lead
 - **THEN** the recipe remains valid and its info card exposes lead's ordinary sanitation and culinary disadvantages without revealing any latent toxicity state
 
-### Requirement: Only toxic ware materials add vanilla toxic buildup
-Lead and uranium SHALL be the only default kitchenware materials that contribute toxic exposure. A covered humanlike ingestion SHALL add a small dose to the eater's vanilla `ToxicBuildup` Hediff for each toxic ware item actually used: `0.020` severity for toxic cookware recorded on that serving, `0.015` for its toxic plate, and `0.010` for its toxic cutlery. At the default scale, an all-toxic place setting therefore adds `0.045` per meal; compared with Core's `0.08` severity-per-day recovery, repeated ordinary use can accumulate slowly while occasional exposure normally recovers. Lead and uranium SHALL use the same initial dose table until playtesting justifies a material-specific distinction.
+### Requirement: Unsafe ware uses the active toxic or radiation health provider
+Lead and uranium SHALL be the only default kitchenware materials that contribute unsafe-material exposure. A covered humanlike ingestion SHALL calculate a small dose for each unsafe ware item actually used: `0.020` severity-equivalent units for cookware recorded on that serving, `0.015` for its plate, and `0.010` for its cutlery. At the default scale, an all-unsafe place setting therefore contributes `0.045` units per meal. Lead SHALL always add its component dose to Core's `ToxicBuildup` Hediff.
 
-Exposure SHALL occur once only after RimWorld reports positive nutrition ingestion. Crafting, carrying, reserving, cooking, inspection, aborted ingestion, non-toxic kitchenware, chef's knives, missing/legacy cookware provenance, animals, and excluded hand-eaten foods SHALL add no toxic buildup. The cooked serving SHALL preserve only its hidden cookware-material provenance through stack split/merge and save/load; the embedded physical plate and exact dining cutlery remain authoritative for their own material. The meal, cookware, plate, and cutlery inspect strings MUST NOT reveal a toxicity flag, predicted dose, or current latent toxic state. Pawn Health inspection SHALL remain entirely vanilla-owned: the initial buildup stays hidden while vanilla marks its stage `becomeVisible=false`, and the Hediff becomes player-visible only at vanilla's current threshold.
+Core RimWorld 1.6 has no separate pawn radiation-sickness Hediff. Uranium SHALL therefore select exactly one enabled, exact-shape-supported provider in this priority order: `Dubwise.Rimatomics`, then `Katavrik.CrashLanding`, then Core `ToxicBuildup`. Exact supported Rimatomics SHALL receive the converted strength through public `Rimatomics.DubUtils.applyRads(Pawn,float)` using the inspected `0.0028758333` default conversion. Exact supported Crash Landing SHALL receive the unchanged severity-equivalent dose through its owned `HediffDef Rad` when Rimatomics did not claim the exposure. Rimatomics SHALL win when both are active, matching Crash Landing's own radiation-provider behavior and preventing double application. Lead and uranium components in one place setting SHALL be split between providers without combining, dropping, or applying either component twice. An active incompatible provider SHALL emit one bounded warning and fall through only if it was not partially invoked; if no radiation provider is admitted, uranium SHALL use Core toxic buildup.
+
+Exposure SHALL occur once only after RimWorld reports positive nutrition ingestion. Crafting, carrying, reserving, cooking, inspection, aborted ingestion, safe kitchenware, chef's knives, missing/legacy cookware provenance, animals, and excluded hand-eaten foods SHALL add no unsafe-material health effect. The cooked serving SHALL preserve only its hidden cookware-material provenance through stack split/merge and save/load; the embedded physical plate and exact dining cutlery remain authoritative for their own material. The meal, cookware, plate, and cutlery inspect strings MUST NOT reveal a toxicity/radiation flag, predicted dose, or current latent health state. Pawn Health inspection SHALL remain owned by the active health provider: Core controls `ToxicBuildup` visibility, Rimatomics controls its native radiation lifecycle, and Crash Landing controls `Rad` stages and visibility.
 
 `ToxicKitchenwareExposureScale` SHALL be a live setting with default `1.0` and range `0.0`–`3.0`. It SHALL multiply only the material-dose sum at ingestion, clamp before application, and SHALL NOT affect food-poisoning probability, food-poisoning attribution, material cleanliness, or culinary quality. Setting it to zero disables new toxic-ware exposure without deleting an existing pawn Hediff or rewriting stored meal provenance.
 
@@ -186,9 +195,36 @@ Exposure SHALL occur once only after RimWorld reports positive nutrition ingesti
 - **THEN** no kitchenware or meal inspection reveals that hidden dose or the pawn's latent Hediff state
 
 #### Scenario: Uranium plate contributes only when used
-- **WHEN** a humanlike pawn completes ingestion from an actual uranium plate while the cookware and cutlery are non-toxic
-- **THEN** exactly the `0.015` plate dose is added after positive nutrition ingestion
+- **WHEN** a humanlike pawn completes ingestion from an actual uranium plate while the cookware and cutlery are safe and Rimatomics is absent
+- **THEN** exactly the `0.015` plate dose is added to Core `ToxicBuildup` after positive nutrition ingestion
 - **THEN** merely crafting, carrying, reserving, or inspecting the uranium plate adds nothing
+
+#### Scenario: Rimatomics owns uranium radiation
+- **WHEN** a humanlike pawn completes native ingestion from an actual uranium plate while exact supported Rimatomics is active
+- **THEN** Immersive Chefs invokes `Rimatomics.DubUtils.applyRads` once with strength `0.015 / 0.0028758333`, allowing Rimatomics settings and resistance to own the resulting radiation state
+- **THEN** Immersive Chefs adds no Core `ToxicBuildup` for that uranium plate and does not reveal the latent radiation state on the consumed meal or returned plate
+
+#### Scenario: Crash Landing owns uranium radiation when Rimatomics is absent
+- **WHEN** a humanlike pawn completes native ingestion from an actual uranium plate while exact supported `Katavrik.CrashLanding` is active and Rimatomics is absent or disabled
+- **THEN** exactly `0.015` severity is added once to Crash Landing's owned `Rad` Hediff
+- **THEN** Immersive Chefs adds no Core `ToxicBuildup` and does not reveal latent radiation on the meal or returned plate
+
+#### Scenario: Rimatomics wins when both radiation providers are active
+- **WHEN** exact supported Rimatomics and Crash Landing are both active for uranium ingestion
+- **THEN** the uranium dose is applied once through Rimatomics and Crash Landing's `Rad` severity remains unchanged
+
+#### Scenario: Mixed lead and uranium service splits providers
+- **WHEN** supported Rimatomics is active and a humanlike pawn completes native ingestion of a serving whose actual used ware includes both lead and uranium components
+- **THEN** only the summed lead-component dose is added to Core `ToxicBuildup`
+- **THEN** only the summed uranium-component dose is converted to upstream strength and applied once through Rimatomics
+
+#### Scenario: Changed Rimatomics shape falls back safely
+- **WHEN** exact package `Dubwise.Rimatomics` is active but the public static `void DubUtils.applyRads(Pawn,float)` shape is missing or changed
+- **THEN** no upstream method is partially invoked, one bounded compatibility warning identifies the disabled integration, and uranium tries exact enabled Crash Landing before using Core `ToxicBuildup`
+
+#### Scenario: Changed Crash Landing radiation Def falls back safely
+- **WHEN** exact package `Katavrik.CrashLanding` is active without admitted Rimatomics but its owned `HediffDef Rad` shape is missing or changed
+- **THEN** uranium uses Core `ToxicBuildup`, no foreign Hediff is changed, and one bounded compatibility warning identifies the disabled radiation integration
 
 #### Scenario: Native cooking records toxic cookware separately from service ware
 - **WHEN** a pawn performs an ordinary `DoBill` job using actual uranium cookware, the resulting meal receives an ordinary steel plate, and the pawn later completes native ingestion using actual uranium cutlery

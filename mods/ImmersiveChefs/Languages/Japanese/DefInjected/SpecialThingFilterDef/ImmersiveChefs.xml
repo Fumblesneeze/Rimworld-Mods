@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveChefs_AllowCleanKitchenware.label>清潔な調理用品</ImmersiveChefs_AllowCleanKitchenware.label>
+  <ImmersiveChefs_AllowCleanKitchenware.description>清潔な調理器具セット、皿、カトラリーを許可します。天然水で洗った物も含みます。</ImmersiveChefs_AllowCleanKitchenware.description>
+  <ImmersiveChefs_AllowDirtyKitchenware.label>汚れた調理用品</ImmersiveChefs_AllowDirtyKitchenware.label>
+  <ImmersiveChefs_AllowDirtyKitchenware.description>洗浄が必要な調理器具セット、皿、カトラリーを許可します。</ImmersiveChefs_AllowDirtyKitchenware.description>
+</LanguageData>

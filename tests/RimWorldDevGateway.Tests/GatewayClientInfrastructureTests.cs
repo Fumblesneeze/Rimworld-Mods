@@ -246,6 +246,11 @@ public static class TestSnippet
                     publisherSource,
                     Does.Contain("SteamUGC.SubmitItemUpdate(handle, null)"),
                     "Preview-only synchronization must disable Steam change-note creation.");
+                Assert.That(publisherSource, Does.Contain("SteamUGC.RemoveItemKeyValueTags"));
+                Assert.That(publisherSource, Does.Contain("SteamUGC.AddItemKeyValueTag"));
+                Assert.That(publisherSource, Does.Contain("SteamUGC.SetReturnKeyValueTags"));
+                Assert.That(publisherSource, Does.Contain("SteamUGC.GetQueryUGCKeyValueTag"));
+                Assert.That(publisherSource, Does.Contain("RemoteLinks"));
             });
             var failure = safety.GetMethod("DurableFailureStage", BindingFlags.Public | BindingFlags.Static)!;
             var correlation = safety.GetMethod("CallbackIdsMatch", BindingFlags.Public | BindingFlags.Static)!;

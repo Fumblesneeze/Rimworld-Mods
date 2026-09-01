@@ -36,6 +36,9 @@ summary:
 3. Create the owning OpenSpec change and a strict `Release/release.json` before using the universal
    MCP operations. The profile is the source of truth for the project, package allowlist, supported
    game build, dependencies, preview, and verification workflow.
+   Every new distributable mod starts with complete `English`, `German`, `Spanish`, `French`,
+   `ChineseSimplified`, `Russian`, and `Japanese` catalogs. Author them from gameplay context and
+   keep their keyed and DefInjected inventories exact; do not defer the baseline languages until release.
 4. Route rules to Unit, owned patches to Harmony, scoped real Def fixtures to Defs, finalized loaded
    Def/XML behavior to isolated in-game integration tests, and native player workflows to E2E. Keep
    optional integrations package/Def-resolved and never reference the Dev Gateway from the product.
@@ -86,6 +89,26 @@ Extend existing projects; do not create a new assembly unless the owning design 
 Express static Def creation and changes through Def XML and patch operations. Do not mutate Defs manually in C# or Harmony when an equivalent load-time XML patch is available. Use C# only for runtime state, lifecycle-sensitive or computed behavior, or a documented seam with no suitable XML operation.
 
 Start with the narrowest vanilla operation, then use the most specific suitable XML Extensions operation. Any `XmlExtensions.*` use creates a hard runtime dependency for the owning mod. Read [references/xml-defs-patching.md](references/xml-defs-patching.md) for package-ID gating, dependency metadata, load order, operation selection, and verification before implementing a Def change in C#.
+
+Preserve RimWorld's material-volume convention when balancing Stuff recipes. Core Silver and Gold set
+`ThingDef.smallVolume=true`; each physical item therefore contributes `0.1` ordinary material unit.
+Keep recipe XML counts expressed in ordinary units and make a shared ingredient-value getter return
+`0.1` for any compatible small-volume Stuff and `1` otherwise. Thus a 6/4/2-unit recipe consumes
+60/40/20 Silver or Gold but still consumes 6/4/2 Steel. Do not hard-code precious-metal Def names or
+multiply the XML recipe count, because capability-compatible modded small-volume Stuff must follow the
+same convention and ordinary ingredients must remain unchanged.
+
+Core RimWorld 1.6 has toxic buildup but no general pawn radiation-sickness system. When a gameplay
+effect should become radiation in the presence of another mod, inspect the installed package rather
+than guessing from its label: pin the exact package ID and either a public supported method shape or a
+Def owned by that package, calibrate the external severity scale, and state an explicit provider
+priority. Keep every provider behind an optional setting and a reflection/Def-resolved adapter with no
+compile-time reference. Resolve external Def shapes only after long-event loading has finalized them;
+mod constructors can run before another active mod's Defs are ready. A changed or absent provider may
+fall through to the next provider and finally Core, but an exception after invoking a provider must not
+apply a fallback dose because the external call may already have mutated the pawn. Verify absence,
+each provider alone, provider precedence when multiple providers are loaded, mixed-material dose
+splitting, and the actual native ingestion-to-Health result in separate exact-mod processes.
 
 ## Preserve module boundaries
 

@@ -1,5 +1,6 @@
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace ImmersiveChefs;
@@ -112,10 +113,16 @@ internal static class KitchenwareIngredientInfoPatch
             return false;
         }
 
+        var materialValuePerUnit = selectedRecipe.IngredientValueGetter.ValuePerUnitOf(stuff);
+        if (materialValuePerUnit <= 0f || float.IsNaN(materialValuePerUnit) || float.IsInfinity(materialValuePerUnit))
+        {
+            return false;
+        }
+
         var requirements = selectedRecipe.ingredients
             .Select((ingredient, index) => index == exactMaterialSlot
                 ? "ImmersiveChefs_IngredientRequirement".Translate(
-                    ingredient.GetBaseCount(),
+                    Mathf.CeilToInt(ingredient.GetBaseCount() / materialValuePerUnit),
                     stuff.label).ToString()
                 : selectedRecipe.IngredientValueGetter.BillRequirementsDescription(selectedRecipe, ingredient))
             .ToArray();

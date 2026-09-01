@@ -230,7 +230,7 @@ Get-ChildItem .\.agents\skills -Directory | ForEach-Object {
 }
 ```
 
-For distributable-mod language layout, contextual terminology, focused localization checks, and the six-language live release gate, see [Localization.md](Localization.md).
+For distributable-mod language layout, contextual terminology, focused localization checks, and the seven-language live release gate, see [Localization.md](Localization.md).
 
 ## Extending a mod
 

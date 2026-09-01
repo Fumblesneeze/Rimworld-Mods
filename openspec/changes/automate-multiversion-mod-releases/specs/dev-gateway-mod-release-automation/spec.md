@@ -77,13 +77,13 @@ The release staging step SHALL assemble each mod from an explicit allowlist, rej
 
 ### Requirement: Distributable releases have complete localization catalogs
 
-Every per-mod release manifest SHALL explicitly classify the mod as distributable or development-only. A distributable RimWorld mod SHALL declare and ship at least `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`. Before a candidate is staged, the release gate SHALL parse its canonical keyed runtime strings, translatable Def source fields, conditional patch-added Def fields, and guarded runtime translation-key inventory; require structurally complete catalogs for every declared language; validate XML, duplicate/stale keys, placeholder parity, and rich-text tag parity; and reject guarded raw player-interface literals. English source Def values MAY supply the canonical English Def text, but all runtime keys require English keyed entries. Directory presence or nonzero translation-file count SHALL NOT satisfy the gate.
+Every per-mod release manifest SHALL explicitly classify the mod as distributable or development-only. A distributable RimWorld mod SHALL declare and ship at least `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, `Russian`, and `Japanese`. Before a candidate is staged, the release gate SHALL parse its canonical keyed runtime strings, translatable Def source fields, conditional patch-added Def fields, and guarded runtime translation-key inventory; require structurally complete catalogs for every declared language; validate XML, duplicate/stale keys, placeholder parity, and rich-text tag parity; and reject guarded raw player-interface literals. English source Def values MAY supply the canonical English Def text, but all runtime keys require English keyed entries. Directory presence or nonzero translation-file count SHALL NOT satisfy the gate.
 
 Development-only mods MAY explicitly opt out. RimWorld Dev Gateway SHALL be classified development-only and SHALL not be presented as a localized player product. A distributable mod's release evidence SHALL retain catalog hashes and its declared human/agent authorship review; an automated machine-translation service SHALL NOT be invoked by the release pipeline to fill missing entries.
 
 #### Scenario: Product adds one untranslated setting
 
-- **WHEN** a distributable mod adds an English setting key but omits it from German, Spanish, French, Simplified Chinese, or Russian
+- **WHEN** a distributable mod adds an English setting key but omits it from German, Spanish, French, Simplified Chinese, Russian, or Japanese
 - **THEN** validation names every missing locale/key and fails before staging or publication
 
 #### Scenario: Translation corrupts a placeholder
@@ -136,6 +136,20 @@ When an asset-led feature card depicts a Stuff-colored Thing, its structured art
 #### Scenario: Immersive Chefs presentation is complete and candid
 - **WHEN** the RimWorld 1.6 Immersive Chefs Workshop description is compiled
 - **THEN** it uses visual feature sections and approachable player-facing language, includes every implemented mechanic, thing, building, and supported optional ecosystem with concise expected behavior, identifies Harmony and XML Extensions as the required third-party mods, and places its candid `Author's Note` and pre-generated-AI disclosure as the final section
+
+### Requirement: Repository links use Workshop link metadata
+
+Every publishable release profile SHALL declare a bounded, unique set of HTTPS Workshop links independently from the Workshop description. The immutable publication plan SHALL retain their exact key and URL values. The Steam publisher SHALL reconcile only those declared key/value links through the Workshop item update handle, preserve unrelated existing link keys, check every setter result, and query the resulting key/value inventory before accepting publication. The repository source URL `https://github.com/Fumblesneeze/Rimworld-Mods` SHALL use the `github` link key for repository-owned Workshop items and SHALL NOT be inserted into the description merely to satisfy this requirement.
+
+#### Scenario: Existing item gains its source repository link
+
+- **WHEN** a reviewed incremental release declares `github` as `https://github.com/Fumblesneeze/Rimworld-Mods`
+- **THEN** the admitted plan reports the exact link diff, Steam receives one exact `github` key/value pair, the authenticated post-submit query returns that pair, and the description contains no copy of that URL
+
+#### Scenario: An unrelated social link already exists
+
+- **WHEN** the remote item contains an undeclared Facebook, YouTube, or other key/value link
+- **THEN** reconciling the declared GitHub link leaves the unrelated key/value pair unchanged
 
 ### Requirement: Mod dependencies have one typed source of truth
 Each per-mod release manifest SHALL classify every declared mod relationship as required or optional and SHALL record its canonical package ID, display name, presentation text, and Workshop item identity when it is needed for Steam publication. Generated `About/About.xml` SHALL contain every required mod in RimWorld's required dependency metadata. The generated Workshop description SHALL contain explicit Required Mods and Optional Mods sections, including an explicit empty state, and SHALL render the declared identities without maintaining a second hand-authored dependency list. A mod MAY additionally promote a reviewed subset of optional integrations into a player-facing `Recommended Mods` section immediately above `Optional Mods`; those entries SHALL link their Workshop identities when the exact description budget permits, SHALL retain any required package-chain guidance, and SHALL NOT be duplicated in `Optional Mods`. Recommended mods remain optional and MUST NOT be promoted to RimWorld or Steam required dependencies.

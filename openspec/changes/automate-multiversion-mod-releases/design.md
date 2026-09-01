@@ -166,7 +166,7 @@ Maintaining separate hand-authored lists was rejected because required/optional 
 
 ### 15. Treat complete localization as staged product content
 
-Every distributable mod manifest declares the repository's baseline release languages: `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, and `Russian`. A development-only tool may explicitly opt out; `fumblesneeze.rimworlddevgateway` uses that classification because it is not a player distribution product. The stage validator parses canonical keyed text, Def source fields, conditional patch-added Def fields, and guarded runtime translation keys; it compares those inventories with every required locale, rejects malformed/duplicate/stale entries and placeholder or rich-text-tag drift, and records catalog hashes in candidate evidence. English Def source values may be canonical without redundant DefInjected copies, but every runtime key requires an English keyed value.
+Every distributable mod manifest declares the repository's baseline release languages: `English`, `German`, `Spanish`, `French`, `ChineseSimplified`, `Russian`, and `Japanese`. A development-only tool may explicitly opt out; `fumblesneeze.rimworlddevgateway` uses that classification because it is not a player distribution product. The stage validator parses canonical keyed text, Def source fields, conditional patch-added Def fields, and guarded runtime translation keys; it compares those inventories with every required locale, rejects malformed/duplicate/stale entries and placeholder or rich-text-tag drift, and records catalog hashes in candidate evidence. English Def source values may be canonical without redundant DefInjected copies, but every runtime key requires an English keyed value.
 
 This gate validates completeness and structure, not linguistic quality by pretending that directory presence or string equality is sufficient. Product development records that the required translations were authored by an agent or human from gameplay context rather than sent through an automated translation service, and native-language smoke profiles render representative settings, Def, job, alert, and runtime text. Publication remains blocked when either structural coverage or the product's declared live language profile is incomplete.
 
@@ -199,7 +199,7 @@ Screenshots and GIFs are complementary release artifacts rather than substitutes
 - **[Full historical installations consume substantial disk]** → Separate compact compilation and full-run caches, use manifest-keyed reuse and explicit cache inventory/pruning, and never prune an active lease.
 - **[The release orchestrator becomes a second test framework]** → Invoke existing guarded build/E2E scripts and add only target resolution, contracts, and evidence plumbing.
 - **[A Gateway publisher weakens product isolation]** → Keep publisher code/package ownership in RimWorld Dev Gateway, validate product package exclusions, and perform at least one final product acceptance run without Gateway.
-- **[A release ships English fallbacks or broken placeholders]** → Inventory canonical player text, require exact six-language structural parity for distributable mods, and bind catalog hashes plus live language evidence into the candidate receipt.
+- **[A release ships English fallbacks or broken placeholders]** → Inventory canonical player text, require exact seven-language structural parity for distributable mods, and bind catalog hashes plus live language evidence into the candidate receipt.
 
 ## Migration Plan
 
