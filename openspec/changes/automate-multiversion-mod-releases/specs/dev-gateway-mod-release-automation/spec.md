@@ -153,8 +153,8 @@ Every publishable release profile SHALL declare a bounded, unique, possibly empt
 
 #### Scenario: Already-submitted unsupported immutable plan is recovered honestly
 
-- **WHEN** an admitted plan reached Steam before the platform limitation was discovered, its unsupported custom link is absent remotely, and durable state proves the exact item and plan
-- **THEN** recovery does not resubmit the update, accepts only the absence of that unsupported field, records the unsupported link and reason in the receipt, and continues subscriber verification without claiming that Steam published it
+- **WHEN** an admitted plan reached Steam before the platform limitation was discovered, durable state proves the exact item and plan, and the unsupported custom key is either absent or retained with its exact URL as generic non-player-facing metadata
+- **THEN** recovery does not resubmit the update, rejects conflicting or duplicate values, records whether the exact generic metadata was retained plus the platform limitation in the receipt, and continues subscriber verification without claiming that Steam rendered it in Links
 
 #### Scenario: Link metadata crosses the legacy in-game automation boundary
 

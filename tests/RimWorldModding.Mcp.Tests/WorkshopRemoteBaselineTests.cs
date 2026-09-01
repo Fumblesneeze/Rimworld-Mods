@@ -114,12 +114,15 @@ public sealed class WorkshopRemoteBaselineTests
     }
 
     [Test]
-    public void Already_submitted_plan_can_recover_only_when_unsupported_links_are_absent()
+    public void Already_submitted_plan_recovers_unsupported_links_without_calling_them_player_facing()
     {
         var github = new[] { new WorkshopLink("github", WorkshopLinkPolicy.RepositoryUrl) };
         using var absent = JsonDocument.Parse("""{ "RemoteLinks": [] }""");
         using var misleadingHiddenTag = JsonDocument.Parse($$"""
             { "RemoteLinks": [{ "Key": "github", "Url": "{{WorkshopLinkPolicy.RepositoryUrl}}" }] }
+            """);
+        using var conflictingHiddenTag = JsonDocument.Parse("""
+            { "RemoteLinks": [{ "Key": "github", "Url": "https://example.invalid/wrong" }] }
             """);
         using var missingSupported = JsonDocument.Parse("""{ "RemoteLinks": [] }""");
 
@@ -127,7 +130,8 @@ public sealed class WorkshopRemoteBaselineTests
         {
             Assert.That(ReleasePublisher.RemoteLinksMatchPlan(absent.RootElement, github), Is.False);
             Assert.That(ReleasePublisher.RemoteLinksMatchRecovery(absent.RootElement, github), Is.True);
-            Assert.That(ReleasePublisher.RemoteLinksMatchRecovery(misleadingHiddenTag.RootElement, github), Is.False);
+            Assert.That(ReleasePublisher.RemoteLinksMatchRecovery(misleadingHiddenTag.RootElement, github), Is.True);
+            Assert.That(ReleasePublisher.RemoteLinksMatchRecovery(conflictingHiddenTag.RootElement, github), Is.False);
             Assert.That(ReleasePublisher.RemoteLinksMatchRecovery(
                 missingSupported.RootElement,
                 [new WorkshopLink("reddit", "https://reddit.com/r/RimWorld")]), Is.False);

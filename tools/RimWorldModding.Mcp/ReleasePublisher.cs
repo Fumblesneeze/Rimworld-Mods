@@ -396,6 +396,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var unsupportedWorkshopLinks = allowUnsupportedWorkshopLinkRecovery
             ? admission.Plan.WorkshopLinks.Where(link => !WorkshopLinkPolicy.IsSteamPlayerFacingKey(link.Key)).ToArray()
             : [];
+        var observedRemoteLinks = WorkshopRemoteBaseline.ReadWorkshopLinks(remote);
         var receipt = new Dictionary<string, object?>
         {
             ["schema"] = "RimWorldModReleaseReceipt/v1",
@@ -419,7 +420,11 @@ public sealed class ReleasePublisher(string repositoryRoot)
             {
                 link.Key,
                 link.Url,
-                Status = "not-published-platform-does-not-expose-player-facing-custom-link"
+                Status = observedRemoteLinks.Any(candidate =>
+                    candidate.Key.Equals(link.Key, StringComparison.OrdinalIgnoreCase) &&
+                    candidate.Url.Equals(link.Url, StringComparison.Ordinal))
+                    ? "stored-as-generic-key-value-not-player-facing"
+                    : "not-stored-platform-does-not-expose-player-facing-custom-link"
             }).ToArray(),
             ["tokenRetained"] = false
         };
@@ -628,7 +633,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
             var sameKey = actual.Where(candidate =>
                 candidate.Key.Equals(link.Key, StringComparison.OrdinalIgnoreCase)).ToArray();
             if (!WorkshopLinkPolicy.IsSteamPlayerFacingKey(link.Key))
-                return sameKey.Length == 0;
+                return sameKey.Length == 0 ||
+                       sameKey.Length == 1 && sameKey[0].Url.Equals(link.Url, StringComparison.Ordinal);
             return sameKey.Length == 1 && sameKey[0].Url.Equals(link.Url, StringComparison.Ordinal);
         });
     }
