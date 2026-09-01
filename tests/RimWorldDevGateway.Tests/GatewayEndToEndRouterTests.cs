@@ -166,6 +166,74 @@ public sealed class GatewayEndToEndRouterTests
     }
 
     [Test]
+    public void End_to_end_artifact_retries_a_transient_destination_lock_longer_than_one_second()
+    {
+        var root = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            "e2e-artifact-replace-lock",
+            Guid.NewGuid().ToString("N"));
+        FileStream? destinationLock = null;
+        IGatewayEndToEndPersistenceOperation? persist = null;
+        try
+        {
+            var original = new GatewayEndToEndSnapshot(enabled: true, discoveryState: "discovering");
+            var replacement = new GatewayEndToEndSnapshot(enabled: true, discoveryState: "completed");
+            var store = new GatewayEndToEndSessionArtifactStore(root);
+            var attach = store.BeginAttachSession("replace-lock", original);
+            Assert.That(SpinWait.SpinUntil(() => attach.IsCompleted, TimeSpan.FromSeconds(10)), Is.True);
+            Assert.That(attach.GetOutcome().Succeeded, Is.True);
+
+            string artifactPath = store.ArtifactPath!;
+            byte[] durableOriginal = File.ReadAllBytes(artifactPath);
+            destinationLock = new FileStream(
+                artifactPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+
+            persist = store.BeginPersist(replacement);
+            string artifactDirectory = Path.GetDirectoryName(artifactPath)!;
+            Assert.That(
+                SpinWait.SpinUntil(
+                    () => Directory.GetFiles(artifactDirectory, "*.tmp").Length == 1,
+                    TimeSpan.FromSeconds(10)),
+                Is.True,
+                "The persistence Task must reach its owned temporary file before timing the lock.");
+            Thread.Sleep(TimeSpan.FromMilliseconds(1_100));
+            Assert.Multiple(() =>
+            {
+                Assert.That(persist.IsCompleted, Is.False,
+                    "The persistence lane must outlive the previous one-second retry ceiling.");
+                Assert.That(File.ReadAllBytes(artifactPath), Is.EqualTo(durableOriginal),
+                    "The last durable snapshot must remain intact while replacement is blocked.");
+            });
+            destinationLock.Dispose();
+            destinationLock = null;
+
+            Assert.That(SpinWait.SpinUntil(() => persist.IsCompleted, TimeSpan.FromSeconds(10)), Is.True);
+            var outcome = persist.GetOutcome();
+            Assert.Multiple(() =>
+            {
+                Assert.That(outcome.Succeeded, Is.True, outcome.Failure?.ToString());
+                Assert.That(outcome.Snapshot, Is.SameAs(replacement));
+                Assert.That(store.CommittedSnapshot, Is.SameAs(replacement));
+                Assert.That(File.ReadAllBytes(artifactPath), Is.Not.EqualTo(durableOriginal));
+                Assert.That(Directory.GetFiles(Path.GetDirectoryName(artifactPath)!, "*.tmp"), Is.Empty);
+            });
+        }
+        finally
+        {
+            destinationLock?.Dispose();
+            bool persistenceStopped = persist is null || persist.IsCompleted ||
+                SpinWait.SpinUntil(() => persist.IsCompleted, TimeSpan.FromSeconds(10));
+            if (persistenceStopped && Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Test]
     public void Atomic_temporary_sibling_retries_a_collision_without_deleting_the_unowned_file()
     {
         var root = Path.Combine(

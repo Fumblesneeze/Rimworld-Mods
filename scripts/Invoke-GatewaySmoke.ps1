@@ -4810,7 +4810,11 @@ function Protect-GatewayCredentialArtifacts {
         -Path (Join-Path $resolvedSavedDataPath 'DevGateway\current.json') `
         -RootPath $resolvedRunDirectory
     $matchingCurrent = $false
-    if (Test-Path -LiteralPath $currentPath -PathType Leaf) {
+    if (Test-Path -LiteralPath $currentPath -ErrorAction Stop) {
+        if (-not (Test-Path -LiteralPath $currentPath -PathType Leaf -ErrorAction Stop)) {
+            $sanitizationFailures.Add("Current locator '$currentPath' is not a file.")
+        }
+        else {
         $currentManifest = $null
         try {
             $currentManifest = Read-GatewayCredentialManifest -Path $currentPath
@@ -4856,6 +4860,7 @@ function Protect-GatewayCredentialArtifacts {
                 $sanitizationFailures.Add("Current locator '$currentPath': $currentFailure")
             }
         }
+        }
     }
 
     $sessionRoot = Assert-SafeGatewayArtifactPath `
@@ -4890,7 +4895,11 @@ function Protect-GatewayCredentialArtifacts {
         $sessionPath = Assert-SafeGatewayArtifactPath `
             -Path $sessionPathCandidate `
             -RootPath $resolvedRunDirectory
-        if (-not (Test-Path -LiteralPath $sessionPath -PathType Leaf)) {
+        if (-not (Test-Path -LiteralPath $sessionPath -ErrorAction Stop)) {
+            continue
+        }
+        if (-not (Test-Path -LiteralPath $sessionPath -PathType Leaf -ErrorAction Stop)) {
+            $sanitizationFailures.Add("Session '$sessionPath' is not a file.")
             continue
         }
 
@@ -4963,28 +4972,69 @@ function Protect-GatewayCredentialArtifacts {
         catch {
             $sessionFailure = $_.Exception.Message
             # A credential-bearing session file is less valuable than the unrestricted token it
-            # contains. If atomic redaction fails after the process is dead, remove that exact file.
-            foreach ($credentialPath in @([string]$matchingSession.Path)) {
-                try {
-                    if (-not [string]::IsNullOrWhiteSpace($credentialPath) -and
-                        (Test-Path -LiteralPath $credentialPath -PathType Leaf)) {
-                        Remove-Item -LiteralPath $credentialPath -Force
-                    }
-                }
-                catch {
-                    $sessionFailure += " Exact-file fallback removal also failed for '$credentialPath': $($_.Exception.Message)"
+            # contains. If atomic redaction loses a race with the Gateway's own shutdown deletion,
+            # or otherwise fails after the process is dead, remove only that exact file. The
+            # original replacement error is fatal only when the exact credential artifact remains.
+            $credentialPath = [string]$matchingSession.Path
+            try {
+                if (-not [string]::IsNullOrWhiteSpace($credentialPath) -and
+                    (Test-Path -LiteralPath $credentialPath -PathType Leaf)) {
+                    Remove-Item -LiteralPath $credentialPath -Force
                 }
             }
-            $sanitizationFailures.Add("Session '$($matchingSession.Path)': $sessionFailure")
+            catch {
+                $sessionFailure += " Exact-file fallback removal also failed for '$credentialPath': $($_.Exception.Message)"
+            }
+
+            $credentialArtifactAbsent = $false
+            try {
+                $credentialArtifactAbsent = -not (
+                    Test-Path -LiteralPath $credentialPath -ErrorAction Stop)
+            }
+            catch {
+                $sessionFailure += " Exact-file absence verification also failed for '$credentialPath': $($_.Exception.Message)"
+            }
+
+            if ($credentialArtifactAbsent) {
+                $sanitizedSessionCount++
+            }
+            else {
+                $sanitizationFailures.Add("Session '$($matchingSession.Path)': $sessionFailure")
+            }
         }
     }
 
-    if ($matchingCurrent -and (Test-Path -LiteralPath $currentPath -PathType Leaf)) {
+    if ($matchingCurrent) {
+        $currentFailure = $null
         try {
-            Remove-Item -LiteralPath $currentPath -Force
+            if (Test-Path -LiteralPath $currentPath -PathType Leaf -ErrorAction Stop) {
+                Remove-Item -LiteralPath $currentPath -Force
+            }
         }
         catch {
-            $sanitizationFailures.Add("Current locator '$currentPath': $($_.Exception.Message)")
+            $currentFailure = $_.Exception.Message
+        }
+
+        $currentArtifactAbsent = $false
+        try {
+            $currentArtifactAbsent = -not (
+                Test-Path -LiteralPath $currentPath -ErrorAction Stop)
+        }
+        catch {
+            $absenceFailure = $_.Exception.Message
+            $currentFailure = if ([string]::IsNullOrWhiteSpace($currentFailure)) {
+                "Exact-file absence verification failed: $absenceFailure"
+            }
+            else {
+                "$currentFailure Exact-file absence verification failed: $absenceFailure"
+            }
+        }
+
+        if (-not $currentArtifactAbsent) {
+            if ([string]::IsNullOrWhiteSpace($currentFailure)) {
+                $currentFailure = 'The exact credential locator remains after fallback cleanup.'
+            }
+            $sanitizationFailures.Add("Current locator '$currentPath': $currentFailure")
         }
     }
 
@@ -7775,11 +7825,11 @@ try {
         Start-Sleep -Milliseconds 250
         $clickResponse = Invoke-TrackedGatewayRequest `
             -Method 'POST' `
-            -Uri "$baseUrl/input/click" `
+            -Uri "$baseUrl/input/may-maximize-window/click" `
             -RequestId 'gateway-smoke-click' `
             -Operation {
                 Invoke-WebRequest `
-                    -Uri "$baseUrl/input/click" `
+                    -Uri "$baseUrl/input/may-maximize-window/click" `
                     -Method Post `
                     -Headers $clickHeaders `
                     -ContentType 'application/json' `

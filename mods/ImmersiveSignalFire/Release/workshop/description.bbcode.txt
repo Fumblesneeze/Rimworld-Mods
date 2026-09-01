@@ -1,0 +1,25 @@
+[h1]Immersive Signal Fire[/h1]
+
+Call nearby tribal and medieval allies with a real smoke signal instead of a radio.
+
+[h2]How it works[/h2]
+[list]
+[*]Research Smoke signals at Neolithic technology.
+[*]Build a cold 2×2 fresh-and-seasoned wood signal stack.
+[*]Right-click it with or without a selected colonist.
+[*]Choose an allied sub-industrial settlement within ten world tiles.
+[*]Assign one caller and up to two helpers in the familiar ritual-style setup window.
+[*]Watch the group send a dark compressed SOS pattern for ten seconds.
+[/list]
+
+Melee and Social skill determine whether warriors answer immediately, answer later, misunderstand the signal, or never notice it. Every terminal active attempt consumes the single-use wood stack and leaves a substantial patch of cleanable ash.
+
+[h2]Requirements[/h2]
+[list]
+[*]Harmony
+[*]Dynamic Effects Forge
+[/list]
+
+Show Me Your Tools or its maintained fork is optional. When present, participants lift a shared smoke blanket in sync with the dark smoke pulses.
+
+This mod does not perform live AI generation. Its original building, smoke, and blanket textures are packaged with the mod.

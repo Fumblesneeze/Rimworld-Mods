@@ -10,6 +10,75 @@ namespace RimWorldDevGateway.Tests;
 [TestFixture]
 public sealed class GatewayClientCliTests
 {
+    [TestCase("click", "may-maximize-window-click")]
+    [TestCase("drag", "may-maximize-window-drag")]
+    [TestCase("keys", "may-maximize-window-keys")]
+    public void Ambiguous_process_input_commands_fail_before_transport_and_name_the_explicit_replacement(
+        string legacyCommand,
+        string replacement)
+    {
+        var fixture = new CliFixture();
+
+        var arguments = legacyCommand switch
+        {
+            "click" => new[] { legacyCommand, "--x", "10", "--y", "20" },
+            "drag" => new[]
+            {
+                legacyCommand,
+                "--start-x", "10",
+                "--start-y", "20",
+                "--end-x", "30",
+                "--end-y", "40"
+            },
+            "keys" => new[] { legacyCommand, "--key", "Escape" },
+            _ => throw new AssertionException("Unexpected legacy command fixture.")
+        };
+
+        var exitCode = fixture.App.Run(arguments, fixture.Output, fixture.Error);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exitCode, Is.EqualTo(2));
+            Assert.That(fixture.Transport.Request, Is.Null);
+            Assert.That(fixture.Error.ToString(), Does.Contain(replacement));
+        });
+    }
+
+    [TestCase("may-maximize-window-click", "/api/v1/input/may-maximize-window/click")]
+    [TestCase("may-maximize-window-drag", "/api/v1/input/may-maximize-window/drag")]
+    [TestCase("may-maximize-window-keys", "/api/v1/input/may-maximize-window/keys")]
+    public void Explicit_process_input_commands_post_only_to_warning_bearing_routes(
+        string command,
+        string expectedPath)
+    {
+        var fixture = new CliFixture();
+        var arguments = command switch
+        {
+            "may-maximize-window-click" => new[] { command, "--x", "10", "--y", "20" },
+            "may-maximize-window-drag" => new[]
+            {
+                command,
+                "--start-x", "10",
+                "--start-y", "20",
+                "--end-x", "30",
+                "--end-y", "40"
+            },
+            "may-maximize-window-keys" => new[] { command, "--key", "Escape" },
+            _ => throw new AssertionException("Unexpected explicit command fixture.")
+        };
+
+        var exitCode = fixture.App.Run(arguments, fixture.Output, fixture.Error);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(fixture.Transport.Request, Is.Not.Null);
+            Assert.That(fixture.Transport.Request!.Method, Is.EqualTo("POST"));
+            Assert.That(fixture.Transport.Request.Uri.AbsolutePath, Is.EqualTo(expectedPath));
+            Assert.That(fixture.Error.ToString(), Is.Empty);
+        });
+    }
+
     [Test]
     public void Help_is_successful_and_documents_commands_output_modes_and_exit_codes()
     {

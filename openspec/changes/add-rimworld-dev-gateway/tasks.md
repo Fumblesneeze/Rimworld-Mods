@@ -221,6 +221,8 @@
 
 - [x] 29.1 SPEC/TDD: add a typed, safe-leaf save-and-reload step backed by RimWorld's native main-thread save/load operations, isolated-save ownership, replacement-game detection, and bounded completion semantics.
 - [x] 29.2 IN-GAME: run only the focused Food Texture Variety persistence E2E test; observe the same selected meal and texture before/after a native game replacement and clean the exact isolated save.
+- [ ] 29.3 RED/GREEN/IN-GAME: preserve and report an entered paused state on the replacement game before the typed save/load action completes, then prove a bounded active visual phase survives a native paused save/load without uncontrolled tick drift.
+- [ ] 29.4 RED/GREEN/IN-GAME: schedule the existing typed native time-control action for one absolute game tick without exposing an arbitrary action delegate, prove it dispatches on the first matching update, and use it to retain a short active visual phase without wait/action transition drift.
 
 ## 30. mods/RimWorldDevGateway — Cardinal native placement
 
@@ -254,3 +256,28 @@
 
 - [x] 35.1 SPEC/TDD: Make the Gateway warning and test-status overlay render only while RimWorld's exact native in-play Escape-menu tab is current, retaining stopping and screenshot-mode suppression.
 - [x] 35.2 REVIEW/IN-GAME: Independently review the scoped change, then on the reviewed build observe the overlay absent during ordinary map play, present after the native Escape action opens the menu, and absent again after the native Escape action closes it.
+
+## 36. mods/RimWorldDevGateway — Nested native map float menus
+
+- [ ] 36.1 TDD RED: add focused public-contract and native-action tests for a typed exact-target map-menu open step with zero, one, and multiple pawn actors; stale/duplicate/non-pawn identities; player-control and concurrent-menu rejection; and exact automation-lease capture. Retain the intended failing evidence.
+- [ ] 36.2 GREEN: implement the bounded shared-contract step and Unity-thread Gateway action through `FloatMenuMakerMap.GetOptions`, opening the real native menu without desktop input or synthetic option invocation.
+- [ ] 36.3 TDD RED/GREEN: extend exact current-menu choice with opt-in adoption of exactly one native-input-opened menu and replacement-submenu transfer; prove adoption releases a closed stale lease, fails on zero/multiple/still-owned menus, and transfers one new submenu while zero/multiple/stale/source-still-open replacement cases clear it and fail closed, preserving existing non-transfer behavior.
+- [ ] 36.4 REGRESSION/REVIEW: run the focused Gateway contract/action suites plus the affected owning suite, perform independent code review, resolve findings, build Release, and run strict OpenSpec validation.
+- [ ] 36.5 IN-GAME: from a fresh minimized exact-PID Immersive Signal Fire E2E run, open the signal fire's no-pawn native map menu, choose its contact entry into a visible faction replacement submenu, choose the faction, and accept the resulting begin-lord-job dialog; retain before/menu/submenu/dialog evidence and exact-process cleanup.
+- [ ] 36.6 TDD/IN-GAME: add a bounded no-pawn native map right-click step that invokes the exact selector GUI seam under a temporary target-centered mouse-up event, restores event state, rejects selected/concurrent/stale/unconsumed cases, and proves the signal-fire menu without desktop focus, restore, or foreground input.
+
+## 37. tools/RimWorldDevGateway.EndToEndHost — Durable stage-journal retries
+
+- [ ] 37.1 TDD RED/GREEN: reproduce short-lived Windows locks during exact stage-lease journal replacement and deletion, then retry only transient I/O/access failures for a bounded interval while the expected file state remains valid.
+- [ ] 37.2 REGRESSION: rerun the exact Immersive Signal Fire grouped workflow through successful multi-owner stage publication and exact-marker cleanup with no retained lease journal.
+
+## 38. tools/RimWorldDevGateway.EndToEndHost — Shutdown-race-safe credential sanitation
+
+- [x] 38.1 TDD RED/GREEN: reproduce the Gateway deleting its exact session manifest during atomic redaction and its matching current locator during host removal; accept only wholly absent exact destinations, reject pre-existing or replacement non-file occupancy, and retain fail-closed behavior for any credential path that remains. Reviewed GREEN: `artifacts/TestResults/20260827T094214779Z-73684-e31f1892644f4e85958a7d146f2903e8` (20/20).
+- [x] 38.2 REVIEW/IN-GAME: independently review the scoped sanitation fix, then rerun a fresh minimized exact-PID E2E workflow through successful credential sanitation and complete process/configuration cleanup. Reviewed Thin Walls run: `artifacts/EndToEndRuns/Grouped/20260827T095059849Z` (PID 62660, minimized, credentials/process/stage/configuration cleanup passed).
+
+## 39. Gateway raw-input naming — Explicit desktop disruption
+
+- [x] 39.1 SPEC/TDD RED: require every HTTP, companion CLI, and typed E2E process-input action that may restore, foreground, or result in a maximized RimWorld window to include the literal `may-maximize-window` warning in its public name; reject ambiguous legacy names.
+- [x] 39.2 GREEN/REGRESSION: rename the routes, commands, request/step types, adapters, tests, examples, and callers; prove legacy CLI commands fail before transport and focused Gateway suites remain green. GREEN: focused naming/route/CLI/action slice 147/147; built CLI help and all three legacy-command rejections verified.
+- [x] 39.3 REVIEW: independently review the naming migration for missed disruptive aliases, documentation drift, and accidental semantic-action renames, then rerun strict OpenSpec validation. Independent re-review: no findings; strict OpenSpec validation 12/12.

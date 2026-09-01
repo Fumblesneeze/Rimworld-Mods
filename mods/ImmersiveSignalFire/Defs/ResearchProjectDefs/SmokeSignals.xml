@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ResearchProjectDef>
+    <defName>ImmersiveSignalFire_SmokeSignals</defName>
+    <label>smoke signalling</label>
+    <description>Coordinate deliberate fire and smoke patterns to request warriors from nearby allied tribal and medieval settlements.</description>
+    <baseCost>500</baseCost>
+    <techLevel>Neolithic</techLevel>
+    <tags>
+      <li>TribalStart</li>
+      <li>ClassicStart</li>
+    </tags>
+    <researchViewX>1.00</researchViewX>
+    <researchViewY>1.40</researchViewY>
+  </ResearchProjectDef>
+</Defs>

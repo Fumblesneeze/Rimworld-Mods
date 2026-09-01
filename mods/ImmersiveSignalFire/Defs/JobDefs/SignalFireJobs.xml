@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <JobDef>
+    <defName>ImmersiveSignalFire_Approach</defName>
+    <driverClass>ImmersiveSignalFire.Jobs.JobDriver_ApproachSignalFire</driverClass>
+    <reportString>Taking position at the signal fire.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+    <playerInterruptible>true</playerInterruptible>
+  </JobDef>
+  <JobDef>
+    <defName>ImmersiveSignalFire_Signal</defName>
+    <driverClass>ImmersiveSignalFire.Jobs.JobDriver_SignalFire</driverClass>
+    <reportString>Working the signal fire.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+    <playerInterruptible>true</playerInterruptible>
+  </JobDef>
+</Defs>

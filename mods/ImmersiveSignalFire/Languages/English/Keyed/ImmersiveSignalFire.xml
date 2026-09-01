@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ImmersiveSignalFire_Contact>Send a smoke signal...</ImmersiveSignalFire_Contact>
+  <ImmersiveSignalFire_NoContacts>no allied neolithic or medieval settlements nearby</ImmersiveSignalFire_NoContacts>
+  <ImmersiveSignalFire_ContactUnavailable>That settlement contact is no longer available.</ImmersiveSignalFire_ContactUnavailable>
+  <ImmersiveSignalFire_DialogTitle>Prepare smoke signal for {0}</ImmersiveSignalFire_DialogTitle>
+  <ImmersiveSignalFire_DialogDescription>Choose one caller and up to two helpers. Melee controls the blanket and fuel; Social is the caller's charisma carried by the smoke pattern.</ImmersiveSignalFire_DialogDescription>
+  <ImmersiveSignalFire_OutcomeBands>Above 50%: warriors answer now. Above 30%: a delayed answer. From 15% through 30%: noticed but misunderstood. Below 15%: unnoticed.</ImmersiveSignalFire_OutcomeBands>
+  <ImmersiveSignalFire_Begin>Light signal fire</ImmersiveSignalFire_Begin>
+  <ImmersiveSignalFire_Caller>Caller</ImmersiveSignalFire_Caller>
+  <ImmersiveSignalFire_Helper>Helper</ImmersiveSignalFire_Helper>
+  <ImmersiveSignalFire_TooMany>Only two helpers can join the caller.</ImmersiveSignalFire_TooMany>
+  <ImmersiveSignalFire_Immediate>Signal understood: warriors answer immediately.</ImmersiveSignalFire_Immediate>
+  <ImmersiveSignalFire_Delayed>The signal was understood. Warriors may arrive later.</ImmersiveSignalFire_Delayed>
+  <ImmersiveSignalFire_Misunderstood>The smoke was noticed but misunderstood. No warriors are coming.</ImmersiveSignalFire_Misunderstood>
+  <ImmersiveSignalFire_Unnoticed>The signal failed to be noticed. No warriors are coming.</ImmersiveSignalFire_Unnoticed>
+  <ImmersiveSignalFire_Interrupted>The smoke signal was interrupted before it could be understood.</ImmersiveSignalFire_Interrupted>
+  <ImmersiveSignalFire_NoResponse>The allied faction can no longer answer this signal.</ImmersiveSignalFire_NoResponse>
+  <ImmersiveSignalFire_AidFailed>The signal was understood, but no warriors could answer.</ImmersiveSignalFire_AidFailed>
+  <ImmersiveSignalFire_AidCooldown>The allies are still recovering from their last aid mission. Try again in {0}.</ImmersiveSignalFire_AidCooldown>
+  <ImmersiveSignalFire_InvalidParticipants>The signal needs one to three available adult colonists.</ImmersiveSignalFire_InvalidParticipants>
+  <ImmersiveSignalFire_NeedCaller>Choose a caller before beginning.</ImmersiveSignalFire_NeedCaller>
+  <ImmersiveSignalFire_NoWorkCells>There are not enough distinct reachable places around the signal fire.</ImmersiveSignalFire_NoWorkCells>
+  <ImmersiveSignalFire_JobRejected>{0} could not take part in the signal.</ImmersiveSignalFire_JobRejected>
+  <ImmersiveSignalFire_MeleeFactor>Melee skill</ImmersiveSignalFire_MeleeFactor>
+  <ImmersiveSignalFire_SocialFactor>Social skill (charisma)</ImmersiveSignalFire_SocialFactor>
+  <ImmersiveSignalFire_PawnSkillSummary>Melee {0}, Social {1} ({2})</ImmersiveSignalFire_PawnSkillSummary>
+  <ImmersiveSignalFire_Quality>Signal quality</ImmersiveSignalFire_Quality>
+  <ImmersiveSignalFire_Duration>Signal duration</ImmersiveSignalFire_Duration>
+  <ImmersiveSignalFire_DurationValue>Signal duration: {0} seconds ({1} ticks)</ImmersiveSignalFire_DurationValue>
+</LanguageData>

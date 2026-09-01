@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ThingDef ParentName="BuildingBase">
+    <defName>ImmersiveSignalFire_SignalFire</defName>
+    <label>signal fire</label>
+    <description>A neatly stacked, single-use signal fire prepared for coordinated flame and smoke signalling. Allied tribal and medieval settlements within ten world tiles may answer a skillfully worked signal.</description>
+    <thingClass>ImmersiveSignalFire.Buildings.Building_SignalFire</thingClass>
+    <category>Building</category>
+    <graphicData>
+      <texPath>ImmersiveSignalFire/Things/Building/SignalFire/SignalFire</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(2.35,2.35)</drawSize>
+      <drawRotated>false</drawRotated>
+      <allowFlip>false</allowFlip>
+      <damageData>
+        <rect>(0.15,0.15,0.7,0.7)</rect>
+      </damageData>
+    </graphicData>
+    <uiIconPath>ImmersiveSignalFire/Things/Building/SignalFire/SignalFire</uiIconPath>
+    <altitudeLayer>Building</altitudeLayer>
+    <size>(2,2)</size>
+    <rotatable>false</rotatable>
+    <passability>PassThroughOnly</passability>
+    <pathCost>30</pathCost>
+    <fillPercent>0.2</fillPercent>
+    <blockWind>false</blockWind>
+    <tickerType>Normal</tickerType>
+    <drawerType>MapMeshAndRealTime</drawerType>
+    <selectable>true</selectable>
+    <terrainAffordanceNeeded>Light</terrainAffordanceNeeded>
+    <designationCategory>Misc</designationCategory>
+    <constructionSkillPrerequisite>3</constructionSkillPrerequisite>
+    <statBases>
+      <MaxHitPoints>120</MaxHitPoints>
+      <WorkToBuild>400</WorkToBuild>
+      <Flammability>0</Flammability>
+      <Beauty>-2</Beauty>
+    </statBases>
+    <costList>
+      <WoodLog>60</WoodLog>
+    </costList>
+    <researchPrerequisites>
+      <li>ImmersiveSignalFire_SmokeSignals</li>
+    </researchPrerequisites>
+    <soundImpactDefault>BulletImpact_Ground</soundImpactDefault>
+    <comps>
+      <li Class="ImmersiveSignalFire.Buildings.CompProperties_SignalFire" />
+    </comps>
+  </ThingDef>
+</Defs>

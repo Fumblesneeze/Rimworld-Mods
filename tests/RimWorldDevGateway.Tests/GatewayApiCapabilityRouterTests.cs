@@ -11,6 +11,80 @@ namespace RimWorldDevGateway.Tests;
 [TestFixture]
 public sealed class GatewayApiCapabilityRouterTests
 {
+    [TestCase(
+        "/api/v1/input/may-maximize-window/click",
+        "{\"x\":10,\"y\":20,\"button\":\"left\",\"activate\":false}",
+        "may-maximize-window-click")]
+    [TestCase(
+        "/api/v1/input/may-maximize-window/drag",
+        "{\"startX\":10,\"startY\":20,\"endX\":30,\"endY\":40," +
+        "\"button\":\"left\",\"durationMs\":1,\"steps\":1,\"activate\":false}",
+        "may-maximize-window-drag")]
+    [TestCase(
+        "/api/v1/input/may-maximize-window/keys",
+        "{\"key\":\"Escape\",\"activate\":false}",
+        "may-maximize-window-keys")]
+    public void Warning_bearing_process_input_routes_are_callable(
+        string path,
+        string body,
+        string expectedOperation)
+    {
+        var platform = InputPlatform.Ready();
+        var router = new GatewayApiRouter(
+            new GatewayDispatcher(),
+            new StubStateProvider(),
+            new GatewayLogBuffer(),
+            new GatewayApiServices(
+                windowsInput: new GatewayWindowsInput(platform, processId: 77)),
+            responseTimeout: TimeSpan.FromSeconds(2));
+
+        var response = router.Handle(Post(path, body), "explicit-input-route");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(200), Encoding.UTF8.GetString(response.Body));
+            Assert.That(
+                Encoding.UTF8.GetString(response.Body),
+                Does.Contain($"\"Operation\":\"{expectedOperation}\""));
+            Assert.That(platform.InjectionThreadIds, Is.Not.Empty);
+        });
+    }
+
+    [TestCase(
+        "/api/v1/input/click",
+        "{\"x\":10,\"y\":20,\"button\":\"left\",\"activate\":false}")]
+    [TestCase(
+        "/api/v1/input/drag",
+        "{\"startX\":10,\"startY\":20,\"endX\":30,\"endY\":40," +
+        "\"button\":\"left\",\"durationMs\":1,\"steps\":1,\"activate\":false}")]
+    [TestCase(
+        "/api/v1/input/keys",
+        "{\"key\":\"Escape\",\"activate\":false}")]
+    public void Ambiguous_process_input_routes_are_not_callable(
+        string path,
+        string body)
+    {
+        var platform = InputPlatform.Ready();
+        var router = new GatewayApiRouter(
+            new GatewayDispatcher(),
+            new StubStateProvider(),
+            new GatewayLogBuffer(),
+            new GatewayApiServices(
+                windowsInput: new GatewayWindowsInput(platform, processId: 77)),
+            responseTimeout: TimeSpan.FromSeconds(2));
+
+        var response = router.Handle(Post(path, body), "ambiguous-input-route");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(404));
+            Assert.That(
+                Encoding.UTF8.GetString(response.Body),
+                Does.Contain("\"code\":\"route_not_found\""));
+            Assert.That(platform.InjectionThreadIds, Is.Empty);
+        });
+    }
+
     [Test]
     public void Csharp_endpoint_evaluates_plain_text_on_the_dispatcher_thread()
     {
@@ -611,7 +685,7 @@ public sealed class GatewayApiCapabilityRouterTests
             requestThreadId = Thread.CurrentThread.ManagedThreadId;
             return router.Handle(
                 Post(
-                    "/api/v1/input/drag",
+                    "/api/v1/input/may-maximize-window/drag",
                     "{\"startX\":10,\"startY\":20,\"endX\":30,\"endY\":40," +
                     "\"button\":\"left\",\"durationMs\":25,\"steps\":2,\"activate\":false}"),
                 "direct-drag");
@@ -649,7 +723,7 @@ public sealed class GatewayApiCapabilityRouterTests
             requestStarted.Set();
             return router.Handle(
                 Post(
-                    "/api/v1/input/click",
+                    "/api/v1/input/may-maximize-window/click",
                     "{\"x\":10,\"y\":20,\"button\":\"left\",\"activate\":false}"),
                 "direct-click");
         });
@@ -678,7 +752,7 @@ public sealed class GatewayApiCapabilityRouterTests
     public void Text_input_runs_on_the_http_worker_without_blocking_the_dispatcher()
     {
         AssertRawInputRunsWithoutDispatcher(
-            "/api/v1/input/keys",
+            "/api/v1/input/may-maximize-window/keys",
             "{\"text\":\"Hi\",\"activate\":false}",
             "direct-text");
     }
@@ -687,7 +761,7 @@ public sealed class GatewayApiCapabilityRouterTests
     public void Chord_input_runs_on_the_http_worker_without_blocking_the_dispatcher()
     {
         AssertRawInputRunsWithoutDispatcher(
-            "/api/v1/input/keys",
+            "/api/v1/input/may-maximize-window/keys",
             "{\"key\":\"S\",\"modifiers\":[\"Control\"],\"activate\":false}",
             "direct-chord");
     }
@@ -707,7 +781,7 @@ public sealed class GatewayApiCapabilityRouterTests
             responseTimeout: TimeSpan.FromSeconds(15));
         using var cancellation = new CancellationTokenSource();
         var request = Post(
-            "/api/v1/input/drag",
+            "/api/v1/input/may-maximize-window/drag",
             "{\"startX\":10,\"startY\":20,\"endX\":30,\"endY\":40," +
             "\"button\":\"left\",\"durationMs\":5000,\"steps\":1,\"activate\":false}",
             cancellation.Token);

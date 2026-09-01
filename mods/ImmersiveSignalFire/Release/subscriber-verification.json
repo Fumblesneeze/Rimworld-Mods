@@ -1,0 +1,21 @@
+{
+  "schema": "RimWorldSubscriberVerification/v1",
+  "engine": "gateway-automation",
+  "source": "tests/ImmersiveSignalFire.EndToEndTests/SignalFirePlayerWorkflowTests.cs",
+  "entryType": "ImmersiveSignalFire.EndToEndTests.SignalFirePlayerWorkflowTests",
+  "automation": "immersive-signal-fire.player-workflow",
+  "additionalPackageIds": [
+    "brrainz.harmony",
+    "blues.forge",
+    "meathax.showmeyourtools"
+  ],
+  "steps": [
+    { "operation": "arrange", "expectedStatus": "arranged", "screenshot": "subscriber-cold.png" },
+    { "operation": "open", "expectedStatus": "menu-open", "screenshot": "subscriber-menu.png" },
+    { "operation": "signal", "expectedStatus": "active", "screenshot": "subscriber-smoke.png" },
+    { "operation": "observe", "expectedStatus": "passed", "screenshot": "subscriber-after.png" },
+    { "operation": "cleanup", "expectedStatus": "cleaned" }
+  ],
+  "expectedObservation": "The exact Workshop-loaded hearth should be cold when idle; real map right-click and replacement submenu actions should open the shared participant dialog; accepting it should make three colonists perform a 600-tick dark-smoke signal and produce native allied warriors or the quality-band result plus 16 cleanable ash.",
+  "timeoutSeconds": 600
+}

@@ -59,6 +59,117 @@ public sealed class GatewaySmokeCredentialCleanupTests
     }
 
     [Test]
+    public void Session_disappearing_during_atomic_redaction_is_accepted_only_after_exact_absence_is_verified()
+    {
+        using var fixture = Fixture.Create();
+
+        var run = fixture.InvokeWithAtomicRedactionFailure(removeSession: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(File.Exists(fixture.CurrentPath), Is.False);
+            Assert.That(File.Exists(fixture.SessionPath), Is.False);
+            Assert.That(run.StandardOutput, Does.Contain("\"SessionsSanitized\":1"));
+        });
+    }
+
+    [Test]
+    public void Atomic_redaction_failure_remains_fatal_when_the_exact_session_cannot_be_removed()
+    {
+        using var fixture = Fixture.Create();
+
+        var run = fixture.InvokeWithAtomicRedactionFailure(removeSession: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(1));
+            Assert.That(run.StandardError, Does.Contain("Gateway credential sanitation was incomplete"));
+            Assert.That(File.Exists(fixture.SessionPath), Is.True);
+        });
+    }
+
+    [Test]
+    public void Session_type_swap_during_atomic_redaction_is_not_misclassified_as_absence()
+    {
+        using var fixture = Fixture.Create();
+
+        var run = fixture.InvokeWithSessionReplacedByDirectoryDuringAtomicRedaction();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(1));
+            Assert.That(run.StandardError, Does.Contain("Gateway credential sanitation was incomplete"));
+            Assert.That(Directory.Exists(fixture.SessionPath), Is.True);
+        });
+    }
+
+    [Test]
+    public void Current_locator_disappearing_during_removal_is_accepted_only_after_exact_absence_is_verified()
+    {
+        using var fixture = Fixture.Create();
+
+        var run = fixture.InvokeWithCurrentRemovalFailure(removeCurrent: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            Assert.That(File.Exists(fixture.CurrentPath), Is.False);
+            Assert.That(Directory.Exists(fixture.CurrentPath), Is.False);
+            Assert.That(File.ReadAllText(fixture.SessionPath), Does.Not.Contain(Token));
+        });
+    }
+
+    [Test]
+    public void Current_locator_removal_failure_remains_fatal_when_the_exact_path_survives()
+    {
+        using var fixture = Fixture.Create();
+
+        var run = fixture.InvokeWithCurrentRemovalFailure(removeCurrent: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(1));
+            Assert.That(run.StandardError, Does.Contain("Gateway credential sanitation was incomplete"));
+            Assert.That(File.Exists(fixture.CurrentPath), Is.True);
+        });
+    }
+
+    [Test]
+    public void Preexisting_directory_at_current_credential_path_fails_closed()
+    {
+        using var fixture = Fixture.Create();
+        File.Delete(fixture.CurrentPath);
+        Directory.CreateDirectory(fixture.CurrentPath);
+
+        var run = fixture.Invoke(processHasExited: true, includeExpectedIdentity: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(1));
+            Assert.That(run.StandardError, Does.Contain("is not a file"));
+            Assert.That(Directory.Exists(fixture.CurrentPath), Is.True);
+        });
+    }
+
+    [Test]
+    public void Preexisting_directory_at_session_credential_path_fails_closed()
+    {
+        using var fixture = Fixture.Create();
+        File.Delete(fixture.SessionPath);
+        Directory.CreateDirectory(fixture.SessionPath);
+
+        var run = fixture.Invoke(processHasExited: true, includeExpectedIdentity: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(1));
+            Assert.That(run.StandardError, Does.Contain("is not a file"));
+            Assert.That(Directory.Exists(fixture.SessionPath), Is.True);
+        });
+    }
+
+    [Test]
     public void Startup_failure_sanitizes_an_exact_duplicate_token_even_when_the_last_value_is_empty()
     {
         using var fixture = Fixture.Create(
@@ -387,6 +498,138 @@ public sealed class GatewaySmokeCredentialCleanupTests
                 "}\n" +
                 $"Set-GatewayCredentialFreeSessionManifestAtomically -Path {PowerShellLiteral(SessionPath)} -SanitizedJson {PowerShellLiteral(sanitizedJson)} -RunDirectory {PowerShellLiteral(RunDirectory)} -AfterReplace {{ [Environment]::Exit(73) }}\n" +
                 "exit 0\n";
+            File.WriteAllText(invocationPath, invocation, new UTF8Encoding(false));
+            return RunPowerShell(invocationPath);
+        }
+
+        public InvocationResult InvokeWithAtomicRedactionFailure(bool removeSession)
+        {
+            var invocationPath = Path.Combine(root, $"invoke-disappearing-{Guid.NewGuid():N}.ps1");
+            var functionNames = new[]
+            {
+                "Assert-SafeGatewayArtifactPath",
+                "Test-FileContainsBearerToken",
+                "Assert-NoRetainedBearerToken",
+                "Read-GatewayCredentialManifest",
+                "ConvertTo-GatewayCredentialFreeManifestJson",
+                "Protect-GatewayCredentialArtifacts"
+            };
+            var invocation =
+                "$ErrorActionPreference = 'Stop'\n" +
+                "Set-StrictMode -Version Latest\n" +
+                "$tokens = $null; $parseErrors = $null\n" +
+                $"$ast = [System.Management.Automation.Language.Parser]::ParseFile({PowerShellLiteral(smokePath)}, [ref]$tokens, [ref]$parseErrors)\n" +
+                $"$functionNames = @({string.Join(",", functionNames.Select(PowerShellLiteral))})\n" +
+                "foreach ($functionName in $functionNames) {\n" +
+                "  $functionAst = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $functionName }, $true)\n" +
+                "  if ($null -eq $functionAst) { throw \"Function was not found: $functionName\" }\n" +
+                "  Invoke-Expression $functionAst.Extent.Text\n" +
+                "}\n" +
+                "function Set-GatewayCredentialFreeSessionManifestAtomically {\n" +
+                "  param([string]$Path, [string]$SanitizedJson, [string]$RunDirectory, [scriptblock]$AfterReplace)\n" +
+                (removeSession ? "  Remove-Item -LiteralPath $Path -Force\n" : string.Empty) +
+                "  throw [System.IO.IOException]::new('Simulated shutdown deletion during atomic redaction.')\n" +
+                "}\n" +
+                "try {\n" +
+                $"$result = Protect-GatewayCredentialArtifacts -RunDirectory {PowerShellLiteral(RunDirectory)} -SavedDataPath {PowerShellLiteral(SavedDataPath)} -ExpectedProcessId {ProcessId} -ExpectedRunId {PowerShellLiteral(RunId)} -BearerToken {PowerShellLiteral(Token)} -ProcessHasExited:$true\n" +
+                "$result | ConvertTo-Json -Compress\n" +
+                "exit 0\n" +
+                "}\ncatch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }\n";
+            File.WriteAllText(invocationPath, invocation, new UTF8Encoding(false));
+            if (removeSession)
+            {
+                return RunPowerShell(invocationPath);
+            }
+
+            using var sessionLock = new FileStream(
+                SessionPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+            return RunPowerShell(invocationPath);
+        }
+
+        public InvocationResult InvokeWithSessionReplacedByDirectoryDuringAtomicRedaction()
+        {
+            var invocationPath = Path.Combine(root, $"invoke-type-swap-{Guid.NewGuid():N}.ps1");
+            var functionNames = new[]
+            {
+                "Assert-SafeGatewayArtifactPath",
+                "Test-FileContainsBearerToken",
+                "Assert-NoRetainedBearerToken",
+                "Read-GatewayCredentialManifest",
+                "ConvertTo-GatewayCredentialFreeManifestJson",
+                "Protect-GatewayCredentialArtifacts"
+            };
+            var invocation =
+                "$ErrorActionPreference = 'Stop'\n" +
+                "Set-StrictMode -Version Latest\n" +
+                "$tokens = $null; $parseErrors = $null\n" +
+                $"$ast = [System.Management.Automation.Language.Parser]::ParseFile({PowerShellLiteral(smokePath)}, [ref]$tokens, [ref]$parseErrors)\n" +
+                $"$functionNames = @({string.Join(",", functionNames.Select(PowerShellLiteral))})\n" +
+                "foreach ($functionName in $functionNames) {\n" +
+                "  $functionAst = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $functionName }, $true)\n" +
+                "  if ($null -eq $functionAst) { throw \"Function was not found: $functionName\" }\n" +
+                "  Invoke-Expression $functionAst.Extent.Text\n" +
+                "}\n" +
+                "function Set-GatewayCredentialFreeSessionManifestAtomically {\n" +
+                "  param([string]$Path, [string]$SanitizedJson, [string]$RunDirectory, [scriptblock]$AfterReplace)\n" +
+                "  Remove-Item -LiteralPath $Path -Force\n" +
+                "  New-Item -ItemType Directory -Path $Path | Out-Null\n" +
+                "  throw [System.IO.IOException]::new('Simulated file-to-directory swap during atomic redaction.')\n" +
+                "}\n" +
+                "try {\n" +
+                $"$result = Protect-GatewayCredentialArtifacts -RunDirectory {PowerShellLiteral(RunDirectory)} -SavedDataPath {PowerShellLiteral(SavedDataPath)} -ExpectedProcessId {ProcessId} -ExpectedRunId {PowerShellLiteral(RunId)} -BearerToken {PowerShellLiteral(Token)} -ProcessHasExited:$true\n" +
+                "$result | ConvertTo-Json -Compress\n" +
+                "exit 0\n" +
+                "}\ncatch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }\n";
+            File.WriteAllText(invocationPath, invocation, new UTF8Encoding(false));
+            return RunPowerShell(invocationPath);
+        }
+
+        public InvocationResult InvokeWithCurrentRemovalFailure(bool removeCurrent)
+        {
+            var invocationPath = Path.Combine(root, $"invoke-current-race-{Guid.NewGuid():N}.ps1");
+            var functionNames = new[]
+            {
+                "Assert-SafeGatewayArtifactPath",
+                "Test-FileContainsBearerToken",
+                "Assert-NoRetainedBearerToken",
+                "Read-GatewayCredentialManifest",
+                "ConvertTo-GatewayCredentialFreeManifestJson",
+                "Protect-GatewayCredentialArtifacts"
+            };
+            var removeCurrentStatement = removeCurrent
+                ? "    [System.IO.File]::Delete($LiteralPath)\n"
+                : string.Empty;
+            var invocation =
+                "$ErrorActionPreference = 'Stop'\n" +
+                "Set-StrictMode -Version Latest\n" +
+                "$tokens = $null; $parseErrors = $null\n" +
+                $"$ast = [System.Management.Automation.Language.Parser]::ParseFile({PowerShellLiteral(smokePath)}, [ref]$tokens, [ref]$parseErrors)\n" +
+                $"$functionNames = @({string.Join(",", functionNames.Select(PowerShellLiteral))})\n" +
+                "foreach ($functionName in $functionNames) {\n" +
+                "  $functionAst = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $functionName }, $true)\n" +
+                "  if ($null -eq $functionAst) { throw \"Function was not found: $functionName\" }\n" +
+                "  Invoke-Expression $functionAst.Extent.Text\n" +
+                "}\n" +
+                "function Set-GatewayCredentialFreeSessionManifestAtomically {\n" +
+                "  param([string]$Path, [string]$SanitizedJson, [string]$RunDirectory, [scriptblock]$AfterReplace)\n" +
+                "  [System.IO.File]::WriteAllText($Path, $SanitizedJson, [System.Text.UTF8Encoding]::new($false))\n" +
+                "}\n" +
+                "function Remove-Item {\n" +
+                "  param([string]$LiteralPath, [switch]$Force)\n" +
+                $"  if ([string]::Equals($LiteralPath, {PowerShellLiteral(CurrentPath)}, [System.StringComparison]::OrdinalIgnoreCase)) {{\n" +
+                removeCurrentStatement +
+                "    throw [System.IO.IOException]::new('Simulated current-locator removal race.')\n" +
+                "  }\n" +
+                "  Microsoft.PowerShell.Management\\Remove-Item -LiteralPath $LiteralPath -Force:$Force\n" +
+                "}\n" +
+                "try {\n" +
+                $"$result = Protect-GatewayCredentialArtifacts -RunDirectory {PowerShellLiteral(RunDirectory)} -SavedDataPath {PowerShellLiteral(SavedDataPath)} -ExpectedProcessId {ProcessId} -ExpectedRunId {PowerShellLiteral(RunId)} -BearerToken {PowerShellLiteral(Token)} -ProcessHasExited:$true\n" +
+                "$result | ConvertTo-Json -Compress\n" +
+                "exit 0\n" +
+                "}\ncatch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }\n";
             File.WriteAllText(invocationPath, invocation, new UTF8Encoding(false));
             return RunPowerShell(invocationPath);
         }

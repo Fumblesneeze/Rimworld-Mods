@@ -1,0 +1,17 @@
+<Project Sdk="Zlepper.RimWorld.ModSdk.Testing/0.0.9">
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
+    <RootNamespace>ImmersiveSignalFire.Defs.Tests</RootNamespace>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\mods\ImmersiveSignalFire\ImmersiveSignalFire.csproj" />
+    <PackageReference Update="NUnit3TestAdapter" Version="6.2.0" PrivateAssets="all" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryRoot</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(RepositoryRoot)'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,50 @@
+{
+  "schema": "RimWorldModRelease/v1",
+  "project": "mods/ImmersiveSignalFire/ImmersiveSignalFire.csproj",
+  "packageId": "fumblesneeze.immersivesignalfire",
+  "title": "Immersive Signal Fire",
+  "author": "Fumblesneeze",
+  "distributionKind": "Product",
+  "rimWorldVersion": "1.6",
+  "rimWorldBuild": "1.6.4871 rev590",
+  "rimWorldRuntimeBuild": "1.6.4871 rev591",
+  "steamBuildId": "23969874",
+  "managedAssemblySha256": "5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A",
+  "steamAppId": 294100,
+  "steamUserId": "76561198077136238",
+  "allowFirstPublication": true,
+  "visibility": "Private",
+  "tags": [
+    "Mod",
+    "1.6"
+  ],
+  "requiredWorkshopItems": [
+    "2009463077",
+    "3735443951"
+  ],
+  "requiredDlcAppIds": [],
+  "hardRuntimeAssemblyReferences": [
+    "BluesForge"
+  ],
+  "workshopLinks": [
+    {
+      "key": "github",
+      "url": "https://github.com/Fumblesneeze/Rimworld-Mods"
+    }
+  ],
+  "buildOperation": "mod_build",
+  "presentationOperation": "presentation_render",
+  "packageSource": "artifacts/Mods/fumblesneeze.immersivesignalfire",
+  "packageInclude": [
+    "About/About.xml",
+    "About/Preview.png",
+    "1.6/Assemblies/ImmersiveSignalFire.dll",
+    "1.6/Defs/",
+    "1.6/Languages/",
+    "1.6/Textures/"
+  ],
+  "description": "workshop/description.bbcode.txt",
+  "preview": "workshop/preview-main.png",
+  "changeNote": "Initial private development candidate for the complete smoke-signal player workflow.",
+  "verificationProfile": "mods/ImmersiveSignalFire/Release/subscriber-verification.json"
+}

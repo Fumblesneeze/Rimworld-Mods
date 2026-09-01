@@ -34,7 +34,7 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
+    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ImmersiveSignalFire', 'ImmersiveSignalFire.Unit', 'ImmersiveSignalFire.Harmony', 'ImmersiveSignalFire.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
@@ -113,6 +113,21 @@ try {
     $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
     $availableSuites = @(
         [pscustomobject]@{
+            Name = 'ImmersiveSignalFire.Unit'
+            Group = 'ImmersiveSignalFire'
+            Project = Join-Path $repositoryRoot 'tests\ImmersiveSignalFire.Tests\ImmersiveSignalFire.Tests.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'ImmersiveSignalFire.Harmony'
+            Group = 'ImmersiveSignalFire'
+            Project = Join-Path $repositoryRoot 'tests\ImmersiveSignalFire.Harmony.Tests\ImmersiveSignalFire.Harmony.Tests.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'ImmersiveSignalFire.Defs'
+            Group = 'ImmersiveSignalFire'
+            Project = Join-Path $repositoryRoot 'tests\ImmersiveSignalFire.Defs.Tests\ImmersiveSignalFire.Defs.Tests.csproj'
+        },
+        [pscustomobject]@{
             Name = 'ImmersiveChefs.Unit'
             Group = 'ImmersiveChefs'
             Project = Join-Path $repositoryRoot 'tests\ImmersiveChefs.Tests\ImmersiveChefs.Tests.csproj'
@@ -181,7 +196,7 @@ try {
     $selectedSuites = if ($Suite -eq 'All') {
         @($availableSuites)
     }
-    elseif ($Suite -in @('ImmersiveChefs', 'ThinWalls', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
+    elseif ($Suite -in @('ImmersiveChefs', 'ImmersiveSignalFire', 'ThinWalls', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
         @($availableSuites | Where-Object Group -EQ $Suite)
     }
     else {

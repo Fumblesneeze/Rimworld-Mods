@@ -7,6 +7,39 @@ namespace RimWorldDevGateway.Tests;
 public sealed class GatewayEndToEndNativeStepDriverTests
 {
     [Test]
+    public void Public_process_input_action_methods_warn_that_they_may_maximize_the_window()
+    {
+        static string[] DeclaredPublicMethods(Type type) => type
+            .GetMethods(System.Reflection.BindingFlags.Instance |
+                        System.Reflection.BindingFlags.Public |
+                        System.Reflection.BindingFlags.DeclaredOnly)
+            .Select(method => method.Name)
+            .ToArray();
+
+        var nativeActionMethods = DeclaredPublicMethods(typeof(IGatewayEndToEndNativeActions));
+        var actionBackendMethods = DeclaredPublicMethods(typeof(IGatewayEndToEndActionBackend));
+        var actionFacadeMethods = DeclaredPublicMethods(typeof(GatewayEndToEndNativeActions));
+        var gatewayBackendMethods = DeclaredPublicMethods(typeof(GatewayEndToEndGatewayBackend));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(nativeActionMethods, Does.Contain("BeginMayMaximizeWindowInput"));
+            Assert.That(actionBackendMethods, Does.Contain("BeginMayMaximizeWindowInput"));
+            Assert.That(actionFacadeMethods, Does.Contain("BeginMayMaximizeWindowInput"));
+            Assert.That(gatewayBackendMethods, Does.Contain("BeginMayMaximizeWindowInput"));
+            Assert.That(nativeActionMethods, Does.Not.Contain("BeginInput"));
+            Assert.That(actionBackendMethods, Does.Not.Contain("BeginInput"));
+            Assert.That(gatewayBackendMethods, Does.Not.Contain("BeginInput"));
+            Assert.That(
+                typeof(GatewayEndToEndNativeActions).GetMethods()
+                    .Where(method => method.Name == "Begin")
+                    .SelectMany(method => method.GetParameters())
+                    .Select(parameter => parameter.ParameterType),
+                Does.Not.Contain(typeof(MayMaximizeWindowInputActionStep)));
+        });
+    }
+
+    [Test]
     public void Typed_steps_dispatch_to_exact_native_adapter_methods()
     {
         var actions = new RecordingNativeActions();
@@ -29,6 +62,8 @@ public sealed class GatewayEndToEndNativeStepDriverTests
                 EndToEndGizmoInteraction.Invoke,
                 "stable-gizmo"),
             new FloatMenuActionStep("float", "pawn_1", "thing_1", "stable-option"),
+            new MapFloatMenuOpenActionStep("map-float", "thing_1", Array.Empty<string>()),
+            new NoPawnMapRightClickActionStep("no-pawn-right-click", "thing_1"),
             new CurrentFloatMenuActionStep("current-float", "For guests"),
             new SettlementTradeActionStep("settlement-trade", 41, 42),
             new IncidentActionStep("incident", "TraderCaravanArrival", 17),
@@ -45,7 +80,7 @@ public sealed class GatewayEndToEndNativeStepDriverTests
             new WindowAcceptActionStep("accept-window", "Example.Dialog"),
             new ModSettingsActionStep("mod-settings", "fumblesneeze.immersivechefs"),
             new SaveLoadActionStep("save-load", "GatewayE2E"),
-            ProcessInputActionStep.Click(
+            MayMaximizeWindowInputActionStep.Click(
                 "click",
                 new EndToEndScreenPoint(10, 20),
                 EndToEndMouseButton.Left),
@@ -58,12 +93,12 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         {
             Assert.That(actions.Calls, Is.EqualTo(new[]
             {
-                "time", "selection", "supporting-hit-points", "camera", "screenshot-mode", "shadow-rendering", "gizmo", "float", "current-float", "settlement-trade", "incident", "trade", "dialog", "architect", "escape-menu", "inspect-tab", "info-card", "close-inspect", "cancel-window", "accept-window", "mod-settings", "save-load", "input", "screenshot"
+                "time", "selection", "supporting-hit-points", "camera", "screenshot-mode", "shadow-rendering", "gizmo", "float", "map-float", "no-pawn-right-click", "current-float", "settlement-trade", "incident", "trade", "dialog", "architect", "escape-menu", "inspect-tab", "info-card", "close-inspect", "cancel-window", "accept-window", "mod-settings", "save-load", "input", "screenshot"
             }));
-            Assert.That(operations.Take(21).All(operation => operation.IsCompleted), Is.True);
-            Assert.That(operations[21], Is.SameAs(actions.SaveLoadOperation));
-            Assert.That(operations[22], Is.SameAs(actions.InputOperation));
-            Assert.That(operations[23], Is.SameAs(actions.ScreenshotOperation));
+            Assert.That(operations.Take(23).All(operation => operation.IsCompleted), Is.True);
+            Assert.That(operations[23], Is.SameAs(actions.SaveLoadOperation));
+            Assert.That(operations[24], Is.SameAs(actions.InputOperation));
+            Assert.That(operations[25], Is.SameAs(actions.ScreenshotOperation));
         });
     }
 
@@ -89,6 +124,8 @@ public sealed class GatewayEndToEndNativeStepDriverTests
         IGatewayEndToEndDialogConfirmationNativeActions,
         IGatewayEndToEndArchitectCategoryNativeActions,
         IGatewayEndToEndEscapeMenuNativeActions,
+        IGatewayEndToEndMapFloatMenuNativeActions,
+        IGatewayEndToEndNoPawnMapRightClickNativeActions,
         IGatewayEndToEndCurrentFloatMenuNativeActions,
         IGatewayEndToEndInspectionNativeActions
     {
@@ -130,6 +167,14 @@ public sealed class GatewayEndToEndNativeStepDriverTests
 
         public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step, IEndToEndContext context) =>
             Record("float");
+
+        GatewayEndToEndStepOutcome IGatewayEndToEndMapFloatMenuNativeActions.Apply(
+            MapFloatMenuOpenActionStep step,
+            IEndToEndContext context) => Record("map-float");
+
+        GatewayEndToEndStepOutcome IGatewayEndToEndNoPawnMapRightClickNativeActions.Apply(
+            NoPawnMapRightClickActionStep step,
+            IEndToEndContext context) => Record("no-pawn-right-click");
 
         GatewayEndToEndStepOutcome IGatewayEndToEndCurrentFloatMenuNativeActions.Apply(
             CurrentFloatMenuActionStep step,
@@ -180,7 +225,9 @@ public sealed class GatewayEndToEndNativeStepDriverTests
             ModSettingsActionStep step,
             IEndToEndContext context) => Record("mod-settings");
 
-        public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)
+        public IGatewayEndToEndStepOperation BeginMayMaximizeWindowInput(
+            MayMaximizeWindowInputActionStep step,
+            IEndToEndContext context)
         {
             Calls.Add("input");
             return InputOperation;

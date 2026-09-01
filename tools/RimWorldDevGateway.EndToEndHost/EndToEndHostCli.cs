@@ -139,7 +139,7 @@ public static class EndToEndHostCli
                         string.Join(", ", failures));
                 }
 
-                File.Delete(leasePath);
+                ClearLeaseFile(leasePath);
                 Write(parseResult, parseResult.GetValue(output), new
                 {
                     status = "cleaned",
@@ -606,19 +606,14 @@ public static class EndToEndHostCli
             throw new EndToEndStageException("Stage publication produced zero leases.");
         }
 
-        var parent = Path.GetDirectoryName(path) ??
-                     throw new EndToEndStageException("The lease file has no parent directory.");
-        Directory.CreateDirectory(parent);
-        var temporary = path + ".tmp." + Guid.NewGuid().ToString("N");
-        File.WriteAllText(
-            temporary,
+        EndToEndLeaseJournal.WriteAtomically(
+            path,
             JsonSerializer.Serialize(leases.Select(LeaseRecord.From).ToArray(), JsonOptions));
-        File.Move(temporary, path, overwrite: true);
     }
 
     private static void ClearLeaseFile(string path)
     {
-        if (File.Exists(path)) File.Delete(path);
+        EndToEndLeaseJournal.Clear(path);
     }
 
     private static string RequiredPath(string? value, string description) =>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <FleckDef ParentName="DimForgedUp">
+    <defName>ImmersiveSignalFire_DarkSmoke</defName>
+    <solidTime>0.7</solidTime>
+    <fadeInTime>0.12</fadeInTime>
+    <fadeOutTime>1.2</fadeOutTime>
+    <graphicData>
+      <texPath>ImmersiveSignalFire/Effects/DarkSmoke</texPath>
+    </graphicData>
+  </FleckDef>
+
+  <FleckDef>
+    <defName>ImmersiveSignalFire_FlameFleck</defName>
+    <fleckSystemClass>Blues.FleckSystemForged</fleckSystemClass>
+    <solidTime>0.3</solidTime>
+    <fadeInTime>0.2</fadeInTime>
+    <fadeOutTime>0.5</fadeOutTime>
+    <graphicData>
+      <texPath>ImmersiveSignalFire/Effects/Flame</texPath>
+      <shaderType>MoteGlow</shaderType>
+      <graphicClass>Graphic_Fleck</graphicClass>
+      <renderInstanced>true</renderInstanced>
+    </graphicData>
+    <altitudeLayer>MoteOverhead</altitudeLayer>
+  </FleckDef>
+
+  <Blues.SingleTakeDef>
+    <defName>ImmersiveSignalFire_Flame</defName>
+    <fleckInstructions>
+      <li>
+        <fleckDefs>
+          <li>ImmersiveSignalFire_FlameFleck</li>
+        </fleckDefs>
+        <ActiveTicks>0~60</ActiveTicks>
+        <visuals>
+          <scale>0.35~0.7</scale>
+          <colors>
+            <li>(0.95, 0.52, 0.12, 0.9)</li>
+            <li>(0.75, 0.16, 0.04, 0.85)</li>
+          </colors>
+        </visuals>
+        <spawner>
+          <spawnPerTick>0.22</spawnPerTick>
+          <radius>(0.55, 0.18)</radius>
+          <offset>(0, 0.38)</offset>
+        </spawner>
+        <physics>
+          <speed>0.15~0.45</speed>
+          <range>0.3~0.6</range>
+          <rotation>0</rotation>
+        </physics>
+      </li>
+    </fleckInstructions>
+  </Blues.SingleTakeDef>
+
+  <Blues.SingleTakeDef>
+    <defName>ImmersiveSignalFire_DarkSmokePulse</defName>
+    <fleckInstructions>
+      <li>
+        <fleckDefs>
+          <li>ImmersiveSignalFire_DarkSmoke</li>
+        </fleckDefs>
+        <ActiveTicks>0~20</ActiveTicks>
+        <visuals>
+          <scale>0.55~1.15</scale>
+          <colors>
+            <li>(0.09, 0.085, 0.075, 0.88)</li>
+            <li>(0.17, 0.16, 0.14, 0.82)</li>
+          </colors>
+        </visuals>
+        <spawner>
+          <spawnPerTick>0.72</spawnPerTick>
+          <direction>0</direction>
+          <fireArc>18</fireArc>
+          <radius>(0.5, 0.2)</radius>
+          <offset>(0, 0.55)</offset>
+        </spawner>
+        <physics>
+          <speed>0.25~0.75</speed>
+          <range>1.7~2.6</range>
+          <rotation>-10~10</rotation>
+        </physics>
+      </li>
+    </fleckInstructions>
+  </Blues.SingleTakeDef>
+</Defs>

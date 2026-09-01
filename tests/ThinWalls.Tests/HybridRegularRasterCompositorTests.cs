@@ -708,16 +708,15 @@ public sealed class HybridRegularRasterCompositorTests
         });
     }
 
-    [TestCase(HybridWallRayMask.South, HybridWallQuadrant.NorthWest, HybridWallQuadrant.NorthEast, 10, 10)]
-    [TestCase(HybridWallRayMask.North, HybridWallQuadrant.SouthWest, HybridWallQuadrant.SouthEast, 10, 59)]
-    [TestCase(HybridWallRayMask.West, HybridWallQuadrant.SouthEast, HybridWallQuadrant.NorthEast, 5, 10)]
-    [TestCase(HybridWallRayMask.East, HybridWallQuadrant.SouthWest, HybridWallQuadrant.NorthWest, 5, 59)]
+    [TestCase(HybridWallRayMask.South, HybridWallQuadrant.NorthWest, HybridWallQuadrant.NorthEast, 10)]
+    [TestCase(HybridWallRayMask.North, HybridWallQuadrant.SouthWest, HybridWallQuadrant.SouthEast, 10)]
+    [TestCase(HybridWallRayMask.West, HybridWallQuadrant.SouthEast, HybridWallQuadrant.NorthEast, 5)]
+    [TestCase(HybridWallRayMask.East, HybridWallQuadrant.SouthWest, HybridWallQuadrant.NorthWest, 5)]
     public void EverySideTRotationLeavesBothReceivingNativeBodiesUncovered(
         HybridWallRayMask ray,
         HybridWallQuadrant firstQuadrant,
         HybridWallQuadrant secondQuadrant,
-        int originalLinkIndex,
-        int alongRayCoordinate)
+        int originalLinkIndex)
     {
         var alpha = new byte[60 * 60];
         Fill(alpha, (byte)255);
@@ -797,23 +796,33 @@ public sealed class HybridRegularRasterCompositorTests
                 secondChangedBodyByteCount++;
             }
         }
+        const int internalBoundaryCoordinate = 10;
         int firstInternalBoundary;
         int secondInternalBoundary;
+        int secondContactBoundary;
         if (ray is HybridWallRayMask.North or HybridWallRayMask.South)
         {
-            int y = HybridRegularRasterCompositor.Padding + alongRayCoordinate;
+            int y = HybridRegularRasterCompositor.Padding + internalBoundaryCoordinate;
             firstInternalBoundary = y * HybridRegularRasterCompositor.CanvasSize +
                                     HybridRegularRasterCompositor.Padding + 60;
             secondInternalBoundary = y * HybridRegularRasterCompositor.CanvasSize +
                                      HybridRegularRasterCompositor.Padding - 1;
+            int contactY = HybridRegularRasterCompositor.Padding +
+                           (ray == HybridWallRayMask.South ? 0 : 59);
+            secondContactBoundary = contactY * HybridRegularRasterCompositor.CanvasSize +
+                                    HybridRegularRasterCompositor.Padding - 1;
         }
         else
         {
-            int x = HybridRegularRasterCompositor.Padding + alongRayCoordinate;
+            int x = HybridRegularRasterCompositor.Padding + internalBoundaryCoordinate;
             firstInternalBoundary = (HybridRegularRasterCompositor.Padding + 60) *
                                     HybridRegularRasterCompositor.CanvasSize + x;
             secondInternalBoundary = (HybridRegularRasterCompositor.Padding - 1) *
                                      HybridRegularRasterCompositor.CanvasSize + x;
+            int contactX = HybridRegularRasterCompositor.Padding +
+                           (ray == HybridWallRayMask.West ? 0 : 59);
+            secondContactBoundary = (HybridRegularRasterCompositor.Padding - 1) *
+                                    HybridRegularRasterCompositor.CanvasSize + contactX;
         }
 
         Assert.Multiple(() =>
@@ -834,6 +843,13 @@ public sealed class HybridRegularRasterCompositorTests
                 "the first half must not outline the internal boundary shared with the second regular tile");
             Assert.That(secondOutput[secondInternalBoundary].a, Is.Zero,
                 "the second half must not outline the internal boundary shared with the first regular tile");
+            Assert.That(second.ThinAt(
+                    secondContactBoundary % HybridRegularRasterCompositor.CanvasSize,
+                    secondContactBoundary / HybridRegularRasterCompositor.CanvasSize).IsStructural,
+                Is.True,
+                "the canonical participant must structurally join the Thin gutter at the exact shared vertex");
+            Assert.That(secondOutput[secondContactBoundary].a, Is.GreaterThan(0),
+                "the exact shared-vertex union must not be cleared as though it were an internal contour");
         });
 
         HybridRegularCompositePlan Compile(HybridWallQuadrant quadrant, bool ownsGutter) =>

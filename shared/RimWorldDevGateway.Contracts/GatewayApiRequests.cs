@@ -194,7 +194,7 @@ public sealed class GatewayAssemblyExecutionRequest
 }
 
 [DataContract]
-public sealed class GatewayClickRequest
+public sealed class GatewayMayMaximizeWindowClickRequest
 {
     [DataMember(Name = "x", Order = 1, IsRequired = true)]
     public int X { get; set; }
@@ -217,7 +217,7 @@ public sealed class GatewayClickRequest
 }
 
 [DataContract]
-public sealed class GatewayDragRequest
+public sealed class GatewayMayMaximizeWindowDragRequest
 {
     [DataMember(Name = "startX", Order = 1, IsRequired = true)]
     public int StartX { get; set; }
@@ -254,7 +254,7 @@ public sealed class GatewayDragRequest
 }
 
 [DataContract]
-public sealed class GatewayKeysRequest
+public sealed class GatewayMayMaximizeWindowKeysRequest
 {
     [DataMember(Name = "key", Order = 1)]
     public string? Key { get; set; }

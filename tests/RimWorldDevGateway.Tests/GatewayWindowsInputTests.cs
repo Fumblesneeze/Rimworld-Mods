@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -8,16 +9,42 @@ namespace RimWorldDevGateway.Tests;
 public sealed class GatewayWindowsInputTests
 {
     [Test]
+    public void Public_process_input_methods_warn_that_they_may_maximize_the_window()
+    {
+        var publicMethods = typeof(GatewayWindowsInput)
+            .GetMethods(System.Reflection.BindingFlags.Instance |
+                        System.Reflection.BindingFlags.Public |
+                        System.Reflection.BindingFlags.DeclaredOnly)
+            .Select(method => method.Name)
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(publicMethods, Does.Contain("MayMaximizeWindowClick"));
+            Assert.That(publicMethods, Does.Contain("MayMaximizeWindowDrag"));
+            Assert.That(publicMethods, Does.Contain("MayMaximizeWindowPressKey"));
+            Assert.That(publicMethods, Does.Contain("MayMaximizeWindowSendChord"));
+            Assert.That(publicMethods, Does.Contain("MayMaximizeWindowSendText"));
+            Assert.That(
+                publicMethods,
+                Has.None.Matches<string>(
+                    name => name is "Click" or "Drag" or "PressKey" or "SendChord" or "SendText"));
+        });
+    }
+
+    [Test]
     public void Click_targets_current_process_client_coordinates_and_emits_one_pair()
     {
         var platform = FakePlatform.Ready();
         var input = new GatewayWindowsInput(platform, processId: 77);
 
-        var result = input.Click(new GatewayClientPoint(20, 30), GatewayMouseButton.Left);
+        var result = input.MayMaximizeWindowClick(
+            new GatewayClientPoint(20, 30),
+            GatewayMouseButton.Left);
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Operation, Is.EqualTo("click"));
+            Assert.That(result.Operation, Is.EqualTo("may-maximize-window-click"));
             Assert.That(result.WindowHandle, Is.EqualTo(42));
             Assert.That(result.Events.Select(entry => entry.Kind),
                 Is.EqualTo(new[] { "mouse_move", "mouse_left_down", "mouse_left_up" }));
@@ -37,11 +64,13 @@ public sealed class GatewayWindowsInputTests
         platform.ForegroundWindow = new IntPtr(99);
         var input = new GatewayWindowsInput(platform, processId: 77);
 
-        var result = input.Click(new GatewayClientPoint(20, 30), GatewayMouseButton.Left);
+        var result = input.MayMaximizeWindowClick(
+            new GatewayClientPoint(20, 30),
+            GatewayMouseButton.Left);
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Operation, Is.EqualTo("click"));
+            Assert.That(result.Operation, Is.EqualTo("may-maximize-window-click"));
             Assert.That(platform.ActivationAttempts, Is.EqualTo(1));
             Assert.That(platform.RestoreAttempts, Is.Zero);
             Assert.That(platform.ActivationReleases, Is.EqualTo(1));
@@ -62,7 +91,9 @@ public sealed class GatewayWindowsInputTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                () => input.Click(new GatewayClientPoint(20, 30), GatewayMouseButton.Left),
+                () => input.MayMaximizeWindowClick(
+                    new GatewayClientPoint(20, 30),
+                    GatewayMouseButton.Left),
                 Throws.TypeOf<GatewayInputException>()
                     .With.Property(nameof(GatewayInputException.Code)).EqualTo("focus_lost"));
             Assert.That(platform.ActivationAttempts, Is.EqualTo(2));
@@ -78,7 +109,9 @@ public sealed class GatewayWindowsInputTests
         platform.LoseFocusOnlyOnce = true;
         var input = new GatewayWindowsInput(platform, processId: 77);
 
-        var result = input.Click(new GatewayClientPoint(20, 30), GatewayMouseButton.Left);
+        var result = input.MayMaximizeWindowClick(
+            new GatewayClientPoint(20, 30),
+            GatewayMouseButton.Left);
 
         Assert.Multiple(() =>
         {
@@ -109,7 +142,7 @@ public sealed class GatewayWindowsInputTests
         platform.LoseFocusAfterInjectionCount = 2;
         var input = new GatewayWindowsInput(platform, processId: 77);
 
-        var exception = Assert.Throws<GatewayInputException>(() => input.Drag(
+        var exception = Assert.Throws<GatewayInputException>(() => input.MayMaximizeWindowDrag(
             new GatewayClientPoint(10, 10),
             new GatewayClientPoint(40, 40),
             GatewayMouseButton.Left,
@@ -139,7 +172,7 @@ public sealed class GatewayWindowsInputTests
         var platform = FakePlatform.Ready();
         var input = new GatewayWindowsInput(platform, processId: 77);
 
-        var result = input.Drag(
+        var result = input.MayMaximizeWindowDrag(
             new GatewayClientPoint(10, 10),
             new GatewayClientPoint(40, 40),
             GatewayMouseButton.Right,
@@ -148,7 +181,7 @@ public sealed class GatewayWindowsInputTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Operation, Is.EqualTo("drag"));
+            Assert.That(result.Operation, Is.EqualTo("may-maximize-window-drag"));
             Assert.That(result.Events.Where(entry => entry.Kind == "mouse_move").Select(entry => entry.ClientX),
                 Is.EqualTo(new int?[] { 10, 20, 30, 40 }));
             Assert.That(result.Events.Where(entry => entry.Kind == "delay").Select(entry => entry.DelayMilliseconds),
@@ -163,7 +196,7 @@ public sealed class GatewayWindowsInputTests
         var platform = FakePlatform.Ready();
         platform.BlockDelay = true;
         var input = new GatewayWindowsInput(platform, processId: 77);
-        var drag = Task.Run(() => input.Drag(
+        var drag = Task.Run(() => input.MayMaximizeWindowDrag(
             new GatewayClientPoint(10, 10),
             new GatewayClientPoint(40, 40),
             GatewayMouseButton.Left,
@@ -171,7 +204,7 @@ public sealed class GatewayWindowsInputTests
             steps: 1));
         Assert.That(platform.DelayStarted.Wait(TimeSpan.FromSeconds(1)), Is.True);
 
-        var click = Task.Run(() => input.Click(
+        var click = Task.Run(() => input.MayMaximizeWindowClick(
             new GatewayClientPoint(20, 20),
             GatewayMouseButton.Left));
         bool clickCompletedDuringDrag;
@@ -210,7 +243,7 @@ public sealed class GatewayWindowsInputTests
         platform.BlockDelay = true;
         var input = new GatewayWindowsInput(platform, processId: 77);
         using var cancellation = new CancellationTokenSource();
-        var drag = Task.Run(() => input.Drag(
+        var drag = Task.Run(() => input.MayMaximizeWindowDrag(
             new GatewayClientPoint(10, 10),
             new GatewayClientPoint(40, 40),
             GatewayMouseButton.Left,
@@ -251,11 +284,13 @@ public sealed class GatewayWindowsInputTests
         var platform = FakePlatform.Ready();
         var input = new GatewayWindowsInput(platform, processId: 77);
 
-        var result = input.SendChord(new[] { "Control", "Shift" }, "S");
+        var result = input.MayMaximizeWindowSendChord(
+            new[] { "Control", "Shift" },
+            "S");
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Operation, Is.EqualTo("keys"));
+            Assert.That(result.Operation, Is.EqualTo("may-maximize-window-keys"));
             Assert.That(platform.Injected, Is.EqualTo(new[]
             {
                 "key:17:down",
@@ -274,11 +309,11 @@ public sealed class GatewayWindowsInputTests
         var platform = FakePlatform.Ready();
         var input = new GatewayWindowsInput(platform, processId: 77);
 
-        var result = input.SendText("Hi");
+        var result = input.MayMaximizeWindowSendText("Hi");
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Operation, Is.EqualTo("text"));
+            Assert.That(result.Operation, Is.EqualTo("may-maximize-window-keys"));
             Assert.That(platform.Injected, Is.EqualTo(new[]
             {
                 "text:72:down", "text:72:up",
@@ -308,9 +343,11 @@ public sealed class GatewayWindowsInputTests
 
         TestDelegate action = failure switch
         {
-            "bounds" => () => input.Click(new GatewayClientPoint(800, 10)),
-            "key" => () => input.SendChord(new[] { "Control" }, "Not-A-Key"),
-            _ => () => input.Click(new GatewayClientPoint(10, 10))
+            "bounds" => () => input.MayMaximizeWindowClick(new GatewayClientPoint(800, 10)),
+            "key" => () => input.MayMaximizeWindowSendChord(
+                new[] { "Control" },
+                "Not-A-Key"),
+            _ => () => input.MayMaximizeWindowClick(new GatewayClientPoint(10, 10))
         };
 
         Assert.Multiple(() =>
@@ -331,7 +368,7 @@ public sealed class GatewayWindowsInputTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                () => input.Click(new GatewayClientPoint(10, 10)),
+                () => input.MayMaximizeWindowClick(new GatewayClientPoint(10, 10)),
                 Throws.TypeOf<GatewayInputException>()
                     .With.Property(nameof(GatewayInputException.Code)).EqualTo("target_window_mismatch"));
             Assert.That(platform.Injected, Is.EqualTo(new[] { "move:110,210" }));
@@ -348,7 +385,9 @@ public sealed class GatewayWindowsInputTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                () => input.SendChord(new[] { "Control", "Shift" }, "S"),
+                () => input.MayMaximizeWindowSendChord(
+                    new[] { "Control", "Shift" },
+                    "S"),
                 Throws.TypeOf<GatewayInputException>()
                     .With.Property(nameof(GatewayInputException.Code)).EqualTo("focus_lost"));
             Assert.That(platform.Injected,
@@ -365,7 +404,7 @@ public sealed class GatewayWindowsInputTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                () => input.Drag(
+                () => input.MayMaximizeWindowDrag(
                     new GatewayClientPoint(0, 0),
                     new GatewayClientPoint(1, 1),
                     GatewayMouseButton.Left,
@@ -374,7 +413,8 @@ public sealed class GatewayWindowsInputTests
                 Throws.TypeOf<GatewayInputException>()
                     .With.Property(nameof(GatewayInputException.Code)).EqualTo("invalid_drag"));
             Assert.That(
-                () => input.SendText(new string('x', GatewayWindowsInput.MaximumTextLength + 1)),
+                () => input.MayMaximizeWindowSendText(
+                    new string('x', GatewayWindowsInput.MaximumTextLength + 1)),
                 Throws.TypeOf<GatewayInputException>()
                     .With.Property(nameof(GatewayInputException.Code)).EqualTo("input_too_large"));
             Assert.That(platform.MainWindowReads, Is.Zero);

@@ -901,6 +901,19 @@ internal static class FloatMenuAutomationLease
         }
     }
 
+    internal static void ReleaseIfNotOpen(IEnumerable<FloatMenu> openMenus)
+    {
+        if (openMenus is null)
+        {
+            throw new ArgumentNullException(nameof(openMenus));
+        }
+
+        if (capturedForAutomation is not null && !openMenus.Contains(capturedForAutomation))
+        {
+            Clear();
+        }
+    }
+
     internal static void Clear()
     {
         if (capturedForAutomation is not null)

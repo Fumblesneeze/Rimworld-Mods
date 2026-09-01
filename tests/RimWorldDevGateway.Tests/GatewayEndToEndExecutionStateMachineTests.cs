@@ -105,6 +105,89 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
     }
 
     [Test]
+    public void Scheduled_time_control_waits_then_dispatches_the_native_action_on_the_exact_game_tick()
+    {
+        var clock = new FakeClock();
+        var driver = new RecordingDriver();
+        var machine = Machine(clock, driver, Descriptor<ScheduledTimeControlTest>("scheduled-time"));
+        AdvanceUntil(machine, clock, snapshot => snapshot.CurrentStep?.Name == "pause on the exact capture frame");
+        machine.ConfirmPersisted(machine.Snapshot);
+
+        while (clock.GameTick < 99)
+        {
+            clock.NextFrame(gameTicks: Math.Min(10, 99 - clock.GameTick));
+            machine.Advance();
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(clock.GameTick, Is.EqualTo(99));
+            Assert.That(driver.BeginCount, Is.Zero);
+            Assert.That(machine.Snapshot.CurrentStep!.Status, Is.EqualTo("running"));
+        });
+
+        clock.NextFrame();
+        machine.Advance();
+        Assert.Multiple(() =>
+        {
+            Assert.That(driver.BeginCount, Is.EqualTo(1));
+            Assert.That(driver.LastStep, Is.TypeOf<TimeControlActionStep>());
+            Assert.That(machine.Snapshot.CurrentStep!.Status, Is.EqualTo("passed"));
+        });
+    }
+
+    [Test]
+    public void Scheduled_time_control_times_out_without_dispatch_when_the_target_tick_is_not_reached()
+    {
+        var clock = new FakeClock();
+        var driver = new RecordingDriver();
+        var machine = Machine(clock, driver, Descriptor<ScheduledTimeControlTimeoutTest>("scheduled-timeout"));
+        AdvanceUntil(machine, clock, snapshot => snapshot.CurrentStep?.Status == "running");
+        machine.ConfirmPersisted(machine.Snapshot);
+
+        for (var frame = 0; frame < 4 && machine.Snapshot.CurrentTest!.Status == "running"; frame++)
+        {
+            clock.NextFrame(gameTicks: 0, wallClock: TimeSpan.FromMilliseconds(1));
+            machine.Advance();
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(driver.BeginCount, Is.Zero);
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("cleaning"));
+            Assert.That(machine.Snapshot.CurrentTest.Failure!.Kind, Is.EqualTo("timeout"));
+            Assert.That(machine.Snapshot.CurrentStep!.Status, Is.EqualTo("timed_out"));
+        });
+    }
+
+    [Test]
+    public void Scheduled_time_control_does_not_dispatch_when_the_target_is_first_seen_after_the_deadline()
+    {
+        var clock = new FakeClock();
+        var driver = new RecordingDriver();
+        var machine = Machine(
+            clock,
+            driver,
+            Descriptor<ScheduledTimeControlCrossedAfterDeadlineTest>("scheduled-crossed-after-deadline"));
+        AdvanceUntil(machine, clock, snapshot => snapshot.CurrentStep?.Status == "running");
+        machine.ConfirmPersisted(machine.Snapshot);
+
+        clock.NextFrame(gameTicks: 0);
+        machine.Advance();
+        clock.NextFrame(gameTicks: 0);
+        machine.Advance();
+        clock.NextFrame(gameTicks: 100);
+        machine.Advance();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(driver.BeginCount, Is.Zero);
+            Assert.That(machine.Snapshot.CurrentTest!.Status, Is.EqualTo("cleaning"));
+            Assert.That(machine.Snapshot.CurrentStep!.Status, Is.EqualTo("timed_out"));
+        });
+    }
+
+    [Test]
     public void Wait_timeout_uses_frame_tick_or_wall_deadline_and_enters_durable_cleanup()
     {
         var clock = new FakeClock();
@@ -530,9 +613,12 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
 
         public IGatewayEndToEndStepOperation? Operation { get; set; }
 
+        public EndToEndStep? LastStep { get; private set; }
+
         public IGatewayEndToEndStepOperation Begin(EndToEndStep step, IEndToEndContext context)
         {
             BeginCount++;
+            LastStep = step;
             return Operation ?? GatewayEndToEndCompletedStepOperation.Passed();
         }
     }
@@ -603,6 +689,57 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
 
         public static void Reset()
         {
+        }
+    }
+
+    private sealed class ScheduledTimeControlTest : IRimWorldEndToEndTest
+    {
+        public void Arrange(IEndToEndContext context)
+        {
+        }
+
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            yield return new TimeControlActionStep(
+                "pause on the exact capture frame",
+                paused: true,
+                speed: EndToEndGameSpeed.Normal,
+                atGameTick: 100,
+                deadline: new EndToEndDeadline(100, 200, TimeSpan.FromSeconds(2)));
+        }
+    }
+
+    private sealed class ScheduledTimeControlTimeoutTest : IRimWorldEndToEndTest
+    {
+        public void Arrange(IEndToEndContext context)
+        {
+        }
+
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            yield return new TimeControlActionStep(
+                "never reached scheduled pause",
+                paused: true,
+                speed: EndToEndGameSpeed.Normal,
+                atGameTick: 1_000,
+                deadline: new EndToEndDeadline(2, 100, TimeSpan.FromSeconds(1)));
+        }
+    }
+
+    private sealed class ScheduledTimeControlCrossedAfterDeadlineTest : IRimWorldEndToEndTest
+    {
+        public void Arrange(IEndToEndContext context)
+        {
+        }
+
+        public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+        {
+            yield return new TimeControlActionStep(
+                "expired before reaching scheduled pause",
+                paused: true,
+                speed: EndToEndGameSpeed.Normal,
+                atGameTick: 100,
+                deadline: new EndToEndDeadline(2, 200, TimeSpan.FromSeconds(1)));
         }
     }
 

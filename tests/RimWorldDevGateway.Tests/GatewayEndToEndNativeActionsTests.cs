@@ -411,11 +411,13 @@ public sealed class GatewayEndToEndNativeActionsTests
     {
         var backend = new RecordingBackend();
         var actions = new GatewayEndToEndNativeActions(backend);
-        var input = ProcessInputActionStep.Key("key", "Space");
+        var input = MayMaximizeWindowInputActionStep.Key("key", "Space");
         var saveLoad = new SaveLoadActionStep("reload", "FocusedPersistence");
         var saveLoadContext = Context();
         var screenshot = new ScreenshotStep("shot", new[] { "pawn_1" }, 8);
         var menu = new FloatMenuActionStep("eat", "pawn_1", "meal_1", "consume");
+        var mapMenu = new MapFloatMenuOpenActionStep("open map menu", "signal-fire", Array.Empty<string>());
+        var noPawnRightClick = new NoPawnMapRightClickActionStep("right-click signal fire", "signal-fire");
         var currentMenu = new CurrentFloatMenuActionStep("choose guests", "For guests");
         var settlementTrade = new SettlementTradeActionStep("trade", 41, 42);
         var incident = new IncidentActionStep("incident", "TraderCaravanArrival", 17);
@@ -423,10 +425,14 @@ public sealed class GatewayEndToEndNativeActionsTests
             "confirm",
             "Example.Dialog");
 
-        var inputOperation = actions.Begin(input, Context());
+        var inputOperation = actions.BeginMayMaximizeWindowInput(input, Context());
         var saveLoadOperation = actions.Begin(saveLoad, saveLoadContext);
         var screenshotOperation = actions.Begin(screenshot, Context());
         var menuOutcome = actions.Apply(menu, Context());
+        var mapMenuOutcome = ((IGatewayEndToEndMapFloatMenuNativeActions)actions)
+            .Apply(mapMenu, Context());
+        var noPawnRightClickOutcome = ((IGatewayEndToEndNoPawnMapRightClickNativeActions)actions)
+            .Apply(noPawnRightClick, Context());
         var currentMenuOutcome = ((IGatewayEndToEndCurrentFloatMenuNativeActions)actions)
             .Apply(currentMenu, Context());
         var settlementTradeOutcome = actions.Apply(settlementTrade, Context());
@@ -440,6 +446,8 @@ public sealed class GatewayEndToEndNativeActionsTests
             Assert.That(saveLoadOperation, Is.SameAs(backend.SaveLoadOperation));
             Assert.That(screenshotOperation, Is.SameAs(backend.ScreenshotOperation));
             Assert.That(menuOutcome.Passed, Is.True);
+            Assert.That(mapMenuOutcome.Passed, Is.True);
+            Assert.That(noPawnRightClickOutcome.Passed, Is.True);
             Assert.That(currentMenuOutcome.Passed, Is.True);
             Assert.That(settlementTradeOutcome.Passed, Is.True);
             Assert.That(incidentOutcome.Passed, Is.True);
@@ -449,6 +457,8 @@ public sealed class GatewayEndToEndNativeActionsTests
             Assert.That(backend.SaveLoadContext, Is.SameAs(saveLoadContext));
             Assert.That(backend.ScreenshotStep, Is.SameAs(screenshot));
             Assert.That(backend.FloatMenuStep, Is.SameAs(menu));
+            Assert.That(backend.MapFloatMenuStep, Is.SameAs(mapMenu));
+            Assert.That(backend.NoPawnMapRightClickStep, Is.SameAs(noPawnRightClick));
             Assert.That(backend.CurrentFloatMenuStep, Is.SameAs(currentMenu));
             Assert.That(backend.SettlementTradeStep, Is.SameAs(settlementTrade));
             Assert.That(backend.IncidentStep, Is.SameAs(incident));
@@ -522,6 +532,8 @@ public sealed class GatewayEndToEndNativeActionsTests
         IGatewayEndToEndDialogConfirmationBackend,
         IGatewayEndToEndArchitectCategoryBackend,
         IGatewayEndToEndEscapeMenuBackend,
+        IGatewayEndToEndMapFloatMenuBackend,
+        IGatewayEndToEndNoPawnMapRightClickBackend,
         IGatewayEndToEndCurrentFloatMenuBackend
     {
         public GatewayEndToEndCameraViewport Viewport { get; set; } =
@@ -547,7 +559,7 @@ public sealed class GatewayEndToEndNativeActionsTests
 
         public string? InvokedHandle { get; private set; }
 
-        public ProcessInputActionStep? InputStep { get; private set; }
+        public MayMaximizeWindowInputActionStep? InputStep { get; private set; }
 
         public SaveLoadActionStep? SaveLoadStep { get; private set; }
 
@@ -556,6 +568,10 @@ public sealed class GatewayEndToEndNativeActionsTests
         public ScreenshotStep? ScreenshotStep { get; private set; }
 
         public FloatMenuActionStep? FloatMenuStep { get; private set; }
+
+        public MapFloatMenuOpenActionStep? MapFloatMenuStep { get; private set; }
+
+        public NoPawnMapRightClickActionStep? NoPawnMapRightClickStep { get; private set; }
 
         public CurrentFloatMenuActionStep? CurrentFloatMenuStep { get; private set; }
 
@@ -675,6 +691,18 @@ public sealed class GatewayEndToEndNativeActionsTests
             return GatewayEndToEndStepOutcome.Pass();
         }
 
+        public GatewayEndToEndStepOutcome ApplyMapFloatMenu(MapFloatMenuOpenActionStep step)
+        {
+            MapFloatMenuStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
+
+        public GatewayEndToEndStepOutcome ApplyNoPawnMapRightClick(NoPawnMapRightClickActionStep step)
+        {
+            NoPawnMapRightClickStep = step;
+            return GatewayEndToEndStepOutcome.Pass();
+        }
+
         public GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step) =>
             GatewayEndToEndStepOutcome.Pass();
 
@@ -708,8 +736,8 @@ public sealed class GatewayEndToEndNativeActionsTests
             return GatewayEndToEndStepOutcome.Pass();
         }
 
-        public IGatewayEndToEndStepOperation BeginInput(
-            ProcessInputActionStep step,
+        public IGatewayEndToEndStepOperation BeginMayMaximizeWindowInput(
+            MayMaximizeWindowInputActionStep step,
             IEndToEndContext context)
         {
             InputStep = step;

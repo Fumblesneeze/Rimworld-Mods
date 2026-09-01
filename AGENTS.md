@@ -18,6 +18,7 @@ This is a RimWorld mod monorepo:
 - Product mods must never reference, depend on, load-order-hint, or ship `fumblesneeze.rimworlddevgateway`.
 - Workshop/downloaded mods are read-only inspection inputs. Never edit them or copy their assemblies into a release package.
 - Optional integrations must be package-ID/Def-resolved, absent-safe, shape-guarded, and isolated behind narrow adapters.
+- Multiple agents may work on the same worktree at the same time if they are working on different mods.
 
 Before changing RimWorld C#, XML, Defs, Harmony patches, compatibility adapters, tests, smoke tooling, or the gateway, read and follow `.agents/skills/rimworld-mod-development/SKILL.md` and its routed references. Use the repository's `tdd` and `code-review` skills when they apply. Pure prose, translation, and presentation edits do not need behavior-level TDD, but still require their applicable schema, package, asset, and manual verification. Metadata, Def values, balance boundaries, and dependency declarations are not automatically exempt when they affect behavior or packaging.
 

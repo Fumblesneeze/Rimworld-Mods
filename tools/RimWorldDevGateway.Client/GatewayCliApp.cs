@@ -101,15 +101,21 @@ public sealed class GatewayCliApp
             case "screenshot":
                 RunScreenshot(globals, tail, output);
                 return 0;
+            case "may-maximize-window-click":
+                RunMayMaximizeWindowClick(globals, tail, output);
+                return 0;
+            case "may-maximize-window-drag":
+                RunMayMaximizeWindowDrag(globals, tail, output);
+                return 0;
+            case "may-maximize-window-keys":
+                RunMayMaximizeWindowKeys(globals, tail, output);
+                return 0;
             case "click":
-                RunClick(globals, tail, output);
-                return 0;
+                throw RenamedInputCommand("click", "may-maximize-window-click");
             case "drag":
-                RunDrag(globals, tail, output);
-                return 0;
+                throw RenamedInputCommand("drag", "may-maximize-window-drag");
             case "keys":
-                RunKeys(globals, tail, output);
-                return 0;
+                throw RenamedInputCommand("keys", "may-maximize-window-keys");
             case "action":
                 RunAction(globals, tail, output);
                 return 0;
@@ -281,29 +287,42 @@ public sealed class GatewayCliApp
                int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value);
     }
 
-    private void RunClick(GlobalOptions globals, string[] tail, TextWriter output)
+    private void RunMayMaximizeWindowClick(GlobalOptions globals, string[] tail, TextWriter output)
     {
-        var options = CommandOptions.Parse("click", tail, new[] { "no-activate" }, new[] { "x", "y", "button" }, 0, 0);
-        var body = GatewayContractJson.Write(new GatewayClickRequest
+        var options = CommandOptions.Parse(
+            "may-maximize-window-click",
+            tail,
+            new[] { "no-activate" },
+            new[] { "x", "y", "button" },
+            0,
+            0);
+        var body = GatewayContractJson.Write(new GatewayMayMaximizeWindowClickRequest
         {
             X = options.RequiredInt("x"),
             Y = options.RequiredInt("y"),
             Button = options.Value("button") ?? "left",
             Activate = !options.Flag("no-activate")
         });
-        WriteJsonResponse(Send(LoadSession(globals), "POST", "/input/click", body), globals.Output, output);
+        WriteJsonResponse(
+            Send(
+                LoadSession(globals),
+                "POST",
+                "/input/may-maximize-window/click",
+                body),
+            globals.Output,
+            output);
     }
 
-    private void RunDrag(GlobalOptions globals, string[] tail, TextWriter output)
+    private void RunMayMaximizeWindowDrag(GlobalOptions globals, string[] tail, TextWriter output)
     {
         var options = CommandOptions.Parse(
-            "drag",
+            "may-maximize-window-drag",
             tail,
             new[] { "no-activate" },
             new[] { "start-x", "start-y", "end-x", "end-y", "button", "duration-ms", "steps" },
             0,
             0);
-        var body = GatewayContractJson.Write(new GatewayDragRequest
+        var body = GatewayContractJson.Write(new GatewayMayMaximizeWindowDragRequest
         {
             StartX = options.RequiredInt("start-x"),
             StartY = options.RequiredInt("start-y"),
@@ -314,17 +333,31 @@ public sealed class GatewayCliApp
             Steps = options.Int("steps", 10, 1, 1000),
             Activate = !options.Flag("no-activate")
         });
-        WriteJsonResponse(Send(LoadSession(globals), "POST", "/input/drag", body), globals.Output, output);
+        WriteJsonResponse(
+            Send(
+                LoadSession(globals),
+                "POST",
+                "/input/may-maximize-window/drag",
+                body),
+            globals.Output,
+            output);
     }
 
-    private void RunKeys(GlobalOptions globals, string[] tail, TextWriter output)
+    private void RunMayMaximizeWindowKeys(GlobalOptions globals, string[] tail, TextWriter output)
     {
-        var options = CommandOptions.Parse("keys", tail, new[] { "no-activate" }, new[] { "key", "text", "modifiers" }, 0, 0);
+        var options = CommandOptions.Parse(
+            "may-maximize-window-keys",
+            tail,
+            new[] { "no-activate" },
+            new[] { "key", "text", "modifiers" },
+            0,
+            0);
         var key = options.Value("key");
         var text = options.Value("text");
         if (string.IsNullOrEmpty(key) == string.IsNullOrEmpty(text))
         {
-            throw new GatewayCliUsageException("keys requires exactly one of --key or --text.");
+            throw new GatewayCliUsageException(
+                "may-maximize-window-keys requires exactly one of --key or --text.");
         }
 
         var modifiers = (options.Value("modifiers") ?? string.Empty)
@@ -332,14 +365,21 @@ public sealed class GatewayCliApp
             .Select(value => value.Trim())
             .Where(value => value.Length > 0)
             .ToList();
-        var body = GatewayContractJson.Write(new GatewayKeysRequest
+        var body = GatewayContractJson.Write(new GatewayMayMaximizeWindowKeysRequest
         {
             Key = key,
             Text = text,
             Modifiers = modifiers,
             Activate = !options.Flag("no-activate")
         });
-        WriteJsonResponse(Send(LoadSession(globals), "POST", "/input/keys", body), globals.Output, output);
+        WriteJsonResponse(
+            Send(
+                LoadSession(globals),
+                "POST",
+                "/input/may-maximize-window/keys",
+                body),
+            globals.Output,
+            output);
     }
 
     private void RunAction(GlobalOptions globals, string[] tail, TextWriter output)
@@ -529,6 +569,13 @@ public sealed class GatewayCliApp
         throw new GatewayCliUsageException($"Command '{command}' does not accept positional arguments.");
     }
 
+    private static GatewayCliUsageException RenamedInputCommand(
+        string legacyCommand,
+        string replacement) =>
+        new(
+            $"Command '{legacyCommand}' was renamed to '{replacement}' because it may restore, " +
+            "foreground, or maximize the RimWorld window.");
+
     private static void WriteHelp(TextWriter output)
     {
         output.WriteLine("RimWorld Dev Gateway companion client");
@@ -541,9 +588,10 @@ public sealed class GatewayCliApp
         output.WriteLine("  logs [--after N] [--limit N]     Read structured logs");
         output.WriteLine("  screenshot --file PATH [--things HANDLE[,HANDLE...] --padding PIXELS]");
         output.WriteLine("                         [--width PX --height PX --offset-x PX --offset-y PX]");
-        output.WriteLine("  click --x N --y N [--button B]   Send a process-scoped click");
-        output.WriteLine("  drag --start-x N --start-y N --end-x N --end-y N");
-        output.WriteLine("  keys (--key K|--text TEXT) [--modifiers Ctrl,Shift]");
+        output.WriteLine("  may-maximize-window-click --x N --y N [--button B]");
+        output.WriteLine("      Send process input that may restore, foreground, or maximize RimWorld");
+        output.WriteLine("  may-maximize-window-drag --start-x N --start-y N --end-x N --end-y N");
+        output.WriteLine("  may-maximize-window-keys (--key K|--text TEXT) [--modifiers Ctrl,Shift]");
         output.WriteLine("  action NAME [--arguments JSON]   Invoke a semantic action");
         output.WriteLine("  execute-source FILE --managed DIR --contract DLL --entry-type TYPE");
         output.WriteLine("  automations                      List named automations");

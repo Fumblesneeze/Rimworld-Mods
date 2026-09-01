@@ -86,7 +86,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(publisherFixture, Does.Contain("SteamUGC.SubmitItemUpdate"));
             Assert.That(publisherFixture, Does.Contain("SteamUGC.AddDependency"));
             Assert.That(publisherFixture, Does.Contain("SteamUGC.RemoveDependency"));
-            Assert.That(publisherFixture, Does.Contain("SteamUGC.SubscribeItem"));
+            Assert.That(publisherFixture, Does.Not.Contain("SteamUGC.SubscribeItem"));
             Assert.That(publisherFixture, Does.Contain("SteamUGC.GetQueryUGCResult"));
             Assert.That(publisherFixture, Does.Contain("RequireExistingPreflight"));
             Assert.That(publisherFixture, Does.Contain("submit-admitted"));

@@ -179,7 +179,7 @@ public sealed class GatewayWindowsInput
         }
     }
 
-    public GatewayInputResult Click(
+    public GatewayInputResult MayMaximizeWindowClick(
         GatewayClientPoint point,
         GatewayMouseButton button = GatewayMouseButton.Left,
         bool activate = true,
@@ -213,7 +213,7 @@ public sealed class GatewayWindowsInput
                 cancellationToken.ThrowIfCancellationRequested();
                 SendButton(target, button, false, point, screen, events);
                 down = false;
-                return new GatewayInputResult("click", target, events);
+                return new GatewayInputResult("may-maximize-window-click", target, events);
             }
             catch (GatewayInputException exception) when (
                 exception.Code == "focus_lost" && activate && !down && attempt == 0)
@@ -232,7 +232,7 @@ public sealed class GatewayWindowsInput
         throw Error("focus_lost", "The RimWorld window could not retain foreground focus for a click.");
     }
 
-    public GatewayInputResult Drag(
+    public GatewayInputResult MayMaximizeWindowDrag(
         GatewayClientPoint start,
         GatewayClientPoint end,
         GatewayMouseButton button,
@@ -299,7 +299,7 @@ public sealed class GatewayWindowsInput
             cancellationToken.ThrowIfCancellationRequested();
             SendButton(target, button, false, end, screen, events);
             down = false;
-            return new GatewayInputResult("drag", target, events);
+            return new GatewayInputResult("may-maximize-window-drag", target, events);
         }
         finally
         {
@@ -311,15 +311,19 @@ public sealed class GatewayWindowsInput
         }
     }
 
-    public GatewayInputResult PressKey(
+    public GatewayInputResult MayMaximizeWindowPressKey(
         string key,
         bool activate = true,
         CancellationToken cancellationToken = default)
     {
-        return SendChord(Array.Empty<string>(), key, activate, cancellationToken);
+        return MayMaximizeWindowSendChord(
+            Array.Empty<string>(),
+            key,
+            activate,
+            cancellationToken);
     }
 
-    public GatewayInputResult SendChord(
+    public GatewayInputResult MayMaximizeWindowSendChord(
         IReadOnlyList<string> modifiers,
         string key,
         bool activate = true,
@@ -389,7 +393,7 @@ public sealed class GatewayWindowsInput
                 pressedModifiers.RemoveAt(index);
             }
 
-            return new GatewayInputResult("keys", target, events);
+            return new GatewayInputResult("may-maximize-window-keys", target, events);
         }
         finally
         {
@@ -407,7 +411,7 @@ public sealed class GatewayWindowsInput
         }
     }
 
-    public GatewayInputResult SendText(
+    public GatewayInputResult MayMaximizeWindowSendText(
         string text,
         bool activate = true,
         CancellationToken cancellationToken = default)
@@ -458,7 +462,7 @@ public sealed class GatewayWindowsInput
             }
         }
 
-        return new GatewayInputResult("text", target, events);
+        return new GatewayInputResult("may-maximize-window-keys", target, events);
     }
 
     private GatewayInputResult ExecuteSerialized(

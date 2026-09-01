@@ -298,6 +298,26 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
             var step = currentStep!.Step;
             switch (step)
             {
+                case TimeControlActionStep time when time.AtGameTick.HasValue:
+                    if (stepOperation is null && DeadlineExceeded(
+                            currentStep.StartedFrame,
+                            currentStep.StartedGameTick,
+                            currentStep.StartedUtc,
+                            time.Deadline!))
+                    {
+                        TimeoutCurrentStep(
+                            "step_deadline_exceeded",
+                            "The scheduled E2E time-control action exceeded its declared deadline.");
+                        return;
+                    }
+
+                    if (stepOperation is null && clock.GameTick < time.AtGameTick.Value)
+                    {
+                        return;
+                    }
+
+                    AdvanceDrivenStep(step);
+                    return;
                 case WaitUntilStep wait:
                     if (wait.Predicate(context!))
                     {

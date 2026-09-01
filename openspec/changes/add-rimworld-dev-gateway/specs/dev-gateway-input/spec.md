@@ -1,8 +1,19 @@
 ## ADDED Requirements
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
+### Requirement: Explicitly named potentially maximizing process input
+Every public Gateway surface that may restore or foreground a minimized RimWorld window—and may therefore cause Windows or Unity to present it maximized—SHALL include the literal warning `may-maximize-window` in its action, route, command, method, request type, step type, or serialized operation name. The direct HTTP routes SHALL be `POST /api/v1/input/may-maximize-window/click`, `POST /api/v1/input/may-maximize-window/drag`, and `POST /api/v1/input/may-maximize-window/keys`; the companion CLI SHALL expose matching `may-maximize-window-click`, `may-maximize-window-drag`, and `may-maximize-window-keys` commands; successful results SHALL identify the operation with the matching warning-bearing value. Ambiguous legacy names such as `/input/click`, `/input/drag`, `/input/keys`, `click`, `drag`, and `keys` SHALL NOT remain callable aliases. Help and usage failures for those legacy CLI names SHALL direct callers to the explicit replacements.
+
+#### Scenario: Caller selects a desktop-disruptive input path
+- **WHEN** a caller inspects the HTTP route, companion command, or typed E2E action before sending process input that can activate a minimized RimWorld window
+- **THEN** its public name explicitly states `may-maximize-window` before any side effect occurs
+
+#### Scenario: Caller uses an old ambiguous CLI command
+- **WHEN** a caller invokes `click`, `drag`, or `keys`
+- **THEN** the companion exits with invalid usage, names the corresponding `may-maximize-window-*` replacement, and sends no request
+
 ### Requirement: Process-scoped click input
-`POST /api/v1/input/click` SHALL accept a mouse button and screen-local client-pixel position whose origin is the top-left of the rendered RimWorld client, validate that the current target window belongs to the running RimWorld PID and that the point lies within its current client bounds, and inject exactly one down/up click pair or return a capability/focus/bounds error. Foreground activation from a Gateway HTTP worker SHALL keep any temporary Windows input-queue attachment alive through the complete serialized click and detach it in cleanup. A click MAY retry one transient `focus_lost` before mouse-down; it SHALL record that reacquisition, SHALL NOT inject more than one button pair, and SHALL NOT retry after mouse-down. `GET /api/v1/ui-state` SHALL expose the corresponding current rendered-client width, height, and coordinate origin so callers do not infer coordinates from a scaled desktop capture.
+`POST /api/v1/input/may-maximize-window/click` SHALL accept a mouse button and screen-local client-pixel position whose origin is the top-left of the rendered RimWorld client, validate that the current target window belongs to the running RimWorld PID and that the point lies within its current client bounds, and inject exactly one down/up click pair or return a capability/focus/bounds error. Foreground activation from a Gateway HTTP worker SHALL keep any temporary Windows input-queue attachment alive through the complete serialized click and detach it in cleanup. A click MAY retry one transient `focus_lost` before mouse-down; it SHALL record that reacquisition, SHALL NOT inject more than one button pair, and SHALL NOT retry after mouse-down. `GET /api/v1/ui-state` SHALL expose the corresponding current rendered-client width, height, and coordinate origin so callers do not infer coordinates from a scaled desktop capture.
 
 #### Scenario: Click a visible RimWorld control
 - **WHEN** the RimWorld window is available and an authenticated caller clicks a point within its client bounds
@@ -21,7 +32,7 @@
 - **THEN** the gateway reacquires the same PID-owned window once, records `focus_reacquire`, and injects one click pair or fails closed without a pair
 
 ### Requirement: Bounded drag input
-`POST /api/v1/input/drag` SHALL accept in-bounds start and end client coordinates, mouse button, bounded duration, and bounded interpolation steps; revalidate target ownership and focus during the gesture; and release any pressed button if focus or ownership is lost. Its timed interpolation loop SHALL run outside Unity's main-thread dispatcher so waiting between native input events does not freeze the game or prevent it from consuming those events.
+`POST /api/v1/input/may-maximize-window/drag` SHALL accept in-bounds start and end client coordinates, mouse button, bounded duration, and bounded interpolation steps; revalidate target ownership and focus during the gesture; and release any pressed button if focus or ownership is lost. Its timed interpolation loop SHALL run outside Unity's main-thread dispatcher so waiting between native input events does not freeze the game or prevent it from consuming those events.
 
 #### Scenario: Drag across the map
 - **WHEN** an authenticated caller supplies valid start/end points and duration while the RimWorld window remains targeted
@@ -36,7 +47,7 @@
 - **THEN** the native input worker performs the bounded waits while Unity's main thread remains available to update and render the game
 
 ### Requirement: Key, chord, and text input
-`POST /api/v1/input/keys` SHALL accept a bounded single key press, modifier chord, or text value, validate each requested key, target only the RimWorld process, release injected keys and modifiers after success or failure, and return the resolved event ledger.
+`POST /api/v1/input/may-maximize-window/keys` SHALL accept a bounded single key press, modifier chord, or text value, validate each requested key, target only the RimWorld process, release injected keys and modifiers after success or failure, and return the resolved event ledger.
 
 #### Scenario: Press a RimWorld key binding
 - **WHEN** an authenticated caller sends a valid space-key request while a colony is running

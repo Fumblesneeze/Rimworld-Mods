@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using RimWorld;
+using RimWorld.Planet;
 using RimWorldDevGateway.Contracts;
 using RimWorldDevGateway.EndToEndTesting;
 using UnityEngine;
@@ -22,12 +23,24 @@ internal interface IGatewayEndToEndCurrentFloatMenuActions
     GatewayEndToEndStepOutcome Apply(CurrentFloatMenuActionStep step);
 }
 
+internal interface IGatewayEndToEndMapFloatMenuActions
+{
+    GatewayEndToEndStepOutcome Apply(MapFloatMenuOpenActionStep step);
+}
+
+internal interface IGatewayEndToEndNoPawnMapRightClickActions
+{
+    GatewayEndToEndStepOutcome Apply(NoPawnMapRightClickActionStep step);
+}
+
 public sealed class GatewayEndToEndGatewayBackend :
     IGatewayEndToEndActionBackend,
     IGatewayEndToEndDialogConfirmationBackend,
     IGatewayEndToEndArchitectCategoryBackend,
     IGatewayEndToEndEscapeMenuBackend,
     IGatewayEndToEndCurrentFloatMenuBackend,
+    IGatewayEndToEndMapFloatMenuBackend,
+    IGatewayEndToEndNoPawnMapRightClickBackend,
     IGatewayEndToEndDesignatorSessionBackend,
     IGatewayEndToEndInspectionBackend
 {
@@ -249,6 +262,22 @@ public sealed class GatewayEndToEndGatewayBackend :
                 "unsupported_e2e_step",
                 "The configured float-menu adapter cannot operate an already-open menu.");
 
+    GatewayEndToEndStepOutcome IGatewayEndToEndMapFloatMenuBackend.ApplyMapFloatMenu(
+        MapFloatMenuOpenActionStep step) =>
+        floatMenus is IGatewayEndToEndMapFloatMenuActions mapFloatMenuActions
+            ? mapFloatMenuActions.Apply(step)
+            : GatewayEndToEndStepOutcome.Fail(
+                "unsupported_e2e_step",
+                "The configured float-menu adapter cannot open an exact map menu.");
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndNoPawnMapRightClickBackend.ApplyNoPawnMapRightClick(
+        NoPawnMapRightClickActionStep step) =>
+        floatMenus is IGatewayEndToEndNoPawnMapRightClickActions noPawnRightClickActions
+            ? noPawnRightClickActions.Apply(step)
+            : GatewayEndToEndStepOutcome.Fail(
+                "unsupported_e2e_step",
+                "The configured float-menu adapter cannot perform a minimized no-pawn map right-click.");
+
     public GatewayEndToEndStepOutcome ApplySettlementTrade(SettlementTradeActionStep step) =>
         settlementTrade.Apply(step);
 
@@ -351,10 +380,20 @@ public sealed class GatewayEndToEndGatewayBackend :
             new VerseGatewayEndToEndInspectionRuntime());
 
     GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyWindowCancel(
-        WindowCancelActionStep step) =>
-        VerseGatewayEndToEndInspectionActions.Apply(
+        WindowCancelActionStep step)
+    {
+        GatewayEndToEndStepOutcome outcome = VerseGatewayEndToEndInspectionActions.Apply(
             step,
             new VerseGatewayEndToEndInspectionRuntime());
+        if (outcome.Passed)
+        {
+            FloatMenuAutomationLease.ReleaseIfNotOpen(
+                Find.WindowStack?.Windows.OfType<FloatMenu>().Where(menu => menu.IsOpen) ??
+                Enumerable.Empty<FloatMenu>());
+        }
+
+        return outcome;
+    }
 
     GatewayEndToEndStepOutcome IGatewayEndToEndInspectionBackend.ApplyWindowAccept(
         WindowAcceptActionStep step) =>
@@ -368,8 +407,8 @@ public sealed class GatewayEndToEndGatewayBackend :
             step,
             new VerseGatewayEndToEndInspectionRuntime());
 
-    public IGatewayEndToEndStepOperation BeginInput(
-        ProcessInputActionStep step,
+    public IGatewayEndToEndStepOperation BeginMayMaximizeWindowInput(
+        MayMaximizeWindowInputActionStep step,
         IEndToEndContext context)
     {
         var task = Task.Run(() =>
@@ -388,7 +427,8 @@ public sealed class GatewayEndToEndGatewayBackend :
         IEndToEndContext context) =>
         new GatewayEndToEndSaveLoadStepOperation(
             new VerseGatewayEndToEndSaveLoadRuntime(),
-            step.SaveName);
+            step.SaveName,
+            context.DeferCleanup);
 
     public IGatewayEndToEndStepOperation BeginScreenshot(
         ScreenshotStep step,
@@ -463,15 +503,17 @@ public sealed class GatewayEndToEndGatewayBackend :
             new Dictionary<string, string> { ["screenshot"] = fileName });
     }
 
-    private void ApplyInput(ProcessInputActionStep step)
+    private void ApplyInput(MayMaximizeWindowInputActionStep step)
     {
         switch (step.InputKind)
         {
             case EndToEndProcessInputKind.Click:
-                input.Click(Point(step.Start), MouseButton(step.MouseButton));
+                input.MayMaximizeWindowClick(
+                    Point(step.Start),
+                    MouseButton(step.MouseButton));
                 return;
             case EndToEndProcessInputKind.Drag:
-                input.Drag(
+                input.MayMaximizeWindowDrag(
                     Point(step.Start),
                     Point(step.End),
                     MouseButton(step.MouseButton),
@@ -479,7 +521,7 @@ public sealed class GatewayEndToEndGatewayBackend :
                     steps: 12);
                 return;
             case EndToEndProcessInputKind.Key:
-                input.PressKey(step.Value!);
+                input.MayMaximizeWindowPressKey(step.Value!);
                 return;
             case EndToEndProcessInputKind.Chord:
                 var parts = step.Value!.Split(new[] { '+' }, StringSplitOptions.RemoveEmptyEntries)
@@ -491,10 +533,12 @@ public sealed class GatewayEndToEndGatewayBackend :
                     throw new InvalidOperationException("An E2E chord requires a modifier and a key.");
                 }
 
-                input.SendChord(parts.Take(parts.Length - 1).ToArray(), parts[parts.Length - 1]);
+                input.MayMaximizeWindowSendChord(
+                    parts.Take(parts.Length - 1).ToArray(),
+                    parts[parts.Length - 1]);
                 return;
             case EndToEndProcessInputKind.Text:
-                input.SendText(step.Value ?? string.Empty);
+                input.MayMaximizeWindowSendText(step.Value ?? string.Empty);
                 return;
             default:
                 throw new ArgumentOutOfRangeException(nameof(step.InputKind));
@@ -520,6 +564,8 @@ public sealed class GatewayEndToEndGatewayBackend :
 public sealed class VerseGatewayEndToEndFloatMenuActions :
     IGatewayEndToEndFloatMenuActions,
     IGatewayEndToEndCurrentFloatMenuActions,
+    IGatewayEndToEndMapFloatMenuActions,
+    IGatewayEndToEndNoPawnMapRightClickActions,
     IEndToEndFloatMenuCatalog
 {
     private static readonly FieldInfo? ActionField = typeof(FloatMenuOption).GetField(
@@ -528,6 +574,230 @@ public sealed class VerseGatewayEndToEndFloatMenuActions :
     private static readonly FieldInfo? OptionsField = typeof(FloatMenu).GetField(
         "options",
         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+    private static readonly MethodInfo? SelectorLowPriorityInput = typeof(Selector).GetMethod(
+        "SelectorOnGUI",
+        BindingFlags.Instance | BindingFlags.Public,
+        binder: null,
+        types: Type.EmptyTypes,
+        modifiers: null);
+
+    public GatewayEndToEndStepOutcome Apply(MapFloatMenuOpenActionStep step)
+    {
+        Game? game = Current.Game;
+        Map? map = Current.Game?.CurrentMap;
+        WindowStack? windowStack = Find.WindowStack;
+        if (!HasPlayerControlledMap(
+                map is not null,
+                windowStack is not null,
+                GenScene.InPlayScene,
+                WorldRendererUtility.DrawingMap,
+                LongEventHandler.AnyEventNowOrWaiting,
+                game?.PlayerHasControl == true,
+                windowStack?.AnyWindowAbsorbingAllInput == true) ||
+            map is null ||
+            windowStack is null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "map_float_menu_player_control_required",
+                "A visible, unblocked, settled current map with player control is required.");
+        }
+
+        FloatMenuAutomationLease.ReleaseIfNotOpen(
+            windowStack.Windows.OfType<FloatMenu>().Where(menu => menu.IsOpen));
+        if (FloatMenuAutomationLease.CapturedForAutomation is not null ||
+            windowStack.Windows.OfType<FloatMenu>().Any(menu => menu.IsOpen))
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "map_float_menu_already_open",
+                "Another native float menu or automation lease is already active.");
+        }
+
+        if (!TryResolveExactThing(map, step.TargetRuntimeId, out Thing? target))
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "map_float_menu_target_invalid",
+                "The exact map float-menu target is not one unique spawned current-map Thing.");
+        }
+
+        var actors = new List<Pawn>();
+        foreach (string actorRuntimeId in step.ActorRuntimeIds)
+        {
+            if (!TryResolveExactThing(map, actorRuntimeId, out Thing? actorThing) || actorThing is not Pawn actor)
+            {
+                return GatewayEndToEndStepOutcome.Fail(
+                    "map_float_menu_actor_invalid",
+                    "Every map float-menu actor must resolve to one unique spawned current-map pawn.");
+            }
+
+            if (IsDuplicateResolvedActor(actors, actor))
+            {
+                return GatewayEndToEndStepOutcome.Fail(
+                    "map_float_menu_actor_duplicate",
+                    "Map float-menu actor runtime IDs must resolve to distinct spawned pawns.");
+            }
+
+            actors.Add(actor);
+        }
+
+        List<FloatMenuOption> options = FloatMenuMakerMap.GetOptions(
+            actors,
+            target!.DrawPos,
+            out _);
+        if (options.Count == 0)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "map_float_menu_empty",
+                "RimWorld generated no native map float-menu options for the exact target and actors.");
+        }
+
+        FloatMenu[] before = windowStack.Windows.OfType<FloatMenu>().Where(menu => menu.IsOpen).ToArray();
+        var opened = new FloatMenu(options)
+        {
+            givesColonistOrders = actors.Count > 0,
+            vanishIfMouseDistant = false,
+        };
+        windowStack.Add(opened);
+        FloatMenu[] after = windowStack.Windows.OfType<FloatMenu>().Where(menu => menu.IsOpen).ToArray();
+        FloatMenuAutomationLease.CaptureNewlyOpened(before, after);
+        if (!ReferenceEquals(FloatMenuAutomationLease.CapturedForAutomation, opened))
+        {
+            windowStack.TryRemove(opened, doCloseSound: false);
+            FloatMenuAutomationLease.Clear();
+            return GatewayEndToEndStepOutcome.Fail(
+                "map_float_menu_capture_failed",
+                "The exact newly opened native map float menu could not be captured.");
+        }
+
+        return GatewayEndToEndStepOutcome.Pass(new Dictionary<string, string>
+        {
+            ["targetRuntimeId"] = step.TargetRuntimeId,
+            ["actorCount"] = actors.Count.ToString(),
+            ["optionCount"] = options.Count.ToString(),
+        });
+    }
+
+    public GatewayEndToEndStepOutcome Apply(NoPawnMapRightClickActionStep step)
+    {
+        Game? game = Current.Game;
+        Map? map = game?.CurrentMap;
+        WindowStack? windowStack = Find.WindowStack;
+        Selector? selector = Find.Selector;
+        if (!HasPlayerControlledMap(
+                map is not null,
+                windowStack is not null,
+                GenScene.InPlayScene,
+                WorldRendererUtility.DrawingMap,
+                LongEventHandler.AnyEventNowOrWaiting,
+                game?.PlayerHasControl == true,
+                windowStack?.AnyWindowAbsorbingAllInput == true) ||
+            selector is null ||
+            map is null ||
+            windowStack is null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "no_pawn_map_right_click_player_control_required",
+                "A visible, unblocked, settled current map with player control is required.");
+        }
+
+        FloatMenuAutomationLease.ReleaseIfNotOpen(
+            windowStack.Windows.OfType<FloatMenu>().Where(menu => menu.IsOpen));
+        if (FloatMenuAutomationLease.CapturedForAutomation is not null ||
+            windowStack.Windows.OfType<FloatMenu>().Any(menu => menu.IsOpen))
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "no_pawn_map_right_click_menu_active",
+                "Another native float menu or automation lease is already active.");
+        }
+
+        if (selector.SelectedPawns.Count > 0)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "no_pawn_map_right_click_selection_active",
+                "The minimized no-pawn map right-click requires zero selected pawns.");
+        }
+
+        if (!TryResolveExactThing(map, step.TargetRuntimeId, out Thing? target))
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "no_pawn_map_right_click_target_invalid",
+                "The exact target is not one unique spawned Thing on the current map.");
+        }
+
+        if (SelectorLowPriorityInput is null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "no_pawn_map_right_click_seam_unavailable",
+                "RimWorld's exact no-pawn selector GUI seam is unavailable.");
+        }
+
+        Vector2 mousePosition = target!.DrawPos.MapToUIPosition();
+        Vector2 screenPoint = UI.GUIToScreenPoint(mousePosition);
+        if (windowStack.GetWindowAt(screenPoint) is not null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "no_pawn_map_right_click_target_obscured",
+                "An open native window covers the target-centered selector event.");
+        }
+
+        var syntheticEvent = new Event
+        {
+            type = EventType.MouseUp,
+            button = 1,
+            mousePosition = mousePosition,
+        };
+        Event? priorEvent = Event.current;
+        try
+        {
+            Event.current = syntheticEvent;
+            SelectorLowPriorityInput.Invoke(selector, parameters: null);
+        }
+        catch (TargetInvocationException exception)
+        {
+            Exception failure = exception.InnerException ?? exception;
+            return GatewayEndToEndStepOutcome.Fail(
+                "no_pawn_map_right_click_invocation_failed",
+                $"The exact selector input seam failed: {failure.GetType().Name}: {failure.Message}");
+        }
+        finally
+        {
+            Event.current = priorEvent;
+        }
+
+        if (syntheticEvent.type != EventType.Used)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "no_pawn_map_right_click_unconsumed",
+                "The exact selector input seam did not consume the target-centered right-click event.");
+        }
+
+        return GatewayEndToEndStepOutcome.Pass(new Dictionary<string, string>
+        {
+            ["targetRuntimeId"] = step.TargetRuntimeId,
+            ["mouseX"] = mousePosition.x.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+            ["mouseY"] = mousePosition.y.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+            ["eventConsumed"] = bool.TrueString,
+            ["desktopInput"] = bool.FalseString,
+        });
+    }
+
+    internal static bool HasPlayerControlledMap(
+        bool hasMap,
+        bool hasWindowStack,
+        bool inPlayScene,
+        bool drawingMap,
+        bool longEventPending,
+        bool playerHasControl,
+        bool inputBlocked) =>
+        hasMap &&
+        hasWindowStack &&
+        inPlayScene &&
+        drawingMap &&
+        !longEventPending &&
+        playerHasControl &&
+        !inputBlocked;
+
+    internal static bool IsDuplicateResolvedActor(IReadOnlyList<Pawn> actors, Pawn candidate) =>
+        actors.Any(actor => ReferenceEquals(actor, candidate));
 
     public GatewayEndToEndStepOutcome Apply(FloatMenuActionStep step)
     {
@@ -598,6 +868,15 @@ public sealed class VerseGatewayEndToEndFloatMenuActions :
             .OfType<FloatMenu>()
             .Where(menu => menu.IsOpen)
             .ToArray();
+        if (step.CaptureSoleUnownedMenu)
+        {
+            GatewayEndToEndStepOutcome capture = CaptureSoleUnownedMenu(openMenus, out _);
+            if (!capture.Passed)
+            {
+                return capture;
+            }
+        }
+
         GatewayEndToEndStepOutcome menuResolution = ResolveExactCapturedMenu(
             openMenus,
             FloatMenuAutomationLease.CapturedForAutomation,
@@ -636,14 +915,118 @@ public sealed class VerseGatewayEndToEndFloatMenuActions :
 
         if (menu!.IsOpen)
         {
+            FloatMenuAutomationLease.Clear();
             return GatewayEndToEndStepOutcome.Fail(
                 "current_float_menu_did_not_close",
                 "The selected native FloatMenu option did not close its source menu.");
         }
 
+        if (step.ExpectReplacementMenu)
+        {
+            FloatMenu[] openAfter = windowStack.Windows
+                .OfType<FloatMenu>()
+                .Where(candidate => candidate.IsOpen)
+                .ToArray();
+            GatewayEndToEndStepOutcome replacementResolution = ResolveReplacementMenu(
+                menu,
+                menu.IsOpen,
+                openAfter,
+                out FloatMenu? replacement);
+            if (!replacementResolution.Passed)
+            {
+                FloatMenuAutomationLease.Clear();
+                return replacementResolution;
+            }
+
+            FloatMenuAutomationLease.CaptureNewlyOpened(new[] { menu }, new[] { replacement! });
+            if (!ReferenceEquals(FloatMenuAutomationLease.CapturedForAutomation, replacement))
+            {
+                FloatMenuAutomationLease.Clear();
+                return GatewayEndToEndStepOutcome.Fail(
+                    "replacement_float_menu_capture_failed",
+                    "The exact replacement submenu could not acquire the automation lease.");
+            }
+
+            return GatewayEndToEndStepOutcome.Pass(new Dictionary<string, string>
+            {
+                ["optionLabel"] = step.ExactOptionLabel,
+                ["replacementMenu"] = replacement!.GetType().FullName,
+            });
+        }
+
         FloatMenuAutomationLease.Consume(menu);
         return GatewayEndToEndStepOutcome.Pass(
             new Dictionary<string, string> { ["optionLabel"] = step.ExactOptionLabel });
+    }
+
+    internal static GatewayEndToEndStepOutcome CaptureSoleUnownedMenu(
+        IEnumerable<FloatMenu> openMenus,
+        out FloatMenu? captured)
+    {
+        captured = null;
+        FloatMenu[] candidates = openMenus.Distinct().ToArray();
+        FloatMenuAutomationLease.ReleaseIfNotOpen(candidates);
+        if (FloatMenuAutomationLease.CapturedForAutomation is not null)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_capture_owned",
+                "A native FloatMenu automation lease is already active.");
+        }
+
+        if (candidates.Length != 1)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_capture_ambiguous",
+                $"Exactly one process-opened native FloatMenu is required; observed {candidates.Length}.");
+        }
+
+        FloatMenuAutomationLease.CaptureNewlyOpened(Array.Empty<FloatMenu>(), candidates);
+        if (!ReferenceEquals(FloatMenuAutomationLease.CapturedForAutomation, candidates[0]))
+        {
+            FloatMenuAutomationLease.Clear();
+            return GatewayEndToEndStepOutcome.Fail(
+                "current_float_menu_capture_failed",
+                "The sole process-opened native FloatMenu could not acquire the automation lease.");
+        }
+
+        captured = candidates[0];
+        return GatewayEndToEndStepOutcome.Pass();
+    }
+
+    internal static GatewayEndToEndStepOutcome ResolveReplacementMenu(
+        FloatMenu source,
+        bool sourceIsOpen,
+        IEnumerable<FloatMenu> openMenus,
+        out FloatMenu? replacement)
+    {
+        replacement = null;
+        if (sourceIsOpen)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "replacement_float_menu_source_open",
+                "The source native float menu remained open after choosing its option.");
+        }
+
+        FloatMenu[] candidates = openMenus
+            .Where(menu => !ReferenceEquals(menu, source))
+            .Distinct()
+            .ToArray();
+        if (candidates.Length == 0)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "replacement_float_menu_missing",
+                "The chosen option did not open the required replacement submenu.");
+        }
+
+        if (candidates.Length != 1)
+        {
+            return GatewayEndToEndStepOutcome.Fail(
+                "replacement_float_menu_ambiguous",
+                $"The chosen option opened {candidates.Length} replacement float menus instead of exactly one.");
+        }
+
+        replacement = candidates[0];
+        return GatewayEndToEndStepOutcome.Pass();
     }
 
     internal static GatewayEndToEndStepOutcome ResolveExactCapturedMenu(
@@ -789,6 +1172,18 @@ public sealed class VerseGatewayEndToEndFloatMenuActions :
             .FirstOrDefault(thing =>
                 string.Equals(thing.ThingID, runtimeId, StringComparison.Ordinal) ||
                 string.Equals(thing.GetUniqueLoadID(), runtimeId, StringComparison.Ordinal));
+    }
+
+    private static bool TryResolveExactThing(Map map, string runtimeId, out Thing? resolved)
+    {
+        Thing[] matches = map.listerThings.AllThings
+            .Where(thing => thing.Spawned && !thing.Destroyed && thing.Map == map)
+            .Where(thing =>
+                string.Equals(thing.ThingID, runtimeId, StringComparison.Ordinal) ||
+                string.Equals(thing.GetUniqueLoadID(), runtimeId, StringComparison.Ordinal))
+            .ToArray();
+        resolved = matches.Length == 1 ? matches[0] : null;
+        return resolved is not null;
     }
 
     private static bool TryGetOptions(

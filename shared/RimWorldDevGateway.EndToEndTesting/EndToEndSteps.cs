@@ -445,15 +445,69 @@ public sealed class FloatMenuActionStep : EndToEndStep
     public string StableOptionId { get; }
 }
 
+public sealed class MapFloatMenuOpenActionStep : EndToEndStep
+{
+    public const int MaximumActors = 16;
+
+    public MapFloatMenuOpenActionStep(
+        string name,
+        string targetRuntimeId,
+        IEnumerable<string> actorRuntimeIds)
+        : base(name, EndToEndStepKind.Act)
+    {
+        TargetRuntimeId = StepValues.Required(targetRuntimeId, nameof(targetRuntimeId));
+        ActorRuntimeIds = StepValues.CopyIds(actorRuntimeIds, nameof(actorRuntimeIds));
+        if (ActorRuntimeIds.Count > MaximumActors)
+        {
+            throw new ArgumentException(
+                $"A map float menu may use at most {MaximumActors} pawn actors.",
+                nameof(actorRuntimeIds));
+        }
+
+        var unique = new HashSet<string>(ActorRuntimeIds, StringComparer.Ordinal);
+        if (unique.Count != ActorRuntimeIds.Count)
+        {
+            throw new ArgumentException(
+                "Map float-menu actor runtime IDs must be unique.",
+                nameof(actorRuntimeIds));
+        }
+    }
+
+    public string TargetRuntimeId { get; }
+
+    public IReadOnlyList<string> ActorRuntimeIds { get; }
+}
+
+public sealed class NoPawnMapRightClickActionStep : EndToEndStep
+{
+    public NoPawnMapRightClickActionStep(string name, string targetRuntimeId)
+        : base(name, EndToEndStepKind.Act)
+    {
+        TargetRuntimeId = StepValues.Required(targetRuntimeId, nameof(targetRuntimeId));
+    }
+
+    public string TargetRuntimeId { get; }
+}
+
 public sealed class CurrentFloatMenuActionStep : EndToEndStep
 {
-    public CurrentFloatMenuActionStep(string name, string exactOptionLabel)
+    public CurrentFloatMenuActionStep(
+        string name,
+        string exactOptionLabel,
+        bool expectReplacementMenu = false,
+        bool captureSoleUnownedMenu = false)
         : base(name, EndToEndStepKind.Act)
     {
         ExactOptionLabel = StepValues.Required(exactOptionLabel, nameof(exactOptionLabel));
+        ExpectReplacementMenu = expectReplacementMenu;
+        CaptureSoleUnownedMenu = captureSoleUnownedMenu;
     }
 
     public string ExactOptionLabel { get; }
+
+    public bool ExpectReplacementMenu { get; }
+
+    public bool CaptureSoleUnownedMenu { get; }
 }
 
 public sealed class SettlementTradeActionStep : EndToEndStep
@@ -509,8 +563,42 @@ public sealed class IncidentActionStep : EndToEndStep
 public sealed class TimeControlActionStep : EndToEndStep
 {
     public TimeControlActionStep(string name, bool paused, EndToEndGameSpeed speed)
+        : this(name, paused, speed, atGameTick: null, deadline: null, scheduled: false)
+    {
+    }
+
+    public TimeControlActionStep(
+        string name,
+        bool paused,
+        EndToEndGameSpeed speed,
+        int atGameTick,
+        EndToEndDeadline deadline)
+        : this(
+            name,
+            paused,
+            speed,
+            atGameTick >= 0
+                ? atGameTick
+                : throw new ArgumentOutOfRangeException(nameof(atGameTick)),
+            deadline ?? throw new ArgumentNullException(nameof(deadline)),
+            scheduled: true)
+    {
+    }
+
+    private TimeControlActionStep(
+        string name,
+        bool paused,
+        EndToEndGameSpeed speed,
+        int? atGameTick,
+        EndToEndDeadline? deadline,
+        bool scheduled)
         : base(name, EndToEndStepKind.Act)
     {
+        if (scheduled && (!atGameTick.HasValue || deadline is null))
+        {
+            throw new ArgumentException("Scheduled time control requires a target game tick and deadline.");
+        }
+
         if (!Enum.IsDefined(typeof(EndToEndGameSpeed), speed))
         {
             throw new ArgumentOutOfRangeException(nameof(speed));
@@ -518,11 +606,17 @@ public sealed class TimeControlActionStep : EndToEndStep
 
         Paused = paused;
         Speed = speed;
+        AtGameTick = atGameTick;
+        Deadline = deadline;
     }
 
     public bool Paused { get; }
 
     public EndToEndGameSpeed Speed { get; }
+
+    public int? AtGameTick { get; }
+
+    public EndToEndDeadline? Deadline { get; }
 }
 
 public sealed class SaveLoadActionStep : EndToEndStep
@@ -794,9 +888,9 @@ public sealed class ShadowRenderingActionStep : EndToEndStep
     public bool Enabled { get; }
 }
 
-public sealed class ProcessInputActionStep : EndToEndStep
+public sealed class MayMaximizeWindowInputActionStep : EndToEndStep
 {
-    private ProcessInputActionStep(
+    private MayMaximizeWindowInputActionStep(
         string name,
         EndToEndProcessInputKind inputKind,
         EndToEndScreenPoint? start,
@@ -822,26 +916,38 @@ public sealed class ProcessInputActionStep : EndToEndStep
 
     public string? Value { get; }
 
-    public static ProcessInputActionStep Click(
+    public static MayMaximizeWindowInputActionStep Click(
         string name,
         EndToEndScreenPoint point,
         EndToEndMouseButton mouseButton)
     {
-        return new ProcessInputActionStep(name, EndToEndProcessInputKind.Click, point, null, mouseButton, null);
+        return new MayMaximizeWindowInputActionStep(
+            name,
+            EndToEndProcessInputKind.Click,
+            point,
+            null,
+            mouseButton,
+            null);
     }
 
-    public static ProcessInputActionStep Drag(
+    public static MayMaximizeWindowInputActionStep Drag(
         string name,
         EndToEndScreenPoint start,
         EndToEndScreenPoint end,
         EndToEndMouseButton mouseButton)
     {
-        return new ProcessInputActionStep(name, EndToEndProcessInputKind.Drag, start, end, mouseButton, null);
+        return new MayMaximizeWindowInputActionStep(
+            name,
+            EndToEndProcessInputKind.Drag,
+            start,
+            end,
+            mouseButton,
+            null);
     }
 
-    public static ProcessInputActionStep Key(string name, string key)
+    public static MayMaximizeWindowInputActionStep Key(string name, string key)
     {
-        return new ProcessInputActionStep(
+        return new MayMaximizeWindowInputActionStep(
             name,
             EndToEndProcessInputKind.Key,
             null,
@@ -850,9 +956,9 @@ public sealed class ProcessInputActionStep : EndToEndStep
             StepValues.Required(key, nameof(key)));
     }
 
-    public static ProcessInputActionStep Chord(string name, string chord)
+    public static MayMaximizeWindowInputActionStep Chord(string name, string chord)
     {
-        return new ProcessInputActionStep(
+        return new MayMaximizeWindowInputActionStep(
             name,
             EndToEndProcessInputKind.Chord,
             null,
@@ -861,9 +967,15 @@ public sealed class ProcessInputActionStep : EndToEndStep
             StepValues.Required(chord, nameof(chord)));
     }
 
-    public static ProcessInputActionStep Text(string name, string text)
+    public static MayMaximizeWindowInputActionStep Text(string name, string text)
     {
-        return new ProcessInputActionStep(name, EndToEndProcessInputKind.Text, null, null, null, text ?? string.Empty);
+        return new MayMaximizeWindowInputActionStep(
+            name,
+            EndToEndProcessInputKind.Text,
+            null,
+            null,
+            null,
+            text ?? string.Empty);
     }
 }
 

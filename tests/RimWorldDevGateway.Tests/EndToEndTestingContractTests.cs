@@ -10,6 +10,26 @@ namespace RimWorldDevGateway.Tests;
 public sealed class EndToEndTestingContractTests
 {
     [Test]
+    public void Desktop_process_input_type_warns_that_it_may_maximize_the_window()
+    {
+        var contractAssembly = typeof(EndToEndStep).Assembly;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                contractAssembly.GetType(
+                    "RimWorldDevGateway.EndToEndTesting.MayMaximizeWindowInputActionStep",
+                    throwOnError: false),
+                Is.Not.Null);
+            Assert.That(
+                contractAssembly.GetType(
+                    "RimWorldDevGateway.EndToEndTesting.ProcessInputActionStep",
+                    throwOnError: false),
+                Is.Null);
+        });
+    }
+
+    [Test]
     public void Semantic_inspection_steps_require_exact_targets_without_screen_coordinates()
     {
         var tab = new PawnInspectTabActionStep("open gear", "Thing_Human123", EndToEndPawnInspectTab.Gear);
@@ -41,11 +61,11 @@ public sealed class EndToEndTestingContractTests
             Assert.That(acceptWindow.ExpectedWindowRuntimeType, Is.EqualTo("Verse.Dialog_MessageBox"));
             Assert.That(cancelWindow.ExpectedWindowRuntimeType, Is.EqualTo("Verse.Dialog_MessageBox"));
             Assert.That(modSettings.PackageId, Is.EqualTo("fumblesneeze.immersivechefs"));
-            Assert.That(tab, Is.Not.InstanceOf<ProcessInputActionStep>());
-            Assert.That(open, Is.Not.InstanceOf<ProcessInputActionStep>());
-            Assert.That(closeInspect, Is.Not.InstanceOf<ProcessInputActionStep>());
-            Assert.That(cancelWindow, Is.Not.InstanceOf<ProcessInputActionStep>());
-            Assert.That(modSettings, Is.Not.InstanceOf<ProcessInputActionStep>());
+            Assert.That(tab, Is.Not.InstanceOf<MayMaximizeWindowInputActionStep>());
+            Assert.That(open, Is.Not.InstanceOf<MayMaximizeWindowInputActionStep>());
+            Assert.That(closeInspect, Is.Not.InstanceOf<MayMaximizeWindowInputActionStep>());
+            Assert.That(cancelWindow, Is.Not.InstanceOf<MayMaximizeWindowInputActionStep>());
+            Assert.That(modSettings, Is.Not.InstanceOf<MayMaximizeWindowInputActionStep>());
             Assert.That(
                 () => new ModSettingsActionStep("open settings", " "),
                 Throws.TypeOf<ArgumentException>());
@@ -113,6 +133,12 @@ public sealed class EndToEndTestingContractTests
     public void Step_contract_separates_typed_actions_waits_and_observations()
     {
         var waitDeadline = new EndToEndDeadline(120, 600, TimeSpan.FromSeconds(10));
+        var conditionalTime = new TimeControlActionStep(
+            "pause on capture frame",
+            paused: true,
+            speed: EndToEndGameSpeed.Normal,
+            atGameTick: 123,
+            deadline: waitDeadline);
         EndToEndStep[] steps =
         {
             new GizmoActionStep("undraft", new[] { "pawn:42" }, "Command_Toggle", EndToEndGizmoInteraction.Invoke),
@@ -130,8 +156,11 @@ public sealed class EndToEndTestingContractTests
                 "MealFine42",
                 countDelta: -1),
             TradeDialogActionStep.Accept("accept-trade"),
-            ProcessInputActionStep.Click("click-gizmo", new EndToEndScreenPoint(100, 200), EndToEndMouseButton.Left),
-            ProcessInputActionStep.Drag(
+            MayMaximizeWindowInputActionStep.Click(
+                "click-gizmo",
+                new EndToEndScreenPoint(100, 200),
+                EndToEndMouseButton.Left),
+            MayMaximizeWindowInputActionStep.Drag(
                 "drag-zone",
                 new EndToEndScreenPoint(10, 20),
                 new EndToEndScreenPoint(80, 90),
@@ -164,6 +193,16 @@ public sealed class EndToEndTestingContractTests
         Assert.That(((WaitUntilStep)steps[12]).Deadline, Is.SameAs(waitDeadline));
         Assert.Multiple(() =>
         {
+            Assert.That(conditionalTime.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(conditionalTime.AtGameTick, Is.EqualTo(123));
+            Assert.That(conditionalTime.Deadline, Is.SameAs(waitDeadline));
+            Assert.That(() => new TimeControlActionStep(
+                    "invalid scheduled pause",
+                    paused: true,
+                    EndToEndGameSpeed.Normal,
+                    atGameTick: -1,
+                    deadline: waitDeadline),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
             var currentMenu = (CurrentFloatMenuActionStep)steps[2];
             Assert.That(currentMenu.ExactOptionLabel, Is.EqualTo("For guests"));
             var settlementTrade = (SettlementTradeActionStep)steps[3];
@@ -179,6 +218,64 @@ public sealed class EndToEndTestingContractTests
             var accept = (TradeDialogActionStep)steps[9];
             Assert.That(accept.Action, Is.EqualTo(EndToEndTradeDialogAction.Accept));
             Assert.That(accept.ThingRuntimeId, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Map_float_menu_open_supports_an_exact_target_and_zero_or_more_unique_actors()
+    {
+        var withoutPawn = new MapFloatMenuOpenActionStep(
+            "open no-pawn menu",
+            "signal-fire-7",
+            Array.Empty<string>());
+        var withPawns = new MapFloatMenuOpenActionStep(
+            "open selected-pawn menu",
+            "signal-fire-7",
+            new[] { "pawn-1", "pawn-2" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(withoutPawn.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(withoutPawn.TargetRuntimeId, Is.EqualTo("signal-fire-7"));
+            Assert.That(withoutPawn.ActorRuntimeIds, Is.Empty);
+            Assert.That(withPawns.ActorRuntimeIds, Is.EqualTo(new[] { "pawn-1", "pawn-2" }));
+            Assert.That(
+                () => new MapFloatMenuOpenActionStep("duplicate", "fire", new[] { "pawn", "pawn" }),
+                Throws.ArgumentException);
+        });
+    }
+
+    [Test]
+    public void No_pawn_map_right_click_names_one_exact_target_without_desktop_input()
+    {
+        var step = new NoPawnMapRightClickActionStep("right-click signal fire", "signal-fire-7");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(step.Kind, Is.EqualTo(EndToEndStepKind.Act));
+            Assert.That(step.TargetRuntimeId, Is.EqualTo("signal-fire-7"));
+            Assert.That(
+                () => new NoPawnMapRightClickActionStep("missing", " "),
+                Throws.ArgumentException);
+        });
+    }
+
+    [Test]
+    public void Current_float_menu_can_require_one_replacement_submenu()
+    {
+        var ordinary = new CurrentFloatMenuActionStep("choose terminal", "Faction A");
+        var nested = new CurrentFloatMenuActionStep(
+            "open contacts",
+            "Send a smoke signal...",
+            expectReplacementMenu: true,
+            captureSoleUnownedMenu: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ordinary.ExpectReplacementMenu, Is.False);
+            Assert.That(ordinary.CaptureSoleUnownedMenu, Is.False);
+            Assert.That(nested.ExpectReplacementMenu, Is.True);
+            Assert.That(nested.CaptureSoleUnownedMenu, Is.True);
         });
     }
 

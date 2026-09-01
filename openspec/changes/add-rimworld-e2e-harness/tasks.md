@@ -31,6 +31,7 @@
 - [ ] 2.20 E2E/IN-GAME: Use the typed screenshot-mode action in a fresh minimized visual catalog, retain UI-free viewport-checked captures, and prove exact-PID cleanup restores the prior interface state.
 - [x] 2.19 TDD/E2E: Add a typed exact-package mod-settings action that opens and verifies RimWorld's native dialog for the exact active `Mod` without foreground input, then use it in the minimized six-language product localization workflow.
 - [ ] 2.20 TDD/E2E: Add a bounded exact-Thing supporting hit-point fixture action that is retained as direct setup rather than observation, and prove a product visual catalog covers horizontal, vertical, junction, and one-owner-damaged doubled-edge rendering without treating the fixture as native damage acceptance.
+- [ ] 2.21 TDD/E2E: Reproduce a live E2E snapshot replacement blocked for longer than one second, retain the old durable snapshot while retrying on the background lane, and prove a fresh minimized player workflow completes without a persistence error or developer-log overlay.
 - [ ] 2.21 TDD/E2E: Add a typed reversible native shadow-rendering action for exact-camera supporting silhouette measurement, restore the prior global state in cleanup, and prove a minimized product capture uses shadow-free staged masks while retaining ordinary shadows in the final public frame.
 - [x] 2.22 TDD/E2E: Add a typed exact-label current-`FloatMenu` action that requires one real open menu and one enabled option, invokes its native chosen lifecycle without desktop input, and prove it through the Guest Bed Gizmo four-choice owner workflow.
 - [x] 2.23 TDD: After an exact semantic gizmo callback opens exactly one native `FloatMenu`, hold and lease only that exact newly opened instance against mouse-distance vanishing, reject replacement/ambiguity, and clear or consume the lease through bounded action/isolation cleanup while restoring the leased menu's prior behavior and leaving pre-existing windows unchanged.
@@ -69,3 +70,8 @@
 - [ ] 6.2 REGRESSION: Run focused tests, full Gateway and repository suites with nonzero discovery, Release/package inspection, and strict OpenSpec validation.
 - [ ] 6.3 REVIEW: Independently review contract honesty, metadata/staging safety, multi-frame/thread ownership, reset completeness, native-action fidelity, failure isolation, CLI contracts, package boundaries, and KISS; resolve findings and rerun affected gates.
 - [ ] 6.4 IN-GAME: On the reviewed build, run at least two exact mod groups in one host invocation, personally inspect retained native before/action/after behavior for the adverse-meal tracer and one optional-mod workflow, and prove sequential cleanup, controlled exact-PID shutdown, stage/credential removal, final log scans, and unchanged normal configuration hashes.
+
+## 7. Explicitly disruptive process-input naming
+
+- [x] 7.1 SPEC/TDD RED: replace the ambiguous typed process-input action contract with `MayMaximizeWindowInputActionStep`, require the warning at every click/drag/key/chord/text call site, and prove the old type is absent.
+- [x] 7.2 GREEN/REGRESSION: migrate the shared contract, Gateway runtime adapters, host tests, and remaining product E2E callers; verify semantic and in-process actions retain their minimized-safe names. Focused regression 147/147; independent re-review found no remaining ambiguous process-input surface.

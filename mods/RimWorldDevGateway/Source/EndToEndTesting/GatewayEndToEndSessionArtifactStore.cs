@@ -8,7 +8,7 @@ namespace RimWorldDevGateway;
 public sealed class GatewayEndToEndSessionArtifactStore : IGatewayEndToEndSessionArtifactStore
 {
     private static readonly char[] AllowedRunIdPunctuation = { '-', '_' };
-    private static readonly TimeSpan AtomicReplaceRetryWindow = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan AtomicReplaceRetryWindow = TimeSpan.FromSeconds(5);
     private readonly object sync = new();
     private readonly string saveDataFolder;
     private GatewayEndToEndSnapshot? committedSnapshot;
@@ -189,6 +189,9 @@ public sealed class GatewayEndToEndSessionArtifactStore : IGatewayEndToEndSessio
             }
             catch (IOException) when (File.Exists(temporaryPath) && timer.Elapsed < AtomicReplaceRetryWindow)
             {
+                // This runs on the dedicated persistence Task. Antivirus and the host's
+                // snapshot reader can briefly deny delete-sharing on Windows; retain the
+                // old durable file and retry without ever sleeping Unity's update thread.
                 Thread.Sleep(delayMilliseconds);
                 delayMilliseconds = Math.Min(delayMilliseconds * 2, 50);
             }

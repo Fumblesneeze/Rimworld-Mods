@@ -45,9 +45,9 @@ All public routes are rooted at `/api/v1`; an unsupported `/api/vN` returns a st
 | `GET /api/v1/ui-state` | Bounded program/root, pause/speed, rendered-client coordinate bounds, selected-handle/label, and window-handle/type/modal snapshot |
 | `GET /api/v1/logs?after=<sequence>&limit=<n>` | Count- and byte-bounded cursor page of structured logs |
 | `POST /api/v1/screenshots` | End-of-frame full PNG capture, or an optional padded union crop around exact current-map Thing/Pawn handles |
-| `POST /api/v1/input/click` | Client-coordinate click against this RimWorld process |
-| `POST /api/v1/input/drag` | Timed client-coordinate drag against this RimWorld process |
-| `POST /api/v1/input/keys` | Key, chord, or text input against this RimWorld process |
+| `POST /api/v1/input/may-maximize-window/click` | Client-coordinate click that may restore, foreground, or result in a maximized RimWorld window |
+| `POST /api/v1/input/may-maximize-window/drag` | Timed client-coordinate drag that may restore, foreground, or result in a maximized RimWorld window |
+| `POST /api/v1/input/may-maximize-window/keys` | Key, chord, or text input that may restore, foreground, or result in a maximized RimWorld window |
 | `POST /api/v1/actions/{name}` | A registered semantic button/action invocation |
 | `GET /api/v1/game-state` | Developer/god mode, pause/speed, current-map, camera, view rectangle, and selection summary |
 | `POST /api/v1/game-state` | Atomically set any supplied developer/god mode, pause, or speed fields |
@@ -153,6 +153,13 @@ drawing even there. Ordinary map play and the title screen therefore remain free
 while screenshot mode is active it also skips those boxes without stopping the server, discovery, or
 the running test. This keeps the action reversible and avoids a second private visibility state.
 Using fixtures retain and restore the prior native flag in guaranteed cleanup.
+
+Short visual phases cannot be captured reliably by composing a completed wait step with a later
+time-control step because durable step transitions consume rendered frames and game ticks between
+them. A `TimeControlActionStep` may therefore carry one absolute non-negative game tick and the same
+bounded deadline model as waits. The execution state machine holds that typed action until the live
+clock reaches the target, then dispatches the existing native time-control backend on that exact
+update. This adds no arbitrary action delegate and does not create a second pause implementation.
 
 This semantic protocol is intentionally not a universal serializer or a promise to parameterize every mod-defined command. Unsupported custom gizmos/debug tools return their concrete runtime type and reason; the always-on raw C# endpoint remains the escape hatch and can be used to prototype a later typed adapter without restarting the game.
 

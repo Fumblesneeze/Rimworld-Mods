@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Mono.Cecil;
 using RimWorldDevGateway.EndToEndTesting;
 using System.IO;
 using System.Reflection;
@@ -11,6 +12,139 @@ namespace RimWorldDevGateway.Tests;
 [TestFixture]
 public sealed class GatewayEndToEndGatewayBackendTests
 {
+    [Test]
+    public void No_pawn_map_right_click_resolves_the_exact_RimWorld_selector_seam()
+    {
+        FieldInfo? field = typeof(VerseGatewayEndToEndFloatMenuActions).GetField(
+            "SelectorLowPriorityInput",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        var method = field?.GetValue(null) as MethodInfo;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(field, Is.Not.Null);
+            Assert.That(method, Is.Not.Null,
+                "The production resolver must find the installed RimWorld 1.6 selector seam.");
+            Assert.That(method?.DeclaringType, Is.EqualTo(typeof(RimWorld.Selector)));
+            Assert.That(method?.Name, Is.EqualTo("SelectorOnGUI"));
+            Assert.That(method?.IsPublic, Is.True,
+                "The Gateway must bind RimWorld 1.6's exact public post-window selector seam.");
+            Assert.That(method?.GetParameters(), Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Map_menu_actions_require_native_outer_routing_preconditions()
+    {
+        MethodInfo? policy = typeof(VerseGatewayEndToEndFloatMenuActions).GetMethod(
+            "HasPlayerControlledMap",
+            BindingFlags.Static | BindingFlags.NonPublic);
+
+        Assert.That(policy, Is.Not.Null);
+        bool fullyReady = (bool)policy!.Invoke(
+            null,
+            new object[] { true, true, true, true, false, true, false })!;
+        bool noPlayerControl = (bool)policy.Invoke(
+            null,
+            new object[] { true, true, true, true, false, false, false })!;
+        bool drawingWorld = (bool)policy.Invoke(
+            null,
+            new object[] { true, true, true, false, false, true, false })!;
+        bool inputBlocked = (bool)policy.Invoke(
+            null,
+            new object[] { true, true, true, true, false, true, true })!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fullyReady, Is.True);
+            Assert.That(noPlayerControl, Is.False,
+                "A playable map scene is not actionable until Current.Game.PlayerHasControl is true.");
+            Assert.That(drawingWorld, Is.False,
+                "The in-process map action must not bypass Core's DrawingMap outer route.");
+            Assert.That(inputBlocked, Is.False,
+                "The in-process map action must not bypass an input-absorbing native window.");
+        });
+    }
+
+    [Test]
+    public void Map_menu_actions_wire_the_native_outer_routing_policy()
+    {
+        using AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(
+            typeof(GatewayEndToEndGatewayBackend).Assembly.Location);
+        TypeDefinition actions = assembly.MainModule.GetType(
+            "RimWorldDevGateway.VerseGatewayEndToEndFloatMenuActions");
+        MethodDefinition mapMenu = FindApply(
+            actions,
+            "RimWorldDevGateway.EndToEndTesting.MapFloatMenuOpenActionStep");
+        MethodDefinition noPawn = FindApply(
+            actions,
+            "RimWorldDevGateway.EndToEndTesting.NoPawnMapRightClickActionStep");
+
+        foreach (MethodDefinition action in new[] { mapMenu, noPawn })
+        {
+            Assert.Multiple(() =>
+            {
+                AssertCalls(action, "RimWorld.Planet.WorldRendererUtility", "get_DrawingMap");
+                AssertCalls(action, "Verse.WindowStack", "get_AnyWindowAbsorbingAllInput");
+                AssertCalls(action, actions.FullName, "HasPlayerControlledMap");
+            });
+        }
+
+        Assert.Multiple(() =>
+        {
+            AssertDoesNotCall(mapMenu, "Verse.UI", "GUIToScreenPoint");
+            AssertDoesNotCall(mapMenu, "Verse.WindowStack", "GetWindowAt");
+            AssertCalls(noPawn, "Verse.UI", "GUIToScreenPoint");
+            AssertCalls(noPawn, "Verse.WindowStack", "GetWindowAt");
+        });
+    }
+
+    [Test]
+    public void Map_menu_rejects_runtime_id_aliases_that_resolve_to_the_same_pawn()
+    {
+        MethodInfo? duplicatePolicy = typeof(VerseGatewayEndToEndFloatMenuActions).GetMethod(
+            "IsDuplicateResolvedActor",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        var first = (Pawn)FormatterServices.GetUninitializedObject(typeof(Pawn));
+        var second = (Pawn)FormatterServices.GetUninitializedObject(typeof(Pawn));
+
+        Assert.That(duplicatePolicy, Is.Not.Null);
+        bool samePawn = (bool)duplicatePolicy!.Invoke(
+            null,
+            new object[] { new[] { first }, first })!;
+        bool distinctPawn = (bool)duplicatePolicy.Invoke(
+            null,
+            new object[] { new[] { first }, second })!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(samePawn, Is.True);
+            Assert.That(distinctPawn, Is.False);
+        });
+    }
+
+    private static MethodDefinition FindApply(TypeDefinition type, string parameterType) =>
+        type.Methods.Single(method =>
+            method.Name == "Apply" &&
+            method.Parameters.Count == 1 &&
+            method.Parameters[0].ParameterType.FullName == parameterType);
+
+    private static void AssertCalls(MethodDefinition method, string declaringType, string methodName) =>
+        Assert.That(method.Body.Instructions.Any(instruction =>
+                instruction.Operand is MethodReference reference &&
+                reference.DeclaringType.FullName == declaringType &&
+                reference.Name == methodName),
+            Is.True,
+            $"{method.FullName} must call {declaringType}.{methodName}.");
+
+    private static void AssertDoesNotCall(MethodDefinition method, string declaringType, string methodName) =>
+        Assert.That(method.Body.Instructions.Any(instruction =>
+                instruction.Operand is MethodReference reference &&
+                reference.DeclaringType.FullName == declaringType &&
+                reference.Name == methodName),
+            Is.False,
+            $"{method.FullName} must not call {declaringType}.{methodName}.");
+
     [Test]
     public void Concrete_backend_maps_time_selection_camera_and_architect_queries_to_gateway_services()
     {
@@ -308,6 +442,108 @@ public sealed class GatewayEndToEndGatewayBackendTests
             Assert.That(resolved, Is.SameAs(captured));
             Assert.That(stale.Passed, Is.False);
             Assert.That(stale.FailureCode, Is.EqualTo("current_float_menu_stale"));
+        });
+    }
+
+    [Test]
+    public void Current_float_menu_can_explicitly_adopt_one_process_opened_window()
+    {
+        var physical = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        var extra = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        FloatMenuAutomationLease.Clear();
+
+        GatewayEndToEndStepOutcome exact =
+            VerseGatewayEndToEndFloatMenuActions.CaptureSoleUnownedMenu(
+                new[] { physical },
+                out FloatMenu? captured);
+        FloatMenuAutomationLease.Clear();
+        GatewayEndToEndStepOutcome ambiguous =
+            VerseGatewayEndToEndFloatMenuActions.CaptureSoleUnownedMenu(
+                new[] { physical, extra },
+                out _);
+        FloatMenuAutomationLease.Clear();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exact.Passed, Is.True);
+            Assert.That(captured, Is.SameAs(physical));
+            Assert.That(ambiguous.Passed, Is.False);
+            Assert.That(ambiguous.FailureCode, Is.EqualTo("current_float_menu_capture_ambiguous"));
+        });
+    }
+
+    [Test]
+    public void Closed_float_menu_releases_its_automation_lease_before_the_next_native_menu()
+    {
+        var closed = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        FloatMenuAutomationLease.CaptureNewlyOpened(Array.Empty<FloatMenu>(), new[] { closed });
+
+        FloatMenuAutomationLease.ReleaseIfNotOpen(Array.Empty<FloatMenu>());
+
+        Assert.That(FloatMenuAutomationLease.CapturedForAutomation, Is.Null);
+    }
+
+    [Test]
+    public void Sole_menu_adoption_releases_a_stale_closed_lease_before_capture()
+    {
+        var stale = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        var newlyOpen = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        FloatMenuAutomationLease.Clear();
+        FloatMenuAutomationLease.CaptureNewlyOpened(Array.Empty<FloatMenu>(), new[] { stale });
+
+        GatewayEndToEndStepOutcome outcome =
+            VerseGatewayEndToEndFloatMenuActions.CaptureSoleUnownedMenu(
+                new[] { newlyOpen },
+                out FloatMenu? captured);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Passed, Is.True, outcome.FailureMessage);
+            Assert.That(captured, Is.SameAs(newlyOpen));
+            Assert.That(FloatMenuAutomationLease.CapturedForAutomation, Is.SameAs(newlyOpen));
+        });
+        FloatMenuAutomationLease.Clear();
+    }
+
+    [Test]
+    public void Replacement_submenu_requires_one_new_menu_and_a_closed_source()
+    {
+        var source = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        var replacement = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+        var extra = (FloatMenu)FormatterServices.GetUninitializedObject(typeof(FloatMenu));
+
+        GatewayEndToEndStepOutcome exact =
+            VerseGatewayEndToEndFloatMenuActions.ResolveReplacementMenu(
+                source,
+                sourceIsOpen: false,
+                new[] { replacement },
+                out FloatMenu? resolved);
+        GatewayEndToEndStepOutcome absent =
+            VerseGatewayEndToEndFloatMenuActions.ResolveReplacementMenu(
+                source,
+                sourceIsOpen: false,
+                Array.Empty<FloatMenu>(),
+                out _);
+        GatewayEndToEndStepOutcome ambiguous =
+            VerseGatewayEndToEndFloatMenuActions.ResolveReplacementMenu(
+                source,
+                sourceIsOpen: false,
+                new[] { replacement, extra },
+                out _);
+        GatewayEndToEndStepOutcome sourceStillOpen =
+            VerseGatewayEndToEndFloatMenuActions.ResolveReplacementMenu(
+                source,
+                sourceIsOpen: true,
+                new[] { source, replacement },
+                out _);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exact.Passed, Is.True);
+            Assert.That(resolved, Is.SameAs(replacement));
+            Assert.That(absent.FailureCode, Is.EqualTo("replacement_float_menu_missing"));
+            Assert.That(ambiguous.FailureCode, Is.EqualTo("replacement_float_menu_ambiguous"));
+            Assert.That(sourceStillOpen.FailureCode, Is.EqualTo("replacement_float_menu_source_open"));
         });
     }
 

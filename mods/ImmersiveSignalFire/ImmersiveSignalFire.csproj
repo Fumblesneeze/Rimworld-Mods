@@ -1,0 +1,67 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <DynamicEffectsForgeAssemblyPath Condition="'$(DynamicEffectsForgeAssemblyPath)' == ''">$(SteamModContentFolder)\3735443951\Assemblies\BluesForge.dll</DynamicEffectsForgeAssemblyPath>
+    <RimWorldModName>Immersive Signal Fire</RimWorldModName>
+    <RimWorldPackageId>fumblesneeze.immersivesignalfire</RimWorldPackageId>
+    <RimWorldDistributionKind>Product</RimWorldDistributionKind>
+    <Authors>Fumblesneeze</Authors>
+    <AssemblyName>ImmersiveSignalFire</AssemblyName>
+    <RootNamespace>ImmersiveSignalFire</RootNamespace>
+    <IncludeHarmony>true</IncludeHarmony>
+    <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
+    <Description>A cold Neolithic signal fire for calling nearby allied tribal and medieval warriors through synchronized smoke signalling.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <RimWorldSteamModDependency Include="blues.forge">
+      <MainDllName>BluesForge</MainDllName>
+    </RimWorldSteamModDependency>
+    <RimWorldLoadAfter Include="meathax.ShowMeYourTools" />
+    <Reference Include="BluesForge">
+      <HintPath>$(DynamicEffectsForgeAssemblyPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+
+  <Target Name="ExcludeRootAssemblyForgeFromSdkReferenceResolution" BeforeTargets="ReferenceRimWorldMods">
+    <ItemGroup>
+      <RimWorldSteamModDependency Remove="blues.forge" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ValidateImmersiveSignalFireDependencies" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(DynamicEffectsForgeAssemblyPath)')" Text="Dynamic Effects Forge assembly does not exist: $(DynamicEffectsForgeAssemblyPath)." />
+  </Target>
+
+  <!-- Dynamic Effects Forge keeps its assembly at the Workshop item root, which
+       ModSdk 0.0.9 cannot resolve as a RimWorldSteamModDependency. The direct
+       non-copying compile reference above is paired with reviewed source metadata. -->
+  <Target Name="UseReviewedImmersiveSignalFireAboutMetadata" AfterTargets="OutputRimWorldResources">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Build\ReviewedAbout.xml"
+          DestinationFiles="$(MSBuildProjectDirectory)\About\About.xml" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Build\ReviewedAbout.xml"
+          DestinationFiles="$(ModSpecificOutputfolder)\About\About.xml" />
+  </Target>
+
+  <!-- ModSdk 0.0.9's optional XSD generator cannot resolve Dynamic Effects
+       Forge's netstandard facade graph. Finalized XML is verified in game. -->
+  <PropertyGroup>
+    <ImmersiveSignalFireGenerateDefXsd Condition="'$(ImmersiveSignalFireGenerateDefXsd)' == ''">false</ImmersiveSignalFireGenerateDefXsd>
+  </PropertyGroup>
+  <Target Name="GenerateDefXsds"
+          AfterTargets="Build;CopyMod"
+          Inputs="@(RimWorldDefFiles);@(Reference);@(RimWorldCompilationResult)"
+          Outputs="$(DefsXsdFileName)"
+          Condition="'$(ImmersiveSignalFireGenerateDefXsd)' == 'true' and '@(RimWorldResourceDefs)' != ''">
+    <GenerateXdsFilesForDefs References="@(Reference)"
+                             RimWorldCompilationResult="@(RimWorldCompilationResult)"
+                             RimWorldDefFiles="@(RimWorldDefFiles)"
+                             XmlSchemaFileName="$(DefsXsdFileName)" />
+  </Target>
+</Project>

@@ -134,8 +134,15 @@ Built-in gateway automations SHALL resolve optional content by package ID and De
 - **WHEN** quickstart is given a descriptor containing valid Defs from another loaded target mod
 - **THEN** it resolves and spawns those Defs without loading any Immersive Chefs assembly or adapter
 
+### Requirement: Exact-tick native E2E time control
+The attributed E2E contract SHALL allow a typed time-control action to carry an optional non-negative absolute game tick and bounded frame, game-tick, and wall-clock deadline. When scheduled, the execution engine SHALL wait without dispatching the action while the live game tick is lower than the target, then invoke the existing bounded native pause/speed action on the same update that first observes the target reached. It SHALL not expose an arbitrary synchronous action delegate and SHALL fail with the ordinary step deadline before dispatch when the target is not reached.
+
+#### Scenario: Visual capture pauses on an exact simulation phase
+- **WHEN** an attributed E2E workflow schedules native pause for an absolute game tick inside a short visible phase
+- **THEN** the engine does not dispatch pause early and applies it on the first update whose game tick reaches that target, without a separate wait-step transition advancing the simulation past the phase
+
 ### Requirement: Native E2E save and reload action
-The attributed E2E contract SHALL expose a typed save-and-reload action that accepts only a safe leaf save name. The Gateway SHALL invoke RimWorld's native `GameDataSaveLoader.SaveGame` and `GameDataSaveLoader.LoadGame` operations on the main thread only from a player-controlled playable game. It SHALL fail when native saving is disabled, refuse to overwrite an existing isolated save, and verify the new file is nonempty before loading it. Completion SHALL require a different `Current.Game` instance, restored player control and current playable map, and no current or queued long event. Frame and wall-clock deadlines SHALL remain authoritative because loading may reset the game-tick clock. The attributed test SHALL own and delete its exact isolated save through deferred cleanup.
+The attributed E2E contract SHALL expose a typed save-and-reload action that accepts only a safe leaf save name. The Gateway SHALL invoke RimWorld's native `GameDataSaveLoader.SaveGame` and `GameDataSaveLoader.LoadGame` operations on the main thread only from a player-controlled playable game. It SHALL fail when native saving is disabled, refuse to overwrite an existing isolated save, and verify the new file is nonempty before loading it. Completion SHALL require a different `Current.Game` instance, restored player control and current playable map, and no current or queued long event. Before requesting load, the Gateway SHALL temporarily set RimWorld's native `Prefs.PauseOnLoad` to the action's entered pause state: a paused action therefore lets `Game.LoadGame` perform its prescribed single initialization tick before setting the finalized replacement `TickManager` to `Paused`, while a running action cannot be unexpectedly paused by a pre-existing preference. The original preference SHALL be restored on successful replacement, synchronous failure, or guaranteed deferred E2E cleanup after asynchronous failure, timeout, or abandonment. A polling pause SHALL remain a fail-safe only after a paused replacement is fully playable, completion SHALL require the entered pause state, and the action SHALL report paused restoration. Frame and wall-clock deadlines SHALL remain authoritative because loading may reset the game-tick clock. The attributed test SHALL own and delete its exact isolated save through deferred cleanup.
 
 #### Scenario: Existing save name is rejected
 - **WHEN** an E2E test requests a save leaf that already exists in its isolated save-data folder
@@ -145,12 +152,75 @@ The attributed E2E contract SHALL expose a typed save-and-reload action that acc
 - **WHEN** a focused E2E test records a visible Thing, invokes the typed save-and-reload action, reacquires that Thing by stable game identity, and observes it after load
 - **THEN** the test continues only after the replacement game and playable map settle and can retain before/after screenshots and checkpoints for the same observable object
 
+#### Scenario: Paused save and reload preserves paused simulation
+- **WHEN** a focused E2E test invokes the typed save-and-reload action while the game is paused
+- **THEN** the action temporarily aligns native pause-on-load with the entered paused state, permits only RimWorld's prescribed initialization tick, restores the original preference even through guaranteed cleanup, and reports the replacement tick manager paused before completion
+
 ### Requirement: Exact native E2E window acceptance
 The attributed E2E contract SHALL expose a typed exact-window accept action that requires player control and exactly one open window with the declared runtime type. The Gateway SHALL invoke that window's native `OnAcceptKeyPressed` path on the Unity thread under an accept-key event, restore the prior Unity event in guaranteed cleanup, and report success only after the exact window closes. It SHALL remain usable from a minimized background launch without process-scoped keyboard injection.
 
 #### Scenario: Background E2E confirms a native message box
 - **WHEN** a minimized E2E run names the sole open `Verse.Dialog_MessageBox` and requests exact-window acceptance
 - **THEN** the native accept callback runs, the dialog closes, foreground focus is unchanged, and the action records the accepted runtime type
+
+### Requirement: Exact native E2E map float-menu opening
+The attributed E2E contract SHALL expose a typed map float-menu option-projection action with one exact current-map target runtime ID and a bounded set of zero or more exact current-map pawn actor IDs. On the Unity thread with player control, the Gateway SHALL re-resolve every supplied identity, call RimWorld's native `FloatMenuMakerMap.GetOptions` at the target's current draw position with the exact actor set, open the resulting native `FloatMenu`, and capture that exact menu under the automation lease. Zero actors SHALL remain a valid and distinct diagnostic input, but this semantic projection SHALL NOT be presented as proof that RimWorld's outer `Selector.HandleMapClicks` player-input gate invokes `GetOptions` without a pawn. Missing, duplicate, non-pawn, off-map, stale, empty-option, concurrent-menu, or no-control states SHALL fail closed before opening a menu.
+
+#### Scenario: Project a custom zero-actor map option set while minimized
+- **WHEN** a minimized diagnostic targets a mod-provided map option source that deliberately returns options from `FloatMenuMakerMap.GetOptions` for zero pawn actor IDs
+- **THEN** that real zero-actor option set is displayed in one captured native menu without desktop focus or coordinate input, while any claim about RimWorld's outer no-pawn selector gate still requires either exact-process input or the faithful in-process native GUI-event action below
+
+#### Scenario: Open a selected-pawn map menu
+- **WHEN** a minimized E2E run opens the native map menu for one exact target with one exact spawned player pawn actor
+- **THEN** the captured native menu is generated from that exact pawn and target through RimWorld's ordinary map-menu path
+
+### Requirement: Minimized in-process no-pawn native GUI right-click
+The attributed E2E contract SHALL expose a typed in-process no-pawn selector-seam projection for one exact spawned current-map target. With player control, the map renderer active, zero selected pawns, no input-absorbing native window, no native window covering the target-centered GUI point, no current float-menu lease, and no open native float menu, the Gateway SHALL resolve the target, create a temporary right-button `MouseUp` GUI event at the target's rendered center, invoke the exact public low-priority `Selector.SelectorOnGUI` player-input seam on the Unity thread, require that the event is consumed, and restore the prior Unity event in guaranteed cleanup. Because the event is injected directly at the selector seam rather than passed through `WindowStackOnGUI`, the Gateway SHALL conservatively use `WindowStack.GetWindowAt(UI.GUIToScreenPoint(mousePosition))` to reject a native window that could consume an equivalent target-centered event without rejecting unrelated map UI. The action SHALL use no desktop mouse, focus, restore, foreground, or window-state operation and SHALL NOT be described as physical OS input or as proof that a window received the synthetic event. Missing, duplicate, stale, off-map, world-view, target-obscured, selected-pawn, concurrent-menu, unavailable-seam, or unconsumed states SHALL fail closed.
+
+#### Scenario: No-pawn signal-fire menu opens while RimWorld remains minimized
+- **WHEN** a minimized E2E run clears pawn selection and performs the typed no-pawn right-click on one exact visible signal fire
+- **THEN** the exact selector-seam projection consumes the temporary native GUI event under the target-point window-coverage boundary, the product opens its ordinary no-pawn float menu on the following UI pass, and no OS-level input or foreground-window transition occurs
+
+#### Scenario: Map-menu identities are stale or ambiguous
+- **WHEN** the target or any actor cannot be resolved uniquely on the current map, an actor is not a pawn, or another automation-owned menu is active
+- **THEN** the action fails without opening or choosing any float-menu option
+
+### Requirement: Exact native E2E replacement submenu transfer
+The current-float-menu choice action SHALL optionally adopt exactly one otherwise-unowned native `FloatMenu` opened by the immediately preceding native input action, including either exact-process physical input or the typed in-process selector GUI event, and SHALL optionally require the chosen option to replace its captured source menu with exactly one newly opened native `FloatMenu`. Adoption SHALL first release an automation lease whose menu is no longer open, then fail when a still-open lease exists or the open-menu count is not exactly one. In replacement mode, the Gateway SHALL run the existing native chosen/tutor/close lifecycle, distinguish the source menu from windows opened by its action, require the source to close and exactly one replacement menu to remain open, and atomically transfer the automation lease to that replacement. No replacement, multiple replacements, a still-open source, or a reused source identity SHALL fail and clear the stale lease. Existing choices that request neither behavior SHALL retain their current behavior.
+
+#### Scenario: Adopt a map menu opened by a native input action
+- **WHEN** exact-PID physical input or the typed in-process selector GUI-event action opens exactly one unowned native `FloatMenu` for a map target
+- **THEN** an explicit current-menu adoption request captures that exact window before choosing its exact enabled visible option, while zero or multiple menus or an existing lease fail closed
+
+#### Scenario: Contact action opens a faction submenu
+- **WHEN** an E2E run chooses an exact contact option with replacement-submenu transfer required and that option opens one faction `FloatMenu`
+- **THEN** the source closes, the one replacement submenu remains visible and becomes the exact menu accepted by the next current-float-menu action
+
+#### Scenario: Option does not open exactly one submenu
+- **WHEN** replacement-submenu transfer is required but the chosen option opens zero or multiple native float menus
+- **THEN** the action fails with the observed menu count and retains no stale automation lease
+
+### Requirement: Transient-lock-tolerant E2E stage lease journal
+The E2E host SHALL persist its exact stage-ownership lease journal through atomic sibling-file replacement and SHALL clear that journal only after owned stage cleanup. Replacement and deletion SHALL retry `IOException` or `UnauthorizedAccessException` failures for a short bounded interval while the expected source or destination still exists. A persistent lock SHALL still fail closed without broad deletion or loss of the last durable committed journal.
+
+#### Scenario: Windows scanner briefly holds the stage lease journal
+- **WHEN** a short-lived Windows reader prevents replacement and later deletion of the exact E2E stage lease journal
+- **THEN** the host retries both operations within a bounded interval, publishes the requested stage, and clears the journal after exact-marker cleanup without requiring manual filesystem mutation
+
+### Requirement: Shutdown-race-safe credential sanitation
+After the exact owned RimWorld process is confirmed dead, the E2E host SHALL sanitize each matching Gateway session manifest by atomic credential-free replacement or by removal of that exact file, and SHALL remove the matching live credential locator. If the Gateway's own shutdown cleanup removes either destination while the host is replacing or deleting it, the host SHALL accept that failed operation only after it rechecks that no file, directory, or other filesystem item remains at the exact destination. It SHALL still fail closed when an exact credential path remains occupied, when fallback removal fails and the path remains, or when any retained run artifact contains a recovered bearer token.
+
+#### Scenario: Gateway shutdown removes a session during host redaction
+- **WHEN** the host has already matched a session manifest to the exact dead process and the Gateway removes that exact session file during the host's atomic replacement
+- **THEN** the host verifies the exact file is absent, counts that session as sanitized, and completes credential cleanup without retaining the original replace exception as a false failure
+
+#### Scenario: Gateway shutdown removes the current locator during host cleanup
+- **WHEN** the host has already matched `current.json` to the exact dead process and the Gateway removes that locator during host deletion
+- **THEN** the host verifies that the exact path is wholly absent and completes credential cleanup without retaining the original deletion exception as a false failure
+
+#### Scenario: Failed redaction leaves the credential artifact present
+- **WHEN** atomic replacement or locator deletion fails and the exact credential path remains occupied by any filesystem item
+- **THEN** credential cleanup fails and the run cannot be accepted
 
 #### Scenario: Exact accept target is absent or ambiguous
 - **WHEN** no open window or more than one open window has the declared runtime type

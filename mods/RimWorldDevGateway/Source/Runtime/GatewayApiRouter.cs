@@ -497,14 +497,15 @@ public sealed class GatewayApiRouter
                 return response;
             }
 
-            if (request.Method == "POST" && request.Path == "/api/v1/input/click")
+            if (request.Method == "POST" &&
+                request.Path == "/api/v1/input/may-maximize-window/click")
             {
                 var input = Require(services.WindowsInput, "raw_input_unavailable");
-                var payload = DeserializeBody<GatewayClickRequest>(request);
+                var payload = DeserializeBody<GatewayMayMaximizeWindowClickRequest>(request);
                 var button = ParseMouseButton(payload.Button);
                 return Success(
                     requestId,
-                    input.Click(
+                    input.MayMaximizeWindowClick(
                         new GatewayClientPoint(payload.X, payload.Y),
                         button,
                         payload.Activate,
@@ -512,14 +513,15 @@ public sealed class GatewayApiRouter
                     stopwatch);
             }
 
-            if (request.Method == "POST" && request.Path == "/api/v1/input/drag")
+            if (request.Method == "POST" &&
+                request.Path == "/api/v1/input/may-maximize-window/drag")
             {
                 var input = Require(services.WindowsInput, "raw_input_unavailable");
-                var payload = DeserializeBody<GatewayDragRequest>(request);
+                var payload = DeserializeBody<GatewayMayMaximizeWindowDragRequest>(request);
                 var button = ParseMouseButton(payload.Button);
                 return Success(
                     requestId,
-                    input.Drag(
+                    input.MayMaximizeWindowDrag(
                         new GatewayClientPoint(payload.StartX, payload.StartY),
                         new GatewayClientPoint(payload.EndX, payload.EndY),
                         button,
@@ -530,10 +532,11 @@ public sealed class GatewayApiRouter
                     stopwatch);
             }
 
-            if (request.Method == "POST" && request.Path == "/api/v1/input/keys")
+            if (request.Method == "POST" &&
+                request.Path == "/api/v1/input/may-maximize-window/keys")
             {
                 var input = Require(services.WindowsInput, "raw_input_unavailable");
-                var payload = DeserializeBody<GatewayKeysRequest>(request);
+                var payload = DeserializeBody<GatewayMayMaximizeWindowKeysRequest>(request);
                 if (payload.Text is not null && payload.Key is not null)
                 {
                     throw new FormatException("Specify either 'text' or 'key', not both.");
@@ -543,7 +546,7 @@ public sealed class GatewayApiRouter
                 {
                     return Success(
                         requestId,
-                        input.SendText(
+                        input.MayMaximizeWindowSendText(
                             payload.Text,
                             payload.Activate,
                             request.CancellationToken),
@@ -557,7 +560,7 @@ public sealed class GatewayApiRouter
 
                 return Success(
                     requestId,
-                    input.SendChord(
+                    input.MayMaximizeWindowSendChord(
                         payload.Modifiers,
                         payload.Key!,
                         payload.Activate,

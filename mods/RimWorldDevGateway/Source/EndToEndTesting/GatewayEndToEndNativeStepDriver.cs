@@ -28,7 +28,9 @@ public interface IGatewayEndToEndNativeActions
 
     GatewayEndToEndStepOutcome Apply(TradeDialogActionStep step, IEndToEndContext context);
 
-    IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context);
+    IGatewayEndToEndStepOperation BeginMayMaximizeWindowInput(
+        MayMaximizeWindowInputActionStep step,
+        IEndToEndContext context);
 
     IGatewayEndToEndStepOperation Begin(SaveLoadActionStep step, IEndToEndContext context);
 
@@ -53,6 +55,16 @@ internal interface IGatewayEndToEndEscapeMenuNativeActions
 internal interface IGatewayEndToEndCurrentFloatMenuNativeActions
 {
     GatewayEndToEndStepOutcome Apply(CurrentFloatMenuActionStep step, IEndToEndContext context);
+}
+
+internal interface IGatewayEndToEndMapFloatMenuNativeActions
+{
+    GatewayEndToEndStepOutcome Apply(MapFloatMenuOpenActionStep step, IEndToEndContext context);
+}
+
+internal interface IGatewayEndToEndNoPawnMapRightClickNativeActions
+{
+    GatewayEndToEndStepOutcome Apply(NoPawnMapRightClickActionStep step, IEndToEndContext context);
 }
 
 internal interface IGatewayEndToEndDesignatorSessionNativeActions
@@ -110,6 +122,18 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
                         "unsupported_e2e_step",
                         "The native E2E adapter does not support persistent designator previews."),
             FloatMenuActionStep floatMenu => Complete(actions.Apply(floatMenu, context)),
+            MapFloatMenuOpenActionStep mapFloatMenu => actions is
+                IGatewayEndToEndMapFloatMenuNativeActions mapFloatMenuActions
+                    ? Complete(mapFloatMenuActions.Apply(mapFloatMenu, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support opening an exact map float menu."),
+            NoPawnMapRightClickActionStep noPawnRightClick => actions is
+                IGatewayEndToEndNoPawnMapRightClickNativeActions noPawnRightClickActions
+                    ? Complete(noPawnRightClickActions.Apply(noPawnRightClick, context))
+                    : GatewayEndToEndCompletedStepOperation.Failed(
+                        "unsupported_e2e_step",
+                        "The native E2E adapter does not support a minimized no-pawn map right-click."),
             CurrentFloatMenuActionStep currentFloatMenu => actions is
                 IGatewayEndToEndCurrentFloatMenuNativeActions currentFloatMenuActions
                     ? Complete(currentFloatMenuActions.Apply(currentFloatMenu, context))
@@ -176,8 +200,8 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
             SaveLoadActionStep saveLoad =>
                 actions.Begin(saveLoad, context)
                 ?? throw new InvalidOperationException("The save/load adapter returned no operation."),
-            ProcessInputActionStep input =>
-                actions.Begin(input, context)
+            MayMaximizeWindowInputActionStep input =>
+                actions.BeginMayMaximizeWindowInput(input, context)
                 ?? throw new InvalidOperationException("The input adapter returned no operation."),
             ScreenshotStep screenshot =>
                 actions.Begin(screenshot, context)

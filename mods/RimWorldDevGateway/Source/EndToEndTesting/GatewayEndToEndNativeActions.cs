@@ -91,8 +91,8 @@ public interface IGatewayEndToEndActionBackend
 
     GatewayEndToEndStepOutcome ApplyTradeDialog(TradeDialogActionStep step);
 
-    IGatewayEndToEndStepOperation BeginInput(
-        ProcessInputActionStep step,
+    IGatewayEndToEndStepOperation BeginMayMaximizeWindowInput(
+        MayMaximizeWindowInputActionStep step,
         IEndToEndContext context);
 
     IGatewayEndToEndStepOperation BeginSaveLoad(
@@ -122,6 +122,16 @@ internal interface IGatewayEndToEndEscapeMenuBackend
 internal interface IGatewayEndToEndCurrentFloatMenuBackend
 {
     GatewayEndToEndStepOutcome ApplyCurrentFloatMenu(CurrentFloatMenuActionStep step);
+}
+
+internal interface IGatewayEndToEndMapFloatMenuBackend
+{
+    GatewayEndToEndStepOutcome ApplyMapFloatMenu(MapFloatMenuOpenActionStep step);
+}
+
+internal interface IGatewayEndToEndNoPawnMapRightClickBackend
+{
+    GatewayEndToEndStepOutcome ApplyNoPawnMapRightClick(NoPawnMapRightClickActionStep step);
 }
 
 internal interface IGatewayEndToEndDesignatorSessionBackend
@@ -156,6 +166,8 @@ public sealed class GatewayEndToEndNativeActions :
     IGatewayEndToEndArchitectCategoryNativeActions,
     IGatewayEndToEndEscapeMenuNativeActions,
     IGatewayEndToEndCurrentFloatMenuNativeActions,
+    IGatewayEndToEndMapFloatMenuNativeActions,
+    IGatewayEndToEndNoPawnMapRightClickNativeActions,
     IGatewayEndToEndDesignatorSessionNativeActions,
     IGatewayEndToEndInspectionNativeActions
 {
@@ -442,6 +454,32 @@ public sealed class GatewayEndToEndNativeActions :
                 "The configured E2E backend does not support an already-open float menu.");
     }
 
+    GatewayEndToEndStepOutcome IGatewayEndToEndMapFloatMenuNativeActions.Apply(
+        MapFloatMenuOpenActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndMapFloatMenuBackend mapFloatMenuBackend
+            ? mapFloatMenuBackend.ApplyMapFloatMenu(step) ??
+              throw new InvalidOperationException("The map-float-menu backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support opening an exact map float menu.");
+    }
+
+    GatewayEndToEndStepOutcome IGatewayEndToEndNoPawnMapRightClickNativeActions.Apply(
+        NoPawnMapRightClickActionStep step,
+        IEndToEndContext context)
+    {
+        Require(step, context);
+        return backend is IGatewayEndToEndNoPawnMapRightClickBackend noPawnRightClickBackend
+            ? noPawnRightClickBackend.ApplyNoPawnMapRightClick(step) ??
+              throw new InvalidOperationException("The no-pawn map right-click backend returned no outcome.")
+            : Fail(
+                "unsupported_e2e_step",
+                "The configured E2E backend does not support a minimized no-pawn map right-click.");
+    }
+
     public GatewayEndToEndStepOutcome Apply(
         SettlementTradeActionStep step,
         IEndToEndContext context)
@@ -586,10 +624,12 @@ public sealed class GatewayEndToEndNativeActions :
                 "The configured E2E backend does not support mod-settings actions.");
     }
 
-    public IGatewayEndToEndStepOperation Begin(ProcessInputActionStep step, IEndToEndContext context)
+    public IGatewayEndToEndStepOperation BeginMayMaximizeWindowInput(
+        MayMaximizeWindowInputActionStep step,
+        IEndToEndContext context)
     {
         Require(step, context);
-        return backend.BeginInput(step, context) ??
+        return backend.BeginMayMaximizeWindowInput(step, context) ??
                throw new InvalidOperationException("The input backend returned no operation.");
     }
 
