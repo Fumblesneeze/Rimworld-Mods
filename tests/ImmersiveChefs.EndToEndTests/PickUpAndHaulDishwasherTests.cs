@@ -1000,7 +1000,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
                 ? "The exact Processor group must use the supported Processor Framework dishwasher."
                 : "The exact local group must exercise the Immersive Chefs holder without Processor Framework.");
 
-        var cleaner = HandwashingE2EFixture.CreateInactiveCleaner("Mara Dishrunner");
+        var cleaner = CreateInactiveDishwasherWorker("Mara Dishrunner");
         GenSpawn.Spawn(cleaner, center + new IntVec3(-4, 0, -2), map);
         EndToEndAssert.Equal(requirePickUpAndHaul ? 1 : 0,
             cleaner.AllComps.Count(comp => comp.GetType().FullName == TrackerTypeName),
@@ -1085,11 +1085,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
     internal bool ObserveNativeProcessorFillAdmission()
     {
         ObserveInputJobTiming();
-        var held = DishwasherHeldWare();
-        var applianceOwnsExactPlate =
-            ware.Count == 1 &&
-            ware.All(item => held.Any(candidate => ReferenceEquals(candidate, item))) &&
-            ware.All(item => !item.Spawned);
+        var applianceOwnsExactPlate = AllExactWareOwnedByDishwasherWithoutTracking();
         if (applianceOwnsExactPlate && inputAdmissionCompletedTick < 0)
         {
             inputAdmissionCompletedTick = Find.TickManager.TicksGame;
@@ -1909,7 +1905,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
         }
 
         if (inputArrivalTicks.ContainsKey(jobId) &&
-            AllWareOwnedByDishwasher() &&
+            AllExactWareOwnedByDishwasherWithoutTracking() &&
             !inputTransferTicks.ContainsKey(jobId))
         {
             inputTransferTicks[jobId] = Find.TickManager.TicksGame;
@@ -1923,6 +1919,14 @@ internal sealed class PickUpAndHaulDishwasherFixture
                inputArrivalTicks.TryGetValue(lastInputFillJobId, out var arrivalTick) &&
                inputTransferTicks.TryGetValue(lastInputFillJobId, out var transferTick) &&
                transferTick - arrivalTick <= MaxObservedImmediateTransferTicks;
+    }
+
+    private bool AllExactWareOwnedByDishwasherWithoutTracking()
+    {
+        var held = DishwasherHeldWare();
+        return ware.Count == 1 &&
+               ware.All(item => held.Any(candidate => ReferenceEquals(candidate, item))) &&
+               ware.All(item => !item.Spawned);
     }
 
     private void ObserveOutputJobTiming()
@@ -2007,6 +2011,23 @@ internal sealed class PickUpAndHaulDishwasherFixture
             modifiers: null);
         return method?.Invoke(tracker, null) is IEnumerable tracked &&
                tracked.Cast<object>().Any(candidate => ReferenceEquals(candidate, thing));
+    }
+
+    private static Pawn CreateInactiveDishwasherWorker(string name)
+    {
+        for (var attempt = 0; attempt < 64; attempt++)
+        {
+            var pawn = HandwashingE2EFixture.CreateInactiveCleaner(name);
+            if (!pawn.WorkTypeIsDisabled(WorkTypeDefOf.Hauling))
+            {
+                return pawn;
+            }
+
+            pawn.Destroy(DestroyMode.Vanish);
+        }
+
+        throw new EndToEndAssertionException(
+            "Could not generate a dishwasher worker capable of both Cleaning and Hauling.");
     }
 
     private static ThingWithComps MakeDirtyWare(string defName, ThingDef stuff)
