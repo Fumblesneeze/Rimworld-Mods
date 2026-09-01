@@ -206,6 +206,7 @@ public static class TestSnippet
             var safety = assembly.GetType("GatewaySteamWorkshopPublisher.PublisherSafety", throwOnError: true)!;
             var visibility = safety.GetMethod("EffectiveVisibility", BindingFlags.Public | BindingFlags.Static)!;
             var previewOperations = safety.GetMethod("PreviewOperations", BindingFlags.Public | BindingFlags.Static)!;
+            var mutationStage = safety.GetMethod("MutationStageForOperation", BindingFlags.Public | BindingFlags.Static)!;
             var publisherSource = File.ReadAllText(Path.Combine(root, "scripts", "Fixtures", "GatewaySteamWorkshopPublisher.cs"));
             Assert.Multiple(() =>
             {
@@ -219,12 +220,24 @@ public static class TestSnippet
                     "An existing item update must retain the reviewed release visibility.");
                 Assert.That(
                     (string[])previewOperations.Invoke(null, new object[] { 2u, 3 })!,
-                    Is.EqualTo(new[] { "update:0", "update:1", "add:2" }),
-                    "Preview reconciliation must update retained slots before adding missing art.");
+                    Is.EqualTo(new[] { "remove:1", "remove:0", "add:0", "add:1", "add:2" }),
+                    "Preview reconciliation must discard every stale Steam slot before rebuilding the exact ordered gallery.");
                 Assert.That(
                     (string[])previewOperations.Invoke(null, new object[] { 4u, 2 })!,
-                    Is.EqualTo(new[] { "update:0", "update:1", "remove:3", "remove:2" }),
-                    "Stale preview slots must be removed from the end so indexes stay stable.");
+                    Is.EqualTo(new[] { "remove:3", "remove:2", "remove:1", "remove:0", "add:0", "add:1" }),
+                    "Every old preview must be removed from the end before the reviewed gallery is recreated.");
+                Assert.That(
+                    mutationStage.Invoke(null, new object[] { "preview-sync", "submit" }),
+                    Is.EqualTo("preview-submit"),
+                    "A preview callback failure must persist in the preview retry-state family.");
+                Assert.That(
+                    mutationStage.Invoke(null, new object[] { "preview-sync", "submit-setter-Preview-add:0" }),
+                    Is.EqualTo("preview-submit-setter-Preview-add:0"),
+                    "A preview setter failure must remain a definite preview failure.");
+                Assert.That(
+                    mutationStage.Invoke(null, new object[] { "publish", "submit" }),
+                    Is.EqualTo("submit"),
+                    "Ordinary content publication must retain its existing state family.");
                 Assert.That(
                     Regex.Matches(publisherSource, @"SteamUGC\.SubmitItemUpdate\(handle, request\.ChangeNote\)").Count,
                     Is.EqualTo(1),

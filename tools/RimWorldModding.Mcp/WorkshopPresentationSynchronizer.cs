@@ -160,7 +160,7 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
             AssertRemoteIdentity(preflight, profile, publishedFileId);
             await RequirePlanInputsUnchangedAsync(sourceRevision, workshopRoot, profile.Preview, previews, cancellationToken);
             var priorState = ReadPresentationState(statePath, publishedFileId);
-            var remoteMayAlreadyBeExact = priorState is { State: "succeeded" } &&
+            var remoteMayAlreadyBeExact = priorState is { State: "succeeded" or "preview-submitted" } &&
                                           string.Equals(priorState.PlanSha256, planSha256, StringComparison.OrdinalIgnoreCase);
             var remoteIsExact = remoteMayAlreadyBeExact &&
                                 await IsExactRemoteInventoryAsync(preflight, previews, cancellationToken);
@@ -329,12 +329,14 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
         var samePlan = string.Equals(priorState.PlanSha256, planSha256, StringComparison.OrdinalIgnoreCase);
         if (!samePlan)
         {
-            if (priorState.State is "succeeded" or "preview-submit-failed-definite") return "submit";
+            if (priorState.State is "succeeded" or "preview-submitted" or "preview-submit-failed-definite") return "submit";
             throw new InvalidOperationException("A different presentation plan still has admitted or indeterminate Steam ownership.");
         }
         return priorState.State switch
         {
-            "preview-submit-admitted" or "preview-submitted" or "preview-submit-indeterminate" => "resume",
+            "preview-submit-admitted" or "preview-submit-indeterminate" => "resume",
+            "preview-submitted" when remoteIsExact => "skip",
+            "preview-submitted" => "submit",
             "succeeded" when remoteIsExact => "skip",
             "succeeded" or "preview-submit-failed-definite" => "submit",
             _ => throw new InvalidOperationException("Durable presentation-preview state is not a recognized safe transition.")

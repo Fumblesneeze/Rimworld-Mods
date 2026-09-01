@@ -329,6 +329,12 @@ The repository automation surface SHALL expose the reviewed two-phase presentati
 - **WHEN** a retained description refers to an expired CDN URL or the remote gallery is missing one reviewed card
 - **THEN** the typed presentation-sync operation restores the complete ordered gallery, resolves all inline tokens to the newly observed Steam URLs, and final publication is blocked until every inline image returns the exact reviewed bytes
 
+#### Scenario: Callback-confirmed partial preview propagation is repaired without stale slots
+- **GIVEN** Steam accepted one preview-only submission but its later query or public CDN inventory omits a slot, preserves a stale slot, or exposes an unreachable raw image URL
+- **WHEN** the same reviewed presentation is retried after bounded reconciliation could not prove the exact inventory
+- **THEN** the publisher treats the completed callback as a definite mutation, removes every existing additional preview from the highest index downward, recreates the complete reviewed sequence, and submits no player-facing change note
+- **AND** an admitted request without a terminal Steam callback remains reconciliation-only and cannot be resubmitted
+
 #### Scenario: A synchronized card URL becomes unreachable before final publication
 - **WHEN** release preparation validates the resolved Workshop presentation and any inline Steam image returns a non-success response, redirects away from the reviewed host, or exceeds the image byte ceiling
 - **THEN** preparation fails before Steam metadata/content mutation and reports the broken presentation identity

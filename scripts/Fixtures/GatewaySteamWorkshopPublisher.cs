@@ -68,11 +68,16 @@ public static class PublisherSafety
     {
         if (desiredCount < 1 || desiredCount > 10) throw new ArgumentOutOfRangeException(nameof(desiredCount));
         var operations = new List<string>();
-        var shared = Math.Min(existingCount, (uint)desiredCount);
-        for (uint index = 0; index < shared; index++) operations.Add("update:" + index);
-        for (var index = (int)shared; index < desiredCount; index++) operations.Add("add:" + index);
-        for (var index = (int)existingCount - 1; index >= desiredCount; index--) operations.Add("remove:" + index);
+        for (var index = (int)existingCount - 1; index >= 0; index--) operations.Add("remove:" + index);
+        for (var index = 0; index < desiredCount; index++) operations.Add("add:" + index);
         return operations.ToArray();
+    }
+
+    public static string MutationStageForOperation(string operation, string stage)
+    {
+        if (string.IsNullOrWhiteSpace(operation) || string.IsNullOrWhiteSpace(stage))
+            throw new ArgumentException("Workshop mutation operation and stage are required.");
+        return operation == "preview-sync" ? "preview-" + stage : stage;
     }
 
 }
@@ -509,17 +514,17 @@ internal static class Publisher
         lock (Gate)
         {
             submitResult = null;
+            var request = RequiredRequest();
             if (ioFailure || result.m_eResult != EResult.k_EResultOK)
             {
-                FailMutation("submit", result.m_eResult, ioFailure);
+                FailMutation(PublisherSafety.MutationStageForOperation(request.Operation, "submit"), result.m_eResult, ioFailure);
                 return;
             }
 
-            var request = RequiredRequest();
             var id = result.m_nPublishedFileId.m_PublishedFileId;
             if (id != request.PublishedFileId)
             {
-                FailMutation("submit-id-mismatch", EResult.k_EResultFail, ioFailure: true);
+                FailMutation(PublisherSafety.MutationStageForOperation(request.Operation, "submit-id-mismatch"), EResult.k_EResultFail, ioFailure: true);
                 return;
             }
             var submittedStage = request.Operation == "preview-sync" ? "preview-submitted" : "submitted";
@@ -951,7 +956,10 @@ internal static class Publisher
     {
         if (accepted) return true;
         var request = RequiredRequest();
-        FailMutation("submit-setter-" + name, EResult.k_EResultFail, ioFailure: false);
+        FailMutation(
+            PublisherSafety.MutationStageForOperation(request.Operation, "submit-setter-" + name),
+            EResult.k_EResultFail,
+            ioFailure: false);
         return false;
     }
 

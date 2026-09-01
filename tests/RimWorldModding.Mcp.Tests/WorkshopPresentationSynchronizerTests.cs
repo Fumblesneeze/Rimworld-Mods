@@ -95,11 +95,22 @@ public sealed class WorkshopPresentationSynchronizerTests
             Assert.That(WorkshopPresentationSynchronizer.DecideMutation(
                 new WorkshopPresentationState("preview-submit-indeterminate", plan), plan, false), Is.EqualTo("resume"));
             Assert.That(WorkshopPresentationSynchronizer.DecideMutation(
+                new WorkshopPresentationState("preview-submit-admitted", plan), plan, false), Is.EqualTo("resume"));
+            Assert.That(WorkshopPresentationSynchronizer.DecideMutation(
                 new WorkshopPresentationState("succeeded", plan), plan, true), Is.EqualTo("skip"));
             Assert.That(WorkshopPresentationSynchronizer.DecideMutation(
                 new WorkshopPresentationState("succeeded", plan), plan, false), Is.EqualTo("submit"));
+            Assert.That(WorkshopPresentationSynchronizer.DecideMutation(
+                new WorkshopPresentationState("preview-submitted", plan), plan, true), Is.EqualTo("skip"));
+            Assert.That(WorkshopPresentationSynchronizer.DecideMutation(
+                new WorkshopPresentationState("preview-submitted", plan), plan, false), Is.EqualTo("submit"));
+            Assert.That(WorkshopPresentationSynchronizer.DecideMutation(
+                new WorkshopPresentationState("preview-submitted", new string('B', 64)), plan, false), Is.EqualTo("submit"));
             Assert.That(() => WorkshopPresentationSynchronizer.DecideMutation(
                     new WorkshopPresentationState("preview-submit-indeterminate", new string('B', 64)), plan, false),
+                Throws.InvalidOperationException);
+            Assert.That(() => WorkshopPresentationSynchronizer.DecideMutation(
+                    new WorkshopPresentationState("preview-submit-admitted", new string('B', 64)), plan, false),
                 Throws.InvalidOperationException);
             Assert.That(() => WorkshopPresentationSynchronizer.DecideMutation(
                     new WorkshopPresentationState("legal-agreement-required", plan), plan, false),
