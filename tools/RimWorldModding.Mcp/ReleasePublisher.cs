@@ -155,7 +155,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 EnsureExistingPublicationIdentity(
                     identityPath, repositoryIdentityPath, packageIdentityPath, publishedId);
             var admissionProof = ReleasePlanAdmission.AdmissionText(admission);
-            _ = await client.InvokeAsync(new Dictionary<string, object?>
+            var publishArguments = new Dictionary<string, object?>
             {
                 ["operation"] = "publish",
                 ["planSha256"] = admission.PlanSha256,
@@ -173,9 +173,11 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 ["previewPath"] = admission.Plan.PreviewPath,
                 ["changeNote"] = admission.Plan.ChangeNote,
                 ["tags"] = admission.Plan.Tags,
-                ["workshopLinks"] = admission.Plan.WorkshopLinks,
                 ["visibility"] = admission.Plan.Visibility
-            }, durableToken);
+            };
+            foreach (var pair in WorkshopLinkGatewayArguments(admission.Plan.WorkshopLinks))
+                publishArguments.Add(pair.Key, pair.Value);
+            _ = await client.InvokeAsync(publishArguments, durableToken);
             var publish = await client.WaitTerminalAsync(
                 admission.PlanSha256,
                 new HashSet<string>(["succeeded", "failed", "legal-agreement-required"], StringComparer.Ordinal),
@@ -504,6 +506,15 @@ public sealed class ReleasePublisher(string repositoryRoot)
         }
         if (primaryFailure is not null) ExceptionDispatchInfo.Capture(primaryFailure).Throw();
         return (primaryResult!, cleanupResult);
+    }
+
+    internal static Dictionary<string, object?> WorkshopLinkGatewayArguments(IReadOnlyList<WorkshopLink> links)
+    {
+        var validated = WorkshopLinkPolicy.Validate(links);
+        return new Dictionary<string, object?>
+        {
+            ["workshopLinkJson"] = validated.Select(link => JsonSerializer.Serialize(link)).ToArray()
+        };
     }
 
     private static async Task<RunStatusResult> WaitReadyAsync(

@@ -10,6 +10,21 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class ReleasePublicationAdmissionTests
 {
     [Test]
+    public void Workshop_links_use_a_nested_object_free_gateway_wire_that_the_legacy_contract_serializes()
+    {
+        var arguments = ReleasePublisher.WorkshopLinkGatewayArguments(
+            [new WorkshopLink("github", WorkshopLinkPolicy.RepositoryUrl)]);
+
+        Assert.That(arguments.Keys, Is.EqualTo(new[] { "workshopLinkJson" }));
+        var wire = arguments["workshopLinkJson"] as string[];
+        Assert.That(wire, Is.Not.Null, "The legacy Gateway contract accepts primitive arrays, not nested dictionaries.");
+        Assert.That(wire, Has.Length.EqualTo(1));
+        Assert.That(
+            wire![0],
+            Is.EqualTo("{\"key\":\"github\",\"url\":\"https://github.com/Fumblesneeze/Rimworld-Mods\"}"));
+    }
+
+    [Test]
     public void Existing_publication_seeds_only_a_missing_durable_identity_from_two_exact_immutable_identities()
     {
         var root = TestRoot();

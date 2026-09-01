@@ -1152,8 +1152,7 @@ internal static class Publisher
                 RequiredWorkshopItemId = ParseId(objectValue.requiredWorkshopItemId, allowEmpty: true),
                 RequiredDlcAppId = ParseAppId(objectValue.requiredDlcAppId),
                 Tags = (objectValue.tags ?? Array.Empty<string>()).ToList(),
-                WorkshopLinks = (objectValue.workshopLinks ?? Array.Empty<WorkshopLinkJson>())
-                    .Select(link => new WorkshopLinkValue { Key = link.key ?? "", Url = link.url ?? "" }).ToList(),
+                WorkshopLinks = ParseWorkshopLinks(objectValue.workshopLinkJson),
                 AdditionalPreviewPaths = (objectValue.additionalPreviewPaths ?? Array.Empty<string>()).ToList(),
                 Visibility = ParseVisibility(PublisherSafety.EffectiveVisibility(
                     ParseId(objectValue.publishedFileId, allowEmpty: true) == 0,
@@ -1231,6 +1230,24 @@ internal static class Publisher
             return parsed;
         }
 
+        private static List<WorkshopLinkValue> ParseWorkshopLinks(string[]? wireValues)
+        {
+            var values = wireValues ?? Array.Empty<string>();
+            if (values.Length > 8) throw new InvalidOperationException("workshopLinkJson exceeds the exact 8-entry bound.");
+            var links = new List<WorkshopLinkValue>(values.Length);
+            foreach (var wireValue in values)
+            {
+                if (string.IsNullOrWhiteSpace(wireValue) || wireValue.Length > 512)
+                    throw new InvalidOperationException("workshopLinkJson contains an invalid bounded entry.");
+                WorkshopLinkJson link;
+                try { link = Json.Read<WorkshopLinkJson>(wireValue); }
+                catch (Exception exception) { throw new InvalidOperationException("workshopLinkJson contains invalid JSON.", exception); }
+                if (link == null) throw new InvalidOperationException("workshopLinkJson contains invalid JSON.");
+                links.Add(new WorkshopLinkValue { Key = link.key ?? "", Url = link.url ?? "" });
+            }
+            return links;
+        }
+
         private static uint ParseAppId(string? value)
         {
             if (string.IsNullOrWhiteSpace(value)) return 0;
@@ -1297,8 +1314,8 @@ internal static class Publisher
         public string? requiredDlcAppId;
         [DataMember(Name = "tags")]
         public string[]? tags;
-        [DataMember(Name = "workshopLinks")]
-        public WorkshopLinkJson[]? workshopLinks;
+        [DataMember(Name = "workshopLinkJson")]
+        public string[]? workshopLinkJson;
         [DataMember(Name = "visibility")]
         public string? visibility;
         [DataMember(Name = "additionalPreviewPaths")]

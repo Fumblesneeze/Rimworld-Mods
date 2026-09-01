@@ -151,6 +151,11 @@ Every publishable release profile SHALL declare a bounded, unique set of HTTPS W
 - **WHEN** the remote item contains an undeclared Facebook, YouTube, or other key/value link
 - **THEN** reconciling the declared GitHub link leaves the unrelated key/value pair unchanged
 
+#### Scenario: Link metadata crosses the legacy in-game automation boundary
+
+- **WHEN** the typed publisher sends the bounded link inventory through the .NET Framework Gateway contract into RimWorld
+- **THEN** it uses a primitive, bounded wire representation that the legacy serializer can carry without admitting arbitrary nested dictionaries, and the in-game publisher reconstructs and revalidates the exact typed key/value records before Steam mutation
+
 ### Requirement: Mod dependencies have one typed source of truth
 Each per-mod release manifest SHALL classify every declared mod relationship as required or optional and SHALL record its canonical package ID, display name, presentation text, and Workshop item identity when it is needed for Steam publication. Generated `About/About.xml` SHALL contain every required mod in RimWorld's required dependency metadata. The generated Workshop description SHALL contain explicit Required Mods and Optional Mods sections, including an explicit empty state, and SHALL render the declared identities without maintaining a second hand-authored dependency list. A mod MAY additionally promote a reviewed subset of optional integrations into a player-facing `Recommended Mods` section immediately above `Optional Mods`; those entries SHALL link their Workshop identities when the exact description budget permits, SHALL retain any required package-chain guidance, and SHALL NOT be duplicated in `Optional Mods`. Recommended mods remain optional and MUST NOT be promoted to RimWorld or Steam required dependencies.
 

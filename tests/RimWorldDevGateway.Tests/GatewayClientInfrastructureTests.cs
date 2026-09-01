@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -161,6 +163,57 @@ public static class TestSnippet
             {
                 Directory.Delete(compilerRoot, true);
             }
+        }
+    }
+
+    [Test]
+    public void Checked_in_Steam_publisher_parses_the_bounded_primitive_Workshop_link_wire()
+    {
+        var root = FindRepositoryRoot();
+        var compilerRoot = Path.Combine(Path.GetTempPath(), "gateway-release-link-wire-" + Guid.NewGuid().ToString("N"));
+        const string requestJson =
+            "{\"operation\":\"status\",\"workshopLinkJson\":[\"{\\\"key\\\":\\\"github\\\",\\\"url\\\":\\\"https://github.com/Fumblesneeze/Rimworld-Mods\\\"}\"]}";
+        try
+        {
+            var parsedGatewayArguments = new Dictionary<string, object?>
+            {
+                ["operation"] = "status",
+                ["workshopLinkJson"] = new object[]
+                {
+                    "{\"key\":\"github\",\"url\":\"https://github.com/Fumblesneeze/Rimworld-Mods\"}"
+                }
+            };
+            Assert.DoesNotThrow(() => GatewayContractJson.Write(new GatewayAutomationRunRequest
+            {
+                Arguments = parsedGatewayArguments
+            }), "The exact CLI request must remain serializable through the legacy net48 Gateway contract.");
+
+            var compiler = new DotNetGatewaySourceCompiler(temporaryRoot: compilerRoot);
+            var bytes = compiler.Compile(new GatewaySourceCompilationRequest(
+                Path.Combine(root, "scripts", "Fixtures", "GatewaySteamWorkshopPublisher.cs"),
+                Path.GetDirectoryName(typeof(Pawn).Assembly.Location)!,
+                typeof(GatewaySessionManifest).Assembly.Location));
+            var assembly = Assembly.Load(bytes);
+            var publisher = assembly.GetType("GatewaySteamWorkshopPublisher.Publisher", throwOnError: true)!;
+            var requestType = publisher.GetNestedType("Request", BindingFlags.NonPublic)!;
+            var parse = requestType.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static)!;
+            var request = parse.Invoke(null, new object[] { requestJson })!;
+            var links = ((System.Collections.IEnumerable)requestType.GetField("WorkshopLinks")!.GetValue(request)!)
+                .Cast<object>()
+                .ToArray();
+
+            Assert.That(links, Has.Length.EqualTo(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(links[0].GetType().GetField("Key")!.GetValue(links[0]), Is.EqualTo("github"));
+                Assert.That(
+                    links[0].GetType().GetField("Url")!.GetValue(links[0]),
+                    Is.EqualTo("https://github.com/Fumblesneeze/Rimworld-Mods"));
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(compilerRoot)) Directory.Delete(compilerRoot, true);
         }
     }
 
