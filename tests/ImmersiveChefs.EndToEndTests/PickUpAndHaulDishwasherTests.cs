@@ -1085,9 +1085,20 @@ internal sealed class PickUpAndHaulDishwasherFixture
     internal bool ObserveNativeProcessorFillAdmission()
     {
         ObserveInputJobTiming();
-        return AllWareOwnedByDishwasher() &&
+        var held = DishwasherHeldWare();
+        var applianceOwnsExactPlate =
+            ware.Count == 1 &&
+            ware.All(item => held.Any(candidate => ReferenceEquals(candidate, item))) &&
+            ware.All(item => !item.Spawned);
+        if (applianceOwnsExactPlate && inputAdmissionCompletedTick < 0)
+        {
+            inputAdmissionCompletedTick = Find.TickManager.TicksGame;
+        }
+
+        return applianceOwnsExactPlate &&
                observedInputFillJobIds.Count == 1 &&
-               InputTransferWasImmediate();
+               InputTransferWasImmediate() &&
+               Cleaner.CurJobDef != ImmersiveChefsDefOf.ImmersiveChefs_DoDishes;
     }
 
     internal bool ObserveImmediateUntrackedOutputStored()
