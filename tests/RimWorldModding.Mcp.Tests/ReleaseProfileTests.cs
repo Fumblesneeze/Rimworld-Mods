@@ -9,18 +9,18 @@ public sealed class ReleaseProfileTests
     private const string RepositoryUrl = "https://github.com/Fumblesneeze/Rimworld-Mods";
 
     [Test]
-    public void Every_repository_release_profile_declares_the_exact_GitHub_Workshop_link()
+    public void Repository_profiles_do_not_claim_an_unsupported_GitHub_Workshop_link()
     {
         var root = TestRepository.FindRoot();
 
-        foreach (var profile in ReleaseProfileCatalog.Discover(root))
+        foreach (var profile in ReleaseProfileCatalog.Discover(root).Where(profile => profile.PublishedFileId is not null))
         {
             Assert.That(
                 profile.WorkshopLinks,
-                Is.EqualTo(new[] { new WorkshopLink("github", RepositoryUrl) }),
-                profile.PackageId + " must publish the repository through Workshop link metadata.");
+                Is.Empty,
+                profile.PackageId + " must not claim a custom link Steam's player-facing editor cannot represent.");
             Assert.That(File.ReadAllText(profile.Description), Does.Not.Contain(RepositoryUrl),
-                "The repository URL belongs in Steam's Links section, not the description.");
+                "Steam has no GitHub/custom Links field, and the author did not approve a description fallback.");
         }
     }
 
@@ -33,7 +33,7 @@ public sealed class ReleaseProfileTests
     }
 
     [Test]
-    public void Workshop_links_reject_duplicate_keys_non_https_and_non_GitHub_repository_targets()
+    public void Workshop_links_are_structurally_bounded_and_Steam_player_facing_keys_are_exact()
     {
         Assert.Multiple(() =>
         {
@@ -45,9 +45,20 @@ public sealed class ReleaseProfileTests
             Assert.That(
                 () => WorkshopLinkPolicy.Validate([new WorkshopLink("github", "http://github.com/Fumblesneeze/Rimworld-Mods")]),
                 Throws.TypeOf<ReleaseProfileException>().With.Message.Contains("HTTPS"));
+            Assert.That(WorkshopLinkPolicy.Validate([]), Is.Empty);
+            Assert.DoesNotThrow(() => WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport([
+                new WorkshopLink("facebook", "https://facebook.com/example"),
+                new WorkshopLink("twitter", "https://x.com/example"),
+                new WorkshopLink("youtube", "https://youtube.com/@example"),
+                new WorkshopLink("polycount", "https://polycount.com/example"),
+                new WorkshopLink("reddit", "https://reddit.com/r/example"),
+                new WorkshopLink("sketchfab", "https://sketchfab.com/example")
+            ]));
             Assert.That(
-                () => WorkshopLinkPolicy.Validate([new WorkshopLink("github", "https://example.invalid/not-the-repository")]),
-                Throws.TypeOf<ReleaseProfileException>().With.Message.Contains("github.com"));
+                () => WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport([
+                    new WorkshopLink("github", RepositoryUrl)]),
+                Throws.TypeOf<ReleaseProfileException>()
+                    .With.Message.Contains("does not expose a GitHub or custom player-facing Workshop link field"));
         });
     }
 

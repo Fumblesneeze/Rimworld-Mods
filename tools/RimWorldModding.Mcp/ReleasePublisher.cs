@@ -64,6 +64,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             .Single(item => string.Equals(item.PackageId, admission.Plan.PackageId, StringComparison.OrdinalIgnoreCase));
         if (!string.Equals(profile.Path, admission.Plan.ReleaseProfilePath, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Publication plan does not select the canonical universal release profile.");
+        _ = WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport(admission.Plan.WorkshopLinks);
         ReleaseEnvironmentValidator.Validate(profile);
         ReleaseChangeNotePolicy.Validate(profile);
         _ = SubscriberVerificationProfiles.Load(_repositoryRoot, admission.Plan.VerificationProfile);
@@ -188,7 +189,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
             publishedId = GatewayWorkshopClient.UInt64(publish, "PublishedFileId");
             if (publishedId == 0) throw new InvalidOperationException("Steam publication succeeded without an item ID.");
             var result = await CompleteAfterSteamAsync(
-                manager, start.RunId, client, admission, profile, publishedId, stateRoot, statePath, durableToken);
+                manager, start.RunId, client, admission, profile, publishedId, stateRoot, statePath,
+                allowUnsupportedWorkshopLinkRecovery: false, durableToken);
             gatewayStopped = true;
             return result;
         }
@@ -259,7 +261,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
                     {
                         publishedId = GatewayWorkshopClient.UInt64(live, "PublishedFileId");
                         var result = await CompleteAfterSteamAsync(manager, gatewayRunId!, attached, admission,
-                            profile, publishedId, stateRoot, statePath, CancellationToken.None);
+                            profile, publishedId, stateRoot, statePath,
+                            allowUnsupportedWorkshopLinkRecovery: true, CancellationToken.None);
                         gatewayStopped = true;
                         return result;
                     }
@@ -288,10 +291,12 @@ public sealed class ReleasePublisher(string repositoryRoot)
             var deadline = DateTimeOffset.UtcNow.AddMinutes(15);
             var remote = await QueryAsync(client, admission, publishedId, deadline, cancellationToken);
             RequireRecoveryItemIdentity(remote, admission, publishedId);
-            if (!RemoteMatchesPlan(remote, admission))
-                _ = await WaitRemoteBaseAsync(client, admission, publishedId, deadline, CancellationToken.None);
+            if (!RemoteMatchesPlan(remote, admission, allowUnsupportedWorkshopLinkRecovery: true))
+                _ = await WaitRemoteBaseAsync(client, admission, publishedId, deadline,
+                    allowUnsupportedWorkshopLinkRecovery: true, CancellationToken.None);
             var recovered = await CompleteAfterSteamAsync(
-                manager, start.RunId, client, admission, profile, publishedId, stateRoot, statePath, CancellationToken.None);
+                manager, start.RunId, client, admission, profile, publishedId, stateRoot, statePath,
+                allowUnsupportedWorkshopLinkRecovery: true, CancellationToken.None);
             gatewayStopped = true;
             return recovered;
         }
@@ -315,6 +320,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         ulong publishedId,
         string stateRoot,
         string statePath,
+        bool allowUnsupportedWorkshopLinkRecovery,
         CancellationToken cancellationToken)
     {
         if (publishedId == 0) throw new InvalidOperationException("Steam completion requires a durable item ID.");
@@ -341,7 +347,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
         DurableFile.WriteAllText(statePath, $"steam-item-persisted|{admission.PlanSha256}|{publishedId}");
 
         var deadline = DateTimeOffset.UtcNow.AddMinutes(15);
-        var remote = await WaitRemoteBaseAsync(client, admission, publishedId, deadline, cancellationToken);
+        var remote = await WaitRemoteBaseAsync(client, admission, publishedId, deadline,
+            allowUnsupportedWorkshopLinkRecovery, cancellationToken);
         remote = await ReconcileRelationshipsAsync(client, admission, publishedId, remote, statePath, deadline, cancellationToken);
         await VerifyRemotePreviewAsync(remote, admission.Plan.PreviewSha256, cancellationToken);
         var changeNoteVerification = await WorkshopChangeHistoryVerifier.VerifyPublishedAsync(
@@ -386,6 +393,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var receiptRoot = Path.Combine(stateRoot, "publication", $"{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfffZ}");
         Directory.CreateDirectory(receiptRoot);
         var receiptPath = Path.Combine(receiptRoot, "publication-receipt.json");
+        var unsupportedWorkshopLinks = allowUnsupportedWorkshopLinkRecovery
+            ? admission.Plan.WorkshopLinks.Where(link => !WorkshopLinkPolicy.IsSteamPlayerFacingKey(link.Key)).ToArray()
+            : [];
         var receipt = new Dictionary<string, object?>
         {
             ["schema"] = "RimWorldModReleaseReceipt/v1",
@@ -405,6 +415,12 @@ public sealed class ReleasePublisher(string repositoryRoot)
             ["changeNoteVerification"] = changeNoteVerification,
             ["identityCommit"] = commit,
             ["localInstall"] = localInstall,
+            ["unsupportedWorkshopLinks"] = unsupportedWorkshopLinks.Select(link => new
+            {
+                link.Key,
+                link.Url,
+                Status = "not-published-platform-does-not-expose-player-facing-custom-link"
+            }).ToArray(),
             ["tokenRetained"] = false
         };
         DurableFile.WriteAllText(receiptPath,
@@ -461,7 +477,10 @@ public sealed class ReleasePublisher(string repositoryRoot)
             throw new InvalidOperationException("Recovery query did not prove the exact Workshop item/owner/app identity.");
     }
 
-    private static bool RemoteMatchesPlan(JsonElement remote, ReleaseAdmission admission)
+    private static bool RemoteMatchesPlan(
+        JsonElement remote,
+        ReleaseAdmission admission,
+        bool allowUnsupportedWorkshopLinkRecovery = false)
     {
         var tags = GatewayWorkshopClient.String(remote, "RemoteTags").Split(',')
             .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal);
@@ -469,7 +488,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
                GatewayWorkshopClient.String(remote, "RemoteDescriptionSha256") == admission.Plan.DescriptionSha256 &&
                GatewayWorkshopClient.String(remote, "RemoteMetadata") == admission.PlanSha256 &&
                GatewayWorkshopClient.String(remote, "RemoteVisibility").EndsWith(admission.Plan.Visibility, StringComparison.Ordinal) &&
-               RemoteLinksMatchPlan(remote, admission.Plan.WorkshopLinks) &&
+               (allowUnsupportedWorkshopLinkRecovery
+                   ? RemoteLinksMatchRecovery(remote, admission.Plan.WorkshopLinks)
+                   : RemoteLinksMatchPlan(remote, admission.Plan.WorkshopLinks)) &&
                tags.SequenceEqual(admission.Plan.Tags.OrderBy(value => value, StringComparer.Ordinal), StringComparer.Ordinal);
     }
 
@@ -562,6 +583,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         ReleaseAdmission admission,
         ulong publishedId,
         DateTimeOffset deadline,
+        bool allowUnsupportedWorkshopLinkRecovery,
         CancellationToken cancellationToken)
     {
         JsonElement remote = default;
@@ -577,7 +599,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 GatewayWorkshopClient.UInt64(remote, "RemoteConsumerAppId") == (ulong)admission.Plan.SteamAppId &&
                 GatewayWorkshopClient.String(remote, "RemoteVisibility").EndsWith(admission.Plan.Visibility, StringComparison.Ordinal) &&
                 !string.IsNullOrWhiteSpace(GatewayWorkshopClient.String(remote, "RemotePreviewUrl")) &&
-                RemoteLinksMatchPlan(remote, admission.Plan.WorkshopLinks) &&
+                (allowUnsupportedWorkshopLinkRecovery
+                    ? RemoteLinksMatchRecovery(remote, admission.Plan.WorkshopLinks)
+                    : RemoteLinksMatchPlan(remote, admission.Plan.WorkshopLinks)) &&
                 remoteTags.SequenceEqual(admission.Plan.Tags.OrderBy(value => value, StringComparer.Ordinal), StringComparer.Ordinal))
                 return remote;
             await Task.Delay(1500, cancellationToken);
@@ -592,6 +616,19 @@ public sealed class ReleasePublisher(string repositoryRoot)
         {
             var sameKey = actual.Where(candidate =>
                 candidate.Key.Equals(link.Key, StringComparison.OrdinalIgnoreCase)).ToArray();
+            return sameKey.Length == 1 && sameKey[0].Url.Equals(link.Url, StringComparison.Ordinal);
+        });
+    }
+
+    internal static bool RemoteLinksMatchRecovery(JsonElement remote, IReadOnlyList<WorkshopLink> expected)
+    {
+        var actual = WorkshopRemoteBaseline.ReadWorkshopLinks(remote);
+        return expected.All(link =>
+        {
+            var sameKey = actual.Where(candidate =>
+                candidate.Key.Equals(link.Key, StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (!WorkshopLinkPolicy.IsSteamPlayerFacingKey(link.Key))
+                return sameKey.Length == 0;
             return sameKey.Length == 1 && sameKey[0].Url.Equals(link.Url, StringComparison.Ordinal);
         });
     }

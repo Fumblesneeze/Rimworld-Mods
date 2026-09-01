@@ -27,12 +27,7 @@
     "1392840"
   ],
   "hardRuntimeAssemblyReferences": [],
-  "workshopLinks": [
-    {
-      "key": "github",
-      "url": "https://github.com/Fumblesneeze/Rimworld-Mods"
-    }
-  ],
+  "workshopLinks": [],
   "buildOperation": "mod_build",
   "presentationOperation": "presentation_render",
   "packageSource": "artifacts/Mods/fumblesneeze.guestbedgizmo",

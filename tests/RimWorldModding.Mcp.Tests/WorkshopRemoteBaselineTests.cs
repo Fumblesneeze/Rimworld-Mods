@@ -114,6 +114,27 @@ public sealed class WorkshopRemoteBaselineTests
     }
 
     [Test]
+    public void Already_submitted_plan_can_recover_only_when_unsupported_links_are_absent()
+    {
+        var github = new[] { new WorkshopLink("github", WorkshopLinkPolicy.RepositoryUrl) };
+        using var absent = JsonDocument.Parse("""{ "RemoteLinks": [] }""");
+        using var misleadingHiddenTag = JsonDocument.Parse($$"""
+            { "RemoteLinks": [{ "Key": "github", "Url": "{{WorkshopLinkPolicy.RepositoryUrl}}" }] }
+            """);
+        using var missingSupported = JsonDocument.Parse("""{ "RemoteLinks": [] }""");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ReleasePublisher.RemoteLinksMatchPlan(absent.RootElement, github), Is.False);
+            Assert.That(ReleasePublisher.RemoteLinksMatchRecovery(absent.RootElement, github), Is.True);
+            Assert.That(ReleasePublisher.RemoteLinksMatchRecovery(misleadingHiddenTag.RootElement, github), Is.False);
+            Assert.That(ReleasePublisher.RemoteLinksMatchRecovery(
+                missingSupported.RootElement,
+                [new WorkshopLink("reddit", "https://reddit.com/r/RimWorld")]), Is.False);
+        });
+    }
+
+    [Test]
     public void Community_fallback_replaces_the_complete_authenticated_inventory()
     {
         var authenticated = new[]

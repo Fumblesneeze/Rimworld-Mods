@@ -64,9 +64,10 @@ conditional PatchOperations in XML; put lifecycle/computed behavior in a narrow 
 Create `Release/release.json` before the first package build. It must use schema
 `RimWorldModRelease/v1`, point to the exact project and package source, declare the positive
 `packageInclude` allowlist, supported RimWorld build, Workshop dependencies/DLC separately, player
-description/preview, the canonical `github` Workshop link to
-`https://github.com/Fumblesneeze/Rimworld-Mods`, and verification profile. Keep the repository URL
-in Workshop link metadata rather than duplicating it in the description. A new unpublished item is explicitly `Private` with
+description/preview, a bounded `workshopLinks` array, and verification profile. Steam's player-facing
+Links editor supports only Facebook, Twitter, YouTube, Polycount, Reddit, and Sketchfab; leave the array
+empty when none applies. Do not represent the repository URL as a generic `github` key, a misleading
+social field, or description text without explicit author approval. A new unpublished item is explicitly `Private` with
 `allowFirstPublication: true`; later updates set the committed Workshop ID and disable first
 publication. Keep change notes player-facing and specific.
 

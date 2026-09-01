@@ -88,13 +88,17 @@ public static class WorkshopLinkPolicy
     public const int MaximumKeyCharacters = 64;
     public const int MaximumUrlCharacters = 255;
     public const string RepositoryUrl = "https://github.com/Fumblesneeze/Rimworld-Mods";
+    private static readonly HashSet<string> SteamPlayerFacingKeys = new(StringComparer.Ordinal)
+    {
+        "facebook", "twitter", "youtube", "polycount", "reddit", "sketchfab"
+    };
 
     public static WorkshopLink[] Validate(IEnumerable<WorkshopLink> links)
     {
         ArgumentNullException.ThrowIfNull(links);
         var values = links.ToArray();
-        if (values.Length is < 1 or > MaximumLinks)
-            throw new ReleaseProfileException($"workshopLinks must contain between 1 and {MaximumLinks} entries.");
+        if (values.Length > MaximumLinks)
+            throw new ReleaseProfileException($"workshopLinks must contain at most {MaximumLinks} entries.");
         if (values.Select(link => link.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count() != values.Length)
             throw new ReleaseProfileException("workshopLinks must use unique case-insensitive keys.");
 
@@ -108,12 +112,23 @@ public static class WorkshopLinkPolicy
                 !Uri.TryCreate(link.Url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps ||
                 !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Fragment))
                 throw new ReleaseProfileException("Every Workshop link must be one bounded absolute HTTPS URL without credentials or a fragment.");
-            if (link.Key.Equals("github", StringComparison.OrdinalIgnoreCase) &&
-                !link.Url.Equals(RepositoryUrl, StringComparison.Ordinal))
-                throw new ReleaseProfileException($"The github Workshop link must be exactly '{RepositoryUrl}'.");
         }
         return values;
     }
+
+    public static WorkshopLink[] ValidateSteamPlayerFacingSupport(IEnumerable<WorkshopLink> links)
+    {
+        var values = Validate(links);
+        var unsupported = values.Where(link => !IsSteamPlayerFacingKey(link.Key)).Select(link => link.Key).ToArray();
+        if (unsupported.Length > 0)
+            throw new ReleaseProfileException(
+                "Steam does not expose a GitHub or custom player-facing Workshop link field. " +
+                $"Supported Links-section keys are: {string.Join(", ", SteamPlayerFacingKeys.OrderBy(value => value, StringComparer.Ordinal))}. " +
+                $"Unsupported: {string.Join(", ", unsupported)}. The publisher will not fall back to the description without explicit author approval.");
+        return values;
+    }
+
+    public static bool IsSteamPlayerFacingKey(string key) => SteamPlayerFacingKeys.Contains(key);
 }
 
 public sealed class ReleaseProfileException(string message) : Exception(message);

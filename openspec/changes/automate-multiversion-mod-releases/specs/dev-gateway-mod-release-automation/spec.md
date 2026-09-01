@@ -137,19 +137,24 @@ When an asset-led feature card depicts a Stuff-colored Thing, its structured art
 - **WHEN** the RimWorld 1.6 Immersive Chefs Workshop description is compiled
 - **THEN** it uses visual feature sections and approachable player-facing language, includes every implemented mechanic, thing, building, and supported optional ecosystem with concise expected behavior, identifies Harmony and XML Extensions as the required third-party mods, and places its candid `Author's Note` and pre-generated-AI disclosure as the final section
 
-### Requirement: Repository links use Workshop link metadata
+### Requirement: Workshop links match Steam's player-facing fields
 
-Every publishable release profile SHALL declare a bounded, unique set of HTTPS Workshop links independently from the Workshop description. The immutable publication plan SHALL retain their exact key and URL values. The Steam publisher SHALL reconcile only those declared key/value links through the Workshop item update handle, preserve unrelated existing link keys, check every setter result, and query the resulting key/value inventory before accepting publication. The repository source URL `https://github.com/Fumblesneeze/Rimworld-Mods` SHALL use the `github` link key for repository-owned Workshop items and SHALL NOT be inserted into the description merely to satisfy this requirement.
+Every publishable release profile SHALL declare a bounded, unique, possibly empty set of HTTPS Workshop links independently from the Workshop description. A newly prepared plan SHALL accept only the fixed player-facing fields Steam's Workshop editor actually exposes: Facebook, Twitter, YouTube, Polycount, Reddit, and Sketchfab. The immutable publication plan SHALL retain their exact key and URL values. The Steam publisher SHALL reconcile only those declared key/value links through the Workshop item update handle, preserve unrelated existing link keys, check every setter result, and query the resulting key/value inventory before accepting publication. Steam does not expose a GitHub or custom player-facing link field; the repository source URL `https://github.com/Fumblesneeze/Rimworld-Mods` therefore SHALL NOT be represented by a generic SteamUGC key/value tag or inserted into the description without explicit author approval.
 
-#### Scenario: Existing item gains its source repository link
+#### Scenario: Unsupported GitHub field is rejected before mutation
 
 - **WHEN** a reviewed incremental release declares `github` as `https://github.com/Fumblesneeze/Rimworld-Mods`
-- **THEN** the admitted plan reports the exact link diff, Steam receives one exact `github` key/value pair, the authenticated post-submit query returns that pair, and the description contains no copy of that URL
+- **THEN** release preparation fails before Steam mutation with a clear platform-capability error and does not silently place the URL in the description or a misleading social field
 
 #### Scenario: An unrelated social link already exists
 
-- **WHEN** the remote item contains an undeclared Facebook, YouTube, or other key/value link
-- **THEN** reconciling the declared GitHub link leaves the unrelated key/value pair unchanged
+- **WHEN** the remote item contains an undeclared supported player-facing link and the plan declares another supported link
+- **THEN** reconciliation changes only the declared field and leaves the unrelated link unchanged
+
+#### Scenario: Already-submitted unsupported immutable plan is recovered honestly
+
+- **WHEN** an admitted plan reached Steam before the platform limitation was discovered, its unsupported custom link is absent remotely, and durable state proves the exact item and plan
+- **THEN** recovery does not resubmit the update, accepts only the absence of that unsupported field, records the unsupported link and reason in the receipt, and continues subscriber verification without claiming that Steam published it
 
 #### Scenario: Link metadata crosses the legacy in-game automation boundary
 

@@ -333,6 +333,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
         var profile = ReleaseProfileCatalog.Discover(_repositoryRoot)
             .SingleOrDefault(item => string.Equals(item.PackageId, packageId, StringComparison.OrdinalIgnoreCase)) ??
             throw new ArgumentException($"No universal release profile exists for packageId '{packageId}'.");
+        _ = WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport(profile.WorkshopLinks);
         ReleaseEnvironmentValidator.Validate(profile);
         ReleaseChangeNotePolicy.Validate(profile);
         _ = SubscriberVerificationProfiles.Load(_repositoryRoot, profile.VerificationProfile);

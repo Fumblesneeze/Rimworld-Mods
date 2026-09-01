@@ -172,7 +172,7 @@ public static class TestSnippet
         var root = FindRepositoryRoot();
         var compilerRoot = Path.Combine(Path.GetTempPath(), "gateway-release-link-wire-" + Guid.NewGuid().ToString("N"));
         const string requestJson =
-            "{\"operation\":\"status\",\"workshopLinkJson\":[\"{\\\"key\\\":\\\"github\\\",\\\"url\\\":\\\"https://github.com/Fumblesneeze/Rimworld-Mods\\\"}\"]}";
+            "{\"operation\":\"status\",\"workshopLinkJson\":[\"{\\\"key\\\":\\\"reddit\\\",\\\"url\\\":\\\"https://reddit.com/r/RimWorld\\\"}\"]}";
         try
         {
             var parsedGatewayArguments = new Dictionary<string, object?>
@@ -180,7 +180,7 @@ public static class TestSnippet
                 ["operation"] = "status",
                 ["workshopLinkJson"] = new object[]
                 {
-                    "{\"key\":\"github\",\"url\":\"https://github.com/Fumblesneeze/Rimworld-Mods\"}"
+                    "{\"key\":\"reddit\",\"url\":\"https://reddit.com/r/RimWorld\"}"
                 }
             };
             Assert.DoesNotThrow(() => GatewayContractJson.Write(new GatewayAutomationRunRequest
@@ -205,10 +205,10 @@ public static class TestSnippet
             Assert.That(links, Has.Length.EqualTo(1));
             Assert.Multiple(() =>
             {
-                Assert.That(links[0].GetType().GetField("Key")!.GetValue(links[0]), Is.EqualTo("github"));
+                Assert.That(links[0].GetType().GetField("Key")!.GetValue(links[0]), Is.EqualTo("reddit"));
                 Assert.That(
                     links[0].GetType().GetField("Url")!.GetValue(links[0]),
-                    Is.EqualTo("https://github.com/Fumblesneeze/Rimworld-Mods"));
+                    Is.EqualTo("https://reddit.com/r/RimWorld"));
             });
         }
         finally

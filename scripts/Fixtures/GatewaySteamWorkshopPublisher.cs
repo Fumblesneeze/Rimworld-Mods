@@ -1177,7 +1177,7 @@ internal static class Publisher
             if (string.IsNullOrWhiteSpace(PackageIdentityPath) || Path.GetFileName(PackageIdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("packageIdentityPath is invalid.");
             if (string.IsNullOrWhiteSpace(StatePath) || Path.GetFileName(StatePath) != "publication-state.txt") throw new InvalidOperationException("statePath is invalid.");
             if (Tags.Count == 0 || Tags.Count > 16 || Tags.Any(string.IsNullOrWhiteSpace)) throw new InvalidOperationException("tags are invalid.");
-            if (WorkshopLinks.Count < 1 || WorkshopLinks.Count > 8 ||
+            if (WorkshopLinks.Count > 8 ||
                 WorkshopLinks.Select(link => link.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count() != WorkshopLinks.Count)
                 throw new InvalidOperationException("workshopLinks are invalid.");
             foreach (var link in WorkshopLinks)
@@ -1189,9 +1189,9 @@ internal static class Publisher
                     !Uri.TryCreate(link.Url, UriKind.Absolute, out uri) || uri.Scheme != Uri.UriSchemeHttps ||
                     !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Fragment))
                     throw new InvalidOperationException("workshopLinks contain an invalid key or URL.");
-                if (link.Key.Equals("github", StringComparison.OrdinalIgnoreCase) &&
-                    link.Url != "https://github.com/Fumblesneeze/Rimworld-Mods")
-                    throw new InvalidOperationException("The github Workshop link is not the canonical repository URL.");
+                if (!new[] { "facebook", "twitter", "youtube", "polycount", "reddit", "sketchfab" }
+                    .Contains(link.Key, StringComparer.Ordinal))
+                    throw new InvalidOperationException("The Workshop link key is not a Steam player-facing Links field.");
             }
         }
 
