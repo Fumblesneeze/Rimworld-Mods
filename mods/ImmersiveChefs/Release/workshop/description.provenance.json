@@ -1,8 +1,8 @@
 {
   "schema": "ImmersiveChefs/WorkshopDescriptionProvenance/v1",
   "publishedFileId": "3782589902",
-  "previewPublicationPlanSha256": "CB3A52879B69CA6767BF6849268D7FBD23927E391AFABBE830342844D9708288",
-  "descriptionSha256": "E40E6151CD6E9F0E2AB607A1754825769B6C31AF7C4CCCFE24EFC858CA946CB8",
+  "previewPublicationPlanSha256": "7E19586ED1754EA5326C3A9B52957C5F94648A3BE44FA9386A3F4700EB3CAF8D",
+  "descriptionSha256": "1C94220FA57A563B979D1E72F74019A2B7ABB77A247CCCCD4C4722A8A2D0D097",
   "previews": [
     {
       "token": "immersive-chefs",
@@ -16,7 +16,7 @@
     {
       "token": "kitchenware",
       "remoteIndex": 1,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/10557042170922753510/EE9080A68BAB28F9053DB9C2DBD7BED228910F66/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/16459140190860468263/EE9080A68BAB28F9053DB9C2DBD7BED228910F66/",
       "localPath": "feature-kitchenware.png",
       "localSha256": "72B5EE204EB79C34EFFEAF1FB2670BD77F375FCE41893BB0FE62C7AA7E6510BE",
       "remoteSha256": "72B5EE204EB79C34EFFEAF1FB2670BD77F375FCE41893BB0FE62C7AA7E6510BE",
@@ -34,7 +34,7 @@
     {
       "token": "dishwashing",
       "remoteIndex": 3,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/9402614076826008064/6F61AD9217541F194847E28F8AE5DF0EA13A2426/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/17045252201687965782/6F61AD9217541F194847E28F8AE5DF0EA13A2426/",
       "localPath": "feature-dishwashing.png",
       "localSha256": "F468795A4D64E941E90BFF8334A010174F425F080969D3DB9C1F01527C50BCDF",
       "remoteSha256": "F468795A4D64E941E90BFF8334A010174F425F080969D3DB9C1F01527C50BCDF",
@@ -43,7 +43,7 @@
     {
       "token": "meals",
       "remoteIndex": 4,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/17722103090486615794/BBAF198C868232E50C00F051F680A766441B25FF/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/12233463740015539295/BBAF198C868232E50C00F051F680A766441B25FF/",
       "localPath": "feature-meals.png",
       "localSha256": "4822D6630F907730D000D6D39BABDF5DB402C6ED567CF97961A29D8DE6B27DC0",
       "remoteSha256": "4822D6630F907730D000D6D39BABDF5DB402C6ED567CF97961A29D8DE6B27DC0",
