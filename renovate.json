@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":disableDependencyDashboard"
+  ],
+  "enabledManagers": [
+    "docker-compose",
+    "github-actions",
+    "pre-commit"
+  ],
+  "pre-commit": {
+    "enabled": true
+  },
+  "github-actions": {
+    "managerFilePatterns": [
+      "/(^|/)\\.gitea/workflows/[^/]+\\.ya?ml$/",
+      "/(^|/)docker-compose-deploy\\.ya?ml$/",
+      "/(^|/)deployment-image-update\\.ya?ml$/"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": [
+        "Require manual review for homelab template dependency updates"
+      ],
+      "matchManagers": [
+        "docker-compose",
+        "github-actions",
+        "pre-commit"
+      ],
+      "automerge": false
+    }
+  ]
+}
