@@ -34,7 +34,7 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ImmersiveSignalFire', 'ImmersiveSignalFire.Unit', 'ImmersiveSignalFire.Harmony', 'ImmersiveSignalFire.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
+    [ValidateSet('All', 'PersonalBugfixes', 'PersonalBugfixes.Unit', 'PersonalBugfixes.Harmony', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ImmersiveSignalFire', 'ImmersiveSignalFire.Unit', 'ImmersiveSignalFire.Harmony', 'ImmersiveSignalFire.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
@@ -112,6 +112,16 @@ try {
 
     $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
     $availableSuites = @(
+        [pscustomobject]@{
+            Name = 'PersonalBugfixes.Unit'
+            Group = 'PersonalBugfixes'
+            Project = Join-Path $repositoryRoot 'tests\PersonalBugfixes.Tests\PersonalBugfixes.Tests.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'PersonalBugfixes.Harmony'
+            Group = 'PersonalBugfixes'
+            Project = Join-Path $repositoryRoot 'tests\PersonalBugfixes.Harmony.Tests\PersonalBugfixes.Harmony.Tests.csproj'
+        },
         [pscustomobject]@{
             Name = 'ImmersiveSignalFire.Unit'
             Group = 'ImmersiveSignalFire'
@@ -196,7 +206,7 @@ try {
     $selectedSuites = if ($Suite -eq 'All') {
         @($availableSuites)
     }
-    elseif ($Suite -in @('ImmersiveChefs', 'ImmersiveSignalFire', 'ThinWalls', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
+    elseif ($Suite -in @('PersonalBugfixes', 'ImmersiveChefs', 'ImmersiveSignalFire', 'ThinWalls', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
         @($availableSuites | Where-Object Group -EQ $Suite)
     }
     else {

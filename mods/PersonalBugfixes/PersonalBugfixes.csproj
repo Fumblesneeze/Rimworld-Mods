@@ -1,0 +1,21 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <RimWorldModName>Personal Bugfixes</RimWorldModName>
+    <RimWorldPackageId>fumblesneeze.personalbugfixes</RimWorldPackageId>
+    <RimWorldDistributionKind>Personal</RimWorldDistributionKind>
+    <Authors>Fumblesneeze</Authors>
+    <AssemblyName>PersonalBugfixes</AssemblyName>
+    <RootNamespace>PersonalBugfixes</RootNamespace>
+    <IncludeHarmony>true</IncludeHarmony>
+    <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
+    <Description>Local-only personal repairs. Each fix checks the target code and reproduces its bug on disposable data before activation. See startup diagnostics and the source reports. Not intended for distribution.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <RimWorldLoadAfter Include="TheLastBulletBender.RWExploration" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+</Project>

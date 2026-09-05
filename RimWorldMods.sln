@@ -2,7 +2,6 @@
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "mods", "mods", "{414D1254-A15A-4024-85AC-4424837ABA2D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImmersiveChefs", "mods\ImmersiveChefs\ImmersiveChefs.csproj", "{EBEF05F9-B027-44DA-8D85-CD4C6D3CBFF9}"
@@ -134,6 +133,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImmersiveSignalFire.Defs.Tests", "tests\ImmersiveSignalFire.Defs.Tests\ImmersiveSignalFire.Defs.Tests.csproj", "{02B93815-4EF0-4372-B21B-3B0141C315FC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImmersiveSignalFire.EndToEndTests", "tests\ImmersiveSignalFire.EndToEndTests\ImmersiveSignalFire.EndToEndTests.csproj", "{1CCCE264-F529-4890-9902-F20877BD87BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonalBugfixes", "mods\PersonalBugfixes\PersonalBugfixes.csproj", "{050C905E-C255-4023-927F-25D446AE6B7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonalBugfixes.Tests", "tests\PersonalBugfixes.Tests\PersonalBugfixes.Tests.csproj", "{AE644B6C-0FAB-4840-8CB0-78608496C315}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonalBugfixes.Harmony.Tests", "tests\PersonalBugfixes.Harmony.Tests\PersonalBugfixes.Harmony.Tests.csproj", "{0A224AB0-E95A-4D0A-A194-580D7F7E3DCB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonalBugfixes.EndToEndTests", "tests\PersonalBugfixes.EndToEndTests\PersonalBugfixes.EndToEndTests.csproj", "{75E0570B-A66B-4609-B9B7-1EBB5ADF0264}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -388,6 +395,22 @@ Global
 		{1CCCE264-F529-4890-9902-F20877BD87BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1CCCE264-F529-4890-9902-F20877BD87BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1CCCE264-F529-4890-9902-F20877BD87BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{050C905E-C255-4023-927F-25D446AE6B7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{050C905E-C255-4023-927F-25D446AE6B7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{050C905E-C255-4023-927F-25D446AE6B7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{050C905E-C255-4023-927F-25D446AE6B7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE644B6C-0FAB-4840-8CB0-78608496C315}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE644B6C-0FAB-4840-8CB0-78608496C315}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE644B6C-0FAB-4840-8CB0-78608496C315}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE644B6C-0FAB-4840-8CB0-78608496C315}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A224AB0-E95A-4D0A-A194-580D7F7E3DCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A224AB0-E95A-4D0A-A194-580D7F7E3DCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A224AB0-E95A-4D0A-A194-580D7F7E3DCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A224AB0-E95A-4D0A-A194-580D7F7E3DCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75E0570B-A66B-4609-B9B7-1EBB5ADF0264}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75E0570B-A66B-4609-B9B7-1EBB5ADF0264}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75E0570B-A66B-4609-B9B7-1EBB5ADF0264}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75E0570B-A66B-4609-B9B7-1EBB5ADF0264}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{EBEF05F9-B027-44DA-8D85-CD4C6D3CBFF9} = {414D1254-A15A-4024-85AC-4424837ABA2D}
@@ -452,5 +475,9 @@ Global
 		{0E864203-64D6-40FE-915B-FA57F1D8D250} = {57C1353C-978D-44F2-995F-A95307B3701E}
 		{02B93815-4EF0-4372-B21B-3B0141C315FC} = {57C1353C-978D-44F2-995F-A95307B3701E}
 		{1CCCE264-F529-4890-9902-F20877BD87BB} = {57C1353C-978D-44F2-995F-A95307B3701E}
+		{050C905E-C255-4023-927F-25D446AE6B7B} = {414D1254-A15A-4024-85AC-4424837ABA2D}
+		{AE644B6C-0FAB-4840-8CB0-78608496C315} = {57C1353C-978D-44F2-995F-A95307B3701E}
+		{0A224AB0-E95A-4D0A-A194-580D7F7E3DCB} = {57C1353C-978D-44F2-995F-A95307B3701E}
+		{75E0570B-A66B-4609-B9B7-1EBB5ADF0264} = {57C1353C-978D-44F2-995F-A95307B3701E}
 	EndGlobalSection
 EndGlobal

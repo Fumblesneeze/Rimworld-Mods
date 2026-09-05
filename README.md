@@ -9,6 +9,7 @@ This repository is the Windows development monorepo for Fumblesneeze's RimWorld 
 | [Hospitality + Ideology Patch](mods/GuestBedGizmo/README.md) | `fumblesneeze.guestbedgizmo` | Adds Hospitality guests to RimWorld's unified bed-owner menu. |
 | [Immersive Chefs](mods/ImmersiveChefs/README.md) | `fumblesneeze.immersivechefs` | Makes kitchenware, preparation, meal condition, service, dining, and sanitation part of colony play. |
 | [Thin Walls](mods/ThinWalls/README.md) | `fumblesneeze.thinwalls` | Adds Stuff-made walls and doors that occupy tile edges instead of whole cells. |
+| [Personal Bugfixes](mods/PersonalBugfixes/README.md) | `fumblesneeze.personalbugfixes` | Local-only, self-checking repairs for personal games; no Workshop publication. |
 | [RimWorld Dev Gateway](mods/RimWorldDevGateway/README.md) | `fumblesneeze.rimworlddevgateway` | Developer-only authenticated loopback control, observation, testing, and unrestricted C# execution. |
 
 Each OpenSpec change and capability has exactly one owner: either one mod or one repository-tooling component. Repository-owned mods do not depend on one another, and product mods never ship, reference, or load-order-hint the Gateway; it is isolated development infrastructure, not a gameplay dependency.
