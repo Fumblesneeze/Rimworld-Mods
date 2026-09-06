@@ -45,3 +45,7 @@ The mod SHALL declare a strict universal release profile targeting its retained 
 #### Scenario: Annotated Private item update is published
 - **WHEN** the exact prepared update is published under the standing user order
 - **THEN** only the retained Private item is updated, Steam renders the corrected title and simplified page, Ideology appears as required DLC, Harmony and Hospitality remain required items, and the subscribed package's native four-choice workflow is verified before personal evidence acceptance
+
+#### Scenario: Compatibility fix updates the existing public item
+- **WHEN** the user requests publication of a verified compatibility fix and the authenticated Steam baseline reports item `3789536584` is already Public
+- **THEN** the release profile and prepared update preserve Public visibility, the current title, description, preview and dependency graph; only the tested content, release metadata and specific change note are updated
