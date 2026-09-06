@@ -80,4 +80,4 @@
 - [x] 13.1 RED/GREEN: prove a compatible Hospitality rebuild is accepted without an allowlisted binary identity; remove the MVID gate while retaining consumed-interface validation and specific rejection of missing swap/legacy-toggle interfaces.
 - [x] 13.2 Run affected host tests, Release build/local installation, package and OpenSpec checks; resolve independent scoped code review and complete the semantic playability pass.
 - [x] 13.3 On the reviewed build with current Hospitality, exercise the native owner menu, guest conversion and vanilla conversion in a fresh minimized isolated game; personally inspect screenshots/logs and retain build, config and cleanup evidence.
-- [ ] 13.4 Publish the verified compatibility fix to existing Workshop item `3789536584` through the universal release operations, preserving its declared visibility and dependency graph and retaining Steam verification and cleanup evidence.
+- [x] 13.4 Publish the verified compatibility fix to existing Workshop item `3789536584` through the universal release operations, preserving its declared visibility and dependency graph and retaining Steam verification and cleanup evidence.
