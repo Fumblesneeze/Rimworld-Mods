@@ -10,8 +10,6 @@ namespace GuestBedGizmo.Compatibility.Hospitality;
 
 internal static class HospitalityRuntimeContract
 {
-    internal static readonly Guid SupportedModuleVersionId =
-        new Guid("2960a88a-6247-4553-ae68-04319c05246e");
     internal const string AssemblySimpleName = "Hospitality";
     internal const string HarmonyOwner = "Orion.Hospitality";
     internal const string GuestBedTypeName = "Hospitality.Building_GuestBed";
@@ -60,12 +58,6 @@ internal sealed class HospitalityRuntimeAdapter
         }
 
         Assembly assembly = matches[0];
-        if (assembly.ManifestModule.ModuleVersionId != HospitalityRuntimeContract.SupportedModuleVersionId)
-        {
-            failure = $"unsupported Hospitality module identity {assembly.ManifestModule.ModuleVersionId}";
-            return false;
-        }
-
         Type? guestBedType = assembly.GetType(HospitalityRuntimeContract.GuestBedTypeName, false);
         if (guestBedType == null || !guestBedType.IsPublic ||
             !typeof(Building_Bed).IsAssignableFrom(guestBedType))

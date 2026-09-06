@@ -13,6 +13,28 @@ namespace GuestBedGizmo.Harmony.Tests;
 public sealed class HospitalityAssemblyShapeTests
 {
     [Test]
+    public void CompatibleHospitalityRebuildDoesNotNeedAnAllowlistedBinaryIdentity()
+    {
+        using AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(Metadata("HospitalityAssemblyPath"));
+        assembly.MainModule.Mvid = Guid.NewGuid();
+        assembly.Name.Version = new Version(9, 8, 7, 6);
+        using var rebuilt = new MemoryStream();
+        assembly.Write(rebuilt);
+        Assembly loadedAssembly = Assembly.Load(rebuilt.ToArray());
+
+        bool resolved = HospitalityRuntimeAdapter.TryResolve(
+            new[] { loadedAssembly },
+            out HospitalityRuntimeAdapter? adapter,
+            out string? failure);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(resolved, Is.True, failure);
+            Assert.That(adapter, Is.Not.Null);
+        });
+    }
+
+    [Test]
     public void InspectedHospitality16ShapeMatchesTheGuardedRuntimeContract()
     {
         string path = Metadata("HospitalityAssemblyPath");
@@ -35,11 +57,6 @@ public sealed class HospitalityAssemblyShapeTests
         Assert.Multiple(() =>
         {
             Assert.That(assembly.Name.Name, Is.EqualTo(HospitalityRuntimeContract.AssemblySimpleName));
-            Assert.That(assembly.MainModule.Mvid, Is.EqualTo(new Guid("2960a88a-6247-4553-ae68-04319c05246e")));
-            Assert.That(
-                loadedAssembly.ManifestModule.ModuleVersionId,
-                Is.EqualTo(HospitalityRuntimeContract.SupportedModuleVersionId));
-            Assert.That(Sha256(path), Is.EqualTo("484BFDC9A4896EFC92E590B146A903B3C9FEA384C6BD41FB55A90FC15D582297"));
             Assert.That(guestBed.IsPublic, Is.True);
             Assert.That(guestBed.BaseType.FullName, Is.EqualTo("RimWorld.Building_Bed"));
             Assert.That(swap.IsPublic && swap.IsStatic, Is.True);
@@ -64,6 +81,32 @@ public sealed class HospitalityAssemblyShapeTests
             Assert.That(HospitalityRuntimeContract.GuestLabelKey, Is.EqualTo("CommandBedSetAsGuestLabel"));
             Assert.That(HospitalityRuntimeContract.GuestDescriptionKey, Is.EqualTo("CommandBedSetAsGuestDesc"));
             Assert.That(HospitalityRuntimeContract.GuestIconPath, Is.EqualTo("UI/Commands/AsGuest"));
+        });
+        TestContext.WriteLine($"Inspected Hospitality: MVID={assembly.MainModule.Mvid}; SHA256={Sha256(path)}");
+    }
+
+    [TestCase(HospitalityRuntimeContract.GuestBedTypeName, HospitalityRuntimeContract.SwapMethodName)]
+    [TestCase(HospitalityRuntimeContract.LegacyPatchTypeName, "Postfix")]
+    [TestCase(HospitalityRuntimeContract.LegacyActionTypeName, HospitalityRuntimeContract.LegacyActionMethodName)]
+    public void MissingConsumedHospitalityInterfaceLeavesTheAdapterUnavailable(string typeName, string methodName)
+    {
+        using AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(Metadata("HospitalityAssemblyPath"));
+        assembly.MainModule.Mvid = Guid.NewGuid();
+        TypeDefinition type = RequiredType(assembly, typeName);
+        type.Methods.Single(method => method.Name == methodName).Name = "UpstreamReplacement_" + methodName;
+        using var changed = new MemoryStream();
+        assembly.Write(changed);
+
+        bool resolved = HospitalityRuntimeAdapter.TryResolve(
+            new[] { Assembly.Load(changed.ToArray()) },
+            out HospitalityRuntimeAdapter? adapter,
+            out string? failure);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(resolved, Is.False);
+            Assert.That(adapter, Is.Null);
+            Assert.That(failure, Does.Contain(methodName));
         });
     }
 

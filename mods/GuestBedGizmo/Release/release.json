@@ -39,6 +39,6 @@
   ],
   "description": "workshop/description.bbcode.txt",
   "preview": "workshop/preview-main.png",
-  "changeNote": "Corrected the title, simplified the Workshop page and preview around the four-choice bed menu, and declared Ideology as required DLC.",
-  "previousChangeNote": "Initial release."
+  "changeNote": "Restored the four-choice bed owner menu with the current Hospitality release. Compatible Hospitality rebuilds no longer disable guest-bed conversion.",
+  "previousChangeNote": "Corrected the title, simplified the Workshop page and preview around the four-choice bed menu, and declared Ideology as required DLC."
 }

@@ -4,7 +4,7 @@
 
 ### Requirement: Hospitality and Ideology activation is optional and shape guarded
 
-Guest Bed Gizmo SHALL activate its integration only when canonical package IDs `Ludeon.RimWorld.Ideology` and `Orion.Hospitality` are in the real active mod list and the supported loaded assembly, guest-bed type, swap method, legacy-toggle identity, translation, icon, and gizmo patch surfaces all match the inspected RimWorld 1.6 contract. It MUST have no compile-time Hospitality reference and MUST NOT install its bed-gizmo Harmony patch when either prerequisite is absent or Hospitality is incompatible.
+Guest Bed Gizmo SHALL activate its integration only when canonical package IDs `Ludeon.RimWorld.Ideology` and `Orion.Hospitality` are in the real active mod list and the supported loaded assembly, guest-bed type, swap method, legacy-toggle identity, translation, icon, and gizmo patch surfaces all match the inspected RimWorld 1.6 contract. Compatibility MUST depend on those consumed interfaces and assets, never on an allowlisted module version ID, file hash, or assembly version. Binary fingerprints MAY be retained as diagnostic evidence only. It MUST have no compile-time Hospitality reference and MUST NOT install its bed-gizmo Harmony patch when either prerequisite is absent or Hospitality is incompatible.
 
 #### Scenario: Hospitality is absent
 - **WHEN** Harmony, Core, Ideology, and Guest Bed Gizmo load without `Orion.Hospitality`
@@ -15,8 +15,16 @@ Guest Bed Gizmo SHALL activate its integration only when canonical package IDs `
 - **THEN** Hospitality's legacy guest-bed control remains untouched and Guest Bed Gizmo installs no bed-gizmo patch
 
 #### Scenario: Supported Hospitality is active
-- **WHEN** Ideology and the exact inspected Hospitality Continued 1.6 package are active before Guest Bed Gizmo
+- **WHEN** Ideology and a Hospitality Continued 1.6 package with compatible bed interfaces are active before Guest Bed Gizmo
 - **THEN** Guest Bed Gizmo validates one supported adapter and installs its `Building_Bed.GetGizmos` patch exactly once after Hospitality
+
+#### Scenario: Hospitality is rebuilt without changing the consumed bed interfaces
+- **WHEN** Hospitality has a different module version ID, file hash, or assembly version but preserves all consumed bed interfaces and assets
+- **THEN** the adapter remains eligible and the native owner command still offers guest conversion without adding the new binary to an allowlist
+
+#### Scenario: Hospitality removes its legacy guest toggle or bed-swap interface
+- **WHEN** an upstream change removes a consumed legacy-toggle or swap interface, including replacement of the old bed UI that makes this integration obsolete
+- **THEN** Guest Bed Gizmo leaves the upstream bed controls intact, installs no partial integration, and reports the specific missing interface once
 
 #### Scenario: Hospitality shape changed
 - **WHEN** `Orion.Hospitality` is active but any required type, method, action identity, translation, icon, or return shape differs

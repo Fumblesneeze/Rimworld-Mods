@@ -31,6 +31,8 @@ The mod constructor first checks the canonical package IDs `ludeon.rimworld.ideo
 
 This keeps optional type names out of fields, signatures, attributes, and eager JIT paths. A compile-time Hospitality reference was rejected because an inactive or updated optional assembly could then prevent the product from loading.
 
+Compatibility follows the interfaces actually consumed by this adapter. Module version IDs, assembly versions, and file hashes identify inspected builds in evidence; they are not admission requirements. A Hospitality rebuild that preserves those interfaces must continue to work. Missing or incompatible bed-swap/legacy-toggle interfaces still disable the adapter before patch installation, including an upstream replacement of the legacy UI that makes this integration obsolete. Host regressions exercise a rebuilt assembly with changed identity and genuine missing interfaces; final acceptance uses the currently installed Hospitality package through the native four-choice menu and both conversion directions.
+
 ### Replace the command object, not vanilla IL or the owner enum
 
 One manually installed Harmony postfix runs after Hospitality on `Building_Bed.GetGizmos`. Its lazy projection materializes one upstream enumeration so it can confirm that a vanilla owner command exists before removing Hospitality's old control. It then:
