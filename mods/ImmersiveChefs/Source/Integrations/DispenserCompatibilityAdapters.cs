@@ -59,7 +59,6 @@ internal static class DispenserMealResolutionPolicy
 internal static class ReplimatCompatibility
 {
     internal const string AssemblyName = "Replimat";
-    internal const string AssemblyVersion = "1.0.0.0";
     internal const string TerminalTypeName = "Replimat.Building_ReplimatTerminal";
     internal const string UtilityTypeName = "Replimat.ReplimatUtility";
     internal const string ToilPrefixTypeName = "Replimat.Harmony_Toils_Ingest_TakeMealFromDispenser";
@@ -93,7 +92,6 @@ internal static class ReplimatCompatibility
         bool mealRegistryValidated)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                terminalTypeName == TerminalTypeName &&
                terminalIsPasteDispenser &&
                tryDispenseParameterTypeNames.SequenceEqual(new[]
@@ -114,7 +112,6 @@ internal static class ReplimatCompatibility
 internal static class MealPrinterCompatibility
 {
     internal const string AssemblyName = "MealPrinter";
-    internal const string AssemblyVersion = "0.0.0.0";
     internal const string PrinterTypeName = "MealPrinter.Building_MealPrinter";
     internal const string StartupTypeName = "MealPrinter.MealPrinterMain";
     internal const string ToilPrefixTypeName =
@@ -157,7 +154,6 @@ internal static class MealPrinterCompatibility
         bool vanillaMealDefsPresent)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                printerTypeName == PrinterTypeName &&
                printerIsPasteDispenser &&
                tryDispenseParameterCount == 0 &&

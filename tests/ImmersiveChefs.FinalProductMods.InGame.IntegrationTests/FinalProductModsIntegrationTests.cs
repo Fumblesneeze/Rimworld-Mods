@@ -33,13 +33,13 @@ public static class FinalProductModsIntegrationTests
         var adaptiveType = AccessTools.TypeByName(AdaptiveMealBillCompatibility.AdaptiveRecipeTypeName);
         var overcookedType = AccessTools.TypeByName(OvercookedMealsCompatibility.PrefixTypeName);
         IntegrationAssert.Equal(
-            "AdaptiveMealBill, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
-            adaptiveType?.Assembly.FullName,
-            "Adaptive Meal Bill must retain the inspected assembly identity.");
+            "AdaptiveMealBill",
+            adaptiveType?.Assembly.GetName().Name,
+            "Adaptive Meal Bill must expose the required types from its own assembly.");
         IntegrationAssert.Equal(
-            "OvercookedMeals, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
-            overcookedType?.Assembly.FullName,
-            "Overcooked Meals must retain the inspected assembly identity.");
+            "OvercookedMeals",
+            overcookedType?.Assembly.GetName().Name,
+            "Overcooked Meals must expose the required types from its own assembly.");
         IntegrationAssert.True(
             ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.AdaptiveMealBill) &&
             AdaptiveMealBillAdapter.Enabled,

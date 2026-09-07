@@ -9,7 +9,6 @@ namespace ImmersiveChefs;
 internal static class MealsOnWheelsCompatibility
 {
     internal const string AssemblyName = "Meals_On_Wheels";
-    internal const string AssemblyVersion = "1.0.0.0";
     internal const string PatchTypeName = "Meals_On_Wheels.FoodGrabbing";
     internal const string PostfixMethodName = "Postfix";
     internal const string PatchOwner = "uuugggg.rimworld.Meals_On_Wheels.main";
@@ -23,7 +22,6 @@ internal static class MealsOnWheelsCompatibility
         string? patchOwner)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                patchTypeName == PatchTypeName &&
                postfixMethodName == PostfixMethodName &&
                postfixShape &&
@@ -138,7 +136,6 @@ internal static class MealsOnWheelsAdapter
 internal static class PrioritizeMealsCompatibility
 {
     internal const string AssemblyName = "Prioritize Meals over Preserved Foods";
-    internal const string AssemblyVersion = "2.3.0.0";
     internal const string StartupTypeName = "seekiworks_Prioritize_Meals_over_Preserved_Foods.Main";
     internal const string FoodsTypeName = "seekiworks_Prioritize_Meals_over_Preserved_Foods.Foods";
     internal const string PreservedFoodsFieldName = "preservedFoods";
@@ -187,7 +184,6 @@ internal static class PrioritizeMealsCompatibility
         bool allTypesShareAssembly)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                startupTypeName == StartupTypeName &&
                hasStartupAttribute &&
                foodsTypeName == FoodsTypeName &&

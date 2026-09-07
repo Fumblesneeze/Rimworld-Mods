@@ -36,13 +36,13 @@ public static class FoodSearchModsIntegrationTests
         var mealsOnWheelsType = AccessTools.TypeByName(MealsOnWheelsCompatibility.PatchTypeName);
         var prioritizeType = AccessTools.TypeByName(PrioritizeMealsCompatibility.StartupTypeName);
         IntegrationAssert.Equal(
-            "Meals_On_Wheels, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
-            mealsOnWheelsType?.Assembly.FullName,
-            "Meals on Wheels must retain the inspected assembly identity.");
+            "Meals_On_Wheels",
+            mealsOnWheelsType?.Assembly.GetName().Name,
+            "Meals on Wheels must expose the required types from its own assembly.");
         IntegrationAssert.Equal(
-            "Prioritize Meals over Preserved Foods, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null",
-            prioritizeType?.Assembly.FullName,
-            "Prioritize Meals must retain the inspected assembly identity.");
+            "Prioritize Meals over Preserved Foods",
+            prioritizeType?.Assembly.GetName().Name,
+            "Prioritize Meals must expose the required types from its own assembly.");
         IntegrationAssert.True(
             ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.MealsOnWheels) &&
             MealsOnWheelsAdapter.Enabled,

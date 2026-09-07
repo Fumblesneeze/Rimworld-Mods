@@ -5,13 +5,14 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class PickUpAndHaulAdapterTests
 {
-    [Test]
-    public void Installed_public_shape_is_supported()
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Installed_public_shape_is_supported(string version)
     {
         Assert.That(
             PickUpAndHaulCompatibility.IsSupported(
                 assemblyName: "PickUpAndHaul",
-                assemblyVersion: new Version(1, 0, 0, 0),
+                assemblyVersion: new Version(version),
                 compTypeName: "PickUpAndHaul.CompHauledToInventory",
                 compIsPublicThingComp: true,
                 registerIsPublicInstanceThingVoid: true,
@@ -28,7 +29,6 @@ public sealed class PickUpAndHaulAdapterTests
     }
 
     [TestCase("Lookalike", "1.0.0.0", "PickUpAndHaul.CompHauledToInventory", true, true, true, "PickUpAndHaul.PawnUnloadChecker", true, true, "PickUpAndHaul.JobDriver_UnloadYourHauledInventory", true)]
-    [TestCase("PickUpAndHaul", "2.0.0.0", "PickUpAndHaul.CompHauledToInventory", true, true, true, "PickUpAndHaul.PawnUnloadChecker", true, true, "PickUpAndHaul.JobDriver_UnloadYourHauledInventory", true)]
     [TestCase("PickUpAndHaul", "1.0.0.0", "Changed.Comp", true, true, true, "PickUpAndHaul.PawnUnloadChecker", true, true, "PickUpAndHaul.JobDriver_UnloadYourHauledInventory", true)]
     [TestCase("PickUpAndHaul", "1.0.0.0", "PickUpAndHaul.CompHauledToInventory", false, true, true, "PickUpAndHaul.PawnUnloadChecker", true, true, "PickUpAndHaul.JobDriver_UnloadYourHauledInventory", true)]
     [TestCase("PickUpAndHaul", "1.0.0.0", "PickUpAndHaul.CompHauledToInventory", true, false, true, "PickUpAndHaul.PawnUnloadChecker", true, true, "PickUpAndHaul.JobDriver_UnloadYourHauledInventory", true)]
@@ -331,13 +331,14 @@ public sealed class PickUpAndHaulAdapterTests
         Assert.That(ProcessorEmptyLifecyclePolicy.ShouldSucceed(empty), Is.EqualTo(expectedSuccess));
     }
 
-    [Test]
-    public void Installed_processor_filling_shape_is_supported()
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Installed_processor_filling_shape_is_supported(string version)
     {
         Assert.That(
             ProcessorDishwasherInputCompatibility.IsSupported(
                 assemblyName: "ProcessorFramework",
-                assemblyVersion: new Version(1, 0, 0, 0),
+                assemblyVersion: new Version(version),
                 driverTypeName: "ProcessorFramework.JobDriver_FillProcessor",
                 driverIsPublicJobDriver: true,
                 makeNewToilsIsProtectedInstanceEnumerable: true,
@@ -348,7 +349,6 @@ public sealed class PickUpAndHaulAdapterTests
     }
 
     [TestCase("ChangedFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, true, true, true, true)]
-    [TestCase("ProcessorFramework", "2.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, true, true, true, true)]
     [TestCase("ProcessorFramework", "1.0.0.0", "Changed.FillDriver", true, true, true, true, true)]
     [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", false, true, true, true, true)]
     [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_FillProcessor", true, false, true, true, true)]
@@ -378,13 +378,14 @@ public sealed class PickUpAndHaulAdapterTests
             Is.False);
     }
 
-    [Test]
-    public void Installed_processor_emptying_shape_is_supported()
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Installed_processor_emptying_shape_is_supported(string version)
     {
         Assert.That(
             ProcessorDishwasherOutputCompatibility.IsSupported(
                 assemblyName: "ProcessorFramework",
-                assemblyVersion: new Version(1, 0, 0, 0),
+                assemblyVersion: new Version(version),
                 driverTypeName: "ProcessorFramework.JobDriver_EmptyProcessor",
                 driverIsPublicJobDriver: true,
                 makeNewToilsIsProtectedInstanceEnumerable: true,
@@ -396,7 +397,6 @@ public sealed class PickUpAndHaulAdapterTests
     }
 
     [TestCase("ChangedFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, true, true, true, true, true)]
-    [TestCase("ProcessorFramework", "2.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, true, true, true, true, true)]
     [TestCase("ProcessorFramework", "1.0.0.0", "Changed.EmptyDriver", true, true, true, true, true, true)]
     [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", false, true, true, true, true, true)]
     [TestCase("ProcessorFramework", "1.0.0.0", "ProcessorFramework.JobDriver_EmptyProcessor", true, false, true, true, true, true)]

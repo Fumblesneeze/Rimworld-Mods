@@ -771,8 +771,6 @@ internal sealed class PickUpAndHaulDishwashingFixture
             "The exact installed Pick Up And Haul mod must attach one tracked-inventory component to the cleaner.");
         EndToEndAssert.Equal("PickUpAndHaul", trackers[0].GetType().Assembly.GetName().Name,
             "The tracked-inventory component must come from the exact supported assembly.");
-        EndToEndAssert.Equal(new Version(1, 0, 0, 0), trackers[0].GetType().Assembly.GetName().Version,
-            "The tracked-inventory component must retain the exact supported assembly version.");
     }
 
     private static ThingWithComps MakeDirtyWare(string defName, ThingDef stuff)

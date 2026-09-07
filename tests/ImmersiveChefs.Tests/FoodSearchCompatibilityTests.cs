@@ -5,13 +5,14 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class FoodSearchCompatibilityTests
 {
-    [Test]
-    public void Exact_meals_on_wheels_shape_is_supported()
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Exact_meals_on_wheels_shape_is_supported(string version)
     {
         Assert.That(
             MealsOnWheelsCompatibility.IsSupported(
                 assemblyName: "Meals_On_Wheels",
-                assemblyVersion: "1.0.0.0",
+                assemblyVersion: version,
                 patchTypeName: "Meals_On_Wheels.FoodGrabbing",
                 postfixMethodName: "Postfix",
                 postfixShape: true,
@@ -20,7 +21,6 @@ public sealed class FoodSearchCompatibilityTests
     }
 
     [TestCase("Lookalike", "1.0.0.0", "Meals_On_Wheels.FoodGrabbing", "Postfix", true, "uuugggg.rimworld.Meals_On_Wheels.main")]
-    [TestCase("Meals_On_Wheels", "2.0.0.0", "Meals_On_Wheels.FoodGrabbing", "Postfix", true, "uuugggg.rimworld.Meals_On_Wheels.main")]
     [TestCase("Meals_On_Wheels", "1.0.0.0", "Changed.FoodGrabbing", "Postfix", true, "uuugggg.rimworld.Meals_On_Wheels.main")]
     [TestCase("Meals_On_Wheels", "1.0.0.0", "Meals_On_Wheels.FoodGrabbing", "Changed", true, "uuugggg.rimworld.Meals_On_Wheels.main")]
     [TestCase("Meals_On_Wheels", "1.0.0.0", "Meals_On_Wheels.FoodGrabbing", "Postfix", false, "uuugggg.rimworld.Meals_On_Wheels.main")]
@@ -68,13 +68,14 @@ public sealed class FoodSearchCompatibilityTests
             Is.False);
     }
 
-    [Test]
-    public void Exact_prioritize_meals_shape_is_supported()
+    [TestCase("2.3.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Exact_prioritize_meals_shape_is_supported(string version)
     {
         Assert.That(
             PrioritizeMealsCompatibility.IsSupported(
                 assemblyName: "Prioritize Meals over Preserved Foods",
-                assemblyVersion: "2.3.0.0",
+                assemblyVersion: version,
                 startupTypeName: "seekiworks_Prioritize_Meals_over_Preserved_Foods.Main",
                 hasStartupAttribute: true,
                 foodsTypeName: "seekiworks_Prioritize_Meals_over_Preserved_Foods.Foods",
@@ -107,7 +108,6 @@ public sealed class FoodSearchCompatibilityTests
     }
 
     [TestCase("Lookalike", "2.3.0.0", "seekiworks_Prioritize_Meals_over_Preserved_Foods.Main", true, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Foods", true, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Patch_IncidentWorker_TraderCaravanArrival", "SendLetter_Postfix", true, "Prioritize_Meals_over_Preserved_Foods.HarmonyPatch")]
-    [TestCase("Prioritize Meals over Preserved Foods", "3.0.0.0", "seekiworks_Prioritize_Meals_over_Preserved_Foods.Main", true, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Foods", true, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Patch_IncidentWorker_TraderCaravanArrival", "SendLetter_Postfix", true, "Prioritize_Meals_over_Preserved_Foods.HarmonyPatch")]
     [TestCase("Prioritize Meals over Preserved Foods", "2.3.0.0", "Changed.Main", true, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Foods", true, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Patch_IncidentWorker_TraderCaravanArrival", "SendLetter_Postfix", true, "Prioritize_Meals_over_Preserved_Foods.HarmonyPatch")]
     [TestCase("Prioritize Meals over Preserved Foods", "2.3.0.0", "seekiworks_Prioritize_Meals_over_Preserved_Foods.Main", false, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Foods", true, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Patch_IncidentWorker_TraderCaravanArrival", "SendLetter_Postfix", true, "Prioritize_Meals_over_Preserved_Foods.HarmonyPatch")]
     [TestCase("Prioritize Meals over Preserved Foods", "2.3.0.0", "seekiworks_Prioritize_Meals_over_Preserved_Foods.Main", true, "Changed.Foods", true, "seekiworks_Prioritize_Meals_over_Preserved_Foods.Patch_IncidentWorker_TraderCaravanArrival", "SendLetter_Postfix", true, "Prioritize_Meals_over_Preserved_Foods.HarmonyPatch")]

@@ -18,6 +18,7 @@ internal static class OptionalIntegrationDiagnostics
 
         Log.Warning(
             $"[ImmersiveChefs] {integration} integration disabled: {detail}. " +
-            "Base Immersive Chefs behavior remains active; update the optional mod or turn its integration Off.");
+            "Base Immersive Chefs behavior remains active. Report this contract failure with the mod list and log; " +
+            "the affected integration can be turned Off in settings.");
     }
 }

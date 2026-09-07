@@ -5,6 +5,27 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class FoodTextureVarietyPersistenceTests
 {
+    [TestCase("FoodTextureVariety", "1.0.0.0", true)]
+    [TestCase("FoodTextureVariety", "9.8.7.6", true)]
+    [TestCase("Lookalike", "1.0.0.0", false)]
+    public void Compatible_texture_provider_rebuild_is_accepted(string name, string version, bool expected)
+    {
+        var identity = new System.Reflection.AssemblyName { Name = name, Version = new Version(version) };
+        Assert.That(FoodTextureVarietyCompatibility.IsSupportedAssembly(identity), Is.EqualTo(expected));
+    }
+
+    [TestCase(true, true, false, true)]
+    [TestCase(false, true, false, false)]
+    [TestCase(true, false, false, false)]
+    [TestCase(true, true, true, false)]
+    public void Supplemental_persistence_requires_usable_members_and_no_upstream_persistence(
+        bool fieldsMatch, bool callableMatches, bool declaresPersistence, bool expected)
+    {
+        Assert.That(
+            FoodTextureVarietyCompatibility.CanSupplementPersistence(fieldsMatch, callableMatches, declaresPersistence),
+            Is.EqualTo(expected));
+    }
+
     [Test]
     public void Finds_the_unique_selected_three_graphic_group_in_the_finalized_array()
     {

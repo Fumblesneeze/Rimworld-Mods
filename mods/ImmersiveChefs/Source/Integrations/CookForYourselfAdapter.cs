@@ -89,12 +89,22 @@ internal readonly struct CookForYourselfIngredientEntry
     internal int StackCount { get; }
 }
 
+internal static class StackGapCompatibility
+{
+    internal static bool RequiresLegacyRepair(bool firstDropHook, bool secondDropHook, bool placementHook) =>
+        firstDropHook || secondDropHook || placementHook;
+
+    internal static bool IsSupported(
+        string? assemblyName,
+        Version? assemblyVersion,
+        Guid moduleVersionId,
+        bool requiredMembersMatch) =>
+        assemblyName == "StackGap" && requiredMembersMatch;
+}
+
 internal static class CookForYourselfCompatibility
 {
     internal const string AssemblyName = "CookForYourself";
-    internal static readonly Version AssemblyVersion = new(1, 0, 0, 0);
-    internal static readonly Guid ModuleVersionId =
-        Guid.Parse("d559047c-a763-4d2f-8cab-7077d5f4a309");
     internal const string SelfJobGiverTypeName = "CookForYourself.JobGiver_CookMealForSelf";
     internal const string DependentJobGiverTypeName = "CookForYourself.JobGiver_CookMealForDependent";
     internal const string DriverTypeName = "CookForYourself.JobDriver_CookMealForSelf";
@@ -103,8 +113,6 @@ internal static class CookForYourselfCompatibility
     internal static bool IsSupported(CookForYourselfShape shape)
     {
         return shape.AssemblyName == AssemblyName &&
-               shape.AssemblyVersion == AssemblyVersion &&
-               shape.ModuleVersionId == ModuleVersionId &&
                shape.SelfJobGiverTypeName == SelfJobGiverTypeName &&
                shape.SelfTryGiveJobIsProtectedInstancePawnJob &&
                shape.DependentJobGiverTypeName == DependentJobGiverTypeName &&
@@ -321,16 +329,12 @@ internal static class CookForYourselfRecoveryPolicy
 internal static class CookForYourselfAdapter
 {
     private const string StackGapPackageId = "Andromeda.StackGap";
-    private const string StackGapAssemblyName = "StackGap";
     private const string StackGapDropPatchTypeName =
         "StorageUpperBound.Pawn_CarryTracker_Patch";
     private const string StackGapDropPatch2TypeName =
         "StorageUpperBound.Pawn_CarryTracker_Patch2";
     private const string StackGapPlacementPatchTypeName =
         "StorageUpperBound.Patch_TryPlaceDirect+TryPlaceDirect_Patch";
-    private static readonly Version StackGapAssemblyVersion = new(1, 0, 0, 0);
-    private static readonly Guid StackGapModuleVersionId =
-        Guid.Parse("e69587cb-b4c8-4b4a-a3f8-fe0910b5ed73");
     private const BindingFlags DeclaredInstance =
         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
     private const BindingFlags DeclaredStatic =
@@ -389,6 +393,12 @@ internal static class CookForYourselfAdapter
         var stackGapPlacementPatchType = stackGapLoaded
             ? AccessTools.TypeByName(StackGapPlacementPatchTypeName)
             : null;
+        // Newer Stack Gap implementations removed the global placement switch and
+        // both legacy interceptors. Their absence retires this repair, not CFS.
+        var stackGapRepairRequired = StackGapCompatibility.RequiresLegacyRepair(
+            stackGapDropPatchType is not null,
+            stackGapDropPatch2Type is not null,
+            stackGapPlacementPatchType is not null);
         var stackGapDropPrefix = ExactStaticMethod(
             stackGapDropPatchType,
             "Prefix",
@@ -407,10 +417,11 @@ internal static class CookForYourselfAdapter
             "Enabled",
             DeclaredStatic);
         var stackGapAssembly = stackGapDropPatchType?.Assembly;
-        var stackGapShapeSupported = !stackGapLoaded ||
-                                     stackGapAssembly?.GetName().Name == StackGapAssemblyName &&
-                                     stackGapAssembly.GetName().Version == StackGapAssemblyVersion &&
-                                     stackGapDropPatchType?.Module.ModuleVersionId == StackGapModuleVersionId &&
+        var stackGapShapeSupported = !stackGapRepairRequired || StackGapCompatibility.IsSupported(
+                                     stackGapAssembly?.GetName().Name,
+                                     stackGapAssembly?.GetName().Version,
+                                     stackGapDropPatchType?.Module.ModuleVersionId ?? Guid.Empty,
+                                     stackGapAssembly is not null &&
                                      stackGapDropPatch2Type?.Assembly == stackGapAssembly &&
                                      stackGapPlacementPatchType?.Assembly == stackGapAssembly &&
                                      stackGapDropPrefix is not null &&
@@ -421,7 +432,7 @@ internal static class CookForYourselfAdapter
                                          IsStatic: true,
                                          FieldType: not null
                                      } &&
-                                     foundStackGapEnabledField.FieldType == typeof(bool);
+                                     foundStackGapEnabledField.FieldType == typeof(bool));
         var assembly = foundDriverType?.Assembly;
         var shape = new CookForYourselfShape(
             assembly?.GetName().Name,
@@ -460,16 +471,23 @@ internal static class CookForYourselfAdapter
             !stackGapShapeSupported ||
             !CookForYourselfPatchPolicy.ShouldInstall(
                 targets.Take(3).All(method => method is not null) &&
-                (!stackGapLoaded || targets.Skip(3).All(method => method is not null)),
+                (!stackGapRepairRequired || targets.Skip(3).All(method => method is not null)),
                 existingOwnedPatches) ||
             selfTryGiveJob is null || dependentTryGiveJob is null || makeNewToils is null ||
             foundDriverType is null || workLeftField is null || foundJobDef is null)
         {
             reason = existingOwnedPatches > 0
                 ? "a partial or duplicate Immersive Chefs patch already owns the Cook for Yourself seam"
-                : stackGapLoaded && !stackGapShapeSupported
-                    ? "the installed Stack Gap ingredient-placement patch no longer matches the audited 1.6 build"
-                : "the installed Cook for Yourself assembly/job-driver shape no longer matches the audited 1.6 build";
+                : stackGapRepairRequired && !stackGapShapeSupported
+                    ? "Stack Gap ingredient placement requires both carry-drop Prefix methods, shared assembly ownership, JobDriver.toils and the static bool Enabled field"
+                : $"Cook for Yourself cooking contract is incompatible: assembly={shape.AssemblyName}; " +
+                  $"version={shape.AssemblyVersion}; MVID={shape.ModuleVersionId}; " +
+                  $"selfJobGiver={shape.SelfTryGiveJobIsProtectedInstancePawnJob}; " +
+                  $"dependentJobGiver={shape.DependentTryGiveJobIsProtectedInstancePawnJob}; " +
+                  $"driver={shape.DriverIsPublicSealedJobDriver}; toils={shape.MakeNewToilsIsProtectedInstanceEnumerableToil}; " +
+                  $"workLeft={shape.WorkLeftIsPrivateInstanceFloat}; recipe={shape.RecipeIsPrivateInstanceRecipeDef}; " +
+                  $"recipient={shape.RecipientIsPrivateInstancePawn}; deliveryMode={shape.DeliveryModeIsPrivateInstanceInt}; " +
+                  $"jobDef={shape.JobDefUsesDriver}; sharedAssembly={allSameAssembly}";
             return false;
         }
 
@@ -478,7 +496,7 @@ internal static class CookForYourselfAdapter
         try
         {
             foundWorkLeft = AccessTools.FieldRefAccess<float>(foundDriverType, workLeftField.Name);
-            if (stackGapLoaded)
+            if (stackGapRepairRequired)
             {
                 foundDriverToils = AccessTools.FieldRefAccess<JobDriver, List<Toil>>(
                     foundDriverToilsField!.Name);
@@ -493,7 +511,7 @@ internal static class CookForYourselfAdapter
             harmony.Patch(
                 makeNewToils,
                 postfix: new HarmonyMethod(typeof(CookForYourselfAdapter), nameof(MakeNewToilsPostfix)));
-            if (stackGapLoaded)
+            if (stackGapRepairRequired)
             {
                 var bypass = new HarmonyMethod(
                     typeof(CookForYourselfAdapter),

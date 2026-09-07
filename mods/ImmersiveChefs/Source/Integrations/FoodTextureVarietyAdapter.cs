@@ -5,13 +5,21 @@ using Verse;
 
 namespace ImmersiveChefs;
 
+internal static class FoodTextureVarietyCompatibility
+{
+    internal static bool IsSupportedAssembly(AssemblyName identity) =>
+        string.Equals(identity.Name, "FoodTextureVariety", StringComparison.Ordinal);
+
+    internal static bool CanSupplementPersistence(
+        bool requiredFieldsMatch, bool subGraphicForMatches, bool declaresPersistence) =>
+        requiredFieldsMatch && subGraphicForMatches && !declaresPersistence;
+}
+
 internal static class FoodTextureVarietyAdapter
 {
     internal const string ScribeLabel = "immersiveChefsFtvTextureGroup";
     internal const string GraphicTypeNameForDiagnostics = GraphicTypeName;
 
-    private const string ExpectedAssemblyName = "FoodTextureVariety";
-    private static readonly Version ExpectedAssemblyVersion = new(1, 0, 0, 0);
     private const string CompTypeName = "FoodTextureVariety.CompFoodAlternateTexture";
     private const string GraphicTypeName = "FoodTextureVariety.Graphic_MealVariantsExpanded";
 
@@ -86,10 +94,10 @@ internal static class FoodTextureVarietyAdapter
         if (compType is null || graphicType is null ||
             !typeof(ThingComp).IsAssignableFrom(compType) ||
             !typeof(Graphic_Collection).IsAssignableFrom(graphicType) ||
-            !HasExpectedAssemblyIdentity(compType.Assembly) ||
+            !FoodTextureVarietyCompatibility.IsSupportedAssembly(compType.Assembly.GetName()) ||
             graphicType.Assembly != compType.Assembly)
         {
-            reason = "the exact Food Texture Variety 1.6 assembly and required types were not found";
+            reason = "Food Texture Variety must expose CompFoodAlternateTexture as a ThingComp and Graphic_MealVariantsExpanded as a Graphic_Collection in its own assembly";
             return false;
         }
 
@@ -113,24 +121,24 @@ internal static class FoodTextureVarietyAdapter
             "PostExposeData",
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly) is not null;
 
-        if (textureIndexField is null || storedGraphicsField is null || firstLoadField is null ||
-            rotateOverrideField is null || subGraphicsField?.FieldType != typeof(Graphic[]) ||
-            graphicPathField?.FieldType != typeof(string) || subGraphicFor?.ReturnType != typeof(Graphic) ||
-            declaresPersistence)
+        if (!FoodTextureVarietyCompatibility.CanSupplementPersistence(
+                textureIndexField is not null && storedGraphicsField is not null && firstLoadField is not null &&
+                rotateOverrideField is not null && subGraphicsField?.FieldType == typeof(Graphic[]) &&
+                graphicPathField?.FieldType == typeof(string),
+                subGraphicFor?.ReturnType == typeof(Graphic),
+                declaresPersistence))
         {
-            reason = "the installed Food Texture Variety comp or graphic lifecycle no longer matches the validated 1.6 shape";
+            reason = declaresPersistence
+                ? "Food Texture Variety now declares PostExposeData; its own persistence must be assessed before adding the supplemental save/load repair"
+                : $"Food Texture Variety persistence contract is incompatible: textureIndex={textureIndexField is not null}; " +
+                  $"storedGraphics={storedGraphicsField is not null}; firstLoad={firstLoadField is not null}; " +
+                  $"rotateOverride={rotateOverrideField is not null}; subGraphics={subGraphicsField?.FieldType}; " +
+                  $"path={graphicPathField?.FieldType}; SubGraphicFor={subGraphicFor?.ReturnType}";
             return false;
         }
 
         reason = string.Empty;
         return true;
-    }
-
-    private static bool HasExpectedAssemblyIdentity(Assembly assembly)
-    {
-        var name = assembly.GetName();
-        return string.Equals(name.Name, ExpectedAssemblyName, StringComparison.Ordinal) &&
-               name.Version == ExpectedAssemblyVersion;
     }
 
     private static FieldInfo? DeclaredPublicField(Type type, string name, Type fieldType)

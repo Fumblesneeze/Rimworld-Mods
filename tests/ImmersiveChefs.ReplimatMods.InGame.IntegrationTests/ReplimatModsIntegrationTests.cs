@@ -35,9 +35,9 @@ public static class ReplimatModsIntegrationTests
 
         var terminalType = AccessTools.TypeByName(ReplimatCompatibility.TerminalTypeName);
         IntegrationAssert.Equal(
-            "Replimat, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
-            terminalType?.Assembly.FullName,
-            "Replimat must retain the inspected 1.6 assembly identity.");
+            "Replimat",
+            terminalType?.Assembly.GetName().Name,
+            "Replimat must expose the required types from its own assembly.");
         IntegrationAssert.True(
             ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.Replimat) &&
             ReplimatAdapter.Enabled,

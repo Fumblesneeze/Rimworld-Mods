@@ -38,7 +38,6 @@ internal static class ProcessorDishwasherTransferPolicy
 internal static class ProcessorDishwasherInputCompatibility
 {
     internal const string AssemblyName = "ProcessorFramework";
-    internal static readonly Version AssemblyVersion = new(1, 0, 0, 0);
     internal const string FillDriverTypeName = "ProcessorFramework.JobDriver_FillProcessor";
 
     internal static bool IsSupported(
@@ -52,7 +51,6 @@ internal static class ProcessorDishwasherInputCompatibility
         bool processFilterHasAllowedIngredientList)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                driverTypeName == FillDriverTypeName &&
                driverIsPublicJobDriver &&
                makeNewToilsIsProtectedInstanceEnumerable &&
@@ -65,7 +63,6 @@ internal static class ProcessorDishwasherInputCompatibility
 internal static class ProcessorDishwasherOutputCompatibility
 {
     internal const string AssemblyName = "ProcessorFramework";
-    internal static readonly Version AssemblyVersion = new(1, 0, 0, 0);
     internal const string EmptyDriverTypeName = "ProcessorFramework.JobDriver_EmptyProcessor";
 
     internal static bool IsSupported(
@@ -80,7 +77,6 @@ internal static class ProcessorDishwasherOutputCompatibility
         bool lifecyclePropertiesArePublicInstanceBoolean)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                driverTypeName == EmptyDriverTypeName &&
                driverIsPublicJobDriver &&
                makeNewToilsIsProtectedInstanceEnumerable &&
@@ -378,7 +374,8 @@ internal static class ProcessorFrameworkAdapter
             fillProcessorJobDriverType.Assembly != processorAssembly ||
             emptyProcessorJobDriverType?.Assembly != processorAssembly)
         {
-            reason = "the installed Processor Framework emptying lifecycle no longer matches the validated 1.6 shape";
+            reason = $"Processor Framework dishwasher job contract is incompatible: filling={inputShapeSupported}; " +
+                     $"emptying={outputShapeSupported}; assembly={processorAssembly.FullName}";
             return false;
         }
 

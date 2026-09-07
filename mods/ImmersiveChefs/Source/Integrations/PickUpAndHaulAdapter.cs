@@ -8,7 +8,6 @@ namespace ImmersiveChefs;
 internal static class PickUpAndHaulCompatibility
 {
     internal const string AssemblyName = "PickUpAndHaul";
-    internal static readonly Version AssemblyVersion = new(1, 0, 0, 0);
     internal const string CompTypeName = "PickUpAndHaul.CompHauledToInventory";
     internal const string CheckerTypeName = "PickUpAndHaul.PawnUnloadChecker";
     internal const string SettingsTypeName = "PickUpAndHaul.Settings";
@@ -31,7 +30,6 @@ internal static class PickUpAndHaulCompatibility
         bool unloadDriverIsPublicJobDriver)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                compTypeName == CompTypeName &&
                compIsPublicThingComp &&
                registerIsPublicInstanceThingVoid &&

@@ -108,7 +108,8 @@ public sealed class AdaptiveOvercookedCompatibilityTest : IRimWorldEndToEndTest
 
         var bill = new Bill_Production(adaptiveRecipe)
         {
-            repeatMode = BillRepeatModeDefOf.Forever,
+            repeatMode = BillRepeatModeDefOf.RepeatCount,
+            repeatCount = 1,
             ingredientSearchRadius = 8f
         };
         bill.SetStoreMode(BillStoreModeDefOf.DropOnFloor);
@@ -173,6 +174,10 @@ public sealed class AdaptiveOvercookedCompatibilityTest : IRimWorldEndToEndTest
                 "adaptive Fine attempt produces a native final product " + attempt,
                 _ => TryResolveProducedMeal(),
                 new EndToEndDeadline(600, 4_000, TimeSpan.FromSeconds(30)));
+            yield return new WaitUntilStep(
+                "the completed native bill returns its reusable cookware before inspection",
+                _ => cook.CurJobDef != JobDefOf.DoBill && cookware.Spawned && !cookware.Destroyed,
+                new EndToEndDeadline(600, 2_000, TimeSpan.FromSeconds(30)));
             if (currentProduct?.def == overcookedDef)
             {
                 finalProduct = currentProduct;
@@ -363,6 +368,7 @@ public sealed class AdaptiveOvercookedCompatibilityTest : IRimWorldEndToEndTest
         SatisfyCookHunger();
         IssueCleanSteelPlate();
         EnsureIngredientSupply();
+        ((Bill_Production)((IBillGiver)stove).BillStack.Bills.First()).repeatCount = 1;
     }
 
     private void SatisfyCookHunger()

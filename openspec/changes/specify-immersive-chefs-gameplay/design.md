@@ -33,6 +33,12 @@ This document defines the implementation architecture and acceptance contract; c
 
 ## Decisions
 
+### Compatibility across upstream rebuilds
+
+All external assembly versions, MVIDs and hashes in this design are historical inspection evidence, not runtime admission requirements. Optional adapters accept new builds when the package ownership and consumed member/Def/lifecycle shapes remain compatible. Remove the binary-identity conjuncts from Cook for Yourself/Stack Gap, Processor Framework, Pick Up And Haul, Adaptive Meal Bill, Overcooked Meals, Replimat, Meal Printer, Meals on Wheels, Prioritize Meals and Food Texture Variety. Preserve the existing native ownership, argument/return, persistence-obsolescence and partial-patch cleanup guards. In particular, a compatible Stack Gap rebuild must not disable the whole Cook for Yourself adapter. Tests must accept rebuilt identities and continue rejecting genuinely missing or incompatible consumed contracts. Native acceptance covers the existing affected cooking, hauling/dishwasher, final-product, dispenser, food-selection and texture save/load workflows. No costs, durations, balance values, package dependencies or user configuration change in this slice.
+
+The native final-product fixture uses one completed bill iteration per attempt and waits for normal job cleanup before checking returned cookware. A meal becoming visible precedes completion of the cooking driver's cleanup; pausing at product creation alone is not evidence that cookware was lost. Each subsequent probabilistic attempt rearms the one-iteration bill only as disposable fixture setup.
+
 ### 1. Persistent state belongs to small composable ThingComps
 
 Use separate, versioned components for sanitation, embedded serving ware, preparation provenance, and culinary meal state. Components serialize stable Def/package identifiers and numeric snapshots rather than runtime object references. Each embedded plate binding includes Def, Stuff, quality, hit points, and sanitation so terminal recovery can return the exact surviving item. Stack compatibility SHALL include component state; split and merge operations SHALL preserve per-serving plate counts and reject lossy merges.

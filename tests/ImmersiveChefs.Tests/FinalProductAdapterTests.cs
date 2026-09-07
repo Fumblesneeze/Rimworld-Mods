@@ -53,13 +53,14 @@ public sealed class FinalProductAdapterTests
         });
     }
 
-    [Test]
-    public void Exact_adaptive_meal_bill_shape_is_supported()
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Exact_adaptive_meal_bill_shape_is_supported(string version)
     {
         Assert.That(
             AdaptiveMealBillCompatibility.IsSupported(
                 assemblyName: "AdaptiveMealBill",
-                assemblyVersion: "1.0.0.0",
+                assemblyVersion: version,
                 adaptiveRecipeTypeName: "AdaptiveMealBill.AdaptiveRecipeDef",
                 adaptiveRecipeIsRecipeDef: true,
                 selectedRecipeFieldName: "activeSubRecipes",
@@ -71,7 +72,6 @@ public sealed class FinalProductAdapterTests
     }
 
     [TestCase("Lookalike", "1.0.0.0", "AdaptiveMealBill.AdaptiveRecipeDef", true, "activeSubRecipes", true, "AdaptiveMealBill.Patch_MakeRecipeProducts", true, "rabiosus.AdaptiveMealBill")]
-    [TestCase("AdaptiveMealBill", "2.0.0.0", "AdaptiveMealBill.AdaptiveRecipeDef", true, "activeSubRecipes", true, "AdaptiveMealBill.Patch_MakeRecipeProducts", true, "rabiosus.AdaptiveMealBill")]
     [TestCase("AdaptiveMealBill", "1.0.0.0", "Changed.AdaptiveRecipeDef", true, "activeSubRecipes", true, "AdaptiveMealBill.Patch_MakeRecipeProducts", true, "rabiosus.AdaptiveMealBill")]
     [TestCase("AdaptiveMealBill", "1.0.0.0", "AdaptiveMealBill.AdaptiveRecipeDef", false, "activeSubRecipes", true, "AdaptiveMealBill.Patch_MakeRecipeProducts", true, "rabiosus.AdaptiveMealBill")]
     [TestCase("AdaptiveMealBill", "1.0.0.0", "AdaptiveMealBill.AdaptiveRecipeDef", true, "changed", true, "AdaptiveMealBill.Patch_MakeRecipeProducts", true, "rabiosus.AdaptiveMealBill")]
@@ -104,13 +104,14 @@ public sealed class FinalProductAdapterTests
             Is.False);
     }
 
-    [Test]
-    public void Exact_overcooked_meals_shape_is_supported()
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Exact_overcooked_meals_shape_is_supported(string version)
     {
         Assert.That(
             OvercookedMealsCompatibility.IsSupported(
                 assemblyName: "OvercookedMeals",
-                assemblyVersion: "1.0.0.0",
+                assemblyVersion: version,
                 prefixTypeName: "OvercookedMeals.HarmonyPatches",
                 prefixMethodName: "TryMakeOvercookedPrefix",
                 prefixShape: true,
@@ -120,7 +121,6 @@ public sealed class FinalProductAdapterTests
     }
 
     [TestCase("Lookalike", "1.0.0.0", "OvercookedMeals.HarmonyPatches", "TryMakeOvercookedPrefix", true, "binchcannon.rimworld.overcookedmeals", "OvercookedMeals_MealOvercooked")]
-    [TestCase("OvercookedMeals", "2.0.0.0", "OvercookedMeals.HarmonyPatches", "TryMakeOvercookedPrefix", true, "binchcannon.rimworld.overcookedmeals", "OvercookedMeals_MealOvercooked")]
     [TestCase("OvercookedMeals", "1.0.0.0", "Changed.Patches", "TryMakeOvercookedPrefix", true, "binchcannon.rimworld.overcookedmeals", "OvercookedMeals_MealOvercooked")]
     [TestCase("OvercookedMeals", "1.0.0.0", "OvercookedMeals.HarmonyPatches", "Changed", true, "binchcannon.rimworld.overcookedmeals", "OvercookedMeals_MealOvercooked")]
     [TestCase("OvercookedMeals", "1.0.0.0", "OvercookedMeals.HarmonyPatches", "TryMakeOvercookedPrefix", false, "binchcannon.rimworld.overcookedmeals", "OvercookedMeals_MealOvercooked")]

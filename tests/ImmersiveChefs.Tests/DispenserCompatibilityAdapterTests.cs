@@ -54,13 +54,14 @@ public sealed class DispenserCompatibilityAdapterTests
             Is.EqualTo(expected));
     }
 
-    [Test]
-    public void Exact_replimat_16_shape_is_supported()
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Exact_replimat_16_shape_is_supported(string version)
     {
         Assert.That(
             ReplimatCompatibility.IsSupported(
                 assemblyName: "Replimat",
-                assemblyVersion: "1.0.0.0",
+                assemblyVersion: version,
                 terminalTypeName: "Replimat.Building_ReplimatTerminal",
                 terminalIsPasteDispenser: true,
                 tryDispenseParameterTypeNames: new[]
@@ -80,7 +81,6 @@ public sealed class DispenserCompatibilityAdapterTests
     }
 
     [TestCase("Lookalike", "1.0.0.0", "Replimat.Building_ReplimatTerminal", true, true, "Replimat.Harmony_Toils_Ingest_TakeMealFromDispenser", true, "com.Replimat.patches", true)]
-    [TestCase("Replimat", "2.0.0.0", "Replimat.Building_ReplimatTerminal", true, true, "Replimat.Harmony_Toils_Ingest_TakeMealFromDispenser", true, "com.Replimat.patches", true)]
     [TestCase("Replimat", "1.0.0.0", "Changed.Terminal", true, true, "Replimat.Harmony_Toils_Ingest_TakeMealFromDispenser", true, "com.Replimat.patches", true)]
     [TestCase("Replimat", "1.0.0.0", "Replimat.Building_ReplimatTerminal", false, true, "Replimat.Harmony_Toils_Ingest_TakeMealFromDispenser", true, "com.Replimat.patches", true)]
     [TestCase("Replimat", "1.0.0.0", "Replimat.Building_ReplimatTerminal", true, false, "Replimat.Harmony_Toils_Ingest_TakeMealFromDispenser", true, "com.Replimat.patches", true)]
@@ -115,13 +115,14 @@ public sealed class DispenserCompatibilityAdapterTests
             Is.False);
     }
 
-    [Test]
-    public void Exact_meal_printer_16_shape_is_supported()
+    [TestCase("0.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Exact_meal_printer_16_shape_is_supported(string version)
     {
         Assert.That(
             MealPrinterCompatibility.IsSupported(
                 assemblyName: "MealPrinter",
-                assemblyVersion: "0.0.0.0",
+                assemblyVersion: version,
                 printerTypeName: "MealPrinter.Building_MealPrinter",
                 printerIsPasteDispenser: true,
                 tryDispenseParameterCount: 0,
@@ -135,13 +136,14 @@ public sealed class DispenserCompatibilityAdapterTests
             Is.True);
     }
 
-    [Test]
-    public void Exact_meal_printer_passive_shape_is_safe_to_initialize_before_its_patch_owner_exists()
+    [TestCase("0.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Exact_meal_printer_passive_shape_is_safe_to_initialize_before_its_patch_owner_exists(string version)
     {
         Assert.That(
             MealPrinterCompatibility.HasSupportedPassiveShape(
                 assemblyName: "MealPrinter",
-                assemblyVersion: "0.0.0.0",
+                assemblyVersion: version,
                 printerTypeName: "MealPrinter.Building_MealPrinter",
                 printerIsPasteDispenser: true,
                 tryDispenseParameterCount: 0,
@@ -226,7 +228,6 @@ public sealed class DispenserCompatibilityAdapterTests
     }
 
     [TestCase("Lookalike", "0.0.0.0", "MealPrinter.Building_MealPrinter", true, 0, true, "MealPrinter.HarmonyPatches.Toils_Ingest_TakeMealFromDispenser", true, "MealPrinter", "MealPrinter", "MealPrinter_NutriBar", true)]
-    [TestCase("MealPrinter", "1.0.0.0", "MealPrinter.Building_MealPrinter", true, 0, true, "MealPrinter.HarmonyPatches.Toils_Ingest_TakeMealFromDispenser", true, "MealPrinter", "MealPrinter", "MealPrinter_NutriBar", true)]
     [TestCase("MealPrinter", "0.0.0.0", "Changed.Printer", true, 0, true, "MealPrinter.HarmonyPatches.Toils_Ingest_TakeMealFromDispenser", true, "MealPrinter", "MealPrinter", "MealPrinter_NutriBar", true)]
     [TestCase("MealPrinter", "0.0.0.0", "MealPrinter.Building_MealPrinter", false, 0, true, "MealPrinter.HarmonyPatches.Toils_Ingest_TakeMealFromDispenser", true, "MealPrinter", "MealPrinter", "MealPrinter_NutriBar", true)]
     [TestCase("MealPrinter", "0.0.0.0", "MealPrinter.Building_MealPrinter", true, 1, true, "MealPrinter.HarmonyPatches.Toils_Ingest_TakeMealFromDispenser", true, "MealPrinter", "MealPrinter", "MealPrinter_NutriBar", true)]

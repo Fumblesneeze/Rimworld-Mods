@@ -61,8 +61,6 @@ public sealed class CookForYourselfAdapterTests
         var changed = new[]
         {
             Changed(shape => shape.AssemblyName = "Lookalike"),
-            Changed(shape => shape.AssemblyVersion = new Version(2, 0, 0, 0)),
-            Changed(shape => shape.ModuleVersionId = Guid.Empty),
             Changed(shape => shape.SelfJobGiverTypeName = "Changed.Self"),
             Changed(shape => shape.SelfTryGiveJobIsProtectedInstancePawnJob = false),
             Changed(shape => shape.DependentJobGiverTypeName = "Changed.Dependent"),
@@ -80,6 +78,44 @@ public sealed class CookForYourselfAdapterTests
 
         Assert.That(changed, Has.All.Matches<CookForYourselfShape>(
             shape => !CookForYourselfCompatibility.IsSupported(shape)));
+    }
+
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Compatible_cooking_driver_rebuild_remains_supported(string version)
+    {
+        var rebuilt = SupportedShape;
+        rebuilt.AssemblyVersion = new Version(version);
+        rebuilt.ModuleVersionId = Guid.NewGuid();
+
+        Assert.That(CookForYourselfCompatibility.IsSupported(rebuilt), Is.True);
+    }
+
+    [TestCase("1.0.0.0")]
+    [TestCase("9.8.7.6")]
+    public void Compatible_stack_gap_rebuild_keeps_cooking_integration_available(string version)
+    {
+        Assert.That(StackGapCompatibility.IsSupported(
+            "StackGap", new Version(version), Guid.NewGuid(), requiredMembersMatch: true), Is.True);
+    }
+
+    [TestCase("Lookalike", true)]
+    [TestCase("StackGap", false)]
+    public void Stack_gap_requires_its_owned_ingredient_placement_contract(string assembly, bool members)
+    {
+        Assert.That(StackGapCompatibility.IsSupported(
+            assembly, new Version(9, 8, 7, 6), Guid.NewGuid(), members), Is.False);
+    }
+
+    [TestCase(false, false, false, false)]
+    [TestCase(true, true, true, true)]
+    [TestCase(true, false, false, true)]
+    [TestCase(false, true, false, true)]
+    [TestCase(false, false, true, true)]
+    public void Stack_gap_only_needs_the_legacy_repair_when_its_legacy_hooks_exist(
+        bool firstDrop, bool secondDrop, bool placement, bool expected)
+    {
+        Assert.That(StackGapCompatibility.RequiresLegacyRepair(firstDrop, secondDrop, placement), Is.EqualTo(expected));
     }
 
     [Test]

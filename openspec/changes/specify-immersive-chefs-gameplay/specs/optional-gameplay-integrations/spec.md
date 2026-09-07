@@ -16,6 +16,33 @@ Harmony (`brrainz.harmony`) and XML Extensions (`imranfish.xmlextensions`, Works
 - **WHEN** an active optional mod has the known package ID but its required Def or reflected member is absent
 - **THEN** only that adapter is disabled and exactly one diagnostic identifies the incompatible integration
 
+### Requirement: Compatible upstream rebuilds remain usable
+
+Optional adapter admission SHALL depend on the active package, ownership and consumed callable/Def/lifecycle contracts, never equality to an inspected assembly version, MVID, file hash, or Steam build ID. This applies to Cook for Yourself, its Stack Gap interaction, Processor Framework, Pick Up And Haul, Adaptive Meal Bill, Overcooked Meals, Replimat, Meal Printer, Meals on Wheels, Prioritize Meals over Preserved Foods, and Food Texture Variety. Binary identities recorded elsewhere in this change describe inspected evidence only. They SHALL NOT constrain player installations. Real missing members, incompatible return/parameter types, missing Defs, conflicting patch ownership, and an upstream implementation that makes a repair obsolete SHALL still receive the existing narrowly scoped rejection. Diagnostics SHALL identify the observed incompatible contract or exception and the affected behavior, without telling the player to update an optional mod merely because it was rebuilt.
+
+#### Scenario: Optional mod is rebuilt without changing the consumed contract
+
+- **WHEN** a recognized active optional mod has a different assembly version, MVID or file hash but retains every contract used by its adapter
+- **THEN** the adapter remains available and its native player workflow retains the same integration behavior
+- **THEN** a rebuild alone produces no incompatibility warning
+
+#### Scenario: Stack Gap is compatibly rebuilt
+
+- **WHEN** Stack Gap retains the required ingredient-placement members with a different binary identity
+- **THEN** Cook for Yourself still completes its native ingredient placement, cooking and meal delivery with Immersive Chefs ware handling
+
+#### Scenario: Stack Gap removes the legacy placement interception
+
+- **WHEN** Stack Gap no longer exposes any of the legacy carry-drop and global placement-switch patch types
+- **THEN** Immersive Chefs omits only that obsolete supplemental repair and keeps Cook for Yourself cooking and ware handling available
+- **THEN** a partially present legacy contract still requires its consumed members to match before any legacy repair is installed
+
+#### Scenario: A consumed interface changes or an upstream repair becomes obsolete
+
+- **WHEN** an active optional provider lacks a required member or changes a consumed callable or persistence contract
+- **THEN** its affected adapter rejects that specific incompatibility and reports it once while usable base gameplay remains available
+- **THEN** a version or MVID change alone is never classified as such an incompatibility
+
 ### Requirement: Supported food ecosystems use audited package identities
 
 The compatibility registry and grouped test runner SHALL use the exact active package IDs and required dependency chains below. Downloaded folders, Workshop titles, translated labels, and assembly presence without an active package SHALL NOT activate an integration. The runner SHALL resolve the active RimWorld 1.6 content folder and record the loaded assembly identity for every adapter that reflects code.
@@ -197,7 +224,7 @@ Canceled, failed, pre-work, and product-incomplete cooking SHALL NOT queue clean
 
 ### Requirement: Pick Up And Haul transports a dishwashing batch
 
-When exact package `Mehni.PickUpAndHaul` is active and assembly `PickUpAndHaul, Version=1.0.0.0` exposes the validated public hauled-inventory component, `RegisterHauledItem(Verse.Thing)`, `CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and native `UnloadYourHauledInventory` JobDef/driver shape, an ordinary `Doing dishes` job SHALL collect a bounded nearby batch before visiting its one chosen hand-washing source or dishwasher. It SHALL reserve only dirty eligible ware within 12 cells of the first item that can use the same exact destination and stop before either pawn encumbrance or appliance capacity is exceeded.
+When exact package `Mehni.PickUpAndHaul` is active and assembly `PickUpAndHaul` exposes the validated public hauled-inventory component, `RegisterHauledItem(Verse.Thing)`, `CheckIfPawnShouldUnloadInventory(Verse.Pawn, bool)`, and native `UnloadYourHauledInventory` JobDef/driver shape, an ordinary `Doing dishes` job SHALL collect a bounded nearby batch before visiting its one chosen hand-washing source or dishwasher. It SHALL reserve only dirty eligible ware within 12 cells of the first item that can use the same exact destination and stop before either pawn encumbrance or appliance capacity is exceeded.
 
 At a hand-washing source it SHALL wash units one by one with their own duration and water use, then invoke the upstream native unload workflow once so the clean batch enters ordinary valid storage together. At a dishwasher it SHALL admit each tracked unit through the validated local or Processor Framework appliance seam within two job ticks per physical unit, immediately remove each admitted unit from upstream tracking, and leave the dishwasher to own its loading state and wash cycle. Still-carried units SHALL use upstream unloading on interruption.
 
@@ -243,7 +270,7 @@ Immersive Chefs SHALL retain ownership of sanitation, source priority, water pro
 
 ### Requirement: Cook for Yourself one-off jobs use the normal culinary ware lifecycle
 
-When exact package `lordfelix.CookForYourself` is active and assembly `CookForYourself, Version=1.0.0.0` exposes the validated `JobGiver_CookMealForSelf.TryGiveJob(Pawn)`, `JobGiver_CookMealForDependent.TryGiveJob(Pawn)`, `JobDriver_CookMealForSelf.MakeNewToils()`, private `float workLeft`, `CFS_CookMealForSelf` JobDef, and job target/tag contract, Cook for Yourself SHALL remain authoritative for deciding whether a pawn needs a one-off meal and for selecting the station, concrete recipe, exact ingredients, recipient, and delivery mode. Immersive Chefs SHALL resolve the concrete recipe and apply its existing meal-coverage/exclusion policy before admission. For a covered meal, job-giver admission SHALL only verify current ware availability and mark the exact returned job as eligible; it MUST NOT reserve ware or open a cooking session. Once that same accepted driver becomes the pawn's current job and enters `MakeNewToils`, Immersive Chefs SHALL attach its normal cooking session and reserve one eligible cookware set plus the concrete recipe's required admissible plates. It SHALL leave the pawn's inventory, carry tracker, target C, and upstream ingredient toils untouched until every selected ingredient has passed through the upstream `PlaceCookIngredient` toil. It SHALL then collect the committed ware immediately before the one validated active cooking toil, decorate that toil with cookware/knife/preparation speed and linked-assistant contribution, visibly render the held cookware during that real work, dirty the cookware only after work begins, and bind culinary state plus each exact plate once to the surviving `GenRecipe.MakeRecipeProducts` output. Baby food, pemmican, packaged/travel food, and every other uncovered product SHALL pass through the upstream job unchanged without kitchenware, cutlery, culinary state, or Immersive Chefs work modifiers.
+When exact package `lordfelix.CookForYourself` is active and assembly `CookForYourself` exposes the validated `JobGiver_CookMealForSelf.TryGiveJob(Pawn)`, `JobGiver_CookMealForDependent.TryGiveJob(Pawn)`, `JobDriver_CookMealForSelf.MakeNewToils()`, private `float workLeft`, `CFS_CookMealForSelf` JobDef, and job target/tag contract, Cook for Yourself SHALL remain authoritative for deciding whether a pawn needs a one-off meal and for selecting the station, concrete recipe, exact ingredients, recipient, and delivery mode. Immersive Chefs SHALL resolve the concrete recipe and apply its existing meal-coverage/exclusion policy before admission. For a covered meal, job-giver admission SHALL only verify current ware availability and mark the exact returned job as eligible; it MUST NOT reserve ware or open a cooking session. Once that same accepted driver becomes the pawn's current job and enters `MakeNewToils`, Immersive Chefs SHALL attach its normal cooking session and reserve one eligible cookware set plus the concrete recipe's required admissible plates. It SHALL leave the pawn's inventory, carry tracker, target C, and upstream ingredient toils untouched until every selected ingredient has passed through the upstream `PlaceCookIngredient` toil. It SHALL then collect the committed ware immediately before the one validated active cooking toil, decorate that toil with cookware/knife/preparation speed and linked-assistant contribution, visibly render the held cookware during that real work, dirty the cookware only after work begins, and bind culinary state plus each exact plate once to the surviving `GenRecipe.MakeRecipeProducts` output. Baby food, pemmican, packaged/travel food, and every other uncovered product SHALL pass through the upstream job unchanged without kitchenware, cutlery, culinary state, or Immersive Chefs work modifiers.
 
 The adapter SHALL NOT create a bill, call either upstream job giver twice, rerun ingredient selection, replace the upstream JobDef/driver, start ingestion or feeding itself, change dependent priority, or alter baby/patient/inventory delivery. A self-cook's native follow-up ingestion SHALL use ordinary cutlery and return the exact plate/cutlery dirty. A patient follow-up SHALL use the existing nurse/cutlery/conscious-thought rules. Cancellation before recipe work SHALL return clean ware; cancellation after work begins SHALL return the exact cookware dirty and unused plates clean. Because cooking sessions are intentionally transient, loading an exact active covered CFS driver SHALL interrupt that job through the shared recovery lifecycle and return any serialized session-marked ware before ordinary work resumes; it MUST NOT resume a shorter undecorated upstream toil list with orphaned ware. Package absence, `Off`, incomplete dependencies, or any changed shape SHALL disable only this integration without a hard reference or missing-type error, leaving the upstream mod and other Immersive Chefs workflows operational.
 
@@ -261,9 +288,9 @@ The adapter SHALL NOT create a bill, call either upstream job giver twice, rerun
 
 #### Scenario: Stack Gap preserves CFS ingredient placement without losing its storage rules
 
-- **WHEN** exact package `Andromeda.StackGap` with audited assembly `StackGap, Version=1.0.0.0` observes an admitted CFS job directly dropping its actual carried ingredient during the exact active upstream `PlaceCookIngredient` toil, including after upstream queue handling has consumed or replaced target B
+- **WHEN** exact package `Andromeda.StackGap` with assembly `StackGap` exposing the required ingredient-placement contract observes an admitted CFS job directly dropping its actual carried ingredient during the exact active upstream `PlaceCookIngredient` toil, including after upstream queue handling has consumed or replaced target B
 - **THEN** Immersive Chefs bypasses only Stack Gap's exact carry-drop prefix for that one pre-cooking ingredient operation so vanilla direct placement completes and the CFS job continues exactly once
-- **AND** Stack Gap remains authoritative for every non-CFS, non-direct, post-cooking, non-ingredient-toil, or empty-carry placement; a changed Stack Gap shape disables the CFS adapter without a partial patch
+- **AND** Stack Gap remains authoritative for every non-CFS, non-direct, post-cooking, non-ingredient-toil, or empty-carry placement; an incompatible surviving legacy contract disables the CFS adapter without a partial patch, while complete removal of those legacy hooks retires only their repair
 
 #### Scenario: Cook prepares a meal for a patient
 

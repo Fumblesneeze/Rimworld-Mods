@@ -35,9 +35,9 @@ public static class MealPrinterModsIntegrationTests
 
         var printerType = AccessTools.TypeByName(MealPrinterCompatibility.PrinterTypeName);
         IntegrationAssert.Equal(
-            "MealPrinter, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-            printerType?.Assembly.FullName,
-            "Meal Printer must retain the inspected 1.6 assembly identity.");
+            "MealPrinter",
+            printerType?.Assembly.GetName().Name,
+            "Meal Printer must expose the required types from its own assembly.");
         IntegrationAssert.True(
             ImmersiveChefsMod.IsIntegrationEnabled(OptionalIntegration.MealPrinter) &&
             MealPrinterAdapter.Enabled,

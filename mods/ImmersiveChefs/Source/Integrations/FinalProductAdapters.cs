@@ -11,7 +11,6 @@ namespace ImmersiveChefs;
 internal static class AdaptiveMealBillCompatibility
 {
     internal const string AssemblyName = "AdaptiveMealBill";
-    internal const string AssemblyVersion = "1.0.0.0";
     internal const string AdaptiveRecipeTypeName = "AdaptiveMealBill.AdaptiveRecipeDef";
     internal const string HarmonyPatchesTypeName = "AdaptiveMealBill.HarmonyPatches";
     internal const string SelectedRecipeFieldName = "activeSubRecipes";
@@ -31,7 +30,6 @@ internal static class AdaptiveMealBillCompatibility
         bool allTypesShareAssembly)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                adaptiveRecipeTypeName == AdaptiveRecipeTypeName &&
                adaptiveRecipeIsRecipeDef &&
                selectedRecipeFieldName == SelectedRecipeFieldName &&
@@ -252,7 +250,6 @@ internal static class AdaptiveMealBillAdapter
 internal static class OvercookedMealsCompatibility
 {
     internal const string AssemblyName = "OvercookedMeals";
-    internal const string AssemblyVersion = "1.0.0.0";
     internal const string PrefixTypeName = "OvercookedMeals.HarmonyPatches";
     internal const string PrefixMethodName = "TryMakeOvercookedPrefix";
     internal const string PatchOwner = "binchcannon.rimworld.overcookedmeals";
@@ -266,7 +263,6 @@ internal static class OvercookedMealsCompatibility
         bool prefixShape)
     {
         return assemblyName == AssemblyName &&
-               assemblyVersion == AssemblyVersion &&
                prefixTypeName == PrefixTypeName &&
                prefixMethodName == PrefixMethodName &&
                prefixShape;
