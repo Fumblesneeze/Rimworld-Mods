@@ -1,0 +1,2 @@
+# Preserve the exact bytes pinned by the Workshop presentation manifest.
+scripts/Resolve-ImmersiveChefsWorkshopDescription.ps1 text eol=lf

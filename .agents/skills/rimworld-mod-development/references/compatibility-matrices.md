@@ -26,7 +26,7 @@ Never let XML, a public API, guarded reflection, and Harmony apply the same muta
 Do not test the Cartesian product and do not load every food mod together. Build groups by shared
 engine seam and compatibility risk:
 
-1. **base absence** — Harmony, Core, product only;
+1. **base absence** — Harmony, Core, required libraries, and the product; Gateway is appended for automation;
 2. **one owner/replacer** — mods that replace vanilla meals, temperature, dispensers, or graphics;
 3. **service stack** — compatible waiter/guest/cleanup mods whose real interaction is the claim;
 4. **production stack** — compatible recipe/bill/food-source mods sharing cooking or dispensing;
@@ -40,7 +40,7 @@ Separate mutually exclusive replacements and known-overlap owners. Use a small s
 each supported adapter needs at least one exact group that exercises its unique seam, while one group
 may cover several compatible adapters through one coherent native workflow.
 
-Every attributed integration/E2E test declares its complete ordered non-Gateway package list. Do not
+Every attributed integration/E2E test declares its complete ordered non-Gateway package list; the runner appends Gateway for automation. This declaration convention does not require a separate run without Gateway. Do not
 fake `LoadedModManager`, package presence, external Defs, or patched state in an ordinary unit test.
 
 ## Required evidence per integration

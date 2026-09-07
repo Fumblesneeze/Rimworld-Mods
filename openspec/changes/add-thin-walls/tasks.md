@@ -78,7 +78,7 @@
 
 ## 11. mods/ThinWalls — Final reviewed in-game acceptance
 
-- [x] 11.1 Deploy only the reviewed Release product and run a fresh Core/Harmony/Thin-Walls startup with Gateway automation with unique savedata/log/PID evidence, native Mods-screen inspection, native Architect visibility, clean developer console/log classification, and normal-config hash restoration.
+- [x] 11.1 Historical optional check: the reviewed Release product ran with Core/Harmony/Thin Walls and no Gateway, retaining unique savedata/log/PID evidence, native Mods-screen inspection, native Architect visibility, clean developer console/log classification, and normal-config hash restoration. This completed check does not require future runs to omit Gateway.
 - [x] 11.2 On a fresh reviewed gateway-assisted process, execute the actual native construction/designation, movement, building-placement, bashing, deconstruction, save/load, and roof-support workflows and personally inspect before/action/after views from that exact PID.
 - [x] 11.3 Personally inspect and record every required cardinal/Stuff/junction/doubled/regular-wall visual outcome at close, ordinary, and far useful zoom on the reviewed package; retain build hash, ordered mods, camera states, actions, screenshots, logs, config hashes, graceful shutdown, and cleanup together.
 
