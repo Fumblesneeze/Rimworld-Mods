@@ -762,6 +762,24 @@ internal sealed class CountertopMicrowaveDiningFixture
             paddingPixels: 150);
     }
 
+    internal CountertopMicrowaveDiningFixture ResolveAfterLoad()
+    {
+        var map = Current.Game.CurrentMap;
+        var meal = (ThingWithComps)FindLoadedThing(map, Meal.ThingID);
+        var plate = (ThingWithComps)meal.GetComp<CompEmbeddedWare>().PeekPlateThing()!;
+        EndToEndAssert.Equal(Plate.ThingID, plate.ThingID, "The same embedded plate must survive load.");
+        return new CountertopMicrowaveDiningFixture(
+            map, (Building)FindLoadedThing(map, Table.ThingID),
+            (Building_Microwave)FindLoadedThing(map, Microwave.ThingID),
+            (Pawn)FindLoadedThing(map, Diner.ThingID), meal, plate,
+            (ThingWithComps)FindLoadedThing(map, Cutlery.ThingID), deconstructSupport);
+    }
+
+    internal static Thing FindLoadedThing(Map map, string id) => map.listerThings.AllThings
+        .Concat(map.mapPawns.AllPawnsSpawned.SelectMany(pawn => pawn.inventory.innerContainer))
+        .Concat(map.mapPawns.AllPawnsSpawned.Select(pawn => pawn.carryTracker.CarriedThing).Where(thing => thing is not null))
+        .Single(thing => thing.ThingID == id);
+
     internal GizmoActionStep ToggleDraft(
         IEndToEndContext context,
         string name,

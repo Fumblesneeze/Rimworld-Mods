@@ -17,6 +17,8 @@ Simple meals accept any registered plate material. Fine/Advanced meals require m
 
 ## Settings
 
+When Immersive Chefs owns temperature, colonists prefer a reachable, powered microwave for cold meals. They walk over without booking it for the whole dining job and wait if another pawn is heating. Each diner gets a full heating cycle. Stoves and campfires remain fallbacks when no usable microwave is available, including during a power outage.
+
 Open `Options > Mod settings > Immersive Chefs`. Restart-required settings change generated Defs, patches, or classification caches; changing them in a running game is not a completed configuration change until RimWorld is restarted. Live settings are read during job selection or outcome calculation.
 
 | Setting | Default | Range or choices | Applies |

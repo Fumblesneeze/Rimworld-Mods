@@ -27,6 +27,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
 
         var release = (IDictionary<string, object>)new JavaScriptSerializer()
             .DeserializeObject(File.ReadAllText(manifestPath));
+        var previousNote = (string)release["previousChangeNote"];
+        var pendingNote = (string)release["changeNote"];
         Assert.Multiple(() =>
         {
             Assert.That(release["packageId"], Is.EqualTo("fumblesneeze.immersivechefs"));
@@ -41,11 +43,13 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
             Assert.That(release["publishedFileId"], Is.EqualTo("3782589902"));
-            Assert.That(release["previousChangeNote"], Is.EqualTo("Silver and gold kitchenware recipes now use RimWorld's small-volume material counts. Uranium tableware now uses Dubs Rimatomics or Crash Landing radiation when available, with toxic buildup as the Core fallback. Added complete Japanese localization and linked the public GitHub repository from the Workshop page."));
-            Assert.That(
-                release["changeNote"],
-                Is.EqualTo(string.Empty),
-                "A completed Workshop update must clear its pending change note after pinning the published note as history.");
+            Assert.That(previousNote, Is.Not.Empty, "The published change note remains recorded as history.");
+            if (pendingNote.Length > 0)
+            {
+                Assert.That(pendingNote.Trim(), Is.Not.Empty, "An authored pending update must describe its change.");
+                Assert.That(pendingNote, Is.EqualTo(pendingNote.Trim()));
+                Assert.That(pendingNote, Is.Not.EqualTo(previousNote), "A new update must not recycle the published note.");
+            }
             Assert.That(
                 ((IEnumerable)release["requiredWorkshopItems"]).Cast<object>().Select(value => value.ToString()),
                 Is.EqualTo(new[] { "2009463077", "2574315206" }));

@@ -1477,10 +1477,9 @@ internal static class DiningSessionRegistry
             .Cast<MealHeatingSource>()
             .Where(source =>
                 !source.Thing.IsForbidden(pawn) &&
-                pawn.CanReserveAndReach(
-                    source.Thing,
-                    source.PathEndMode,
-                    Danger.Some))
+                (source.Kind == MealHeatingSourceKind.Microwave
+                    ? pawn.CanReach(source.Thing, source.PathEndMode, Danger.Some)
+                    : pawn.CanReserveAndReach(source.Thing, source.PathEndMode, Danger.Some)))
             .Select(source => new MealHeatingCandidate<MealHeatingSource>(
                 source,
                 source.Kind,
@@ -1488,7 +1487,8 @@ internal static class DiningSessionRegistry
             .ToList();
         foreach (var candidate in MealHeatingPolicy.Order(candidates))
         {
-            if (pawn.Reserve(candidate.Value.Thing, pawn.CurJob, 1, -1))
+            if (candidate.Kind == MealHeatingSourceKind.Microwave ||
+                pawn.Reserve(candidate.Value.Thing, pawn.CurJob, 1, -1))
             {
                 return candidate.Value.Thing;
             }

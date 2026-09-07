@@ -91,9 +91,10 @@ public sealed class LocalizationReleaseGateTests
         {
             Assert.That(classifications["ImmersiveChefs"], Is.EqualTo("Product"));
             Assert.That(classifications["RimWorldDevGateway"], Is.EqualTo("DevelopmentOnly"));
+            Assert.That(classifications["PersonalBugfixes"], Is.EqualTo("Personal"));
             Assert.That(
                 classifications.Values,
-                Has.All.Matches<string?>(value => value is "Product" or "DevelopmentOnly"),
+                Has.All.Matches<string?>(value => value is "Product" or "DevelopmentOnly" or "Personal"),
                 "Every repo-owned RimWorld mod must explicitly declare whether it is distributable.");
         });
 

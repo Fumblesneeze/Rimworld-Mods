@@ -148,9 +148,9 @@ Wild-water provenance SHALL be evaluated independently from dirty state, SHALL b
 ### Requirement: Pawns reheat eligible cold meals through prioritized available heat sources
 When Thermodynamics - Hot Meals is absent, the mod SHALL provide a powered one-cell countertop microwave unlocked directly by vanilla `Electricity` that accepts one eligible plated meal serving per heating job. It SHALL require neither `ImmersiveChefs_Dishwashing` nor `ImmersiveChefs_ProfessionalKitchens`. The microwave SHALL render and construct at `BuildingOnTop`, SHALL be a non-edifice, SHALL not clear or replace the supporting building, and SHALL occupy the top-building altitude for that cell. Its placement worker SHALL require an already completed, spawned table or workbench cell whose Def provides an eating/item surface; bare terrain, blueprints, frames, beds, shelves/storage, and unrelated buildings SHALL be rejected. The support MAY be vanilla or modded and the rule SHALL be capability-based rather than a hard-coded Def-name list. Even More Linkables is an inspected implementation example, not a dependency.
 
-The microwave SHALL retain its own power trader, flick, breakdown, reservation, interaction-cell, and heating state independently of the support. It MUST NOT block ordinary bills, interaction cells, dining use, or facility links of a multi-cell supporting table/workbench merely by sharing one surface cell. If the support becomes invalid through destruction, deconstruction, replacement, or another mod, any active heating job SHALL cancel without applying a completed-reheat mutation: it SHALL NOT set the microwave target temperature, subtract quality, increment the reheat count, add contamination, or replace/remove the embedded plate, while ordinary elapsed-time ambient temperature progression remains valid. The microwave SHALL become a recoverable minified building at that cell or the nearest valid standable cell rather than remain floating, disappear, or duplicate.
+The microwave SHALL retain its own power trader, flick, breakdown, interaction-cell, and active-use state independently of the support. It MUST NOT block ordinary bills, interaction cells, dining use, or facility links of a multi-cell supporting table/workbench merely by sharing one surface cell. If the support becomes invalid through destruction, deconstruction, replacement, or another mod, any active heating job SHALL cancel without applying a completed-reheat mutation: it SHALL NOT set the microwave target temperature, subtract quality, increment the reheat count, add contamination, or replace/remove the embedded plate, while ordinary elapsed-time ambient temperature progression remains valid. The microwave SHALL become a recoverable minified building at that cell or the nearest valid standable cell rather than remain floating, disappear, or duplicate.
 
-When meal temperature is enabled, a pawn intending to eat an eligible serving below both `AutoMicrowaveBelow` and the `15°C` Room Temperature boundary SHALL select the first tier containing a reachable, allowed, operational, and reservable source, then the nearest candidate within that tier: countertop microwave, non-open-flame meal-source stove, open-flame meal-source/campfire, then another positive heat-emitting building such as a heater, radiator, brazier, or torch. Classification SHALL use finalized building capabilities rather than labels and SHALL reject non-building comp users. A positive heat capability alone is insufficient at runtime: the finalized emitter MUST currently be able to emit heat, including native heat-pusher/temperature-control state or a narrow shape-guarded optional radiator adapter. Common power, fuel, flick, breakdown, reachability, forbiddance, and reservation state SHALL remain additional authoritative guards. If no usable source exists, reheating remains optional and MUST NOT prevent eating. Recipes excluded by the meal-production contract remain excluded.
+When meal temperature is enabled, a pawn intending to eat an eligible serving below both `AutoMicrowaveBelow` and the `15°C` Room Temperature boundary SHALL select the first tier containing a reachable, allowed, operational source (also reservable for non-microwave tiers), then the nearest candidate within that tier: countertop microwave, non-open-flame meal-source stove, open-flame meal-source/campfire, then another positive heat-emitting building such as a heater, radiator, brazier, or torch. Classification SHALL use finalized building capabilities rather than labels and SHALL reject non-building comp users. A positive heat capability alone is insufficient at runtime: the finalized emitter MUST currently be able to emit heat, including native heat-pusher/temperature-control state or a narrow shape-guarded optional radiator adapter. Common power, fuel, flick, breakdown, reachability, and forbiddance remain authoritative guards; advance reservations apply only to non-microwave sources. If no usable source exists, reheating remains optional and MUST NOT prevent eating. Recipes excluded by the meal-production contract remain excluded.
 
 A completed microwave cycle SHALL take its finalized Def duration (180 ticks in the base Def), set the serving to `60°C`, increment its microwave reheat count, and add the per-microwave poisoning delta at eventual ingestion. A stove cycle SHALL take `450` ticks and set `55°C`; a campfire cycle SHALL take `750` ticks and set `45°C`; another heating building SHALL take `1800` ticks and set at most `20°C`. The culinary-quality loss SHALL be `MicrowaveQualityLoss + source penalty + clamp(ceil((15 - sourceTemperatureCelsius) / 5), 0, 10)`, with penalties `0`, `3`, `6`, and `10` respectively and without reducing quality below zero. The source temperature SHALL be advanced to the completion tick before calculating the loss, and an interrupted cycle SHALL apply no heat, quality loss, or count. Non-microwave completion SHALL NOT increment the microwave reheat count or add its poisoning contribution.
 
@@ -181,8 +181,32 @@ A completed microwave cycle SHALL take its finalized Def duration (180 ticks in 
 - **THEN** both reach `60°C` and increment their own reheat count exactly once
 
 #### Scenario: Microwave is unavailable
+
 - **WHEN** a hungry pawn selects a cold serving but every microwave, stove, campfire, and heating building is unusable
 - **THEN** the pawn may continue to eat the serving without waiting indefinitely for a source
+
+#### Scenario: Powered microwave is shared at arrival
+- **WHEN** two hungry pawns choose cold meals and a reachable, allowed microwave has sufficient power, valid support and no breakdown, even if a stove or campfire is closer
+- **THEN** both choose the microwave without reserving it for the approach or whole dining job
+- **THEN** a pawn arriving while another pawn is heating waits at the appliance without heating its meal or consuming any of its heating duration
+- **THEN** only one pawn heats at a time, each performs its full configured cycle, and the next pawn can begin as soon as the active cycle ends, before the previous diner finishes eating
+- **THEN** both continue their original native dining workflow with the exact meal and tableware intact
+
+#### Scenario: Microwave user is interrupted while another pawn waits
+- **WHEN** the player drafts the pawn currently heating while another pawn waits at the same operational microwave
+- **THEN** the interrupted cycle applies no completed heat, quality loss or reheat count and immediately releases active use
+- **THEN** the waiting pawn starts its own full cycle without restarting its dining job or selecting a stove or campfire
+
+#### Scenario: Power is lost while waiting for a microwave
+- **WHEN** the selected microwave loses power or valid support while a pawn waits to use it
+- **THEN** the waiting job follows the existing unavailable-source cancellation or normal-service fallback with no completed heating mutation or stale active-use claim
+- **THEN** an unpowered, forbidden, unreachable, unsupported or broken microwave does not suppress usable lower-tier heat sources on the next ordinary food search
+
+#### Scenario: Save and load while diners share a microwave
+- **WHEN** the player saves and loads while one diner heats and another waits
+- **THEN** existing transient dining-session recovery cancels the interrupted cycles without applying heat, quality loss or reheat counts and releases their native active-use claims
+- **THEN** both servings retain their count, state and exact embedded tableware through any legitimate native stack merging, and ordinary recovered dining jobs can reheat and consume them without an orphaned microwave user
+- **THEN** meals with distinct non-stackable Defs also retain their individual Thing identities
 
 #### Scenario: Stove is the first available fallback
 - **WHEN** a pawn selects a `5°C` serving, no usable microwave exists, and both an operational stove and campfire are available
@@ -218,8 +242,8 @@ When Gastronomy is active by package ID, Thermodynamics - Hot Meals is absent, a
 - **THEN** the waiter completes the microwave step before delivering that same serving to the assigned diner
 
 #### Scenario: Reheat path fails during service
-- **WHEN** the waiter's reserved microwave loses power before heating completes
-- **THEN** the microwave reservation is released and the waiter can deliver the original order through Gastronomy's normal flow
+- **WHEN** the waiter's selected microwave loses power before heating completes
+- **THEN** any active microwave use is released and the waiter can deliver the original order through Gastronomy's normal flow
 
 ### Requirement: Thermodynamics - Hot Meals exclusively owns temperature when active
 When exact package `Mlie.DThermodynamicsHotMeals` is active, Immersive Chefs SHALL yield the complete hot/cold-meal concern to that mod. A package-ID guard SHALL remove the Immersive Chefs microwave node before Def deserialization, so its research/designation entry, power/heating comps, and texture are never materialized or resolved. Immersive Chefs SHALL install or execute no meal-temperature initialization/progression, inspect gauge, temperature thought, temperature poisoning delta, microwave reheat count/quality loss, automatic reheat selection, heating job/toil, Gastronomy reheat insertion, or caravan-temperature code. Thermodynamics' `DMicrowave`, `HeatMeal`, `DHotMeals.JobDriver_HeatMeal`, food-temperature comps, ambient diffusion, UI, thoughts, settings, and Harmony patches SHALL remain authoritative.

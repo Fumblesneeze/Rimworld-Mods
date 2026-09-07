@@ -482,6 +482,23 @@ internal static class IngestCutleryToilsPatch
         var originalInitAction = toil.initAction;
         var originalTickAction = toil.tickAction;
         Effecter? progressEffecter = null;
+        var microwaveUse = source.Kind == MealHeatingSourceKind.Microwave
+            ? target.MapHeld?.physicalInteractionReservationManager
+            : null;
+        Job? heatingJob = null;
+
+        void TryBeginMicrowaveUse()
+        {
+            var actor = toil.actor;
+            if (microwaveUse?.FirstReserverOf(target) is { } user && user != actor)
+            {
+                return;
+            }
+
+            microwaveUse?.Reserve(actor, heatingJob, target);
+            toil.defaultCompleteMode = ToilCompleteMode.Delay;
+            actor.jobs.curDriver.ticksLeftThisToil = duration;
+        }
 
         toil.debugName = "ImmersiveChefs_HeatAtCapturedSource";
         toil.handlingFacing = true;
@@ -497,18 +514,35 @@ internal static class IngestCutleryToilsPatch
                     completeDelayNormally: true,
                     onInterrupted: onInterrupted);
             }
+            else if (microwaveUse is not null)
+            {
+                heatingJob = toil.actor.CurJob;
+                // Approach never books the appliance. Only a pawn physically at the
+                // heating toil acquires use; waiting consumes none of its cycle.
+                toil.defaultCompleteMode = ToilCompleteMode.Never;
+                TryBeginMicrowaveUse();
+            }
         };
         toil.tickAction = () =>
         {
             var actor = toil.actor;
             if (!source.IsOperational)
             {
+                toil.defaultCompleteMode = ToilCompleteMode.Delay;
                 HandleUnavailableSource(
                     toil,
                     source,
                     normalDeliveryFallback,
                     completeDelayNormally: true,
                     onInterrupted: onInterrupted);
+                return;
+            }
+
+            if (microwaveUse is not null && toil.defaultCompleteMode == ToilCompleteMode.Never)
+            {
+                heatingJob ??= actor.CurJob;
+                TryBeginMicrowaveUse();
+                actor.rotationTracker.FaceTarget(target);
                 return;
             }
 
@@ -531,6 +565,10 @@ internal static class IngestCutleryToilsPatch
         };
         toil.AddFinishAction(() =>
         {
+            if (heatingJob is not null)
+            {
+                microwaveUse?.TryRelease(toil.actor, heatingJob, target);
+            }
             progressEffecter?.Cleanup();
             progressEffecter = null;
         });
