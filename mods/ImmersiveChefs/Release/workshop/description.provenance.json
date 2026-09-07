@@ -1,13 +1,13 @@
 {
   "schema": "ImmersiveChefs/WorkshopDescriptionProvenance/v1",
   "publishedFileId": "3782589902",
-  "previewPublicationPlanSha256": "7E19586ED1754EA5326C3A9B52957C5F94648A3BE44FA9386A3F4700EB3CAF8D",
-  "descriptionSha256": "D8CC65E0DF22681E8E3A90CFD45BD639457808B072C02BB6EFAB6B982640A06B",
+  "previewPublicationPlanSha256": "321C16F7280A50E3D2D27C38D6336126AB6002E80278A43BAEC06A9BF49014E2",
+  "descriptionSha256": "5F312FBBA9B24D56922BF64BA614C79CA9E2CD1B759F1198DD0FC36BE06EA182",
   "previews": [
     {
       "token": "immersive-chefs",
       "remoteIndex": 0,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/14776242877087781510/0961B265A253ABE7BAE3BB904CCF0612E78A6EA0/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/11092734740742366306/0961B265A253ABE7BAE3BB904CCF0612E78A6EA0/",
       "localPath": "preview-main.png",
       "localSha256": "B61BC0C7E4C626C0C7643278C077466FCEF8BCDBB23092897550490004CDB936",
       "remoteSha256": "B61BC0C7E4C626C0C7643278C077466FCEF8BCDBB23092897550490004CDB936",
@@ -25,7 +25,7 @@
     {
       "token": "teamwork",
       "remoteIndex": 2,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/10595014367887970089/07F935B974C098924B64F63F2B2D009BEDA574D9/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/15484612259419818366/07F935B974C098924B64F63F2B2D009BEDA574D9/",
       "localPath": "feature-teamwork.png",
       "localSha256": "562B6E55FF269175437989D65EECF2D6270676D778D65C30D7121CA1824F9657",
       "remoteSha256": "562B6E55FF269175437989D65EECF2D6270676D778D65C30D7121CA1824F9657",
@@ -52,7 +52,7 @@
     {
       "token": "colony",
       "remoteIndex": 5,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/15319281986753242149/1394EBA094EB853E3E71249E8F3B581900348911/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/11478779480000533986/1394EBA094EB853E3E71249E8F3B581900348911/",
       "localPath": "feature-colony.png",
       "localSha256": "A678AFC699128D12BE578CABD3ECCC125273FEB0E72ABC96BCD6A9DCFBCBC0D0",
       "remoteSha256": "A678AFC699128D12BE578CABD3ECCC125273FEB0E72ABC96BCD6A9DCFBCBC0D0",
@@ -61,7 +61,7 @@
     {
       "token": "compatibility",
       "remoteIndex": 6,
-      "remoteUrl": "https://images.steamusercontent.com/ugc/14006664955242215432/B9A0FEB55759677B102509FFD8D30A4C149D81EA/",
+      "remoteUrl": "https://images.steamusercontent.com/ugc/15701764865395406625/B9A0FEB55759677B102509FFD8D30A4C149D81EA/",
       "localPath": "feature-compatibility.png",
       "localSha256": "824B5FC972C3E79E8EC79A6018094A692391BAFE22D8915E65A389EE1D8768AA",
       "remoteSha256": "824B5FC972C3E79E8EC79A6018094A692391BAFE22D8915E65A389EE1D8768AA",
