@@ -44,7 +44,7 @@
 - [ ] 5.1 Add RED runner tests for exact target resolution, exact executable/data paths, matching compatibility-folder package selection, full manifest-set evidence, and refusal to fall back to the normal installation.
 - [ ] 5.2 Extend the scenario and grouped E2E runners with a declared target parameter while preserving their current default and exact ordered mod-list contracts.
 - [ ] 5.3 Make the runner tests green for unique savedata, exact PID/start identity, normal `ModsConfig.xml` before/after hashes, graceful cleanup, and active-cache leases.
-- [ ] 5.4 Refactor common target/process evidence without weakening player-action, screenshot-inspection, product-without-Gateway, or optional-mod gates.
+- [ ] 5.4 Refactor common target/process evidence without weakening player-action, screenshot-inspection, product-package independence, or optional-mod gates.
 - [ ] 5.5 Run the existing dry-run commands and one current-version process smoke to verify target plumbing and cleanup before attempting historical gameplay acceptance.
 
 ## 6. mods/RimWorldDevGateway — Presentation compiler TDD
@@ -102,9 +102,9 @@
 - [ ] 12.2 Perform dry-run, personally inspect the exact package/presentation/required-item remote diff, and admit only the bound hashes already authorized by the explicit publication order.
 - [ ] 12.3 Observe Steam progress and terminal callbacks, personally inspect the resulting Workshop metadata, required items, optional-mod behavior descriptions, final AI disclosure, and previews; then subscribe/refresh the exact item, reacquire its Workshop copy, and compare its content manifest with the reviewed stage.
 - [ ] 12.4 Run each selected product mod's declared native player workflow on every claimed exact RimWorld target from the subscribed Workshop package path, never a local deployment, and personally inspect before/action/after screenshots.
-- [ ] 12.5 Complete at least one separate product-mod acceptance run without the Gateway and retain its native workflow evidence.
+- [ ] 12.5 Verify product independence through dependency metadata, package contents, and assembly references; Gateway-based native workflows satisfy live acceptance without a separate product-only run.
 - [ ] 12.6 Record source/build identities, target symbols, XML projection hashes, packaged and remote dependency graphs, ordered depot/mod lists, native actions, observable outcomes, screenshots, remote verification, normal-configuration hashes, and cleanup in one secret-free evidence directory.
-- [ ] 12.7 Check implementation tasks only after the reviewed revision's tests, package checks, live publication proof, per-target player acceptance, Gateway-free product proof, and cleanup evidence all exist.
+- [ ] 12.7 Check implementation tasks only after the reviewed revision's tests, package checks, live publication proof, per-target player acceptance, product-package independence checks, and cleanup evidence all exist.
 
 ## 13. mods/RimWorldDevGateway — Immersive Chefs 1.6 release bootstrap
 

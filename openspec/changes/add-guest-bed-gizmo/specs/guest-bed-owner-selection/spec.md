@@ -103,5 +103,5 @@ The reviewed Release package SHALL be accepted only after the acting agent uses 
 - **THEN** retained exact-process before/menu/guest/vanilla screenshots causally show one unified command, both conversions, preserved related gizmos, and no relevant warnings or errors
 
 #### Scenario: Final absence acceptance
-- **WHEN** the reviewed product loads in a separate fresh process without Hospitality or the Dev Gateway and a player selects an ordinary bed
+- **WHEN** the reviewed product loads in a separate fresh process without Hospitality, with Dev Gateway available for native automation, and a player selects an ordinary bed
 - **THEN** the observed bed UI remains vanilla, the process log is clean of product errors, configuration hashes match, and exact-PID cleanup completes

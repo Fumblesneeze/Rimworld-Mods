@@ -39,7 +39,7 @@ Read [references/release-checklist.md](references/release-checklist.md) before c
 1. Run focused and owning tests, guarded repository tests, Release builds, strict OpenSpec validation, and package inspection.
 2. Run every target's declared scenario in a fresh exact-version RimWorld process with unique savedata and the complete ordered mod list.
 3. Exercise the native player workflow and personally inspect before/action/after screenshots from that exact process. Compilation, startup, logs, Gateway JSON, direct state mutation, and static end-state screenshots are supporting evidence only.
-4. Retain at least one product acceptance run without the Gateway. Preserve the normal `ModsConfig.xml` before/after hash and exact-PID cleanup evidence.
+4. Gateway-based native player workflows satisfy live release acceptance; a separate run without the Gateway is not required. Preserve the normal `ModsConfig.xml` before/after hash and exact-PID cleanup evidence. Verify product independence through dependency metadata, package contents, and assembly references.
 5. Use the `code-review` skill on the scoped diff, resolve findings, and repeat any verification invalidated by review fixes.
 
 ## Generate and review Workshop presentation

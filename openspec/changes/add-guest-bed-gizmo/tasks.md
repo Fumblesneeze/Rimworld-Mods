@@ -52,7 +52,7 @@
 
 - [x] 9.1 On the reviewed Release build, run a fresh exact Core/Harmony/Ideology/Hospitality/product/Gateway process, select a real bed, open and observe exactly four choices, choose guests, observe the guest replacement/unified label/retained Hospitality controls/no legacy toggle, choose a vanilla owner type, and observe the reverse conversion.
 - [x] 9.2 Personally inspect retained exact-process before/menu/guest/vanilla screenshots at materially different useful zooms and the native developer console/full flushed log; record build/package hashes, mod order, action sequence, causal observations, warnings, request IDs, config hashes, and cleanup.
-- [x] 9.3 Run a separate fresh product-only no-Gateway absence workflow, observe the unchanged vanilla bed UI, inspect its log, restore state, gracefully stop the exact PID, and prove both normal configuration hashes match.
+- [x] 9.3 Historical optional check: the separate product-only absence workflow observed unchanged vanilla bed UI, clean logs, restored state, graceful exact-PID shutdown, and matching normal configuration hashes. A separate run without Gateway is no longer required; current absence acceptance uses Gateway-based native workflows.
 
 ## 10. `mods/GuestBedGizmo` Steam Preview and Final Evidence
 

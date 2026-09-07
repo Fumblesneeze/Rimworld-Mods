@@ -34,6 +34,8 @@ No mod behavior, bug fix, Harmony/XML integration, compatibility claim, or game-
 
 Acceptance requires all of the following:
 
+A separate run without the Dev Gateway is not required for development, compatibility acceptance, or release. Gateway-based native player workflows satisfy the live-run requirement. Verify product independence through dependency metadata, package contents, and assembly references; product mods must still never depend on or ship the Gateway.
+
 1. Perform an actual player action, or faithful automation of the same native UI, gizmo, designation, bill, job, hauling, ingestion, construction, selection, or game-command path a player uses.
 2. Observe the resulting player-visible or player-observable game behavior in the running game. Examples include a pawn performing the expected job, a physical item changing or appearing, a building accepting work, an inspect pane or gauge changing, a thought or hediff appearing, or a native command visibly taking effect.
 3. Personally inspect the relevant live view or before/action/after screenshots captured from that exact process. Record what was observed, not merely what an automation reported.

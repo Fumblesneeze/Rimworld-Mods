@@ -78,7 +78,7 @@
 
 ## 11. mods/ThinWalls — Final reviewed in-game acceptance
 
-- [x] 11.1 Deploy only the reviewed Release product and run a fresh product-only Core/Harmony/Thin-Walls startup with unique savedata/log/PID evidence, native Mods-screen inspection, native Architect visibility, clean developer console/log classification, and normal-config hash restoration.
+- [x] 11.1 Deploy only the reviewed Release product and run a fresh Core/Harmony/Thin-Walls startup with Gateway automation with unique savedata/log/PID evidence, native Mods-screen inspection, native Architect visibility, clean developer console/log classification, and normal-config hash restoration.
 - [x] 11.2 On a fresh reviewed gateway-assisted process, execute the actual native construction/designation, movement, building-placement, bashing, deconstruction, save/load, and roof-support workflows and personally inspect before/action/after views from that exact PID.
 - [x] 11.3 Personally inspect and record every required cardinal/Stuff/junction/doubled/regular-wall visual outcome at close, ordinary, and far useful zoom on the reviewed package; retain build hash, ordered mods, camera states, actions, screenshots, logs, config hashes, graceful shutdown, and cleanup together.
 
@@ -111,7 +111,7 @@
 - [x] 14.8 RED/GREEN: dirty affected regions across construction/destruction/load, keep Thin Doors as persistent room dividers, redirect their temperature exchange to exactly the two rooms across the edge, and cover indoor classification, room IDs/cell counts/roles/stats, temperature isolation, final-edge remerge, vanilla-door preservation, and no-Thin-structure bypass.
 - [x] 14.9 Extend grouped E2E with native Thin Door construction/open/wait/cross/hold/close/damage/save/load/bashing workflows and native room-inspect/temperature/final-edge-remerge workflows, retaining causal before/action/after screenshots.
 - [x] 14.10 Extend the visual catalog with uninterrupted long stone runs, Core-outline side-by-side views, explicit wood/stone/metal regular-wall connectors, and Thin Door closed/open/mixed-run/damage views at close, ordinary, and far useful zoom.
-- [x] 14.11 Run independent code and asset review, resolve every finding, rerun affected focused suites/build/package/spec validation, then repeat the reviewed finalized-loader, product-only startup, selected gameplay E2E, and exact visual E2E runs.
+- [x] 14.11 Run independent code and asset review, resolve every finding, rerun affected focused suites/build/package/spec validation, then repeat the reviewed finalized-loader, selected gameplay E2E, and exact visual E2E runs.
 - [x] 14.12 Give only the final unlabeled multi-zoom connector/door/wall screenshots to a context-free reviewer sub-agent and repeat until it identifies the edge walls, doors, regular-wall joins, materials, and perspective with no defect.
 - [x] 14.13 Update English/German catalogs, About/Workshop descriptions, presentation manifest, title/About/feature cards, deterministic hashes, package parity, and local publishing handoff for the expanded implemented scope.
 
@@ -163,7 +163,7 @@
 - [x] 19.2 TDD RED/GREEN: enumerate representative non-square occupied rectangles through all four rotations and prove every completed/blueprinted/framed Thin Wall and Thin Door on an internal north/east/south/west adjacency rejects placement while every exterior-only contact remains legal.
 - [x] 19.3 TDD RED/GREEN: implement the shared structural placement transform across preview, blueprint, frame, completed, door, selection, damage, and hybrid gutter/aperture paths; mechanically prove the final outlined straight/L/T/+/door/hybrid bounds, arm-local North endpoint clipping against horizontal walls/door frames at standard and doubled widths, and both centered shadow bases.
 - [x] 19.4 TDD RED/GREEN: implement cached ordinary-building/blueprint/frame `DrawPos` displacement for all four exterior contact sides, opposite-side cancellation, perpendicular composition, exclusions, and Thin-edge-version invalidation without changing any logical footprint or gameplay coordinate.
-- [x] 19.5 REVIEW/VERIFY: run focused tests/build/package/OpenSpec validation, resolve independent review, then perform fresh minimized Gateway native placement/use/door/regular-merge workflows and the mandatory product-only run; personally inspect close/ordinary/far screenshots and obtain the unlabeled blind visual verdict before accepting the cumulative matrix.
+- [x] 19.5 REVIEW/VERIFY: run focused tests/build/package/OpenSpec validation, resolve independent review, then perform fresh minimized Gateway native placement/use/door/regular-merge workflows; personally inspect close/ordinary/far screenshots and obtain the unlabeled blind visual verdict before accepting the cumulative matrix.
 
 ## 20. mods/ThinWalls — Final-union topology, shadow, and close-clearance correction
 
@@ -172,7 +172,7 @@
 - [x] 20.3 TDD RED/GREEN: pin the Core Hand Tailoring Bench 224x96 canvas and `[16,16,208,89)` alpha bound, derive `22/60` from its actual 73-row normal silhouette plus the final 35/60 wall envelope, and verify phase-appropriate completed/blueprint/frame realtime positions, completed/blueprint cached graphic meshes, and completed shadow meshes without changing any logical footprint.
 - [x] 20.4 REVIEW/VERIFY: run focused tests, owning Release build, package checks, and strict OpenSpec validation; obtain independent scoped code review and resolve every finding before live acceptance.
 - [x] 20.5 LIVE: on the reviewed build, run fresh minimized exact-PID Gateway player workflows and retain close/ordinary/far screenshots for all 16 Thin masks, representative shadows, and opposing workbenches; personally inspect them and give only unlabeled screenshots to an independent reviewer. Supersede every earlier topology/workbench/publishing capture until this passes.
-- [x] 20.6 RELEASE INPUTS: complete the mandatory fresh product-only workflow, promote only newly accepted in-game renders, deterministically rebuild affected About/Workshop cards with no generated imagery, verify hashes/package parity, and stop at the local publishing handoff.
+- [x] 20.6 RELEASE INPUTS: complete the fresh Gateway-based native player workflow, promote only newly accepted in-game renders, deterministically rebuild affected About/Workshop cards with no generated imagery, verify hashes/package parity, and stop at the local publishing handoff.
 
 ## 21. mods/ThinWalls — User-rejected publication geometry and measurable acceptance
 

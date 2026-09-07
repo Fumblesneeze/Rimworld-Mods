@@ -13,9 +13,10 @@ The gateway project, runtime package constant, About manifest, deployment folder
 ### Requirement: Independent developer-only mod
 RimWorld Dev Gateway SHALL be a separately loadable developer-only mod, and Immersive Chefs SHALL NOT declare it as a required dependency, optional dependency, assembly reference, or load-order dependency.
 
-#### Scenario: Immersive Chefs loads without the gateway
-- **WHEN** RimWorld starts with Harmony, Core, XML Extensions, and Immersive Chefs but without RimWorld Dev Gateway
-- **THEN** Immersive Chefs loads and initializes without a missing-dependency warning for the gateway
+#### Scenario: Product metadata and package exclude the gateway
+- **WHEN** the Immersive Chefs dependency metadata, package contents, and assembly references are verified
+- **THEN** none declares, references, or ships RimWorld Dev Gateway
+- **AND** Gateway-based native player workflows satisfy live acceptance without a mandatory separate run omitting the Gateway
 
 #### Scenario: Gateway loads without Immersive Chefs
 - **WHEN** RimWorld starts with Core and RimWorld Dev Gateway but without Immersive Chefs

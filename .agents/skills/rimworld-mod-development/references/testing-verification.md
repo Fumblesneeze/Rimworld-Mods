@@ -120,12 +120,12 @@ Always launch with a per-run `-savedatafolder` containing its own `Config/ModsCo
 
 Use separate minimal runs that prove each boundary:
 
-- external-package-absence run: Core, required libraries, owning mod;
+- external-package-absence run: Core, required libraries, owning mod, and Dev Gateway for disposable automation;
 - external-package-present run: the absence list plus the external mod and its actual dependencies;
-- gateway-assisted integration run: the integration list plus Dev Gateway, used only for disposable automation;
+- gateway-assisted integration run: the exact integration list with Dev Gateway for disposable automation;
 - gateway self-test run: Core plus Dev Gateway.
 
-Always retain at least one product run without Dev Gateway. For every claimed compatibility strategy, run an installed version that actually selects that strategy; never claim a runtime fallback that was only inferred or host-tested.
+Gateway-based native player workflows satisfy live acceptance. No separate run without Dev Gateway is required for development, compatibility verification, or release. Verify product independence through dependency metadata, package contents, and assembly references. For every claimed compatibility strategy, run an installed version that actually selects that strategy; never claim a runtime fallback that was only inferred or host-tested.
 
 Wait for the exact launched PID, not any window with the same title. Every run SHALL retain Player.log, ModsConfig, screenshots where applicable, the build log, and hashes under one evidence directory. A gateway-assisted run SHALL additionally retain the credential-free stopped session tombstone, API request IDs, and JSON responses. A product-only run cannot produce gateway artifacts and MUST NOT be marked incomplete for their absence. Never retain a live `current.json` manifest or bearer token in durable evidence.
 

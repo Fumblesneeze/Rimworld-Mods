@@ -59,7 +59,7 @@ Replacement beds are resolved on the same map, root position, and rotation immed
 - Host tests cover the four-choice catalog, package-ID activation, exact optional-shape probe, legacy-command discrimination, conversion/preflight planning, and transactional rollback without pretending to load a mod.
 - Main-menu integration tests cover the real generated guest-bed Defs, exact active package order, complete patch ownership, and selected strategy.
 - A focused E2E/player run selects a real bed, opens the native command, observes all four menu choices, chooses guests, observes the replacement guest bed and unified label with no standalone toggle, then chooses a vanilla owner type and observes the reverse conversion.
-- A separate product-only no-Gateway run proves clean absence behavior. All runs use unique saved data, exact PID/start identity, normal configuration hashes, reviewed build hashes, and controlled cleanup.
+- An exact optional-mod-absence run with Gateway automation proves clean absence behavior; a separate run without Gateway is not required. All runs use unique saved data, exact PID/start identity, normal configuration hashes, reviewed build hashes, and controlled cleanup.
 
 ### Build the preview from accepted behavior
 

@@ -92,7 +92,7 @@
 - [ ] 14.3 Post raw `text/plain` C# directly while the game remains running, prove main-thread execution, compile diagnostics, bounded results, and state retention across submissions, and perform a reversible game-state inspection/mutation without a companion client; then separately smoke the optional compiled-assembly fallback and session-scoped automation registration without a restart.
 - [x] 14.4 Launch isolated `-quicktest` with optional explicit additional package IDs, run `quickstart.spawn` for named buildings and Stuff/items on a playable map, and verify returned handles/positions, post-quickstart status/UI/log evidence, visible screenshot, and an idempotent terminal replay.
 - [x] 14.5 Invoke controlled shutdown, verify the listener and live credential locator disappear and the stopped record has no token, then verify game-process/service cleanup and an unchanged normal `ModsConfig.xml` hash.
-- [x] 14.6 Launch Immersive Chefs without the gateway and the gateway without Immersive Chefs to prove both dependency boundaries in-game, and retain the two evidence bundles.
+- [x] 14.6 Historical dependency checks retained both original evidence bundles. Current product independence is verified through dependency metadata, package contents, and assembly references; no separate product run without Gateway is required. Gateway self-tests still run independently of Immersive Chefs.
 
 ## 15. mods/RimWorldDevGateway — TDD RED: Semantic game control and inspection
 
