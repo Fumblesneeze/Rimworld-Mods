@@ -56,6 +56,12 @@ Each distributable mod owns `mods/<ModName>/Release/release.json`. A strict sche
 
 The universal release pipeline accepts a profile path or package ID; it never contains a mod name in code. Profile build/presentation steps are selected from registered operation IDs and declared inputs, not free-form command strings. The initial migration may call proven internal runner scripts behind adapters, but those scripts are not the public contract and may not contain product-specific publication policy.
 
+`presentation_render(packageId)` owns offline rendering during authoring. It selects the validated
+profile's `presentation.json`, verifies its renderer path and SHA-256, and passes `-ManifestPath` and
+`-Output json` to that bounded PowerShell adapter. The release-preparation renderer check shares this
+same adapter planner. Rendering may update authored images in a dirty checkout; Steam presentation
+synchronization and publication continue to require a clean committed worktree.
+
 ### 5. Publication remains a two-turn immutable transaction
 
 `release_prepare` requires a clean committed source revision, builds and stages from a positive allowlist, hashes every content/presentation input, validates metadata and dependencies, scans the owner account for an exact-title collision on first publication, and writes an immutable candidate plus canonical dry-run plan. It returns a candidate digest, remote diff, expiry, and random nonce.

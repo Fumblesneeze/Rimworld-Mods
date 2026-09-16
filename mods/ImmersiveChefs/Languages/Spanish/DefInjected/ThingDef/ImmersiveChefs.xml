@@ -17,11 +17,11 @@
   <ImmersiveChefs_Cookware.label>batería de cocina</ImmersiveChefs_Cookware.label>
   <ImmersiveChefs_Cookware.description>Un juego de cocina reutilizable completo: olla, sartén, tapas, mangos y utensilios pequeños. Su material y fabricación influyen en la velocidad, limpieza, comodidad y calidad culinaria.</ImmersiveChefs_Cookware.description>
   <ImmersiveChefs_Plate.label>plato</ImmersiveChefs_Plate.label>
-  <ImmersiveChefs_Plate.description>Un plato reutilizable para una porción de comida. Su material y fabricación influyen en la comodidad, velocidad al comer e higiene.</ImmersiveChefs_Plate.description>
+  <ImmersiveChefs_Plate.description>Un plato reutilizable para una porción de comida. Su material influye en la comodidad, velocidad al comer e higiene.</ImmersiveChefs_Plate.description>
   <ImmersiveChefs_AdobePlate.label>plato de adobe</ImmersiveChefs_AdobePlate.label>
   <ImmersiveChefs_AdobePlate.description>Un plato tosco de ladrillos de adobe. Es poroso, frágil y extremadamente difícil de mantener limpio.</ImmersiveChefs_AdobePlate.description>
   <ImmersiveChefs_Cutlery.label>juego de cubiertos</ImmersiveChefs_Cutlery.label>
-  <ImmersiveChefs_Cutlery.description>Un juego reutilizable de tenedor, cuchara y cuchillo para un comensal. Su material y fabricación influyen en la comodidad e higiene.</ImmersiveChefs_Cutlery.description>
+  <ImmersiveChefs_Cutlery.description>Un juego reutilizable de tenedor, cuchara y cuchillo para un comensal. Su material influye en la comodidad e higiene.</ImmersiveChefs_Cutlery.description>
   <ImmersiveChefs_GlitterworldCookware.label>batería de cocina ultratecnológica</ImmersiveChefs_GlitterworldCookware.label>
   <ImmersiveChefs_GlitterworldCookware.description>Una batería autolimpiable e incombustible importada de un mundo brillante. No puede fabricarse localmente.</ImmersiveChefs_GlitterworldCookware.description>
   <ImmersiveChefs_ChefsKnife.label>juego de cuchillos de chef</ImmersiveChefs_ChefsKnife.label>

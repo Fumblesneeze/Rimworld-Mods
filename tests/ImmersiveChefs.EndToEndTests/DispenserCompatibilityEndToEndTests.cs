@@ -2504,7 +2504,7 @@ internal static class DispenserE2EFixture
     {
         var pipeDef = DefDatabase<ThingDef>.GetNamed("sewagePipeHidden");
         var towerCell = appliance.Position + new IntVec3(-5, 0, -1);
-        for (var x = towerCell.x + 2; x <= appliance.Position.x - 1; x++)
+        for (var x = towerCell.x + 2; x < appliance.OccupiedRect().minX; x++)
         {
             var pipe = ThingMaker.MakeThing(pipeDef, ThingDefOf.Steel);
             pipe.SetFactionDirect(Faction.OfPlayer);

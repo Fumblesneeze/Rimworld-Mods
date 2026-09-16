@@ -1,5 +1,21 @@
 # Countertop microwave sprite generation
 
+## Final human-selected September 16 appliance
+
+The user rejected the preceding microwave candidates and selected a new derivative of the domestic dishwasher. It uses parallel rectangular top edges, a front half the dishwasher's height, a window, swing-door handle, two right-side dials and one button. Both finishes have384×384canvases, consistent independent cardinal views and unchanged countertop support behavior. Side/rear panels do not carry the front controls. Source geometry and exact hashes are in the approval manifests and [human selection record](asset-prompts/ImmersiveChefs-HumanSelections-20260916.md). Native placements in all four rotations and three camera zooms are retained in `artifacts/VisualAssets/FinalBuildings-20260916/review.html`.
+
+## Superseded early September 2026 remake
+
+The selected set is base North N, alternate North F, base East/West J and alternate East/West C, with H5/B2 rear cards retained. Independent static review scores all eight cards and both families 9/10. Fronts show an empty glass turntable, vertical pull, blank unlit display and six keys: square on neutral steel, round on warm-gray enamel. The four side fronts are flush, with no obsolete protruding knobs. Exact submitted prompts and original identities are retained in [the September generation record](asset-prompts/ImmersiveChefs-Microwave-20260910.md). Source/final hashes and measured components are pinned in the approval manifests.
+
+North and South use a uniform fit within 400×400, centered in 512×512. New East/West cards reuse their old raw crop, uniform scale and placement (300×354 at106,79; 300×365 at106,73). Their narrower alpha silhouettes come from removed controls, not an enlarged body. Independent old/new body probes differ by about 1–2 source pixels. The18-source-pixel #171412 contour passes all three Core ring checks. Local processing is chroma removal, crop, uniform scale, edge despill and contour; semantic artwork comes from imagegen.
+
+Actual separate top/casing depths are North180/118 and180/117, East196/128, South190/112, and West201/132 or202/132. These exclude the seam and remain within the unchanged .50–.68 ratio. North windows are94,296,196,90 and93,295,196,90; handles304,295,25,95 and304,294,25,96; complete discs124,312,132,66 and123,315,135,62 (x,y,width,height). Roof means145.375/136.685 and bare-front means138.114/127.469 preserve the top/front value ordering. The actual64×69 and40×43 mesh proxies show no visible fringe. Very low-alpha residual chroma is recorded in the independent review; no claim of zero chroma in every partially transparent pixel is made.
+
+H5/B2, I/C and K/E native captures failed strict blind microwave identity despite strong quality/fit scores. K/E runs C passed both support workflows and all48 clearances; both reviewers retained conventional oven alternatives. L exceeded the150 roof limit; M inverted top/front lighting; N corrected that value. The reviewed fixture's pending-thought branch was not triggered in C because no initial attached thoughts were present. N/F/J/C passed fresh native runs D on table and machining-bench supports, with all92 exact-process captures personally inspected. Both blind reviewers scored every comparison9/10 for quality and fit and clarified confident microwave identity from the visible front cues, with no competing type. Source-to-anonymous copies are hash-matched; the185-file reviewed package, unchanged normal config/prefs, clean logs and graceful process cleanup are retained in the D evidence ledgers. Workbench D also recorded three destroyed-target pending thoughts, whose visible bubbles remained below and clear of the gallery throughout native placement/variation and zoom captures. The original generation and plane-deformation history below describes only the superseded August family.
+
+## Historical August 2026 family
+
 Owning mod: `fumblesneeze.immersivechefs`
 
 This is the retained source contract for the fallback microwave's two cosmetic `Graphic_Multi` families. It does not apply when `Mlie.DThermodynamicsHotMeals` removes the fallback Def.

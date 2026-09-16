@@ -152,7 +152,7 @@ public sealed class WorkGiver_PlateMeals : WorkGiver_Scanner
         var missing = Math.Max(0, meal.stackCount - embedded.EmbeddedPlateCount);
         foreach (var candidate in candidates.Where(candidate => candidate.Dirty == wantDirty))
         {
-            var reservableCount = Math.Min(missing, candidate.Thing.stackCount);
+            var reservableCount = Math.Min(missing, PlateMaterialEligibilityRuntime.CountEligible(candidate.Thing, complexity));
             while (reservableCount > 0 && !pawn.CanReserve(candidate.Thing, 1, reservableCount))
             {
                 reservableCount--;
@@ -233,6 +233,11 @@ public sealed class JobDriver_PlateMeals : JobDriver
         }
 
         var count = Math.Min(job.count, source.stackCount);
+        if (!PlateMaterialEligibilityRuntime.PreparePickup(source, MealComplexityRuntime.Classify(TargetThingA.def), count))
+        {
+            EndIncompletable();
+            return;
+        }
         var picked = count < source.stackCount ? source.SplitOff(count) : source;
         if (picked.Spawned)
         {

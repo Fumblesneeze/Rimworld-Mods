@@ -140,7 +140,7 @@ public sealed class CeramicsContinuedPorcelainPlateTest : IRimWorldEndToEndTest
                     plates.Stuff!.stuffProps.color,
                     plates.DrawColor,
                     "The rendered plate color must come from the exact porcelain Stuff mask.");
-                EndToEndAssert.NotNull(plates.GetComp<CompQuality>(), "Native crafting must assign plate quality.");
+                EndToEndAssert.True(plates.GetComp<CompQuality>() is null, "Crafted plates have no quality grade.");
                 EndToEndAssert.Equal(
                     75f,
                     plates.GetComp<CompKitchenwareStats>().CurrentStats.MaterialCleanliness,

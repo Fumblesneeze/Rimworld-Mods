@@ -8,6 +8,8 @@ manifest, and the exact shipped sprites. ImageMagick is the only external render
 #>
 [CmdletBinding()]
 param(
+    [string]$ManifestPath,
+    [ValidateSet('json', 'table')][string]$Output = 'json',
     [string]$ImageMagickPath = 'magick'
 )
 
@@ -23,10 +25,16 @@ function Invoke-Magick {
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $workshopRoot = Join-Path $repositoryRoot 'mods\ImmersiveChefs\Release\workshop'
 $textureRoot = Join-Path $repositoryRoot 'mods\ImmersiveChefs\Textures\ImmersiveChefs'
-$manifestPath = Join-Path $workshopRoot 'presentation.json'
+$manifestFile = Join-Path $workshopRoot 'presentation.json'
+if (-not [string]::IsNullOrWhiteSpace($ManifestPath)) {
+    $selectedManifest = [IO.Path]::GetFullPath($ManifestPath)
+    if (-not $selectedManifest.Equals($manifestFile, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "ManifestPath must select this worktree's Immersive Chefs presentation.json."
+    }
+}
 $templatePath = Join-Path $repositoryRoot 'release\templates\workshop\feature-card.svg'
 $fontPath = (Join-Path $repositoryRoot 'release\templates\workshop\fonts\Oswald-SemiBold.ttf').Replace('\', '/')
-$manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+$manifest = Get-Content -LiteralPath $manifestFile -Raw -Encoding UTF8 | ConvertFrom-Json
 $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) ('immersive-chefs-workshop-' + [Guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory -Path $temporaryRoot
 
@@ -118,8 +126,16 @@ finally {
     if (Test-Path -LiteralPath $temporaryRoot) { Remove-Item -LiteralPath $temporaryRoot -Recurse -Force }
 }
 
-[pscustomobject][ordered]@{
+$result = [pscustomobject][ordered]@{
     schema = [string]$manifest.schema
     cards = @($manifest.cards).Count
     outputRoot = Join-Path $workshopRoot 'assets'
-} | ConvertTo-Json -Compress
+    manifestSha256 = (Get-FileHash -LiteralPath $manifestFile -Algorithm SHA256).Hash
+    rendererSha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash
+    outputs = @($manifest.cards | ForEach-Object {
+        $cardPath = Join-Path $workshopRoot ([string]$_.path).Replace('/', '\')
+        [pscustomobject]@{ token = [string]$_.token; path = $cardPath; sha256 = (Get-FileHash -LiteralPath $cardPath -Algorithm SHA256).Hash }
+    })
+}
+if ($Output -eq 'json') { $result | ConvertTo-Json -Depth 4 -Compress }
+else { $result | Format-List }

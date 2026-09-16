@@ -293,6 +293,18 @@ public sealed class OperationRegistry
                 "Replaces only the selected local package directory; temporary staging is removed and no install backup is retained.",
                 static (registry, arguments, _) => Task.FromResult<object>(registry.SyncLocalMod(arguments))),
             Register(
+                "presentation_render",
+                "Render one profile's authored Workshop presentation with its hash-bound offline renderer.",
+                OperationRisk.WorkspaceWrite,
+                longRunning: false,
+                timeoutSeconds: 150,
+                "Returns bounded renderer output and its authored output directory; no game launch, local install, or Steam mutation.",
+                static async (registry, arguments, cancellationToken) => await RepositoryOperations.ExecuteAsync(
+                    RepositoryOperationPlanner.PresentationRender(
+                        registry._repositoryRoot,
+                        registry.RequiredProfile(RequiredString(arguments, "packageId"))),
+                    cancellationToken)),
+            Register(
                 "release_prepare",
                 "Build, validate, stage, hash, and remotely preflight one universal release profile without mutating Steam.",
                 OperationRisk.WorkspaceWrite,

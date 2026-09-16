@@ -650,31 +650,9 @@ public sealed class ReleasePreparer(string repositoryRoot)
             using var document = JsonDocument.Parse(File.ReadAllText(manifest));
             requiresResolvedDescription = document.RootElement.TryGetProperty("descriptionResolver", out var resolverDeclaration) &&
                                           resolverDeclaration.ValueKind == JsonValueKind.Object;
-            if (document.RootElement.TryGetProperty("renderer", out var renderer))
-            {
-                if (!renderer.TryGetProperty("path", out var rendererPath) ||
-                    rendererPath.ValueKind != JsonValueKind.String ||
-                    !renderer.TryGetProperty("sha256", out var rendererHash) ||
-                    rendererHash.ValueKind != JsonValueKind.String)
-                    throw new InvalidOperationException("Presentation renderer declaration is incomplete.");
-                var relative = rendererPath.GetString()!;
-                var script = RepositoryRoot.ContainedPath(_repositoryRoot, relative);
-                var scriptsRoot = Path.Combine(_repositoryRoot, "scripts") + Path.DirectorySeparatorChar;
-                if (!script.StartsWith(scriptsRoot, StringComparison.OrdinalIgnoreCase) ||
-                    !string.Equals(Path.GetExtension(script), ".ps1", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Presentation renderer is not a contained PowerShell migration adapter: {relative}");
-                if (!File.Exists(script) ||
-                    !string.Equals(ReleaseCandidateBuilder.Hash(script), rendererHash.GetString(), StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException("Presentation renderer does not match the hash pinned by its manifest.");
-                var render = await ProcessRunner.RunAsync(
-                    "pwsh",
-                    ["-NoProfile", "-NonInteractive", "-File", script, "-ManifestPath", manifest, "-Output", "json"],
-                    _repositoryRoot,
-                    TimeSpan.FromMinutes(2),
-                    cancellationToken);
-                if (render.ExitCode != 0)
-                    throw new InvalidOperationException($"Presentation render validation failed: {Bounded(render.StandardError + render.StandardOutput)}");
-            }
+            if (document.RootElement.TryGetProperty("renderer", out _))
+                _ = await RepositoryOperations.ExecuteAsync(
+                    RepositoryOperationPlanner.PresentationRender(_repositoryRoot, profile), cancellationToken);
         }
         var provenance = Path.ChangeExtension(profile.Description, ".provenance.json");
         if (profile.PublishedFileId is not null && requiresResolvedDescription && !File.Exists(provenance))

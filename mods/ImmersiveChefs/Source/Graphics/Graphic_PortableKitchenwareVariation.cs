@@ -32,6 +32,43 @@ public sealed class Graphic_PortableKitchenwareVariation : Graphic_Single
         MaterialKinds = new();
     private readonly Dictionary<PortableTextureFamily, Graphic_Single> familyGraphics = new();
 
+    public override void Print(SectionLayer layer, Thing thing, float extraRotation)
+    {
+        if (thing.stackCount < 2 || CompTablewareStack.For(thing) is not { } pile)
+        {
+            base.Print(layer, thing, extraRotation);
+            return;
+        }
+        var layout = TablewareStackLayout.For(thing.def.GetModExtension<KitchenwareExtension>().product, thing.stackCount);
+        var size = drawSize * (thing.MultipleItemsPerCellDrawn() ? .8f : 1f);
+        var origin = thing.TrueCenter() + DrawOffset(thing.Rotation);
+        for (var i = 0; i < layout.Count; i++)
+        {
+            var unit = pile.UnitView(i);
+            var material = unit.Graphic.MatSingleFor(unit);
+            TryGetTextureAtlasReplacementInfo(material, thing.def.category.ToAtlasGroup(), false, true,
+                out material, out var uv, out var color);
+            var center = origin + new Vector3(layout[i].X, .002f * i, layout[i].Z);
+            Printer_Plane.PrintPlane(layer, center, size, material, extraRotation, false, uv,
+                new[] { color, color, color, color });
+        }
+    }
+
+    public override void DrawWorker(Vector3 loc, Rot4 rot, ThingDef thingDef, Thing thing, float extraRotation)
+    {
+        if (thing is null || thing.stackCount < 2 || CompTablewareStack.For(thing) is not { } pile)
+        {
+            base.DrawWorker(loc, rot, thingDef, thing, extraRotation);
+            return;
+        }
+        var layout = TablewareStackLayout.For(thingDef.GetModExtension<KitchenwareExtension>().product, thing.stackCount);
+        for (var i = 0; i < layout.Count; i++)
+        {
+            var unit = pile.UnitView(i);
+            unit.Graphic.DrawWorker(loc + new Vector3(layout[i].X, .002f * i, layout[i].Z), rot, thingDef, unit, extraRotation);
+        }
+    }
+
     public override Material MatAt(Rot4 rot, Thing thing = null!)
     {
         var selected = SelectGraphic(thing);

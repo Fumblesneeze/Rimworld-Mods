@@ -141,7 +141,7 @@
   <ImmersiveChefs_Stat_CookingSpeedValue>調理速度係数：{0}</ImmersiveChefs_Stat_CookingSpeedValue>
   <ImmersiveChefs_Stat_CulinaryModifierValue>料理の出来栄え補正：{0}</ImmersiveChefs_Stat_CulinaryModifierValue>
   <ImmersiveChefs_Stat_EatingSpeedValue>食事速度係数：{0}</ImmersiveChefs_Stat_EatingSpeedValue>
-  <ImmersiveChefs_Stat_Explanation>Immersive Chefs は、素材と製作品質からこの値を算出します。</ImmersiveChefs_Stat_Explanation>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs は素材からこの値を算出します。調理器具とシェフナイフには製作品質も影響します。</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>待機中</ImmersiveChefs_Dishwasher_StatusIdle>
   <ImmersiveChefs_Dishwasher_StatusWashing>洗浄中（{0}%）</ImmersiveChefs_Dishwasher_StatusWashing>

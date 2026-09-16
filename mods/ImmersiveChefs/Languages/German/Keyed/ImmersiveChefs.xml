@@ -141,7 +141,7 @@
   <ImmersiveChefs_Stat_CookingSpeedValue>Kochgeschwindigkeitsfaktor: {0}</ImmersiveChefs_Stat_CookingSpeedValue>
   <ImmersiveChefs_Stat_CulinaryModifierValue>Modifikator der kulinarischen Qualität: {0}</ImmersiveChefs_Stat_CulinaryModifierValue>
   <ImmersiveChefs_Stat_EatingSpeedValue>Essgeschwindigkeitsfaktor: {0}</ImmersiveChefs_Stat_EatingSpeedValue>
-  <ImmersiveChefs_Stat_Explanation>Immersive Chefs leitet diesen Wert aus Material und Fertigungsqualität ab.</ImmersiveChefs_Stat_Explanation>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs leitet diesen Wert aus dem Material ab. Bei Kochgeschirr und Kochmessern spielt auch die Fertigungsqualität eine Rolle.</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>inaktiv</ImmersiveChefs_Dishwasher_StatusIdle>
   <ImmersiveChefs_Dishwasher_StatusWashing>spült ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>

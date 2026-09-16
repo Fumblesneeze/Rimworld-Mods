@@ -141,7 +141,7 @@
   <ImmersiveChefs_Stat_CookingSpeedValue>Facteur de vitesse de cuisine : {0}</ImmersiveChefs_Stat_CookingSpeedValue>
   <ImmersiveChefs_Stat_CulinaryModifierValue>Modificateur de qualité culinaire : {0}</ImmersiveChefs_Stat_CulinaryModifierValue>
   <ImmersiveChefs_Stat_EatingSpeedValue>Facteur de vitesse du repas : {0}</ImmersiveChefs_Stat_EatingSpeedValue>
-  <ImmersiveChefs_Stat_Explanation>Immersive Chefs déduit cette valeur du matériau et de la qualité de fabrication.</ImmersiveChefs_Stat_Explanation>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs déduit cette valeur du matériau. La qualité de fabrication intervient aussi pour les ustensiles de cuisson et les couteaux de chef.</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>inactif</ImmersiveChefs_Dishwasher_StatusIdle>
   <ImmersiveChefs_Dishwasher_StatusWashing>lavage ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>

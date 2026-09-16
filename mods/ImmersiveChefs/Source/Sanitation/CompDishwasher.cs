@@ -533,6 +533,61 @@ public sealed class CompDishwasher : ThingComp, IThingHolder
 
     public ThingOwner GetDirectlyHeldThings() => Contents;
 
+    internal DishwasherPresentationState ReadPresentation(List<Thing> visibleUnits)
+    {
+        visibleUnits.Clear();
+        bool hasContents;
+        bool unfinished;
+        if (ProcessorFrameworkAdapter.Controls(parent))
+        {
+            ProcessorFrameworkAdapter.ReadPresentation(parent, visibleUnits, out hasContents, out unfinished);
+        }
+        else
+        {
+            hasContents = false;
+            unfinished = false;
+            if (contents is not null)
+            {
+                foreach (var ware in contents.InnerListForReading)
+                {
+                    if (ware.Destroyed || ware.stackCount <= 0 || !ReferenceEquals(ware.holdingOwner, contents))
+                        continue;
+                    hasContents = true;
+                    AddVisibleUnits(visibleUnits, ware);
+                }
+
+                var count = Math.Min(localLoadThings.Count,
+                    Math.Min(localLoadProgressTicks.Count, localLoadDurationTicks.Count));
+                for (var i = 0; i < count; i++)
+                {
+                    var ware = localLoadThings[i];
+                    if (ware is { Destroyed: false, stackCount: > 0 } &&
+                        ReferenceEquals(ware.holdingOwner, contents) &&
+                        localLoadProgressTicks[i] < localLoadDurationTicks[i])
+                    {
+                        unfinished = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Rendering must never call CanProgress/ProcessorCycleCanProgress: those paths can
+        // debit legacy water or change the processor's pause state.
+        var canProgress = hasContents && unfinished && HasActivePower() &&
+            (!RequiresDubsWater || DishwasherCyclePolicy.CanContinueWithWater(
+                true, waterDebitedForCycle, DubsWaterAdapter.HasSuppliedConnection(parent),
+                residualWaterSupplyRequiredForCycle, DubsWaterAdapter.CanSupplyCycleWater(parent, 0.001f)));
+        return DishwasherPresentationPolicy.Resolve(hasContents, unfinished, canProgress);
+    }
+
+    internal static void AddVisibleUnits(List<Thing> visibleUnits, Thing ware)
+    {
+        var count = Math.Min(ware.stackCount, 3 - visibleUnits.Count);
+        for (var i = 0; i < count; i++)
+            visibleUnits.Add(ware);
+    }
+
     public void GetChildHolders(List<IThingHolder> outChildren)
     {
         ThingOwnerUtility.AppendThingHoldersFromThings(outChildren, GetDirectlyHeldThings());

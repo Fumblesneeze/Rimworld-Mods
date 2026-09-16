@@ -112,33 +112,8 @@ internal static class DiningStandardsRuntime
         return result;
     }
 
-    private static bool MeetsMaterial(ServiceWareSnapshot ware, ServiceMaterialTier required)
-    {
-        if (ware.Dirty)
-        {
-            return false;
-        }
-
-        var actual = ware.Material switch
-        {
-            KitchenMaterialKind.Gold => ServiceMaterialTier.Gold,
-            KitchenMaterialKind.Silver => ServiceMaterialTier.Silver,
-            KitchenMaterialKind.StainlessSteel or KitchenMaterialKind.Ceramic => ServiceMaterialTier.Refined,
-            KitchenMaterialKind.Steel or KitchenMaterialKind.Uranium or KitchenMaterialKind.Plastic or
-                KitchenMaterialKind.AdvancedSteel or
-                KitchenMaterialKind.Titanium or KitchenMaterialKind.Plasteel => ServiceMaterialTier.Durable,
-            _ => ServiceMaterialTier.Basic
-        };
-        if (actual >= required)
-        {
-            return true;
-        }
-
-        return required == ServiceMaterialTier.Refined &&
-               ware.Material == KitchenMaterialKind.Steel &&
-               ware.Quality >= QualityCategory.Good &&
-               !HasRegisteredRefinedMaterial();
-    }
+    private static bool MeetsMaterial(ServiceWareSnapshot ware, ServiceMaterialTier required) =>
+        DiningStandardPolicy.MeetsMaterial(ware.Material, ware.Dirty, required, HasRegisteredRefinedMaterial());
 
     private static bool HasRegisteredRefinedMaterial()
     {

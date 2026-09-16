@@ -23,6 +23,24 @@ The MCP/CLI SHALL provide typed operations for strict OpenSpec validation, proje
 - **WHEN** a caller validates a distributable mod package
 - **THEN** the result checks its declared allowlist and rejects source, symbols, caches, test, host, Gateway, compiler, optional-mod, RimWorld, Unity, or bundled Harmony assemblies as applicable
 
+### Requirement: Presentation rendering is a typed offline operation
+The MCP/CLI SHALL expose `presentation_render(packageId)` for one validated release profile. It SHALL
+execute only the repository-contained PowerShell renderer declared by path and SHA-256 in that
+profile's presentation manifest, with the exact manifest path, a bounded timeout, cancellation, and
+bounded output. The operation SHALL work in an uncommitted authoring checkout or an isolated release
+worktree, without launching RimWorld, changing Steam, installing a mod, or requiring a clean revision.
+Publication preparation and synchronization SHALL retain their separate clean-revision gates.
+
+#### Scenario: Rerender an authored presentation
+- **WHEN** a caller selects a package whose presentation manifest pins an existing renderer
+- **THEN** the operation invokes that renderer with the selected manifest and JSON output, returns its
+  exit/duration/output evidence, and repeated unchanged input produces the same authored outputs
+
+#### Scenario: Refuse an unreviewed or failed renderer
+- **WHEN** the renderer is missing, outside the repository scripts directory, not PowerShell, changed
+  from its pinned hash, or returns a failure
+- **THEN** rendering fails with an actionable error and does not report successful presentation output
+
 ### Requirement: Successful mod builds install the local package by default
 The `mod_build` operation SHALL refuse to run while RimWorld is active, build the selected profile's
 project, and, only after a successful build, synchronize its positive-allowlist package into the

@@ -140,6 +140,7 @@ public sealed class CompSanitation : ThingComp
         if (parent.Spawned && parent.Map is { } map)
         {
             map.listerHaulables.Notify_AddedThing(parent);
+            parent.DirtyMapMesh(map);
         }
     }
 }

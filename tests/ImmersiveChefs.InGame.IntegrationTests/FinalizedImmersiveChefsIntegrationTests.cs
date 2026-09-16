@@ -1278,8 +1278,8 @@ public static class FinalizedImmersiveChefsIntegrationTests
             foreach (var binding in embedded.Bindings)
             {
                 IntegrationAssert.True(
-                    binding.Quality == (int)QualityCategory.Poor,
-                    "Every generated origin plate must have Poor craftsmanship quality.");
+                    binding.Quality == (int)QualityCategory.Normal,
+                    "Ungraded tableware uses the neutral legacy binding value.");
                 IntegrationAssert.True(
                     !binding.IsDirty,
                     "Every generated origin plate must begin clean.");
@@ -2523,8 +2523,6 @@ public static class FinalizedImmersiveChefsIntegrationTests
             var childFood = child.needs!.food!;
             var childJobs = child.jobs!;
 
-            plate.GetComp<CompQuality>().SetQuality(QualityCategory.Excellent, ArtGenerationContext.Colony);
-            cutlery.GetComp<CompQuality>().SetQuality(QualityCategory.Excellent, ArtGenerationContext.Colony);
             plate.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
             cutlery.GetComp<CompSanitation>().MarkClean(WashProvenance.Safe);
             meal.GetComp<CompCulinaryState>().ReplaceServings(new[]

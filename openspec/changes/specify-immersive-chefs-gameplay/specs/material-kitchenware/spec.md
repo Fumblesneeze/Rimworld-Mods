@@ -3,24 +3,24 @@
 **Mod scope:** Immersive Chefs (`fumblesneeze.immersivechefs`) at `mods/ImmersiveChefs`.
 
 ### Requirement: Kitchenware has explicit gameplay identities
-Immersive Chefs SHALL add four distinct, quality-bearing kitchenware types: a cookware set, a plate, a cutlery setting, and a chef's knife set. One cookware item SHALL abstract one pot, one pan, their lids, handles, and small utensils; one plate and one cutlery item SHALL each serve one meal portion; and one chef's knife item SHALL represent a cook's personal knife set.
+Immersive Chefs SHALL add four distinct kitchenware types: a cookware set, a plate, a cutlery setting, and a chef's knife set. One cookware item SHALL abstract one pot, one pan, their lids, handles, and small utensils; one plate and one cutlery item SHALL each serve one meal portion; and one chef's knife item SHALL represent a cook's personal knife set.
 
 Player-facing terminology SHALL call the pot/pan/lid abstraction a `cookware set` everywhere. `Tableware` MAY collectively mean plates and cutlery, and `kitchenware` MAY name the broad catalog category containing all four product types, but alerts, bills, requirements, float-menu messages, inspect strings, and other actionable text MUST name the exact missing or used product rather than calling a cookware set `kitchenware`.
 
 #### Scenario: Inspect each crafted kitchenware type
 - **WHEN** a player inspects a cookware set, plate, cutlery setting, and chef's knife set
-- **THEN** each item identifies its gameplay unit and displays its material, crafting quality, cleanliness, comfort, and every speed or culinary stat applicable to that type
+- **THEN** each item identifies its gameplay unit and displays its material, cleanliness, comfort, crafting quality only for cookware and knives, and every speed or culinary stat applicable to that type
 
 ### Requirement: Stuff-aware items preserve material identity and color
-Metal, wood, registered stone-block, and compatible plastic kitchenware SHALL be stuff-aware, SHALL retain the selected Stuff on every split, merge, haul, save, and load operation, and SHALL draw using that Stuff's color. Fixed-material ceramic and adobe plates and fixed glitterworld cookware SHALL use their own material-specific labels and colors. Kitchenware with different Stuff, crafting quality, or sanitation state MUST NOT merge into one stack.
+Metal, wood, registered stone-block, and compatible plastic kitchenware SHALL be stuff-aware, SHALL retain each unit's selected Stuff on every split, merge, haul, save, and load operation, and SHALL draw using that Stuff's color. Fixed-material ceramic and adobe plates and fixed glitterworld cookware SHALL use their own material-specific labels and colors. Plates and cutlery of the same ThingDef MAY stack across Stuff materials, preserving each unit's Stuff and hit points. Different sanitation, wash provenance, personal ownership or interrupted-session ownership MUST remain separate. Plates and cutlery SHALL have no crafting-quality component, grade, quality-based stacking restriction, or quality-derived value/durability modifier; cookware and knives retain crafting quality. Cookware and knives retain their existing stack rules.
 
 #### Scenario: Craft visually distinct metal plates
 - **WHEN** a crafter makes one plate batch from steel and another from gold
-- **THEN** the resulting plates retain their respective Stuff, render in the corresponding Stuff colors, and do not stack together
+- **THEN** the resulting plates retain their respective Stuff and render in the corresponding Stuff colors, including after the batches merge into one mixed-material stack and are split again
 
-#### Scenario: Reload quality-bearing kitchenware
+#### Scenario: Reload kitchenware
 - **WHEN** a saved game containing clean and dirty kitchenware of multiple materials and qualities is reloaded
-- **THEN** every item retains its material, color source, crafting quality, quantity, and sanitation state
+- **THEN** every item retains its material, color source, applicable cookware/knife crafting quality, quantity, and sanitation state
 
 ### Requirement: Material eligibility is capability-based and extensible
 Cookware and chef's knives SHALL accept compatible metallic Stuff, including vanilla steel, silver, and gold and supported modded lead, iron, steel variants, stainless steel, brass, bronze, copper, aluminium, titanium, and other metals. Primitive cookware and stone plates SHALL accept any Stuff with the finalized `Stony` material category so loaded material mods participate without an Immersive Chefs Def-name allowlist. Explicit Immersive Chefs exclusions and more-specific material registrations SHALL take precedence over broad categories, so a deliberately excluded material remains unavailable and an explicitly registered plastic or metal is not misclassified merely because it also advertises `Stony`. Plates SHALL accept compatible metal, wood, stone, ceramic, adobe, and registered plastic materials. Cutlery SHALL accept compatible metal, wood, and registered plastic materials.
@@ -45,7 +45,7 @@ The classifier SHALL use explicit kitchen-material registrations plus narrowly a
 - **THEN** any explicit exclusion or explicit non-stone registration for that Stuff still wins
 
 ### Requirement: Optional ceramic and supported adobe shapes have safe recipe paths
-Immersive Chefs SHALL NOT invent ceramic or porcelain content or make a ceramics provider mandatory. When exact package `zal.ceramics` (`Ceramics (Continued)`) is active and finalized Stuff Def `N7_Porcelain` plus the expected ceramics benches are present, Immersive Chefs SHALL explicitly register that Stuff as `Ceramic` for plates and expose a four-plate porcelain recipe at `CeramicsBench_Basic` and `CeramicsBench_Electric`. The recipe SHALL consume exactly 4 units of one registered ceramic Stuff, retain that exact Stuff and its color on all four output plates, use Crafting quality, and retain the provider's `BasicCeramics` progression. Porcelain MUST NOT enter primitive-stone cookware, primitive-stone plates, cutlery, or chef's-knife recipes merely because the upstream Stuff also carries `Stony`.
+Immersive Chefs SHALL NOT invent ceramic or porcelain content or make a ceramics provider mandatory. When exact package `zal.ceramics` (`Ceramics (Continued)`) is active and finalized Stuff Def `N7_Porcelain` plus the expected ceramics benches are present, Immersive Chefs SHALL explicitly register that Stuff as `Ceramic` for plates and expose a four-plate porcelain recipe at `CeramicsBench_Basic` and `CeramicsBench_Electric`. The recipe SHALL consume exactly 4 units of one registered ceramic Stuff, retain that exact Stuff and its color on all four output plates, have no crafting-quality grade, and retain the provider's `BasicCeramics` progression. Porcelain MUST NOT enter primitive-stone cookware, primitive-stone plates, cutlery, or chef's-knife recipes merely because the upstream Stuff also carries `Stony`.
 
 When the package is absent, disabled, or its expected Def shape is missing, the porcelain recipe and classification SHALL be unavailable without a missing Def, hard dependency on the ceramics provider, or fallback to broad `Stony` inference. Because the locally available `EM_AdobeBricks` is a resource rather than Stuff, its current integration SHALL use a fixed-material adobe plate recipe and MUST NOT pretend that the output is made from Stuff. Both optional recipe patches SHALL match the provider's canonical package ID through the required XML Extensions patch engine rather than a translated display name.
 
@@ -56,7 +56,7 @@ When the package is absent, disabled, or its expected Def shape is missing, the 
 #### Scenario: Ceramics (Continued) porcelain is available
 - **WHEN** exact package `zal.ceramics` finalizes `N7_Porcelain`, `CeramicsBench_Basic`, `CeramicsBench_Electric`, and `BasicCeramics`
 - **THEN** both ceramics benches expose the Immersive Chefs porcelain-plate recipe after the provider's research
-- **THEN** one completed native bill consumes exactly 4 porcelain and produces four quality-bearing plates whose Stuff is exactly `N7_Porcelain`
+- **THEN** one completed native bill consumes exactly 4 porcelain and produces four ungraded plates whose Stuff is exactly `N7_Porcelain`
 
 #### Scenario: Porcelain's broad Stony tag does not leak
 - **WHEN** `N7_Porcelain` is registered as ceramic for plates
@@ -90,7 +90,7 @@ The table expresses ordinary material-volume units, not raw stack items. Every k
 
 These costs SHALL remain benchmarked against same-era Core objects instead of being treated as isolated tuning constants: one Core wall consumes 5 material units and one Core steel knife consumes 30, so primitive cookware costs one wall-equivalent of stone, metal cookware costs only 1.2 wall-equivalents, a non-weapon chef's knife set costs 20% of the combat knife, and one complete place setting costs 1.5 material units. A future rebalance SHALL record its comparator Defs and ratios before changing the table.
 
-Every recipe SHALL use the completing pawn's Crafting skill to assign a vanilla `QualityCategory` to all items in its output batch. The wood in each cookware recipe SHALL represent handles, spatulas, and related non-metal parts rather than a second selectable Stuff. Every ingredient requirement SHALL use a semantic player label such as `any stony material`, `any intermediate metal`, or `wood`; no generated bill requirement MAY expose an internal category such as `root`. Plate and cutlery recipes SHALL have no Immersive Chefs research prerequisite: progression comes from access to `CraftingSpot`, vanilla `Smithing`/`Electricity` for the smithies, and vanilla `Machining` for `TableMachining`. The machining recipes SHALL remain a late universal route even for materials also available at an earlier station.
+Cookware and knife recipes SHALL use the completing pawn's Crafting skill to assign a vanilla `QualityCategory` to their output. Plate and cutlery recipes SHALL produce ungraded items regardless of crafter skill. The wood in each cookware recipe SHALL represent handles, spatulas, and related non-metal parts rather than a second selectable Stuff. Every ingredient requirement SHALL use a semantic player label such as `any stony material`, `any intermediate metal`, or `wood`; no generated bill requirement MAY expose an internal category such as `root`. Plate and cutlery recipes SHALL have no Immersive Chefs research prerequisite: progression comes from access to `CraftingSpot`, vanilla `Smithing`/`Electricity` for the smithies, and vanilla `Machining` for `TableMachining`. The machining recipes SHALL remain a late universal route even for materials also available at an earlier station.
 
 The bill-configuration requirement SHALL remain a semantic description of the materials that recipe accepts. The info card for an existing Stuff-made kitchenware Thing SHALL instead select the producing recipe tier appropriate to that Thing's actual Stuff and show the exact material for the batch cost. It MUST NOT inherit the unrelated first producing recipe merely because RimWorld enumerated that recipe first.
 
@@ -108,7 +108,7 @@ The bill-configuration requirement SHALL remain a semantic description of the ma
 
 #### Scenario: Smith intermediate place settings
 - **WHEN** a colony with a fueled smithy crafts bronze plates and cutlery from registered bronze
-- **THEN** the smithy produces four of each with bronze Stuff and one crafting quality per output batch without requiring an Immersive Chefs research project
+- **THEN** the smithy produces four of each with bronze Stuff and no crafting-quality grade without requiring an Immersive Chefs research project
 
 #### Scenario: Craft kitchenware from Silver or Gold
 - **WHEN** the player restricts a 6-unit, 4-unit, or 2-unit metal kitchenware bill to vanilla Silver or Gold
@@ -117,14 +117,14 @@ The bill-configuration requirement SHALL remain a semantic description of the ma
 
 #### Scenario: Craft a batch of wood place settings
 - **WHEN** a pawn completes each wood place-setting recipe at a crafting spot
-- **THEN** 4 wood yields four wood plates and 2 wood yields four stackable wood cutlery settings, with one shared crafting quality per batch
+- **THEN** 4 wood yields four wood plates and 2 wood yields four stackable wood cutlery settings, with no crafting-quality grade
 
 ### Requirement: Portable culinary ware enters appropriate trader stock
-Every portable Immersive Chefs ware item that a player can reasonably carry and own SHALL be sellable. Trader stock SHALL remain low and thematic: neolithic bulk-goods traders MAY carry primitive cookware and inexpensive wood or stone tableware; outlander bulk-goods traders MAY carry ordinary cookware, plates, cutlery, and chef's knife sets; and exotic-goods traders MAY rarely carry glitterworld cookware. Prepared ingredients, dirty ware, installed buildings, and research-locked station/appliance products SHALL not be injected as ordinary stock merely to satisfy sellability. Stock generators SHALL preserve Stuff, quality, sanitation, and stack counts and SHALL not create optional-mod package coupling.
+Every portable Immersive Chefs ware item that a player can reasonably carry and own SHALL be sellable. Trader stock SHALL remain low and thematic: neolithic bulk-goods traders MAY carry primitive cookware and inexpensive wood or stone tableware; outlander bulk-goods traders MAY carry ordinary cookware, plates, cutlery, and chef's knife sets; and exotic-goods traders MAY rarely carry glitterworld cookware. Prepared ingredients, dirty ware, installed buildings, and research-locked station/appliance products SHALL not be injected as ordinary stock merely to satisfy sellability. Stock generators SHALL preserve Stuff, applicable cookware/knife quality, sanitation, and stack counts and SHALL not create optional-mod package coupling.
 
 #### Scenario: Buy everyday kitchen supplies
 - **WHEN** an eligible bulk-goods trader generates stock
-- **THEN** it may contain a low number of era-appropriate cookware sets, plates, cutlery settings, or chef's knife sets using valid Stuff and quality
+- **THEN** it may contain a low number of era-appropriate cookware sets, plates, cutlery settings, or chef's knife sets using valid Stuff and, for cookware/knives, quality
 - **THEN** the player can buy or sell eligible portable ware through the native trade dialog
 
 #### Scenario: Find glitterworld cookware
@@ -168,7 +168,7 @@ Primitive stone cookware SHALL have intrinsic material-cleanliness `15`, Cooking
 - **THEN** the granite set displays cleanliness `15`, speed `0.60`, comfort `0.10`, material culinary offset `-12`, and no more than half the steel set's maximum hit points
 
 #### Scenario: Compare clean porous and durable plates
-- **WHEN** equal-quality clean adobe, wood, vanilla-steel, and registered-ceramic plates are compared
+- **WHEN** clean adobe, wood, vanilla-steel, and registered-ceramic plates are compared
 - **THEN** their normalized intrinsic material-cleanliness scores are `5`, `10`, `50`, and at least `70`, respectively
 - **THEN** marking the wood or adobe plate clean does not erase its intrinsic material penalty
 
@@ -273,8 +273,48 @@ In RimWorld 1.6, the native Gear tab groups belt/utility apparel under the visib
 - **THEN** the knife retains its intrinsic material cleanliness and equipped state without creating dirty ware or a dishwashing job
 
 ### Requirement: Cutlery is safely stackable
-Cutlery SHALL stack when Stuff, crafting quality, and sanitation state are identical. Its stack count SHALL be preserved through reservations, carrying, splitting, merging, saving, and loading, and one eating job SHALL reserve exactly one setting per diner.
+Cutlery SHALL stack across Stuff materials when all sanitation/ownership state is identical. Its per-unit material, durability and count SHALL be preserved through reservations, carrying, splitting, merging, saving, and loading, and one eating job SHALL reserve exactly one setting per diner.
 
 #### Scenario: Reserve one setting from a clean stack
-- **WHEN** a diner selects one setting from a stack of ten clean, Normal-quality steel cutlery items
+- **WHEN** a diner selects one setting from a stack of ten clean steel cutlery items
 - **THEN** one item is reserved and split for that diner while the remaining nine stay available to other pawns
+
+### Requirement: Mixed tableware stacks remain truthful throughout use
+Mixed-material plate and cutlery stacks SHALL retain an ordered per-unit material/durability ledger. Old homogeneous stacks initialize from their actual current Stuff, hit points and count. Native sanitation and ownership remain homogeneous stack boundaries. Split, partial merge, full-stack transfer, failed transfer and save/load SHALL conserve every physical unit. A cooking or dining session SHALL use the actual extracted unit for eligibility, comfort, toxicity and other effects. Eligible plate counts SHALL count only eligible materials, and collection SHALL revalidate those units. Whole-stack and partial-transfer value and mass SHALL reflect the units actually present or transferred; trading SHALL not price gold units as wood or vice versa. Damage SHALL not make hidden units immune or recover lost durability through splitting.
+
+#### Scenario: Haul and split a mixed pile
+- **WHEN** a pawn hauls equally clean steel and gold plates into one stack, then carries a subset away
+- **THEN** both resulting stacks conserve the exact material, hit points and total count, including after save/load
+- **AND** clean and dirty or differently owned units never merge.
+
+#### Scenario: Select eligible plates beneath an ineligible top unit
+- **WHEN** a lavish cooking bill draws from a mixed wood-and-gold plate stack whose first unit is wood
+- **THEN** only actual gold units count toward the bill requirement and are extracted for plating
+- **AND** the remaining wooden plates stay available for eligible uses without being converted.
+
+#### Scenario: Wash mixed-material tableware
+- **WHEN** native hand-washing or dishwasher jobs clean an admitted mixed batch
+- **THEN** every cleaned unit retains its material and durability, and partial admission preserves both remainders.
+
+#### Scenario: Damage a mixed pile without hiding fragile units
+- **WHEN** a mixed pile takes native damage, including outdoor deterioration or fire
+- **THEN** the actual damage subtracts from every unit and destroys only units whose remaining hit points reach zero
+- **AND** whole-pile destruction occurs only when no unit survives, regardless of ledger order.
+- **AND** the pile uses the highest contained flammability and deterioration rate for environmental exposure; all units in the exposed pile share the resulting damage, so placing a nonflammable or durable unit first cannot protect hidden wood.
+
+#### Scenario: Render the size and contents of a physical pile
+- **WHEN** a ground stack contains one, two, five, or more than five plates or cutlery settings
+- **THEN** the renderer reuses the current sprites to display respectively one, two, five, or five actual material-aware units
+- **AND** plates overlap vertically while cutlery forms a compact group alongside one another, without increasing the physical item count
+- **AND** open dishwasher contents resolve those same individual materials.
+
+### Requirement: Ungraded everyday tableware
+Plates (including adobe and provider-material plates) and cutlery SHALL have no vanilla quality component. Newly crafted, traded, embedded, carried, and loaded tableware SHALL not show a quality suffix or quality stat. Existing saves SHALL load the same physical tableware, materials, counts, sanitation, and per-unit durability while discarding obsolete quality data through the native component loading path. Existing absolute HP SHALL remain unchanged (bounded by ordinary engine rules); no quality compensation, price refund, or new material conversion is introduced. Cookware and chef's knives retain their current quality behavior.
+
+#### Scenario: Craft and reload ordinary tableware
+- **WHEN** a pawn crafts plates or cutlery and the player saves and reloads the game
+- **THEN** the items retain their material, quantity, sanitation and durability with no crafting-quality grade in their label or stats
+- **AND** tableware formerly saved at different quality grades may now stack when their remaining state permits it.
+
+### Future idea (not scheduled for implementation)
+Separate **fine plates** and **fine cutlery** item types may provide a later luxury-tableware progression. This is an idea only: do not add Defs, recipes, research, textures, quality grades, or balance values for them in this change.

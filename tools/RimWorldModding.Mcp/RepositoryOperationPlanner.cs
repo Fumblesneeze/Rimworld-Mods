@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Text.Json;
 
 namespace RimWorldModding.Mcp;
 
@@ -15,6 +16,39 @@ public static class RepositoryOperationPlanner
     private static readonly Regex LiteralIdentifier = new(
         "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
         RegexOptions.CultureInvariant);
+
+    public static AdapterCommand PresentationRender(string repositoryRoot, ReleaseProfile profile)
+    {
+        var root = RepositoryRoot.Resolve(repositoryRoot);
+        var manifest = RepositoryRoot.ContainedPath(root,
+            Path.Combine(Path.GetDirectoryName(profile.Preview)!, "presentation.json"));
+        if (!File.Exists(manifest))
+            throw new ArgumentException("The selected profile has no presentation.json renderer manifest.");
+        using var document = JsonDocument.Parse(File.ReadAllText(manifest));
+        if (!document.RootElement.TryGetProperty("renderer", out var renderer) ||
+            renderer.ValueKind != JsonValueKind.Object ||
+            !renderer.TryGetProperty("path", out var rendererPath) ||
+            rendererPath.ValueKind != JsonValueKind.String ||
+            string.IsNullOrWhiteSpace(rendererPath.GetString()) ||
+            !renderer.TryGetProperty("sha256", out var rendererHash) ||
+            rendererHash.ValueKind != JsonValueKind.String)
+            throw new ArgumentException("Presentation manifest requires a renderer path and SHA-256.");
+        var script = RepositoryRoot.ContainedPath(root, rendererPath.GetString()!);
+        var scriptsRoot = Path.Combine(root, "scripts") + Path.DirectorySeparatorChar;
+        if (!script.StartsWith(scriptsRoot, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.GetExtension(script), ".ps1", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Presentation renderer must be a contained PowerShell adapter under scripts/.");
+        if (!File.Exists(script) ||
+            !string.Equals(ReleaseCandidateBuilder.Hash(script), rendererHash.GetString(), StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Presentation renderer does not match the SHA-256 pinned by its manifest.");
+        return new AdapterCommand(
+            profile.PresentationOperation,
+            "pwsh",
+            ["-NoProfile", "-NonInteractive", "-File", script, "-ManifestPath", manifest, "-Output", "json"],
+            root,
+            TimeSpan.FromMinutes(2),
+            Path.GetDirectoryName(manifest));
+    }
 
     public static AdapterCommand OpenSpecValidate(string repositoryRoot)
     {

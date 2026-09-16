@@ -40,6 +40,34 @@ public readonly struct DiningRequirement : IEquatable<DiningRequirement>
 
 public static class DiningStandardPolicy
 {
+    public static bool MeetsMaterial(KitchenMaterialKind material, bool dirty, ServiceMaterialTier required, bool refinedAvailable)
+    {
+        if (dirty)
+        {
+            return false;
+        }
+
+        var actual = material switch
+        {
+            KitchenMaterialKind.Gold => ServiceMaterialTier.Gold,
+            KitchenMaterialKind.Silver => ServiceMaterialTier.Silver,
+            KitchenMaterialKind.StainlessSteel or KitchenMaterialKind.Ceramic => ServiceMaterialTier.Refined,
+            KitchenMaterialKind.Steel or KitchenMaterialKind.Uranium or KitchenMaterialKind.Plastic or
+                KitchenMaterialKind.AdvancedSteel or
+                KitchenMaterialKind.Titanium or KitchenMaterialKind.Plasteel => ServiceMaterialTier.Durable,
+            _ => ServiceMaterialTier.Basic
+        };
+        if (actual >= required)
+        {
+            return true;
+        }
+
+        return required == ServiceMaterialTier.Refined &&
+               material == KitchenMaterialKind.Steel &&
+               !refinedAvailable;
+    }
+
+
     private static readonly DiningRequirement[] ColonyRows =
     {
         new(ServiceMaterialTier.Basic, 0f, MealComplexity.Simple, 0),

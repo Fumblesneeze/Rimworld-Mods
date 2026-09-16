@@ -257,6 +257,16 @@ public static class McpTools
             JsonSerializer.SerializeToElement(new { packageId, modsRoot }),
             cancellationToken));
 
+    [McpServerTool(Name = "presentation_render"), Description("Render the selected profile's authored Workshop images through its hash-pinned offline adapter. Allows uncommitted authoring changes; never launches RimWorld, installs a mod, or changes Steam.")]
+    public static async Task<string> RenderPresentation(
+        OperationRegistry registry,
+        [Description("Canonical package ID selected from a universal release profile.")] string packageId,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync(
+            "presentation_render",
+            JsonSerializer.SerializeToElement(new { packageId }),
+            cancellationToken));
+
     [McpServerTool(Name = "release_prepare"), Description("Build, validate, stage, hash, and perform a mutation-free owner/title preflight for one universal release profile. Returns a digest and nonce; never mutates Steam.")]
     public static async Task<string> PrepareRelease(
         OperationRegistry registry,

@@ -229,7 +229,9 @@ internal static class ProcessorFrameworkAdapter
         processorAnyRuined = AccessTools.Property(processorType, "AnyRuined");
         processorEmpty = AccessTools.Property(processorType, "Empty");
         spaceLeftFor = AccessTools.Method(processorType, "SpaceLeftFor");
-        graphicChange = AccessTools.Method(processorType, "GraphicChange");
+        graphicChange = processorType.GetMethod("GraphicChange",
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
+            binder: null, types: new[] { typeof(bool) }, modifiers: null);
         enableAllProcesses = AccessTools.Method(processorType, "EnableAllProcesses");
         addIngredient = processorType.GetMethod(
             "AddIngredient",
@@ -318,7 +320,11 @@ internal static class ProcessorFrameworkAdapter
             processFilterAllowedIngredients.DeclaringType != processFilterType ||
             processorEmptyNow is null ||
             activeProcessComplete is null || activeProcessRuined is null || activeProcessPercent is null ||
-            spaceLeftFor is null || graphicChange is null || enableAllProcesses is null ||
+            spaceLeftFor is null || graphicChange is null ||
+            processorType.Assembly.GetName().Name != ProcessorDishwasherInputCompatibility.AssemblyName ||
+            processorType.ContainsGenericParameters || graphicChange.DeclaringType != processorType ||
+            graphicChange.ReturnType != typeof(void) || graphicChange.IsGenericMethod ||
+            graphicChange.IsAbstract || enableAllProcesses is null ||
             addIngredient is not { ReturnType: { } addIngredientReturn } ||
             addIngredientReturn != typeof(void) || addIngredient.DeclaringType != processorType ||
             takeOutProduct is not { ReturnType: { } takeOutReturn } ||
@@ -425,7 +431,8 @@ internal static class ProcessorFrameworkAdapter
         SetField(properties, "independentProcesses", true);
         SetField(properties, "parallelProcesses", true);
         SetField(properties, "dropIngredients", true);
-        SetField(properties, "showProductIcon", true);
+        SetField(properties, "showProductIcon",
+            buildingDef.comps?.Any(comp => comp is CompProperties_IndustrialDishwasherPresentation) != true);
         SetField(properties, "colorCoded", false);
         SetField(properties, "processes", processList);
         properties.ResolveReferences(buildingDef);
@@ -479,6 +486,9 @@ internal static class ProcessorFrameworkAdapter
         harmony.Patch(
             takeOutProduct!,
             prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(TakeOutProductPrefix)));
+        harmony.Patch(
+            graphicChange!,
+            prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(GraphicChangePrefix)));
         harmony.Patch(
             AccessTools.Method(processorType!, "DoTicks"),
             prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(ProcessorDoTicksPrefix)));
@@ -1231,6 +1241,33 @@ internal static class ProcessorFrameworkAdapter
                 .ToArray();
     }
 
+    internal static void ReadPresentation(Thing thing, List<Thing> visibleUnits,
+        out bool hasContents, out bool hasUnfinishedWork)
+    {
+        hasContents = false;
+        hasUnfinishedWork = false;
+        var processor = ProcessorOf(thing);
+        var owner = processor is null ? null : processorInnerContainer!.GetValue(processor) as ThingOwner;
+        if (processor is null || owner is null)
+            return;
+
+        foreach (var process in ActiveProcesses(processor))
+        {
+            var processHasContents = false;
+            foreach (var ware in ProcessIngredients(process))
+            {
+                if (ware.Destroyed || ware.stackCount <= 0 || !ReferenceEquals(ware.holdingOwner, owner))
+                    continue;
+                processHasContents = true;
+                CompDishwasher.AddVisibleUnits(visibleUnits, ware);
+            }
+
+            hasContents |= processHasContents;
+            hasUnfinishedWork |= processHasContents && activeProcessRuined!.GetValue(process) is not true &&
+                NaturalProgress(process) < 1f;
+        }
+    }
+
     internal static int TryTakeCompletedOutputsToInventory(
         Pawn pawn,
         Thing dishwasherThing,
@@ -1682,6 +1719,14 @@ internal static class ProcessorFrameworkAdapter
     private static ThingWithComps? ParentOfProcessor(object processor)
     {
         return processor is ThingComp comp ? comp.parent : null;
+    }
+
+    private static bool GraphicChangePrefix(object __instance)
+    {
+        var parent = ParentOfProcessor(__instance);
+        // This comp owns state siblings; PF's base-path reload would erase the player's VEF finish.
+        return parent is null || parent.def != ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher ||
+               parent.GetComp<CompIndustrialDishwasherPresentation>() is null;
     }
 
     private static bool IsDishwasher(Thing thing)

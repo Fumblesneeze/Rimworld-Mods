@@ -129,7 +129,7 @@ Each group also includes Immersive Chefs and the developer-only Gateway in isola
 
 ## Save behavior
 
-Current development-schema saves made by the same build line are supported. Serialized meal servings retain culinary quality, ingredient/provenance snapshots, contamination, temperature fields when owned, and exact embedded plate bindings. Kitchenware retains Def, Stuff, quality, hit points, sanitation, and wash provenance. Stack split/merge rules preserve per-serving state rather than forcing a lossy merge.
+Current development-schema saves made by the same build line are supported. Serialized meal servings retain culinary quality, ingredient/provenance snapshots, contamination, temperature fields when owned, and exact embedded plate bindings. Kitchenware retains Def, Stuff, hit points, sanitation, and wash provenance. Stack split/merge rules preserve per-serving state rather than forcing a lossy merge.
 
 Active cooking, dining, service, assistant, and dishwasher work is recovered after load. Process-local coordination is not serialized as if it were a Thing: held ware is returned safely and the ordinary job can retry. Dishwasher loading/progress and its captured exact inputs persist; loss of power, breakdown, or supplied Dubs water pauses the same cycle and restoration resumes it without charging the same water twice.
 
@@ -170,10 +170,12 @@ An imported/debug/third-party meal without an actual serialized binding is inten
 
 ## Known limitations and deferred work
 
-- This is pre-release: backward migration between unreleased schemas and uninstall cleanup are deferred until release preparation.
-- Ceramics (Continued) porcelain is the only currently audited ceramic provider. Base silver/gold and Good-or-better steel keep the expectation tiers attainable without it; no imaginary ceramic or brass Def is created for other mods.
+- Uninstall cleanup and arbitrary unreleased-schema migration remain unsupported. Loading older graded plates/cutlery removes their obsolete crafting grade while preserving their material, count and durability.
+- Ceramics (Continued) porcelain is the only currently audited ceramic provider. Base silver/gold and clean steel keep the expectation tiers attainable without it; no imaginary ceramic or brass Def is created for other mods.
 - Food preservation/canning and food waste are separate future systems. Compatible mods' preserved products remain deliberately outside Immersive Chefs meal/ware behavior.
 - Compatibility is guaranteed only for the exact package chains and guarded shapes above. An upstream update may disable one adapter until its new shape is audited; unrelated base behavior should continue.
 - A broad “all mods together” startup is a canary, not proof of every unsupported permutation. The maintained exact groups are the behavioral compatibility contract.
 
 For development commands and evidence requirements, return to the repository [README](../README.md) and [testing-environment guide](TestingEnvironments.md). The accepted behavior contract lives in the [Immersive Chefs OpenSpec change](../openspec/changes/specify-immersive-chefs-gameplay/proposal.md).
+
+Plates and cutlery are ungraded; only cookware and chef’s knives retain crafting quality. Plates and cutlery can stack across materials while preserving each unit’s material and condition. Separate fine tableware is a future idea, not implemented content.

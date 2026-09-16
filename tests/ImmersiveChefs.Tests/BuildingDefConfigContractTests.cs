@@ -53,6 +53,7 @@ public sealed class BuildingDefConfigContractTests
         var root = FindRepositoryRoot();
         var approvals = XDocument.Load(Path.Combine(root, "docs", "DirectionalSpriteApprovals.xml"));
         var sinkFamilies = approvals.Descendants("frame")
+            .Where(frame => ((string?)frame.Attribute("path"))?.StartsWith("KitchenStation/") == true)
             .Where(frame => ((string?)frame.Attribute("equipmentOrder"))?
                 .Split('|').Any(part => part == "sink") == true)
             .Select(frame => Path.GetFileNameWithoutExtension((string)frame.Attribute("path")!)!

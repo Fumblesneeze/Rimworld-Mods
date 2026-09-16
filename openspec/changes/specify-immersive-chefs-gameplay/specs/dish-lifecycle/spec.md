@@ -18,14 +18,14 @@ Every reusable cookware set, plate, and cutlery set SHALL carry a serialized san
 - **THEN** they remain separate stacks so the wild-water poisoning provenance cannot be erased by merging
 
 ### Requirement: Lossless service-ware metadata
-A plated meal stack SHALL serialize one plate binding per serving, including the plate Def, Stuff, craftsmanship quality, remaining hit points, sanitation state, and wash provenance. Splitting or partially consuming a stack SHALL transfer the corresponding number of bindings, and merging SHALL occur only when the bindings can be combined without erasing material, quality, durability, sanitation, or wash-provenance distinctions.
+A plated meal stack SHALL serialize one plate binding per serving, including the plate Def, Stuff, remaining hit points, sanitation state, and wash provenance. Splitting or partially consuming a stack SHALL transfer the corresponding number of bindings, and merging SHALL occur only when the bindings can be combined without erasing material, durability, sanitation, or wash-provenance distinctions.
 
 #### Scenario: Split a plated meal stack
 - **WHEN** three servings with three bound plates are split into stacks of one and two servings
 - **THEN** the resulting stacks contain one and two plate bindings respectively and no plate is duplicated or lost
 
 #### Scenario: Reject a lossy meal merge
-- **WHEN** two otherwise identical meal stacks are plated with different Stuff or craftsmanship quality
+- **WHEN** two otherwise identical meal stacks are plated with different Stuff or durability
 - **THEN** the stacks do not merge in a way that discards either plate identity
 
 ### Requirement: Clean ware preference and emergency fallback
@@ -81,7 +81,7 @@ For a spawned meal, a surviving plate SHALL appear at or adjacent to the meal's 
 
 #### Scenario: A plated meal is destroyed without fire
 - **WHEN** non-fire damage terminally destroys a plated meal
-- **THEN** each exact bound plate survives with its recorded Def, Stuff, quality, and remaining hit points and is released dirty
+- **THEN** each exact bound plate survives with its recorded Def, Stuff, and remaining hit points and is released dirty
 
 #### Scenario: Fire destroys a flammable bound plate
 - **WHEN** fire damage terminally destroys a plated meal whose bound plate has effective `Flammability` greater than zero

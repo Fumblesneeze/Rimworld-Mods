@@ -54,10 +54,8 @@ public sealed class RimCuisineNoVanillaPizzaTradeTest : IRimWorldEndToEndTest
                 "The upstream-generated pizza did not retain a physical plate Thing.");
         EndToEndAssert.Equal(ThingDefOf.Silver.defName, plate.Stuff?.defName,
             "An Elaborate pizza must receive the least-cost supported luxury plate material.");
-        EndToEndAssert.Equal(
-            QualityCategory.Poor,
-            plate.TryGetComp<CompQuality>()?.Quality ?? QualityCategory.Legendary,
-            "Externally generated trader meals must receive Poor-quality service ware.");
+        EndToEndAssert.True(plate.TryGetComp<CompQuality>() is null,
+            "Externally generated trader meals receive ungraded service ware.");
 
         ship = new TradeShip(DefDatabase<TraderKindDef>.GetNamed("Orbital_Exotic"), null);
         ship.GetDirectlyHeldThings().ClearAndDestroyContents();
@@ -93,7 +91,7 @@ public sealed class RimCuisineNoVanillaPizzaTradeTest : IRimWorldEndToEndTest
                 ["plateThingId"] = plate.ThingID,
                 ["plateStuff"] = plate.Stuff?.defName ?? "none",
                 ["plateQuality"] =
-                    (plate.TryGetComp<CompQuality>()?.Quality ?? QualityCategory.Legendary).ToString()
+                    plate.TryGetComp<CompQuality>()?.Quality.ToString() ?? "ungraded"
             });
         yield return new ScreenshotStep(
             "observe upstream RimCuisine pizza in native orbital stock",

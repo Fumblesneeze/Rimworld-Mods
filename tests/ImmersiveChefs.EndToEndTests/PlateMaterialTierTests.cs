@@ -179,7 +179,7 @@ public sealed class PlateMaterialTierTest : IRimWorldEndToEndTest
                                 : plate.holdingOwner?.GetType().Name ?? "unheld")))));
     }
 
-    private static Fixture CreateFixture(
+    internal static Fixture CreateFixture(
         Map map,
         IntVec3 center,
         string name,
@@ -285,7 +285,7 @@ public sealed class PlateMaterialTierTest : IRimWorldEndToEndTest
         GenSpawn.Spawn(wall, cell, map);
     }
 
-    private static IReadOnlyList<IntVec3> FindRoomCenters(Map map, int count)
+    internal static IReadOnlyList<IntVec3> FindRoomCenters(Map map, int count)
     {
         var centers = new List<IntVec3>();
         for (var x = -72; x <= 72; x += 18)
@@ -328,7 +328,7 @@ public sealed class PlateMaterialTierTest : IRimWorldEndToEndTest
         return true;
     }
 
-    private sealed class Fixture
+    internal sealed class Fixture
     {
         public Fixture(
             string name,

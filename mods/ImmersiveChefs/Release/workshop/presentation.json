@@ -5,25 +5,61 @@
     "path": "scripts/Resolve-ImmersiveChefsWorkshopDescription.ps1",
     "sha256": "EEA9E12D272B65B94D838C452BF742BC80DFB2C17BCCE1F82158E95BC4E7F510"
   },
-  "carouselCards": [ "kitchenware", "teamwork", "dishwashing", "meals", "colony", "compatibility" ],
+  "carouselCards": [
+    "kitchenware",
+    "teamwork",
+    "dishwashing",
+    "meals",
+    "colony",
+    "compatibility"
+  ],
   "cards": [
     {
       "token": "kitchenware",
       "path": "assets/feature-kitchenware.png",
       "alt": "Cookware, plates, cutlery and a chef's knife from Immersive Chefs",
-      "kicker": "MATERIAL • QUALITY • CLEANLINESS",
+      "kicker": "MATERIAL • CLEANLINESS • CRAFT",
       "title": "KITCHEN TOOLS MATTER",
       "lines": [
         "Cookware shapes every recipe",
-        "Plates & cutlery return dirty",
+        "Tableware stacks across materials",
         "Chef's knives belong to the cook"
       ],
       "art": [
-        { "source": "Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware.png", "x": 610, "y": 100, "width": 250 },
-        { "source": "Things/Item/Kitchenware/Cookware/Cookware.png", "stuffColor": "#696969", "x": 835, "y": 90, "width": 265 },
-        { "source": "Things/Item/Kitchenware/Plate/Plate.png", "stuffColor": "#696969", "x": 580, "y": 350, "width": 215 },
-        { "source": "Things/Item/Kitchenware/Cutlery/Cutlery.png", "stuffColor": "#696969", "x": 770, "y": 365, "width": 200 },
-        { "source": "Things/Item/Kitchenware/ChefsKnife/ChefsKnife.png", "stuffColor": "#696969", "x": 940, "y": 355, "width": 190 }
+        {
+          "source": "Things/Item/Kitchenware/PrimitiveCookware/PrimitiveCookware.png",
+          "x": 610,
+          "y": 100,
+          "width": 250
+        },
+        {
+          "source": "Things/Item/Kitchenware/Cookware/Cookware.png",
+          "stuffColor": "#696969",
+          "x": 835,
+          "y": 90,
+          "width": 265
+        },
+        {
+          "source": "Things/Item/Kitchenware/Plate/Plate.png",
+          "stuffColor": "#696969",
+          "x": 580,
+          "y": 350,
+          "width": 215
+        },
+        {
+          "source": "Things/Item/Kitchenware/Cutlery/Cutlery.png",
+          "stuffColor": "#696969",
+          "x": 770,
+          "y": 365,
+          "width": 200
+        },
+        {
+          "source": "Things/Item/Kitchenware/ChefsKnife/ChefsKnife.png",
+          "stuffColor": "#696969",
+          "x": 940,
+          "y": 355,
+          "width": 190
+        }
       ]
     },
     {
@@ -38,9 +74,24 @@
         "Better meals demand more effort"
       ],
       "art": [
-        { "source": "Things/Building/KitchenStation/PrepStation_south.png", "x": 545, "y": 80, "width": 590 },
-        { "source": "Things/Building/KitchenStation/SauceStation_south.png", "x": 590, "y": 350, "width": 260 },
-        { "source": "Things/Building/KitchenStation/MeatStation_south.png", "x": 840, "y": 350, "width": 285 }
+        {
+          "source": "Things/Building/KitchenStation/PrepStation_north.png",
+          "x": 545,
+          "y": 80,
+          "width": 590
+        },
+        {
+          "source": "Things/Building/KitchenStation/SauceStation_north.png",
+          "x": 590,
+          "y": 350,
+          "width": 260
+        },
+        {
+          "source": "Things/Building/KitchenStation/MeatStation_north.png",
+          "x": 840,
+          "y": 350,
+          "width": 285
+        }
       ]
     },
     {
@@ -55,9 +106,25 @@
         "Sinks and wild water are fallbacks"
       ],
       "art": [
-        { "source": "Things/Building/Dishwasher/Dishwasher_south.png", "x": 580, "y": 70, "width": 500 },
-        { "source": "Things/Building/Dishwasher/IndustrialDishwasher_south.png", "x": 570, "y": 330, "width": 560 },
-        { "source": "Things/Item/Kitchenware/Plate/Plate_Dirty.png", "stuffColor": "#696969", "x": 970, "y": 70, "width": 140 }
+        {
+          "source": "Things/Building/Dishwasher/Dishwasher_north.png",
+          "x": 615,
+          "y": 72,
+          "width": 240
+        },
+        {
+          "source": "Things/Building/Dishwasher/IndustrialDishwasher_north.png",
+          "x": 585,
+          "y": 319,
+          "width": 780
+        },
+        {
+          "source": "Things/Item/Kitchenware/Plate/Plate_Dirty.png",
+          "stuffColor": "#696969",
+          "x": 905,
+          "y": 110,
+          "width": 180
+        }
       ]
     },
     {
@@ -72,11 +139,39 @@
         "Caravans & patients keep their dishes"
       ],
       "art": [
-        { "source": "Things/Item/Food/PreparedIngredients/PreparedIngredients.png", "x": 580, "y": 110, "width": 225 },
-        { "source": "Things/Building/Appliance/Microwave_north.png", "x": 790, "y": 60, "width": 320 },
-        { "source": "Things/Item/Kitchenware/Plate/Plate.png", "stuffColor": "#696969", "x": 600, "y": 380, "width": 190 },
-        { "source": "Things/Item/Kitchenware/Cutlery/Cutlery.png", "stuffColor": "#696969", "x": 790, "y": 390, "width": 175 },
-        { "source": "Things/Item/Kitchenware/Cookware/Cookware_Dirty.png", "stuffColor": "#696969", "x": 945, "y": 380, "width": 175 }
+        {
+          "source": "Things/Item/Food/PreparedIngredients/PreparedIngredients.png",
+          "x": 580,
+          "y": 110,
+          "width": 225
+        },
+        {
+          "source": "Things/Building/Appliance/Microwave_north.png",
+          "x": 790,
+          "y": 60,
+          "width": 320
+        },
+        {
+          "source": "Things/Item/Kitchenware/Plate/Plate.png",
+          "stuffColor": "#696969",
+          "x": 600,
+          "y": 380,
+          "width": 190
+        },
+        {
+          "source": "Things/Item/Kitchenware/Cutlery/Cutlery.png",
+          "stuffColor": "#696969",
+          "x": 790,
+          "y": 390,
+          "width": 175
+        },
+        {
+          "source": "Things/Item/Kitchenware/Cookware/Cookware_Dirty.png",
+          "stuffColor": "#696969",
+          "x": 945,
+          "y": 380,
+          "width": 175
+        }
       ]
     },
     {
@@ -91,7 +186,12 @@
         "Travelers clean dishes on the road"
       ],
       "art": [
-        { "source": "workshop:illustrations/colony-service.png", "x": 535, "y": 120, "width": 600 }
+        {
+          "source": "workshop:illustrations/colony-service.png",
+          "x": 535,
+          "y": 120,
+          "width": 600
+        }
       ]
     },
     {
@@ -106,8 +206,17 @@
         "Every integration stays optional"
       ],
       "art": [
-        { "source": "workshop:illustrations/compatibility-loop.png", "x": 650, "y": 70, "width": 430 }
+        {
+          "source": "workshop:illustrations/compatibility-loop.png",
+          "x": 650,
+          "y": 70,
+          "width": 430
+        }
       ]
     }
-  ]
+  ],
+  "renderer": {
+    "path": "scripts/Build-ImmersiveChefsWorkshopPresentation.ps1",
+    "sha256": "7D6E9D440A4C881A9EEDF304B76B28E3B5A0931B39D233700F50A3244E8B4471"
+  }
 }

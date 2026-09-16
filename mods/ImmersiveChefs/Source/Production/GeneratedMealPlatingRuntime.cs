@@ -98,8 +98,6 @@ internal static class GeneratedMealPlatingRuntime
         }
 
         var plate = ThingMaker.MakeThing(plateDef, stuff);
-        (plate as ThingWithComps)?.GetComp<CompQuality>()
-            ?.SetQuality(QualityCategory.Poor, ArtGenerationContext.Colony);
         (plate as ThingWithComps)?.GetComp<CompSanitation>()
             ?.MarkClean(WashProvenance.None);
         return plate;

@@ -141,7 +141,7 @@
   <ImmersiveChefs_Stat_CookingSpeedValue>Множитель скорости готовки: {0}</ImmersiveChefs_Stat_CookingSpeedValue>
   <ImmersiveChefs_Stat_CulinaryModifierValue>Модификатор кулинарного качества: {0}</ImmersiveChefs_Stat_CulinaryModifierValue>
   <ImmersiveChefs_Stat_EatingSpeedValue>Множитель скорости еды: {0}</ImmersiveChefs_Stat_EatingSpeedValue>
-  <ImmersiveChefs_Stat_Explanation>Immersive Chefs рассчитывает это значение по материалу и качеству изготовления.</ImmersiveChefs_Stat_Explanation>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs рассчитывает это значение по материалу. Для кухонной посуды и поварских ножей также учитывается качество изготовления.</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>простаивает</ImmersiveChefs_Dishwasher_StatusIdle>
   <ImmersiveChefs_Dishwasher_StatusWashing>моет ({0} %)</ImmersiveChefs_Dishwasher_StatusWashing>

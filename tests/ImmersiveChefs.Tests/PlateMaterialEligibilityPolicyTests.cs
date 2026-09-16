@@ -140,6 +140,7 @@ public sealed class PlateMaterialEligibilityPolicyTests
         };
         var thing = Uninitialized<Thing>();
         thing.def = plateDef;
+        thing.stackCount = 1;
         if (stuffDefName is null)
         {
             return thing;

@@ -8,9 +8,9 @@
   <ImmersiveChefs_IndustrialDishwasher.label>工业洗碗机</ImmersiveChefs_IndustrialDishwasher.label><ImmersiveChefs_IndustrialDishwasher.description>高吞吐量电动洗碗机，可容纳64套餐具。</ImmersiveChefs_IndustrialDishwasher.description>
   <ImmersiveChefs_PrimitiveCookware.label>原始石制炊具套装</ImmersiveChefs_PrimitiveCookware.label><ImmersiveChefs_PrimitiveCookware.description>粗凿石锅、浅平底锅和锅盖，配有简陋木把手与小工具。这套完整原始炊具效率低、易损坏，也很难保持卫生。</ImmersiveChefs_PrimitiveCookware.description>
   <ImmersiveChefs_Cookware.label>炊具套装</ImmersiveChefs_Cookware.label><ImmersiveChefs_Cookware.description>一套完整可重复使用的厨房器具：锅、平底锅、锅盖、把手和小工具。材料与制造品质会影响烹饪速度、清洁性、舒适度和烹饪质量。</ImmersiveChefs_Cookware.description>
-  <ImmersiveChefs_Plate.label>餐盘</ImmersiveChefs_Plate.label><ImmersiveChefs_Plate.description>可重复使用、盛放一份饭菜的餐盘。材料与制造品质会影响用餐舒适度、进食速度和卫生。</ImmersiveChefs_Plate.description>
+  <ImmersiveChefs_Plate.label>餐盘</ImmersiveChefs_Plate.label><ImmersiveChefs_Plate.description>可重复使用、盛放一份饭菜的餐盘。材料会影响用餐舒适度、进食速度和卫生。</ImmersiveChefs_Plate.description>
   <ImmersiveChefs_AdobePlate.label>土坯餐盘</ImmersiveChefs_AdobePlate.label><ImmersiveChefs_AdobePlate.description>用土坯砖制成的粗糙餐盘。它多孔、易碎，并且极难保持卫生。</ImmersiveChefs_AdobePlate.description>
-  <ImmersiveChefs_Cutlery.label>餐具套装</ImmersiveChefs_Cutlery.label><ImmersiveChefs_Cutlery.description>供一人使用的可重复使用叉、勺和餐刀。材料与制造品质会影响用餐舒适度和卫生。</ImmersiveChefs_Cutlery.description>
+  <ImmersiveChefs_Cutlery.label>餐具套装</ImmersiveChefs_Cutlery.label><ImmersiveChefs_Cutlery.description>供一人使用的可重复使用叉、勺和餐刀。材料会影响用餐舒适度和卫生。</ImmersiveChefs_Cutlery.description>
   <ImmersiveChefs_GlitterworldCookware.label>闪耀世界炊具套装</ImmersiveChefs_GlitterworldCookware.label><ImmersiveChefs_GlitterworldCookware.description>从闪耀世界进口的自清洁、不易燃炊具套装，无法在本地制造。</ImmersiveChefs_GlitterworldCookware.description>
   <ImmersiveChefs_ChefsKnife.label>厨师刀具套装</ImmersiveChefs_ChefsKnife.label><ImmersiveChefs_ChefsKnife.description>厨师个人使用的一套专业刀具。佩戴在工具腰带上，可提高烹饪效率而不会取代武器。</ImmersiveChefs_ChefsKnife.description>
   <ImmersiveChefs_PreparedFood.label>预处理食材</ImmersiveChefs_PreparedFood.label><ImmersiveChefs_PreparedFood.description>已经切割、修整和分份，可直接进行最终烹饪的食材。查看信息仍可得知其营养、来源与预处理质量。</ImmersiveChefs_PreparedFood.description>

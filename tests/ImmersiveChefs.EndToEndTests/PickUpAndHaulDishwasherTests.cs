@@ -939,6 +939,8 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
     internal Pawn Cleaner { get; }
     internal ThingWithComps Dishwasher { get; }
+    internal IReadOnlyList<ThingWithComps> PhysicalWare => ware;
+    internal IReadOnlyList<Thing> HeldDishwasherWare => DishwasherHeldWare();
     internal ThingWithComps FirstContinuousWare => ware[0];
     internal string[] WareIds => ware.Select(item => item.ThingID).ToArray();
     internal string[] VisibleThingIds => WareIds.Concat(new[]
@@ -978,7 +980,9 @@ internal sealed class PickUpAndHaulDishwasherFixture
         bool requireProcessor,
         bool plateOnly = false,
         int plateCount = 1,
-        bool requirePickUpAndHaul = true)
+        bool requirePickUpAndHaul = true,
+        string dishwasherDefName = "ImmersiveChefs_Dishwasher",
+        bool hiddenConduits = false)
     {
         var map = Current.Game.CurrentMap;
         var center = FoodSearchE2EFixture.FindRoomCenter(map);
@@ -995,10 +999,10 @@ internal sealed class PickUpAndHaulDishwasherFixture
         settings.DishwashingWorkScale = requireProcessor ? 0.25f : 4f;
 
         var powerCell = SpawnPowerSource(map, center + new IntVec3(5, 0, 3));
-        SpawnConduitsOutside(map, center, 7, 5, powerCell.OccupiedRect().Cells.ToHashSet());
+        SpawnConduitsOutside(map, center, 7, 5, powerCell.OccupiedRect().Cells.ToHashSet(), hiddenConduits);
         var dishwasher = DispenserE2EFixture.SpawnBuilding(
             map,
-            "ImmersiveChefs_Dishwasher",
+            dishwasherDefName,
             center + new IntVec3(2, 0, 1));
         var tower = DispenserE2EFixture.SpawnDubsWaterSupply(map, dishwasher, 10f);
         DispenserE2EFixture.SettlePower(map, new[] { dishwasher }, 400);
@@ -1816,10 +1820,25 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
     internal bool AllWareStoredClean()
     {
-        return observedCleanBatchHaul &&
-               ware.All(item => item.Spawned && item.Map == map && cleanStorageCells.Contains(item.Position)) &&
+        return observedCleanBatchHaul && ExactWareStoredClean();
+    }
+
+    internal bool ExactWareStoredClean()
+    {
+        return ware.All(item => item.Spawned && item.Map == map && cleanStorageCells.Contains(item.Position)) &&
                ware.All(item => item.GetComp<CompSanitation>()!.IsDirty == false) &&
                ware.All(item => !IsTracked(item));
+    }
+
+    internal void AssertUntrackedOutputConservation()
+    {
+        EndToEndAssert.True(ExactWareStoredClean(), "All exact clean items must reach the declared storage.");
+        EndToEndAssert.Equal(initialWareUnitCount, ware.Sum(item => item.stackCount),
+            "Every original unit must survive ordinary dishwasher output.");
+        EndToEndAssert.Equal(initialWareUnitCount, TotalPhysicalUnitsAcrossHolders(),
+            "Ordinary output must not create duplicate kitchenware elsewhere.");
+        EndToEndAssert.Equal(0, DishwasherHeldWare().Count,
+            "Stored output must leave the actual dishwasher owner empty.");
     }
 
     internal void AssertFinalConservation()
@@ -2044,7 +2063,9 @@ internal sealed class PickUpAndHaulDishwasherFixture
 
     private bool IsTracked(Thing thing)
     {
-        var tracker = Cleaner.AllComps.Single(comp => comp.GetType().FullName == TrackerTypeName);
+        var tracker = Cleaner.AllComps.SingleOrDefault(comp => comp.GetType().FullName == TrackerTypeName);
+        if (tracker is null)
+            return false;
         var method = tracker.GetType().GetMethod(
             "GetHashSet",
             BindingFlags.Public | BindingFlags.Instance,
@@ -2102,9 +2123,10 @@ internal sealed class PickUpAndHaulDishwasherFixture
         IntVec3 center,
         int radiusX,
         int radiusZ,
-        ISet<IntVec3> excluded)
+        ISet<IntVec3> excluded,
+        bool hiddenConduits)
     {
-        var def = DefDatabase<ThingDef>.GetNamed("PowerConduit");
+        var def = DefDatabase<ThingDef>.GetNamed(hiddenConduits ? "HiddenConduit" : "PowerConduit");
         for (var x = -radiusX; x <= radiusX; x++)
         {
             for (var z = -radiusZ; z <= radiusZ; z++)

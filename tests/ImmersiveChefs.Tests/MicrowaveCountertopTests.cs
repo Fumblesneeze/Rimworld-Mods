@@ -189,8 +189,8 @@ public sealed class MicrowaveCountertopTests
         using var bitmap = new Bitmap(texturePath);
         Assert.Multiple(() =>
         {
-            Assert.That(bitmap.Width, Is.EqualTo(512));
-            Assert.That(bitmap.Height, Is.EqualTo(512));
+            Assert.That(bitmap.Width, Is.EqualTo(384));
+            Assert.That(bitmap.Height, Is.EqualTo(384));
             Assert.That(bitmap.GetPixel(0, 0).A, Is.EqualTo(0));
             Assert.That(bitmap.GetPixel(bitmap.Width / 2, bitmap.Height / 2).A, Is.GreaterThan(0));
         });

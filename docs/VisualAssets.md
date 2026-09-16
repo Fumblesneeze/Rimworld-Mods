@@ -4,6 +4,132 @@ Selected sprites are tracked in the mod package. Generated candidates, chroma-ke
 comparison montages, and rejected variants are retained under ignored `artifacts/VisualAssets`
 during development.
 
+## Final human-selected collection — 16 September 2026
+
+The complete gameplay texture remake is selected and approved by the user. The final choices and precise edits are recorded in [HumanSelections](asset-prompts/ImmersiveChefs-HumanSelections-20260916.md). They supersede the candidate choices and progress counts in the historical records below. The source inventory now includes eight additional industrial closed-hood frames, alongside the remade base/cardinal/finish/material/sanitation families.
+
+The domestic dishwasher is a one-cell kitchen appliance. The industrial dishwasher uses the selected hood handle B, recessed sealed washing compartment and empty racks; its west tap is clear of the hood in both positions. The microwave uses a rectangular384×384canvas with a shallow front, window, vertical handle, two dials and a button. Portable objects use the selected simplified compositions; the knife remains in its carrier.
+
+Native all-rotation review is retained at `artifacts/VisualAssets/FinalBuildings-20260916/review.html`. Final approval ends autonomous aesthetic iteration; independent scores and far-zoom limitations remain honest. No generated image is attributed to GPT Image2.5 because the tool supplied no authoritative model identity. Steam feature cards use the selected shipped sprites and their reviewed front views. The title illustration and human-deferred gameplay showcases retain their existing scope.
+
+## Historical development milestones
+
+The following sections retain prior candidate measurements and evidence; their candidate names, counts and acceptance scores do not describe the final selected collection.
+
+## September 2026 vanilla remake — plates and chef’s knife
+
+The plate family now uses a simple shallow rim, restrained wood/stone finishes and fixed warm food residue. The chef’s knife is one broad blade with a dark grip, following the user's preference for clearer portable sets. All 14 diffuse/mask PNGs passed independent static review and fresh base/VTEX native reviews at close, ordinary and far zooms on concrete and wood: quality and vanilla fit 9/10. Root observed native equipping/replacement, ingestion and water-washing, including wood and stone selection with VTEX. Hit-point grade captures do not demonstrate visible damage progression. Source history, exact package identity, process evidence and limitations are in [the plate and knife record](asset-prompts/ImmersiveChefs-Plate-Knife-20260916.md). The eight simplified cookware PNGs also passed fresh native cooking/washing and independent base/VTEX reviews at all three zooms: quality/style9, including material/state siblings (see [cookware record](asset-prompts/ImmersiveChefs-Cookware-20260916.md)). Current accepted remake total: **70/100**. The historical 48/100 counts below describe earlier milestones; remaining portable families and dishwashers are still in progress.
+
+## September 2026 vanilla remake — microwave
+
+The selected microwave set uses base North N, alternate North F, base East/West J and alternate East/West C, with both H5/B2 rear cards retained. All eight directions independently score 9/10 in static review beside original Core stove and butcher art. The new fronts have a blank unlit display, six square/round keys, a vertical pull and an empty glass turntable. Side views now have flush control edges, preserving the old casing scale. Neutral steel and warm-gray enamel retain the 512×512 canvases, one-cell footprint, support behavior and draw size. Exact prompts and source history are in [the microwave generation record](asset-prompts/ImmersiveChefs-Microwave-20260910.md); measured components and hashes are pinned in the sprite manifests. Previous K/E live runs C scored 9 for quality and fit on both supports but failed strict blind identity. Fresh runs D passed native placement and variation on both real table and machining-bench supports. Root inspected all92 captures, including both variants in every direction at close, ordinary and far zooms and55/15 percent hit-point states. Both blind reviewers scored all24 comparison views per support9/10 for quality and fit and confidently identified a microwave in the front view. Exact package A0F542990FA88A4A5EA949E423C079FC6E83F4B46F514FA01111C962A4D8CC7F and process evidence are retained in the ignored microwave-table-live-d and microwave-workbench-live-d ledgers. This brings accepted remake textures to48/100; dishwashers and portable families remain in progress.
+
+## September 2026 vanilla remake — prep station
+
+The base and optional alternate prep-station families now use a medium neutral-metal worktop,
+one shallow screen-bottom apron, a wooden board, three knives, a sink/faucet and four trays.
+Their existing 3x1 footprint, cardinal semantics, fixed-color shader and 896x384 / 384x896
+canvases are unchanged. The generated art follows the measured Core geometry and contour
+contracts without including Core pixels.
+
+The built-in imagegen route was used after the user explicitly authorized it. The tool exposed
+no model selector or authoritative model metadata; these images must not be labeled as verified
+GPT Image 2.5 output. The selected prompt history is retained in
+[the prep-station prompt record](asset-prompts/ImmersiveChefs-PrepStation-20260909.md).
+
+Independent image-only review scored every base and alternate direction 9/10, and both families
+9/10, against Core on matched light/dark backgrounds at source and 64-pixel/cell scale. Base
+selection is K; alternate selection is K2. The selected art replaces the
+knife strip with one knife on the board and two loose knives, preserves coherent rotations,
+and gives the sink/trays stronger recessed shading with clearer boundaries. Its darker gray
+worktop reduces the pale perimeter and compartment grid seen in the rejected I3 live review.
+K/K2 use neutral gray metal, muted wood and a coherent slight clockwise board offset to
+address the olive color and rigid arrangement observed in the J/J3 live review.
+The 8-source-pixel contour was preferred over 12. Candidate, measurement, topology and score
+evidence remains under `artifacts/VisualAssets/VanillaRemake-20260909`; exact selected hashes
+are in `SpriteOutlineApprovals.xml` and `DirectionalSpriteApprovals.xml`.
+
+The earlier G/G2/C selection passed native placement/variation checks but scored5–7/10 at dawn
+and5.4–7/10 at noon beside same-facing Core stove and butcher-table Defs. VTEX could select
+alternate comparator artwork in those exploratory runs. The pale
+counter and yellow board were too bright, and fine utensils became stripes at distant zoom.
+H/H3 uses subdued gray metal and brown wood, simpler rims and drains, and cleaned edge mattes.
+The fresh reviewed H/H3 noon run also passed native placement and variation, but its blind
+review scored readability 6–7/10 and vanilla fit 7/10. Recesses still appeared flat, the pale
+perimeter framed the counter too strongly, and repeated knives became striped trim. The run
+and full review are retained under `artifacts/VisualAssets/VanillaRemake-20260909/review/live-c.md`.
+
+I3 scored 9/10 statically but only7.5/10 readability and8/10 fit in blind live review; see
+`artifacts/VisualAssets/VanillaRemake-20260909/review/live-d.md`. The comparison fixture now
+selects original Core graphics through the native variation gizmo and verifies their paths at
+every zoom. J/J3 independently scored9/10 in all eight cleaned static exports, but the fresh
+live review scored8/10in every orientation/layout/zoom beside verified original Core artwork.
+Residual olive-gray color and rigid arrangement remain visible; see
+`artifacts/VisualAssets/VanillaRemake-20260909/review/live-e.md`.
+
+K/K2 passed the fresh native placement and variation workflow on 2026-09-10. The acting agent
+personally inspected all 46 captures: before/after placement, native variation changes, both
+layouts at three camera sizes in each orientation, and the supporting 55%/15% health fixtures.
+The gray worktop, recessed compartments, board and sink remain coherent beside original Core
+stove and butcher-table artwork. The eight health-state views show the expected inspect values
+without detached or misplaced damage marks. A fresh reviewer given only the 24 clean game
+frames independently identified a kitchen preparation counter and scored every frame 9/10 for
+quality and 9/10 for surrounding-game fit, with no actionable visible defect. The acting agent
+agrees with that assessment. Exact package, frame mapping, configuration and cleanup evidence
+is retained in `artifacts/VisualAssets/VanillaRemake-20260909/review/live-f.md`.
+Older acceptance records below describe earlier textures and cannot
+accept this remake.
+
+## September 2026 vanilla remake — sauce station
+
+Selected base L3 and alternate J5 retain the existing2x1 geometry and native selectors. The base now has a long-handled saucepan, cooking spoon, mortar/pestle and perforated spice shakers. The alternate has long-gripped covered cooking pans, a steel bowl/whisk and four perforated spice shakers. Every direction and both families score9/10 in independent static review on light/dark Core comparisons. Measured top bands104.453–133.228 and apron/top ratios .632–.793 satisfy the existing limits. Exact source/output hashes are pinned in the approval manifests; all32 prompts are retained in [the sauce prompt record](asset-prompts/ImmersiveChefs-SauceStation-20260910.md). Fresh reviewed-build live I acceptance passed: root inspected all46 native captures and a context-free reviewer scored all24 clean direction/variant/zoom views9/10 for quality and fit beside original Core stove and butcher tables, independently identifying kitchen preparation. Evidence: ignored VanillaRemake-20260909/review/sauce-live-i.md, run20260910T193455287Z, package320F4572F7A78771E56350ED024AF0A0257BF0F2134E1F44FACBE34C05446430. The preceding H scene-clearance failure remains rejected and retained; no guard was weakened.
+
+Earlier I/G live D scored8 and remains unaccepted. J/H2 live E and K2/I live G scored9 for quality/fit but the blind reviewers still inferred herbal/chemical or ambiguous food/medicine preparation. Those identity failures remain retained in review/sauce-live-e.md and review/sauce-live-g.md under the ignored remake evidence. L3/J5 add stronger cooking handles and spice-cap cues; older scores cannot accept the new pixels.
+
+## September 2026 vanilla remake — meat station
+
+The base meat station uses H and the alternate uses F in all four directions. The eight sprites
+retain the existing 2x1 footprint, 2.5x1.5 draw size, Cutout shader and measured shallow counter
+projection. The base has a red board, covered pan, separate cleaver and scale; the alternate
+places the cleaver on a larger board. Scale control edges, cleaver directions and equipment order
+rotate coherently; all painted depth remains on screen bottom.
+
+Independent source/map review scores every selected direction and both families9/10. The selected
+top bands measure121.08–125.62 and apron/top ratios .673–.719, within the unchanged Core-relative
+limits. All14exact prompts, selection history and source provenance are in
+[the meat-station record](asset-prompts/ImmersiveChefs-MeatStation-20260910.md).
+All 51 focused visual package checks passed and independent scoped review found no issues.
+Fresh native placement and variation passed beside original Core stove/butcher artwork at noon.
+Root inspected all 46 captures; blind review scored each of 24 clean views 9/10 for quality and
+vanilla fit across both layouts, all directions and three zooms. Supporting health views showed
+no detached damage marks. Exact build, action, capture and cleanup evidence is retained in
+`artifacts/VisualAssets/VanillaRemake-20260909/review/meat-live-a.md`.
+
+## September 2026 vanilla remake — vegetable station
+
+Base B and alternate B retain the existing two-cell counter, fixed-color shader and cardinal
+equipment inventories. The eight sprites use broad matte values, a shallow screen-bottom apron
+and coherent tool rotations. B corrects the first pass's grip/blade directions and compressed
+West layout. Every direction and both families scored 9/10 in independent static review.
+Top bands measure120.706–128.802, with apron/top ratios .694–.743. All59 visual package checks
+pass; scoped review found no issues. Fresh native placement/variation passed beside Core stove and butcher artwork at noon. Root inspected all46 captures; blind review recognized kitchen preparation and scored each of24clean views9/10 for quality and vanilla fit across both layouts, four directions and three zooms. Supporting damaged-state captures remain coherent. Exact build/action/cleanup evidence is in `artifacts/VisualAssets/VanillaRemake-20260909/review/vegetable-live-a.md`. Exact prompts, source
+provenance and selection history are in
+[the vegetable-station record](asset-prompts/ImmersiveChefs-VegetableStation-20260910.md).
+
+## September 2026 vanilla remake — pastry station
+
+Selected base E and alternate D use the existing two-cell counter and fixed-color shader.
+The base has a rolling slab, pin, stand mixer and empty tray; the alternate has a tray, pin,
+empty bowl and mechanical scale. Tool axes, mixer bowls, scale dials and needles rotate in
+world space while all painted thickness remains screen-bottom. Every selected direction
+and both families score 9/10 in independent static review. Top bands measure120.025–125.502;
+apron/top ratios .756–.838. Exact hashes and cardinal landmarks are pinned in the approval
+manifests. The [nine-prompt record](asset-prompts/ImmersiveChefs-PastryStation-20260910.md)
+retains source provenance and rejected iterations. Fresh reviewed-build live A passed native placement
+and variation. The acting agent inspected all46 captures; the independent blind reviewer scored all24
+clean views9/10 quality and9/10 fit and identified baking/food preparation. All eight pastry PNGs are
+accepted. Exact evidence: `artifacts/VisualAssets/VanillaRemake-20260909/review/pastry-live-a.md`.
+
 ## Primitive stone cookware set
 
 Two 1254×1254 original chroma-key candidates were generated on 2026-08-09 from the same brief:
@@ -193,6 +319,14 @@ fixed-color sprite uses `Cutout`; edge-only despill removes chroma without mutin
 opaque green vegetables.
 
 ## Domestic dishwasher
+
+Current September redesign status: the one-cell domestic appliance and three-cell industrial hood washer both remain below the required native identity/fit gate. The former two-cell lid/rack notes below are rejected history. The industrial renderer's admission, native power-off/on, completion and clean-output paths now pass fresh reviewed-build workflows with and without Processor; its per-building icon option prevents duplicate white process icons over the closed hood. These runtime results do not accept the textures. The compact P5 D trial reached fit9 at64,40.91 and28pixels/cell, but source/far fit remained8 and identity fell to6–7at the smallest scale. The newer open-rack component trial remains unaccepted. See the [current industrial generation and evidence record](asset-prompts/ImmersiveChefs-IndustrialDishwasherComponents-20260912.md). Accepted remake count remains48/100.
+
+The September 2026 remake selects base North Q, East F2, South D2 and West C, and alternate North B2 with East/South/West A. All eight exact cards score 9.0–9.2 in independent static review beside original Core stove and butcher art at source and map scale on light and dark backgrounds. Neutral steel and warmer matte alternates retain one closed lid and one inset rack with three shaded cream plates, the unchanged 2x1 footprint, 2.5x1.5 draw size, separate shallow near faces and screen-bottom underframe. Exact generation prompts are retained in [the dishwasher prompt record](asset-prompts/ImmersiveChefs-Dishwasher-20260911.md).
+
+The tabletop brightness check now excludes the fixed projected lid/rack rectangles and four pixels of stroke clearance from its original lower band. The previous full-width sample crossed the South/West near faces and part of North's lid face. The exposed regions are fixed by geometry, area-weighted and identical for base/alternate; the 90–140 luminance and 0.45–0.85 apron/tabletop limits remain unchanged. All eight original textures failed the corrected check before promotion, and the eight reviewed candidates pass. The full geometric rationale and separate component measurements remain in ignored `review/dishwasher-working-plane-sampling-review.md` evidence.
+
+The eight outline entries also pin the measured pre-outline alpha envelope and component-review reference. Intrinsic generated strokes and retained antialiasing extend beyond the physical body rectangle; the final alpha envelope must equal the exact pre-envelope plus the selected 8-pixel contour and agree with the directional approval and actual PNG. Physical tabletop/apron geometry is checked separately, with no general coordinate tolerance or cropped contour. Package review and 87 focused checks passed. Native run A exercised placement, variation, three zooms and supporting damage views, but its blind review rejected all24 clean views with quality5–7/10 and fit6–7/10; the two-cell lid/rack silhouette was ambiguous. The accepted remake count remains48/100. The user's2026-09-11 references supersede this design with a one-cell domestic appliance and a hood-style industrial washer with empty baskets and state-dependent contents. Neither historical dishwasher runs nor run A accept the replacement artwork.
 
 The 2026-08-09 building-art correction reopened every building selection and directional/live
 acceptance task below. The former `Graphic_Single` notes describe the rejected historical package,

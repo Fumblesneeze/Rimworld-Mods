@@ -180,10 +180,8 @@ public sealed class GeneratedMealOriginTest : IRimWorldEndToEndTest
         EndToEndAssert.NotNull(
             plate,
             name + " must retain a real generated plate Thing.");
-        EndToEndAssert.Equal(
-            QualityCategory.Poor,
-            ReadQuality(plate!),
-            name + " must use a cheap Poor-quality generated plate.");
+        EndToEndAssert.True(plate!.TryGetComp<CompQuality>() is null,
+            name + " must use an ungraded generated plate.");
         EndToEndAssert.True(
             plate!.TryGetComp<CompSanitation>() is { IsDirty: false },
             name + " must begin with a clean generated plate.");
@@ -293,13 +291,8 @@ public sealed class GeneratedMealOriginTest : IRimWorldEndToEndTest
         return meal;
     }
 
-    private static QualityCategory ReadQuality(Thing thing)
-    {
-        EndToEndAssert.True(
-            QualityUtility.TryGetQuality(thing, out var quality),
-            "A generated plate must expose CompQuality.");
-        return quality;
-    }
+    private static string ReadQuality(Thing thing) =>
+        thing.TryGetComp<CompQuality>()?.Quality.ToString() ?? "ungraded";
 
     private static IReadOnlyList<IntVec3> FindFixtureCells(Map map, int count)
     {

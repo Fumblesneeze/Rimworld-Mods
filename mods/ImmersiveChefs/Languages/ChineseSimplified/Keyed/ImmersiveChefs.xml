@@ -141,7 +141,7 @@
   <ImmersiveChefs_Stat_CookingSpeedValue>烹饪速度系数：{0}</ImmersiveChefs_Stat_CookingSpeedValue>
   <ImmersiveChefs_Stat_CulinaryModifierValue>烹饪质量修正：{0}</ImmersiveChefs_Stat_CulinaryModifierValue>
   <ImmersiveChefs_Stat_EatingSpeedValue>进食速度系数：{0}</ImmersiveChefs_Stat_EatingSpeedValue>
-  <ImmersiveChefs_Stat_Explanation>Immersive Chefs 根据材料与制造品质计算此数值。</ImmersiveChefs_Stat_Explanation>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs 根据材料计算此数值。炊具和厨师刀具还会受到制造品质的影响。</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>空闲</ImmersiveChefs_Dishwasher_StatusIdle>
   <ImmersiveChefs_Dishwasher_StatusWashing>清洗中（{0}%）</ImmersiveChefs_Dishwasher_StatusWashing>

@@ -580,7 +580,7 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         return placements;
     }
 
-    private static EndToEndCardinalRotation EndToEndRotation(Rot4 rotation)
+    internal static EndToEndCardinalRotation EndToEndRotation(Rot4 rotation)
     {
         if (rotation == Rot4.North)
         {
@@ -634,7 +634,7 @@ public sealed class BaseBuildingVisualCatalogTest : IRimWorldEndToEndTest
         return fixture;
     }
 
-    private static Building SpawnBuilding(
+    internal static Building SpawnBuilding(
         Map map,
         IntVec3 cell,
         string defName,

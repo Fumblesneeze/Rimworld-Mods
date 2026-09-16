@@ -121,6 +121,14 @@ internal sealed class CookingSession
             return;
         }
 
+        if (source.def.GetModExtension<KitchenwareExtension>()?.product == KitchenwareProduct.Plate &&
+            !PlateMaterialEligibilityRuntime.PreparePickup(source,
+                MealClassificationRuntime.ClassifyRecipe(ReservationRecipe), portion.Count))
+        {
+            pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
+            return;
+        }
+
         if (source.ParentHolder == pawn.inventory?.innerContainer)
         {
             (source as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
@@ -1211,7 +1219,7 @@ internal static class CookingSessionRegistry
         {
             foreach (var candidate in candidates.Where(candidate => candidate.Dirty == wantDirty))
             {
-                var count = Math.Min(remaining, candidate.Thing.stackCount);
+                var count = Math.Min(remaining, candidate.AvailableCount);
                 if (count <= 0 || !pawn.Reserve(candidate.Thing, job, 1, count))
                 {
                     continue;
@@ -1284,10 +1292,10 @@ internal static class CookingSessionRegistry
     {
         var cleanAvailable = candidates
             .Where(candidate => !candidate.Dirty)
-            .Sum(candidate => candidate.Thing.stackCount) >= requiredCount;
+            .Sum(candidate => candidate.AvailableCount) >= requiredCount;
         var dirtyAvailable = candidates
             .Where(candidate => candidate.Dirty)
-            .Sum(candidate => candidate.Thing.stackCount) >= requiredCount;
+            .Sum(candidate => candidate.AvailableCount) >= requiredCount;
         return forcedUse switch
         {
             WareUse.Dirty when !cleanAvailable && dirtyAvailable =>
@@ -1342,7 +1350,7 @@ internal static class CookingSessionRegistry
         var dirtyCookwareAvailable = dirtyCookware is not null;
         var cleanPlatesAvailable = plates
             .Where(candidate => !candidate.Dirty)
-            .Sum(candidate => candidate.Thing.stackCount) >= requiredPlates;
+            .Sum(candidate => candidate.AvailableCount) >= requiredPlates;
         var normalCookwareUse = WareSelectionPolicy.Select(
             settings.WareRequirementMode,
             settings.DirtyWareFallback,
@@ -1390,14 +1398,14 @@ internal static class CookingSessionRegistry
                             PlateMaterialEligibilityRuntime.Allows(thing, plateComplexity))
             .Where(thing => !thing.IsForbidden(pawn) &&
                             pawn.CanReach(thing, PathEndMode.Touch, Danger.Some))
-            .Where(thing => pawn.CanReserve(
-                thing,
-                1,
-                Math.Min(requiredCount, thing.stackCount)))
             .Select(thing => new WareCandidate(
                 thing,
                 (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,
-                SecondaryScore(thing, pawn)))
+                SecondaryScore(thing, pawn),
+                product == KitchenwareProduct.Plate
+                    ? PlateMaterialEligibilityRuntime.CountEligible(thing, plateComplexity) : thing.stackCount))
+            .Where(candidate => candidate.AvailableCount > 0 && pawn.CanReserve(candidate.Thing, 1,
+                Math.Min(requiredCount, candidate.AvailableCount)))
             .OrderBy(candidate => candidate.Dirty)
             .ThenByDescending(candidate => candidate.Score)
             .ToList();
@@ -1405,16 +1413,18 @@ internal static class CookingSessionRegistry
 
     private sealed class WareCandidate
     {
-        internal WareCandidate(Thing thing, bool dirty, float score)
+        internal WareCandidate(Thing thing, bool dirty, float score, int availableCount)
         {
             Thing = thing;
             Dirty = dirty;
             Score = score;
+            AvailableCount = availableCount;
         }
 
         internal Thing Thing { get; }
         internal bool Dirty { get; }
         internal float Score { get; }
+        internal int AvailableCount { get; }
     }
 
     private static float SecondaryScore(Thing thing, Pawn pawn)

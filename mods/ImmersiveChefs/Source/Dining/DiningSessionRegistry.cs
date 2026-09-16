@@ -314,6 +314,7 @@ internal sealed class DiningSession : IThingHolder
             if (inventory.TryAdd(personal, canMergeWithExistingStacks: false))
             {
                 CarriedCutlery = personal;
+                CutleryServiceScore = KitchenwareRuntime.ServiceScore(personal);
             }
             else if (CarrierPawn.MapHeld is { } map)
             {
@@ -340,6 +341,7 @@ internal sealed class DiningSession : IThingHolder
         {
             (picked as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
             CarriedCutlery = picked;
+            CutleryServiceScore = KitchenwareRuntime.ServiceScore(picked);
         }
         else if (CarrierPawn.MapHeld is { } map)
         {
@@ -354,6 +356,12 @@ internal sealed class DiningSession : IThingHolder
             return;
         }
 
+        if (!PlateMaterialEligibilityRuntime.PreparePickup(ReservedPlate,
+                RequestedMealDef is null ? null : MealComplexityRuntime.Classify(RequestedMealDef), 1))
+        {
+            CarrierPawn.jobs.EndCurrentJob(JobCondition.Incompletable);
+            return;
+        }
         var picked = ReservedPlate.stackCount > 1 ? ReservedPlate.SplitOff(1) : ReservedPlate;
         if (picked.Spawned)
         {
@@ -1578,11 +1586,13 @@ internal static class DiningSessionRegistry
                 (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,
                 KitchenwareRuntime.ServiceScore(thing)))
             .ToList();
-        return CaravanDiningPolicy.SelectWare(
+        var selected = CaravanDiningPolicy.SelectWare(
             candidates,
             mode,
             ImmersiveChefsMod.Settings.DirtyWareFallback,
             emergency);
+        return selected is not null && product == KitchenwareProduct.Plate &&
+               !PlateMaterialEligibilityRuntime.PreparePickup(selected, plateComplexity, 1) ? null : selected;
     }
 }
 

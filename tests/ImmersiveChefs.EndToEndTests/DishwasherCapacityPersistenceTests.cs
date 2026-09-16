@@ -836,7 +836,7 @@ public sealed class LocalDishwasherCapacityPersistenceTest : IRimWorldEndToEndTe
         var plate = FoodSearchE2EFixture.MakeCleanWare("ImmersiveChefs_Plate", stuff);
         plate.stackCount = count;
         plate.HitPoints = Math.Min(plate.MaxHitPoints, hitPoints);
-        plate.GetComp<CompQuality>()!.SetQuality(quality, ArtGenerationContext.Colony);
+        EndToEndAssert.True(plate.GetComp<CompQuality>() is null, "Plate stacks are ungraded.");
         plate.GetComp<CompSanitation>()!.MarkDirty();
         return plate;
     }
@@ -942,7 +942,7 @@ public sealed class LocalDishwasherCapacityPersistenceTest : IRimWorldEndToEndTe
             string thingId,
             string defName,
             string stuffDefName,
-            QualityCategory quality,
+            QualityCategory? quality,
             int hitPoints,
             int stackCount)
         {
@@ -957,7 +957,7 @@ public sealed class LocalDishwasherCapacityPersistenceTest : IRimWorldEndToEndTe
         internal string ThingId { get; }
         private string DefName { get; }
         private string StuffDefName { get; }
-        private QualityCategory Quality { get; }
+        private QualityCategory? Quality { get; }
         private int HitPoints { get; }
         private int StackCount { get; }
 
@@ -965,7 +965,7 @@ public sealed class LocalDishwasherCapacityPersistenceTest : IRimWorldEndToEndTe
             thing.ThingID,
             thing.def.defName,
             thing.Stuff?.defName ?? string.Empty,
-            thing.GetComp<CompQuality>()!.Quality,
+            thing.GetComp<CompQuality>()?.Quality,
             thing.HitPoints,
             thing.stackCount);
 
@@ -977,7 +977,7 @@ public sealed class LocalDishwasherCapacityPersistenceTest : IRimWorldEndToEndTe
                 "Dishwashing must preserve the ware Def.");
             EndToEndAssert.Equal(StuffDefName, thing.Stuff?.defName ?? string.Empty,
                 "Dishwashing must preserve Stuff.");
-            EndToEndAssert.Equal(Quality, thing.GetComp<CompQuality>()!.Quality,
+            EndToEndAssert.Equal(Quality, thing.GetComp<CompQuality>()?.Quality,
                 "Dishwashing must preserve crafting quality.");
             EndToEndAssert.Equal(HitPoints, thing.HitPoints,
                 "Dishwashing must preserve hit points.");

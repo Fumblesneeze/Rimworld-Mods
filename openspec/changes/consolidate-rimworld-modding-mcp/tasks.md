@@ -109,3 +109,13 @@
 - [x] DU.1 RED/GREEN: typed log paging and validation.
 - [x] DU.2 RED/GREEN: error/method inspection, host decompilation and credential-free report export.
 - [x] DU.3 Validate contracts, independent review and exact-process live diagnostic workflow. Evidence: `artifacts/McpRuns/20260916T104503740Z-879dad9d42a54b9db365c296695ae451/acceptance.md` (including deliberate-error classification and cleanup).
+
+## 15. Typed offline presentation rendering — `tools/RimWorldModding.Mcp`
+
+- [x] 15.1 RED/GREEN: expose `presentation_render(packageId)` through the shared registry and MCP,
+  reuse the profile/manifest renderer contract, and verify actual deterministic adapter execution,
+  output modes, hash/path rejection, and adapter failure without Steam or game startup. RED
+  `artifacts/TestResults/20260916T144445482Z-32620-6a98baa5d71e412b92af544d0a3c6858` failed the real
+  CLI call with unknown operation; GREEN `artifacts/TestResults/20260916T144719692Z-1084-72106b149b604696b91e3aea7e2754cb`
+  passed 9/9 focused cases.
+- [x] 15.2 Independent root review found no actionable issue in the scoped renderer operation, hash/path containment, failure propagation or shared release hook. Strict OpenSpec passed14/14; focused CLI/release regression passed40/40 at `artifacts/TestResults/20260916T145018465Z-15100-1ed8936424da4c6694dcf080ea4e0da5`. Actual Immersive Chefs six-card invocation succeeded and root inspected the contact sheet and four changed cards.

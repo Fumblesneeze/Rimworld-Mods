@@ -57,7 +57,7 @@ For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or ownin
 
 ### Requirement: Missing or dirty ware affects one dining experience
 
-The mod SHALL calculate plate and cutlery cleanliness, material comfort, and craftsmanship for the ingestion event. Missing required ware or using dirty ware SHALL contribute to one combined dining-standard thought and SHALL apply the configured poisoning modifier rather than stacking several equivalent negative thoughts.
+The mod SHALL calculate plate and cutlery cleanliness and material comfort for the ingestion event. Missing required ware or using dirty ware SHALL contribute to one combined dining-standard thought and SHALL apply the configured poisoning modifier rather than stacking several equivalent negative thoughts.
 
 #### Scenario: Dirty wooden service gives one consequence thought
 
@@ -177,7 +177,7 @@ For dining standards, the combined service comfort SHALL be `clamp((plate Dining
 
 - `Basic`: any eligible clean service-ware material.
 - `Durable`: vanilla steel, registered plastic or ceramic where that item supports it, registered stainless steel, silver, or gold; wood and adobe do not qualify.
-- `Refined`: registered ceramic where that item supports it, registered stainless steel, silver, or gold. For each plate or cutlery item that has neither a compatible ceramic nor stainless path registered, Good-or-better vanilla steel SHALL be the satisfiable base-game substitute for that item.
+- `Refined`: registered ceramic where that item supports it, registered stainless steel, silver, or gold. For each plate or cutlery item that has neither a compatible ceramic nor stainless path registered, clean vanilla steel SHALL be the satisfiable base-game substitute for that item.
 - `Silver`: vanilla silver or gold.
 - `Gold`: vanilla gold.
 
@@ -216,7 +216,7 @@ When Royalty and `RoyaltyDiningStandards` are enabled, the mod SHALL apply the f
 | Baron/Baroness | Silver | `0.70` | Elaborate | `65` (Excellent) |
 | Count/Countess or higher | Gold | `0.80` | Elaborate | `80` (Masterwork) |
 
-For a modded title, the evaluator SHALL use its declared title seniority and select the greatest listed vanilla row whose seniority is not above it, unless a compatibility extension explicitly supplies a row. A title below Yeoman adds no title-specific row and a title above Count clamps to the Count-or-higher row. Every title row MUST remain craftable when optional material mods are absent: Refined SHALL then accept its Good-or-better vanilla-steel substitute, Silver SHALL use base-game silver or gold, and Gold SHALL use base-game gold. Ceramic and stainless remain preferred Refined examples only when compatible material paths are actually registered.
+For a modded title, the evaluator SHALL use its declared title seniority and select the greatest listed vanilla row whose seniority is not above it, unless a compatibility extension explicitly supplies a row. A title below Yeoman adds no title-specific row and a title above Count clamps to the Count-or-higher row. Every title row MUST remain craftable when optional material mods are absent: Refined SHALL then accept its clean vanilla-steel substitute, Silver SHALL use base-game silver or gold, and Gold SHALL use base-game gold. Ceramic and stainless remain preferred Refined examples only when compatible material paths are actually registered.
 
 #### Scenario: Lower title accepts stainless service
 
@@ -225,7 +225,7 @@ For a modded title, the evaluator SHALL use its declared title seniority and sel
 
 #### Scenario: Lower title has no optional material mod
 
-- **WHEN** no compatible ceramic or stainless path is registered and a Yeoman uses Good-quality clean vanilla-steel service meeting the other row thresholds
+- **WHEN** no compatible ceramic or stainless path is registered and a Yeoman uses clean vanilla-steel service meeting the other row thresholds
 - **THEN** the explicit base-game substitute satisfies the Refined material requirement without creating a ceramic Def
 
 #### Scenario: Highest title rejects lesser service

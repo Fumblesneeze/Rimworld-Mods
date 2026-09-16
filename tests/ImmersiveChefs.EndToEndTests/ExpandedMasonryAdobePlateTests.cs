@@ -135,7 +135,7 @@ public sealed class ExpandedMasonryAdobePlateTest : IRimWorldEndToEndTest
                 EndToEndAssert.NotNull(plates, "The ordinary bill must produce adobe plates.");
                 EndToEndAssert.True(plates!.Stuff is null, "Adobe plates are fixed-material products, not invented Stuff.");
                 EndToEndAssert.Equal(4, plates.stackCount, "One native bill must produce four plates.");
-                EndToEndAssert.NotNull(plates.GetComp<CompQuality>(), "Native crafting must assign plate quality.");
+                EndToEndAssert.True(plates.GetComp<CompQuality>() is null, "Crafted plates have no quality grade.");
                 EndToEndAssert.Equal(
                     5f,
                     plates.GetComp<CompKitchenwareStats>().CurrentStats.MaterialCleanliness,

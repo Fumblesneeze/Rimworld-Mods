@@ -283,10 +283,10 @@ public sealed class PreciousMetalKitchenwareCostTest : IRimWorldEndToEndTest
         EndToEndAssert.NotNull(plates, $"The native bill must produce {stuff.label} plates.");
         EndToEndAssert.Equal(stuff, plates!.Stuff, "The plate batch must retain its exact input Stuff.");
         EndToEndAssert.Equal(4, plates.stackCount, "One native plate bill must produce four plates.");
-        EndToEndAssert.NotNull(plates.GetComp<CompQuality>(), "Native machining must assign plate quality.");
+        EndToEndAssert.True(plates.GetComp<CompQuality>() is null, "Crafted plates have no quality grade.");
     }
 
-    private static Pawn GenerateCrafter()
+    internal static Pawn GenerateCrafter()
     {
         var smithing = DefDatabase<WorkTypeDef>.GetNamed("Smithing");
         for (var attempt = 0; attempt < 64; attempt++)
@@ -324,7 +324,7 @@ public sealed class PreciousMetalKitchenwareCostTest : IRimWorldEndToEndTest
         throw new EndToEndAssertionException("Could not generate a capable kitchenware smith.");
     }
 
-    private static IntVec3 FindFixtureCenter(Map map)
+    internal static IntVec3 FindFixtureCenter(Map map)
     {
         foreach (var candidate in GenRadial.RadialCellsAround(map.Center, 55f, useCenter: true))
         {

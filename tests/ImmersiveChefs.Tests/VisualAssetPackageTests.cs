@@ -12,6 +12,112 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class VisualAssetPackageTests
 {
+    [Test]
+    public void Dishwasher_source_base_declares_native_workstation_ground_shadows()
+    {
+        var definitions = XDocument.Load(Path.Combine(FindRepositoryRoot(), "mods", "ImmersiveChefs",
+            "Defs", "ThingDefs", "KitchenBuildings.xml"));
+        var dishwasherBase = definitions.Root!.Elements("ThingDef")
+            .Single(def => (string?)def.Attribute("Name") == "ImmersiveChefs_DishwasherBase");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((bool?)dishwasherBase.Element("castEdgeShadows"), Is.True);
+            Assert.That((decimal?)dishwasherBase.Element("staticSunShadowHeight"), Is.EqualTo(0.20m));
+        });
+    }
+
+    [Test]
+    public void Industrial_damage_is_anchored_to_invariant_fixed_surfaces()
+    {
+        var root = FindRepositoryRoot();
+        var definitions = XDocument.Load(Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "KitchenBuildings.xml"));
+        var industrial = definitions.Root!.Elements("ThingDef")
+            .Single(def => (string?)def.Element("defName") == "ImmersiveChefs_IndustrialDishwasher");
+        var damage = industrial.Element("graphicData")?.Element("damageData");
+        Assert.That(damage, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)damage!.Element("rectN"), Is.EqualTo("(1.1875,-0.0625,0.625,0.3125)"));
+            Assert.That((string?)damage.Element("rectS"), Is.EqualTo("(1.1875,-0.0625,0.625,0.3125)"));
+            Assert.That((string?)damage.Element("rectE"), Is.EqualTo("(0.125,0.5625,0.75,0.75)"));
+            Assert.That((string?)damage.Element("rectW"), Is.EqualTo("(0.125,0.5625,0.75,0.75)"));
+        });
+    }
+
+    [Test]
+    public void Industrial_hood_canvas_preserves_the_three_cell_footprint_registration()
+    {
+        var definitions = XDocument.Load(Path.Combine(FindRepositoryRoot(), "mods", "ImmersiveChefs",
+            "Defs", "ThingDefs", "KitchenBuildings.xml"));
+        var industrial = definitions.Root!.Elements("ThingDef")
+            .Single(def => (string?)def.Element("defName") == "ImmersiveChefs_IndustrialDishwasher");
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)industrial.Element("size"), Is.EqualTo("(3,1)"));
+            Assert.That((string?)industrial.Element("graphicData")?.Element("drawSize"),
+                Is.EqualTo("(4.75,4)"));
+            Assert.That((string?)industrial.Element("graphicData")?.Element("drawOffset") ?? "(0,0,0)",
+                Is.EqualTo("(0,0,0)"));
+            Assert.That((string?)industrial.Element("drawerType"), Is.EqualTo("MapMeshAndRealTime"));
+            Assert.That(industrial.Element("comps")!.Elements("li").Count(comp =>
+                (string?)comp.Attribute("Class") == "ImmersiveChefs.CompProperties_IndustrialDishwasherPresentation"),
+                Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Industrial_hood_state_cardinals_fit_the_measured_mesh(
+        [Values("north", "east", "south", "west")] string direction,
+        [Values(false, true)] bool alternate, [Values(false, true)] bool closed)
+    {
+        var name = "IndustrialDishwasher" + (alternate ? "_Variant01" : "")
+            + (closed ? "_Closed" : "") + "_" + direction + ".png";
+        var path = Path.Combine(FindRepositoryRoot(), "mods", "ImmersiveChefs",
+            "Textures", "ImmersiveChefs", "Things", "Building", "Dishwasher", name);
+        using var texture = new Bitmap(path);
+        var expected = direction switch
+        {
+            "north" => new Size(1216, 1024),
+            "south" => new Size(1216, 1024),
+            _ => new Size(1024, 1216)
+        };
+        Assert.That(texture.Size, Is.EqualTo(expected));
+        AssertNoBrightBlueEmission(path);
+    }
+
+    [Test]
+    public void Domestic_dishwasher_uses_one_cell_and_a_square_padded_appliance_canvas()
+    {
+        var definitions = XDocument.Load(Path.Combine(FindRepositoryRoot(), "mods", "ImmersiveChefs",
+            "Defs", "ThingDefs", "KitchenBuildings.xml"));
+        var domestic = definitions.Root!.Elements("ThingDef")
+            .Single(def => (string?)def.Element("defName") == "ImmersiveChefs_Dishwasher");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)domestic.Element("size"), Is.EqualTo("(1,1)"));
+            Assert.That((string?)domestic.Element("graphicData")?.Element("drawSize"),
+                Is.EqualTo("(1.5,1.5)"));
+        });
+    }
+
+    [TestCase("north", false)]
+    [TestCase("east", false)]
+    [TestCase("south", false)]
+    [TestCase("west", false)]
+    [TestCase("north", true)]
+    [TestCase("east", true)]
+    [TestCase("south", true)]
+    [TestCase("west", true)]
+    public void Domestic_appliance_cardinals_match_the_one_cell_draw_canvas(string direction, bool alternate)
+    {
+        var name = "Dishwasher" + (alternate ? "_Variant01" : "") + "_" + direction + ".png";
+        using var texture = new Bitmap(Path.Combine(FindRepositoryRoot(), "mods", "ImmersiveChefs",
+            "Textures", "ImmersiveChefs", "Things", "Building", "Dishwasher", name));
+        Assert.That(texture.Size, Is.EqualTo(new Size(384, 384)));
+    }
+
     private const string CookwareTexturePath =
         "ImmersiveChefs/Things/Item/Kitchenware/Cookware/Cookware";
     private const string PrimitiveCookwareTexturePath =
@@ -42,6 +148,175 @@ public sealed class VisualAssetPackageTests
         "ImmersiveChefs/Things/Building/KitchenStation/PastryStation";
     private const string MicrowaveTexturePath =
         "ImmersiveChefs/Things/Building/Appliance/Microwave";
+
+    [TestCase("north", false, 300, 330, 736)]
+    [TestCase("south", false, 300, 330, 736)]
+    [TestCase("east", false, 812, 842, 224)]
+    [TestCase("west", false, 812, 842, 224)]
+    [TestCase("north", true, 300, 330, 736)]
+    [TestCase("south", true, 300, 330, 736)]
+    [TestCase("east", true, 812, 842, 224)]
+    [TestCase("west", true, 812, 842, 224)]
+    public void Prep_station_preserves_a_medium_gray_Core_depth_working_plane(
+        string direction, bool alternate, int topY, int apronY, int bandWidth)
+        => AssertWorkingPlane(PrepStationTexturePath, direction, alternate, topY, apronY, bandWidth);
+
+    [TestCase("north", false, 300, 330, 480)]
+    [TestCase("south", false, 300, 330, 480)]
+    [TestCase("east", false, 556, 586, 224)]
+    [TestCase("west", false, 556, 586, 224)]
+    [TestCase("north", true, 300, 330, 480)]
+    [TestCase("south", true, 300, 330, 480)]
+    [TestCase("east", true, 556, 586, 224)]
+    [TestCase("west", true, 556, 586, 224)]
+    public void Sauce_station_preserves_a_medium_gray_Core_depth_working_plane(
+        string direction, bool alternate, int topY, int apronY, int bandWidth)
+        => AssertWorkingPlane(SauceStationTexturePath, direction, alternate, topY, apronY, bandWidth);
+
+    [TestCase("north", false, 300, 330, 480)]
+    [TestCase("south", false, 300, 330, 480)]
+    [TestCase("east", false, 556, 586, 224)]
+    [TestCase("west", false, 556, 586, 224)]
+    [TestCase("north", true, 300, 330, 480)]
+    [TestCase("south", true, 300, 330, 480)]
+    [TestCase("east", true, 556, 586, 224)]
+    [TestCase("west", true, 556, 586, 224)]
+    public void Meat_station_preserves_a_medium_gray_Core_depth_working_plane(
+        string direction, bool alternate, int topY, int apronY, int bandWidth)
+        => AssertWorkingPlane(MeatStationTexturePath, direction, alternate, topY, apronY, bandWidth);
+
+    [TestCase("north", false, 300, 330, 480)]
+    [TestCase("south", false, 300, 330, 480)]
+    [TestCase("east", false, 556, 586, 224)]
+    [TestCase("west", false, 556, 586, 224)]
+    [TestCase("north", true, 300, 330, 480)]
+    [TestCase("south", true, 300, 330, 480)]
+    [TestCase("east", true, 556, 586, 224)]
+    [TestCase("west", true, 556, 586, 224)]
+    public void Vegetable_station_preserves_a_medium_gray_Core_depth_working_plane(
+        string direction, bool alternate, int topY, int apronY, int bandWidth)
+        => AssertWorkingPlane(VegetableStationTexturePath, direction, alternate, topY, apronY, bandWidth);
+
+    [TestCase("north", false, 300, 330, 480)]
+    [TestCase("south", false, 300, 330, 480)]
+    [TestCase("east", false, 556, 586, 224)]
+    [TestCase("west", false, 556, 586, 224)]
+    [TestCase("north", true, 300, 330, 480)]
+    [TestCase("south", true, 300, 330, 480)]
+    [TestCase("east", true, 556, 586, 224)]
+    [TestCase("west", true, 556, 586, 224)]
+    public void Pastry_station_preserves_a_medium_gray_Core_depth_working_plane(
+        string direction, bool alternate, int topY, int apronY, int bandWidth)
+        => AssertWorkingPlane(PastryStationTexturePath, direction, alternate, topY, apronY, bandWidth);
+
+    [TestCase("north", false)]
+    [TestCase("south", false)]
+    [TestCase("east", false)]
+    [TestCase("west", false)]
+    [TestCase("north", true)]
+    [TestCase("south", true)]
+    [TestCase("east", true)]
+    [TestCase("west", true)]
+    public void Domestic_dishwasher_preserves_the_measured_appliance_planes(string direction, bool alternate)
+    {
+        var root = FindRepositoryRoot();
+        var family = DishwasherTexturePath + (alternate ? "_Variant01" : "");
+        var file = family + "_" + direction + ".png";
+        using var bitmap = new Bitmap(TextureFile(root, file));
+        var roof = new Rectangle(64, 32, 256, 144);
+        var casing = new Rectangle(64, 176, 256, 176);
+        var top = MeanLuminance(bitmap, new Rectangle(92, 64, 200, 80));
+        var face = MeanLuminance(bitmap, new Rectangle(100, 250, 180, 55));
+        var outlinePath = file.Substring("ImmersiveChefs/Things/".Length);
+        var outline = XDocument.Load(Path.Combine(root, "docs", "SpriteOutlineApprovals.xml"))
+            .Root!.Elements("sprite").Single(entry => (string?)entry.Attribute("path") == outlinePath);
+        var directionPath = outlinePath.Substring("Building/".Length);
+        var frame = XDocument.Load(Path.Combine(root, "docs", "DirectionalSpriteApprovals.xml"))
+            .Root!.Elements("frame").Single(entry => (string?)entry.Attribute("path") == directionPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(bitmap.Size, Is.EqualTo(new Size(384, 384)));
+            Assert.That((int?)outline.Attribute("selectedStrokeSourcePixels"), Is.EqualTo(8),
+                "The appliance contour must retain its reviewed eight-pixel width.");
+            Assert.That((string?)outline.Attribute("geometryEvidence"), Is.Not.Null.And.Not.Empty,
+                "The pre-outline envelope requires an independent component-geometry review.");
+            Assert.That((string?)frame.Attribute("geometryEvidence"), Is.Not.Null.And.Not.Empty,
+                "The exact final envelope requires its corresponding component-geometry review.");
+            Assert.That(top, Is.InRange(140, 150), "Retain the user's selected DISH-3 gray roof values.");
+            Assert.That(face / top, Is.InRange(0.66, 0.88), "The full casing must remain darker than the selected roof.");
+            Assert.That(AlphaCoverage(bitmap, casing), Is.GreaterThanOrEqualTo(0.98),
+                "The appliance must retain its full 176-pixel casing in every direction.");
+        });
+        AssertMeasuredProjection(bitmap, roof, casing, (int)outline.Attribute("selectedStrokeSourcePixels")!,
+            file, ParseRectangle((string)outline.Attribute("preOutlineAlphaBounds")!),
+            ParseRectangle((string)frame.Attribute("alphaBounds")!));
+    }
+
+    [TestCase("north", false)]
+    [TestCase("east", false)]
+    [TestCase("south", false)]
+    [TestCase("west", false)]
+    [TestCase("north", true)]
+    [TestCase("east", true)]
+    [TestCase("south", true)]
+    [TestCase("west", true)]
+    public void Microwave_retains_a_muted_Core_relative_metal_top(string direction, bool alternate)
+    {
+        var root = FindRepositoryRoot();
+        var fileName = "Microwave" + (alternate ? "_Variant01" : "") + "_" + direction + ".png";
+        var approval = XDocument.Load(Path.Combine(root, "docs", "DirectionalSpriteApprovals.xml"))
+            .Root!.Elements("frame").Single(frame =>
+                (string?)frame.Attribute("path") == "Appliance/" + fileName);
+        using var bitmap = new Bitmap(TextureFile(root,
+            MicrowaveTexturePath + (alternate ? "_Variant01" : "") + "_" + direction + ".png"));
+        var top = MeanLuminance(bitmap, ParseRectangle((string)approval.Attribute("topPlane")!));
+        Assert.That(top, Is.InRange(90, 150),
+            "The reviewed top-plane region must use restrained medium metal values comparable to Core appliances.");
+    }
+
+    private static void AssertWorkingPlane(
+        string texturePath, string direction, bool alternate, int topY, int apronY, int bandWidth)
+        => AssertWorkingPlane(texturePath, direction, alternate,
+            new[] { new Rectangle(80, topY, bandWidth, 16) },
+            new Rectangle(80, apronY, bandWidth, 14));
+
+    private static void AssertWorkingPlane(
+        string texturePath, string direction, bool alternate, Rectangle[] topRegions, Rectangle apronRegion)
+    {
+        using var bitmap = new Bitmap(TextureFile(
+            FindRepositoryRoot(), texturePath + (alternate ? "_Variant01" : "") +
+                                  "_" + direction + ".png"));
+        var samplePixels = topRegions.Sum(region => region.Width * region.Height);
+        var top = topRegions.Sum(region => MeanLuminance(bitmap, region) * region.Width * region.Height)
+                  / samplePixels;
+        var apron = MeanLuminance(bitmap, apronRegion);
+
+        Assert.Multiple(() =>
+        {
+            // Matched unmasked Core electric-stove bands measure 96/111; the old
+            // 115 floor forced pale art even when its actual top/apron geometry was sound.
+            Assert.That(top, Is.InRange(90, 140),
+                direction + ": the tabletop band must retain the measured medium-gray value range.");
+            Assert.That(apron / top, Is.InRange(0.45, 0.85),
+                direction + ": the shallow screen-bottom apron must remain a separate darker plane.");
+        });
+    }
+
+    private static double MeanLuminance(Bitmap bitmap, Rectangle rectangle)
+    {
+        double total = 0;
+        for (var y = rectangle.Top; y < rectangle.Bottom; y++)
+        {
+            for (var x = rectangle.Left; x < rectangle.Right; x++)
+            {
+                var pixel = bitmap.GetPixel(x, y);
+                total += (0.2126 * pixel.R + 0.7152 * pixel.G + 0.0722 * pixel.B)
+                    * pixel.A / 255.0;
+            }
+        }
+
+        return total / (rectangle.Width * rectangle.Height);
+    }
 
     [Test]
     public void Every_shipped_Thing_diffuse_has_a_reviewed_Core_relative_outline_approval()
@@ -748,7 +1023,7 @@ public sealed class VisualAssetPackageTests
             AssertPackagedTextureMatchesSource(diffusePath, packagedDiffuse);
             AssertPackagedTextureMatchesSource(maskPath, packagedMask);
             AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion);
-            AssertNoVividGreenChroma(diffusePath);
+            AssertNoGreenChromaFringe(diffusePath);
         }
 
         AssertSpritesDiffer(
@@ -834,7 +1109,7 @@ public sealed class VisualAssetPackageTests
             AssertPackagedTextureMatchesSource(variantPath, packagedVariantPath);
             AssertTransparentSprite(variantPath);
             AssertSameCanvas(basePath, variantPath);
-            AssertNoVividGreenChroma(variantPath);
+            AssertNoGreenChromaFringe(variantPath);
             AssertNoBrightBlueEmission(variantPath);
             AssertSpritesDiffer(basePath, variantPath);
         }
@@ -859,8 +1134,8 @@ public sealed class VisualAssetPackageTests
             .ToDictionary(element => (string)element.Element("defName")!);
         var buildings = new[]
         {
-            ("ImmersiveChefs_Dishwasher", DishwasherTexturePath, 5, 3),
-            ("ImmersiveChefs_IndustrialDishwasher", IndustrialDishwasherTexturePath, 7, 3),
+            ("ImmersiveChefs_Dishwasher", DishwasherTexturePath, 1, 1),
+            ("ImmersiveChefs_IndustrialDishwasher", IndustrialDishwasherTexturePath, 19, 16),
             ("ImmersiveChefs_PrepStation", PrepStationTexturePath, 7, 3),
             ("ImmersiveChefs_SauceStation", SauceStationTexturePath, 5, 3),
             ("ImmersiveChefs_MeatStation", MeatStationTexturePath, 5, 3),
@@ -913,7 +1188,7 @@ public sealed class VisualAssetPackageTests
                     var packaged = PackagedTextureFile(root, familyPath + "_" + direction + ".png");
                     AssertPackagedTextureMatchesSource(source, packaged);
                     AssertTransparentSprite(source);
-                    AssertNoVividGreenChroma(source);
+                    AssertNoGreenChromaFringe(source);
                     AssertNoBrightBlueEmission(source);
                 }
 
@@ -922,7 +1197,26 @@ public sealed class VisualAssetPackageTests
                 AssertCanvasAspect(east, heightUnits, widthUnits);
                 AssertCanvasAspect(west, heightUnits, widthUnits);
                 AssertSpritesDiffer(north, south);
-                AssertSpritesDiffer(east, west);
+                if (defName is "ImmersiveChefs_Microwave" or "ImmersiveChefs_Dishwasher")
+                {
+                    // The selected appliance has identical side panels except for the
+                    // door edge. Test that physical landmark, not an arbitrary percent
+                    // of the complete roof/body being different between side views.
+                    using var eastView = new Bitmap(east);
+                    using var westView = new Bitmap(west);
+                    var doorY = defName == "ImmersiveChefs_Microwave" ? 224 : 180;
+                    var doorHeight = defName == "ImmersiveChefs_Microwave" ? 68 : 152;
+                    var leftEdge = new Rectangle(77, doorY, 3, doorHeight);
+                    var rightEdge = new Rectangle(306, doorY, 3, doorHeight);
+                    Assert.That(MeanLuminance(westView, leftEdge) - MeanLuminance(eastView, leftEdge),
+                        Is.GreaterThan(25), "The east view must place the door edge on its left.");
+                    Assert.That(MeanLuminance(eastView, rightEdge) - MeanLuminance(westView, rightEdge),
+                        Is.GreaterThan(25), "The west view must place the door edge on its right.");
+                }
+                else
+                {
+                    AssertSpritesDiffer(east, west);
+                }
                 AssertNotExactHalfTurn(north, south);
                 AssertNotExactHalfTurn(east, west);
             }
@@ -959,13 +1253,15 @@ public sealed class VisualAssetPackageTests
                 element => (string)element.Attribute("footprint")!,
                 element => element,
                 StringComparer.Ordinal);
-        var outlineStrokes = XDocument.Load(Path.Combine(root, "docs", "SpriteOutlineApprovals.xml"))
+        var outlineApprovals = XDocument.Load(Path.Combine(root, "docs", "SpriteOutlineApprovals.xml"))
             .Root!
             .Elements("sprite")
             .ToDictionary(
                 element => (string)element.Attribute("path")!,
-                element => (int)element.Attribute("selectedStrokeSourcePixels")!,
+                element => element,
                 StringComparer.Ordinal);
+        var directionalApprovals = XDocument.Load(Path.Combine(root, "docs", "DirectionalSpriteApprovals.xml"))
+            .Root!.Elements("frame").ToDictionary(element => "Building/" + (string)element.Attribute("path")!);
         var documents = new[]
         {
             Path.Combine(root, "mods", "ImmersiveChefs", "Defs", "ThingDefs", "KitchenBuildings.xml"),
@@ -980,8 +1276,6 @@ public sealed class VisualAssetPackageTests
             .ToDictionary(element => (string)element.Element("defName")!);
         var families = new[]
         {
-            ("ImmersiveChefs_Dishwasher", DishwasherTexturePath, "2x1"),
-            ("ImmersiveChefs_IndustrialDishwasher", IndustrialDishwasherTexturePath, "3x1"),
             ("ImmersiveChefs_PrepStation", PrepStationTexturePath, "3x1"),
             ("ImmersiveChefs_SauceStation", SauceStationTexturePath, "2x1"),
             ("ImmersiveChefs_MeatStation", MeatStationTexturePath, "2x1"),
@@ -1026,12 +1320,23 @@ public sealed class VisualAssetPackageTests
                         (bitmap.Width, bitmap.Height),
                         Is.EqualTo(expectedCanvas),
                         path + " must use the exact normalized projection canvas.");
+                    var outline = outlineApprovals[outlinePath];
+                    var preBoundsText = (string?)outline.Attribute("preOutlineAlphaBounds");
+                    Rectangle? preBounds = null;
+                    Rectangle? approvedBounds = null;
+                    if (preBoundsText is not null)
+                    {
+                        Assert.That((string?)outline.Attribute("geometryEvidence"), Is.Not.Null.And.Not.Empty,
+                            outlinePath + " needs a separate component-geometry review for its measured alpha envelope.");
+                        preBounds = ParseRectangle(preBoundsText);
+                        approvedBounds = ParseRectangle((string)directionalApprovals[outlinePath].Attribute("alphaBounds")!);
+                    }
                     AssertMeasuredProjection(
                         bitmap,
                         direction is "north" or "south" ? horizontalTabletop : verticalTabletop,
                         direction is "north" or "south" ? horizontalUnderframe : verticalUnderframe,
-                        outlineStrokes[outlinePath],
-                        path);
+                        (int)outline.Attribute("selectedStrokeSourcePixels")!,
+                        path, preBounds, approvedBounds);
                     AssertNoGreenSilhouetteFringe(path);
                 }
 
@@ -1079,6 +1384,9 @@ public sealed class VisualAssetPackageTests
                 .SelectMany(variant => new[] { "north", "east", "south", "west" }
                     .Select(direction =>
                         family.Item1 + "/" + family.Item2 + variant + "_" + direction + ".png")))
+            .Concat(new[] { string.Empty, "_Variant01" }.SelectMany(variant =>
+                new[] { "north", "east", "south", "west" }.Select(direction =>
+                    "Dishwasher/IndustrialDishwasher" + variant + "_Closed_" + direction + ".png")))
             .OrderBy(path => path, StringComparer.Ordinal)
             .ToArray();
 
@@ -1101,6 +1409,7 @@ public sealed class VisualAssetPackageTests
             var landmarks = (string?)approval.Attribute("landmarks") ?? string.Empty;
             var equipmentOrder = (string?)approval.Attribute("equipmentOrder") ?? string.Empty;
             var isMicrowave = path.StartsWith("Appliance/Microwave", StringComparison.Ordinal);
+            var isDomestic = path.StartsWith("Dishwasher/Dishwasher", StringComparison.Ordinal);
             var expectedHash = (string?)approval.Attribute("sha256") ?? string.Empty;
             var texturePath = Path.Combine(
                 textureRoot,
@@ -1111,9 +1420,10 @@ public sealed class VisualAssetPackageTests
                 Assert.That(File.Exists(texturePath), Is.True, path);
                 Assert.That(
                     landmarks,
-                    Does.Contain(isMicrowave ? "countertop body" : "screen-bottom underframe"),
+                    Does.Contain(isMicrowave ? "countertop body" :
+                        isDomestic ? "full-height appliance body" : "screen-bottom underframe"),
                     path + " must record the fixed-camera body landmark.");
-                if (!isMicrowave)
+                if (!isMicrowave && !isDomestic)
                 {
                     Assert.That(
                         equipmentOrder.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Length,
@@ -1139,7 +1449,8 @@ public sealed class VisualAssetPackageTests
         foreach (var family in expectedPaths
                      .Select(path => path.Substring(0, path.LastIndexOf('_')))
                      .Distinct(StringComparer.Ordinal)
-                     .Where(family => !family.StartsWith("Appliance/Microwave", StringComparison.Ordinal)))
+                     .Where(family => !family.StartsWith("Appliance/Microwave", StringComparison.Ordinal)
+                         && !family.StartsWith("Dishwasher/Dishwasher", StringComparison.Ordinal)))
         {
             var north = EquipmentOrder(approvedFrames[family + "_north.png"]);
             var east = EquipmentOrder(approvedFrames[family + "_east.png"]);
@@ -1153,7 +1464,11 @@ public sealed class VisualAssetPackageTests
             });
         }
 
-        foreach (var family in new[] { "Appliance/Microwave", "Appliance/Microwave_Variant01" })
+        foreach (var family in new[]
+                 {
+                     "Appliance/Microwave", "Appliance/Microwave_Variant01",
+                     "Dishwasher/Dishwasher", "Dishwasher/Dishwasher_Variant01"
+                 })
         {
             Assert.Multiple(() =>
             {
@@ -1236,8 +1551,8 @@ public sealed class VisualAssetPackageTests
                 projectionFrames.Add((family + "_" + direction, topDepth, casingDepth));
                 Assert.Multiple(() =>
                 {
-                    Assert.That(bitmap.Width, Is.EqualTo(512), family + "_" + direction + " canvas width");
-                    Assert.That(bitmap.Height, Is.EqualTo(512), family + "_" + direction + " canvas height");
+                    Assert.That(bitmap.Width, Is.EqualTo(384), family + "_" + direction + " canvas width");
+                    Assert.That(bitmap.Height, Is.EqualTo(384), family + "_" + direction + " canvas height");
                     Assert.That(bounds, Is.EqualTo(approvedBounds), family + "_" + direction + " approved alpha bounds");
                     Assert.That(bounds.Left, Is.GreaterThanOrEqualTo(24), family + "_" + direction + " left clearance");
                     Assert.That(bounds.Top, Is.GreaterThanOrEqualTo(24), family + "_" + direction + " top clearance");
@@ -1252,12 +1567,12 @@ public sealed class VisualAssetPackageTests
                         Is.InRange(minimumCasingToTopRatio, maximumCasingToTopRatio),
                         family + "_" + direction + " must match the measured Thermodynamics countertop-microwave top/casing projection rather than becoming a tall cube or flat deck");
                     Assert.That(
-                        direction is "north" or "south" ? bounds.Width / (double)bounds.Height : bounds.Height / (double)bounds.Width,
-                        Is.GreaterThanOrEqualTo(1.10),
-                        family + "_" + direction + " must use RimWorld's axis-aligned horizontal/vertical cardinal projection");
+                        bounds.Width / (double)bounds.Height,
+                        Is.InRange(1.05, 1.15),
+                        family + "_" + direction + " uses the selected one-cell appliance body at the fixed map camera");
                     Assert.That(
                         projection,
-                        Is.EqualTo(direction is "north" or "south" ? family + "-horizontal" : family + "-vertical"),
+                        Is.EqualTo(family + "-one-cell"),
                         family + "_" + direction + " fixed-camera projection group");
                 });
 
@@ -1297,7 +1612,7 @@ public sealed class VisualAssetPackageTests
 
         foreach (var (projection, frames) in measuredFrames)
         {
-            Assert.That(frames, Has.Count.EqualTo(2), projection + " must contain one cardinal-opposite pair.");
+            Assert.That(frames, Has.Count.EqualTo(4), projection + " must contain four views of the same one-cell body.");
             Assert.Multiple(() =>
             {
                 Assert.That(
@@ -1402,7 +1717,7 @@ public sealed class VisualAssetPackageTests
 
         AssertTransparentMatchingPair(diffusePath, maskPath, requireFixedBlackRegion: true);
         AssertTransparentMatchingPair(dirtyPath, dirtyMaskPath, requireFixedBlackRegion: true);
-        AssertVisibleBounds(diffusePath, 170, 230, 170, 230);
+        AssertVisibleBounds(diffusePath, 160, 230, 160, 230);
     }
 
     [Test]
@@ -1661,7 +1976,7 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(DishwasherTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(2.5,1.5)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(1.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, DishwasherTexturePath + "_north.png")), Is.True);
         });
@@ -1691,7 +2006,7 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(IndustrialDishwasherTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(3.5,1.5)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(4.75,4)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(PackagedTextureFile(root, IndustrialDishwasherTexturePath + "_north.png")), Is.True);
         });
@@ -1832,7 +2147,7 @@ public sealed class VisualAssetPackageTests
         AssertPackagedTextureMatchesSource(diffusePath, packagedPath);
         AssertTransparentSprite(diffusePath);
         AssertCanvasAspect(diffusePath, widthUnits: 5, heightUnits: 3);
-        AssertNoVividGreenChroma(diffusePath);
+        AssertNoGreenChromaFringe(diffusePath);
         AssertNoBrightBlueEmission(diffusePath);
     }
 
@@ -1867,7 +2182,7 @@ public sealed class VisualAssetPackageTests
         AssertPackagedTextureMatchesSource(diffusePath, packagedPath);
         AssertTransparentSprite(diffusePath);
         AssertCanvasAspect(diffusePath, widthUnits: 5, heightUnits: 3);
-        AssertNoVividGreenChroma(diffusePath);
+        AssertNoGreenChromaFringe(diffusePath);
         AssertNoBrightBlueEmission(diffusePath);
     }
 
@@ -1904,7 +2219,7 @@ public sealed class VisualAssetPackageTests
             Assert.That((string?)graphicData.Element("texPath"), Is.EqualTo(MicrowaveTexturePath));
             Assert.That((string?)graphicData.Element("graphicClass"), Is.EqualTo("Graphic_Multi"));
             Assert.That((string?)graphicData.Element("shaderType"), Is.EqualTo("Cutout"));
-            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(1.25,1.35)"));
+            Assert.That((string?)graphicData.Element("drawSize"), Is.EqualTo("(1.5,1.5)"));
             Assert.That(File.Exists(diffusePath), Is.True);
             Assert.That(File.Exists(packagedPath), Is.True);
             Assert.That(File.Exists(obsoleteSourcePath), Is.False);
@@ -1919,11 +2234,11 @@ public sealed class VisualAssetPackageTests
         AssertCanvasAspect(diffusePath, widthUnits: 1, heightUnits: 1);
         AssertVisibleBounds(
             diffusePath,
-            minimumWidth: 280 + addedDiameter,
-            maximumWidth: 430 + addedDiameter,
+            minimumWidth: 256 + addedDiameter,
+            maximumWidth: 256 + addedDiameter,
             minimumHeight: 180 + addedDiameter,
             maximumHeight: 430 + addedDiameter);
-        AssertNoVividGreenChroma(diffusePath);
+        AssertNoGreenChromaFringe(diffusePath);
         AssertNoBrightBlueEmission(diffusePath);
     }
 
@@ -2083,15 +2398,23 @@ public sealed class VisualAssetPackageTests
 
         using var bitmap = new Bitmap(diffusePath);
         var brightBluePixels = 0;
+        var name = Path.GetFileName(diffusePath);
+        var northBasketFrame = name is "IndustrialDishwasher_north.png" or
+            "IndustrialDishwasher_Closed_north.png" or "IndustrialDishwasher_Variant01_north.png" or
+            "IndustrialDishwasher_Variant01_Closed_north.png";
+        if (northBasketFrame) Assert.That(bitmap.Size, Is.EqualTo(new Size(1216, 1024)));
+        var closed = name.IndexOf("_Closed_", StringComparison.Ordinal) >= 0;
+        // Measured passive plastic surfaces; controls and the closed wash chamber are never exempt.
+        var workingBasket = new Rectangle(532, 449, 152, 140);
+        var stagingBasket = new Rectangle(776, 433, 168, 173);
         for (var y = 0; y < bitmap.Height; y++)
         {
             for (var x = 0; x < bitmap.Width; x++)
             {
                 var pixel = bitmap.GetPixel(x, y);
-                if (pixel.A >= 64 &&
-                    pixel.B >= 100 &&
-                    pixel.B > pixel.R * 1.25 &&
-                    pixel.B > pixel.G * 1.15)
+                var passiveBasket = northBasketFrame &&
+                    (stagingBasket.Contains(x, y) || (!closed && workingBasket.Contains(x, y)));
+                if (IsUnconditionalBlueEmission(pixel, passiveBasket))
                 {
                     brightBluePixels++;
                 }
@@ -2104,14 +2427,72 @@ public sealed class VisualAssetPackageTests
             "Unconditional base art must not look powered while the building is off or broken.");
     }
 
-    private static void AssertNoVividGreenChroma(string diffusePath)
+    [TestCase(71, 112, 130, true, false)]
+    [TestCase(71, 112, 130, false, true)]
+    [TestCase(40, 180, 255, true, true)]
+    [TestCase(40, 180, 255, false, true)]
+    [TestCase(105, 105, 105, false, false)]
+    public void Blue_emission_check_distinguishes_passive_paint_from_a_bright_cyan_control(
+        int red, int green, int blue, bool passiveBasket, bool emission)
+    {
+        Assert.That(IsUnconditionalBlueEmission(Color.FromArgb(255, red, green, blue), passiveBasket),
+            Is.EqualTo(emission));
+    }
+
+    private static bool IsUnconditionalBlueEmission(Color pixel, bool passiveBasket)
+    {
+        var blue = pixel.A >= 64 && pixel.B >= 100 &&
+            pixel.B > pixel.R * 1.25 && pixel.B > pixel.G * 1.15;
+        if (!blue) return false;
+        var passivePaint = passiveBasket && pixel.R is >= 50 and <= 105 &&
+            pixel.G is >= 80 and <= 155 && pixel.B is >= 100 and <= 175 &&
+            .2126 * pixel.R + .7152 * pixel.G + .0722 * pixel.B <= 145;
+        return !passivePaint;
+    }
+
+    [TestCase(32, 255, false)]
+    [TestCase(8, 255, true)]
+    [TestCase(16, 255, true)]
+    [TestCase(16, 1, true)]
+    public void Chroma_fringe_validation_preserves_interior_paint_and_rejects_edge_residue(
+        int greenX, int alpha, bool residueExpected)
+    {
+        using var bitmap = new Bitmap(64, 64);
+        using (var graphics = Graphics.FromImage(bitmap))
+        {
+            graphics.Clear(Color.Transparent);
+            graphics.FillRectangle(Brushes.Black, 8, 8, 48, 48);
+        }
+
+        bitmap.SetPixel(greenX, 32, Color.FromArgb(alpha, 20, 180, 20));
+        TestDelegate validate = () => AssertNoGreenChromaFringe(bitmap, 8, "synthetic outlined sprite");
+        if (residueExpected)
+        {
+            Assert.Throws<AssertionException>(validate);
+        }
+        else
+        {
+            Assert.DoesNotThrow(validate);
+        }
+    }
+
+    private static void AssertNoGreenChromaFringe(string diffusePath)
     {
         if (!File.Exists(diffusePath))
         {
             return;
         }
 
+        var texturePath = diffusePath.Replace('\\', '/');
+        var approval = XDocument.Load(Path.Combine(FindRepositoryRoot(), "docs", "SpriteOutlineApprovals.xml"))
+            .Root!.Elements("sprite").Single(sprite =>
+                texturePath.EndsWith("/" + (string)sprite.Attribute("path")!, StringComparison.Ordinal));
         using var bitmap = new Bitmap(diffusePath);
+        AssertNoGreenChromaFringe(bitmap, (int)approval.Attribute("selectedStrokeSourcePixels")!, diffusePath);
+    }
+
+    private static void AssertNoGreenChromaFringe(Bitmap bitmap, int outlineStroke, string identity)
+    {
         var vividGreenPixels = 0;
         for (var y = 0; y < bitmap.Height; y++)
         {
@@ -2121,7 +2502,8 @@ public sealed class VisualAssetPackageTests
                 if (pixel.A > 0 &&
                     pixel.G >= 128 &&
                     pixel.G > pixel.R * 1.4 &&
-                    pixel.G > pixel.B * 1.4)
+                    pixel.G > pixel.B * 1.4 &&
+                    IsSilhouetteEdge(bitmap, x, y, outlineStroke + 2))
                 {
                     vividGreenPixels++;
                 }
@@ -2132,7 +2514,7 @@ public sealed class VisualAssetPackageTests
         Assert.That(
             vividGreenPixels,
             Is.Zero,
-            "The selected sprite must not retain vivid green chroma-key pixels.");
+            identity + " must not retain vivid green chroma fringe through its exterior stroke.");
     }
 
     private static void AssertNoGreenSilhouetteFringe(string diffusePath)
@@ -2261,6 +2643,8 @@ public sealed class VisualAssetPackageTests
         var materialSurfacePixels = 0;
         var fixedGrimePixels = 0;
         var highContrastGrimePixels = 0;
+        var isCutlery = Path.GetFileName(cleanDiffusePath).StartsWith("Cutlery");
+        var materialMaskThreshold = isCutlery ? 200 : 240;
         for (var y = 0; y < clean.Height; y++)
         for (var x = 0; x < clean.Width; x++)
         {
@@ -2268,7 +2652,7 @@ public sealed class VisualAssetPackageTests
             var dirtyPixel = dirty.GetPixel(x, y);
             var cleanMaskPixel = cleanMask.GetPixel(x, y);
             var dirtyMaskPixel = dirtyMask.GetPixel(x, y);
-            if (cleanPixel.A < 96 || cleanMaskPixel.R < 240 || cleanMaskPixel.G > 15 || cleanMaskPixel.B > 15)
+            if (cleanPixel.A < 96 || cleanMaskPixel.R < materialMaskThreshold || cleanMaskPixel.G > 15 || cleanMaskPixel.B > 15)
             {
                 continue;
             }
@@ -2280,11 +2664,12 @@ public sealed class VisualAssetPackageTests
             }
 
             fixedGrimePixels++;
+            var steelTint = 1d - cleanMaskPixel.R / 255d * (1d - 105d / 255d);
             var cleanAfterSteelTint = Color.FromArgb(
                 cleanPixel.A,
-                cleanPixel.R * 105 / 255,
-                cleanPixel.G * 105 / 255,
-                cleanPixel.B * 105 / 255);
+                (int)(cleanPixel.R * steelTint),
+                (int)(cleanPixel.G * steelTint),
+                (int)(cleanPixel.B * steelTint));
             var maximumChannelDifference = Math.Max(
                 Math.Abs(dirtyPixel.R - cleanAfterSteelTint.R),
                 Math.Max(
@@ -2296,16 +2681,20 @@ public sealed class VisualAssetPackageTests
             }
         }
 
+        // The selected two-piece cutlery reserves most of its surface for clean handles.
+        // Its approved grime occupies about 7% of the complete material surface (the working ends).
+        var minimumGrimeFraction = isCutlery ? 0.05 : 0.12;
+        var minimumContrastFraction = isCutlery ? 0.05 : 0.10;
         Assert.Multiple(() =>
         {
             Assert.That(materialSurfacePixels, Is.GreaterThan(100), cleanDiffusePath + " has no measurable Stuff surface.");
             Assert.That(
                 fixedGrimePixels,
-                Is.GreaterThanOrEqualTo((int)Math.Ceiling(materialSurfacePixels * 0.12)),
-                dirtyDiffusePath + " must reserve at least 12% of its Stuff surface for fixed-color grime.");
+                Is.GreaterThanOrEqualTo((int)Math.Ceiling(materialSurfacePixels * minimumGrimeFraction)),
+                dirtyDiffusePath + " must preserve the selected working-surface grime coverage.");
             Assert.That(
                 highContrastGrimePixels,
-                Is.GreaterThanOrEqualTo((int)Math.Ceiling(materialSurfacePixels * 0.10)),
+                Is.GreaterThanOrEqualTo((int)Math.Ceiling(materialSurfacePixels * minimumContrastFraction)),
                 dirtyDiffusePath + " must remain unmistakably dirty after the Core Steel tint is applied.");
         });
     }
@@ -2380,19 +2769,28 @@ public sealed class VisualAssetPackageTests
         Rectangle tabletop,
         Rectangle screenSouthUnderframe,
         int addedOutlinePixels,
-        string path)
+        string path,
+        Rectangle? preOutlineAlphaBounds = null,
+        Rectangle? approvedAlphaBounds = null)
     {
-        var expectedVisibleBounds = Rectangle.FromLTRB(
-            tabletop.Left - addedOutlinePixels,
-            tabletop.Top - addedOutlinePixels,
-            tabletop.Right + addedOutlinePixels,
-            screenSouthUnderframe.Bottom + addedOutlinePixels);
+        var idealBody = Rectangle.Union(tabletop, screenSouthUnderframe);
+        var preBounds = preOutlineAlphaBounds ?? idealBody;
+        var expectedVisibleBounds = Rectangle.Inflate(preBounds, addedOutlinePixels, addedOutlinePixels);
         Assert.Multiple(() =>
         {
+            Assert.That(preBounds.Contains(idealBody), Is.True,
+                path + " must retain the full ideal body inside its pre-outline envelope.");
+            if (approvedAlphaBounds is not null)
+            {
+                Assert.That(expectedVisibleBounds, Is.EqualTo(approvedAlphaBounds.Value),
+                    path + " must expand the reviewed pre-outline envelope by exactly the selected contour.");
+                Assert.That(AlphaCoverage(bitmap, tabletop), Is.GreaterThanOrEqualTo(0.98),
+                    path + " must cover the ideal Core-derived tabletop independently of its contour envelope.");
+            }
             Assert.That(
                 AlphaBounds(bitmap),
                 Is.EqualTo(expectedVisibleBounds),
-                path + " must use the exact Core-derived tabletop plus underframe bounds.");
+                path + " must match its exact body/contour alpha envelope.");
             Assert.That(
                 AlphaCoverage(bitmap, screenSouthUnderframe),
                 Is.GreaterThanOrEqualTo(0.70),

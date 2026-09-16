@@ -90,6 +90,8 @@ try {
         'IMMERSIVE CHEFS',
         '-strip',
         '-colors', '256',
+        '-set', 'comment', 'Immersive Chefs texture release 2026-09-16',
+        '-define', 'png:include-chunk=tEXt',
         "PNG8:$temporaryMaster"
     )
     & $magick.Source @renderArguments

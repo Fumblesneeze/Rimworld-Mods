@@ -23,9 +23,6 @@
     </thingCategories>
     <comps>
       <li Class="CompProperties_Forbiddable" />
-      <li>
-        <compClass>CompQuality</compClass>
-      </li>
       <li Class="ImmersiveChefs.CompProperties_Sanitation" />
       <li Class="ImmersiveChefs.CompProperties_KitchenwareStats" />
     </comps>
@@ -33,6 +30,7 @@
 
   <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
     <defName>ImmersiveChefs_PrimitiveCookware</defName>
+    <comps><li><compClass>CompQuality</compClass></li></comps>
     <label>primitive stone cookware set</label>
     <description>One rough carved-stone pot, shallow pan and lids with simple wooden handles and utensils. This complete primitive cookware set is slow, fragile and difficult to keep sanitary.</description>
     <graphicData>
@@ -61,6 +59,7 @@
 
   <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
     <defName>ImmersiveChefs_Cookware</defName>
+    <comps><li><compClass>CompQuality</compClass></li></comps>
     <label>cookware set</label>
     <description>One complete reusable kitchen set: a pot, pan, lids, handles and small utensils. Its material and craftsmanship affect cooking speed, cleanliness, comfort and culinary quality.</description>
     <graphicData>
@@ -88,8 +87,9 @@
 
   <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
     <defName>ImmersiveChefs_Plate</defName>
+    <comps><li Class="ImmersiveChefs.CompProperties_TablewareStack" /></comps>
     <label>plate</label>
-    <description>A reusable plate for one meal portion. Its material and craftsmanship affect dining comfort, eating speed and sanitation.</description>
+    <description>A reusable plate for one meal portion. Its material affects dining comfort, eating speed and sanitation.</description>
     <graphicData>
       <texPath>ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate</texPath>
       <graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass>
@@ -117,6 +117,7 @@
 
   <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
     <defName>ImmersiveChefs_AdobePlate</defName>
+    <comps><li Class="ImmersiveChefs.CompProperties_TablewareStack" /></comps>
     <label>adobe plate</label>
     <description>A crude fixed-material plate formed from adobe bricks. It is porous, fragile and extremely difficult to keep sanitary.</description>
     <graphicData><texPath>ImmersiveChefs/Things/Item/Kitchenware/Plate/Plate</texPath><graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass><shaderType>CutoutComplex</shaderType><color>(0.62,0.43,0.25)</color><drawSize>(0.65,0.65)</drawSize></graphicData>
@@ -129,8 +130,9 @@
 
   <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
     <defName>ImmersiveChefs_Cutlery</defName>
+    <comps><li Class="ImmersiveChefs.CompProperties_TablewareStack" /></comps>
     <label>cutlery setting</label>
-    <description>A reusable fork, spoon and knife setting for one diner. Its material and craftsmanship affect dining comfort and sanitation.</description>
+    <description>A reusable fork, spoon and knife setting for one diner. Its material affects dining comfort and sanitation.</description>
     <graphicData>
       <texPath>ImmersiveChefs/Things/Item/Kitchenware/Cutlery/Cutlery</texPath>
       <graphicClass>ImmersiveChefs.Graphic_PortableKitchenwareVariation</graphicClass>
@@ -157,6 +159,7 @@
 
   <ThingDef ParentName="ImmersiveChefs_KitchenwareBase">
     <defName>ImmersiveChefs_GlitterworldCookware</defName>
+    <comps><li><compClass>CompQuality</compClass></li></comps>
     <label>glitterworld cookware set</label>
     <description>A self-cleaning, nonflammable cookware set imported from a glitterworld. It cannot be manufactured locally.</description>
     <graphicData>

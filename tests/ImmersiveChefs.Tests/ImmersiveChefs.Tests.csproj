@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\ImmersiveChefs.EndToEndTests\GalleryClearance.cs" Link="GalleryClearance.cs" />
     <ProjectReference Include="..\..\mods\ImmersiveChefs\ImmersiveChefs.csproj" />
     <Reference Include="System.Web.Extensions" />
     <PackageReference Update="NUnit3TestAdapter" Version="6.2.0" PrivateAssets="all" />

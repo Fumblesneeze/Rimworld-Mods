@@ -7,6 +7,28 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class KitchenwareRecipeDefContractTests
 {
+    [TestCase("ImmersiveChefs_Plate", false)]
+    [TestCase("ImmersiveChefs_AdobePlate", false)]
+    [TestCase("ImmersiveChefs_Cutlery", false)]
+    [TestCase("ImmersiveChefs_Cookware", true)]
+    [TestCase("ImmersiveChefs_PrimitiveCookware", true)]
+    [TestCase("ImmersiveChefs_GlitterworldCookware", true)]
+    public void Only_cooking_tools_have_crafting_quality(string defName, bool expected)
+    {
+        var things = XDocument.Load(Path.Combine(FindRepositoryRoot(),
+            "mods/ImmersiveChefs/Defs/ThingDefs/Kitchenware.xml")).Root!.Elements("ThingDef").ToArray();
+        var current = things.Single(t => (string?)t.Element("defName") == defName);
+        var quality = false;
+        while (current is not null)
+        {
+            quality |= current.Element("comps")?.Elements("li")
+                .Any(c => (string?)c.Element("compClass") == "CompQuality") == true;
+            var parent = (string?)current.Attribute("ParentName");
+            current = things.SingleOrDefault(t => (string?)t.Attribute("Name") == parent);
+        }
+        Assert.That(quality, Is.EqualTo(expected), "Tableware has material and condition, without crafting grades.");
+    }
+
     [Test]
     public void Existing_kitchenware_selects_the_recipe_tier_matching_its_actual_material()
     {

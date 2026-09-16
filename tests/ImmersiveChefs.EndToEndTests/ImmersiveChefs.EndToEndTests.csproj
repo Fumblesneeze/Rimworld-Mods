@@ -25,9 +25,26 @@
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="0Harmony">
       <HintPath>$(HarmonyAssemblyPath)</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+  <!-- All four local review sources admit this fixture together. Clean checkouts do not discover it. -->
+  <PropertyGroup>
+    <DishwasherCandidateArtAvailable Condition="Exists('..\..\artifacts\VisualAssets\HumanFeedback-20260916\handle-round\A-raised.png') And Exists('..\..\artifacts\VisualAssets\HumanFeedback-20260916\handle-round\A-closed.png') And Exists('..\..\artifacts\VisualAssets\HumanFeedback-20260916\handle-round\B-raised.png') And Exists('..\..\artifacts\VisualAssets\HumanFeedback-20260916\handle-round\B-closed.png')">true</DishwasherCandidateArtAvailable>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(DishwasherCandidateArtAvailable)' != 'true'">
+    <Compile Remove="DishwasherCandidateRenderingTests.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(DishwasherCandidateArtAvailable)' == 'true'">
+    <EmbeddedResource Include="..\..\artifacts\VisualAssets\HumanFeedback-20260916\handle-round\A-raised.png" LogicalName="DishwasherCandidate.A-raised.png" />
+    <EmbeddedResource Include="..\..\artifacts\VisualAssets\HumanFeedback-20260916\handle-round\A-closed.png" LogicalName="DishwasherCandidate.A-closed.png" />
+    <EmbeddedResource Include="..\..\artifacts\VisualAssets\HumanFeedback-20260916\handle-round\B-raised.png" LogicalName="DishwasherCandidate.B-raised.png" />
+    <EmbeddedResource Include="..\..\artifacts\VisualAssets\HumanFeedback-20260916\handle-round\B-closed.png" LogicalName="DishwasherCandidate.B-closed.png" />
   </ItemGroup>
 </Project>

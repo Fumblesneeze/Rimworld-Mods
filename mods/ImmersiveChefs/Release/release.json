@@ -39,6 +39,6 @@
   ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
-  "previousChangeNote": "Silver and gold kitchenware recipes now use RimWorld's small-volume material counts. Uranium tableware now uses Dubs Rimatomics or Crash Landing radiation when available, with toxic buildup as the Core fallback. Added complete Japanese localization and linked the public GitHub repository from the Workshop page.",
-  "changeNote": "Colonists now share powered microwaves: they walk over without booking the appliance and wait for an active user instead of reheating at a stove or campfire. Optional integrations now tolerate compatible mod updates, and the obsolete Stack Gap workaround retires automatically."
+  "previousChangeNote": "Colonists now share powered microwaves: they walk over without booking the appliance and wait for an active user instead of reheating at a stove or campfire. Optional integrations now tolerate compatible mod updates, and the obsolete Stack Gap workaround retires automatically.",
+  "changeNote": "Remade kitchen appliances, workbenches and portable kitchenware with clearer vanilla-style textures and matching rotations. Domestic dishwashers now fit one cell, while industrial hoods and visible contents follow actual use. Plates and cutlery stack across materials, show up to five physical settings, and no longer have crafting quality."
 }

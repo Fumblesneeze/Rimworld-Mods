@@ -141,7 +141,7 @@
   <ImmersiveChefs_Stat_CookingSpeedValue>Cooking speed factor: {0}</ImmersiveChefs_Stat_CookingSpeedValue>
   <ImmersiveChefs_Stat_CulinaryModifierValue>Culinary quality modifier: {0}</ImmersiveChefs_Stat_CulinaryModifierValue>
   <ImmersiveChefs_Stat_EatingSpeedValue>Eating speed factor: {0}</ImmersiveChefs_Stat_EatingSpeedValue>
-  <ImmersiveChefs_Stat_Explanation>Immersive Chefs derives this value from material and crafting quality.</ImmersiveChefs_Stat_Explanation>
+  <ImmersiveChefs_Stat_Explanation>Immersive Chefs derives this value from the material. Crafting quality also affects cookware and chef's knives.</ImmersiveChefs_Stat_Explanation>
 
   <ImmersiveChefs_Dishwasher_StatusIdle>idle</ImmersiveChefs_Dishwasher_StatusIdle>
   <ImmersiveChefs_Dishwasher_StatusWashing>washing ({0}%)</ImmersiveChefs_Dishwasher_StatusWashing>
