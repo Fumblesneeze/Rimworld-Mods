@@ -1097,3 +1097,9 @@ Static source inspection and local thumbnails are supporting evidence only. The 
 - **WHEN** VTEX Variations selects alternate graphics for the comparison stove or butcher table
 - **THEN** the visual fixture invokes their native graphic-change gizmos with a bounded retry count until their original Core graphic paths are selected
 - **THEN** every comparison checkpoint records and verifies `Things/Building/Production/TableStoveElectric` and `Things/Building/Production/TableButcher`; a different path fails the comparison rather than being described as vanilla artwork
+
+#### Scenario: Fork neck and finish remain continuous
+- **WHEN** the selected cutlery is viewed in metal or wood, clean or dirty
+- **THEN** the fork head, neck and handle share one continuous dark contour and coherent neutral shading, without the abrupt unoutlined join left by the earlier head edit
+- **AND** the selected silhouette, dark inset tine marks, dinner knife, material tinting and sanitation stains remain consistent across the four families
+- **AND** only the affected cutlery native dining/washing and material-zoom scenarios are repeated for acceptance.
