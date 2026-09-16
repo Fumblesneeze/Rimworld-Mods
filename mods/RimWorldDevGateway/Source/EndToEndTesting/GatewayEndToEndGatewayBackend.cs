@@ -244,8 +244,8 @@ public sealed class GatewayEndToEndGatewayBackend :
         GatewayDesignatorRotationDirection direction) =>
         gizmos.RotateDesignatorPreview(direction);
 
-    GatewayDesignatorCommitResult IGatewayEndToEndDesignatorSessionBackend.CommitDesignatorPreview() =>
-        gizmos.CommitDesignatorPreview();
+    GatewayDesignatorCommitResult IGatewayEndToEndDesignatorSessionBackend.CommitDesignatorPreview(bool keepActive) =>
+        gizmos.CommitDesignatorPreview(keepActive);
 
     void IGatewayEndToEndDesignatorSessionBackend.CancelDesignatorPreview() =>
         gizmos.CancelDesignatorPreview();

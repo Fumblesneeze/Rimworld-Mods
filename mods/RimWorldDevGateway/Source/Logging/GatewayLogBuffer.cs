@@ -68,6 +68,7 @@ public sealed class GatewayLogReadResult
 
 public sealed class GatewayLogBuffer
 {
+    public GatewayErrorStore Errors { get; }
     private readonly object sync = new();
     private readonly GatewayLogEntry?[] entries;
     private readonly Func<DateTimeOffset> utcNow;
@@ -121,6 +122,7 @@ public sealed class GatewayLogBuffer
         this.maximumReadUtf8Bytes = maximumReadUtf8Bytes;
         this.maximumMessageUtf8Bytes = maximumMessageUtf8Bytes;
         this.maximumStackUtf8Bytes = maximumStackUtf8Bytes;
+        Errors = new GatewayErrorStore(redact: RedactRequired);
     }
 
     public GatewayLogEntry Append(

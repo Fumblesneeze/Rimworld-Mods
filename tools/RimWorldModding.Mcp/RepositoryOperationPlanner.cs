@@ -104,7 +104,8 @@ public static class RepositoryOperationPlanner
         string language,
         int timeoutSeconds,
         bool dryRun,
-        bool enableAudio = false)
+        bool enableAudio = false,
+        string? projectPath = null)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         if ((groupId is null) == (testId is null))
@@ -131,6 +132,14 @@ public static class RepositoryOperationPlanner
             "-TimeoutSeconds", timeoutSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "-Output", "json"
         };
+        if (projectPath is not null)
+        {
+            var scopedProject = RepositoryRoot.ContainedPath(root, projectPath);
+            if (!scopedProject.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase) || !File.Exists(scopedProject))
+                throw new ArgumentException($"projectPath must be an existing repository-contained .csproj: {projectPath}");
+            arguments.Add("-ProjectPath");
+            arguments.Add(scopedProject);
+        }
         if (dryRun) arguments.Add("-DryRun");
         if (enableAudio) arguments.Add("-EnableAudio");
         return new AdapterCommand(

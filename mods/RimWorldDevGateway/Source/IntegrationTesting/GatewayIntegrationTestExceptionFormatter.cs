@@ -28,6 +28,9 @@ internal static class GatewayIntegrationTestExceptionFormatter
 {
     private const string SuppressedMessage = "Exception details suppressed for an untrusted exception type.";
 
+    internal static string MessageWithoutVirtualUserCode(Exception exception) =>
+        IsTrustedExactExceptionType(exception) ? SafeMessage(exception) : SuppressedMessage;
+
     public static GatewayIntegrationTestExceptionDetails Format(
         Exception exception,
         string? sessionCredential = null,
@@ -178,7 +181,7 @@ internal static class GatewayIntegrationTestExceptionFormatter
         }
     }
 
-    private static bool IsTrustedExactExceptionType(Exception exception)
+    internal static bool IsTrustedExactExceptionType(Exception exception)
     {
         var type = exception.GetType();
         return type == typeof(IntegrationTestAssertionException) ||

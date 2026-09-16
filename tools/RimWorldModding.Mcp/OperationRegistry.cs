@@ -114,7 +114,8 @@ public sealed class OperationRegistry
                         OptionalString(arguments, "language") ?? "English",
                         OptionalInt32(arguments, "timeoutSeconds", 300),
                         OptionalBoolean(arguments, "dryRun", false),
-                        OptionalBoolean(arguments, "enableAudio", false)),
+                        OptionalBoolean(arguments, "enableAudio", false),
+                        OptionalString(arguments, "projectPath")),
                     cancellationToken)),
             Register(
                 "game_run_start",
@@ -165,6 +166,42 @@ public sealed class OperationRegistry
                 static async (registry, arguments, cancellationToken) => await registry.InvokeGatewayDiagnostic(
                     arguments, RequiredString(arguments, "command"), cancellationToken)),
             Register(
+                "gateway_logs", "Read a chronological log page after an exclusive sequence cursor.",
+                OperationRisk.Read, false, 180,
+                "Exact leased process; retains request correlation and log history-loss indicators without credentials.",
+                static async (registry, arguments, cancellationToken) => await new GatewayDiagnostics(registry._repositoryRoot)
+                    .LogsAsync(RequiredString(arguments, "runId"),
+                        arguments.TryGetProperty("after", out var after) ? after.GetInt64() : 0,
+                        OptionalInt32(arguments, "limit", 100), cancellationToken)),
+            Register(
+                "gateway_screenshot",
+                "Capture the exact leased game's rendered view into its evidence directory without changing game state.",
+                OperationRisk.WorkspaceWrite,
+                longRunning: false,
+                timeoutSeconds: 180,
+                "Returns exact run/PID/start identity and PNG path, size, and SHA-256; credentials remain in memory only.",
+                static async (registry, arguments, cancellationToken) => await new GatewayScreenshot(registry._repositoryRoot)
+                    .CaptureAsync(RequiredString(arguments, "runId"), cancellationToken)),
+            Register("gateway_errors", "Query grouped errors or inspect one exact retained error and its frame/patch attribution.",
+                OperationRisk.Read, false, 180, "Exact leased process; bounded error history and request identity.",
+                static async (registry, arguments, token) => await new GatewayDiagnostics(registry._repositoryRoot)
+                    .InspectAsync(RequiredString(arguments, "runId"), "diagnostics.errors",
+                        DiagnosticArguments(arguments, "id", "after", "limit", "filter"), token)),
+            Register("gateway_methods", "Discover exact declared methods of one loaded type, including overload identities.",
+                OperationRisk.Read, false, 180, "Exact leased process and MVID/token handles; bounded method page.",
+                static async (registry, arguments, token) => await new GatewayDiagnostics(registry._repositoryRoot)
+                    .InspectAsync(RequiredString(arguments, "runId"), "diagnostics.methods",
+                        DiagnosticArguments(arguments, "typeName", "assemblyName", "methodName", "offset", "limit"), token)),
+            Register("gateway_decompile", "Decompile an exact original method or explicitly reconstruct its current Harmony replacement. Merged reconstruction executes transpilers.",
+                OperationRisk.DestructiveLocal, false, 180, "Retains input PE/hash, C# and exact method/request provenance under the run; merged output is not historical crash code.",
+                static async (registry, arguments, token) => await new GatewayDiagnostics(registry._repositoryRoot)
+                    .DecompileAsync(RequiredString(arguments, "runId"), RequiredString(arguments, "methodHandle"),
+                        arguments.TryGetProperty("merged", out var merged) && merged.GetBoolean(), token)),
+            Register("gateway_error_report", "Export one retained error with attributed frames and process provenance to Markdown and JSON.",
+                OperationRisk.WorkspaceWrite, false, 180, "Writes credential-free diagnostic artifacts beneath the exact run directory.",
+                static async (registry, arguments, token) => await new GatewayDiagnostics(registry._repositoryRoot)
+                    .ReportAsync(RequiredString(arguments, "runId"), RequiredString(arguments, "errorId"), token)),
+            Register(
                 "gateway_mutation",
                 "Invoke one explicit semantic action or registered automation against an exact leased live process.",
                 OperationRisk.DestructiveLocal,
@@ -172,6 +209,16 @@ public sealed class OperationRegistry
                 timeoutSeconds: 180,
                 "Mutation remains attributable to the exact run/request; direct mutation is diagnostic/setup evidence, not gameplay acceptance.",
                 static async (registry, arguments, cancellationToken) => await registry.InvokeGatewayMutation(arguments, cancellationToken)),
+            Register(
+                "gateway_scene_time",
+                "Set current-map local time or restore a captured calendar offset without advancing simulation ticks.",
+                OperationRisk.DestructiveLocal,
+                longRunning: false,
+                timeoutSeconds: 180,
+                "Exact leased process and map; returns before/after clock snapshots. Setup only, not simulated gameplay.",
+                static async (registry, arguments, cancellationToken) => await registry.InvokeGatewayMutation(
+                    GatewaySceneTimeArguments.Parse(arguments),
+                    cancellationToken)),
             Register(
                 "gateway_raw_mutation",
                 "Compile and execute one bounded raw C# mutation in an exact leased live Gateway process for one-off development or diagnosis.",
@@ -422,6 +469,22 @@ public sealed class OperationRegistry
     private ReleaseProfile RequiredProfile(string packageId) => ReleaseProfileCatalog.Discover(_repositoryRoot)
         .SingleOrDefault(item => string.Equals(item.PackageId, packageId, StringComparison.OrdinalIgnoreCase)) ??
         throw new ArgumentException($"No universal release profile exists for packageId '{packageId}'.");
+
+    private static Dictionary<string, object?> DiagnosticArguments(JsonElement arguments, params string[] names)
+    {
+        var result = new Dictionary<string, object?>();
+        foreach (var name in names)
+        {
+            if (!arguments.TryGetProperty(name, out var value) || value.ValueKind == JsonValueKind.Null) continue;
+            result[name] = value.ValueKind switch
+            {
+                JsonValueKind.String => value.GetString(),
+                JsonValueKind.Number when value.TryGetInt64(out var number) => number,
+                _ => throw new ArgumentException(name + " must be a string or integer.")
+            };
+        }
+        return result;
+    }
 
     private async Task<object> InvokeGatewayDiagnostic(
         JsonElement arguments,

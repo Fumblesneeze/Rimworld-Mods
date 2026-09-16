@@ -321,7 +321,7 @@ public sealed class GatewayEndToEndTestIsolationTests
         {
         }
 
-        public GatewayDesignatorCommitResult CommitPreview() =>
+        public GatewayDesignatorCommitResult CommitPreview(bool keepActive) =>
             new(accepted: true, rejectionReason: null);
 
         public void CancelPreview() => CancelCount++;

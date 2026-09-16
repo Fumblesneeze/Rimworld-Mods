@@ -640,23 +640,26 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
             designator.RenderHighlight(new List<IntVec3> { previewCell });
         }
 
-        public GatewayDesignatorCommitResult CommitPreview()
+        public GatewayDesignatorCommitResult CommitPreview(bool keepActive)
         {
             Designator_Place designator = RequirePreviewDesignator();
+            bool completed = false;
             try
             {
                 AcceptanceReport report = designator.CanDesignateCell(previewCell);
                 if (!report.Accepted)
                 {
+                    completed = true;
                     return new GatewayDesignatorCommitResult(false, report.Reason);
                 }
 
                 designator.DesignateMultiCell(new[] { previewCell });
+                completed = true;
                 return new GatewayDesignatorCommitResult(true, null);
             }
             finally
             {
-                CancelPreview();
+                if (!completed || !keepActive) CancelPreview();
             }
         }
 

@@ -9,7 +9,9 @@ The Gateway gives repository automation reliable, game-native observation and co
 ## Capabilities
 
 - Versioned authenticated HTTP API on a dynamic IPv4 loopback port.
-- Status, UI state, logs, screenshots, bounded Def export, and request journals.
+- Status, UI state, paged logs, grouped errors with frame/patch attribution, screenshots, bounded Def export, and request journals.
+- Exact method discovery and host-side C# decompilation of original or reconstructed current Harmony methods.
+- Required installed Harmony provider (`brrainz.harmony`); no bundled Harmony assembly.
 - Semantic time, camera, selection, thing, debug-action, gizmo, float-menu, and window control.
 - Exact-PID input and controlled process shutdown for the few native paths that require it.
 - Named automations plus staged integration and multi-frame E2E test execution.
@@ -56,4 +58,3 @@ dotnet run --project $mcp -- tool call openspec_validate --arguments '{}' -o jso
 Gateway extensions must remain authenticated, loopback-bound, bounded on Unity's main thread, cancellation-aware, and semantically distinct between player actions, observations, and direct mutation. A new route is not accepted until it is exercised in a real minimized RimWorld workflow.
 
 Read [`docs/Gateway.md`](../../docs/Gateway.md) for protocol, client, evidence, and troubleshooting details. The owning contract is [`openspec/changes/add-rimworld-dev-gateway`](../../openspec/changes/add-rimworld-dev-gateway/).
-

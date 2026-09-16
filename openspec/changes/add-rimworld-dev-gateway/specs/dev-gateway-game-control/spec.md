@@ -1,4 +1,44 @@
 ## ADDED Requirements
+
+### Requirement: Repeatable local scene time with exact restoration
+The Gateway SHALL expose version-one `scene.time` setup automation and the typed repository
+`gateway_scene_time` MCP/CLI operation. A request SHALL identify the current map and provide exactly
+one of a local minute of day (0 through 1439) or a previously captured game-start absolute tick.
+Setting local time SHALL change only the global calendar offset, preserve simulation ticks, the
+selected map's local day, pause/speed, weather, selection and camera, and return before/after clock
+snapshots. This is explicit disposable-scene setup, not gameplay time progression; other maps share
+the adjusted global calendar. Restoration SHALL restore the captured offset without rewinding ticks.
+The operation SHALL reject invalid ranges, unknown fields, ambiguous modes, stale map handles and
+absolute-clock overflow before mutation. It SHALL run on the Unity thread through the authenticated,
+correlated automation dispatcher. Cancellation before dispatch SHALL leave the clock unchanged.
+The matching typed supporting E2E step SHALL register restoration in guaranteed test cleanup.
+
+#### Scenario: Set noon for workstation comparison
+- **WHEN** an exact isolated process receives minuteOfDay 720 for its current map
+- **THEN** local time becomes noon without simulating cooking, jobs or pawn aging
+- **AND** subsequent rendered captures visibly show the changed illumination and native clock
+- **AND** the result records the previous offset, map handle, simulation tick and local day tick
+
+#### Scenario: Restore after a capture or failed test
+- **WHEN** the recorded gameStartAbsTick is restored, or a typed scene-time test exits
+- **THEN** the original offset is restored while any intervening simulation ticks remain unchanged
+
+#### Scenario: Invalid or stale clock request
+- **WHEN** the map has changed, both modes are supplied, the minute is outside 0–1439, or the resulting absolute clock overflows
+- **THEN** the request fails before changing the offset
+
+### Requirement: Repeated native clicks within a retained designator session
+The typed E2E designator-session commit action SHALL optionally retain its native designator and
+hover cell after both accepted and rejected clicks. Native Q/E-equivalent rotation and subsequent
+clicks then operate on that exact retained instance, without reselection or post-spawn rotation.
+Default commit continues to close the session. Explicit cancellation, stale-map loss, exceptions,
+and test cleanup SHALL release retained sessions. The existing typed test-selected E2E operation
+exposes this repeatable player workflow without raw C# or desktop input.
+
+#### Scenario: Click rotate click at one cell
+- **WHEN** a commit requests retention, followed by rotate and another commit at the same hover cell
+- **THEN** the same native designator handles both preflight and designation calls
+- **AND** the recorded input sequence distinguishes those two clicks from directly spawning results
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: Dedicated semantic game-state get and set

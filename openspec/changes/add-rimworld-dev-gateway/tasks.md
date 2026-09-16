@@ -281,3 +281,20 @@
 - [x] 39.1 SPEC/TDD RED: require every HTTP, companion CLI, and typed E2E process-input action that may restore, foreground, or result in a maximized RimWorld window to include the literal `may-maximize-window` warning in its public name; reject ambiguous legacy names.
 - [x] 39.2 GREEN/REGRESSION: rename the routes, commands, request/step types, adapters, tests, examples, and callers; prove legacy CLI commands fail before transport and focused Gateway suites remain green. GREEN: focused naming/route/CLI/action slice 147/147; built CLI help and all three legacy-command rejections verified.
 - [x] 39.3 REVIEW: independently review the naming migration for missed disruptive aliases, documentation drift, and accidental semantic-action renames, then rerun strict OpenSpec validation. Independent re-review: no findings; strict OpenSpec validation 12/12.
+
+## 40. mods/RimWorldDevGateway — Repeated native designator clicks
+
+- [x] 40.1 TDD: add opt-in `keepActive` to a native designator-session commit; retain the same selected tool and hover cell for a later Q/E rotation and click. Keep default commit-and-close behavior unchanged; native rejection may retain the session, but exceptions, staleness, and explicit cancellation must release it. Focused RED/GREEN and reviewed exception-cleanup tests are recorded in the local Thin Walls phase-fix ledger.
+- [x] 40.2 REVIEW/LIVE: independently review the scoped session lifecycle, then exercise click/rotate/click and duplicate rejection through native Thin Walls designators in a fresh minimized isolated process. Personally inspect the distinct resulting blueprints and record process/build/configuration/cleanup evidence. Reviewed final run `20260905T111435554Z`, PID 73904: all four three-edge sequences preserve their IDs; explicit cancellation releases each session; process/configuration/stage cleanup passed. This accepts the Gateway click workflow, not the product's unresolved compact-U visual fit.
+
+## 41. mods/RimWorldDevGateway — Repeatable scene time
+
+- [x] 41.1 TDD: prove local minute conversion, preserved simulation ticks/day, exact offset restoration, invalid/stale/overflow rejection and cancellation-before-dispatch through the named automation. RED/GREEN ledger: `artifacts/VisualAssets/VanillaRemake-20260909/review/gateway-scene-time-ledger.md`; final focused20/20 includes real HTTP JSON numeric parsing.
+- [x] 41.2 GREEN/REVIEW: expose typed MCP/CLI and E2E setup controls, guaranteed cleanup, and concise usage documentation; independently review and run affected host tests. Final independent review: no findings; broader Gateway40/40 and MCP11/11, followed by focused20/20 after review corrections.
+- [x] 41.3 IN-GAME: use the reviewed control in a fresh minimized run, personally inspect native clock/illumination before and after setting noon, then compare player-placed workstations beside same-facing vanilla stove and butcher table at matching zooms; retain exact clock restoration and process/configuration cleanup. Reviewed Gateway SHA25651E80A9D41B75F3EE2D161399FD132A495ABDD1104B10708CABEB2D0AE5D780F: native comparison run20260909T211405835Z/PID45440 and public typed API run20260909T212019554Z-1b3423d46aed49b6aa54e3aaabded70f/PID16468. Personally observed6h→12h lighting; exact offset restoration retained. Graceful cleanup and normal config/prefs hashes passed. This accepts Gateway scene control; prep art remains visually unaccepted.
+## Error diagnostic usability — approved September 2026
+
+- [x] ED.1 RED/GREEN: grouped errors, nested causes, bounded history and immutable pages.
+- [x] ED.2 RED/GREEN: live frame identities, required Harmony capture and patch/mod attribution.
+- [x] ED.3 RED/GREEN: exact method discovery and original/current-merged decompilation inputs.
+- [x] ED.4 Review, package/dependency verification, and final isolated native command-to-error workflow with personally inspected screenshots and diagnostic outputs. Evidence: `artifacts/McpRuns/20260916T104503740Z-879dad9d42a54b9db365c296695ae451/acceptance.md`; ordinary launcher clean-log check flags the three intentional fixture errors, separately classified in that record.

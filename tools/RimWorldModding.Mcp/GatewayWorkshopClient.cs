@@ -20,6 +20,24 @@ public sealed class GatewayWorkshopClient(
         await RegisterSourceAsync(source, "GatewaySteamWorkshopPublisher.Entry", cancellationToken);
     }
 
+    public async Task<JsonElement> ReadLogsAsync(long after, int limit, CancellationToken cancellationToken)
+    {
+        var result = await CallAsync(GatewayLogArguments.Create(after, limit), cancellationToken);
+        RequireOk(result, "Gateway log read");
+        return result;
+    }
+
+    public async Task<JsonElement> InspectDiagnosticsAsync(string name, IReadOnlyDictionary<string, object?> arguments,
+        CancellationToken cancellationToken)
+    {
+        if (name is not ("diagnostics.errors" or "diagnostics.methods" or "diagnostics.method" or "diagnostics.merged"))
+            throw new ArgumentException("Unknown diagnostic operation.");
+        var outer = await CallAsync(["run", name, "--arguments", JsonSerializer.Serialize(arguments)], cancellationToken);
+        RequireOk(outer, "Gateway diagnostic dispatch");
+        _ = GatewayDiagnostics.Payload(outer);
+        return outer;
+    }
+
     public async Task RegisterSourceAsync(string source, string entryType, CancellationToken cancellationToken)
     {
         source = RepositoryRoot.ContainedPath(_repositoryRoot, source);

@@ -10,6 +10,7 @@ namespace RimWorldDevGateway.EndToEndTests;
 [RimWorldEndToEndTest(
     "gateway.notification-cleanup.seed",
     EndToEndTestContract.GatewayPackageId,
+    "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
     MaxFrames = 900,
     MaxGameTicks = 2_000,
@@ -76,6 +77,7 @@ public sealed class GatewayNotificationCleanupSeedTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "gateway.notification-cleanup.verify",
     EndToEndTestContract.GatewayPackageId,
+    "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
     MaxFrames = 600,
     MaxGameTicks = 1_000,

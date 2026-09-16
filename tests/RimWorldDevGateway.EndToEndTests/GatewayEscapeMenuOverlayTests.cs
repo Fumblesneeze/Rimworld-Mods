@@ -9,6 +9,7 @@ namespace RimWorldDevGateway.EndToEndTests;
 [RimWorldEndToEndTest(
     "gateway.escape-menu-overlay",
     EndToEndTestContract.GatewayPackageId,
+    "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
     MaxFrames = 600,
     MaxGameTicks = 1_000,

@@ -140,7 +140,7 @@ internal interface IGatewayEndToEndDesignatorSessionBackend
 
     void RotateDesignatorPreview(GatewayDesignatorRotationDirection direction);
 
-    GatewayDesignatorCommitResult CommitDesignatorPreview();
+    GatewayDesignatorCommitResult CommitDesignatorPreview(bool keepActive);
 
     void CancelDesignatorPreview();
 }
@@ -162,6 +162,7 @@ internal interface IGatewayEndToEndInspectionBackend
 
 public sealed class GatewayEndToEndNativeActions :
     IGatewayEndToEndNativeActions,
+    IGatewayEndToEndSceneTimeNativeActions,
     IGatewayEndToEndDialogConfirmationNativeActions,
     IGatewayEndToEndArchitectCategoryNativeActions,
     IGatewayEndToEndEscapeMenuNativeActions,
@@ -175,6 +176,9 @@ public sealed class GatewayEndToEndNativeActions :
 
     public GatewayEndToEndNativeActions(IGatewayEndToEndActionBackend backend) =>
         this.backend = backend ?? throw new ArgumentNullException(nameof(backend));
+
+    public GatewayEndToEndStepOutcome Apply(SupportingSceneTimeActionStep step, IEndToEndContext context) =>
+        new GatewaySceneTimeFixture(new VerseGatewaySceneClockWorld()).Apply(step, context);
 
     public GatewayEndToEndStepOutcome Apply(TimeControlActionStep step, IEndToEndContext context)
     {
@@ -412,7 +416,7 @@ public sealed class GatewayEndToEndNativeActions :
                 return GatewayEndToEndStepOutcome.Pass();
             case EndToEndDesignatorSessionAction.Commit:
             {
-                GatewayDesignatorCommitResult result = designatorBackend.CommitDesignatorPreview();
+                GatewayDesignatorCommitResult result = designatorBackend.CommitDesignatorPreview(step.KeepActive);
                 if (step.ExpectRejected)
                 {
                     return result.Accepted

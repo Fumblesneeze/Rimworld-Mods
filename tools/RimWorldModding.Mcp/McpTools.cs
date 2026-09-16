@@ -56,10 +56,11 @@ public static class McpTools
         [Description("Scenario timeout in seconds, 60-3600.")] int? timeoutSeconds,
         [Description("True validates discovery and launch inputs without launching RimWorld.")] bool? dryRun,
         [Description("True enables RimWorld master audio for sound-focused work; omitted or false keeps the isolated run muted.")] bool? enableAudio,
+        [Description("Optional repository-contained E2E .csproj path that scopes metadata discovery to that owning project.")] string? projectPath,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "e2e_run_start",
-            JsonSerializer.SerializeToElement(new { groupId, testId, language, timeoutSeconds, dryRun, enableAudio }),
+            JsonSerializer.SerializeToElement(new { groupId, testId, language, timeoutSeconds, dryRun, enableAudio, projectPath }),
             cancellationToken));
 
     [McpServerTool(Name = "game_run_start"), Description("Start one leased isolated minimized Gateway-backed RimWorld process.")]
@@ -108,6 +109,44 @@ public static class McpTools
         OperationJson.Serialize(await registry.InvokeAsync(
             "gateway_diagnostic", JsonSerializer.SerializeToElement(new { runId, command }), cancellationToken));
 
+    [McpServerTool(Name = "gateway_logs"), Description("Read chronological logs with an exclusive sequence cursor. Resume using the final returned entry's Sequence.")]
+    public static async Task<string> GatewayLogs(OperationRegistry registry, string runId,
+        CancellationToken cancellationToken, long after = 0, int limit = 100) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_logs",
+            JsonSerializer.SerializeToElement(new { runId, after, limit }), cancellationToken));
+
+    [McpServerTool(Name = "gateway_errors"), Description("Query grouped errors or inspect an exact error ID with captured frames, causes and current Harmony attribution.")]
+    public static async Task<string> GatewayErrors(OperationRegistry registry, string runId,
+        CancellationToken cancellationToken, string? id = null, long after = 0, int limit = 50, string? filter = null) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_errors",
+            JsonSerializer.SerializeToElement(new { runId, id, after, limit, filter }), cancellationToken));
+
+    [McpServerTool(Name = "gateway_methods"), Description("Discover methods of one exact loaded type; results identify overloads by module MVID and metadata token.")]
+    public static async Task<string> GatewayMethods(OperationRegistry registry, string runId, string typeName,
+        CancellationToken cancellationToken, string? assemblyName = null, string? methodName = null, int offset = 0, int limit = 50) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_methods",
+            JsonSerializer.SerializeToElement(new { runId, typeName, assemblyName, methodName, offset, limit }), cancellationToken));
+
+    [McpServerTool(Name = "gateway_decompile"), Description("Decompile one exact method on the host. merged=true reconstructs current Harmony IL and executes transpilers; it never installs the reconstructed method. Retains PE/C#/provenance.")]
+    public static async Task<string> GatewayDecompile(OperationRegistry registry, string runId, string methodHandle,
+        CancellationToken cancellationToken, bool merged = false) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_decompile",
+            JsonSerializer.SerializeToElement(new { runId, methodHandle, merged }), cancellationToken));
+
+    [McpServerTool(Name = "gateway_error_report"), Description("Export one exact retained error to credential-free Markdown and JSON under its leased run's evidence directory.")]
+    public static async Task<string> GatewayErrorReport(OperationRegistry registry, string runId, string errorId,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_error_report",
+            JsonSerializer.SerializeToElement(new { runId, errorId }), cancellationToken));
+
+    [McpServerTool(Name = "gateway_screenshot"), Description("Capture the exact leased game's rendered view to a unique PNG under its evidence directory. Returns process identity and PNG hash; does not change game state.")]
+    public static async Task<string> GatewayScreenshot(
+        OperationRegistry registry,
+        [Description("Exact ready run ID.")] string runId,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync(
+            "gateway_screenshot", JsonSerializer.SerializeToElement(new { runId }), cancellationToken));
+
     [McpServerTool(Name = "gateway_mutation"), Description("Invoke one explicit semantic action or registered automation against an exact leased live process.")]
     public static async Task<string> GatewayMutation(
         OperationRegistry registry,
@@ -118,6 +157,17 @@ public static class McpTools
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "gateway_mutation", JsonSerializer.SerializeToElement(new { runId, kind, name, argumentsJson }), cancellationToken));
+
+    [McpServerTool(Name = "gateway_scene_time"), Description("Set current-map local time or restore a captured calendar offset without advancing simulation ticks. Disposable scene setup only.")]
+    public static async Task<string> GatewaySceneTime(
+        OperationRegistry registry,
+        [Description("Exact ready run ID.")] string runId,
+        [Description("Exact current map handle, for example map-0.")] string mapHandle,
+        [Description("Local minute of day, 0–1439; noon is 720. Supply this or gameStartAbsTick.")] int? minuteOfDay,
+        [Description("Previously returned Before.GameStartAbsTick for restoration. Supply this or minuteOfDay.")] int? gameStartAbsTick,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_scene_time",
+            JsonSerializer.SerializeToElement(new { runId, mapHandle, minuteOfDay, gameStartAbsTick }), cancellationToken));
 
     [McpServerTool(Name = "gateway_raw_mutation"), Description("Compile and execute one bounded raw C# mutation in an exact leased live Gateway process. For one-off development/diagnosis only; it never proves gameplay acceptance.")]
     public static async Task<string> GatewayRawMutation(

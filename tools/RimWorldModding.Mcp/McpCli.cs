@@ -261,6 +261,17 @@ public static class McpCli
                 parseResult.InvocationConfiguration.Output.WriteLine($"entry: {rawMutation.EntryType}");
                 parseResult.InvocationConfiguration.Output.WriteLine("gameplay acceptance evidence: false");
                 break;
+            case GatewayDiagnosticResult diagnostic:
+                parseResult.InvocationConfiguration.Output.WriteLine($"run: {diagnostic.RunId}; process: {diagnostic.GameProcessId}");
+                parseResult.InvocationConfiguration.Output.WriteLine(diagnostic.Response.ToString());
+                break;
+            case GatewayScreenshotResult screenshot:
+                parseResult.InvocationConfiguration.Output.WriteLine($"run: {screenshot.RunId}");
+                parseResult.InvocationConfiguration.Output.WriteLine($"game process: {screenshot.GameProcessId} ({screenshot.GameProcessStartUtc:O})");
+                parseResult.InvocationConfiguration.Output.WriteLine($"file: {screenshot.Path}");
+                parseResult.InvocationConfiguration.Output.WriteLine($"bytes: {screenshot.Bytes}");
+                parseResult.InvocationConfiguration.Output.WriteLine($"sha256: {screenshot.Sha256}");
+                break;
             default:
                 throw new InvalidOperationException($"No table projection is registered for {value.GetType().FullName}.");
         }

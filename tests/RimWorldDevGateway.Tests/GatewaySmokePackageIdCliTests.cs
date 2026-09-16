@@ -13,7 +13,7 @@ namespace RimWorldDevGateway.Tests;
 public sealed class GatewaySmokePackageIdCliTests
 {
     [Test]
-    public void Active_order_honors_harmony_load_before_and_keeps_core_first_when_harmony_is_absent()
+    public void Active_order_always_includes_required_harmony_before_core()
     {
         var repositoryRoot = FindSourceRepositoryRoot();
         var smokePath = Path.Combine(repositoryRoot, "scripts", "Invoke-GatewaySmoke.ps1");
@@ -38,7 +38,7 @@ public sealed class GatewaySmokePackageIdCliTests
                 Assert.That(run.ExitCode, Is.Zero, run.StandardError);
                 Assert.That(run.StandardOutput.Trim(), Is.EqualTo(
                     "{\"withHarmony\":[\"brrainz.harmony\",\"ludeon.rimworld\",\"optional.one\",\"optional.two\",\"fumblesneeze.rimworlddevgateway\"]," +
-                    "\"withoutHarmony\":[\"ludeon.rimworld\",\"optional.one\",\"optional.two\",\"fumblesneeze.rimworlddevgateway\"]}"));
+                    "\"withoutHarmony\":[\"brrainz.harmony\",\"ludeon.rimworld\",\"optional.one\",\"optional.two\",\"fumblesneeze.rimworlddevgateway\"]}"));
             });
         }
         finally

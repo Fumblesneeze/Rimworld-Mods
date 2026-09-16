@@ -62,6 +62,10 @@ The MCP/CLI SHALL start isolated game, smoke, integration, and grouped E2E work 
 - **WHEN** a caller selects an exact E2E group and test IDs
 - **THEN** one isolated process executes the native player actions, retains correlated before/action/after screenshots and request IDs, and returns evidence that remains unaccepted until a reviewer records visual inspection
 
+#### Scenario: Scope E2E discovery to an owning project
+- **WHEN** a caller passes an optional repository-contained `.csproj` path to the E2E run operation
+- **THEN** the operation builds and validates E2E assembly metadata only for that marked project, an unrelated project declaring an unresolvable package cannot block the selection, and a path outside the repository or without a `.csproj` extension is rejected with exit code `2`
+
 #### Scenario: Cancel after the launcher has exited
 - **WHEN** the launcher process has exited but the exact leased RimWorld PID and process-start identity remain live
 - **THEN** cancellation still requests bounded graceful completion and terminates only that exact orphaned game process before releasing the lease
@@ -72,6 +76,11 @@ The MCP/CLI SHALL expose authenticated health/status and typed diagnostic Gatewa
 #### Scenario: Read live state without exposing credentials
 - **WHEN** a caller queries game state for an active isolated run
 - **THEN** the operation authenticates to that run, returns the bounded Gateway response and request ID, and stores neither the bearer token nor live `current.json` in durable output
+
+#### Scenario: Capture the exact leased game's rendered view
+- **WHEN** a caller invokes `gateway_screenshot` with an exact ready run ID
+- **THEN** the operation uses the existing authenticated Gateway capture, saves a uniquely named PNG beneath that run's evidence directory, and returns the run ID, game PID/start identity, path, byte count, and SHA-256 without returning credentials or changing game state
+- **AND** a missing or non-ready run is rejected rather than selecting another process; the PNG remains supporting evidence until personally reviewed with its associated player action
 
 #### Scenario: Send raw mutating C# deliberately
 - **WHEN** a caller explicitly selects the raw mutation operation and submits bounded C#
@@ -91,3 +100,17 @@ The MCP/CLI SHALL inspect, enable, disable, and restore entries in the user's no
 #### Scenario: Local package synchronization does not retain an install backup
 - **WHEN** `local_mod_sync` replaces an existing product copy
 - **THEN** it stages outside the `Mods` directory, leaves only the selected package under `Mods/<package-id>`, and reports no retained install backup
+### Requirement: Typed diagnostic usability
+The tooling component SHALL expose `gateway_logs` with validated exclusive cursor and page limit; `gateway_errors` with bounded filtering/paging and exact error detail; `gateway_methods` with bounded method discovery; `gateway_decompile` selecting original or explicitly mutating current merged code; and `gateway_error_report` exporting an error and its provenance beneath the exact run's evidence directory. These operations SHALL reuse exact leased-process authentication, cancellation and request correlation. C# decompilation SHALL occur on the host from exact MVID/token-validated assembly inputs and retain provenance. No browser UI or managed hot-patch lifecycle is required in this slice.
+
+#### Scenario: Continue chronological log pages
+- **WHEN** a caller supplies the last returned sequence and a limit
+- **THEN** the MCP/CLI forwards both values and returns later logs instead of the default initial page
+
+#### Scenario: Inspect and export an error
+- **WHEN** a caller selects an error from its exact run
+- **THEN** typed tools return grouped occurrences and attributed frames and can retain a credential-free Markdown/JSON report with process and request identity
+
+#### Scenario: Decompile an exact overloaded method
+- **WHEN** a caller selects an exact method handle
+- **THEN** host decompilation returns that token's C# and input hash, rejects changed module identity, and labels merged output as reconstructed current code without historical crash-line precision

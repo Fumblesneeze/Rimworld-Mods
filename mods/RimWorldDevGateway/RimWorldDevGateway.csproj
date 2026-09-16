@@ -9,6 +9,7 @@
     <Authors>Fumblesneeze</Authors>
     <AssemblyName>RimWorldDevGateway</AssemblyName>
     <RootNamespace>RimWorldDevGateway</RootNamespace>
+    <IncludeHarmony>true</IncludeHarmony>
     <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
     <Description>
       DANGER: developer-only local automation gateway. Starts an authenticated loopback API with
@@ -27,6 +28,12 @@
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.PerformanceTesting\RimWorldDevGateway.PerformanceTesting.csproj" />
     <PackageReference Include="EmbedIO" Version="3.5.2" />
     <PackageReference Include="Mono.CSharp" Version="4.0.0.143" />
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.2" PrivateAssets="all" />
+    <!-- Reconstruct the installed Harmony method without detouring it; Cecil is already embedded in the provider. -->
+    <Publicize Include="0Harmony" />
+    <DoNotPublicize Include="0Harmony:System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute" />
+    <!-- Do not let the compiler bind ordinary interpolated strings to Harmony's internal polyfill. -->
+    <DoNotPublicize Include="0Harmony:System.Runtime.CompilerServices.DefaultInterpolatedStringHandler" />
   </ItemGroup>
 
   <!-- Language discovery happens before RimWorld resolves versioned load folders. These files

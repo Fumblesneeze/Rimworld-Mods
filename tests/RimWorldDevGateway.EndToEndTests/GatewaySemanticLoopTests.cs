@@ -9,6 +9,7 @@ namespace RimWorldDevGateway.EndToEndTests;
 [RimWorldEndToEndTest(
     "gateway.semantic-loop.first",
     EndToEndTestContract.GatewayPackageId,
+    "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
     MaxFrames = 900,
     MaxGameTicks = 2_000,
@@ -50,6 +51,7 @@ public sealed class FirstSemanticLoopTest : IRimWorldEndToEndTest
 [RimWorldEndToEndTest(
     "gateway.semantic-loop.second",
     EndToEndTestContract.GatewayPackageId,
+    "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
     MaxFrames = 600,
     MaxGameTicks = 1_000,

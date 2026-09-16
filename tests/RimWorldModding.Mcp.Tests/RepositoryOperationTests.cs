@@ -19,6 +19,7 @@ public sealed class RepositoryOperationTests
         File.WriteAllText(Path.Combine(_root, "scripts", "Invoke-RimWorldEndToEndTests.ps1"), "# adapter");
         File.WriteAllText(Path.Combine(_root, "scripts", "Invoke-GatewaySmoke.ps1"), "# adapter");
         File.WriteAllText(Path.Combine(_root, "mods", "Example", "Example.csproj"), "<Project />");
+        File.WriteAllText(Path.Combine(_root, "mods", "Example", "Example.cs.txt"), "x");
     }
 
     [TearDown]
@@ -85,6 +86,36 @@ public sealed class RepositoryOperationTests
             300,
             dryRun: true);
         Assert.That(packageGroup.Arguments, Does.Contain("-GroupId"));
+    }
+
+    [Test]
+    public void EndToEndPlan_WithoutProjectPath_OmitsDiscoveryScope()
+    {
+        var plan = RepositoryOperationPlanner.EndToEnd(
+            _root, null, "guest-bed-owner-menu", "English", 300, dryRun: true);
+
+        Assert.That(plan.Arguments.Count(argument => argument == "-ProjectPath"), Is.Zero);
+    }
+
+    [Test]
+    public void EndToEndPlan_ScopesDiscoveryToOneContainedProject()
+    {
+        var relativeProject = Path.Combine("mods", "Example", "Example.csproj");
+        var plan = RepositoryOperationPlanner.EndToEnd(
+            _root, null, "guest-bed-owner-menu", "English", 300, dryRun: true, projectPath: relativeProject);
+
+        Assert.That(plan.Arguments, Does.Contain("-ProjectPath"));
+        Assert.That(plan.Arguments, Does.Contain(Path.Combine(_root, "mods", "Example", "Example.csproj")));
+    }
+
+    [TestCase("mods/Example/Missing.csproj")]
+    [TestCase("mods/Example/Example.cs.txt")]
+    [TestCase("mods/Example")]
+    [TestCase("../outside/root.csproj")]
+    public void EndToEndPlan_RejectsUnsafeOrMissingProjectPath(string projectPath)
+    {
+        Assert.Throws<ArgumentException>(() => RepositoryOperationPlanner.EndToEnd(
+            _root, null, "guest-bed-owner-menu", "English", 300, dryRun: true, projectPath: projectPath));
     }
 
     [Test]

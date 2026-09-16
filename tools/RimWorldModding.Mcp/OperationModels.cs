@@ -93,6 +93,8 @@ public sealed record WorkshopPresentationSyncResult(
 [JsonSerializable(typeof(ReleasePlanStatusResult))]
 [JsonSerializable(typeof(ReleasePublishResult))]
 [JsonSerializable(typeof(GatewayRawMutationResult))]
+[JsonSerializable(typeof(GatewayScreenshotResult))]
+[JsonSerializable(typeof(GatewayDiagnosticResult))]
 [JsonSerializable(typeof(ReleaseWorkerRequest))]
 [JsonSerializable(typeof(ReleaseWorkerLease))]
 [JsonSerializable(typeof(WorkshopSubscriptionCleanupResult))]

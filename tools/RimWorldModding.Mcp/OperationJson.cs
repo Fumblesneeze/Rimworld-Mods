@@ -24,6 +24,8 @@ internal static class OperationJson
         ReleasePublishResult releasePublish => JsonSerializer.Serialize(releasePublish, McpJsonContext.Default.ReleasePublishResult),
         WorkshopSubscriptionCleanupResult subscriptionCleanup => JsonSerializer.Serialize(subscriptionCleanup, McpJsonContext.Default.WorkshopSubscriptionCleanupResult),
         GatewayRawMutationResult rawMutation => JsonSerializer.Serialize(rawMutation, McpJsonContext.Default.GatewayRawMutationResult),
+        GatewayScreenshotResult screenshot => JsonSerializer.Serialize(screenshot, McpJsonContext.Default.GatewayScreenshotResult),
+        GatewayDiagnosticResult diagnostic => JsonSerializer.Serialize(diagnostic, McpJsonContext.Default.GatewayDiagnosticResult),
         _ => throw new InvalidOperationException(
             $"No deterministic JSON projection is registered for {value.GetType().FullName}.")
     };

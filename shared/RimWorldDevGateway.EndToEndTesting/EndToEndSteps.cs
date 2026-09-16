@@ -366,10 +366,12 @@ public sealed class DesignatorSessionActionStep : EndToEndStep
         IEnumerable<string>? architectCategoryDefNames = null,
         EndToEndMapCell? hoverCell = null,
         string? stuffDefName = null,
-        bool expectRejected = false)
+        bool expectRejected = false,
+        bool keepActive = false)
         : base(name, EndToEndStepKind.Act)
     {
         Action = action;
+        KeepActive = keepActive;
         TargetRuntimeIds = StepValues.CopyIds(targetRuntimeIds ?? Array.Empty<string>(), nameof(targetRuntimeIds));
         ArchitectCategoryDefNames = StepValues.CopyIds(
             architectCategoryDefNames ?? Array.Empty<string>(),
@@ -382,6 +384,8 @@ public sealed class DesignatorSessionActionStep : EndToEndStep
     }
 
     public EndToEndDesignatorSessionAction Action { get; }
+
+    public bool KeepActive { get; }
 
     public IReadOnlyList<string> TargetRuntimeIds { get; }
 
@@ -421,8 +425,8 @@ public sealed class DesignatorSessionActionStep : EndToEndStep
     public static DesignatorSessionActionStep RotateRight(string name) =>
         new(name, EndToEndDesignatorSessionAction.RotateRight);
 
-    public static DesignatorSessionActionStep Commit(string name, bool expectRejected = false) =>
-        new(name, EndToEndDesignatorSessionAction.Commit, expectRejected: expectRejected);
+    public static DesignatorSessionActionStep Commit(string name, bool expectRejected = false, bool keepActive = false) =>
+        new(name, EndToEndDesignatorSessionAction.Commit, expectRejected: expectRejected, keepActive: keepActive);
 
     public static DesignatorSessionActionStep Cancel(string name) =>
         new(name, EndToEndDesignatorSessionAction.Cancel);

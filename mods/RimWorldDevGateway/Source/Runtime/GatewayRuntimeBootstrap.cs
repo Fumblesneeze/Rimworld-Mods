@@ -196,6 +196,8 @@ public static class GatewayRuntimeBootstrap
             {
                 var automations = new GatewayAutomationRegistry(diagnostics: logBuffer);
                 GatewayQuickstartAutomation.Register(automations);
+                GatewaySceneTimeAutomation.Register(automations);
+                GatewayDiagnosticAutomations.Register(automations, logBuffer.Errors);
                 var screenshots = new GatewayScreenshotService(
                     activeDispatcher,
                     new UnityGatewayScreenshotBackend(),
@@ -569,11 +571,13 @@ internal static class GatewayRuntimeOverlayPolicy
 internal sealed class UnityGatewayLogSubscription : IDisposable
 {
     private readonly GatewayLogBuffer buffer;
+    private readonly GatewayErrorCapture errorCapture;
     private int disposed;
 
     public UnityGatewayLogSubscription(GatewayLogBuffer buffer)
     {
         this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+        errorCapture = new GatewayErrorCapture();
         Application.logMessageReceivedThreaded += OnLog;
     }
 
@@ -582,6 +586,7 @@ internal sealed class UnityGatewayLogSubscription : IDisposable
         if (Interlocked.Exchange(ref disposed, 1) == 0)
         {
             Application.logMessageReceivedThreaded -= OnLog;
+            errorCapture.Dispose();
         }
     }
 
@@ -604,5 +609,11 @@ internal sealed class UnityGatewayLogSubscription : IDisposable
             string.IsNullOrEmpty(stackTrace) ? null : stackTrace,
             Thread.CurrentThread.ManagedThreadId.ToString(CultureInfo.InvariantCulture),
             GatewayRequestScope.CurrentRequestId);
+        if (severity == "Error")
+        {
+            try { GatewayErrorCapture.Observe(buffer.Errors, message ?? string.Empty,
+                stackTrace ?? string.Empty, GatewayRequestScope.CurrentRequestId); }
+            catch { /* Diagnostic capture must never break the original logger. */ }
+        }
     }
 }

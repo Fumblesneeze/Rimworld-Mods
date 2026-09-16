@@ -1,6 +1,44 @@
 ## ADDED Requirements
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
+### Requirement: Structured error diagnostics
+The Gateway SHALL require the installed `brrainz.harmony` provider without bundling it. It SHALL retain bounded grouped errors independently of chronological logs, with stable fingerprints, occurrence counts, first/last timestamps, request correlation, nested causes and exact captured method identities. Frame attribution SHALL distinguish the original assembly/mod from its Harmony patches and expose patch kind, owner, priority and ordering. Capture hooks SHALL preserve original logging/exception behavior and perform no Verse enumeration on threaded logging callbacks. Unresolved frames and dropped or truncated capture data SHALL remain explicit.
+
+#### Scenario: Repeated native action errors remain inspectable
+- **WHEN** a native player command emits the same error twice
+- **THEN** the diagnostic query returns one error with two occurrences, its captured frames and patch attribution, while chronological logs retain both events
+
+#### Scenario: Distinct nested causes and bounded history
+- **WHEN** otherwise identical errors have distinct inner causes, or retained capture limits are exceeded
+- **THEN** causes remain distinct, immutable paged snapshots report loss/truncation, and the original logger continues working
+
+#### Scenario: Incomplete or unsafe exception text
+- **WHEN** a capture exceeds its 65,536-character, 64-total-frame or eight-cause budget, or an exception chain includes a type outside the trusted message-getter policy
+- **THEN** the snapshot is explicitly incomplete and receives its own identity rather than claiming equivalence to another incomplete error; custom virtual text getters are never called by capture
+
+#### Scenario: An unrelated error follows exception inspection
+- **WHEN** code inspects an exception and later logs text sharing only part of its message
+- **THEN** the Gateway does not attribute that exception's frames to the new error; association requires the entire rendered exception including its stack
+
+### Requirement: Exact method inspection and decompilation inputs
+The Gateway SHALL provide bounded loaded-method discovery and exact method snapshots using module MVID, metadata token and complete signature. Original assembly snapshots SHALL identify the loaded MVID so the host rejects replaced bytes. Explicit merged-method reconstruction SHALL report the current Harmony composition and export a synthetic assembly without installing a replacement detour. Reconstruction can execute transpilers and SHALL be classified as diagnostic mutation. Error-capture and current composition SHALL be distinguishable; no reconstructed offset SHALL be claimed to identify a historical crash line.
+
+#### Scenario: Inspect overloaded original and patch methods
+- **WHEN** a caller selects one exact method handle from captured frames or method discovery
+- **THEN** inspection and host decompilation use that overload's metadata token rather than a name-only match
+
+#### Scenario: Reconstruct a currently patched method
+- **WHEN** the caller explicitly requests merged-method reconstruction
+- **THEN** the result contains current patch attachments with priority and ordering constraints, explicitly labels their list as attachment order, hashes the full composition including infixes independently of display truncation, exports bounded PE bytes, leaves installed patches unchanged, and identifies the output as reconstructed current code
+
+#### Scenario: Unsupported method contexts coexist with supported overloads
+- **WHEN** a discovery page or patch list includes generic or dynamic contexts that the exact-handle representation cannot preserve
+- **THEN** those entries expose their signatures and unsupported reason while supported siblings remain inspectable; original decompilation of byte-loaded methods fails explicitly rather than guessing assembly bytes
+
+#### Scenario: Stale methods or changed assembly bytes
+- **WHEN** a method handle cannot resolve exactly or on-disk module identity differs from the loaded module
+- **THEN** the operation fails with an actionable error rather than decompiling another overload or build
+
 ### Requirement: Structured status snapshot
 `GET /api/v1/status` SHALL return an immutable main-thread version-one snapshot with these fields: `developerOnly`, `longEventActive`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. `longEventActive` SHALL report `LongEventHandler.AnyEventNowOrWaiting`, allowing callers to distinguish an allocated map from a settled lifecycle boundary. A non-null `map` SHALL contain only `Handle`, `Biome`, `Width`, and `Height`. The version-one status contract SHALL NOT imply game/mod-version, pause/speed, window-geometry, uploaded-assembly-count, per-operation, raw-input, or automation-health fields.
 

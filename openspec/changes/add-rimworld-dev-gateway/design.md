@@ -27,6 +27,20 @@ The target development environment is RimWorld 1.6 on Windows, .NET Framework-co
 
 ## Decisions
 
+### Error diagnostics and Harmony dependency (September 2026)
+
+The approved diagnostic slice makes Harmony a hard provider dependency. Pure grouping lives in a host-testable store; Harmony logging hooks capture bounded live frames and exception ancestry, and main-thread projections add immutable mod and patch attribution. Existing chronological logs remain authoritative for ordering. Named diagnostic automations expose errors, methods and exact method snapshots. The host MCP performs C# decompilation and report rendering, keeping the decompiler dependency out of Unity. Merged-method reconstruction uses the installed Harmony composition machinery and is explicitly mutating because transpilers may execute; it never installs its reconstructed method. Exact MVID/token identities prevent overload confusion. No historical crash-line claim is made for reconstructed code. Policy bounds (retained errors, pending captures, frames, ancestry, method pages and PE payloads) are documented with truncation/loss indicators and focused boundary tests. Managed hot-patch lifecycle and a browser UI are outside this slice.
+
+### Repeatable scene clock
+
+The Gateway-owned scene clock uses a small host-safe controller over an injected clock adapter.
+Local minute-of-day maps to the nearest native tick in RimWorld's 60,000-tick day. The controller
+adjusts `gameStartAbsTick` by target-minus-current local day tick; it never changes `TicksGame`.
+The named automation, typed MCP/CLI projection, and typed E2E setup step share that controller.
+Before/after snapshots expose the original offset for explicit restoration; the E2E step also
+registers exact offset restoration in its context cleanup. Weather remains a separate condition.
+This allows noon comparisons beside vanilla workstations without ad hoc clock mutation in fixtures.
+
 ### 1. Pinned EmbedIO owns the loopback HTTP transport
 
 The mod will host its API with **EmbedIO 3.5.2**, using the package's managed .NET Standard 2.0 assets, and will bind the resulting `WebServer` explicitly to `http://127.0.0.1:<port>/`. It will never accept a configured bind address other than IPv4 loopback. The default port is dynamically selected; an optional preferred port may be tried before falling back to another loopback port. EmbedIO owns HTTP parsing, connection lifecycle, request contexts, routing, and response writes. Gateway code owns authentication, API envelopes, endpoint-specific body and response limits, concurrency, timeouts, and main-thread dispatch. The gateway will not maintain a parallel hand-written `TcpListener` or raw HTTP parser.

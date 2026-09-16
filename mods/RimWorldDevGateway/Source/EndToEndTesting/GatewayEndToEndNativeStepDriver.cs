@@ -109,6 +109,9 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
         return step switch
         {
             TimeControlActionStep time => Complete(actions.Apply(time, context)),
+            SupportingSceneTimeActionStep sceneTime => actions is IGatewayEndToEndSceneTimeNativeActions sceneTimeActions
+                ? Complete(sceneTimeActions.Apply(sceneTime, context))
+                : GatewayEndToEndCompletedStepOperation.Failed("unsupported_e2e_step", "The native adapter does not support scene time setup."),
             SelectionActionStep selection => Complete(actions.Apply(selection, context)),
             SupportingHitPointFixtureActionStep fixture => Complete(actions.Apply(fixture, context)),
             CameraActionStep camera => Complete(actions.Apply(camera, context)),

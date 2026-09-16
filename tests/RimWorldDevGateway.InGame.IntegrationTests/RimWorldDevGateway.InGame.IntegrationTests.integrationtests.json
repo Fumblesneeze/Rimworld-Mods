@@ -3,6 +3,7 @@
   "assembly": "RimWorldDevGateway.InGame.IntegrationTests.dll",
   "activePackageSetMode": "exact",
   "activePackageIds": [
+    "brrainz.harmony",
     "ludeon.rimworld",
     "fumblesneeze.rimworlddevgateway"
   ]

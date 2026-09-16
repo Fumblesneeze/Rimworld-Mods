@@ -2723,15 +2723,8 @@ function Get-GatewayActiveModIds {
     $remainingPackageIds = @($AdditionalPackageIds | Where-Object {
         -not [string]::Equals($_, $harmonyPackageId, [System.StringComparison]::OrdinalIgnoreCase)
     })
-    $hasHarmony = @($AdditionalPackageIds | Where-Object {
-        [string]::Equals($_, $harmonyPackageId, [System.StringComparison]::OrdinalIgnoreCase)
-    }).Count -gt 0
-
-    if ($hasHarmony) {
-        return @($harmonyPackageId, $corePackageId) + $remainingPackageIds + @($gatewayPackageId)
-    }
-
-    return @($corePackageId) + $remainingPackageIds + @($gatewayPackageId)
+    # Gateway diagnostics require the installed Harmony provider in every isolated run.
+    return @($harmonyPackageId, $corePackageId) + $remainingPackageIds + @($gatewayPackageId)
 }
 
 $activeModIds = @(Get-GatewayActiveModIds -AdditionalPackageIds $validatedAdditionalModIds)

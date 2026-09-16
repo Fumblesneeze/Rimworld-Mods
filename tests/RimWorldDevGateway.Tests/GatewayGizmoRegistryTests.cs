@@ -187,6 +187,39 @@ public sealed class GatewayGizmoRegistryTests
     }
 
     [Test]
+    public void Retained_click_allows_rotation_and_another_click_without_reselecting()
+    {
+        var candidate = PreviewCandidate.Create("build-thin-wall");
+        var registry = new GatewayGizmoRegistry(new FakeSource(candidate));
+        string handle = registry.Query(GatewayGizmoQuery.ForOwners(
+            Array.Empty<string>(), architectCategoryDefNames: new[] { "Structure" })).Items.Single().Handle;
+        registry.BeginDesignatorPreview(handle, new GatewayMapCell(8, 11), "Steel");
+        registry.CommitDesignatorPreview(keepActive: true);
+        Assert.That(registry.HasActiveDesignatorPreview, Is.True);
+        registry.RotateDesignatorPreview(GatewayDesignatorRotationDirection.Counterclockwise);
+        registry.CommitDesignatorPreview(keepActive: true);
+        registry.CancelDesignatorPreview();
+        Assert.That(candidate.Events, Is.EqualTo(new[]
+            { "begin:8,11:Steel", "click", "rotate:Counterclockwise", "click", "cancel" }));
+        Assert.That(registry.HasActiveDesignatorPreview, Is.False);
+    }
+
+    [Test]
+    public void Retained_session_releases_ownership_when_native_rotation_throws()
+    {
+        var candidate = PreviewCandidate.Create("build-thin-wall");
+        var registry = new GatewayGizmoRegistry(new FakeSource(candidate));
+        string handle = registry.Query(GatewayGizmoQuery.ForOwners(
+            Array.Empty<string>(), architectCategoryDefNames: new[] { "Structure" })).Items.Single().Handle;
+        registry.BeginDesignatorPreview(handle, new GatewayMapCell(8, 11), "Steel");
+        registry.CommitDesignatorPreview(keepActive: true);
+        candidate.ThrowOnRotation = true;
+        Assert.Throws<InvalidOperationException>(() => registry.RotateDesignatorPreview(GatewayDesignatorRotationDirection.Clockwise));
+        Assert.That(registry.HasActiveDesignatorPreview, Is.False);
+        Assert.That(candidate.Events.Last(), Is.EqualTo("cancel"));
+    }
+
+    [Test]
     public void Designator_preview_session_clears_itself_when_native_selection_is_lost()
     {
         var candidate = PreviewCandidate.Create("build-thin-wall");
@@ -661,6 +694,7 @@ public sealed class GatewayGizmoRegistryTests
         public List<string> Events { get; } = new();
 
         public bool PreviewCurrent { get; set; } = true;
+        public bool ThrowOnRotation { get; set; }
 
         public bool PreviewIsCurrent => PreviewCurrent;
 
@@ -693,6 +727,7 @@ public sealed class GatewayGizmoRegistryTests
 
         public void RotatePreview(GatewayDesignatorRotationDirection direction)
         {
+            if (ThrowOnRotation) throw new InvalidOperationException("native rotation failed");
             if (!PreviewCurrent)
             {
                 throw new GatewayGizmoException(
@@ -705,9 +740,9 @@ public sealed class GatewayGizmoRegistryTests
 
         public void DrawPreview() => DrawCount++;
 
-        public GatewayDesignatorCommitResult CommitPreview()
+        public GatewayDesignatorCommitResult CommitPreview(bool keepActive)
         {
-            Events.Add("commit");
+            Events.Add(keepActive ? "click" : "commit");
             return new GatewayDesignatorCommitResult(accepted: true, rejectionReason: null);
         }
 

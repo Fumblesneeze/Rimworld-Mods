@@ -6,7 +6,65 @@ Use it only in a disposable isolated `-savedatafolder`. Uploaded code runs with 
 
 The Gateway warning and any integration/E2E status boxes are intentionally absent from ordinary map play. Open RimWorld's native in-play Escape menu to see them. Native screenshot mode, runtime shutdown, and the title screen keep the Gateway-owned overlay hidden; the authenticated API and startup/session warnings remain available independently.
 
+## Scene time for repeatable lighting
+
+`gateway_scene_time` sets the current map's local minute of day without advancing simulation ticks.
+Supply the exact leased `runId`, current `mapHandle` and `minuteOfDay` (0–1439; noon is 720).
+The result contains `Before` and `After` clock snapshots. To restore, supply the same run/map and
+`gameStartAbsTick` from `Before`, omitting `minuteOfDay`. The global calendar offset affects all maps;
+weather, pause, camera and selection remain unchanged. Wait for a subsequent rendered frame before
+capturing the changed sunlight. This is disposable-scene setup, not simulated gameplay progression.
+Before/after snapshots also remain in automation artifacts if cancellation wins after the handler
+returns. A cancellation detected inside the clock step restores the offset; if it arrives at the
+registry's final completion check, use those artifacts to inspect the applied state and restore
+explicitly. Cancellation before dispatch never changes the clock. Zero is RimWorld's uninitialized
+offset sentinel and is rejected even when produced by minute conversion.
+
+The CLI exposes the same typed operation:
+
+```powershell
+dotnet run --project tools/RimWorldModding.Mcp -c Release -- tool call gateway_scene_time --arguments '{"runId":"<exact-run>","mapHandle":"map-0","minuteOfDay":720}' -o json
+dotnet run --project tools/RimWorldModding.Mcp -c Release -- tool call gateway_scene_time --arguments '{"runId":"<exact-run>","mapHandle":"map-0","gameStartAbsTick":3600000}' -o json
+```
+
+Use the actual returned original offset in the second call; `3600000` is only an example.
+The underlying authenticated route is `POST /api/v1/automations/scene.time/runs`, with version-one
+arguments. The typed `SupportingSceneTimeActionStep` uses the same controller, records clock
+identity, and registers exact offset restoration in guaranteed E2E cleanup.
+
 ## Transport and threat model
+
+### Error and method diagnostics
+
+Harmony (`brrainz.harmony`) is required and loaded before Core; the Gateway does not bundle `0Harmony.dll`.
+The typed MCP operations also have the same `tool call <name> --arguments '<JSON>' -o json` CLI projection:
+
+| Operation | Arguments and result |
+| --- | --- |
+| `gateway_logs` | Exact `runId`, optional `after` cursor and `limit` (1–500); chronological log page. |
+| `gateway_errors` | Exact `runId`, optional `after`, `limit` (1–100), `filter`, or one `id`; grouped counts/timestamps or captured frames, nested causes and current patch attribution. |
+| `gateway_methods` | Exact `runId`, `typeName`, optional `assemblyName`, `methodName`, `offset`, `limit`; exact overload handles. |
+| `gateway_decompile` | Exact `runId`, `methodHandle`, optional `merged` (default false); C# plus retained input assembly, SHA-256, MVID/token and provenance. |
+| `gateway_error_report` | Exact `runId`, `errorId`; portable Markdown/JSON report in that run's evidence directory. |
+
+Capture begins when the Gateway starts. Errors have a separate 512-entry history, up to eight nested
+causes, 64 total frames and 65,536 retained text characters per record. Incomplete captures (including
+suppressed custom exception details) are marked `Truncated` and never merged as equivalent errors.
+Chronological logs retain the original logger output; grouped exception messages normalize only
+fully trusted exception chains. A whole rendered exception must match the log before its live CLR
+frames can be associated. Reading an exception's stack alone does not associate it with later errors.
+
+Patch lists describe current attachments, including inner prefixes/postfixes, owner, priority and
+before/after constraints; list order is explicitly attachment order. Attribution identifies involvement,
+not fault. Merged reconstruction hashes Harmony's full composition before/after, exports a synthetic
+PE without installing a detour, and can execute transpilers. It is therefore an explicit diagnostic
+mutation. ILSpy runs on the host with a linked 180-second deadline; output describes reconstructed
+current code, with no historical crash-line claim.
+
+Generic/dynamic methods without an exact supported handle remain visible with an unsupported reason;
+they do not hide supported methods on the same page. Original decompilation requires file-backed,
+MVID-matching assemblies; byte-loaded test/snippet assemblies fail explicitly. Original inputs are
+limited to 64 MiB, reconstructed inputs to 512 KiB, and source output to one million characters.
 
 The in-process server is EmbedIO 3.5.2 in managed-listener mode, bound only to a dynamically selected IPv4 `127.0.0.1` port. EmbedIO owns HTTP parsing and connection handling; the mod does not implement a raw HTTP parser. Kestrel is not used because current Kestrel expects the ASP.NET Core shared framework and a modern CoreCLR host, while RimWorld 1.6 loads `net48`-compatible mods in Unity Mono. EmbedIO supports the target runtime with a much smaller dependency graph.
 

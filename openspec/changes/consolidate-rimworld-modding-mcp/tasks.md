@@ -99,3 +99,13 @@
 - [x] 13.1d RED/GREEN: reproduce an existing-item update from a fresh clean worktree with no ignored durable identity; atomically seed it only from matching checked-in and immutable candidate identities after authenticated preflight, and reject mismatches without overwrite. RED `20260827T105000000Z-SteamDurableIdentityRed` failed to compile because the guarded identity projection did not exist; GREEN `20260827T105500000Z-SteamDurableIdentityGreen` passed exact creation, existing-mismatch non-overwrite, and source-mismatch no-create assertions.
 - [x] 13.1e RED/GREEN: reproduce Steam rejecting the final 8,341-byte resolved Workshop description with `k_EResultInvalidParam` while the shorter tokenized template remained green; validate the exact submitted UTF-8 file and terminator boundary during profile discovery/preparation, then shorten redundant player-facing copy without dropping required inventories, dependency chains, images, or the final Author's Note. RED failed to compile before the shared resolved-description policy existed; GREEN passed the exact 7,999/8,000-byte boundary, NUL rejection, and Immersive Chefs' 7,706-byte resolved description with every presentation contract intact.
 - [ ] 13.2 REVIEW/LIVE: independently review the fallback, run the focused MCP tests and strict OpenSpec validation, then prepare and publish the retained Immersive Chefs update through the exact live Steam response that triggered the regression.
+
+## 14. Exact-run rendered screenshot capture — `tools/RimWorldModding.Mcp`
+
+- [x] 14.1 RED/GREEN: expose `gateway_screenshot(runId)` through the shared registry and MCP, reuse existing exact-process authenticated capture, and cover discovery plus missing-run rejection.
+- [x] 14.2 Independently review, run focused tests and strict OpenSpec validation, then personally inspect a retained screenshot after a native player action in an exact minimized leased process; retain build identity and cleanup evidence. Local ledger: `artifacts/VisualAssets/DishwasherAppliances-20260911/review/gateway-screenshot-acceptance.md` (2026-09-14).
+## Diagnostic usability — approved September 2026
+
+- [x] DU.1 RED/GREEN: typed log paging and validation.
+- [x] DU.2 RED/GREEN: error/method inspection, host decompilation and credential-free report export.
+- [x] DU.3 Validate contracts, independent review and exact-process live diagnostic workflow. Evidence: `artifacts/McpRuns/20260916T104503740Z-879dad9d42a54b9db365c296695ae451/acceptance.md` (including deliberate-error classification and cleanup).

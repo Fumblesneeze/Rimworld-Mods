@@ -266,7 +266,7 @@ public interface IGatewayDesignatorPreviewCandidate
 
     void DrawPreview();
 
-    GatewayDesignatorCommitResult CommitPreview();
+    GatewayDesignatorCommitResult CommitPreview(bool keepActive);
 
     void CancelPreview();
 }
@@ -742,12 +742,12 @@ public sealed class GatewayGizmoRegistry
         }
 
         ActiveDesignatorPreview active = RequireActiveDesignatorPreview();
-        RevalidateDesignatorPreview(active);
         try
         {
+            RevalidateDesignatorPreview(active);
             active.Candidate.RotatePreview(direction);
         }
-        catch (GatewayGizmoException exception) when (exception.Code == "designator_preview_not_current")
+        catch
         {
             ClearStaleDesignatorPreview(active);
             throw;
@@ -788,17 +788,24 @@ public sealed class GatewayGizmoRegistry
         }
     }
 
-    public GatewayDesignatorCommitResult CommitDesignatorPreview()
+    public GatewayDesignatorCommitResult CommitDesignatorPreview(bool keepActive = false)
     {
         ActiveDesignatorPreview active = RequireActiveDesignatorPreview();
+        bool completed = false;
         try
         {
             RevalidateDesignatorPreview(active);
-            return active.Candidate.CommitPreview();
+            GatewayDesignatorCommitResult result = active.Candidate.CommitPreview(keepActive);
+            completed = true;
+            return result;
         }
         finally
         {
-            activeDesignatorPreview = null;
+            if (!completed || !keepActive)
+            {
+                activeDesignatorPreview = null;
+                if (!completed) ClearStaleDesignatorPreview(active);
+            }
         }
     }
 

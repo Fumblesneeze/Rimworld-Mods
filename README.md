@@ -21,7 +21,7 @@ Each OpenSpec change and capability has exactly one owner: either one mod or one
 | Windows, Git, and PowerShell 7 | Repository development and isolated RimWorld process control. |
 | .NET 8 SDK | Restore, build, test, MCP server, and companion tools. `global.json` pins the supported SDK policy. |
 | RimWorld 1.6 from Steam | Managed assemblies and final live verification. |
-| Harmony Workshop item `2009463077` | Required by the three product mods; not required by the Gateway itself. |
+| Harmony Workshop item `2009463077` | Required by the product mods and the Dev Gateway; loaded before Core in isolated runs. |
 | XML Extensions Workshop item `2574315206` | Required by Immersive Chefs, and by any other owning mod that uses an `XmlExtensions.*` patch operation; never bundled. |
 | Node.js LTS and OpenSpec `1.2.0` | Contract validation. Install with `npm install -g @fission-ai/openspec@1.2.0`. |
 | FlaUiCli | Optional exact-window evidence for workflows that genuinely require desktop UI. |
