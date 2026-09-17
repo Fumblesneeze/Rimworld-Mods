@@ -127,6 +127,7 @@ internal static class ProcessorFrameworkAdapter
     private static MethodInfo? fillProcessorTryMakeReservations;
     private static MethodInfo? fillProcessorMakeNewToils;
     private static MethodInfo? emptyProcessorMakeNewToils;
+    private static MethodInfo? emptyProcessorTryMakeReservations;
     private static MethodInfo? resolveProcessReferences;
     private static MethodInfo? addProcessDef;
     private static MethodInfo? recacheAll;
@@ -263,6 +264,12 @@ internal static class ProcessorFrameworkAdapter
         var fillProcessorJob = DefDatabase<JobDef>.GetNamedSilentFail("FillProcessor");
         var emptyProcessorJobDriverType = AccessTools.TypeByName(
             ProcessorDishwasherOutputCompatibility.EmptyDriverTypeName);
+        emptyProcessorTryMakeReservations = emptyProcessorJobDriverType?.GetMethod(
+            nameof(JobDriver.TryMakePreToilReservations),
+            BindingFlags.Public | BindingFlags.Instance,
+            binder: null,
+            types: new[] { typeof(bool) },
+            modifiers: null);
         emptyProcessorMakeNewToils = emptyProcessorJobDriverType?.GetMethod(
             "MakeNewToils",
             BindingFlags.NonPublic | BindingFlags.Instance,
@@ -377,6 +384,9 @@ internal static class ProcessorFrameworkAdapter
             IsPublicInstanceBoolean(processorAnyRuined, processorType) &&
             IsPublicInstanceBoolean(processorEmpty, processorType));
         if (!inputShapeSupported || !outputShapeSupported ||
+            emptyProcessorTryMakeReservations is not { IsPublic: true, IsStatic: false, IsAbstract: false, IsGenericMethod: false } ||
+            emptyProcessorTryMakeReservations.DeclaringType != emptyProcessorJobDriverType ||
+            emptyProcessorTryMakeReservations.ReturnType != typeof(bool) ||
             fillProcessorJobDriverType.Assembly != processorAssembly ||
             emptyProcessorJobDriverType?.Assembly != processorAssembly)
         {
@@ -431,8 +441,8 @@ internal static class ProcessorFrameworkAdapter
         SetField(properties, "independentProcesses", true);
         SetField(properties, "parallelProcesses", true);
         SetField(properties, "dropIngredients", true);
-        SetField(properties, "showProductIcon",
-            buildingDef.comps?.Any(comp => comp is CompProperties_IndustrialDishwasherPresentation) != true);
+        // Domestic doors are opaque; industrial contents have their own hood-clipped renderer.
+        SetField(properties, "showProductIcon", false);
         SetField(properties, "colorCoded", false);
         SetField(properties, "processes", processList);
         properties.ResolveReferences(buildingDef);
@@ -508,6 +518,9 @@ internal static class ProcessorFrameworkAdapter
         harmony.Patch(
             emptyProcessorMakeNewToils!,
             prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(EmptyProcessorMakeNewToilsPrefix)));
+        harmony.Patch(
+            emptyProcessorTryMakeReservations!,
+            prefix: new HarmonyMethod(typeof(ProcessorFrameworkAdapter), nameof(EmptyProcessorReservationsPrefix)));
     }
 
     internal static bool AllowsFillReservation(bool isDishwasher, bool isDirtyWare)
@@ -515,22 +528,19 @@ internal static class ProcessorFrameworkAdapter
         return !isDishwasher || isDirtyWare;
     }
 
-    private static bool FillProcessorReservationsPrefix(JobDriver __instance, ref bool __result)
+    private static bool FillProcessorReservationsPrefix(JobDriver __instance, bool __0, ref bool __result)
     {
         var job = __instance.job;
         var processor = job?.GetTarget(TargetIndex.A).Thing;
-        if (job is null || processor is null)
+        if (job is null || processor is null || !Controls(processor))
         {
             return true;
         }
 
         var ingredient = job.GetTarget(TargetIndex.B).Thing;
-        if (AllowsFillReservation(IsDishwasher(processor), ingredient is not null && IsDirtyWare(ingredient)))
-        {
-            return true;
-        }
-
-        __result = false;
+        // Reserve the physical input, never the shared appliance for the whole trip.
+        __result = ingredient is not null && IsDirtyWare(ingredient) &&
+                   __instance.pawn.Reserve(ingredient, job, 1, job.count, null, __0);
         return false;
     }
 
@@ -627,17 +637,27 @@ internal static class ProcessorFrameworkAdapter
         return false;
     }
 
+    private static bool EmptyProcessorReservationsPrefix(JobDriver __instance, ref bool __result)
+    {
+        var appliance = __instance.job?.targetA.Thing;
+        if (appliance is null || !Controls(appliance)) return true;
+
+        // Extraction is atomic on arrival; the following toils reserve the output and storage cell.
+        __result = true;
+        return false;
+    }
+
     private static IEnumerable<Toil> MakeImmediateEmptyProcessorToils(
         JobDriver driver,
         Thing dishwasher)
     {
         var processor = ProcessorOf(dishwasher)!;
-        driver.FailOn(() => ProcessorEmptyLifecyclePolicy.ShouldFail(
+        driver.FailOn(() => !driver.job.targetB.HasThing && ProcessorEmptyLifecyclePolicy.ShouldFail(
             processorAnyComplete!.GetValue(processor) is true,
             processorAnyRuined!.GetValue(processor) is true,
             processorEmpty!.GetValue(processor) is true));
         driver.FailOnDestroyedNullOrForbidden(TargetIndex.A);
-        driver.AddEndCondition(() => ProcessorEmptyLifecyclePolicy.ShouldSucceed(
+        driver.AddEndCondition(() => !driver.job.targetB.HasThing && ProcessorEmptyLifecyclePolicy.ShouldSucceed(
                 processorEmpty!.GetValue(processor) is true)
             ? JobCondition.Succeeded
             : JobCondition.Ongoing);

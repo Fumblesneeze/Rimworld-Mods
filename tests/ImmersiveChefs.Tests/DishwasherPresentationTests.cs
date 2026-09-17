@@ -5,6 +5,21 @@ namespace ImmersiveChefs.Tests;
 [TestFixture]
 public sealed class DishwasherPresentationTests
 {
+    [Test]
+    public void Ware_beneath_the_raised_hood_is_cropped_without_squeezing_the_complete_sprite_into_view()
+    {
+        Assert.That(DishwasherPresentationPolicy.TryGetContentQuad(
+            DishwasherPresentationState.OpenLoaded, 0, 0, 1, 1f, 1f, out var quad), Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(quad.VMax, Is.LessThan(1f), "The hood must hide the rear portion of a plate.");
+            Assert.That(quad.Height / (quad.VMax - quad.VMin), Is.EqualTo(80f / 256f).Within(.0001f),
+                "Cropping must preserve the plate's original scale, rather than shrink it into the opening.");
+            Assert.That(512f - (quad.Z + quad.Height / 2f) * 256f, Is.EqualTo(516f).Within(.001f),
+                "The visible quad starts immediately below the selected hood's lower contour.");
+        });
+    }
+
     [TestCase(0, "north")]
     [TestCase(1, "east")]
     [TestCase(2, "south")]
@@ -21,10 +36,10 @@ public sealed class DishwasherPresentationTests
         }
     }
 
-    [TestCase(0, 608f, 512f, 540f, 532f, 136f, 56f)]
-    [TestCase(1, 512f, 608f, 432f, 600f, 160f, 86f)]
-    [TestCase(3, 512f, 608f, 432f, 600f, 160f, 86f)]
-    public void Complete_ware_quads_stay_inside_the_authored_basket_aperture(
+    [TestCase(0, 608f, 512f, 540f, 516f, 136f, 56f)]
+    [TestCase(1, 512f, 608f, 440f, 580f, 144f, 86f)]
+    [TestCase(3, 512f, 608f, 440f, 580f, 144f, 86f)]
+    public void Visible_ware_fragments_stay_inside_the_chamber_and_preserve_source_aspect(
         int rotation, float canvasCenterX, float canvasCenterY,
         float apertureX, float apertureY, float apertureWidth, float apertureHeight)
     {
@@ -32,21 +47,42 @@ public sealed class DishwasherPresentationTests
         {
             for (var index = 0; index < Math.Min(containedCount, 3); index++)
             {
-                Assert.That(DishwasherPresentationPolicy.TryGetContentSlot(
-                    DishwasherPresentationState.OpenLoaded, rotation, index, containedCount, out var slot), Is.True);
-                var pixelX = canvasCenterX + slot.X * 256f;
-                var pixelY = canvasCenterY - slot.Z * 256f;
-                var halfSize = slot.Size * 256f / 2f;
-                Assert.Multiple(() =>
+                foreach (var aspect in new[] { .5f, 1f, 2f })
                 {
-                    Assert.That(halfSize, Is.GreaterThan(0));
-                    Assert.That(pixelX - halfSize, Is.GreaterThanOrEqualTo(apertureX));
-                    Assert.That(pixelX + halfSize, Is.LessThanOrEqualTo(apertureX + apertureWidth));
-                    Assert.That(pixelY - halfSize, Is.GreaterThanOrEqualTo(apertureY));
-                    Assert.That(pixelY + halfSize, Is.LessThanOrEqualTo(apertureY + apertureHeight));
-                });
+                    Assert.That(DishwasherPresentationPolicy.TryGetContentQuad(
+                        DishwasherPresentationState.OpenLoaded, rotation, index, containedCount,
+                        aspect, 1f, out var quad), Is.True);
+                    var pixelX = canvasCenterX + quad.X * 256f;
+                    var pixelY = canvasCenterY - quad.Z * 256f;
+                    var halfWidth = quad.Width * 256f / 2f;
+                    var halfHeight = quad.Height * 256f / 2f;
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(pixelX - halfWidth, Is.GreaterThanOrEqualTo(apertureX));
+                        Assert.That(pixelX + halfWidth, Is.LessThanOrEqualTo(apertureX + apertureWidth));
+                        Assert.That(pixelY - halfHeight, Is.GreaterThanOrEqualTo(apertureY));
+                        Assert.That(pixelY + halfHeight, Is.LessThanOrEqualTo(apertureY + apertureHeight));
+                        Assert.That(quad.UMin, Is.InRange(0f, 1f));
+                        Assert.That(quad.UMax, Is.InRange(quad.UMin, 1f));
+                        Assert.That(quad.VMin, Is.InRange(0f, 1f));
+                        Assert.That(quad.VMax, Is.InRange(quad.VMin, 1f));
+                        Assert.That((quad.Width / (quad.UMax - quad.UMin)) /
+                                    (quad.Height / (quad.VMax - quad.VMin)), Is.EqualTo(aspect).Within(.0001f));
+                    });
+                }
             }
         }
+    }
+
+    [TestCase(DishwasherPresentationState.Empty, 0, 1f)]
+    [TestCase(DishwasherPresentationState.Washing, 1, 1f)]
+    [TestCase(DishwasherPresentationState.OpenLoaded, 2, 1f)]
+    [TestCase(DishwasherPresentationState.OpenLoaded, 0, .05f)]
+    public void Fully_hidden_contents_do_not_get_a_visible_quad(
+        DishwasherPresentationState state, int rotation, float height)
+    {
+        Assert.That(DishwasherPresentationPolicy.TryGetContentQuad(state, rotation,
+            0, 3, 1f, height, out _), Is.False);
     }
 
     [TestCase(DishwasherPresentationState.Empty, 0, 3, 0)]

@@ -39,6 +39,6 @@
   ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
-  "previousChangeNote": "Remade kitchen appliances, workbenches and portable kitchenware with clearer vanilla-style textures and matching rotations. Domestic dishwashers now fit one cell, while industrial hoods and visible contents follow actual use. Plates and cutlery stack across materials, show up to five physical settings, and no longer have crafting quality.",
-  "changeNote": "Smoothed the fork head, neck and handle into one consistent shape and finish across metal, wooden, clean and dirty cutlery. Updated the Workshop kitchenware images to match."
+  "previousChangeNote": "Smoothed the fork head, neck and handle into one consistent shape and finish across metal, wooden, clean and dirty cutlery. Updated the Workshop kitchenware images to match.",
+  "changeNote": "Dishwasher loading and unloading no longer reserve the whole appliance, allowing multiple workers to use spare capacity without diverting to a nearby sink. Domestic appliances now hide their contents; industrial contents stay beneath the hood and are clipped where it covers them."
 }

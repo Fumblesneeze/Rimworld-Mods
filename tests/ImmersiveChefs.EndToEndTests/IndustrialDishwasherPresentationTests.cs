@@ -173,6 +173,7 @@ internal sealed class IndustrialDishwasherPresentationScenario
             presentation.State == DishwasherPresentationState.Washing &&
             presentation.DisplayGraphic?.path == selectedFamily + "_Closed");
         yield return Screenshot("real admitted loads close the hood");
+        foreach (var step in DishwasherOcclusionViews.Capture(context, fixture.Dishwasher, "closed loaded hood")) yield return step;
         foreach (var step in CaptureZooms(context, "washing after native admission")) yield return step;
         if (processor)
             yield return new AssertionStep("only the industrial contained-ware renderer owns product appearance", _ =>
@@ -185,13 +186,13 @@ internal sealed class IndustrialDishwasherPresentationScenario
                     ?.GetField("showProcessIconGlobal");
                 EndToEndAssert.NotNull(globalIcons, "The live global Processor icon setting must be observable.");
                 EndToEndAssert.Equal(true, (bool)globalIcons!.GetValue(null),
-                    "Global product icons must remain enabled while only the industrial appliance suppresses them.");
+                    "Global product icons must remain enabled while dishwasher appliances suppress them.");
                 EndToEndAssert.Equal(false, (bool)field!.GetValue(comp.props),
                     "Generic process icons must not draw over the industrial hood or its actual material-aware contents.");
                 var domestic = DefDatabase<ThingDef>.GetNamed("ImmersiveChefs_Dishwasher").comps
                     .Single(properties => properties.GetType() == comp.props.GetType());
-                EndToEndAssert.Equal(true, (bool)field.GetValue(domestic),
-                    "The domestic appliance must retain its existing Processor icon setting.");
+                EndToEndAssert.Equal(false, (bool)field.GetValue(domestic),
+                    "The closed domestic appliance must not render a Processor product icon.");
             });
 
         foreach (var step in Flick(context, on: false)) yield return step;
@@ -201,6 +202,7 @@ internal sealed class IndustrialDishwasherPresentationScenario
         yield return new CheckpointStep("actual mixed-pile slot materials after native power off", _ =>
             ReadMixedSlotEvidence());
         yield return Screenshot("native power-off exposes only the exact held ware");
+        foreach (var step in DishwasherOcclusionViews.Capture(context, fixture.Dishwasher, "raised hood with real held ware")) yield return step;
         foreach (var step in CaptureZooms(context, "held ware after native power off")) yield return step;
         yield return new AssertionStep("paused presentation retains actual dirty items", _ =>
         {

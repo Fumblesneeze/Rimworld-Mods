@@ -96,7 +96,7 @@ For a spawned meal, a surviving plate SHALL appear at or adjacent to the meal's 
 - **THEN** the cutlery reservation is released and the cutlery remains clean
 
 ### Requirement: Doing dishes is Cleaning work
-Immersive Chefs SHALL add a `Doing dishes` work giver governed by the vanilla Cleaning work type. Eligible cleaners SHALL reserve dirty ware and its destination atomically. With `PreferDishwashers` enabled, they SHALL prefer hauling it to an available dishwasher and use hand washing only when no eligible dishwasher has load capacity or can be reached. With that setting disabled, the work giver MAY select either an eligible dishwasher or valid hand-washing source through ordinary priority, reachability, and reservation rules. Ordinary hauling logic MAY deliver dirty ware to dishwasher input storage, but SHALL NOT divert ware away from an already selected eligible dishwasher merely to enable hand washing.
+Immersive Chefs SHALL add a `Doing dishes` work giver governed by the vanilla Cleaning work type. Eligible cleaners SHALL reserve dirty ware and, for hand washing only, its source. Dishwashers SHALL remain unreserved throughout a transfer. With `PreferDishwashers` enabled, they SHALL prefer hauling it to an available dishwasher and use hand washing only when no eligible dishwasher has load capacity or can be reached. With that setting disabled, the work giver MAY select either an eligible dishwasher or valid hand-washing source through ordinary priority, reachability, and reservation rules. Ordinary hauling logic MAY deliver dirty ware to dishwasher input storage, but SHALL NOT divert ware away from an already selected eligible dishwasher merely to enable hand washing.
 
 Hand-washing duration SHALL scale with the physical abstraction represented by the exact item instead of using one duration for every product. At the default work scale, one plate SHALL take 250 ticks, one cutlery setting 125 ticks, and a cookware set 1,000 ticks. The configured hand-washing work scale SHALL multiply those baselines once. A stack split for one job SHALL use only the admitted physical unit's duration.
 
@@ -104,7 +104,7 @@ Dishwasher delivery is hauling rather than manual washing. Once the pawn reaches
 
 #### Scenario: Dishwasher has capacity
 - **WHEN** a cleaner searches for work while dirty ware and a reachable eligible dishwasher with free capacity exist
-- **THEN** the generated job reserves both and hauls the ware to that dishwasher instead of selecting a hand-washing source
+- **THEN** the generated job reserves the ware only and hauls it to that dishwasher instead of selecting a hand-washing source
 
 #### Scenario: Dishwasher delivery is a near-instant hauling handoff
 - **WHEN** a cleaner reaches the selected dishwasher carrying one dirty unit or a tracked batch
@@ -112,7 +112,7 @@ Dishwasher delivery is hauling rather than manual washing. Once the pawn reaches
 - **AND** any later loading-state wait and washing progress belong to the dishwasher rather than keeping the hauling pawn at the appliance
 
 #### Scenario: No dishwasher can accept the ware
-- **WHEN** every dishwasher is full, disconnected, unpowered, forbidden, reserved, or unreachable
+- **WHEN** every dishwasher is full, disconnected, unpowered, forbidden, or unreachable
 - **THEN** the cleaner may generate a hand-washing job at the highest-priority valid water source
 
 #### Scenario: Cleaning work is disabled
@@ -131,7 +131,7 @@ For hand washing, the pawn SHALL travel to the selected source once, wash each a
 
 For a dishwasher, the pawn SHALL travel to that appliance once and admit each tracked physical unit separately through the appliance owner's validated admission seam. Admission SHALL preserve each exact Thing identity, SHALL stop before the appliance's remaining capacity is exceeded, and SHALL remove an admitted unit from Pick Up And Haul tracking because the dishwasher now owns its lifecycle. Interruption before admission SHALL return the still-carried dirty units through Pick Up And Haul's native unload workflow; interruption after admission SHALL leave those exact units owned by the dishwasher and governed by its ordinary pause, completion, ejection, and hauling behavior.
 
-Completed appliance output SHALL remain ordinary clean haulable ware. For every admitted job targeting an Immersive Chefs Processor dishwasher, Processor Framework's native work scan, appliance reservation, selected JobDef, storage search, and ordinary hauling SHALL remain authoritative, but both `FillProcessor` loading and `EmptyProcessor` extraction at the appliance SHALL complete after no more than a two-engine-tick arrival latch. Neither path SHALL apply Processor Framework's stock 200-tick simulated processor-work delay because the dishwasher's own independent cycle already owns the cleaning work. Unrelated Processor Framework buildings SHALL retain their upstream timing unchanged.
+Completed appliance output SHALL remain ordinary clean haulable ware. For every admitted job targeting an Immersive Chefs Processor dishwasher, Processor Framework's native work scan, selected JobDef, storage search, and ordinary hauling SHALL remain authoritative, but both `FillProcessor` loading and `EmptyProcessor` extraction at the appliance SHALL complete after no more than a two-engine-tick arrival latch. Neither path SHALL apply Processor Framework's stock 200-tick simulated processor-work delay because the dishwasher's own independent cycle already owns the cleaning work. Unrelated Processor Framework buildings SHALL retain their upstream timing unchanged.
 
 When exact Pick Up And Haul tracking is also active and natural output fits, one admitted emptying job SHALL prefer lighter naturally completed outputs (`ActiveProcessPercent >= 1`) to maximize the whole-unit count fitting the pawn's remaining mass capacity, transfer that batch into pawn inventory, register every transferred Thing immediately with Pick Up And Haul, and invoke its native unload workflow once. It SHALL never interpret Processor Framework's `EmptyNow` completion override as natural completion, take an active or ruined load into the tracked batch, over-encumber the pawn, merge away exact Thing identity, or leave one physical item simultaneously owned by the appliance and pawn inventory. If only part of a completed stack fits, that exact count SHALL enter inventory and the completed remainder SHALL stay in the dishwasher for a later job.
 
@@ -262,7 +262,7 @@ Immersive Chefs SHALL add mutually exclusive `Clean kitchenware` and `Dirty kitc
 ### Requirement: Identity-preserving dishwashers
 Immersive Chefs SHALL provide a dishwasher with a base capacity of 16 plate-equivalents and an industrial dishwasher with a base capacity of 64 plate-equivalents before applying `DishwasherCapacityScale`. A wash cycle SHALL preserve each input item's Def, Stuff, craftsmanship quality, hit points, stack count, and other components while changing only sanitation-related state, and clean output SHALL be available for hauling when the cycle completes.
 
-For capacity accounting, the default load SHALL count a plate as 1 plate-equivalent, a cookware set as 4, a cutlery set as 0.25, and any future washable item by a Def-configurable value. The dishwasher SHALL remain continuously open to later dirty ware while live power, supplied water when required, reachability, reservations, and remaining capacity allow. Every successful admission SHALL create one independently timed, save-persistent load at zero progress. A later load SHALL wash in parallel and MUST NOT reset, delay, merge with, inherit progress from, or accelerate an earlier load; each load becomes clean and exits when its own captured duration completes. The inspector SHALL present active washing rather than a sealed loading or batch state.
+For capacity accounting, the default load SHALL count a plate as 1 plate-equivalent, a cookware set as 4, a cutlery set as 0.25, and any future washable item by a Def-configurable value. The dishwasher SHALL remain continuously open to later dirty ware while live power, supplied water when required, reachability, ware reservations, and remaining capacity allow. Every successful admission SHALL create one independently timed, save-persistent load at zero progress. A later load SHALL wash in parallel and MUST NOT reset, delay, merge with, inherit progress from, or accelerate an earlier load; each load becomes clean and exits when its own captured duration completes. The inspector SHALL present active washing rather than a sealed loading or batch state.
 
 With the validated Dubs adapter active, each admission SHALL atomically verify and debit exactly one positive Def-configured water charge scaled only to the newly admitted physical load before dishwasher ownership commits. Insufficient supplied water SHALL reject that admission without consuming or moving the dirty ware and without pausing, restarting, or otherwise changing already admitted loads. A paused/resumed load MUST NOT debit water again, and explicit cancellation, deconstruction, or terminal destruction SHALL NOT refund any already admitted charge.
 
@@ -418,3 +418,16 @@ When Dubs Bad Hygiene is active, a connected pipe with an empty or otherwise unu
 #### Scenario: The appliance is fully supplied
 - **WHEN** both the active native power draw and each admission's exact Dubs water charge are available
 - **THEN** the dishwasher advances every admitted load in parallel and ejects each exact clean ware identity as its own duration completes
+
+### Requirement: Dishwasher transfers permit concurrent workers
+Immersive Chefs SHALL NOT reserve the domestic or industrial appliance while a pawn collects, delivers, or removes ware. A reachable, usable dishwasher with room SHALL remain eligible for other workers while another transfer is scheduled. Physical ware and output storage destinations SHALL retain ordinary reservations. Capacity, enabled processes, power, water, forbidden state and access checks SHALL remain authoritative; each arrival SHALL recheck availability and conserve the exact ware if another worker arrives first. This applies to the local holder and supported Processor Framework adapter; other Processor buildings and handwashing sources retain native reservations.
+
+#### Scenario: Two workers deliver beside a sink
+- **WHEN** dishwasher preference is enabled, two workers have distinct dirty ware available, and a supplied dishwasher with free capacity stands beside a usable sink
+- **THEN** both schedule and perform dishwasher deliveries concurrently without reserving the appliance or diverting to the sink solely because the first worker is en route
+- **THEN** each item enters once and capacity is not exceeded
+
+#### Scenario: Concurrent Processor unloading
+- **WHEN** two workers seek hauling work while one dishwasher holds multiple naturally completed outputs
+- **THEN** both can schedule unloading without an appliance reservation, extract distinct available outputs and return them to storage
+- **THEN** a worker whose output was taken before arrival ends safely without duplicating or losing ware

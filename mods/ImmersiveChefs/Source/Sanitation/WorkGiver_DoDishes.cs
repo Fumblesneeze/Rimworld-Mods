@@ -298,7 +298,7 @@ public sealed class WorkGiver_DoDishes : WorkGiver_Scanner
                             thing.def == ImmersiveChefsDefOf.ImmersiveChefs_IndustrialDishwasher)
             .Where(thing =>
                 !thing.IsForbidden(pawn) &&
-                pawn.CanReserveAndReach(thing, PathEndMode.Touch, Danger.Some))
+                pawn.CanReach(thing, PathEndMode.Touch, Danger.Some))
             .Where(thing =>
             {
                 if (ProcessorFrameworkAdapter.Controls(thing))

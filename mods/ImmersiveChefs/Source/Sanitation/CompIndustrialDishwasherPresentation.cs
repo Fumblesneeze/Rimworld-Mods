@@ -15,6 +15,8 @@ public sealed class CompIndustrialDishwasherPresentation : ThingComp
 {
     private readonly List<Thing> visibleUnits = new(3);
     private readonly ThingOwner?[] sampledOwners = new ThingOwner?[3];
+    private readonly Mesh?[] contentMeshes = new Mesh?[3];
+    private readonly DishwasherContentQuad[] contentQuads = new DishwasherContentQuad[3];
     private CompDishwasher? dishwasher;
     private Graphic? selectedFamily;
     private Graphic? closedGraphic;
@@ -79,23 +81,58 @@ public sealed class CompIndustrialDishwasherPresentation : ThingComp
             for (var prior = 0; prior <= i; prior++)
                 if (ReferenceEquals(visibleUnits[prior], ware))
                     unitIndex++;
-            if (unitIndex > ware.stackCount || !DishwasherPresentationPolicy.TryGetContentSlot(
-                    State, parent.Rotation.AsInt, i, visibleUnits.Count, out var slot))
+            if (unitIndex > ware.stackCount)
                 continue;
 
             var displayedUnit = CompTablewareStack.For(ware)?.UnitView(unitIndex - 1) ?? ware;
             var graphic = displayedUnit.Graphic;
-            var longestEdge = Math.Max(graphic.drawSize.x, graphic.drawSize.y);
-            if (longestEdge <= 0f)
+            if (!DishwasherPresentationPolicy.TryGetContentQuad(State, parent.Rotation.AsInt,
+                    i, visibleUnits.Count, graphic.drawSize.x, graphic.drawSize.y, out var quad))
                 continue;
-            var scale = slot.Size / longestEdge;
             // Ordinary printed planes have a .01 top-vertex bias. Keep contents above that
             // whole plane and below the native damage layer; position remains inside the aperture.
-            var position = drawLoc + new Vector3(slot.X, 0.04f + i * 0.001f, slot.Z);
-            var matrix = Matrix4x4.TRS(position, Quaternion.identity,
-                new Vector3(graphic.drawSize.x * scale, 1f, graphic.drawSize.y * scale));
-            GenDraw.DrawMeshNowOrLater(MeshPool.plane10, matrix, graphic.MatSingleFor(displayedUnit), false);
+            var position = drawLoc + new Vector3(0f, 0.04f + i * 0.001f, 0f);
+            var matrix = Matrix4x4.TRS(position, Quaternion.identity, Vector3.one);
+            GenDraw.DrawMeshNowOrLater(ContentMesh(i, quad), matrix, graphic.MatSingleFor(displayedUnit), false);
         }
+    }
+
+    private Mesh ContentMesh(int index, DishwasherContentQuad quad)
+    {
+        var mesh = contentMeshes[index];
+        if (mesh is not null && contentQuads[index].Equals(quad))
+            return mesh;
+        mesh ??= contentMeshes[index] = new Mesh { name = "Dishwasher contained ware" };
+        var left = quad.X - quad.Width / 2f;
+        var right = quad.X + quad.Width / 2f;
+        var bottom = quad.Z - quad.Height / 2f;
+        var top = quad.Z + quad.Height / 2f;
+        mesh.vertices = new[]
+        {
+            new Vector3(left, 0f, bottom), new Vector3(left, 0f, top),
+            new Vector3(right, 0f, top), new Vector3(right, 0f, bottom)
+        };
+        mesh.uv = new[]
+        {
+            new Vector2(quad.UMin, quad.VMin), new Vector2(quad.UMin, quad.VMax),
+            new Vector2(quad.UMax, quad.VMax), new Vector2(quad.UMax, quad.VMin)
+        };
+        mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        contentQuads[index] = quad;
+        return mesh;
+    }
+
+    public override void PostDeSpawn(Map map, DestroyMode mode = DestroyMode.Vanish)
+    {
+        for (var i = 0; i < contentMeshes.Length; i++)
+        {
+            if (contentMeshes[i] is { } mesh)
+                UnityEngine.Object.Destroy(mesh);
+            contentMeshes[i] = null;
+        }
+        base.PostDeSpawn(map, mode);
     }
 
     private bool ResolveGraphics()

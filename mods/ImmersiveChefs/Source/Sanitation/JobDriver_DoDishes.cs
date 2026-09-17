@@ -17,12 +17,16 @@ public sealed class JobDriver_DoDishes : JobDriver
         {
             pawn.ReserveAsManyAsPossible(job.targetQueueA, job);
             return pawn.Reserve(job.targetQueueA[0], job, 1, job.countQueue?[0] ?? 1, null, errorOnFailed) &&
-                   pawn.Reserve(job.targetB, job, 1, -1, null, errorOnFailed);
+                   ReserveHandwashingSource(errorOnFailed);
         }
 
         return pawn.Reserve(job.targetA, job, 1, job.count, null, errorOnFailed) &&
-               pawn.Reserve(job.targetB, job, 1, -1, null, errorOnFailed);
+               ReserveHandwashingSource(errorOnFailed);
     }
+
+    private bool ReserveHandwashingSource(bool errorOnFailed) =>
+        TargetThingB?.TryGetComp<CompDishwasher>() is not null ||
+        pawn.Reserve(job.targetB, job, 1, -1, null, errorOnFailed);
 
     protected override IEnumerable<Toil> MakeNewToils()
     {

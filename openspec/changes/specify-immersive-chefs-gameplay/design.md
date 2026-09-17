@@ -20,6 +20,8 @@ Separate cosmetic family from operating state. The domestic door remains closed.
 
 For the industrial presentation, complete raised and closed sprites are composed offline from each original fixed assembly and its identical hood translated160source pixels. A native presentation comp prints only the selected endpoint and draws actual held units in the reviewed raised aperture. It samples the current owner and utilities at most4Hz in real time, including pause, with an immediate first sample; this explicitly bounds visual latency to250ms without changing simulation ticks. Graphics are cached together per resolved cosmetic family, mesh invalidation follows actual presentation/family/rotation changes, and the draw loop does not repeatedly allocate or reflect. The maximum three visible units are a bounded representation of the actual contents, including units from a stack, with each unit's own resolved material and preserved aspect ratio. The rear view and all closed endpoints suppress contents. Native verification must assess these small contents at useful zoom and test the bounded refresh after real player actions.
 
+September16 contents correction: neither appliance permits Processor's generic product icon; this is a per-building property and leaves the provider's global icons alone. The domestic casing always hides its load. Industrial units remain centered in the wash chamber instead of being moved toward the front to remain fully visible. At256pixels/cell their fixed longest edge is80pixels, with up to80pixels of horizontal center spacing. The selected north opening is source rectangle(540,516)–(676,572), and east/west use(440,580)–(584,666); south and closed endpoints are fully occluded. Geometry and source UVs are intersected with that opening together, so hood-hidden portions are cropped without squeezing the image. Three reusable per-building meshes cache the resulting quads and are destroyed on despawn. Existing material ownership, polling, processing, utilities and quantities are unchanged. These measured rectangles follow the current human-selected raster family; final native screenshots remain the acceptance gate.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -247,6 +249,8 @@ Active cooking keeps the reserved cookware as its existing work prop. Once real 
 The human-deferred dishwasher showcase may eventually use this lifecycle as its source of visible overflow. If a human produces it, it must show at least five genuinely used cookware sets on or beside the stove and genuinely returned table settings, then follow ordinary collection, dishwasher processing and storage. Agents must not arrange, capture, repair, promote, or publish this showcase. Its deferral does not affect the implemented runtime lifecycle or its existing native player-workflow evidence.
 
 ## Risks / Trade-offs
+
+Dishwasher transfers reserve actual incoming ware and outgoing storage cells only, never the appliance for the trip. Admission remains atomic on the game thread and rechecks capacity/utilities. Keep sinks and unrelated Processor buildings on their native reservation rules. No capacity, cycle time, water, power or progression balance changes are intended.
 
 ### Mixed-material plate and cutlery piles
 

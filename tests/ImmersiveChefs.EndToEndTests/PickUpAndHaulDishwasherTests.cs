@@ -2076,7 +2076,7 @@ internal sealed class PickUpAndHaulDishwasherFixture
                tracked.Cast<object>().Any(candidate => ReferenceEquals(candidate, thing));
     }
 
-    private static Pawn CreateInactiveDishwasherWorker(string name)
+    internal static Pawn CreateInactiveDishwasherWorker(string name)
     {
         for (var attempt = 0; attempt < 64; attempt++)
         {
