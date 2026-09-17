@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using UnityEngine;
 using Verse;
@@ -56,13 +57,16 @@ internal static class DishwasherOcclusionViews
     {
         var originalRotation = appliance.Rotation;
         var originalScreenshotMode = Find.ScreenshotModeHandler.Active;
+        var originalInspect = appliance.GetInspectString();
+        var originalGraphic = appliance.Graphic.path;
+        var originalTick = Find.TickManager.TicksGame;
+        EndToEndAssert.True(Find.TickManager.Paused, "Directional capture must not advance dishwasher processing.");
         context.DeferCleanup(() =>
         {
             Find.ScreenshotModeHandler.Active = originalScreenshotMode;
             if (!appliance.Destroyed && appliance.Spawned)
             {
-                appliance.Rotation = originalRotation;
-                appliance.DirtyMapMesh(appliance.Map);
+                SetCaptureRotation(appliance, originalRotation);
             }
         });
         yield return new SupportingSceneTimeActionStep("set noon " + phase, "map-" + appliance.Map.uniqueID, 720);
@@ -76,13 +80,14 @@ internal static class DishwasherOcclusionViews
             // and operating state; neither is fabricated for these directional captures.
             yield return new AssertionStep("supporting cardinal view " + phase + " " + facing, _ =>
             {
-                appliance.Rotation = facing;
-                appliance.DirtyMapMesh(appliance.Map);
+                SetCaptureRotation(appliance, facing);
                 settleAt = Time.realtimeSinceStartup + .35f;
             });
             yield return new WaitUntilStep("settle printed hood " + phase + " " + facing,
                 _ => Time.realtimeSinceStartup >= settleAt,
                 new EndToEndDeadline(1200, 1000, TimeSpan.FromSeconds(10)));
+            yield return new AssertionStep("shadow footprint matches " + phase + " " + facing, _ =>
+                AssertShadowFootprint(appliance));
             foreach (var zoom in new[] { 11f, 16f, 24f })
             {
                 var padding = (int)Math.Round(Screen.height * (1f - appliance.OccupiedRect().Height / (2f * zoom)) / 2f);
@@ -93,9 +98,45 @@ internal static class DishwasherOcclusionViews
         }
         yield return new AssertionStep("restore original direction " + phase, _ =>
         {
-            appliance.Rotation = originalRotation;
-            appliance.DirtyMapMesh(appliance.Map);
+            SetCaptureRotation(appliance, originalRotation);
+            AssertShadowFootprint(appliance);
+            EndToEndAssert.Equal(originalTick, Find.TickManager.TicksGame, "Directional captures do not advance simulation.");
+            EndToEndAssert.Equal(originalInspect, appliance.GetInspectString(), "Directional captures preserve appliance contents and progress.");
+            EndToEndAssert.Equal(originalGraphic, appliance.Graphic.path, "Directional captures preserve the selected finish.");
         });
         yield return new ScreenshotModeActionStep("restore interface " + phase, originalScreenshotMode);
+    }
+
+    private static void SetCaptureRotation(ThingWithComps appliance, Rot4 facing)
+    {
+        if (appliance.Rotation == facing) return;
+        var building = (Building)appliance;
+        var map = appliance.Map;
+        var before = appliance.OccupiedRect();
+        var after = GenAdj.OccupiedRect(appliance.Position, facing, appliance.def.size);
+        EndToEndAssert.True(appliance.def.IsEdifice(), "Dishwasher capture requires an edifice.");
+        foreach (var cell in after)
+            EndToEndAssert.True(cell.InBounds(map) &&
+                (map.edificeGrid[cell] is null || ReferenceEquals(map.edificeGrid[cell], appliance)),
+                "Directional capture must not overwrite another building at " + cell);
+
+        // Rotation updates thingGrid, but Core leaves edificeGrid and building shadows unchanged.
+        // Keep the same spawned appliance: respawning can reconnect utilities or reset optional comps.
+        map.edificeGrid.DeRegister(building);
+        appliance.Rotation = facing;
+        map.edificeGrid.Register(building);
+        foreach (var cell in before.Cells.Concat(after.Cells).Distinct())
+            map.mapDrawer.MapMeshDirty(cell, (ulong)MapMeshFlagDefOf.Things | (ulong)MapMeshFlagDefOf.Buildings);
+    }
+
+    private static void AssertShadowFootprint(ThingWithComps appliance)
+    {
+        var occupied = appliance.OccupiedRect();
+        var possibleCells = Enumerable.Range(0, 4)
+            .SelectMany(rotation => GenAdj.OccupiedRect(appliance.Position, new Rot4(rotation), appliance.def.size).Cells)
+            .Distinct();
+        foreach (var cell in possibleCells)
+            EndToEndAssert.Equal(occupied.Contains(cell), ReferenceEquals(appliance.Map.edificeGrid[cell], appliance),
+                "The shadow grid must match the current dishwasher footprint at " + cell + "; no previous facing may remain.");
     }
 }

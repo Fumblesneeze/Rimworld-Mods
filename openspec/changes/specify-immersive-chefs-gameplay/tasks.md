@@ -418,6 +418,8 @@ Published 2026-09-16: existing public Workshop item3782589902 now serves candida
 
 ## 37. mods/ImmersiveChefs - Dishwasher contents occlusion
 
+- [x] 37.4 Correct supporting capture rotations so the shadow footprint follows every facing and restoration without changing held contents or processing state. Live RED `20260917T115325402Z` failed on the stale east-facing footprint; reviewed local GREEN `20260917T115911939Z` and Processor/VEF/VTEX GREEN `20260917T120404658Z` passed. Root inspected all 48 open/closed directional captures at three zooms and native loaded-to-clean-storage results. Both runs passed eight footprint and two restoration/state checks, cleaned their processes/credentials, and preserved normal configuration. Independent review found no issues; build and strict OpenSpec passed. Evidence: `artifacts/VisualAssets/ShadowCaptureFix-20260917/verification.md`.
+
 - [x] 37.3 Remove whole-appliance loading/unloading reservations; retain item/storage protection and capacity checks. Capture native RED/GREEN for concurrent workers beside a sink, local and Processor workflows, review and final exact-build acceptance.
 
 - [x] 37.1 Suppress domestic contents and both appliances' generic Processor icons; retain focused RED/GREEN and native loaded-appliance evidence.

@@ -1089,6 +1089,12 @@ Immersive Chefs SHALL expose `TextureVariationIntegration` as `Auto` or `Off`, d
 ### Requirement: Final art is accepted through live game rendering
 Static source inspection and local thumbnails are supporting evidence only. The reviewed built package SHALL be loaded in a fresh isolated RimWorld process, every selected asset SHALL be rendered through its real finalized Def beside representative vanilla content, and the acting agent SHALL personally inspect retained screenshots. The visual catalog SHALL cover map rendering, selection brackets, stack overlays for stackable items, item scale, building footprint/rotation, and ordinary inspector or build-menu presentation where applicable. For buildings, retained close screenshots SHALL place each custom building and an appropriate Core production bench in the same live scene at the same zoom and lighting, and SHALL show north, east, south, and west views closely enough to judge both style and directional consistency.
 
+#### Scenario: Supporting dishwasher captures preserve the rotated shadow footprint
+- **WHEN** the paused supporting capture helper presents the same natively loaded dishwasher in every cardinal direction and restores its original facing
+- **THEN** the building and ground-shadow meshes use its current occupied cells, including removal of the previous facing's footprint, without relying on simulation ticks
+- **AND** changing the viewing direction preserves the actual held items, processing state and selected finish; temporary placement must not overwrite neighboring buildings
+- **AND** a focused live regression checks each facing and restoration, and the acting agent inspects the resulting close, ordinary and distant captures.
+
 #### Scenario: A selected source image looks good outside the game
 - **WHEN** the real Def renders it too small, too large, muddy after Stuff tint, directionally incomplete, visually ambiguous, or inconsistent beside vanilla assets
 - **THEN** the asset remains unaccepted and selection/wiring is revised before its task is checked
