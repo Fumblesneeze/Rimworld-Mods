@@ -221,6 +221,13 @@ All raw click, drag, chord, and text injection runs on HTTP workers through one 
 
 ## Semantic game control and inspection
 
+`map.pointer.select` is a semantic action with required numeric map `x` and `z`. Invoke it through
+`gateway_mutation` (`kind=action`) or `MapPointerSelectionActionStep`. It executes native left
+mouse-down/up selection with fractional coordinates while minimized, never direct selection by ID
+or desktop input. Selection before/after is retained. The map must be settled and unblocked, without
+an active designator, targeter or debug pointer; the point must be visible away from toolbars/windows.
+Temporary pointer/Shift overrides are removed in finally. Repeating the point uses native cycling.
+
 All operations in this section are ordinary authenticated HTTP requests and run through the Unity main-thread dispatcher. Request property names are case-sensitive camel case. Result DTO properties retain their .NET names in the JSON writer.
 
 Read the complete control snapshot, then make an atomic partial mutation:

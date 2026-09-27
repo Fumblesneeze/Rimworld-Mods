@@ -439,6 +439,17 @@ public sealed class GatewaySemanticActionRegistry
             throw new ArgumentException("A request ID is required.", nameof(requestId));
         }
 
+        if (string.Equals(action, "map.pointer.select", StringComparison.Ordinal))
+        {
+            if (arguments is null || arguments.Count != 2 ||
+                !ReadCoordinate(arguments, "x", out float x) || !ReadCoordinate(arguments, "z", out float z))
+                return Completed(GatewaySemanticActionInvocationResult.Failure(action, ActionVersion,
+                    new GatewaySemanticActionError("invalid_argument", "Required arguments x and z must be finite numbers.")));
+            return dispatcher.EnqueueOperation(requestId, action, dispatchTimeout,
+                _ => InvokeSafely(requestId, action, () => GatewayMapPointerSelection.Select(x, z)),
+                cancellationToken: cancellationToken);
+        }
+
         if (string.Equals(action, "game.speed", StringComparison.Ordinal))
         {
             ReadRequiredSpeed(arguments, out var speed, out var speedError);
@@ -515,6 +526,15 @@ public sealed class GatewaySemanticActionRegistry
     private static GatewayDispatchOperation<GatewaySemanticActionInvocationResult> Completed(
         GatewaySemanticActionInvocationResult result) =>
         new(Task.FromResult(result));
+
+    private static bool ReadCoordinate(IReadOnlyDictionary<string, object?> arguments, string name, out float value)
+    {
+        value = 0;
+        if (!arguments.TryGetValue(name, out object? raw) ||
+            raw is not (double or float or int or long or decimal)) return false;
+        value = Convert.ToSingle(raw, System.Globalization.CultureInfo.InvariantCulture);
+        return !float.IsNaN(value) && !float.IsInfinity(value);
+    }
 
     private GatewaySemanticActionInvocationResult InvokeSafely(
         string requestId,
@@ -834,7 +854,16 @@ public sealed class GatewaySemanticActionRegistry
                 "debug.tool.cancel",
                 "Cancel the currently active native RimWorld debug pointer tool.",
                 Array.Empty<GatewaySemanticActionArgumentDescriptor>(),
-                runtime => runtime.GetDebugToolAvailability())
+                runtime => runtime.GetDebugToolAvailability()),
+            new ActionDefinition(
+                "map.pointer.select",
+                "Left-click fractional map coordinates through native selection without desktop input.",
+                new[] {
+                    new GatewaySemanticActionArgumentDescriptor("x", "number", true, "Map X coordinate."),
+                    new GatewaySemanticActionArgumentDescriptor("z", "number", true, "Map Z coordinate.") },
+                runtime => runtime.GetGameAvailability().IsAvailable
+                    ? GatewayMapPointerSelection.Availability()
+                    : runtime.GetGameAvailability())
         });
     }
 

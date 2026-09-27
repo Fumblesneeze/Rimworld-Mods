@@ -147,6 +147,19 @@ public abstract class EndToEndStep
     public EndToEndStepKind Kind { get; }
 }
 
+public sealed class MapPointerSelectionActionStep : EndToEndStep
+{
+    public MapPointerSelectionActionStep(string name, float x, float z) : base(name, EndToEndStepKind.Act)
+    {
+        if (float.IsNaN(x) || float.IsInfinity(x) || float.IsNaN(z) || float.IsInfinity(z))
+            throw new ArgumentOutOfRangeException(nameof(x), "Map pointer coordinates must be finite.");
+        X = x;
+        Z = z;
+    }
+    public float X { get; }
+    public float Z { get; }
+}
+
 public sealed class GizmoActionStep : EndToEndStep
 {
     public GizmoActionStep(

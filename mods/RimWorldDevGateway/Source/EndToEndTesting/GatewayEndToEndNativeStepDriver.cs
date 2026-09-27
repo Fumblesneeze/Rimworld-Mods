@@ -108,6 +108,7 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
 
         return step switch
         {
+            MapPointerSelectionActionStep pointer => Complete(SelectPointer(pointer)),
             TimeControlActionStep time => Complete(actions.Apply(time, context)),
             SupportingSceneTimeActionStep sceneTime => actions is IGatewayEndToEndSceneTimeNativeActions sceneTimeActions
                 ? Complete(sceneTimeActions.Apply(sceneTime, context))
@@ -213,6 +214,15 @@ public sealed class GatewayEndToEndNativeStepDriver : IGatewayEndToEndStepDriver
                 "unsupported_e2e_step",
                 $"The native E2E driver does not support '{step.GetType().FullName}'.")
         };
+    }
+
+    private static GatewayEndToEndStepOutcome SelectPointer(MapPointerSelectionActionStep step)
+    {
+        var result = GatewayMapPointerSelection.Select(step.X, step.Z);
+        return result.Ok
+            ? GatewayEndToEndStepOutcome.Pass(new System.Collections.Generic.Dictionary<string, string>
+                { ["nativePointerResult"] = System.Text.Encoding.UTF8.GetString(GatewayJsonWriter.Write(result)), ["desktopInput"] = "False" })
+            : GatewayEndToEndStepOutcome.Fail(result.Error!.Code, result.Error.Message);
     }
 
     private static IGatewayEndToEndStepOperation Complete(GatewayEndToEndStepOutcome outcome) =>

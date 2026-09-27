@@ -32,7 +32,8 @@ public sealed class GatewaySemanticActionsTests
                     "game.speed",
                     "window.accept",
                     "window.cancel",
-                    "debug.tool.cancel"
+                    "debug.tool.cancel",
+                    "map.pointer.select"
                 }));
             Assert.That(descriptors.Select(action => action.Version), Is.All.EqualTo("1"));
             Assert.That(descriptors[0].ArgumentSchema.Single().Name, Is.EqualTo("paused"));
