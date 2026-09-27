@@ -10,6 +10,7 @@ namespace ImmersiveChefs;
 internal enum DiningCutlerySource
 {
     Colony,
+    ColonyInventory,
     PersonalInventory
 }
 
@@ -145,7 +146,8 @@ internal sealed class DiningSession : IThingHolder
     private bool travelPlateImported;
     private bool travelPlateWasDirty;
     private WashProvenance travelPlateWashProvenance;
-    private bool cutleryFromPersonalInventory;
+    private bool cutleryStartedInInventory;
+    private bool returnCutleryToPersonalInventory;
     private bool returnPlateToPersonalInventory;
     private bool capturedPlateSanitationKnown;
     private bool capturedPlateWasDirty;
@@ -216,7 +218,7 @@ internal sealed class DiningSession : IThingHolder
         Job = job;
         this.caravan = caravan;
         travelWare = new ThingOwner<Thing>(this, oneStackOnly: false, LookMode.Deep);
-        cutleryFromPersonalInventory = cutlerySource == DiningCutlerySource.PersonalInventory;
+        SetCutlerySource(cutlerySource);
         SetCutlery(cutlery);
         HeatingSource = heatingSourceThing is null
             ? null
@@ -249,6 +251,17 @@ internal sealed class DiningSession : IThingHolder
             : null;
     internal Pawn? ServingPawn { get; private set; }
     internal ThingDef? RequestedMealDef { get; }
+    internal IntVec3 DiningPosition { get; private set; } = IntVec3.Invalid;
+
+    internal void SelectCutleryForDining(
+        Thing? cutlery,
+        DiningCutlerySource source,
+        IntVec3 diningPosition)
+    {
+        DiningPosition = diningPosition;
+        SetCutlerySource(source);
+        SetCutlery(cutlery);
+    }
 
     internal void CapturePlate(Thing plate)
     {
@@ -299,18 +312,27 @@ internal sealed class DiningSession : IThingHolder
 
     internal void PickupCutlery()
     {
-        if (Cutlery is null || Cutlery.Destroyed || CarriedCutlery is not null)
+        if (Cutlery is null || CarriedCutlery is not null)
         {
             return;
         }
 
-        if (cutleryFromPersonalInventory &&
+        if (Cutlery.Destroyed)
+        {
+            SetCutlery(null);
+            return;
+        }
+
+        if (cutleryStartedInInventory &&
             ReferenceEquals(Cutlery.holdingOwner, CarrierPawn.inventory?.innerContainer))
         {
             var inventory = CarrierPawn.inventory!.innerContainer;
             ClearTemporaryWareProvenance(Cutlery);
             var personal = inventory.Take(Cutlery, 1);
-            (personal as ThingWithComps)?.GetComp<CompSanitation>()?.MarkPersonalDiningOwner(CarrierPawn);
+            if (returnCutleryToPersonalInventory)
+            {
+                (personal as ThingWithComps)?.GetComp<CompSanitation>()?.MarkPersonalDiningOwner(CarrierPawn);
+            }
             if (inventory.TryAdd(personal, canMergeWithExistingStacks: false))
             {
                 CarriedCutlery = personal;
@@ -331,21 +353,58 @@ internal sealed class DiningSession : IThingHolder
             return;
         }
 
-        var picked = Cutlery.stackCount > 1 ? Cutlery.SplitOff(1) : Cutlery;
-        if (picked.Spawned)
+        var source = Cutlery;
+        var sourceStillSpawned = !source.Destroyed && source.Spawned &&
+                                 ReferenceEquals(source.MapHeld, CarrierPawn.MapHeld);
+        var reservationMap = sourceStillSpawned ? source.MapHeld : null;
+        var releaseReservation = Job is not null &&
+                                 reservationMap?.reservationManager.ReservedBy(
+                                     source,
+                                     CarrierPawn,
+                                     Job) == true;
+        var sourceStillAllowed = sourceStillSpawned &&
+                                 !source.IsForbidden(CarrierPawn) &&
+                                 CarrierPawn.CanReach(source, PathEndMode.Touch, Danger.Some);
+        if (caravan is null &&
+            !DiningCutleryPickupPolicy.CanTakeSelectedMapCutlery(
+                sourceStillSpawned,
+                releaseReservation,
+                sourceStillAllowed))
         {
-            picked.DeSpawn(DestroyMode.Vanish);
+            if (releaseReservation)
+            {
+                reservationMap!.reservationManager.Release(source, CarrierPawn, Job!);
+            }
+
+            SetCutlery(null);
+            return;
         }
 
-        if (CarrierPawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
+        try
         {
-            (picked as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
-            CarriedCutlery = picked;
-            CutleryServiceScore = KitchenwareRuntime.ServiceScore(picked);
+            var picked = source.stackCount > 1 ? source.SplitOff(1) : source;
+            if (picked.Spawned)
+            {
+                picked.DeSpawn(DestroyMode.Vanish);
+            }
+
+            if (CarrierPawn.inventory?.innerContainer.TryAdd(picked, canMergeWithExistingStacks: false) == true)
+            {
+                (picked as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
+                CarriedCutlery = picked;
+                CutleryServiceScore = KitchenwareRuntime.ServiceScore(picked);
+            }
+            else if (CarrierPawn.MapHeld is { } map)
+            {
+                GenPlace.TryPlaceThing(picked, CarrierPawn.PositionHeld, map, ThingPlaceMode.Near);
+            }
         }
-        else if (CarrierPawn.MapHeld is { } map)
+        finally
         {
-            GenPlace.TryPlaceThing(picked, CarrierPawn.PositionHeld, map, ThingPlaceMode.Near);
+            if (releaseReservation)
+            {
+                reservationMap!.reservationManager.Release(source, CarrierPawn, Job!);
+            }
         }
     }
 
@@ -397,14 +456,15 @@ internal sealed class DiningSession : IThingHolder
 
         if (ReferenceEquals(CarriedCutlery, deliveredCutlery))
         {
-            cutleryFromPersonalInventory = false;
+            cutleryStartedInInventory = false;
+            returnCutleryToPersonalInventory = false;
             (deliveredCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
             return;
         }
 
         if (CarriedCutlery is not null)
         {
-            if (cutleryFromPersonalInventory)
+            if (returnCutleryToPersonalInventory)
             {
                 ClearTemporaryWareProvenance(CarriedCutlery);
             }
@@ -430,7 +490,8 @@ internal sealed class DiningSession : IThingHolder
             }
         }
 
-        cutleryFromPersonalInventory = false;
+        cutleryStartedInInventory = false;
+        returnCutleryToPersonalInventory = false;
         SetCutlery(deliveredCutlery);
         (deliveredCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkSessionTransferredWare();
         CarriedCutlery = deliveredCutlery;
@@ -542,7 +603,7 @@ internal sealed class DiningSession : IThingHolder
         {
             var usedCutlery = CarriedCutlery;
             (usedCutlery as ThingWithComps)?.GetComp<CompSanitation>()?.MarkDirty();
-            if (cutleryFromPersonalInventory &&
+            if (returnCutleryToPersonalInventory &&
                 ReferenceEquals(usedCutlery.holdingOwner, CarrierPawn.inventory?.innerContainer))
             {
                 ClearTemporaryWareProvenance(usedCutlery);
@@ -598,7 +659,7 @@ internal sealed class DiningSession : IThingHolder
 
         DropPlate(CarrierPawn);
         RecoverCapturedPlateForCancellation();
-        if (cutleryFromPersonalInventory)
+        if (returnCutleryToPersonalInventory)
         {
             ClearTemporaryWareProvenance(CarriedCutlery);
             CarriedCutlery = null;
@@ -633,6 +694,13 @@ internal sealed class DiningSession : IThingHolder
         CutleryWasDirty = sanitation?.IsDirty == true;
         CutleryWasWildWaterWashed = sanitation?.WashedInWildWater == true;
         CutleryServiceScore = cutlery is null ? null : KitchenwareRuntime.ServiceScore(cutlery);
+    }
+
+    private void SetCutlerySource(DiningCutlerySource source)
+    {
+        cutleryStartedInInventory = source is
+            DiningCutlerySource.ColonyInventory or DiningCutlerySource.PersonalInventory;
+        returnCutleryToPersonalInventory = source == DiningCutlerySource.PersonalInventory;
     }
 
     private Thing? TakeOneForTravel(Thing? ware)
@@ -1011,7 +1079,6 @@ internal static class DiningSessionRegistry
 
         var personalPlateProvenance = embeddedWare?.PeekPlateThing() is not null &&
                                       (mealWasInPersonalInventory || embeddedWare.IsPersonalPlateFor(pawn));
-        Thing? selected = null;
         Thing? plate = null;
         if (ImmersiveChefsMod.Settings.WareRequirementMode != WareRequirementMode.Off)
         {
@@ -1034,27 +1101,16 @@ internal static class DiningSessionRegistry
                 // pre-toil reservation failure.
             }
 
-            selected = SelectWare(
-                pawn,
-                job,
-                KitchenwareProduct.Cutlery,
-                emergency,
-                WareRequirementMode.Prefer,
-                allowPersonalInventory: mayUsePersonalInventory);
         }
 
         var heatingSource = pasteDispenser ? null : FindHeatingSource(pawn, meal);
-        var cutlerySource = selected is not null &&
-                            ReferenceEquals(selected.holdingOwner, pawn.inventory?.innerContainer)
-            ? DiningCutlerySource.PersonalInventory
-            : DiningCutlerySource.Colony;
         var session = new DiningSession(
             pawn,
             job,
-            selected,
+            null,
             plate,
             heatingSource,
-            cutlerySource,
+            DiningCutlerySource.Colony,
             requestedMealDef: diningMealDef,
             returnPlateToPersonalInventory:
                 GuestWareSelectionPolicy.ShouldReturnMealPlateToPersonalInventory(
@@ -1466,6 +1522,51 @@ internal static class DiningSessionRegistry
         }
     }
 
+    internal static void SelectSelfDiningCutlery(Pawn pawn)
+    {
+        if (pawn.CurJob is not { } job || !Sessions.TryGetValue(job, out var session))
+        {
+            return;
+        }
+
+        if (!DiningCutleryDeferredSelectionPolicy.ShouldSelect(
+                session.Cutlery is not null,
+                session.CarriedCutlery is not null,
+                session.ServingPawn is not null))
+        {
+            return;
+        }
+
+        var target = job.GetTarget(TargetIndex.B);
+        var diningOrigin = target.IsValid ? target.Cell : pawn.Position;
+        Thing? selected = null;
+        var source = DiningCutlerySource.Colony;
+        if (ImmersiveChefsMod.Settings.WareRequirementMode != WareRequirementMode.Off)
+        {
+            var emergency = pawn.needs?.food?.CurLevelPercentage <=
+                            ImmersiveChefsMod.Settings.EmergencyHungerThreshold;
+            var guestUsesPersonalFallback = MayUsePersonalInventory(pawn);
+            selected = SelectWare(
+                pawn,
+                job,
+                KitchenwareProduct.Cutlery,
+                emergency,
+                WareRequirementMode.Prefer,
+                allowInventory: true,
+                preferColonyService: guestUsesPersonalFallback,
+                searchOrigin: diningOrigin);
+            if (selected is not null &&
+                ReferenceEquals(selected.holdingOwner, pawn.inventory?.innerContainer))
+            {
+                source = guestUsesPersonalFallback
+                    ? DiningCutlerySource.PersonalInventory
+                    : DiningCutlerySource.ColonyInventory;
+            }
+        }
+
+        session.SelectCutleryForDining(selected, source, pawn.Position);
+    }
+
     internal static Thing? FindHeatingSource(Pawn pawn, Thing meal)
     {
         if (!TemperatureOwnership.ImmersiveChefsFeaturesActive ||
@@ -1511,22 +1612,35 @@ internal static class DiningSessionRegistry
         KitchenwareProduct product,
         bool emergency,
         WareRequirementMode mode = WareRequirementMode.Prefer,
-        bool allowPersonalInventory = false,
+        bool allowInventory = false,
+        bool preferColonyService = false,
+        IntVec3? searchOrigin = null,
         MealComplexity? plateComplexity = null)
     {
-        var colonyCandidates = pawn.Map.listerThings.AllThings
+        if (pawn.Map is not { } map)
+        {
+            return null;
+        }
+
+        var origin = searchOrigin ?? pawn.PositionHeld;
+        var colonyCandidates = map.listerThings.AllThings
             .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
             .Where(thing => product != KitchenwareProduct.Plate ||
                             PlateMaterialEligibilityRuntime.Allows(thing, plateComplexity))
             .Where(thing => !thing.IsForbidden(pawn) && pawn.CanReach(thing, PathEndMode.Touch, Danger.Some))
-            .Where(thing => pawn.CanReserve(thing, 1, 1))
+            .Where(thing =>
+            {
+                var reservation = ReservationFor(product, thing);
+                return pawn.CanReserve(thing, reservation.MaxPawns, reservation.StackCount);
+            })
             .Select(thing => new ServiceWareCandidate<Thing>(
                 thing,
                 (thing as ThingWithComps)?.GetComp<CompSanitation>()?.IsDirty == true,
-                KitchenwareRuntime.ServiceScore(thing) -
-                (thing.PositionHeld.DistanceToSquared(pawn.PositionHeld) * 0.01f)))
+                DiningCutlerySearchPolicy.MapScore(
+                    KitchenwareRuntime.ServiceScore(thing),
+                    thing.PositionHeld.DistanceToSquared(origin))))
             .ToList();
-        var personalCandidates = allowPersonalInventory && pawn.inventory is not null
+        var inventoryCandidates = allowInventory && pawn.inventory is not null
             ? pawn.inventory.innerContainer.InnerListForReading
                 .Where(thing => !thing.Destroyed && thing.stackCount > 0)
                 .Where(thing => thing.def.GetModExtension<KitchenwareExtension>()?.product == product)
@@ -1538,20 +1652,38 @@ internal static class DiningSessionRegistry
                     KitchenwareRuntime.ServiceScore(thing)))
                 .ToList()
             : new List<ServiceWareCandidate<Thing>>();
-        var selected = GuestWareSelectionPolicy.Select(
-            colonyCandidates,
-            personalCandidates,
-            allowPersonalInventory,
-            mode,
-            ImmersiveChefsMod.Settings.DirtyWareFallback,
-            emergency);
+        var selected = allowInventory
+            ? SelfDiningCutlerySelectionPolicy.Select(
+                colonyCandidates,
+                inventoryCandidates,
+                preferColonyService,
+                mode,
+                ImmersiveChefsMod.Settings.DirtyWareFallback,
+                emergency)
+            : ServiceWareSelectionPolicy.Select(
+                colonyCandidates,
+                mode,
+                ImmersiveChefsMod.Settings.DirtyWareFallback,
+                emergency);
         if (selected is null || ReferenceEquals(selected.holdingOwner, pawn.inventory?.innerContainer))
         {
             return selected;
         }
 
-        return pawn.Reserve(selected, job, 1, 1) ? selected : null;
+        var selectedReservation = ReservationFor(product, selected);
+        return pawn.Reserve(
+            selected,
+            job,
+            selectedReservation.MaxPawns,
+            selectedReservation.StackCount)
+            ? selected
+            : null;
     }
+
+    private static DiningWareReservation ReservationFor(KitchenwareProduct product, Thing thing) =>
+        product == KitchenwareProduct.Cutlery
+            ? DiningCutleryReservationPolicy.ForStackLimit(thing.def.stackLimit)
+            : new DiningWareReservation(1, 1);
 
     private static bool MayUsePersonalInventory(Pawn pawn)
     {

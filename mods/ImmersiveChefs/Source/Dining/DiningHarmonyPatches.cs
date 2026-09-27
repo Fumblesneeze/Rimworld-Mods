@@ -1,3 +1,4 @@
+using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -274,6 +275,9 @@ internal static class DiningMealToilOrder
 [HarmonyPatch(typeof(JobDriver_Ingest), "MakeNewToils")]
 internal static class IngestCutleryToilsPatch
 {
+    private static readonly FieldInfo? ChewingToilField =
+        AccessTools.Field(typeof(JobDriver_Ingest), "chewing");
+
     private static void Postfix(JobDriver_Ingest __instance, ref IEnumerable<Toil> __result)
     {
         __result = AddCutleryPickup(__instance, __result);
@@ -303,7 +307,8 @@ internal static class IngestCutleryToilsPatch
             };
         }
 
-        if (pawn.CurJob is { } job && DiningSessionRegistry.HasPickup(job) &&
+        if (driver is not JobDriver_Ingest &&
+            pawn.CurJob is { } job && DiningSessionRegistry.HasPickup(job) &&
             DiningSessionRegistry.CutleryFor(job) is { } cutlery)
         {
             if (cutlery.Spawned)
@@ -318,63 +323,22 @@ internal static class IngestCutleryToilsPatch
             };
         }
 
-        if (pawn.CurJob is { } heatingJob &&
-            DiningSessionRegistry.HeatingSourceFor(heatingJob) is { } heatingSource)
+        IEnumerable<Toil> ordered = AddOptionalHeating(driver, pawn, original);
+        if (driver is JobDriver_Ingest ingestDriver)
         {
-            var meal = heatingJob.GetTarget(TargetIndex.A).Thing;
-            var pickupPlan = DiningMealPickupPolicy.For(
-                meal?.Spawned == true,
-                meal is not null &&
-                ReferenceEquals(meal.holdingOwner, pawn.inventory?.innerContainer),
-                meal is not null && ReferenceEquals(meal, pawn.carryTracker?.CarriedThing),
-                driver is JobDriver_Ingest);
-            if (pickupPlan == DiningMealPickupPlan.ReheatAfterVanillaInventoryTransfer)
-            {
-                // JobDriver_Ingest latched eatingFromInventory when this job started.
-                // Its first native toil performs the inventory-to-carrier transfer. Run
-                // that toil before walking to the selected heat source, then leave the heated meal
-                // in the carrier for the remaining native ingest toils.
-                foreach (var toil in DiningMealToilOrder.InsertAfterInventoryTransfer(
-                             original,
-                             HeatCarriedMeal(pawn, heatingSource, dropAfterHeating: false)))
-                {
-                    yield return toil;
-                }
-            }
-            else
-            {
-                if (pickupPlan != DiningMealPickupPlan.SkipOptionalReheat)
-                {
-                    if (pickupPlan == DiningMealPickupPlan.ApproachAndCarry)
-                    {
-                        yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.Touch);
-                        yield return Toils_Haul.StartCarryThing(
-                            TargetIndex.A,
-                            putRemainderInQueue: false,
-                            subtractNumTakenFromJobCount: false,
-                            failIfStackCountLessThanJobCount: false,
-                            reserve: false,
-                            canTakeFromInventory: false);
-                    }
-
-                    foreach (var toil in HeatCarriedMeal(pawn, heatingSource, dropAfterHeating: true))
-                    {
-                        yield return toil;
-                    }
-                }
-
-                foreach (var toil in original)
-                {
-                    yield return toil;
-                }
-            }
+            ordered = DiningCutleryToilOrder.InsertBefore(
+                ordered,
+                toil => ReferenceEquals(toil, ChewingToilField?.GetValue(ingestDriver)),
+                DeferredSelfDiningCutleryToils(pawn),
+                onMissing: () => Log.ErrorOnce(
+                    "[ImmersiveChefs] Could not locate JobDriver_Ingest's chewing toil; " +
+                    "deferred cutlery acquisition was skipped for this job.",
+                    148539721));
         }
-        else
+
+        foreach (var toil in ordered)
         {
-            foreach (var toil in original)
-            {
-                yield return toil;
-            }
+            yield return toil;
         }
 
         yield return new Toil
@@ -382,6 +346,143 @@ internal static class IngestCutleryToilsPatch
             initAction = () => CommonSenseAdapter.TryQueueCommittedHandoff(pawn, driver.job),
             defaultCompleteMode = ToilCompleteMode.Instant
         };
+    }
+
+    private static IEnumerable<Toil> AddOptionalHeating(
+        JobDriver driver,
+        Pawn pawn,
+        IEnumerable<Toil> original)
+    {
+        if (pawn.CurJob is not { } heatingJob ||
+            DiningSessionRegistry.HeatingSourceFor(heatingJob) is not { } heatingSource)
+        {
+            foreach (var toil in original)
+            {
+                yield return toil;
+            }
+
+            yield break;
+        }
+
+        var meal = heatingJob.GetTarget(TargetIndex.A).Thing;
+        var pickupPlan = DiningMealPickupPolicy.For(
+            meal?.Spawned == true,
+            meal is not null &&
+            ReferenceEquals(meal.holdingOwner, pawn.inventory?.innerContainer),
+            meal is not null && ReferenceEquals(meal, pawn.carryTracker?.CarriedThing),
+            driver is JobDriver_Ingest);
+        if (pickupPlan == DiningMealPickupPlan.ReheatAfterVanillaInventoryTransfer)
+        {
+            // JobDriver_Ingest latched eatingFromInventory when this job started.
+            // Its first native toil performs the inventory-to-carrier transfer. Run
+            // that toil before walking to the selected heat source, then leave the heated meal
+            // in the carrier for the remaining native ingest toils.
+            foreach (var toil in DiningMealToilOrder.InsertAfterInventoryTransfer(
+                         original,
+                         HeatCarriedMeal(pawn, heatingSource, dropAfterHeating: false)))
+            {
+                yield return toil;
+            }
+
+            yield break;
+        }
+
+        if (pickupPlan != DiningMealPickupPlan.SkipOptionalReheat)
+        {
+            if (pickupPlan == DiningMealPickupPlan.ApproachAndCarry)
+            {
+                yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.Touch);
+                yield return Toils_Haul.StartCarryThing(
+                    TargetIndex.A,
+                    putRemainderInQueue: false,
+                    subtractNumTakenFromJobCount: false,
+                    failIfStackCountLessThanJobCount: false,
+                    reserve: false,
+                    canTakeFromInventory: false);
+            }
+
+            foreach (var toil in HeatCarriedMeal(pawn, heatingSource, dropAfterHeating: true))
+            {
+                yield return toil;
+            }
+        }
+
+        foreach (var toil in original)
+        {
+            yield return toil;
+        }
+    }
+
+    private static IEnumerable<Toil> DeferredSelfDiningCutleryToils(Pawn pawn)
+    {
+        yield return new Toil
+        {
+            debugName = "ImmersiveChefs_SelectCutleryAtDiningPlace",
+            initAction = () => DiningSessionRegistry.SelectSelfDiningCutlery(pawn),
+            defaultCompleteMode = ToilCompleteMode.Instant
+        };
+        yield return GotoSelectedCutlery();
+        yield return new Toil
+        {
+            debugName = "ImmersiveChefs_PickupDiningCutlery",
+            initAction = () => DiningSessionRegistry.Pickup(pawn),
+            defaultCompleteMode = ToilCompleteMode.Instant
+        };
+        yield return ReturnToDiningPosition();
+    }
+
+    private static Toil GotoSelectedCutlery()
+    {
+        var toil = ToilMaker.MakeToil("ImmersiveChefs_GotoDiningCutlery");
+        toil.defaultCompleteMode = ToilCompleteMode.Never;
+        toil.initAction = () =>
+        {
+            var actor = toil.actor;
+            var cutlery = actor.CurJob is { } job
+                ? DiningSessionRegistry.CutleryFor(job)
+                : null;
+            if (cutlery is null || !cutlery.Spawned)
+            {
+                actor.jobs.curDriver.ReadyForNextToil();
+                return;
+            }
+
+            toil.defaultCompleteMode = ToilCompleteMode.PatherArrival;
+            actor.pather.StartPath(cutlery, PathEndMode.Touch);
+        };
+        toil.tickAction = () =>
+        {
+            var actor = toil.actor;
+            var cutlery = actor.CurJob is { } job
+                ? DiningSessionRegistry.CutleryFor(job)
+                : null;
+            if (cutlery is null || !cutlery.Spawned)
+            {
+                actor.pather.StopDead();
+                actor.jobs.curDriver.ReadyForNextToil();
+            }
+        };
+        return toil;
+    }
+
+    private static Toil ReturnToDiningPosition()
+    {
+        var toil = ToilMaker.MakeToil("ImmersiveChefs_ReturnToDiningPosition");
+        toil.defaultCompleteMode = ToilCompleteMode.Never;
+        toil.initAction = () =>
+        {
+            var actor = toil.actor;
+            var diningPosition = DiningSessionRegistry.Current(actor)?.DiningPosition ?? IntVec3.Invalid;
+            if (!diningPosition.IsValid || actor.Position == diningPosition)
+            {
+                actor.jobs.curDriver.ReadyForNextToil();
+                return;
+            }
+
+            toil.defaultCompleteMode = ToilCompleteMode.PatherArrival;
+            actor.pather.StartPath(diningPosition, PathEndMode.OnCell);
+        };
+        return toil;
     }
 
     private static IEnumerable<Toil> HeatCarriedMeal(

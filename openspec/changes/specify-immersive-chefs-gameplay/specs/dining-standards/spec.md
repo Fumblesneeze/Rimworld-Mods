@@ -4,7 +4,7 @@
 
 ### Requirement: Eaters acquire service ware
 
-For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or owning Gastronomy server SHALL try to reserve and collect one reachable cutlery unit in addition to the meal while preserving normal reachability, reservation, forbidden-item, and danger rules. Selection SHALL be deterministic: clean cutlery first; if none is eligible, dirty cutlery only when `DirtyWareFallback=Always` or when it is `Urgent only` and the diner is at or below `EmergencyHungerThreshold`; otherwise no cutlery. Failure to obtain a permitted setting SHALL NOT block ingestion and SHALL record the missing-cutlery dining consequence. In `Off` mode the workflow SHALL neither select cutlery nor record a missing-cutlery consequence. Pemmican, packaged/travel survival meals, raw food, drinks, drugs, baby food, and animal feeding SHALL remain hand-eaten exclusions. A non-humanlike animal eating any meal SHALL never acquire plate or cutlery and SHALL receive no Immersive Chefs temperature, culinary-quality, tableware, dining-standard, memory/thought, or custom food-poisoning consequence.
+For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or owning Gastronomy server SHALL try to reserve and collect one reachable cutlery unit in addition to the meal while preserving normal reachability, reservation, forbidden-item, and danger rules. A self-eating pawn SHALL select map cutlery only after vanilla has resolved the actual dining destination: distance ranking SHALL originate at the selected eat-surface cell in `TargetIndex.B`, or at the native chew spot when no eat surface was selected, rather than at the pawn's pre-job position. The pawn's own inventory SHALL participate in the same selection; among otherwise eligible clean choices a colonist SHALL prefer its already-carried setting, while the separate guest colony-before-personal rule remains authoritative. Deferred self-selection SHALL NOT replace cutlery already selected, carried, or delivered by a Gastronomy server. Selection SHALL be deterministic: clean cutlery first; if none is eligible, dirty cutlery only when `DirtyWareFallback=Always` or when it is `Urgent only` and the diner is at or below `EmergencyHungerThreshold`; otherwise no cutlery. A map stack reservation SHALL claim exactly one physical cutlery unit and SHALL permit other diners to reserve the remaining unclaimed units; pickup SHALL revalidate that the exact source remains spawned, permitted, reachable, and reserved by that dining session, abandon a stale selection without taking from another holder, and release the source-stack reservation after the selected unit is split or transferred. Failure to obtain a permitted setting SHALL NOT block ingestion and SHALL record the missing-cutlery dining consequence. In `Off` mode the workflow SHALL neither select cutlery nor record a missing-cutlery consequence. Pemmican, packaged/travel survival meals, raw food, drinks, drugs, baby food, and animal feeding SHALL remain hand-eaten exclusions. A non-humanlike animal eating any meal SHALL never acquire plate or cutlery and SHALL receive no Immersive Chefs temperature, culinary-quality, tableware, dining-standard, memory/thought, or custom food-poisoning consequence.
 
 #### Scenario: Animal eats a normal meal
 
@@ -20,6 +20,31 @@ For an eligible dining job in `Strict` or `Prefer` ware mode, the eater or ownin
 
 - **WHEN** a colonist chooses an eligible plated meal and reachable clean cutlery exists
 - **THEN** the eating job reserves and collects both without another pawn claiming either item
+
+#### Scenario: Two diners share one cutlery stack
+
+- **WHEN** two colonists start eligible meals while one clean cutlery stack contains at least two unclaimed physical units
+- **THEN** each dining job can reserve exactly one unit from that same stack, neither reservation claims the unrequested remainder, and each pawn collects one distinct setting
+
+#### Scenario: Dining destination determines nearby cutlery
+
+- **WHEN** a colonist starts far from the dining room, vanilla resolves a table there, and otherwise equal clean cutlery exists near both the starting cell and selected eat surface
+- **THEN** the dining job selects the setting near the resolved eat surface and returns to the same native chew spot before ingestion
+
+#### Scenario: Colonist uses carried cutlery
+
+- **WHEN** a colonist already carries eligible clean cutlery while starting an eligible self-ingest job
+- **THEN** the job selects one carried unit ahead of an otherwise equivalent clean map setting, uses it without a map pickup detour, and follows the ordinary colony dirty-return lifecycle after ingestion
+
+#### Scenario: Waiter-delivered cutlery remains authoritative
+
+- **WHEN** a Gastronomy server has already delivered cutlery for a self-ingest session before deferred dining-place selection runs
+- **THEN** the eater keeps that delivered setting and does not select, reserve, approach, or assign personal-return ownership to a second setting
+
+#### Scenario: Selected stack becomes stale before pickup
+
+- **WHEN** selected map cutlery becomes unspawned, forbidden, unreachable, or loses the dining session's exact reservation before pickup
+- **THEN** the eater abandons that selection, releases any surviving source reservation, does not take cutlery from another holder, and continues the admitted ingestion without cutlery
 
 #### Scenario: Dirty cutlery is allowed only by fallback policy
 
