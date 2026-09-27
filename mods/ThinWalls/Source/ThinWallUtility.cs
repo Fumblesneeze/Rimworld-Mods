@@ -64,6 +64,7 @@ public static class ThinWallUtility
 
     public static bool HasWall(Map map, SharedEdge edge, bool completedOnly = true)
     {
+        if (completedOnly && Pathing.ThinWallMapComponent.TryGet(map, out var component)) return component.HasWall(edge);
         var first = new OwnedEdge(edge.AnchorCell, edge.PositiveSide);
         if (CellHasOwner(map, first, completedOnly))
         {
@@ -78,6 +79,7 @@ public static class ThinWallUtility
 
     public static bool HasEdgeStructure(Map map, SharedEdge edge, bool completedOnly = true)
     {
+        if (completedOnly && Pathing.ThinWallMapComponent.TryGet(map, out var component)) return component.HasEdge(edge);
         foreach (Thing thing in ThingsOnSharedEdge(map, edge, completedOnly))
         {
             if (IsThinEdgeDef(thing.def))

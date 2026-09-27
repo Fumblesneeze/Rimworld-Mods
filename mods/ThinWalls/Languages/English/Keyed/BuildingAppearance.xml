@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ShrinkBuilding>Shrink</TW_ShrinkBuilding>
+  <TW_ShrinkBuildingDesc>Cycle visual size: 100%, 90%, 80%, 70%, 60%, 50%, then 100%. Changes only this building's appearance, not its occupied cells or interaction spots. Pawns and stored items are not resized. Shrinking does not change the offset.</TW_ShrinkBuildingDesc>
+  <TW_OffsetBuilding>Offset</TW_OffsetBuilding>
+  <TW_OffsetBuildingDesc>Cycle a visual 0.2-cell nudge: N, NE, E, SE, S, SW, W, NW, then centered. Does not change occupied cells, jobs or interaction spots. Pawns and stored items do not move. Nearby thin walls choose an automatic offset until you use this control. Your choice then stays fixed, including center.</TW_OffsetBuildingDesc>
+  <TW_ShowShrinkGizmo>Show building shrink gizmo</TW_ShowShrinkGizmo>
+  <TW_ShowOffsetGizmo>Show building offset gizmo</TW_ShowOffsetGizmo>
+  <TW_AppearanceSettingsHint>Hiding a gizmo keeps saved adjustments. These controls change appearance only. Walls, doors and linked structures are excluded.</TW_AppearanceSettingsHint>
+  <TW_OffsetCenter>Center</TW_OffsetCenter>
+  <TW_OffsetN>N</TW_OffsetN>
+  <TW_OffsetNE>NE</TW_OffsetNE>
+  <TW_OffsetE>E</TW_OffsetE>
+  <TW_OffsetSE>SE</TW_OffsetSE>
+  <TW_OffsetS>S</TW_OffsetS>
+  <TW_OffsetSW>SW</TW_OffsetSW>
+  <TW_OffsetW>W</TW_OffsetW>
+  <TW_OffsetNW>NW</TW_OffsetNW>
+</LanguageData>

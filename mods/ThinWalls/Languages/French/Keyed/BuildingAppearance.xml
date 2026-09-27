@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ShrinkBuilding>Réduire</TW_ShrinkBuilding>
+  <TW_ShrinkBuildingDesc>Taille visuelle : 100%, 90%, 80%, 70%, 60%, 50%, puis 100%. Modifie uniquement l'apparence de ce bâtiment, pas les cases occupées ni les points d'interaction. Les personnages et objets stockés ne sont pas redimensionnés. Changer la taille ne modifie pas le décalage.</TW_ShrinkBuildingDesc>
+  <TW_OffsetBuilding>Décaler</TW_OffsetBuilding>
+  <TW_OffsetBuildingDesc>Décalage visuel de 0,2 case : N, NE, E, SE, S, SO, O, NO, puis centré. Ne modifie ni les cases occupées, ni les tâches, ni les points d'interaction. Les personnages et objets stockés ne sont pas déplacés. Les murs fins voisins déterminent le décalage automatiquement jusqu'à l'utilisation de cette commande. Votre choix est ensuite conservé, même centré.</TW_OffsetBuildingDesc>
+  <TW_ShowShrinkGizmo>Afficher la commande de réduction des bâtiments</TW_ShowShrinkGizmo>
+  <TW_ShowOffsetGizmo>Afficher la commande de décalage des bâtiments</TW_ShowOffsetGizmo>
+  <TW_AppearanceSettingsHint>Masquer une commande conserve les réglages enregistrés. Ces commandes ne modifient que l'apparence. Les murs, portes et structures reliées sont exclus.</TW_AppearanceSettingsHint>
+  <TW_OffsetCenter>Centre</TW_OffsetCenter>
+  <TW_OffsetN>N</TW_OffsetN>
+  <TW_OffsetNE>NE</TW_OffsetNE>
+  <TW_OffsetE>E</TW_OffsetE>
+  <TW_OffsetSE>SE</TW_OffsetSE>
+  <TW_OffsetS>S</TW_OffsetS>
+  <TW_OffsetSW>SO</TW_OffsetSW>
+  <TW_OffsetW>O</TW_OffsetW>
+  <TW_OffsetNW>NO</TW_OffsetNW>
+</LanguageData>

@@ -6,6 +6,15 @@ namespace ThinWalls.Tests;
 [TestFixture]
 public sealed class ThinDoorAccessPolicyTests
 {
+    [TestCase(Verse.TraverseMode.NoPassClosedDoors)]
+    [TestCase(Verse.TraverseMode.NoPassClosedDoorsOrWater)]
+    public void BothClosedDoorTraversalModesRejectAnUnopenedEdgeDoor(Verse.TraverseMode mode)
+    {
+        // Lightweight unopened Thing only: no Defs, map, loaded mod or Harmony initialization.
+        var door = new ThinWalls.Buildings.Building_ThinDoor();
+        Assert.That(ThinDoorAccessPolicy.CanTraverse(door, Verse.TraverseParms.For(mode)), Is.False);
+    }
+
     [TestCase(true, false, true)]
     [TestCase(false, false, false)]
     [TestCase(true, true, false)]
@@ -17,41 +26,6 @@ public sealed class ThinDoorAccessPolicyTests
     {
         Assert.That(
             ThinDoorAccessPolicy.PermitsPassage(canPhysicallyPass, forbidden),
-            Is.EqualTo(expected));
-    }
-
-    [TestCase(true, true, true)]
-    [TestCase(true, false, false)]
-    [TestCase(false, true, false)]
-    [TestCase(false, false, false)]
-    public void EdgeReachabilityCanOnlyRefineAnAcceptedVanillaAnswer(
-        bool vanillaAccepted,
-        bool edgeGraphAccepted,
-        bool expected)
-    {
-        Assert.That(
-            ThinDoorAccessPolicy.RefineReachability(vanillaAccepted, edgeGraphAccepted),
-            Is.EqualTo(expected));
-    }
-
-    [TestCase(false, true, true, true, true)]
-    [TestCase(false, true, true, false, false)]
-    [TestCase(false, true, false, true, false)]
-    [TestCase(false, false, true, true, false)]
-    [TestCase(true, true, true, true, false)]
-    public void ADeliberateDoorRegionSplitIsRecoveredOnlyByAnActualDoorCrossingPath(
-        bool vanillaAccepted,
-        bool edgeGraphAccepted,
-        bool nativePathFound,
-        bool pathCrossesThinDoor,
-        bool expected)
-    {
-        Assert.That(
-            ThinDoorAccessPolicy.MayRecoverThinDoorRegionSplit(
-                vanillaAccepted,
-                edgeGraphAccepted,
-                nativePathFound,
-                pathCrossesThinDoor),
             Is.EqualTo(expected));
     }
 

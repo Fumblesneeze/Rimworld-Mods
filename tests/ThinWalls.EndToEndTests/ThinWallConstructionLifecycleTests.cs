@@ -132,6 +132,9 @@ public sealed class ThinWallConstructionLifecycleTest : IRimWorldEndToEndTest
             _ => (blueprint = FindPhase<Blueprint>(buildCell)) is not null,
             new EndToEndDeadline(300, 300, TimeSpan.FromSeconds(20)));
         usedStuff = ((Blueprint_Build)blueprint!).stuffToUse;
+        EndToEndAssert.True(Math.Abs(thinWallDef.GetStatValueAbstract(StatDefOf.WorkToBuild, usedStuff) -
+            ThingDefOf.Wall.GetStatValueAbstract(StatDefOf.WorkToBuild, usedStuff) * .5f) < .001f,
+            "Native blueprint work must equal half the same-Stuff Core wall work.");
         EndToEndAssert.NotNull(usedStuff, "The stuff-selecting designator must retain one concrete material.");
         initialAvailableStuff = CountNearby(usedStuff!);
         EndToEndAssert.Equal(3, initialAvailableStuff,
@@ -193,7 +196,7 @@ public sealed class ThinWallConstructionLifecycleTest : IRimWorldEndToEndTest
         yield return new TimeControlActionStep(
             "run ordinary hauling and construction",
             paused: false,
-            EndToEndGameSpeed.Superfast);
+            EndToEndGameSpeed.Normal);
         yield return new CheckpointStep(
             "ordinary construction preconditions",
             _ => new Dictionary<string, string>
@@ -413,7 +416,7 @@ public sealed class ThinWallConstructionLifecycleTest : IRimWorldEndToEndTest
         .Where(thing => thing.Spawned && thing.Position.InHorDistOf(buildCell, 8f))
         .Sum(thing => thing.stackCount);
 
-    private static Pawn GenerateBuilder()
+    internal static Pawn GenerateBuilder()
     {
         for (int attempt = 0; attempt < 64; attempt++)
         {
@@ -455,7 +458,7 @@ public sealed class ThinWallConstructionLifecycleTest : IRimWorldEndToEndTest
         throw new EndToEndAssertionException("Could not generate a capable Thin Walls builder.");
     }
 
-    private static void NormalizeToClearNoon(Map target)
+    internal static void NormalizeToClearNoon(Map target)
     {
         Find.TickManager.DebugSetTicksGame(0);
         Find.TickManager.gameStartAbsTick = GenDate.TicksPerYear + 30_000;

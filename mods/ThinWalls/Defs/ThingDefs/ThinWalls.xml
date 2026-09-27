@@ -2,15 +2,16 @@
 <Defs>
   <ThingDef ParentName="BuildingBase">
     <defName>TW_ThinWall</defName>
+    <replaceTags Inherit="False" />
     <label>thin wall</label>
     <description>A narrow wall mounted along one edge of a tile. It blocks crossing that edge while leaving the tile itself usable. Thin walls divide rooms but never support roofs.</description>
     <thingClass>ThinWalls.Buildings.Building_ThinWall</thingClass>
     <category>Building</category>
-    <drawerType>MapMeshOnly</drawerType>
+    <drawerType>MapMeshAndRealTime</drawerType>
     <altitudeLayer>Building</altitudeLayer>
     <graphicData>
-      <texPath>Things/Building/Linked/Wall</texPath>
-      <graphicClass>Graphic_Appearances</graphicClass>
+      <texPath>Things/Building/Linked/WallSmooth_MenuIcon</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
       <drawSize>(1,1)</drawSize>
       <shaderType>CutoutComplex</shaderType>
       <damageData>
@@ -18,6 +19,16 @@
       </damageData>
     </graphicData>
     <uiIconPath>Things/Building/Linked/WallSmooth_MenuIcon</uiIconPath>
+    <uiIconPathsStuff>
+      <li>
+        <appearance>Planks</appearance>
+        <iconPath>Things/Building/Linked/WallPlanks_MenuIcon</iconPath>
+      </li>
+      <li>
+        <appearance>Bricks</appearance>
+        <iconPath>Things/Building/Linked/WallBricks_MenuIcon</iconPath>
+      </li>
+    </uiIconPathsStuff>
     <castEdgeShadows>false</castEdgeShadows>
     <staticSunShadowHeight>0</staticSunShadowHeight>
     <selectable>true</selectable>
@@ -43,13 +54,16 @@
     <costStuffCount>3</costStuffCount>
     <statBases>
       <MaxHitPoints>150</MaxHitPoints>
-      <WorkToBuild>600</WorkToBuild>
+      <WorkToBuild>67.5</WorkToBuild>
       <Mass>2.5</Mass>
       <Flammability>1.0</Flammability>
       <Beauty>-1</Beauty>
     </statBases>
     <building>
       <blueprintClass>ThinWalls.Buildings.Blueprint_ThinWall</blueprintClass>
+      <blueprintGraphicData>
+        <texPath>Things/Building/Linked/Wall_Blueprint_Atlas</texPath>
+      </blueprintGraphicData>
       <isEdifice>false</isEdifice>
       <canBuildNonEdificesUnder>true</canBuildNonEdificesUnder>
       <allowAutoroof>false</allowAutoroof>
@@ -61,19 +75,20 @@
 
   <ThingDef ParentName="DoorBase">
     <defName>TW_ThinDoor</defName>
+    <replaceTags Inherit="False" />
     <label>thin door</label>
     <description>A narrow door mounted along one edge of a tile. The tile remains usable, and only crossing the door edge requires it to open. Thin doors divide rooms but never support roofs.</description>
     <thingClass>ThinWalls.Buildings.Building_ThinDoor</thingClass>
     <graphicData>
-      <texPath>Things/Building/Linked/Wall</texPath>
-      <graphicClass>Graphic_Appearances</graphicClass>
+      <texPath>Things/Building/Door/DoorSimple_MenuIcon</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
       <drawSize>(1,1)</drawSize>
       <shaderType>CutoutComplex</shaderType>
       <damageData>
         <enabled>false</enabled>
       </damageData>
     </graphicData>
-    <uiIconPath>Things/Building/Linked/WallSmooth_MenuIcon</uiIconPath>
+    <uiIconPath>Things/Building/Door/DoorSimple_MenuIcon</uiIconPath>
     <canGenerateDefaultDesignator>false</canGenerateDefaultDesignator>
     <drawStyleCategory>TW_ThinWallLine</drawStyleCategory>
     <rotatable>true</rotatable>
@@ -98,6 +113,9 @@
     </statBases>
     <building>
       <blueprintClass>ThinWalls.Buildings.Blueprint_ThinDoor</blueprintClass>
+      <blueprintGraphicData>
+        <texPath>Things/Building/Linked/Wall_Blueprint_Atlas</texPath>
+      </blueprintGraphicData>
       <isEdifice>false</isEdifice>
       <canBuildNonEdificesUnder>true</canBuildNonEdificesUnder>
       <allowAutoroof>false</allowAutoroof>

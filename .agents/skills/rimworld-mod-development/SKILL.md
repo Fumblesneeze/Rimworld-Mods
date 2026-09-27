@@ -86,6 +86,19 @@ Extend existing projects; do not create a new assembly unless the owning design 
 
 ## Prefer declarative XML
 
+### Expect content added by other mods
+
+Treat mod-added Stuff, appearances, textures, shaders, and compatible Defs as ordinary runtime inputs.
+Resolve their actual categories, graphics, materials, and native capabilities before applying a
+transformation. Do not gate ordinary content on a list of known Def names, texture names, exact pixel
+hashes, or the absence of a mask. Source fingerprints belong in measurement evidence, not admission
+checks. Attempt the native-compatible operation while preserving the resolved material and its tint,
+mask, shader, and UV bindings. Restrict only a concrete missing capability or demonstrated incompatible
+shape; isolate that case, preserve usable gameplay, and emit at most one useful diagnostic per failing
+source. A mod adding content is not itself an error and must not trigger repeated exceptions or disable
+otherwise compatible construction. Keep stricter callable-shape guards for optional executable APIs
+and preserve package/process safety boundaries.
+
 Express static Def creation and changes through Def XML and patch operations. Do not mutate Defs manually in C# or Harmony when an equivalent load-time XML patch is available. Use C# only for runtime state, lifecycle-sensitive or computed behavior, or a documented seam with no suitable XML operation.
 
 Start with the narrowest vanilla operation, then use the most specific suitable XML Extensions operation. Any `XmlExtensions.*` use creates a hard runtime dependency for the owning mod. Read [references/xml-defs-patching.md](references/xml-defs-patching.md) for package-ID gating, dependency metadata, load order, operation selection, and verification before implementing a Def change in C#.

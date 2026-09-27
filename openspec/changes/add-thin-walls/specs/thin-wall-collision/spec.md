@@ -2,6 +2,27 @@
 
 Owning mod: **Thin Walls** (`fumblesneeze.thinwalls`) at `mods/ThinWalls`.
 
+### Requirement: Inactive maps avoid Thin Walls search and connectivity work
+Maps without completed Thin Walls or Thin Doors SHALL retain native reachability and path-job connectivity without allocating, copying, or scanning a Thin connectivity overlay. Hot callbacks SHALL resolve their map component without repeatedly enumerating the map's component list. First-edge construction SHALL activate the required edge behavior, and final-edge removal SHALL restore native connectivity without disposing buffers while scheduled jobs can still read them. Map load and removal SHALL not reuse a component from another or replaced map.
+
+Maintained native Thing lists SHALL be used directly for necessary door-access checks; repeated sorting and temporary filtered lists are not required. Closed Thin Doors and doors without an active closing countdown SHALL not scan their owner cell for countdown correction. Edge lifecycle notifications SHALL invalidate both incident regions once without a duplicate owner-neighborhood invalidation.
+
+#### Scenario: Ordinary movement has no Thin overlay on an unused map
+- **WHEN** a player orders a colonist across an ordinary map containing no completed Thin edge structure
+- **THEN** the colonist follows the native route and Thin Walls allocates no connectivity grid for that movement
+
+#### Scenario: First and final edges switch movement handling safely
+- **WHEN** a player constructs the first Thin Wall across an issued route and later deconstructs the final Thin edge structure
+- **THEN** the pawn first detours around the new blocker and then can cross the reopened edge through native connectivity
+
+#### Scenario: Unrelated reactivation does not restore a removed blocker
+- **WHEN** the player removes the final Thin structure, moves a pawn through its former edge, and constructs a new first Thin Wall elsewhere while paused
+- **THEN** the former edge remains immediately traversable before any new path-data gather, and a native move order crosses it without an obsolete blocker
+
+#### Scenario: Map replacement preserves the correct component
+- **WHEN** the player saves and reloads a map with Thin edge structures
+- **THEN** component access resolves the reloaded map's component and native wall/door movement and deconstruction remain correct
+
 ### Requirement: Completed shared edges block cardinal pawn movement
 A completed Thin Wall on an undirected cardinal edge SHALL remove normal pawn traversal in both directions across that edge while leaving both adjacent cells individually standable. Either owner description addresses the same unique structure; the player cannot place a second opposite owner.
 
@@ -66,6 +87,18 @@ Because a completed Thin Door deliberately splits vanilla rooms and regions, an 
 - **WHEN** a colonist receives a native move order whose path crosses a closed friendly Thin Door
 - **THEN** the colonist stops on the current side, the two visible leaves open through the normal door delay, and only then does the pawn enter the opposite cell
 
+#### Scenario: Authorized access survives pawn-side drift and repeated orders
+- **WHEN** colonists naturally construct a sealed thin-wall room whose only permitted crossing is one completed Thin Door, and a drafted colonist later receives repeated native move orders between an outside cell and an interior cell from any starting side
+- **THEN** `Reachability.CanReach`, the Thin Walls edge-graph bridge, and the native pathfinder all agree that the interior is reachable through the door, the produced path leaves the sealed perimeter through the door edge, no native `ran out of path nodes` or invalid-path error is logged, and each ordered pawn arrives at its interior or exterior target
+
+#### Scenario: Bridge re-crosses a registered edge from every opened side
+- **WHEN** the edge-graph bridge searches from a pawn whose region already contains the destination and only one permitted crossing exists
+- **THEN** the bridge re-evaluates that crossing from every newly opened cell instead of discarding it after its first attempt, and the search still terminates through the visited-cell guard
+
+#### Scenario: Completing an edge refreshes every affected native path cell
+- **WHEN** a Thin Wall or Thin Door completes construction during ordinary play
+- **THEN** every cell whose native cardinal or endpoint-crossing diagonal connection the edge removes receives a native path-data delta, so the next path job consumes connectivity without stale corner-slip bits regardless of which cells vanilla's incremental gather recomputes
+
 #### Scenario: Walking inside the owner cell does not operate the door
 - **WHEN** a colonist enters or leaves the Thin Door owner cell through any other open edge
 - **THEN** the Thin Door remains uninvolved and the cell pays no door-opening delay
@@ -73,6 +106,10 @@ Because a completed Thin Door deliberately splits vanilla rooms and regions, an 
 #### Scenario: Inaccessible Thin Door is routed around
 - **WHEN** a pawn that cannot open a closed Thin Door has an alternate open path to the destination
 - **THEN** its computed path uses that alternate route and never repeatedly attempts the closed door edge
+
+#### Scenario: Native permission changes refresh the door route
+- **WHEN** the player forbids a room's sole Thin Door exit, orders movement into its owner cell from an open side, then allows the door again
+- **THEN** owner-cell movement remains usable while the forbidden exit offers a disabled native no-path option, and allowing the door restores a native move order through its edge without stale permission results
 
 #### Scenario: Hold-open and closing are visible
 - **WHEN** the player toggles hold-open through the ordinary selected-door command and a colonist crosses the Thin Door
@@ -85,9 +122,9 @@ Vanilla region generation SHALL NOT flood or create a `RegionLink` across a shar
 - **WHEN** completed Thin Walls form a closed edge perimeter around roofed usable cells without touching the map edge
 - **THEN** those cells share one Core Room that does not touch the map edge, excludes surrounding cells, reports the expected cell count, and exposes ordinary room stats/role behavior
 
-#### Scenario: Thin Wall prevents temperature leakage
+#### Scenario: Thin Wall separates rooms while conducting finite heat
 - **WHEN** two roofed rooms with different temperatures are separated only by a completed Thin Wall edge
-- **THEN** they retain distinct Room identities and temperatures rather than equalizing through that edge
+- **THEN** they retain distinct Room identities while exchanging heat at half a regular wall's thermal resistance, as specified by `correct-thin-wall-thermal-insulation`; they are not perfectly insulated
 
 #### Scenario: Thin Door exchanges only across its edge
 - **WHEN** a Thin Door separates two rooms and a third room is cardinally adjacent to its owner cell but not across the door edge

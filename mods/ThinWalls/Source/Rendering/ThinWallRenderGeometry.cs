@@ -33,6 +33,25 @@ public static class ThinWallRenderGeometry
     public static Vector3 StructuralVertexCenter(IntVec3 vertex, float altitude) =>
         new(vertex.x, altitude, vertex.z);
 
+    public static IEnumerable<IntVec3> MeshDependencyCells(OwnedEdge edge)
+    {
+        var seen = new HashSet<IntVec3>();
+        foreach (IntVec3 incident in IncidentCells(edge))
+        foreach (IntVec3 dependency in RegularWallDependencyCells(incident))
+            if (seen.Add(dependency)) yield return dependency;
+    }
+
+    public static IEnumerable<IntVec3> RegularWallDependencyCells(IntVec3 wallCell)
+    {
+        for (int x = -1; x <= 1; x++)
+        for (int z = -1; z <= 1; z++)
+            yield return wallCell + new IntVec3(x, 0, z);
+    }
+
+    public static bool RegularWallDamageGradeChanged(int oldHitPoints, int newHitPoints, int maxHitPoints) =>
+        ThinWallVisualResolver.DamageGrade(oldHitPoints, maxHitPoints) !=
+        ThinWallVisualResolver.DamageGrade(newHitPoints, maxHitPoints);
+
     public static IEnumerable<IntVec3> IncidentCells(OwnedEdge edge)
     {
         SharedEdge shared = edge.Shared;

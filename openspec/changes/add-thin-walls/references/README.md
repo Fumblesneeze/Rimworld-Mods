@@ -2,6 +2,13 @@
 
 These drawings and annotated in-game corrections are normative geometry references supplied by the user. They are requirements, not generated product art and not publishing inputs.
 
+**Active rendering plan, 2026-09-04:**
+[`2026-09-04-core-material-mesh-pivot.md`](2026-09-04-core-material-mesh-pivot.md), together with the
+current rendering capability. Geometry annotations remain relevant; prior generated/runtime-painted
+outputs and implementation recipes are superseded. A receiving regular wall may change every surface
+inside the necessary geometric contact aperture to achieve top continuity, not merely its outer
+contour. Source-only native interior perspective seams replace synthetic painted seams.
+
 | Reference | SHA-256 | Contract extracted from the drawing |
 | --- | --- | --- |
 | `2026-08-18-undirected-shared-edge-designation.png` | `D0988A4C388BD512D8337B81F6B2A57DF46258A0701DDD1619A633F8B83E0366` | Forward and reverse designations address the same physical edge. Once any Thin Wall or Thin Door phase occupies that shared edge, the opposite owner/designation is rejected. |
@@ -15,4 +22,8 @@ These drawings and annotated in-game corrections are normative geometry referenc
 
 For every topology drawing, equivalent rotations and reflections are part of the requirement. Raster projection may expose Core's normal top/front/side planes, but it may not replace a square plan-view contact with a diagonal width transition.
 
-The cumulative textual decisions from the subsequent rendering-prototype review are consolidated in [`2026-08-19-rendering-requirements-matrix.md`](2026-08-19-rendering-requirements-matrix.md). That matrix is a traceability/checklist view of the normative capability specs. Generated concept sheets remain ignored requirements-elicitation aids and are not normative art or product inputs.
+The cumulative earlier decisions remain in the historical
+[`2026-08-19-rendering-requirements-matrix.md`](2026-08-19-rendering-requirements-matrix.md).
+That matrix and the old atlas plan are traceability records, not the active implementation or acceptance
+checklist. Generated concept sheets remain ignored requirements-elicitation aids and are not normative
+art or product inputs.

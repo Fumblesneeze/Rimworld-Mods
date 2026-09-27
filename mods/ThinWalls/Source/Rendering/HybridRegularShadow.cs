@@ -90,101 +90,8 @@ public sealed class HybridRegularShadowPlan
     }
 }
 
-public static class HybridRegularShadowCompiler
+internal static class HybridWallShadowEdgeCompiler
 {
-    private const int Size = HybridWallRasterPlan.Size;
-
-    public static HybridRegularShadowPlan Compile(HybridRegularCompositePlan raster)
-    {
-        if (raster == null)
-        {
-            throw new ArgumentNullException(nameof(raster));
-        }
-
-        var occupied = new bool[Size * Size];
-        int occupiedCount = 0;
-        for (int y = 0; y < Size; y++)
-        for (int x = 0; x < Size; x++)
-        {
-            int canvasX = x + HybridRegularRasterCompositor.Padding;
-            int canvasY = y + HybridRegularRasterCompositor.Padding;
-            HybridWallRasterPixel thin = raster.ThinAt(canvasX, canvasY);
-            bool top = thin.IsStructural
-                ? thin.Surface == HybridWallRasterSurface.Top
-                : raster.OriginalAt(canvasX, canvasY).Surface == HybridWallRasterSurface.Top;
-            occupied[y * Size + x] = top;
-            if (top)
-            {
-                occupiedCount++;
-            }
-        }
-
-        var runs = new List<HybridWallShadowRun>();
-        for (int y = 0; y < Size; y++)
-        {
-            int x = 0;
-            while (x < Size)
-            {
-                while (x < Size && !occupied[y * Size + x])
-                {
-                    x++;
-                }
-                int minX = x;
-                while (x < Size && occupied[y * Size + x])
-                {
-                    x++;
-                }
-                if (minX < x)
-                {
-                    runs.Add(new HybridWallShadowRun(y, minX, x));
-                }
-            }
-        }
-
-        var edges = new List<HybridWallShadowEdge>();
-        for (int y = 0; y < Size; y++)
-        for (int x = 0; x < Size; x++)
-        {
-            if (!occupied[y * Size + x])
-            {
-                continue;
-            }
-            if (x == 0
-                    ? !raster.HasTopContinuationAtCanvas(
-                        HybridRegularRasterCompositor.Padding - 1,
-                        HybridRegularRasterCompositor.Padding + y)
-                    : !occupied[y * Size + x - 1])
-            {
-                edges.Add(new HybridWallShadowEdge(
-                    x, y, x, y + 1, HybridWallShadowCastingSide.West));
-            }
-            if (x == Size - 1
-                    ? !raster.HasTopContinuationAtCanvas(
-                        HybridRegularRasterCompositor.Padding + Size,
-                        HybridRegularRasterCompositor.Padding + y)
-                    : !occupied[y * Size + x + 1])
-            {
-                edges.Add(new HybridWallShadowEdge(
-                    x + 1, y, x + 1, y + 1, HybridWallShadowCastingSide.East));
-            }
-            if (y == 0
-                    ? !raster.HasTopContinuationAtCanvas(
-                        HybridRegularRasterCompositor.Padding + x,
-                        HybridRegularRasterCompositor.Padding - 1)
-                    : !occupied[(y - 1) * Size + x])
-            {
-                edges.Add(new HybridWallShadowEdge(
-                    x, y, x + 1, y, HybridWallShadowCastingSide.South));
-            }
-        }
-
-        return new HybridRegularShadowPlan(
-            occupied,
-            runs,
-            MergeCollinear(edges),
-            occupiedCount);
-    }
-
     internal static IReadOnlyList<HybridWallShadowEdge> MergeCollinear(
         IReadOnlyList<HybridWallShadowEdge> source)
     {
@@ -251,8 +158,8 @@ public static class HybridThinShadowCompiler
 
         FillVertical(HybridWallRayMask.North, Center, Size - 1);
         FillHorizontal(HybridWallRayMask.East, Center, Size - 1);
-        FillVertical(HybridWallRayMask.South, 0, Center);
-        FillHorizontal(HybridWallRayMask.West, 0, Center);
+        FillVertical(HybridWallRayMask.South, 0, Center - 1);
+        FillHorizontal(HybridWallRayMask.West, 0, Center - 1);
 
         var runs = new List<HybridWallShadowRun>();
         int occupiedCount = 0;
@@ -297,7 +204,7 @@ public static class HybridThinShadowCompiler
         return new HybridRegularShadowPlan(
             occupied,
             runs,
-            HybridRegularShadowCompiler.MergeCollinear(edges),
+            HybridWallShadowEdgeCompiler.MergeCollinear(edges),
             occupiedCount);
 
         void FillVertical(HybridWallRayMask ray, int minY, int maxY)

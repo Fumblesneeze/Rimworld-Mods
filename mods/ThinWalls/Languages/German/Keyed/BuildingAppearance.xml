@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ShrinkBuilding>Verkleinern</TW_ShrinkBuilding>
+  <TW_ShrinkBuildingDesc>Darstellungsgröße wechseln: 100%, 90%, 80%, 70%, 60%, 50%, dann 100%. Ändert nur das Aussehen dieses Gebäudes, nicht belegte Felder oder Interaktionspositionen. Figuren und gelagerte Gegenstände werden nicht verkleinert. Verkleinern ändert den Versatz nicht.</TW_ShrinkBuildingDesc>
+  <TW_OffsetBuilding>Versetzen</TW_OffsetBuilding>
+  <TW_OffsetBuildingDesc>Darstellung um 0,2 Felder versetzen: N, NO, O, SO, S, SW, W, NW, dann zentriert. Belegte Felder, Arbeiten und Interaktionspositionen bleiben unverändert. Figuren und gelagerte Gegenstände werden nicht versetzt. Nahe dünne Wände bestimmen den Versatz automatisch, bis du diese Steuerung verwendest. Danach bleibt deine Wahl erhalten, auch zentriert.</TW_OffsetBuildingDesc>
+  <TW_ShowShrinkGizmo>Gebäudebefehl zum Verkleinern anzeigen</TW_ShowShrinkGizmo>
+  <TW_ShowOffsetGizmo>Gebäudebefehl zum Versetzen anzeigen</TW_ShowOffsetGizmo>
+  <TW_AppearanceSettingsHint>Ausgeblendete Befehle behalten gespeicherte Anpassungen bei. Diese Befehle ändern nur das Aussehen. Wände, Türen und verbundene Strukturen sind ausgeschlossen.</TW_AppearanceSettingsHint>
+  <TW_OffsetCenter>Mitte</TW_OffsetCenter>
+  <TW_OffsetN>N</TW_OffsetN>
+  <TW_OffsetNE>NO</TW_OffsetNE>
+  <TW_OffsetE>O</TW_OffsetE>
+  <TW_OffsetSE>SO</TW_OffsetSE>
+  <TW_OffsetS>S</TW_OffsetS>
+  <TW_OffsetSW>SW</TW_OffsetSW>
+  <TW_OffsetW>W</TW_OffsetW>
+  <TW_OffsetNW>NW</TW_OffsetNW>
+</LanguageData>

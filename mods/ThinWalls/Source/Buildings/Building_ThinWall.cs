@@ -54,6 +54,15 @@ public sealed class Building_ThinWall : Building, IThinEdgeStructure
         ThinWallRenderer.PrintCompleted(layer, this);
     }
 
+    protected override void DrawAt(Vector3 drawLoc, bool flip = false)
+    {
+        // The completed structure remains in the cached map mesh. Only damage
+        // is realtime so Core's transparent scratch material draws after that
+        // source-bound surface instead of disappearing behind it.
+        NativeThinDamageRenderer.DrawRealtime(this);
+        Comps_PostDraw();
+    }
+
     public override void DrawExtraSelectionOverlays()
     {
         base.DrawExtraSelectionOverlays();

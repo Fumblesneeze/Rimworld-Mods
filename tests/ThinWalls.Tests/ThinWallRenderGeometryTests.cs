@@ -10,6 +10,23 @@ namespace ThinWalls.Tests;
 public sealed class ThinWallRenderGeometryTests
 {
     [Test]
+    public void MeshInvalidationIncludesTheOtherReceiversFarCornerAcrossSectionBoundaries()
+    {
+        var edge = new OwnedEdge(new IntVec3(18, 0, 9), ThinWallSide.West);
+        var dirty = ThinWallRenderGeometry.MeshDependencyCells(edge).ToArray();
+        Assert.That(dirty, Does.Contain(new IntVec3(16, 0, 10)),
+            "Changing the far corner of the eastern receiver must invalidate the western section's half too.");
+        Assert.That(dirty.Distinct().Count(), Is.EqualTo(dirty.Length));
+        Assert.That(dirty.Length, Is.LessThanOrEqualTo(30), "Invalidation is a bounded local neighborhood, not a map rebuild.");
+        var ordinary = ThinWallRenderGeometry.RegularWallDependencyCells(new IntVec3(17, 0, 10)).ToArray();
+        Assert.That(ordinary, Does.Contain(new IntVec3(16, 0, 10)));
+        Assert.That(ordinary, Does.Contain(new IntVec3(17, 0, 9)));
+        Assert.That(ordinary.Length, Is.EqualTo(9));
+        Assert.That(ThinWallRenderGeometry.RegularWallDamageGradeChanged(100, 70, 100), Is.True);
+        Assert.That(ThinWallRenderGeometry.RegularWallDamageGradeChanged(70, 55, 100), Is.False);
+        Assert.That(ThinWallRenderGeometry.RegularWallDamageGradeChanged(55, 45, 100), Is.True);
+    }
+    [Test]
     public void UnionPlanesMeetWithoutCoplanarOverlap()
     {
         Assert.That(

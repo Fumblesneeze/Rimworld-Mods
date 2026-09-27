@@ -118,6 +118,22 @@ public sealed class ThinDoorRoomWorkflowTest : IRimWorldEndToEndTest
                     "Drawing the Thin Door must not mutate its persistent east-edge ownership.");
             });
 
+        EndToEndGizmoOption allowDoor = context.GetRequiredService<IEndToEndGizmoCatalog>()
+            .Query(new[] { door.ThingID }, Array.Empty<string>())
+            .Single(option => !option.Disabled &&
+                              option.Interaction == EndToEndGizmoInteraction.Toggle &&
+                              option.Label == "CommandAllow".Translate().ToString());
+        yield return new GizmoActionStep(
+            "forbid the Thin Door through its native Allow command",
+            new[] { door.ThingID },
+            allowDoor.RuntimeType,
+            EndToEndGizmoInteraction.Toggle,
+            stableGizmoId: allowDoor.StableId);
+        yield return new AssertionStep(
+            "the native command forbids passage before nearby movement",
+            _ => EndToEndAssert.True(door.IsForbiddenToPass(pawn),
+                "The selected-door Allow command must forbid passage for the test pawn."));
+
         string ownerOption = GoHereOption(context, ownerMarker);
         yield return new SelectionActionStep("select pawn for non-door-side movement", new[] { pawn.ThingID }, false);
         yield return new FloatMenuActionStep(
@@ -140,6 +156,33 @@ public sealed class ThinDoorRoomWorkflowTest : IRimWorldEndToEndTest
             AllFixtureIds(),
             paddingPixels: 170);
 
+        yield return new AssertionStep(
+            "the native movement menu rejects the forbidden sole exit",
+            _ =>
+            {
+                var options = context.GetRequiredService<IEndToEndFloatMenuCatalog>()
+                    .Query(pawn.ThingID, outsideMarker.ThingID);
+                EndToEndAssert.True(options.Any(option => option.Disabled &&
+                        option.Label == "CannotGoNoPath".Translate().ToString()),
+                    "The native menu must expose its disabled no-path move option across the forbidden door.");
+                EndToEndAssert.False(options.Any(option => !option.Disabled &&
+                        option.Label == "GoHere".Translate().ToString()),
+                    "The cached door graph must not permit the forbidden sole exit.");
+            });
+        yield return new MapFloatMenuOpenActionStep(
+            "open the native movement menu beyond the forbidden Thin Door",
+            outsideMarker.ThingID,
+            new[] { pawn.ThingID });
+        yield return new ScreenshotStep("forbidden Thin Door visibly refuses the native move order",
+            Array.Empty<string>(), paddingPixels: 0);
+        yield return new WindowCancelActionStep("close the disabled movement menu", "Verse.FloatMenu");
+        yield return new GizmoActionStep(
+            "allow the Thin Door again through its native command",
+            new[] { door.ThingID },
+            allowDoor.RuntimeType,
+            EndToEndGizmoInteraction.Toggle,
+            stableGizmoId: allowDoor.StableId);
+
         string outsideOption = GoHereOption(context, outsideMarker);
         yield return new FloatMenuActionStep(
             "order pawn across the closed Thin Door edge",
@@ -152,7 +195,7 @@ public sealed class ThinDoorRoomWorkflowTest : IRimWorldEndToEndTest
             {
                 TraverseParms parms = TraverseParms.For(pawn);
                 bool edgeReachable = map.GetComponent<Pathing.ThinWallMapComponent>()
-                    .CanReachThroughEdges(pawn.Position, outsideMarker.Position, PathEndMode.OnCell, parms);
+                    .TryBridgeEdges(pawn.Position, outsideMarker.Position, PathEndMode.OnCell, parms);
                 bool nativeReachable = map.reachability.CanReach(
                     pawn.Position,
                     outsideMarker.Position,
@@ -303,6 +346,48 @@ public sealed class ThinDoorRoomWorkflowTest : IRimWorldEndToEndTest
             DoorFocusIds(),
             paddingPixels: 110);
 
+        yield return new AssertionStep("door bridging preserves native endpoint restrictions", _ =>
+        {
+            var failures = new List<string>();
+            IntVec3 exit = door.OwnedEdge.OppositeCell;
+            TerrainDef original = exit.GetTerrain(map);
+            try
+            {
+                map.terrainGrid.SetTerrain(exit, DefDatabase<TerrainDef>.GetNamed("WaterShallow"));
+                foreach (TraverseMode mode in new[] { TraverseMode.NoPassClosedDoorsOrWater, TraverseMode.PassAllDestroyableThingsNotWater })
+                    if (map.reachability.CanReach(door.Position, exit, PathEndMode.OnCell, TraverseParms.For(mode)))
+                        failures.Add($"{mode} gained a water destination through the bridge's immediate-finish shortcut.");
+            }
+            finally { map.terrainGrid.SetTerrain(exit, original); }
+
+            // Temperature/roof are disposable diagnostic preconditions, not a claimed player action.
+            Room inside = center.GetRoom(map);
+            var roofs = inside.Cells.ToDictionary(cell => cell, cell => map.roofGrid.RoofAt(cell));
+            float temperature = inside.Temperature;
+            Pawn probe = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+            GenSpawn.Spawn(probe, outsideMarker.Position, map);
+            try
+            {
+                foreach (IntVec3 cell in roofs.Keys) map.roofGrid.SetRoof(cell, RoofDefOf.RoofConstructed);
+                inside.Temperature = probe.SafeTemperatureRange().max + 20f;
+                TraverseParms parms = TraverseParms.For(probe, Danger.None);
+                Region destinationRegion = door.Position.GetRegion(map);
+                EndToEndAssert.Equal(Danger.Some, destinationRegion.DangerFor(probe), "The actual heated room must be moderately dangerous.");
+                EndToEndAssert.False(destinationRegion.Allows(parms, isDestination: true), "Native destination policy must reject this hot room.");
+                if (map.reachability.CanReach(probe.Position, door.Position, PathEndMode.OnCell, parms))
+                    failures.Add("Bridge immediate finish bypassed native destination-danger restrictions.");
+                if (map.reachability.CanReach(probe.Position, center, PathEndMode.OnCell, parms))
+                    failures.Add("Bridge same-district finish bypassed native destination-danger restrictions.");
+            }
+            finally
+            {
+                inside.Temperature = temperature;
+                foreach (var entry in roofs) map.roofGrid.SetRoof(entry.Key, entry.Value);
+                probe.Destroy(DestroyMode.Vanish);
+            }
+            EndToEndAssert.True(failures.Count == 0, string.Join(" | ", failures));
+        });
+
         yield return new GizmoActionStep(
             "turn Thin Door hold-open back off through the ordinary command",
             new[] { door.ThingID },
@@ -364,6 +449,25 @@ public sealed class ThinDoorRoomWorkflowTest : IRimWorldEndToEndTest
                 center.GetRoom(map),
                 (center + new IntVec3(4, 0, 0)).GetRoom(map)).ToString(),
             ["doorHoldsRoof"] = door.def.holdsRoof.ToString(),
+        });
+        yield return new AssertionStep("map removal releases a retained permission buffer after native readers finish", _ =>
+        {
+            // Last step of this disposable run: exercise Core's MapRemoved -> PathFinder.Dispose order.
+            var component = map.GetComponent<Pathing.ThinWallMapComponent>();
+            component.DisposeRequestConnectivity();
+            var native = new Unity.Collections.NativeArray<CellConnection>(map.cellIndices.NumGridCells, Unity.Collections.Allocator.Temp);
+            try
+            {
+                using (var request = new PathRequest(map, pawn.Position, outsideMarker.Position, null,
+                           TraverseParms.For(TraverseMode.NoPassClosedDoors), default, PathEndMode.OnCell, null, 0, 0, 0))
+                    component.ConnectivityFor(native, request);
+                EndToEndAssert.Equal(1, component.RequestSnapshotCount, "A closed-door request must retain its permission-specific buffer.");
+                component.MapRemoved();
+                EndToEndAssert.False(Pathing.ThinWallMapComponent.TryGet(map, out var unused), "The hot-path registration is already gone in Core removal order.");
+                map.pathFinder.Dispose();
+                EndToEndAssert.Equal(0, component.RequestSnapshotCount, "PathFinder disposal must still release the retained request buffer.");
+            }
+            finally { native.Dispose(); }
         });
     }
 

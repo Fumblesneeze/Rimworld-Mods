@@ -89,6 +89,19 @@ public sealed class ThinWallClosedAndCornerRoutingTest : IRimWorldEndToEndTest
             fixtures.Select(thing => thing.ThingID).Concat(walls.Select(wall => wall.ThingID)),
             paddingPixels: 170);
 
+        yield return new AssertionStep("native cell traversal cannot cross a non-bashable edge enclosure", _ =>
+        {
+            foreach (TraverseMode mode in new[] { TraverseMode.NoPassClosedDoorsOrWater,
+                         TraverseMode.PassAllDestroyableThings, TraverseMode.PassAllDestroyableThingsNotWater,
+                         TraverseMode.PassAllDestroyablePlayerOwnedThings })
+                EndToEndAssert.False(map.reachability.CanReach(enclosureCell, enclosureTarget.Position,
+                        PathEndMode.OnCell, TraverseParms.For(mode)),
+                    "Non-bashing native cell flood escaped the thin enclosure: " + mode);
+            EndToEndAssert.False(map.reachability.CanReach(enclosureTarget.Position, enclosureCell,
+                    PathEndMode.Touch, TraverseParms.For(cornerPawn)),
+                "Touch destination regions must not include a cell across an enclosing edge.");
+        });
+
         EndToEndFloatMenuOption[] enclosureOptions = context
             .GetRequiredService<IEndToEndFloatMenuCatalog>()
             .Query(enclosedPawn.ThingID, enclosureTarget.ThingID)

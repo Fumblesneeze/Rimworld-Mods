@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ShrinkBuilding>縮小</TW_ShrinkBuilding>
+  <TW_ShrinkBuildingDesc>表示倍率を100%、90%、80%、70%、60%、50%、100%の順に切り替えます。この建築物の見た目だけを変え、占有マスや作業位置は変えません。キャラクターや保管品は縮小されません。縮小しても位置のずれは変わりません。</TW_ShrinkBuildingDesc>
+  <TW_OffsetBuilding>位置調整</TW_OffsetBuilding>
+  <TW_OffsetBuildingDesc>表示位置を0.2マスずらします。北、北東、東、南東、南、南西、西、北西、中央の順に切り替えます。占有マス、作業、操作位置は変わりません。キャラクターや保管品は移動しません。この操作を使うまでは、近くの薄い壁に応じて表示位置を自動調整します。操作後は中央を含め、選んだ位置が維持されます。</TW_OffsetBuildingDesc>
+  <TW_ShowShrinkGizmo>建築物の縮小コマンドを表示</TW_ShowShrinkGizmo>
+  <TW_ShowOffsetGizmo>建築物の位置調整コマンドを表示</TW_ShowOffsetGizmo>
+  <TW_AppearanceSettingsHint>コマンドを非表示にしても保存済みの調整は残ります。見た目だけを変える機能です。壁、ドア、連結する構造物は対象外です。</TW_AppearanceSettingsHint>
+  <TW_OffsetCenter>中央</TW_OffsetCenter>
+  <TW_OffsetN>北</TW_OffsetN>
+  <TW_OffsetNE>北東</TW_OffsetNE>
+  <TW_OffsetE>東</TW_OffsetE>
+  <TW_OffsetSE>南東</TW_OffsetSE>
+  <TW_OffsetS>南</TW_OffsetS>
+  <TW_OffsetSW>南西</TW_OffsetSW>
+  <TW_OffsetW>西</TW_OffsetW>
+  <TW_OffsetNW>北西</TW_OffsetNW>
+</LanguageData>

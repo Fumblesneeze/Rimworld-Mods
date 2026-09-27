@@ -125,13 +125,7 @@ public class Designator_ThinWall : Designator_Build
         ThingDef? stuff,
         Color stateColor,
         float stateWeight,
-        ThinWallSide side) => ThinWallRenderer.StateEdgeMaterial(
-            buildDef,
-            stuff,
-            stateColor,
-            stateWeight,
-            side,
-            ThinWallUtility.IsThinDoorDef(buildDef));
+        ThinWallSide side) => ThinWallRenderer.BlueprintMaterial(stateColor);
 
     public override void SelectedProcessInput(UnityEngine.Event ev)
     {

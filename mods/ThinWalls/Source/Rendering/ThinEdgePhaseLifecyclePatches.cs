@@ -26,8 +26,9 @@ public static class ThinEdgePhaseSpawnPatch
 public static class ThinEdgePhaseDeSpawnPatch
 {
     [HarmonyPrefix]
-    public static void Prefix(Thing __instance)
+    public static void Prefix(Thing __instance, out (Map Map, OwnedEdge Edge)? __state)
     {
+        __state = null;
         Map? map = __instance.Map;
         if (map == null || __instance is IThinEdgeStructure ||
             !ThinWallUtility.TryGetOwnedEdge(__instance, out OwnedEdge edge))
@@ -35,6 +36,13 @@ public static class ThinEdgePhaseDeSpawnPatch
             return;
         }
 
-        map.GetComponent<ThinWallMapComponent>().NotifyPlannedEdgeChanged(edge);
+        __state = (map, edge);
+    }
+
+    [HarmonyPostfix]
+    public static void Postfix(Thing __instance, (Map Map, OwnedEdge Edge)? __state)
+    {
+        if (__state.HasValue && !__instance.Spawned)
+            __state.Value.Map.GetComponent<ThinWallMapComponent>().NotifyPlannedEdgeChanged(__state.Value.Edge);
     }
 }

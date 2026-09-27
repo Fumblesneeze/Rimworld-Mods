@@ -8,6 +8,30 @@ namespace ThinWalls.Defs.Tests;
 [TestFixture]
 public sealed class ThinWallSourceContractTests
 {
+    [TestCase("TW_ThinWall")]
+    [TestCase("TW_ThinDoor")]
+    public void ThinEdgePhasesUseNativeBlueprintPixelsWithoutCellWideReplacementTags(string defName)
+    {
+        XElement def = XDocument.Load(SourcePath("Defs", "ThingDefs", "ThinWalls.xml"))
+            .Root!.Elements("ThingDef").Single(candidate => (string?)candidate.Element("defName") == defName);
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)def.Element("building")?.Element("blueprintGraphicData")?.Element("texPath"),
+                Is.EqualTo("Things/Building/Linked/Wall_Blueprint_Atlas"));
+            Assert.That((string?)def.Element("replaceTags")?.Attribute("Inherit"), Is.EqualTo("False"));
+        });
+    }
+
+    [TestCase("TW_ThinWall", 135d)]
+    [TestCase("TW_ThinDoor", 850d)]
+    public void ConstructionWorkIsHalfTheCoreCounterpart(string defName, double coreBaseWork)
+    {
+        XElement def = XDocument.Load(SourcePath("Defs", "ThingDefs", "ThinWalls.xml"))
+            .Root!.Elements("ThingDef").Single(candidate => (string?)candidate.Element("defName") == defName);
+        Assert.That((double)def.Element("statBases")!.Element("WorkToBuild")!,
+            Is.EqualTo(coreBaseWork / 2d));
+    }
+
     [Test]
     public void ThinWallDefIsHalfStrengthStandableNonEdificeAndNeverSupportsRoofs()
     {
@@ -18,6 +42,8 @@ public sealed class ThinWallSourceContractTests
         Assert.Multiple(() =>
         {
             Assert.That((string?)def.Element("thingClass"), Is.EqualTo("ThinWalls.Buildings.Building_ThinWall"));
+            Assert.That((string?)def.Element("drawerType"), Is.EqualTo("MapMeshAndRealTime"),
+                "the cached source-bound wall needs a realtime pass only for attached Core damage");
             Assert.That((string?)def.Element("canGenerateDefaultDesignator"), Is.EqualTo("false"));
             Assert.That((string?)def.Element("costStuffCount"), Is.EqualTo("3"));
             Assert.That((string?)def.Element("statBases")?.Element("MaxHitPoints"), Is.EqualTo("150"));

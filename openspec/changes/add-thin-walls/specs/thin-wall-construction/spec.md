@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Independent edge construction phases in a single cell
+Thin Walls and Thin Doors SHALL permit one blueprint/frame on each distinct shared edge of a cell.
+Cell-wide replacement tags SHALL NOT cancel another edge's frame. Identical shared-edge duplicates
+remain rejected from either owner. This includes rotated single-click L and one-cell-interior U shapes.
+
+#### Scenario: Click rotate click preserves each earlier blueprint
+- **WHEN** the player leaves god mode off and clicks South, rotates to East and clicks, then rotates to North and clicks the same cell without deselecting the tool
+- **THEN** three separately selectable blueprints remain with their original identities, rotations and Stuff
+- **AND** retrying any occupied edge rejects the duplicate without changing those blueprints
+- **AND** a one-cell small shelf remains a legal blueprint inside the U; larger footprints crossing any edge remain rejected
+
+#### Scenario: A Thin Door frame does not cancel a different edge
+- **GIVEN** a Thin Door frame on one edge of a cell
+- **WHEN** the player designates a Thin Door on a different edge of the same cell
+- **THEN** the first frame and its resources remain intact
+
 Owning mod: **Thin Walls** (`fumblesneeze.thinwalls`) at `mods/ThinWalls`.
 
 ### Requirement: One tool provides a rotatable click preview and right-hand line drags
@@ -48,6 +64,16 @@ Each north, east, south, or west segment SHALL be an independently selectable, c
 
 ### Requirement: Thin walls use half wall durability and ceiling-half material cost
 The `TW_ThinWall` Def SHALL use the same Metallic, Woody, and Stony Stuff categories as Core `Wall`, SHALL cost `ceil(5 / 2) = 3` units of the selected Stuff, and SHALL have base maximum hit points `300 / 2 = 150`. Normal Stuff stat factors SHALL apply to both values through RimWorld's native construction/stat system.
+
+Thin Wall base `WorkToBuild` SHALL be `135 / 2 = 67.5`, half the inspected Core wall's base work,
+instead of the erroneous 600. Thin Door retains `850 / 2 = 425`. Native Stuff work factors apply
+normally, including factors supplied by new modded materials. The ratio is to the Core base values;
+this does not install a global stat patch or follow another mod's wall-only work override.
+
+#### Scenario: Half construction labor
+- **WHEN** a player designates a Thin Wall and a Core wall of the same Stuff
+- **THEN** their base construction work is 67.5 and 135 respectively before the same native Stuff work factors
+- **AND** ordinary construction jobs use the reduced Thin Wall work without changing the selected resources
 
 #### Scenario: Matching Stuff comparison
 - **WHEN** the player inspects a Thin Wall and a Core wall made from the same Stuff

@@ -1,3 +1,4 @@
+using RimWorld;
 using ThinWalls.Buildings;
 using ThinWalls.Geometry;
 using UnityEngine;
@@ -7,6 +8,13 @@ namespace ThinWalls.Rendering;
 
 public static class ThinWallRenderer
 {
+    public static void PrintBlueprint(SectionLayer layer, OwnedEdge edge) => NativeWallMeshPrinter.Print(
+        layer, ThinWallRenderGeometry.StructuralCenter(edge, AltitudeLayer.Blueprint.AltitudeFor()),
+        HybridWallRenderer.BlueprintMaterial(ThingDefGenerator_Buildings.BlueprintColor),
+        NativeWallMeshPlan.Straight(edge.Shared.PositiveSide == ThinWallSide.North));
+
+    public static Material BlueprintMaterial(Color color) => HybridWallRenderer.BlueprintMaterial(color);
+
     public static void PrintCompleted(SectionLayer layer, Building_ThinWall wall)
     {
         HybridWallRenderer.PrintCompleted(layer, wall);
@@ -19,7 +27,7 @@ public static class ThinWallRenderer
 
     public static void Dirty(Map map, OwnedEdge edge)
     {
-        foreach (IntVec3 cell in ThinWallRenderGeometry.IncidentCells(edge))
+        foreach (IntVec3 cell in ThinWallRenderGeometry.MeshDependencyCells(edge))
         {
             if (cell.InBounds(map))
             {
@@ -63,7 +71,7 @@ public static class ThinWallRenderer
     {
         Color stuffColor = stuff == null ? Color.white : buildDef.GetColorForStuff(stuff);
         Color finalColor = Color.Lerp(stuffColor, stateColor, Mathf.Clamp01(stateWeight));
-        return SolidColorMaterials.SimpleSolidColorMaterial(finalColor);
+        return HybridWallRenderer.CoreWallStateMaterial(buildDef, stuff, finalColor);
     }
 
     public static void DrawDoor(Building_ThinDoor door, float openPct)

@@ -1,6 +1,11 @@
 # Thin Walls cumulative rendering requirement matrix
 
-This matrix is the human-review checklist for the Thin Walls renderer. The capability specs remain normative; this document makes the accumulated decisions auditable in one place so a later correction cannot silently regress an earlier requirement.
+**Historical traceability matrix; superseded 2026-09-04.** Use the current rendering capability and
+[`2026-09-04-core-material-mesh-pivot.md`](2026-09-04-core-material-mesh-pivot.md) for implementation
+and acceptance. This matrix preserves where earlier user requirements came from; it is not the active
+renderer checklist. Observable geometry, two-sided readability, and user annotations remain relevant.
+Its OSB/rivet/painted-damage recipes, synthetic phase strokes, fixed raster repair bands, contour-only
+hybrid edits, and old door tone/interval prescriptions are specifically superseded.
 
 Generated concept sheets are disposable requirements-elicitation aids only. A concept sheet passes review only when every active row below passes together. A positive annotation accepts only the named property at that location; it does not accept the whole sheet or waive another row. No generated concept pixel is a runtime, package, Workshop, or visual-style input.
 
@@ -42,7 +47,7 @@ Generated concept sheets are disposable requirements-elicitation aids only. A co
 
 | ID | Requirement | Mechanical or visual acceptance |
 | --- | --- | --- |
-| `H-01` | A valid regular/Thin contact is one linked silhouette. | The regular wall uses its ordinary linked state to its cell perimeter; the constant-width Thin arm begins outside it. The shared top is continuous and has no internal outline. |
+| `H-01` | A valid regular/Thin contact is one linked silhouette. | The Thin arm reaches the shared vertex and uses the same complementary diagonal surface-plane seam as the equivalent Thin-only junction. Beyond that seam the regular continuation remains ordinary-width and the Thin continuation remains edge-width; there is no black butt line or pasted overlay. |
 | `H-02` | Width changes are square and localized. | The transition is one abrupt axis-aligned shoulder at the regular tile perimeter. Non-straight Core slots classify affected pixels only; every final native top/front/side byte comes from straight link 10 or 5. No diagonal angle, staircase, bevel, stretched Core corner, or transition distributed through the regular cell appears. |
 | `H-03` | Exact incidence controls connection. | Endpoint, corner, and side-T contacts join only when their topology shares the exact grid vertex/perimeter. Offset, parallel, or screen-overlapping near-misses keep separate contours. |
 | `H-04` | A side-T remains vertex-centered. | Both adjacent regular tiles replace only their half of the seven-pixel contact's two-dark-plus-one-antialias contour depth with phase-aligned regular-material top/front/side structure; the receiving regular run stays straight; one canonical owner emits the exterior Thin gutter; no branch is displaced into either cell, and no transparent slit or regenerated outline survives inside the union. |

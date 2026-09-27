@@ -188,18 +188,23 @@ public static class ThinDoorMovementPatches
     [HarmonyPrefix]
     public static void TickPrefix(Building_Door __instance, int ___ticksUntilClose, out ThinDoorTickState __state)
     {
-        if (__instance is not Buildings.Building_ThinDoor door || !door.Spawned)
+        if (__instance is not Buildings.Building_ThinDoor door || !door.Spawned ||
+            !door.Open || ___ticksUntilClose <= 0)
         {
             __state = default;
             return;
         }
 
-        bool crossingPawn = door.Position.GetThingList(door.Map)
-            .OfType<Pawn>()
-            .Any(pawn => pawn.Spawned && ThinWallUtility.StepCrossesEdge(
-                pawn.Position,
-                pawn.pather.nextCell,
-                door.OwnedEdge.Shared));
+        bool crossingPawn = false;
+        foreach (Thing thing in door.Position.GetThingList(door.Map))
+        {
+            if (thing is Pawn pawn && pawn.Spawned && ThinWallUtility.StepCrossesEdge(
+                    pawn.Position, pawn.pather.nextCell, door.OwnedEdge.Shared))
+            {
+                crossingPawn = true;
+                break;
+            }
+        }
         __state = new ThinDoorTickState(___ticksUntilClose, crossingPawn);
     }
 

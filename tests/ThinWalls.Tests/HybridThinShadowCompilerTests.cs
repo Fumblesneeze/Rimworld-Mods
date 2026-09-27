@@ -73,6 +73,34 @@ public sealed class HybridThinShadowCompilerTests
         });
     }
 
+    [TestCase(HybridWallRayMask.North, 27, 33, 30, 59)]
+    [TestCase(HybridWallRayMask.East, 30, 59, 27, 33)]
+    [TestCase(HybridWallRayMask.South, 27, 33, 0, 29)]
+    [TestCase(HybridWallRayMask.West, 0, 29, 27, 33)]
+    public void SingleRayShadowStopsAtTheVertexWithoutLongitudinalOverhang(
+        HybridWallRayMask ray,
+        int expectedMinX,
+        int expectedMaxX,
+        int expectedMinY,
+        int expectedMaxY)
+    {
+        HybridRegularShadowPlan plan = HybridThinShadowCompiler.Compile(ray, HybridWallRayMask.None);
+        var occupied = Enumerable.Range(0, 60)
+            .SelectMany(y => Enumerable.Range(0, 60)
+                .Where(x => plan.Contains(x, y))
+                .Select(x => new { X = x, Y = y }))
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(occupied.Min(cell => cell.X), Is.EqualTo(expectedMinX));
+            Assert.That(occupied.Max(cell => cell.X), Is.EqualTo(expectedMaxX));
+            Assert.That(occupied.Min(cell => cell.Y), Is.EqualTo(expectedMinY));
+            Assert.That(occupied.Max(cell => cell.Y), Is.EqualTo(expectedMaxY));
+            Assert.That(plan.OccupiedCount, Is.EqualTo(30 * 7));
+        });
+    }
+
     [Test]
     public void CastingEdgesUseTheNativePrinterShadowSidesAndTriangleWinding()
     {

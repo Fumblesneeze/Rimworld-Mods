@@ -1,3 +1,10 @@
+> **2026-09-04 pivot:** checked rendering/asset/publication tasks below record historical work, not
+> acceptance of the replacement. All earlier visual approvals and publishing captures are superseded.
+> Section 22 is the active source-only mesh work queue. Section 21's still-required placement and
+> measurement outcomes carry into it; its CPU-painted phase-seam implementation is cancelled, not
+> completed. Gameplay contracts remain required and need focused regression where the new renderer
+> or phase wiring affects them.
+
 ## 1. mods/ThinWalls — Product and test scaffolding
 
 - [x] 1.1 Create the product project, package metadata, Harmony/Core dependency order, Def folders, localization folders, release-source layout, and `fumblesneeze.thinwalls` repository-local package output.
@@ -174,13 +181,156 @@
 - [x] 20.5 LIVE: on the reviewed build, run fresh minimized exact-PID Gateway player workflows and retain close/ordinary/far screenshots for all 16 Thin masks, representative shadows, and opposing workbenches; personally inspect them and give only unlabeled screenshots to an independent reviewer. Supersede every earlier topology/workbench/publishing capture until this passes.
 - [x] 20.6 RELEASE INPUTS: complete the fresh Gateway-based native player workflow, promote only newly accepted in-game renders, deterministically rebuild affected About/Workshop cards with no generated imagery, verify hashes/package parity, and stop at the local publishing handoff.
 
-## 21. mods/ThinWalls — User-rejected publication geometry and measurable acceptance
+## 21. mods/ThinWalls — Superseded work queue; outcomes carried into section 22
 
-- [ ] 21.1 SPEC: retain the three 2026-08-20 annotated user references with SHA-256; formalize the itemized publication-placement audit, zero-gap/facing chair rule, unobstructed door approaches, wall-headed bed, edge-balance pixel measurement, direction-specific building-clearance measurement, Thin-only internal Core-style perpendicular surface seams, and seam-free regular-wall side contacts without diagonal exterior width transitions.
-- [ ] 21.2 TDD RED/GREEN: replace the symmetric `22/60` adjacent-building assumption with actual direction/rotation/phase alpha-clearance measurement; prove the pinned north/south Core Hand Tailoring Bench pair has no final-pixel wall overlap or excessive aisle across completed, blueprint, frame, and cached map-mesh rendering.
-- [ ] 21.3 TDD RED/GREEN: derive designator-card cell boundaries from measured in-game grid/structural pixels and fail if the complete horizontal or north-south Thin silhouette is not bisected within one output pixel; remove hard-coded misleading overlay coordinates.
-- [ ] 21.4 TDD RED/GREEN: add deterministic Thin-only L/T/+ phase-seam geometry and seam-free mixed regular-wall side contacts from measured Core donors; require continuous horizontal top/facade, one-pixel internal diagonal phase seams only for Thin-only perpendicular unions, byte-continuous regular-wall tops, unchanged alpha/exterior contour/shadow, and no wedge, tab, pasted overlap, or shortened arm in every rotation.
-- [ ] 21.5 REDESIGN: revise the realistic-base design record and native room fixture so the divider position and both regular-wall contacts align, the bed head is visibly against its backing wall, every pictured chair is immediately adjacent to and faces its served table/workbench, every door/approach and primary aisle is clear, and no unexplained prop remains.
-- [ ] 21.6 REVIEW/VERIFY: run focused tests, the owning Release build, package checks, strict OpenSpec validation, and independent scoped code review; resolve every finding before live acceptance.
-- [ ] 21.7 LIVE: on the reviewed build, run fresh isolated minimized Gateway player workflows for preview rotation/placement, two-sided workbenches, all Thin-only L/T/+ rotations, mixed regular-wall unions, doors, and the redesigned room; personally inspect close/ordinary/far screenshots and retain the exact causal actions and pixel measurements.
-- [ ] 21.8 PUBLICATION: give unlabeled in-game renders to an independent visual reviewer and separately require an itemized publication-placement audit; only after both pass, promote the fresh captures, deterministically rebuild every affected title/About/Workshop card, verify exact source/output measurements and hashes, and present the renders to the user for review without Steam mutation.
+- Superseded by section 22 — 21.1 SPEC: retain the three 2026-08-20 annotated user references with SHA-256; formalize the itemized publication-placement audit, zero-gap/facing chair rule, unobstructed door approaches, wall-headed bed, edge-balance pixel measurement, direction-specific building-clearance measurement, Thin-only internal Core-style perpendicular surface seams, and seam-free regular-wall side contacts without diagonal exterior width transitions.
+- Superseded by section 22 — 21.2 TDD RED/GREEN: replace the symmetric `22/60` adjacent-building assumption with actual direction/rotation/phase alpha-clearance measurement; prove the pinned north/south Core Hand Tailoring Bench pair has no final-pixel wall overlap or excessive aisle across completed, blueprint, frame, and cached map-mesh rendering.
+- Superseded by section 22 — 21.3 TDD RED/GREEN: derive designator-card cell boundaries from measured in-game grid/structural pixels and fail if the complete horizontal or north-south Thin silhouette is not bisected within one output pixel; remove hard-coded misleading overlay coordinates.
+- Superseded by section 22 — 21.4 TDD RED/GREEN: add deterministic Thin-only L/T/+ phase-seam geometry and seam-free mixed regular-wall side contacts from measured Core donors; require continuous horizontal top/facade, one-pixel internal diagonal phase seams only for Thin-only perpendicular unions, byte-continuous regular-wall tops, unchanged alpha/exterior contour/shadow, and no wedge, tab, pasted overlap, or shortened arm in every rotation.
+- Superseded by section 22 — 21.5 REDESIGN: revise the realistic-base design record and native room fixture so the divider position and both regular-wall contacts align, the bed head is visibly against its backing wall, every pictured chair is immediately adjacent to and faces its served table/workbench, every door/approach and primary aisle is clear, and no unexplained prop remains.
+- Superseded by section 22 — 21.6 REVIEW/VERIFY: run focused tests, the owning Release build, package checks, strict OpenSpec validation, and independent scoped code review; resolve every finding before live acceptance.
+- Superseded by section 22 — 21.7 LIVE: on the reviewed build, run fresh isolated minimized Gateway player workflows for preview rotation/placement, two-sided workbenches, all Thin-only L/T/+ rotations, mixed regular-wall unions, doors, and the redesigned room; personally inspect close/ordinary/far screenshots and retain the exact causal actions and pixel measurements.
+- Superseded by section 22 — 21.8 PUBLICATION: give unlabeled in-game renders to an independent visual reviewer and separately require an itemized publication-placement audit; only after both pass, promote the fresh captures, deterministically rebuild every affected title/About/Workshop card, verify exact source/output measurements and hashes, and present the renders to the user for review without Steam mutation.
+
+## 22. mods/ThinWalls — Source-only native-material mesh pivot
+
+- [x] 22.1 RESEARCH/SPEC: inspect the installed Naname reference read-only, pin source/version identities, distinguish its material/UV mechanism from owned UI assets, record the source-only plan and explicit supersession, and independently review/strictly validate the revised contract.
+- [ ] 22.2 MEASURE: revalidate current Core wall/door/damage/phase material identities and independent top/front/both-side/contour landmarks; retain source/reference comparisons and numeric mesh/UV target maps without adopting Naname coordinate presets or copying any product pixels.
+- [ ] 22.3 TDD/TRACER: RED/GREEN one native-source horizontal straight and its native designation-to-render workflow, then the independently mapped north-south form and both owner descriptions. Prove source texture/mask/shader identity, full height, 7/60 top, balanced projection, Core outline/contrast, and repeat-phase continuity before adding junctions.
+- [ ] 22.4 TDD/THIN UNION: implement the 16 Thin masks as shared-boundary source-region meshes, with exact surface ownership, no per-pixel quads, internal end faces, extra contours, gaps, or pasted posts. Clip each single-ray terminal exactly to its grid vertex longitudinally while retaining the full balanced normal projection; verify fixed-camera L/T/+ occlusion and source-defined internal perspective seams.
+- [x] 22.5 TDD/MIXED UNION: specialize only the exact four-rotation, two-receiver regular-wall side-T by retaining one uninterrupted Core-width receiver run and restoring the previously accepted centered source-derived diagonal shoulder inside one bounded aperture; forbid terminal caps, exterior-contour changes, displaced branches, vertical seams, and pasted overlays; prove a lone regular-wall cell is ignored without suppressing either native participant, and restore native printing on final-contact removal.
+- [ ] 22.6 TDD/PHASES: wire hover/blueprint/frame/completed/selection to the same geometry, retain Q/E versus multi-cell drag authority, use Core door mover sources for clipped moving leaves, and use only Core damage/shadow materials clipped/derived from final owner surfaces.
+- [ ] 22.7 TDD/COEXISTENCE: retain exhaustive footprint-crossing rejection for wall/door phases in all rotations; recalculate minimal directional building render displacement from actual alpha and new mesh bounds; verify no occlusion or artificial aisle in independently measured live renders.
+- [ ] 22.8 RETIRE/VERIFY: remove obsolete surface painters, runtime painted-atlas/material-color baking, rejected renderer paths, superseded tests and publishing inputs only after replacement coverage; run focused nonzero tests, owning build/package checks, independent code review, and strict OpenSpec validation.
+- [ ] 22.9 LIVE/REVIEW: on the reviewed build run fresh minimized Gateway native workflows and cumulative close/ordinary/far material/phase/junction/door/damage/shadow/two-sided-building evidence; personally inspect it, pass context-free independent visual review, and retain exact build/source/process/actions/measurements/log/config/cleanup identities.
+- [ ] 22.10 PUBLICATION: redesign credible scenes with the realistic-base skill, pass itemized placement audits and pixel gates, promote only fresh accepted in-game captures, rebuild affected About/Workshop cards and source-only material descriptions, and present local renders for user review without Steam mutation.
+
+### 22.x implementation evidence in progress — 2026-09-04
+
+- Horizontal and north-south Thin-only source meshes are implemented from the measured Core 60-pixel
+  Bricks/Planks/Smooth inner tiles. Focused tests retain the top/front/side/outline landmarks, balanced
+  34/60-cell envelope, 7/60 top, UV phase, and actual linked material identity.
+- All 16 Thin-only linked masks are implemented as native-material rectangles and complementary
+  face triangles. Fresh native designations produced an ordinary/far catalog at 40.9088135 and
+  15.5553589 pixels per cell without a `TW_` texture binding. The context-free visual review found
+  no gap, overlap, perspective, connection, or far-zoom identity defect in this narrow catalog.
+- The temporary capless-butt interpretation of the mixed side-T was superseded after direct comparison
+  with the previously accepted in-game reference. South, north, east, and west Thin contacts into exact
+  two-cell regular runs now retain the receiver's actual linked Core atlas state outside one bounded
+  aperture and restore the centered source-derived diagonal shoulder inside it. The receiver run remains
+  uninterrupted; no branch is displaced, no terminal cap survives inside the admitted junction, and
+  one-cell regular contacts are deliberately ignored with both native terminal silhouettes intact.
+- The retired 120-pixel regular compositor, runtime texture builder, and their implementation-shape
+  tests are removed. Static Thin Wall damage now uses a realtime attached pass bound directly to Core
+  scratch materials; `20260904T202204186Z` visibly retained severe scratches on the edge surface.
+- The rejected one-regular-cell corner compositor is removed. Single-ray endpoint bounds failed in all
+  four rotations at `20260904T225116935Z` and passed with exact longitudinal `[vertex, midpoint]` bounds,
+  full normal projection, convex winding, and fan area at `20260904T230620278Z`. Fresh minimized native
+  designations in `20260904T230101520Z` retained all four admitted two-receiver side-Ts and showed four
+  intentionally ignored one-wall contacts with independent native endpoints.
+- The Core atlas gate now hashes the one-time decoded RGBA readback per concrete texture instance instead
+  of accepting name and dimensions alone. The missing runtime comparison failed at
+  `20260904T225842722Z`; the exact Bricks/Planks/Smooth identity tests passed at `20260904T225947893Z`,
+  and the running Bricks source produced the pinned
+  `9103d223a5c8c5c38cda6b3b7c423e2d8c8dfaa5fcc719311ef0013d68b12044` identity in
+  `20260904T225700101Z`.
+- The ignored-contact terminal shadow initially retained one inclusive center row/column for its south
+  and west rays: four-direction bounds failed 2/4 cases at `20260904T231241125Z` and passed 4/4 after
+  the exact `Center - 1` correction at `20260904T231308100Z`; the full Unit suite then passed 340/340
+  at `20260904T231317572Z`, and independent review found no remaining issue in this resolution.
+- Corrected reviewed build DLL `362157A5DFE4300AD39C8171277648C283AC26E7EE3BCE5749DDCA4CE87D7746`
+  passed the fresh minimized contact-boundary player workflow `20260905T082133808Z` and cumulative
+  37-capture native visual/material workflow `20260905T082350594Z`. The focused workflow used native
+  designation and deconstruction across a real map-section boundary: all four exact two-receiver
+  side-Ts restored the centered diagonal shoulder while preserving the native Core receiver, all four
+  lone receiver contacts kept independent caps, the offset pair remained disconnected, and receiver
+  removal immediately restored the ordinary Thin terminal. Personal inspection found no gap, displaced
+  centerline, longitudinal endpoint overhang, or shadow discontinuity. A fresh context-free reviewer
+  independently read all four close-ups as coherent rotations of the same thick-run/thin-branch T and
+  found no rejection-level seam, hole, overdraw, displaced centerline, endpoint overhang, or shadow
+  discontinuity; the wider catalog remained readable. Unit passed 327/327 at
+  `20260905T082046087Z`, Harmony passed 7/7 at `20260905T082051014Z`, and the scoped source/asset Def
+  contracts passed 8/8 at `20260905T082103365Z`. Package digest
+  `B020637B896A47BE4DC050A61516A5E67AC43ACC704326A47D949EBE6C2CA077`
+  passed the allowlist check; strict OpenSpec validation passed 12/12. Broader unresolved visual rows
+  remain explicit under 22.9 rather than being waived by acceptance of this corrected mixed-union slice.
+- Retained RED/GREEN evidence includes `20260904T175507838Z` -> `20260904T175557044Z` for the superseded
+  first mixed aperture, the live painted-source RED `20260904T175924311Z` -> native-source run
+  `20260904T180200016Z`, capless-plan compile RED `20260904T232535441Z` -> 8/8 GREEN
+  `20260904T232714160Z`, removed-Core-interception RED `20260904T234012707Z` -> GREEN
+  `20260904T234316089Z`, and admission-API compile RED `20260904T234138909Z` -> 17/17 GREEN
+  `20260904T234300011Z`. Independent scoped code review found no remaining issue in the exact
+  native-receiver/capless-stem slice. The unsupported future Core-source diagnostic fallback and the
+  broader visual findings remain explicit open work rather than being waived by this slice.
+
+## 23. mods/ThinWalls — Construction phases, content compatibility, and compact enclosures
+
+- [x] 23.1 WORK: reduce Thin Wall base construction work to 67.5 (half Core's 135), retaining native Stuff factors; verify the finalized same-material ratio and an ordinary hauling/construction workflow. Thin Door remains 425 (half 850). Reviewed native runs: `20260905T110606171Z` and `20260905T110916829Z`.
+- [ ] 23.2 MATERIALS: replace the former exact atlas fingerprint admission gate with capability-based native material resolution; preserve shader, mask, both colors, and source UV transforms. Verify actual material families and retain explicit limits on untested optional-mod claims.
+- [ ] 23.3 PHASES: use the native wall blueprint atlas with the Thin mesh once, including the pre-click designator ghost; preserve distinct same-cell edges through native click/rotate/click and blueprint-to-frame construction. Reject only the duplicate physical edge, including an opposite-owner designation.
+- [ ] 23.4 SELECTION: keep native selection bracket graphics/animation but measure their edge-centered 1 by 34/60 envelope for wall/door blueprints, frames, and completed buildings in all orientations.
+- [ ] 23.5 COMPACT U: test all four one-cell-interior U orientations and a native small shelf, retaining three edge identities, legal placement, stable logical position, and bounded non-jittering render offsets. Measure opposing clearances. If the native sprite cannot fit by translation, retain an explicit failed visual gate pending an agreed rendering policy; do not silently crop or scale.
+- [ ] 23.6 REVIEW/LIVE: resolve independent scoped review, run affected host/package/spec checks, then personally inspect the reviewed build's native construction, placement, material, selection, and mixed-contact workflows in fresh minimized Gateway processes. Keep unresolved visual rows and publication work open.
+
+### 23.x implementation/acceptance boundary — 2026-09-05
+
+The current reviewed package passed six scoped minimized native workflows (materials/menu icons,
+ordinary wall lifecycle, funded co-located door frames, footprint boundaries, mixed contacts, and four
+compact U rotations). The full-atlas map/icon defects are removed; different-edge blueprint IDs and
+funded frame resources survive further designations; selection follows the canonical edge. Source
+fingerprints no longer reject content. Actual Core wood/granite/steel/plasteel/uranium/gold/jade placements
+passed; diagnostic Material cloning is supporting evidence only, not a blanket optional-mod claim.
+
+The compact U remains a failed visual case: opposing walls leave 26/60 cells of projected width while
+the native small shelf occupies 64/60. Translation alone cannot fit it. The impossible-axis offset stays
+stable at zero, logical placement is valid, and no scaling/cropping has been silently added. A size/depth
+policy needs user direction before visual acceptance. Broader phase/junction/material/zoom and publication
+rows remain open. The local evidence ledger is
+`artifacts/ThinWalls/2026-09-05-construction-phases/review-and-verification.md`.
+
+## 24. mods/ThinWalls — Remove unnecessary scans and inactive-map work
+
+- [ ] 24.1 RED/GREEN: prove ordinary native movement on a map without Thin structures allocates no Thin connectivity grid, then remove repeated map-component scans and bypass empty-map connectivity work while preserving first/final-edge transitions.
+- [x] 24.2 SIMPLIFY: remove unnecessary door-list sorting/filter allocations, inactive door countdown occupancy scans and duplicate owner-region invalidation; preserve door access and scheduled buffer lifetime.
+- [x] 24.3 REVIEW/VERIFY: resolve independent scoped review, run affected nonzero host checks, validate the package/spec, and retain reviewed build identity.
+- [x] 24.4 LIVE: personally inspect fresh minimized native movement, first-edge construction/final removal, closed/corner routing, door opening/access/hold-open/closing and save/load workflows; retain action/result screenshots, logs and cleanup. Scope performance conclusions to measured evidence.
+
+2026-09-05 scan-cleanup verification: the reviewed DLL `9E7EB2A717BE3CF4A10C1B8CD87127BD349511DD365DDAB615D08CA8DA999BA9`
+is installed locally. Five scoped native workflows passed in six fresh minimized runs, including a
+reviewed extension that visibly captures a forbidden door's disabled move menu before allowing and
+crossing it. The acting agent inspected all retained action/result screenshots. Thirty focused host
+checks pass, normal configuration/preferences match before/after, and all exact processes, temporary
+test staging and credentials were cleaned. Evidence:
+`artifacts/ThinWalls/2026-09-05-remove-unnecessary-scans/review-and-verification.md`.
+24.1 remains open only for its historical native empty-overlay RED record: host component-cache
+RED/GREEN and the final native empty-overlay GREEN exist, but the old-build failing native allocation
+run was blocked while the user game was open and was not retrospectively manufactured. No new colony
+FPS or stall-reduction measurement is claimed.
+
+## 25. mods/ThinWalls — Enclosed-room access, bridge correctness, and stale path-delta fix
+
+- [x] 25.1 RED (live): reproduced the player-reported failures on an isolated Harmony/Core/ThinWalls/Gateway
+  map after native thin-wall/door construction: repeated native `ran out of path nodes while pathing`
+  errors when ordering a drafted colonist into the sealed room, and the reachability bridge
+  intermittently returning false (`bridge=False, native=True`) after natural construction. Captured in
+  the gateway log ring of run `20260920T130416937Z-manual` and preserved under
+  `artifacts/ThinWalls/2026-09-20-thin-room-pathing/`.
+- [x] 25.2 RED→GREEN (native E2E): new `thin-walls.native-enclosed-room-access` workflow — natural
+  colonist construction of a 19-wall room plus one east Thin Door, thick-wall roof-extension anchor,
+  repeated drafted interior/exterior orders, and a zero-new-pathfinder-failure assertion. Failed on the
+  unfixed build (`bridge=False` menu rejection and truncated 2-node corner-slip diagnostic path) and
+  passes after the fixes: run `20260920T190935377Z`.
+- [x] 25.3 GREEN (host): `ThinEdgeBridgeReachability` no longer discards a crossing after its first
+  attempt, so searches re-process it from every newly opened cell; focused regression
+  `APawnAlreadyOnTheFarSideCanStillReachTheFirstCrossingsExit` added; ThinWalls.Unit 359/359.
+- [x] 25.4 GREEN (host): `NotifyCompletedEdgeChanged` now issues native path-data deltas for every
+  `ThinWallConnectivity.Removals` cell (six per edge) instead of only the two owners, so vanilla's
+  incremental gather cannot leave endpoint-crossing diagonal bits stale; covered by the E2E
+  `pathNodes > 3` corner-slip assertion plus existing SparseEdgeMask connectivity contracts.
+- [x] 25.5 REVIEW/LIVE: independent scoped code review resolved (bridge termination verified, vacuous
+  roof assertion tightened, dead fields/duplication removed), remaining focused host suites rerun
+  green, package/spec validation passed, and the reviewed build (`FC68B857...`) passed the minimized
+  live player workflow: native designator room + door, natural construction, drafted native move
+  order into the sealed interior arrived with a clean log, and completed-wall selection brackets were
+  personally inspected hugging the edge envelope (`selection-closeup2.png`). Evidence:
+  `artifacts/ThinWalls/2026-09-20-thin-room-pathing/review-and-verification.md`.

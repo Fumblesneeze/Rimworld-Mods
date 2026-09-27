@@ -9,16 +9,31 @@ namespace ThinWalls.Rooms;
 
 public static class ThinEdgeRegionUtility
 {
-    private static readonly System.Reflection.MethodInfo DirtyRegionForThing =
-        AccessTools.Method(typeof(RegionDirtyer), "DirtyRegionForThing");
     private static readonly System.Reflection.MethodInfo NotifyWalkabilityChanged =
         AccessTools.Method(typeof(RegionDirtyer), "Notify_WalkabilityChanged");
+
+    public static void NotifyChunkBoundaryChanged(Map map, OwnedEdge edge)
+    {
+        // First/final ownership changes span format on both sides of a native chunk boundary.
+        // Include interior fence/portal regions too: every link within the chunk changes format.
+        // Probe only the two incident chunks plus their receiver ring; never dirty the whole map.
+        var chunks = new HashSet<IntVec3>();
+        foreach (IntVec3 cell in new[] { edge.Cell, edge.OppositeCell })
+        {
+            if (!cell.InBounds(map)) continue;
+            var origin = new IntVec3(cell.x / Region.GridSize * Region.GridSize, 0,
+                cell.z / Region.GridSize * Region.GridSize);
+            if (!chunks.Add(origin)) continue;
+            foreach (IntVec3 boundary in new CellRect(origin.x, origin.z, Region.GridSize, Region.GridSize).ExpandedBy(1).Cells)
+                if (boundary.InBounds(map))
+                    NotifyWalkabilityChanged.Invoke(map.regionDirtyer, new object[] { boundary, true });
+        }
+    }
 
     public static void NotifyEdgeChanged(Building building)
     {
         if (building?.Map != null)
         {
-            DirtyRegionForThing.Invoke(building.Map.regionDirtyer, new object[] { building });
             if (building is IThinEdgeStructure edgeStructure)
             {
                 OwnedEdge edge = edgeStructure.OwnedEdge;
@@ -69,7 +84,8 @@ public static class ThinEdgeRegionMakerPatch
         List<IntVec3> ___newRegCells,
         ref RegionGrid ___regionGrid)
     {
-        if (!___map.GetComponent<Pathing.ThinWallMapComponent>().HasCompletedEdgeStructures)
+        if (!Pathing.ThinWallMapComponent.TryGet(___map, out Pathing.ThinWallMapComponent component) ||
+            !component.AffectsRegionAt(root))
         {
             return true;
         }
@@ -220,7 +236,9 @@ public static class ThinEdgeRegionMakerPatch
         int forward = 0;
         int backward = 0;
         seen.Add(cell);
-        if (!otherType.IsOneCellRegion())
+        bool cellLink = Pathing.ThinWallMapComponent.TryGet(map, out var component) &&
+                        component.UseCellRegionLink(cell, other);
+        if (!otherType.IsOneCellRegion() && !cellLink)
         {
             while (CanExtend(
                        cell + along.FacingCell * (forward + 1),

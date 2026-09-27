@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using ThinWalls.Buildings;
@@ -13,7 +14,7 @@ using Verse;
 namespace ThinWalls.EndToEndTests;
 
 [RimWorldEndToEndTest(
-    "thin-walls.supporting-complete-linked-topology-catalog",
+    "thin-walls.native-material-topology-catalog",
     "fumblesneeze.thinwalls",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
@@ -40,6 +41,10 @@ public sealed class ThinWallTopologyCatalogTest : IRimWorldEndToEndTest
     private Map map = null!;
     private CellRect catalogEnvelope;
     private bool originalScreenshotMode;
+    private EndToEndGizmoOption build = null!;
+    private readonly Dictionary<IntVec3, TerrainDef> originalTerrain = new();
+    private readonly List<Thing> farFraming = new();
+    private float ordinaryPixelsPerCell;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -52,10 +57,13 @@ public sealed class ThinWallTopologyCatalogTest : IRimWorldEndToEndTest
         float originalPrevSkyTargetLerp = map.weatherManager.prevSkyTargetLerp;
         float originalCurrSkyTargetLerp = map.weatherManager.currSkyTargetLerp;
         originalScreenshotMode = Find.ScreenshotModeHandler.Active;
+        bool originalGodMode = DebugSettings.godMode;
+        DebugSettings.godMode = true;
         NormalizeToClearNoon(map);
         context.DeferCleanup(() =>
         {
             Find.ScreenshotModeHandler.Active = originalScreenshotMode;
+            DebugSettings.godMode = originalGodMode;
             Find.TickManager.DebugSetTicksGame(originalTicks);
             Find.TickManager.gameStartAbsTick = originalAbsoluteStart;
             map.weatherManager.curWeather = originalWeather;
@@ -64,26 +72,32 @@ public sealed class ThinWallTopologyCatalogTest : IRimWorldEndToEndTest
             map.weatherManager.prevSkyTargetLerp = originalPrevSkyTargetLerp;
             map.weatherManager.currSkyTargetLerp = originalCurrSkyTargetLerp;
             map.weatherManager.ResetSkyTargetLerpCache();
+            foreach (var terrain in originalTerrain) map.terrainGrid.SetTerrain(terrain.Key, terrain.Value);
         });
         IntVec3 center = FindClearCenter(map);
         catalogEnvelope = CellRect.CenteredOn(center, CleanCaptureEnvelopeRadius);
-        ThingDef wallDef = DefDatabase<ThingDef>.GetNamed(ThinWallUtility.ThinWallDefName);
-        ThingDef stuff = DefDatabase<ThingDef>.GetNamed("BlocksGranite");
+        foreach (var cell in catalogEnvelope.Cells)
+        {
+            originalTerrain[cell] = map.terrainGrid.TerrainAt(cell);
+            map.terrainGrid.SetTerrain(cell, TerrainDefOf.Soil);
+        }
+        build = context.GetRequiredService<IEndToEndGizmoCatalog>()
+            .Query(Array.Empty<string>(), new[] { "Structure" })
+            .Single(option => !option.Disabled && option.BuildableDefName == ThinWallUtility.ThinWallDefName &&
+                              option.Interaction == EndToEndGizmoInteraction.Drag);
+        foreach (int offset in new[] { -22, 22 })
+        {
+            Thing marker = ThingMaker.MakeThing(InvisibleCatalogAnchorDef);
+            GenSpawn.Spawn(marker, center + new IntVec3(offset, 0, offset), map);
+            fixtures.Add(marker);
+            farFraming.Add(marker);
+        }
         for (int mask = 0; mask < 16; mask++)
         {
             int column = mask % 4;
             int row = mask / 4;
             IntVec3 vertex = center + new IntVec3((column - 1) * 4, 0, (row - 1) * 4);
             vertices[mask] = vertex;
-            foreach (HybridWallDirection direction in Directions((HybridWallRayMask)mask))
-            {
-                OwnedEdge edge = OwnerFor(vertex, direction);
-                var wall = (Building_ThinWall)ThingMaker.MakeThing(wallDef, stuff);
-                wall.SetFactionDirect(Faction.OfPlayer);
-                GenSpawn.Spawn(wall, edge.Cell, map, new Rot4((int)edge.Side));
-                fixtures.Add(wall);
-            }
-
             if (mask == 0)
             {
                 Thing marker = ThingMaker.MakeThing(InvisibleCatalogAnchorDef);
@@ -95,7 +109,22 @@ public sealed class ThinWallTopologyCatalogTest : IRimWorldEndToEndTest
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
-        string[] ids = fixtures.Select(thing => thing.ThingID).ToArray();
+        if (Find.WindowStack.Windows.Any(window => window.GetType().FullName == "LudeonTK.EditWindow_Log"))
+            yield return new WindowCancelActionStep("close startup log", "LudeonTK.EditWindow_Log");
+        yield return new ScreenshotStep("before native topology designations", fixtures.Except(farFraming).Select(thing => thing.ThingID), 110);
+        for (int mask = 1; mask < 16; mask++)
+        foreach (var direction in Directions((HybridWallRayMask)mask))
+        {
+            OwnedEdge edge = OwnerFor(vertices[mask], direction);
+            var cell = new EndToEndMapCell(edge.Cell.x, edge.Cell.z);
+            yield return new GizmoActionStep($"mask {mask}: designate {direction} ray", Array.Empty<string>(), build.RuntimeType,
+                EndToEndGizmoInteraction.Drag, (EndToEndCardinalRotation)(int)edge.Side,
+                new EndToEndBuildMaterial("BlocksGranite"), stableGizmoId: build.StableId,
+                startCell: cell, endCell: cell, architectCategoryDefNames: new[] { "Structure" });
+            var wall = edge.Cell.GetThingList(map).OfType<Building_ThinWall>().Single(thing => thing.OwnedSide == edge.Side);
+            fixtures.Add(wall);
+        }
+        string[] ids = fixtures.Except(farFraming).Select(thing => thing.ThingID).ToArray();
         yield return new ScreenshotModeActionStep(
             "enable native screenshot mode for the clean topology catalog",
             enabled: true);
@@ -126,14 +155,86 @@ public sealed class ThinWallTopologyCatalogTest : IRimWorldEndToEndTest
             "ordinary topology catalog is cleanly framed inside the screenshot-mode viewport",
             _ => AssertCatalogViewport(ids, minimumMarginPixels: 32));
         yield return new ScreenshotStep("all sixteen Core-derived Thin Wall linked states at ordinary zoom", ids, 110);
-        yield return new CameraActionStep("far useful zoom of all sixteen Thin-only linked states", ids, 195);
+        yield return new CheckpointStep("native source material and ordinary zoom identity", _ =>
+        {
+            ordinaryPixelsPerCell = PixelsPerCell();
+            var materials = fixtures.OfType<Building_ThinWall>().Select(wall => map.mapDrawer.SectionAt(wall.Position))
+                .Distinct().Select(section => section.GetLayer(typeof(SectionLayer_ThingsGeneral)))
+                .SelectMany(layer => layer.subMeshes).Where(mesh => !mesh.disabled && mesh.mesh.vertexCount > 0)
+                .Select(mesh => mesh.material).Distinct().ToArray();
+            EndToEndAssert.True(materials.Any(material => material.mainTexture?.name == "Wall_Atlas_Bricks"),
+                "Native placement must produce a mesh bound to the actual Core wall atlas.");
+            EndToEndAssert.True(materials.All(material => material.mainTexture?.name.StartsWith("TW_", StringComparison.Ordinal) != true),
+                "Completed catalog meshes must not silently fall back to painted Thin Walls textures.");
+            return new Dictionary<string, string>
+            {
+                ["pixelsPerCell"] = ordinaryPixelsPerCell.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                ["materials"] = string.Join(";", materials.Select(material => material.name + ":" + material.mainTexture?.name + ":" + material.shader.name)),
+                ["sourceRgbaSha256"] = string.Join(";", materials
+                    .Where(material => material.mainTexture != null)
+                    .GroupBy(material => material.mainTexture.name)
+                    .Select(group => group.Key + ":" + HashRgba(group.First().mainTexture)))
+            };
+        });
+        yield return new CameraActionStep("far useful zoom of all sixteen Thin-only linked states",
+            ids.Concat(farFraming.Select(thing => thing.ThingID)), 100);
         yield return new AssertionStep(
             "far topology catalog is cleanly framed and remains free of the normal game interface",
             _ => AssertCatalogViewport(ids, minimumMarginPixels: 72));
         yield return new ScreenshotStep("all sixteen Core-derived Thin Wall linked states at far useful zoom", ids, 195);
+        yield return new CheckpointStep("materially different far zoom scale", _ =>
+        {
+            float far = PixelsPerCell();
+            EndToEndAssert.True(far <= ordinaryPixelsPerCell * 0.65f, "Far capture must have at least 35% smaller cell scale than ordinary.");
+            return new Dictionary<string, string> { ["pixelsPerCell"] = far.ToString("R", System.Globalization.CultureInfo.InvariantCulture) };
+        });
         yield return new ScreenshotModeActionStep(
             "restore the topology catalog's prior screenshot-mode state",
             originalScreenshotMode);
+    }
+
+    private float PixelsPerCell()
+    {
+        Vector3 origin = vertices[15].ToVector3();
+        return Vector3.Distance(Find.Camera.WorldToScreenPoint(origin), Find.Camera.WorldToScreenPoint(origin + Vector3.right));
+    }
+
+    private static string HashRgba(Texture texture)
+    {
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture temporary = RenderTexture.GetTemporary(
+            texture.width,
+            texture.height,
+            0,
+            RenderTextureFormat.ARGB32,
+            RenderTextureReadWrite.Default);
+        Texture2D? readable = null;
+        try
+        {
+            Graphics.Blit(texture, temporary);
+            RenderTexture.active = temporary;
+            readable = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
+            readable.ReadPixels(new Rect(0f, 0f, texture.width, texture.height), 0, 0, false);
+            readable.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            Color32[] pixels = readable.GetPixels32();
+            var bytes = new byte[pixels.Length * 4];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                int offset = i * 4;
+                bytes[offset] = pixels[i].r;
+                bytes[offset + 1] = pixels[i].g;
+                bytes[offset + 2] = pixels[i].b;
+                bytes[offset + 3] = pixels[i].a;
+            }
+            using SHA256 sha = SHA256.Create();
+            return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", string.Empty).ToLowerInvariant();
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(temporary);
+            if (readable != null) UnityEngine.Object.Destroy(readable);
+        }
     }
 
     public void Cleanup(IEndToEndContext context)

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ShrinkBuilding>缩小</TW_ShrinkBuilding>
+  <TW_ShrinkBuildingDesc>循环切换显示比例：100%、90%、80%、70%、60%、50%，然后恢复100%。仅改变此建筑的外观，不改变占地或交互位置。角色和存放的物品不会缩小。缩放不会改变偏移。</TW_ShrinkBuildingDesc>
+  <TW_OffsetBuilding>偏移</TW_OffsetBuilding>
+  <TW_OffsetBuildingDesc>循环切换0.2格的视觉偏移：北、东北、东、东南、南、西南、西、西北，然后居中。不改变占地、工作或交互位置。角色和存放的物品不会移动。附近的薄墙会自动决定偏移，直到你使用此按钮。之后将保留你的选择，包括居中。</TW_OffsetBuildingDesc>
+  <TW_ShowShrinkGizmo>显示建筑缩小按钮</TW_ShowShrinkGizmo>
+  <TW_ShowOffsetGizmo>显示建筑偏移按钮</TW_ShowOffsetGizmo>
+  <TW_AppearanceSettingsHint>隐藏按钮不会清除已保存的调整。这些按钮仅改变外观，不适用于墙、门和相连结构。</TW_AppearanceSettingsHint>
+  <TW_OffsetCenter>居中</TW_OffsetCenter>
+  <TW_OffsetN>北</TW_OffsetN>
+  <TW_OffsetNE>东北</TW_OffsetNE>
+  <TW_OffsetE>东</TW_OffsetE>
+  <TW_OffsetSE>东南</TW_OffsetSE>
+  <TW_OffsetS>南</TW_OffsetS>
+  <TW_OffsetSW>西南</TW_OffsetSW>
+  <TW_OffsetW>西</TW_OffsetW>
+  <TW_OffsetNW>西北</TW_OffsetNW>
+</LanguageData>

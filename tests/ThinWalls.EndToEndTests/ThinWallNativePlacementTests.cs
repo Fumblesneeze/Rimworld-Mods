@@ -267,7 +267,7 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
         Building southWorkbench = FindBuilding(workbenchDef, southBenchPosition)!;
         fixtures.Add(southWorkbench);
         yield return new AssertionStep(
-            "two multi-cell workbenches occupy opposite sides without crossing or obscuring the Thin Wall",
+            "two multi-cell workbenches occupy opposite sides and use opposing gizmo presets",
             _ =>
             {
                 EndToEndAssert.True(
@@ -286,12 +286,16 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
                 Vector3 southLogical = LogicalCenter(southWorkbench);
                 EndToEndAssert.True(
                     Math.Abs(northWorkbench.DrawPos.x - northLogical.x) <= 0.0001f &&
-                    Math.Abs(northWorkbench.DrawPos.z - (northLogical.z + (27f / 60f))) <= 0.0001f,
-                    "The north workbench sprite must move 27/60 cell north from its south perimeter Thin Wall, derived from its deeper 41-pixel wall-facing alpha half plus one safety pixel.");
+                    Math.Abs(northWorkbench.DrawPos.z - northLogical.z) <= 0.0001f,
+                    "The removed renderer must no longer change the north workbench DrawPos.");
                 EndToEndAssert.True(
                     Math.Abs(southWorkbench.DrawPos.x - southLogical.x) <= 0.0001f &&
-                    Math.Abs(southWorkbench.DrawPos.z - (southLogical.z - (19f / 60f))) <= 0.0001f,
-                    "The south workbench sprite must move 19/60 cell south from its north perimeter Thin Wall, derived independently from its 32-pixel wall-facing alpha half plus one safety pixel.");
+                    Math.Abs(southWorkbench.DrawPos.z - southLogical.z) <= 0.0001f,
+                    "The removed renderer must no longer change the south workbench DrawPos.");
+                EndToEndAssert.Equal(1, BuildingAppearanceControls.Get(northWorkbench).OffsetStep,
+                    "The north workbench must use the north gizmo preset.");
+                EndToEndAssert.Equal(5, BuildingAppearanceControls.Get(southWorkbench).OffsetStep,
+                    "The south workbench must use the south gizmo preset.");
             });
         string[] workbenchIds = benchWalls.Select(wall => wall.ThingID)
             .Concat(new[] { northWorkbench.ThingID, southWorkbench.ThingID })
@@ -338,11 +342,11 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
                 AssertMapMeshPlaneCenter(
                     northWorkbench,
                     LogicalCenter(northWorkbench) +
-                    new Vector3(0f, 0f, 27f / 60f));
+                    new Vector3(0f, 0f, .2f));
                 AssertMapMeshPlaneCenter(
                     southWorkbench,
                     LogicalCenter(southWorkbench) -
-                    new Vector3(0f, 0f, 19f / 60f));
+                    new Vector3(0f, 0f, .2f));
             });
 
         IntVec3 blueprintBenchPosition = center + new IntVec3(0, 0, -5);
@@ -379,14 +383,13 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
         Blueprint_Build workbenchBlueprint = FindWorkbenchBlueprint(blueprintBenchPosition)!;
         fixtures.Add(workbenchBlueprint);
         yield return new AssertionStep(
-            "native workbench blueprint uses the same realtime and cached-mesh displacement",
+            "native workbench blueprint retains its unadjusted rendering",
             _ =>
             {
-                Vector3 expected = LogicalCenter(workbenchBlueprint) +
-                                   new Vector3(0f, 0f, 27f / 60f);
+                Vector3 expected = LogicalCenter(workbenchBlueprint);
                 EndToEndAssert.True(
                     Vector3.Distance(workbenchBlueprint.DrawPos, expected) <= 0.0001f,
-                    "The native workbench blueprint must use the 27/60 direction-specific final-building clearance from its south perimeter Thin Wall.");
+                    "The ordinary blueprint must not receive the removed automatic rendering offset.");
                 EndToEndAssert.True(blueprintBenchWalls.All(wall => wall.Spawned),
                     "Native workbench blueprint placement must preserve all three perimeter Thin Walls.");
                 AssertMapMeshPlaneCenter(workbenchBlueprint, expected);
@@ -445,18 +448,17 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
         fixtures.Remove(frameSourceBlueprint);
         fixtures.Add(workbenchFrame);
         yield return new AssertionStep(
-            "native workbench frame keeps the exact realtime displacement without changing its footprint",
+            "native workbench frame retains its unadjusted rendering and footprint",
             _ =>
             {
-                Vector3 expected = LogicalCenter(workbenchFrame) +
-                                   new Vector3(0f, 0f, 23f / 60f);
+                Vector3 expected = LogicalCenter(workbenchFrame);
                 EndToEndAssert.True(
                     Vector3.Distance(workbenchFrame.DrawPos, expected) <= 0.0001f,
-                    "The native workbench Frame must use the 23/60 clearance measured from its actual 1.15x footprint underfield rather than the completed bench sprite.");
+                    "The ordinary Frame must not receive the removed automatic rendering offset.");
                 EndToEndAssert.Equal(
                     frameBenchFootprint,
                     workbenchFrame.OccupiedRect(),
-                    "The render-only frame offset must not alter the native workbench footprint.");
+                    "Appearance changes must not alter the native workbench footprint.");
                 EndToEndAssert.True(frameBenchWalls.All(wall => wall.Spawned),
                     "The native workbench blueprint-to-frame transition must preserve all three perimeter Thin Walls.");
             });
@@ -465,15 +467,15 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
             .Concat(frameBenchWalls.Select(wall => wall.ThingID))
             .ToArray();
         yield return new SelectionActionStep(
-            "clear selection before blueprint and frame displacement evidence",
+            "clear selection before native blueprint and frame evidence",
             Array.Empty<string>(),
             additive: false);
         yield return new CameraActionStep(
-            "frame native workbench blueprint and frame offsets",
+            "frame native workbench construction phases",
             phaseIds,
             paddingPixels: 130);
         yield return new ScreenshotStep(
-            "blueprint and frame remain offset from their perimeter Thin Walls",
+            "blueprint and frame retain native centers beside perimeter Thin Walls",
             phaseIds,
             paddingPixels: 130);
         DebugSettings.godMode = true;
@@ -728,6 +730,7 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
                 EndToEndAssert.True(perimeterDoor.Spawned && perimeterBuilding.Spawned,
                     "An exterior perimeter Thin Door must remain legal beside a non-crossing 3x2 building.");
             });
+        foreach (var step in ThinWallNativeLogEvidence.Capture(context)) yield return step;
     }
 
     private static Vector3 LogicalCenter(Thing thing)
@@ -792,7 +795,9 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
                 string.Join(",", graphicCenters.Select(center => $"({center.x:F4},{center.z:F4})")));
 
             Vector3 logical = LogicalCenter(thing);
-            EndToEndAssert.False(
+            bool shifted = Math.Abs(expectedCenter.x - logical.x) > .0001f ||
+                           Math.Abs(expectedCenter.z - logical.z) > .0001f;
+            if (shifted) EndToEndAssert.False(
                 graphicCenters.Any(center => Math.Abs(center.x - logical.x) <= 0.0001f &&
                                              Math.Abs(center.z - logical.z) <= 0.0001f),
                 $"The exact native print for {thing.LabelCap} must not append an unshifted main plane.");
@@ -809,7 +814,7 @@ public sealed class ThinWallNativePlacementTest : IRimWorldEndToEndTest
                     $"The exact native shadow print for {thing.LabelCap} must move with its graphic to " +
                     $"({expectedShadowCenter.x:F4},{expectedShadowCenter.z:F4}); observed " +
                     string.Join(",", shadowCenters.Select(center => $"({center.x:F4},{center.z:F4})")));
-                EndToEndAssert.False(
+                if (shifted) EndToEndAssert.False(
                     shadowCenters.Any(center =>
                         Math.Abs(center.x - unshiftedShadowCenter.x) <= 0.0001f &&
                         Math.Abs(center.z - unshiftedShadowCenter.z) <= 0.0001f),

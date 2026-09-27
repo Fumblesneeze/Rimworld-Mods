@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ShrinkBuilding>Reducir</TW_ShrinkBuilding>
+  <TW_ShrinkBuildingDesc>Alternar tamaño visual: 100%, 90%, 80%, 70%, 60%, 50% y 100%. Solo cambia el aspecto de este edificio, no las casillas ocupadas ni los puntos de interacción. Los personajes y objetos almacenados no cambian de tamaño. Cambiar el tamaño no modifica el desplazamiento.</TW_ShrinkBuildingDesc>
+  <TW_OffsetBuilding>Desplazar</TW_OffsetBuilding>
+  <TW_OffsetBuildingDesc>Alternar un desplazamiento visual de 0,2 casillas: N, NE, E, SE, S, SO, O, NO y centrado. No cambia las casillas ocupadas, los trabajos ni los puntos de interacción. Los personajes y objetos almacenados no se mueven. Las paredes delgadas cercanas eligen un desplazamiento automático hasta que uses este control. Después se conserva tu elección, incluso el centrado.</TW_OffsetBuildingDesc>
+  <TW_ShowShrinkGizmo>Mostrar comando para reducir edificios</TW_ShowShrinkGizmo>
+  <TW_ShowOffsetGizmo>Mostrar comando para desplazar edificios</TW_ShowOffsetGizmo>
+  <TW_AppearanceSettingsHint>Ocultar un comando conserva los ajustes guardados. Estos controles solo cambian el aspecto. Se excluyen paredes, puertas y estructuras conectadas.</TW_AppearanceSettingsHint>
+  <TW_OffsetCenter>Centro</TW_OffsetCenter>
+  <TW_OffsetN>N</TW_OffsetN>
+  <TW_OffsetNE>NE</TW_OffsetNE>
+  <TW_OffsetE>E</TW_OffsetE>
+  <TW_OffsetSE>SE</TW_OffsetSE>
+  <TW_OffsetS>S</TW_OffsetS>
+  <TW_OffsetSW>SO</TW_OffsetSW>
+  <TW_OffsetW>O</TW_OffsetW>
+  <TW_OffsetNW>NO</TW_OffsetNW>
+</LanguageData>

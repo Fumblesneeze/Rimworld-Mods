@@ -22,6 +22,7 @@ namespace ThinWalls.EndToEndTests;
     MaxWallClockSeconds = 200)]
 public sealed class ThinWallBashCapableTraversalTest : IRimWorldEndToEndTest
 {
+    private const int FirstOwnerStartingHitPoints = 90;
     private readonly List<Thing> fixtures = new();
     private Map map = null!;
     private Pawn raider = null!;
@@ -49,7 +50,7 @@ public sealed class ThinWallBashCapableTraversalTest : IRimWorldEndToEndTest
         firstOwner = SpawnWall(wallDef, ThingDefOf.WoodLog, firstEdge);
         endpointOwner = SpawnWall(wallDef, ThingDefOf.WoodLog,
             new OwnedEdge(start + IntVec3.North, ThinWallSide.East));
-        firstOwner.HitPoints = Math.Min(firstOwner.HitPoints, 35);
+        firstOwner.HitPoints = Math.Min(firstOwner.HitPoints, FirstOwnerStartingHitPoints);
         endpointOwner.HitPoints = Math.Min(endpointOwner.HitPoints, 35);
 
         for (int x = -5; x <= 9; x++)
@@ -165,9 +166,8 @@ public sealed class ThinWallBashCapableTraversalTest : IRimWorldEndToEndTest
             "pawn receives the owned edge-melee blocker job",
             _ =>
             {
-                firstDamagedByMelee |= firstOwner.HitPoints < 35;
-                return raider.CurJobDef?.defName == ThinWallUtility.ThinWallBashJobDefName ||
-                       firstDamagedByMelee;
+                firstDamagedByMelee |= firstOwner.HitPoints < FirstOwnerStartingHitPoints;
+                return firstDamagedByMelee;
             },
             new EndToEndDeadline(1_500, 2_500, TimeSpan.FromSeconds(55)));
         yield return new ScreenshotStep(
@@ -178,7 +178,7 @@ public sealed class ThinWallBashCapableTraversalTest : IRimWorldEndToEndTest
             "ordinary melee destroys the first concrete owner",
             _ =>
             {
-                firstDamagedByMelee |= firstOwner.HitPoints < 35;
+                firstDamagedByMelee |= firstOwner.HitPoints < FirstOwnerStartingHitPoints;
                 return firstOwner.Destroyed;
             },
             new EndToEndDeadline(2_400, 5_000, TimeSpan.FromSeconds(80)));

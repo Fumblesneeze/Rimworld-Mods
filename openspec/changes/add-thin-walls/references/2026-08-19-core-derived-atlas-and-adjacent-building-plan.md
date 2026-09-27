@@ -1,6 +1,11 @@
 # Core-derived atlas and adjacent-building implementation plan
 
-This plan is normative for the implementation slice that follows the cumulative rendering matrix. It does not authorize generated art or packaged Core pixels.
+**Historical; superseded 2026-09-04.** The active implementation plan is
+[`2026-09-04-core-material-mesh-pivot.md`](2026-09-04-core-material-mesh-pivot.md) and the current
+rendering capability is authoritative. The raster caches, fixed repair bands, contour-only regular
+apertures, and synthetic material treatments below are retired prescriptions, not implementation
+instructions or acceptance evidence. Measured Core source data and observable user geometry/placement
+requirements remain reference inputs subject to the current contract.
 
 ## Runtime source and atlas model
 

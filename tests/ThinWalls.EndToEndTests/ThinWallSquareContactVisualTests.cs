@@ -11,7 +11,7 @@ using Verse;
 namespace ThinWalls.EndToEndTests;
 
 [RimWorldEndToEndTest(
-    "thin-walls.native-square-contact-catalog",
+    "thin-walls.native-contact-boundary-catalog",
     "fumblesneeze.thinwalls",
     "brrainz.harmony",
     EndToEndTestContract.CorePackageId,
@@ -19,7 +19,7 @@ namespace ThinWalls.EndToEndTests;
     MaxFrames = 2_400,
     MaxGameTicks = 2_000,
     MaxWallClockSeconds = 90)]
-public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
+public sealed class ThinWallContactBoundaryVisualTest : IRimWorldEndToEndTest
 {
     private readonly List<Thing> fixtures = new();
     private readonly List<Building_ThinWall> thinWalls = new();
@@ -104,7 +104,7 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
             if (cleanupFailures.Count > 0)
             {
                 throw new AggregateException(
-                    "One or more square-contact fixture cleanup operations failed.",
+                    "One or more contact-boundary fixture cleanup operations failed.",
                     cleanupFailures);
             }
         });
@@ -114,6 +114,12 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
         NormalizeBuildTerrain(fixtureArea.Value);
         DisplaceIncidentalThings(fixtureArea.Value);
         DebugSettings.godMode = true;
+
+        IntVec3 crossSectionVertex = center + new IntVec3(-4, 0, 7);
+        EndToEndAssert.True(!ReferenceEquals(
+                map.mapDrawer.SectionAt(crossSectionVertex + new IntVec3(-1, 0, -1)),
+                map.mapDrawer.SectionAt(crossSectionVertex + new IntVec3(-1, 0, 0))),
+            "The removable south side-T fixture must cross a map-section boundary.");
 
         foreach (IntVec3 markerCell in new[]
                  {
@@ -165,10 +171,10 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
         yield return Ray("west Thin ray enters the side of a continuous ordinary run",
             layoutVertices["side-t-west"], ContactDirection.West);
 
-        yield return Ray("north square corner contact", layoutVertices["square-corner-ne"], ContactDirection.North);
-        yield return Ray("north reflected square corner contact", layoutVertices["square-corner-nw"], ContactDirection.North);
-        yield return Ray("south square corner contact", layoutVertices["square-corner-se"], ContactDirection.South);
-        yield return Ray("south reflected square corner contact", layoutVertices["square-corner-sw"], ContactDirection.South);
+        yield return Ray("north terminal beside an isolated ordinary wall", layoutVertices["square-corner-ne"], ContactDirection.North);
+        yield return Ray("reflected north terminal beside an isolated ordinary wall", layoutVertices["square-corner-nw"], ContactDirection.North);
+        yield return Ray("south terminal beside an isolated ordinary wall", layoutVertices["square-corner-se"], ContactDirection.South);
+        yield return Ray("reflected south terminal beside an isolated ordinary wall", layoutVertices["square-corner-sw"], ContactDirection.South);
 
         IntVec3 offset = layoutVertices["offset-non-contact"];
         yield return Ray(
@@ -177,11 +183,11 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
             ContactDirection.East);
 
         yield return new WaitUntilStep(
-            "native designations materialize every square-contact and non-contact Thin ray",
+            "native designations materialize every admitted side-T and ignored-contact Thin ray",
             _ => CaptureWalls() == 18,
             new EndToEndDeadline(600, 900, TimeSpan.FromSeconds(30)));
         yield return new AssertionStep(
-            "square-contact catalog retains exact supporting geometry",
+            "contact-boundary catalog retains exact supporting geometry",
             _ =>
             {
                 foreach (string key in new[] { "side-t-north", "side-t-south", "side-t-east", "side-t-west" })
@@ -193,6 +199,15 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
                         $"{key} must keep an uninterrupted two-quadrant ordinary wall run at its T vertex.");
                 }
 
+                foreach (string key in new[] { "square-corner-ne", "square-corner-nw", "square-corner-se", "square-corner-sw" })
+                {
+                    IntVec3 vertex = layoutVertices[key];
+                    int ordinaryQuadrants = fixtures.OfType<Building>()
+                        .Count(wall => wall.def == ThingDefOf.Wall && TouchesVertex(wall.Position, vertex));
+                    EndToEndAssert.Equal(1, ordinaryQuadrants,
+                        $"{key} must remain an intentionally ignored one-cell ordinary-wall contact.");
+                }
+
                 IntVec3 nonContact = layoutVertices["offset-non-contact"];
                 EndToEndAssert.True(thinWalls
                         .Where(wall => wall.Position.InHorDistOf(nonContact, 4f))
@@ -202,7 +217,7 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
                     "The deliberate near-miss must share no exact edge endpoint with a regular wall cell.");
             });
         yield return new SelectionActionStep(
-            "clear selection from square-contact catalog",
+            "clear selection from contact-boundary catalog",
             Array.Empty<string>(),
             additive: false);
 
@@ -226,9 +241,9 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
             layoutVertices["square-corner-se"],
             layoutVertices["square-corner-sw"],
         }, 3f);
-        yield return new CameraActionStep("close reflected square end contacts", squareIds, paddingPixels: 110);
+        yield return new CameraActionStep("close ignored one-wall endpoint contacts", squareIds, paddingPixels: 110);
         yield return new ScreenshotStep(
-            "ordinary and Thin Walls meet with abrupt orthogonal shoulders and no diagonal wedges",
+            "isolated ordinary walls remain native while Thin rays stop independently at their shared vertices",
             squareIds,
             110);
 
@@ -238,6 +253,39 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
             "nearby offset silhouettes remain visually disconnected",
             nonContactIds,
             130);
+
+        IntVec3 changedVertex = layoutVertices["side-t-south"];
+        Building removedReceiver = fixtures.OfType<Building>().Single(thing =>
+            thing.def == ThingDefOf.Wall && thing.Position == changedVertex);
+        EndToEndGizmoOption deconstruct = context.GetRequiredService<IEndToEndGizmoCatalog>()
+            .Query(new[] { removedReceiver.ThingID }, Array.Empty<string>())
+            .Single(option => !option.Disabled &&
+                              option.Interaction == EndToEndGizmoInteraction.Invoke &&
+                              option.Label.IndexOf("deconstruct", StringComparison.OrdinalIgnoreCase) >= 0);
+        yield return new GizmoActionStep(
+            "native deconstruction removes one receiver from an admitted side-T",
+            new[] { removedReceiver.ThingID },
+            deconstruct.RuntimeType,
+            EndToEndGizmoInteraction.Invoke,
+            stableGizmoId: deconstruct.StableId);
+        yield return new WaitUntilStep(
+            "receiver removal invalidates the contact and rebuilds the Thin endpoint",
+            _ => removedReceiver.Destroyed,
+            new EndToEndDeadline(600, 900, TimeSpan.FromSeconds(30)));
+        yield return new AssertionStep(
+            "removed receiver leaves exactly one intentionally ignored ordinary quadrant",
+            _ => EndToEndAssert.Equal(1, fixtures.OfType<Building>()
+                .Count(wall => !wall.Destroyed && wall.def == ThingDefOf.Wall &&
+                               TouchesVertex(wall.Position, changedVertex))));
+        string[] changedContactIds = IdsNear(new[] { changedVertex }, 3f);
+        yield return new CameraActionStep(
+            "close former side-T after native receiver removal",
+            changedContactIds,
+            paddingPixels: 110);
+        yield return new ScreenshotStep(
+            "one-wall remainder stays native and the Thin ray restores its capped terminal",
+            changedContactIds,
+            110);
     }
 
     private GizmoActionStep Ray(string name, IntVec3 vertex, ContactDirection direction)
@@ -291,7 +339,8 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
     {
         IntVec3[] centers = points.ToArray();
         return fixtures.Concat<Thing>(thinWalls)
-            .Where(thing => centers.Any(point => thing.Position.InHorDistOf(point, radius)))
+            .Where(thing => !thing.Destroyed &&
+                            centers.Any(point => thing.Position.InHorDistOf(point, radius)))
             .Select(thing => thing.ThingID)
             .Distinct()
             .ToArray();
@@ -351,7 +400,9 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
         {
             for (int z = -60; z <= 60; z += 20)
             {
-                IntVec3 candidate = map.Center + new IntVec3(x, 0, z);
+                IntVec3 candidate = AlignSouthContactAcrossSection(
+                    map,
+                    map.Center + new IntVec3(x, 0, z));
                 CellRect area = CellRect.CenteredOn(candidate, radius);
                 if (!area.InBounds(map))
                 {
@@ -369,7 +420,29 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
         }
 
         return best ?? throw new EndToEndAssertionException(
-            "Could not find an in-bounds square-contact visual-evidence area.");
+            "Could not find an in-bounds contact-boundary visual-evidence area.");
+    }
+
+    private static IntVec3 AlignSouthContactAcrossSection(Map map, IntVec3 seed)
+    {
+        for (int distance = 0; distance <= 8; distance++)
+        {
+            foreach (int sign in distance == 0 ? new[] { 1 } : new[] { 1, -1 })
+            {
+                IntVec3 candidate = seed + new IntVec3(0, 0, distance * sign);
+                IntVec3 vertex = candidate + new IntVec3(-4, 0, 7);
+                IntVec3 thinOwner = vertex + new IntVec3(-1, 0, -1);
+                IntVec3 northReceiver = vertex + new IntVec3(-1, 0, 0);
+                if (thinOwner.InBounds(map) && northReceiver.InBounds(map) &&
+                    !ReferenceEquals(
+                        map.mapDrawer.SectionAt(thinOwner),
+                        map.mapDrawer.SectionAt(northReceiver)))
+                    return candidate;
+            }
+        }
+
+        throw new EndToEndAssertionException(
+            "Could not align the removable side-T fixture across a map-section boundary.");
     }
 
     private void NormalizeBuildTerrain(CellRect area)
@@ -379,7 +452,7 @@ public sealed class ThinWallSquareContactVisualTest : IRimWorldEndToEndTest
             soil.affordances.Contains(TerrainAffordanceDefOf.Light) &&
             soil.affordances.Contains(TerrainAffordanceDefOf.Medium) &&
             soil.affordances.Contains(TerrainAffordanceDefOf.Heavy),
-            "Core soil must support every square-contact fixture.");
+            "Core soil must support every contact-boundary fixture.");
         foreach (IntVec3 cell in area.Cells.Where(cell =>
                      !ThinWallEndToEndFixtureTerrain.SupportsEveryFixtureBuild(cell, map)))
         {

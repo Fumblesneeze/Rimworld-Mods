@@ -931,36 +931,6 @@ public sealed class HybridWallRasterCompilerTests
     }
 
     [Test]
-    public void RegularHybridUsesOnePaddedUnionAtNativeTexelDensity()
-    {
-        Assert.Multiple(() =>
-        {
-            Assert.That(HybridRegularRasterCompositor.CanvasSize, Is.EqualTo(120));
-            Assert.That(HybridRegularRasterCompositor.Padding, Is.EqualTo(30));
-        });
-    }
-
-    [Test]
-    public void RegularDoorContactUsesTheSameAugmentedLinkedStateAsAWallContact()
-    {
-        var alpha = new byte[60 * 60];
-        var wallCorner = new HybridWallCornerRaster(
-            HybridWallQuadrant.NorthEast,
-            HybridWallRayMask.West,
-            HybridWallRayMask.None,
-            HybridWallRayMask.None);
-        var doorCorner = new HybridWallCornerRaster(
-            HybridWallQuadrant.NorthEast,
-            HybridWallRayMask.West,
-            HybridWallRayMask.None,
-            HybridWallRayMask.West);
-
-        Assert.That(
-            HybridRegularRasterCompositor.Compile(alpha, alpha, new[] { doorCorner }).TransitionLinkIndex,
-            Is.EqualTo(HybridRegularRasterCompositor.Compile(alpha, alpha, new[] { wallCorner }).TransitionLinkIndex));
-    }
-
-    [Test]
     public void RegularDoorContactCachesOnlyItsSquareBoundaryAndThreePixelFixedFrame()
     {
         IReadOnlyList<HybridWallRasterWrite> writes = HybridWallRegularApertureRecipe.Compile(

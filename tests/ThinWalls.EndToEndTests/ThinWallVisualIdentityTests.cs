@@ -214,10 +214,10 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
 
         yield return Drag("seven-segment granite horizontal running-bond sample", -10, 7, -4, 7, EndToEndCardinalRotation.South, "BlocksGranite");
         yield return Drag("seven-segment granite north-south running-bond sample", -8, 6, -8, 0, EndToEndCardinalRotation.West, "BlocksGranite");
-        yield return Drag("wood OSB horizontal projection sample", -3, 7, 1, 7, EndToEndCardinalRotation.South, "WoodLog");
-        yield return Drag("wood OSB north-south projection sample", -2, 5, -2, 2, EndToEndCardinalRotation.West, "WoodLog");
-        yield return Drag("steel riveted horizontal projection sample", 3, 7, 7, 7, EndToEndCardinalRotation.South, "Steel");
-        yield return Drag("steel riveted north-south projection sample", 4, 5, 4, 2, EndToEndCardinalRotation.West, "Steel");
+        yield return Drag("Core plank horizontal projection sample", -3, 7, 1, 7, EndToEndCardinalRotation.South, "WoodLog");
+        yield return Drag("Core plank north-south projection sample", -2, 5, -2, 2, EndToEndCardinalRotation.West, "WoodLog");
+        yield return Drag("Core smooth-metal horizontal projection sample", 3, 7, 7, 7, EndToEndCardinalRotation.South, "Steel");
+        yield return Drag("Core smooth-metal north-south projection sample", 4, 5, 4, 2, EndToEndCardinalRotation.West, "Steel");
 
         yield return Drag("wood L horizontal arm", -10, -3, -8, -3, EndToEndCardinalRotation.South, "WoodLog");
         yield return Drag("wood L vertical arm", -10, 0, -10, -3, EndToEndCardinalRotation.West, "WoodLog");
@@ -225,18 +225,18 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
         yield return Drag("steel T stem", -2, 0, -2, -3, EndToEndCardinalRotation.West, "Steel");
         yield return Drag("granite plus horizontal arm", 4, -3, 8, -3, EndToEndCardinalRotation.South, "BlocksGranite");
         yield return Drag("granite plus vertical arm", 6, -1, 6, -5, EndToEndCardinalRotation.West, "BlocksGranite");
-        yield return Drag("granite extension into material-matched Core wall", 9, 2, 11, 2, EndToEndCardinalRotation.South, "BlocksGranite");
-        yield return Drag("wood extension into material-matched Core wall", 9, 5, 11, 5, EndToEndCardinalRotation.South, "WoodLog");
-        yield return Drag("steel extension into material-matched Core wall", 9, 8, 11, 8, EndToEndCardinalRotation.South, "Steel");
-        yield return Drag("reverse granite horizontal extension into Core wall", -11, 10, -9, 10, EndToEndCardinalRotation.South, "BlocksGranite");
-        yield return Drag("wood north-ray extension into Core wall", 15, -7, 15, -5, EndToEndCardinalRotation.West, "WoodLog");
-        yield return Drag("steel south-ray extension into Core wall", 12, -4, 12, -2, EndToEndCardinalRotation.West, "Steel");
-        yield return Drag("west ray at mixed Core-wall vertex", -3, 17, -1, 17, EndToEndCardinalRotation.South, "BlocksGranite");
-        yield return Drag("south ray at mixed Core-wall vertex", 0, 14, 0, 16, EndToEndCardinalRotation.West, "BlocksGranite");
-        yield return Drag("west ray into south-side Core wall", -6, 11, -4, 11, EndToEndCardinalRotation.North, "BlocksGranite");
-        yield return Drag("east ray into south-side Core wall", 8, 11, 6, 11, EndToEndCardinalRotation.North, "BlocksGranite");
-        yield return Drag("north ray into west-side Core wall", -15, 7, -15, 9, EndToEndCardinalRotation.East, "WoodLog");
-        yield return Drag("south ray into west-side Core wall", -15, -3, -15, -1, EndToEndCardinalRotation.East, "Steel");
+        yield return Drag("granite terminal beside one ignored Core wall", 9, 2, 11, 2, EndToEndCardinalRotation.South, "BlocksGranite");
+        yield return Drag("wood terminal beside one ignored Core wall", 9, 5, 11, 5, EndToEndCardinalRotation.South, "WoodLog");
+        yield return Drag("steel terminal beside one ignored Core wall", 9, 8, 11, 8, EndToEndCardinalRotation.South, "Steel");
+        yield return Drag("reflected granite terminal beside one ignored Core wall", -11, 10, -9, 10, EndToEndCardinalRotation.South, "BlocksGranite");
+        yield return Drag("wood north terminal beside one ignored Core wall", 15, -7, 15, -5, EndToEndCardinalRotation.West, "WoodLog");
+        yield return Drag("steel south terminal beside one ignored Core wall", 12, -4, 12, -2, EndToEndCardinalRotation.West, "Steel");
+        yield return Drag("west ray of independent Thin L beside ordinary run", -3, 17, -1, 17, EndToEndCardinalRotation.South, "BlocksGranite");
+        yield return Drag("south ray of independent Thin L beside ordinary run", 0, 14, 0, 16, EndToEndCardinalRotation.West, "BlocksGranite");
+        yield return Drag("west terminal beside one ignored south-side Core wall", -6, 11, -4, 11, EndToEndCardinalRotation.North, "BlocksGranite");
+        yield return Drag("east terminal beside one ignored south-side Core wall", 8, 11, 6, 11, EndToEndCardinalRotation.North, "BlocksGranite");
+        yield return Drag("north terminal beside one ignored west-side Core wall", -15, 7, -15, 9, EndToEndCardinalRotation.East, "WoodLog");
+        yield return Drag("south terminal beside one ignored west-side Core wall", -15, -3, -15, -1, EndToEndCardinalRotation.East, "Steel");
         yield return Drag("isolated south side-T centered between two Core walls", 19, -15, 19, -13, EndToEndCardinalRotation.West, "BlocksGranite");
         yield return Drag("isolated north side-T centered between two Core walls", 19, -3, 19, -1, EndToEndCardinalRotation.West, "BlocksGranite");
         yield return Drag("isolated west side-T centered between two Core walls", -21, -12, -19, -12, EndToEndCardinalRotation.South, "BlocksGranite");
@@ -376,27 +376,32 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
             .Where(wall => EdgeTouchesCorner(wall.OwnedEdge.Shared, mixedVertex))
             .ToArray();
         yield return new AssertionStep(
-            "mixed regular-wall vertex contains exactly the two native designated incident owners",
+            "independent Thin L beside ordinary run contains exactly the two native designated incident owners",
             _ =>
             {
                 EndToEndAssert.Equal(
                     2,
                     nativeMixedRayOwners.Length,
-                    "The mixed join evidence must contain only two incident edge owners.");
+                    "The ignored-contact evidence must contain only two incident edge owners.");
                 EndToEndAssert.True(
                     nativeMixedRayOwners.Any(wall =>
                         wall.Position == center + new IntVec3(-1, 0, 17) &&
                         wall.OwnedSide == ThinWallSide.South),
-                    "The native west-ray endpoint owner must reach the mixed vertex.");
+                    "The native west-ray endpoint owner must reach the ignored-contact vertex.");
                 EndToEndAssert.True(
                     nativeMixedRayOwners.Any(wall =>
                         wall.Position == center + new IntVec3(0, 0, 16) &&
                         wall.OwnedSide == ThinWallSide.West),
-                    "The native south-ray endpoint owner must reach the mixed vertex.");
+                    "The native south-ray endpoint owner must reach the ignored-contact vertex.");
             });
         yield return new CheckpointStep("record visual identity catalog composition", _ =>
         {
-            Dictionary<string, string> material = DescribeCoreWallMaterial(walls[0]);
+            Dictionary<string, string>[] coreMaterials = new[] { "BlocksGranite", "WoodLog", "Steel" }
+                .Select(stuff => DescribeCoreWallMaterial(walls.First(wall => wall.Stuff?.defName == stuff)))
+                .ToArray();
+            EndToEndAssert.True(coreMaterials.All(material => material["supported"] == bool.TrueString),
+                "Every material family must pass the one-time measured RGBA source identity gate in the running game.");
+            Dictionary<string, string> material = coreMaterials[0];
             return new Dictionary<string, string>
         {
             ["wallCount"] = walls.Count.ToString(),
@@ -412,7 +417,8 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
             ["verticalDoors"] = doors.Count(door => door.OwnedSide == ThinWallSide.East || door.OwnedSide == ThinWallSide.West).ToString(),
             ["damagedDoors"] = doors.Count(door => door.HitPoints < door.MaxHitPoints).ToString(),
             ["regularWallJoinCount"] = regularWalls.Count.ToString(),
-            ["connectedRegularWallRuns"] = "16",
+            ["ignoredOneWallContactExamples"] = "10",
+            ["admittedRegularSideTRuns"] = "4",
             ["isolatedVertexCenteredSideTRuns"] = "4",
             ["contextOuterShellWalls"] = contextRegularWalls.Count.ToString(),
             ["contextFurniture"] = contextFixtures.Count(thing => thing is Building).ToString(),
@@ -421,6 +427,7 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
             ["coreMaterialTexture"] = material["texture"],
             ["coreMaterialScale"] = material["scale"],
             ["coreMaterialOffset"] = material["offset"],
+            ["validatedCoreAtlasTextures"] = string.Join(";", coreMaterials.Select(identity => identity["texture"])),
         };
         });
 
@@ -463,8 +470,8 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
                      int verticalX, int verticalMinZ, int verticalMaxZ) in new[]
                  {
                      ("BlocksGranite", "stone dressed masonry", -10, -4, 7, -8, 0, 6),
-                     ("WoodLog", "wood OSB plates", -3, 1, 7, -2, 2, 5),
-                     ("Steel", "riveted metal plates", 3, 7, 7, 4, 2, 5),
+                     ("WoodLog", "Core wood planks", -3, 1, 7, -2, 2, 5),
+                     ("Steel", "Core smooth metal", 3, 7, 7, 4, 2, 5),
                  })
         {
             string[] materialIds = walls
@@ -506,8 +513,8 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
         foreach ((string material, string label, int z) in new[]
                  {
                      ("BlocksGranite", "granite masonry", 2),
-                     ("WoodLog", "wood OSB", 5),
-                     ("Steel", "riveted steel", 8),
+                     ("WoodLog", "Core wood planks", 5),
+                     ("Steel", "Core smooth steel", 8),
                  })
         {
             string[] joinIds = walls
@@ -519,9 +526,9 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
                     .Where(wall => wall.Position.z == center.z + z)
                     .Select(wall => wall.ThingID))
                 .ToArray();
-            yield return new CameraActionStep("close " + label + " hybrid Core-wall merge", joinIds, paddingPixels: 90);
+            yield return new CameraActionStep("close " + label + " terminal beside one ignored Core wall", joinIds, paddingPixels: 90);
             yield return new ScreenshotStep(
-                "unchanged Core wall with material-matched " + label + " extension to Thin Wall",
+                "unchanged Core wall and independently capped " + label + " Thin terminal",
                 joinIds,
                 90);
         }
@@ -533,8 +540,8 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
                 .Where(wall => wall.Position.z == center.z + 10)
                 .Select(wall => wall.ThingID))
             .ToArray();
-        yield return new CameraActionStep("close reverse horizontal Core-wall continuation", reverseJoinIds, paddingPixels: 90);
-        yield return new ScreenshotStep("east-ray Thin Wall merges into connected ordinary walls", reverseJoinIds, 90);
+        yield return new CameraActionStep("close reflected ignored one-wall contact", reverseJoinIds, paddingPixels: 90);
+        yield return new ScreenshotStep("east-ray Thin terminal and lone ordinary wall keep independent native ends", reverseJoinIds, 90);
 
         foreach ((string label, int x, int minZ, int maxZ, int regularMinX, int regularMaxX, int regularZ) in new[]
                  {
@@ -552,9 +559,9 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
                                    wall.Position.z == center.z + regularZ)
                     .Select(wall => wall.ThingID))
                 .ToArray();
-            yield return new CameraActionStep("close " + label + " Core-wall continuation", verticalJoinIds, paddingPixels: 90);
+            yield return new CameraActionStep("close " + label + " ignored one-wall contact", verticalJoinIds, paddingPixels: 90);
             yield return new ScreenshotStep(
-                label + " Thin Wall merges into one material-matched ordinary wall without another material touching it",
+                label + " Thin terminal ignores the lone material-matched ordinary wall and stops at its vertex",
                 verticalJoinIds,
                 90);
         }
@@ -568,8 +575,8 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
                                wall.Position.x >= center.x - 3 && wall.Position.x <= center.x + 5)
                 .Select(wall => wall.ThingID))
             .ToArray();
-        yield return new CameraActionStep("close west and east rays into south-side Core walls", southSideHorizontalJoinIds, paddingPixels: 110);
-        yield return new ScreenshotStep("both horizontal rays use square in-raster shoulders at south-side ordinary wall surfaces", southSideHorizontalJoinIds, 110);
+        yield return new CameraActionStep("close west and east terminals beside lone south-side Core walls", southSideHorizontalJoinIds, paddingPixels: 110);
+        yield return new ScreenshotStep("both horizontal terminals ignore lone south-side ordinary walls without endpoint overhang", southSideHorizontalJoinIds, 110);
 
         string[] westSideVerticalJoinIds = walls
             .Where(wall => wall.Position.x == center.x - 15 &&
@@ -580,8 +587,8 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
                                (wall.Position.z == center.z || wall.Position.z == center.z + 6))
                 .Select(wall => wall.ThingID))
             .ToArray();
-        yield return new CameraActionStep("close north and south rays into west-side Core walls", westSideVerticalJoinIds, paddingPixels: 110);
-        yield return new ScreenshotStep("both vertical rays use square in-raster shoulders at west-side ordinary wall surfaces", westSideVerticalJoinIds, 110);
+        yield return new CameraActionStep("close north and south terminals beside lone west-side Core walls", westSideVerticalJoinIds, paddingPixels: 110);
+        yield return new ScreenshotStep("both vertical terminals ignore lone west-side ordinary walls without endpoint overhang", westSideVerticalJoinIds, 110);
 
         foreach ((string label, string[] ids) in new[]
                  {
@@ -638,14 +645,14 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
                 .Where(wall => wall.Position.z == center.z + 17 && wall.Position.x >= center.x && wall.Position.x <= center.x + 1)
                 .Select(wall => wall.ThingID))
             .ToArray();
-        yield return new CameraActionStep("close native mixed-ray regular-wall vertex composition", multiRayJoinIds, paddingPixels: 110);
-        yield return new ScreenshotStep("native west and south rays meet one mixed-width regular-wall union without folded overlays", multiRayJoinIds, 110);
+        yield return new CameraActionStep("close independent Thin L beside ordinary run", multiRayJoinIds, paddingPixels: 110);
+        yield return new ScreenshotStep("native west and south rays form a Thin L while the ordinary run remains native", multiRayJoinIds, 110);
 
         foreach ((string material, string label) in new[]
                  {
                      ("BlocksGranite", "granite Thin Doors"),
-                     ("WoodLog", "wood plate Thin Doors"),
-                     ("Steel", "riveted steel Thin Doors"),
+                     ("WoodLog", "Core wood Thin Doors"),
+                     ("Steel", "Core smooth-steel Thin Doors"),
                  })
         {
             string[] doorIds = doors
@@ -1188,6 +1195,7 @@ public sealed class ThinWallVisualIdentityTest : IRimWorldEndToEndTest
             ["texture"] = $"{texture.name}|{texture.width}x{texture.height}",
             ["scale"] = material.mainTextureScale.ToString(),
             ["offset"] = material.mainTextureOffset.ToString(),
+            ["supported"] = HybridWallAtlasSupport.IsSupported(texture).ToString(),
         };
     }
 

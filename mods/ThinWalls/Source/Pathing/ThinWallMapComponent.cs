@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using RimWorld;
 using ThinWalls.Buildings;
+using ThinWalls.Geometry;
 using Unity.Collections;
 using Verse;
 using Verse.AI;
@@ -10,575 +12,216 @@ namespace ThinWalls.Pathing;
 
 public sealed class ThinWallMapComponent : MapComponent
 {
-    private NativeArray<CellConnection> firstConnectivity;
-    private NativeArray<CellConnection> secondConnectivity;
+    private static readonly ConditionalWeakTable<Map, ThinWallMapComponent> Components = new();
+    private readonly Dictionary<SharedEdge, Building> edges = new();
+    private readonly Dictionary<SharedEdge, Building_ThinDoor> doors = new();
+    private readonly SparseEdgeRegionIndex affectedRegions = new();
+    private readonly SparseEdgeMasks walls = new();
+    private readonly SparseConnectivityOverlay overlay = new();
+    // Only permission-specific Burst transport snapshots; disposed after native readers complete.
     private readonly List<NativeArray<CellConnection>> requestConnectivity = new();
-    private readonly Dictionary<PathingContext, EdgeReachabilityGraph> reachabilityGraphs = new();
-    private readonly Dictionary<DoorGraphKey, EdgeReachabilityGraph> doorReachabilityGraphs = new();
-    private bool firstIsActive;
-    private bool dirty = true;
 
     public ThinWallMapComponent(Map map) : base(map)
     {
         map.events.BuildingSpawned += NotifyBuildingChanged;
         map.events.BuildingDespawned += NotifyBuildingChanged;
-        map.events.TerrainChanged += NotifyPathingChanged;
-        map.events.PathCostRecalculate += NotifyPathingChanged;
-        map.events.DoorOpened += NotifyDoorChanged;
-        map.events.DoorClosed += NotifyDoorChanged;
+        Components.Remove(map);
+        Components.Add(map, this);
     }
 
-    public bool HasCompletedWalls => map.listerThings.ThingsOfDef(ThinWallDef).Count != 0;
+    public static bool TryGet(Map map, out ThinWallMapComponent component) => Components.TryGetValue(map, out component);
+    public bool HasCompletedWalls => walls.Cells.Count != 0;
+    public bool HasCompletedEdgeStructures => edges.Count != 0;
+    public int OwnedEdgeCount => edges.Count;
+    public int DoorCount => doors.Count;
+    public int MaskedCellCount => walls.Cells.Count;
+    public int RemovedNativeCellCount => overlay.Removed.Count;
+    public int RequestSnapshotCount => requestConnectivity.Count;
+    public int AffectedRegionChunkCount => affectedRegions.Count;
+    public bool AffectsRegionAt(IntVec3 cell) => affectedRegions.Contains(cell);
+    public bool UseCellRegionLink(IntVec3 first, IntVec3 second) => affectedRegions.UseCellLink(first, second);
+    public bool HasEdge(SharedEdge edge) => edges.ContainsKey(edge);
+    public bool HasWall(SharedEdge edge) => edges.TryGetValue(edge, out var building) && building is Building_ThinWall;
 
-    public bool HasCompletedEdgeStructures => HasCompletedWalls ||
-        map.listerThings.ThingsOfDef(ThinDoorDef).Count != 0;
-
-    public NativeArray<CellConnection> Connectivity => firstIsActive ? firstConnectivity : secondConnectivity;
-
-    public int Version { get; private set; }
-
-    public int ThinEdgeVisualRevision { get; private set; }
-
-    public int DoorAccessSignature(TraverseParms traverseParms)
+    public override void MapComponentTick()
     {
-        unchecked
-        {
-            int signature = 17;
-            foreach (Building_ThinDoor door in map.listerThings.ThingsOfDef(ThinDoorDef)
-                         .OfType<Building_ThinDoor>()
-                         .OrderBy(candidate => candidate.thingIDNumber))
-            {
-                signature = (signature * 31) ^ door.thingIDNumber;
-                signature = (signature * 31) ^
-                            (ThinDoorAccessPolicy.CanTraverse(door, traverseParms) ? 1 : 0);
-                signature = (signature * 31) ^ (door.FreePassage ? 1 : 0);
-            }
-
-            return signature;
-        }
+        if (!HasCompletedWalls || (Find.TickManager.TicksGame % 120 != 7 && !DebugSettings.fastEcology)) return;
+        // Core cannot sample a wall between adjacent air cells. Only visit our canonical edges;
+        // native roofs, filled-cell walls, doors and temperature trackers keep their own work.
+        foreach (var entry in edges)
+            if (entry.Value is Building_ThinWall)
+                Rooms.ThinWallHeatTransfer.Equalize(map, entry.Key);
     }
 
-    private static ThingDef ThinWallDef => DefDatabase<ThingDef>.GetNamed(ThinWallUtility.ThinWallDefName);
-
-    private static ThingDef ThinDoorDef => DefDatabase<ThingDef>.GetNamed(ThinWallUtility.ThinDoorDefName);
-
-    public void NotifyCompletedEdgeChanged(Geometry.OwnedEdge edge)
+    public void NotifyCompletedEdgeChanged(OwnedEdge edge)
     {
-        dirty = true;
-        Version++;
-        IncrementThinEdgeVisualRevision();
-        reachabilityGraphs.Clear();
-        doorReachabilityGraphs.Clear();
-        foreach (Geometry.OwnedEdge owner in ThinWallUtility.Owners(edge.Shared))
-        {
-            if (owner.Cell.InBounds(map))
-            {
-                map.pathFinder.MapData.Notify_CellDelta(owner.Cell);
-            }
-        }
-
+        // Inspect only the two owners. Lifecycle callbacks never write native buffers.
+        var owners = ThinWallUtility.ThingsOnSharedEdge(map, edge.Shared, completedOnly: true).OfType<Building>();
+        Building? building = owners.FirstOrDefault(t => t is Building_ThinWall) ?? owners.FirstOrDefault();
+        if (building == null) edges.Remove(edge.Shared);
+        else edges[edge.Shared] = building;
+        if (building is Building_ThinDoor door) doors[edge.Shared] = door;
+        else doors.Remove(edge.Shared);
+        if (affectedRegions.Set(edge.Shared, building != null))
+            Rooms.ThinEdgeRegionUtility.NotifyChunkBoundaryChanged(map, edge);
+        walls.Set(edge.Shared, building is Building_ThinWall);
+        // Every removal cell needs a native delta: vanilla's incremental gather otherwise
+        // leaves the endpoint-crossing diagonal bits of neighbor cells stale until some
+        // unrelated dirty event recomputes them. Removals repeat cells; notify each once.
+        foreach (IntVec3 removalCell in ThinWallConnectivity.Removals(edge.Shared)
+                     .Select(removal => removal.Cell).Distinct())
+            if (removalCell.InBounds(map)) map.pathFinder.MapData.Notify_CellDelta(removalCell);
         DirtyIncidentThingMeshes(edge);
     }
 
-    public void NotifyPlannedEdgeChanged(Geometry.OwnedEdge edge)
+    public void NotifyPlannedEdgeChanged(OwnedEdge edge)
     {
-        IncrementThinEdgeVisualRevision();
         DirtyIncidentThingMeshes(edge);
     }
 
-    private void IncrementThinEdgeVisualRevision()
+    // GatherData runs only after native jobs finish, including its same-tick early return.
+    public void RestoreNativeConnectivity(NativeArray<CellConnection> native) =>
+        overlay.Restore(i => native[i], (i, bits) => native[i] = bits);
+
+    public void ApplyNativeConnectivity(NativeArray<CellConnection> native)
     {
-        ThinEdgeVisualRevision++;
+        System.Func<int, CellConnection> read = i => native[i];
+        System.Action<int, CellConnection> write = (i, bits) => native[i] = bits;
+        foreach (var entry in walls.Cells)
+            if (entry.Key.InBounds(map))
+                overlay.Apply(map.cellIndices.CellToIndex(entry.Key), entry.Value, read, write);
     }
 
-    public NativeArray<CellConnection>.ReadOnly ConnectivityFor(
-        PathFinderMapData source,
-        PathRequest request)
+    public NativeArray<CellConnection>.ReadOnly ConnectivityFor(NativeArray<CellConnection> native, PathRequest request)
     {
-        EnsureConnectivity(source, vanillaChanged: false);
-        List<Building_ThinDoor> blockedDoors = map.listerThings.ThingsOfDef(ThinDoorDef)
-            .OfType<Building_ThinDoor>()
-            .Where(door => !ThinDoorAccessPolicy.CanTraverse(door, request.TraverseParms))
-            .ToList();
-        if (blockedDoors.Count == 0)
+        NativeArray<CellConnection> specific = default;
+        if (request.TraverseParms.canBashDoors && overlay.Removed.Count != 0)
         {
-            return Connectivity.AsReadOnly();
+            specific = new NativeArray<CellConnection>(native, Allocator.Persistent);
+            requestConnectivity.Add(specific);
+            foreach (var entry in overlay.Removed) specific[entry.Key] |= entry.Value;
         }
-
-        var specific = new NativeArray<CellConnection>(
-            Connectivity,
-            Allocator.Persistent);
-        foreach (Building_ThinDoor door in blockedDoors)
+        if (!request.TraverseParms.canBashDoors)
+        foreach (Building_ThinDoor door in doors.Values)
         {
-            RemoveEdge(specific, door.OwnedEdge.Shared);
+            if (ThinDoorAccessPolicy.CanTraverse(door, request.TraverseParms)) continue;
+            if (!specific.IsCreated)
+            {
+                specific = new NativeArray<CellConnection>(native, Allocator.Persistent);
+                requestConnectivity.Add(specific);
+            }
+            foreach (ConnectionRemoval removal in ThinWallConnectivity.Removals(door.OwnedEdge.Shared))
+                if (removal.Cell.InBounds(map))
+                {
+                    int index = map.cellIndices.CellToIndex(removal.Cell);
+                    specific[index] &= ~removal.Connection;
+                }
         }
-
-        requestConnectivity.Add(specific);
-        return specific.AsReadOnly();
+        return specific.IsCreated ? specific.AsReadOnly() : native.AsReadOnly();
     }
 
     public void DisposeRequestConnectivity()
     {
         foreach (NativeArray<CellConnection> connectivity in requestConnectivity)
-        {
-            if (connectivity.IsCreated)
-            {
-                connectivity.Dispose();
-            }
-        }
+            if (connectivity.IsCreated) connectivity.Dispose();
         requestConnectivity.Clear();
-    }
-
-    public void EnsureConnectivity(PathFinderMapData source, bool vanillaChanged)
-    {
-        if (!dirty && !vanillaChanged && Connectivity.IsCreated)
-        {
-            return;
-        }
-
-        int count = map.cellIndices.NumGridCells;
-        EnsureBuffers(count);
-        NativeArray<CellConnection> rebuilt = firstIsActive ? secondConnectivity : firstConnectivity;
-        for (int index = 0; index < count; index++)
-        {
-            rebuilt[index] = source.CellConnectionsAt(index);
-        }
-
-        foreach (Building_ThinWall wall in map.listerThings.ThingsOfDef(ThinWallDef).OfType<Building_ThinWall>())
-        {
-            foreach (ConnectionRemoval removal in ThinWallConnectivity.Removals(wall.OwnedEdge.Shared))
-            {
-                if (!removal.Cell.InBounds(map))
-                {
-                    continue;
-                }
-
-                int index = map.cellIndices.CellToIndex(removal.Cell);
-                rebuilt[index] = (CellConnection)((byte)rebuilt[index] & ~(byte)removal.Connection);
-            }
-        }
-
-        firstIsActive = rebuilt.Equals(firstConnectivity);
-        dirty = false;
-        Version++;
-        reachabilityGraphs.Clear();
-        doorReachabilityGraphs.Clear();
     }
 
     public bool AllowsStep(IntVec3 from, IntVec3 to)
     {
-        int deltaX = to.x - from.x;
-        int deltaZ = to.z - from.z;
-        CellConnection connection = ConnectionFor(deltaX, deltaZ);
-        if (connection == CellConnection.Self || !from.InBounds(map) || !to.InBounds(map))
-        {
-            return false;
-        }
-
-        if (Connectivity.IsCreated)
-        {
-            int index = map.cellIndices.CellToIndex(from);
-            if (((byte)Connectivity[index] & (byte)connection) == 0)
-            {
-                return false;
-            }
-        }
-
-        return !ThinWallUtility.BlocksStep(map, from, to);
+        CellConnection connection = ConnectionFor(to.x - from.x, to.z - from.z);
+        return connection != CellConnection.Self && from.InBounds(map) && to.InBounds(map) &&
+               (walls.At(from) & connection) == CellConnection.Self;
     }
 
-    public bool AllowsStep(IntVec3 from, IntVec3 to, TraverseParms traverseParms)
+    public bool AllowsStep(IntVec3 from, IntVec3 to, TraverseParms parms)
     {
-        if (!traverseParms.canBashDoors && !AllowsStep(from, to))
-        {
-            return false;
-        }
-
-        foreach (Geometry.SharedEdge edge in ThinWallUtility.SharedEdgesCrossed(from, to))
-        {
-            foreach (Building_ThinDoor door in ThinWallUtility
-                         .ThingsOnSharedEdge(map, edge, completedOnly: true)
-                         .OfType<Building_ThinDoor>())
-            {
-                if (!traverseParms.canBashDoors && !ThinDoorAccessPolicy.CanTraverse(door, traverseParms))
-                {
-                    return false;
-                }
-            }
-        }
-
+        if (ConnectionFor(to.x - from.x, to.z - from.z) == CellConnection.Self || !from.InBounds(map) || !to.InBounds(map)) return false;
+        if (parms.canBashDoors) return true;
+        if (!AllowsStep(from, to)) return false;
+        foreach (SharedEdge edge in ThinWallUtility.SharedEdgesCrossed(from, to))
+            if (edges.TryGetValue(edge, out var building) && building is Building_ThinDoor door && !ThinDoorAccessPolicy.CanTraverse(door, parms)) return false;
         return true;
     }
 
-    public bool CanReachThroughEdges(
-        IntVec3 start,
-        LocalTargetInfo destination,
-        PathEndMode endMode,
-        TraverseParms traverseParms)
+    public bool TryBridgeEdges(IntVec3 start, LocalTargetInfo destination, PathEndMode endMode, TraverseParms parms)
     {
-        PathingContext context = map.pathing.For(traverseParms);
-        bool hasThinDoors = map.listerThings.ThingsOfDef(ThinDoorDef).Count != 0;
-        EdgeReachabilityGraph graph;
-        if (hasThinDoors)
+        bool Native(IntVec3 from, LocalTargetInfo to, PathEndMode mode) =>
+            ThinWallReachabilityPatch.NativeCanReach(map, from, to, mode, parms);
+        if (!parms.canBashDoors && doors.Count == 0) return false;
+        var crossings = new List<SharedEdge>();
+        if (parms.canBashDoors) crossings.AddRange(edges.Keys);
+        else foreach (var entry in doors)
+            if (ThinDoorAccessPolicy.CanTraverse(entry.Value, parms)) crossings.Add(entry.Key);
+        if (crossings.Count == 0) return false;
+        // Re-run Core's destination admission, not its search. A bridge changes the native start,
+        // so immediate and same-district shortcuts must not erase the original destination policy.
+        if (parms.mode != TraverseMode.PassAllDestroyableThings &&
+            parms.mode != TraverseMode.PassAllDestroyablePlayerOwnedThings &&
+            parms.mode != TraverseMode.PassAllDestroyableThingsNotWater)
         {
-            var doorGraphKey = new DoorGraphKey(
-                context,
-                DoorAccessSignature(traverseParms),
-                traverseParms.canBashDoors);
-            if (!doorReachabilityGraphs.TryGetValue(doorGraphKey, out graph))
+            PathEndMode resolvedMode = endMode;
+            LocalTargetInfo resolved = (LocalTargetInfo)GenPath.ResolvePathMode(parms.pawn, destination.ToTargetInfo(map), ref resolvedMode);
+            if (resolvedMode == PathEndMode.OnCell)
             {
-                graph = BuildReachabilityGraph(context, traverseParms);
-                doorReachabilityGraphs.Add(doorGraphKey, graph);
+                if (resolved.Cell.GetRegion(map)?.Allows(parms, isDestination: true) != true) return false;
             }
-        }
-        else if (!reachabilityGraphs.TryGetValue(context, out graph))
-        {
-            graph = BuildReachabilityGraph(context, traverseParms);
-            reachabilityGraphs.Add(context, graph);
-        }
-
-        int startNode = graph.NodeAt(map, start);
-        if (startNode == 0)
-        {
-            return false;
-        }
-
-        HashSet<int> destinationNodes = SimplePool<HashSet<int>>.Get();
-        Queue<int> open = SimplePool<Queue<int>>.Get();
-        HashSet<int> visited = SimplePool<HashSet<int>>.Get();
-        try
-        {
-        CellRect targetRect = destination.HasThing
-            ? destination.Thing.OccupiedRect()
-            : new CellRect(destination.Cell.x, destination.Cell.z, 1, 1);
-        foreach (IntVec3 candidate in targetRect.ExpandedBy(1).Cells)
-        {
-            int candidateNode = graph.NodeAt(map, candidate);
-            if (candidateNode == 0)
+            else if (resolvedMode == PathEndMode.Touch)
             {
-                continue;
-            }
-
-            if (ReachabilityImmediate.CanReachImmediate(
-                    candidate,
-                    destination,
-                    map,
-                    endMode,
-                    traverseParms.pawn))
-            {
-                destinationNodes.Add(candidateNode);
-            }
-        }
-
-            if (destinationNodes.Contains(startNode))
-            {
-                return true;
-            }
-
-            open.Enqueue(startNode);
-            visited.Add(startNode);
-            while (open.Count != 0)
-            {
-                int current = open.Dequeue();
-                foreach (int adjacent in graph.Adjacent[current])
+                var destinations = SimplePool<List<Region>>.Get();
+                try
                 {
-                    if (!visited.Add(adjacent))
-                    {
-                        continue;
-                    }
-
-                    bool isDestination = destinationNodes.Contains(adjacent);
-                    Region region = graph.Regions[adjacent];
-                    if (region == null || !region.Allows(traverseParms, isDestination))
-                    {
-                        continue;
-                    }
-
-                    if (isDestination)
-                    {
-                        return true;
-                    }
-
-                    open.Enqueue(adjacent);
+                    TouchPathEndModeUtility.AddAllowedAdjacentRegions(resolved, parms, map, destinations);
+                    if (destinations.Count == 0) return false;
                 }
+                finally { destinations.Clear(); SimplePool<List<Region>>.Return(destinations); }
             }
-
-            return false;
+            else return false;
         }
-        finally
+        bool Usable(IntVec3 cell)
         {
-            destinationNodes.Clear();
-            open.Clear();
-            visited.Clear();
-            SimplePool<HashSet<int>>.Return(destinationNodes);
-            SimplePool<Queue<int>>.Return(open);
-            SimplePool<HashSet<int>>.Return(visited);
+            if (!cell.InBounds(map) || !map.pathing.For(parms).pathGrid.Walkable(cell)) return false;
+            if ((parms.mode == TraverseMode.NoPassClosedDoorsOrWater ||
+                 parms.mode == TraverseMode.PassAllDestroyableThingsNotWater) && cell.GetTerrain(map).IsWater) return false;
+            Region? region = cell.GetRegion(map);
+            return region != null && region.Allows(parms, isDestination: false);
         }
-    }
-
-    public override void FinalizeInit()
-    {
-        dirty = true;
+        return ThinEdgeBridgeReachability.CanReach(start, crossings,
+            (from, to) => ThinWallReachabilityPatch.NativeCanReach(map, from, to, PathEndMode.OnCell, parms, intermediateEndpoint: true),
+            from => Native(from, destination, endMode), Usable);
     }
 
     public override void MapRemoved()
     {
+        if (TryGet(map, out var current) && ReferenceEquals(current, this)) Components.Remove(map);
         map.events.BuildingSpawned -= NotifyBuildingChanged;
         map.events.BuildingDespawned -= NotifyBuildingChanged;
-        map.events.TerrainChanged -= NotifyPathingChanged;
-        map.events.PathCostRecalculate -= NotifyPathingChanged;
-        map.events.DoorOpened -= NotifyDoorChanged;
-        map.events.DoorClosed -= NotifyDoorChanged;
-        reachabilityGraphs.Clear();
-        doorReachabilityGraphs.Clear();
-        ThinWallReachabilityPatch.NotifyMapRemoved(map);
-    }
-
-    public void DisposeConnectivity()
-    {
-        if (firstConnectivity.IsCreated)
-        {
-            firstConnectivity.Dispose();
-        }
-
-        if (secondConnectivity.IsCreated)
-        {
-            secondConnectivity.Dispose();
-        }
-
-        DisposeRequestConnectivity();
-    }
-
-    private void EnsureBuffers(int count)
-    {
-        if (firstConnectivity.IsCreated && firstConnectivity.Length == count &&
-            secondConnectivity.IsCreated && secondConnectivity.Length == count)
-        {
-            return;
-        }
-
-        if (firstConnectivity.IsCreated)
-        {
-            firstConnectivity.Dispose();
-        }
-
-        if (secondConnectivity.IsCreated)
-        {
-            secondConnectivity.Dispose();
-        }
-
-        firstConnectivity = new NativeArray<CellConnection>(
-            count,
-            Allocator.Persistent,
-            NativeArrayOptions.UninitializedMemory);
-        secondConnectivity = new NativeArray<CellConnection>(
-            count,
-            Allocator.Persistent,
-            NativeArrayOptions.UninitializedMemory);
-        firstIsActive = false;
     }
 
     private void NotifyBuildingChanged(Building building)
     {
-        Version++;
-        reachabilityGraphs.Clear();
-        doorReachabilityGraphs.Clear();
-        if (building is Building_ThinWall || building.def.building?.isWall != true)
-        {
-            return;
-        }
-
+        Rendering.BuildingAppearanceControls.RefreshAutomaticOffset(building);
+        if (building is Building_ThinWall || building.def.building?.isWall != true) return;
         foreach (IntVec3 cell in building.OccupiedRect().ExpandedBy(1).Cells)
-        {
-            if (cell.InBounds(map))
-            {
-                map.mapDrawer.MapMeshDirty(cell, MapMeshFlagDefOf.Things);
-            }
-        }
+            if (cell.InBounds(map)) map.mapDrawer.MapMeshDirty(cell, MapMeshFlagDefOf.Things);
     }
 
-    private void NotifyPathingChanged(IntVec3 _)
+    private static CellConnection ConnectionFor(int x, int z)
     {
-        Version++;
-        reachabilityGraphs.Clear();
-        doorReachabilityGraphs.Clear();
-    }
-
-    private void NotifyDoorChanged(Building_Door _)
-    {
-        Version++;
-        reachabilityGraphs.Clear();
-        doorReachabilityGraphs.Clear();
-    }
-
-    private static CellConnection ConnectionFor(int deltaX, int deltaZ)
-    {
-        if (deltaX == -1 && deltaZ == -1) return CellConnection.SouthWest;
-        if (deltaX == 0 && deltaZ == -1) return CellConnection.South;
-        if (deltaX == 1 && deltaZ == -1) return CellConnection.SouthEast;
-        if (deltaX == -1 && deltaZ == 0) return CellConnection.West;
-        if (deltaX == 1 && deltaZ == 0) return CellConnection.East;
-        if (deltaX == -1 && deltaZ == 1) return CellConnection.NorthWest;
-        if (deltaX == 0 && deltaZ == 1) return CellConnection.North;
-        if (deltaX == 1 && deltaZ == 1) return CellConnection.NorthEast;
+        if (x == -1 && z == -1) return CellConnection.SouthWest;
+        if (x == 0 && z == -1) return CellConnection.South;
+        if (x == 1 && z == -1) return CellConnection.SouthEast;
+        if (x == -1 && z == 0) return CellConnection.West;
+        if (x == 1 && z == 0) return CellConnection.East;
+        if (x == -1 && z == 1) return CellConnection.NorthWest;
+        if (x == 0 && z == 1) return CellConnection.North;
+        if (x == 1 && z == 1) return CellConnection.NorthEast;
         return CellConnection.Self;
-    }
-
-    private EdgeReachabilityGraph BuildReachabilityGraph(PathingContext context, TraverseParms traverseParms)
-    {
-        int cellCount = map.cellIndices.NumGridCells;
-        var cellRegions = new Region[cellCount];
-        for (int index = 0; index < cellCount; index++)
-        {
-            IntVec3 cell = map.cellIndices.IndexToCell(index);
-            cellRegions[index] = cell.GetRegion(map, RegionType.Set_Passable);
-        }
-
-        int[] nodes = EdgeConnectivityLabeler.Build(
-            map.cellIndices.SizeX,
-            map.cellIndices.SizeZ,
-            index => cellRegions[index] != null &&
-                     context.pathGrid.WalkableFast(map.cellIndices.IndexToCell(index)),
-            (from, to) => ReferenceEquals(cellRegions[from], cellRegions[to]) &&
-                          AllowsStep(
-                              map.cellIndices.IndexToCell(from),
-                              map.cellIndices.IndexToCell(to),
-                              traverseParms));
-        int nodeCount = nodes.Length == 0 ? 0 : nodes.Max();
-        var regions = new Region[nodeCount + 1];
-        var adjacencyLists = new List<int>[nodeCount + 1];
-        for (int node = 1; node <= nodeCount; node++)
-        {
-            adjacencyLists[node] = new List<int>();
-        }
-
-        for (int index = 0; index < nodes.Length; index++)
-        {
-            int node = nodes[index];
-            if (node != 0 && regions[node] == null)
-            {
-                regions[node] = cellRegions[index];
-            }
-        }
-
-        var edges = new HashSet<long>();
-        for (int index = 0; index < nodes.Length; index++)
-        {
-            int fromNode = nodes[index];
-            if (fromNode == 0)
-            {
-                continue;
-            }
-
-            IntVec3 fromCell = map.cellIndices.IndexToCell(index);
-            for (int adjacentIndex = 0; adjacentIndex < GenAdj.AdjacentCells.Length; adjacentIndex++)
-            {
-                IntVec3 toCell = fromCell + GenAdj.AdjacentCells[adjacentIndex];
-                if (!toCell.InBounds(map))
-                {
-                    continue;
-                }
-
-                int toNode = nodes[map.cellIndices.CellToIndex(toCell)];
-                if (toNode == 0 || toNode == fromNode || !AllowsStep(fromCell, toCell, traverseParms))
-                {
-                    continue;
-                }
-
-                int lower = fromNode < toNode ? fromNode : toNode;
-                int upper = fromNode < toNode ? toNode : fromNode;
-                long edge = ((long)lower << 32) | (uint)upper;
-                if (!edges.Add(edge))
-                {
-                    continue;
-                }
-
-                adjacencyLists[lower].Add(upper);
-                adjacencyLists[upper].Add(lower);
-            }
-        }
-
-        var adjacent = new int[nodeCount + 1][];
-        adjacent[0] = System.Array.Empty<int>();
-        for (int node = 1; node <= nodeCount; node++)
-        {
-            adjacent[node] = adjacencyLists[node].ToArray();
-        }
-
-        return new EdgeReachabilityGraph(nodes, regions, adjacent);
-    }
-
-    private void RemoveEdge(NativeArray<CellConnection> connectivity, Geometry.SharedEdge edge)
-    {
-        foreach (ConnectionRemoval removal in ThinWallConnectivity.Removals(edge))
-        {
-            if (!removal.Cell.InBounds(map))
-            {
-                continue;
-            }
-
-            int index = map.cellIndices.CellToIndex(removal.Cell);
-            connectivity[index] = (CellConnection)((byte)connectivity[index] & ~(byte)removal.Connection);
-        }
-    }
-
-    private sealed class EdgeReachabilityGraph
-    {
-        public EdgeReachabilityGraph(int[] nodes, Region[] regions, int[][] adjacent)
-        {
-            Nodes = nodes;
-            Regions = regions;
-            Adjacent = adjacent;
-        }
-
-        public int[] Nodes { get; }
-
-        public Region[] Regions { get; }
-
-        public int[][] Adjacent { get; }
-
-        public int NodeAt(Map map, IntVec3 cell)
-        {
-            return cell.InBounds(map) ? Nodes[map.cellIndices.CellToIndex(cell)] : 0;
-        }
-    }
-
-    private readonly struct DoorGraphKey : System.IEquatable<DoorGraphKey>
-    {
-        public DoorGraphKey(PathingContext context, int doorAccessSignature, bool canBashDoors)
-        {
-            Context = context;
-            DoorAccessSignature = doorAccessSignature;
-            CanBashDoors = canBashDoors;
-        }
-
-        private PathingContext Context { get; }
-
-        private int DoorAccessSignature { get; }
-
-        private bool CanBashDoors { get; }
-
-        public bool Equals(DoorGraphKey other) =>
-            Equals(Context, other.Context) &&
-            DoorAccessSignature == other.DoorAccessSignature &&
-            CanBashDoors == other.CanBashDoors;
-
-        public override bool Equals(object? obj) => obj is DoorGraphKey other && Equals(other);
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                int hash = Context?.GetHashCode() ?? 0;
-                hash = (hash * 397) ^ DoorAccessSignature;
-                return (hash * 397) ^ CanBashDoors.GetHashCode();
-            }
-        }
     }
 
     private void DirtyIncidentThingMeshes(Geometry.OwnedEdge edge)
     {
-        foreach (IntVec3 cell in Rendering.ThinWallRenderGeometry.IncidentCells(edge))
+        foreach (IntVec3 cell in Rendering.ThinWallRenderGeometry.MeshDependencyCells(edge))
         {
             if (cell.InBounds(map))
             {
@@ -591,10 +234,8 @@ public sealed class ThinWallMapComponent : MapComponent
                      .SelectMany(owner => owner.Cell.GetThingList(map))
                      .Distinct())
         {
-            if (Rendering.AdjacentBuildingVisualOffset.IsEligible(thing, out _))
-            {
-                map.mapDrawer.MapMeshDirty(thing.Position, MapMeshFlagDefOf.Things);
-            }
+            if (thing is Building building)
+                Rendering.BuildingAppearanceControls.RefreshAutomaticOffset(building);
         }
     }
 }

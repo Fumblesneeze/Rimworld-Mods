@@ -12,10 +12,18 @@ namespace ThinWalls.Rendering;
 [StaticConstructorOnStartup]
 public static class HybridWallRenderer
 {
-    private const float CompletedAltitude = 0.006f;
     private static readonly Color32 LowShadowVertexColor = new(0, 0, 0, 0);
     private static readonly Color32 HighShadowVertexColor = new(255, 0, 0, 255);
+    private static readonly HybridWallRayMask[] CardinalRays =
+    {
+        HybridWallRayMask.North,
+        HybridWallRayMask.East,
+        HybridWallRayMask.South,
+        HybridWallRayMask.West,
+    };
     private static readonly Dictionary<string, Material> SlicedRealtimeMaterials = new();
+    private static readonly Dictionary<int, Material> RealtimeMaterials = new();
+    private static readonly Dictionary<string, Mesh> NativeDoorMeshes = new();
 
     public static void DrawStateEdge(
         OwnedEdge edge,
@@ -25,24 +33,77 @@ public static class HybridWallRenderer
     {
         SharedEdge shared = edge.Shared;
         bool horizontal = shared.PositiveSide == ThinWallSide.North;
-        HybridWallRayMask rays = horizontal
-            ? HybridWallRayMask.East | HybridWallRayMask.West
-            : HybridWallRayMask.North | HybridWallRayMask.South;
-        Material compiled = CoreDerivedWallMaterialCache.StateMaterial(
-            rays,
-            ownerCount > 1 ? rays : HybridWallRayMask.None,
-            stateMaterial.color);
         Vector3 center = ThinWallRenderGeometry.StructuralCenter(edge, altitude);
-        Graphics.DrawMesh(
-            MeshPool.plane10,
-            Matrix4x4.TRS(
-                center,
-                Quaternion.identity,
+        if (NativeWallMeshPrinter.CanRemap(stateMaterial))
+        {
+            DrawRealtimeNativePlan(center, stateMaterial, NativeWallMeshPlan.Straight(horizontal));
+            return;
+        }
+
+        // Missing graphics must still be visible, but never expose an entire atlas.
+        Graphics.DrawMesh(MeshPool.plane10,
+            Matrix4x4.TRS(center, Quaternion.identity,
                 horizontal
-                    ? new Vector3(ThinWallRenderGeometry.UnionPlaneScale, 1f, 1f)
-                    : new Vector3(1f, 1f, ThinWallRenderGeometry.UnionPlaneScale)),
-            compiled,
-            0);
+                    ? new Vector3(1f, 1f, 34f / 60f)
+                    : new Vector3(34f / 60f, 1f, 1f)),
+            BaseContent.BadMat, 0);
+    }
+
+    internal static Material CoreWallStateMaterial(ThingDef buildDef, ThingDef? stuff, Color color)
+    {
+        return WallMaterial(ThingDefOf.Wall.graphicData.Graphic, stuff, null,
+            color, Color.white, ThingDefOf.Wall.graphicData.ignoreThingDrawColor);
+    }
+
+    internal static Material BlueprintMaterial(Color color) =>
+        WallMaterial(ThingDefOf.Wall.blueprintDef.graphicData.Graphic, null, null,
+            color, Color.white, ignoreColor: false);
+
+    private static Material WallMaterial(Graphic graphic, ThingDef? stuff, Thing? thing,
+        Color color, Color colorTwo, bool ignoreColor)
+    {
+        // Graphic_Appearances rejects secondary colors. Resolve the actual native
+        // appearance first; the leaf graphic owns the shader/mask and both tints.
+        while (true)
+        {
+            if (graphic is Graphic_Linked linked) graphic = linked.SubGraphic;
+            else if (graphic is Graphic_Appearances appearances) graphic = appearances.SubGraphicFor(stuff);
+            else break;
+        }
+        Material material = thing == null ? graphic.MatSingle : graphic.MatSingleFor(thing);
+        return ignoreColor ? material : NativeWallMaterial.WithColors(material, color, colorTwo);
+    }
+
+    private static void DrawRealtimeNativePlan(
+        Vector3 center,
+        Material atlas,
+        IReadOnlyList<NativeWallMeshQuad> plan)
+    {
+        foreach (NativeWallMeshQuad quad in plan)
+        {
+            Material linked = NativeWallMaterial.ForLinks(atlas, (int)quad.SourceLinks);
+            Material sliced = SlicedLinkedRealtimeMaterial(linked, quad.Source);
+            HybridWallUvRect d = quad.Destination;
+            Graphics.DrawMesh(MeshPool.plane10,
+                Matrix4x4.TRS(
+                    center + new Vector3(d.X + d.Width * 0.5f, 0f, d.Y + d.Height * 0.5f),
+                    Quaternion.identity,
+                    new Vector3(d.Width, 1f, d.Height)),
+                sliced,
+                0);
+        }
+    }
+
+    private static Material SlicedLinkedRealtimeMaterial(Material linked, HybridWallUvRect uv)
+    {
+        Vector2 scale = linked.mainTextureScale;
+        Vector2 offset = linked.mainTextureOffset;
+        var absolute = new HybridWallUvRect(
+            offset.x + scale.x * uv.X,
+            offset.y + scale.y * uv.Y,
+            scale.x * uv.Width,
+            scale.y * uv.Height);
+        return SlicedRealtimeMaterial(linked, absolute);
     }
 
     public static void DrawDoor(Building_ThinDoor door, float openFraction)
@@ -50,71 +111,11 @@ public static class HybridWallRenderer
         SharedEdge edge = door.OwnedEdge.Shared;
         bool horizontal = edge.PositiveSide == ThinWallSide.North;
         Vector3 structuralCenter = ThinWallRenderGeometry.StructuralCenter(door.OwnedEdge, 0f);
-        float centerX = structuralCenter.x;
-        float centerZ = structuralCenter.z;
-        HybridWallRayMask rays = horizontal
-            ? HybridWallRayMask.East | HybridWallRayMask.West
-            : HybridWallRayMask.North | HybridWallRayMask.South;
-        HybridWallRuntimePlan runtimePlan = HybridWallRuntimePlanCompiler.Compile(
-            HybridWallVertexTopology.FromOccupancy(HybridWallQuadrant.None, rays),
-            HybridWallRayMask.None,
-            HybridWallRayMask.None);
-        Material leaf = CoreDerivedWallMaterialCache.RuntimeMaterial(
-            CoreWallAtlasMaterial(door),
-            runtimePlan,
-            FamilyFor(door),
-            ThinWallVisualResolver.DamageGrade(door.HitPoints, door.MaxHitPoints),
-            door: true);
-        leaf = CoreDerivedWallMaterialCache.RealtimeMaterial(leaf);
-        HybridWallDoorPlan plan = HybridWallDoorGeometryCompiler.CompileVisible(openFraction);
+        NativeDoorMoverPlan plan = NativeDoorMoverPlan.Compile(openFraction);
         HybridWallDoorShadowPlan shadow = HybridWallDoorGeometryCompiler.CompileShadow(openFraction);
-        float nativeWallAltitude = AltitudeLayer.Building.AltitudeFor();
-        float completedWallAltitude = nativeWallAltitude + CompletedAltitude;
-        float leafAltitude = HybridWallDoorGeometryCompiler.LeafAltitude(
-            nativeWallAltitude,
-            completedWallAltitude,
-            openFraction);
-
-        if (plan.IsFullyClosed)
+        if (plan.OpeningWidth <= 0.00001f)
         {
             DrawRealtimeSunShadow(HybridWallSunShadowGeometry.ForEdge(edge, ownerCount: 1));
-            if (horizontal)
-            {
-                DrawRealtimeRect(centerX + plan.Left.Min, centerZ - 0.5f,
-                    centerX + plan.Right.Max, centerZ + 0.5f,
-                    leafAltitude, leaf, new HybridWallUvRect(
-                        plan.Left.UvMin,
-                        0f,
-                        plan.Right.UvMax - plan.Left.UvMin,
-                        1f));
-            }
-            else
-            {
-                DrawRealtimeRect(centerX - 0.5f, centerZ + plan.Left.Min,
-                    centerX + 0.5f, centerZ + plan.Right.Max,
-                    leafAltitude, leaf, new HybridWallUvRect(
-                        0f,
-                        plan.Left.UvMin,
-                        1f,
-                        plan.Right.UvMax - plan.Left.UvMin));
-            }
-            return;
-        }
-
-        if (horizontal)
-        {
-            DrawRealtimeSunShadow(HybridWallSunShadowGeometry.ForEdgeSpan(
-                edge, 1, shadow.LeftMin + 0.5f, shadow.LeftMax + 0.5f));
-            DrawRealtimeSunShadow(HybridWallSunShadowGeometry.ForEdgeSpan(
-                edge, 1, shadow.RightMin + 0.5f, shadow.RightMax + 0.5f));
-            DrawRealtimeRect(centerX + plan.Left.Min, centerZ - 0.5f,
-                centerX + plan.Left.Max, centerZ + 0.5f,
-                leafAltitude, leaf, new HybridWallUvRect(
-                    plan.Left.UvMin, 0f, plan.Left.UvMax - plan.Left.UvMin, 1f));
-            DrawRealtimeRect(centerX + plan.Right.Min, centerZ - 0.5f,
-                centerX + plan.Right.Max, centerZ + 0.5f,
-                leafAltitude, leaf, new HybridWallUvRect(
-                    plan.Right.UvMin, 0f, plan.Right.UvMax - plan.Right.UvMin, 1f));
         }
         else
         {
@@ -122,14 +123,112 @@ public static class HybridWallRenderer
                 edge, 1, shadow.LeftMin + 0.5f, shadow.LeftMax + 0.5f));
             DrawRealtimeSunShadow(HybridWallSunShadowGeometry.ForEdgeSpan(
                 edge, 1, shadow.RightMin + 0.5f, shadow.RightMax + 0.5f));
-            DrawRealtimeRect(centerX - 0.5f, centerZ + plan.Left.Min,
-                centerX + 0.5f, centerZ + plan.Left.Max,
-                leafAltitude, leaf, new HybridWallUvRect(
-                    0f, plan.Left.UvMin, 1f, plan.Left.UvMax - plan.Left.UvMin));
-            DrawRealtimeRect(centerX - 0.5f, centerZ + plan.Right.Min,
-                centerX + 0.5f, centerZ + plan.Right.Max,
-                leafAltitude, leaf, new HybridWallUvRect(
-                    0f, plan.Right.UvMin, 1f, plan.Right.UvMax - plan.Right.UvMin));
+        }
+
+        Material leafMaterial = RealtimeMaterial(CoreDoorMaterial(door));
+        float altitude = AltitudeLayer.DoorMoveable.AltitudeFor();
+        Vector3 drawOrigin = new(structuralCenter.x, altitude, structuralCenter.z);
+        Graphics.DrawMesh(NativeDoorMesh(plan.Left, horizontal), drawOrigin,
+            Quaternion.identity, leafMaterial, 0);
+        Graphics.DrawMesh(NativeDoorMesh(plan.Right, horizontal), drawOrigin,
+            Quaternion.identity, leafMaterial, 0);
+        DrawRealtimeDoorDamage(door, structuralCenter, horizontal, openFraction, altitude + 0.002f);
+    }
+
+    private static Material CoreDoorMaterial(Building_ThinDoor door)
+    {
+        return WallMaterial(ThingDefOf.Door.graphicData.Graphic, door.Stuff, door,
+            door.DrawColor, door.DrawColorTwo,
+            ThingDefOf.Door.graphicData.ignoreThingDrawColor);
+    }
+
+    private static Mesh NativeDoorMesh(NativeDoorLeafPlan leaf, bool horizontal)
+    {
+        string key = FormattableString.Invariant(
+            $"{horizontal}:{leaf.LongitudinalMin:R}:{leaf.LongitudinalMax:R}:{leaf.UAtMin:R}:{leaf.UAtMax:R}:{leaf.VMin:R}:{leaf.VMax:R}");
+        if (NativeDoorMeshes.TryGetValue(key, out Mesh cached)) return cached;
+
+        float n0 = -NativeDoorMoverPlan.NormalHalfWidth;
+        float n1 = NativeDoorMoverPlan.NormalHalfWidth;
+        var mesh = new Mesh { name = "ThinWalls_CoreDoorMoverSlice" };
+        if (horizontal)
+        {
+            mesh.vertices = new[]
+            {
+                new Vector3(leaf.LongitudinalMin, 0f, n0),
+                new Vector3(leaf.LongitudinalMin, 0f, n1),
+                new Vector3(leaf.LongitudinalMax, 0f, n1),
+                new Vector3(leaf.LongitudinalMax, 0f, n0),
+            };
+            mesh.uv = new[]
+            {
+                new Vector2(leaf.UAtMin, leaf.VMin),
+                new Vector2(leaf.UAtMin, leaf.VMax),
+                new Vector2(leaf.UAtMax, leaf.VMax),
+                new Vector2(leaf.UAtMax, leaf.VMin),
+            };
+        }
+        else
+        {
+            mesh.vertices = new[]
+            {
+                new Vector3(n0, 0f, leaf.LongitudinalMin),
+                new Vector3(n0, 0f, leaf.LongitudinalMax),
+                new Vector3(n1, 0f, leaf.LongitudinalMax),
+                new Vector3(n1, 0f, leaf.LongitudinalMin),
+            };
+            mesh.uv = new[]
+            {
+                new Vector2(leaf.UAtMin, leaf.VMin),
+                new Vector2(leaf.UAtMax, leaf.VMin),
+                new Vector2(leaf.UAtMax, leaf.VMax),
+                new Vector2(leaf.UAtMin, leaf.VMax),
+            };
+        }
+        mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+        mesh.RecalculateBounds();
+        mesh.UploadMeshData(true);
+        NativeDoorMeshes[key] = mesh;
+        return mesh;
+    }
+
+    private static void DrawRealtimeDoorDamage(
+        Building_ThinDoor door,
+        Vector3 origin,
+        bool horizontal,
+        float openFraction,
+        float altitude)
+    {
+        ThinWallDamageGrade grade = ThinWallVisualResolver.DamageGrade(door.HitPoints, door.MaxHitPoints);
+        if (grade == ThinWallDamageGrade.None) return;
+        var materials = BuildingsDamageSectionLayerUtility.GetScratchMats(door);
+        if (materials == null || materials.Count == 0) return;
+        float open = Mathf.Clamp01(openFraction);
+        float slide = open <= HybridWallDoorGeometryCompiler.ClosedUnionThreshold
+            ? 0f
+            : open * NativeDoorMoverPlan.MaximumSlide;
+        NativeDoorMoverPlan visible = NativeDoorMoverPlan.Compile(open);
+        foreach (NativeThinDamageMark mark in NativeThinDamagePlan.Compile(grade, door.thingIDNumber))
+        {
+            bool left = mark.LongitudinalCenter < 0f;
+            float longitudinal = mark.LongitudinalCenter + (left ? -slide : slide);
+            NativeDoorLeafPlan leaf = left ? visible.Left : visible.Right;
+            if (!NativeDoorDamageClipPlan.TryClip(mark, longitudinal, leaf, out NativeDoorDamageClip clip))
+                continue;
+            longitudinal = clip.Center;
+            Vector3 center = horizontal
+                ? new Vector3(origin.x + longitudinal, altitude, origin.z + mark.NormalCenter)
+                : new Vector3(origin.x + mark.NormalCenter, altitude, origin.z + longitudinal);
+            Material source = materials[mark.CoreScratchIndex % materials.Count];
+            Material clipped = SlicedRealtimeMaterial(RealtimeMaterial(source), horizontal
+                ? new HybridWallUvRect(clip.SourceMin, 0f, clip.SourceMax - clip.SourceMin, 1f)
+                : new HybridWallUvRect(0f, clip.SourceMin, 1f, clip.SourceMax - clip.SourceMin));
+            Graphics.DrawMesh(MeshPool.plane10,
+                Matrix4x4.TRS(center, Quaternion.identity,
+                    horizontal
+                        ? new Vector3(clip.Width, 1f, mark.Size)
+                        : new Vector3(mark.Size, 1f, clip.Width)),
+                clipped, 0);
         }
     }
 
@@ -184,6 +283,22 @@ public static class HybridWallRenderer
             hideFlags = HideFlags.HideAndDontSave,
         };
         SlicedRealtimeMaterials[key] = material;
+        return material;
+    }
+
+    private static Material RealtimeMaterial(Material source)
+    {
+        int key = source.GetInstanceID();
+        if (RealtimeMaterials.TryGetValue(key, out Material cached)) return cached;
+        var material = new Material(source)
+        {
+            hideFlags = HideFlags.HideAndDontSave,
+            name = source.name + "_TW_Realtime",
+        };
+        // Retain Core's Cutout/CutoutComplex shader and mask channels; only the
+        // queue moves after the cached section mesh for a realtime moving leaf.
+        material.renderQueue = ShaderDatabase.Transparent.renderQueue;
+        RealtimeMaterials[key] = material;
         return material;
     }
 
@@ -242,267 +357,209 @@ public static class HybridWallRenderer
         SectionLayer layer,
         VertexContext context)
     {
-        HybridWallRayMask regularOwned = HybridRegularContactOwnership.AllRegularOwnedRays(
-            context.Topology.OrdinaryQuadrants,
-            context.Topology.ThinRays);
+        HybridWallRayMask regularOwned = HybridWallRayMask.None;
+        if (TryResolveNativeRegularContact(context, out NativeRegularContact admitted))
+            regularOwned |= Mask(admitted.Rule.StemDirection);
         HybridWallRayMask vertexRays = context.Topology.ThinRays & ~regularOwned;
-        if (vertexRays == HybridWallRayMask.None)
+        if (vertexRays != HybridWallRayMask.None)
         {
-            return;
-        }
-        HybridWallVertexTopology vertexTopology = HybridWallVertexTopology.FromOccupancy(
-            context.Topology.OrdinaryQuadrants,
-            vertexRays);
-        HybridWallRayMask vertexDoorRays = context.DoorRays & vertexRays;
-        HybridWallRuntimePlan plan = HybridWallRuntimePlanCompiler.Compile(
-            vertexTopology,
-            context.DoubledRays & vertexRays,
-            vertexDoorRays);
-        float wallAltitude = AltitudeLayer.Building.AltitudeFor() + CompletedAltitude;
-        float frameAltitude = HybridWallDoorGeometryCompiler.ThinFrameAltitude(wallAltitude);
-        Vector3 center = ThinWallRenderGeometry.StructuralVertexCenter(context.Vertex, wallAltitude);
-
-        var partitions = new List<VertexPartition>();
-        foreach (HybridWallDirection direction in context.Topology.Arms.OccupiedDirections)
-        {
-            if (!context.ThinSources.TryGetValue(direction, out IReadOnlyList<Building> sources))
-            {
-                continue;
-            }
-
-            HybridWallRayMask ray = Mask(direction);
-            if (regularOwned.HasFlag(ray))
-            {
-                continue;
-            }
-            bool doubled = sources.Count > 1;
-            foreach (Building source in sources)
-            {
-                Material sourceMaterial = CoreWallAtlasMaterial(source);
-                partitions.Add(new VertexPartition(
-                    ray,
-                    source,
-                    sourceMaterial,
-                    FamilyFor(source),
-                    ThinWallVisualResolver.DamageGrade(source.HitPoints, source.MaxHitPoints),
-                    doubled,
-                    doubled && source is IThinEdgeStructure edgeSource
-                        ? edgeSource.OwnedEdge.Side
-                        : null));
-            }
-        }
-        if (partitions.Count == 0)
-        {
-            return;
-        }
-
-        Material outline = CoreDerivedWallMaterialCache.RuntimeMaterial(
-            partitions[0].SourceMaterial,
-            plan,
-            partitions[0].Family,
-            ThinWallDamageGrade.None,
-            door: false,
-            outlineOnly: true);
-        PrintPlane(outline,
-            HybridWallDoorGeometryCompiler.HasThinOwnedFrame(context.DoorRays, vertexRays)
-                ? frameAltitude
-                : wallAltitude);
-
-        HybridWallPartitionVisual[] visualPartitions = partitions
-            .Select(partition => new HybridWallPartitionVisual(
-                partition.Ray,
-                partition.SourceMaterial.GetInstanceID(),
-                partition.Family,
-                partition.Damage,
-                partition.Doubled,
-                partition.Source is Building_ThinDoor))
-            .ToArray();
-        if (HybridWallPartitionBatching.CanRenderAsOneStructuralUnion(visualPartitions))
-        {
-            VertexPartition first = partitions[0];
-            HybridWallRayMask combinedRays = partitions.Aggregate(
-                HybridWallRayMask.None,
-                (mask, partition) => mask | partition.Ray);
-            Material material = CoreDerivedWallMaterialCache.RuntimeMaterial(
-                first.SourceMaterial,
-                plan,
-                first.Family,
-                first.Damage,
-                door: false,
-                partitionRay: combinedRays);
-            PrintPlane(material, wallAltitude + 0.001f);
-        }
-        else
-        {
-            foreach (VertexPartition partition in partitions)
-            {
-                Material material = CoreDerivedWallMaterialCache.RuntimeMaterial(
-                    partition.SourceMaterial,
-                    plan,
-                    partition.Family,
-                    partition.Damage,
-                    door: false,
-                    partitionRay: partition.Ray,
-                    ownerSide: partition.OwnerSide);
-                PrintPlane(material,
-                    partition.Source is Building_ThinDoor ? frameAltitude : wallAltitude + 0.001f);
-            }
-        }
-
-        void PrintPlane(Material material, float altitude)
-        {
-            Printer_Plane.PrintPlane(
-                layer,
-                new Vector3(center.x, altitude, center.z),
-                new Vector2(
-                    ThinWallRenderGeometry.UnionPlaneScale,
-                    ThinWallRenderGeometry.UnionPlaneScale),
-                material,
-                topVerticesAltitudeBias: HybridWallDoorGeometryCompiler.CustomPlaneTopVerticesAltitudeBias);
+            PrintNativeThinVertex(layer, context, vertexRays);
         }
     }
+
+    private static void PrintNativeThinVertex(
+        SectionLayer layer,
+        VertexContext context,
+        HybridWallRayMask rays)
+    {
+        Building[] allSources = context.ThinSources
+            .Where(entry => rays.HasFlag(Mask(entry.Key)))
+            .SelectMany(entry => entry.Value)
+            .OrderBy(source => source.thingIDNumber)
+            .ToArray();
+        if (allSources.Length == 0) return;
+        Vector3 center = ThinWallRenderGeometry.StructuralVertexCenter(
+            context.Vertex,
+            AltitudeLayer.Building.AltitudeFor() + NativeWallMeshPlan.CompletedAltitudeOffset);
+        HybridWallRayMask doorRays = context.DoorRays & rays;
+        HybridWallRayMask structuralRays = rays & ~doorRays;
+        bool homogeneous = allSources.All(source =>
+            source.Stuff == allSources[0].Stuff &&
+            source.DrawColor == allSources[0].DrawColor &&
+            source.DrawColorTwo == allSources[0].DrawColorTwo);
+        if ((context.DoubledRays & rays) != HybridWallRayMask.None)
+        {
+            Log.WarningOnce(
+                "[Thin Walls] A legacy save contains two completed structures on the same shared edge. " +
+                "The source-only renderer displays the canonical owner once; new designations reject this state.",
+                0x54484455 ^ context.Vertex.GetHashCode());
+        }
+
+        Material canonical = CoreWallAtlasMaterial(allSources[0]);
+        if (!NativeWallMeshPrinter.CanRemap(canonical))
+        {
+            Log.WarningOnce("[Thin Walls] Resolved wall graphic has no usable texture; displaying a diagnostic edge.",
+                0x54484e53 ^ canonical.GetInstanceID());
+            canonical = BaseContent.BadMat;
+        }
+
+        if (structuralRays != HybridWallRayMask.None)
+        {
+            IReadOnlyList<NativeWallMeshQuad> plan = NativeWallMeshPlan.Topology(structuralRays);
+            if (homogeneous)
+            {
+                NativeWallMeshPrinter.Print(layer, center, canonical, plan);
+            }
+            else
+            {
+                const float body = 17f / 60f;
+                NativeWallMeshQuad[] central = plan.Where(quad =>
+                    quad.Destination.X >= -body - 0.00001f && quad.Destination.XMax <= body + 0.00001f &&
+                    quad.Destination.Y >= -body - 0.00001f && quad.Destination.YMax <= body + 0.00001f).ToArray();
+                NativeWallMeshPrinter.Print(layer, center, canonical, central);
+                foreach (HybridWallDirection direction in context.Topology.Arms.OccupiedDirections)
+                {
+                    HybridWallRayMask ray = Mask(direction);
+                    if (!structuralRays.HasFlag(ray) ||
+                        !context.ThinSources.TryGetValue(direction, out IReadOnlyList<Building> sources)) continue;
+                    NativeWallMeshQuad[] exterior = plan.Where(quad => IsExteriorForRay(quad, ray, body)).ToArray();
+                    NativeWallMeshPrinter.Print(layer, center, CoreWallAtlasMaterial(sources[0]), exterior);
+                }
+            }
+        }
+
+        foreach (HybridWallDirection direction in context.Topology.Arms.OccupiedDirections)
+        {
+            HybridWallRayMask ray = Mask(direction);
+            if (!doorRays.HasFlag(ray) ||
+                !context.ThinSources.TryGetValue(direction, out IReadOnlyList<Building> sources)) continue;
+            NativeWallMeshPrinter.Print(layer, center, CoreWallAtlasMaterial(sources[0]), NativeDoorFramePlan.ForRay(ray));
+        }
+    }
+
+    private static bool IsExteriorForRay(NativeWallMeshQuad quad, HybridWallRayMask ray, float body) =>
+        ray switch
+        {
+            HybridWallRayMask.North => quad.Destination.Y >= body - 0.00001f,
+            HybridWallRayMask.East => quad.Destination.X >= body - 0.00001f,
+            HybridWallRayMask.South => quad.Destination.YMax <= -body + 0.00001f,
+            HybridWallRayMask.West => quad.Destination.XMax <= -body + 0.00001f,
+            _ => false,
+        };
 
     internal static bool TryPrintHybridRegularWall(
         SectionLayer layer,
         Building wall,
         Material nativeLinkedMaterial)
     {
-        if (wall.Map == null || wall.def.building?.isWall != true)
-        {
+        if (wall.Map == null || wall.def != ThingDefOf.Wall)
             return false;
-        }
 
-        var corners = new List<HybridWallCornerRaster>(4);
-        var visuals = new List<HybridWallContactVisual>(8);
-        var sourceMaterials = new Dictionary<int, Material>();
-        AddCorner(wall.Position, HybridWallQuadrant.NorthEast);
-        AddCorner(new IntVec3(wall.Position.x + 1, 0, wall.Position.z), HybridWallQuadrant.NorthWest);
-        AddCorner(new IntVec3(wall.Position.x, 0, wall.Position.z + 1), HybridWallQuadrant.SouthEast);
-        AddCorner(new IntVec3(wall.Position.x + 1, 0, wall.Position.z + 1), HybridWallQuadrant.SouthWest);
-        if (corners.Count == 0)
-        {
-            return false;
-        }
-        if (!HybridWallAtlasSupport.IsSupported(
-                nativeLinkedMaterial.mainTexture.name,
-                nativeLinkedMaterial.mainTexture.width,
-                nativeLinkedMaterial.mainTexture.height) ||
-            !CoreDerivedWallMaterialCache.SupportsHybridAtlas(nativeLinkedMaterial.mainTexture))
-        {
-            return false;
-        }
-
-        HybridRegularRenderMaterial render = CoreDerivedWallMaterialCache.HybridRegularMaterial(
-            nativeLinkedMaterial,
-            LinkIndex(nativeLinkedMaterial),
-            corners,
-            visuals,
-            sourceMaterials);
-        Printer_Plane.PrintPlane(
-            layer,
-            GenThing.TrueCenter(wall),
-            Vector2.one,
-            render.NativeMaterial,
-            topVerticesAltitudeBias: 0.01f);
-        foreach (HybridRegularExteriorRenderMaterial exterior in render.ExteriorMaterials)
-        {
-            PrintHybridRegularExterior(
-                layer,
-                GenThing.TrueCenter(wall),
-                exterior);
-        }
-        PrintHybridRegularShadow(layer, wall, render.Shadow);
-        return true;
-
-        void AddCorner(IntVec3 vertex, HybridWallQuadrant wallQuadrant)
-        {
-            VertexContext context = ResolveContext(wall.Map, vertex);
-            HybridWallRayMask participatingRays = HybridRegularContactOwnership.RaysParticipatingIn(
-                wallQuadrant,
-                context.Topology.OrdinaryQuadrants,
-                context.Topology.ThinRays);
-            if (participatingRays == HybridWallRayMask.None ||
-                !context.Topology.OrdinaryQuadrants.HasFlag(wallQuadrant))
-            {
-                return;
-            }
-            HybridWallRayMask gutterRays = HybridRegularContactOwnership.RaysOwnedBy(
-                wallQuadrant,
-                context.Topology.OrdinaryQuadrants,
-                context.Topology.ThinRays);
-            HybridWallRayMask sideTRays = HybridRegularContactOwnership.SideTRaysParticipatingIn(
-                wallQuadrant,
-                context.Topology.OrdinaryQuadrants,
-                context.Topology.ThinRays);
-            corners.Add(new HybridWallCornerRaster(
-                wallQuadrant,
-                participatingRays,
-                context.DoubledRays & participatingRays,
-                context.DoorRays & participatingRays,
-                gutterRays,
-                sideTRays));
-            foreach (HybridWallDirection direction in new[]
-                     {
-                         HybridWallDirection.North,
-                         HybridWallDirection.East,
-                         HybridWallDirection.South,
-                         HybridWallDirection.West,
-                     })
-            {
-                HybridWallRayMask ray = Mask(direction);
-                if (!participatingRays.HasFlag(ray) ||
-                    !context.ThinSources.TryGetValue(direction, out IReadOnlyList<Building> sources))
-                {
-                    continue;
-                }
-                bool doubled = sources.Count > 1;
-                foreach (Building source in sources)
-                {
-                    Material sourceMaterial = CoreWallAtlasMaterial(source);
-                    int materialId = sourceMaterial.GetInstanceID();
-                    sourceMaterials[materialId] = sourceMaterial;
-                    visuals.Add(new HybridWallContactVisual(
-                        new HybridWallContactKey(wallQuadrant, ray),
-                        materialId,
-                        FamilyFor(source),
-                        ThinWallVisualResolver.DamageGrade(source.HitPoints, source.MaxHitPoints),
-                        source is Building_ThinDoor,
-                        doubled && source is IThinEdgeStructure edgeSource
-                            ? edgeSource.OwnedEdge.Side
-                            : null));
-                }
-            }
-        }
+        return TryPrintNativeRegularContact(layer, wall, nativeLinkedMaterial);
     }
 
-    private static void PrintHybridRegularExterior(
-        SectionLayer layer,
-        Vector3 wallCenter,
-        HybridRegularExteriorRenderMaterial exterior)
-    {
-        HybridRegularExteriorRegion region = exterior.Region;
-        Printer_Plane.PrintPlane(
-            layer,
-            new Vector3(
-                wallCenter.x + region.CenterX,
-                wallCenter.y + region.AltitudeOffset,
-                wallCenter.z + region.CenterZ),
-            new Vector2(region.SizeX, region.SizeZ),
-            exterior.Material,
-            topVerticesAltitudeBias: region.TopVerticesAltitudeBias);
-    }
-
-    private static void PrintHybridRegularShadow(
+    private static bool TryPrintNativeRegularContact(
         SectionLayer layer,
         Building wall,
-        HybridRegularShadowPlan shadow)
+        Material nativeLinked)
     {
-        if (!DebugViewSettings.drawShadows)
+        VertexContext[] contexts =
         {
-            return;
-        }
+            ResolveContext(wall.Map, wall.Position),
+            ResolveContext(wall.Map, wall.Position + IntVec3.East),
+            ResolveContext(wall.Map, wall.Position + IntVec3.North),
+            ResolveContext(wall.Map, wall.Position + IntVec3.North + IntVec3.East),
+        };
+        NativeRegularContact[] contacts = contexts
+            .Select(context => TryResolveNativeRegularContact(context, out NativeRegularContact contact)
+                ? contact
+                : null)
+            .Where(contact => contact != null)
+            .ToArray()!;
+        if (contacts.Length != 1) return false;
 
-        PrintRasterShadow(layer, wall.Position.x, wall.Position.z, shadow);
+        NativeRegularContact admitted = contacts[0];
+        int receiverIndex = Array.FindIndex(admitted.Receivers, receiver => ReferenceEquals(receiver, wall));
+        if (receiverIndex < 0) return false;
+        Material atlas = CoreWallAtlasMaterial(wall);
+        if (!NativeWallMeshPrinter.CanRemap(atlas) || nativeLinked == null ||
+            nativeLinked.mainTexture != atlas.mainTexture || nativeLinked.shader != atlas.shader)
+            return false;
+
+        HybridWallRayMask stem = Mask(admitted.Rule.StemDirection);
+        IReadOnlyList<NativeWallMeshQuad> compiled = ContactPlan(stem, receiverIndex == 0);
+        Vector3 center = new(admitted.Context.Vertex.x, GenThing.TrueCenter(wall).y, admitted.Context.Vertex.z);
+        NativeWallMeshPrinter.PrintLinked(
+            layer,
+            center,
+            nativeLinked,
+            wall.Position.z - admitted.Context.Vertex.z,
+            compiled.Where(quad => !NativeRegularContactPlan.UsesThinSource(quad, stem)).ToArray());
+        NativeWallMeshPrinter.Print(layer, center, CoreWallAtlasMaterial(admitted.Stem),
+            compiled.Where(quad => NativeRegularContactPlan.UsesThinSource(quad, stem)).ToArray());
+        wall.Graphic.ShadowGraphic?.Print(layer, wall, 0f);
+        return true;
+    }
+
+    private static IReadOnlyList<NativeWallMeshQuad> ContactPlan(
+        HybridWallRayMask stem,
+        bool firstReceiver) => stem switch
+    {
+        HybridWallRayMask.North => NativeRegularContactPlan.NorthStem(firstReceiver),
+        HybridWallRayMask.East => NativeRegularContactPlan.EastStem(firstReceiver),
+        HybridWallRayMask.South => NativeRegularContactPlan.SouthStem(firstReceiver),
+        HybridWallRayMask.West => NativeRegularContactPlan.WestStem(firstReceiver),
+        _ => throw new ArgumentOutOfRangeException(nameof(stem)),
+    };
+
+    private static bool TryResolveNativeRegularContact(
+        VertexContext context,
+        out NativeRegularContact contact)
+    {
+        if (!TryResolveNativeRegularContactCandidate(context, out contact)) return false;
+        var candidates = new List<NativeRegularContactCandidate>();
+        foreach (NativeRegularGridPoint vertex in NativeRegularContactPlan.ReceiverVertices(contact.Rule))
+        {
+            if (TryResolveNativeRegularContactCandidate(
+                    ResolveContext(context.Map, context.Vertex + new IntVec3(vertex.X, 0, vertex.Z)),
+                    out NativeRegularContact candidate))
+                candidates.Add(new NativeRegularContactCandidate(vertex.X, vertex.Z, candidate.Rule));
+        }
+        if (NativeRegularContactPlan.CanReplaceAtomically(contact.Rule, candidates)) return true;
+        contact = null!;
+        return false;
+    }
+
+    private static bool TryResolveNativeRegularContactCandidate(
+        VertexContext context,
+        out NativeRegularContact contact)
+    {
+        contact = null!;
+        if (!NativeRegularContactPlan.TryResolve(
+                context.Topology.ThinRays,
+                context.Topology.OrdinaryQuadrants,
+                context.DoorRays,
+                context.DoubledRays,
+                out NativeRegularContactRule rule))
+            return false;
+
+        if (!context.ThinSources.TryGetValue(rule.StemDirection, out IReadOnlyList<Building> sources) ||
+            sources.Count != 1 || !NativeWallMeshPrinter.CanRemap(CoreWallAtlasMaterial(sources[0])))
+            return false;
+        IntVec3[] receiverCells =
+        {
+            context.Vertex + new IntVec3(rule.FirstReceiverX, 0, rule.FirstReceiverZ),
+            context.Vertex + new IntVec3(rule.SecondReceiverX, 0, rule.SecondReceiverZ),
+        };
+        Building[] receivers = receiverCells.Select(cell => cell.GetEdifice(context.Map)).ToArray();
+        foreach (Building receiver in receivers)
+        {
+            if (receiver == null || receiver.def != ThingDefOf.Wall ||
+                !HybridRegularWallPrintPatch.UsesNativePrint(receiver.Graphic) ||
+                !NativeWallMeshPrinter.CanRemap(CoreWallAtlasMaterial(receiver))) return false;
+        }
+        contact = new NativeRegularContact(context, rule, receivers, sources[0]);
+        return true;
     }
 
     private static void PrintThinVertexShadow(
@@ -597,44 +654,10 @@ public static class HybridWallRenderer
     internal static Material CoreWallAtlasMaterial(Building source)
     {
         ThingDef graphicDef = source.def.building?.isWall == true ? source.def : ThingDefOf.Wall;
-        Graphic graphic = graphicDef.graphicData.Graphic;
-        if (!graphicDef.graphicData.ignoreThingDrawColor)
-        {
-            graphic = graphic.GetColoredVersion(graphic.Shader, source.DrawColor, source.DrawColorTwo);
-        }
-
-        while (graphic is Graphic_Linked linked)
-        {
-            graphic = linked.SubGraphic;
-        }
-        if (graphic is Graphic_Appearances appearances)
-        {
-            graphic = appearances.SubGraphicFor(source.Stuff);
-        }
-
-        Material material = graphic.MatSingleFor(source);
-        if (material.mainTexture is Texture2D texture && HybridWallAtlasSupport.IsSupported(
-                texture.name,
-                texture.width,
-                texture.height))
-        {
-            return material;
-        }
-
-        Graphic core = ThingDefOf.Wall.graphicData.Graphic;
-        if (!ThingDefOf.Wall.graphicData.ignoreThingDrawColor)
-        {
-            core = core.GetColoredVersion(core.Shader, source.DrawColor, source.DrawColorTwo);
-        }
-        while (core is Graphic_Linked linkedCore)
-        {
-            core = linkedCore.SubGraphic;
-        }
-        if (core is Graphic_Appearances coreAppearances)
-        {
-            core = coreAppearances.SubGraphicFor(source.Stuff);
-        }
-        return core.MatSingleFor(source);
+        bool regular = source.def.building?.isWall == true;
+        return WallMaterial(regular ? source.Graphic : graphicDef.graphicData.Graphic, source.Stuff, source,
+            source.DrawColor, source.DrawColorTwo,
+            regular || graphicDef.graphicData.ignoreThingDrawColor);
     }
 
     private static VertexContext ResolveContext(Map map, IntVec3 vertex)
@@ -673,6 +696,7 @@ public static class HybridWallRenderer
         AddQuadrant(HybridWallQuadrant.SouthWest, new IntVec3(vertex.x - 1, 0, vertex.z - 1));
 
         return new VertexContext(
+            map,
             vertex,
             HybridWallVertexTopology.FromOccupancy(quadrants, thinMask),
             doubledRays,
@@ -705,11 +729,7 @@ public static class HybridWallRenderer
             graphic = appearances.SubGraphicFor(wall.Stuff);
         }
         Material material = graphic.MatSingleFor(wall);
-        return HybridWallAtlasSupport.IsSupported(
-                   material.mainTexture.name,
-                   material.mainTexture.width,
-                   material.mainTexture.height) &&
-               CoreDerivedWallMaterialCache.SupportsHybridAtlas(material.mainTexture);
+        return HybridWallAtlasSupport.IsSupported(material.mainTexture);
     }
 
     private static IEnumerable<(HybridWallDirection Direction, SharedEdge Edge)> IncidentEdges(IntVec3 vertex)
@@ -749,12 +769,14 @@ public static class HybridWallRenderer
     private sealed class VertexContext
     {
         public VertexContext(
+            Map map,
             IntVec3 vertex,
             HybridWallVertexTopology topology,
             HybridWallRayMask doubledRays,
             HybridWallRayMask doorRays,
             IReadOnlyDictionary<HybridWallDirection, IReadOnlyList<Building>> thinSources)
         {
+            Map = map;
             Vertex = vertex;
             Topology = topology;
             DoubledRays = doubledRays;
@@ -762,11 +784,32 @@ public static class HybridWallRenderer
             ThinSources = thinSources;
         }
 
+        public Map Map { get; }
         public IntVec3 Vertex { get; }
         public HybridWallVertexTopology Topology { get; }
         public HybridWallRayMask DoubledRays { get; }
         public HybridWallRayMask DoorRays { get; }
         public IReadOnlyDictionary<HybridWallDirection, IReadOnlyList<Building>> ThinSources { get; }
+    }
+
+    private sealed class NativeRegularContact
+    {
+        public NativeRegularContact(
+            VertexContext context,
+            NativeRegularContactRule rule,
+            Building[] receivers,
+            Building stem)
+        {
+            Context = context;
+            Rule = rule;
+            Receivers = receivers;
+            Stem = stem;
+        }
+
+        public VertexContext Context { get; }
+        public NativeRegularContactRule Rule { get; }
+        public Building[] Receivers { get; }
+        public Building Stem { get; }
     }
 
     private sealed class VertexPartition

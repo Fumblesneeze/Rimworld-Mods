@@ -9,16 +9,6 @@ public static class ThinDoorAccessPolicy
     public static bool PermitsPassage(bool canPhysicallyPass, bool forbidden) =>
         canPhysicallyPass && !forbidden;
 
-    public static bool RefineReachability(bool vanillaAccepted, bool edgeGraphAccepted) =>
-        vanillaAccepted && edgeGraphAccepted;
-
-    public static bool MayRecoverThinDoorRegionSplit(
-        bool vanillaAccepted,
-        bool edgeGraphAccepted,
-        bool nativePathFound,
-        bool pathCrossesThinDoor) =>
-        !vanillaAccepted && edgeGraphAccepted && nativePathFound && pathCrossesThinDoor;
-
     public static bool ShouldRefreshFriendlyTouch(bool pawnSpawned, bool crossesOwnedEdge) =>
         pawnSpawned && crossesOwnedEdge;
 
@@ -37,11 +27,13 @@ public static class ThinDoorAccessPolicy
 
     public static bool CanTraverse(Building_ThinDoor door, TraverseParms traverseParms)
     {
+        if (traverseParms.mode == TraverseMode.NoPassClosedDoors ||
+            traverseParms.mode == TraverseMode.NoPassClosedDoorsOrWater) return door.FreePassage;
         if (traverseParms.pawn != null)
         {
             return CanTraverse(door, traverseParms.pawn);
         }
 
-        return traverseParms.mode != TraverseMode.NoPassClosedDoors || door.FreePassage;
+        return true;
     }
 }

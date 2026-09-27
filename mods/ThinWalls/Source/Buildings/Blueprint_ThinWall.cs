@@ -8,15 +8,11 @@ namespace ThinWalls.Buildings;
 
 public sealed class Blueprint_ThinWall : Blueprint_Build
 {
-    protected override void DrawAt(Vector3 drawLoc, bool flip = false)
+    public override void Print(SectionLayer layer)
     {
         var edge = new OwnedEdge(Position, (ThinWallSide)Rotation.AsInt);
-        Material material = ThinWallRenderer.StateMaterial(
-            BuildDef,
-            stuffToUse,
-            new Color(0.25f, 0.85f, 1f),
-            0.72f,
-            edge.Side);
-        ThinWallRenderer.DrawRealtime(edge, 1, material, AltitudeLayer.Blueprint.AltitudeFor());
+        ThinWallRenderer.PrintBlueprint(layer, edge);
     }
+
+    protected override void DrawAt(Vector3 drawLoc, bool flip = false) { }
 }

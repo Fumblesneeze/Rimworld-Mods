@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <TW_ShrinkBuilding>Уменьшить</TW_ShrinkBuilding>
+  <TW_ShrinkBuildingDesc>Масштаб изображения: 100%, 90%, 80%, 70%, 60%, 50%, затем 100%. Меняется только внешний вид здания, но не занятые клетки и места взаимодействия. Размеры персонажей и хранящихся предметов не меняются. Изменение масштаба не меняет смещение.</TW_ShrinkBuildingDesc>
+  <TW_OffsetBuilding>Сместить</TW_OffsetBuilding>
+  <TW_OffsetBuildingDesc>Визуальное смещение на 0,2 клетки: С, СВ, В, ЮВ, Ю, ЮЗ, З, СЗ, затем по центру. Занятые клетки, задания и места взаимодействия не меняются. Персонажи и хранящиеся предметы не перемещаются. Ближайшие тонкие стены определяют смещение автоматически, пока вы не используете эту команду. После этого ваш выбор сохраняется, в том числе положение по центру.</TW_OffsetBuildingDesc>
+  <TW_ShowShrinkGizmo>Показывать команду уменьшения зданий</TW_ShowShrinkGizmo>
+  <TW_ShowOffsetGizmo>Показывать команду смещения зданий</TW_ShowOffsetGizmo>
+  <TW_AppearanceSettingsHint>Скрытие команды не сбрасывает сохранённые настройки. Меняется только внешний вид. Стены, двери и соединённые конструкции исключены.</TW_AppearanceSettingsHint>
+  <TW_OffsetCenter>Центр</TW_OffsetCenter>
+  <TW_OffsetN>С</TW_OffsetN>
+  <TW_OffsetNE>СВ</TW_OffsetNE>
+  <TW_OffsetE>В</TW_OffsetE>
+  <TW_OffsetSE>ЮВ</TW_OffsetSE>
+  <TW_OffsetS>Ю</TW_OffsetS>
+  <TW_OffsetSW>ЮЗ</TW_OffsetSW>
+  <TW_OffsetW>З</TW_OffsetW>
+  <TW_OffsetNW>СЗ</TW_OffsetNW>
+</LanguageData>

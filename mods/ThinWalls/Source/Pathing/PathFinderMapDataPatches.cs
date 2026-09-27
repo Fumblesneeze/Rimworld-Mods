@@ -1,6 +1,7 @@
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Verse;
 
 namespace ThinWalls.Pathing;
@@ -8,8 +9,8 @@ namespace ThinWalls.Pathing;
 [HarmonyPatch]
 public static class PathFinderMapDataPatches
 {
-    [ThreadStatic]
-    private static bool pendingThinWallBashTraversal;
+    private static readonly AccessTools.FieldRef<SimplePathFinderDataSource<CellConnection>, NativeArray<CellConnection>> NativeData =
+        AccessTools.FieldRefAccess<SimplePathFinderDataSource<CellConnection>, NativeArray<CellConnection>>("data");
 
     [ThreadStatic]
     private static PathRequest? pendingRequest;
@@ -18,50 +19,48 @@ public static class PathFinderMapDataPatches
     [HarmonyPostfix]
     public static void PathFinderParameterizePostfix(PathRequest request)
     {
-        pendingThinWallBashTraversal = MayBashThinWalls(request.TraverseParms);
         pendingRequest = request;
     }
 
     [HarmonyPatch(typeof(PathFinderMapData), nameof(PathFinderMapData.GatherData))]
-    [HarmonyPostfix]
-    public static void GatherDataPostfix(PathFinderMapData __instance, bool __result, Map ___map)
+    [HarmonyPrefix]
+    public static void GatherDataPrefix(ConnectivitySource ___connectivity, Map ___map)
     {
-        ___map.GetComponent<ThinWallMapComponent>().EnsureConnectivity(__instance, __result);
+        if (ThinWallMapComponent.TryGet(___map, out var component))
+            component.RestoreNativeConnectivity(NativeData(___connectivity));
+    }
+
+    [HarmonyPatch(typeof(PathFinderMapData), nameof(PathFinderMapData.GatherData))]
+    [HarmonyPostfix]
+    public static void GatherDataPostfix(ConnectivitySource ___connectivity, Map ___map)
+    {
+        if (ThinWallMapComponent.TryGet(___map, out ThinWallMapComponent component))
+        {
+            component.ApplyNativeConnectivity(NativeData(___connectivity));
+        }
     }
 
     [HarmonyPatch(typeof(PathFinderMapData), nameof(PathFinderMapData.ParameterizePathJob))]
     [HarmonyPostfix]
-    public static void ParameterizePathJobPostfix(PathFinderMapData __instance, ref PathFinderJob job, Map ___map)
+    public static void ParameterizePathJobPostfix(ConnectivitySource ___connectivity, ref PathFinderJob job, Map ___map)
     {
-        bool thinWallBashTraversal = pendingThinWallBashTraversal;
         PathRequest? request = pendingRequest;
-        pendingThinWallBashTraversal = false;
         pendingRequest = null;
-        if (thinWallBashTraversal)
+        if (!ThinWallMapComponent.TryGet(___map, out ThinWallMapComponent component) ||
+            !component.HasCompletedEdgeStructures || request == null)
         {
             return;
         }
-
-        ThinWallMapComponent component = ___map.GetComponent<ThinWallMapComponent>();
-        if (!component.Connectivity.IsCreated)
-        {
-            component.EnsureConnectivity(__instance, vanillaChanged: true);
-        }
-        job.connectivity = request == null
-            ? component.Connectivity.AsReadOnly()
-            : component.ConnectivityFor(__instance, request);
+        job.connectivity = component.ConnectivityFor(NativeData(___connectivity), request);
     }
 
     [HarmonyPatch(typeof(PathFinder), nameof(PathFinder.Dispose))]
     [HarmonyPostfix]
     public static void PathFinderDisposePostfix(Map ___map)
     {
-        ___map.GetComponent<ThinWallMapComponent>()?.DisposeConnectivity();
-    }
-
-    private static bool MayBashThinWalls(TraverseParms traverseParms)
-    {
-        return traverseParms.canBashDoors;
+        // Core calls MapRemoved (which unregisters the hot-path lookup) before PathFinder.Dispose.
+        // The map's component list still exists here, after native scheduled readers completed.
+        ___map.GetComponent<ThinWallMapComponent>()?.DisposeRequestConnectivity();
     }
 }
 
@@ -79,6 +78,9 @@ public static class ThinDoorPathFinderPatches
     [HarmonyPostfix]
     public static void ForceCompleteScheduledJobsPostfix(Map ___map)
     {
-        ___map.GetComponent<ThinWallMapComponent>()?.DisposeRequestConnectivity();
+        if (ThinWallMapComponent.TryGet(___map, out ThinWallMapComponent component))
+        {
+            component.DisposeRequestConnectivity();
+        }
     }
 }

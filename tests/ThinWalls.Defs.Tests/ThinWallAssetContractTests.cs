@@ -38,9 +38,13 @@ public sealed class ThinWallAssetContractTests
         {
             Assert.That(xml, Does.Contain("Things/Building/Linked/Wall"));
             Assert.That(xml, Does.Not.Contain("Things/Building/Linked/Wall_Bricks"));
-            Assert.That(xml, Does.Not.Contain("<graphicClass>Graphic_Single</graphicClass>"));
-            Assert.That(xml, Does.Contain("<graphicClass>Graphic_Appearances</graphicClass>"));
+            Assert.That(xml, Does.Contain("<graphicClass>Graphic_Single</graphicClass>"));
+            Assert.That(xml, Does.Not.Contain("<graphicClass>Graphic_Appearances</graphicClass>"),
+                "the fallback Def graphic is a native menu icon; the map renderer resolves Core's atlas independently, so native icon resolution must not expose it");
             Assert.That(xml, Does.Contain("Things/Building/Linked/WallSmooth_MenuIcon"));
+            Assert.That(xml, Does.Contain("Things/Building/Door/DoorSimple_MenuIcon"));
+            Assert.That(xml, Does.Contain("Things/Building/Linked/WallBricks_MenuIcon"));
+            Assert.That(xml, Does.Contain("Things/Building/Linked/WallPlanks_MenuIcon"));
             Assert.That(xml, Does.Not.Contain("ThinWalls/Wall/"));
         });
     }
@@ -65,22 +69,19 @@ public sealed class ThinWallAssetContractTests
     }
 
     [Test]
-    public void RuntimePinsAllThreeMeasuredCoreAtlasPixelIdentities()
+    public void RuntimeDoesNotReadBackOrHashTexturePixelsForContentAdmission()
     {
         string source = File.ReadAllText(Path.Combine(
             ModRoot(),
             "Source",
             "Rendering",
-            "CoreDerivedWallMaterialCache.cs"));
+            "HybridWallAtlasSupport.cs"));
 
         Assert.Multiple(() =>
         {
-            Assert.That(source, Does.Contain("Wall_Atlas_Bricks"));
-            Assert.That(source, Does.Contain("9103d223a5c8c5c38cda6b3b7c423e2d8c8dfaa5fcc719311ef0013d68b12044"));
-            Assert.That(source, Does.Contain("Wall_Atlas_Planks"));
-            Assert.That(source, Does.Contain("080da89957a7fb03a84e6b22ebc0cd0b64b38ce1a2fca5b86f1195c734179aa3"));
-            Assert.That(source, Does.Contain("Wall_Atlas_Smooth"));
-            Assert.That(source, Does.Contain("3264a8a3747279b010d7895507f31d30d3b5e2e2da949262a804595f3f305c95"));
+            Assert.That(source, Does.Not.Contain("ComputeRgbaSha256"));
+            Assert.That(source, Does.Not.Contain("GetPixels32"));
+            Assert.That(source, Does.Not.Contain("Wall_Atlas_Bricks"));
         });
     }
 
