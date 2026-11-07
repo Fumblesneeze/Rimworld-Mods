@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>Make Rimworld Great Again — development scaffold</title>
+  <rect width="1200" height="630" fill="#20252b" />
+  <g fill="#f1f3f5" font-family="sans-serif" text-anchor="middle">
+    <text x="600" y="250" font-size="54">Make Rimworld Great Again</text>
+    <text x="600" y="340" font-size="30">Development scaffold — no gameplay implemented</text>
+    <text x="600" y="410" font-size="24">Placeholder only · not approved for publication</text>
+  </g>
+</svg>

@@ -7,6 +7,14 @@ namespace RimWorldModding.Mcp;
 [McpServerToolType]
 public static class McpTools
 {
+    [McpServerTool(Name = "game_installation_inspect"), Description("Inspect a supported 1.6 or 1.7 game layout without loading assemblies or launching RimWorld.")]
+    public static async Task<string> InspectGameInstallation(
+        OperationRegistry registry,
+        [Description("Absolute game root; omit for the configured local installation.")] string? gameRoot,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("game_installation_inspect",
+            JsonSerializer.SerializeToElement(new { gameRoot }), cancellationToken));
+
     [McpServerTool(Name = "operation_list"), Description("List typed RimWorld repository operations and their risk/lifecycle metadata.")]
     public static async Task<string> ListOperations(OperationRegistry registry, CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync("operation_list", EmptyArguments(), cancellationToken));
@@ -57,10 +65,11 @@ public static class McpTools
         [Description("True validates discovery and launch inputs without launching RimWorld.")] bool? dryRun,
         [Description("True enables RimWorld master audio for sound-focused work; omitted or false keeps the isolated run muted.")] bool? enableAudio,
         [Description("Optional repository-contained E2E .csproj path that scopes metadata discovery to that owning project.")] string? projectPath,
+        [Description("Optional existing directory beneath repository artifacts containing isolated prelaunch mod-settings XML files; never normal ModsConfig or Prefs.")] string? prelaunchConfigDirectory,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "e2e_run_start",
-            JsonSerializer.SerializeToElement(new { groupId, testId, language, timeoutSeconds, dryRun, enableAudio, projectPath }),
+            JsonSerializer.SerializeToElement(new { groupId, testId, language, timeoutSeconds, dryRun, enableAudio, projectPath, prelaunchConfigDirectory }),
             cancellationToken));
 
     [McpServerTool(Name = "game_run_start"), Description("Start one leased isolated minimized Gateway-backed RimWorld process.")]
@@ -70,10 +79,12 @@ public static class McpTools
         [Description("Optional matching repository-owned mod project paths to build/deploy.")] string[]? projectPaths,
         [Description("Interactive hold duration in seconds, 60-7200.")] int? holdSeconds,
         [Description("True enables RimWorld master audio for sound-focused work; omitted or false keeps the isolated run muted.")] bool? enableAudio,
+        [Description("Optional artifacts-contained isolated mod-settings XML fixture.")] string? prelaunchConfigDirectory,
+        [Description("Only for an explicitly user-requested playtest: retain the game until the user exits or explicitly cancels; no automatic hold timeout.")] bool? userPlaytest,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "game_run_start",
-            JsonSerializer.SerializeToElement(new { packageIds, projectPaths, holdSeconds, enableAudio }),
+            JsonSerializer.SerializeToElement(new { packageIds, projectPaths, holdSeconds, enableAudio, prelaunchConfigDirectory, userPlaytest }),
             cancellationToken));
 
     [McpServerTool(Name = "run_status"), Description("Inspect one exact leased run, process identities, Gateway manifest, and bounded log tails.")]

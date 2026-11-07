@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net480</TargetFramework>
+    <RimWorldVersionedBuild>true</RimWorldVersionedBuild>
+    <RimWorldPath Condition="'$(RimWorldPath)' == ''">$(DefaultRimWorldPath)</RimWorldPath>
     <AssemblyName>RimWorldDevGateway.EndToEndTests</AssemblyName>
     <RootNamespace>RimWorldDevGateway.EndToEndTests</RootNamespace>
     <LangVersion>latest</LangVersion>
@@ -9,13 +11,16 @@
     <RimWorldEndToEndTestOwnerPackageId>fumblesneeze.rimworlddevgateway</RimWorldEndToEndTestOwnerPackageId>
   </PropertyGroup>
 
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.props" />
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.targets" />
+
   <ItemGroup>
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
-    <Reference Include="Assembly-CSharp">
+    <Reference Include="Assembly-CSharp" Condition="'$(RimWorldVersion)' == '1.6'">
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.CoreModule">
+    <Reference Include="UnityEngine.CoreModule" Condition="'$(RimWorldVersion)' == '1.6'">
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>

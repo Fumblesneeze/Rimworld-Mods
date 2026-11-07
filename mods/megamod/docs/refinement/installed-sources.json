@@ -1,0 +1,2006 @@
+{
+  "inspectedOn": "2026-11-01",
+  "scope": "Installed About.xml matches; roles distinguish named candidates, excluded providers (including rejected identity candidates), unnamed research suggestions and later interview UI references. Interview references do not add original-photo entries. Not activation, license or compatibility verification.",
+  "sources": [
+    {
+      "name": "Hunt for Me",
+      "packageId": "aRandomKiwi.HuntForMe",
+      "role": "excluded-by-user",
+      "referencedBy": ["P1-60"],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1593245720/About/About.xml",
+      "workshopId": "1593245720",
+      "supportedVersions": ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6"],
+      "aboutXmlSha256": "5B0288D6190A5A3BFC83D6513A3FE97E9107620AB6A00B9DCDE074D2841761CF"
+    },
+    {
+      "name": "Nice Bill Tab",
+      "packageId": "Andromeda.NiceBillTab",
+      "role": "interview-ui-reference",
+      "referencedBy": [
+        "interview:P1-09"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3520130671/About/About.xml",
+      "workshopId": "3520130671",
+      "supportedVersions": [
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "464C80013B120A06591061E75EBBFA2C3B800F5631F899024C8734E86B6AF4DA"
+    },
+    {
+      "name": "Nice Bill Tab - Expansion",
+      "packageId": "HICON.NiceBillTabExpansion",
+      "role": "interview-ui-reference",
+      "referencedBy": [
+        "interview:P1-09"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3721023311/About/About.xml",
+      "workshopId": "3721023311",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "8710CD9FA238649389E633055FE5B4B9E42BC59323016E8A4BDDE19B665AC34B"
+    },
+    {
+      "name": "Readable Numbers",
+      "packageId": "7h0m4s.RimworldReadableNumbers",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-26"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3762441264/About/About.xml",
+      "workshopId": "3762441264",
+      "supportedVersions": [
+        "1.7",
+        "1.6"
+      ],
+      "aboutXmlSha256": "80467F4454E7D0635DD4C2C159C80A75E217BF314927DAFEDC23EBC76C023AEB"
+    },
+    {
+      "name": "De-generalize Work",
+      "packageId": "Alias.DegeneralizeWork",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-52"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2011655761/About/About.xml",
+      "workshopId": "2011655761",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "E37A7B1C6F9B29FE417C34E70A217CCEC39EA1BA96A77C7FF4A8EA833D069697"
+    },
+    {
+      "name": "Improved Need Indicator",
+      "packageId": "AmCh.ImprovedNeedIndicator",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-03"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3211635205/About/About.xml",
+      "workshopId": "3211635205",
+      "supportedVersions": [
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "B2E36B5E2708CAB617A5BE4712A248D4E4D5CAA8B41C40417B17D0D155D39070"
+    },
+    {
+      "name": "Need Bar Overflow",
+      "packageId": "AmCh.NeedBarOverflow",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-33"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2566316158/About/About.xml",
+      "workshopId": "2566316158",
+      "supportedVersions": [
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "05ADD92A5364CFECD636301F9E3BE4C6D242337BA6E0D6759929A7971E90E619"
+    },
+    {
+      "name": "Enemies Use Apparel Too - EUAT",
+      "packageId": "Argotis.EnemiesUseApparelToo",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-12"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3746069759/About/About.xml",
+      "workshopId": "3746069759",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "6DC53A54134EDBCC64E986F588F2FB2973B5AF621A2BCCE9322BC2E605753902"
+    },
+    {
+      "name": "More power info",
+      "packageId": "arl85.MorePowerInfo",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-32"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2906529763/About/About.xml",
+      "workshopId": "2906529763",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "A33168AFA3EF20F7A1003F2901608A9F7F8C8D84473CBE7A7DA3D0E0D9F41C3B"
+    },
+    {
+      "name": "Show gender/age in caravan form dialog",
+      "packageId": "arl85.ShowGenderAgeCaravanFormDialog",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-45"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2914157264/About/About.xml",
+      "workshopId": "2914157264",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "137D2317D2FE4791650CD2FDC98EFC85BDE0FD44EB7C9DD69346E40D951AB866"
+    },
+    {
+      "name": "Auto links",
+      "packageId": "automatic.autolinks",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-03"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2059389912/About/About.xml",
+      "workshopId": "2059389912",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "90CA2B65BE9F2560439E92E8A6064ADC60277BBF701B718905DC7FFAF6439CBA"
+    },
+    {
+      "name": "Common Sense",
+      "packageId": "avilmask.CommonSense",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-18"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1561769193/About/About.xml",
+      "workshopId": "1561769193",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "7D88D50091E0EBE694EB1C2118CF9B7496942352B1A11D8856B8A080F1D3220C"
+    },
+    {
+      "name": "Grazing Lands",
+      "packageId": "avilmask.GrazingLands",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-16"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1770268130/About/About.xml",
+      "workshopId": "1770268130",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "88E3BFC4C0DDAD2AE9FEE951C6C8AADFF60B60CAEE1A1829065ACA39B62225E0"
+    },
+    {
+      "name": "Micro Designations",
+      "packageId": "avilmask.MicroDesignations",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-25"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1877972690/About/About.xml",
+      "workshopId": "1877972690",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "F8DEECF862645991067107892749DF7B4F7FD6901B16DD0C80C3CE8B1A668B57"
+    },
+    {
+      "name": "Research Whatever",
+      "packageId": "avilmask.ResearchWhatever",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-50"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2552092060/About/About.xml",
+      "workshopId": "2552092060",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "089DAA121D5800B083439E5253BCED46626B76BFB32556601FA2F82A44A0C03F"
+    },
+    {
+      "name": "Trees Don't Just Die",
+      "packageId": "azuraal.treedontjustdie",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-06"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2784870434/About/About.xml",
+      "workshopId": "2784870434",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "131F9F2E7BAAD8BFC8643E389E5D23BF8EC1B3C954041F816FC87E5466D4063F"
+    },
+    {
+      "name": "FoodTracker",
+      "packageId": "b0arl0ck.foodtracker",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-14"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3795037221/About/About.xml",
+      "workshopId": "3795037221",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "74651B6A931C66DE29B61DE82EE1CE5E5B9CC8E5B1444E64D4DBFB19B08B4564"
+    },
+    {
+      "name": "Stop, Drop, And Roll! [BAL]",
+      "packageId": "balistafreak.StopDropAndRoll",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-08"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2362707956/StopDropAndRoll/About/About.xml",
+      "workshopId": "2362707956",
+      "supportedVersions": [
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5"
+      ],
+      "aboutXmlSha256": "349E012B99B33790B4B6965E884D47355AB7AE15CB5A74FC8C342F6310BAF6AC"
+    },
+    {
+      "name": "Stop, Drop, And Roll! [BAL]",
+      "packageId": "balistafreak.StopDropAndRoll",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-08"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2362707956/About/About.xml",
+      "workshopId": "2362707956",
+      "supportedVersions": [
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "59BB2227910AA0FDE1C55074064C13F432CEE6E996C67BB1E278C88836A874B1"
+    },
+    {
+      "name": "Automatic Night Owl",
+      "packageId": "ben.automaticnightowl",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-64"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2056012179/About/About.xml",
+      "workshopId": "2056012179",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "672A92BBB293760C7C195040A00A60F490C45CA31EE6940C70437083C5C6EC6F"
+    },
+    {
+      "name": "Show Buildable Material Count",
+      "packageId": "BP.ShowBuildableMaterialCount",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-25"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3245101540/About/About.xml",
+      "workshopId": "3245101540",
+      "supportedVersions": [
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "31E21C0CE99937786A9BA4D52EA05097512824E7DF9EBCA4CFC2BF248B3B38DE"
+    },
+    {
+      "name": "Better Log - Fix your errors",
+      "packageId": "bs.betterlog",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-27"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2772559481/About/About.xml",
+      "workshopId": "2772559481",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5"
+      ],
+      "aboutXmlSha256": "20E5EC43EDB3E195615EE1FD6B9C81AFD1FCCFC7A1C16995468DD907C6E9D57C"
+    },
+    {
+      "name": "Designations Tooltip",
+      "packageId": "CheaterEater.DesignationsTooltip",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-13",
+        "P1-36"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3743959668/About/About.xml",
+      "workshopId": "3743959668",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "900D627BB3F469BAC00BA032950113A5968BDB0DEDFDC7A868EA4583BEC37224"
+    },
+    {
+      "name": "Right-Click Gizmo Indicator",
+      "packageId": "CheaterEater.RightClickGizmoIndicator",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-39"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3750529401/About/About.xml",
+      "workshopId": "3750529401",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "20C16265490B3ABCEAA707759D3F4F4720BE73828F2F05F89A11733B4ECDA453"
+    },
+    {
+      "name": "CM Color Coded Mood Bar [1.1+]",
+      "packageId": "CrashM.ColorCodedMoodBar.11",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-01"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2006605356/About/About.xml",
+      "workshopId": "2006605356",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "A9B6EBB05210C43DF06437187648A90EA3A261DEC112CB3F8D877B3C56D41CB8"
+    },
+    {
+      "name": "Auto Name Babies",
+      "packageId": "cruesoe.autonamebabies",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-35"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3782676886/About/About.xml",
+      "workshopId": "3782676886",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "376254D8BF58CEF5DBAE7BB33F668A23F0F34C4C4638825E6F26B85440B60509"
+    },
+    {
+      "name": "Toddlers",
+      "packageId": "cyanobot.toddlers",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-24",
+        "P2-49"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2903359152/About/About.xml",
+      "workshopId": "2903359152",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "A356F0EF0BFE51CA2C4C039B26FF5E6B232AFDFC40F94321461199E0188E2368"
+    },
+    {
+      "name": "[DN] Blunt Social Fights",
+      "packageId": "dani.BluntSocialFighting",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-29"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2886174990/About/About.xml",
+      "workshopId": "2886174990",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "08A10C1C6B76641B4A7D6B510683F161453CAD044E0850CCC4E053EE755EB9BF"
+    },
+    {
+      "name": "Select Perishable",
+      "packageId": "Danoweb.SelectPerishable",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-43"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3667956712/About/About.xml",
+      "workshopId": "3667956712",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "CFC4BC7840125D51E4ABB97418CCA534749969917F7CA1D0EB85AC5258449E89"
+    },
+    {
+      "name": "Auto-Cut Blight - 1.6",
+      "packageId": "Defi.AutoCutBlight",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-63"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3520167264/About/About.xml",
+      "workshopId": "3520167264",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "0DC74FABB0292047D30EF1D60590087A29D81B1B1D9DE5A70FEB24C107376632"
+    },
+    {
+      "name": "Stabilize Bleeding",
+      "packageId": "Defi.StabilizeBleeding",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-09"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3521178066/About/About.xml",
+      "workshopId": "3521178066",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "ED6CE7F08B0829FF47BB61603BCA8F144EE80896FE04092CAECF80260E4B33BE"
+    },
+    {
+      "name": "Smarter Construction",
+      "packageId": "dhultgren.smarterconstruction",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-54"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2202185773/About/About.xml",
+      "workshopId": "2202185773",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "C79E234B6F7FB7E010A2822AAF8B8C315EB717FA52D4D216F996AA07ED0DEDC9"
+    },
+    {
+      "name": "Dubs Break Mod",
+      "packageId": "Dubwise.DubsBreakMod",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-48"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1722398508/About/About.xml",
+      "workshopId": "1722398508",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "DD00C483A305DFF9CC9A169DB3FA8AD6C8137FB2A232447BF04BED26F9A87059"
+    },
+    {
+      "name": "KanbanStockpile Continued",
+      "packageId": "endag.kanbanstockpile",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-43"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3767756434/About/About.xml",
+      "workshopId": "3767756434",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "CE41481FE05AAC7E46FBB0F70FF85F73C85070CC89091A8FF4518DDF88FC85E1"
+    },
+    {
+      "name": "Monument Highlight",
+      "packageId": "espio.monhighlight",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-31"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3018715974/About/About.xml",
+      "workshopId": "3018715974",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "C86EFD9F7BF67BFA6F6A2A6017B5C38BD45045F410F97F0E130137540E2EE33A"
+    },
+    {
+      "name": "Better Workbench Management",
+      "packageId": "falconne.BWM",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-14"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/935982361/About/About.xml",
+      "workshopId": "935982361",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "0883A31034258EB4AEF9839BEA976E50EE839C5639D3759ACF0BF2CD9AA1968F"
+    },
+    {
+      "name": "Labels on Floor (continued)",
+      "packageId": "falconne.LabelsOnFloor",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-22"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3546003256/About/About.xml",
+      "workshopId": "3546003256",
+      "supportedVersions": [
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "01015D76189844711B56DF9CA8748E69367155791F8AFCD7E6EAF474C8197F68"
+    },
+    {
+      "name": "Storage Stats in Description",
+      "packageId": "ferny.StorageStatsinDescription",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-27"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3740185419/About/About.xml",
+      "workshopId": "3740185419",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "E6991DBCF86AF9072E4A125AC115B6048B29F2D8F3B763A0E935EF2CD14F3C24"
+    },
+    {
+      "name": "Auto Self-Tend",
+      "packageId": "funstab.AutoSelfTend",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-33"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3300580124/About/About.xml",
+      "workshopId": "3300580124",
+      "supportedVersions": [
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "973345FE2A3291AB1D1B8013D71B5479337550CB6D90ABCAF9AB57D7E965B884"
+    },
+    {
+      "name": "Quality Based Durability",
+      "packageId": "gabrieel1482.QualityBasedDurability",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-36"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3798015624/About/About.xml",
+      "workshopId": "3798015624",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "A351E1A431172AC6541CF66D303BF1441A01059E14ECACC57826DCDFD16486EE"
+    },
+    {
+      "name": "Destroy Item",
+      "packageId": "Garwel.DestroyItem",
+      "role": "research-only-not-named",
+      "referencedBy": [
+        "P1-17"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2423311270/About/About.xml",
+      "workshopId": "2423311270",
+      "supportedVersions": [
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "7FC578F5670B2F39F576BB8573B4E5543033F76C27E94BCE25FDD3E346751E08"
+    },
+    {
+      "name": "Add Deconstruct Button To Floor Category",
+      "packageId": "geodesicdragon.deconstructfloorcategory",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-61"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2905837332/About/About.xml",
+      "workshopId": "2905837332",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "EE4E58BA5AF9C5A3967D217374E0CBC32726BBD29E9B42412B9A0FCFB13A8794"
+    },
+    {
+      "name": "Grazing Area",
+      "packageId": "gguake.grazingarea",
+      "role": "excluded-by-user",
+      "referencedBy": [
+        "P1-41"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3769685249/About/About.xml",
+      "workshopId": "3769685249",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "E8C76B81DA0139E5EBFA00CF7BA5BCC85783C8029C7187E31995F528FE19C67F"
+    },
+    {
+      "name": "QualityBuilder Unofficial 1.6",
+      "packageId": "hatti.qualitybuilder",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-10"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3512466087/About/About.xml",
+      "workshopId": "3512466087",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "4B9F5352005098843357CBE6AA9764C1FBA7342D11E01170A1B843DD3A55B713"
+    },
+    {
+      "name": "Growth Speed Makes Sense Now",
+      "packageId": "Jdalt.GSMSN",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-17"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2969141187/About/About.xml",
+      "workshopId": "2969141187",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "EE66CD0EAC3810EA44E5AA1C39C69ECA61D61C9518C14F4BE96AC57070207021"
+    },
+    {
+      "name": "Spines Matter More Now",
+      "packageId": "Jdalt.SMMN",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-28"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2971629404/About/About.xml",
+      "workshopId": "2971629404",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "B8568F61D0215320518F06AA7F36FF8C3405E1ABC6528CEAC32C78AC15840B9A"
+    },
+    {
+      "name": "LightsOut",
+      "packageId": "juanlopez2008.LightsOut",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-46"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2584269293/About/About.xml",
+      "workshopId": "2584269293",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "99C098D6E8C32E49740E269923218DE18A0E55F0C333F7E5E557A3FE6374E9D7"
+    },
+    {
+      "name": "Use Best Materials",
+      "packageId": "kathanon.UseBestMaterials",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-20"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2901561962/About/About.xml",
+      "workshopId": "2901561962",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "730FC0C945B09A872C0811E05B33A9FF98C3A9EB4C8BCF14A646D7FE0982CE31"
+    },
+    {
+      "name": "[Kit] Graze up",
+      "packageId": "kittahkhan.grazeup",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-34"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2302739121/About/About.xml",
+      "workshopId": "2302739121",
+      "supportedVersions": [
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "65D0E97A6EDAA6F20B89F04D43DF71AF15F11A59E7C06C97B2D949D6009C679A"
+    },
+    {
+      "name": "Chill the Fork Out",
+      "packageId": "KT.ChillOut",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-02"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3523235444/About/About.xml",
+      "workshopId": "3523235444",
+      "supportedVersions": [
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "B7E2144EAEDCC812DCBD2E8A5B01692CBD44CD3EE5EC33211ABA6125BAD98DCC"
+    },
+    {
+      "name": "Cut It Off",
+      "packageId": "LegendaryMinuteman.CutItOff",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-50"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3628405994/About/About.xml",
+      "workshopId": "3628405994",
+      "supportedVersions": [
+        "1.7",
+        "1.6"
+      ],
+      "aboutXmlSha256": "CABA120B288BB8F0C4D49F7F90F087B58B3A8525CA77CFCF3969E088A49D57AF"
+    },
+    {
+      "name": "Max Buy, Max Sell",
+      "packageId": "Leoltron.MaxBuyMaxSell",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-24"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2889812094/About/About.xml",
+      "workshopId": "2889812094",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "16891CCE8C408F6B282F087A38ED8BB9AFF9658939CF721EFCC32D7B2F46707B"
+    },
+    {
+      "name": "Auto-Cast Specialist Commands",
+      "packageId": "Linnun.AutoCastSpecialistCommands",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-45"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3459647882/About/About.xml",
+      "workshopId": "3459647882",
+      "supportedVersions": [
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "45A9EB33E9D96779A4FB91E037FC317F31B8246EF71B83A87BFF8833464A5593"
+    },
+    {
+      "name": "Keep Converting",
+      "packageId": "Linnun.KeepConverting",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-21"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3461478214/About/About.xml",
+      "workshopId": "3461478214",
+      "supportedVersions": [
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "9ADCDF9FCF21424B15F94F3FE03790645D5E90843552F38BB4AF47B0103033CE"
+    },
+    {
+      "name": "Quick Stockpile Creation",
+      "packageId": "longwater.smartstockpilecreation",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-37"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1742151109/About/About.xml",
+      "workshopId": "1742151109",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "1505F1F1E9EACFB5ED06FF91A567CC754FF0212E1C11648B663B33199D3C8D61"
+    },
+    {
+      "name": "Cherry picker scroll bars",
+      "packageId": "lucius.cherryscroll",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-15"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3781285156/About/About.xml",
+      "workshopId": "3781285156",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "97844FC4FD9CAB540C1D036BFD417C1423DD91EF7F31B360081B3DF6FBD0396E"
+    },
+    {
+      "name": "Most Skilled Bill Restriction",
+      "packageId": "Matheus.MostSkilledBill",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-14"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3757516418/About/About.xml",
+      "workshopId": "3757516418",
+      "supportedVersions": [
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "4F3A5E908CE6BC31A1E2DF3DE95F0A06B4AE6E71BD32615269515A2A369CBB0B"
+    },
+    {
+      "name": "Pick Up And Haul",
+      "packageId": "Mehni.PickUpAndHaul",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-16"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1279012058/About/About.xml",
+      "workshopId": "1279012058",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "E38FE74FB2928DC20A893D8D6DD0F7294957407D66A68396EC7E9329B0D7B7D7"
+    },
+    {
+      "name": "Ctrl F - Continued",
+      "packageId": "Memegoddess.CtrlF",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-25",
+        "P1-49",
+        "P2-51"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3529520961/About/About.xml",
+      "workshopId": "3529520961",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "CACF88EC8B96FC700BB0D595FA56501EBF60E813D513D47E1A96BE5522C53F70"
+    },
+    {
+      "name": "Everybody Gets One - Continued",
+      "packageId": "Memegoddess.EverybodyGetsOne",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-14"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3530806680/About/About.xml",
+      "workshopId": "3530806680",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "B2A60479E5F4CF2C5A8931E41415253EC21BA2278A27523AEF026C5D948867D7"
+    },
+    {
+      "name": "Meals On Wheels - Continued",
+      "packageId": "Memegoddess.MealsOnWheels",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-48"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3538082807/About/About.xml",
+      "workshopId": "3538082807",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "11E7D8E21FA77E723625879468447ECA3527D2613E825DF2F4C44C72F37F5039"
+    },
+    {
+      "name": "Replace Stuff - Continued",
+      "packageId": "Memegoddess.ReplaceStuff",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-22"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3526354009/About/About.xml",
+      "workshopId": "3526354009",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "1BFEFAE3F2A0AB007408AED271490DDC82D682C4442C6BE07DDCBA49E7AD139C"
+    },
+    {
+      "name": "Smart Medicine - Continued",
+      "packageId": "Memegoddess.SmartMedicine",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-56"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3526251680/About/About.xml",
+      "workshopId": "3526251680",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "26499A76BC1666DDE46A2D910D85A46E301F400B8FEF5100A999DC083E856BDE"
+    },
+    {
+      "name": "TD Find Lib - Continued",
+      "packageId": "Memegoddess.TDFindLib",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-51"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3529443295/About/About.xml",
+      "workshopId": "3529443295",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "B0544857BA55105F2BBAE9C21B9CE84DAE09F72A4C596B78D90FEF961716EA06"
+    },
+    {
+      "name": "Use Bedrolls - Continued",
+      "packageId": "Memegoddess.UseBedrolls",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-02"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3534169351/About/About.xml",
+      "workshopId": "3534169351",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "8EC3347234CAAED1ADAADA4C9ADDC8F679EF4493D1F62FB0B26445ADB105C8F7"
+    },
+    {
+      "name": "All Memories Fade",
+      "packageId": "Mlie.AllMemoriesFade",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-62"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2800155563/About/About.xml",
+      "workshopId": "2800155563",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "0CBBA8CC439FBCE870DFCE1A5A846B68D2F6158534537D7A445815D3B081D8A7"
+    },
+    {
+      "name": "Best Mix (Continued)",
+      "packageId": "Mlie.BestMix",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-53"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2195986094/About/About.xml",
+      "workshopId": "2195986094",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "8953CB9AA3D98AA7686552C59B14BBE627C2653F9CC9BF54D3576038E5D3B25B"
+    },
+    {
+      "name": "Better Message Placement (Continued)",
+      "packageId": "Mlie.BetterMessagePlacement",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-65"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2259516339/About/About.xml",
+      "workshopId": "2259516339",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "FE85F6A525978AE8E237E4ABC5DC3B5A728E7A3BF3D5E559D6B93296AA254B48"
+    },
+    {
+      "name": "Brrr and Phew (Continued)",
+      "packageId": "Mlie.BrrandPhew",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-24"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2195938471/About/About.xml",
+      "workshopId": "2195938471",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "8F955AB5228719B130D81A3FDC40E9318FEF45F3CFF7E68852A85BFED4767BDB"
+    },
+    {
+      "name": "Cut plants before building (Continued)",
+      "packageId": "Mlie.CutPlantsBeforeBuilding",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-57"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3286376165/About/About.xml",
+      "workshopId": "3286376165",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "5FF9B3EF7F58B60502DAB7977CF524386D8306AA0C97E0238904A7C0940FBF87"
+    },
+    {
+      "name": "Dress for the Weather (Continued)",
+      "packageId": "Mlie.DressForTheWeather",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-05",
+        "P1-39"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3607724833/About/About.xml",
+      "workshopId": "3607724833",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "586EEEEF7169BD593DA33D54F6D60E16A109D1D72D48CF584770CFE0975EF122"
+    },
+    {
+      "name": "Drug Policy Fix (Continued)",
+      "packageId": "Mlie.DrugPolicyFix",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-23"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2195390245/About/About.xml",
+      "workshopId": "2195390245",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "340D9C61E6D1CA243F05B056D575FDB6FA01FC174A59B7ECC34B7B345647F01C"
+    },
+    {
+      "name": "Easy Upgrades (Continued)",
+      "packageId": "Mlie.EasyUpgrades",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-11"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2904429048/About/About.xml",
+      "workshopId": "2904429048",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "AE32D97C3ACC7C9C3BE75E70EAF372D378A668C31EA2409A7C808B7C3643F408"
+    },
+    {
+      "name": "Food Poisoning Stack Fix (Continued)",
+      "packageId": "Mlie.FoodPoisoningStackFix",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-32"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2843483188/About/About.xml",
+      "workshopId": "2843483188",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "7E87A6726D76D3A19D4136311186D53726A0F82AF4C2FE962317CF5E33DEA537"
+    },
+    {
+      "name": "I Cant Fix That",
+      "packageId": "Mlie.ICantFixThat",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-47"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2780971535/About/About.xml",
+      "workshopId": "2780971535",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "A977605BFF206C0BB2D76B2B03CDDE188226EA7EFA5BC4AA95C22C5ABF3386FB"
+    },
+    {
+      "name": "Just Put It Over There",
+      "packageId": "Mlie.JustPutItOverThere",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-21"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2856471776/About/About.xml",
+      "workshopId": "2856471776",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "DC4A28FF0404F18AA4C406693734C252997664E7992C868F9F76813ABE59412E"
+    },
+    {
+      "name": "Log After Def Error (Continued)",
+      "packageId": "Mlie.LogAfterDefError",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-23"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3550944748/About/About.xml",
+      "workshopId": "3550944748",
+      "supportedVersions": [
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "D4F0874D6ECC988F9347E7DF56B124276BD57C5BB22A83E373D6D7D52EBF1976"
+    },
+    {
+      "name": "Prosthetic No Missing Body Parts (Continued)",
+      "packageId": "Mlie.ProstheticNoMissingBodyParts",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-19"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2739055353/About/About.xml",
+      "workshopId": "2739055353",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "7882F4E306BEA742BC9846EC0C06A7EDDB2254D16D797B99BA29EDCD2ACA1B82"
+    },
+    {
+      "name": "Recycle This (Continued)",
+      "packageId": "Mlie.RecycleThis",
+      "role": "research-only-not-named",
+      "referencedBy": [
+        "P1-17"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3253550009/About/About.xml",
+      "workshopId": "3253550009",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "11F935B98A085B421668CD9AEF0DB85DB20D4544C6F621473D1008E2DE69FAE8"
+    },
+    {
+      "name": "Simple Stockpile Presets (Continued)",
+      "packageId": "Mlie.SimpleStockpilePresets",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-44"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2189006791/About/About.xml",
+      "workshopId": "2189006791",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "104C4CB189D6458F4D6BBE44CCDDA7117AD227A57E9400F2A540C82F7DAE56A8"
+    },
+    {
+      "name": "Smarter Deconstruction and Mining (Continued)",
+      "packageId": "Mlie.SmarterDeconstructionAndMining",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-55"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3261302741/About/About.xml",
+      "workshopId": "3261302741",
+      "supportedVersions": [
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "3678FA9C71528C8F90E96480E0D6569ED0A314A7648FF104C2B52F98A9C9EBA5"
+    },
+    {
+      "name": "Turn It On and Off - RePowered",
+      "packageId": "Mlie.TurnOnOffRePowered",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-46"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2228219259/About/About.xml",
+      "workshopId": "2228219259",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "1FEE7232A963F914F04B1F4B857D6457A3D2635BE2F339132862E78B12EFD3C1"
+    },
+    {
+      "name": "Skilled Slaughtering",
+      "packageId": "MrHydralisk.SkilledSlaughtering",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-46"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2873284405/About/About.xml",
+      "workshopId": "2873284405",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "A4C69075B20796C3BF7189AA6B4703BBF3EAAEBB48AD8E661E6CBBF48989D2BF"
+    },
+    {
+      "name": "Architect Menu Optimizer",
+      "packageId": "MRK.architectmenuoptimizer",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-28"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3697920753/About/About.xml",
+      "workshopId": "3697920753",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "42F1619D0D28BC7DC263E3D5F8BF21F74AA6756BB31F615AF88307EAAEDC8781"
+    },
+    {
+      "name": "Scenario Searchbars",
+      "packageId": "nimrag.scenariosearchbar",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-42"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3579415129/About/About.xml",
+      "workshopId": "3579415129",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "AF508C45D6E228405C6A77339FC9BFD1A734193A57D23140E4531105D51C8E80"
+    },
+    {
+      "name": "RescueeJoinsPlus",
+      "packageId": "Ogliss.RescueeJoinsPlus",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-38"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2177170403/About/About.xml",
+      "workshopId": "2177170403",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "4C69FA0922E028EB52F525F2BE0FF044963FAABD87EC246A71BD8D8949768528"
+    },
+    {
+      "name": "WanderJoinsPlus",
+      "packageId": "Ogliss.WanderJoinsPlus",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-38"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2177016016/About/About.xml",
+      "workshopId": "2177016016",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "3BEF2BA2D3442C2EDB814F9B165813253184259EEA944887F83A091836D1B682"
+    },
+    {
+      "name": "Go-juice is medical",
+      "packageId": "orioM.Gojuicemedical",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-15"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2971408015/About/About.xml",
+      "workshopId": "2971408015",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "E82E6D5A09226D1A497948A65D53E6F94BAA5169C04B2C0505CD0B27382DF95C"
+    },
+    {
+      "name": "Cherry Picker",
+      "packageId": "Owlchemist.CherryPicker",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-30"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3521312241/About/About.xml",
+      "workshopId": "3521312241",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "1B0DEB10BEF55A8732A25B822F119EC9D9D4AE95CD1EA48E0749CB43FF2D2C7A"
+    },
+    {
+      "name": "Permeable Terrain",
+      "packageId": "Owlchemist.PermeableTerrain",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-35"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3261312042/About/About.xml",
+      "workshopId": "3261312042",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "FB92F7EE8276E80DBF1C72F51D654A9E29DB5E59E2CC41B5214092A5BF3199DE"
+    },
+    {
+      "name": "Scattered Stones 1.7",
+      "packageId": "Owlchemist.ScatteredStones",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-41"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3528503211/About/About.xml",
+      "workshopId": "3528503211",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "93F2F66318D814C66D9BCF03EDC632C78078CB2F1F466A3D7D9BD06C5AC642ED"
+    },
+    {
+      "name": "UnLimitedArmor",
+      "packageId": "Paragon.Hanul.UnLimitedArmor",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-04"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1695493009/About/About.xml",
+      "workshopId": "1695493009",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "586923E86F65A14750338722551E60B6A214E5E9EAEDA6FC682F0806CFA1E926"
+    },
+    {
+      "name": "Compact Hediffs",
+      "packageId": "PeteTimesSix.CompactHediffs",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-07"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2031734067/About/About.xml",
+      "workshopId": "2031734067",
+      "supportedVersions": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "6B5D14761F8143B2CC348993950A2993DF54E1C601478129E2F0E77762023919"
+    },
+    {
+      "name": "Consciously Malnourished",
+      "packageId": "ProfileName.MalCon",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-37"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2935404464/About/About.xml",
+      "workshopId": "2935404464",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "3AAAA23F6D08DDCE33F4CE44274FF14CC17B648DA3488AD1242FAFA0EC0653B7"
+    },
+    {
+      "name": "Is This A Weapon?",
+      "packageId": "S4.IsThisAWeapon",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-19"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3566108804/About/About.xml",
+      "workshopId": "3566108804",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "1D284EB600874505415897F8F2DFED8383C6FA36F4E05D9A2A133C485DEE69E8"
+    },
+    {
+      "name": "Auto-Facing Chairs",
+      "packageId": "scarf.autofacingchairs",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-42"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3783758781/About/About.xml",
+      "workshopId": "3783758781",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "335EE41CC96DEB23F3A956D3215AB401F434AAC2C8C0D52BA74BEFDD6E8D5E16"
+    },
+    {
+      "name": "Prioritize Meals over Preserved Foods",
+      "packageId": "seekiworksmod.no10",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-51"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2899127245/About/About.xml",
+      "workshopId": "2899127245",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "F5DC5CE221E930141967B9DE5AD60B56685B432B191D6945E6167FDCE71F4F9B"
+    },
+    {
+      "name": "Sensible Bed Ownership",
+      "packageId": "sensiblebedownership.1trickPwnyta",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-44"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3328702448/About/About.xml",
+      "workshopId": "3328702448",
+      "supportedVersions": [
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "E79FB1103213B4ACCFD9F3625B1FD3E58816454FFE9C030CD3F9F149F19E3CFE"
+    },
+    {
+      "name": "Quartermaster",
+      "packageId": "slim.quartermaster",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-09"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3737474260/About/About.xml",
+      "workshopId": "3737474260",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "3ECBC2392FC4C6BBD584E2152AFFDFCA99F4B89E8AC87EE1AC96804ED7784639"
+    },
+    {
+      "name": "Spray Transfer",
+      "packageId": "Spray.Transfer",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-10"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3490194365/About/About.xml",
+      "workshopId": "3490194365",
+      "supportedVersions": [
+        "1.5",
+        "1.6",
+        "1.7",
+        "1.8",
+        "1.9",
+        "2.0"
+      ],
+      "aboutXmlSha256": "F71B02D1C941DCF47F8914868D32702895430944D867CFDA5442F904207D8750"
+    },
+    {
+      "name": "Mod Options Sort",
+      "packageId": "Superniquito.ModOptionsSort",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-40",
+        "P2-30"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2910865748/About/About.xml",
+      "workshopId": "2910865748",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "EFF68E1EB70D38EA40653945074AC4E24E0FFD221F8AE2DA5008B2447A23F241"
+    },
+    {
+      "name": "Healer Mech Serum Choice",
+      "packageId": "Syrus.HMSChoice",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-18"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2714095848/About/About.xml",
+      "workshopId": "2714095848",
+      "supportedVersions": [
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "4189F33496658A7D3F6D399964CB7F4D3F5B7A707332AEC5D726510DA2C2DA5A"
+    },
+    {
+      "name": "Room Food",
+      "packageId": "TheLordDrake.RoomFood",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-40"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3530729319/About/About.xml",
+      "workshopId": "3530729319",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "62E9DBD871D2E50D8FA54E6AEC417D9F3B1E6CC31042700ACF798FD14770659F"
+    },
+    {
+      "name": "Keep Burning, Corpse!",
+      "packageId": "tixiv.KeepBurningCorpse",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-20"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3717835691/About/About.xml",
+      "workshopId": "3717835691",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "7CFB38A7D88BACF5794A44912B8766BB2BE8CFE0C264B44CD02F995C7E66B8DE"
+    },
+    {
+      "name": "[PL] Trading Spot",
+      "packageId": "tradingpost.programmerlily.com",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-31"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3507108484/About/About.xml",
+      "workshopId": "3507108484",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "29702A9682C0A8C9F0B717C6D9D2D1604E8C90E80A18A0FEBC906DB0ABBCF4B6"
+    },
+    {
+      "name": "Allow Tool",
+      "packageId": "UnlimitedHugs.AllowTool",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-08"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/761421485/About/About.xml",
+      "workshopId": "761421485",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "0054DAF3B8466D87D2D6C3EE02F0345B240E92F2CC8656FC4DEB7665F984357B"
+    },
+    {
+      "name": "No Burn Metal",
+      "packageId": "Unon.NoBurnMetal",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-34"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1923990111/About/About.xml",
+      "workshopId": "1923990111",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "597AAA25815AFBE73FA9E321B7494E244B1995078C263C2B5F18AF965D9CA4CE"
+    },
+    {
+      "name": "Mining Priority (Continued)",
+      "packageId": "Uuugggg.MiningPriority",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-26"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3610712721/About/About.xml",
+      "workshopId": "3610712721",
+      "supportedVersions": [
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "49F1B5134F2ADE54900C553C12EC6B3CB54AF5A31B0795023FA1DB98B7405F4C"
+    },
+    {
+      "name": "Consciousness Patch",
+      "packageId": "Vex.Consciousness",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-38"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2913127696/About/About.xml",
+      "workshopId": "2913127696",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "4837941D54402B2DF01DB9E2D1DD9A51D27804CC866D425189F02FC66171C368"
+    },
+    {
+      "name": "Walls are solid",
+      "packageId": "Victor.WallsAreSolid",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-01"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2896548513/About/About.xml",
+      "workshopId": "2896548513",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "45A7B20FC7CDEBB3B2B44781721BD365FF5CA649E526C790D96CD8E46E34D23D"
+    },
+    {
+      "name": "Snap Out!",
+      "packageId": "weilbyte.snapout",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-29"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1319782555/About/About.xml",
+      "workshopId": "1319782555",
+      "supportedVersions": [
+        "1.1",
+        "1.0",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "9F2EF22C0351760923F074F0F29C24D5A80C072E3D6AFCA4C92C4689402A6467"
+    },
+    {
+      "name": "Linkable Hydroponics",
+      "packageId": "Yakobo.LinkableHydroponics",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-05"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3535816519/About/About.xml",
+      "workshopId": "3535816519",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "67A13F430C7F437BE8E0AE0E51CEDDBCA6EC84686AD7D5DF0091918664654DE2"
+    },
+    {
+      "name": "Bulk Smelting (Continued)",
+      "packageId": "zal.bulksmelting",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-12"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/2889803802/About/About.xml",
+      "workshopId": "2889803802",
+      "supportedVersions": [
+        "1.4",
+        "1.5",
+        "1.6"
+      ],
+      "aboutXmlSha256": "C4935F5E541C407B20760AD041FEE2759C3A3CA512125E29EE57E5363F7F453C"
+    },
+    {
+      "name": "SmarterDoctors (Continued)",
+      "packageId": "zal.smarterdoctors",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P1-52"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/3744377058/About/About.xml",
+      "workshopId": "3744377058",
+      "supportedVersions": [
+        "1.6"
+      ],
+      "aboutXmlSha256": "4CACA145499670398B5DF5E41D9902C3AE6CB0214110A81C902840BF99DF2355"
+    },
+    {
+      "name": "Extra Alerts",
+      "packageId": "zylle.ExtraAlerts",
+      "role": "selected-candidate",
+      "referencedBy": [
+        "P2-13"
+      ],
+      "metadataPath": "F:/Steam/steamapps/workshop/content/294100/1926923167/About/About.xml",
+      "workshopId": "1926923167",
+      "supportedVersions": [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "aboutXmlSha256": "2FDEC6B9A28EA441E0AC47664D50631A644AC054D3B021CB911B46F07333DFEC"
+    }
+  ]
+}

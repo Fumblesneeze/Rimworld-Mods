@@ -2,7 +2,9 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text;
+#if !RIMWORLD_1_7
 using Mono.CSharp;
+#endif
 
 namespace RimWorldDevGateway;
 
@@ -33,6 +35,7 @@ public sealed class GatewayCSharpEvaluationResult
     public string Diagnostics { get; }
 }
 
+#if !RIMWORLD_1_7
 public sealed class GatewayCSharpEvaluator
 {
     private const string TruncatedMarker = "[truncated]";
@@ -284,3 +287,4 @@ public sealed class GatewayCSharpEvaluator
         }
     }
 }
+#endif

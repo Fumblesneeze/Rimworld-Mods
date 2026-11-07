@@ -1,0 +1,2 @@
+[h1]Make Rimworld Great Again[/h1]
+Development scaffold for RimWorld 1.7 beta. No gameplay features, patches, or replacement implementations are included yet. Not ready for gameplay use or publication.

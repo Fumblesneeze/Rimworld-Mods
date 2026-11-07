@@ -1,6 +1,6 @@
 # Fumblesneeze RimWorld mods
 
-This repository is the Windows development monorepo for Fumblesneeze's RimWorld 1.6 mods. It owns the playable mod sources, the developer-only RimWorld Dev Gateway, host and in-game tests, OpenSpec contracts, release profiles, and the typed MCP/CLI automation used to build, verify, install, and publish them.
+This repository is the Windows development monorepo for Fumblesneeze's RimWorld mods. Established product mods target 1.6; the new megamod scaffold targets 1.7 beta. The developer-only Gateway and explicitly opted-in verification bundles also support the inspected 1.7 beta runtime. The repository owns mod sources, host and in-game tests, OpenSpec contracts, release profiles, and typed MCP/CLI automation for building, verifying, installing, and publishing them.
 
 ## Mods
 
@@ -10,6 +10,7 @@ This repository is the Windows development monorepo for Fumblesneeze's RimWorld 
 | [Immersive Chefs](mods/ImmersiveChefs/README.md) | `fumblesneeze.immersivechefs` | Makes kitchenware, preparation, meal condition, service, dining, and sanitation part of colony play. |
 | [Thin Walls](mods/ThinWalls/README.md) | `fumblesneeze.thinwalls` | Adds Stuff-made walls and doors that occupy tile edges instead of whole cells. |
 | [Personal Bugfixes](mods/PersonalBugfixes/README.md) | `fumblesneeze.personalbugfixes` | Local-only, self-checking repairs for personal games; no Workshop publication. |
+| [Make Rimworld Great Again](mods/megamod/README.md) | `fumblesneeze.megamod` | RimWorld 1.7 beta scaffold for independently specified replacement features and shared infrastructure; no gameplay implemented yet. |
 | [RimWorld Dev Gateway](mods/RimWorldDevGateway/README.md) | `fumblesneeze.rimworlddevgateway` | Developer-only authenticated loopback control, observation, testing, and unrestricted C# execution. |
 
 Each OpenSpec change and capability has exactly one owner: either one mod or one repository-tooling component. Repository-owned mods do not depend on one another, and product mods never ship, reference, or load-order-hint the Gateway; it is isolated development infrastructure, not a gameplay dependency.
@@ -19,9 +20,9 @@ Each OpenSpec change and capability has exactly one owner: either one mod or one
 | Tool | Purpose |
 | --- | --- |
 | Windows, Git, and PowerShell 7 | Repository development and isolated RimWorld process control. |
-| .NET 8 SDK | Restore, build, test, MCP server, and companion tools. `global.json` pins the supported SDK policy. |
-| RimWorld 1.6 from Steam | Managed assemblies and final live verification. |
-| Harmony Workshop item `2009463077` | Required by the product mods and the Dev Gateway; loaded before Core in isolated runs. |
+| .NET 10 SDK; .NET 8 runtime for host tools | Restore, build, test, MCP server, and companion tools. `global.json` pins the SDK policy; existing host tools still target .NET 8. |
+| Matching RimWorld installation from Steam | 1.6 for established products; 1.7 beta for megamod and opted-in Gateway verification. The beta port does not make other products or the full legacy test suite 1.7-compatible. |
+| Harmony Workshop item `2009463077` | Required by mods that use Harmony and by the Dev Gateway; loaded before Core in isolated runs. The inert megamod scaffold does not use it yet. |
 | XML Extensions Workshop item `2574315206` | Required by Immersive Chefs, and by any other owning mod that uses an `XmlExtensions.*` patch operation; never bundled. |
 | Node.js LTS and OpenSpec `1.2.0` | Contract validation. Install with `npm install -g @fission-ai/openspec@1.2.0`. |
 | FlaUiCli | Optional exact-window evidence for workflows that genuinely require desktop UI. |
@@ -123,18 +124,20 @@ rebuilding from the repository package. Do not use Workshop content as a build o
 
 [`AGENTS.md`](AGENTS.md) is authoritative for repository boundaries and acceptance. In brief: identify the single mod or tooling owner, update its observable OpenSpec contract, work through focused tests and package checks, resolve an independent review, then verify game-facing behavior through a real player workflow on the reviewed build and inspect the retained evidence personally.
 
-A convenient repository-level restore and build is:
+With a matching 1.6 installation, a repository-level restore and build is:
 
 ```powershell
 dotnet restore .\RimWorldMods.sln
 dotnet build .\RimWorldMods.sln -c Release --nologo
 ```
 
+On a 1.7-only installation, build only opted-in projects and use the exact selected verification workflow; see [versioned development](docs/Development.md) and [Gateway runtime support](docs/Gateway.md). Do not run the legacy solution or `All` test aggregate as a beta-compatibility check.
+
 Use [`docs/TestingEnvironments.md`](docs/TestingEnvironments.md) to choose the honest host or isolated-game tier. Grouped E2E results are supporting evidence until the native screenshots from that exact reviewed build have been personally inspected.
 
 ## Dev Gateway safety
 
-The Gateway binds an authenticated API to a dynamic IPv4 loopback port and creates a new bearer token for each isolated run. Its raw Mono.CSharp endpoint intentionally permits unrestricted in-process code execution with the RimWorld process's permissions.
+The Gateway binds an authenticated API to a dynamic IPv4 loopback port and creates a new bearer token for each isolated run. Its raw C# endpoint (Mono.CSharp on 1.6, Roslyn on 1.7) intentionally permits unrestricted in-process code execution with the RimWorld process's permissions.
 
 - Never enable it in an ordinary or untrusted play session.
 - Never commit or paste a live `SavedData\DevGateway\current.json`.

@@ -17,7 +17,9 @@ public sealed class GatewaySmokeInteractiveHoldTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(source, Does.Contain("[ValidateRange(0, 3600)]"));
+            Assert.That(source, Does.Contain("[ValidateRange(0, 7200)]"));
+            Assert.That(source, Does.Contain("[switch]$UserPlaytest"));
+            Assert.That(source, Does.Contain("Get-RimWorldHoldDecision"));
             Assert.That(source, Does.Contain("[int]$InteractiveHoldSeconds = 0"));
             Assert.That(source, Does.Contain("[string]$InteractiveCompletionFile"));
             Assert.That(source, Does.Contain("-InteractiveCompletionFile requires -InteractiveHoldSeconds."));

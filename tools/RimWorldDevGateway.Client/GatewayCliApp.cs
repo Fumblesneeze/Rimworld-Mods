@@ -401,13 +401,14 @@ public sealed class GatewayCliApp
             "execute-source",
             tail,
             Array.Empty<string>(),
-            new[] { "managed", "contract", "entry-type", "entry-method", "request-json" },
+            new[] { "managed", "contract", "entry-type", "entry-method", "request-json", "target-framework" },
             1,
             1);
         var compileRequest = new GatewaySourceCompilationRequest(
             options.Positionals[0],
             options.Required("managed"),
-            options.Required("contract"));
+            options.Required("contract"),
+            options.Value("target-framework") ?? "net480");
         var assembly = compiler.Compile(compileRequest);
         if (assembly.Length == 0)
         {
@@ -593,7 +594,7 @@ public sealed class GatewayCliApp
         output.WriteLine("  may-maximize-window-drag --start-x N --start-y N --end-x N --end-y N");
         output.WriteLine("  may-maximize-window-keys (--key K|--text TEXT) [--modifiers Ctrl,Shift]");
         output.WriteLine("  action NAME [--arguments JSON]   Invoke a semantic action");
-        output.WriteLine("  execute-source FILE --managed DIR --contract DLL --entry-type TYPE");
+        output.WriteLine("  execute-source FILE --managed DIR --contract DLL --entry-type TYPE [--target-framework net480|net10.0]");
         output.WriteLine("  automations                      List named automations");
         output.WriteLine("  run NAME [--arguments JSON]      Run a named automation");
         output.WriteLine("  automations run NAME ...         Alias for run");

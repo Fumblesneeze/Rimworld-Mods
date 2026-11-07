@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <PL.Title>Pathfinding Lab</PL.Title>
+  <PL.Experimental>Trajets expérimentaux</PL.Experimental>
+  <PL.Warning>Prototype de recherche : remplace toutes les recherches de chemin sur la carte, y compris les tâches ordinaires. Les règles de déplacement sont conservées. Les trajets peuvent être plus longs ; aucun gain de vitesse garanti. En cas d’erreur, le système d’origine prend le relais.</PL.Warning>
+  <PL.MapWarning>Prochaine colonie uniquement. Les cartes immenses peuvent bloquer le jeu ou épuiser la mémoire. Cartes existantes et de quête inchangées.</PL.MapWarning>
+  <PL.VanillaSize>Taille de carte d’origine</PL.VanillaSize>
+  <PL.MapSize>{0} × {0} cases</PL.MapSize>
+  <PL.RefinementCells>Horizon d’affinage : {0} cases (renouvellement vers la moitié)</PL.RefinementCells>
+</LanguageData>

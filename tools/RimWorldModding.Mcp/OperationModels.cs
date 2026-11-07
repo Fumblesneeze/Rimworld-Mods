@@ -73,6 +73,7 @@ public sealed record WorkshopPresentationSyncResult(
 
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, WriteIndented = true)]
 [JsonSerializable(typeof(RepositoryStatusResult))]
+[JsonSerializable(typeof(GameInstallation))]
 [JsonSerializable(typeof(List<OperationDescriptor>))]
 [JsonSerializable(typeof(OperationDescriptor[]))]
 [JsonSerializable(typeof(ReleaseProfileResult))]

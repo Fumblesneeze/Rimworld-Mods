@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <PL.Title>Pathfinding Lab</PL.Title>
+  <PL.Experimental>Experimental paths</PL.Experimental>
+  <PL.Warning>Research prototype: replaces all map cell-path searches, including ordinary jobs. Native traversal rules remain. Paths may be longer; speedups are not guaranteed. Errors use emergency vanilla fallback.</PL.Warning>
+  <PL.MapWarning>Next settlement only. Huge maps may freeze or exhaust memory. Existing and quest maps are unchanged.</PL.MapWarning>
+  <PL.VanillaSize>Vanilla map size</PL.VanillaSize>
+  <PL.MapSize>{0} × {0} cells</PL.MapSize>
+  <PL.RefinementCells>Refinement horizon: {0} cells (renew around halfway)</PL.RefinementCells>
+</LanguageData>

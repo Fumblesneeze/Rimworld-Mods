@@ -98,6 +98,21 @@ public sealed class RepositoryOperationTests
     }
 
     [Test]
+    public void EndToEndPlan_ForwardsOnlyExistingArtifactsContainedSettings()
+    {
+        string settings = Path.Combine(_root, "artifacts", "settings");
+        Directory.CreateDirectory(settings);
+        var plan = RepositoryOperationPlanner.EndToEnd(_root, null, "pathfinding-lab.large-map", "English", 600,
+            dryRun: true, prelaunchConfigDirectory: settings);
+        Assert.That(plan.Arguments, Does.Contain("-PrelaunchConfigDirectory"));
+        Assert.That(plan.Arguments, Does.Contain(settings));
+        Assert.That(plan.Arguments, Does.Contain("-DryRun"));
+        foreach (string invalid in new[] { "mods", "artifacts/missing", "../outside", "artifacts" })
+            Assert.Throws<ArgumentException>(() => RepositoryOperationPlanner.EndToEnd(_root, null,
+                "pathfinding-lab.large-map", "English", 600, true, prelaunchConfigDirectory: invalid));
+    }
+
+    [Test]
     public void EndToEndPlan_ScopesDiscoveryToOneContainedProject()
     {
         var relativeProject = Path.Combine("mods", "Example", "Example.csproj");

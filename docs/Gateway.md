@@ -1,12 +1,73 @@
 # RimWorld Dev Gateway
 
-RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) is an intentionally dangerous, development-only RimWorld 1.6 mod. Whenever it is loaded, unrestricted in-process C# and uploaded-assembly execution are enabled. There is no safety switch, allowlist, confirmation dialog, or sandbox.
+## Runtime selection (1.6 / 1.7 beta)
+
+`game_installation_inspect` reads a bounded `Version.txt` and verifies the selected
+executable, game assembly and runtime shim without loading them. The leased launcher
+and uploaded-source compiler use the resulting layout:
+
+| Game | Executable | Game references | Gateway target / REPL |
+| --- | --- | --- | --- |
+| 1.6 | `RimWorldWin64.exe` | `RimWorldWin64_Data/Managed` | net480 / Mono.CSharp |
+| 1.7 | `RimWorld.exe` | installation root (restricted game DLL set) | net10.0 / Roslyn 4.11 |
+
+Only explicitly opted-in projects import `tools/RimWorld.Build/VersionedGame.props`
+and `.targets`; unrelated products are not retargeted. Opted-in E2E projects also
+declare the literal `RimWorldVersionedBuild=true` so metadata-only discovery can
+select their expected framework. The host rejects a different evaluated framework.
+The beta REPL is synchronous: submissions containing `await` fail before executing;
+multi-frame work belongs in dispatcher-backed automations. Raw execution remains
+unrestricted and is not a sandbox.
+
+Waylith ignores Unity's old `-logFile` routing. On 1.7 the isolated launcher disables
+Waylith file logging with `-NoFileLog` and retains stdout as `Player.log`, plus a
+separate `Player.stderr.log`. Never use the normal profile log as run evidence.
+
+The port verifies the native draft/Go-here workflow through
+`gateway.native-pawn-movement` in the exact Gateway E2E project. It does not establish
+blanket 1.7 compatibility for all integration tests, optional profilers, product
+mods, save/load, or publication workflows. The 1.6 source path remains available;
+a fresh 1.6 live run requires a separate matching installation.
+
+Exact `e2e_run_start` calls can supply `prelaunchConfigDirectory` for mod settings
+needed before native map generation. The directory must be strictly under the
+repository's ignored `artifacts/` tree. Both dry-run and real launch validate direct
+ordinary XML files, names, sizes and parseability; `Prefs.xml`, `ModsConfig.xml`,
+subdirectories, reparse points and DTDs are rejected. Only a real run copies them
+into its disposable savedata and records hashes. This never edits normal settings.
+When using the CLI projection from a running local tool build, invoke the built
+`RimWorldModding.Mcp.dll` with `dotnet`; running its apphost while a nested operation
+rebuilds that same executable can cause a Windows file-lock failure.
+
+Large native-world fixtures can explicitly implement `IEndToEndGeneratedMapFixture`.
+Select exactly one such test through `e2e_run_start`; a mixed same-process selection
+is rejected before arrangement. This policy preserves baseline map objects, roofs,
+zones and designations, removes newly created disposable objects and transient UI,
+and restores control/camera state. The fixture owns restoration of its local grid
+edits. Natural objects deliberately removed inside its disposable area are not
+claimed restored, and that map cannot serve another test. Ordinary tests retain
+the empty-map reset. The runner accepts the typed timeout range through 3600 seconds.
+
+Saved-colony workloads can instead implement `IEndToEndProcessOwnedGameFixture`. This inherits the
+single-selected-test restriction and keeps the entire disposable game intact until process shutdown,
+including a replacement game loaded from a private save copy. UI/notification/control restoration,
+deferred cleanup, and exact host process/stage/config/credential cleanup remain required. It is not
+an empty-map assertion or permission to reuse a user game; ordinary fixtures keep destructive reset.
+
+RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) is an intentionally dangerous, development-only RimWorld mod. Whenever it is loaded, unrestricted in-process C# and uploaded-assembly execution are enabled. There is no safety switch, allowlist, confirmation dialog, or sandbox.
 
 Use it only in a disposable isolated `-savedatafolder`. Uploaded code runs with the RimWorld process's full access, can corrupt game state or files, and cannot be unloaded from the AppDomain. Code that blocks the main thread can freeze the game even after the HTTP caller times out.
 
 The Gateway warning and any integration/E2E status boxes are intentionally absent from ordinary map play. Open RimWorld's native in-play Escape menu to see them. Native screenshot mode, runtime shutdown, and the title screen keep the Gateway-owned overlay hidden; the authenticated API and startup/session warnings remain available independently.
 
 ## Scene time for repeatable lighting
+
+For an explicitly user-requested building/playtest session, `game_run_start` accepts
+`prelaunchConfigDirectory` with the same isolated XML fixture policy and `userPlaytest: true`.
+This is a user-owned game, not a disposable acceptance run: its interactive hold has no automatic
+shutdown deadline. The launcher stays alive until the user exits or explicitly calls `run_cancel`,
+then retains saves and performs normal credential/configuration cleanup. Default verification
+runs keep their bounded hold. Both modes launch minimized and muted unless audio is requested.
 
 `gateway_scene_time` sets the current map's local minute of day without advancing simulation ticks.
 Supply the exact leased `runId`, current `mapHandle` and `minuteOfDay` (0–1439; noon is 720).
@@ -68,16 +129,22 @@ limited to 64 MiB, reconstructed inputs to 512 KiB, and source output to one mil
 
 The in-process server is EmbedIO 3.5.2 in managed-listener mode, bound only to a dynamically selected IPv4 `127.0.0.1` port. EmbedIO owns HTTP parsing and connection handling; the mod does not implement a raw HTTP parser. Kestrel is not used because current Kestrel expects the ASP.NET Core shared framework and a modern CoreCLR host, while RimWorld 1.6 loads `net48`-compatible mods in Unity Mono. EmbedIO supports the target runtime with a much smaller dependency graph.
 
-The transport graph is pinned to EmbedIO 3.5.2, `Unosquare.Swan.Lite` 3.1.0, and `System.ValueTuple` 4.5.0. Direct in-process C# uses the separately pinned `Mono.CSharp` 4.0.0.143 package. The packaged runtime assemblies are exactly:
+The transport graph is pinned to EmbedIO 3.5.2 and `Unosquare.Swan.Lite` 3.1.0. The common packaged runtime assemblies are:
 
 - `RimWorldDevGateway.dll`
 - `RimWorldDevGateway.Contracts.dll`
 - `RimWorldDevGateway.EndToEndTesting.dll`
 - `RimWorldDevGateway.IntegrationTesting.dll`
+- `RimWorldDevGateway.PerformanceTesting.dll`
 - `EmbedIO.dll`
-- `Mono.CSharp.dll`
 - `Swan.Lite.dll`
-- `System.ValueTuple.dll`
+
+The 1.6 package additionally contains `Mono.CSharp.dll` (4.0.0.143 package) and
+`System.ValueTuple.dll` (4.5.0 package). The 1.7 package instead contains
+`Microsoft.CodeAnalysis.dll`, `Microsoft.CodeAnalysis.CSharp.dll`,
+`Microsoft.CodeAnalysis.Scripting.dll`, and `Microsoft.CodeAnalysis.CSharp.Scripting.dll`,
+all pinned to 4.11.0. Game/platform/Harmony-provider assemblies are references, not
+package payload. The exact selected inventory and hashes are retained per run.
 
 Every route requires a fresh 256-bit bearer token. The listener rejects non-loopback peers and requests containing an `Origin` header, so use the companion client, `curl.exe`, or another native HTTP client rather than browser JavaScript. Authentication limits accidental cross-process calls; it does not protect against another process running as the same Windows user that can read the manifest.
 
@@ -401,15 +468,15 @@ curl.exe --silent --show-error --fail-with-body `
   "$($session.baseUrl)/executions/csharp"
 ```
 
-At REPL creation the gateway initializes the framework namespaces first, probes whether the host has already imported `Verse.Current`, and adds `Assembly-CSharp` only when that host fallback is needed. It then references Unity, the gateway, and compatible loaded AppDomain assemblies once per simple assembly identity, and preloads `System`, common collections/LINQ/reflection/threading namespaces, `RimWorld`, `Verse`, `UnityEngine`, and `RimWorldDevGateway`. This ordering avoids Unity Mono importing `Assembly-CSharp` twice while still allowing direct game, gateway, EmbedIO, and compatible optional-mod access.
+On 1.6, REPL creation initializes the framework namespaces first, probes whether the host has already imported `Verse.Current`, and adds `Assembly-CSharp` only when that host fallback is needed. It then references Unity, the gateway, and compatible loaded AppDomain assemblies once per simple assembly identity, and preloads `System`, common collections/LINQ/reflection/threading namespaces, `RimWorld`, `Verse`, `UnityEngine`, and `RimWorldDevGateway`. This ordering avoids Unity Mono importing `Assembly-CSharp` twice. On 1.7, Roslyn uses file-backed game/Gateway and loaded-assembly references with the same namespace imports; declarations persist through script continuations.
 
-Mono.CSharp 4.0.0.143 uses a C# 6 baseline and has only partial C# 7 support; it is not current Roslyn, so do not rely on records, file-scoped namespaces, nullable-reference syntax, or other newer constructs. Use the assembly-upload path when newer compiler features or a conventional project are more useful.
+The 1.6 Mono.CSharp 4.0.0.143 backend uses a C# 6 baseline and has only partial C# 7 support; do not rely on newer syntax there. The 1.7 Roslyn backend supports its newer scripting syntax but rejects `await`, including loaded scripts, before execution to preserve synchronous thread affinity. Use the assembly-upload path for a conventional project; use dispatcher-backed automations for multi-frame game work.
 
 There is no reset endpoint. Restart the disposable RimWorld process to discard REPL declarations and dynamically emitted assemblies. Compilation failures normally return HTTP success with `Succeeded: false` and diagnostics; an executing snippet can still throw, hang the main thread, mutate anything accessible to RimWorld, or terminate the process.
 
 ### Host-compiled assembly upload
 
-`execute-source` creates a unique temporary `net48` project on the host, references `Assembly-CSharp*.dll`, `Unity*.dll`, and the gateway contract assembly, invokes the installed .NET SDK, uploads the resulting DLL, and removes the temporary directory. This path uses the host compiler; the in-game `Mono.CSharp.dll` exists only for the direct REPL endpoint, and Roslyn is not shipped in the mod.
+`execute-source` creates a unique temporary host project for the selected target (`net480` on 1.6, `net10.0` on 1.7), references the matching game assemblies and Gateway contract, invokes the installed .NET SDK, uploads the resulting DLL, and removes the temporary directory. The 1.7 reference set excludes root-level platform runtime DLLs. The typed `gateway_raw_mutation` operation derives installation and target from the exact leased executable, PID/start identity and full live version. Manual client calls must provide matching `--managed` and `--target-framework` values. These uploads use the host SDK; the packaged Mono.CSharp/Roslyn libraries serve the direct REPL endpoint.
 
 The named type must declare exactly one public static, non-generic method with the requested case-sensitive name. It returns `string` and may use the legacy `(string requestJson)` signature or the context-aware `(string requestJson, GatewayAssemblyExecutionContext context)` signature. The client defaults the method name to `Execute` and the request string to `{}`. Use the context-aware form when uploaded code needs request correlation, cooperative cancellation, or a session automation:
 
@@ -691,6 +758,12 @@ The Def-export values deliberately favor patch authoring over tiny payloads. A r
 The integration-test snapshot remains at 4 MiB because its shape is fixed and much smaller: at most 64 assembly records, 128 descriptors/results, 64 failures, two lifecycle records, and bounded 128/256/1,024-character identity, message, and stack fields. Its ceiling covers the worst bounded record set including JSON escaping; it is unrelated to Def export and does not constrain general endpoint requests. Any future increase should change the owning OpenSpec contract and boundary tests together rather than being presented as a framework requirement.
 
 ## Isolated smoke evidence and cleanup
+
+The detailed Mono/Unity smoke description and historical acceptance records below
+describe the 1.6 path. The 1.7 path substitutes the Roslyn dependency/health check,
+Waylith executable and isolated stdout/stderr logging described above. Legacy
+integration staging and unexercised native UI scenarios are not accepted on 1.7.
+Both paths retain the same minimized-launch, ownership and cleanup contracts.
 
 `scripts\Invoke-GatewaySmoke.ps1` defaults to only Core + Dev Gateway in an isolated run. It writes `SavedData\Config\Prefs.xml` with `runInBackground=True`, `volumeMaster=0`, `volumeMusic=0`, fullscreen disabled, and a deterministic 1600×900 render size, then passes matching `-screen-*` arguments to Unity before requesting a minimized owned RimWorld window. Pass `-EnableAudio` only for sound-focused work; it writes `volumeMaster=1` while leaving music at zero. Windows can expose Unity's new HWND in its normal state for a few milliseconds before applying the minimized request; the launcher does not maximize it or enforce its later state. Pass `-VisibleWindow` for hands-on or computer-use interaction. The desktop-owning `gateway-regression` scenario requests a normal visible window automatically. Dry-run and completed results identify `Prefs`, `RunInBackground`, `AudioEnabled`, `MasterVolume`, `MusicVolume`, `RenderWidth`, `RenderHeight`, `Fullscreen`, `UnityWindowArguments`, the requested `LaunchWindowStyle`, effective visibility mode, and whether visibility was explicitly requested. Once the window has been created, the launcher does not query, classify, warn on, or enforce native window state, so a user restore or maximize cannot fail the run. The user's normal `Prefs.xml` is hashed before and after alongside `ModsConfig.xml`; either mutation fails the run. `-AdditionalModIds` validates and de-duplicates package IDs. If Harmony is present, the launcher moves only `brrainz.harmony` ahead of Core to honor Harmony's installed `loadBefore` contract, preserves every other caller package's relative order after Core, and keeps Gateway last. This lets the same harness load Harmony and a product mod without touching the normal mod list. For product evidence, `-AdditionalModProjectPaths` builds and deploys the exact repository product project before launch and records its assembly/About/XML-patch hashes; the ordinary deployed package is rejected if a test assembly or Gateway integration contract leaked into it. `-ExpectedIntegrationTests` names the exact owner, lifecycle, and fully qualified product test that must be discovered and pass. A non-Gateway expected owner is rejected unless the corresponding repository product project is supplied, so a stale preinstalled package cannot satisfy provenance. The script waits for the exact PID's manifest, reads it through a 64 KiB non-reparse bound, requires its exact active schema and JSON types, safe run ID, exact `http://127.0.0.1:<port>/api/v1` base URL, and matching PID plus process-start instant before using its token or paths. Scenario step request IDs are derived deterministically from the descriptive scenario and step names; valid short IDs remain readable, while longer compositions retain a readable prefix plus a SHA-256 suffix within the API's 64-character correlation bound. Every mode runs a harmless raw-C# health probe proving Mono.CSharp evaluation, live Unity/Gateway/EmbedIO access, and RimWorld's actual ordered loaded-mod list; only the explicit Gateway regression mutates and restores developer mode. It proves unauthenticated `401` and authenticated traffic through the real Unity Mono EmbedIO listener, checks all packaged DLLs including `Mono.CSharp.dll`, captures non-mutating state/log/Def/screenshot evidence, checks the Player log before setup, requests controlled shutdown, stops the exact owned PID, rescans the flushed log, and verifies the normal mod-list and preference hashes are unchanged.
 

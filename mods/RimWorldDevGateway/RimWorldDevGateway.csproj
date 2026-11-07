@@ -1,4 +1,5 @@
-<Project Sdk="Zlepper.RimWorld.ModSdk/0.0.9">
+<Project>
+  <Import Project="Sdk.props" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
   <PropertyGroup>
     <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
     <RimWorldManagedPath>$(RimWorldPath)\RimWorldWin64_Data\Managed</RimWorldManagedPath>
@@ -17,8 +18,10 @@
     </Description>
   </PropertyGroup>
 
+  <Import Project="..\..\tools\RimWorld.Build\VersionedGame.props" />
+
   <ItemGroup>
-    <Reference Include="UnityEngine.IMGUIModule">
+    <Reference Include="UnityEngine.IMGUIModule" Condition="'$(RimWorldVersion)' == '1.6'">
       <HintPath>$(RimWorldManagedPath)\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
@@ -27,7 +30,8 @@
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.IntegrationTesting\RimWorldDevGateway.IntegrationTesting.csproj" />
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.PerformanceTesting\RimWorldDevGateway.PerformanceTesting.csproj" />
     <PackageReference Include="EmbedIO" Version="3.5.2" />
-    <PackageReference Include="Mono.CSharp" Version="4.0.0.143" />
+    <PackageReference Include="Mono.CSharp" Version="4.0.0.143" Condition="'$(RimWorldVersion)' == '1.6'" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.11.0" Condition="'$(RimWorldVersion)' == '1.7'" />
     <PackageReference Include="Krafs.Publicizer" Version="2.3.2" PrivateAssets="all" />
     <!-- Reconstruct the installed Harmony method without detouring it; Cecil is already embedded in the provider. -->
     <Publicize Include="0Harmony" />
@@ -49,4 +53,6 @@
       DestinationFiles="$(ModSpecificOutputfolder)\Languages\%(RecursiveDir)%(Filename)%(Extension)" />
     <Delete Files="@(GatewayLocaleProviderMetadata->'$(OutputVersionFolder)\Languages\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
+  <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <Import Project="..\..\tools\RimWorld.Build\VersionedGame.targets" />
 </Project>

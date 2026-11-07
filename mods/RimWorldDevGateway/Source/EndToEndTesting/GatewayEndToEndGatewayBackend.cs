@@ -317,9 +317,17 @@ public sealed class GatewayEndToEndGatewayBackend :
 
         try
         {
+            var arrival = step.RaidArrivalModeDefName == null ? null :
+                DefDatabase<PawnsArrivalModeDef>.GetNamedSilentFail(step.RaidArrivalModeDefName);
+            var strategy = step.RaidStrategyDefName == null ? null :
+                DefDatabase<RaidStrategyDef>.GetNamedSilentFail(step.RaidStrategyDefName);
+            if (step.RaidArrivalModeDefName != null && arrival == null || step.RaidStrategyDefName != null && strategy == null)
+                return GatewayEndToEndStepOutcome.Fail("incident_raid_def_missing", "An exact requested raid arrival or strategy Def is not loaded.");
             var parms = StorytellerUtility.DefaultParmsNow(incident.category, map);
             parms.forced = true;
             parms.faction = faction;
+            parms.raidArrivalMode = arrival;
+            parms.raidStrategy = strategy;
             if (!incident.Worker.TryExecute(parms))
             {
                 return GatewayEndToEndStepOutcome.Fail(
@@ -331,7 +339,9 @@ public sealed class GatewayEndToEndGatewayBackend :
                 new Dictionary<string, string>
                 {
                     ["incidentDef"] = incident.defName,
-                    ["factionLoadId"] = faction?.loadID.ToString() ?? string.Empty
+                    ["factionLoadId"] = faction?.loadID.ToString() ?? string.Empty,
+                    ["raidArrivalMode"] = parms.raidArrivalMode?.defName ?? string.Empty,
+                    ["raidStrategy"] = parms.raidStrategy?.defName ?? string.Empty
                 });
         }
         catch (Exception exception)
@@ -950,7 +960,7 @@ public sealed class VerseGatewayEndToEndFloatMenuActions :
             return GatewayEndToEndStepOutcome.Pass(new Dictionary<string, string>
             {
                 ["optionLabel"] = step.ExactOptionLabel,
-                ["replacementMenu"] = replacement!.GetType().FullName,
+                ["replacementMenu"] = replacement!.GetType().FullName!,
             });
         }
 

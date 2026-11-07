@@ -204,8 +204,8 @@ public static class EndToEndHostCli
         command.SetAction(parseResult => Execute(parseResult, () =>
         {
             var input = common.Read(parseResult);
-            var projects = PerformanceProjectDiscovery.Discover(input.RepositoryRoot);
-            var candidates = new EndToEndProjectBuilder().BuildPerformance(
+            var projects = PerformanceProjectDiscovery.Discover(input.RepositoryRoot, input.RimWorldVersion);
+            var candidates = new EndToEndProjectBuilder(rimWorldPath: input.RimWorldPath).BuildPerformance(
                 projects,
                 input.Configuration,
                 TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
@@ -283,9 +283,9 @@ public static class EndToEndHostCli
         {
             var input = common.Read(parseResult);
             var projects = PerformanceProjectDiscovery.SelectExactProjects(
-                PerformanceProjectDiscovery.Discover(input.RepositoryRoot),
+                PerformanceProjectDiscovery.Discover(input.RepositoryRoot, input.RimWorldVersion),
                 parseResult.GetValue(projectPaths) ?? Array.Empty<string>());
-            var candidates = new EndToEndProjectBuilder().BuildPerformance(
+            var candidates = new EndToEndProjectBuilder(rimWorldPath: input.RimWorldPath).BuildPerformance(
                 projects,
                 input.Configuration,
                 TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
@@ -469,9 +469,9 @@ public static class EndToEndHostCli
     private static EndToEndBundlePlan BuildPlan(CommonInputs input)
     {
         var projects = EndToEndProjectDiscovery.SelectExactProjects(
-            EndToEndProjectDiscovery.Discover(input.RepositoryRoot),
+            EndToEndProjectDiscovery.Discover(input.RepositoryRoot, input.RimWorldVersion),
             input.ProjectPaths);
-        var assemblies = new EndToEndProjectBuilder().Build(
+        var assemblies = new EndToEndProjectBuilder(rimWorldPath: input.RimWorldPath).Build(
             projects,
             input.Configuration,
             TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
@@ -669,6 +669,11 @@ public static class EndToEndHostCli
             "--rimworld-version",
             "Versioned mod folder, for example 1.6.");
 
+        public Option<string> RimWorldPath { get; } = new("--rimworld-path")
+        {
+            Description = "Selected installation root passed to build and evaluation. Omit only for host-only fixtures."
+        };
+
         public Option<string[]> PackageIds { get; } = new("--package-id")
         {
             Description = "Resolvable package ID. Repeat for every package used by selected groups.",
@@ -707,6 +712,7 @@ public static class EndToEndHostCli
             command.Options.Add(RepositoryRoot);
             command.Options.Add(ModsRoot);
             command.Options.Add(RimWorldVersion);
+            command.Options.Add(RimWorldPath);
             command.Options.Add(PackageIds);
             command.Options.Add(PackageIdFile);
             command.Options.Add(Configuration);
@@ -746,6 +752,7 @@ public static class EndToEndHostCli
                 packageIds,
                 RequiredToken(result.GetValue(Configuration), "configuration"),
                 (result.GetValue(ProjectPaths) ?? Array.Empty<string>()).Select(Path.GetFullPath).ToArray(),
+                result.GetValue(RimWorldPath) is { } gamePath ? RequiredExistingDirectory(gamePath, "RimWorld path") : null,
                 timeout);
         }
 
@@ -770,6 +777,7 @@ public static class EndToEndHostCli
         IReadOnlyList<string> PackageIds,
         string Configuration,
         IReadOnlyList<string> ProjectPaths,
+        string? RimWorldPath,
         int BuildTimeoutSeconds);
 
     private sealed record LeaseRecord(

@@ -92,6 +92,18 @@ Within a process tests run by stable test ID. A failed assertion or test excepti
 
 ### 4. Every test gets a destructive disposable-map reset
 
+An explicit `IEndToEndProcessOwnedGameFixture` is the exception for a whole saved-colony workload.
+It inherits the generated-map single-test restriction, must be selected alone through `e2e_run_start`,
+and owns the disposable game until exact-process shutdown. Its isolation clears/verifies transient
+UI and notifications and restores controls/camera, but does not demolish map content before/after
+the test. Deferred cleanup still restores test-owned settings/patches and removes private input
+copies. No second test may consume that world, and successful host process/stage/config cleanup
+remains mandatory. Ordinary and generated-map policies are unchanged. This avoids multi-minute
+synchronous destruction after loading a million-cell save; it is not permission to use normal saves.
+When the fixture replaces the world, camera restoration reapplies the original coordinates and zoom
+to the current map handle, clamped to that map's cell/zoom bounds; it cannot restore a disposed map.
+The resulting target is verified. Ordinary fixtures retain strict original-map identity.
+
 Before the first test and in `finally` after every test, the runtime pauses the game, cancels targeters/designators, closes test-opened windows, clears selection, then removes every roof cell—including constructed roofs and overhead mountain—before destroying any map content. It next stops pawn jobs, removes every destroyable spawned map Thing/Pawn, removes zones and designations, releases reservations through normal destruction/job cleanup, and removes scenario-owned world objects registered with the context. Removing roofs first prevents unsupported roofs from collapsing onto fixtures while the map is being emptied. After map removal has finished, the reset clears RimWorld's live messages, visible and delayed letters, and currently active alert-readout cache so destruction notices or prior scenario alerts cannot contaminate the next test. Newly arranged conditions may populate fresh alerts normally. Permanent non-destroyable map features (for example quicktest steam geysers) remain part of the environment and are excluded from disposable-state verification. It restores developer/god mode, speed, camera, and input state to the group baseline.
 
 The reset then verifies that no roof, destroyable spawned thing, pawn, zone, designation, active interaction, tracked world fixture, live message, visible/delayed letter, or active alert-readout entry remains. Exact private collection shapes needed only for delayed letters and the active readout are Gateway-owned and fail closed when the current RimWorld build drifts. Tests must register changes outside those generic surfaces through `DeferCleanup`. A failure in cleanup or verification is not ignored. The runner does not try to reset Def databases, Harmony patches, loaded packages, mod constructors, or static caches; tests requiring a different such state belong to another exact process group.
@@ -138,5 +150,15 @@ The first tracer is the adverse meal outcome because it requires arrangement, a 
 Rollback is deletion of marker-owned staged E2E bundles and omission of the startup flag. The launcher always uses isolated `ModsConfig.xml` and `Prefs.xml`; it never edits the user's normal files, verifies both hashes in `finally`, and closes only the exact launched PID.
 
 ## Open Questions
+
+The typed IncidentActionStep now needs optional exact PawnsArrivalModeDef and
+RaidStrategyDef names for native raid comparisons. Preserve its original three-argument
+constructor for prebuilt bundles and add a five-argument overload. Resolve both names
+before invoking the incident, reject raid options on non-RaidEnemy incidents, assign
+native IncidentParms.raidArrivalMode/raidStrategy, and record the resolved values in
+the action outcome. Unknown or blank names fail closed; omission keeps native selection.
+This is exposed through the existing typed e2e_run_start workflow, not a raw setup script.
+Native EdgeWalkIn/ImmediateAttack setup, save/reload and visible ordinary approach provide
+the live acceptance case; no pawn teleporting or direct lord/job replacement is used.
 
 None blocking. The initial typed step set will grow only when an actual migrated workflow requires a new faithful player-control or observable checkpoint.

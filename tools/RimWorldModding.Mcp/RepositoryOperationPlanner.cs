@@ -139,7 +139,8 @@ public static class RepositoryOperationPlanner
         int timeoutSeconds,
         bool dryRun,
         bool enableAudio = false,
-        string? projectPath = null)
+        string? projectPath = null,
+        string? prelaunchConfigDirectory = null)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         if ((groupId is null) == (testId is null))
@@ -175,6 +176,7 @@ public static class RepositoryOperationPlanner
             arguments.Add(scopedProject);
         }
         if (dryRun) arguments.Add("-DryRun");
+        AddPrelaunchConfig(root, arguments, prelaunchConfigDirectory);
         if (enableAudio) arguments.Add("-EnableAudio");
         return new AdapterCommand(
             "e2e_run",
@@ -191,7 +193,9 @@ public static class RepositoryOperationPlanner
         IReadOnlyList<string> packageIds,
         IReadOnlyList<string> projectPaths,
         int holdSeconds,
-        bool enableAudio = false)
+        bool enableAudio = false,
+        string? prelaunchConfigDirectory = null,
+        bool userPlaytest = false)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var artifacts = RepositoryRoot.ContainedPath(root, runRoot);
@@ -231,6 +235,8 @@ public static class RepositoryOperationPlanner
             arguments.Add(string.Join(',', projects));
         }
         if (enableAudio) arguments.Add("-EnableAudio");
+        AddPrelaunchConfig(root, arguments, prelaunchConfigDirectory);
+        if (userPlaytest) arguments.Add("-UserPlaytest");
         return new AdapterCommand(
             "game_run_start",
             "pwsh",
@@ -238,6 +244,19 @@ public static class RepositoryOperationPlanner
             root,
             TimeSpan.FromSeconds(holdSeconds + 600),
             artifacts);
+    }
+
+    private static void AddPrelaunchConfig(string root, List<string> arguments, string? directory)
+    {
+        if (directory is null) return;
+        var fixture = RepositoryRoot.ContainedPath(root, directory);
+        var artifactsRoot = Path.Combine(root, "artifacts");
+        if (!fixture.StartsWith(artifactsRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) || !Directory.Exists(fixture))
+            throw new ArgumentException("prelaunchConfigDirectory must be an existing directory beneath repository artifacts.");
+        foreach (var path in ReleaseCandidateBuilder.PathsToInspect(root, fixture))
+            ReleaseCandidateBuilder.RejectReparseAttributes(File.GetAttributes(path), path);
+        arguments.Add("-PrelaunchConfigDirectory");
+        arguments.Add(fixture);
     }
 
     private static string Configuration(string configuration) => configuration switch

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <rect width="800" height="400" fill="#18202b"/>
+  <text x="50" y="170" fill="#fafafa" font-family="sans-serif" font-size="56">Pathfinding Lab</text>
+  <text x="50" y="240" fill="#e8bd68" font-family="sans-serif" font-size="28">LOCAL EXPERIMENT · NOT A RELEASE PREVIEW</text>
+</svg>

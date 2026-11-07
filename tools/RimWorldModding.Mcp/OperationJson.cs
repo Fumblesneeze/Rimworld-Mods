@@ -6,6 +6,7 @@ internal static class OperationJson
 {
     public static string Serialize(object value) => value switch
     {
+        GameInstallation installation => JsonSerializer.Serialize(installation, McpJsonContext.Default.GameInstallation),
         RepositoryStatusResult status => JsonSerializer.Serialize(status, McpJsonContext.Default.RepositoryStatusResult),
         List<OperationDescriptor> descriptors => JsonSerializer.Serialize(descriptors, McpJsonContext.Default.ListOperationDescriptor),
         ReleaseProfileResult profile => JsonSerializer.Serialize(profile, McpJsonContext.Default.ReleaseProfileResult),

@@ -62,7 +62,7 @@ public sealed class DotNetGatewaySourceCompiler : IGatewaySourceCompiler
             var projectPath = Path.Combine(workspace, assemblyName + ".csproj");
             File.WriteAllText(
                 projectPath,
-                CreateProject(assemblyName, managedPath, contractPath),
+                CreateProject(assemblyName, managedPath, contractPath, request.TargetFramework),
                 new UTF8Encoding(false));
 
             RunBuild(projectPath, workspace);
@@ -115,11 +115,17 @@ public sealed class DotNetGatewaySourceCompiler : IGatewaySourceCompiler
         return fullPath;
     }
 
-    private static string CreateProject(string assemblyName, string managedPath, string contractPath)
+    private static string CreateProject(string assemblyName, string managedPath, string contractPath, string targetFramework)
     {
         var references = new List<string>();
         references.AddRange(Directory.EnumerateFiles(managedPath, "Assembly-CSharp*.dll"));
         references.AddRange(Directory.EnumerateFiles(managedPath, "Unity*.dll"));
+        if (targetFramework == "net10.0")
+        {
+            references.AddRange(Directory.EnumerateFiles(managedPath, "Brutal.*.dll"));
+            references.Add(Path.Combine(managedPath, "Waylith.dll"));
+            references.Add(Path.Combine(managedPath, "Waylith.UnityCompat.dll"));
+        }
         var steamworks = Path.Combine(managedPath, "com.rlabrecque.steamworks.net.dll");
         if (File.Exists(steamworks))
         {
@@ -130,7 +136,7 @@ public sealed class DotNetGatewaySourceCompiler : IGatewaySourceCompiler
         var project = new StringBuilder();
         project.AppendLine("<Project Sdk=\"Microsoft.NET.Sdk\">");
         project.AppendLine("  <PropertyGroup>");
-        project.AppendLine("    <TargetFramework>net48</TargetFramework>");
+        project.Append("    <TargetFramework>").Append(targetFramework).AppendLine("</TargetFramework>");
         project.AppendLine("    <LangVersion>latest</LangVersion>");
         project.AppendLine("    <Nullable>enable</Nullable>");
         project.AppendLine("    <Deterministic>true</Deterministic>");

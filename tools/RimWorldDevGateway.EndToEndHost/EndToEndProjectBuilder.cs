@@ -131,15 +131,21 @@ public sealed class EndToEndProjectBuilder
 {
     private readonly IEndToEndBuildCommandRunner commandRunner;
     private readonly string dotnetExecutable;
+    private readonly string[] installationProperties;
 
     public EndToEndProjectBuilder(
         IEndToEndBuildCommandRunner? commandRunner = null,
-        string dotnetExecutable = "dotnet")
+        string dotnetExecutable = "dotnet",
+        string? rimWorldPath = null)
     {
         this.commandRunner = commandRunner ?? new EndToEndProcessBuildCommandRunner();
         this.dotnetExecutable = string.IsNullOrWhiteSpace(dotnetExecutable)
             ? throw new ArgumentException("A dotnet executable is required.", nameof(dotnetExecutable))
             : dotnetExecutable;
+        installationProperties = rimWorldPath is null ? Array.Empty<string>() : new[] {
+            "-p:RimWorldPath=" + Path.GetFullPath(rimWorldPath),
+            "-p:DefaultRimWorldPath=" + Path.GetFullPath(rimWorldPath)
+        };
     }
 
     public IReadOnlyList<EndToEndAssemblyCandidate> Build(
@@ -219,20 +225,20 @@ public sealed class EndToEndProjectBuilder
         var build = commandRunner.Run(dotnetExecutable, new[]
         {
             "build", projectPath, "--configuration", configuration, "--nologo", "--verbosity", "minimal"
-        }, workingDirectory, timeout);
+        }.Concat(installationProperties).ToArray(), workingDirectory, timeout);
         EnsureSucceeded("performance build", projectPath, build);
         var propertiesResult = commandRunner.Run(dotnetExecutable, new[]
         {
             "msbuild", projectPath, "-nologo", "-verbosity:quiet", "-property:Configuration=" + configuration,
             "-getProperty:TargetPath", "-getProperty:AssemblyName", "-getProperty:TargetFramework"
-        }, workingDirectory, timeout);
+        }.Concat(installationProperties).ToArray(), workingDirectory, timeout);
         EnsureSucceeded("performance output-property query", projectPath, propertiesResult);
         var properties = ReadProperties(projectPath, propertiesResult.StandardOutput);
 
-        if (!StringComparer.Ordinal.Equals(properties.TargetFramework, "net480") ||
-            !StringComparer.Ordinal.Equals(project.TargetFramework, "net480"))
+        if (project.TargetFramework is not ("net480" or "net10.0") ||
+            !StringComparer.Ordinal.Equals(properties.TargetFramework, project.TargetFramework))
             throw new EndToEndProjectBuildException(
-                $"Performance project '{projectPath}' must target net480; declared '{project.TargetFramework}', " +
+                $"Performance project '{projectPath}' must match its selected net480/net10.0 target; declared '{project.TargetFramework}', " +
                 $"evaluated '{properties.TargetFramework}'.");
         if (!StringComparer.Ordinal.Equals(properties.AssemblyName, project.AssemblyName))
             throw new EndToEndProjectBuildException(
@@ -283,7 +289,7 @@ public sealed class EndToEndProjectBuilder
             "--verbosity",
             "minimal"
         };
-        var build = commandRunner.Run(dotnetExecutable, buildArguments, workingDirectory, timeout);
+        var build = commandRunner.Run(dotnetExecutable, buildArguments.Concat(installationProperties).ToArray(), workingDirectory, timeout);
         EnsureSucceeded("build", projectPath, build);
 
         var propertyArguments = new[]
@@ -299,17 +305,17 @@ public sealed class EndToEndProjectBuilder
         };
         var propertiesResult = commandRunner.Run(
             dotnetExecutable,
-            propertyArguments,
+            propertyArguments.Concat(installationProperties).ToArray(),
             workingDirectory,
             timeout);
         EnsureSucceeded("output-property query", projectPath, propertiesResult);
         var properties = ReadProperties(projectPath, propertiesResult.StandardOutput);
 
-        if (!StringComparer.Ordinal.Equals(properties.TargetFramework, "net480") ||
-            !StringComparer.Ordinal.Equals(project.TargetFramework, "net480"))
+        if (project.TargetFramework is not ("net480" or "net10.0") ||
+            !StringComparer.Ordinal.Equals(properties.TargetFramework, project.TargetFramework))
         {
             throw new EndToEndProjectBuildException(
-                $"E2E project '{projectPath}' must target net480; declared '{project.TargetFramework}', " +
+                $"E2E project '{projectPath}' must match its selected net480/net10.0 target; declared '{project.TargetFramework}', " +
                 $"evaluated '{properties.TargetFramework}'.");
         }
 

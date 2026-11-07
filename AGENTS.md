@@ -19,6 +19,8 @@ This is a RimWorld mod monorepo:
 - Workshop/downloaded mods are read-only inspection inputs. Never edit them or copy their assemblies into a release package.
 - Optional integrations must be package-ID/Def-resolved, absent-safe, shape-guarded, and isolated behind narrow adapters.
 - Multiple agents may work on the same worktree at the same time if they are working on different mods.
+  The user-authorized megamod exception below also permits disjoint, explicitly leased chunks of
+  `mods/megamod` to run in parallel within one worktree.
 
 Before changing RimWorld C#, XML, Defs, Harmony patches, compatibility adapters, tests, smoke tooling, or the gateway, read and follow `.agents/skills/rimworld-mod-development/SKILL.md` and its routed references. Use the repository's `tdd` and `code-review` skills when they apply. Pure prose, translation, and presentation edits do not need behavior-level TDD, but still require their applicable schema, package, asset, and manual verification. Metadata, Def values, balance boundaries, and dependency declarations are not automatically exempt when they affect behavior or packaging.
 
@@ -66,6 +68,25 @@ Pure documentation or repository-maintenance changes that cannot affect packaged
 Read `docs/TestingEnvironments.md` before adding a test that depends on RimWorld global state. Create a new process-isolated test project only for a concrete combination that cannot fit one of the existing honest environments; never fake a loaded mod by mutating `LoadedModManager`.
 
 ## Required change workflow
+
+### Megamod-only orchestration exception
+
+For `fumblesneeze.megamod` only, the user explicitly authorizes grouping multiple owned feature
+changes into parallel implementation chunks and postponing their final live verification to an
+integrated part gate. Follow [its coordinated plan](openspec/changes/plan-megamod-parallel-implementation/design.md),
+[roadmap](openspec/changes/plan-megamod-parallel-implementation/roadmap.md),
+[tasks](openspec/changes/plan-megamod-parallel-implementation/tasks.md) and [local instructions](mods/megamod/AGENTS.md).
+Implementers remain narrowly scoped, perform test-first work and independent review, and author
+executable in-game scenarios. Once all selected chunks in the part are ready, the orchestrator is
+the acting acceptance agent: it integrates/reviews the build, runs the isolated native scenarios,
+personally observes their results and delegates defects back to the responsible owners. Implementer
+handoffs are not live acceptance. The orchestrator may revise scope allocation, sequence, shared
+design and dependencies on evidence, recording revisions and superseded assignments while retaining
+all requested feature obligations and user decisions. This exception changes scheduling and role
+allocation only; it does not weaken any acceptance, credential, process-safety, deployment, package,
+test-environment or repository-boundary invariant. Other mods retain the normal workflow below.
+
+### Workflow steps
 
 1. **OpenSpec:** Identify the applicable change, confirm its single mod or tooling owner, and read its proposal, design, capability specs, and tasks before editing. Add or correct observable scenarios when the contract is missing. Do not implement from an unowned requirement.
 2. **Vertical TDD:** Work one behavior at a time: focused RED, minimum GREEN, then refactor while green. Test public behavior rather than private implementation. Record durable RED/GREEN evidence and reject zero-test runs.

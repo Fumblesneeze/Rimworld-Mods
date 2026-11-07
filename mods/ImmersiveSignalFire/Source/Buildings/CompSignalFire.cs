@@ -214,16 +214,32 @@ public sealed class CompSignalFire : ThingComp
             .Where(cell => cell.InBounds(map) && cell.Walkable(map))
             .Distinct()
             .ToList();
-        bool found = DistinctAssignmentPolicy.TryAssign(
-            pawns,
-            pawn => (IReadOnlyList<IntVec3>)available
-                .Where(candidate => pawn.CanReach(candidate, PathEndMode.OnCell, Danger.Some) &&
-                                    pawn.CanReserve(candidate))
-                .OrderBy(candidate => pawn.Position.DistanceToSquared(candidate))
-                .ToList(),
-            out IReadOnlyList<IntVec3> result);
+        bool found =
+            DistinctAssignmentPolicy.TryAssign(
+                pawns,
+                pawn => CandidateCells(available, map, pawn, requireUnoccupied: true),
+                out IReadOnlyList<IntVec3> result) ||
+            DistinctAssignmentPolicy.TryAssign(
+                pawns,
+                pawn => CandidateCells(available, map, pawn, requireUnoccupied: false),
+                out result);
         assigned = found ? result.ToList() : new List<IntVec3>();
         return found;
+    }
+
+    private static IReadOnlyList<IntVec3> CandidateCells(
+        IReadOnlyList<IntVec3> available,
+        Map map,
+        Pawn pawn,
+        bool requireUnoccupied)
+    {
+        return available
+            .Where(candidate => pawn.CanReach(candidate, PathEndMode.OnCell, Danger.Some) &&
+                                pawn.CanReserve(candidate) &&
+                                (!requireUnoccupied ||
+                                 candidate.GetThingList(map).OfType<Pawn>().All(occupant => occupant == pawn)))
+            .OrderBy(candidate => pawn.Position.DistanceToSquared(candidate))
+            .ToList();
     }
 
     private void CompleteActive(

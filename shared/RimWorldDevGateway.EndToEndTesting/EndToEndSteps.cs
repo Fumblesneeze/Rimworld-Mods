@@ -566,15 +566,29 @@ public sealed class IncidentActionStep : EndToEndStep
         string name,
         string incidentDefName,
         int? factionLoadId = null)
+        : this(name, incidentDefName, factionLoadId, null, null)
+    {
+    }
+
+    public IncidentActionStep(string name, string incidentDefName, int? factionLoadId,
+        string? raidArrivalModeDefName, string? raidStrategyDefName)
         : base(name, EndToEndStepKind.Act)
     {
         IncidentDefName = StepValues.Required(incidentDefName, nameof(incidentDefName));
         FactionLoadId = factionLoadId;
+        RaidArrivalModeDefName = raidArrivalModeDefName is null ? null : StepValues.Required(raidArrivalModeDefName, nameof(raidArrivalModeDefName));
+        RaidStrategyDefName = raidStrategyDefName is null ? null : StepValues.Required(raidStrategyDefName, nameof(raidStrategyDefName));
+        if ((RaidArrivalModeDefName != null || RaidStrategyDefName != null) && IncidentDefName != "RaidEnemy")
+            throw new ArgumentException("Raid choices require the exact RaidEnemy incident.");
     }
 
     public string IncidentDefName { get; }
 
     public int? FactionLoadId { get; }
+
+    public string? RaidArrivalModeDefName { get; }
+
+    public string? RaidStrategyDefName { get; }
 }
 
 public sealed class TimeControlActionStep : EndToEndStep

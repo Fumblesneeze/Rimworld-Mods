@@ -31,22 +31,40 @@ internal static class GatewayPatchedMethodBuilder
             return null;
         }
 
-        var prefixes = PatchFunctions.GetSortedPatchMethods(
+        var prefixes =
+#if RIMWORLD_1_7
+            PatchFunctions.GetSortedPatchCalls(
+#else
+            PatchFunctions.GetSortedPatchMethods(
+#endif
             original,
             patchInfo.prefixes,
             debug: false
         );
-        var postfixes = PatchFunctions.GetSortedPatchMethods(
+        var postfixes =
+#if RIMWORLD_1_7
+            PatchFunctions.GetSortedPatchCalls(
+#else
+            PatchFunctions.GetSortedPatchMethods(
+#endif
             original,
             patchInfo.postfixes,
             debug: false
+#if RIMWORLD_1_7
+            , previousPostfixes: patchInfo.postfixes
+#endif
         );
         var transpilers = PatchFunctions.GetSortedPatchMethods(
             original,
             patchInfo.transpilers,
             debug: false
         );
-        var finalizers = PatchFunctions.GetSortedPatchMethods(
+        var finalizers =
+#if RIMWORLD_1_7
+            PatchFunctions.GetSortedPatchCalls(
+#else
+            PatchFunctions.GetSortedPatchMethods(
+#endif
             original,
             patchInfo.finalizers,
             debug: false
@@ -63,6 +81,9 @@ internal static class GatewayPatchedMethodBuilder
             finalizers,
             innerPrefixes,
             innerPostfixes,
+#if RIMWORLD_1_7
+            PatchFunctions.GetInfixes(patchInfo.innerfinalizers),
+#endif
             debug: false
         );
         var creator = new MethodCreator(config);

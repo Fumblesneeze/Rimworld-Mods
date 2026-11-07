@@ -110,7 +110,7 @@ public static class GatewayDiagnosticAutomations
             pack.assemblies.loadedAssemblies.Contains(method.Module.Assembly));
         var path = method.Module.FullyQualifiedName;
         return new GatewayMethodDescription(GatewayMethodIdentity.Handle(method), GatewayMethodIdentity.Signature(method),
-            method.Module.ModuleVersionId.ToString("D"), method.MetadataToken, method.Module.Assembly.FullName,
+            method.Module.ModuleVersionId.ToString("D"), method.MetadataToken, method.Module.Assembly.FullName!,
             path, mod?.PackageId ?? (method.Module.Assembly.GetName().Name == "Assembly-CSharp" ? "ludeon.rimworld" : null),
             patches.AsReadOnly(), hash, truncated);
     }

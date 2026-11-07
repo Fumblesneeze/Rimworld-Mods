@@ -42,13 +42,15 @@ public sealed class GatewayWorkshopClient(
     {
         source = RepositoryRoot.ContainedPath(_repositoryRoot, source);
         var companion = await EnsureCompanionAsync(cancellationToken);
-        var managed = @"F:\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed";
+        var installation = GameInstallation.ForSession(_manifestPath, _processId);
+        var managed = installation.ManagedPath;
         if (!File.Exists(source) || !Directory.Exists(managed))
             throw new InvalidOperationException("Workshop publisher source, RimWorld managed directory, or Gateway contract is missing.");
         var outer = await CallAsync(
             [
                 "execute-source", source,
                 "--managed", managed,
+                "--target-framework", installation.TargetFramework,
                 "--contract", companion.ContractPath,
                 "--entry-type", entryType,
                 "--entry-method", "Execute",
@@ -165,12 +167,14 @@ public sealed class GatewayWorkshopClient(
             if (request.RootElement.ValueKind != JsonValueKind.Object)
                 throw new ArgumentException("requestJson must be one JSON object.");
         }
-        var managed = @"F:\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed";
+        var installation = GameInstallation.ForSession(_manifestPath, _processId);
+        var managed = installation.ManagedPath;
         var companion = await EnsureCompanionAsync(cancellationToken);
         var outer = await CallAsync(
             [
                 "execute-source", source,
                 "--managed", managed,
+                "--target-framework", installation.TargetFramework,
                 "--contract", companion.ContractPath,
                 "--entry-type", entryType,
                 "--entry-method", "Execute",

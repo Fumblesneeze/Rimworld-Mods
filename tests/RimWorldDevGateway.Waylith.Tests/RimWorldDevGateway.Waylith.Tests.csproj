@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>RimWorldDevGateway.Waylith.Tests</AssemblyName>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../mods/RimWorldDevGateway/RimWorldDevGateway.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
+    <!-- Real metadata only. These tests never initialize a game, load mods or seed Defs. -->
+    <Reference Include="$(RimWorldPath)/Assembly-CSharp.dll;$(RimWorldPath)/UnityStubs.dll;$(RimWorldPath)/Waylith.dll;$(RimWorldPath)/Waylith.UnityCompat.dll;$(RimWorldPath)/Brutal.*.dll">
+      <Private>true</Private>
+    </Reference>
+    <Compile Include="../RimWorldDevGateway.Tests/GatewayCSharpEvaluatorTests.cs" Link="GatewayCSharpEvaluatorTests.cs" />
+    <Compile Include="../../tools/RimWorldDevGateway.Client/DotNetGatewaySourceCompiler.cs" Link="Client/DotNetGatewaySourceCompiler.cs" />
+    <Compile Include="../../tools/RimWorldDevGateway.Client/GatewayClientContracts.cs" Link="Client/GatewayClientContracts.cs" />
+  </ItemGroup>
+</Project>

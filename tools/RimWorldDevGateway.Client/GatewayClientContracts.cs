@@ -99,11 +99,15 @@ public sealed class GatewaySourceCompilationRequest
     public GatewaySourceCompilationRequest(
         string sourcePath,
         string managedAssembliesPath,
-        string gatewayContractPath)
+        string gatewayContractPath,
+        string targetFramework = "net480")
     {
+        if (targetFramework != "net480" && targetFramework != "net10.0")
+            throw new GatewayCliUsageException("Source target framework must be net480 or net10.0.");
         SourcePath = sourcePath;
         ManagedAssembliesPath = managedAssembliesPath;
         GatewayContractPath = gatewayContractPath;
+        TargetFramework = targetFramework;
     }
 
     public string SourcePath { get; }
@@ -111,6 +115,8 @@ public sealed class GatewaySourceCompilationRequest
     public string ManagedAssembliesPath { get; }
 
     public string GatewayContractPath { get; }
+
+    public string TargetFramework { get; }
 }
 
 public interface IGatewaySourceCompiler

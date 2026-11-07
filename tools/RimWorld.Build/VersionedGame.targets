@@ -1,0 +1,18 @@
+<Project>
+  <Target Name="ValidateVersionedGame" BeforeTargets="PrepareForBuild">
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(RimWorldFullVersion)', '^1\.[67]\.[0-9]+( rev[0-9]+)?$'))" Text="Malformed or unsupported RimWorld version: '$(RimWorldFullVersion)'." />
+    <Error Condition="'$(RequestedRimWorldVersion)' != '' and '$(RequestedRimWorldVersion)' != '$(RimWorldVersion)'" Text="Requested RimWorld version does not match the selected installation." />
+    <Error Condition="'$(RimWorldVersion)' != $([System.Text.RegularExpressions.Regex]::Match('$(RimWorldFullVersion)', '^1\.[67](?=\.)').Value)" Text="Build version does not match Version.txt." />
+    <Error Condition="'$(RimWorldVersion)' != '1.6' and '$(RimWorldVersion)' != '1.7'" Text="Unsupported RimWorld version '$(RimWorldFullVersion)'; expected 1.6 or 1.7." />
+    <Error Condition="!Exists('$(RimWorldManagedPath)/Assembly-CSharp.dll')" Text="Missing Assembly-CSharp.dll in $(RimWorldManagedPath)." />
+    <Error Condition="'$(RimWorldVersion)' == '1.7' and !Exists('$(RimWorldManagedPath)/UnityStubs.dll')" Text="RimWorld 1.7 requires UnityStubs.dll." />
+  </Target>
+    <ItemGroup Condition="'$(RimWorldVersion)' == '1.7'">
+      <!-- The SDK's root glob includes the entire self-contained CLR. Framework
+           reference assemblies must come from the SDK, never the game's runtime. -->
+      <Reference Remove="$(RimWorldManagedPath)\*.dll" />
+      <Reference Include="$(RimWorldManagedPath)\Assembly-CSharp.dll;$(RimWorldManagedPath)\UnityStubs.dll;$(RimWorldManagedPath)\Waylith.dll;$(RimWorldManagedPath)\Waylith.UnityCompat.dll;$(RimWorldManagedPath)\Brutal.*.dll;$(RimWorldManagedPath)\com.rlabrecque.steamworks.net.dll">
+        <Private>false</Private>
+      </Reference>
+    </ItemGroup>
+</Project>

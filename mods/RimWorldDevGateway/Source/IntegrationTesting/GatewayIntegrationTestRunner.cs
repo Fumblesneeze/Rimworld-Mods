@@ -1257,7 +1257,7 @@ public sealed class GatewayIntegrationTestRunner
 
     private static Exception UnwrapInvocationException(Exception exception) =>
         exception is TargetInvocationException { InnerException: not null } target
-            ? target.InnerException
+            ? target.InnerException!
             : exception;
 
     private string Bound(string? value, int maximumCharacters)

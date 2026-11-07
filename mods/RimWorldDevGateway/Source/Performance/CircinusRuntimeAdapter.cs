@@ -628,7 +628,7 @@ internal sealed class CircinusRuntimeBinding
                 return false;
             }
 
-            if ((bool)shape.RecorderRecording.GetValue(recorder))
+            if ((bool)shape.RecorderRecording.GetValue(recorder)!)
             {
                 reason = "Circinus already owns an active recording; refusing to replace it.";
                 return false;
@@ -638,7 +638,7 @@ internal sealed class CircinusRuntimeBinding
             shape.RegistryRecording.SetValue(null, false);
             shape.DisarmAll.Invoke(null, Array.Empty<object>());
             shape.RegistryResetAll.Invoke(null, Array.Empty<object>());
-            started = (bool)shape.RecorderStart.Invoke(recorder, new object[] { label });
+            started = (bool)shape.RecorderStart.Invoke(recorder, new object[] { label })!;
             if (!started)
             {
                 reason = "Circinus RunRecorder refused the requested run.";
@@ -661,8 +661,8 @@ internal sealed class CircinusRuntimeBinding
                 return false;
             }
             var documentId = (string?)shape.DocumentId.GetValue(document);
-            var schemaMajor = (int)shape.DocumentSchemaMajor.GetValue(document);
-            _ = (int)shape.DocumentSchemaMinor.GetValue(document);
+            var schemaMajor = (int)shape.DocumentSchemaMajor.GetValue(document)!;
+            _ = (int)shape.DocumentSchemaMinor.GetValue(document)!;
             if (!string.Equals(documentId, runId, StringComparison.Ordinal))
             {
                 TryStopRecorder(recorder);
@@ -892,7 +892,7 @@ internal sealed class CircinusRuntimeRun : IDisposable
         var armAttempted = false;
         try
         {
-            if ((bool)shape.IsPatched.Invoke(null, new object[] { method }))
+            if ((bool)shape.IsPatched.Invoke(null, new object[] { method })!)
             {
                 reason = $"Circinus method '{method}' is already armed outside this run.";
                 return false;
@@ -901,7 +901,7 @@ internal sealed class CircinusRuntimeRun : IDisposable
             if (!TryResolveRowIdentity(method, out var row, out reason)) return false;
             if (!CanAddRows(new[] { row! }, out reason)) return false;
             armAttempted = true;
-            if (!(bool)shape.ArmMethod.Invoke(null, new object[] { method, label }))
+            if (!(bool)shape.ArmMethod.Invoke(null, new object[] { method, label })!)
             {
                 reason = $"Circinus refused to arm method '{method}'.";
                 return false;
@@ -958,8 +958,8 @@ internal sealed class CircinusRuntimeRun : IDisposable
 
             var before = RegistryMethods();
             armAttempted = true;
-            var armed = (int)shape.ArmTarget.Invoke(null, new[] { target, (object)true });
-            var methodCount = (int)shape.TargetMethodCount.GetValue(target);
+            var armed = (int)shape.ArmTarget.Invoke(null, new[] { target, (object)true })!;
+            var methodCount = (int)shape.TargetMethodCount.GetValue(target)!;
             if (armed <= 0 || methodCount != armed)
             {
                 TryInvoke(shape.DisarmTarget, target);
@@ -984,7 +984,7 @@ internal sealed class CircinusRuntimeRun : IDisposable
             foreach (var method in addedMethods)
             {
                 var profiler = shape.RegistryFind.Invoke(null, new object[] { method });
-                if (profiler is null || !(bool)shape.ProfilerHandArmed.GetValue(profiler))
+                if (profiler is null || !(bool)shape.ProfilerHandArmed.GetValue(profiler)!)
                 {
                     TryInvoke(shape.DisarmTarget, target);
                     armAttempted = false;
@@ -1063,8 +1063,8 @@ internal sealed class CircinusRuntimeRun : IDisposable
             }
 
             var id = (string?)shape.DocumentId.GetValue(document) ?? string.Empty;
-            var schemaMajor = (int)shape.DocumentSchemaMajor.GetValue(document);
-            var schemaMinor = (int)shape.DocumentSchemaMinor.GetValue(document);
+            var schemaMajor = (int)shape.DocumentSchemaMajor.GetValue(document)!;
+            var schemaMinor = (int)shape.DocumentSchemaMinor.GetValue(document)!;
             var raw = (string?)shape.DocumentToJson.Invoke(document, Array.Empty<object>()) ?? string.Empty;
             if (!string.Equals(id, runId, StringComparison.Ordinal))
             {
@@ -1110,7 +1110,7 @@ internal sealed class CircinusRuntimeRun : IDisposable
         }
         catch (Exception exception)
         {
-            stopped = !(bool)shape.RecorderRecording.GetValue(recorder);
+            stopped = !(bool)shape.RecorderRecording.GetValue(recorder)!;
             reason = "Could not stop/capture Circinus run: " + CircinusRuntimeAdapter.Describe(exception);
             return false;
         }
@@ -1135,9 +1135,9 @@ internal sealed class CircinusRuntimeRun : IDisposable
         {
             try
             {
-                if ((bool)shape.RecorderRecording.GetValue(recorder))
+                if ((bool)shape.RecorderRecording.GetValue(recorder)!)
                     shape.RecorderStop.Invoke(recorder, Array.Empty<object>());
-                if ((bool)shape.RecorderRecording.GetValue(recorder))
+                if ((bool)shape.RecorderRecording.GetValue(recorder)!)
                     throw new InvalidOperationException("Circinus recorder remained active after Stop().");
                 stopped = true;
             }
@@ -1173,7 +1173,7 @@ internal sealed class CircinusRuntimeRun : IDisposable
             }
             try
             {
-                if ((int)shape.TargetMethodCount.GetValue(pair.Value) != 0)
+                if ((int)shape.TargetMethodCount.GetValue(pair.Value)! != 0)
                     throw new InvalidOperationException(
                         $"Circinus target '{pair.Key}' retained armed methods after cleanup.");
             }
@@ -1185,13 +1185,13 @@ internal sealed class CircinusRuntimeRun : IDisposable
 
         try
         {
-            if ((bool)shape.RegistryRecording.GetValue(null) ||
-                (bool)shape.RegistryEnabled.GetValue(null))
+            if ((bool)shape.RegistryRecording.GetValue(null)! ||
+                (bool)shape.RegistryEnabled.GetValue(null)!)
                 throw new InvalidOperationException("Circinus registry remained enabled after cleanup.");
             var registered = RegistryMethods();
             foreach (var method in methods.Keys)
             {
-                var patched = (bool)shape.IsPatched.Invoke(null, new object[] { method });
+                var patched = (bool)shape.IsPatched.Invoke(null, new object[] { method })!;
                 if (patched || registered.Contains(method))
                     failures.Add(new InvalidOperationException(
                         $"Circinus retained owned profiler '{MethodIdentity(method)}' after cleanup."));
@@ -1276,7 +1276,7 @@ internal sealed class CircinusRuntimeRun : IDisposable
                     kind,
                     key,
                     ambiguousTargetCount,
-                    (bool)shape.PatchRefCanSkip.GetValue(firstPatchRef));
+                    (bool)shape.PatchRefCanSkip.GetValue(firstPatchRef)!);
                 reason = string.Empty;
                 return true;
             }
@@ -1347,18 +1347,18 @@ internal sealed class CircinusRuntimeRun : IDisposable
                     return false;
                 }
 
-                var empty = (bool)shape.ProfilerEmpty.GetValue(profiler);
+                var empty = (bool)shape.ProfilerEmpty.GetValue(profiler)!;
                 captured.Add(new CircinusProfilerSidecar(
                     MethodIdentity(method),
                     owned.Row.Kind,
                     owned.Row.Key,
                     owned.Row.AmbiguousTargetCount,
-                    (bool)shape.ProfilerHandArmed.GetValue(profiler),
-                    (int)shape.ProfilerSampleShift.GetValue(profiler),
-                    (long)shape.ProfilerTotalCalls.GetValue(profiler),
-                    (long)shape.ProfilerTimedCalls.GetValue(profiler),
+                    (bool)shape.ProfilerHandArmed.GetValue(profiler)!,
+                    (int)shape.ProfilerSampleShift.GetValue(profiler)!,
+                    (long)shape.ProfilerTotalCalls.GetValue(profiler)!,
+                    (long)shape.ProfilerTimedCalls.GetValue(profiler)!,
                     empty,
-                    (int)shape.ProfilerCyclesSeen.GetValue(profiler),
+                    (int)shape.ProfilerCyclesSeen.GetValue(profiler)!,
                     empty ? "empty-or-uninvoked" : null,
                     owned.Row.CanSkip));
             }

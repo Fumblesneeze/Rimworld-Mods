@@ -23,6 +23,13 @@ public sealed class OperationRegistry
         var registrations = new[]
         {
             Register(
+                "game_installation_inspect",
+                "Resolve a supported RimWorld installation without loading assemblies or launching the game.",
+                OperationRisk.Read, false, 10,
+                "Returns version, executable, reference directory and compilation target; no credentials or mutations.",
+                static (_, arguments, _) => Task.FromResult<object>(GameInstallation.Inspect(
+                    OptionalString(arguments, "gameRoot") ?? @"F:\Steam\steamapps\common\RimWorld"))),
+            Register(
                 "operation_list",
                 "List typed repository operations and their safety metadata.",
                 OperationRisk.Read,
@@ -115,7 +122,8 @@ public sealed class OperationRegistry
                         OptionalInt32(arguments, "timeoutSeconds", 300),
                         OptionalBoolean(arguments, "dryRun", false),
                         OptionalBoolean(arguments, "enableAudio", false),
-                        OptionalString(arguments, "projectPath")),
+                        OptionalString(arguments, "projectPath"),
+                        OptionalString(arguments, "prelaunchConfigDirectory")),
                     cancellationToken)),
             Register(
                 "game_run_start",
@@ -128,7 +136,9 @@ public sealed class OperationRegistry
                     OptionalStringArray(arguments, "packageIds"),
                     OptionalStringArray(arguments, "projectPaths"),
                     OptionalInt32(arguments, "holdSeconds", 1800),
-                    enableAudio: OptionalBoolean(arguments, "enableAudio", false)))),
+                    enableAudio: OptionalBoolean(arguments, "enableAudio", false),
+                    prelaunchConfigDirectory: OptionalString(arguments, "prelaunchConfigDirectory"),
+                    userPlaytest: OptionalBoolean(arguments, "userPlaytest", false)))),
             Register(
                 "run_status",
                 "Inspect one exact leased run without touching any process.",

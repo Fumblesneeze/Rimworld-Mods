@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <PL.Title>Pathfinding Lab</PL.Title>
+  <PL.Experimental>Rutas experimentales</PL.Experimental>
+  <PL.Warning>Prototipo de investigación: sustituye todas las búsquedas de rutas del mapa, incluidas las tareas normales. Conserva las reglas de movimiento. Las rutas pueden ser más largas; no se garantiza mayor velocidad. Ante errores se usa el sistema original.</PL.Warning>
+  <PL.MapWarning>Solo la próxima colonia. Los mapas enormes pueden bloquear el juego o agotar la memoria. Los mapas existentes y de misiones no cambian.</PL.MapWarning>
+  <PL.VanillaSize>Tamaño original</PL.VanillaSize>
+  <PL.MapSize>{0} × {0} casillas</PL.MapSize>
+  <PL.RefinementCells>Horizonte de refinamiento: {0} celdas (renovar hacia la mitad)</PL.RefinementCells>
+</LanguageData>

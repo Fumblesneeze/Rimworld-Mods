@@ -5,13 +5,13 @@ namespace RimWorldDevGateway.EndToEndHost;
 
 public static class EndToEndProjectDiscovery
 {
-    public static IReadOnlyList<EndToEndProjectRecord> Discover(string repositoryRoot) =>
+    public static IReadOnlyList<EndToEndProjectRecord> Discover(string repositoryRoot, string rimWorldVersion = "1.6") =>
         new ReadOnlyCollection<EndToEndProjectRecord>(MarkedProjectDiscovery.Discover(
                 repositoryRoot,
                 "RimWorldEndToEndTest",
                 "RimWorldEndToEndTestOwnerPackageId",
                 "E2E",
-                int.MaxValue)
+                int.MaxValue, rimWorldVersion)
             .Select(record => new EndToEndProjectRecord(
                 record.ProjectPath,
                 record.OwnerPackageId,
@@ -43,13 +43,13 @@ public static class EndToEndProjectDiscovery
 
 public static class PerformanceProjectDiscovery
 {
-    public static IReadOnlyList<PerformanceProjectRecord> Discover(string repositoryRoot) =>
+    public static IReadOnlyList<PerformanceProjectRecord> Discover(string repositoryRoot, string rimWorldVersion = "1.6") =>
         new ReadOnlyCollection<PerformanceProjectRecord>(MarkedProjectDiscovery.Discover(
                 repositoryRoot,
                 "RimWorldPerformanceTest",
                 "RimWorldPerformanceTestOwnerPackageId",
                 "performance",
-                PerformanceDiscoveryValidator.MaximumBenchmarks)
+                PerformanceDiscoveryValidator.MaximumBenchmarks, rimWorldVersion)
             .Select(record => new PerformanceProjectRecord(
                 record.ProjectPath,
                 record.OwnerPackageId,
@@ -100,8 +100,11 @@ internal static class MarkedProjectDiscovery
         string markerProperty,
         string ownerProperty,
         string description,
-        int maximumProjects)
+        int maximumProjects,
+        string rimWorldVersion)
     {
+        if (rimWorldVersion is not ("1.6" or "1.7"))
+            throw new EndToEndDiscoveryException($"Unsupported bundle runtime: {rimWorldVersion}");
         if (string.IsNullOrWhiteSpace(repositoryRoot))
             throw new ArgumentException("A repository root is required.", nameof(repositoryRoot));
 
@@ -141,7 +144,9 @@ internal static class MarkedProjectDiscovery
                 assemblyNames.Length == 1 && !string.IsNullOrWhiteSpace(assemblyNames[0])
                     ? assemblyNames[0].Trim()
                     : Path.GetFileNameWithoutExtension(projectPath),
-                targetFrameworks[0].Trim()));
+                Values(document, "RimWorldVersionedBuild").SequenceEqual(new[] { "true" })
+                    ? (rimWorldVersion == "1.7" ? "net10.0" : "net480")
+                    : targetFrameworks[0].Trim()));
         }
 
         return new ReadOnlyCollection<MarkedProjectRecord>(records

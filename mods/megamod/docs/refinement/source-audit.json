@@ -1,0 +1,1986 @@
+{
+  "date": "2026-11-01",
+  "scope": "All original-photo entries, installed metadata identities only; not active-mod status, compatibility or behavior acceptance",
+  "inventoryFiles": 1517,
+  "parseErrors": 0,
+  "counts": {
+    "Mod reference": 107,
+    "Excluded": 2,
+    "Feature sketch": 7,
+    "Modifier": 1
+  },
+  "selectedCandidateIdentities": 108,
+  "entries": [
+    {
+      "entryId": "P1-01",
+      "reading": "CM Color Coded Mood Bar",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "CrashM.ColorCodedMoodBar.11",
+          "title": "CM Color Coded Mood Bar [1.1+]",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2006605356/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-02",
+      "reading": "Chill the fuck out",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "KT.ChillOut",
+          "title": "Chill the Fork Out",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3523235444/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Profanity in note; Fork in installed title."
+    },
+    {
+      "entryId": "P1-03",
+      "reading": "Improved Need Indicator",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "AmCh.ImprovedNeedIndicator",
+          "title": "Improved Need Indicator",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3211635205/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-04",
+      "reading": "Already crossed-out line: `[... shelves? → ... storage piles?]`",
+      "initialReadingState": "U",
+      "classification": "Excluded",
+      "sources": [],
+      "researchOnlyPackageIds": [],
+      "note": "Cancelled; user says already covered by base game. Exact text remains unreadable."
+    },
+    {
+      "entryId": "P1-05",
+      "reading": "Dress for the Weather",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.DressForTheWeather",
+          "title": "Dress for the Weather (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3607724833/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-06",
+      "reading": "Link Stockpile Zones / Growing Zones",
+      "initialReadingState": "R → partly clarified",
+      "classification": "Feature sketch",
+      "sources": [],
+      "researchOnlyPackageIds": [],
+      "note": "Vanilla shelf-linking semantics confirmed for stockpiles, including mixed shelf/stockpile groups. Linked growing zones synchronize crop selection and sowing/cutting controls. Detailed specification and vanilla checks are deferred."
+    },
+    {
+      "entryId": "P1-07",
+      "reading": "Compact Hediffs",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "PeteTimesSix.CompactHediffs",
+          "title": "Compact Hediffs",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2031734067/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-08",
+      "reading": "Allow Tool",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "UnlimitedHugs.AllowTool",
+          "title": "Allow Tool",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/761421485/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-09",
+      "reading": "Something like Quartermaster but directly in Bills menu and showing what can and cannot be made",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "slim.quartermaster",
+          "title": "Quartermaster",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3737474260/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Richer Add bill view: search, category pills based on this workbench's recipe outputs, craftability highlighting requiring enough ingredients and a colonist meeting recipe skill requirements, and output-stat sorting with common properties first and choices relevant to filtered recipes. Compare at Normal quality with no quality selector. Use all materials checkbox beside the sort dropdown: unchecked by default uses the best compatible material available in sufficient quantity; checked includes unavailable materials. Carry the compared material into the added bill, with right-click proposed for a different material. No separate menu/bottom tab. Nice Bill Tab and its Expansion were added as UI references during the interview."
+    },
+    {
+      "entryId": "P1-10",
+      "reading": "Quality Builder",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "hatti.qualitybuilder",
+          "title": "QualityBuilder Unofficial 1.6",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3512466087/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Unofficial 1.6 is the installed edition title; no target-version acceptance implied."
+    },
+    {
+      "entryId": "P1-11",
+      "reading": "Link Workbenches",
+      "initialReadingState": "R",
+      "classification": "Feature sketch",
+      "sources": [],
+      "researchOnlyPackageIds": [],
+      "note": "No distinct provider named. Synchronize the entire bill list across linked workbenches: additions, removals, order and every bill's configuration; not individual bill links with other bills remaining local."
+    },
+    {
+      "entryId": "P1-12",
+      "reading": "Bulk smelting",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "zal.bulksmelting",
+          "title": "Bulk Smelting (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2889803802/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-13",
+      "reading": "Designations Tooltip",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "CheaterEater.DesignationsTooltip",
+          "title": "Designations Tooltip",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3743959668/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-14",
+      "reading": "Better Workbench Management / Everyone gets one / Most Skilled Bill Restriction",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "falconne.BWM",
+          "title": "Better Workbench Management",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/935982361/About/About.xml"
+          ]
+        },
+        {
+          "packageId": "Memegoddess.EverybodyGetsOne",
+          "title": "Everybody Gets One - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3530806680/About/About.xml"
+          ]
+        },
+        {
+          "packageId": "Matheus.MostSkilledBill",
+          "title": "Most Skilled Bill Restriction",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3757516418/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Everyone maps to Everybody. Most Skilled Bill Restriction wraps into the right column."
+    },
+    {
+      "entryId": "P1-15",
+      "reading": "Cherry picker scrollbars",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "lucius.cherryscroll",
+          "title": "Cherry picker scroll bars",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3781285156/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-16",
+      "reading": "PUAH + optimized",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mehni.PickUpAndHaul",
+          "title": "Pick Up And Haul",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1279012058/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Optimization requested. Our hauling must respect pawn carrying capacity, including items held in a separate hauling inventory; no capacity bypass. The user's suspicion about upstream capacity behavior is unverified."
+    },
+    {
+      "entryId": "P1-17",
+      "reading": "A recycle and destroy mod that works",
+      "initialReadingState": "R → partly clarified",
+      "classification": "Feature sketch",
+      "sources": [],
+      "researchOnlyPackageIds": [
+        "Mlie.RecycleThis",
+        "Garwel.DestroyItem"
+      ],
+      "note": "Recycling is limited to weapons and apparel. Destruction applies only to items that use HP: a pawn repeatedly performs actual melee attacks against the item where it lies until it is destroyed, through normal attack/damage/destruction behavior. User immediately narrowed everything with HP to items; excludes buildings, plants, living pawns and other non-items. Items without HP are ineligible. No work-timer deletion or direct HP subtraction as an attack substitute. Micro Designations (P2-25) supplies the other item-specific processing options; compose these directly. Detailed recycling refunds and native attack/stack/interruption/reservation/job lifecycle remain for specification. Recycle This and Destroy Item remain research references, not blanket feature-parity selections. Upstream bug diagnosis is not required."
+    },
+    {
+      "entryId": "P1-18",
+      "reading": "Common Sense",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "avilmask.CommonSense",
+          "title": "Common Sense",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1561769193/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-19",
+      "reading": "Prosthetic no missing Bodypart",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.ProstheticNoMissingBodyParts",
+          "title": "Prosthetic No Missing Body Parts (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2739055353/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-20",
+      "reading": "Best Materials",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "kathanon.UseBestMaterials",
+          "title": "Use Best Materials",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2901561962/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Shortened title. Distinct from Best Mix."
+    },
+    {
+      "entryId": "P1-21",
+      "reading": "Just Put it over there",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.JustPutItOverThere",
+          "title": "Just Put It Over There",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2856471776/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Recovered missed match. Not Just Ignore Me Passing."
+    },
+    {
+      "entryId": "P1-22",
+      "reading": "Replace Stuff",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Memegoddess.ReplaceStuff",
+          "title": "Replace Stuff - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3526354009/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-23",
+      "reading": "Drug Policy Fix → also remove not found drugs",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.DrugPolicyFix",
+          "title": "Drug Policy Fix (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2195390245/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Source identified; removal of missing-drug entries is an additional requested behavior."
+    },
+    {
+      "entryId": "P1-24",
+      "reading": "Brrr and Phew + Toddlers fix",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.BrrandPhew",
+          "title": "Brrr and Phew (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2195938471/About/About.xml"
+          ]
+        },
+        {
+          "packageId": "cyanobot.toddlers",
+          "title": "Toddlers",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2903359152/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Clarified by user on 2026-11-02: toddler idle wandering must proactively avoid dangerous hot/cold areas, and mobile toddlers must seek safety if their surroundings become unsafe. Both prevention and response are confirmed for the combined Brrr and Phew/Toddlers behavior. Toddlers is a separate source mod. User reports repeated wandering into bad temperatures and rescue, and suspects the mods do not work together as expected; this interaction/cause is not independently verified. Implement directly composed owned behavior. Exact thresholds, mobility, destination/path eligibility and job precedence belong in specification."
+    },
+    {
+      "entryId": "P1-25",
+      "reading": "Show buildable Material Count → Ctrl+F",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "BP.ShowBuildableMaterialCount",
+          "title": "Show Buildable Material Count",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3245101540/About/About.xml"
+          ]
+        },
+        {
+          "packageId": "Memegoddess.CtrlF",
+          "title": "Ctrl F - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3529520961/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "The arrow means material counts must use the same index/cache as Ctrl+F. It does not request a click-to-search action."
+    },
+    {
+      "entryId": "P1-26",
+      "reading": "Readable Numbers",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "7h0m4s.RimworldReadableNumbers",
+          "title": "Readable Numbers",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3762441264/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-27",
+      "reading": "Better Log",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "bs.betterlog",
+          "title": "Better Log - Fix your errors",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2772559481/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-28",
+      "reading": "Architect Menu Optimizer?",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "MRK.architectmenuoptimizer",
+          "title": "Architect Menu Optimizer",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3697920753/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-29",
+      "reading": "Blunt Social Fights",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "dani.BluntSocialFighting",
+          "title": "[DN] Blunt Social Fights",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2886174990/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-30",
+      "reading": "Cherry Picker",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Owlchemist.CherryPicker",
+          "title": "Cherry Picker",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3521312241/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-31",
+      "reading": "Trading Spot `(or area?)`",
+      "initialReadingState": "U → clarified",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "tradingpost.programmerlily.com",
+          "title": "[PL] Trading Spot",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3507108484/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "User confirmed a successor using a dedicated fixed trading area with its own gizmos, drawn through area-designation tools, not a pawn allowed area or generic allowed-area assignment workflow. Fixed does not establish immutable footprint, preset size or fixed map coordinates. Detailed gizmo actions, movement, fallback and lifecycle remain for specification."
+    },
+    {
+      "entryId": "P1-32",
+      "reading": "Food Poisoning Stack Fix",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.FoodPoisoningStackFix",
+          "title": "Food Poisoning Stack Fix (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2843483188/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-33",
+      "reading": "Auto Self Tend",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "funstab.AutoSelfTend",
+          "title": "Auto Self-Tend",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3300580124/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-34",
+      "reading": "Graze Up",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "kittahkhan.grazeup",
+          "title": "[Kit] Graze up",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2302739121/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-35",
+      "reading": "Auto Name Babies",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "cruesoe.autonamebabies",
+          "title": "Auto Name Babies",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3782676886/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-36",
+      "reading": "Designations Tooltips",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "CheaterEater.DesignationsTooltip",
+          "title": "Designations Tooltip",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3743959668/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Duplicate of P1-13."
+    },
+    {
+      "entryId": "P1-37",
+      "reading": "Consciously Malnourished",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "ProfileName.MalCon",
+          "title": "Consciously Malnourished",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2935404464/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Sideways text checked against original."
+    },
+    {
+      "entryId": "P1-38",
+      "reading": "Consciousness Patch",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Vex.Consciousness",
+          "title": "Consciousness Patch",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2913127696/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Sideways text checked against original."
+    },
+    {
+      "entryId": "P1-39",
+      "reading": "Dress for the Weather?",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.DressForTheWeather",
+          "title": "Dress for the Weather (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3607724833/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Duplicate of P1-05, with question mark."
+    },
+    {
+      "entryId": "P1-40",
+      "reading": "Mod Options Sort?",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Superniquito.ModOptionsSort",
+          "title": "Mod Options Sort",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2910865748/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-41",
+      "reading": "Grazing Area",
+      "initialReadingState": "R → corrected",
+      "classification": "Excluded",
+      "sources": [
+        {
+          "packageId": "gguake.grazingarea",
+          "title": "Grazing Area",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3769685249/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed, but user corrected intended source to Grazing Lands (P2-16)."
+    },
+    {
+      "entryId": "P1-42",
+      "reading": "Auto-Facing Chairs + manual fix",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "scarf.autofacingchairs",
+          "title": "Auto-Facing Chairs",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3783758781/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Manual rotation during placement persists within the current hovered cell, including small mouse movements. Moving to another cell releases the override and permits automatic facing again."
+    },
+    {
+      "entryId": "P1-43",
+      "reading": "Kanban Stockpile-ish",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "endag.kanbanstockpile",
+          "title": "KanbanStockpile Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3767756434/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Per-item totals across all linked storages govern automatic refill below X/up to Y, with no category-wide targets; other deliveries may exceed Y. Separately clarified on 2026-11-02: one standard slider applies to all stacks in a storage and defaults to infinite/undefined. It limits only how far haulers refill stacks, never overriding each item's actual applicable stack maximum. A full stack remains full regardless of the slider; finite hauling ceiling is the smaller of the slider and the actual maximum. No per-item slider values, separate enable toggle, stack resizing/splitting or hard cap on non-hauling deliveries. Earlier assistant suggestions of per-item defaults/hard stack caps are superseded. X/Y defaults and remaining source controls require direct analysis/specification. User explicitly instructed the agent to stop asking them to explain existing mod behavior."
+    },
+    {
+      "entryId": "P1-44",
+      "reading": "Simple Stockpile Presets + fixes! + UI change?",
+      "initialReadingState": "R → partly clarified",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.SimpleStockpilePresets",
+          "title": "Simple Stockpile Presets (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2189006791/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Compact selector preferred over many preset gizmos; dropdown gizmo versus storage-configuration integration remains undecided. Extend to other storage types; hide presets with no items the storage can accept (meat in woody-only storage). Independent specs/tests/implementation address correctness; no upstream bug diagnosis required from the user."
+    },
+    {
+      "entryId": "P1-45",
+      "reading": "Autocast Specialist Commands",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Linnun.AutoCastSpecialistCommands",
+          "title": "Auto-Cast Specialist Commands",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3459647882/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-46",
+      "reading": "Lights Out / Turn it on and off",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "juanlopez2008.LightsOut",
+          "title": "LightsOut",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2584269293/About/About.xml"
+          ]
+        },
+        {
+          "packageId": "Mlie.TurnOnOffRePowered",
+          "title": "Turn It On and Off - RePowered",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2228219259/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Both sources matched; no conflict or precedence is inferred."
+    },
+    {
+      "entryId": "P1-47",
+      "reading": "I can't fix that",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.ICantFixThat",
+          "title": "I Cant Fix That",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2780971535/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-48",
+      "reading": "Meals on Wheels",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Memegoddess.MealsOnWheels",
+          "title": "Meals On Wheels - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3538082807/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-49",
+      "reading": "Ctrl+F",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Memegoddess.CtrlF",
+          "title": "Ctrl F - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3529520961/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Ctrl+F already appears in P1-25; also P2-51."
+    },
+    {
+      "entryId": "P1-50",
+      "reading": "Cut it off",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "LegendaryMinuteman.CutItOff",
+          "title": "Cut It Off",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3628405994/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-51",
+      "reading": "Meals over Preserved Foods",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "seekiworksmod.no10",
+          "title": "Prioritize Meals over Preserved Foods",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2899127245/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Shortened title omits Prioritize."
+    },
+    {
+      "entryId": "P1-52",
+      "reading": "Smarter Doctors",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "zal.smarterdoctors",
+          "title": "SmarterDoctors (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3744377058/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-53",
+      "reading": "(That other “Random Materials” Mod) → Best Mix",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.BestMix",
+          "title": "Best Mix (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2195986094/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Arrow names Best Mix. Random Materials is descriptive, not another selected identity."
+    },
+    {
+      "entryId": "P1-54",
+      "reading": "Smarter Construction",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "dhultgren.smarterconstruction",
+          "title": "Smarter Construction",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2202185773/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-55",
+      "reading": "Smarter Deconstruction and Mining",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.SmarterDeconstructionAndMining",
+          "title": "Smarter Deconstruction and Mining (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3261302741/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Wrapped Mining belongs to this title."
+    },
+    {
+      "entryId": "P1-56",
+      "reading": "Smart Medicine",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Memegoddess.SmartMedicine",
+          "title": "Smart Medicine - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3526251680/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Smart Medicine is a separate interleaved entry."
+    },
+    {
+      "entryId": "P1-57",
+      "reading": "Cut plants before building",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.CutPlantsBeforeBuilding",
+          "title": "Cut plants before building (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3286376165/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-58",
+      "reading": "Hunting rework? Hunting Spot / Hochsitz",
+      "initialReadingState": "R",
+      "classification": "Feature sketch",
+      "sources": [],
+      "researchOnlyPackageIds": [],
+      "note": "Wait at the spot/seat for an animal within an initial 40-cell detection radius, with no line-of-sight check, then leave to hunt. Storage-style animal filter grouped by predator/non-predator and small game/big game; list species that can appear on this map even when absent. Radius is an initial tuning choice. No named provider."
+    },
+    {
+      "entryId": "P1-59",
+      "reading": "hingehen und Ausschau halten, dann erst schießen",
+      "initialReadingState": "R",
+      "classification": "Feature sketch",
+      "sources": [],
+      "researchOnlyPackageIds": [],
+      "note": "Continuation of P1-58. Wait at the spot/seat, detect an animal by range alone (initially about 40 cells), then leave to hunt. No line-of-sight requirement; detailed targeting/return rules remain open."
+    },
+    {
+      "entryId": "P1-60",
+      "reading": "Hunting dogs?",
+      "initialReadingState": "R",
+      "classification": "Feature sketch",
+      "sources": [],
+      "researchOnlyPackageIds": [],
+      "excludedPackageIds": ["aRandomKiwi.HuntForMe"],
+      "note": "User rejected Hunt for Me and explicitly chose custom companions. All of a hunter's qualifying bonded animals with existing Attack + Haul training may accompany them, wandering nearby throughout the hunting job using Pathfinding Lab's herd-wandering update; no separate Hunting training. When the hunter shoots prey and it falls unconscious or dies, only one companion claims that prey, rushes to it, kills it if necessary, then hauls the corpse if a valid destination exists and it can carry it. Exact claimant selection/reassignment, companion radius and failure/lifecycle details remain open; no movement-speed bonus or dog-only restriction selected. Separate interview addition extends directional idle wandering to pen/room animals with provisional 2-3 adjacent steps, no herd-animal center, legal enclosure boundaries, bounded attempts and normal waiting if trapped, including a single-cell room. This is a behavior reference, not a runtime dependency on Pathfinding Lab or selection of its broader pathfinder."
+    },
+    {
+      "entryId": "P1-61",
+      "reading": "Add Deconstruct to Floors Category",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "geodesicdragon.deconstructfloorcategory",
+          "title": "Add Deconstruct Button To Floor Category",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2905837332/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Shortened title omits Button."
+    },
+    {
+      "entryId": "P1-62",
+      "reading": "All Memories Fade",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.AllMemoriesFade",
+          "title": "All Memories Fade",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2800155563/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-63",
+      "reading": "Auto-Cut Blight",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Defi.AutoCutBlight",
+          "title": "Auto-Cut Blight - 1.6",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3520167264/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P1-64",
+      "reading": "Automatic Night Owl",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "ben.automaticnightowl",
+          "title": "Automatic Night Owl",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2056012179/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title supports edge-obscured ending; exact hidden letters are not claimed."
+    },
+    {
+      "entryId": "P1-65",
+      "reading": "Better Message Placement",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.BetterMessagePlacement",
+          "title": "Better Message Placement (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2259516339/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-01",
+      "reading": "Walls are solid",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Victor.WallsAreSolid",
+          "title": "Walls are solid",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2896548513/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-02",
+      "reading": "Use Bedrolls",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Memegoddess.UseBedrolls",
+          "title": "Use Bedrolls - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3534169351/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-03",
+      "reading": "Auto Links",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "automatic.autolinks",
+          "title": "Auto links",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2059389912/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-04",
+      "reading": "Unlimited Armour",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Paragon.Hanul.UnLimitedArmor",
+          "title": "UnLimitedArmor",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1695493009/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-05",
+      "reading": "Linkable Hydroponics?",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Yakobo.LinkableHydroponics",
+          "title": "Linkable Hydroponics",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3535816519/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-06",
+      "reading": "Trees don't just die",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "azuraal.treedontjustdie",
+          "title": "Trees Don't Just Die",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2784870434/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-07",
+      "reading": "Don't generate everything in one Tick (Traders, Raids, Maps/Encounter etc.)",
+      "initialReadingState": "R → partly clarified",
+      "classification": "Feature sketch",
+      "sources": [],
+      "researchOnlyPackageIds": [],
+      "note": "User confirmed preparation spread across ticks, with raids and trader groups appearing together only once the whole group is ready; no partly generated group exposed to gameplay. Maps/encounters remain requested but loading/presentation details are not separately clarified. Exact scheduling, latency, native lifecycle, cancellation/failure, save/load and determinism remain for specification. No source mod or threading architecture selected; no performance acceptance claimed."
+    },
+    {
+      "entryId": "P2-08",
+      "reading": "Stop, Drop, and Roll",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "balistafreak.StopDropAndRoll",
+          "title": "Stop, Drop, And Roll! [BAL]",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2362707956/StopDropAndRoll/About/About.xml",
+            "F:/Steam/steamapps/workshop/content/294100/2362707956/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Two installed metadata files share this package ID; count one identity."
+    },
+    {
+      "entryId": "P2-09",
+      "reading": "Stabilize Bleeding",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Defi.StabilizeBleeding",
+          "title": "Stabilize Bleeding",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3521178066/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Exact Stabilize Bleeding match; do not substitute the separate Stabilize mod."
+    },
+    {
+      "entryId": "P2-10",
+      "reading": "Spray Transfer",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Spray.Transfer",
+          "title": "Spray Transfer",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3490194365/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-11",
+      "reading": "Easy Upgrades",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.EasyUpgrades",
+          "title": "Easy Upgrades (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2904429048/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-12",
+      "reading": "Enemies use Apparel Too",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Argotis.EnemiesUseApparelToo",
+          "title": "Enemies Use Apparel Too - EUAT",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3746069759/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-13",
+      "reading": "Extra Alerts",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "zylle.ExtraAlerts",
+          "title": "Extra Alerts",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1926923167/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-14",
+      "reading": "Food tracker",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "b0arl0ck.foodtracker",
+          "title": "FoodTracker",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3795037221/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-15",
+      "reading": "Go-Juice is Medical",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "orioM.Gojuicemedical",
+          "title": "Go-juice is medical",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2971408015/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-16",
+      "reading": "Grazing Lands (Not Area)",
+      "initialReadingState": "R → confirmed",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "avilmask.GrazingLands",
+          "title": "Grazing Lands",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1770268130/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "User confirmed Grazing Lands and rejected Grazing Area."
+    },
+    {
+      "entryId": "P2-17",
+      "reading": "Growth Speed makes sense now",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Jdalt.GSMSN",
+          "title": "Growth Speed Makes Sense Now",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2969141187/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-18",
+      "reading": "Healer Mech Serum Choice",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Syrus.HMSChoice",
+          "title": "Healer Mech Serum Choice",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2714095848/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-19",
+      "reading": "Is this a weapon? (→ Mod Config)",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "S4.IsThisAWeapon",
+          "title": "Is This A Weapon?",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3566108804/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Source identified; mod-configuration placement is explicitly noted."
+    },
+    {
+      "entryId": "P2-20",
+      "reading": "Keep Burning, Corpse",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "tixiv.KeepBurningCorpse",
+          "title": "Keep Burning, Corpse!",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3717835691/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-21",
+      "reading": "Keep Converting",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Linnun.KeepConverting",
+          "title": "Keep Converting",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3461478214/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Converting, not constructing."
+    },
+    {
+      "entryId": "P2-22",
+      "reading": "Labels on Floor",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "falconne.LabelsOnFloor",
+          "title": "Labels on Floor (continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3546003256/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-23",
+      "reading": "Log after Def Error",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Mlie.LogAfterDefError",
+          "title": "Log After Def Error (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3550944748/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-24",
+      "reading": "Max Buy, Max Sell",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Leoltron.MaxBuyMaxSell",
+          "title": "Max Buy, Max Sell",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2889812094/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-25",
+      "reading": "Micro Designations",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "avilmask.MicroDesignations",
+          "title": "Micro Designations",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1877972690/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-26",
+      "reading": "Mining Priority",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Uuugggg.MiningPriority",
+          "title": "Mining Priority (Continued)",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3610712721/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-27",
+      "reading": "Storage stats in Description",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "ferny.StorageStatsinDescription",
+          "title": "Storage Stats in Description",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3740185419/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-28",
+      "reading": "Spines Matter More Now",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Jdalt.SMMN",
+          "title": "Spines Matter More Now",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2971629404/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title corroborates the cramped Spines wording."
+    },
+    {
+      "entryId": "P2-29",
+      "reading": "Snap Out",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "weilbyte.snapout",
+          "title": "Snap Out!",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1319782555/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Snap Out, not Swap Out."
+    },
+    {
+      "entryId": "P2-30",
+      "reading": "Mod Options Sort + Search",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Superniquito.ModOptionsSort",
+          "title": "Mod Options Sort",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2910865748/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Same source as P1-40. The installed description already includes author-aware search of the mod-options list. Separately confirmed by user on 2026-11-02: megamod's own settings search matches setting names, setting descriptions, feature names and category names, retaining the common UI's scope and disabled-control rules. No commitment to arbitrary searching inside other mods' settings controls. Detailed matching, results and navigation remain for specification."
+    },
+    {
+      "entryId": "P2-31",
+      "reading": "Monument Highlight",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "espio.monhighlight",
+          "title": "Monument Highlight",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3018715974/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-32",
+      "reading": "More Power Info",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "arl85.MorePowerInfo",
+          "title": "More power info",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2906529763/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Power, not pawn."
+    },
+    {
+      "entryId": "P2-33",
+      "reading": "Need Bar Overflow",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "AmCh.NeedBarOverflow",
+          "title": "Need Bar Overflow",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2566316158/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-34",
+      "reading": "No burn Metal",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Unon.NoBurnMetal",
+          "title": "No Burn Metal",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1923990111/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-35",
+      "reading": "Permeable Terrain (optimize?)",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Owlchemist.PermeableTerrain",
+          "title": "Permeable Terrain",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3261312042/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Optimization question retained; performance defect not established."
+    },
+    {
+      "entryId": "P2-36",
+      "reading": "Quality base durability",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "gabrieel1482.QualityBasedDurability",
+          "title": "Quality Based Durability",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3798015624/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Base maps to Based in installed title."
+    },
+    {
+      "entryId": "P2-37",
+      "reading": "Quick Stockpile Generation",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "longwater.smartstockpilecreation",
+          "title": "Quick Stockpile Creation",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1742151109/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Generation maps to Creation in installed title."
+    },
+    {
+      "entryId": "P2-38",
+      "reading": "Rescuee Joins Plus / Wanderer Joins Plus",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Ogliss.RescueeJoinsPlus",
+          "title": "RescueeJoinsPlus",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2177170403/About/About.xml"
+          ]
+        },
+        {
+          "packageId": "Ogliss.WanderJoinsPlus",
+          "title": "WanderJoinsPlus",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2177016016/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Recovered WanderJoinsPlus; two distinct sources, no automatic merger."
+    },
+    {
+      "entryId": "P2-39",
+      "reading": "Right-Click Gizmo Indicator",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "CheaterEater.RightClickGizmoIndicator",
+          "title": "Right-Click Gizmo Indicator",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3750529401/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-40",
+      "reading": "Room Food",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "TheLordDrake.RoomFood",
+          "title": "Room Food",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3530729319/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-41",
+      "reading": "Scattered Stones",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Owlchemist.ScatteredStones",
+          "title": "Scattered Stones 1.7",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3528503211/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-42",
+      "reading": "Scenario searchbars",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "nimrag.scenariosearchbar",
+          "title": "Scenario Searchbars",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3579415129/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-43",
+      "reading": "Select perishable",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Danoweb.SelectPerishable",
+          "title": "Select Perishable",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3667956712/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-44",
+      "reading": "Sensible bed ownership",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "sensiblebedownership.1trickPwnyta",
+          "title": "Sensible Bed Ownership",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3328702448/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Installed title matches the note, allowing case, punctuation, joined words and edition/author suffixes."
+    },
+    {
+      "entryId": "P2-45",
+      "reading": "Show gender/age in caravan form dialog",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "arl85.ShowGenderAgeCaravanFormDialog",
+          "title": "Show gender/age in caravan form dialog",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2914157264/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Exact installed-title match; previous custom classification corrected."
+    },
+    {
+      "entryId": "P2-46",
+      "reading": "Skilled slaughtering (+ cooking)",
+      "initialReadingState": "R → clarified",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "MrHydralisk.SkilledSlaughtering",
+          "title": "Skilled Slaughtering",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2873284405/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Source identified; Cooking and yield changes clarified by user, formula still open."
+    },
+    {
+      "entryId": "P2-47",
+      "reading": "`(+ amount[?])`",
+      "initialReadingState": "U → clarified",
+      "classification": "Modifier",
+      "sources": [],
+      "researchOnlyPackageIds": [],
+      "note": "Clarified quantity modifier of P2-46, not a separate mod."
+    },
+    {
+      "entryId": "P2-48",
+      "reading": "Dubs Break mod",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Dubwise.DubsBreakMod",
+          "title": "Dubs Break Mod",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/1722398508/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Sideways text: Dubs Break Mod."
+    },
+    {
+      "entryId": "P2-49",
+      "reading": "Toddlers",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "cyanobot.toddlers",
+          "title": "Toddlers",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2903359152/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Same Toddlers source referenced in P1-24."
+    },
+    {
+      "entryId": "P2-50",
+      "reading": "Research Whatever",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "avilmask.ResearchWhatever",
+          "title": "Research Whatever",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2552092060/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Sideways title checked against original."
+    },
+    {
+      "entryId": "P2-51",
+      "reading": "TD Find Lib + Ctrl+F",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Memegoddess.TDFindLib",
+          "title": "TD Find Lib - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3529443295/About/About.xml"
+          ]
+        },
+        {
+          "packageId": "Memegoddess.CtrlF",
+          "title": "Ctrl F - Continued",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/3529520961/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Both sources matched; Ctrl+F repeats earlier entries."
+    },
+    {
+      "entryId": "P2-52",
+      "reading": "De-generalize work",
+      "initialReadingState": "R",
+      "classification": "Mod reference",
+      "sources": [
+        {
+          "packageId": "Alias.DegeneralizeWork",
+          "title": "De-generalize Work",
+          "metadataPaths": [
+            "F:/Steam/steamapps/workshop/content/294100/2011655761/About/About.xml"
+          ]
+        }
+      ],
+      "researchOnlyPackageIds": [],
+      "note": "Sideways title checked against original."
+    }
+  ]
+}

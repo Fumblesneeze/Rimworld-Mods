@@ -1,5 +1,12 @@
 # Development workflow
 
+The repository compiler is pinned to .NET SDK 10.0.400. Existing product targets
+remain unchanged; the Gateway and its opted-in E2E bundle select net480 for 1.6 or
+net10.0 for 1.7. See [Gateway runtime selection](Gateway.md#runtime-selection-16--17-beta)
+for the verified beta workflow and deliberately unverified surfaces. Do not run a
+legacy full test matrix against the beta installation as a substitute for porting
+each owning product and its exact test group.
+
 This repository is a RimWorld 1.6 mod monorepo. OpenSpec changes live at the repository root, playable mods live under `mods/`, shared host-safe contracts under `shared/`, companion tools under `tools/`, and NUnit projects under `tests/`. Re-inspect installed dependency assemblies and finalized Defs before changing optional-mod integration code; machine-local dependency audits are deliberately ignored. Downloaded Workshop content is read-only inspection input and must remain unmodified. See [Gateway.md](Gateway.md) for the developer gateway's security model and command/API reference.
 
 Trusted local Codex sessions start the repository-owned `rimworld_modding` stdio MCP from

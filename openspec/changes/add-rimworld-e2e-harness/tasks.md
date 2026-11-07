@@ -41,12 +41,15 @@
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 
+- [x] 2.27 TDD/REVIEW/LIVE: Preserve the incident constructor ABI and add exact optional raid arrival/strategy Def selection, fail closed before native execution on invalid options, and personally observe native edge-walk-in raids in the corrected Pathfinding Lab setup. Evidence: ignored `artifacts/PathfindingLab/proactive-approach-20261024.md`; executed5-test RED/GREEN, independent fixture review, and native incident/save/reload group20261024T190125607Z with personally inspected edge-raid captures.
+
 - [ ] 3.1 TDD RED: Add failing reset-plan tests for spawned Things/Pawns, jobs, zones, designations, interactions, windows, selection, world-fixture ledgers, input release, camera/control restoration, cleanup callbacks, and post-reset verification.
 - [x] 3.2 TDD GREEN: Implement pre/post-test disposable-map reset and process tainting so ordinary test failures continue only after a verified empty baseline.
 - [x] 3.2a TDD RED/GREEN: Remove constructed roofs and overhead mountain before any map content, include roofs in empty-baseline verification, and prove the exact sequential group has no roof-collapse or leaked-death evidence.
 - [x] 3.2b TDD/E2E: After initial and between-test map removal, clear and verify live messages, visible/delayed letters, and active alert-readout entries through exact Gateway-owned shapes so alert-sensitive scenarios start from a clean notification slate.
 - [x] 3.2c TDD/E2E: Reproduce sequential colonist generation failing after an earlier fixture replaces a humanlike name with `NameSingle`; keep stable fixture labels through valid native `NameTriple` values, retain `NameSingle` only for animals, and prove a later same-process generation plus the affected gameplay sequence complete with clean logs.
 - [x] 3.3 REFACTOR: Keep test orchestration, native action adapters, reset ownership, persistence, and HTTP projection behind narrow modules shared with existing Gateway services rather than duplicate implementations.
+- [x] 3.4 TDD/REVIEW/LIVE: Add explicit single-test process-owned-game isolation for native saved-colony workloads; preserve map content until exact-process shutdown while verifying UI/control/deferred cleanup, and prove it through a minimized real colony run.
 
 ## 4. host runner — CLI TDD and orchestration
 

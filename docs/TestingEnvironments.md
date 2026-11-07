@@ -22,6 +22,16 @@ That distinction determines which test environment to use.
 
 ## Available suites
 
+`RimWorldDevGateway.Waylith.Unit` is an explicit .NET 10 alternative for the 1.7
+Gateway evaluator and uploaded-source compiler. It uses real game type metadata,
+but no active mods, Harmony initialization or populated Def databases. Assembly-wide
+entry/exit guards enforce that distinction. It is not included in the legacy `All`
+aggregate, which still requires a 1.6 installation. It never proves live gameplay.
+
+Runtime layout, build-import and test-bundle selection rules are covered by focused
+`RimWorldModding.Mcp` tests without loading game assemblies. Versioned E2E metadata
+is inspected with the existing host rather than loading a net10 test DLL in net8.
+
 `Invoke-Tests.ps1` starts a separate `dotnet test` process for each registered project:
 
 ```powershell

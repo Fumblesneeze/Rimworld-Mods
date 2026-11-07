@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-01",
+  "originals": [
+    "page-1-original.png",
+    "page-2-original.png"
+  ],
+  "files": [
+    {
+      "file": "images/page-1-original.png",
+      "bytes": 2769282,
+      "sha256": "D5CD7359BD76D1B01DB0EF3571A4F0D9ACD7E215ADBE00E987DD18934800623B"
+    },
+    {
+      "file": "images/page-1-read.png",
+      "bytes": 2064712,
+      "sha256": "A1F4EE1548F16EE9E4AC7C3DDE6111B293C45233EB81CE67716D0DB6100ACF8E"
+    },
+    {
+      "file": "images/page-2-original.png",
+      "bytes": 2587067,
+      "sha256": "86640A2E9D7BB1217876247DDD813BD28ED6875DD329C6B91CF5E712C079573F"
+    },
+    {
+      "file": "images/page-2-read.png",
+      "bytes": 1883969,
+      "sha256": "5AD6D4619C4E13FEC866DDB9CC6DB904AD0837A11A878034CCF264F53A1C9810"
+    }
+  ]
+}

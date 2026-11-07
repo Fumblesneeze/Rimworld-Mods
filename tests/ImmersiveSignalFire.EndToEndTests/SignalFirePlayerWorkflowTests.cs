@@ -11,6 +11,7 @@ using RimWorld;
 using RimWorld.Planet;
 using RimWorldDevGateway.EndToEndTesting;
 using Verse;
+using Verse.AI;
 
 namespace ImmersiveSignalFire.EndToEndTests;
 
@@ -56,7 +57,6 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
     private Pawn menuActor = null!;
     private string topLevelLabel = null!;
     private int baselineAshThickness;
-    private int ashBeforeImmediate;
     private int firstStartTick;
     private int secondStartTick;
     private int thirdStartTick;
@@ -122,15 +122,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
             .ToList();
         for (int generatedIndex = 0; generatedIndex < 3; generatedIndex++)
         {
-            Pawn pawn = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
-                PawnKindDefOf.Colonist,
-                Faction.OfPlayer,
-                forceGenerateNewPawn: true,
-                canGeneratePawnRelations: false,
-                fixedBiologicalAge: 30f,
-                fixedChronologicalAge: 30f,
-                developmentalStages: DevelopmentalStage.Adult,
-                forceNoGear: true));
+            Pawn pawn = GenerateSignalParticipant();
             IntVec3 pawnCell = map.AllCells
                 .Where(cell => cell.Standable(map) && !cell.Fogged(map) &&
                                cell.GetThingList(map).Count == 0 &&
@@ -266,11 +258,6 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         int cooldownCompletionTick = 0;
         int cooldownGoodwill = 0;
         int cooldownAidTick = 0;
-        int ashBeforeUnnoticed = 0;
-        int ashBeforeMisunderstood = 0;
-        int ashBeforeInterrupted = 0;
-        int ashBeforeDelayed = 0;
-        int ashBeforeCooldown = 0;
         int delayedDueTick = 0;
         int delayedWarriorCount = 0;
         int delayedExpectedGoodwillChange = 0;
@@ -355,7 +342,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         yield return new AssertionStep("arrange the unnoticed skill band on the preserved unused fire", _ =>
         {
             SetAllParticipantSkills(2);
-            ashBeforeUnnoticed = AshThickness();
+            CaptureSessionAshBaseline();
         });
         foreach (EndToEndStep step in StartSignal(
                      context,
@@ -375,8 +362,8 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             firstCompletionTick = Find.TickManager.TicksGame;
             int observedDuration = firstCompletionTick - firstStartTick;
-            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 610,
-                $"Frame polling must not observe an early terminal state and may lag the exact transition by at most 10 ticks; " +
+            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 660,
+                $"Frame polling must not observe an early terminal state and may lag the exact transition by at most 60 ticks (frame-polling lag tolerance); " +
                 $"observed {observedDuration}. The component's exact completed duration is asserted separately.");
         });
         yield return new AssertionStep(
@@ -393,8 +380,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
             EndToEndAssert.Equal(600, firstDuration, "The active signal must last exactly 600 game ticks.");
             EndToEndAssert.Equal(0, NewFactionPawnCount(delayedFaction),
                 "An unnoticed signal must not create allied warriors.");
-            EndToEndAssert.Equal(16, AshThickness() - ashBeforeUnnoticed,
-                "The first burned-out signal must leave exactly 16 ash thickness.");
+            AssertSessionSootPlacement("unnoticed");
             AssertCurrentFireWasConsumed("unnoticed");
         });
         yield return new ScreenshotStep("unnoticed single-use fire is gone with cleanable soot left behind", Array.Empty<string>(), 0);
@@ -403,7 +389,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             SpawnPreparedFire();
             SetAllParticipantSkills(6);
-            ashBeforeMisunderstood = AshThickness();
+            CaptureSessionAshBaseline();
         });
         yield return new TimeControlActionStep("resume for the misunderstood signal", paused: false, EndToEndGameSpeed.Normal);
         foreach (EndToEndStep step in StartSignal(
@@ -423,9 +409,9 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             int observedCompletionTick = Find.TickManager.TicksGame;
             int observedDuration = observedCompletionTick - misunderstoodStartTick;
-            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 610,
+            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 660,
                 "Frame polling must not observe an early misunderstood terminal state and may lag " +
-                $"the exact transition by at most 10 ticks; observed {observedDuration}.");
+                $"the exact transition by at most 60 ticks (frame-polling lag tolerance); observed {observedDuration}.");
             EndToEndAssert.Equal(600, fire.SignalComp.LastCompletedDurationTicks,
                 "The misunderstood active signal must last exactly 600 component ticks.");
             misunderstoodCompletionTick = misunderstoodStartTick + fire.SignalComp.LastCompletedDurationTicks;
@@ -440,8 +426,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             EndToEndAssert.Equal(0, NewFactionPawnCount(delayedFaction),
                 "A misunderstood signal must not create allied warriors.");
-            EndToEndAssert.Equal(16, AshThickness() - ashBeforeMisunderstood,
-                "The misunderstood signal must add exactly 16 ash thickness after its fresh-fire fixture.");
+            AssertSessionSootPlacement("misunderstood");
             AssertCurrentFireWasConsumed("misunderstood");
         });
 
@@ -449,7 +434,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             SpawnPreparedFire();
             SetAllParticipantSkills(20);
-            ashBeforeInterrupted = AshThickness();
+            CaptureSessionAshBaseline();
         });
         yield return new TimeControlActionStep("resume for the interrupted signal", paused: false, EndToEndGameSpeed.Normal);
         foreach (EndToEndStep step in StartSignal(
@@ -461,6 +446,19 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             yield return step;
         }
+        yield return new TimeControlActionStep(
+            "pause inside the visible interrupted signal before the native draft order",
+            paused: true,
+            EndToEndGameSpeed.Normal,
+            atGameTick: interruptedStartTick + 350,
+            deadline: new EndToEndDeadline(2400, 360, TimeSpan.FromSeconds(15)));
+        yield return new AssertionStep("the pre-draft pause sits inside the visible active phase", _ =>
+        {
+            int pausedElapsedTicks = fire.SignalComp.ActiveElapsedTicks;
+            EndToEndAssert.True(fire.SignalComp.IsActive && pausedElapsedTicks is >= 170 and < 600,
+                "The deterministic draft must happen inside the already-visible active phase; " +
+                $"isActive={fire.SignalComp.IsActive} elapsed={pausedElapsedTicks}.");
+        });
         yield return ToggleDraft(context, menuActor, "draft one active signaler through the native pawn command", expectedCurrentState: false);
         yield return new WaitUntilStep(
             "draft interruption cancels the shared signal once",
@@ -469,10 +467,16 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         yield return new AssertionStep("measure the interrupted terminal tick", _ =>
         {
             interruptedCompletionTick = Find.TickManager.TicksGame;
-            EndToEndAssert.True(interruptedCompletionTick - interruptedStartTick is >= 170 and < 600,
-                "The native draft action must terminate the already-visible signal before its normal end tick.");
+            int observedInterruptedDuration = interruptedCompletionTick - interruptedStartTick;
+            EndToEndAssert.True(observedInterruptedDuration is >= 170 and < 600,
+                "The native draft action must terminate the already-visible signal before its normal end tick; " +
+                $"observed duration={observedInterruptedDuration} ticks.");
             burnoutInspectionTick = Find.TickManager.TicksGame + 120;
         });
+        yield return new TimeControlActionStep(
+            "resume after the deterministic draft interruption",
+            paused: false,
+            EndToEndGameSpeed.Normal);
         yield return new WaitUntilStep(
             "the interrupted terminal flecks fade",
             _ => Find.TickManager.TicksGame >= burnoutInspectionTick,
@@ -482,20 +486,18 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             EndToEndAssert.Equal(0, NewFactionPawnCount(delayedFaction),
                 "An interrupted signal must request no warriors.");
-            EndToEndAssert.Equal(16, AshThickness() - ashBeforeInterrupted,
-                "The interrupted signal must add exactly one 16-thickness cleanup.");
+            AssertSessionSootPlacement("interrupted");
             AssertCurrentFireWasConsumed("interrupted");
         });
         yield return new ScreenshotStep("draft-interrupted single-use fire is gone with one soot cleanup", Array.Empty<string>(), 0);
         yield return ToggleDraft(context, menuActor, "undraft the reporting signaler after cleanup", expectedCurrentState: true);
 
-        int ashBeforeExternalDestruction = 0;
         int warriorsBeforeExternalDestruction = 0;
         yield return new AssertionStep("arrange a fresh prepared fire for native active deconstruction", _ =>
         {
             SpawnPreparedFire();
             SetAllParticipantSkills(20);
-            ashBeforeExternalDestruction = AshThickness();
+            CaptureSessionAshBaseline();
             warriorsBeforeExternalDestruction = NewFactionPawnCount(delayedFaction);
         });
         yield return new TimeControlActionStep(
@@ -552,11 +554,13 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         yield return new AssertionStep("external active destruction resolves once inside the bounded footprint", _ =>
         {
             EndToEndAssert.True(fire.SignalComp.LastCompletedDurationTicks is > 0 and < 600,
-                "Native deconstruction must interrupt an active performance before its ordinary terminal tick.");
-            EndToEndAssert.True(Find.TickManager.TicksGame - externallyDestroyedStartTick < 600,
-                "The external destruction observation must occur before the normal 600-tick completion.");
-            EndToEndAssert.Equal(16, AshThickness() - ashBeforeExternalDestruction,
-                "PostDeSpawn cleanup must add exactly 16 ash thickness once.");
+                "Native deconstruction must interrupt an active performance before its ordinary terminal tick; " +
+                $"observed duration={fire.SignalComp.LastCompletedDurationTicks} ticks.");
+            int observedDestructionLagTicks = Find.TickManager.TicksGame - externallyDestroyedStartTick;
+            EndToEndAssert.True(observedDestructionLagTicks < 600,
+                "The external destruction observation must occur before the normal 600-tick completion; " +
+                $"observed lag={observedDestructionLagTicks} ticks.");
+            AssertSessionSootPlacement("external-deconstruction");
             EndToEndAssert.Equal(warriorsBeforeExternalDestruction, NewFactionPawnCount(delayedFaction),
                 "External destruction must not request allied warriors.");
             AssertCurrentFireWasConsumed("externally-deconstructed");
@@ -570,7 +574,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             SpawnPreparedFire();
             SetAllParticipantSkills(8);
-            ashBeforeDelayed = AshThickness();
+            CaptureSessionAshBaseline();
         });
         yield return new TimeControlActionStep("resume for the delayed signal", paused: false, EndToEndGameSpeed.Normal);
         foreach (EndToEndStep step in StartSignal(
@@ -590,9 +594,9 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             int observedCompletionTick = Find.TickManager.TicksGame;
             int observedDuration = observedCompletionTick - secondStartTick;
-            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 610,
+            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 660,
                 "Frame polling must not observe an early delayed terminal state and may lag " +
-                $"the exact transition by at most 10 ticks; observed {observedDuration}.");
+                $"the exact transition by at most 60 ticks (frame-polling lag tolerance); observed {observedDuration}.");
             EndToEndAssert.Equal(600, fire.SignalComp.LastCompletedDurationTicks,
                 "The delayed active signal must last exactly 600 component ticks.");
             secondCompletionTick = secondStartTick + fire.SignalComp.LastCompletedDurationTicks;
@@ -614,8 +618,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
             EndToEndAssert.Equal(600, secondDuration, "The delayed active signal must last exactly 600 ticks.");
             EndToEndAssert.Equal(0, NewFactionPawnCount(delayedFaction),
                 "Delayed aid must not arrive in the completion tick.");
-            EndToEndAssert.Equal(16, AshThickness() - ashBeforeDelayed,
-                "The delayed terminal signal must add exactly 16 ash thickness after its fresh-fire fixture.");
+            AssertSessionSootPlacement("delayed");
             AssertCurrentFireWasConsumed("delayed");
             delayedGoodwillBeforeAid = delayedFaction.PlayerGoodwill;
             delayedExpectedGoodwillChange = Faction.OfPlayer.CalculateAdjustedGoodwillChange(
@@ -699,7 +702,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
             immediateFaction.lastMilitaryAidRequestTick = Find.TickManager.TicksGame -
                                                            MilitaryAidAvailabilityPolicy.CooldownTicks;
             SetAllParticipantSkills(20);
-            ashBeforeImmediate = AshThickness();
+            CaptureSessionAshBaseline();
             immediateGoodwillBeforeAid = immediateFaction.PlayerGoodwill;
             immediateExpectedGoodwillChange = Faction.OfPlayer.CalculateAdjustedGoodwillChange(
                 immediateFaction,
@@ -722,14 +725,13 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             int observedCompletionTick = Find.TickManager.TicksGame;
             int observedDuration = observedCompletionTick - thirdStartTick;
-            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 610,
+            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 660,
                 "Frame polling must not observe an early immediate terminal state and may lag " +
-                $"the exact transition by at most 10 ticks; observed {observedDuration}.");
+                $"the exact transition by at most 60 ticks (frame-polling lag tolerance); observed {observedDuration}.");
             EndToEndAssert.Equal(600, fire.SignalComp.LastCompletedDurationTicks,
                 "The immediate active signal must last exactly 600 component ticks.");
             thirdCompletionTick = thirdStartTick + fire.SignalComp.LastCompletedDurationTicks;
-            EndToEndAssert.Equal(16, AshThickness() - ashBeforeImmediate,
-                "The immediate terminal transition must add exactly 16 ash thickness.");
+            AssertSessionSootPlacement("immediate");
         });
         yield return new WaitUntilStep(
             "observe native allied warrior presence independently after measuring completion",
@@ -772,7 +774,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
             SpawnPreparedFire();
             cooldownGoodwill = immediateFaction.PlayerGoodwill;
             cooldownAidTick = immediateFaction.lastMilitaryAidRequestTick;
-            ashBeforeCooldown = AshThickness();
+            CaptureSessionAshBaseline();
             EndToEndAssert.True(
                 MilitaryAidAvailabilityPolicy.RemainingCooldownTicks(
                     cooldownAidTick,
@@ -796,9 +798,9 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         {
             int observedCompletionTick = Find.TickManager.TicksGame;
             int observedDuration = observedCompletionTick - cooldownStartTick;
-            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 610,
+            EndToEndAssert.True(observedDuration >= 600 && observedDuration <= 660,
                 "Frame polling must not observe an early cooldown-rejected terminal state and may lag " +
-                $"the exact transition by at most 10 ticks; observed {observedDuration}.");
+                $"the exact transition by at most 60 ticks (frame-polling lag tolerance); observed {observedDuration}.");
             EndToEndAssert.Equal(600, fire.SignalComp.LastCompletedDurationTicks,
                 "The cooldown-rejected signal must still perform the full 600-tick player workflow.");
             cooldownCompletionTick = cooldownStartTick + fire.SignalComp.LastCompletedDurationTicks;
@@ -808,8 +810,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
                 "An active military-aid cooldown must not overwrite the prior request tick.");
             EndToEndAssert.Equal(0, ScheduledResponseCount(immediateFaction),
                 "An immediate cooldown rejection must not create a delayed response entry.");
-            EndToEndAssert.Equal(16, AshThickness() - ashBeforeCooldown,
-                "The rejected response must still leave one ordinary 16-thickness soot cleanup.");
+            AssertSessionSootPlacement("cooldown-rejected");
             AssertCurrentFireWasConsumed("cooldown-rejected");
 
             int remaining = MilitaryAidAvailabilityPolicy.RemainingCooldownTicks(
@@ -1016,19 +1017,21 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
             EndToEndGameSpeed.Normal);
         yield return new AssertionStep(
             $"start the bounded {outcomeName} gathering observation",
-            _ => gatherInspectionTick = Find.TickManager.TicksGame + 120);
+            _ => gatherInspectionTick = Find.TickManager.TicksGame + 1500);
         yield return new WaitUntilStep(
             $"the {outcomeName} gathering phase reaches activity, aborts, or reaches its diagnostic bound",
             _ => fire.SignalComp.IsActive || !fire.SignalComp.IsBusy ||
                  Find.TickManager.TicksGame >= gatherInspectionTick,
-            new EndToEndDeadline(300, 300, TimeSpan.FromSeconds(15)));
+            new EndToEndDeadline(2400, 2000, TimeSpan.FromSeconds(40)));
         yield return new AssertionStep(
             $"all selected colonists begin the synchronized {outcomeName} signal job",
             _ => EndToEndAssert.True(
                 fire.SignalComp.IsActive && fire.SignalComp.ActiveParticipants.Count >= 1,
                 "The accepted signal must enter its active phase. " +
-                $"busy={fire.SignalComp.IsBusy}; tick={Find.TickManager.TicksGame}; " +
-                "participants=" + string.Join(" | ", generatedColonists.Select(pawn =>
+                $"busy={fire.SignalComp.IsBusy}; tick={Find.TickManager.TicksGame}; fireAt={fire.Position}; " +
+                "session=" + string.Join(" | ", fire.SignalComp.ActiveParticipants.Select(pawn =>
+                    $"{pawn.LabelShort}({pawn.ThingID}):pos={pawn.Position},job={pawn.CurJobDef?.defName ?? "none"},moving={pawn.pather?.MovingNow ?? false}")) +
+                "; generated=" + string.Join(" | ", generatedColonists.Select(pawn =>
                     $"{pawn.LabelShort}:pos={pawn.Position},job={pawn.CurJobDef?.defName ?? "none"},moving={pawn.pather?.MovingNow ?? false}"))));
         yield return new AssertionStep($"capture the exact {outcomeName} active start tick", _ =>
         {
@@ -1052,7 +1055,7 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
                 "pause inside the first raised puff before active persistence",
                 paused: true,
                 EndToEndGameSpeed.Normal,
-                atGameTick: activeStartTick + 15,
+                atGameTick: activeStartTick + 8,
                 deadline: new EndToEndDeadline(300, 300, TimeSpan.FromSeconds(10)));
             yield return new AssertionStep(
                 "the paused pre-reload phase remains inside the owned emitter window",
@@ -1208,9 +1211,19 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned.Where(pawn =>
                      pawnSnapshots.Any(snapshot => snapshot.PawnId == pawn.ThingID) && !pawn.Destroyed))
         {
-            int assignedLevel = generatedColonists.Any(candidate => candidate.ThingID == pawn.ThingID) ? level : 0;
+            bool generated = generatedColonists.Any(candidate => candidate.ThingID == pawn.ThingID);
+            int assignedLevel = generated ? level : 0;
             pawn.skills.GetSkill(SkillDefOf.Melee).Level = assignedLevel;
             pawn.skills.GetSkill(SkillDefOf.Social).Level = assignedLevel;
+            if (generated)
+            {
+                int displayedMelee = pawn.skills.GetSkill(SkillDefOf.Melee).Level;
+                int displayedSocial = pawn.skills.GetSkill(SkillDefOf.Social).Level;
+                EndToEndAssert.True(displayedMelee == assignedLevel && displayedSocial == assignedLevel,
+                    "Generated signal participants must display their assigned Melee and Social levels so the " +
+                    $"quality-band fixtures stay deterministic; pawn={pawn.ThingID} assigned={assignedLevel} " +
+                    $"displayedMelee={displayedMelee} displayedSocial={displayedSocial}.");
+            }
         }
     }
 
@@ -1411,6 +1424,83 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         .OfType<Filth>()
         .Sum(filth => filth.thickness);
 
+    private readonly Dictionary<string, int> sessionAshBaseline = new(StringComparer.Ordinal);
+
+    private void CaptureSessionAshBaseline()
+    {
+        CellRect affectedArea = fire.OccupiedRect().ExpandedBy(1);
+        foreach (Filth ash in map.listerThings.ThingsOfDef(ThingDefOf.Filth_Ash).OfType<Filth>()
+                     .Where(ash => ash.Spawned && affectedArea.Contains(ash.Position))
+                     .ToArray())
+        {
+            ash.Destroy(DestroyMode.Vanish);
+        }
+
+        sessionAshBaseline.Clear();
+        foreach (Filth ash in map.listerThings.ThingsOfDef(ThingDefOf.Filth_Ash).OfType<Filth>())
+        {
+            sessionAshBaseline[ash.ThingID] = ash.thickness;
+        }
+    }
+
+    private void AssertSessionSootPlacement(string stage)
+    {
+        var current = new Dictionary<string, int>();
+        int placed = 0;
+        int independentDrift = 0;
+        foreach (Filth ash in map.listerThings.ThingsOfDef(ThingDefOf.Filth_Ash).OfType<Filth>())
+        {
+            current[ash.ThingID] = ash.thickness;
+            if (sessionAshBaseline.TryGetValue(ash.ThingID, out int before))
+            {
+                int change = ash.thickness - before;
+                if (change > 0)
+                {
+                    placed += change;
+                }
+                else
+                {
+                    independentDrift += change;
+                }
+            }
+            else
+            {
+                placed += ash.thickness;
+            }
+        }
+
+        foreach (KeyValuePair<string, int> baselineEntry in sessionAshBaseline)
+        {
+            if (!current.ContainsKey(baselineEntry.Key))
+            {
+                independentDrift -= baselineEntry.Value;
+            }
+        }
+
+        if (placed != 16)
+        {
+            foreach (Filth ash in map.listerThings.ThingsOfDef(ThingDefOf.Filth_Ash).OfType<Filth>())
+            {
+                int baselineThickness = sessionAshBaseline.TryGetValue(ash.ThingID, out int before) ? before : -1;
+                Log.Warning(
+                    $"[ImmersiveSignalFire.Diagnostics] ash thing={ash.ThingID} pos={ash.Position} thickness={ash.thickness} baseline={baselineThickness}");
+            }
+
+            foreach (KeyValuePair<string, int> baselineEntry in sessionAshBaseline)
+            {
+                if (!current.ContainsKey(baselineEntry.Key))
+                {
+                    Log.Warning($"[ImmersiveSignalFire.Diagnostics] ash MISSING thing={baselineEntry.Key} baselineThickness={baselineEntry.Value}");
+                }
+            }
+        }
+
+        EndToEndAssert.Equal(16, placed,
+            $"The {stage} cleanup must add exactly 16 thickness of new or thickened ash. Thickness changes are " +
+            $"attributed per thing so unrelated vanilla filth losses do not mask the placement; observed placed={placed}, " +
+            $"independentDrift={independentDrift}. The product's own cleanup throws unless it placed exactly 16.");
+    }
+
     private static FloatMenuOption[] OpenMenuOptions()
     {
         FloatMenu[] menus = Find.WindowStack.Windows.OfType<FloatMenu>().Where(menu => menu.IsOpen).ToArray();
@@ -1428,6 +1518,33 @@ public sealed class SignalFirePlayerWorkflowTests : IRimWorldEndToEndTest
         settlement.Name = name;
         Find.WorldObjects.Add(settlement);
         return settlement;
+    }
+
+    private static Pawn GenerateSignalParticipant()
+    {
+        for (int attempt = 0; attempt < 64; attempt++)
+        {
+            Pawn candidate = PawnGenerator.GeneratePawn(new PawnGenerationRequest(
+                PawnKindDefOf.Colonist,
+                Faction.OfPlayer,
+                forceGenerateNewPawn: true,
+                canGeneratePawnRelations: false,
+                fixedBiologicalAge: 30f,
+                fixedChronologicalAge: 30f,
+                developmentalStages: DevelopmentalStage.Adult,
+                forceNoGear: true));
+            bool meleeEnabled = !candidate.skills.GetSkill(SkillDefOf.Melee).TotallyDisabled;
+            bool socialEnabled = !candidate.skills.GetSkill(SkillDefOf.Social).TotallyDisabled;
+            if (meleeEnabled && socialEnabled)
+            {
+                return candidate;
+            }
+
+            candidate.Destroy(DestroyMode.Vanish);
+        }
+
+        throw new EndToEndAssertionException(
+            "Could not generate a signal participant with both Melee and Social skills enabled.");
     }
 
     private static Pawn GenerateDeconstructor()

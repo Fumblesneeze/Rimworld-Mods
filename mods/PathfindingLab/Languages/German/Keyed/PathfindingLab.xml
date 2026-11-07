@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <PL.Title>Pathfinding Lab</PL.Title>
+  <PL.Experimental>Experimentelle Wege</PL.Experimental>
+  <PL.Warning>Forschungsprototyp: ersetzt alle Wegsuchen auf der Karte, auch bei normalen Arbeiten. Die Bewegungsregeln bleiben erhalten. Wege können länger sein; Beschleunigung ist nicht garantiert. Bei Fehlern greift die Vanilla-Notfalllösung.</PL.Warning>
+  <PL.MapWarning>Nur die nächste Siedlung. Riesige Karten können einfrieren oder den Speicher erschöpfen. Bestehende und Questkarten bleiben unverändert.</PL.MapWarning>
+  <PL.VanillaSize>Vanilla-Kartengröße</PL.VanillaSize>
+  <PL.MapSize>{0} × {0} Felder</PL.MapSize>
+  <PL.RefinementCells>Verfeinerungshorizont: {0} Zellen (Erneuerung etwa zur Hälfte)</PL.RefinementCells>
+</LanguageData>

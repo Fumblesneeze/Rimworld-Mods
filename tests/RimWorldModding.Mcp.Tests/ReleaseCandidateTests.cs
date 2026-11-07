@@ -6,6 +6,21 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class ReleaseCandidateTests
 {
     [Test]
+    public void ProductBoundary_BetaPlatformNamesAreExactAndVersionScoped()
+    {
+        Assert.That(ReleasePackageValidator.IsPlatformReference("UnityStubs", "1.7"), Is.True);
+        Assert.That(ReleasePackageValidator.IsPlatformReference("Waylith", "1.7"), Is.True);
+        Assert.That(ReleasePackageValidator.IsPlatformReference("System.Runtime", "1.7"), Is.True);
+        Assert.That(ReleasePackageValidator.IsPlatformReference("UnityStubs", "1.6"), Is.False);
+        Assert.That(ReleasePackageValidator.IsPlatformReference("Waylith.FakeMod", "1.7"), Is.False);
+        Assert.That(ReleasePackageValidator.IsPlatformReference("System.FakeMod", "1.7"), Is.False);
+        Assert.That(ReleasePackageValidator.IsPlatformReference("RimWorldDevGateway", "1.7"), Is.False);
+        foreach (string native in new[] { "coreclr", "steam_api64", "hostfxr", "System.IO.Compression.Native" })
+            Assert.That(ReleasePackageValidator.IsPlatformReference(native, "1.7"), Is.False);
+        Assert.Throws<ArgumentException>(() => ReleasePackageValidator.IsPlatformReference("System", "1.8"));
+    }
+
+    [Test]
     public void OwnerScan_RequiresCompleteExactTitleAbsence()
     {
         const string html = """

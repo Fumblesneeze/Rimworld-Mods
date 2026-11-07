@@ -20,6 +20,8 @@ deploy product assemblies before publishing test bundles.
 Pass -VisibleWindow only when desktop UI or computer-use interaction is required; the explicit
 gateway-regression scenario selects a normal visible window automatically.
 Pass -EnableAudio only for sound-focused work; it enables master audio while music remains muted.
+Pass -UserPlaytest only for a user-requested interactive session: its hold has no automatic
+expiry, user exit is normal, and saves remain in the isolated savedata directory.
 Exit codes: 0 success,
 1 verification/runtime failure, 2 for a path or semantic input rejected after parameter binding.
 PowerShell rejects invalid ValidateRange or ValidateSet values before the script runs and reports
@@ -90,8 +92,10 @@ param(
     [ValidateRange(30, [int]::MaxValue)]
     [int]$TimeoutSeconds = 180,
 
-    [ValidateRange(0, 3600)]
+    [ValidateRange(0, 7200)]
     [int]$InteractiveHoldSeconds = 0,
+
+    [switch]$UserPlaytest,
 
     [string]$InteractiveCompletionFile,
 
@@ -320,42 +324,9 @@ function Copy-GatewayPrelaunchConfig {
     if ([string]::IsNullOrWhiteSpace($SourceDirectory)) {
         return @()
     }
-    $sourceRoot = [System.IO.Path]::GetFullPath($SourceDirectory)
     $destinationRoot = [System.IO.Path]::GetFullPath($DestinationDirectory)
-    if (-not (Test-Path -LiteralPath $sourceRoot -PathType Container)) {
-        throw "Prelaunch config directory does not exist: $sourceRoot"
-    }
-    $rootItem = Get-Item -LiteralPath $sourceRoot -Force -ErrorAction Stop
-    if (($rootItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-        throw 'Prelaunch config directory cannot be a reparse point.'
-    }
-
-    $entries = @(Get-ChildItem -LiteralPath $sourceRoot -Force | Sort-Object Name)
-    if ($entries.Count -gt 64) {
-        throw 'Prelaunch config contains more than the repository safety ceiling of 64 files.'
-    }
-    $totalBytes = [long]0
-    $validated = [System.Collections.Generic.List[object]]::new()
-    foreach ($entry in $entries) {
-        if ($entry.PSIsContainer -or
-            ($entry.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-            throw "Prelaunch config accepts only direct, ordinary XML files: $($entry.Name)"
-        }
-        if ($entry.Name -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.xml$') {
-            throw "Invalid prelaunch config file name: $($entry.Name)"
-        }
-        if ($entry.Name -ieq 'Prefs.xml' -or $entry.Name -ieq 'ModsConfig.xml') {
-            throw "Prelaunch config file '$($entry.Name)' is reserved by the isolated launcher."
-        }
-        if ([long]$entry.Length -gt 16MB) {
-            throw "Prelaunch config file '$($entry.Name)' exceeds the repository safety ceiling of 16 MiB."
-        }
-        $totalBytes += [long]$entry.Length
-        if ($totalBytes -gt 64MB) {
-            throw 'Prelaunch config exceeds the repository aggregate safety ceiling of 64 MiB.'
-        }
-        $validated.Add($entry)
-    }
+    Import-Module (Join-Path $PSScriptRoot 'RimWorldPrelaunchConfig.Support.psm1') -Force
+    $validated = @(Get-RimWorldPrelaunchConfigFiles -SourceDirectory $SourceDirectory)
 
     $null = New-Item -Path $destinationRoot -ItemType Directory -Force
     $records = [System.Collections.Generic.List[object]]::new()
@@ -1249,6 +1220,7 @@ function Get-GatewaySmokeProductPackageEvidence {
     param(
         [Parameter(Mandatory)][object]$Project,
         [Parameter(Mandatory)][string]$RimWorldPath,
+        [ValidateSet('1.6', '1.7')][string]$GameVersion = '1.6',
         [Parameter(Mandatory)][string]$BuildLogPath
     )
 
@@ -1319,7 +1291,7 @@ function Get-GatewaySmokeProductPackageEvidence {
         throw "Ordinary product managed assembly references forbidden RimWorldDevGateway assembly identities: $($references -join '; ')"
     }
 
-    $assembliesPath = Join-Path $packageRoot '1.6\Assemblies'
+    $assembliesPath = Join-Path $packageRoot "$GameVersion\Assemblies"
     $assemblyFileName = [string]$Project.AssemblyName + '.dll'
     $assembly = @(Get-GatewaySmokeAssemblyEvidence `
         -AssembliesPath $assembliesPath `
@@ -1330,7 +1302,7 @@ function Get-GatewaySmokeProductPackageEvidence {
             [System.StringComparison]::Ordinal)) {
         throw "Deployed product assembly identity does not match its project AssemblyName: $assemblyFileName"
     }
-    $productAssemblyRelativePath = "1.6/Assemblies/$assemblyFileName"
+    $productAssemblyRelativePath = "$GameVersion/Assemblies/$assemblyFileName"
     $productManagedAssembly = if ($managedAssembliesByPath.ContainsKey($productAssemblyRelativePath)) {
         $managedAssembliesByPath[$productAssemblyRelativePath]
     }
@@ -1345,7 +1317,7 @@ function Get-GatewaySmokeProductPackageEvidence {
         -Path (Join-Path $packageRoot 'About\About.xml') `
         -RelativePath 'About/About.xml'
     $sourcePatches = @($Project.SourcePatchFiles)
-    $deployedPatchRoot = Join-Path $packageRoot '1.6\Patches'
+    $deployedPatchRoot = Join-Path $packageRoot "$GameVersion\Patches"
     $deployedPatchFiles = @()
     if (Test-Path -LiteralPath $deployedPatchRoot) {
         $deployedPatchFiles = @(Get-ChildItem -LiteralPath $deployedPatchRoot -File -Recurse -Force |
@@ -3082,9 +3054,16 @@ function Start-GatewayRimWorldProcess {
     param(
         [Parameter(Mandatory)][string]$ExecutablePath,
         [Parameter(Mandatory)][string[]]$LaunchArguments,
-        [Parameter(Mandatory)][ValidateSet('Minimized', 'Normal')][string]$WindowStyle
+        [Parameter(Mandatory)][ValidateSet('Minimized', 'Normal')][string]$WindowStyle,
+        [string]$StandardOutputPath,
+        [string]$StandardErrorPath
     )
 
+    if (-not [string]::IsNullOrWhiteSpace($StandardOutputPath)) {
+        return Start-Process -FilePath $ExecutablePath -ArgumentList $LaunchArguments `
+            -WindowStyle $WindowStyle -RedirectStandardOutput $StandardOutputPath `
+            -RedirectStandardError $StandardErrorPath -PassThru
+    }
     return Start-Process `
         -FilePath $ExecutablePath `
         -ArgumentList $LaunchArguments `
@@ -5446,24 +5425,21 @@ if (-not (Test-Path -LiteralPath $SteamModContentFolder -PathType Container)) {
 
 $resolvedRimWorldPath = (Resolve-Path -LiteralPath $RimWorldPath).Path
 $resolvedWorkshopPath = (Resolve-Path -LiteralPath $SteamModContentFolder).Path
-$rimWorldExecutable = Join-Path $resolvedRimWorldPath 'RimWorldWin64.exe'
-$versionPath = Join-Path $resolvedRimWorldPath 'Version.txt'
-$managedPath = Join-Path $resolvedRimWorldPath 'RimWorldWin64_Data\Managed'
-if (-not (Test-Path -LiteralPath $rimWorldExecutable -PathType Leaf)) {
-    Exit-InvalidInput "RimWorld executable does not exist: $rimWorldExecutable"
-}
-
-if (-not (Test-Path -LiteralPath $versionPath -PathType Leaf)) {
-    Exit-InvalidInput "RimWorld version file does not exist: $versionPath"
-}
-
-$rimWorldVersion = (Get-Content -LiteralPath $versionPath -Raw).Trim()
-if (-not $rimWorldVersion.StartsWith('1.6.', [StringComparison]::Ordinal)) {
-    Exit-InvalidInput "RimWorld Dev Gateway supports RimWorld 1.6; installed version is '$rimWorldVersion'."
-}
-$rimWorldMajorVersion = '1.6'
-
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$runtimeToolProject = Join-Path $repositoryRoot 'tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj'
+$runtimeArguments = @{ gameRoot = $resolvedRimWorldPath } | ConvertTo-Json -Compress
+$runtimeOutput = Invoke-GatewaySmokeBoundedProcess -ExecutablePath (Get-Command dotnet).Source -Arguments @(
+    'run', '--project', $runtimeToolProject, '--configuration', 'Release', '--no-launch-profile',
+    '--verbosity', 'quiet', '--', 'tool', 'call', 'game_installation_inspect', '--arguments', $runtimeArguments, '-o', 'json'
+) -TimeoutMilliseconds 120000 -DisplayName 'inspect game runtime'
+if ($runtimeOutput.ExitCode -ne 0) {
+    Exit-InvalidInput "RimWorld installation inspection failed: $($runtimeOutput.StandardError)"
+}
+$gameInstallation = $runtimeOutput.StandardOutput | ConvertFrom-Json
+$rimWorldExecutable = [string]$gameInstallation.executablePath
+$managedPath = [string]$gameInstallation.managedPath
+$rimWorldVersion = [string]$gameInstallation.version
+$rimWorldMajorVersion = [string]$gameInstallation.majorVersion
 $validatedAdditionalModProjects = [System.Collections.Generic.List[object]]::new()
 $additionalModProjectPackages = [System.Collections.Generic.HashSet[string]]::new(
     [System.StringComparer]::OrdinalIgnoreCase)
@@ -5501,6 +5477,9 @@ catch {
 $runGatewayRegressionScenario = [bool]$scenarioPlan.RunsGatewayRegression
 if (-not [string]::IsNullOrWhiteSpace($InteractiveCompletionFile) -and $InteractiveHoldSeconds -le 0) {
     Exit-InvalidInput '-InteractiveCompletionFile requires -InteractiveHoldSeconds.'
+}
+if ($UserPlaytest -and ($InteractiveHoldSeconds -le 0 -or -not $Quicktest -or $RunEndToEndTests -or $RunIntegrationTests -or $Scenario)) {
+    Exit-InvalidInput '-UserPlaytest requires a plain -Quicktest interactive hold without scenarios or test runners.'
 }
 $resolvedInteractiveCompletionFile = if ([string]::IsNullOrWhiteSpace($InteractiveCompletionFile)) {
     $null
@@ -5683,6 +5662,11 @@ $launchArguments = @(
     '-logFile',
     "`"$playerLogPath`""
 ) + $unityWindowArguments
+if ($rimWorldMajorVersion -eq '1.7') {
+    # Waylith ignores Unity's -logFile and otherwise writes to the normal profile.
+    # Capture its console logger into this process's evidence directory instead.
+    $launchArguments += '-NoFileLog'
+}
 if ($Quicktest) {
     $launchArguments += '-quicktest'
 }
@@ -5781,7 +5765,7 @@ if ($runGatewayRegressionScenario -and $null -eq (Get-Command flaui -ErrorAction
     Exit-InvalidInput 'FlaUI CLI is not installed or not available on PATH.'
 }
 
-$existingRimWorld = @(Get-Process -Name 'RimWorldWin64' -ErrorAction SilentlyContinue)
+$existingRimWorld = @(Get-Process -Name 'RimWorldWin64','RimWorld' -ErrorAction SilentlyContinue)
 if ($existingRimWorld.Count -gt 0) {
     Exit-InvalidInput "RimWorld is already running (PID(s): $($existingRimWorld.Id -join ', ')). Close it before gateway verification."
 }
@@ -5860,6 +5844,7 @@ try {
                 (Get-GatewaySmokeProductPackageEvidence `
                     -Project $additionalModProject `
                     -RimWorldPath $resolvedRimWorldPath `
+                    -GameVersion $rimWorldMajorVersion `
                     -BuildLogPath $productBuildLogPath))
         }
 
@@ -6038,17 +6023,23 @@ try {
                 -Encoding UTF8
     }
 
-    $deployedAssemblies = Join-Path $resolvedRimWorldPath 'Mods\fumblesneeze.rimworlddevgateway\1.6\Assemblies'
+    $deployedAssemblies = Join-Path $resolvedRimWorldPath "Mods\fumblesneeze.rimworlddevgateway\$rimWorldMajorVersion\Assemblies"
     $requiredAssemblies = @(
         'RimWorldDevGateway.dll',
         'RimWorldDevGateway.Contracts.dll',
         'RimWorldDevGateway.EndToEndTesting.dll',
         'RimWorldDevGateway.IntegrationTesting.dll',
+        'RimWorldDevGateway.PerformanceTesting.dll',
         'EmbedIO.dll',
-        'Mono.CSharp.dll',
-        'Swan.Lite.dll',
-        'System.ValueTuple.dll'
+        'Swan.Lite.dll'
     )
+    if ($rimWorldMajorVersion -eq '1.7') {
+        $requiredAssemblies += @('Microsoft.CodeAnalysis.dll', 'Microsoft.CodeAnalysis.CSharp.dll', 'Microsoft.CodeAnalysis.Scripting.dll', 'Microsoft.CodeAnalysis.CSharp.Scripting.dll')
+        $evaluatorType = 'Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript'
+    } else {
+        $requiredAssemblies += @('Mono.CSharp.dll', 'System.ValueTuple.dll')
+        $evaluatorType = 'Mono.CSharp.Evaluator'
+    }
     $requiredAssemblyEvidence = @(Get-GatewaySmokeAssemblyEvidence `
         -AssembliesPath $deployedAssemblies `
         -RequiredAssemblies $requiredAssemblies)
@@ -6086,10 +6077,15 @@ try {
         $Language,
         [EnvironmentVariableTarget]::Process)
     try {
+        $runtimeLogArguments = @{}
+        if ($rimWorldMajorVersion -eq '1.7') {
+            $runtimeLogArguments.StandardOutputPath = $playerLogPath
+            $runtimeLogArguments.StandardErrorPath = Join-Path $runDirectory 'Player.stderr.log'
+        }
         $launchedProcess = Start-GatewayRimWorldProcess `
             -ExecutablePath $rimWorldExecutable `
             -LaunchArguments $launchArguments `
-            -WindowStyle $launchWindowStyle
+            -WindowStyle $launchWindowStyle @runtimeLogArguments
     }
     finally {
         [Environment]::SetEnvironmentVariable(
@@ -6147,6 +6143,9 @@ try {
         -ExpectedProcessStartUtc $launchedProcessStartUtc
 
     $baseUrl = [string]$manifest.baseUrl
+    if (([string]$manifest.gameVersion).Trim() -cne $rimWorldVersion.Trim()) {
+        throw "Configured RimWorld '$rimWorldVersion' differs from live Gateway '$($manifest.gameVersion)'."
+    }
     $unauthorized = Invoke-TrackedGatewayRequest `
         -Method 'GET' `
         -Uri "$baseUrl/status" `
@@ -6457,11 +6456,12 @@ try {
     }
 
     $executionUri = "$baseUrl/executions/csharp"
+    $healthSource = 'string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}|{1}|{2}|{3}|{4}|{5}|{6}", UnityEngine.Time.frameCount, Thread.CurrentThread.ManagedThreadId, Current.ProgramState, typeof(RimWorldDevGateway.GatewayDispatcher).FullName, typeof(EmbedIO.WebServer).FullName, typeof(EVALUATOR_TYPE).FullName, string.Join(",", LoadedModManager.RunningModsListForReading.Select(mod => mod.PackageId)))'.Replace('EVALUATOR_TYPE', $evaluatorType)
     $stateResponse = Invoke-GatewayTextPost `
         -Uri $executionUri `
         -Token $manifest.token `
         -RequestId 'gateway-smoke-execution-state' `
-        -Source 'string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}|{1}|{2}|{3}|{4}|{5}|{6}", UnityEngine.Time.frameCount, Thread.CurrentThread.ManagedThreadId, Current.ProgramState, typeof(RimWorldDevGateway.GatewayDispatcher).FullName, typeof(EmbedIO.WebServer).FullName, typeof(Mono.CSharp.Evaluator).FullName, string.Join(",", LoadedModManager.RunningModsListForReading.Select(mod => mod.PackageId)))'
+        -Source $healthSource
     $stateResponse.Content | Set-Content -LiteralPath $executionStatePath -Encoding UTF8
     $stateEnvelope = $stateResponse.Content | ConvertFrom-Json
     if ([int]$stateResponse.StatusCode -ne 200 -or
@@ -6478,8 +6478,8 @@ try {
         [string]::IsNullOrWhiteSpace([string]$probeParts[2]) -or
         [string]$probeParts[3] -ne 'RimWorldDevGateway.GatewayDispatcher' -or
         [string]$probeParts[4] -ne 'EmbedIO.WebServer' -or
-        [string]$probeParts[5] -ne 'Mono.CSharp.Evaluator') {
-        throw "Raw C# health probe did not prove live Unity, Gateway, EmbedIO, and Mono.CSharp access. See $executionStatePath"
+        [string]$probeParts[5] -ne $evaluatorType) {
+        throw "Raw C# health probe did not prove live game, Gateway, EmbedIO, and selected evaluator access. See $executionStatePath"
     }
 
     $loadedModIds = @(([string]$probeParts[6]).Split(',', [System.StringSplitOptions]::RemoveEmptyEntries))
@@ -8023,25 +8023,29 @@ try {
     }
 
     if ($InteractiveHoldSeconds -gt 0) {
+        Import-Module (Join-Path $PSScriptRoot 'RimWorldPlaytest.Support.psm1') -Force
         $holdStartedUtc = [datetime]::UtcNow
         $holdDeadline = $holdStartedUtc.AddSeconds($InteractiveHoldSeconds)
         [pscustomobject][ordered]@{
             Status = 'active'
             ProcessId = [int]$launchedProcess.Id
             StartedUtc = $holdStartedUtc.ToString('O')
-            UntilUtc = $holdDeadline.ToString('O')
+            UntilUtc = if ($UserPlaytest) { $null } else { $holdDeadline.ToString('O') }
+            UserPlaytest = [bool]$UserPlaytest
             Manifest = $manifestPath
             CompletionFile = $resolvedInteractiveCompletionFile
         } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $interactiveHoldPath -Encoding UTF8
 
-        Write-Host "Interactive verification hold active until $($holdDeadline.ToLocalTime().ToString('T')); state: $interactiveHoldPath"
-        while ([datetime]::UtcNow -lt $holdDeadline) {
-            if ($null -ne $resolvedInteractiveCompletionFile -and
-                (Test-Path -LiteralPath $resolvedInteractiveCompletionFile -PathType Leaf)) {
-                break
-            }
+        Write-Host "Interactive hold active; user-owned=$([bool]$UserPlaytest); state: $interactiveHoldPath"
+        while ($true) {
             $launchedProcess.Refresh()
-            if ($launchedProcess.HasExited) {
+            $completionRequested = $null -ne $resolvedInteractiveCompletionFile -and
+                (Test-Path -LiteralPath $resolvedInteractiveCompletionFile -PathType Leaf)
+            $decision = Get-RimWorldHoldDecision -UserPlaytest ([bool]$UserPlaytest) `
+                -Expired ([datetime]::UtcNow -ge $holdDeadline) -ProcessExited $launchedProcess.HasExited `
+                -CompletionRequested $completionRequested
+            if ($decision -eq 'Complete') { break }
+            if ($decision -eq 'UnexpectedExit') {
                 throw "RimWorld exited during the interactive verification hold. See $playerLogPath"
             }
 
@@ -8058,6 +8062,8 @@ try {
         } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $interactiveHoldPath -Encoding UTF8
     }
 
+    $launchedProcess.Refresh()
+    if (-not $launchedProcess.HasExited) {
     $shutdownHeaders = @{
         Authorization = "Bearer $($manifest.token)"
         'X-Request-Id' = 'gateway-smoke-shutdown'
@@ -8079,6 +8085,7 @@ try {
     $shutdownResponse.Content | Set-Content -LiteralPath $shutdownPath -Encoding UTF8
     if ([int]$shutdownResponse.StatusCode -ne 202) {
         throw "Controlled gateway shutdown failed with HTTP $([int]$shutdownResponse.StatusCode). See $shutdownPath"
+    }
     }
 
     $tombstonePath = Join-Path $savedDataPath "DevGateway\Sessions\$($manifest.runId)\session.json"

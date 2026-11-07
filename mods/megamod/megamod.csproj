@@ -1,0 +1,22 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <RimWorldModName>Make Rimworld Great Again</RimWorldModName>
+    <RimWorldPackageId>fumblesneeze.megamod</RimWorldPackageId>
+    <RimWorldDistributionKind>Product</RimWorldDistributionKind>
+    <Authors>Fumblesneeze</Authors>
+    <AssemblyName>Megamod</AssemblyName>
+    <RootNamespace>Megamod</RootNamespace>
+    <IncludeHarmony>false</IncludeHarmony>
+    <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
+    <Description>Development scaffold for Make Rimworld Great Again. No gameplay features or replacement mods are implemented yet. Targets RimWorld 1.7 beta.</Description>
+  </PropertyGroup>
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.props" />
+  <Target Name="RequireMegamodGameVersion" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(RimWorldVersion)' != '1.7'" Text="Make Rimworld Great Again currently targets RimWorld 1.7 beta only." />
+  </Target>
+  <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.targets" />
+</Project>

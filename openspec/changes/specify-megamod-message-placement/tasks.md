@@ -1,0 +1,38 @@
+## 1. Resolve current contracts
+
+- [ ] 1.1 Resolve BMP-Q1–4 against the selected 1.7 build: native draw/lesson ordering, actual visible bar extensions, logical viewport and Unity clipping/input.
+- [ ] 1.2 Create each actual target document and index entry with minimal semantic admission, atomic contribution boundaries, effective foreign code, later-repatch behavior, fallback and native workflow.
+- [ ] 1.3 Complete exact provider/consumer analysis needed for claimed support; retain original authority and unsupported-bar fallback without source identity spoofing or whole-product incompatibility flags.
+
+## 2. Native placement and fitting
+
+- [ ] 2.1 Record focused RED for baseline/lesson preservation, current visible geometry, manual offsets, UI scaling and fitting on each axis, including oversized messages/stacks.
+- [ ] 2.2 Implement the smallest pure placement policy with the specified 0/0, ±100% and four-unit choices, a single stack translation and explicit overflow priorities.
+- [ ] 2.3 Record GREEN for independent coordinates, deliberate overlap, no bar, world view, current resize/row changes and retained native relative positions; avoid tests that only repeat literals.
+- [ ] 2.4 Record RED/GREEN for exact native layout preparation and visible label/weapon/frame/S001-outline bounds, including empty framed groups, hidden bar, tile picker and screenshot filtering in honest test tiers.
+- [ ] 2.5 Integrate current native layout and the admitted position contribution without world scans, private Thing indexes, per-port persistent caches or a replacement message renderer.
+- [ ] 2.6 Record RED/GREEN for native text/background/hitbox/collision alignment and unchanged posting, sound, history, target/quest, dismissal, refresh and expiry semantics.
+
+## 3. Common settings and preview
+
+- [ ] 3.1 Record focused RED for atomic pair validation, malformed loaded pairs, inheritance/dormant override, separate scopes, reset, main-menu mutation guards and save switching.
+- [ ] 3.2 Implement the common Interface / Messages compound row and next-display application, retaining percentages through fitting/layout changes and preserving unrelated settings.
+- [ ] 3.3 Record RED/GREEN for labeled effective-scope preview, independent/equal-and-opposite coordinate changes, reset/inheritance, world/menu context and no message/archive/sound/target side effects.
+- [ ] 3.4 Implement only the bounded settings preview and transient cleanup; do not claim the preview proves native message rendering or interactions.
+- [ ] 3.5 Translate and verify all seven baseline languages, including scope, range, overlap/overflow, reset and unavailable-provider explanations, without adding a tab or toggle.
+
+## 4. Admission and composition
+
+- [ ] 4.1 Record RED/GREEN for compatible foreign patches, unrelated instruction changes, incompatible/ambiguous anchor use, skip-original interactions, actual incoming transpiler validation and unchanged-stream failure.
+- [ ] 4.2 Verify repeated startup/repatching, validator/install exceptions, owned-only atomic rollback and bounded per-skipped-enabled-patch warning contents without partial X/Y placement.
+- [ ] 4.3 Verify direct S001 effective-presentation bounds, including hidden/reduced entries, adjustable weapons and retained update timing, plus original sole-provider behavior and absent/present/changed optional adapters with distinct manual/automatic fallback.
+
+## 5. Review and native acceptance
+
+- [ ] 5.1 Run affected nonzero host tests, owning build/package/dependency checks and typed OpenSpec validation; retain focused RED/GREEN evidence and measure combined message/bar/preview costs.
+- [ ] 5.2 Independently review the scoped implementation, resolve findings and rerun affected checks before the final native run.
+- [ ] 5.3 In a fresh minimized isolated game on the reviewed build, produce real messages through ordinary player workflows, inspect placement across rows/groups/labels/weapons/lessons/map/world views and test native hover/target/quest/dismiss actions.
+- [ ] 5.4 Through native settings and view controls, verify effective scopes, menu-disabled callbacks, reset/reload/save switching, UI scale/resolution, preview/history separation and small-screen overflow without direct state mutation as acceptance.
+- [ ] 5.5 Verify exact original/optional-provider absent/present/changed cases and coherent failure fallback; personally inspect causal before/action/after views rather than accepting logs, installed patches or a preview alone.
+- [ ] 5.6 Through native S001 settings, hide/reduce a lowest row and enlarge/move weapon icons; produce native messages and personally inspect clearance against the actually rendered content, retained group frames and unchanged bar settings/update timing.
+- [ ] 5.7 Complete the semantic/playability pass and root final native acceptance gate, retaining reviewed build/mod-list identity, action sequence, screenshots, supporting logs, normal-config hashes and cleanup before checking runtime tasks.

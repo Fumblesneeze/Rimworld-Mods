@@ -254,6 +254,11 @@ A typed native save-and-reload action SHALL accept only a canonical Windows leaf
 - **THEN** the Gateway invokes RimWorld's native incident worker once with forced current-map parameters and that exact faction
 - **THEN** the test waits for ordinary caravan entry and observes the resulting pawns and arrival letter, while missing, ambiguous, rejected, or version-drifted state fails closed without a generic callback or synthetic caravan
 
+#### Scenario: A raid uses exact native arrival and strategy choices
+- **WHEN** an incident action supplies optional exact arrival-mode and strategy Def names for RaidEnemy
+- **THEN** the contract preserves those names and its original constructor ABI, and the Gateway resolves the native Defs before invoking the real incident worker with those parameters.
+- **AND** blank names, unknown Defs or raid options on a non-raid incident fail before execution; omitted options retain native selection and the action outcome records the actual native choices.
+
 ### Requirement: Arranged fixtures preserve native object invariants
 Product-owned E2E fixtures SHALL keep engine-managed objects valid for every native subsystem that may revisit them later in the same process. In particular, generated humanlike Pawns SHALL retain a valid `Verse.NameTriple` with a stable requested short label; fixtures MUST NOT replace that name with the animal-style `Verse.NameSingle`. This invariant applies even when a Pawn is subsequently destroyed or removed from the disposable map, because vanilla world-pawn and relationship generation may retain or revisit it before process shutdown.
 
@@ -287,6 +292,13 @@ After native player control becomes available, before the first test and in guar
 #### Scenario: A quicktest map contains a permanent feature
 - **WHEN** the generated map contains a non-destroyable steam geyser or equivalent permanent map Thing
 - **THEN** reset preserves that feature while still removing and verifying the absence of every destroyable disposable fixture
+
+#### Scenario: One fixture owns an entire disposable saved game
+- **WHEN** an explicitly marked process-owned-game fixture is selected through the typed E2E runner
+- **THEN** exactly one test is allowed in that fresh isolated process; a mixed selection fails before arrangement.
+- **AND** the fixture may load a private copy of an archived save without resetting its population or geometry. Isolation still clears/verifies interactions, selection, test windows and notifications, restores control/camera state, and executes deferred cleanup, but leaves map content intact for exact-process shutdown.
+- **AND** no subsequent test reuses the world, host shutdown/stage/config/credential cleanup is still required, and unmarked tests retain destructive verified-empty isolation.
+- **AND** if the disposable world was replaced, camera restoration targets the current map with the original coordinates/zoom clamped to its valid bounds and verifies that target; it never requests a disposed original map handle.
 
 ### Requirement: Failures are isolated and diagnostically complete
 An assertion, test exception, unsupported native action, stale handle, or ordinary test timeout SHALL fail only the current test when map reset remains trustworthy. Each failure SHALL retain the current step, bounded causal exception, live job/target and selection checkpoint when available, final screenshot, log cursor page, and cleanup result. Before any failure snapshot becomes persistable, the runtime SHALL redact the exact live session credential from every failure field and cap the failure message to the same 8 KiB UTF-8 diagnostic-message budget used by Gateway log entries; identity and stack fields SHALL remain separately bounded. A test failure MUST NOT be converted into a process success merely because later cleanup passed.

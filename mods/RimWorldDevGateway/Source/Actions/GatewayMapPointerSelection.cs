@@ -49,8 +49,8 @@ internal static class GatewayMapPointerSelection
             Find.ColonistBar.ColonistOrCorpseAt(gui) is not null ||
             Find.ColonistBar.CaravanMemberCaravanAt(gui) is not null)
             return Failure("pointer_obscured", "Pointer is outside the unobstructed map viewport.");
-        MethodInfo mouse = typeof(UI).GetProperty(nameof(UI.MousePositionOnUI))!.GetGetMethod();
-        MethodInfo shift = typeof(Selector).GetProperty(nameof(Selector.ShiftIsHeld))!.GetGetMethod();
+        MethodInfo mouse = typeof(UI).GetProperty(nameof(UI.MousePositionOnUI))!.GetGetMethod()!;
+        MethodInfo shift = typeof(Selector).GetProperty(nameof(Selector.ShiftIsHeld))!.GetGetMethod()!;
         MethodInfo mousePrefix = typeof(GatewayMapPointerSelection).GetMethod(nameof(MousePrefix), BindingFlags.NonPublic | BindingFlags.Static)!;
         MethodInfo shiftPrefix = typeof(GatewayMapPointerSelection).GetMethod(nameof(ShiftPrefix), BindingFlags.NonPublic | BindingFlags.Static)!;
         if (mouse.ReturnType != typeof(Vector2) || !mouse.IsStatic || shift.ReturnType != typeof(bool) || !shift.IsStatic)

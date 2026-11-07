@@ -63,6 +63,8 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
         this.stepDriver = stepDriver ?? throw new ArgumentNullException(nameof(stepDriver));
         this.isolation = isolation ?? throw new ArgumentNullException(nameof(isolation));
         this.sessionCredential = string.IsNullOrEmpty(sessionCredential) ? null : sessionCredential;
+        foreach (var selected in descriptors)
+            EndToEndTestContract.UsesGeneratedMap(selected.TestType, descriptors.Length);
     }
 
     public GatewayEndToEndExecutionSnapshot Snapshot => snapshot;
@@ -212,7 +214,16 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
 
         try
         {
-            isolation.Prepare(context);
+            if (typeof(IEndToEndProcessOwnedGameFixture).IsAssignableFrom(descriptor!.TestType))
+            {
+                EndToEndTestContract.UsesGeneratedMap(descriptor.TestType, descriptors.Length);
+                (isolation as IGatewayEndToEndProcessOwnedGameTestIsolation
+                    ?? throw new InvalidOperationException("Process-owned-game isolation is unavailable.")).PrepareProcessOwnedGame(context);
+            }
+            else if (EndToEndTestContract.UsesGeneratedMap(descriptor.TestType, descriptors.Length))
+                (isolation as IGatewayEndToEndGeneratedMapTestIsolation
+                    ?? throw new InvalidOperationException("Generated-map isolation is unavailable.")).PrepareGeneratedMap(context);
+            else isolation.Prepare(context);
         }
         catch (Exception exception)
         {

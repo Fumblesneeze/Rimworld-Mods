@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <PL.Title>寻路实验室</PL.Title>
+  <PL.Experimental>实验性寻路</PL.Experimental>
+  <PL.Warning>研究原型：替换地图上所有格子的寻路，包括日常工作。保留原版通行规则。路线可能更长，不保证提速。发生错误时紧急回退到原版寻路。</PL.Warning>
+  <PL.MapWarning>仅影响下一个殖民地。超大地图可能导致卡死或内存耗尽。现有地图和任务地图不变。</PL.MapWarning>
+  <PL.VanillaSize>原版地图大小</PL.VanillaSize>
+  <PL.MapSize>{0} × {0} 格</PL.MapSize>
+  <PL.RefinementCells>细化范围：{0} 格（约走到一半时更新）</PL.RefinementCells>
+</LanguageData>

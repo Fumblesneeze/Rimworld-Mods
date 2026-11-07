@@ -1,0 +1,3 @@
+[h1]Pathfinding Lab — local experiment[/h1]
+RimWorld 1.7 research prototype. Vanilla pathfinding is the default. Experimental mode caches connected chunk portals and refines short path segments ahead of drafted colonists. Unsupported requests use vanilla.
+Optional 500, 750 and 1000 cell settlement maps can be slow or exhaust memory. No optimality, compatibility or speedup claim is made before measured acceptance. This local profile is not publication-ready.

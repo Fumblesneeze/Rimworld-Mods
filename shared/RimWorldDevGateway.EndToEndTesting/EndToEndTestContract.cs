@@ -34,6 +34,12 @@ public interface IRimWorldEndToEndTest
     IEnumerator<EndToEndStep> Execute(IEndToEndContext context);
 }
 
+// Explicit opt-in: one fixture owns a fresh generated map until process shutdown.
+public interface IEndToEndGeneratedMapFixture { }
+
+// Explicit opt-in: the entire disposable game is released at process shutdown, never reused.
+public interface IEndToEndProcessOwnedGameFixture : IEndToEndGeneratedMapFixture { }
+
 public interface IEndToEndContext
 {
     long FrameCount { get; }
@@ -222,6 +228,14 @@ public sealed class EndToEndContractException : Exception
 
 public static class EndToEndTestContract
 {
+    public static bool UsesGeneratedMap(Type testType, int selectedTestCount)
+    {
+        if (!typeof(IEndToEndGeneratedMapFixture).IsAssignableFrom(testType)) return false;
+        if (selectedTestCount != 1)
+            throw new EndToEndContractException("A generated-map fixture requires exactly one selected test in a fresh process.");
+        return true;
+    }
+
     public const string HarmonyPackageId = "brrainz.harmony";
     public const string CorePackageId = "ludeon.rimworld";
     public const string GatewayPackageId = "fumblesneeze.rimworlddevgateway";

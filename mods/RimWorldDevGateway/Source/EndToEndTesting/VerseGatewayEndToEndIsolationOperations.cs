@@ -12,7 +12,7 @@ internal enum GatewayEndToEndMapResetPhase
     Notifications
 }
 
-public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIsolationOperations
+public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIsolationOperations, IGatewayEndToEndGeneratedMapIsolationOperations, IGatewayEndToEndProcessOwnedGameIsolationOperations
 {
     private const int MaximumThingRemovalPasses = 8;
     internal static readonly IReadOnlyList<GatewayEndToEndMapResetPhase> ResetPhaseOrder =
@@ -44,6 +44,15 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
     public bool IsReady => Current.Game?.PlayerHasControl == true;
 
     public GatewayEndToEndIsolationBaseline CaptureBaseline()
+        => CaptureBaseline(false);
+
+    public GatewayEndToEndIsolationBaseline CaptureGeneratedMapBaseline()
+        => CaptureBaseline(true);
+
+    public GatewayEndToEndIsolationBaseline CaptureProcessOwnedGameBaseline()
+        => CaptureBaseline(false, true);
+
+    private GatewayEndToEndIsolationBaseline CaptureBaseline(bool preserveGeneratedMap, bool processOwnedGame = false)
     {
         var map = RequireMap();
         var state = new BaselineState(
@@ -52,6 +61,13 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
             camera.Capture(),
             new HashSet<Window>(Find.WindowStack.Windows));
         activeBaseline = state;
+        state.ProcessOwnedGame = processOwnedGame;
+        if (preserveGeneratedMap)
+        {
+            state.Environment = new HashSet<object>(AllMapThings(map).Cast<object>()
+                .Concat(map.zoneManager.AllZones.Cast<object>())
+                .Concat(map.designationManager.AllDesignations.Cast<object>()));
+        }
         return new GatewayEndToEndIsolationBaseline(state);
     }
 
@@ -74,12 +90,18 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         Find.Selector.ClearSelection();
         RemoveTestWindows();
 
+        if (activeBaseline?.ProcessOwnedGame == true)
+        {
+            notifications.Clear();
+            return; // Exact-process shutdown releases this world; no later fixture can reuse it.
+        }
+
         foreach (var phase in ResetPhaseOrder)
         {
             switch (phase)
             {
                 case GatewayEndToEndMapResetPhase.Roofs:
-                    RemoveRoofs(map);
+                    if (activeBaseline?.Environment is null) RemoveRoofs(map);
                     break;
                 case GatewayEndToEndMapResetPhase.Designations:
                     RemoveDesignations(map);
@@ -110,39 +132,68 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         }
     }
 
-    private static void RemoveDesignations(Map map)
+    private void RemoveDesignations(Map map)
     {
         foreach (var designation in map.designationManager.AllDesignations.ToArray())
         {
-            designation.Delete();
+            if (!IsEnvironment(designation)) designation.Delete();
         }
     }
 
-    private static void RemoveZones(Map map)
+    private void RemoveZones(Map map)
     {
         foreach (var zone in map.zoneManager.AllZones.ToArray())
         {
-            zone.Delete();
+            if (!IsEnvironment(zone)) zone.Delete();
         }
     }
 
-    private static void RemoveThings(Map map)
+    private bool IsEnvironment(object value) => activeBaseline?.Environment?.Contains(value) == true;
+
+    private static List<Thing> AllMapThings(Map map)
+    {
+        var result = new List<Thing>();
+        ThingOwnerUtility.GetAllThingsRecursively(map, ThingRequest.ForGroup(ThingRequestGroup.Everything), result);
+        return result;
+    }
+
+    private IEnumerable<Thing> ResetCandidates(Map map) => activeBaseline?.Environment is null
+        ? map.listerThings.AllThings.Where(thing => thing.Spawned && thing.Map == map)
+        : AllMapThings(map);
+
+    private void RemoveThings(Map map)
     {
         for (var pass = 0; pass < MaximumThingRemovalPasses; pass++)
         {
-            var spawned = map.listerThings.AllThings
+            var spawned = ResetCandidates(map)
                 .ToArray()
-                .Where(thing => IsDisposable(thing) && thing.Spawned && !thing.Destroyed && thing.Map == map)
+                .Where(thing => !IsEnvironment(thing) && IsDisposable(thing) && !thing.Destroyed)
                 .ToArray();
             if (spawned.Length == 0)
             {
                 break;
             }
 
+            if (activeBaseline?.Environment is { } environment)
+                EnsureSafeRemoval(spawned.Cast<object>(), environment.OfType<Thing>().Where(thing => !thing.Destroyed),
+                    value => value is Thing thing ? thing.ParentHolder : (value as IThingHolder)?.ParentHolder);
             foreach (var thing in spawned)
             {
-                thing.Destroy(DestroyMode.Vanish);
+                if (!thing.Destroyed) thing.Destroy(DestroyMode.Vanish);
             }
+        }
+    }
+
+    internal static void EnsureSafeRemoval(IEnumerable<object> removal, IEnumerable<object> preserved,
+        Func<object, object?> parent)
+    {
+        var targets = new HashSet<object>(removal);
+        foreach (var value in preserved)
+        {
+            var seen = new HashSet<object>();
+            for (var holder = parent(value); holder is not null && seen.Add(holder); holder = parent(holder))
+                if (targets.Contains(holder))
+                    throw new InvalidOperationException("Cleanup refused to destroy a new holder containing baseline objects; restore its contents first.");
         }
     }
 
@@ -151,16 +202,16 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         var state = activeBaseline;
         var map = Current.Game?.CurrentMap;
         if (state is null || map is null ||
-            !string.Equals(state.MapHandle, "map-" + map.uniqueID, StringComparison.Ordinal))
+            !state.ProcessOwnedGame && !string.Equals(state.MapHandle, "map-" + map.uniqueID, StringComparison.Ordinal))
         {
             return false;
         }
 
-        return !map.listerThings.AllThings.Any(thing =>
-                   IsDisposable(thing) && thing.Spawned && !thing.Destroyed && thing.Map == map) &&
-               !map.AllCells.Any(cell => ShouldRemoveRoof(map.roofGrid.RoofAt(cell))) &&
-               map.designationManager.AllDesignations.Count == 0 &&
-               map.zoneManager.AllZones.Count == 0 &&
+        return (state.ProcessOwnedGame || (!ResetCandidates(map).Any(thing =>
+                   !IsEnvironment(thing) && IsDisposable(thing) && !thing.Destroyed) &&
+               (state.Environment is not null || !map.AllCells.Any(cell => ShouldRemoveRoof(map.roofGrid.RoofAt(cell)))) &&
+               map.designationManager.AllDesignations.All(value => IsEnvironment(value)) &&
+               map.zoneManager.AllZones.All(value => IsEnvironment(value)))) &&
                notifications.IsEmpty() &&
                Find.Selector.SelectedObjectsListForReading.Count == 0 &&
                FloatMenuAutomationLease.CapturedForAutomation is null &&
@@ -173,6 +224,18 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         thing is not null && thing.def is not null && thing.def.destroyable;
 
     internal static bool ShouldRemoveRoof(RoofDef? roof) => roof is not null;
+
+    internal static GatewayCameraMutationRequest CameraRestoreRequest(GatewayCameraSnapshot original,
+        GatewayCameraSnapshot current, bool processOwnedGame) => new()
+    {
+        MapHandle = processOwnedGame ? current.MapHandle : original.MapHandle,
+        Center = new GatewayMapCellRequest
+        {
+            X = processOwnedGame ? Math.Max(0, Math.Min(original.Center.X, current.MapWidth - 1)) : original.Center.X,
+            Z = processOwnedGame ? Math.Max(0, Math.Min(original.Center.Z, current.MapHeight - 1)) : original.Center.Z
+        },
+        RootSize = processOwnedGame ? Math.Max(current.MinimumRootSize, Math.Min(original.RootSize, current.MaximumRootSize)) : original.RootSize
+    };
 
     public bool RestoreBaseline(GatewayEndToEndIsolationBaseline baseline)
     {
@@ -188,26 +251,18 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
             GodMode = state.Game.GodMode,
             Speed = speed.ToString()
         });
-        camera.Mutate(new GatewayCameraMutationRequest
-        {
-            MapHandle = state.Camera.MapHandle,
-            Center = new GatewayMapCellRequest
-            {
-                X = state.Camera.Center.X,
-                Z = state.Camera.Center.Z
-            },
-            RootSize = state.Camera.RootSize
-        });
+        var cameraRestore = CameraRestoreRequest(state.Camera, camera.Capture(), state.ProcessOwnedGame);
+        camera.Mutate(cameraRestore);
 
         var restoredGame = gameControl.Capture();
         var restoredCamera = camera.Capture();
         return restoredGame.DevMode == state.Game.DevMode &&
                restoredGame.GodMode == state.Game.GodMode &&
                restoredGame.Speed == speed &&
-               string.Equals(restoredCamera.MapHandle, state.Camera.MapHandle, StringComparison.Ordinal) &&
-               restoredCamera.Center.X == state.Camera.Center.X &&
-               restoredCamera.Center.Z == state.Camera.Center.Z &&
-               Math.Abs(restoredCamera.RootSize - state.Camera.RootSize) < 0.001f;
+               string.Equals(restoredCamera.MapHandle, cameraRestore.MapHandle, StringComparison.Ordinal) &&
+               restoredCamera.Center.X == cameraRestore.Center!.X &&
+               restoredCamera.Center.Z == cameraRestore.Center.Z &&
+               Math.Abs(restoredCamera.RootSize - cameraRestore.RootSize!.Value) < 0.001f;
     }
 
     internal static void CancelSemanticInteractions(GatewayGizmoRegistry gizmos)
@@ -271,5 +326,9 @@ public sealed class VerseGatewayEndToEndIsolationOperations : IGatewayEndToEndIs
         public GatewayCameraSnapshot Camera { get; }
 
         public HashSet<Window> Windows { get; }
+
+        public HashSet<object>? Environment { get; set; }
+
+        public bool ProcessOwnedGame { get; set; }
     }
 }

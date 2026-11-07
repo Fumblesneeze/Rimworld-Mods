@@ -1,0 +1,24 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <PropertyGroup>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <SteamModContentFolder>$(DefaultSteamModContentFolder)</SteamModContentFolder>
+    <RimWorldModName>Pathfinding Lab</RimWorldModName>
+    <RimWorldPackageId>fumblesneeze.pathfindinglab</RimWorldPackageId>
+    <RimWorldDistributionKind>Product</RimWorldDistributionKind>
+    <Authors>Fumblesneeze</Authors>
+    <AssemblyName>PathfindingLab</AssemblyName>
+    <RootNamespace>PathfindingLab</RootNamespace>
+    <IncludeHarmony>true</IncludeHarmony>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
+    <Description>Experimental hierarchical partial-refinement pathfinding for RimWorld 1.7. Vanilla by default. Shared cohort guides build in the background; unavailable guides use vanilla without waiting. Ordinary idle wildlife uses short directional walks. Purposeful jobs retain native traversal preparation and full-path query contracts. Optional oversized settlement maps can consume substantial memory and are not guaranteed safe. Local research prototype, not a production optimization.</Description>
+  </PropertyGroup>
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.props" />
+  <Target Name="RequireBeta" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(RimWorldVersion)' != '1.7'" Text="Pathfinding Lab requires RimWorld 1.7." />
+  </Target>
+  <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.targets" />
+</Project>

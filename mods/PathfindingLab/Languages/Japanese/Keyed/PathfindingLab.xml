@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <PL.Title>経路探索ラボ</PL.Title>
+  <PL.Experimental>実験的な経路</PL.Experimental>
+  <PL.Warning>研究用試作：通常の仕事を含む、マップ上のすべての経路探索を置き換えます。移動ルールは維持されます。経路が長くなる場合があり、高速化は保証されません。エラー時は標準探索に戻ります。</PL.Warning>
+  <PL.MapWarning>次の入植地のみ。巨大マップでは停止やメモリ不足が起こる可能性があります。既存・クエスト用マップは変更しません。</PL.MapWarning>
+  <PL.VanillaSize>標準のマップサイズ</PL.VanillaSize>
+  <PL.MapSize>{0} × {0} マス</PL.MapSize>
+  <PL.RefinementCells>経路の詳細化範囲：{0} マス（約半分で更新）</PL.RefinementCells>
+</LanguageData>

@@ -23,7 +23,27 @@ public interface IGatewayEndToEndIsolationOperations
     bool RestoreBaseline(GatewayEndToEndIsolationBaseline baseline);
 }
 
-public sealed class GatewayEndToEndTestIsolation : IGatewayEndToEndTestIsolation
+public interface IGatewayEndToEndGeneratedMapIsolationOperations
+{
+    GatewayEndToEndIsolationBaseline CaptureGeneratedMapBaseline();
+}
+
+public interface IGatewayEndToEndGeneratedMapTestIsolation
+{
+    void PrepareGeneratedMap(RimWorldDevGateway.EndToEndTesting.IEndToEndContext context);
+}
+
+public interface IGatewayEndToEndProcessOwnedGameIsolationOperations
+{
+    GatewayEndToEndIsolationBaseline CaptureProcessOwnedGameBaseline();
+}
+
+public interface IGatewayEndToEndProcessOwnedGameTestIsolation
+{
+    void PrepareProcessOwnedGame(RimWorldDevGateway.EndToEndTesting.IEndToEndContext context);
+}
+
+public sealed class GatewayEndToEndTestIsolation : IGatewayEndToEndTestIsolation, IGatewayEndToEndGeneratedMapTestIsolation, IGatewayEndToEndProcessOwnedGameTestIsolation
 {
     private readonly IGatewayEndToEndIsolationOperations operations;
     private GatewayEndToEndIsolationBaseline? baseline;
@@ -34,6 +54,15 @@ public sealed class GatewayEndToEndTestIsolation : IGatewayEndToEndTestIsolation
     public bool IsReady => operations.IsReady;
 
     public void Prepare(RimWorldDevGateway.EndToEndTesting.IEndToEndContext context)
+        => Prepare(context, false);
+
+    public void PrepareGeneratedMap(RimWorldDevGateway.EndToEndTesting.IEndToEndContext context)
+        => Prepare(context, true);
+
+    public void PrepareProcessOwnedGame(RimWorldDevGateway.EndToEndTesting.IEndToEndContext context)
+        => Prepare(context, false, true);
+
+    private void Prepare(RimWorldDevGateway.EndToEndTesting.IEndToEndContext context, bool preserveGeneratedMap, bool processOwnedGame = false)
     {
         if (context is null)
         {
@@ -45,7 +74,13 @@ public sealed class GatewayEndToEndTestIsolation : IGatewayEndToEndTestIsolation
             throw new InvalidOperationException("The prior E2E isolation baseline has not been cleaned up.");
         }
 
-        baseline = operations.CaptureBaseline() ??
+        baseline = (processOwnedGame
+            ? (operations as IGatewayEndToEndProcessOwnedGameIsolationOperations
+                ?? throw new InvalidOperationException("The isolation backend does not support process-owned games.")).CaptureProcessOwnedGameBaseline()
+            : preserveGeneratedMap
+            ? (operations as IGatewayEndToEndGeneratedMapIsolationOperations
+                ?? throw new InvalidOperationException("The isolation backend does not support generated maps.")).CaptureGeneratedMapBaseline()
+            : operations.CaptureBaseline()) ??
                    throw new InvalidOperationException("The E2E isolation backend returned no baseline.");
         operations.Pause();
         operations.ResetTransientState();

@@ -34,7 +34,7 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'PersonalBugfixes', 'PersonalBugfixes.Unit', 'PersonalBugfixes.Harmony', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ImmersiveSignalFire', 'ImmersiveSignalFire.Unit', 'ImmersiveSignalFire.Harmony', 'ImmersiveSignalFire.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape')]
+    [ValidateSet('All', 'PersonalBugfixes', 'PersonalBugfixes.Unit', 'PersonalBugfixes.Harmony', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ImmersiveSignalFire', 'ImmersiveSignalFire.Unit', 'ImmersiveSignalFire.Harmony', 'ImmersiveSignalFire.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape', 'RimWorldDevGateway.Waylith.Unit', 'PathfindingLab.Unit')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
@@ -104,14 +104,29 @@ try {
     $resolvedRimWorldPath = (Resolve-Path -LiteralPath $RimWorldPath).Path
     $resolvedWorkshopPath = (Resolve-Path -LiteralPath $SteamModContentFolder).Path
     $managedPath = Join-Path $resolvedRimWorldPath 'RimWorldWin64_Data\Managed'
+    if ($Suite -eq 'RimWorldDevGateway.Waylith.Unit') {
+        $managedPath = $resolvedRimWorldPath
+    }
     $assemblyPath = Join-Path $managedPath 'Assembly-CSharp.dll'
 
-    if (-not (Test-Path -LiteralPath $assemblyPath -PathType Leaf)) {
+    # This host-only suite never loads game assemblies; an upgraded or absent legacy
+    # Managed directory must not prevent testing the installation resolver itself.
+    if ($Suite -notin @('RimWorldModding.Mcp', 'RimWorldDevGateway.EndToEndHost.Unit', 'PathfindingLab.Unit') -and -not (Test-Path -LiteralPath $assemblyPath -PathType Leaf)) {
         Exit-InvalidInput "RimWorld managed assembly does not exist: $assemblyPath"
     }
 
     $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
     $availableSuites = @(
+        [pscustomobject]@{
+            Name = 'PathfindingLab.Unit'
+            Group = 'PathfindingLab'
+            Project = Join-Path $repositoryRoot 'tests\PathfindingLab.Unit\PathfindingLab.Unit.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'RimWorldDevGateway.Waylith.Unit'
+            Group = 'RimWorldDevGateway.Waylith'
+            Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Waylith.Tests\RimWorldDevGateway.Waylith.Tests.csproj'
+        },
         [pscustomobject]@{
             Name = 'PersonalBugfixes.Unit'
             Group = 'PersonalBugfixes'
@@ -204,7 +219,9 @@ try {
         }
     )
     $selectedSuites = if ($Suite -eq 'All') {
-        @($availableSuites)
+        # This legacy aggregate runs against Unity/Mono. The beta process is an
+        # explicit alternative, not another suite that can share 1.6 references.
+        @($availableSuites | Where-Object Name -NE 'RimWorldDevGateway.Waylith.Unit')
     }
     elseif ($Suite -in @('PersonalBugfixes', 'ImmersiveChefs', 'ImmersiveSignalFire', 'ThinWalls', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
         @($availableSuites | Where-Object Group -EQ $Suite)
@@ -394,7 +411,7 @@ try {
             Passed = $passed
             Failed = $failed
             NotExecuted = $notExecuted
-            Framework = if ($selected.Name -eq 'RimWorldModding.Mcp') { '.NET 8.0' } else { '.NET Framework 4.8' }
+            Framework = if ($selected.Name -in @('RimWorldDevGateway.Waylith.Unit', 'PathfindingLab.Unit')) { '.NET 10.0' } elseif ($selected.Name -eq 'RimWorldModding.Mcp' -or $selected.Name -eq 'RimWorldDevGateway.EndToEndHost.Unit') { '.NET 8.0' } else { '.NET Framework 4.8' }
             Results = $trxPath
             Log = $logPath
             DependencyEvidence = if ($selected.Name -like '*.Harmony') { $harmonyDependencyEvidencePath } else { $null }

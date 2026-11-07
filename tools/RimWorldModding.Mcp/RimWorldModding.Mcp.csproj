@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="PlatformAssemblies17.txt" />
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>RimWorldModding.Mcp.Tests</_Parameter1>
     </AssemblyAttribute>

@@ -112,10 +112,11 @@ public static class GatewayRuntimeBootstrap
                         " failed: " + exception),
                     featureSelection.SelectedEndToEndTestIds));
 
-            gameObject = new GameObject("[RimWorldDevGateway] Runtime")
-            {
-                hideFlags = HideFlags.HideAndDontSave
-            };
+            gameObject = new GameObject("[RimWorldDevGateway] Runtime");
+#if !RIMWORLD_1_7
+            // Waylith has no editor persistence and this setter is an explicit warning-only stub.
+            gameObject.hideFlags = HideFlags.HideAndDontSave;
+#endif
             UnityEngine.Object.DontDestroyOnLoad(gameObject);
             var createdHost = gameObject.AddComponent<GatewayRuntimeHost>();
             lock (Sync)

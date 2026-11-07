@@ -53,7 +53,7 @@ public static class GatewayClientPlanner
         if (!File.Exists(project)) throw new InvalidOperationException("Gateway companion client project is missing.");
         var arguments = new List<string>
         {
-            "run", "--project", project, "-c", "Release", "--no-restore", "--"
+            "run", "--project", project, "-c", "Release", "--"
         };
         arguments.AddRange(commandArguments);
         arguments.Add("--manifest");

@@ -42,10 +42,12 @@ param(
 
     [string]$ArtifactsPath,
 
+    [string]$PrelaunchConfigDirectory,
+
     [ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')]
     [string]$Language = 'English',
 
-    [ValidateRange(30, 600)]
+    [ValidateRange(30, 3600)]
     [int]$TimeoutSeconds = 300,
 
     [switch]$EnableAudio,
@@ -59,6 +61,14 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'RimWorldEndToEndRunner.Support.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'RimWorldPrelaunchConfig.Support.psm1') -Force
+try {
+    $null = @(Get-RimWorldPrelaunchConfigFiles -SourceDirectory $PrelaunchConfigDirectory)
+}
+catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 2
+}
 $testIdFilters = @($TestId)
 
 function Exit-InvalidInput {
@@ -186,7 +196,7 @@ function Invoke-BoundedProcess {
     param(
         [Parameter(Mandatory)][string]$ExecutablePath,
         [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$Arguments,
-        [Parameter(Mandatory)][ValidateRange(1000, 1800000)][int]$TimeoutMilliseconds,
+        [Parameter(Mandatory)][ValidateRange(1000, 3780000)][int]$TimeoutMilliseconds,
         [Parameter(Mandatory)][string]$Description
     )
 
@@ -237,6 +247,8 @@ function Invoke-HostTool {
         [Parameter(Mandatory)][string]$HostProject,
         [Parameter(Mandatory)][string]$RepositoryRoot,
         [Parameter(Mandatory)][string]$ModsRoot,
+        [Parameter(Mandatory)][string]$RimWorldVersion,
+        [Parameter(Mandatory)][string]$RimWorldPath,
         [Parameter(Mandatory)][string[]]$ResolvablePackageIds,
         [string[]]$ProjectPaths = @(),
         [AllowNull()][string]$LeaseFile
@@ -252,7 +264,8 @@ function Invoke-HostTool {
             foreach ($argument in @(
                 '--repository-root', $RepositoryRoot,
                 '--mods-root', $ModsRoot,
-                '--rimworld-version', '1.6')) {
+                '--rimworld-path', $RimWorldPath,
+                '--rimworld-version', $RimWorldVersion)) {
                 $arguments.Add($argument)
             }
             $packageIdFile = Join-Path `
@@ -326,17 +339,21 @@ if (-not (Test-Path -LiteralPath $SteamModContentFolder -PathType Container)) {
 
 $resolvedRimWorldPath = (Resolve-Path -LiteralPath $RimWorldPath).Path
 $resolvedWorkshopPath = (Resolve-Path -LiteralPath $SteamModContentFolder).Path
-$rimWorldExecutable = Join-Path $resolvedRimWorldPath 'RimWorldWin64.exe'
-$managedPath = Join-Path $resolvedRimWorldPath 'RimWorldWin64_Data\Managed'
 $modsRoot = Join-Path $resolvedRimWorldPath 'Mods'
-if (-not (Test-Path -LiteralPath $rimWorldExecutable -PathType Leaf)) {
-    Exit-InvalidInput "RimWorld executable does not exist: $rimWorldExecutable"
-}
-if (-not (Test-Path -LiteralPath $managedPath -PathType Container)) {
-    Exit-InvalidInput "RimWorld managed assembly path does not exist: $managedPath"
-}
-
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$runtimeInspection = Invoke-BoundedProcess -ExecutablePath 'dotnet' -Arguments @(
+    'run', '--project', (Join-Path $repositoryRoot 'tools/RimWorldModding.Mcp'),
+    '--configuration', 'Release', '--no-launch-profile', '--verbosity', 'quiet', '--',
+    'tool', 'call', 'game_installation_inspect', '--arguments',
+    (@{ gameRoot = $resolvedRimWorldPath } | ConvertTo-Json -Compress), '-o', 'json'
+) -TimeoutMilliseconds 120000 -Description 'inspect game runtime'
+if ($runtimeInspection.ExitCode -ne 0) {
+    Exit-InvalidInput "RimWorld installation inspection failed: $($runtimeInspection.StandardError)"
+}
+$gameInstallation = ConvertFrom-RequiredJson -Text $runtimeInspection.StandardOutput -Description 'game runtime inspection'
+$rimWorldExecutable = [string]$gameInstallation.executablePath
+$managedPath = [string]$gameInstallation.managedPath
+$rimWorldMajorVersion = [string]$gameInstallation.majorVersion
 $hostProject = Join-Path $repositoryRoot 'tools\RimWorldDevGateway.EndToEndHost\RimWorldDevGateway.EndToEndHost.csproj'
 $smokeScript = Join-Path $repositoryRoot 'scripts\Invoke-GatewaySmoke.ps1'
 if ([string]::IsNullOrWhiteSpace($ArtifactsPath)) {
@@ -371,6 +388,8 @@ if (@($testIdFilters | Select-Object -Unique).Count -ne $testIdFilters.Count) {
 
 $planInvocation = Invoke-HostTool `
     -Operation 'plan' `
+    -RimWorldPath $resolvedRimWorldPath `
+    -RimWorldVersion $rimWorldMajorVersion `
     -HostProject $hostProject `
     -RepositoryRoot $repositoryRoot `
     -ModsRoot $modsRoot `
@@ -436,12 +455,16 @@ foreach ($group in $selectedGroups) {
     $plannedCommand = @(
         'pwsh', '-NoProfile', '-NonInteractive', '-File', $smokeScript,
         '-Quicktest', '-RunEndToEndTests', '-SkipBuildDeploy',
+        '-RimWorldPath', $resolvedRimWorldPath, '-SteamModContentFolder', $resolvedWorkshopPath,
         '-Language', $Language,
         '-TimeoutSeconds', [string]$TimeoutSeconds,
         '-Output', 'json'
     )
     if ($testIdFilters.Count -gt 0) {
         $plannedCommand += @('-EndToEndTestIds', (@($group.tests) -join ','))
+    }
+    if (-not [string]::IsNullOrWhiteSpace($PrelaunchConfigDirectory)) {
+        $plannedCommand += @('-PrelaunchConfigDirectory', $PrelaunchConfigDirectory)
     }
     if ($null -ne $plannedAdditionalIdsFile) {
         $plannedCommand += @('-AdditionalModIdsFile', $plannedAdditionalIdsFile)
@@ -475,7 +498,7 @@ if ($DryRun) {
     exit 0
 }
 
-$existingRimWorld = @(Get-Process -Name 'RimWorldWin64' -ErrorAction SilentlyContinue)
+$existingRimWorld = @(Get-Process -Name 'RimWorldWin64', 'RimWorld' -ErrorAction SilentlyContinue)
 if ($existingRimWorld.Count -ne 0) {
     Exit-InvalidInput "RimWorld is already running (PID(s): $($existingRimWorld.Id -join ', '))."
 }
@@ -539,6 +562,8 @@ try {
 
     $stage = Invoke-HostTool `
         -Operation 'stage' `
+        -RimWorldPath $resolvedRimWorldPath `
+        -RimWorldVersion $rimWorldMajorVersion `
         -HostProject $hostProject `
         -RepositoryRoot $repositoryRoot `
         -ModsRoot $modsRoot `
@@ -571,6 +596,7 @@ try {
         foreach ($argument in @(
             '-NoProfile', '-NonInteractive', '-File', $smokeScript,
             '-Quicktest', '-RunEndToEndTests', '-SkipBuildDeploy',
+            '-RimWorldPath', $resolvedRimWorldPath, '-SteamModContentFolder', $resolvedWorkshopPath,
             '-Language', $Language,
             '-TimeoutSeconds', [string]$TimeoutSeconds,
             '-ArtifactsPath', $groupArtifactRoot,
@@ -580,6 +606,10 @@ try {
         if ($testIdFilters.Count -gt 0) {
             $smokeArguments.Add('-EndToEndTestIds')
             $smokeArguments.Add((@($group.tests) -join ','))
+        }
+        if (-not [string]::IsNullOrWhiteSpace($PrelaunchConfigDirectory)) {
+            $smokeArguments.Add('-PrelaunchConfigDirectory')
+            $smokeArguments.Add($PrelaunchConfigDirectory)
         }
         if ($additionalIds.Count -gt 0) {
             [System.IO.File]::WriteAllLines(
@@ -669,6 +699,8 @@ finally {
         try {
             $clean = Invoke-HostTool `
                 -Operation 'clean' `
+                -RimWorldPath $resolvedRimWorldPath `
+                -RimWorldVersion $rimWorldMajorVersion `
                 -HostProject $hostProject `
                 -RepositoryRoot $repositoryRoot `
                 -ModsRoot $modsRoot `
