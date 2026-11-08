@@ -26,6 +26,10 @@ not prohibit parallel implementation after contracts are specified.
   update tasks and refinement progress and notify affected implementers. Do not silently omit a
   feature, reverse a user decision or loosen acceptance. No new permission is needed for routine
   planning changes within accepted intent.
+- Commit focused, consistent checkpoints as work becomes reviewable; do not wait for the entire
+  mega-mod to become one large change. The user explicitly permits this incremental history.
+  Coordinate active leases, preserve build/dependency consistency, and keep implementation status
+  distinct from native acceptance. A commit never closes an unverified feature or bypasses a gate.
 - **Implementers:** stay within assigned behavior and disjoint path leases. Read referenced source
   mods/documentation or read-only decompilation and existing owned helpers first to find relevant
   game paths and edge cases efficiently. Do not implement blindly from zero, copy or translate
