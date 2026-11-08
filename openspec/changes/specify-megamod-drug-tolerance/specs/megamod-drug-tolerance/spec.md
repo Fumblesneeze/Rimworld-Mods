@@ -1,0 +1,164 @@
+## Owner
+
+Make Rimworld Great Again — `fumblesneeze.megamod`, `mods/megamod`; RimWorld 1.7 beta.
+This capability is specified for later work; no runtime behavior is accepted by this draft.
+
+## ADDED Requirements
+
+### Requirement: Tolerance is an ordinary drug-policy choice
+Make Rimworld Great Again SHALL provide a tolerance choice for each current addictive drug with
+an understood tolerance effect in the native drug-policy window. The choice SHALL be Any or a
+numeric percentage from 0% through 100%. Any is distinct from numeric 100%. New or newly restored
+drug rows without a surviving saved choice SHALL begin at Any. The control SHALL identify the drug
+and explain that it restricts routine scheduled and recreational use, not all consumption or risk.
+When neither scheduled nor recreational use is enabled, the choice SHALL remain retained but
+inactive with an explanation. Unavailable or inapplicable drugs SHALL not gain invented tolerance.
+
+#### Scenario: Open a new applicable row
+- **WHEN** the player opens a newly introduced addictive drug with a recognized tolerance effect
+- **THEN** its choice is Any and the player can select a numeric limit in the same policy window.
+
+#### Scenario: Turn off routine uses
+- **WHEN** the player turns off both scheduled and recreational use on a row with a chosen limit
+- **THEN** that limit remains visible as inactive and returns when either use is enabled again.
+
+### Requirement: Any and numeric thresholds have explicit meanings
+With the feature enabled and available, routine use governed by a numeric choice SHALL require
+current chemical tolerance to be strictly below that percentage. No current tolerance condition
+SHALL count as zero tolerance. Equality SHALL reject use. Numeric zero SHALL reject this use even
+when no tolerance condition exists. Any SHALL add no tolerance restriction, including at or above
+100% tolerance. All ordinary permissions and other restrictions remain required. The comparison
+uses the actual current value rather than a rounded display percentage.
+
+#### Scenario: Boundary and absent tolerance
+- **WHEN** an otherwise eligible pawn has exactly 20% tolerance and the row limit is 20%
+- **THEN** it does not take that routine dose through this rule
+- **AND** a pawn without that tolerance condition is also blocked when the limit is numeric zero.
+
+#### Scenario: Any differs from numeric 100 percent
+- **WHEN** an otherwise eligible pawn has 100% tolerance
+- **THEN** numeric 100% rejects threshold-governed use while Any adds no rejection.
+
+### Requirement: Scheduled use keeps every existing condition
+Scheduled drug use SHALL satisfy ordinary permission, timing, mood, recreation, willingness,
+ingestion and risk restrictions as well as the enabled tolerance limit. With S024 potential-mood
+checking enabled, both its mood condition and the tolerance condition SHALL hold. A tolerance
+choice SHALL not alter dose quantity, schedule interval, chemical effects, inventory targets or
+consumption history. This feature SHALL not grant permission or promise addiction safety.
+
+#### Scenario: Mood or interval still rejects
+- **WHEN** tolerance is below the chosen limit but potential mood or the ordinary interval rejects a dose
+- **THEN** the pawn does not take it through scheduled use.
+
+#### Scenario: Tolerance has fallen
+- **WHEN** tolerance falls below the chosen limit and every other scheduled-use condition is met
+- **THEN** the pawn can obtain and consume the ordinary permitted dose with its normal effects.
+
+### Requirement: Recreation uses the recipient and retains native joy exceptions
+Ordinary recreational drug use SHALL apply the recipient's tolerance choice in addition to its
+other recreation permissions. Native joy exceptions for a positive drug-desire trait or a mental
+state SHALL retain their existing native joy-route scope: this extra tolerance veto does not apply
+to those exceptions, but they grant no scheduled-use or patient-feeding exception. S024 patient
+treats SHALL retain required recipient joy-policy permission and add the numeric tolerance veto
+without a new drug-desire or mental-state exception. Inventory-sourced recreation SHALL retain the
+exceptions of its actual originating route. Neither route uses the visitor's choices to grant use.
+
+#### Scenario: Visitor could take a drug that the patient cannot
+- **WHEN** an eligible visitor selects a recreational drug whose tolerance limit rejects the patient
+- **THEN** the visitor does not deliver that drug as a treat and can make an ordinary visit instead.
+
+#### Scenario: Patient trait does not grant a new feeding exception
+- **WHEN** a patient has a drug-desire trait but its numeric tolerance limit rejects the offered treat
+- **THEN** S024 does not deliver that drug by extending a native self-recreation exception to feeding.
+
+#### Scenario: Joy exception does not become scheduled permission
+- **WHEN** a pawn qualifies for an ordinary joy-policy exception while its numeric tolerance limit is reached
+- **THEN** that exception remains available only on its ordinary joy route
+- **AND** scheduled use remains subject to the tolerance choice.
+
+### Requirement: Medical and explicit orders retain their own authority
+The tolerance preference SHALL not add a restriction to addiction relief, medical administration,
+S124 condition or pain responses, S134 dependency assistance, explicit manual orders or inventory
+refill. Those routes SHALL retain their own permission, medical eligibility, quantity, claims and
+actual-consumption rules. A routine-use choice SHALL neither authorize treatment nor create a
+second pending dose. Merely carrying a drug SHALL not count as consuming it.
+
+#### Scenario: Needed dependency assistance
+- **WHEN** routine use is blocked by numeric zero but S134 independently permits dependency assistance
+- **THEN** this tolerance choice does not block or duplicate the ordinary permitted treatment.
+
+#### Scenario: Manual order or carried supply
+- **WHEN** the player gives an otherwise valid explicit ingestion order or the pawn refills permitted carried stock
+- **THEN** this feature does not add a routine tolerance veto to that action or record consumption before it occurs.
+
+### Requirement: Policy maintenance preserves deliberate choices
+Tolerance choices SHALL remain save-local policy gameplay state, not inherited mod configuration.
+Copying a policy SHALL copy its choices into independently editable rows. S029 maintenance SHALL
+retain each surviving valid row's choice without guessing from its numeric value, policy name or
+preset. Renaming, display sorting, default selection and pawn assignment SHALL not reset choices or
+dose history. A drug removed from saved policy data and later returned SHALL start at Any; no
+hidden restoration store is promised. Choices SHALL survive save/load of megamod colonies and
+remain isolated between saves.
+
+#### Scenario: Copy and edit independently
+- **WHEN** the player copies a policy, changes one copied tolerance choice, saves and reloads
+- **THEN** each policy retains its own choice and pawn assignments remain attached to the intended policy.
+
+#### Scenario: Content repair and return after saved removal
+- **WHEN** S029 repairs policies after a content change
+- **THEN** surviving valid choices remain and genuinely new rows begin at Any
+- **AND** a drug returning after its removal was saved does not recover a hidden old threshold.
+
+### Requirement: Malformed saved choices are visible and conservative
+The proposed malformed-data behavior SHALL distinguish an absent choice from an invalid saved
+choice. An absent choice defaults to Any. A recognized row containing an unreadable choice, an
+unknown choice kind, a nonfinite number or a number outside 0–100% SHALL show Needs review and
+withhold routine use governed by the tolerance choice until the player explicitly selects a valid
+value. The native joy exceptions above retain their scope; other routes remain unchanged. Loading
+SHALL not silently widen an invalid limit to Any, clamp it or rewrite valid neighboring rows.
+
+#### Scenario: Invalid saved number
+- **WHEN** a saved row contains an invalid numeric tolerance choice
+- **THEN** the policy window identifies that row as needing review, threshold-governed routine use is withheld,
+  and selecting Any or a valid number repairs that row without changing other choices.
+
+#### Scenario: Older owned save lacks the new field
+- **WHEN** an otherwise valid megamod policy has no saved tolerance choice
+- **THEN** it receives Any without being reported as corrupt.
+
+### Requirement: Feature configuration does not replace policy state
+The feature's proposed built-in enable default SHALL be on. Its enable switch SHALL use common
+Global default, Use global and Current save controls in the Drug policies settings section. New
+save entries inherit; inherited saves follow current global values, and independent or dormant
+overrides remain intact. Main-menu save controls and their actions SHALL be unavailable. Turning
+the feature off SHALL remove its extra restriction at subsequent eligibility decisions and disable
+its policy editor with an explanation, while retaining policy choices. It SHALL not rewind a dose,
+cancel an already executing native order or alter medical behavior. Turning it on SHALL restore
+the retained choices at subsequent eligible decisions.
+
+#### Scenario: Disable and re-enable in a loaded save
+- **WHEN** the player disables the feature and later enables it
+- **THEN** subsequent applicable use decisions follow the effective setting, and previously saved row choices remain.
+
+#### Scenario: Main menu and save switching
+- **WHEN** the player is at the main menu or switches between two saves
+- **THEN** no current-save control acts on an absent or previous save, and each save retains its own override and policy choices.
+
+### Requirement: Unavailable enforcement and original-provider overlap are honest
+The feature SHALL be unavailable if its intended routine-use rules or policy controls cannot be supported.
+Report a bounded diagnostic and visible explanation, leaving ordinary
+native behavior available rather than claiming protection. Stored choices SHALL remain intact.
+When the original tolerance mod is active, startup SHALL issue a bounded warning identifying the
+overlap and attempt best-effort suppression through the same ordinary feature-off behavior and
+timing. Stored preferences SHALL not be rewritten. An installed but inactive original SHALL not
+trigger this behavior. Unrelated features SHALL remain available and the original SHALL not be
+changed. The warning SHALL not claim full coexistence safety or rollback of every existing effect.
+
+#### Scenario: Original is active
+- **WHEN** startup finds the original tolerance mod active
+- **THEN** the player receives the bounded best-effort disablement warning, retained preferences remain intact,
+  and no original-mod compatibility guarantee is presented.
+
+#### Scenario: Required behavior is unavailable
+- **WHEN** the game cannot support this feature's required enforcement or editor
+- **THEN** the feature explains that its extra protection is unavailable and does not pretend that a displayed limit is enforced.
