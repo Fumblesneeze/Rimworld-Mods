@@ -107,3 +107,12 @@ After completing all artifacts, summarize:
 - If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
 - If a change with that name already exists, ask if user wants to continue it or create a new one
 - Verify each artifact file exists after writing before proceeding to next
+- When adding features to an existing coordinated plan, update its primary allocation, active handoff
+  gates, final coverage gate and current queue/index counts together. Compare the actual unique IDs
+  across these surfaces before handoff; a new roadmap row alone does not put the feature in an
+  implementer's acceptance scope. Keep dated historical counts and completed checkpoints unchanged.
+- Write the first normative sentence after each `### Requirement:` heading as one physical line
+  containing `SHALL` or `MUST`. The repository's pinned OpenSpec parser can use only that first line
+  for the requirement text; wrapping before the modal can falsely fail validation. Use the typed
+  strict validator, and inspect parsed deltas for a schema error instead of assuming artifact status
+  proves validity. Later explanatory text can wrap normally.
