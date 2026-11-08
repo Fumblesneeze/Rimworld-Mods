@@ -498,8 +498,25 @@ public sealed class GatewayEndToEndNativeActions :
         IEndToEndContext context)
     {
         Require(step, context);
-        return backend.ApplyIncident(step) ??
-               throw new InvalidOperationException("The incident backend returned no outcome.");
+        var outcome = backend.ApplyIncident(step) ??
+                      throw new InvalidOperationException("The incident backend returned no outcome.");
+        if (step.ExpectRejected && outcome.Passed)
+        {
+            return Fail("incident_not_rejected", "The native incident executed successfully but refusal was expected.");
+        }
+
+        if (step.ExpectRejected &&
+            string.Equals(outcome.FailureCode, "incident_rejected", StringComparison.Ordinal))
+        {
+            return GatewayEndToEndStepOutcome.Pass(new Dictionary<string, string>
+            {
+                ["incidentDef"] = step.IncidentDefName,
+                ["expectedFailureCode"] = "incident_rejected",
+                ["observedFailureCode"] = outcome.FailureCode!
+            });
+        }
+
+        return outcome;
     }
 
     public GatewayEndToEndStepOutcome Apply(

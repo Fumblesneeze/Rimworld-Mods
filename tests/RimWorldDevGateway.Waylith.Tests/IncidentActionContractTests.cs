@@ -21,8 +21,12 @@ public sealed class IncidentActionContractTests
         Assert.That(step.RaidStrategyDefName, Is.EqualTo("ImmediateAttack"));
         Assert.That(step.FactionLoadId, Is.EqualTo(-17));
         Assert.That(typeof(IncidentActionStep).GetConstructor(new[] { typeof(string), typeof(string), typeof(int?) }), Is.Not.Null);
+        Assert.That(typeof(IncidentActionStep).GetConstructor(new[]
+            { typeof(string), typeof(string), typeof(int?), typeof(string), typeof(string) }), Is.Not.Null);
+        Assert.That(step.ExpectRejected, Is.False);
         var original = new IncidentActionStep("trader", "TraderCaravanArrival");
         Assert.That(original.RaidArrivalModeDefName, Is.Null);
         Assert.That(original.RaidStrategyDefName, Is.Null);
+        Assert.That(original.ExpectRejected, Is.False);
     }
 }

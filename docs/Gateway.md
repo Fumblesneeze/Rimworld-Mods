@@ -660,6 +660,18 @@ or gizmo drift atomically cancels the candidate so a fresh session can begin imm
 
 `IncidentActionStep` is the host-safe semantic path for a real native incident. It resolves one exact loaded `IncidentDef`, optionally one exact loaded faction by its unmodified load ID, builds forced current-map storyteller parameters, and invokes that Def's real `IncidentWorker.TryExecute`. It does not enqueue a guessed incident, expose a generic test callback, or use desktop input; missing, ambiguous, rejected, or throwing state fails closed with bounded diagnostics.
 
+For a scenario that expects native refusal, pass `expectRejected: true`, for example
+`new IncidentActionStep("blocked ship chunk", "ShipChunkDrop", expectRejected: true)`. The Gateway
+still invokes the real incident path once. Only `incident_rejected` satisfies this expectation;
+missing prerequisites, unsupported operations and execution errors remain failures. Unexpected
+native success fails as `incident_not_rejected`, without undoing its side effects. A matching refusal
+records `incidentDef`, `expectedFailureCode` and `observedFailureCode`; follow the action with
+physical/history observations and screenshots because the step result alone does not prove why the
+incident was refused. The original three- and five-argument constructor signatures retain ordinary
+success-required behavior. Explicit refusal overloads accept `(name, incident, expectRejected)`,
+`(name, incident, factionLoadId, expectRejected)`, or the existing raid choices followed by
+`expectRejected`. New scenarios must be built against the extended shared contract.
+
 `ArchitectCategoryActionStep` is the host-safe semantic path for retained build-menu evidence. It
 accepts one exact category Def name and open/close intent, validates exactly one cached native tab,
 then uses RimWorld's Architect main-button, inspected category-click, and current-tab escape paths.

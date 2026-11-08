@@ -566,16 +566,33 @@ public sealed class IncidentActionStep : EndToEndStep
         string name,
         string incidentDefName,
         int? factionLoadId = null)
-        : this(name, incidentDefName, factionLoadId, null, null)
+        : this(name, incidentDefName, factionLoadId, null, null, false)
+    {
+    }
+
+    public IncidentActionStep(string name, string incidentDefName, bool expectRejected)
+        : this(name, incidentDefName, null, null, null, expectRejected)
+    {
+    }
+
+    public IncidentActionStep(string name, string incidentDefName, int? factionLoadId, bool expectRejected)
+        : this(name, incidentDefName, factionLoadId, null, null, expectRejected)
     {
     }
 
     public IncidentActionStep(string name, string incidentDefName, int? factionLoadId,
         string? raidArrivalModeDefName, string? raidStrategyDefName)
+        : this(name, incidentDefName, factionLoadId, raidArrivalModeDefName, raidStrategyDefName, false)
+    {
+    }
+
+    public IncidentActionStep(string name, string incidentDefName, int? factionLoadId,
+        string? raidArrivalModeDefName, string? raidStrategyDefName, bool expectRejected)
         : base(name, EndToEndStepKind.Act)
     {
         IncidentDefName = StepValues.Required(incidentDefName, nameof(incidentDefName));
         FactionLoadId = factionLoadId;
+        ExpectRejected = expectRejected;
         RaidArrivalModeDefName = raidArrivalModeDefName is null ? null : StepValues.Required(raidArrivalModeDefName, nameof(raidArrivalModeDefName));
         RaidStrategyDefName = raidStrategyDefName is null ? null : StepValues.Required(raidStrategyDefName, nameof(raidStrategyDefName));
         if ((RaidArrivalModeDefName != null || RaidStrategyDefName != null) && IncidentDefName != "RaidEnemy")
@@ -589,6 +606,8 @@ public sealed class IncidentActionStep : EndToEndStep
     public string? RaidArrivalModeDefName { get; }
 
     public string? RaidStrategyDefName { get; }
+
+    public bool ExpectRejected { get; }
 }
 
 public sealed class TimeControlActionStep : EndToEndStep

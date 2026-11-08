@@ -467,6 +467,110 @@ public sealed class GatewayEndToEndNativeActionsTests
     }
 
     [Test]
+    public void Incident_expected_refusal_accepts_only_the_native_rejection_and_records_it()
+    {
+        var backend = new RecordingBackend
+        {
+            IncidentOutcome = GatewayEndToEndStepOutcome.Fail("incident_rejected", "Native worker refused.")
+        };
+        var step = new IncidentActionStep("refused incident", "ShipChunkDrop", expectRejected: true);
+
+        var outcome = new GatewayEndToEndNativeActions(backend).Apply(step, Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(backend.IncidentStep, Is.SameAs(step));
+            Assert.That(backend.IncidentCalls, Is.EqualTo(1));
+            Assert.That(outcome.Passed, Is.True);
+            Assert.That(outcome.Artifacts["incidentDef"], Is.EqualTo("ShipChunkDrop"));
+            Assert.That(outcome.Artifacts["expectedFailureCode"], Is.EqualTo("incident_rejected"));
+            Assert.That(outcome.Artifacts["observedFailureCode"], Is.EqualTo("incident_rejected"));
+        });
+    }
+
+    [Test]
+    public void Incident_expected_refusal_fails_if_native_execution_succeeds()
+    {
+        var backend = new RecordingBackend();
+        var step = new IncidentActionStep("refused raid", "RaidEnemy", 17, "EdgeWalkIn", "ImmediateAttack",
+            expectRejected: true);
+
+        var outcome = new GatewayEndToEndNativeActions(backend).Apply(step, Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(backend.IncidentStep, Is.SameAs(step));
+            Assert.That(backend.IncidentCalls, Is.EqualTo(1));
+            Assert.That(outcome.Passed, Is.False);
+            Assert.That(outcome.FailureCode, Is.EqualTo("incident_not_rejected"));
+        });
+    }
+
+    [TestCase("incident_map_unavailable")]
+    [TestCase("incident_def_missing")]
+    [TestCase("incident_faction_missing")]
+    [TestCase("incident_raid_def_missing")]
+    [TestCase("incident_execution_failed")]
+    [TestCase("unsupported_e2e_step")]
+    [TestCase("Incident_Rejected")]
+    public void Incident_expected_refusal_preserves_other_backend_failures(string failureCode)
+    {
+        var expected = GatewayEndToEndStepOutcome.Fail(failureCode, "Original diagnostic.");
+        var backend = new RecordingBackend { IncidentOutcome = expected };
+
+        var outcome = new GatewayEndToEndNativeActions(backend).Apply(
+            new IncidentActionStep("refused incident", "ShipChunkDrop", expectRejected: true), Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome, Is.SameAs(expected));
+            Assert.That(outcome.Passed, Is.False);
+            Assert.That(backend.IncidentCalls, Is.EqualTo(1));
+        });
+    }
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public void Incident_default_expectation_preserves_native_outcome_and_evidence(bool raidChoices, bool rejected)
+    {
+        var expected = rejected
+            ? GatewayEndToEndStepOutcome.Fail("incident_rejected", "Native worker refused.")
+            : GatewayEndToEndStepOutcome.Pass(new Dictionary<string, string> { ["nativeEvidence"] = "retained" });
+        var backend = new RecordingBackend { IncidentOutcome = expected };
+        var step = raidChoices
+            ? new IncidentActionStep("raid", "RaidEnemy", 17, "EdgeWalkIn", "ImmediateAttack")
+            : new IncidentActionStep("incident", "ShipChunkDrop");
+
+        var outcome = new GatewayEndToEndNativeActions(backend).Apply(step, Context());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(step.ExpectRejected, Is.False);
+            Assert.That(outcome, Is.SameAs(expected));
+            Assert.That(backend.IncidentCalls, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Incident_expected_refusal_does_not_swallow_a_throwing_or_absent_backend_outcome()
+    {
+        var error = new InvalidOperationException("Backend failed.");
+        var backend = new RecordingBackend { IncidentException = error };
+        var actions = new GatewayEndToEndNativeActions(backend);
+        var step = new IncidentActionStep("refused incident", "ShipChunkDrop", expectRejected: true);
+
+        Assert.That(Assert.Throws<InvalidOperationException>(() => actions.Apply(step, Context())), Is.SameAs(error));
+
+        backend.IncidentException = null;
+        backend.IncidentOutcome = null!;
+        Assert.That(Assert.Throws<InvalidOperationException>(() => actions.Apply(step, Context()))!.Message,
+            Does.Contain("incident backend returned no outcome"));
+        Assert.That(backend.IncidentCalls, Is.EqualTo(2));
+    }
+
+    [Test]
     public void Architect_category_action_uses_only_the_optional_semantic_backend()
     {
         var backend = new RecordingBackend();
@@ -578,6 +682,12 @@ public sealed class GatewayEndToEndNativeActionsTests
         public SettlementTradeActionStep? SettlementTradeStep { get; private set; }
 
         public IncidentActionStep? IncidentStep { get; private set; }
+
+        public GatewayEndToEndStepOutcome IncidentOutcome { get; set; } = GatewayEndToEndStepOutcome.Pass();
+
+        public int IncidentCalls { get; private set; }
+
+        public Exception? IncidentException { get; set; }
 
         public DialogConfirmationActionStep? DialogStep { get; private set; }
 
@@ -733,7 +843,9 @@ public sealed class GatewayEndToEndNativeActionsTests
         public GatewayEndToEndStepOutcome ApplyIncident(IncidentActionStep step)
         {
             IncidentStep = step;
-            return GatewayEndToEndStepOutcome.Pass();
+            IncidentCalls++;
+            if (IncidentException is not null) throw IncidentException;
+            return IncidentOutcome;
         }
 
         public IGatewayEndToEndStepOperation BeginMayMaximizeWindowInput(
