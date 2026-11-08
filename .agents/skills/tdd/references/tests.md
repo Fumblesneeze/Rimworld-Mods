@@ -33,6 +33,12 @@ use the real selection/projection, and assert the resulting launch arguments or 
 Keep unrelated process/game work outside that focused test; test real transformations, not a copied
 implementation. Cover the distinct selection routes actually supported by the changed contract.
 
+For validation-before-side-effects assertions, identify the intended rejection by its public error
+code or actionable reason, not only a broad exception type. A later lease, file or transport failure
+can throw that same type and let a bypassed validator pass the test. When review exposes this gap,
+prove the corrected assertion rejects the bypass; label a deliberate mutation check separately from
+a product behavior RED.
+
 For compatibility fallbacks, invoke the affected public behavior after denial. Checking an admission
 flag alone misses emitted code that still changes native results. Reproduce review findings against
 the actual prior implementation, then apply the minimum correction; compiler/setup failures are not
