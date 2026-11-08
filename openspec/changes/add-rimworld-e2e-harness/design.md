@@ -1,3 +1,13 @@
+## Screenshot readback evidence on 1.7
+
+The screenshot backend now returns its complete capture to persistence rather than discarding all
+metadata except PNG bytes. Keep the existing screenshot filename artifact and add the source frame,
+applied crop and successful native readback receipt. Use one30-second capture operation on1.7;
+the screenshot service owns all pending-frame retries within that original deadline and capacity.
+Retain a GatewayScreenshotException's stable code/message without creating a misleading PNG.
+Preserve the previous1.6 retry path. This is provenance supporting personal visual inspection,
+not proof that the pictured player behavior succeeded.
+
 ## Context
 
 The current verification stack has four distinct pieces: host NUnit suites, startup-gated in-game integration methods, isolated Gateway launches, and named scenario scripts that an agent finishes manually. The first two are repeatable but cannot prove multi-frame pawn jobs and player-visible consequences. The last two do prove those workflows, but every scenario is separately orchestrated and there is no command that discovers all applicable workflows, groups them by exact mod list, resets state, executes them in sequence, and emits one machine-readable result.

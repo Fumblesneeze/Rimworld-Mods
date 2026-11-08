@@ -213,6 +213,18 @@ Do not log, commit, or paste `current.json`; it is a live unrestricted-execution
 
 All routes are below the manifest's `/api/v1` `baseUrl`.
 
+On 1.7, screenshots require a successful native recorded-frame readback after admission. Temporary
+unavailability waits within the same deadline and capture lease; it never returns the engine's
+empty-texture fallback or restores the desktop window. The PNG response adds
+`X-Gateway-Readback-Provider`, `X-Gateway-Admission-Frame`, `X-Gateway-Rendered-Frame`,
+`X-Gateway-Readback-Utc` and `X-Gateway-Readback-Attempts` alongside frame/crop headers.
+E2E screenshots retain equivalent `screenshot.readbackProvider`, `.admissionFrame`, `.renderedFrame`,
+`.readbackUtc`, `.readbackAttempts`, `.frameWidth`, `.frameHeight` and `.cropX/Y/Width/Height`
+artifact metadata. The 1.7 step uses one 30-second operation and retains a specific native failure
+code/message on failure; it does not restart a full outer timeout. A recorded black frame is valid;
+pixels alone never prove readback. Personal inspection still decides whether evidence shows the
+required player workflow. The 1.6 capture/retry path is unchanged.
+
 | Route | Companion command | Purpose |
 | --- | --- | --- |
 | `GET /status` | `status` | Process/program/root, native long-event readiness, optional map/tick, pending dispatches, and danger flags |
@@ -668,7 +680,7 @@ The focused notification-isolation acceptance run is retained locally at `artifa
 
 E2E state and assertions remain supporting automation. Acceptance still requires the acting agent to inspect the exact run's native screenshots and confirm that the recorded player action caused the visible outcome; logs or a green endpoint alone are insufficient.
 
-Each E2E screenshot is captured at end-of-frame and persisted before its step passes. A transient Unity capture failure, invalid encoded frame, capture timeout, or concurrent-capture lease race receives one fresh end-of-frame retry; deterministic target/request failures and artifact-persistence failures remain terminal so missing evidence is never reported as success.
+Each E2E screenshot is captured at end-of-frame and persisted before its step passes. On the legacy 1.6 capture path, a transient Unity capture failure, invalid encoded frame, capture timeout, or concurrent-capture lease race receives one fresh end-of-frame retry. On 1.7, native readback retries share one original deadline and capture lease, without a fresh outer retry. Deterministic target/request failures and artifact-persistence failures remain terminal so missing evidence is never reported as success.
 
 E2E assemblies can query `IEndToEndGizmoCatalog` for stable gizmo identities, runtime types, native interaction kinds, and structured buildable Def names. A `GizmoActionStep` may set `expectRejected: true`; it passes only when native preflight rejects every supplied target, applies nothing, and the Gateway cancels the still-open semantic interaction. This makes invalid placement rules observable without turning an expected player-facing refusal into an infrastructure failure.
 

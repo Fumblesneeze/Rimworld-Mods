@@ -292,6 +292,21 @@
 - [x] 41.1 TDD: prove local minute conversion, preserved simulation ticks/day, exact offset restoration, invalid/stale/overflow rejection and cancellation-before-dispatch through the named automation. RED/GREEN ledger: `artifacts/VisualAssets/VanillaRemake-20260909/review/gateway-scene-time-ledger.md`; final focused20/20 includes real HTTP JSON numeric parsing.
 - [x] 41.2 GREEN/REVIEW: expose typed MCP/CLI and E2E setup controls, guaranteed cleanup, and concise usage documentation; independently review and run affected host tests. Final independent review: no findings; broader Gateway40/40 and MCP11/11, followed by focused20/20 after review corrections.
 - [x] 41.3 IN-GAME: use the reviewed control in a fresh minimized run, personally inspect native clock/illumination before and after setting noon, then compare player-placed workstations beside same-facing vanilla stove and butcher table at matching zooms; retain exact clock restoration and process/configuration cleanup. Reviewed Gateway SHA25651E80A9D41B75F3EE2D161399FD132A495ABDD1104B10708CABEB2D0AE5D780F: native comparison run20260909T211405835Z/PID45440 and public typed API run20260909T212019554Z-1b3423d46aed49b6aa54e3aaabded70f/PID16468. Personally observed6h→12h lighting; exact offset restoration retained. Graceful cleanup and normal config/prefs hashes passed. This accepts Gateway scene control; prep art remains visually unaccepted.
+## Native screenshot readback — November 2026
+
+- [x] SR.1 SPEC/TDD: prove pending readback, fresh recovery, original deadline/capacity, cancellation/shutdown, malformed data, genuine black frames and exact resource release with focused RED/GREEN evidence.
+- [x] SR.2 GREEN: integrate guarded 1.7 native readback, frame proof and bounded EOF retries into existing screenshot routes/E2E evidence, preserving 1.6 behavior.
+- [x] SR.3 REVIEW: independently review the scoped change and rerun affected checks and strict OpenSpec validation.
+- [ ] SR.4 LIVE: orchestrator verifies reviewed minimized native workflows, personally inspects before/action/after screenshots and correlates readback receipts; an unrenderable process fails explicitly. Keep this open until exact-build live evidence exists.
+
+Supporting evidence: `artifacts/Implementation/gateway-native-window-input/screenshot-readback-ledger.md`;
+final focused 33/33 at `artifacts/TestResults/20261108T001545673Z-44784-a7a21cbcdd9c402bb9008f707653b47f`,
+independent review CLEAR after the dispatcher-failure correction, strict OpenSpec 164/164.
+The reviewed integrated build passed the minimized native checkbox and product reload workflows,
+with personally inspected causal captures and later-frame readback receipts. These prove the
+available-renderer path; real transient-unavailable recovery and unrenderable-process failure remain
+open under SR.4. The native record is `artifacts/Implementation/gateway-native-window-input/screenshot-native-checkbox.md`.
+
 ## Error diagnostic usability — approved September 2026
 
 - [x] ED.1 RED/GREEN: grouped errors, nested causes, bounded history and immutable pages.

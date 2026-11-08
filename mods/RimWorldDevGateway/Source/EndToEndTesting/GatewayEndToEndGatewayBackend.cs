@@ -1,4 +1,5 @@
 using System.IO;
+using System.Globalization;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -464,7 +465,22 @@ public sealed class GatewayEndToEndGatewayBackend :
         string filePath,
         string fileName)
     {
-        byte[] png;
+        GatewayScreenshotCapture completedCapture;
+#if RIMWORLD_1_7
+        var capture = screenshots.CaptureOperation("e2e-" + fileName, request, TimeSpan.FromSeconds(30));
+        try
+        {
+            completedCapture = await capture.Completion.ConfigureAwait(false);
+        }
+        catch (GatewayScreenshotException exception)
+        {
+            return GatewayEndToEndStepOutcome.Fail(exception.Code, exception.Message);
+        }
+        catch (GatewayDispatchException exception)
+        {
+            return GatewayEndToEndStepOutcome.Fail(exception.Code, exception.Message);
+        }
+#else
         for (var attempt = 1; ; attempt++)
         {
             try
@@ -473,7 +489,7 @@ public sealed class GatewayEndToEndGatewayBackend :
                     "e2e-" + fileName + "-attempt-" + attempt,
                     request,
                     TimeSpan.FromSeconds(30));
-                png = (await capture.Completion.ConfigureAwait(false)).Png;
+                completedCapture = await capture.Completion.ConfigureAwait(false);
                 break;
             }
             catch (Exception exception) when (
@@ -482,8 +498,9 @@ public sealed class GatewayEndToEndGatewayBackend :
                 await Task.Yield();
             }
         }
+#endif
 
-        return PersistScreenshot(png, filePath, fileName);
+        return PersistScreenshot(completedCapture, filePath, fileName);
     }
 
     private static bool IsTransientScreenshotFailure(Exception exception) =>
@@ -492,7 +509,7 @@ public sealed class GatewayEndToEndGatewayBackend :
         screenshot.Code is "capture_busy" or "capture_failed" or "invalid_png";
 
     private GatewayEndToEndStepOutcome PersistScreenshot(
-        byte[] png,
+        GatewayScreenshotCapture capture,
         string filePath,
         string fileName)
     {
@@ -505,12 +522,29 @@ public sealed class GatewayEndToEndGatewayBackend :
                    81920,
                    FileOptions.WriteThrough))
         {
-            stream.Write(png, 0, png.Length);
+            stream.Write(capture.Png, 0, capture.Png.Length);
             stream.Flush(flushToDisk: true);
         }
 
-        return GatewayEndToEndStepOutcome.Pass(
-            new Dictionary<string, string> { ["screenshot"] = fileName });
+        var artifacts = new Dictionary<string, string> { ["screenshot"] = fileName };
+        if (capture.FrameWidth.HasValue && capture.FrameHeight.HasValue && capture.Crop is { } crop)
+        {
+            artifacts["screenshot.frameWidth"] = capture.FrameWidth.Value.ToString(CultureInfo.InvariantCulture);
+            artifacts["screenshot.frameHeight"] = capture.FrameHeight.Value.ToString(CultureInfo.InvariantCulture);
+            artifacts["screenshot.cropX"] = crop.X.ToString(CultureInfo.InvariantCulture);
+            artifacts["screenshot.cropY"] = crop.Y.ToString(CultureInfo.InvariantCulture);
+            artifacts["screenshot.cropWidth"] = crop.Width.ToString(CultureInfo.InvariantCulture);
+            artifacts["screenshot.cropHeight"] = crop.Height.ToString(CultureInfo.InvariantCulture);
+        }
+        if (capture.Readback is { } readback)
+        {
+            artifacts["screenshot.readbackProvider"] = readback.Provider;
+            artifacts["screenshot.admissionFrame"] = readback.AdmissionFrame.ToString(CultureInfo.InvariantCulture);
+            artifacts["screenshot.renderedFrame"] = readback.RenderedFrame.ToString(CultureInfo.InvariantCulture);
+            artifacts["screenshot.readbackUtc"] = readback.ReadbackUtc.ToString("O", CultureInfo.InvariantCulture);
+            artifacts["screenshot.readbackAttempts"] = readback.Attempts.ToString(CultureInfo.InvariantCulture);
+        }
+        return GatewayEndToEndStepOutcome.Pass(artifacts);
     }
 
     private void ApplyInput(MayMaximizeWindowInputActionStep step)

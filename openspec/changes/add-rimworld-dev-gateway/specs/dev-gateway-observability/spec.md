@@ -127,3 +127,20 @@ Targeted capture SHALL reuse the endpoint's existing authenticated request-body,
 #### Scenario: Capture capacity is exhausted
 - **WHEN** a screenshot request arrives while the configured capture concurrency is occupied
 - **THEN** the gateway returns a retryable `capture_busy` error instead of allocating another full-frame texture
+
+### Requirement: Proven native screenshot readback on RimWorld 1.7
+On supported RimWorld 1.7 runtimes, a screenshot SHALL succeed only after native readback confirms a recorded rendered frame newer than the request's main-thread admission frame. Readback unavailability SHALL remain pending within the original deadline and single capture lease, with at most one readback attempt per engine frame. The Gateway SHALL NOT return the engine's empty-texture fallback, infer validity from pixel colors, restore or foreground the desktop window, fabricate GUI events, or change renderer eligibility. Cancellation, shutdown, unsupported providers, malformed readback and deadline expiry SHALL terminate truthfully and release owned resources and capacity. The existing RimWorld 1.6 capture path SHALL remain unchanged.
+
+Successful 1.7 screenshot responses and E2E evidence SHALL retain provider identity, admission and rendered frame numbers, readback time and attempt count alongside dimensions/crop metadata. Retries SHALL preserve the original deadline and SHALL NOT allocate textures or enumerate crop targets before a valid fresh readback. A genuinely rendered black image remains valid evidence.
+
+#### Scenario: Rendering resumes during a screenshot request
+- **WHEN** native readback is initially unavailable and a fresh recorded frame becomes readable before the original deadline
+- **THEN** the same request returns that frame with readback provenance, preserving one concurrency lease and releasing temporary resources
+
+#### Scenario: No readable frame arrives
+- **WHEN** rendering remains unavailable until the deadline, or the request is cancelled or the Gateway stops
+- **THEN** the request fails without a success PNG or leaked lease and without manipulating the desktop or renderer
+
+#### Scenario: Recorded black scene
+- **WHEN** the native provider confirms a fresh recorded frame whose pixels are black
+- **THEN** the Gateway returns it with the same readback proof as any other frame

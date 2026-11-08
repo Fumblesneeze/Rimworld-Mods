@@ -18,6 +18,9 @@
       <Private>true</Private>
     </Reference>
     <Compile Include="../RimWorldDevGateway.Tests/GatewayCSharpEvaluatorTests.cs" Link="GatewayCSharpEvaluatorTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/GatewayScreenshotServiceTests.cs" Link="GatewayScreenshotServiceTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/UnityGatewayScreenshotBackendTests.cs" Link="UnityGatewayScreenshotBackendTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/GatewayScreenshotCropPlannerTests.cs" Link="GatewayScreenshotCropPlannerTests.cs" />
     <Compile Include="../../tools/RimWorldDevGateway.Client/DotNetGatewaySourceCompiler.cs" Link="Client/DotNetGatewaySourceCompiler.cs" />
     <Compile Include="../../tools/RimWorldDevGateway.Client/GatewayClientContracts.cs" Link="Client/GatewayClientContracts.cs" />
   </ItemGroup>

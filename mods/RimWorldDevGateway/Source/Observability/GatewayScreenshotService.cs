@@ -29,12 +29,14 @@ public sealed class GatewayScreenshotResource
         object resource,
         int frameWidth,
         int frameHeight,
-        GatewayScreenshotCrop crop)
+        GatewayScreenshotCrop crop,
+        GatewayRenderedFrameEvidence? readback = null)
     {
         Resource = resource ?? throw new ArgumentNullException(nameof(resource));
         FrameWidth = frameWidth;
         FrameHeight = frameHeight;
         Crop = crop ?? throw new ArgumentNullException(nameof(crop));
+        Readback = readback;
     }
 
     public object Resource { get; }
@@ -44,6 +46,7 @@ public sealed class GatewayScreenshotResource
     public int FrameHeight { get; }
 
     public GatewayScreenshotCrop Crop { get; }
+    public GatewayRenderedFrameEvidence? Readback { get; }
 }
 
 public sealed class GatewayScreenshotCapture
@@ -52,12 +55,14 @@ public sealed class GatewayScreenshotCapture
         byte[] png,
         int? frameWidth = null,
         int? frameHeight = null,
-        GatewayScreenshotCrop? crop = null)
+        GatewayScreenshotCrop? crop = null,
+        GatewayScreenshotReadbackReceipt? readback = null)
     {
         Png = png ?? throw new ArgumentNullException(nameof(png));
         FrameWidth = frameWidth;
         FrameHeight = frameHeight;
         Crop = crop;
+        Readback = readback;
     }
 
     public byte[] Png { get; }
@@ -67,6 +72,7 @@ public sealed class GatewayScreenshotCapture
     public int? FrameHeight { get; }
 
     public GatewayScreenshotCrop? Crop { get; }
+    public GatewayScreenshotReadbackReceipt? Readback { get; }
 }
 
 public sealed class GatewayScreenshotException : Exception
@@ -93,12 +99,14 @@ public sealed class GatewayScreenshotService
     private readonly GatewayDispatcher dispatcher;
     private readonly IGatewayScreenshotBackend backend;
     private readonly int maximumPngBytes;
+    private readonly Func<DateTimeOffset> utcNow;
     private object? captureInFlight;
 
     public GatewayScreenshotService(
         GatewayDispatcher dispatcher,
         IGatewayScreenshotBackend backend,
-        int maximumPngBytes)
+        int maximumPngBytes,
+        Func<DateTimeOffset>? utcNow = null)
     {
         if (maximumPngBytes <= 0)
         {
@@ -108,6 +116,7 @@ public sealed class GatewayScreenshotService
         this.dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         this.backend = backend ?? throw new ArgumentNullException(nameof(backend));
         this.maximumPngBytes = maximumPngBytes;
+        this.utcNow = utcNow ?? (() => DateTimeOffset.UtcNow);
     }
 
     public Task<byte[]> CaptureAsync(
@@ -177,6 +186,11 @@ public sealed class GatewayScreenshotService
 
         try
         {
+            if (backend is IGatewayRenderedScreenshotBackend rendered && rendered.RequiresReadback)
+            {
+                return CaptureRenderedOperation(requestId, normalizedRequest, timeout, cancellationToken,
+                    captureLease, rendered);
+            }
             var capture = dispatcher.EnqueueOperation(
                 requestId,
                 "screenshot.capture",
@@ -194,6 +208,97 @@ public sealed class GatewayScreenshotService
             throw;
         }
     }
+
+    private GatewayDispatchOperation<GatewayScreenshotCapture> CaptureRenderedOperation(
+        string requestId, GatewayScreenshotRequest request, TimeSpan timeout, CancellationToken cancellationToken,
+        object captureLease, IGatewayRenderedScreenshotBackend rendered)
+    {
+        if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
+        var deadline = utcNow().Add(timeout);
+        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cancellation.CancelAfter(timeout);
+        var completion = new TaskCompletionSource<GatewayScreenshotCapture>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cancelledBeforeAdmission = 0;
+        var operation = new GatewayDispatchOperation<GatewayScreenshotCapture>(completion.Task, () =>
+        {
+            Interlocked.Exchange(ref cancelledBeforeAdmission, 1);
+            try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+        });
+        _ = Run();
+        return operation;
+
+        async Task Run()
+        {
+            GatewayScreenshotCapture? result = null;
+            Exception? failure = null;
+            var stopped = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var registration = cancellation.Token.Register(() => stopped.TrySetResult(true));
+            var admitted = false;
+            var baseline = 0;
+            var lastAttemptFrame = 0;
+            var attempts = 0;
+            try
+            {
+                while (result == null)
+                {
+                    CheckLifetime();
+                    var attempt = dispatcher.EnqueueOperation(requestId, "screenshot.capture", deadline - utcNow(), token =>
+                    {
+                        CheckLifetime();
+                        var frame = rendered.CurrentFrame;
+                        if (!admitted)
+                        {
+                            if (!operation.TryMarkStarted()) throw Cancelled();
+                            admitted = true;
+                            baseline = lastAttemptFrame = frame;
+                            return (GatewayScreenshotCapture?)null;
+                        }
+                        if (frame == lastAttemptFrame) return null;
+                        if (frame < baseline) throw new GatewayScreenshotException("screenshot_frame_identity_invalid",
+                            "The native frame counter moved backwards during capture.");
+                        lastAttemptFrame = frame;
+                        attempts++;
+                        try { return Capture(request, token, baseline, attempts); }
+                        catch (GatewayScreenshotException exception) when (exception.Code == "screenshot_frame_unavailable")
+                        { return null; }
+                    }, DispatchPhase.EndOfFrame, cancellation.Token);
+                    if (await Task.WhenAny(attempt.Completion, stopped.Task).ConfigureAwait(false) != attempt.Completion)
+                    {
+                        // A queued attempt can be cancelled immediately; an executing native readback
+                        // owns its resources until it returns. Never release its capacity underneath it.
+                        attempt.TryCancelBeforeStart();
+                    }
+                    result = await attempt.Completion.ConfigureAwait(false);
+                    CheckLifetime();
+                }
+            }
+            catch (Exception exception)
+            {
+                try { CheckLifetime(); failure = exception; }
+                catch (Exception lifetimeFailure) { failure = lifetimeFailure; }
+            }
+            finally
+            {
+                registration.Dispose();
+                cancellation.Dispose();
+                ReleaseCapacity(captureLease);
+            }
+            if (failure != null) completion.TrySetException(failure);
+            else completion.TrySetResult(result!);
+
+            void CheckLifetime()
+            {
+                if (cancellationToken.IsCancellationRequested || Volatile.Read(ref cancelledBeforeAdmission) != 0)
+                    throw Cancelled();
+                if (utcNow() >= deadline || cancellation.IsCancellationRequested)
+                    throw new GatewayScreenshotException("screenshot_render_timeout",
+                        "No fresh native screenshot completed within the original request deadline.");
+            }
+        }
+    }
+
+    private static GatewayScreenshotException Cancelled() =>
+        new("screenshot_cancelled", "The screenshot request was cancelled.");
 
     private void ReleaseCapacityWhenComplete(
         Task<GatewayScreenshotCapture> capture,
@@ -216,7 +321,9 @@ public sealed class GatewayScreenshotService
 
     private GatewayScreenshotCapture Capture(
         GatewayScreenshotRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? admissionFrame = null,
+        int attempts = 0)
     {
         try
         {
@@ -233,13 +340,27 @@ public sealed class GatewayScreenshotService
                             "The screenshot backend does not support cropped captures.");
             try
             {
+                GatewayScreenshotReadbackReceipt? receipt = null;
+                if (admissionFrame.HasValue)
+                {
+                    var proof = described?.Readback;
+                    if (proof == null || string.IsNullOrWhiteSpace(proof.Provider) ||
+                        proof.Frame <= admissionFrame.Value ||
+                        proof.Frame != ((IGatewayRenderedScreenshotBackend)backend).CurrentFrame)
+                        throw new GatewayScreenshotException("screenshot_readback_unproven",
+                            "The screenshot backend returned no matching fresh rendered-frame evidence.");
+                    receipt = new GatewayScreenshotReadbackReceipt(proof.Provider, admissionFrame.Value,
+                        proof.Frame, proof.ReadbackUtc, attempts);
+                }
+                cancellationToken.ThrowIfCancellationRequested();
                 var png = backend.EncodePng(resource);
                 ValidatePng(png);
                 return new GatewayScreenshotCapture(
                     png,
                     described?.FrameWidth,
                     described?.FrameHeight,
-                    described?.Crop);
+                    described?.Crop,
+                    receipt);
             }
             finally
             {

@@ -31,7 +31,8 @@ public interface IGatewayScreenshotTargetProjector
 public sealed class UnityGatewayScreenshotBackend :
     IGatewayScreenshotBackend,
     IGatewayTargetedScreenshotBackend,
-    IGatewayDescribedScreenshotBackend
+    IGatewayDescribedScreenshotBackend,
+    IGatewayRenderedScreenshotBackend
 {
     private readonly IGatewayScreenshotTextureOperations textures;
     private readonly IGatewayScreenshotTargetProjector targets;
@@ -52,6 +53,8 @@ public sealed class UnityGatewayScreenshotBackend :
     }
 
     public object Capture() => textures.Capture();
+    public bool RequiresReadback => textures is IGatewayRenderedScreenshotBackend native && native.RequiresReadback;
+    public int CurrentFrame => ((IGatewayRenderedScreenshotBackend)textures).CurrentFrame;
 
     public object Capture(GatewayScreenshotRequest request) =>
         CaptureDescribed(request).Resource;
@@ -64,6 +67,7 @@ public sealed class UnityGatewayScreenshotBackend :
         }
 
         var fullFrame = textures.Capture();
+        var proof = (fullFrame as GatewayScreenshotTexture)?.Evidence;
         try
         {
             var width = textures.Width(fullFrame);
@@ -91,7 +95,7 @@ public sealed class UnityGatewayScreenshotBackend :
                 fullFrame = null!;
             }
 
-            return new GatewayScreenshotResource(cropped, width, height, crop);
+            return new GatewayScreenshotResource(cropped, width, height, crop, proof);
         }
         finally
         {
@@ -107,10 +111,34 @@ public sealed class UnityGatewayScreenshotBackend :
     public void Destroy(object resource) => textures.Destroy(resource);
 }
 
-public sealed class UnityGatewayScreenshotTextureOperations : IGatewayScreenshotTextureOperations
+public sealed class UnityGatewayScreenshotTextureOperations : IGatewayScreenshotTextureOperations,
+    IGatewayRenderedScreenshotBackend
 {
+#if RIMWORLD_1_7
+    private readonly GatewayRenderedFrameReader reader = new(new WaylithGatewayScreenshotReadback());
+    public bool RequiresReadback => true;
+    public int CurrentFrame => reader.CurrentFrame;
+#else
+    public bool RequiresReadback => false;
+    public int CurrentFrame => throw new NotSupportedException("This runtime uses legacy screenshot capture.");
+#endif
     public object Capture()
     {
+#if RIMWORLD_1_7
+        var readback = reader.Read() ?? throw new GatewayScreenshotException("screenshot_frame_unavailable",
+            "No recorded native frame is readable at this end-of-frame boundary.");
+        var texture = new Texture2D(readback.Width, readback.Height, TextureFormat.RGBA32, mipChain: false);
+        try
+        {
+            // Native readback and CoreTexture both use top-down RGBA. The ordinary
+            // GetPixels crop API converts bottom-left coordinates; do not flip twice.
+            texture.CoreTexture.ReplaceCpuData(readback.Width, readback.Height,
+                Waylith.Rendering.LoadedTextureFormat.Rgba32, new[] { readback.RgbaTopDown }, 1, linear: false);
+            texture.Apply(updateMipmaps: false);
+            return new GatewayScreenshotTexture(texture, readback.Evidence);
+        }
+        catch { UnityEngine.Object.Destroy(texture); throw; }
+#else
         var texture = ScreenCapture.CaptureScreenshotAsTexture();
         if (texture is null)
         {
@@ -118,6 +146,7 @@ public sealed class UnityGatewayScreenshotTextureOperations : IGatewayScreenshot
         }
 
         return texture;
+#endif
     }
 
     public int Width(object resource) => RequireTexture(resource).width;
@@ -151,6 +180,7 @@ public sealed class UnityGatewayScreenshotTextureOperations : IGatewayScreenshot
 
     public void Destroy(object resource)
     {
+        if (resource is GatewayScreenshotTexture captured) resource = captured.Texture;
         if (resource is UnityEngine.Object unityObject)
         {
             UnityEngine.Object.Destroy(unityObject);
@@ -158,7 +188,7 @@ public sealed class UnityGatewayScreenshotTextureOperations : IGatewayScreenshot
     }
 
     private static Texture2D RequireTexture(object resource) =>
-        resource as Texture2D ?? throw new ArgumentException(
+        (resource is GatewayScreenshotTexture captured ? captured.Texture : resource) as Texture2D ?? throw new ArgumentException(
             "The screenshot resource is not a Unity Texture2D.",
             nameof(resource));
 }

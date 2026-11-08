@@ -477,11 +477,12 @@ public sealed class GatewayApiRouter
                     "OK",
                     "image/png",
                     completedCapture.Png);
+                var captureHeaders = new Dictionary<string, string>(StringComparer.Ordinal);
                 if (completedCapture.Crop is not null &&
                     completedCapture.FrameWidth.HasValue &&
                     completedCapture.FrameHeight.HasValue)
                 {
-                    response = response.WithHeaders(new Dictionary<string, string>(StringComparer.Ordinal)
+                    captureHeaders = new Dictionary<string, string>(StringComparer.Ordinal)
                     {
                         ["X-Gateway-Frame-Width"] = completedCapture.FrameWidth.Value.ToString(
                             CultureInfo.InvariantCulture),
@@ -491,10 +492,19 @@ public sealed class GatewayApiRouter
                         ["X-Gateway-Crop-Y"] = completedCapture.Crop.Y.ToString(CultureInfo.InvariantCulture),
                         ["X-Gateway-Crop-Width"] = completedCapture.Crop.Width.ToString(CultureInfo.InvariantCulture),
                         ["X-Gateway-Crop-Height"] = completedCapture.Crop.Height.ToString(CultureInfo.InvariantCulture)
-                    });
+                    };
                 }
 
-                return response;
+                if (completedCapture.Readback is { } readback)
+                {
+                    captureHeaders["X-Gateway-Readback-Provider"] = readback.Provider;
+                    captureHeaders["X-Gateway-Admission-Frame"] = readback.AdmissionFrame.ToString(CultureInfo.InvariantCulture);
+                    captureHeaders["X-Gateway-Rendered-Frame"] = readback.RenderedFrame.ToString(CultureInfo.InvariantCulture);
+                    captureHeaders["X-Gateway-Readback-Utc"] = readback.ReadbackUtc.ToString("O", CultureInfo.InvariantCulture);
+                    captureHeaders["X-Gateway-Readback-Attempts"] = readback.Attempts.ToString(CultureInfo.InvariantCulture);
+                }
+
+                return captureHeaders.Count == 0 ? response : response.WithHeaders(captureHeaders);
             }
 
             if (request.Method == "POST" &&

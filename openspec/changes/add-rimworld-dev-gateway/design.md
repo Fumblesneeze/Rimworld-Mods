@@ -268,6 +268,14 @@ These tests are the honest place to assert final Def values, XML patch effects, 
 
 Any tool that changes a non-isolated `ModsConfig.xml` must restore the backup in `finally` and compare its post-run hash with the original before reporting success.
 
+## November 2026: native screenshot readback
+
+Owner: `mods/RimWorldDevGateway`. The reviewed S094 run `20261107T233741111Z` produced empty screenshots while reporting success; its Player.log line 695 explicitly records UnityStubs' unreadable-screen fallback. In inspected 1.7, Bootstrap can resume WaitForEndOfFrame during Update after a skipped render. The existing texture API silently returns an empty Texture2D. Native `ScreenCaptureBackend.Current.TryReadScreen` instead reports failure; the inspected ScreenCaptureFeature only exposes its recorded capture during real rendered-frame completion. Its `RequestCapture` arms readback but cannot override a zero framebuffer. No fabricated repaint or render eligibility change is justified.
+
+Use a narrow absent-safe 1.7 adapter for direct readback and native frame identity, validating provider/callable shape, positive bounded dimensions, exact RGBA length and unchanged frame identity. Preserve top-down native pixels through texture construction and existing bottom-left crop semantics. A screenshot-specific coordinator composes existing dispatcher operations under one absolute deadline and capacity lease; it takes its baseline on the Unity thread, retries at most once per engine frame, and never encodes before fresh proof. It does not change the generic dispatcher. Cancellation, stop and timeout leave no image, textures or retained lease. HTTP headers and E2E artifacts carry the successful proof. Host tests exercise the coordinator and injectable readback boundary without initializing game globals; actual native wiring and final screenshots require a reviewed minimized run. Keep the 1.6 path unchanged.
+
+The success receipt carries `Provider`, `AdmissionFrame`, `RenderedFrame`, `ReadbackUtc` and `Attempts`. HTTP retains these as `X-Gateway-Readback-Provider`, `X-Gateway-Admission-Frame`, `X-Gateway-Rendered-Frame`, `X-Gateway-Readback-Utc` and `X-Gateway-Readback-Attempts`; E2E retains equivalent `screenshot.*` fields plus source and crop dimensions. The 1.7 E2E caller starts one 30-second operation, without the legacy outer second deadline. A deadline/cancellation can stop queued attempts immediately; an already executing native GPU readback remains cooperative and keeps the capture lease until it returns. No claim of GPU-call preemption is made.
+
 ## Open Questions
 
 - Which non-Windows raw-input backend, if any, should be added after the Windows development workflow is proven? This does not block the API because unsupported platforms return a capability error and retain semantic actions and uploaded execution.

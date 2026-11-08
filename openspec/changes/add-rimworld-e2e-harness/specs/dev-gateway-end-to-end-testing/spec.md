@@ -114,6 +114,13 @@ A typed Escape-menu action SHALL require a player-controlled playable game and a
 - **THEN** the native menu visibly opens and closes while the isolated process remains minimized and uses no desktop input
 - **THEN** the Gateway warning and test-status overlay are visible only in the middle Escape-menu frame
 
+#### Scenario: Screenshot evidence retains native readback identity
+- **WHEN** a screenshot step succeeds on the 1.7 native renderer
+- **THEN** its retained PNG artifact also identifies the successful readback provider, admission frame, later rendered frame, readback time, attempt count, original frame dimensions and applied crop
+- **THEN** temporary unavailability is retried within the screenshot operation's original deadline and capacity lease, without starting a second full timeout or accepting an empty fallback texture
+- **THEN** a genuinely recorded black frame is permitted; image colors are not a validity test
+- **THEN** a failed native capture retains its specific stable failure code and message without a PNG artifact or a fresh outer retry deadline
+
 #### Scenario: UI-free evidence is captured without desktop input
 - **WHEN** a test enables the typed screenshot-mode action before a rendered evidence capture
 - **THEN** the Gateway changes only RimWorld's native screenshot-mode state on the Unity thread, normal interface chrome is filtered from the captured frame, no process input or desktop focus is used, and guaranteed cleanup restores the prior state even if a later step fails
