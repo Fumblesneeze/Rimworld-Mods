@@ -12,32 +12,41 @@ chunks are ready; all foundation behavior and safety obligations below remain in
 ## Goals / Non-Goals
 
 **Goals:** one independently packaged mod, traceable feature contracts, tolerant but meaningful patch
-guards, preservation of consumed third-party interfaces, composed behavior across source mods, and
+guards, independent source-behavior research, composed behavior across source mods, and
 shared data ownership where consumers actually share a dataset.
 
 **Non-goals:** porting named examples now, claiming compatibility from their names, designing a
-general plugin platform, implementing empty cache/patch registries, adding placeholder tests, or
+general plugin platform, original-mod API/drop-in compatibility or consumer/facade work,
+implementing empty cache/patch registries, adding placeholder tests, or
 publishing a Workshop item. Runtime requirements below are specified for subsequent vertical slices.
 
 ## Decisions
 
-### Initial support and original-provider precedence — 2026-11-07 refinement
+### Initial support and original-provider handling — 2026-11-08 clarification
 
 Initial support is new-colony single-player without CE. Ordinary saves subsequently created with
 megamod must still reload; this is not a requirement to start a new colony on every load or update.
 Do not build original-mod save import or multiplayer/CE adapters in the initial feature slices.
 Existing source research about those integrations remains reference material, not supported scope.
 
-Resolve canonical active package IDs against each feature's researched original-provider list
-before any conflicting owned behavior becomes active. Suppression must cover the earliest relevant
-phase, including declarative content through XML Extensions where applicable, not merely skip a
-late Harmony patch after conflicting Defs or UI have already been added. Suppress the actual
-conflicting owned group and retain independent features and shared services needed by them. One
-bounded startup warning identifies the provider, affected features and retained original behavior.
-Do not unpatch foreign owners, spoof their IDs, edit their data or change the user's mod list.
-Installed-but-inactive packages do not trigger suppression. Ordinary target checks continue to
-admit compatible unrelated patches. Provider identity and overlap mapping are research tasks, not
-something inferred from a similar title.
+Resolve canonical active package IDs against the original-provider identities recorded for each
+replacement. An active original triggers a bounded startup warning naming it and the corresponding
+owned features, plus best-effort suppression through those features' ordinary settings/effective-off
+path. Apply the same behavior and timing as a manual off choice, using the common settings resolution
+path without overwriting stored global values, save overrides or inheritance choices. This does not
+guarantee suppression before every C#/XML/Def mutation or rollback of effects that an ordinary off
+choice would leave in place. The warning states best-effort disablement, not coexistence compatibility.
+
+Retain independent features and the shared services they need. Do not unpatch foreign owners, spoof
+their IDs, edit their data or change the user's mod list. Installed-but-inactive packages do not
+trigger this policy; normal preference resolution resumes on a later startup without the original.
+Provider identification and the corresponding feature-setting mapping come from source research,
+not a similar title. Do not add an exhaustive original-mod compatibility matrix, consumer audit or
+facade. This clarification supersedes the earlier all-phase suppression guarantee.
+
+Ordinary game-target semantic checks continue to admit compatible unrelated patches. Genuine
+external integrations actually used retain the root package/Def resolution, absent-safety and shape
+guards. Those requirements and normal persistence of our own saves are not waived by this policy.
 
 The [round-one decision record](../../../mods/megamod/docs/refinement/2026-11-07-decisions-round-1.md)
 tracks the accepted feature refinements and remaining draft-reconciliation work. Neither this
@@ -71,16 +80,17 @@ Harmony, Defs, isolated integration, and E2E tiers as actual requirements demand
 
 Maintain `docs/replacements/README.md` as the coverage index. Each researched source gets a report
 from the supplied template recording exact identity, source/license provenance, player behavior,
-consumed interfaces, settings/save contracts, interactions, deviations, omissions, and evidence.
+options/defaults, observable persistence, interactions, deviations, omissions, and evidence.
 Convert findings into observable OpenSpec scenarios owned by megamod. An original feature uses the
 same scenario and acceptance discipline with `origin: original`; it does not invent an upstream mod.
 
 For an upstream mod that modifies another listed mod, record the dependency/behavior graph and
 resolve their effective behavior, load-order effects, options, and conflicts before coding. Express
 the chosen composition in one owned feature contract and ordinary calls/policies. Do not preserve
-upstream internal patches or patch megamod with Harmony. External consumers can receive a narrow
-compatibility facade only after their actual binding/behavior contract is inspected. Package-ID or
-assembly-name detection that cannot be preserved honestly is a documented gap, not silent spoofing.
+upstream internal patches or patch megamod with Harmony. Original-mod API parity, external consumer
+checks, compatibility facades, original saved-schema import and drop-in/coexistence work are excluded.
+Research observable behavior without copying implementation. Separately specify our own save schema
+and the contracts of external integrations actually used; those remain subject to the root safeguards.
 
 ### 4. Every patch has a minimal target spec
 
@@ -165,8 +175,8 @@ defaults/parameters in settings: merely persisting a toggle's state does not tur
 window. Cheats still route to debug controls first. Only a window that exposes an ordinary gameplay
 mechanic to control qualifies for a bottom tab; a window wrapper around a toggle does not qualify.
 Prefer existing native contextual controls for functions outside these categories instead of
-inventing a new tab. UI/API integration contracts are analyzed separately; preserve callable external
-contracts where possible while documenting deliberately changed navigation.
+inventing a new tab. Document deliberately changed navigation and its player impact; this UI audit
+does not require preserving the source mod's callable API or checking its consumers.
 
 The first UI slice must specify exact ordering, labels, state scope, and enable/disable conditions,
 and verify entry point → action → observed result, including developer mode on/off and main-menu
@@ -200,16 +210,23 @@ the actual scope/persistence, and renderer behavior for unavailable controls. Su
 the common path. This is a requirement for the first real settings slice, not an empty framework to
 implement in the scaffold. Test resolution, serialization, state switching, row behavior, and exceptions.
 
+Original-provider detection uses the same effective-off path and effect timing as an ordinary manual
+feature-off choice. Keep this startup policy separate from the stored preference: neither global
+defaults, saved overrides nor inheritance flags are rewritten. A later startup with that provider
+inactive resolves the retained preferences normally, subject to target admission. This is best-effort
+avoidance of duplicated behavior, not a guarantee that the original and megamod are compatible.
+
 ## Risks / Trade-offs
 
 - Beta engine changes → pin build identity for evidence; semantic guards and new live verification
   determine support, not the version label alone.
 - Overly strict probes reject safe mods; weak probes corrupt behavior → document allowed variants,
-  test both positive and negative structural fixtures, and verify actual co-installed cases.
+  test both positive and negative structural fixtures, and verify genuine external integrations
+  actually used. Original-provider warning/effective-off checks do not establish coexistence support.
 - Startup checks cannot predict arbitrary later runtime patches → declare ordering/lifecycle limits,
   revalidate when the supported seam changes, and do not claim unobserved combinations as supported.
-- Upstream contracts can bind to an old assembly/package → inspect real consumers; publish exact
-  limitations and migration needs instead of claiming an unqualified drop-in replacement.
+- An original remains loaded → warn and use the ordinary feature-off path on a best-effort basis;
+  do not claim API parity, original-save import, complete suppression or coexistence compatibility.
 - Shared caches amplify stale-state bugs → one owner, explicit invalidation and freshness, native
   action revalidation, teardown tests, and a safe fallback.
 
@@ -217,12 +234,13 @@ implement in the scaffold. Test resolution, serialization, state switching, row 
 
 The scaffold has no persisted state and introduces no migration. Build/profile/package verification
 is sufficient for this inert scaffolding scope; it does not close any gameplay requirement. Every
-future save/settings import needs an explicit source schema, backup, atomicity, rollback/failure
-restoration, and verified postconditions. Installing remains the canonical local package-ID sync;
+future migration of our own save/settings schema needs an explicit source schema, backup, atomicity,
+rollback/failure restoration, and verified postconditions. Original-mod state import is outside
+initial support. Installing remains the canonical local package-ID sync;
 do not enable the mod in the user's normal configuration automatically.
 
 ## Open Questions
 
-The initial feature order, exact upstream identities/versions, interface consumers, and intentional
+The initial feature order, exact upstream identities/versions, composed behavior, and intentional
 deviations will be resolved during intake. No behavior, timing, balance, default setting, or
 compatibility assumption is silently chosen from the example mod names.

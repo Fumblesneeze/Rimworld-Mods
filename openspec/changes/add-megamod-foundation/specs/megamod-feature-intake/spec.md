@@ -7,9 +7,9 @@ the process and templates; individual replacements and original features require
 
 ### Requirement: Evidence precedes a replacement specification
 Each replacement SHALL start with read-only inspection of the identified upstream version and its
-observable behavior, configuration, persistence, dependencies, and consumed contracts. Record source
+observable behavior, configuration, persistence behavior and dependencies. Record source
 locations, package/Workshop identity, inspected build/hash, license/attribution, uncertainty, and
-consumer evidence. Inventory all bottom-tab and other UI entry points and apply megamod's UI
+behavior evidence. Inventory all bottom-tab and other UI entry points and apply megamod's UI
 placement rules rather than copying upstream navigation. The OpenSpec SHALL state concrete inputs, player actions, results, edge cases,
 defaults, balance/timing assumptions, and explicit omissions before tests or implementation.
 
@@ -32,36 +32,55 @@ not Harmony or equivalent runtime patches against megamod's own implementation.
 #### Scenario: Source interaction has conflicting defaults
 - **WHEN** upstream load order or settings produce multiple possible results
 - **THEN** the spec records the selected default and supported alternatives before implementation
-- **AND** each departure from an upstream result appears in the replacement ledger with its compatibility impact
+- **AND** each departure from an upstream result appears in the replacement ledger with its player impact and possible conflicts
 
-### Requirement: Preserve consumed interfaces deliberately
-Replacement work SHALL inventory public/reflected type and assembly identities, method signatures,
-Def names, events/lifecycle, package detection, settings/save keys, return and exception semantics,
-and actual consumer expectations as applicable. Preserve supported contracts through a narrow facade
-where practical. Document unsupported bindings and migration needs instead of spoofing upstream
-identity or claiming unverified drop-in equivalence. Each feature SHALL define co-installation policy
-so it cannot silently duplicate the upstream effect.
+### Requirement: Replace specified behavior without original-mod compatibility work
+Replacement work SHALL independently research and specify observable source behavior. Original-mod
+API parity, consumer audits, compatibility facades, original saved-state import and drop-in or
+coexistence compatibility work SHALL remain outside scope. The replacement ledger MUST NOT claim
+those guarantees. Genuine external integrations actually used SHALL still satisfy the root
+package/Def-resolution, absent-safety and shape-guard requirements. Game-target semantic admission
+and normal persistence of megamod's own saves SHALL remain required.
 
-#### Scenario: A Cherry Picker consumer uses an external contract
-- **WHEN** an inspected consumer binds to an upstream API, Def, saved key, or package identity
-- **THEN** its exact contract is included in the replacement analysis and compatibility scenarios
-- **AND** drop-in support is claimed only after that consumer works in the exact replacement-only run
+#### Scenario: A replacement is based on Cherry Picker
+- **WHEN** Cherry Picker behavior is selected for replacement
+- **THEN** its observable behavior is researched and the chosen megamod behavior is specified
+- **AND** the documented scope does not promise that other mods calling Cherry Picker APIs or reading its saved state will work with megamod
+
+### Requirement: Warn and use ordinary feature-off behavior when an original is active
+An active original provider SHALL trigger a bounded startup log warning and best-effort disablement
+of the corresponding owned replacement features through their ordinary feature settings/effective-off
+path. The effect and timing SHALL match manually switching those features off. This policy SHALL NOT
+promise complete coexistence compatibility or suppression/rollback of every earlier effect. It MUST
+NOT permanently rewrite stored global/save preferences or inheritance choices, modify the original,
+or disable unrelated features and their required shared services. Installed-but-inactive originals
+SHALL NOT trigger this policy. No full original-provider compatibility test matrix is required.
 
 #### Scenario: The original provider remains loaded
 - **WHEN** an original provider is active alongside megamod
-- **THEN** our conflicting replacement features remain inactive before they can change behavior or content
-- **AND** a bounded startup log warning identifies the original provider, affected owned behavior and original-provider fallback
-- **AND** unrelated megamod features remain available and the original provider is not disabled, edited, uninstalled or unpatched
+- **THEN** a bounded startup log warning identifies that provider and the corresponding owned features subject to best-effort disablement
+- **AND** those features use the same effective-off behavior and timing as a manual off choice, without rewriting the player's stored preferences
+- **AND** the original provider is not disabled, edited, uninstalled or unpatched
+
+#### Scenario: An unrelated feature shares supporting data
+- **WHEN** an original provider triggers effective-off behavior for a replacement and another enabled feature uses the same shared service
+- **THEN** the unrelated feature remains available with that service under its own settings and target requirements
+- **AND** the original-provider rule does not switch off all megamod features
+
+#### Scenario: Startup handling is not a compatibility promise
+- **WHEN** the startup warning reports an active original and best-effort disablement
+- **THEN** it does not report that the original and megamod are fully compatible or that all previously applied effects were undone
+- **AND** documented limitations of the ordinary off choice still apply
 
 #### Scenario: Original provider is installed but inactive
 - **WHEN** an original mod exists on disk but is not in the active mod list
 - **THEN** its presence alone does not disable our replacement
-- **AND** ordinary target-admission checks still determine whether the replacement can activate
+- **AND** retained global/save preferences and ordinary target-admission checks determine whether the replacement can activate
 
 #### Scenario: Other mods change a target compatibly
 - **WHEN** an unrelated active mod changes a target without breaking its documented semantic requirements
 - **THEN** the original-provider suppression rule does not impose a general ban on other patches
-- **AND** the feature remains eligible for its ordinary compatibility checks
+- **AND** the feature remains eligible for its ordinary game-target semantic admission checks
 
 ### Requirement: Initial supported play starts with a new colony
 Initial gameplay support SHALL cover colonies started with megamod in single-player without
@@ -93,7 +112,7 @@ reviewed build under the root acceptance gate.
 
 ### Requirement: Maintain an honest replacement ledger
 The mod SHALL document every source whose functionality it replaces, including implemented portions,
-source interactions, deviations and possible conflicts, preserved/broken contracts, omissions,
+source interactions, observable deviations and possible conflicts, own persistence, actual used integrations, omissions,
 deferred work, and evidence links. Status SHALL distinguish candidate, analyzed, specified,
 implemented-unverified, verified, deferred, and deliberately omitted behavior at feature granularity.
 

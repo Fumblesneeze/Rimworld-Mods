@@ -28,7 +28,7 @@ composed behavior spec. State which source hooks disappear into direct owned cod
 Inventory every bottom tab and other entry point, including injected/dynamic controls. Split
 mixed-purpose windows. Apply [UI placement](../UIPlacement.md) rather than copying the source layout.
 
-| Source entry point / implementation | Actual purpose | Debug / settings / toggle / gameplay window | Megamod destination and rationale | Intentional navigation change / consumer impact |
+| Source entry point / implementation | Actual purpose | Debug / settings / toggle / gameplay window | Megamod destination and rationale | Intentional navigation change / player impact |
 | --- | --- | --- | --- | --- |
 | <tab or control> | <what player does> | <classification> | <assigned native surface> | <deviation> |
 
@@ -38,15 +38,17 @@ persistence/effect timing, main-menu disabled behavior and save-switch lifecycle
 load/store/resolve/row-rendering path; document any inheritance exception and its concrete reason.
 Identify required native UI acceptance, including disabled override controls while inheriting.
 
-## Contracts consumed by other mods or saves
+## Own persistence and external integrations actually used
 
-| Consumer + evidence | Binding / identity / lifecycle contract | Behavior, errors, persistence | Preserve / adapt / unsupported | Verification scenario |
+| Owned state or used integration + evidence | Save schema or required integration contract | Behavior, errors, persistence | Scope and limitations | Verification scenario |
 | --- | --- | --- | --- | --- |
-| <actual consumer> | <assembly/type/member, Def, package check, event or save key> | <exact semantics> | <choice and reason> | <exact mod list / native workflow> |
+| <our saved state or actual integration> | <our save key or required package/Def/member/lifecycle> | <exact semantics> | <supported scope> | <exact mod list / native workflow> |
 
-Include settings/defaults, saved type/key schema, removal behavior, and migration where applicable.
-For migrations specify backup, atomicity, restoration on failure, and postconditions. State why a
-compatibility facade suffices or why an upstream package/assembly binding prevents a drop-in claim.
+Specify our settings/defaults, owned save schema, reload behavior and any required migration of our
+own state. For such migrations specify backup, atomicity, restoration on failure and postconditions.
+Genuine integrations we use remain package/Def-resolved, absent-safe and shape-guarded. Original-mod
+API/consumer audits, compatibility facades, saved-state imports and drop-in/coexistence work are not
+part of replacement research. Independently research observable source behavior; do not copy code.
 
 ## Implementation and coverage
 
@@ -54,14 +56,24 @@ compatibility facade suffices or why an upstream package/assembly binding preven
 | --- | --- | --- | --- | --- |
 | <ID> | <none until implemented> | <including optimizations> | <explicit remainder> | <links, tested build, observed result> |
 
-Describe original-provider co-installation policy, required/optional dependencies, missing/changed
-provider behavior, compatibility boundaries, and shared dataset ownership. XML edits must state
-content/package guards and merge policy; intentional list replacement must explain discarded entries.
+Identify the original's canonical package ID and corresponding owned feature settings. If it is
+active, emit a bounded startup warning and attempt best-effort suppression through the same ordinary
+effective-disable path as manually switching those features off. Record that path's timing and
+limitations; do not promise complete coexistence safety or rollback of all effects. Keep stored
+preferences intact and do not modify the original. Installed-but-inactive sources do not suppress
+features; unrelated features and their shared services remain available. No original-provider
+compatibility matrix or API parity work is required.
+
+Describe required/optional dependencies and missing/changed-provider behavior for genuine external
+integrations actually used, plus shared dataset ownership. Game-target semantic admission remains
+required. XML edits must state content/package guards and merge policy; intentional list replacement
+must explain discarded entries.
 
 ## Verification and acceptance
 
 Record focused RED/GREEN evidence, exact selected test tier and nonzero counts, reviewed build/package
 identity, independent review decisions, and native before/action/after observations in the fresh
-isolated game. Include required absent/present/changed-provider and composed-source cases, language
+isolated game. Include required absent/present/changed-provider cases for integrations actually used,
+focused original-provider warning/effective-off cases, composed-source behavior cases, language
 coverage where applicable, performance measurements for optimization claims, and cleanup evidence.
 Keep unobserved behavior unverified. Record the final balance/progression/job-reachability assessment.

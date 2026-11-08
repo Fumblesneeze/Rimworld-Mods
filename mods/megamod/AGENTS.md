@@ -34,13 +34,13 @@ not prohibit parallel implementation after contracts are specified.
   mods/documentation or read-only decompilation and existing owned helpers first to find relevant
   game paths and edge cases efficiently. Do not implement blindly from zero, copy or translate
   upstream implementation code/XML/assets, or replace our specs/design with upstream behavior.
-  Required signatures/Def identities and observed contract facts are research inputs. Record
+  Required game/integration signatures, Def identities and observed behavior are research inputs. Record
   differences and return cross-chunk/shared-contract problems to the orchestrator with evidence.
 - Implementers follow focused vertical RED/GREEN, honest host tiers and independent review. They
   author executable native verification scenarios with fixture setup, actual player actions,
   observable results, capture points and cleanup. Real loaded-mod tests belong in the isolated game;
-  do not fake them in Unit/Defs or report authored scenarios as executed. Hand off real provider
-  contract checks, review dispositions, scenario registration and unresolved blockers.
+  do not fake them in Unit/Defs or report authored scenarios as executed. Hand off contract checks
+  for external integrations actually used, review dispositions, scenario registration and blockers.
 - After **all selected chunks of a part** are ready, the orchestrator independently reviews the
   integrated candidate, runs the part's isolated loader/native scenarios, and **personally observes**
   the action-to-result behavior on the reviewed build. It returns product/scenario failures to the
@@ -56,7 +56,7 @@ not prohibit parallel implementation after contracts are specified.
 
 1. For a replacement, inspect the exact original mod read-only. Record package/Workshop ID,
    version/hash, source locations, license/attribution, UI workflows, edge cases, options/defaults,
-   persistence, dependencies, public/reflected contracts, and actual consumers. Separate observed
+   observable persistence behavior and dependencies. Separate observed
    facts, inferred behavior, and unresolved questions. Never treat "implement Allow Tool" as a spec.
    **Research existing mod behavior yourself; do not ask the user to explain it or reconfirm each
    upstream feature/default.** Inspect documentation and source (or decompile read-only when needed)
@@ -78,23 +78,31 @@ not prohibit parallel implementation after contracts are specified.
    combined result, conditions/options, defaults, and precedence. Implement it with direct owned
    calls/policies. **Never retain patches against our own implementation as an internal mod stack.**
    Resolve ambiguous composition in the spec before coding; retain provenance for both sources.
-5. Preserve consumed external contracts where practical: type/assembly identity, signatures, Def
-   names, package checks, lifecycle, results/exceptions, settings and save keys. Inspect actual
-   consumers before claiming a drop-in replacement (including Cherry Picker). Use narrow facades
-   only for proven contracts; do not spoof another package's identity. Document unsatisfied bindings.
+5. Original-mod compatibility is outside the requested work: do not audit its API consumers, build
+   compatibility facades, preserve its assembly/type/package identity or saved schema, or pursue
+   drop-in/coexistence claims (including Cherry Picker). Research the source's observable behavior
+   independently and implement our specified result. This does not waive contracts for genuine
+   external integrations we actually use: those remain package/Def-resolved, absent-safe and
+   shape-guarded under the root rules. Game-target semantic admission and our own save persistence
+   remain required. Do not spoof an original provider's identity.
 6. Initial support is for **new colonies, single-player, without Combat Extended**. Retaining and
    loading saves created with megamod remains required; importing existing non-megamod colonies or
    original-mod state is outside initial scope. Multiplayer and CE support are deferred, not implied
    by upstream compatibility research or adapter sketches.
-   If an **original provider is loaded**, disable only our conflicting replacement feature(s) and
-   emit a bounded startup log warning identifying the provider, unavailable owned behavior and
-   fallback. Detect active canonical package identities before enabling conflicting C#, XML, Def,
-   UI or job behavior; merely having a mod installed on disk does not suppress a feature. Preserve
-   unrelated features and shared services needed by them. Never disable, uninstall, edit or unpatch
-   the original provider. This initial rule supersedes earlier draft cooperative/coexistence options;
-   compatible unrelated mods still pass the ordinary semantic admission checks.
-   Any later save/settings migration needs its own contract with backup, atomicity, restoration on
-   failure, and verified postconditions.
+   If an **original provider is loaded**, emit a bounded startup log warning identifying it and the
+   corresponding owned features, and make a **best-effort** attempt to suppress those features through
+   their ordinary feature settings/effective-disable path. Use the same behavior and application
+   timing as manually switching those features off; do not promise rollback of all C#, XML, Def,
+   UI or job effects or complete coexistence safety. Keep stored global/save preferences and
+   inheritance choices intact; automatic suppression is not a permanent settings rewrite. Merely
+   having an original mod installed but inactive does not trigger this policy. Preserve unrelated
+   features and shared services needed by them. Never disable, uninstall, edit or unpatch the
+   original provider. The warning must describe best-effort disablement, not claim compatibility.
+   The 2026-11-08 clarification supersedes earlier all-phase suppression and original-mod
+   compatibility requirements; do not build a full original-provider compatibility test matrix.
+   Compatible unrelated mods still pass ordinary game-target semantic admission checks.
+   Any later migration of our own save/settings schema needs its own contract with backup, atomicity,
+   restoration on failure, and verified postconditions.
 
 The 2026-11-07 decision records ([round one](docs/refinement/2026-11-07-decisions-round-1.md),
 [round two](docs/refinement/2026-11-07-decisions-round-2.md)) record accepted refinements now reconciled
@@ -171,8 +179,8 @@ upstream bottom tab merely for parity. Split mixed-purpose windows into their co
    tab**. A window wrapper around settings or a boolean toggle does not qualify. Other functions
    should use the appropriate existing native contextual surface rather than inventing a tab.
 
-Record intentional navigation changes in the replacement ledger and preserve external callable
-contracts where possible. Verify the real entry-point/action/result path, settings scope separation,
+Record intentional navigation changes in the replacement ledger. Source API compatibility is not
+part of the UI audit. Verify the real entry-point/action/result path, settings scope separation,
 main-menu disabled state, save switching and loaded-game world view, plus developer mode on/off.
 Translate headings, scope labels, tooltips and disabled explanations in all required languages.
 
@@ -200,6 +208,11 @@ override; unchecking restores it, or seeds a first override from the current eff
 Specify application timing and verify reload/save switching, missing entries, and global changes
 with both inherited and overridden saves.
 
+Original-provider detection may make the corresponding feature effectively off through this same
+ordinary path, with its documented timing and limitations. It must not overwrite the player's
+stored global default, save override or Use global choice. Once the provider is inactive on a later
+startup, resolve those retained preferences normally, subject to ordinary target admission.
+
 Exceptions are allowed where this model is impossible or nonsensical, with the concrete reason,
 actual scope/persistence, and UI behavior documented in the feature spec and definition. Exceptions
 still use the common path and cannot enable save-scoped editing at the main menu. Implement this
@@ -222,7 +235,8 @@ claiming an optimization. No speculative cache framework before concrete consume
 ## Keep status, packages, and acceptance honest
 
 Maintain [replacement coverage](docs/replacements/README.md) for every source: implemented portions,
-interactions, preserved contracts, deviations/conflicts, omissions, and not-yet-implemented work.
+interactions, observable deviations/possible conflicts, omissions, and not-yet-implemented work.
+Record our own persistence and genuine external integrations without claiming original API parity.
 Keep candidate/analyzed/specified/implemented-unverified/verified/deferred/omitted distinct. Update
 the ledger and feature docs in the same slice; do not call the entire mod replaced for one feature.
 
