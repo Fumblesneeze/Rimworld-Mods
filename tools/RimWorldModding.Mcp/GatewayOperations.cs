@@ -37,6 +37,24 @@ public static class GatewayClientPlanner
         return Plan(repositoryRoot, manifestPath, processId, "gateway_mutation", [command, name, "--arguments", argumentsJson]);
     }
 
+    public static AdapterCommand DebugActions(string repositoryRoot, string manifestPath, int processId,
+        string? search, string[] categories, string[] modes, string[] allowedGameStates, string? after, int limit)
+    {
+        var arguments = new List<string> { "debug-actions", "query", "--limit", limit.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "--categories-json", JsonSerializer.Serialize(categories), "--modes-json", JsonSerializer.Serialize(modes),
+            "--allowed-game-states-json", JsonSerializer.Serialize(allowedGameStates) };
+        if (search is not null) { arguments.Add("--search"); arguments.Add(search); }
+        if (after is not null) { arguments.Add("--after"); arguments.Add(after); }
+        return Plan(repositoryRoot, manifestPath, processId, "gateway_debug_actions", arguments);
+    }
+
+    public static AdapterCommand DebugActionInvoke(string repositoryRoot, string manifestPath, int processId, string handle)
+    {
+        if (string.IsNullOrWhiteSpace(handle) || handle is "." or ".." || handle.Any(character => char.IsControl(character) || character is '/' or '\\'))
+            throw new ArgumentException("handle must be one exact nonblank native path segment, without slashes, dot segments or control characters.");
+        return Plan(repositoryRoot, manifestPath, processId, "gateway_debug_action_invoke", ["debug-actions", "invoke", handle]);
+    }
+
     private static AdapterCommand Plan(
         string repositoryRoot,
         string manifestPath,

@@ -169,6 +169,25 @@ public static class McpTools
         OperationJson.Serialize(await registry.InvokeAsync(
             "gateway_mutation", JsonSerializer.SerializeToElement(new { runId, kind, name, argumentsJson }), cancellationToken));
 
+    [McpServerTool(Name = "gateway_debug_actions"), Description("Query native debug-action leaves in one exact ready run; preserves native handles and cursor. Does not invoke actions.")]
+    public static async Task<string> GatewayDebugActions(OperationRegistry registry,
+        [Description("Exact ready game run ID.")] string runId, CancellationToken cancellationToken,
+        [Description("Native search text, at most 256 characters.")] string? search = null,
+        [Description("Exact native categories; at most 64 distinct values.")] string[]? categories = null,
+        [Description("Immediate, MapPointer, PawnPointer, WorldPointer, or Unsupported.")] string[]? modes = null,
+        [Description("Exact allowed-game-state labels; at most 64 distinct values.")] string[]? allowedGameStates = null,
+        [Description("Opaque continuation handle from the previous page.")] string? after = null,
+        [Description("Native page size from 1 through 1000.")] int limit = 100) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_debug_actions",
+            JsonSerializer.SerializeToElement(new { runId, search, categories, modes, allowedGameStates, after, limit }), cancellationToken));
+
+    [McpServerTool(Name = "gateway_debug_action_invoke"), Description("Invoke one exact native debug-action handle or activate its native pointer tool. Dispatch is distinct from observing the resulting gameplay.")]
+    public static async Task<string> GatewayDebugActionInvoke(OperationRegistry registry,
+        [Description("Exact ready game run ID.")] string runId,
+        [Description("Exact handle returned by gateway_debug_actions.")] string handle, CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_debug_action_invoke",
+            JsonSerializer.SerializeToElement(new { runId, handle }), cancellationToken));
+
     [McpServerTool(Name = "gateway_scene_time"), Description("Set current-map local time or restore a captured calendar offset without advancing simulation ticks. Disposable scene setup only.")]
     public static async Task<string> GatewaySceneTime(
         OperationRegistry registry,

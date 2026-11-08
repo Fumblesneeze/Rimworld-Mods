@@ -119,3 +119,9 @@
   CLI call with unknown operation; GREEN `artifacts/TestResults/20260916T144719692Z-1084-72106b149b604696b91e3aea7e2754cb`
   passed 9/9 focused cases.
 - [x] 15.2 Independent root review found no actionable issue in the scoped renderer operation, hash/path containment, failure propagation or shared release hook. Strict OpenSpec passed14/14; focused CLI/release regression passed40/40 at `artifacts/TestResults/20260916T145018465Z-15100-1ed8936424da4c6694dcf080ea4e0da5`. Actual Immersive Chefs six-card invocation succeeded and root inspected the contact sheet and four changed cards.
+
+## 16. Typed native debug actions — `tools/RimWorldModding.Mcp`
+
+- [ ] 16.1 Prove exact filtered/cursor query and native-handle invocation through focused companion transport and planner/registry RED/GREEN, including JSON/table output, validation and native refusal.
+- [ ] 16.2 Independently review the projection, resolve findings and validate OpenSpec.
+- [ ] 16.3 On the reviewed build, use the exact ready-run projection for a native player action, personally inspect the result and retain exact process/request/build/cleanup evidence.

@@ -12,6 +12,10 @@ public sealed class GatewayCliApp
 {
     private const int MaximumDiagnosticLength = 4096;
     private const int MaximumScreenshotCropDimensionPixels = 16384;
+    private static readonly HashSet<string> DebugQueryValueOptions = new(StringComparer.Ordinal)
+    {
+        "--search", "--after", "--limit", "--categories-json", "--modes-json", "--allowed-game-states-json"
+    };
 
     private readonly IGatewaySessionProvider sessions;
     private readonly IGatewayHttpTransport transport;
@@ -66,7 +70,7 @@ public sealed class GatewayCliApp
 
     private int RunCore(string[] args, TextWriter output)
     {
-        if (args.Length == 0 || args.Any(argument => argument is "-h" or "--help"))
+        if (args.Length == 0 || HasHelpArgument(args))
         {
             WriteHelp(output);
             return 0;
@@ -97,6 +101,9 @@ public sealed class GatewayCliApp
                 return 0;
             case "logs":
                 RunLogs(globals, tail, output);
+                return 0;
+            case "debug-actions":
+                RunDebugActions(globals, tail, output);
                 return 0;
             case "screenshot":
                 RunScreenshot(globals, tail, output);
@@ -158,6 +165,87 @@ public sealed class GatewayCliApp
             Send(LoadSession(globals), "GET", $"/logs?after={after.ToString(CultureInfo.InvariantCulture)}&limit={limit.ToString(CultureInfo.InvariantCulture)}", null),
             globals.Output,
             output);
+    }
+
+    private static bool HasHelpArgument(IReadOnlyList<string> arguments)
+    {
+        var handleIndex = DebugActionHandleIndex(arguments);
+        for (var index = 0; index < arguments.Count; index++)
+        {
+            if (index == handleIndex) continue;
+            if (DebugQueryValueOptions.Contains(arguments[index])) { index++; continue; }
+            if (arguments[index] is "-h" or "--help") return true;
+        }
+        return false;
+    }
+
+    private static int DebugActionHandleIndex(IReadOnlyList<string> arguments)
+    {
+        var commandPart = 0;
+        for (var index = 0; index < arguments.Count; index++)
+        {
+            if (commandPart == 2) return index;
+            if (arguments[index] is "-o" or "--output" or "--manifest" or "--pid") { index++; continue; }
+            if (arguments[index] != (commandPart == 0 ? "debug-actions" : "invoke")) return -1;
+            commandPart++;
+        }
+        return -1;
+    }
+
+    internal static bool UsesUtf8Console(IReadOnlyList<string> arguments)
+    {
+        for (var index = 0; index < arguments.Count; index++)
+        {
+            if (arguments[index] is "-o" or "--output" or "--manifest" or "--pid") { index++; continue; }
+            return arguments[index] == "debug-actions";
+        }
+        return false;
+    }
+
+    private void RunDebugActions(GlobalOptions globals, string[] tail, TextWriter output)
+    {
+        if (tail.Length > 0 && tail[0] == "invoke")
+        {
+            if (tail.Length != 2) throw new GatewayCliUsageException("debug-actions invoke requires one exact HANDLE.");
+            var handle = tail[1];
+            if (string.IsNullOrWhiteSpace(handle) || handle is "." or ".." || handle.Any(character => char.IsControl(character) || character is '/' or '\\'))
+                throw new GatewayCliUsageException("Debug-action handle must be one exact nonblank native path segment, without slashes, dot segments or control characters.");
+            WriteJsonResponse(Send(LoadSession(globals), "POST", "/dev-tools/actions/" + Uri.EscapeDataString(handle) + "/invoke", "{}"), globals.Output, output);
+            return;
+        }
+        if (tail.Length == 0 || tail[0] != "query")
+            throw new GatewayCliUsageException("debug-actions requires query or invoke HANDLE.");
+        var options = CommandOptions.Parse("debug-actions query", tail.Skip(1).ToArray(), Array.Empty<string>(),
+            new[] { "search", "categories-json", "modes-json", "allowed-game-states-json", "after", "limit" }, 0, 0);
+        var search = options.Value("search");
+        if (search?.Length > 256) throw new GatewayCliUsageException("--search is limited to 256 characters.");
+        var body = GatewayClientJson.Serialize(new Dictionary<string, object?>
+        {
+            ["search"] = search,
+            ["categories"] = DebugActionStrings(options.Value("categories-json"), "--categories-json", true),
+            ["modes"] = DebugActionStrings(options.Value("modes-json"), "--modes-json", false),
+            ["allowedGameStates"] = DebugActionStrings(options.Value("allowed-game-states-json"), "--allowed-game-states-json", true),
+            ["after"] = options.Value("after"),
+            ["limit"] = options.Int("limit", 100, 1, 1000)
+        });
+        WriteJsonResponse(Send(LoadSession(globals), "POST", "/dev-tools/actions/query", body), globals.Output, output);
+    }
+
+    private static string[] DebugActionStrings(string? json, string name, bool bounded)
+    {
+        if (json is null) return Array.Empty<string>();
+        object value;
+        try { value = GatewayClientJson.ParseValue(json); }
+        catch (GatewayClientException) { throw new GatewayCliUsageException(name + " must be a JSON array of strings."); }
+        if (value is not object[] entries || entries.Any(entry => entry is not string))
+            throw new GatewayCliUsageException(name + " must be a JSON array of strings.");
+        var strings = entries.Cast<string>().ToArray();
+        if (bounded && strings.Distinct(StringComparer.Ordinal).Count() > 64)
+            throw new GatewayCliUsageException(name + " permits at most 64 distinct values.");
+        if (!bounded && strings.Any(mode => !new[] { "Immediate", "MapPointer", "PawnPointer", "WorldPointer", "Unsupported" }
+                .Contains(mode, StringComparer.OrdinalIgnoreCase)))
+            throw new GatewayCliUsageException(name + " contains an unknown native invocation mode.");
+        return strings;
     }
 
     private void RunScreenshot(GlobalOptions globals, string[] tail, TextWriter output)
@@ -587,6 +675,10 @@ public sealed class GatewayCliApp
         output.WriteLine("  discover                         Validate and show the live session (token is redacted)");
         output.WriteLine("  status | ui-state                Read game or UI state");
         output.WriteLine("  logs [--after N] [--limit N]     Read structured logs");
+        output.WriteLine("  debug-actions query [--search TEXT] [--after CURSOR] [--limit 1..1000]");
+        output.WriteLine("      [--categories-json ARRAY] [--modes-json ARRAY] [--allowed-game-states-json ARRAY]");
+        output.WriteLine("      Arrays contain exact native strings; search is limited to 256 characters.");
+        output.WriteLine("  debug-actions invoke HANDLE     Invoke exact native action or activate its pointer tool");
         output.WriteLine("  screenshot --file PATH [--things HANDLE[,HANDLE...] --padding PIXELS]");
         output.WriteLine("                         [--width PX --height PX --offset-x PX --offset-y PX]");
         output.WriteLine("  may-maximize-window-click --x N --y N [--button B]");
@@ -650,10 +742,20 @@ public sealed class GatewayCliApp
             string? output = null;
             string? manifest = null;
             string? pidText = null;
+            var handleIndex = DebugActionHandleIndex(arguments);
             for (var index = 0; index < arguments.Count; index++)
             {
                 var token = arguments[index];
-                if (token is "-o" or "--output")
+                if (index == handleIndex)
+                {
+                    remaining.Add(token);
+                }
+                else if (DebugQueryValueOptions.Contains(token))
+                {
+                    remaining.Add(token);
+                    if (index + 1 < arguments.Count) remaining.Add(arguments[++index]);
+                }
+                else if (token is "-o" or "--output")
                 {
                     output = TakeUniqueValue(arguments, ref index, token, output);
                 }

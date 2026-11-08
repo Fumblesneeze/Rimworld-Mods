@@ -86,6 +86,28 @@ recoverable because it temporarily removes the local package while testing the s
 
 `AGENTS.md` will require agents to search the MCP operation catalog before adding RimWorld automation. A workflow becomes a candidate when it is repeated, copied across mods, requires structured parsing, owns a long-lived process, crosses a safety boundary, or produces acceptance/release evidence. The owning OpenSpec change must add observable tool scenarios and TDD before another public script is accepted. One-off diagnostic exploration may still use raw C# or shell, but reusable behavior graduates to the MCP/CLI.
 
+### Native debug-action projection
+
+`gateway_debug_actions(runId, search?, categories?, modes?, allowedGameStates?, after?, limit=100)`
+and `gateway_debug_action_invoke(runId, handle)` reuse the leased-run checks and companion client.
+The companion exposes `debug-actions query` with search/after/limit and exact JSON-array filter options,
+and `debug-actions invoke HANDLE`. It forwards the existing POST query/invoke routes, validates
+the already-defined native search/page/filter limits, escapes the exact handle as one path segment,
+and preserves native pointer-tool semantics. This adds no game route, direct loader invocation or
+automatic retry. Host tests use the actual companion against a synthetic loopback process manifest;
+native acceptance is separate and remains open until root's reviewed workflow observes the result.
+These two operations opt into complete-output checking at the existing65,536-character adapter
+boundary: an oversize response fails explicitly, never returns successful truncated JSON, and
+does not retry the invocation. Existing callers retain their original two-argument ExecuteAsync
+contract; a separate overload carries the opt-in without breaking existing method-group bindings.
+The companion treats the invoke handle as positional data before global option/help parsing.
+Only this typed projection translates the companion's usage exit2 into ArgumentException for the
+typed CLI's usage path; exit1 native refusals keep their runtime classification. Debug-action commands
+declare UTF-8 console output, paired with an explicit UTF-8 decoder on these two typed operations.
+Existing process/adapter overloads keep their default encoding and existing companion commands keep
+their previous console behavior. Tests traverse the typed CLI, leased synthetic test-host identity,
+actual companion child and UTF-8 loopback response; they assert multilingual labels and error text.
+
 ## Risks / Trade-offs
 
 - **[MCP server context grows with too many tools]** → Keep tools high-level and typed, group narrow variants behind bounded arguments, and expose concise descriptions.

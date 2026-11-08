@@ -104,6 +104,30 @@ The MCP/CLI SHALL expose authenticated health/status and typed diagnostic Gatewa
 - **WHEN** a caller explicitly selects the raw mutation operation and submits bounded C#
 - **THEN** the result labels the action as mutation, journals it to the exact run, and does not promote its post-state to gameplay acceptance evidence
 
+### Requirement: Typed native debug-action discovery and invocation
+The tooling SHALL expose read-only `gateway_debug_actions` and mutating `gateway_debug_action_invoke`
+against one exact ready leased game. Query SHALL preserve search, category, mode, allowed-game-state
+filters, opaque continuation cursor and page limit; native handles and request IDs SHALL remain intact.
+Invocation SHALL use one exact returned handle and the existing native registry, without searching by
+label, retrying a mutation, or calling game internals directly. Pointer activation SHALL remain
+distinguishable from an immediate completed command and from any later game result.
+
+#### Scenario: Query a filtered native action page
+- **WHEN** a caller supplies filters, a continuation cursor and a limit from1 through1000
+- **THEN** the companion and typed MCP/CLI send one authenticated native query, retain the page/handles unchanged, and support JSON or table output without credentials
+- **AND** multilingual native labels remain intact through HTTP, redirected companion output and the typed result, including non-Latin characters and supplementary Unicode symbols
+- **AND** search above256 characters, more than64 distinct categories/states, malformed arrays and unknown invocation modes are rejected before transport
+- **AND** exact option values, including text such as `--help` or `--pid`, remain filter data rather than changing client dispatch or session selection
+- **AND** invalid query arguments remain usage failures through the typed CLI (exit2), while native refusals remain runtime failures (exit1)
+- **AND** a response exceeding the existing adapter's65,536-character output bound fails explicitly rather than returning a successful truncated page; the caller may reduce the query page limit
+
+#### Scenario: Invoke an exact action or retain its refusal
+- **WHEN** a caller invokes an exact discovered handle in the selected ready run
+- **THEN** the existing registry revalidates it and the response preserves the request identity, immediate result or pointer activation; a stale/unavailable handle remains a runtime failure, with no second invocation
+- **AND** malformed handles or arguments return usage failure without transport, and a missing/stale run never selects another game
+- **AND** a handle that resembles a CLI flag remains exact positional data; it cannot select help output or alter the session options
+- **AND** an oversized invocation response reports the incomplete response without repeating the native invocation
+
 ### Requirement: Normal mod-list management is transactional
 The MCP/CLI SHALL inspect, enable, disable, and restore entries in the user's normal RimWorld `ModsConfig.xml` only through explicit operations. Before a write it MUST refuse when an unowned RimWorld process is active, resolve the exact file, record its hash, create an exact timestamped backup, parse XML, preserve unrelated order and values, write atomically, reparse, and report the after hash. On failure it MUST restore the backup. A package SHALL appear at most once and an anchor package MUST be resolved exactly.
 

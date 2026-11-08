@@ -55,7 +55,7 @@ public sealed class RunLeaseAndGatewayPlannerTests
         }
     }
 
-    private static string TestRoot()
+    internal static string TestRoot()
     {
         var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"gateway-{Guid.NewGuid():N}");
         Directory.CreateDirectory(Path.Combine(root, "mods"));

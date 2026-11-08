@@ -249,8 +249,8 @@ required player workflow. The 1.6 capture/retry path is unchanged.
 | `POST /defs/export` | direct HTTP | Bounded deterministic JSON snapshots from finalized live Def databases |
 | `GET /integration-tests` | direct HTTP | Startup-gated in-game integration-test state and immutable results |
 | `GET /end-to-end-tests` | direct HTTP | Startup-gated multi-frame E2E discovery, current step, durable terminal results, and screenshot artifacts |
-| `POST /dev-tools/actions/query` | direct HTTP | Discover bounded native debug-action leaves |
-| `POST /dev-tools/actions/{handle}/invoke` | direct HTTP | Invoke an immediate action or activate its native pointer tool |
+| `POST /dev-tools/actions/query` | `debug-actions query` | Discover bounded native debug-action leaves; typed MCP `gateway_debug_actions` |
+| `POST /dev-tools/actions/{handle}/invoke` | `debug-actions invoke HANDLE` | Invoke an immediate action or activate its native pointer tool; typed MCP `gateway_debug_action_invoke` |
 | `POST /dev-tools/spawn` | direct HTTP | Idempotent direct alias for the preflighted `quickstart.spawn` engine |
 | `POST /gizmos/query` | direct HTTP | Discover selected/owned gizmos and architect designators |
 | `POST /gizmos/{handle}/invoke` | direct HTTP | Invoke immediate/toggle or begin one typed interaction |
@@ -260,6 +260,30 @@ required player workflow. The 1.6 capture/retry path is unchanged.
 | `POST /server/shutdown` | `shutdown` | Flush the accepted response, then perform controlled listener and credential cleanup |
 
 Routed JSON API envelopes use version 1 and report the request ID, `ok`, duration, and either `result` or a stable error. Every response also carries `X-Request-Id`, including authentication and transport-limit errors. A caller-provided ID must be 1–64 letters, digits, `-`, `_`, `.`, or `:`; otherwise the server generates one.
+
+Native debug discovery is available without managing credentials:
+
+```powershell
+dotnet artifacts/HostTools/Release/net8.0/RimWorldModding.Mcp.dll tool call gateway_debug_actions --arguments '{"runId":"EXACT_READY_RUN","search":"Hot reload","categories":["General"],"modes":["Immediate"],"allowedGameStates":["Playing"],"limit":100}' -o json
+dotnet artifacts/HostTools/Release/net8.0/RimWorldModding.Mcp.dll tool call gateway_debug_action_invoke --arguments '{"runId":"EXACT_READY_RUN","handle":"EXACT_RETURNED_HANDLE"}' -o json
+```
+
+Use the returned `NextCursor` as `after` for the next page. Query supports native search up to256
+characters, page sizes1–1000 and at most64 distinct category/state filters. The companion equivalent
+is `debug-actions query --search "Hot reload" --categories-json '["General"]' --modes-json '["Immediate"]'
+--allowed-game-states-json '["Playing"]' --limit 100`, followed by `debug-actions invoke HANDLE`,
+with the usual exact manifest/PID and `-o json|table`. JSON arrays preserve commas, Unicode and
+whitespace in native labels; filter values and the exact positional handle remain data even when
+they resemble CLI flags. Request help with `debug-actions --help`; `debug-actions invoke --help`
+attempts that exact handle. The debug-actions companion emits UTF-8 stdout/stderr, and its typed
+adapter explicitly decodes UTF-8 so multilingual labels and errors survive redirection.
+Usage failures remain exit2 through the typed CLI, and native/transport refusals remain exit1.
+A native pointer result only activates that tool; a successful
+immediate invocation may queue work. Observe its subsequent native game result separately. The
+client does not retry, select a label match or treat command dispatch as gameplay acceptance.
+The typed adapter retains the existing65,536-character output bound and explicitly fails larger
+debug-action responses instead of returning truncated JSON. Reduce the page size for a query;
+do not retry a native invocation merely because its response was too large.
 
 The version-one status result remains intentionally narrow: `developerOnly`, `longEventActive`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. `longEventActive` is RimWorld's native `LongEventHandler.AnyEventNowOrWaiting` signal; a non-null map can therefore be distinguished from a settled playable lifecycle. A non-null map has `Handle`, `Biome`, `Width`, and `Height`. The UI-state result contains `programState`, `rootType`, nullable effective `paused`, nullable native `speed`, nullable rendered `clientArea`, up to 256 selection entries (`Handle`, `Label`), and up to 128 window entries (`Handle`, `Type`, `Modal`). `clientArea` reports positive `Width`/`Height` and `CoordinateOrigin: TopLeft`; this is the exact client-pixel coordinate space accepted by `/input/may-maximize-window/click` and `/input/may-maximize-window/drag`, independent of desktop screenshot scaling. Richer developer controls live in the dedicated `/game-state`, `/camera`, `/things`, and `/selection` contracts. Versions come from the session manifest, and action schemas and availability come from their discovery routes.
 

@@ -6,12 +6,21 @@ public sealed record ProcessResult(int ExitCode, string StandardOutput, string S
 
 public static class ProcessRunner
 {
-    public static async Task<ProcessResult> RunAsync(
+    public static Task<ProcessResult> RunAsync(
         string fileName,
         IEnumerable<string> arguments,
         string workingDirectory,
         TimeSpan timeout,
         CancellationToken cancellationToken)
+        => RunAsync(fileName, arguments, workingDirectory, timeout, cancellationToken, streamEncoding: null);
+
+    public static async Task<ProcessResult> RunAsync(
+        string fileName,
+        IEnumerable<string> arguments,
+        string workingDirectory,
+        TimeSpan timeout,
+        CancellationToken cancellationToken,
+        System.Text.Encoding? streamEncoding)
     {
         var start = DateTimeOffset.UtcNow;
         var info = new ProcessStartInfo
@@ -22,7 +31,9 @@ public static class ProcessRunner
             CreateNoWindow = true,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
-            RedirectStandardError = true
+            RedirectStandardError = true,
+            StandardOutputEncoding = streamEncoding,
+            StandardErrorEncoding = streamEncoding
         };
         foreach (var argument in arguments)
         {

@@ -16,4 +16,9 @@
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" PrivateAssets="all" />
   </ItemGroup>
+
+  <Target Name="BuildGatewayCompanionFixture" BeforeTargets="Build">
+    <MSBuild Projects="../../tools/RimWorldDevGateway.Client/RimWorldDevGateway.Client.csproj"
+             Targets="Restore;Build" Properties="Configuration=$(Configuration)" />
+  </Target>
 </Project>

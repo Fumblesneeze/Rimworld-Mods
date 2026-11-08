@@ -220,6 +220,14 @@ public sealed class OperationRegistry
                 "Mutation remains attributable to the exact run/request; direct mutation is diagnostic/setup evidence, not gameplay acceptance.",
                 static async (registry, arguments, cancellationToken) => await registry.InvokeGatewayMutation(arguments, cancellationToken)),
             Register(
+                "gateway_debug_actions", "Query native debug-action leaves with exact filters and continuation cursor in one ready leased process.",
+                OperationRisk.Read, false, 180, "Returns native handles and request identity without credentials; does not invoke an action.",
+                static async (registry, arguments, token) => await registry.InvokeGatewayDebugAction(arguments, false, token)),
+            Register(
+                "gateway_debug_action_invoke", "Invoke one exact native debug-action handle or activate its pointer tool in one ready leased process.",
+                OperationRisk.DestructiveLocal, false, 180, "Preserves native refusal or pointer activation; command dispatch alone does not prove its game result.",
+                static async (registry, arguments, token) => await registry.InvokeGatewayDebugAction(arguments, true, token)),
+            Register(
                 "gateway_scene_time",
                 "Set current-map local time or restore a captured calendar offset without advancing simulation ticks.",
                 OperationRisk.DestructiveLocal,
@@ -540,6 +548,42 @@ public sealed class OperationRegistry
                 RequiredString(arguments, "name"),
                 OptionalString(arguments, "argumentsJson") ?? "{}"),
             cancellationToken);
+    }
+
+    private async Task<object> InvokeGatewayDebugAction(JsonElement arguments, bool invoke, CancellationToken cancellationToken)
+    {
+        var status = new RunLeaseManager(_repositoryRoot).Status(RequiredString(arguments, "runId"));
+        if (status.State != "ready" || status.GameProcessId is null || status.GatewayManifestPath is null)
+            throw new ArgumentException("The selected run has no exact ready Gateway process and manifest.");
+        var plan = invoke
+            ? GatewayClientPlanner.DebugActionInvoke(_repositoryRoot, status.GatewayManifestPath, status.GameProcessId.Value,
+                ExactDebugString(arguments, "handle") ?? throw new ArgumentException("handle is required."))
+            : GatewayClientPlanner.DebugActions(_repositoryRoot, status.GatewayManifestPath, status.GameProcessId.Value,
+                ExactDebugString(arguments, "search"), ExactDebugArray(arguments, "categories"), ExactDebugArray(arguments, "modes"),
+                ExactDebugArray(arguments, "allowedGameStates"), ExactDebugString(arguments, "after"), OptionalInt32(arguments, "limit", 100));
+        try
+        {
+            return await RepositoryOperations.ExecuteAsync(plan, cancellationToken, requireCompleteOutput: true,
+                streamEncoding: System.Text.Encoding.UTF8);
+        }
+        catch (AdapterOperationException exception) when (exception.Result.ExitCode == 2)
+        {
+            throw new ArgumentException(exception.Message, exception);
+        }
+    }
+
+    private static string? ExactDebugString(JsonElement arguments, string name)
+    {
+        if (!arguments.TryGetProperty(name, out var value) || value.ValueKind == JsonValueKind.Null) return null;
+        return value.ValueKind == JsonValueKind.String ? value.GetString() : throw new ArgumentException(name + " must be a string.");
+    }
+
+    private static string[] ExactDebugArray(JsonElement arguments, string name)
+    {
+        if (!arguments.TryGetProperty(name, out var value) || value.ValueKind == JsonValueKind.Null) return [];
+        if (value.ValueKind != JsonValueKind.Array) throw new ArgumentException(name + " must be a string array.");
+        return value.EnumerateArray().Select(item => item.ValueKind == JsonValueKind.String
+            ? item.GetString()! : throw new ArgumentException(name + " must contain strings only.")).ToArray();
     }
 
     private static void RefuseRunningRimWorld()
