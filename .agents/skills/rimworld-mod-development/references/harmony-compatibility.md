@@ -36,7 +36,12 @@ access, `PawnAllowed`, `Working`, power, network, guest/prisoner/animal, or equi
 when selecting a target and immediately before committing the operation. Thread the actual pawn and
 context through the adapter; never bypass native restrictions because a fixture exists.
 
-Log one bounded compatibility warning, not one per tick/job. Expose adapter availability in diagnostics and write tests for absent, present-supported, and present-incompatible cases.
+Log one bounded compatibility warning, not one per tick/job. Preserve the actual failed prerequisite
+and affected content/target through the protected bounded sink; an exception type alone discards the
+actionable reason. The composition owner must report a failed revalidation when the unavailable
+callback will return before its own diagnostic. Use the existing attempted-generation gate to avoid
+repeating that warning every pump. Expose adapter availability in diagnostics and write tests for
+absent, present-supported, and present-incompatible cases.
 
 ## Patch hygiene
 
