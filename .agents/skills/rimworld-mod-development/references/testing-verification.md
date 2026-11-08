@@ -71,7 +71,15 @@ Prefer action → wait → observation steps that exercise the same native path 
 
 - Budget every group honestly. Its frame, game-tick, and wall-time caps must exceed the sum of all
   sequential per-step maxima plus bounded action/screenshot/assertion/save-load overhead. A combined
-  group must cover every admitted case, not one case's deadline multiplied by hope.
+  group must cover every admitted case, not one case's deadline multiplied by hope. Before handoff,
+  retain a count × actual provider deadline calculation for screenshots, native input/commands and
+  other sequential operations; prior fast runs do not justify a cap below those declared allowances.
+  Identify operations without their own bound and allocate an explicit shared scenario reserve,
+  rather than claiming an engine timing guarantee. Frame/tick/wall limits are independent stop
+  conditions: do not derive a frame ceiling from an assumed refresh rate. For a paused UI workflow
+  with no established frame-rate ceiling, explicitly defer the frame stop to the finite wall budget
+  while retaining the independent tick limit. Recalculate after adding captures or controls, and make
+  the launcher allowance cover the selected scenario plus startup and cleanup.
 - Keep later cases inert. Arrange or activate hunger, bills, jobs, and other autonomous triggers only
   when that iterator begins; zero work priorities do not disable ingest/think-tree behavior.
 - Assert physical units with `stackCount` across spawned, carried, inventory, holder, and embedded
