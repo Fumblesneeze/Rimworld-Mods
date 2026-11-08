@@ -50,3 +50,45 @@ Log one bounded compatibility warning, not one per tick/job. Expose adapter avai
   operation, use a Prefix plus Finalizer restoration path so exceptions cannot leak the suppression.
 - Prove root-sequence patch ownership with the exact direct operation/patch classes. Descendant-wide
   XML/Harmony test searches can become ambiguous when another optional sequence is nested later.
+
+## Semantic admission and composition failures
+
+Apply these checks when a patch depends on consumed IL or on other patches' effective behavior.
+An observation-only hook should still require only the callable and execution facts it consumes.
+
+- Prove the producer-to-consumer relationship, not merely the presence/order of matching instructions.
+  A policy store dominating a loop does not prove its value came from the preceding creation call:
+  a branch may enter the store with a different object on the stack. Account for branch/switch entry
+  into the consumed receiver/call/store sequence, including labeled no-ops, and for escaped locals.
+  Reject only the unproved relationship; harmless aliases and unrelated edits should remain eligible.
+  Exercise the alternate incoming path through a real owned-patch fixture before calling it guarded.
+  Pair a rejection with a compatible counterexample: a branch entering at the start of an intact
+  producer chain is not a bypass when it still executes that complete chain.
+- Distinguish the original body, actual incoming transpiler stream and final provider composition.
+  On providers with inner patches, being last among ordinary transpilers does not establish that a
+  required call/store survives. Check relevant final effects with the existing supported adapter;
+  do not replay foreign transpilers or invent a whole-method fingerprint to obtain this proof.
+- Treat metadata inspection as a possible failure and side-effect boundary. The inspected 1.7
+  Harmony provider's public `GetPatchInfo` path can construct foreign parameter attributes. For
+  side-effect-free admission, use the existing shape-guarded publication reader where applicable
+  (`mods/megamod/Source/Patching/Harmony/HarmonyPublication.cs`), not copied parsing or an assumed
+  inert reflection call. Inspect one coherent snapshot for a decision. Filter acquired-owner
+  registrations before projecting rollback receipts; unrelated factories need not be resolved or
+  rejected when their ordering/effects are not consumed. Actual provider composition may execute
+  factories; inspection must not execute them as probes.
+- Revoke old admission before evaluating a newly composed stream. A validator/metadata failure
+  inside a transpiler must preserve its incoming stream and cannot prevent another owner's patch
+  removal. Test the actual failing provider path, including a subsequent successful rebuild when
+  recovery is claimed. Public instruction inspection outside composition is not a publication receipt.
+  Cached admission must state which mutations invalidate it; observer removal does not execute the
+  removed observer. Do not claim that removal is detected unless an existing check actually proves it.
+- Verify fallback by invoking the target and checking its native effects, values and exceptions.
+  `Available == false` alone does not prove that already-emitted owned branches are inactive. Check
+  that an unavailable captured context really bypasses owned decisions. Keep unsupported rewrites
+  explicit instead of expanding into a speculative framework for arbitrary hostile modifications.
+- Acquired transient scopes need cleanup even when later compatibility inspection fails. Put the
+  acquired-token cleanup in an independent `finally`, preserve the original exception, and isolate
+  reporting failures. Rejected nested scopes must not borrow a parent's provenance or authority.
+
+Keep provider-specific details in the owned adapter and target document. These checks do not justify
+rejecting all foreign owners, requiring pristine game methods, or building a general IL interpreter.

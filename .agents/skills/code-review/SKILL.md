@@ -22,6 +22,11 @@ Review or refactor code with a bias toward concrete defects, simpler design, and
    - If Explorer tools are unavailable, do the review locally and state that no independent Explorer pass was run.
 4. For refactors with multiple agents, run agents sequentially. After each agent returns, the host agent must either fix, explicitly defer, or reject the flagged issues before spawning the next agent. This prevents later agents from converging on already-known issues.
 5. Verify with focused tests, type checks, linters, build commands, or smoke checks proportional to the risk. If verification cannot run, say exactly why.
+6. When reviews reveal a recurring root cause, update the relevant repository-local implementation
+   skill or routed reference with the demonstrated prevention technique before the next affected
+   handoff. Prefer correcting an existing rule to adding another checklist. Keep one-off defects in
+   their tests/target docs; do not turn a provider-specific limitation into a universal ban or expand
+   acceptance requirements. Tell active implementers which guidance changed.
 
 Windows search guardrail: in PowerShell, do not pass file globs such as `*.cs` or `*.md` as positional `rg` paths. Use `rg -g "*.cs" -g "*.md" "pattern" .` so Windows does not treat the globs as invalid literal paths.
 

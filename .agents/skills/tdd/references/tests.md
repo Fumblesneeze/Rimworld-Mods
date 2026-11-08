@@ -24,6 +24,20 @@ Characteristics:
 
 ## Bad Tests
 
+### Do not bypass the transformation that can lose the requirement
+
+For values carried through several stages, exercise the production path from their actual input to
+the observable consumer. A launch-mode test that injects an already-selected group can pass while
+the real plan-to-selected-group projection drops the mode. Start from the declared/planned input,
+use the real selection/projection, and assert the resulting launch arguments or admission outcome.
+Keep unrelated process/game work outside that focused test; test real transformations, not a copied
+implementation. Cover the distinct selection routes actually supported by the changed contract.
+
+For compatibility fallbacks, invoke the affected public behavior after denial. Checking an admission
+flag alone misses emitted code that still changes native results. Reproduce review findings against
+the actual prior implementation, then apply the minimum correction; compiler/setup failures are not
+behavior REDs. This complements vertical TDD rather than requiring an exhaustive matrix in advance.
+
 **Implementation-detail tests**: Coupled to internal structure.
 
 ```typescript

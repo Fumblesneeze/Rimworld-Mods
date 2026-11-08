@@ -174,4 +174,10 @@ For optional compatibility, cover at minimum:
 - repeated initialization: no duplicate Harmony patch or duplicated behavior;
 - missing XML target: safe inactive result when the integration actually contains a conditional XML patch target.
 
-For Harmony, prove the resolved target signature and that `Harmony.GetPatchInfo(target)` contains the owning Harmony ID for the expected patch exactly once. For XML, inspect the loaded Def database, not only packaged XML. These are supporting checks. In both cases drive the actual cooking scenario through its player-facing bill/job path and personally observe the resulting game behavior; add a scenario-owned quickstart fixture only to arrange preconditions when the stock fixture is insufficient. A semantic/raw-C# state probe may corroborate the observation but cannot replace it. Startup, static screenshots, and absence of log errors are necessary but not sufficient. Record the external mod package ID, version, assembly filename, MVID or SHA-256, and selected integration strategy.
+For Harmony, prove the resolved target signature and exactly one expected owned registration using
+the provider-appropriate inspection path. Do not assume `Harmony.GetPatchInfo` is side-effect-free;
+follow [harmony-compatibility.md](harmony-compatibility.md) for metadata-sensitive admission. For XML,
+inspect the loaded Def database, not only packaged XML. Both are supporting checks. Drive the actual
+player-facing bill/job/UI path and personally observe its result; fixture setup or a semantic state
+probe cannot replace that workflow. Startup, static screenshots and absence of log errors are not
+sufficient. Retain external package/version, assembly MVID or SHA-256, and the selected strategy.
