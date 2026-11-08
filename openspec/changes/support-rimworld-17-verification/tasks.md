@@ -19,6 +19,7 @@
 
 - [ ] 4.1 Follow-up: TDD and review explicit E2E prelaunch settings and version-correct product package inspection; verify their actual isolated product workflow and cleanup before accepting.
 - [ ] 4.2 Add focused RED/GREEN and independent review for single-test generated-map isolation; personally inspect large-map native workflows and cleanup on the reviewed build.
+- [x] 4.4 Refresh the inspected 1.7.5000 platform inventory with focused exact/version/lookalike rejection RED/GREEN, current package validation and independent review; retain provenance from the game runtime manifests. No new live-runtime acceptance is implied.
 - [x] 4.3 Add focused RED/GREEN and review for explicit user-playtest lifetime and leased prelaunch settings; personally verify minimized generation and paused handoff without an automatic shutdown deadline.
 
 Ignored `artifacts/Runtime17/tdd-and-review.json` retains the per-slice RED/GREEN and

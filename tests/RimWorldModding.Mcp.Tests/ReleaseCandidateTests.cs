@@ -5,6 +5,18 @@ namespace RimWorldModding.Mcp.Tests;
 [TestFixture]
 public sealed class ReleaseCandidateTests
 {
+    [TestCase("RimWorldWaylith.PrepatcherCompat")]
+    [TestCase("Waylith.Injection")]
+    public void ProductBoundary_BetaCompatibilityAssembliesRemainVersionScopedAndRejectLookalikes(string name)
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(ReleasePackageValidator.IsPlatformReference(name, "1.7"), Is.True);
+            Assert.That(ReleasePackageValidator.IsPlatformReference(name, "1.6"), Is.False);
+            Assert.That(ReleasePackageValidator.IsPlatformReference(name + ".UnreviewedMod", "1.7"), Is.False);
+        });
+    }
+
     [Test]
     public void ProductBoundary_BetaPlatformNamesAreExactAndVersionScoped()
     {

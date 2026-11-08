@@ -53,6 +53,11 @@ The tooling SHALL accept an optional artifacts-contained prelaunch mod-settings 
 - **WHEN** a fixture escapes artifacts or a beta product references an undeclared non-platform assembly
 - **THEN** validation fails before acceptance and neither normal settings nor the installed Workshop content is changed.
 
+#### Scenario: Reviewed beta platform inventory refresh
+- **WHEN** the inspected 1.7.5000 installation contains RimWorldWaylith.PrepatcherCompat and Waylith.Injection as declared game runtime dependencies and no longer contains native Ktx/gli files
+- **THEN** its exact reviewed inventory accepts those managed dependencies only in the 1.7 platform scope
+- **AND** similarly named unknown assemblies, Gateway dependencies and further unexplained inventory drift remain rejected.
+
 ### Requirement: Explicit generated-map fixture isolation
 The tooling SHALL support a typed opt-in generated-map E2E fixture for large native worlds. It SHALL admit that policy only for a single selected test in a fresh disposable process. Default tests SHALL retain the existing empty-map reset. The generated-map policy SHALL preserve baseline Things, roofs, zones and designations instead of globally destroying them, clean newly created disposable Things and transient UI/notifications, and restore captured control/camera state. The fixture SHALL register restoration of its own terrain/roof/fog edits. Baseline natural objects removed within a fixture are disposable process environment, not claimed to have been restored; no later test may reuse that map.
 

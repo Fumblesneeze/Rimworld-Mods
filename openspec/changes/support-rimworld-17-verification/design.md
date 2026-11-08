@@ -41,6 +41,17 @@ Exact Waylith capture and evaluator behavior will be established from compilatio
 
 ## First-product follow-up
 
+### 2026-11-07 inventory refresh
+
+Megamod preflight on installed 1.7.5000 rev1275 reproduces the strict inventory failure: additions
+RimWorldWaylith.PrepatcherCompat and Waylith.Injection; removals native Ktx/gli. RimWorld.deps.json
+declares both managed additions as runtime dependencies; RimWorld.runtimeconfig.json routes the
+native-supported prepatcher compatibility assembly names to the former. Both files were inspected
+as managed metadata, not loaded as mods. Refresh the exact inventory only; do not broaden prefixes,
+trust every installed DLL or weaken future drift rejection. Keep 1.6 inventory separate. This fixes
+package inspection, not runtime gameplay/Gateway acceptance for this newer build. Product profiles
+must independently pin their inspected build and hash.
+
 The requested large-map building session needs an explicit user-owned lifetime. Add optional
 `prelaunchConfigDirectory` and `userPlaytest` arguments to `game_run_start`, reusing existing
 fixture validation/copy and the existing lease/launcher. Default verification deadlines remain

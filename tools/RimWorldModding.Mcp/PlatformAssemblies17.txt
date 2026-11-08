@@ -35,7 +35,6 @@ coreclr
 Fmod5Sharp
 freetype
 glfw3
-gli
 hostfxr
 hostpolicy
 imgui
@@ -45,7 +44,6 @@ ISharpZipLib
 K4os.Compression.LZ4
 K4os.Compression.LZ4.Streams
 K4os.Hash.xxHash
-Ktx
 Microsoft.Bcl.Memory
 Microsoft.CSharp
 Microsoft.DiaSymReader.Native.amd64
@@ -78,6 +76,7 @@ OggVorbisEncoder
 png18
 PsdSharp
 RimWorld
+RimWorldWaylith.PrepatcherCompat
 slang
 slang-compiler
 slang-glsl-module
@@ -261,6 +260,7 @@ vma
 VulkanEx
 Waylith
 Waylith.AssetBake
+Waylith.Injection
 Waylith.UnityCompat
 Waylith.VideoDecode
 waylithaudio

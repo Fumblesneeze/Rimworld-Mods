@@ -226,6 +226,12 @@ alone leaves native row order while admitted maintenance remains available.
 - **THEN** the affected maintenance group is inactive and startup reports the unavailable cleanup/preset recovery
 - **AND** if only presentation is unsupported, maintenance remains available with native row ordering and a display warning.
 
+#### Scenario: Available drug has incomplete policy data
+- **WHEN** a currently available drug lacks data required by the game's drug policies
+- **THEN** owned policy maintenance is unavailable and leaves all policy choices unchanged, rather than treating that drug as removed and deleting its rows
+- **AND** a bounded explanation identifies the affected drug and unsupported content condition without claiming to repair that content
+- **AND** a drug already excluded by applied content choices does not prevent maintenance of the remaining supported drugs.
+
 #### Scenario: Original provider active
 - **WHEN** the original Drug Policy Fix is active alongside the megamod
 - **THEN** owned overlap is withheld and its reason is reported

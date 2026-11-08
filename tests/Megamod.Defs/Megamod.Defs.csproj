@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
+    <Reference Include="$(RimWorldPath)/Assembly-CSharp.dll;$(RimWorldPath)/UnityStubs.dll;$(RimWorldPath)/Waylith.dll;$(RimWorldPath)/Waylith.UnityCompat.dll;$(RimWorldPath)/Brutal.*.dll">
+      <Private>true</Private>
+    </Reference>
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/*.cs" Link="Product/Core/%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugPolicyStorage.cs" Link="Product/NativeDrugPolicyStorage.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugCatalog.cs" Link="Product/NativeDrugCatalog.cs" />
+  </ItemGroup>
+</Project>

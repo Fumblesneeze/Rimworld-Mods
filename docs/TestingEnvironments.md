@@ -22,6 +22,20 @@ That distinction determines which test environment to use.
 
 ## Available suites
 
+`Megamod.Unit` is an explicitly selected .NET 10 host-only suite for megamod's pure policies.
+It source-links only product `Core` folders and references neither game assemblies nor Harmony.
+Use `test_run` with `suite: "Megamod.Unit"` and an exact filter for the current behavior. It is
+excluded from the legacy `All` aggregate and does not prove runtime wiring or native gameplay.
+
+`Megamod.Defs` is the separate .NET 10 tier for native data adapters using constructed Defs.
+Its first consumer is S029 drug-policy storage. It source-links that adapter and its policy core,
+references the installed 1.7 game/platform data types, and never loads a mod or Harmony. Each
+nonparallel fixture exclusively registers its declared ThingDefs in an initially empty database
+and clears it in cleanup; assembly entry/exit guards reject leaked definitions, active mods or
+Harmony. These are constructed fixtures, not XML-loaded Core/Workshop content. Select this exact
+suite and focused filter through `test_run`; it remains outside All and proves neither loader
+integration nor the native drug-policy UI workflow.
+
 `RimWorldDevGateway.Waylith.Unit` is an explicit .NET 10 alternative for the 1.7
 Gateway evaluator and uploaded-source compiler. It uses real game type metadata,
 but no active mods, Harmony initialization or populated Def databases. Assembly-wide

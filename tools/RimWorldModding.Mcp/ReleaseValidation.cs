@@ -415,11 +415,11 @@ public static class ReleasePackageValidator
     }
 
     private static readonly HashSet<string> PlatformAssemblyReferences17 = ReadBetaInventory();
-    // Metadata inspection of the pinned 1.7.4984 installation: files, not managed AssemblyRefs.
+    // Metadata inspection of the pinned 1.7.5000 installation: files, not managed AssemblyRefs.
     private static readonly HashSet<string> NativePlatformFiles17 = new(StringComparer.Ordinal)
     {
-        "clretwrc", "clrgc", "clrgcexp", "clrjit", "coreclr", "freetype", "glfw3", "gli", "hostfxr",
-        "hostpolicy", "imgui", "imgui_freetype", "Ktx", "Microsoft.DiaSymReader.Native.amd64", "mscordaccore",
+        "clretwrc", "clrgc", "clrgcexp", "clrjit", "coreclr", "freetype", "glfw3", "hostfxr",
+        "hostpolicy", "imgui", "imgui_freetype", "Microsoft.DiaSymReader.Native.amd64", "mscordaccore",
         "mscordaccore_amd64_amd64_42.42.42.42424", "mscordbi", "mscorrc", "msquic", "png18", "slang",
         "slang-compiler", "slang-glsl-module", "slang-glslang", "stb", "steam_api64",
         "System.IO.Compression.Native", "vma", "VulkanEx", "waylithaudio", "zlib"

@@ -17,8 +17,19 @@
 
 ## Behavior inventory
 
-All listed owned behaviors are **specified, not implemented**. Source code is inspection evidence,
-not native acceptance. Scenarios belong to the
+All listed native behaviors remain **specified, not integrated or accepted**. A first pure
+reconciliation slice is implemented-unverified under `Source/Features/DrugPolicyMaintenance/Core`:
+it plans current-identity cleanup, first-duplicate retention, inapplicable-flag normalization,
+native new-row defaults, and counts, with an injected native ordering operation for additions.
+Nine focused reconciliation tests pass, plus eight atomic-write boundary cases for all-policy
+preparation, partial-write restoration and stale-generation refusal. A standalone native storage
+adapter now has six real-Defs host cases for entry identity/choices, normalization, missing rows,
+native order, nullable storage and partial-write restoration. The separate catalog adapter has eight
+real-Defs host cases for native classification, current identities, availability and incomplete-content
+refusal. Both adapters are independently reviewed. Native hook admission, lifecycle integration and
+applied content publication remain unfinished; these adapters install no hook or gameplay behavior. Local RED/GREEN
+records are in `artifacts/Megamod/P0-C/tdd-ledger.md`. Source inspection is not native acceptance.
+Scenarios belong to the
 [drug-policy capability](../../../../openspec/changes/specify-megamod-drug-policy-maintenance/specs/megamod-drug-policy-maintenance/spec.md).
 
 | ID | Input/action → proposed observable result | Defaults, edge cases and source difference | Scenario |
@@ -80,7 +91,7 @@ restore prior row membership and values. Saved deletions carry no hidden restora
 
 | Behavior | Implemented here | Deviation / possible conflict | Missing / omitted | Targets and evidence |
 | --- | --- | --- | --- | --- |
-| DP-01–04, DP-08 | Nothing | Early cleanup, duplicate/null/stale recovery and native 1.7 defaults replace source's late/name-based gaps | General broken-content/save repair; old deleted-choice recovery; physical item/health edits omitted | Candidate target families in design; executable checks/RED/GREEN/live evidence pending |
+| DP-01–04, DP-08 | Pure reconciliation, atomic-write boundary and standalone native storage/catalog adapters, implemented-unverified; no native hook integration | Early cleanup, duplicate/null/stale recovery and native 1.7 defaults replace source's late/name-based gaps | Finalized lifecycle authority, field/target admission, early preset/load hooks and publication remain open; general corrupted-save repair, old deleted-choice recovery and physical item/health edits omitted | [Storage/catalog tests and native scenario dependency](../../Source/Features/DrugPolicyMaintenance/NativeStorage-Verification.md); target guards and native evidence pending |
 | DP-05–06 | Nothing | Alphabetical presentation preserves job order; foreign dialog mods need shape admission | Source alphabetical job priority omitted | Identity/focus and two-drug native workflows pending |
 | DP-07, DP-09 | Nothing | Direct owned composition and source-overlap suppression; no source facade or private Cherry Picker coupling | Unproven external beta/multiplayer support deferred | Exact providers, effective semantic guards and startup diagnostics pending |
 

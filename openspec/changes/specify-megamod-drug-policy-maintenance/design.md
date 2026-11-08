@@ -1,7 +1,8 @@
 ## Context
 
 Sole owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), **1.7 beta**.
-S029 is documentation only. [Research](../../../mods/megamod/docs/refinement/2026-11-02-drug-policy-fix-research.md)
+S029 has host-tested policy and native data adapters; native lifecycle/UI integration remains incomplete.
+[Research](../../../mods/megamod/docs/refinement/2026-11-02-drug-policy-fix-research.md)
 pins the source, installed assembly, native beta and narrow Cherry Picker evidence. The source's
 late repair duplicates native backfill, misses some stale content and can fail before reaching its
 LoadedGame hook. Its underlying-list alphabetization also changes native job selection.
@@ -14,7 +15,7 @@ direct owned content/scheduling composition; minimal semantic admission and boun
 
 **Non-goals:** new drug mechanics, new policy UI, prescribing drug schedules, physical-stock filtering,
 health/withdrawal repair, general corrupted-save recovery, source API/package emulation, multiplayer
-acceptance, historical deleted-row restoration or a duplicate map index. No runtime code is written now.
+acceptance, historical deleted-row restoration or a duplicate map index.
 
 ## Decisions
 
@@ -178,6 +179,106 @@ Alphabetical display avoids language-dependent drug priority. Finalized provider
 actual addiction/joy/scheduled/refill outcomes still require final live balance/playability review.
 
 ## Risks / Trade-offs
+
+### P0-C implementation tranche — 2026-11-07
+
+The first pure policy slice lives in `Source/Features/DrugPolicyMaintenance/Core` and is
+source-linked into `Megamod.Unit` without Verse, Harmony, or a populated Def database.
+`DrugPolicyReconciler.Plan` consumes detached choices plus opaque reference-identity handles for
+the actual drug and row objects. An equal name/key is not proof that an old drug reference is the
+currently registered Def. Planning does not change the supplied rows; the engine adapter will
+apply a complete plan while preserving retained native row objects. Native whole-list ordering
+will be supplied by the engine adapter, including native tie behavior, instead of invented here.
+This tranche is neither a runtime adapter nor accepted gameplay. Existing task boxes stay open.
+
+Read-only decompilation of the installed 1.7.5000 rev1275 assembly on 2026-11-07
+(SHA-256 `D55AA8E47FA3C5463CA85B0ECCD51F195B4BBCD04F56DA3AF21C2F6688A81254`)
+confirms the earlier `DrugPolicy.InitializeIfNeeded` and `ExposeData` shapes. Additional lifecycle
+inspection found that `Game` constructs its drug database in a field initializer before
+`FillComponents`; `SavedGameLoaderNow.LoadGameFromSaveFileNow` constructs two Game instances.
+`Game.ExposeSmallComponents` loads the drug database before the component collection, and
+`Game.LoadGame` finishes small components before loading world/maps and calling
+`Scribe.loader.FinalizeLoading`. Therefore early preset recovery must use finalized content
+identity without assuming `Current.Game` is the policy's owner or using a previous save's applied
+policy. Save overrides can be available after the small-component LoadingVars pass, before
+post-load reconciliation. Exact admission and native action evidence remain required before
+choosing or accepting a publication hook. These hashes identify research, not runtime admission.
+
+The next host tranche introduces one explicit engine-storage boundary, `IDrugPolicyStorage`,
+with capture, apply and restore operations. `DrugPolicyStorageSnapshot` detaches row membership
+and immutable choice values, keeping opaque original list/entry handles only for identity and
+restoration. Batch orchestration prepares every plan before mutation, marks the current target
+attempted before applying it, and restores that target plus earlier targets in reverse on failure.
+Rollback failure is a distinct unsafe failure, never a successful inactive result. The C03 caller
+prebuilds its immutable candidate and publishes only its own reference after a successful batch;
+there is no arbitrary publication callback or second reconciliation implementation. Revalidate
+the exact catalog and game/save generation before mutation and before publication. All mutable
+native state belongs to the game thread; detached settings resolution follows C02's ownership.
+
+Native storage admission must establish private instance `DrugPolicy.entriesInt` as
+`List<DrugPolicyEntry>` and the exact writable public choice field shapes on `DrugPolicyEntry`.
+Capture via the field, not a getter that initializes or assumes non-null storage. Retained entries
+keep their object identity and numeric edit buffer; normalizing permissions must not call preset
+`CopyFrom` or edit a pawn's dose history. A null stored list with an empty valid catalog still needs
+an actual empty list after successful native initialization even when the pure plan's change
+counts are zero. Restore the original nullable list identity and original choice values on failure.
+These adapter obligations are not established merely by the host storage double.
+
+Current read-only `Verse.GenCollection.SortBy<T, TSortBy>` uses `List<T>.Sort` with the selected
+value's `CompareTo`. Its tie ordering is not promised stable. The native adapter must invoke the
+native whole-list ordering over the prepared sequence without adding a label, key, or stable-sort
+tie-break. Current `DrugPolicyEntry` and `GenCollection` decompilations are retained with the other
+1.7.5000 input evidence. Exact admitted fields and native workflows remain unimplemented here.
+
+### S029 native storage tranche — 2026-11-08
+
+`NativeDrugPolicyStorage` now supplies the real `DrugPolicy` storage boundary to the reviewed pure
+batch. It reads `entriesInt` directly, detaches drug handles and all seven choice values, and retains
+the original nullable list and entry handles for rollback. Apply builds replacement membership in
+the already planned order, reuses retained entries, creates only missing entries, and writes the
+planned values without touching the numeric edit buffer. Restore reinstates original membership,
+entry values and the exact original list reference, including null storage. It performs no sorting,
+catalog discovery, policy discovery, provider detection, logging, settings access or publication.
+The eventual admitted caller must supply the finalized eligible catalog and exactly one native
+ordering operation when additions require it; it must not sort again after this adapter writes.
+
+Six focused `Megamod.Defs` cases pass against constructed native objects and an initially empty,
+exclusively scoped ThingDef database. Four successive behavior changes have actual RED/GREEN
+evidence; null-storage and multi-policy failure regressions then passed without further production
+changes. These fixtures supply explicit catalog facts; they do not prove XML-loaded eligibility,
+provider finalization or a lifecycle hook. The standalone adapter has no registration or native
+callback. Field-shape admission, original-provider suppression, early init/preset/load ordering,
+content-policy publication and the native editor/use workflows remain open. See
+[the storage verification record](../../../mods/megamod/Source/Features/DrugPolicyMaintenance/NativeStorage-Verification.md)
+for exact tests, artifacts, and the next native scenario dependency. No gameplay task is closed.
+
+### S029 native catalog tranche — 2026-11-08
+
+`NativeDrugCatalog.Capture(Func<ThingDef, bool> isAvailable)` now captures the current registered
+ThingDef references in native database enumeration order. The availability delegate is mandatory
+and belongs to the caller's finalized content decision; this adapter has no settings, provider,
+save-generation, content-reload or cache authority. The caller must invoke it at a supported native
+boundary with stable finalized availability, then use the existing catalog/save-generation checks
+before applying any prepared policies. No installed-mod lookup or map/stock/research check occurs.
+
+Native inspection confirms `IsDrug` requires ingestible data with a non-None drug category,
+`IsPleasureDrug` requires a drug with joy greater than zero, and `IsAddictiveDrug` reads the first
+native drug comp's addictiveness greater than zero. Capture requires Item category and IsDrug before
+consulting availability. Explicitly unavailable candidates are skipped before comp/addiction/joy
+access. An available candidate with null comps or no `CompProperties_Drug` rejects the complete
+capture with its ThingDef name in the diagnostic. It must not be quietly omitted and then treated
+as removed by reconciliation. This is the concrete unsupported-content condition in the owning
+spec: no owned policy write, no complete-catalog result, and no claim of repairing the native or
+provider loader. Bounded reporting and disabling the affected maintenance attempt belong to the
+future admitted caller; the adapter does not log independently.
+
+Accepted candidates yield read-only entries with detached addictive/pleasure values and the actual
+native Def references. No name-based replacement or ordering occurs. Native initialization sorts
+by `GetCompProperties<CompProperties_Drug>().listOrder`; ordering remains the existing caller-owned
+operation and must execute only where the owning reconciliation contract requires it. The adapter
+does not invent finite/range restrictions or tie-breaks that native float comparison does not need.
+Eight focused real-Defs cases now pass; storage remains at its independently reviewed hash. This
+tranche does not admit the early native hooks or resolve the missing S038 save/reload boundary.
 
 - Earlier-than-LoadedGame failures → include early preset/init semantics in one admitted maintenance
   group; leave recovery unclaimed when unavailable, without swallowing unrelated failures.
