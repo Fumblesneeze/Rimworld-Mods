@@ -216,6 +216,18 @@ defaults, saved overrides nor inheritance flags are rewritten. A later startup w
 inactive resolves the retained preferences normally, subject to target admission. This is best-effort
 avoidance of duplicated behavior, not a guarantee that the original and megamod are compatible.
 
+The first C02 implementation uses an immutable startup-only projection over the explicitly mapped
+Boolean feature definitions. Common effective reads apply false after ordinary requested-value
+resolution; requested/global reads and persistence exports do not apply this projection. Preference
+editors show the requested value with an effective-off explanation, so editing a preference cannot
+silently undo the startup policy. Inheritance seeding continues to use the requested global value.
+Neither the projection nor its reason is serialized or counted as a stored preference change.
+Detached effective reads accept the same immutable projection; worker hooks consume immutable
+derived option records instead of the mutable store. S035/S094 are the first consumers. Provider
+identity mapping and bounded warning emission remain bootstrap responsibilities, outside the common
+settings core. A feature without an ordinary off switch needs that switch's behavior specified
+before mapping it; content allow/exclude values must not be confused with feature enablement.
+
 ## Risks / Trade-offs
 
 - Beta engine changes → pin build identity for evidence; semantic guards and new live verification

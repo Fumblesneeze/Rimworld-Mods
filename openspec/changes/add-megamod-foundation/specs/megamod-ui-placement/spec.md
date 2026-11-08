@@ -10,7 +10,8 @@ Every source analysis SHALL inventory bottom-tab additions and other entry point
 purpose, and injected/dynamic as well as XML-defined controls. Megamod's classification SHALL take
 precedence over upstream placement. Mixed-purpose windows SHALL be split/classified by function;
 wrapping settings, an override, or a toggle in a window does not justify a bottom tab. Record chosen
-placement, rationale, relocation, and affected consumer/navigation contracts in the source report.
+placement, rationale, relocation and player navigation changes in the source report. This audit SHALL
+NOT require preserving source APIs, checking their consumers or providing a compatibility facade.
 
 #### Scenario: A source mod adds a bottom tab
 - **WHEN** its behavior is analyzed for replacement
@@ -81,6 +82,30 @@ override in that save. Reload and save-switch behavior SHALL preserve those dist
 - **THEN** the common loader restores each save's own choices and overrides and resolves against the current global defaults
 - **AND** no feature-specific loader or UI silently applies a different inheritance policy
 
+### Requirement: Original-provider effective-off handling preserves stored choices
+Startup detection of an active original provider SHALL make a best-effort attempt to disable the
+corresponding owned features with the same behavior and timing as their ordinary manual off choice.
+This effective-off handling MUST NOT rewrite stored global defaults, per-save overrides or Use global
+choices. Its startup warning SHALL identify the affected features without promising full coexistence
+compatibility or rollback beyond the ordinary off behavior. This rule does not waive game-target
+admission or safeguards for external integrations actually used.
+
+#### Scenario: Retain a preference while an original is active
+- **WHEN** a feature has a stored enabled preference and an active original triggers startup handling
+- **THEN** its best-effort effective-off behavior matches the ordinary manual off choice
+- **AND** saving settings preserves the stored global value, save override and inheritance choice unless the player explicitly edits them
+
+#### Scenario: Resume ordinary settings after the original becomes inactive
+- **WHEN** a later startup has no active original for that feature
+- **THEN** the retained global/save choices resolve normally, subject to target admission
+- **AND** the earlier automatic handling has not permanently changed those choices
+
+#### Scenario: Edit a retained preference while automatic disablement applies
+- **WHEN** the player opens settings for a feature automatically disabled by an active original
+- **THEN** its preference controls retain their ordinary scope and show the stored or inherited requested choice with an explanation that the feature is effectively off
+- **AND** explicitly editing that preference changes only the requested choice; it does not bypass the startup disablement
+- **AND** switching inheritance without a previous override seeds from the requested global default rather than the automatically disabled value
+
 ### Requirement: Render the same three-part setting row
 For every non-exempt setting the common renderer SHALL display a localized Use global checkbox,
 Current save control, and Global default control with clear labels. The per-save control SHALL be
@@ -124,7 +149,13 @@ create an implicit save, or mutate a previous game. Global controls SHALL remain
 - **WHEN** the player loads a different save or opens settings in a loaded game's world view
 - **THEN** the controls bind to the active save and enable according to the feature contract, without depending on a selected map or retaining the previous save's state
 
+#### Scenario: Save-context observation becomes unavailable
+- **WHEN** the mod cannot reliably observe the current save after a lifecycle callback fails
+- **THEN** current-save settings and dependent save-scoped behavior become unavailable
+- **AND** stored overrides are retained, global configuration remains available, and one diagnostic explains the failure
+
 ### Requirement: Reserve bottom tabs for gameplay control windows
+
 A new bottom-bar tab SHALL be used only for a window that adds an ordinary game mechanic for the
 player to control. Debug/cheat functions, configuration, and simple toggles MUST use their assigned
 surfaces instead. Each qualifying feature SHALL specify the native entry point, window actions,
