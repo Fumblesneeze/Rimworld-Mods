@@ -94,6 +94,9 @@ An observation-only hook should still require only the callable and execution fa
   array. Read metadata without constructing foreign attributes, honor the inspected provider's
   precedence, and refuse only unproved consumed bindings. Test an actual aliased output writer and
   a harmless renamed observer; a reflection-only raw-name test cannot establish composition safety.
+  Classify the injected payload as well as its declared type: a mutable argument array remains
+  writable through object/interface parameters, while by-ref private patch state is not a target
+  argument or result writer. Pair those rejection and compatible-state cases on the actual provider.
 - Preserve machine arithmetic when validating layout or numeric producer chains. Real-number
   affine equality does not prove Single/Double evaluation equivalence: large cancellation,
   overflow and reassociation can change consumed values. Keep the relevant operation order or
