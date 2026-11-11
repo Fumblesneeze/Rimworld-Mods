@@ -89,7 +89,10 @@ Prefer action → wait → observation steps that exercise the same native path 
   warm-up, does not establish interception. After the real action finishes, checkpoint hit counts
   and bounded window/log state before waiting for an expected notice; a missed injection should
   fail immediately with diagnostics. Keep intentional errors precisely accounted for and preserve
-  unrelated error detection.
+  unrelated error detection. Trace native failure handlers through disposal and scene transitions:
+  an attempted return to the menu is not proof of completed recovery. If an injected failure
+  exposes a native cleanup defect, retain its exact causal evidence and distinguish the rejected
+  operation from successful scene recovery before changing fixture expectations.
 - Preserve native fixture data contracts. Generated human pawns may participate in later relation
   generation, so use native human-style names (`NameTriple`) instead of replacing them with
   `NameSingle` before generating additional humans. Direct setup must not create the tested result.

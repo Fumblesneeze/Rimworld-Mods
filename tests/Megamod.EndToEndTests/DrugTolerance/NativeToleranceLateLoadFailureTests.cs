@@ -17,12 +17,14 @@ namespace Megamod.EndToEndTests.DrugTolerance;
 // Intentionally ends in native failed-load state. Run alone in a fresh process and restart after.
 [RimWorldEndToEndTest("megamod.drug-tolerance.late-load-failure", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
-    MaxFrames = int.MaxValue, MaxGameTicks = 4800, MaxWallClockSeconds = 900)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 4800, MaxWallClockSeconds = 1200)]
 [RimWorldEndToEndExpectedDiagnostic("s138-load-post-init-fault", "ERROR",
     "Could not do PostLoadInit on RimWorld.DrugPolicyEntry: System.InvalidOperationException: Expected S138 owned callback PostLoadInit fault fixture", 1)]
 [RimWorldEndToEndExpectedDiagnostic("s138-load-asynchronous-abort", "ERROR",
     "Exception from asynchronous event: System.InvalidOperationException: Owned drug-tolerance state could not be preserved. Saving/loading was aborted; restart before retrying.", 1,
     InnerCauses = new[] { " ---> System.InvalidOperationException: Expected S138 owned callback PostLoadInit fault fixture" })]
+[RimWorldEndToEndExpectedDiagnostic("s138-load-native-partial-map-disposal", "ERROR",
+    "Exception was thrown while trying to handle exception. Exception: System.NullReferenceException: Object reference not set to an instance of an object.", 1)]
 public sealed class NativeToleranceLateLoadFailureTests : IRimWorldEndToEndTest
 {
     private volatile bool armed;
@@ -39,7 +41,7 @@ public sealed class NativeToleranceLateLoadFailureTests : IRimWorldEndToEndTest
     private string savePath = null!, hash = null!, pointer = null!;
     private EndToEndNativeWindow window = null!;
     private Dialog_SaveFileList_Load loadDialog = null!;
-    private Dialog_MessageBox notice = null!;
+    private Dialog_MessageBox notice = null!, nativeError = null!;
 
     public void Arrange(IEndToEndContext context)
     {
@@ -131,6 +133,42 @@ public sealed class NativeToleranceLateLoadFailureTests : IRimWorldEndToEndTest
             !LongEventHandler.AnyEventNowOrWaiting && Notice() != null,
             new EndToEndDeadline(int.MaxValue, 600, TimeSpan.FromSeconds(180)));
         yield return new NativeDeveloperLogActionStep("close the automatic console before observing the late-load restart notice", false);
+        yield return new WaitUntilStep("the native failed-load handler presents its map-error dialog", _ =>
+            NativeLoadError() != null,
+            new EndToEndDeadline(int.MaxValue, 600, TimeSpan.FromSeconds(30)));
+        yield return new AssertionStep("bind the exact native partial-map disposal diagnostic to the injected load", _ =>
+        {
+            const string prefix = "Exception was thrown while trying to handle exception. Exception: System.NullReferenceException: Object reference not set to an instance of an object.";
+            var errors = Log.Messages.Where(message => message.type == LogMessageType.Error &&
+                message.text.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
+            EndToEndAssert.Equal(1, errors.Length);
+            EndToEndAssert.Equal(1, errors[0].repeats);
+            int cursor = 0;
+            foreach (var frame in new[] { "Verse.MapDrawer.Dispose(", "Verse.Map.Dispose(", "Verse.Game.Dispose(",
+                "Verse.GenScene.GoToMainMenu(", "Verse.GameAndMapInitExceptionHandlers.ErrorWhileLoadingGame(",
+                "Verse.LongEventHandler.RunEventFromAnotherThread(" })
+            {
+                int next = errors[0].text.IndexOf(frame, cursor, StringComparison.Ordinal);
+                EndToEndAssert.True(next >= cursor, "The expected handler error must contain the observed native disposal chain: " + frame);
+                cursor = next + frame.Length;
+            }
+            // PlayerHasControl only gates fading/cutscenes; native FinalizeInit sets Playing.
+            EndToEndAssert.True(faultLoadRequested && injected == 1 && Current.Game != null &&
+                Current.ProgramState == ProgramState.MapInitializing,
+                "This target's failed native disposal must leave a rejected, non-playable partial load.");
+        });
+        yield return Capture("capture the exact native map-error dialog above the owned notice", () => NativeLoadError()!, value =>
+        {
+            nativeError = value;
+            EndToEndAssert.Equal("ErrorWhileLoadingMap".Translate().ToString(), value.text.ToString());
+        });
+        yield return new ScreenshotStep("native map-load error before acknowledging its blocked recovery", Array.Empty<string>(), 0);
+        yield return new NativePointerScopeBeginStep("own pointer for exact native map-load error", value => pointer = value);
+        yield return Click("acknowledge the bound native map-load error", AcknowledgePoint(nativeError));
+        yield return new NativePointerScopeEndStep("restore pointer after native map-load error", pointer);
+        yield return new WaitUntilStep("the acknowledged native map-load error leaves the stack", _ =>
+            !Find.WindowStack.Windows.Any(current => ReferenceEquals(current, nativeError)),
+            new EndToEndDeadline(int.MaxValue, 120, TimeSpan.FromSeconds(5)));
         yield return Capture("capture the exact restart notice after PostLoadInit failure", () => Notice()!, value => notice = value);
         yield return new ScreenshotStep("late native load failed with visible restart guidance", Array.Empty<string>(), 0);
         yield return new AssertionStep("a swallowed PostLoadInit error cannot become a successful loaded colony", _ =>
@@ -147,7 +185,7 @@ public sealed class NativeToleranceLateLoadFailureTests : IRimWorldEndToEndTest
             ["postLoadFaultCount"] = injected.ToString(), ["savedFile"] = Path.GetFileName(savePath),
             ["beforeSha256"] = hash, ["afterSha256"] = FileHash(savePath),
             ["nativeProgramState"] = Current.ProgramState.ToString(), ["notice"] = notice.text.ToString(),
-            ["expectedErrors"] = "Injected owned callback failure after its original PostLoadInit action, native loader abort and failed-load scene recovery. This is not a native parser failure."
+            ["expectedErrors"] = "Injected owned callback failure after original PostLoadInit, native loader abort, then the observed native partial-map disposal error. The rejected load remains non-playable; automatic main-menu recovery is not claimed."
         });
         yield return new NativePointerScopeBeginStep("own pointer for exact late-load notice", value => pointer = value);
         yield return Click("acknowledge the bound late-load restart notice", AcknowledgePoint(notice));
@@ -230,6 +268,8 @@ public sealed class NativeToleranceLateLoadFailureTests : IRimWorldEndToEndTest
     }
     private static Dialog_MessageBox? Notice() => Find.WindowStack.Windows.OfType<Dialog_MessageBox>().SingleOrDefault(box =>
         box.title == "Megamod.DrugTolerance.PersistenceFailureTitle".Translate().ToString());
+    private static Dialog_MessageBox? NativeLoadError() => Find.WindowStack.Windows.OfType<Dialog_MessageBox>().SingleOrDefault(box =>
+        box.title == "ErrorWhileLoadingMapTitle".Translate().ToString());
     private static Vector2 AcknowledgePoint(Dialog_MessageBox box)
     {
         EndToEndAssert.True(box.buttonBText == null && box.buttonCText == null && box.interactionDelay <= 0);

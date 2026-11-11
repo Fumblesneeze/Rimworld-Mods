@@ -228,6 +228,16 @@ available without persistence support. The native Duplicate/save/reload scenario
 wiring with hidden-field assertions and visible copied native row edits; full tolerance editing,
 enforcement and native failure observation remain separate obligations.
 
+The actual 1.7.5005 late-load fault exposed a native recovery limitation: `Game.LoadGame` invokes
+`Scribe.loader.FinalizeLoading` before map finalization initializes `MapDrawer` sections. After
+the owned guard aborts that boundary, the native load-error handler schedules its map-error dialog
+and attempts main-menu recovery; `MapDrawer.Dispose` then dereferences the uninitialized sections.
+The resulting partial game remains `MapInitializing` and non-playable. The failure contract requires
+rejection, preserved source and visible restart guidance, not automatic main-menu recovery. The
+native scenario must acknowledge the actual map-error dialog before observing the owned notice;
+it binds the additional exact handler error to the observed disposal stack and injected fault.
+No product patch repairs or resumes that partial game, and no unrelated error is exempted.
+
 ### Smallest next enforcement/editor batch
 
 Use one owned reader for the drug's resolved `CompProperties_Drug.chemical` and the pawn's matching

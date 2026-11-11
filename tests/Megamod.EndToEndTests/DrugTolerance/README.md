@@ -95,10 +95,16 @@ At width 640 its center is local x476, not the window center x320. Both fixtures
 message receives native input at that point before capturing it, then wait at most 5 seconds for
 that exact acknowledged window reference to leave the stack. Save acknowledges the top owned notice
 before the underlying SafeSaver box; it never treats successful input dispatch as proof of dismissal.
-The late-load scenario has a 900-second cap: four screenshots (120), four captures/three clicks/
-four pointer actions/three log actions (210), two 180-second waits (360) and a menu action (15).
-Its one 5-second exact dismissal wait leaves 190 seconds for the
-initial save/load and other overhead. Cleanup retains its separate 30-second deadline. These are
+The late-load scenario has a 1,200-second cap: five screenshots (150), five captures/four clicks/
+six pointer actions/three log actions (270), two 180-second waits (360), one 30-second native
+error-dialog wait, two 5-second dismissal waits (10) and a menu action (15). Its fixed allowance
+is 835 seconds, leaving 365 seconds for initial save/load and other overhead.
+The inspected 1.7.5005 load handler schedules a native map-error dialog above the owned notice,
+then fails to dispose an incompletely initialized MapDrawer. The fixture acknowledges that exact
+native dialog first. It accounts for this measured handler error exactly once and asserts its
+complete disposal/handler stack plus the injected fault and non-playable partial-load state.
+This does not claim successful main-menu recovery or excuse a different null-reference error.
+Cleanup retains its separate 30-second deadline. These are
 harness allowances, not product timing promises.
 `MaxGameTicks=4800` is a secondary guard while the colony
 stays paused, and frame count is not treated as elapsed-time evidence. Root should retain actual

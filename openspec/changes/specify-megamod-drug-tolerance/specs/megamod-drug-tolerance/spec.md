@@ -174,6 +174,9 @@ success after this error. Repeated attempts SHALL remain blocked without repeati
 - **WHEN** native cross-reference or post-load initialization catches an owned row error inside load finalization
 - **THEN** the native load still fails at its completion boundary and does not report a successfully loaded colony
 - **AND** the owned notice requires restart, the source save remains intact, and an existing native exception is not replaced.
+- **AND** if native failure handling leaves a non-playable partial game, restart remains required;
+  the feature does not resume that game or report successful scene recovery. Native failure
+  dialogs can be acknowledged before the owned restart notice is visible.
 
 #### Scenario: Persistence publication becomes unreadable
 - **WHEN** required persistence support is removed or its newly published metadata cannot be safely inspected
