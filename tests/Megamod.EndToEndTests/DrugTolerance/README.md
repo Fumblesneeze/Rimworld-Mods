@@ -28,6 +28,29 @@ Exact hashes and the preceding inherited-method failure/fix are in the local
 `artifacts/Implementation/megamod-p0/revision21-native-verification.md` ledger. This result is
 limited to that editor slice and build; it does not accept routine ingestion or wider layouts.
 
+Two additional selected workflows exercise real pawn routes:
+
+- `megamod.drug-tolerance.native-scheduled-routes` compares zero and Any with matched supplies,
+  confirms that positive DrugDesire does not bypass scheduled zero, and then exercises the
+  blocked pawn's explicit native Drink order as a separate manual exclusion.
+- `megamod.drug-tolerance.native-direct-joy-routes` compares zero and Any with the positive
+  DrugDesire exception. Native time first passes Core's initial 5000-tick joy gate while the
+  subjects remain drafted; no clock rewrite or forced job is used.
+
+Both arrange disposable adults/policies/supplies, then use native undraft and time controls.
+Read-only trace prefixes count actual engine attempts; a negative case cannot pass without
+attempts and a successful paired control. The real product group must remain available after
+trace installation and throughout the workflow. Captures require actual native chewing with
+the exact carried dose and later Health effects. Native stock-retention setup differs between
+scheduled and joy routes; neither workflow claims independent refill behavior.
+
+Each scenario allows 1440 seconds with an 1800-second launcher. Scheduled reserves 38 native
+operations, 10 screenshots and 360 seconds of waits (1230 seconds total); direct joy reserves
+36 operations, 9 screenshots and 450 seconds of waits (1260 seconds total). The fixture checks
+and retains those counts. Both are reviewed and compile-discovered; native acceptance remains
+pending in `artifacts/Implementation/megamod-p0/s138-native-routes/handoff.md` until root observes
+their exact-run action/results. Run the exact IDs, not the full owning active-mod group.
+
 `megamod.drug-tolerance.native-copy-save` opens Assign and native Manage drug policies, selects
 a disposable source, clicks the native Duplicate icon and changes the copy's Beer recreation
 checkbox. It saves/reloads through the native command and reopens the copied row. Encoded numeric

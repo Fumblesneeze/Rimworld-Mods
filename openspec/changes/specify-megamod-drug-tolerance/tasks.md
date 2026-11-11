@@ -66,6 +66,13 @@ normal hashes are retained in the same revision21 ledger. This accepts that Engl
 slice only; routine pawn behavior, broader layout/settings/copy/save and full feature tasks below
 remain open. The new scheduled/direct-joy route scenarios are being authored separately.
 
+The next route batch now contains independently reviewed, compile-discovered scheduled and
+direct-recreation scenarios with real engine attempt observations, matched controls, native
+ingestion/Health captures and explicit manual exclusion. No product predicate is invoked as a
+test action, and an unavailable atomic group fails the scenario. Their full native gates remain
+pending; exact source/review/budget evidence lives under
+`artifacts/Implementation/megamod-p0/s138-native-routes/`.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.
