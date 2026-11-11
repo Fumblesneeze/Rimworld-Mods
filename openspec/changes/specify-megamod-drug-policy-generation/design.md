@@ -256,8 +256,9 @@ edit membership, flags, native bounds/name, S138 availability, fresh rows and in
 verification. It also covers positive ID allocation/exhaustion, stale/reentrant refusal, one append,
 same-operation idempotence, preparation failures, owned-tail rollback/conflict refusal and disposal.
 Its supplied currentness predicate and ordering delegate remain explicit caller assumptions until
-the existing S029/C01 receipts are integrated. No production caller or effective constructor/getter
-guard is present, so these host checks cannot authorize Create or establish real controller lifetime.
+the existing S029/C01 receipts are integrated. A feature-local constructor/getter guard now has
+scoped Harmony checks, but no production caller or actual native receipt is present; host checks
+cannot authorize Create or establish real controller lifetime.
 
 A window-local one-shot confirmation identity prevents the same action/re-entrant click from
 committing twice. Subsequent deliberate fresh workflows can create independent policies. Do not
@@ -287,6 +288,20 @@ specs before hooks, covering only consumed window/action/transaction semantics. 
 body changes, skip-original, compatible patches, supported repatching and bounded failure. No
 whole-method or version/hash gate. Withhold Generate if complete creation cannot be supported while
 preserving ordinary native controls. Do not inspect external consumers or construct source facades.
+
+The generation-local constructor/getter milestone uses `DrugPolicyCreationAdmission` with explicit
+`Revalidate` and inspection-only `Available`. Owned final observation transpilers retain the actual
+incoming policy/base/entry/getter and relevant callback bodies. Each body is tied to its published
+generation and all consumed publication identities are rechecked before a positive decision.
+Callback identity/signature alone cannot authorize it. New callbacks require explicit acquisition;
+failed revalidation cleans its new observers, and full rollback attempts all owned members.
+The bounded straight-line grammar proves fresh-receiver non-escape and actual-list return while
+allowing scalar initialization, local aliases and scalar diagnostic observers. Unknown calls,
+branches, native-reference effects, replacement/skip callbacks, by-ref parameters and implicit
+type initializers are unsupported. Limits are 256 instructions, 32 observed methods and eight
+dependency levels. The unpatched inert System.Object root is checked without a global observer.
+This implements a positive narrow host admission path; actual native acquisition, finalization and
+controller wiring remain unverified, and no native task is closed by its host cases.
 
 The shared C01 addition for creation admission is an immutable inner-callback metadata projection
 from an already captured HarmonyPublication snapshot. It retains the registered MethodInfo, role,

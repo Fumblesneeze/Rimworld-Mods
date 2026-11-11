@@ -287,6 +287,11 @@ overwritten or described as successfully rolled back.
 - **THEN** it uses immutable metadata and the existing C01 selector semantics without executing foreign attributes, factories, callbacks or transpilers for inspection
 - **AND** compatible or irrelevant effects can remain admitted only with the consumed no-escape/actual-list semantics proved; a changed publication invalidates the old receipt before creation.
 
+#### Scenario: A constructor observer changes after the preview
+- **WHEN** a previously admitted callback is repatched to publish a prepared receiver, mutate a native list or replace the getter result
+- **THEN** creation becomes unavailable before preparation even when that callback's name and signature are unchanged
+- **AND** compatible scalar diagnostics and irrelevant detached scalar initialization remain eligible when their actual effects are proved; unknown control flow or implicit initialization is refused without disabling ordinary native policy controls.
+
 #### Scenario: A confirmation owner is disposed
 - **WHEN** the transient confirmation is disposed before preparation, during a preparation callback, or after completion
 - **THEN** it releases retained native objects and delegates, refuses further preparation/confirmation, and cannot resume a pending append

@@ -33,6 +33,7 @@
     <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Core/DrugToleranceRule.cs" Link="Product/DrugTolerance/Core/DrugToleranceRule.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Harmony/**/*.cs" Link="Product/DrugTolerance/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Harmony/**/*.cs" Link="Product/DrugPolicyMaintenance/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Harmony/**/*.cs" Link="Product/DrugPolicyGeneration/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Settings/Core/**/*.cs" Link="Product/Settings/Core/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Settings/Harmony/**/*.cs" Link="Product/Settings/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/Diagnostics/Core/DefinitionContextScope.cs" Link="Product/Diagnostics/DefinitionContextScope.cs" />

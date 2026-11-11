@@ -1,7 +1,7 @@
 # DG-POLICY-CREATE: publish one complete generated policy
 
-**Staged native adapter; not admitted, registered or accepted.** Complete executable
-admission and index this target before runtime wiring. This target describes the native preparation
+**Staged native adapter and constructor/getter host admission; not registered or accepted.** Complete
+the remaining runtime receipts and index this target before runtime wiring. This target describes the native preparation
 and publication boundary; the contextual Generate UI requires its own target contract.
 
 ## Ownership and traceability
@@ -14,7 +14,10 @@ and publication boundary; the contextual Generate UI requires its own target con
   gameplay objects or atomically append a reviewed draft. Native factories publish before copying.
 - Staged implementation: `Source/Features/DrugPolicyGeneration/Runtime/NativeDrugPolicyCreation.cs`;
   constructed native fixtures: `tests/Megamod.Defs/DrugPolicyGeneration/NativeDrugPolicyCreationTests.cs`.
-  Effective constructor/getter validation and complete controller integration remain pending.
+  Constructor/getter validator: `Source/Features/DrugPolicyGeneration/Harmony/DrugPolicyCreationAdmission.cs`
+  and `DrugPolicyCreationBodyGuard.cs`; scoped provider fixture:
+  `tests/Megamod.Harmony/Features/DrugPolicyGeneration/DrugPolicyCreationAdmissionTests.cs`.
+  Actual native receipt acquisition and complete controller integration remain pending.
 - Evidence game: 1.7.5005 rev1082, Assembly-CSharp SHA256
   `82387F78262461E53BB06A67C3945912B876D1FDB07235122BBB6E59D073F125`.
 
@@ -78,10 +81,45 @@ internal preparation-only factory wraps the existing S029 storage interface for 
 public construction always selects sealed native storage. The internal publication receipt exposes
 the same Append/VerifyOrRollback operations used synchronously by Confirm, with no interposed
 callback. These seams are not runtime options or native effective-admission evidence. C01 must still
-admit no-escape construction and the actual-list getter. A metadata-only C01 callback projection and
-feature-local effective guards are planned; this tranche changes no shared publication helper.
+admit no-escape construction and the actual-list getter in the real process. The C01 metadata
+projection and feature-local effective guards have scoped host coverage; this tranche changes no
+shared publication helper and does not register the staged adapter.
 
 ## Composition, ordering, and invalidation
+
+The feature-local `DrugPolicyCreationAdmission` takes exact policy/base/entry constructors, the
+AllPolicies getter and its actual field. Its Candidate acquires one owned final observation
+transpiler on each consumed member. `Available` only inspects; explicit `Revalidate` discovers and
+acquires observers on relevant published callbacks. Actual composition captures each incoming body
+once; admission never reruns a foreign transpiler, callback, factory or attribute constructor as a
+probe. Relevant callback bodies receive the same publication/currentness proof, including their
+own outer/inner callbacks. Newly discovered callbacks refuse until explicit revalidation. A removed
+observer or changed effective callback body cannot retain an old positive result. Failed revalidation
+cleans newly acquired observers. Explicit revalidation also prunes unreachable callback observers
+from the current published dependency graph, so the bound measures current dependencies rather than
+historical callback changes. Full rollback attempts every acquired member, retaining failed
+cleanup ownership for retry and never removing a foreign owner's patches.
+
+The bounded initial grammar admits straight-line receiver/base construction, scalar or null field
+initialization on the fresh receiver, local aliases, constants and scalar arithmetic. The getter must
+return exactly its receiver's admitted List field through that flow, without mutations. Constructors
+require exactly one parameterless direct-base call. The System.Object root is not globally patched:
+its original inert body and empty current publication are separately required. Native root types
+with a static initializer are unproved. This grammar matches the independently inspected current
+native bodies; no full-method hash/version is used. Unknown calls, control flow, exception regions,
+managed addresses, reference writes/escapes and list substitutions refuse before preparation.
+
+Compatible callbacks are static void methods with no by-ref parameters or implicit type initializer.
+Their actual bodies may ignore reference injections, read scalar parameters, use scalar locals and
+arithmetic, and read/write scalar diagnostic fields on their own type. They cannot load native
+references, invoke unknown work or suppress/replace the native result. Inner metadata comes from
+C01's existing selector projection; selected callbacks have the same body proof, while no selected
+operations means no consumed effect. Effective outer-binding/unchecked-reference forms remain
+unproved. Bounds are 256 instructions per body, 32 observed methods including four roots, and eight
+dependency levels. This is an explicit initial supported subset, not a general engine evaluator or
+a signature-only harmless-observer claim. Other owners and irrelevant scalar initial-value changes
+remain allowed. Host fixtures exercise actual composed effects, refusal, recovery and cleanup;
+native acceptance and the complete transaction's other helper/fact receipts remain open.
 
 Use C01's effective MethodBase publication inspection for consumed native constructors/getter and
 its supported later-repatch invalidation. Inspect relevant prefixes, skip-original, transpiler
@@ -117,9 +155,9 @@ adapter installs no mutation patches of its own; the separate UI group's rollbac
 | Empty database | Unavailable; no implicit default creation | Scoped Defs/native UI | Constructed-Defs refusal passing; native UI pending |
 | Preparation failure and post-append failure | No publication or only exact owned-tail rollback; prior prefix unchanged | Scoped Defs | Constructed storage/order failures and receipt rollback/conflict passing; effective constructors pending |
 | Currentness change or reentry/repeated confirmation | No stale/duplicate append; completed receipt reused | Unit/Defs | Passing for caller predicate, membership, prior/prepared choice, prepared ID and ordering reentry; native receipt/lifecycle pending |
-| Benign foreign constructor/getter edits | Admitted when consumed semantics hold; foreign owner retained | Owned Harmony fixture | Pending |
-| Escape, list substitution, skip-original or unproved callback | Refuse unchanged before preparing/publishing; bounded reason | Owned Harmony fixture | Pending |
-| Relevant later repatch | Invalidate/revalidate before next creation | Owned Harmony fixture | Pending |
+| Benign foreign constructor/getter edits | Admitted when consumed semantics hold; foreign owner retained | Owned Harmony fixture | Scoped host passing; native pending |
+| Escape, list substitution, skip-original or unproved callback | Refuse unchanged before preparing/publishing; bounded reason | Owned Harmony fixture | Scoped host passing; native pending |
+| Relevant later repatch | Invalidate/revalidate before next creation | Owned Harmony fixture | Callback-body/root repatch, observer removal, dependency pruning and cleanup retry passing in host; native pending |
 | Generate/edit/Create/repeat/cancel, ordinary copy/save/load | One complete selected policy; prior defaults/assignments/history preserved | Fresh isolated native Gateway workflow | Pending |
 
 Retain reviewed build/package identity, ordered active mods, actual player input, causal captures,
