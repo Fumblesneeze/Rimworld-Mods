@@ -15,7 +15,7 @@
       <Private>true</Private>
     </Reference>
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/DrugPolicyBatch.cs;../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/DrugPolicyReconciler.cs;../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/PresetEntriesRead.cs" Link="Product/Core/%(Filename)%(Extension)" />
-    <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Core/*.cs" Link="Product/DrugTolerance/Core/%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Core/DrugToleranceChoice.cs;../../mods/megamod/Source/Features/DrugTolerance/Core/DrugToleranceRule.cs" Link="Product/DrugTolerance/Core/%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Runtime/NativeDrugToleranceState.cs" Link="Product/DrugTolerance/NativeDrugToleranceState.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Runtime/NativeDrugToleranceReader.cs" Link="Product/DrugTolerance/NativeDrugToleranceReader.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugPolicyStorage.cs" Link="Product/NativeDrugPolicyStorage.cs" />
