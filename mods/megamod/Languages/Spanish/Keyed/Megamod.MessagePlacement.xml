@@ -17,4 +17,7 @@
   <Megamod_Messages_PreviewDisabled>La colocación está desactivada. Se conservan los desplazamientos; se usa la posición original.</Megamod_Messages_PreviewDisabled>
   <Megamod_Messages_PreviewUnavailable>La colocación no está disponible en el contexto actual. Se usa la posición original.</Megamod_Messages_PreviewUnavailable>
   <Megamod_Messages_PreviewSample>Solo una pila de ejemplo: no crea mensajes, sonidos ni entradas del historial.</Megamod_Messages_PreviewSample>
+  <Megamod_Messages_BarGeometryUnavailable>El espacio automático no está disponible para la vista actual de la barra. Los desplazamientos manuales siguen aplicándose.</Megamod_Messages_BarGeometryUnavailable>
+  <Megamod_Messages_PreviewBarClearance>La vista previa incluye el espacio bajo la barra de colonos visible actualmente.</Megamod_Messages_PreviewBarClearance>
+  <Megamod_Messages_PreviewNoBar>No se muestra ninguna barra de colonos aquí. La vista previa usa la posición nativa y los desplazamientos configurados.</Megamod_Messages_PreviewNoBar>
 </LanguageData>

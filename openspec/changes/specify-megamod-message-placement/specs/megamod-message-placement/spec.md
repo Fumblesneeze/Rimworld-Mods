@@ -49,6 +49,20 @@ enough viewport space, messages SHALL clear that content. Hidden content SHALL r
 - **THEN** placement reflects the current visible layout on that display, including the first display after the change
 - **AND** it does not temporarily use the previous layout's reserve
 
+#### Scenario: The first native automatic slice has explicit unsupported adornments
+- **WHEN** the incremental native adapter encounters displayed weapons, group frames, selected outlines, world selection, active reordering or a pawn with a positive native mood-edge expansion
+- **THEN** it withholds automatic clearance and explains the manual-only fallback without changing saved offsets
+- **AND** this initial mood restriction applies even when the mood-edge preference currently hides that edge; it does not reserve hidden content
+- **AND** ordinary unselected single-map portraits with zero native mood-edge expansion retain current portrait, icon and label clearance
+- **AND** full decorated, hidden-bar, world-view and owned S001 presentation support remains an unfinished requirement
+
+#### Scenario: Current selection animation and newly unobscured mood edge remain contained
+- **WHEN** a currently selected, visible native portrait has a contracting selection animation during one display
+- **THEN** clearance may enclose the animation's remaining extent sampled for that same display, which can only contract before consumption
+- **AND** an unselected or settled portrait does not reserve a full animation jump
+- **AND** a native mood edge eligible after messages move clear is included, but other-map, world-context or active-reordering suppression is respected
+- **AND** changed selection, selection-time source or presentation facts invalidate that display's clearance rather than borrowing an old receipt
+
 #### Scenario: Owned portrait filtering and weapon presentation compose with placement
 - **WHEN** the owned colonist-bar presentation hides or reduces entries, or displays an enlarged or downward-offset weapon
 - **THEN** message clearance follows the parts actually displayed, including the weapon's displayed extent

@@ -29,7 +29,8 @@ Target **RimWorld 1.7 beta**. S071 is a replacement reference, not a co-owner.
 
 Manual placement, common scoped controls and the bounded inert preview are partially implemented,
 with focused host evidence and reviewed English native reset/enable/disable/preview workflows.
-Automatic bar geometry, complete native
+Revision20 adds an implemented-unverified current native portrait/label geometry path, with explicit
+manual-only fallback for current unproved adornments. Full automatic geometry, complete native
 interaction and preview coverage, rendered locale checks and final acceptance remain unfinished.
 No whole replacement is verified; layout choices and remaining evidence obligations stay visible
 in refinement.

@@ -1,7 +1,7 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **19**, 2026-11-11. Status: **P0 implementation dispatched; native acceptance incomplete**.
+Plan revision **20**, 2026-11-11. Status: **P0 implementation dispatched; native acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
@@ -862,3 +862,20 @@ S029 native save/reload regression passes. A failed preview screenshot attempt i
 the passing unchanged-build retry. The local revision19 ledger records build-specific evidence and
 the bounded semantic pass. No automatic geometry, tolerance enforcement or whole-part acceptance
 is inferred; all remaining obligations and the preceding unrun content cases stay allocated.
+
+Revision20 — the continuing goal starts from clean d1607aa after the reviewed revision19 checkpoints.
+Advance S071 from manual placement to the concrete current native bar-geometry adapter under its
+existing single prepared owner. Extend S138 from detached state into native copy/save persistence
+and its contextual controls, retaining the atomic enforcement/editor requirement. Resolve native
+eligibility timing from the owned contract and inspected game paths before decision hooks; do not
+invent a shared-driver ingestion veto. A partial storage handoff cannot expose a falsely enforced
+limit or satisfy the full feature. Later S001/S024 compositions remain allocated. Workers own
+disjoint feature paths and coordinate host output leases; root owns shared registration/projects,
+integrated review/build/package, native scenarios and logical commits. Group affected regression
+and fixes at the batch boundary. All139 feature obligations, prior unrun native cases and full
+P0–P8 acceptance remain active; no scope is removed to fit a turn.
+
+The third revision20 slot resolves S139 DG-Q1–3 calculation/native-content research in parallel,
+with only its owned contract/research documents leased. This prepares the required generator
+implementation instead of bypassing its numeric prerequisites. DG-Q4 atomic publication and all
+runtime/native gates remain; no algorithm or universal-safety claim follows from research alone.

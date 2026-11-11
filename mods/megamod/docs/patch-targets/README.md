@@ -2,8 +2,9 @@
 
 **Current composition includes common settings, early diagnostics and initial incident selection.**
 These are incomplete P0 components. Scoped native observations do not accept a whole feature or part;
-the local evidence ledger records the tested build and remaining workflows. S071 message placement
-remains unregistered. Create one document per patch
+the local evidence ledger records the tested build and remaining workflows. S071 manual placement
+and its preview are composed with scoped revision19 native observations; current automatic geometry
+work remains unverified. Create one document per patch
 from [TEMPLATE.md](TEMPLATE.md) before introducing any Harmony or XML mutation.
 Index every real patch here with its stable ID, owning feature spec, target document, validator/code,
 and verification state. Do not populate a registry with illustrative fake game targets.
@@ -15,8 +16,9 @@ implementation, tests and evidence before admission.
 Plan revision12 adds target-specific handling of Harmony 3 inner transformations after ordinary
 transpilers. Current ordinary-patch evidence does not establish those combinations or persistence
 rewriting. C01's pending shared effect assessment must preserve compatible/unrelated modifications
-and reject only unproved required relationships. S071's revised prepared-render boundary is still
-under design; its existing execution receipt is not sufficient to activate placement.
+and reject only unproved required relationships. S071's prepared-render boundary now composes the
+manual path; automatic geometry requires the complete current drawing guards and its separate
+reviewed-build native gate.
 
 | Candidate ID | Owning feature | Target design | Status |
 |---|---|---|---|
@@ -31,6 +33,11 @@ under design; its existing execution receipt is not sufficient to activate place
 | `LOG-PROTECTED-WARNING` | C01 admission / S035 protected diagnostics | [Protected warning output](LOG-PROTECTED-WARNING.md) | Guarded callable adapter composed, host tested and independently reviewed; dedicated native protection/fallback workflows pending |
 | `MM.DRUG.DisplayRows` | S029 drug-policy maintenance | [Alphabetical presentation](MM.DRUG.DisplayRows.md) | Design only |
 | `MM.DRUG.PresetEntries` | S029 drug-policy maintenance | [Unavailable preset entries](MM.DRUG.PresetEntries.md) | 36 focused host checks reviewed; initial preset and unchanged-catalog native save/reload workflows verified, 98 steps and 20 inspected captures; revised warning/ordinary-settings-off handling and content-change/general-repair work remain open; no original-provider compatibility gate |
+| `DT-POLICY-COPY` | S138 drug tolerance | [Native copy and Scribe persistence](DT-POLICY-PERSISTENCE.md) | Composed and reviewed, including choice-use revocation at19fc6ec; native copy/edit/save/reload observed in the scoped support workflow; full tolerance controls/enforcement remain open |
+| `DT-POLICY-SCRIBE` | S138 drug tolerance | [Native copy and Scribe persistence](DT-POLICY-PERSISTENCE.md) | Successful native persistence has supporting encoded-state evidence; fault fixtures and exact diagnostic accounting are under correction, so the failure gate remains open |
+| `DT-SAVE-FINALIZE` | S138 drug tolerance | [Save failure completion guard](DT-POLICY-PERSISTENCE.md) | Same reviewed persistence group; native failed-overwrite gate open |
+| `DT-LOAD-FINALIZE` | S138 drug tolerance | [Load failure completion guard](DT-POLICY-PERSISTENCE.md) | Same reviewed persistence group; native late-load failure gate open |
+| `DG-POLICY-CREATE` | S139 drug-policy generation | [Unpublished preparation and one creation](DG-POLICY-CREATE.md) | Proposed guarded adapter independently reviewed; executable admission, publication and native acceptance pending |
 | `SETTINGS-GAME-CONTEXT` | C02 common settings | [Actual game identity](SETTINGS-GAME-CONTEXT.md) | Composed, host tested/reviewed; scoped native settings interactions observed; full save/lifecycle acceptance pending |
 | `SETTINGS-LIFECYCLE-PUMP` | C02 common settings | [Main-thread lifecycle handoff](settings.lifecycle-pump.md) | Same required settings group; composed, host tested/reviewed; full save/lifecycle acceptance pending |
 | `MM.CONTENT.IncidentEligibility` | S038 content selection | [Incident eligibility](MM.CONTENT.IncidentEligibility.md) | Composed, host tested/reviewed; native incident eligibility workflow pending |
@@ -41,13 +48,20 @@ under design; its existing execution receipt is not sufficient to activate place
 | `MM.CONTENT.HotReloadDefs` | S038 content selection | [Def reload invalidation](MM.CONTENT.HotReloadDefs.md) | Composed, host tested/reviewed; native invalidation pending; successful subsequent catalog recovery still unfinished |
 | `MM.CONTENT.ClearAllPlayData` | S038 content selection | [Def clearing invalidation](MM.CONTENT.ClearAllPlayData.md) | Required lifecycle group composed, host tested/reviewed; native acceptance pending |
 | `numbers.shared-style-text` | S034 readable numbers | [Paired text measurement and drawing](numbers.shared-style-text.md) | Design only |
-| `MSG-NATIVE-DRAW` | S071 message placement | [Native message window registration](MSG-NATIVE-DRAW.md) | Observer and atomic batch host tested and independently reviewed; no startup registration or native placement acceptance |
-| `MSG-NATIVE-FRAME` | S071 message placement | [Native GUI pass](MSG-NATIVE-FRAME.md) | Host tested/reviewed; native composition authored; unregistered/unverified |
-| `MSG-NATIVE-QUEUE` | S071 message placement | [Queued registration relationships](MSG-NATIVE-FRAME.md#msg-native-queue-registration-relationships-only) | Host tested/reviewed; unregistered/unverified |
-| `MSG-NATIVE-CONSUMPTION` | S071 message placement | [Active-pass consumer veto](MSG-NATIVE-FRAME.md#msg-native-consumption-active-pass-consumer-veto-only) | Host tested/reviewed; unregistered/unverified |
-| `MSG-NATIVE-EVENT` | S071 message placement | [Outer invocation timing](MSG-NATIVE-FRAME.md#msg-native-event-bounded-outer-invocation-timing) | Host tested/reviewed; unregistered/unverified |
-| `MSG-WINDOW-STACK` | S071 message placement | [Entry message fallback](MSG-WINDOW-STACK.md) | First-consumer fallback host tested/reviewed; unregistered and native acceptance pending |
-| `MSG-BAR-PREPARED` | S071 message placement | [Prepared renderer handoff](MSG-BAR-LAYOUT-PREP.md) | Timing handoff and metadata-failure correction host tested/reviewed; native geometry integration pending |
+| `MSG-NATIVE-DRAW` | S071 message placement | [Native message window registration](MSG-NATIVE-DRAW.md) | Composed/reviewed with scoped manual-placement native observations; current automatic batch and full feature acceptance pending |
+| `MSG-NATIVE-FRAME` | S071 message placement | [Native GUI pass](MSG-NATIVE-FRAME.md) | Composed/reviewed with scoped manual-path observations; current automatic batch unverified |
+| `MSG-NATIVE-QUEUE` | S071 message placement | [Queued registration relationships](MSG-NATIVE-FRAME.md#msg-native-queue-registration-relationships-only) | Same composed native group; current automatic batch unverified |
+| `MSG-NATIVE-CONSUMPTION` | S071 message placement | [Active-pass consumer veto](MSG-NATIVE-FRAME.md#msg-native-consumption-active-pass-consumer-veto-only) | Same composed native group; current automatic batch unverified |
+| `MSG-NATIVE-EVENT` | S071 message placement | [Outer invocation timing](MSG-NATIVE-FRAME.md#msg-native-event-bounded-outer-invocation-timing) | Same composed native group; current automatic batch unverified |
+| `MSG-WINDOW-STACK` | S071 message placement | [Entry message fallback](MSG-WINDOW-STACK.md) | Composed/reviewed; scoped fallback observations retained; wider acceptance pending |
+| `MSG-BAR-PREPARED` | S071 message placement | [Prepared renderer handoff](MSG-BAR-LAYOUT-PREP.md) | Manual handoff composed/reviewed; actual geometry integration and current native acceptance pending |
+| `MSG-BAR-ADORNMENTS` | S071 message placement | [Frame and weapon eligibility](MSG-BAR-ADORNMENTS.md) | Participant in the existing prepared owner; 39 focused geometry/adornment checks pass; independent integrated review and native gate pending |
+| `MSG-BAR-LABEL-COLONISTGEOMETRY` | S071 message placement | [Actual portrait/label geometry](MSG-BAR-LAYOUT-PREP.md) | Passive effective-body observation; current integrated review and native gate pending |
+| `MSG-BAR-LABEL-POSITION` | S071 message placement | [Positioned native label](MSG-BAR-LAYOUT-PREP.md) | Same automatic helper group; unverified natively |
+| `MSG-BAR-LABEL-RECTANGLE` | S071 message placement | [Actual label rectangle and drawing](MSG-BAR-LAYOUT-PREP.md) | Same automatic helper group; unverified natively |
+| `MSG-BAR-LABEL-PORTRAITTEXTURE` | S071 message placement | [Native portrait texture bounds](MSG-BAR-LAYOUT-PREP.md) | Same automatic helper group; unverified natively |
+| `MSG-BAR-LABEL-ICONS` | S071 message placement | [Native icon positions](MSG-BAR-LAYOUT-PREP.md) | Same automatic helper group; unverified natively |
+| `MSG-BAR-LABEL-ICON` | S071 message placement | [Native icon drawing](MSG-BAR-LAYOUT-PREP.md) | Same automatic helper group; unverified natively |
 | `MSG-BAR-ENTRIES` | S071 message placement | [Revised prepared-render contract](MSG-BAR-LAYOUT-PREP.md) | Retired revision12 experiment; source/standalone fixtures removed; historical evidence retained |
 | `MSG-BAR-EXECUTION` | S071 message placement | [Revised prepared-render contract](MSG-BAR-LAYOUT-PREP.md) | Retired revision12 experiment; source/standalone fixtures removed; historical evidence retained |
 

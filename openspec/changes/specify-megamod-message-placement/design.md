@@ -36,6 +36,27 @@ or unsupported Colony Groups compatibility. No new tab, toggle, debug function o
 
 ## Decisions
 
+Revision20 current native composition consumes prepared DrawLocs/Size/Scale and entry identities,
+then measures the actual native truncated Tiny label and background. Before the real Entries getter,
+the native dirty path is requested on first/current viewport/root/bar/map changes. No original
+calculator is called speculatively; no draw/collision call measures geometry. The single prepared
+owner proves the entry rectangle producer and its actual native consumers. Separate passive label
+projection guards protect the required current effective code, retaining manual placement when
+automatic admission fails. Receipt lifetime ends at the outer GUI exit; validation never recaches.
+
+The connected first native slice supports current single-map portraits/labels. Visible weapons,
+frames, selected overlays, any positive native mood-edge expansion, world selection and active reordering explicitly
+remain unavailable for automatic clearance. The pure policy already describes these extents, but
+that is not downstream native admission or acceptance. The initial mood predicate declines positive
+expansion even with its preference off; it does not reserve hidden content or claim that this
+conservative unavailable case completes the final visibility contract. Native effective selection
+and positive-expansion gates, actual portrait fill/clipping/texture consumers, and icon sizing/cursor
+helpers participate in the same automatic admission group. Full support remains required. Selection
+will use only the actual remaining0.07-second jump for a currently selected overlay, contracting
+within the same invocation; settled/unselected content never reserves the full animation envelope.
+The authored native UI-scale/selection scenario proves only the bounded current slice once root
+executes and personally inspects it on the reviewed build.
+
 ### 1. Translate the native message stack once
 
 Use one common translation at the point where native message coordinates, including the active

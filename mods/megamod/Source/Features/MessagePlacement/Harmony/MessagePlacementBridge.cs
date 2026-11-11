@@ -30,6 +30,7 @@ public sealed class MessagePlacementBridge
     private readonly Func<MessageBounds, object> nativeRectangle;
     private readonly Action<string> warning;
     private readonly Func<bool> placementEnabled;
+    private readonly Action? endInvocation;
     private MessageConsumptionPatch? consumption;
     private MessageWindowBindings? bindings;
     private MessageDrawShape? boundShape;
@@ -44,11 +45,14 @@ public sealed class MessagePlacementBridge
         MessageBarPreparedTargets? preparedTargets = null,
         Func<object, object, bool, MessageBarBoundsReceipt>? capturePrepared = null,
         MethodInfo? windowStackGui = null, Func<object, object, MessageBarBoundsReceipt?>? captureWindowFallback = null,
-        Func<bool>? placementEnabled = null)
+        Func<bool>? placementEnabled = null, MessageBarGeometryGuard? barGeometry = null,
+        Action<object>? prepareBarGeometry = null, Action<object, int, object>? consumeBarGeometry = null,
+        Action? endInvocation = null)
     {
         this.targets = targets; this.captureFrame = captureFrame; this.nativeRectangle = nativeRectangle; this.warning = warning;
         this.captureWindowFallback = captureWindowFallback;
         this.placementEnabled = placementEnabled ?? (() => true);
+        this.endInvocation = endInvocation;
         timing = new(pass, Report);
         queue = new(targets.Register, targets.AddNew, targets.WindowRectangle, targets.WindowCallback);
         draw = new(targets.Draw, targets.Calculate, targets.Register, forward);
@@ -59,12 +63,15 @@ public sealed class MessagePlacementBridge
         if (preparedTargets != null)
             prepared = new(preparedTargets, (bar, entries, frames, authority) =>
             {
+                if (!this.placementEnabled()) return;
+                var bounds = capturePrepared!(bar, entries, frames);
                 var current = pending;
                 if (current != null)
-                    CommitPrepared(current.Frame.Root, capturePrepared!(bar, entries, frames), authority);
+                    CommitPrepared(current.Frame.Root, bounds, authority);
                 else
                     timing.NotifyConsumption();
-            }, Fault);
+            }, Fault, geometry: barGeometry, preparing: prepareBarGeometry, consuming: consumeBarGeometry,
+                geometryFailureReporter: failure => Report(failure.GetBaseException().Message));
         if ((windowStackGui == null) != (captureWindowFallback == null))
             throw new ArgumentException("Window entry target and fallback capture must be supplied together.");
         if (windowStackGui != null) windowStack = new(windowStackGui, BeforeWindows, Fault);
@@ -83,6 +90,8 @@ public sealed class MessagePlacementBridge
     }
     public PatchGroup Group { get; }
     public bool Available => enabled && Ready;
+    public bool GeometryAvailable => Available && prepared?.GeometryAvailable == true;
+    public Func<bool> CaptureGeometryAuthority() => prepared?.CaptureGeometryAuthority() ?? (() => false);
     private bool Ready => !faulted && draw.Available && draw.Shape == boundShape && queue.Available &&
         outer.Available && scope.Available && consumption?.Available == true && bindings != null &&
         (prepared == null || prepared.Available) && (windowStack == null || windowStack.Available);
@@ -181,6 +190,7 @@ public sealed class MessagePlacementBridge
     private void Exit(MessageGuiEvent.Envelope envelope)
     {
         if (pending != null && ReferenceEquals(pending.Token.Envelope, envelope)) pending = null;
+        endInvocation?.Invoke();
     }
     private void Decline(string reason) { pass.Invalidate(); Report(reason); }
     private void Fault(Exception failure) { faulted = true; enabled = false; Decline(failure.GetBaseException().Message); }

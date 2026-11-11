@@ -1,5 +1,33 @@
 # Pending native S071 scenarios
 
+## Revision20 current native layout, authored but not executed
+
+`megamod.messages.native-automatic-layout` is executable in the owning E2E project. Setup provides
+48 disposable unarmed colonists, no selection/expanded mood edge and one pinned fixture notification.
+The causal player action is Escape → Options → Interface → UI scale →0.75x. The scenario captures
+the native bar/message before and after, requires an actual row extent and message-position change,
+then selects/deselects a native colonist to demonstrate the explicit pending-selection fallback and
+fresh automatic resumption. It restores1x through Options, inspects the native developer console,
+and retains exact cleanup. Posting a notification remains fixture setup, not a posting-parity claim.
+
+The 900-second scenario budget comprises eight 1.7 screenshots at the provider's 30-second deadline
+(240 seconds), six native window inventories plus six native clicks plus four pointer-scope
+begin/end operations plus two console actions at their 15-second deadlines (270 seconds), and a
+shared 390-second reserve for the synchronous Escape/menu/selection/cancel actions, bounded fixture
+construction, assertion/checkpoint work, persistence and cleanup. Those synchronous calls do not
+have a separate engine timing guarantee. The paused workflow uses `MaxFrames=int.MaxValue`, leaving
+the finite wall limit authoritative while retaining its independent 4,800-tick stop. Use a launcher
+allowance of at least 1,500 seconds: scenario 900 + startup/readiness 300 + cleanup 180 + 120 margin.
+Both UI-scale labels use the native current-culture float-plus-`x` expression inspected in
+`Dialog_Options.DoInterface`; the language alone does not determine decimal punctuation.
+Fixture pawns have full mood before the first captured/action state and must report zero native edge
+expansion, so a hidden mood preference cannot accidentally bypass the initial bounded predicate.
+
+Actual bottom-right colonist-bar visibility control still needs a typed minimized native root-widget
+or keybinding E2E capability. Current Gateway native clicks target captured Windows; this control is
+root UI. Do not replace that action with direct showColonistBar mutation or maximizing OS input.
+Full weapons/frames/mood/selected/world/S001 scenarios remain required, not accepted by this tracer.
+
 ## Implemented manual tracer, pending native execution
 
 `megamod.messages.native-manual-reset-disable` is now executable in the Megamod E2E project.
@@ -9,9 +37,9 @@ view retains screenshots and matching native message/window rectangles. Only tho
 movements are claimed. Posting-source parity, automatic bar clearance, preview and native target/
 quest/dismiss interactions remain outside this tracer. All game work stays with the orchestrator.
 
-Owner: `fumblesneeze.megamod`. These are reserved workflow descriptions, **not registered or executed
-tests**. The unregistered native frame adapter and common offset editor exist; the WindowStack
-no-colony fallback is being composed. Automatic bar geometry and central registration remain open.
+Owner: `fumblesneeze.megamod`. The remaining catalog below contains reserved workflow descriptions,
+not executed acceptance. The native frame adapter, common offset editor and preview are integrated;
+revision20's bounded native automatic adapter awaits root review and native acceptance.
 Root must register executable
 scenarios once those surfaces exist; direct store writes or synthetic moved rectangles are not proof.
 

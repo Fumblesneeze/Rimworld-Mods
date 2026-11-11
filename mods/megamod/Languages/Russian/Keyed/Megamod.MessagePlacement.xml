@@ -17,4 +17,7 @@
   <Megamod_Messages_PreviewDisabled>Размещение отключено. Сохранённые смещения остаются; используется исходная позиция.</Megamod_Messages_PreviewDisabled>
   <Megamod_Messages_PreviewUnavailable>Размещение недоступно в текущем игровом контексте. Используется исходная позиция.</Megamod_Messages_PreviewUnavailable>
   <Megamod_Messages_PreviewSample>Только пример стопки: без настоящих сообщений, звуков и записей в истории.</Megamod_Messages_PreviewSample>
+  <Megamod_Messages_BarGeometryUnavailable>Автоматический отступ недоступен для текущего вида панели. Ручные смещения продолжают действовать.</Megamod_Messages_BarGeometryUnavailable>
+  <Megamod_Messages_PreviewBarClearance>Предпросмотр учитывает отступ под видимой сейчас панелью колонистов.</Megamod_Messages_PreviewBarClearance>
+  <Megamod_Messages_PreviewNoBar>Панель колонистов здесь не отображается. Предпросмотр использует обычное положение и заданные смещения.</Megamod_Messages_PreviewNoBar>
 </LanguageData>

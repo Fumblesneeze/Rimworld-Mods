@@ -488,3 +488,91 @@ build identities, root observations, log classification and cleanup are retained
 `artifacts/Implementation/megamod-p0/revision19-integrated-verification.md`. This closes the edit
 leases only. Automatic geometry, tolerance enforcement, wider native/localized cases and every
 whole-feature/part gate remain open; no unrun previous content/master-switch task is accepted.
+
+## Current leases — revision20 (2026-11-11)
+
+Start: clean d1607aa; previous goal turn made implementation and verified-native progress. Revision19
+leases are historical. Continue toward the full139-feature objective, with no acceptance reset.
+
+- `message_batch`: Features/MessagePlacement including existing BarBounds prepared/entry owner,
+  Bridge/runtime, matching feature tests/catalogs/owning specs and MSG target documents. Implement
+  actual prepared native geometry and consumption stability, then executable causal native cases.
+  Existing manual/preview behavior and later S001 composition remain obligations. Initial exclusive
+  Megamod.Harmony output lease; coordinate Unit output with tolerance_batch.
+- `tolerance_batch`: Features/DrugTolerance, matching tests/catalogs/owning specs and DT target
+  documents; narrow S029 state-storage composition as required. Native copy/Scribe support precedes
+  enabled contextual controls. Required enforcement and editor activate atomically; a persistence
+  checkpoint alone is not protection. Resolve exact timing/recipient/route semantics on evidence.
+  Initial Unit/Defs output lease; request Harmony output after message_batch releases it.
+- Root: central registration, projects, shared contracts, broad indexes, integrated independent
+  review, canonical build/install, exact native workflows, evidence and commits. No worker installs,
+  launches games or commits. Final native runs occur after the selected integrated batch is reviewed.
+
+The third slot, `generator_research`, has a documentation-only S139 lease: owning design/spec/tasks
+and a feature-local refinement research note. Resolve DG-Q1–3 from exact current native helpers,
+Core content and measured comparators, independently deriving supported suggestion rules, units,
+rounding and explicit unsupported cases. No source/tests/project edits, host output lease, game
+launch or commit. DG-Q4 publication and S138-dependent controls remain separate required milestones;
+the research must not substitute universal refusal for the requested generator behavior.
+
+Any handoff missing required behavior remains implemented-unverified. Record native scenario IDs,
+current source identities, RED/GREEN evidence, new assumptions and unresolved dependencies before
+root integration. Root may revise allocations on concrete evidence while retaining every obligation.
+
+Revision20 lease refinement: root takes `MessageBarGeometryGuard.cs`, its focused Harmony fixtures,
+and the existing `MessageBarPreparedPatch` observer integration/tests. `message_batch` retains the
+native geometry snapshot/runtime, downstream label admission, owning docs and causal scenarios.
+Root adds the read-only C01 postfix registration projection needed by that admission. Geometry
+rejection must preserve the existing manual path. The first working automatic slice can decline
+currently unproved visible adornments; their full implementation remains allocated, not waived.
+`tolerance_batch` additionally owns native save/load finalization guards and visible failure notice:
+exact source inspection proved Scribe_Deep swallows row failures. No successful missing-state save
+is acceptable. The S139 research lane has handed off to independent contract review before its
+calculation or native publication implementation. Harmony output is leased sequentially between
+root and the two implementers; all root live/commit authority remains unchanged.
+
+Revision20 continuation after research checkpoint251b1e6: `generator_research` now owns additive
+S139 Core calculation/classification/channel-conflict source and Unit fixtures, plus DG-Q4 native
+unpublished-object/publication research. The reviewed model explicitly discloses native batching
+variance and residual tolerance. `tolerance_batch` may start additive S138 reader/enforcement/editor
+files while its reviewed persistence tranche stays frozen for the root native gate; editor and
+enforcement remain unregistered until the atomic batch is ready. New source stays compile-coherent
+and freezes for root builds. Unit output is coordinated between these two workers; message owns
+Harmony output for review fixes with short root handoffs. Root owns a narrowly inspected C01
+publication-identity receipt requested by the concrete label authority hot path. No new code or
+research handoff is accepted as a native result.
+
+Revision20 drawing-proof refinement: `geometry_owner_review` changes from reviewer to implementer
+for the new `MessageBarAdornmentGuard`, matching Harmony fixtures and `MSG-BAR-ADORNMENTS` contract.
+It may compose that contribution through the root geometry guard's optional trailing input; it does
+not replace the sole prepared-owner transpiler. `message_batch` retains drawer/portrait/icon helper
+admission and native binding. These new changes need a different independent reviewer. Harmony
+output leases are coordinated directly among those workers and `tolerance_batch`. S138 persistence
+is checkpointed at7ed458e with native acceptance open. The additive tolerance reader and S139 C1
+calculation/publication design have independent no-finding reviews; the tolerance lane continues
+atomic enforcement/editor work while root prepares their separate implementation checkpoints.
+
+Further revision20 bounded division: `geometry_owner_review` now owns a separate DrawColonist
+exclusion participant and fixtures for selection/world/edge-expansion eligibility, supplied to the
+existing passive observer; `message_batch` owns portrait/icon drawing chains and native binding.
+Root owns the finite direct outward-render-call inventory in the existing bar geometry guard,
+including its added-draw regression, and S139's detached immutable draft/edit/reset component.
+The prior drawing participant is frozen at its 34-check green handoff. New contributions still need
+independent review before the native gate. C1 and native-reader checkpoints are e4f7827/28da488;
+the separately reviewed C01 publication-identity helper is checkpointed at4f3b69f. No checkpoint
+changes the full139-feature obligations or accepts an unobserved gameplay scenario.
+
+Revision20 batch refinement after the user's focused-verification instruction: the reviewed S071
+automatic implementation is checkpointed with native acceptance explicitly open. Native fixture
+repairs are collected together: an actual two-row-to-one-row setup, exact UI/window contracts,
+positive fault reachability and visible failure notices. The save-failure fixture uses only its
+required successful-save baseline; it no longer replays the separate copy/edit workflow. A single
+tooling-owned change, `extend-selected-e2e-diagnostic-expectations`, adds precise selected-test
+runtime error accounting through the existing typed E2E surface. It does not waive unexpected logs.
+
+Additive S138 enforcement/editor and S139 native-fact implementation may proceed while this
+verification batch is repaired. Root integrates and independently reviews the next coherent build
+before selected native runs. Workers freeze compile inputs for root build/staging checkpoints;
+they do not launch or install. Earlier component observations retain their exact build identity
+and do not accept later runtime changes. No feature, aggregate part or remaining comparator/native
+workflow obligation is removed by this scheduling change.

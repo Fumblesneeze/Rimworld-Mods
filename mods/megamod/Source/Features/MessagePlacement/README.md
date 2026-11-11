@@ -1,16 +1,20 @@
 # Message placement
 
-S071, owned by `fumblesneeze.megamod`. The 2026-11-11 batch wires manual offsets, viewport fitting
-and common enable/disable controls for orchestrator integration and native verification. Automatic
-bar geometry, inert preview and full native interaction acceptance remain open. The settings page
-explicitly reports unavailable automatic clearance. It introduces no renderer, persistent message
-list, cache or persistence authority. Earlier tranche notes below retain their historical scope.
+S071, owned by `fumblesneeze.megamod`. Manual placement/common controls and the inert preview have
+bounded reviewed English native evidence. Revision20 adds a connected, implemented-unverified
+automatic path for current native portrait/label rows. Six native label/portrait/icon observers and the
+existing single prepared owner carry the current geometry receipt through consumption. Native frame,
+weapon, selection and mood absence predicates are proved in their actual effective streams. Displayed weapons,
+frames, selection outlines, any positive native mood-edge expansion, world selection and active reordering still decline
+automatic clearance while retaining manual placement. Full native/S001/hidden/resize/locale/interaction
+obligations remain open. This introduces no renderer or persistent message collection. Historical
+tranche notes below retain their original scope.
 
 `MessagePlacement.TryCalculate(newestFirst, viewportWidth, viewportHeight, visibleBarBottom,
 offsets, out translation)` takes current logical UI coordinates. Each `MessageBounds` is a padded
 native rectangle already containing baseline, lesson and spacing; index zero is the newest message.
-The nullable bar bottom means no reserve when absent, not a guessed portrait count. The future
-adapter must distinguish hidden content from unavailable automatic clearance in its status UI.
+The nullable bar bottom means no reserve when absent, not a guessed portrait count. The current
+adapter distinguishes absent content from unavailable automatic clearance in its status UI.
 All inputs belong to one current prepared draw; no previous-frame geometry is retained.
 
 The policy first clears the first padded message by the named `BarClearance` constant (4), preserves

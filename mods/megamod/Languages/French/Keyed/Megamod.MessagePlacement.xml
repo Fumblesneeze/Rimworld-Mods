@@ -17,4 +17,7 @@
   <Megamod_Messages_PreviewDisabled>Le placement est désactivé. Les décalages sont conservés ; la position native est utilisée.</Megamod_Messages_PreviewDisabled>
   <Megamod_Messages_PreviewUnavailable>Le placement est indisponible dans le contexte actuel. La position native est utilisée.</Megamod_Messages_PreviewUnavailable>
   <Megamod_Messages_PreviewSample>Pile d’exemple uniquement : aucun message réel, son ni ajout à l’historique.</Megamod_Messages_PreviewSample>
+  <Megamod_Messages_BarGeometryUnavailable>L’espacement automatique est indisponible pour l’affichage actuel de la barre. Les décalages manuels restent appliqués.</Megamod_Messages_BarGeometryUnavailable>
+  <Megamod_Messages_PreviewBarClearance>L’aperçu tient compte de l’espace sous la barre des colons actuellement visible.</Megamod_Messages_PreviewBarClearance>
+  <Megamod_Messages_PreviewNoBar>Aucune barre des colons n’est affichée ici. L’aperçu utilise la position native et les décalages configurés.</Megamod_Messages_PreviewNoBar>
 </LanguageData>

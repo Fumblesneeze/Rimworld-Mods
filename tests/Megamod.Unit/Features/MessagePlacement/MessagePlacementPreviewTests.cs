@@ -22,12 +22,30 @@ public sealed class MessagePlacementPreviewTests
         var resized = MessagePlacementPreview.Capture(store, Samples, 800, 600, true);
         Assert.That(resized.Messages[0], Is.EqualTo(new MessageBounds(60, 76, 260, 26)));
         Assert.That(first.Messages[0], Is.EqualTo(new MessageBounds(240, 0, 260, 26)));
-        Assert.That(resized.StatusKey, Is.EqualTo("Megamod_Messages_BarIntegrationPending"));
+        Assert.That(resized.StatusKey, Is.EqualTo("Megamod_Messages_BarGeometryUnavailable"));
         Assert.That(Samples[0], Is.EqualTo(new MessageBounds(140, 16, 260, 26)));
     }
 
     private static MessagePreviewSnapshot Capture(SettingsStore store) =>
         MessagePlacementPreview.Capture(store, Samples, 1000, 800, true);
+
+    [Test]
+    public void CurrentAutomaticGeometryMovesThePreviewAndRevocationRestoresManualOnlyStatus()
+    {
+        var store = NewStore();
+        bool current = true;
+        var bar = MessageBarBoundsReceipt.Visible(100, () => current);
+        var preview = MessagePlacementPreview.Capture(store, Samples, 1000, 800, true, bar);
+        Assert.That(preview.Messages[0].Y, Is.EqualTo(104));
+        Assert.That(preview.StatusKey, Is.EqualTo("Megamod_Messages_PreviewBarClearance"));
+        current = false;
+        var revoked = MessagePlacementPreview.Capture(store, Samples, 1000, 800, true, bar);
+        Assert.That(revoked.Messages[0].Y, Is.EqualTo(16));
+        Assert.That(revoked.StatusKey, Is.EqualTo("Megamod_Messages_BarGeometryUnavailable"));
+        var absent = MessagePlacementPreview.Capture(store, Samples, 1000, 800, true, MessageBarBoundsReceipt.Absent(() => true));
+        Assert.That(absent.Messages[0].Y, Is.EqualTo(16));
+        Assert.That(absent.StatusKey, Is.EqualTo("Megamod_Messages_PreviewNoBar"));
+    }
 
     [Test]
     public void EffectiveScopeFollowsSaveOverridesInheritanceAndMenuWithoutWritingSettings()

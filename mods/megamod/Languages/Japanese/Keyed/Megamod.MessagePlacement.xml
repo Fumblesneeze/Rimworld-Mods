@@ -17,4 +17,7 @@
   <Megamod_Messages_PreviewDisabled>配置は無効です。保存したオフセットを保持し、標準の位置を使用します。</Megamod_Messages_PreviewDisabled>
   <Megamod_Messages_PreviewUnavailable>現在のゲーム状況では配置を利用できません。標準の位置を使用します。</Megamod_Messages_PreviewUnavailable>
   <Megamod_Messages_PreviewSample>サンプル表示のみ：実際のメッセージ、音声、履歴は作成しません。</Megamod_Messages_PreviewSample>
+  <Megamod_Messages_BarGeometryUnavailable>現在のバー表示では自動間隔調整を利用できません。手動オフセットは引き続き適用されます。</Megamod_Messages_BarGeometryUnavailable>
+  <Megamod_Messages_PreviewBarClearance>プレビューには、現在表示されている入植者バーの下の間隔が反映されています。</Megamod_Messages_PreviewBarClearance>
+  <Megamod_Messages_PreviewNoBar>ここでは入植者バーは表示されていません。プレビューには標準位置と設定したオフセットを使用します。</Megamod_Messages_PreviewNoBar>
 </LanguageData>

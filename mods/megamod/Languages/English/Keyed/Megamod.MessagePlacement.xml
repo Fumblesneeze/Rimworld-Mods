@@ -17,4 +17,7 @@
   <Megamod_Messages_PreviewDisabled>Placement is off. Stored offsets are retained; native positioning is used.</Megamod_Messages_PreviewDisabled>
   <Megamod_Messages_PreviewUnavailable>Placement is unavailable in the current game context. Native positioning is used.</Megamod_Messages_PreviewUnavailable>
   <Megamod_Messages_PreviewSample>Sample stack only: no live messages, sounds or history entries.</Megamod_Messages_PreviewSample>
+  <Megamod_Messages_BarGeometryUnavailable>Automatic clearance is unavailable for the current bar display. Manual offsets still apply.</Megamod_Messages_BarGeometryUnavailable>
+  <Megamod_Messages_PreviewBarClearance>The preview includes clearance below the current visible colonist bar.</Megamod_Messages_PreviewBarClearance>
+  <Megamod_Messages_PreviewNoBar>No colonist bar is drawn here. The preview uses native positioning and configured offsets.</Megamod_Messages_PreviewNoBar>
 </LanguageData>

@@ -1,12 +1,15 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **19**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **20**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
 Documentation completion and implementation are separate. All aggregate runtime gates remain open.
+Revision20 advances S071's concrete native automatic-clearance path and S138's native persistence/
+controls and enforcement prerequisites. The current p0-dispatch leases govern shared outputs and
+root integration. The complete feature/part obligations are unchanged.
 Revision19 has logical Gateway and S138 state checkpoints plus bounded S071 native preview/manual
 placement evidence and the affected S029 save/reload regression. Its edit leases are closed; exact
 scope and local evidence are recorded in p0-dispatch.md. No aggregate task closes from those slices.

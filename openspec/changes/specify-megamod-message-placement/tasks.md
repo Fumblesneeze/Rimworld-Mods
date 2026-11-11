@@ -1,5 +1,14 @@
 ## 1. Resolve current contracts
 
+Revision20 in progress: current1.7.5005 native portrait/label geometry is now connected under the
+single prepared owner, with separate effective label admission and transient consumption receipts.
+Pure geometry and focused Harmony evidence is retained in the revision20 handoff; root's first
+successful product build does not accept automatic behavior. The executable native UI-scale and
+selection/deselection workflow is authored, not run. Displayed weapons/frames/selected outlines/
+expanded mood, world/S001 and hidden/viewport breadth remain full implementation obligations;
+bottom-right show-bar acceptance additionally needs Gateway native root-widget control. All live
+checkboxes stay open pending reviewed causal evidence.
+
 2026-11-11 continuation batch: a stateless effective-scope settings diagram now projects the common
 store through the existing placement calculation. It retains explicit pending automatic-clearance,
 disabled and unavailable explanations; no bar geometry is invented. Three focused RED/GREEN slices

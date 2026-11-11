@@ -16,6 +16,8 @@ public sealed class MessagePlacementRuntime
     private static MessagePlacementRuntime? route;
     private readonly SettingsRuntime settings;
     private readonly MessagePlacementBridge? bridge;
+    private readonly MessageBarLabelAdmission? labels;
+    private readonly NativeMessageBarGeometry? geometry;
 
     public MessagePlacementRuntime(SettingsRuntime settings, IEnumerable<string> activePackageIds,
         Action<string> protectedWarning)
@@ -28,13 +30,36 @@ public sealed class MessagePlacementRuntime
             settings.Store.ReadGlobal(MessagePlacementSettings.PositionOffset);
             settings.Store.ReadGlobal(MessagePlacementSettings.Enabled);
             var targets = ResolveTargets();
+            MessageBarGeometryGuard? geometryGuard = null;
+            try
+            {
+                labels = NativeMessageBarLabels.Create();
+                geometryGuard = ResolveGeometryGuard();
+                geometry = new(() => settings.Store.GetEffective(MessagePlacementSettings.Enabled) &&
+                    bridge?.GeometryAvailable == true && labels.Refresh(), CaptureAutomaticAuthority,
+                    reason => protectedWarning("[fumblesneeze.megamod] MSG-BAR-LAYOUT-PREP " + reason));
+                AutomaticGroup = labels.Group;
+            }
+            catch (Exception failure)
+            {
+                string reason = failure.GetBaseException().Message;
+                AutomaticGroup = new("messages.automatic-labels", AdmissionPhase.Early, new[]
+                {
+                    new PatchCandidate("MSG-BAR-GEOMETRY-RESOLVE", "MSG-BAR-LAYOUT-PREP", "native bar geometry members",
+                        "automatic message clearance", "manual message placement", () => reason, () => {}, () => {})
+                });
+            }
             bridge = new(targets, typeof(MessagePlacementRuntime).GetMethod(nameof(Forward))!, IsCurrentContext,
                 CaptureFrame, ToNativeRectangle, protectedWarning,
-                preparedTargets: ResolvePreparedTargets(), capturePrepared: CaptureManualBarHandoff,
+                preparedTargets: ResolvePreparedTargets(), capturePrepared: (bar, entries, frames) =>
+                    geometry?.Capture(bar, entries, frames) ?? CaptureManualBarHandoff(bar, entries, frames),
                 windowStackGui: Method(typeof(WindowStack), nameof(WindowStack.WindowStackOnGUI),
                     BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 captureWindowFallback: CaptureWindowFallback,
-                placementEnabled: () => settings.Store.GetEffective(MessagePlacementSettings.Enabled));
+                placementEnabled: () => settings.Store.GetEffective(MessagePlacementSettings.Enabled),
+                barGeometry: geometryGuard, prepareBarGeometry: bar => geometry?.Preparing(bar),
+                consumeBarGeometry: (bar, index, rectangle) => geometry?.Consuming(bar, index, rectangle),
+                endInvocation: () => geometry?.EndInvocation());
             var forwardingRoute = new PatchCandidate("MSG-NATIVE-FORWARDER", "MSG-NATIVE-FRAME", "Verse.Message.Draw native window forwarding",
                 "message placement", "native placement", () => UnavailableReason ??
                     (!UnityData.IsInMainThread ? "Native message admission requires the main thread." : null) ??
@@ -58,10 +83,21 @@ public sealed class MessagePlacementRuntime
     }
 
     public PatchGroup Group { get; }
+    public PatchGroup? AutomaticGroup { get; }
     public string? UnavailableReason { get; }
     public bool Available => UnavailableReason == null && ReferenceEquals(route, this) && bridge?.Available == true;
-    public bool AutomaticClearanceIntegrated => false;
-    public string? AutomaticClearanceReasonKey => "Megamod_Messages_BarIntegrationPending";
+    public bool AutomaticClearanceIntegrated => bridge?.GeometryAvailable == true && labels?.Available == true;
+    public MessageBarBoundsReceipt? CurrentBarBounds => geometry?.Current ??
+        (Find.UIRoot is { } root && root.windows != null ? CaptureWindowFallback(root, root.windows) : null);
+    public string? AutomaticClearanceReasonKey => CurrentBarBounds?.ReasonKey ??
+        (AutomaticClearanceIntegrated ? null : "Megamod_Messages_BarGeometryUnavailable");
+
+    private Func<bool> CaptureAutomaticAuthority()
+    {
+        var bar = bridge?.CaptureGeometryAuthority() ?? (() => false);
+        var label = labels?.CaptureAuthority() ?? (() => false);
+        return () => settings.Store.GetEffective(MessagePlacementSettings.Enabled) && bar() && label();
+    }
 
     // This signature is consumed exactly by MSG-NATIVE-DRAW. The native call is outside owned handling.
     public static void Forward(WindowStack stack, int id, Rect rectangle, WindowLayer layer, Action callback,
@@ -88,7 +124,7 @@ public sealed class MessagePlacementRuntime
             ReferenceEquals(root.windows, actualStack) && UI.screenWidth == width && UI.screenHeight == height;
         return root.GetType() == typeof(UIRoot_Entry) && game == null
             ? MessageBarBoundsReceipt.Absent(IsCurrent)
-            : MessageBarBoundsReceipt.Unavailable("Megamod_Messages_BarIntegrationPending", IsCurrent);
+            : MessageBarBoundsReceipt.Unavailable("Megamod_Messages_BarGeometryUnavailable", IsCurrent);
     }
 
     private static MessageBarBoundsReceipt CaptureManualBarHandoff(object actualBar, object entries, bool frames)
@@ -116,6 +152,31 @@ public sealed class MessagePlacementRuntime
                 Method(drawer, nameof(ColonistBarColonistDrawer.DrawGroupFrame), instance, typeof(int)),
                 Method(drawer, nameof(ColonistBarColonistDrawer.HandleGroupFrameClicks), instance, typeof(int))
             });
+    }
+
+    private static MessageBarGeometryGuard ResolveGeometryGuard()
+    {
+        var targets = ResolvePreparedTargets();
+        return new(new(
+            typeof(ColonistBar).GetField("cachedDrawLocs", BindingFlags.Instance | BindingFlags.NonPublic)!,
+            typeof(ColonistBar).GetProperty(nameof(ColonistBar.Size))!.GetMethod!,
+            typeof(Vector2).GetField(nameof(Vector2.x))!, typeof(Vector2).GetField(nameof(Vector2.y))!,
+            typeof(Rect).GetConstructor(new[] { typeof(float), typeof(float), typeof(float), typeof(float) })!,
+            targets.Consumers![0], targets.Consumers[1], typeof(ColonistBar.Entry).GetField(nameof(ColonistBar.Entry.pawn))!,
+            typeof(ColonistBar.Entry).GetField(nameof(ColonistBar.Entry.map))!, typeof(ColonistBar).GetField(nameof(ColonistBar.drawer))!, new[] { typeof(GUI), typeof(GUIUtility) }),
+            new MessageBarAdornmentGuard(new(
+                typeof(ColonistBar).GetField(nameof(ColonistBar.drawer))!, typeof(ColonistBar.Entry).GetField(nameof(ColonistBar.Entry.pawn))!,
+                typeof(ColonistBar.Entry).GetField(nameof(ColonistBar.Entry.group))!, typeof(Pawn).GetField(nameof(Pawn.equipment))!,
+                typeof(Pawn_EquipmentTracker).GetProperty(nameof(Pawn_EquipmentTracker.Primary))!.GetMethod!,
+                typeof(Prefs).GetProperty(nameof(Prefs.ShowWeaponsUnderPortraitMode))!.GetMethod!,
+                typeof(Pawn).GetProperty(nameof(Pawn.Drafted))!.GetMethod!, typeof(Thing).GetField(nameof(Thing.def))!,
+                typeof(ThingDef).GetProperty(nameof(ThingDef.IsWeapon))!.GetMethod!, targets.Consumers[2], targets.Consumers[3],
+                Method(typeof(Widgets), nameof(Widgets.ThingIcon), BindingFlags.Public | BindingFlags.Static,
+                    typeof(Rect), typeof(Thing), typeof(float), typeof(Rot4?), typeof(bool), typeof(float), typeof(bool)),
+                typeof(Rect).GetProperty(nameof(Rect.x))!.GetMethod!, typeof(Rect).GetProperty(nameof(Rect.y))!.GetMethod!,
+                typeof(Rect).GetProperty(nameof(Rect.width))!.GetMethod!, typeof(Rect).GetProperty(nameof(Rect.height))!.GetMethod!,
+                typeof(Rect).GetConstructor(new[] { typeof(float), typeof(float), typeof(float), typeof(float) })!,
+                Method(typeof(GenUI), nameof(GenUI.ScaledBy), BindingFlags.Public | BindingFlags.Static, typeof(Rect), typeof(float)))));
     }
 
     private MessagePlacementFrame? CaptureFrame()

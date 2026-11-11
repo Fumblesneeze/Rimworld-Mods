@@ -17,4 +17,7 @@
   <Megamod_Messages_PreviewDisabled>Platzierung ist aus. Gespeicherte Versätze bleiben erhalten; die native Position gilt.</Megamod_Messages_PreviewDisabled>
   <Megamod_Messages_PreviewUnavailable>Platzierung ist im aktuellen Spielkontext nicht verfügbar. Die native Position gilt.</Megamod_Messages_PreviewUnavailable>
   <Megamod_Messages_PreviewSample>Nur ein Beispielstapel: keine echten Meldungen, Töne oder Chronikeinträge.</Megamod_Messages_PreviewSample>
+  <Megamod_Messages_BarGeometryUnavailable>Für die aktuelle Leistenansicht ist kein automatischer Abstand verfügbar. Manuelle Versätze gelten weiterhin.</Megamod_Messages_BarGeometryUnavailable>
+  <Megamod_Messages_PreviewBarClearance>Die Vorschau berücksichtigt den Abstand unter der aktuell sichtbaren Kolonistenleiste.</Megamod_Messages_PreviewBarClearance>
+  <Megamod_Messages_PreviewNoBar>Hier wird keine Kolonistenleiste angezeigt. Die Vorschau verwendet die normale Position und die eingestellten Versätze.</Megamod_Messages_PreviewNoBar>
 </LanguageData>

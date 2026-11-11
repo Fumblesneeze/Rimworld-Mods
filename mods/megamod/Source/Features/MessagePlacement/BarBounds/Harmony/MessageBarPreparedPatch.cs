@@ -19,31 +19,52 @@ public sealed class MessageBarPreparedPatch
     private static readonly ConcurrentDictionary<MethodBase, MessageBarPreparedPatch> Routes = new();
     private static readonly MethodInfo Transpiler = typeof(MessageBarPreparedPatch).GetMethod(nameof(Transpile), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo Observer = typeof(MessageBarPreparedPatch).GetMethod(nameof(Observe), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo PreparingObserver = typeof(MessageBarPreparedPatch).GetMethod(nameof(ObservePreparing), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo ConsumerObserver = typeof(MessageBarPreparedPatch).GetMethod(nameof(ObserveConsumer), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static long nextGeneration;
     private readonly MessageBarPreparedTargets targets;
     private readonly Action<object, object, bool, Func<bool>> prepared;
     private readonly Action<Exception> reportFailure;
     private readonly OwnedHarmonyPatch receipt;
     private readonly MessageBarEntryConsumptionPatch? entryConsumption;
+    private readonly MessageBarGeometryGuard? geometry;
+    private readonly Action<object>? preparing;
+    private readonly Action<object, int, object>? consuming;
+    private readonly Action<Exception> geometryFailureReporter;
     private sealed record Incoming(int Version, long Token, IReadOnlyList<HarmonyPublication.Operation> Body,
-        ISet<int> Protected, ISet<int>? EntryArguments, string? EntryFailure);
-    private sealed record Publication(Incoming Generation, string? EntryFailure);
+        ISet<int> Protected, ISet<int>? EntryArguments, string? EntryFailure,
+        ISet<int>? GeometryOperations, string? GeometryFailure);
+    private sealed record Publication(Incoming Generation, string? EntryFailure, string? GeometryFailure, HarmonyPublication.Identity Identity);
     private Incoming? incoming;
     private Publication? publication;
-    private bool installed, enabled, faulted;
+    private bool installed, enabled, faulted, geometryFaulted;
 
     public MessageBarPreparedPatch(MessageBarPreparedTargets targets,
         Action<object, object, bool, Func<bool>> prepared, Action<Exception> reportFailure,
-        MessageBarEntryConsumptionPatch? entryConsumption = null)
+        MessageBarEntryConsumptionPatch? entryConsumption = null, MessageBarGeometryGuard? geometry = null,
+        Action<object>? preparing = null, Action<object, int, object>? consuming = null,
+        Action<Exception>? geometryFailureReporter = null)
     {
         this.targets = targets; this.prepared = prepared; this.reportFailure = reportFailure;
         this.entryConsumption = entryConsumption;
+        this.geometry = geometry; this.preparing = preparing; this.consuming = consuming;
+        this.geometryFailureReporter = geometryFailureReporter ?? reportFailure;
         receipt = new(targets.Render, HarmonyPatchType.Transpiler, Transpiler, ReadTranspilers);
         Candidate = new("MSG-BAR-PREPARED", "MSG-BAR-LAYOUT-PREP", targets.Render.ToString()!,
             "prepared message placement", "native message placement", Validate, Install, Rollback);
     }
     public PatchCandidate Candidate { get; }
     public string? Failure { get; private set; }
+    public bool GeometryAvailable => Available && !geometryFaulted && geometry != null &&
+        Volatile.Read(ref publication) is { GeometryFailure: null } geometryPublication && geometryPublication.Identity.IsCurrent();
+    public string? GeometryFailure => Volatile.Read(ref publication)?.GeometryFailure ??
+        (GeometryAvailable ? null : "Native geometry authority is unavailable.");
+    public Func<bool> CaptureGeometryAuthority()
+    {
+        var admitted = Volatile.Read(ref publication);
+        if (admitted == null || !GeometryAvailable) return () => false;
+        return () => GeometryAvailable && ReferenceEquals(admitted.Generation, Volatile.Read(ref publication)?.Generation);
+    }
     public bool Available => installed && !faulted && Volatile.Read(ref publication) is { } value &&
         ReferenceEquals(value.Generation, Volatile.Read(ref incoming));
     // Selected consumer arguments only: this does not admit source-field geometry or GUI lifetime.
@@ -80,7 +101,13 @@ public sealed class MessageBarPreparedPatch
                     try { entryFailure = snapshot.FailureFor(generation.Body, required); }
                     catch (Exception error) { entryFailure = error.GetBaseException().Message; }
                 }
-                Volatile.Write(ref publication, new Publication(generation, entryFailure));
+                string? geometryFailure = generation.GeometryFailure;
+                if (geometryFailure == null && generation.GeometryOperations is { } geometryRequired)
+                {
+                    try { geometryFailure = snapshot.FailureFor(generation.Body, geometryRequired); }
+                    catch (Exception error) { geometryFailure = error.GetBaseException().Message; }
+                }
+                Volatile.Write(ref publication, new Publication(generation, entryFailure, geometryFailure, snapshot.Identity));
                 return true;
             });
             if (!accepted && Failure == null) Failure = "Published prepared-handoff metadata is busy.";
@@ -177,27 +204,78 @@ public sealed class MessageBarPreparedPatch
         if (body.Any(instruction => instruction.operand is Label label && interior.Contains(label) ||
             instruction.operand is Label[] labels && labels.Any(interior.Contains))) return body;
         long token = Interlocked.Increment(ref nextGeneration);
-        var emitted = body.Select(instruction => new CodeInstruction(instruction)).ToList();
+        MessageBarGeometryDescription? description = null;
+        string? geometryFailure = "No native geometry participant was selected.";
+        if (owner.geometry != null && owner.preparing != null && owner.consuming != null)
+        {
+            try
+            {
+                description = owner.geometry.Describe(body, end, entriesLocal);
+                geometryFailure = description.Failure;
+            }
+            catch (Exception error) { geometryFailure = error.GetBaseException().Message; }
+        }
+        var emitted = new List<CodeInstruction>();
+        var mapped = new int[body.Count];
+        var geometryRequired = geometryFailure == null ? new HashSet<int>() : null;
         var injected = new[]
         {
             new CodeInstruction(OpCodes.Ldarg_0), new CodeInstruction(OpCodes.Ldloc, entriesLocal),
             new CodeInstruction(OpCodes.Ldloc, framesLocal), new CodeInstruction(OpCodes.Ldtoken, __originalMethod),
             new CodeInstruction(OpCodes.Ldc_I8, token), new CodeInstruction(OpCodes.Call, Observer)
         };
-        emitted.InsertRange(end + 1, injected);
-        var required = Enumerable.Range(end + 1, injected.Length).ToHashSet();
+        var required = new HashSet<int>();
+        int handoff = -1;
+        for (int index = 0; index < body.Count; index++)
+        {
+            var original = new CodeInstruction(body[index]);
+            if (index == start && owner.preparing != null)
+            {
+                var before = new[]
+                {
+                    new CodeInstruction(OpCodes.Ldarg_0), new CodeInstruction(OpCodes.Ldtoken, __originalMethod),
+                    new CodeInstruction(OpCodes.Ldc_I8, token), new CodeInstruction(OpCodes.Call, PreparingObserver)
+                };
+                before[0].labels.AddRange(original.labels); original.labels.Clear();
+                geometryRequired?.UnionWith(Enumerable.Range(emitted.Count, before.Length));
+                emitted.AddRange(before);
+            }
+            if (geometryRequired != null && description!.EntryConsumers.Contains(index))
+            {
+                var consume = new[]
+                {
+                    new CodeInstruction(OpCodes.Ldarg_0), new CodeInstruction(OpCodes.Ldloc, description.IndexLocal),
+                    new CodeInstruction(OpCodes.Ldloc, description.RectangleLocal), new CodeInstruction(OpCodes.Box, owner.geometry!.RectangleType),
+                    new CodeInstruction(OpCodes.Ldtoken, __originalMethod), new CodeInstruction(OpCodes.Ldc_I8, token),
+                    new CodeInstruction(OpCodes.Call, ConsumerObserver)
+                };
+                consume[0].labels.AddRange(original.labels); original.labels.Clear();
+                geometryRequired.UnionWith(Enumerable.Range(emitted.Count, consume.Length));
+                emitted.AddRange(consume);
+            }
+            mapped[index] = emitted.Count;
+            emitted.Add(original);
+            if (index == end)
+            {
+                required.UnionWith(Enumerable.Range(emitted.Count, injected.Length));
+                emitted.AddRange(injected);
+                handoff = emitted.Count - 1;
+            }
+        }
+        if (geometryRequired != null)
+            geometryRequired.UnionWith(description!.Required.Select(index => mapped[index]));
         if (owner.targets.Consumers is { } consumers &&
-            !ProtectConsumerOrder(emitted, end + injected.Length, consumers, required)) return body;
+            !ProtectConsumerOrder(emitted, handoff, consumers, required)) return body;
         (ISet<int>? Required, string? Failure) entry;
         try
         {
-            entry = owner.entryConsumption?.Describe(emitted, end + injected.Length) ??
+            entry = owner.entryConsumption?.Describe(emitted, handoff) ??
                 (null, "No entry-call participant was selected.");
         }
         catch (Exception error) { entry = (null, error.GetBaseException().Message); }
         Volatile.Write(ref owner.incoming, new Incoming(version, token,
             emitted.Select(instruction => new HarmonyPublication.Operation(instruction.opcode, instruction.operand)).ToArray(),
-            required, entry.Required, entry.Failure));
+            required, entry.Required, entry.Failure, geometryRequired, geometryFailure));
         return emitted;
     }
 
@@ -274,6 +352,29 @@ public sealed class MessageBarPreparedPatch
         {
             owner.faulted = true; owner.enabled = false; Volatile.Write(ref owner.publication, null);
             try { owner.reportFailure(error); } catch (Exception) { /* Native rendering remains authoritative. */ }
+        }
+    }
+
+    private static void ObservePreparing(object bar, RuntimeMethodHandle method, long token) =>
+        ObserveGeometry(method, token, owner => owner.preparing?.Invoke(bar), requireGeometry: false);
+
+    private static void ObserveConsumer(object bar, int index, object rectangle, RuntimeMethodHandle method, long token) =>
+        ObserveGeometry(method, token, owner => owner.consuming?.Invoke(bar, index, rectangle), requireGeometry: true);
+
+    private static void ObserveGeometry(RuntimeMethodHandle method, long token, Action<MessageBarPreparedPatch> action, bool requireGeometry)
+    {
+        if (!Routes.TryGetValue(MethodBase.GetMethodFromHandle(method)!, out var owner) || !owner.enabled || owner.geometryFaulted) return;
+        try
+        {
+            if (!owner.Available && !owner.RefreshPublication()) return;
+            if (Volatile.Read(ref owner.publication)?.Generation.Token != token ||
+                requireGeometry && !owner.GeometryAvailable) return;
+            action(owner);
+        }
+        catch (Exception error)
+        {
+            owner.geometryFaulted = true;
+            try { owner.geometryFailureReporter(error); } catch (Exception) { /* Preserve native and manual rendering. */ }
         }
     }
 }

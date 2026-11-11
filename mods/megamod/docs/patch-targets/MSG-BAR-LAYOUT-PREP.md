@@ -1,6 +1,84 @@
 # MSG-BAR-LAYOUT-PREP: prepared bar state and render consumption
 
+## Revision20 bounded native automatic contribution
+
+The first connected geometry path admits current native portraits and labels for a single map group.
+Currently displayed weapons, selected outlines, positive native mood-edge expansion, group frames,
+world selection and active reordering explicitly make automatic geometry unavailable; manual offsets
+still apply. The bounded mood predicate declines any positive EdgeExpansion even if its preference
+hides it; it never reserves that hidden geometry. None/Minor mood has no expanded edge in 1.7.5005
+and remains usable. These are interim
+implementation boundaries, not removals of the decorated, world, S001 or hidden/resize obligations.
+
+Six passive effective-stream observers in the separate automatic admission group validate
+`ColonistBarColonistDrawer.DrawColonist`, `GetPawnTextureRect`, `DrawIcons`, `DrawIcon`, and the
+Vector2/Rect `GenMapUI.DrawPawnLabel` overloads.
+They validate the portrait-relative label origin/truncation width, preference-selected background,
+actual text rectangle and drafted underline. The proof captures compiler locals and branch destinations;
+it tolerates unrelated instructions outside the required expressions and NOP/local-number changes.
+It never re-executes foreign transpilers, invokes drawing or queries message collision to measure.
+Their publication receipts inspect C01's immutable Prefixes/Postfixes/Finalizers metadata: parameterless
+void observations are harmless; unproved outer skip/argument/result effects decline automatic geometry.
+The actual incoming stream is revalidated on every composition, and C01 protects the matched operations
+against inner rewrites. Compatible foreign transpilers run before the last observer. A failed label
+contract leaves the separate native manual placement group available.
+
+The same DrawColonist observer unions the actual portrait painting paths and its native outward
+adornment exclusions. Background/dead textures and box consumers retain the supplied rectangle;
+mood fill retains the contracted bottom through yMin/height updates. The portrait texture rectangle
+stays intact on the stack until GUI.DrawTexture. The mood gradient remains inside the current
+contracted BeginGroup/EndGroup clip. Icons use the native bounded size and supplied portrait bottom;
+their helper may advance only the horizontal cursor. The sole admitted icon exception handler is
+the ordinary enumerator-dispose finally. Relevant local definitions must dominate their consumers;
+supplied argument addresses cannot escape into mutating calls. The finite direct GUI/Widgets
+drawing family must be covered by a proved chain; unrelated non-render observations remain legal.
+GUI/Widgets primitive rendering is the boundary, not a recursive audit of unrelated engine internals.
+That finite renderer inventory applies to every admitted label, texture and icon helper, including
+direct clip-ending calls (`EndClip`/`EndScrollView`). Partial DrawColonist descriptions are unioned
+before their single complete inventory check. The Rect label helper must retain its supplied font
+from measurement through every font-sensitive size/text consumer; another reachable font write
+which can feed those consumers without the proved initial setter declines automatic geometry.
+A font restore after all affected consumers is not itself incompatible.
+
+Publication validation captures C01's opaque immutable provider identity together with the checked
+metadata. Repeated current-generation checks use bounded nonblocking identity comparison, never
+metadata reparsing or foreign transpiler replay. Observer removal or replacement revokes old
+authorities even if the observer itself is no longer called.
+
+The prepared owner remains the only owner on `ColonistBarOnGUI`. It marks native layout dirty before
+the real Entries getter when root/bar/map/viewport context changes, captures actual prepared locals,
+and checks the same receipt immediately before native entry consumers. The capture samples current
+native label text/width helpers with the actual cache and Tiny font, restores font state, and measures
+text height (not the100px label container). List identities/versions, entry/rectangle values, scale,
+viewport, language/preferences, map/game/root, pawn label/equipment/selection/mood state and publication
+authority must remain current. Receipt checks never recache or render. Post-commit invalidation preserves
+completed native effects and revokes the transient receipt; no late rollback or second render occurs.
+
 ## Ownership and status
+
+Revision20 current-build research:1.7.5005 rev1082 Assembly-CSharp SHA256
+`82387F78262461E53BB06A67C3945912B876D1FDB07235122BBB6E59D073F125` is retained under
+`artifacts/Megamod/P0-B/automatic-1.7.5005/`. The actual geometry adapter is being implemented
+under the existing prepared owner. The root-owned `MessageBarGeometryGuard` must establish the
+actual cached-location/Size-to-entry-rectangle and matching-entry-to-click/draw relationships;
+the feature owner supplies preparation/invocation/consumer hooks and the native values. This is
+an in-progress contract, not a claim of installed automatic placement.
+
+Current visible vertical contributions are the native portrait; label background/text/draft line
+below `portrait.yMax - 4*Scale`; an actually eligible weapon rectangle whose native scaled bottom
+is `portrait.y + 1.925*portrait.height`; currently selected bracket expansion of `2*Scale` plus
+the remaining contraction jump `4*Scale*max(0,1-(now-selectedAt)/0.07)`; an actually eligible mood
+edge; and separately displayed group frames extending12*Scale below their group. Empty framed
+entries still contribute; an unframed empty entry does not. Native constants are research facts,
+not interchangeable guessed margins. The supplied source-field/argument chain and each actual
+downstream contribution require admission before automatic clearance is available.
+
+The bracket envelope samples only the currently selected target and actual native selection-time
+source; it may contract during the same GUI invocation. It must not reset to a full jump for a
+settled/unselected entry. Mood-edge eligibility excludes non-message alpha reductions (other map,
+world route and reordering) but anticipates the edge that becomes visible when messages move clear.
+No collision or rendering method is invoked for measurement. A changed selection/time/presentation
+fact invalidates the same-invocation receipt; completed native effects are retained.
 
 - Owner: `fumblesneeze.megamod`; S071 `megamod-message-placement`: current-layout clearance,
   absent bar, first resize/UI-scale/map/group display, unchanged interactions and S001 composition.

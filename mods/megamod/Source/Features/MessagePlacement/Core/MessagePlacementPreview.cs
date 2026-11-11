@@ -10,14 +10,20 @@ public sealed record MessagePreviewSnapshot(string ScopeKey, string StatusKey,
 public static class MessagePlacementPreview
 {
     public static MessagePreviewSnapshot Capture(SettingsStore settings, IReadOnlyList<MessageBounds> samples,
-        double viewportWidth, double viewportHeight, bool placementAvailable)
+        double viewportWidth, double viewportHeight, bool placementAvailable, MessageBarBoundsReceipt? bar = null)
     {
         var rectangles = new List<MessageBounds>();
         bool enabled = settings.GetEffective(MessagePlacementSettings.Enabled);
+        bool current = false;
+        try { current = bar?.IsCurrent() == true; } catch (System.Exception) { }
+        double? bottom = current ? bar!.Bottom : null;
         string status = !enabled ? "Megamod_Messages_PreviewDisabled" :
-            !placementAvailable ? "Megamod_Messages_PreviewUnavailable" : "Megamod_Messages_BarIntegrationPending";
+            !placementAvailable ? "Megamod_Messages_PreviewUnavailable" :
+            !current ? "Megamod_Messages_BarGeometryUnavailable" :
+            bar!.State == MessageBarBoundsState.Visible ? "Megamod_Messages_PreviewBarClearance" :
+            bar.State == MessageBarBoundsState.Absent ? "Megamod_Messages_PreviewNoBar" : bar.ReasonKey!;
         if (enabled && placementAvailable &&
-            MessagePlacement.TryCalculate(samples, viewportWidth, viewportHeight, null,
+            MessagePlacement.TryCalculate(samples, viewportWidth, viewportHeight, bottom,
             settings.GetEffective(MessagePlacementSettings.PositionOffset), out var translation))
             foreach (var sample in samples)
                 rectangles.Add(sample with { X = sample.X + translation.X, Y = sample.Y + translation.Y });

@@ -10,11 +10,13 @@ internal sealed class MessagePlacementPreviewUi
 {
     private readonly SettingsStore settings;
     private readonly Func<bool> placementAvailable;
+    private readonly Func<MessageBarBoundsReceipt?>? barBounds;
 
-    internal MessagePlacementPreviewUi(SettingsStore settings, Func<bool> placementAvailable)
+    internal MessagePlacementPreviewUi(SettingsStore settings, Func<bool> placementAvailable, Func<MessageBarBoundsReceipt?>? barBounds = null)
     {
         this.settings = settings;
         this.placementAvailable = placementAvailable;
+        this.barBounds = barBounds;
     }
 
     internal void Draw(Rect rect)
@@ -33,7 +35,7 @@ internal sealed class MessagePlacementPreviewUi
             new MessageBounds(origin.x, origin.y + 26, 340, 26),
             new MessageBounds(origin.x, origin.y + 52, 220, 26)
         };
-        var preview = MessagePlacementPreview.Capture(settings, samples, width, height, placementAvailable());
+        var preview = MessagePlacementPreview.Capture(settings, samples, width, height, placementAvailable(), barBounds?.Invoke());
         Widgets.Label(new Rect(rect.x, rect.y, rect.width, 28), preview.ScopeKey.Translate());
         float statusHeight = Math.Max(34, Text.CalcHeight(preview.StatusKey.Translate(), rect.width));
         Widgets.Label(new Rect(rect.x, rect.y + 28, rect.width, statusHeight), preview.StatusKey.Translate());

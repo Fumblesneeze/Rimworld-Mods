@@ -17,4 +17,7 @@
   <Megamod_Messages_PreviewDisabled>消息定位已关闭。保留已保存的偏移量，使用原生位置。</Megamod_Messages_PreviewDisabled>
   <Megamod_Messages_PreviewUnavailable>当前游戏环境无法使用消息定位。使用原生位置。</Megamod_Messages_PreviewUnavailable>
   <Megamod_Messages_PreviewSample>仅显示示例消息：不会产生实际消息、声音或历史记录。</Megamod_Messages_PreviewSample>
+  <Megamod_Messages_BarGeometryUnavailable>当前殖民者栏显示不支持自动留出间距。手动偏移仍然生效。</Megamod_Messages_BarGeometryUnavailable>
+  <Megamod_Messages_PreviewBarClearance>预览包含当前可见殖民者栏下方的间距。</Megamod_Messages_PreviewBarClearance>
+  <Megamod_Messages_PreviewNoBar>此处未显示殖民者栏。预览使用原始位置和设定的偏移。</Megamod_Messages_PreviewNoBar>
 </LanguageData>

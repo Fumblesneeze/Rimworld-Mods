@@ -83,7 +83,8 @@ public sealed class MegamodMod : Mod
         DiagnosticSettingsUi.Register(renderer);
         WarningCaptureSettingsUi.Register(renderer, warningCapture);
         DrugPolicySettingsUi.Register(renderer);
-        MessagePlacementSettingsUi.Register(renderer, settings.Store, () => messagePlacement?.Available == true);
+        MessagePlacementSettingsUi.Register(renderer, settings.Store, () => messagePlacement?.Available == true,
+            () => messagePlacement?.CurrentBarBounds);
         // Owned row state survives ordinary feature-off choices and precedes native policy factories.
         drugTolerancePersistence = NativeDrugTolerancePersistence.Create(diagnostics.Write);
         if (admission.Apply(drugTolerancePersistence.Group, AdmissionPhase.Early)) drugTolerancePersistence.Enable();
@@ -169,7 +170,8 @@ public sealed class MegamodMod : Mod
         if (messagePlacement == null && settings.Store.GetEffective(MessagePlacementSettings.Enabled))
         {
             messagePlacement = new MessagePlacementRuntime(settings, activePackageIds, diagnostics.Write);
-            admission.Apply(messagePlacement.Group, AdmissionPhase.Early);
+            if (admission.Apply(messagePlacement.Group, AdmissionPhase.Early) && messagePlacement.AutomaticGroup is { } automatic)
+                admission.Apply(automatic, AdmissionPhase.Early);
         }
         // Also maintain the independent warning route when definition context or content
         // selection is inactive. Never inspect Harmony metadata from a log callback.
