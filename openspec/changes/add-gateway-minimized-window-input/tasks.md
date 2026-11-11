@@ -106,6 +106,15 @@ This renews only the basic click/console scope for 1.7.5005; wider section3 gate
 
 ### Focused text prerequisite — 2026-11-11
 
-- [ ] Implement exact focused-control capture and bounded native-window.replace-text through native queues and post-layout validation, with owned cleanup and focused host RED/GREEN.
-- [ ] Expose the same action through existing typed automation and E2E deferred lifecycle; author native numeric/invalid/name and stale-focus scenarios.
-- [ ] Independently review the frozen provider/contract/step changes and personally verify the reviewed minimized native scenario before accepting text delivery.
+- [x] Implement exact focused-control capture and bounded native-window.replace-text through native queues and post-layout validation, with owned cleanup and focused host RED/GREEN.
+- [x] Expose the same action through existing typed automation and E2E deferred lifecycle; author native numeric/invalid/name and stale-focus scenarios.
+- [x] Independently review the frozen provider/contract/step changes and personally verify the reviewed minimized native scenario before accepting text delivery.
+
+Root verified the scoped text workflow on 2026-11-12 local time: reviewed checkpoint2f076a0,
+group20261111T232206299Z-54797f07e99c4115b81195499cbf2f8c,38steps and six personally inspected
+causal captures. Native invalid/valid Apply, empty deletion, accented name input, stale-focus
+refusal and fresh-focus recovery were observed. Graceful exact-process cleanup, staging/credential
+cleanup and unchanged normal configuration hashes completed. Exact build, warning classification,
+actions and limitations are retained in
+`artifacts/Implementation/gateway-native-text-input/native-verification.md`.
+This closes only these focused text prerequisites; section3's broader native matrix remains open.
