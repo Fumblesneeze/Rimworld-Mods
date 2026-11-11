@@ -21,6 +21,13 @@ the edited 100 capture before Cancel and the unchanged zero row afterward, as we
 causal captures and final native console. The fixture restores its exact windows, pointer scope,
 policy and speed; it refuses cleanup against an unrelated Game.
 
+Root observed this editor workflow on reviewed build9724e47 in group
+`20261111T233205965Z-abd820736c4c4f3caef98b41c4b1a026`:78 steps and all ten screenshots,
+English1600x900/UI scale1, with graceful process cleanup and unchanged normal configuration.
+Exact hashes and the preceding inherited-method failure/fix are in the local
+`artifacts/Implementation/megamod-p0/revision21-native-verification.md` ledger. This result is
+limited to that editor slice and build; it does not accept routine ingestion or wider layouts.
+
 `megamod.drug-tolerance.native-copy-save` opens Assign and native Manage drug policies, selects
 a disposable source, clicks the native Duplicate icon and changes the copy's Beer recreation
 checkbox. It saves/reloads through the native command and reopens the copied row. Encoded numeric
