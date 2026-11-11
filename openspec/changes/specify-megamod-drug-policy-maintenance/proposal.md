@@ -15,8 +15,9 @@ and alphabetical navigation; the user's additional request explicitly includes r
   intentionally corrects the source's underlying-list sort, which also changes job selection.
 - Compose content filtering with S038 and scheduled-use restrictions with S024 directly. Distinguish
   unavailable content from zero colony stock; define persistence and bounded repair diagnostics.
-- Record provenance, omissions, source differences and open questions. **Documentation only**;
-  no gameplay implementation or compatibility acceptance is delivered.
+- Record provenance, omissions, source differences and open questions. The originally documentary
+  change is now in implementation under the approved parallel plan. Only initial preset recovery
+  and its native controls workflow have scoped verification; the full replacement remains unfinished.
 
 ## Capabilities
 
@@ -38,9 +39,11 @@ See [research](../../../mods/megamod/docs/refinement/2026-11-02-drug-policy-fix-
 [replacement coverage](../../../mods/megamod/docs/replacements/drug-policy-fix.md).
 
 Future engine boundaries are native policy initialization/loading/copying and policy-window rows.
-Harmony becomes **required** in the implementation slice if its types are eagerly referenced.
-Original Drug Policy Fix and external Cherry Picker (`Owlchemist.CherryPicker`) are **optional**;
-owned maintenance works without either. Original co-installation withholds the owned overlap.
+Harmony is **required** by the current guarded preset implementation.
+Original Drug Policy Fix and Cherry Picker are research inputs, not compatibility dependencies.
+An active original Drug Policy Fix produces a bounded startup warning and requests the ordinary
+per-feature settings disable path for the owned overlap, on a best-effort basis. This does not
+promise cooperative operation or require original-provider-present compatibility verification.
 No XML, XML Extensions use, metadata or runtime dependency change is introduced by this draft.
-No source-package identity, public API facade, multiplayer compatibility or universal save-repair
+No source-package identity, API/binary facade, original-mod save import, multiplayer compatibility or universal save-repair
 claim is made. Product packages remain independent of other repository mods and the Dev Gateway.

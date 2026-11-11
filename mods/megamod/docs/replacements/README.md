@@ -1,6 +1,7 @@
 # Replacement coverage
 
-**No functionality has been replaced yet.** This index is the entry point for source analysis and
+**No whole-source replacement is accepted yet.** S029 has narrow verified preset/persistence
+workflows; its remaining behavior stays unfinished. This index is the entry point for source analysis and
 the ongoing implemented/deviated/omitted ledger. A source name is an intake item, not a specification.
 
 The [sequential specification ledger](../refinement/specification-progress.md) tracks every selected
@@ -8,6 +9,12 @@ source and original feature, including repeated notes and interview additions. S
 were reconciled in the [installed-source audit](../refinement/2026-11-01-source-audit.md); they are
 not unresolved merely because their behavior has not yet been researched. Work proceeds one source
 at a time, documentation first, then source/decompilation. Open questions remain in the ledger.
+
+The [2026-11-08 user decision](../refinement/2026-11-08-drug-policy-additions.md) removes original-mod
+drop-in/API compatibility work, including earlier consumer/facade obligations. Historical source
+findings remain provenance. Known active originals receive a startup warning and best-effort ordinary
+feature-off handling; this is not a supported coexistence claim. Game-target guards and genuine
+third-party integrations remain required.
 
 | Source / origin | Status | Implemented here | Report / remaining work |
 | --- | --- | --- | --- |
@@ -150,6 +157,8 @@ at a time, documentation first, then source/decompilation. Open questions remain
 | Original: routine colonist meal carrying | S123 native/composition research; observable draft independently reviewed and strictly validated | Nothing | [Routine personal meals](routine-meal-carrying.md); shared reserve/stock/cargo quantities, appetite target, manual pause and MC-Q1–5 |
 | Remaining selected sources and custom features | Queued / research in progress | Nothing | [Complete ordered queue](../refinement/specification-progress.md) |
 | Original: condition-driven medical bill filtering | S137 focused source/native research; observable draft independently reviewed/validated | Nothing | [Coverage](condition-medical-bills.md), [research](../refinement/2026-11-07-condition-medical-bills-research.md); direct S007 composition, truthful effects and proposed ancestor eligibility; HBF-Q2–5 |
+| Only If 'Tolerance' Below in Drug Policy | S138 researched and drafted; implementation prerequisites open | Nothing | [Coverage](drug-tolerance.md), [research](../refinement/2026-11-08-drug-tolerance-research.md); explicit threshold and recipient rules with S029 persistence |
+| Safe Drug Policy Generator | S139 researched and drafted; idea-only independent design, calculations/creation prerequisites open | Nothing | [Coverage](safe-drug-policy-generator.md), [research](../refinement/2026-11-08-safe-drug-policy-generator-research.md); preserve existing policies and disclose bounded risk suggestions |
 
 When a source is selected, create its report from [TEMPLATE.md](TEMPLATE.md) and link it here. Record
 every source whose functionality is replaced, including add-ons that modify another selected source.

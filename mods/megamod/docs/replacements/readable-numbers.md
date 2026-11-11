@@ -9,7 +9,8 @@
   source/metadata inputs, selected compiled paths, native UI interface and consumed RimHUD method.
   GPL-3.0 source; no source code/DLL/art copying. No live beta acceptance is implied by decompilation.
 - [Owned change](../../../../openspec/changes/specify-megamod-readable-numbers/proposal.md) specifies
-  future behavior only. **Nothing implemented or accepted.**
+  the complete intended behavior. A first pure formatter and two common settings rows are
+  **partially implemented, unverified in game**; no replacement behavior is accepted.
 
 ## Behavior inventory
 
@@ -71,8 +72,16 @@ failure disables only the adapter when safe; unsafe generic interception must be
 
 ## Implementation and coverage
 
-All RN-01–08 code, target guards, tests, translation/live UI review, performance and native evidence
-remain **pending**. Ordinary cache-capacity/enable controls and package/API impersonation are
+The first pure formatter milestone covers signed decimal digit preservation, four grouping patterns,
+per-quantity thresholds, the small-decimal option, chosen punctuation/nonbreaking group spaces and
+unsupported-token fallback in 18 focused host cases. It does not yet drive native display paths.
+Enable and minimum-digit preferences use common settings. Composite punctuation validation/persistence
+has 29 host cases and a real definition; its runtime registration, row and formatter projection remain
+pending, as do the other preferences and UI. The [shared-style target candidate](../patch-targets/numbers.shared-style-text.md)
+records current native measure/draw evidence but has no validator or registration yet.
+See the [current implementation boundary](../../Source/Features/ReadableNumbers/README.md).
+All RN-01–08 integrated behavior, target guards, remaining tests, translation/live UI review,
+performance and native evidence remain **pending**. Ordinary cache-capacity/enable controls and package/API impersonation are
 **deliberately not adopted**. Automatic source settings/save migration is **not proposed**.
 The source's broad text coverage is a future owned implementation requirement for supported ordinary
 quantities, not a claim that every custom renderer/provider syntax already works.

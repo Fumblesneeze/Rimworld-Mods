@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Settings_UseGlobal>使用全局设置</Megamod_Settings_UseGlobal>
+  <Megamod_Settings_CurrentSave>当前存档</Megamod_Settings_CurrentSave>
+  <Megamod_Settings_GlobalDefault>全局默认值</Megamod_Settings_GlobalDefault>
+  <Megamod_Settings_NoActiveSave>载入殖民地后才能修改当前存档的设置。</Megamod_Settings_NoActiveSave>
+  <Megamod_Settings_GlobalOnly>此选项适用于整个游戏进程。</Megamod_Settings_GlobalOnly>
+  <Megamod_Settings_Inheriting>正在使用当前全局默认值。取消勾选“使用全局设置”即可修改此存档。</Megamod_Settings_Inheriting>
+  <Megamod_Settings_On>开启</Megamod_Settings_On>
+  <Megamod_Settings_Off>关闭</Megamod_Settings_Off>
+  <Megamod_Settings_InvalidStoredValue>保存的值无效；此作用范围内将使用内置默认值。</Megamod_Settings_InvalidStoredValue>
+  <Megamod_Settings_InvalidInteger>请输入允许范围内的整数。</Megamod_Settings_InvalidInteger>
+  <Megamod_Settings_SaveScopeUnavailable>无法启用所需的存档生命周期支持，因此当前存档设置不可用。</Megamod_Settings_SaveScopeUnavailable>
+  <Megamod_Settings_OriginalProviderOff>由于已加载原始模组，此功能目前已关闭。你的设置会被保留。</Megamod_Settings_OriginalProviderOff>
+</LanguageData>

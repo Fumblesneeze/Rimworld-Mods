@@ -4,7 +4,9 @@ Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), *
 S047 Mod Options Sort modifies the outer native Options → Mods chooser. Complete selected1.7 code,
 native chooser and the narrow older HugsLib reference are recorded in
 [research](../../../mods/megamod/docs/refinement/2026-11-03-mod-options-sort-research.md).
-This change is documentation only.
+A bounded host-only chooser projection is implemented; native/provider integration and acceptance
+remain pending. Its contract and limits are recorded in
+[the implementation note](../../../mods/megamod/Source/Features/ModSettingsNavigation/Implementation.md).
 
 ## Goals / Non-Goals
 
@@ -28,7 +30,10 @@ identity; provider-pack identity disambiguates where available. Never serialize 
 
 Sort group labels/title strings using the active language's normal text comparison; handle missing
 metadata, empty author and safe title fallback explicitly. Don't derive ownership from a translated
-title. Retain source grouping conventions, in precedence order after recognized HugsLib proxies:
+title. For a null/empty settings title, use the first nonempty content name, package identity, then
+the localized untitled-page label; retain the original metadata and opening identity unchanged.
+This fallback order makes the previously required safe fallback concrete. Retain source grouping
+conventions, in precedence order after recognized HugsLib proxies:
 content name containing both Vanilla and Expanded → Vanilla Expanded; author containing sarg →
 Sarg Bjornson; else author containing helixien → Helixien; otherwise complete author metadata.
 These are display aliases, not modifications of actual authorship or package identity. Keep raw
@@ -42,12 +47,26 @@ Various Authors sorts last; other groups alphabetically. Name mode orders by tit
 headings and showing author attribution on each card. Author mode shows attribution for Various
 Authors cards, with full raw attribution still discoverable for every row.
 
+The synthetic singleton bucket has its own identity, separate from its translated heading. A real
+multi-page author whose name equals that heading remains an independent, normally sorted author
+group, even though two headings display the same text. Only singleton-bucket rows need per-row
+attribution in author mode. Displayed-group search can match both groups; name-mode author search
+still matches the real author's metadata without matching unrelated singletons. A renderer must
+preserve the separate projected groups rather than deduplicate their headings.
+
 ### Search and layout remain chooser operations
 
 Match a case-insensitive substring against displayed settings title, mod name, raw metadata authors,
 normalized author and displayed group. Empty query includes all; clearing restores the same original
 group sizes/order. Keep every independent match, including same-titled packs. Do not search opaque
 foreign control values or filter out mods because their settings happen to be default.
+
+Displayed group means the current view: Various Authors participates only when author mode and
+singleton grouping actually place that page there. Name mode has no displayed group, so that label
+alone cannot match; raw and normalized authors remain searchable in either mode. A literal match in
+another searched field still counts. This intentionally differs from the selected source's hidden
+group search in name mode and follows MO-04's displayed-group wording. Switching modes does not
+discard the caller's remembered singleton choice or recalculate group sizes from filtered results.
 
 Retain native two-column cards where width permits and readable reflow at constrained scale. Group
 headings start a row, appear only for matching groups and cannot leave the first result inaccessible.
@@ -123,11 +142,12 @@ Log one bounded startup warning per skipped enabled patch containing package/pat
 failed predicate, lost navigation behavior and native/provider fallback. Runtime per-entry failures
 are separately bounded; no frame-by-frame log storm.
 
-Active original `Superniquito.ModOptionsSort` suppresses our outer chooser overlap, leaving its
-behavior intact and the megamod's own page registered. Access through an otherwise-working source
-menu is preserved; the original's broken HugsLib factory can break every click and is an unsupported
-combination, not repaired by our suppression. Diagnostics must not claim that broken route is usable.
-Other settings mods
+Active original `Superniquito.ModOptionsSort` triggers a bounded startup warning and best-effort
+suppression through the ordinary outer-chooser feature-off path, with manual-off behavior and timing.
+Keep stored preferences and the original untouched, and retain the independently registered megamod
+settings page. Installed-but-inactive sources do not trigger this rule. No source-menu usability,
+coexistence safety or repair of the source's observed broken HugsLib factory is promised. Original
+API/consumer/facade work and coexistence test matrices are excluded. Other settings mods
 are not conflicts by mere presence. HugsLib adapter failure affects only its admitted boundary unless
 native/provider access cannot otherwise be preserved, in which case disable the chooser group.
 
@@ -135,8 +155,8 @@ native/provider access cannot otherwise be preserved, in which case disable the 
 
 Core and Harmony required when implemented; HugsLib/forks optional, no DLC or XML operation. Declare
 only justified ordering for exact admitted integration, not source's blanket before-Core hint.
-No bundled source/framework/Gateway DLL or runtime repository-mod dependency. Bounded scans found
-no executable source API consumer; no facade or package identity spoof. Preserve native/provider
+No bundled source/framework/Gateway DLL or runtime repository-mod dependency. No original API facade
+or package identity spoof. Preserve deliberately used native/provider
 entry identity and owner behavior. Source license is unknown; independent implementation only.
 
 The selected1.7 assembly contains no yellow/blue default/strange-implementation highlighting. Do not
@@ -159,10 +179,12 @@ separately specified common-settings or explicit provider contract; no hidden re
 ## Migration Plan
 
 No settings files, save data or provider objects are migrated. Restart resets browsing choices to
-source defaults. Original co-installation leaves that source in charge of the chooser. New navigation
+source defaults. Original-provider handling uses the ordinary feature-off path on a best-effort basis.
+New navigation
 must preserve native/provider edit/close persistence but must never infer permission to reset or
 rewrite arbitrary config files. Disable/remove the navigation feature without deleting third-party
-settings; gameplay settings remain with their original owners. No runtime change is delivered now.
+settings; gameplay settings remain with their original owners. The current pure projection is
+unregistered; no native chooser takeover is delivered yet.
 
 ## Open Questions
 

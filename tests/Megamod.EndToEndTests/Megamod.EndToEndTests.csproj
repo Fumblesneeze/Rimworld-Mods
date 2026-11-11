@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <AssemblyName>Megamod.EndToEndTests</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RimWorldEndToEndTest>true</RimWorldEndToEndTest>
+    <RimWorldEndToEndTestOwnerPackageId>fumblesneeze.megamod</RimWorldEndToEndTestOwnerPackageId>
+  </PropertyGroup>
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.props" />
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.targets" />
+  <ItemGroup>
+    <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.Diagnostics/fixture.json" />
+    <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.Diagnostics.LateOptions/fixture.json" />
+    <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.DrugPresets/fixture.json" />
+    <ProjectReference Include="../../mods/megamod/megamod.csproj" />
+    <ProjectReference Include="../../shared/RimWorldDevGateway.EndToEndTesting/RimWorldDevGateway.EndToEndTesting.csproj" />
+  </ItemGroup>
+</Project>

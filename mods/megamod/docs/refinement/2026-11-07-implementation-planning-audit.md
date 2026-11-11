@@ -10,7 +10,8 @@ Planning only: no gameplay code, tests, runtime dependency changes, installation
   storage, production, medical care, environmental facts, UI helpers and generation publication.
 - [Roadmap](../../../../openspec/changes/plan-megamod-parallel-implementation/roadmap.md): all 137
   feature drafts allocated exactly once to 27 primary chunks across nine integration parts, with
-  prerequisite milestones, combined scenarios and later-composition obligations. Current revision: 1.
+  prerequisite milestones, combined scenarios and later-composition obligations. Reviewed revision
+  at the planning checkpoint: 1; subsequent execution revisions are recorded in the roadmap.
 - [Governing tasks](../../../../openspec/changes/plan-megamod-parallel-implementation/tasks.md): bounded
   dispatch, reviewed handoffs, integrated candidate gates, orchestrator observation, delegated fixes
   and final coverage reconciliation. Only documentation acceptance tasks are complete.
@@ -54,3 +55,21 @@ and final playability review remain tasks for each implemented part and the accu
 No game was launched: pure documentation cannot accept any gameplay requirement. No runtime task
 in the foundation or the 137 feature changes was checked by this work. The existing uncommitted
 workspace outside this documented scope remains untouched.
+
+## Subsequent execution record
+
+The preceding sections describe the committed planning checkpoint, not current implementation state.
+The roadmap is now revision17: P0 A/B/C implementation is in progress, with focused host evidence and
+independent reviews recorded in the dispatch and local part ledger. Initial finalized-Defs capture
+and Def hot-reload recovery are separate boundaries; P0-C must invalidate stale policy and retain
+pending choices before successful-generation reconciliation is implemented. The Gateway input and
+failed-run evidence work is separately owned tooling. Reviewed initial drug-baseline publication now
+shares the native invalidator with incidents. The native Assign prerequisite and initial preset
+controls and unchanged-catalog save/reload now have scoped reviewed evidence:98 native steps and20
+personally inspected captures, including both consoles, with audited cleanup. S029 tasks2.5.3/2.5.4
+close only those workflows; automatic message-bar geometry and the broader feature remain in progress.
+S138/S139 are new drug-policy intake entries, taking the active queue to139. The user's original-mod
+compatibility exclusion and best-effort warning/settings-disable rule supersede earlier drop-in and
+coexistence work; active documents are being reconciled. Local skills incorporate demonstrated recurring review
+failures; helper and skill checkpoints remain distinct from central integration and live acceptance.
+No aggregate P0 gameplay acceptance has been recorded.

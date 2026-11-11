@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Numbers_Category>数値の表示形式</Megamod_Numbers_Category>
+  <Megamod_Numbers_Enabled>有効化</Megamod_Numbers_Enabled>
+  <Megamod_Numbers_EnabledHelp>実際の値を変えずに、数量の表示形式を変更します。</Megamod_Numbers_EnabledHelp>
+  <Megamod_Numbers_MinimumIntegerDigits>整数部の最小桁数</Megamod_Numbers_MinimumIntegerDigits>
+  <Megamod_Numbers_MinimumIntegerDigitsHelp>整数部がこの桁数以上の数量に桁区切りを適用します（4～2,147,483,647）。</Megamod_Numbers_MinimumIntegerDigitsHelp>
+  <Megamod_Numbers_MinimumIntegerDigitsInvalid>整数部の最小桁数は4～2,147,483,647の整数にしてください。</Megamod_Numbers_MinimumIntegerDigitsInvalid>
+  <Megamod_Numbers_PunctuationInvalid>異なる句読点または記号をそれぞれ1文字指定してください。空白は桁区切りにのみ使用できます。</Megamod_Numbers_PunctuationInvalid>
+  <Megamod_Numbers_Punctuation>区切り記号</Megamod_Numbers_Punctuation>
+  <Megamod_Numbers_PunctuationHelp>プリセットを選んでも独自の記号は保持されます。「カスタム」で両方の記号を編集し、組み合わせを適用してください。</Megamod_Numbers_PunctuationHelp>
+  <Megamod_Numbers_PresetCycleHelp>クリックで次の形式を選びます。保存済みの独自記号は保持されます。</Megamod_Numbers_PresetCycleHelp>
+  <Megamod_Numbers_GroupMark>独自の桁区切り</Megamod_Numbers_GroupMark>
+  <Megamod_Numbers_DecimalMark>独自の小数点</Megamod_Numbers_DecimalMark>
+  <Megamod_Numbers_ApplyPair>記号の組み合わせを適用</Megamod_Numbers_ApplyPair>
+  <Megamod_Numbers_Preview>プレビュー（保存済み）</Megamod_Numbers_Preview>
+  <Megamod_Numbers_CommaPeriod>コンマ / ピリオド</Megamod_Numbers_CommaPeriod>
+  <Megamod_Numbers_PeriodComma>ピリオド / コンマ</Megamod_Numbers_PeriodComma>
+  <Megamod_Numbers_SpacePeriod>空白 / ピリオド</Megamod_Numbers_SpacePeriod>
+  <Megamod_Numbers_SpaceComma>空白 / コンマ</Megamod_Numbers_SpaceComma>
+  <Megamod_Numbers_ApostrophePeriod>アポストロフィ / ピリオド</Megamod_Numbers_ApostrophePeriod>
+  <Megamod_Numbers_ApostropheComma>アポストロフィ / コンマ</Megamod_Numbers_ApostropheComma>
+  <Megamod_Numbers_Custom>カスタム</Megamod_Numbers_Custom>
+  <Megamod_Numbers_Grouping>桁区切り</Megamod_Numbers_Grouping>
+  <Megamod_Numbers_GroupingHelp>クリックすると、3桁、最初に3桁・以降2桁、4桁、区切りなしの順に切り替わります。整数部分のみを区切り、区切り文字と最小整数桁数の設定は引き続き適用されます。</Megamod_Numbers_GroupingHelp>
+  <Megamod_Numbers_GroupingInvalid>3桁、最初に3桁・以降2桁、4桁、または区切りなしを選んでください。</Megamod_Numbers_GroupingInvalid>
+  <Megamod_Numbers_GroupingThree>3桁ごと</Megamod_Numbers_GroupingThree>
+  <Megamod_Numbers_GroupingThreeThenTwo>最初に3桁、以降2桁</Megamod_Numbers_GroupingThreeThenTwo>
+  <Megamod_Numbers_GroupingFour>4桁ごと</Megamod_Numbers_GroupingFour>
+  <Megamod_Numbers_GroupingNone>区切りなし</Megamod_Numbers_GroupingNone>
+  <Megamod_Numbers_SmallDecimals>小さい数にも小数点の形式を適用</Megamod_Numbers_SmallDecimals>
+  <Megamod_Numbers_SmallDecimalsHelp>最小整数桁数に達しない数にも、選択した小数区切り文字を使います。最小桁数以上では、桁区切りなしでも常に適用されます。小数の桁数やゼロは変わりません。</Megamod_Numbers_SmallDecimalsHelp>
+</LanguageData>

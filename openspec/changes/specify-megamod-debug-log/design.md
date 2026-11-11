@@ -3,7 +3,7 @@
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), target **1.7 beta**.
 S035 Better Log is a historical 1.5 reference: pinned source and installed DLL match, but the current
 game already has its severity filters and uses a changed logging backend. The [research inventory](../../../mods/megamod/docs/refinement/2026-11-03-better-log-research.md)
-records every source file/patch/default, hashes, consumer evidence and unverified boundaries.
+records every source file/patch/default, hashes, historical inspection evidence and unverified boundaries.
 This change creates documents only. No runtime admission or native acceptance is claimed.
 
 ## Goals / Non-Goals
@@ -74,6 +74,26 @@ Required startup warnings use the foundation warning recorder directly, exempt f
 gates. Keep identifiers, reason and fallback intact, write once, and do not recursively announce a
 notification failure. The fallback recorder must remain independent of the feature it is reporting
 as unavailable; arbitrary foreign suppression is not a compatibility guarantee.
+
+The protected startup route directly invokes the existing Verse native category's exact Warning
+output through a guarded emitted delegate. Its native `LogString<Warning>` is byref-like and cannot
+be boxed into reflection invocation. This is owned forwarding code, not a Harmony patch or a second
+history. It bypasses ordinary Verse entry-point capture/enrichment and its UI-opening methods; the
+native formatter still supplies file framing and ordinary warning retention. Admission checks the
+actual category/conversion/readiness shapes and file backend availability; no native flags or
+foreign subscriber lists are modified. Arbitrary provider replacement or silent foreign suppression
+is not asserted to preserve delivery. Existing native temporary retention suppression remains native.
+
+If native delivery is unavailable or fails, the process-lifetime recorder creates
+`<active savedata>/Logs/Megamod-startup-<unique session id>.log` lazily with CreateNew and retains the
+owned handle. It never adopts, truncates, rotates or deletes a preexisting path. Each warning is
+single-line/bounded to 4,096 characters (normal C01 field bounds fit below this), appended under a
+private file lock and flushed to disk. There is no total warning-count cap. Stderr is last resort;
+all-three-sink failures retain a total plus the first 64 details with 256-character failure reasons.
+Thread-local recursion protection does not serialize unrelated workers or acquire Harmony metadata.
+The file lock never calls native logging. A native exception after partial emission can cause a
+fallback copy; without a transaction/acknowledgement API, physical exactly-once delivery across
+failed sinks is not claimed. No retries or recursive failure warnings are emitted.
 
 The Custom limit notice uses that independent recorder once after the Nth admitted ordinary event:
 Warning severity, retained log plus file, exempt from owned mute/cap and ordinary counting. It must
@@ -173,13 +193,105 @@ Document effective versus original IL, ordering and supported repatch invalidati
 newly installed owned members of a failed group. Settings must distinguish requested from admitted
 effective behavior. Absent optional providers do not produce warnings unless explicitly requested.
 
-Use package-ID detection for `bs.betterlog` co-installation and suppress owned overlap without
-unpatching the original. Prepatcher/RocketMan are not mandatory integrations. Narrow external
-adapters require actual package/member evidence and must not copy the source's foreign patch
-passthrough or global callback removal. No compatibility facade is justified by the bounded
-source-consumer scan alone. All ordinary owned diagnostic consumers compose directly.
+Detect active `bs.betterlog`, emit a bounded startup warning and attempt best-effort suppression
+through the ordinary settings/effective-off path for the corresponding owned Log features. Match
+manual-off behavior and timing without rewriting stored preferences or modifying the original;
+installed-but-inactive sources do not trigger this policy. No original API/consumer/facade work or
+coexistence guarantee/test matrix is required. Prepatcher/RocketMan are not mandatory integrations.
+Narrow external adapters actually used still require package/member evidence and must not copy the
+source's foreign patch passthrough or global callback removal. Ordinary owned diagnostic consumers
+compose directly; game/effective-target admission remains mandatory.
 
 ## Risks / Trade-offs
+
+### Implemented warning-only capture slice, 2026-11-07
+
+`log.muteWarnings` is a common global-only Boolean, built-in false, applied from the loaded global
+snapshot or next eligible occurrence after an owner-thread edit. `WarningCaptureOptionsSource`
+publishes immutable requested/provider snapshots; log workers never read SettingsStore. A feature-local
+editor uses the common renderer/storage/scope/reset path and shows saved On/Off separately from the
+effective state. Seven localized catalogs explain permanent loss, existing evidence, process scope,
+independent direct writers and the protected-warning exception. Native rendering remains unverified.
+
+One `NativeLogPatch` for `Verse.Log.Warning(string)` serves S035 capture and S094 decoration.
+After the native suppression getter and WarningOnce eligibility, the incoming stream gets a no-throw
+capture decision before category/message projection. A rejected occurrence branches to the native
+suppressed return/leave so it skips category/file/retention and subsequent PostMessage/auto-open
+effects while preserving lock finalization. Input instructions are cloned before label changes.
+A capture exception permanently disables only this instance's capture decision, fails open and
+attempts one bounded protected explanation; S094 projection remains available. No counters, limit
+notice, Message/Error mute, palette, announcements or Harmony-file suppression are added by this slice.
+
+The reviewer-confirmed P1 shared-route coupling is corrected: each incoming-validation generation
+retains baseline context acceptance and a separate capture-exit failure. A non-returning suppressed
+continuation omits only the unsafe capture gate; it no longer rejects the physical context receipt
+or poisons C01's shared admission cache. CaptureAvailable requires the same published generation,
+compatible capture semantics and no prior capture-callback fault. The owner reports a semantic
+failure once only while eligible muting is requested; disabled/provider-blocked choices do not
+generate a dormant capture warning. Rebuild validation can restore capture semantics independently,
+but the instance's callback-fault latch remains permanent. Focused shared-composition tests use the
+real common SettingsStore, WarningCaptureRuntime and package policy in the Harmony host, not a
+null delegate standing in for a dormant feature.
+
+`NativeDiagnosticReporting` owns real physical groups `diagnostics.warning-channel` and
+`diagnostics.definition-error`; there is no second warning patch, fake candidate or self-patch.
+S094 context publishes only when both real routes are admitted and currently available. Error
+failure does not remove the useful warning route. S094 original-provider suppression never prevents
+eligible S035 warning muting, and `bs.betterlog` never disables independent S094 decoration.
+Provider notices preserve requested values and leave original patches untouched. Disabled choices
+are not failed admissions. Per-target IDs remain DDI-REPORT-WARNING/ERROR; LOG-CAPTURE-WARNING
+documents the warning consumer and shares the one physical Warning receipt.
+
+Rebuilds invalidate the existing immutable publication immediately. `RefreshReporting()` is an
+explicit runtime-owner maintenance boundary outside the inspected native Log lock, also used before
+the converter scope. Root must call it during owner-thread maintenance so warning-only operation
+does not rely on S094 being enabled. It never runs in a log callback, never probes by re-executing
+foreign transpilers, and only refreshes already-admitted routes. Incompatible compositions remain
+inactive. Arbitrary foreign logging locks/concurrent patch ownership are outside this guarantee.
+
+This tranche is implemented-unverified and awaits independent review/build/native integration.
+Host tests prove scoped fixture control flow, failure isolation, lock release, Once identity and
+protected direct-category coexistence; they do not establish actual native files/UI or acceptance.
+
+### P0-A current-backend inspection, 2026-11-07
+
+Read-only inspection of installed **1.7.5000 rev1275** is retained under ignored
+`artifacts/Implementation/megamod-p0-a/native-1.7.5000/`. In the inspected native backend,
+`WaylithLogFormatter.Write<TState>` formats the diagnostic, obtains its native trace, writes through
+`Waylith.Logging.FileLog.Write`, then calls `LogStream.Publish`. `UnityEngine.Application` bridges
+that publication into its threaded callback, including Verse's retained-log observer. Thus callback
+observation is after file emission and cannot implement the specified muting promise.
+
+The ordinary Verse string methods still check native suppression before category output.
+Brutal `LogCategory` consumes `LogString<TLevel>` via implicit conversion; the readable decompilation's
+apparent string call must not be mistaken for the actual target signature. Guard the real consumed
+operand/data flow. The legacy Verse count callback remains present, but the constructor subscribes
+the different retained-log callback; no active native stop policy is inferred from its integer.
+These are original-body research facts only. Effective-chain guards, thread behavior, protected
+warning delivery and native player acceptance remain open; no capture feature is enabled by this pass.
+
+The refreshed native presentation path builds each list preview from `LogMessage.ToString()`
+(timestamp/repeat framing included), truncates only that display string, and sends it to
+`DevGUI.Label`. Full details use raw `text` plus `StackTrace`; `CopyAllMessagesToClipboard` iterates
+all retained raw records, ignoring display filters. A display-color transform therefore belongs in
+that listing projection, not in Log arguments or the general LogMessage.ToString result. The native
+`LogMessage.Color` getter still selects white/yellow/LogError by severity. A palette result override
+need not invent a body predicate when it uses only the record's severity and supplies the result.
+
+`DebugWindowsOpener.DrawButtons` is drawn through a developer-mode-gated ImmediateWindow in
+`DevToolStarterOnGUI`; its cached final width controls centering. Announcement integration must
+respect that layout boundary and the loaded-game restriction, not draw into an assumed fixed screen
+rectangle. Native log entry and clipboard actions have exact private callable seams, while row
+selection is inline in the native listing. Faithful minimized Gateway actions still require an
+owned surface before these UI workflows can be accepted.
+
+The selected Harmony 1.7 file remains SHA256
+`C8EF7856B2BE3CF24B345C9B5C2F197F68FCF92649635064FCE7B3CCC8F77CB0`.
+Refreshed `FileLog` inspection additionally makes its mutable-buffer exposure explicit:
+`GetBuffer(false)` returns the live list and `SetBuffer(List<string>)` can replace it. Future
+suppression admission must account for both methods, both LogBuffered overloads and pending-list
+aliasing, in addition to direct Log and FlushBuffer. A Log/Flush-only hook cannot claim bounded
+buffer suppression or no later replay. No file suppression has been implemented by this research.
 
 - Pre-output capture in the beta differs from the old Unity callback: resolve BL-Q1 before code;
   unsupported controls remain unavailable instead of falsely claiming suppressed disk writes.
@@ -189,18 +301,54 @@ source-consumer scan alone. All ordinary owned diagnostic consumers compose dire
   no top-left message spam, no recursive logging, and native flood/exception tests are required.
 - Global-only capture is an intentional inheritance exception; save presentation changes remain
   independent so switching saves never resumes or silently mutes the process log.
-- Existing source UI/API identities are not preserved by gameplay parity; document known metadata
-  consumers and retain binary/reflected consumer research before any drop-in claim.
+- Original UI/API identity and drop-in/coexistence support are outside scope; research observable
+  behavior independently without consumer audits or facades, and retain native target admission.
 
 ## Migration Plan
+
+### Published inner-effect admission for the warning route
+
+The first C01 reporting consumer binds publication to the actual Harmony published version and a
+unique emitted body token. The provider monitor is acquired only at safe owner refresh; reentrant
+refresh and a busy monitor defer. Native output callbacks remain lock-free. Published inner selectors
+are assessed against the emitted operations, including the owned projection/capture helpers and
+their identity operands. Mutating required suppression or message/provenance operations disables
+the route; capture-helper-only incompatibility disables capture while independently safe S094 context
+remains viable. Removing an incompatible effect requires a newly published validated generation.
+
+Void/no-argument observations, void postfixes reading a single primitive/enum __result by value,
+and unrelated selected effects remain eligible without an owner ban. Ref/out or mutable results
+do not receive that scalar-observer permission.
+Outer/unchecked binding semantics remain unproven in this initial classifier. Metadata inspection
+does not run factories/callbacks or instantiate foreign attributes, and does not claim to sandbox
+arbitrary foreign side effects. This is implemented host scope awaiting independent review and
+affected native evidence; converter lifecycle and generated persistence remain separate obligations.
 
 No automatic source-config/save import, file cleanup or persistent diagnostic history is planned.
 Fresh owned values use the defaults above. Disabling/removing owned features leaves native records
 and existing files intact. A future import requires its own backup, atomicity, restoration and
 verified postconditions; it cannot be smuggled into startup detection.
 
+### Publication-reader correction
+
+The shared reporting reader uses the inspected provider's read-only published state entry, not
+GetPatchInfo's attribute-constructing deserialization validation. Lock order is PatchProcessor monitor
+then state dictionary monitor; refresh never waits or enters from a native output callback. The copy
+is bounded to 4 MiB. Exact envelope/version/backend checks precede provider-owned ValidateJsonEnvelope
+and DeserializePayload; supported formats are plain JSON and HARMONY-INFIX versions 1–5/backend 1.
+Unknown format/provider shape or contention leaves the route unavailable. There are no state writes,
+copied serializers or foreign constructor/factory/callback probes. Expected-version reads share this
+boundary. Full-name CustomAttributeData detection accounts for alternate-assembly HarmonyOuter markers.
+The bound is owned inspection policy, not a provider limit: a measured 698-byte host composition has
+over 6,000-fold headroom. Real 4,190,477/4,194,573-byte published fixtures prove both sides and the
+explicit unavailable explanation. NativeLogPatch's optional OwnedHarmonyPatch slot reader covers
+its factory/ownership preflight too; unrelated receipt consumers keep their existing default reader.
+Normal provider composition may execute attributes; owned inspection does not. Signed-byte literal
+decoding follows provider selector semantics, with the current emitter's boxed-byte limitation
+explicitly retained rather than claiming a runnable bypass.
+
 ## Open Questions
 
 BL-Q1 through BL-Q4 in the linked research/progress ledger retain effective native admission,
-optional providers/consumers, threading/UI/S094 composition and implementation/native evidence.
+deliberately used external integrations, threading/UI/S094 composition and implementation/native evidence.
 No question requires interrupting specification to ask the user to explain existing mod behavior.

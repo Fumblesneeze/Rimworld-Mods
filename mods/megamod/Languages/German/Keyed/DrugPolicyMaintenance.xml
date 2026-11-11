@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugPolicy_Category>Drogenrichtlinien</Megamod_DrugPolicy_Category>
+  <Megamod_DrugPolicy_Enabled>Pflege der Drogenrichtlinien aktivieren</Megamod_DrugPolicy_Enabled>
+  <Megamod_DrugPolicy_EnabledHelp>Hält Drogenrichtlinien nutzbar und stellt unterstützte Vorgaben wieder her. Änderungen gelten nach einem Neustart von RimWorld. Bearbeitungen und Zuweisungen bleiben erhalten.</Megamod_DrugPolicy_EnabledHelp>
+  <Megamod_DrugPolicy_GlobalOnlyReason>Eine globale Startoption: Die ersten Richtlinien entstehen, bevor ein Spielstand aktiv ist. Änderungen benötigen einen Neustart von RimWorld.</Megamod_DrugPolicy_GlobalOnlyReason>
+</LanguageData>

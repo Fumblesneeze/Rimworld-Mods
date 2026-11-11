@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Settings_UseGlobal>Use global</Megamod_Settings_UseGlobal>
+  <Megamod_Settings_CurrentSave>Current save</Megamod_Settings_CurrentSave>
+  <Megamod_Settings_GlobalDefault>Global default</Megamod_Settings_GlobalDefault>
+  <Megamod_Settings_NoActiveSave>Load a colony to edit current-save settings.</Megamod_Settings_NoActiveSave>
+  <Megamod_Settings_GlobalOnly>This preference applies to the whole game process.</Megamod_Settings_GlobalOnly>
+  <Megamod_Settings_Inheriting>Using the current global default. Uncheck Use global to edit this save.</Megamod_Settings_Inheriting>
+  <Megamod_Settings_On>On</Megamod_Settings_On>
+  <Megamod_Settings_Off>Off</Megamod_Settings_Off>
+  <Megamod_Settings_InvalidStoredValue>Stored value is invalid; using the built-in default in this scope.</Megamod_Settings_InvalidStoredValue>
+  <Megamod_Settings_InvalidInteger>Enter a whole number within the permitted range.</Megamod_Settings_InvalidInteger>
+  <Megamod_Settings_SaveScopeUnavailable>Current-save settings are unavailable because the required save lifecycle support could not be enabled.</Megamod_Settings_SaveScopeUnavailable>
+  <Megamod_Settings_OriginalProviderOff>Effectively off because an original mod is loaded. Your preferences are retained.</Megamod_Settings_OriginalProviderOff>
+</LanguageData>

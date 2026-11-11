@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugPolicy_Category>Политики наркотиков</Megamod_DrugPolicy_Category>
+  <Megamod_DrugPolicy_Enabled>Включить обслуживание политик наркотиков</Megamod_DrugPolicy_Enabled>
+  <Megamod_DrugPolicy_EnabledHelp>Поддерживает работоспособность политик и восстанавливает поддерживаемые шаблоны. Изменения применяются после перезапуска RimWorld. Правки и назначения сохраняются.</Megamod_DrugPolicy_EnabledHelp>
+  <Megamod_DrugPolicy_GlobalOnlyReason>Общий параметр запуска: первые политики создаются до активации сохранения. Перезапустите RimWorld для применения изменений.</Megamod_DrugPolicy_GlobalOnlyReason>
+</LanguageData>

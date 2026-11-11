@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Messages_Enabled>Activar posición de mensajes</Megamod_Messages_Enabled>
+  <Megamod_Messages_EnabledHelp>Usa los desplazamientos configurados y ajusta los mensajes a la pantalla. Al desactivar se recupera la posición normal sin cambiar los desplazamientos guardados.</Megamod_Messages_EnabledHelp>
+  <Megamod_Messages_Category>Interfaz / Mensajes</Megamod_Messages_Category>
+  <Megamod_Messages_PositionOffset>Desplazamiento</Megamod_Messages_PositionOffset>
+  <Megamod_Messages_PositionOffsetHelp>Ajusta ambas coordenadas a la vez, entre −100% y +100% del tamaño actual de la pantalla. Los valores negativos pueden solapar los mensajes con la barra de colonos. Mantenerlos en pantalla tiene prioridad; los grupos demasiado grandes pueden quedar recortados. Aplicar solo cambia los dos valores de esta columna.</Megamod_Messages_PositionOffsetHelp>
+  <Megamod_Messages_Horizontal>Horizontal (%)</Megamod_Messages_Horizontal>
+  <Megamod_Messages_Vertical>Vertical (%)</Megamod_Messages_Vertical>
+  <Megamod_Messages_ApplyPair>Aplicar ambos</Megamod_Messages_ApplyPair>
+  <Megamod_Messages_ResetPair>Restablecer 0 / 0</Megamod_Messages_ResetPair>
+  <Megamod_Messages_ResetPairHelp>Restablece solo esta columna. Usar global y la otra columna no cambian.</Megamod_Messages_ResetPairHelp>
+  <Megamod_Messages_InvalidOffsetPair>Introduce dos números finitos entre −100 y 100.</Megamod_Messages_InvalidOffsetPair>
+  <Megamod_Messages_BarIntegrationPending>La separación automática de la barra de colonos aún no está integrada.</Megamod_Messages_BarIntegrationPending>
+</LanguageData>

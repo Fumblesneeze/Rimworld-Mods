@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Diagnostics_Category>Diagnóstico</Megamod_Diagnostics_Category>
+  <Megamod_Diagnostics_DefinitionContext>Contexto del diagnóstico de definiciones</Megamod_Diagnostics_DefinitionContext>
+  <Megamod_Diagnostics_DefinitionContextHelp>Añade la definición, el mod y el archivo actuales a los próximos avisos y errores durante la carga de definiciones. El diagnóstico original se conserva intacto.</Megamod_Diagnostics_DefinitionContextHelp>
+  <Megamod_Diagnostics_GlobalOnlyReason>Se aplica a toda la sesión: las definiciones se cargan antes de que haya una partida activa y sus diagnósticos se comparten entre partidas.</Megamod_Diagnostics_GlobalOnlyReason>
+  <Megamod_Diagnostics_CaptureCategory>Diagnóstico / Registro — Captura</Megamod_Diagnostics_CaptureCategory>
+  <Megamod_Diagnostics_MuteWarnings>Silenciar advertencias</Megamod_Diagnostics_MuteWarnings>
+  <Megamod_Diagnostics_MuteWarningsHelp>Descarta las futuras advertencias ordinarias del registro y del archivo, incluida la apertura automática de ventanas. No es un filtro visual: las pruebas anteriores se conservan y las advertencias perdidas no se recuperan. No afecta a las escrituras directas en archivos ni a las advertencias de inicio obligatorias.</Megamod_Diagnostics_MuteWarningsHelp>
+  <Megamod_Diagnostics_CaptureGlobalOnlyReason>Solo global: la captura controla los registros compartidos del inicio y del proceso; cambiar de partida no debe alterarla.</Megamod_Diagnostics_CaptureGlobalOnlyReason>
+  <Megamod_Diagnostics_WarningCaptureOff>Efectivo: se capturan las advertencias ordinarias.</Megamod_Diagnostics_WarningCaptureOff>
+  <Megamod_Diagnostics_WarningCaptureOn>Efectivo: se descartan las futuras advertencias ordinarias.</Megamod_Diagnostics_WarningCaptureOn>
+  <Megamod_Diagnostics_WarningCaptureUnavailable>Inactivo: el canal de advertencias no está disponible. Tu elección se conserva y el registro ordinario continúa.</Megamod_Diagnostics_WarningCaptureUnavailable>
+</LanguageData>

@@ -11,6 +11,17 @@ RED/GREEN and deliberate zero-match rejection. Independent reviewer `review_p0_s
 reported no tooling defects; PowerShell syntax and strict OpenSpec validation passed (160 items).
 This accepts suite dispatch only. Product behavior remains governed by its separate feature gates.
 
+## 2. First concrete owned-Harmony registration
+
+- [x] 2.1 Record pre-registration rejection of Megamod.Harmony and specify its distinct honest host environment.
+- [x] 2.2 Register the net10 suite with the installed1.7 provider, exact identity receipt and legacy-All exclusion; run one real focused owned-patch RED/GREEN through typed dispatch and inspect nonzero counts/cleanup.
+- [x] 2.3 Verify zero-match rejection and independent scoped review; rerun affected syntax/spec/package checks without claiming native compatibility.
+
+Evidence: installed-provider receipt and deliberate zero-match outer failure are recorded in
+`artifacts/Implementation/megamod-p0/host-dispatch-evidence.md`. Independent receipt/runner review
+found no issues. PowerShell syntax, strict OpenSpec validation (161 items) and canonical package
+validation passed. These checks accept host dispatch only, not the native game targets.
+
 ## 3. First concrete native-data registration
 
 - [x] 3.1 Retain rejected Megamod.Defs selection, register the separate 1.7/.NET 10 project with its first real native policy storage test and honest environment guards, outside All.

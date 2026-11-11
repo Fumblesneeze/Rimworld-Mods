@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Numbers_Category>Formato numérico</Megamod_Numbers_Category>
+  <Megamod_Numbers_Enabled>Activar</Megamod_Numbers_Enabled>
+  <Megamod_Numbers_EnabledHelp>Dar formato a las cantidades mostradas sin cambiar sus valores.</Megamod_Numbers_EnabledHelp>
+  <Megamod_Numbers_MinimumIntegerDigits>Mínimo de dígitos enteros</Megamod_Numbers_MinimumIntegerDigits>
+  <Megamod_Numbers_MinimumIntegerDigitsHelp>Agrupar cada cantidad solo si su parte entera tiene al menos estos dígitos (de 4 a 2.147.483.647).</Megamod_Numbers_MinimumIntegerDigitsHelp>
+  <Megamod_Numbers_MinimumIntegerDigitsInvalid>El mínimo de dígitos enteros debe ser un número entero entre 4 y 2.147.483.647.</Megamod_Numbers_MinimumIntegerDigitsInvalid>
+  <Megamod_Numbers_PunctuationInvalid>Usa dos signos de puntuación o símbolos distintos, de un carácter cada uno. Solo la agrupación puede usar un espacio.</Megamod_Numbers_PunctuationInvalid>
+  <Megamod_Numbers_Punctuation>Separadores</Megamod_Numbers_Punctuation>
+  <Megamod_Numbers_PunctuationHelp>Los formatos predefinidos conservan tus signos. En Personalizado, edita ambos y aplica el par completo.</Megamod_Numbers_PunctuationHelp>
+  <Megamod_Numbers_PresetCycleHelp>Haz clic para pasar al siguiente formato; se conservan los signos personalizados.</Megamod_Numbers_PresetCycleHelp>
+  <Megamod_Numbers_GroupMark>Agrupación propia</Megamod_Numbers_GroupMark>
+  <Megamod_Numbers_DecimalMark>Decimal propio</Megamod_Numbers_DecimalMark>
+  <Megamod_Numbers_ApplyPair>Aplicar par personalizado</Megamod_Numbers_ApplyPair>
+  <Megamod_Numbers_Preview>Vista previa (guardado)</Megamod_Numbers_Preview>
+  <Megamod_Numbers_CommaPeriod>Coma / punto</Megamod_Numbers_CommaPeriod>
+  <Megamod_Numbers_PeriodComma>Punto / coma</Megamod_Numbers_PeriodComma>
+  <Megamod_Numbers_SpacePeriod>Espacio / punto</Megamod_Numbers_SpacePeriod>
+  <Megamod_Numbers_SpaceComma>Espacio / coma</Megamod_Numbers_SpaceComma>
+  <Megamod_Numbers_ApostrophePeriod>Apóstrofo / punto</Megamod_Numbers_ApostrophePeriod>
+  <Megamod_Numbers_ApostropheComma>Apóstrofo / coma</Megamod_Numbers_ApostropheComma>
+  <Megamod_Numbers_Custom>Personalizado</Megamod_Numbers_Custom>
+  <Megamod_Numbers_Grouping>Agrupación de dígitos</Megamod_Numbers_Grouping>
+  <Megamod_Numbers_GroupingHelp>Haz clic para alternar entre grupos de tres, tres y luego dos, cuatro o sin agrupación. Solo se agrupan los dígitos enteros; la puntuación y el mínimo de dígitos siguen aplicándose.</Megamod_Numbers_GroupingHelp>
+  <Megamod_Numbers_GroupingInvalid>Elige Tres dígitos, Tres y luego dos dígitos, Cuatro dígitos o Ninguna.</Megamod_Numbers_GroupingInvalid>
+  <Megamod_Numbers_GroupingThree>Tres dígitos</Megamod_Numbers_GroupingThree>
+  <Megamod_Numbers_GroupingThreeThenTwo>Tres y luego dos dígitos</Megamod_Numbers_GroupingThreeThenTwo>
+  <Megamod_Numbers_GroupingFour>Cuatro dígitos</Megamod_Numbers_GroupingFour>
+  <Megamod_Numbers_GroupingNone>Ninguna</Megamod_Numbers_GroupingNone>
+  <Megamod_Numbers_SmallDecimals>Aplicar formato decimal a números pequeños</Megamod_Numbers_SmallDecimals>
+  <Megamod_Numbers_SmallDecimalsHelp>Usar el separador decimal elegido por debajo del mínimo de dígitos enteros. A partir de ese límite se aplica siempre, incluso sin agrupación. Los decimales y los ceros no cambian.</Megamod_Numbers_SmallDecimalsHelp>
+</LanguageData>

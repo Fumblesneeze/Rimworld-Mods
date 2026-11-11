@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Messages_Enabled>Enable message placement</Megamod_Messages_Enabled>
+  <Megamod_Messages_EnabledHelp>Use the configured offsets and screen fitting. Disabling restores native placement without changing saved offsets.</Megamod_Messages_EnabledHelp>
+  <Megamod_Messages_Category>Interface / Messages</Megamod_Messages_Category>
+  <Megamod_Messages_PositionOffset>Position offset</Megamod_Messages_PositionOffset>
+  <Megamod_Messages_PositionOffsetHelp>Adjust both coordinates together, from −100% to +100% of the current screen size. Negative offsets can overlap the colonist bar. Keeping messages on screen takes priority; oversized stacks may be clipped. Apply changes both values in this column only.</Megamod_Messages_PositionOffsetHelp>
+  <Megamod_Messages_Horizontal>Horizontal (%)</Megamod_Messages_Horizontal>
+  <Megamod_Messages_Vertical>Vertical (%)</Megamod_Messages_Vertical>
+  <Megamod_Messages_ApplyPair>Apply pair</Megamod_Messages_ApplyPair>
+  <Megamod_Messages_ResetPair>Reset to 0 / 0</Megamod_Messages_ResetPair>
+  <Megamod_Messages_ResetPairHelp>Reset only this column. Use global and the other column remain unchanged.</Megamod_Messages_ResetPairHelp>
+  <Megamod_Messages_InvalidOffsetPair>Enter two finite numbers between −100 and 100.</Megamod_Messages_InvalidOffsetPair>
+  <Megamod_Messages_BarIntegrationPending>Automatic bar clearance is not yet integrated.</Megamod_Messages_BarIntegrationPending>
+</LanguageData>

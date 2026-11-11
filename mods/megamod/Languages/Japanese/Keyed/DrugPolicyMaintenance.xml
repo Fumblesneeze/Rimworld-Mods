@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugPolicy_Category>ドラッグ方針</Megamod_DrugPolicy_Category>
+  <Megamod_DrugPolicy_Enabled>ドラッグ方針の保守を有効にする</Megamod_DrugPolicy_Enabled>
+  <Megamod_DrugPolicy_EnabledHelp>使用可能な方針を維持し、対応するプリセットを修復します。変更は RimWorld の再起動後に適用されます。既存の編集と割り当ては保持されます。</Megamod_DrugPolicy_EnabledHelp>
+  <Megamod_DrugPolicy_GlobalOnlyReason>起動時の共通設定です。最初の方針はセーブの有効化前に作成されます。変更を適用するには RimWorld を再起動してください。</Megamod_DrugPolicy_GlobalOnlyReason>
+</LanguageData>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Settings_UseGlobal>Использовать общие</Megamod_Settings_UseGlobal>
+  <Megamod_Settings_CurrentSave>Текущее сохранение</Megamod_Settings_CurrentSave>
+  <Megamod_Settings_GlobalDefault>Общее значение</Megamod_Settings_GlobalDefault>
+  <Megamod_Settings_NoActiveSave>Загрузите колонию, чтобы изменить настройки текущего сохранения.</Megamod_Settings_NoActiveSave>
+  <Megamod_Settings_GlobalOnly>Эта настройка действует для всего процесса игры.</Megamod_Settings_GlobalOnly>
+  <Megamod_Settings_Inheriting>Используется текущее общее значение. Снимите флажок, чтобы изменить это сохранение.</Megamod_Settings_Inheriting>
+  <Megamod_Settings_On>Вкл.</Megamod_Settings_On>
+  <Megamod_Settings_Off>Выкл.</Megamod_Settings_Off>
+  <Megamod_Settings_InvalidStoredValue>Сохранённое значение недопустимо; в этой области используется встроенное значение по умолчанию.</Megamod_Settings_InvalidStoredValue>
+  <Megamod_Settings_InvalidInteger>Введите целое число в допустимом диапазоне.</Megamod_Settings_InvalidInteger>
+  <Megamod_Settings_SaveScopeUnavailable>Настройки текущего сохранения недоступны: не удалось включить необходимую поддержку его жизненного цикла.</Megamod_Settings_SaveScopeUnavailable>
+  <Megamod_Settings_OriginalProviderOff>Отключено, поскольку загружен оригинальный мод. Ваши настройки сохранены.</Megamod_Settings_OriginalProviderOff>
+</LanguageData>

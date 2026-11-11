@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Megamod drug preset fixture (development only)</name>
+  <author>Fumblesneeze</author>
+  <packageId>fumblesneeze.megamoddrugpresetsfixture</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <description>Disposable initial-preset input for isolated Megamod verification. Uses a valid non-drug reference before valid drug entries. Never distribute with the product.</description>
+  <modDependencies><li><packageId>fumblesneeze.megamod</packageId><displayName>Make Rimworld Great Again</displayName><downloadUrl>https://gitea.schweigert.cloud/Manuel/rimworld-mods</downloadUrl></li></modDependencies>
+</ModMetaData>

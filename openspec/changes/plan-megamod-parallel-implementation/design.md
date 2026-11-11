@@ -1,10 +1,11 @@
 ## Context
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`, RimWorld **1.7 beta**.
-The product currently has an inert scaffold and 137 researched feature changes, not implemented
-gameplay. The [foundation](../add-megamod-foundation/design.md) defines product boundaries; the
+The planning baseline was an inert scaffold and 137 researched feature changes. P0 implementation
+is now underway; no complete feature or part has passed final native acceptance. The
+[foundation](../add-megamod-foundation/design.md) defines product boundaries; the
 [reconciled decisions](../../../mods/megamod/docs/refinement/2026-11-07-decision-reconciliation-audit.md)
-and individual feature specs define behavior. This design coordinates their future implementation.
+and individual feature specs define behavior. This design coordinates their implementation.
 
 The [roadmap](roadmap.md) assigns every feature to a primary chunk and integration part. The
 [tasks](tasks.md) govern execution. Neither replaces the individual changes: intent stays in their
@@ -37,11 +38,37 @@ owns its contract and implementation; other agents request changes from that own
 orchestrator. Central bootstrap, project/package metadata, common registration and language indexes
 have one integration writer. Feature-local adapters remain under `Features/<Feature>/Compatibility/`.
 
+Revision12 adds a concrete C01 consumer requirement: the installed Harmony 3 pipeline can apply
+inner patches after ordinary transpilers, then optional persistence rewriting. A last-transpiler
+receipt therefore proves its inspected stream, not automatically the final body. Share published
+effect inventory/classification where consumers need it; each target names its own required
+operations, including injected helpers. Bind renewed publication to the actual compiled generation
+and published patch inventory without executing foreign callbacks or factories as probes. Relevant
+unknown effects fail closed with specific diagnostics; unrelated/compatible effects remain allowed.
+Outer lifecycle/refusal observers require only their own consumed guarantees. Persistence effects
+remain a separate obligation until inspected. This is a needed admission milestone, not a claim that
+the current C01 implementation already handles these effects.
+
+For S071, shared admission must support the smaller observable boundary identified in revision12:
+the prepared geometry actually consumed by current rendering and its stability until consumption.
+Do not reconstruct or certify the private layout algorithm when the same coherent native geometry
+can establish clearance. Actual visible frames, labels, weapons and S001 contributions remain part
+of that geometry; native first-display and input evidence remain required.
+
+Revision13 adds S094's concrete two-loader coverage requirement after a rejected child conversion
+was observed borrowing parent diagnostic provenance. Its body adapters and native entry guards form
+one atomic owned family; C01 supplies a fixed-pair inspection through the existing provider lock,
+not another metadata reader. Context visibility and cleanup lifetime stay distinct: untrusted nested
+work may invalidate the visible frame, while its acquired token still restores the caller. Reporting
+and S035 warning capture remain independent. Source-level coverage limitations are explicit; no
+unobservable full removal of all observers is claimed. Final runtime wiring and every affected
+initial/reload/legacy workflow still need reviewed native proof. The roadmap records exact leases.
+
 | ID / owner | Responsibility and first consumers | Authority, lifetime and invalidation | Failure behavior |
 |---|---|---|---|
 | C01 / P0-A | Phased feature activation, target admission, startup diagnostics; S035/S094 and the first runtime hooks | Active package identities, documented target predicates and owned patch-group state; early loader hooks before their events, later hooks after their prerequisites. Revalidate supported repatches; transpilers validate every incoming stream. | Suppress only overlapping replacements or dependent atomic groups; one bounded warning per skipped enabled patch. Roll back only newly added owned patches. |
 | C02 / P0-B | Setting definitions, global/save storage, effective resolution and common renderer; S034/S047/S071 | Stable setting ID, global revision and current save identity/revision. Global values and saved inheritance/override state are authoritative; UI is a projection. | Validate before mutation; keep documented last/default value on invalid input. No save callbacks at main menu. No private feature settings stores. |
-| C03 / P0-C | Content identity/category facts, separately applied availability policy and drug-policy reconciliation; S020/S029/S038, later recipes/storage/pawn displays | Stable finalized Def catalog plus separately versioned requested settings and applied save-specific policy. Publish at new-game/load boundaries after overrides load; preserve native Def identity and existing Things. | Missing external content is unavailable; owned exclusions restrict only specified acquisition/production paths. Drug exclusions and policy rows publish atomically or remain inactive. Preserve documented external contracts only after consumer inspection. |
+| C03 / P0-C | Content identity/category facts, separately applied availability policy and drug-policy reconciliation; S020/S029/S038, new S138/S139 policy consumers, later recipes/storage/pawn displays | Stable finalized Def catalog plus separately versioned requested settings and applied save-specific policy. Publish at new-game/load boundaries after overrides load; preserve native Def identity and existing Things. | Missing external content is unavailable; owned exclusions restrict only specified acquisition/production paths. Drug exclusions and policy rows publish atomically or remain inactive. Original-mod API/drop-in parity is outside scope. |
 | C04 / P1-A | Common Thing candidate/query facts for S033/S121/S114, hauling, counts, recipes and inspection | Native listers are primary; materialize only missing shared projections. Map-instance generation, Thing identity and relevant revisions distinguish lifetimes. Clear on map/game teardown; rebuild after load. | Dirty/unknown data triggers a suitable native query/rebuild or an explicit unavailable result; never report a stale/empty result as authoritative. |
 | C05 / P1-C | Physical portions, carried cargo, quantity provenance and scoped claims; S021/S041/S085/S126, later medical/production/loading | Actual Things, containers and native reservations remain authoritative. Durable portion provenance is serialized where required; transient claim receipts are not inventories. | Revalidate exact available quantity/capacity at action; release failed/cancelled claims, preserve physical conservation. No duplicate items, nutrition, doses or imaginary capacity. |
 | C06 / P1-B | Linked storage membership, filter intersection, totals, refill thresholds and presets; S005/S049/S050/S098/S107 | Native shelf grouping semantics extended to stockpiles. Entity-owned configuration and current physical storage membership; invalidate on group/filter/stock/priority changes. | Recompute affected totals or use native facts. Validate destination constraints at delivery. A preset cannot create a selectable item outside the storage's real restrictions. |
@@ -122,13 +149,18 @@ need it. Preferences, suspended claims, temporary custody and current native own
 
 ### 3. Admission precedes feature registration and shared consumers
 
-P0-A owns phased, idempotent activation coordinated with C02 and C03. Discover active providers and
-overlap first. P0-B supplies the early global-settings load/resolve milestone without requiring its
+P0-A owns phased, idempotent activation coordinated with C02 and C03. Resolve known active original
+IDs to a bounded startup warning and best-effort effective feature-off settings before ordinary
+activation. Use the same disable path as the user control, retain stored preferences and expose the
+disabled reason. This does not certify coexistence or require original-mod API/consumer tests.
+P0-B supplies the early global-settings load/resolve milestone without requiring its
 renderer or an active save. Admit early loader/logging hooks before their events: S094 definition
 context must surround the initial XML conversion, not start after catalogs have finalized. Admit
 static XML/Def changes at their actual loader phase with XML Extensions package-ID/content/shape
-guards, including original-provider suppression. A later constructor decision cannot undo XML that
-already ran. Inspect actual timing and prove consistent C#/XML activation policy in real loader runs.
+guards. The ordinary feature-off contract determines what can be withheld at load time; no additional
+all-phase original-mod suppression mechanism or compatibility matrix is required. A later constructor
+decision cannot undo XML that already ran. Inspect actual timing and verify owned C#/XML behavior
+and genuine external content adapters in real loader runs.
 
 After Def finalization, build C03's catalog without removing Defs or zeroing fields. Admit later
 runtime hooks when their required shapes/content exist. Registration is distinct from per-game
@@ -140,10 +172,23 @@ the owning contract. Save switching cannot reuse another save's policy.
 
 P0-C includes S029's drug-policy maintenance as a prerequisite for S038's drug exclusion group.
 Prepare all affected policy rows and publish them with applied drug choices atomically, restoring
-prior rows on failure. An active original DrugPolicyFix or an unadmitted maintenance group leaves
+prior rows on failure. A disabled or unadmitted maintenance group leaves
 owned drug exclusions unavailable without disabling unrelated families. Do not implement a second
 repair inside content selection. Register UI/jobs only for admitted capabilities and the current
 applied policy; preserve native fallbacks at their documented scope.
+
+S138 tolerance conditions and S139 policy generation are new P0-C consumers with separate drafts
+and unresolved implementation prerequisites. They reuse policy identity, catalog and persistence rules instead of
+creating another policy store. S139 is an independent implementation of the requested idea; source
+code is not a template for its safety rules. Later P4 composition must retain S024 restrictions and
+S124/S134 dose authority. Policy controls are save-local gameplay state, not inherited mod settings.
+
+Original-mod source analysis remains behavioral research. The2026-11-08 user decision removes
+drop-in/API/binary compatibility work, compatibility facades and original-provider coexistence runs,
+including earlier requirements to inspect external consumers solely to reproduce those contracts.
+Do not spoof package IDs. Actual third-party integrations deliberately used by megamod still need
+their narrow adapters and appropriate present/absent verification; own-save continuity and all
+semantic game-target checks remain mandatory.
 
 Patches require minimal semantic target contracts, not exact binaries or a ban on foreign patches.
 Original/effective-body assumptions, skip-original prefixes and incoming transpiler streams must be
@@ -163,7 +208,8 @@ Before dispatch, the orchestrator records a bounded assignment containing:
 - Required provider milestones and contract revision: inputs/results, side effects, ownership,
   freshness, missing/disabled behavior, cancellation, serialization and error cases, with examples.
 - Referenced source-mod documentation/source/decompilation locations, existing owned helpers,
-  known divergences and proof obligations. Link target specs and public-contract consumers.
+  known divergences and proof obligations. Link target specs and actual owned/third-party dependencies;
+  do not add original-mod API parity or consumer compatibility work.
 - Focused host test selection, scenario IDs to author, handoff conditions and integration contact.
 
 Freeze only the small contract tranche needed for current consumers. Consumers may develop pure
@@ -234,7 +280,7 @@ Every chunk hands over a durable record under ignored artifacts with this minimu
 | Identity | Plan/contract revision, chunk, source revision plus relevant dirty-file/package hashes, exact path ownership and feature IDs |
 | Coverage | Every assigned requirement and feature task mapped to host tests, native scenario IDs, later composition gate or explicit unresolved blocker |
 | Host results | Focused nonzero RED/GREEN, compile/check results, honest test environment, independent review findings and dispositions |
-| Reference/admission | Inspected upstream entry points, independent implementation deviations, target-spec IDs, active-provider suppression and optional-adapter cases |
+| Reference/admission | Inspected upstream behavior/entry points, independent implementation deviations, target-spec IDs, best-effort original warning/feature-off mapping and genuine optional-adapter cases |
 | Scenarios | Executable native scenarios with fixtures/prerequisites, exact ordered mods, player actions, visible expected outcomes, supporting queries, capture points and cleanup |
 | Integration | Consumed real provider milestone/revision, cross-contract checks, registered scenario selection/dry-run result, central registration requests and known risks |
 | Status | Ready for integration, blocked or returned for fixes; never accepted based on authored scenarios alone |
@@ -245,7 +291,9 @@ the actual control/job/designation and observable before/action/after checkpoint
 cannot exercise it faithfully, record the exact gap and tooling dependency. Compile/list/dry-run
 evidence only proves registration, not gameplay. Do not invent passing scenario runs.
 
-Existing feature tasks remain authoritative. If a task combines implementation and live acceptance,
+Existing feature tasks remain authoritative subject to the latest user scope: earlier original-mod
+drop-in/API or coexistence requirements are superseded by section3, not deferred acceptance gates.
+If a task combines implementation and live acceptance,
 leave it unchecked at handoff, or split it into traceable implementation and acceptance subtasks in
 that change without losing obligations. Only check the implementation subtask with its own evidence.
 Replacement status becomes implemented-unverified; accepted and verified await the orchestrator.
@@ -262,8 +310,10 @@ Then run actual loader/integration checks and native workflows in fresh minimize
 with unique disposable save data/logs and the smallest exact mod lists proving each claim. The
 orchestrator personally inspects the relevant live view or causal before/action/after captures from
 those exact processes. Startup, JSON assertions and prepared-scene screenshots are supporting
-evidence only. Include selected combined workflows from the roadmap, save/load and relevant
-original-provider/optional-content combinations. Prior accepted components used in a new composition
+evidence only. Include selected combined owned workflows from the roadmap, save/load and relevant
+genuine optional-content combinations. Do not require original-mod coexistence matrices. Verify the
+ordinary feature-off path and bounded warning independently of a compatibility claim.
+Prior accepted components used in a new composition
 are exercised again on this build; old evidence is not evidence for changed runtime behavior.
 
 Implementers do not independently launch acceptance games. An earlier orchestrator-run diagnostic

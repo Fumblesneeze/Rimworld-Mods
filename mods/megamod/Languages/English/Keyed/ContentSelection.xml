@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Content_IncidentExcluded>{0} is excluded by this save's applied content settings. Changes take effect after reloading.</Megamod_Content_IncidentExcluded>
+  <Megamod_Content_Category>Content selection</Megamod_Content_Category>
+  <Megamod_Content_IncidentKind>Incident</Megamod_Content_IncidentKind>
+  <Megamod_Content_AllowEntry>Allow {0} ({1})</Megamod_Content_AllowEntry>
+  <Megamod_Content_ChoiceHelp>On allows this content. Off requests exclusion. Save overrides and global defaults apply after saving and reloading; existing things are preserved.</Megamod_Content_ChoiceHelp>
+  <Megamod_Content_IncidentScope>This first section controls incidents only. Other content families and presets are not available here yet.</Megamod_Content_IncidentScope>
+  <Megamod_Content_AllTypes>All types</Megamod_Content_AllTypes>
+  <Megamod_Content_AllSources>All sources</Megamod_Content_AllSources>
+  <Megamod_Content_Search>Search name, identifier, source or type</Megamod_Content_Search>
+  <Megamod_Content_Matching>{0} of {1} incident choices</Megamod_Content_Matching>
+  <Megamod_Content_NoMatches>No matching incidents.</Megamod_Content_NoMatches>
+  <Megamod_Content_AppliedAllowed>Applied: allowed.</Megamod_Content_AppliedAllowed>
+  <Megamod_Content_AppliedExcluded>Applied: excluded.</Megamod_Content_AppliedExcluded>
+  <Megamod_Content_PendingAllow>Pending: allow after saving and reloading. Currently excluded.</Megamod_Content_PendingAllow>
+  <Megamod_Content_PendingExclude>Pending: exclude after saving and reloading. Currently allowed.</Megamod_Content_PendingExclude>
+  <Megamod_Content_NextLoad>Applies to the next new game or load. No save is currently active.</Megamod_Content_NextLoad>
+  <Megamod_Content_ApplicationUnavailable>No incident policy is applied to this save. Requested choices remain stored.</Megamod_Content_ApplicationUnavailable>
+  <Megamod_Content_OriginalProvider>Original Cherry Picker is active. Owned content controls are unavailable; stored choices are retained.</Megamod_Content_OriginalProvider>
+  <Megamod_Content_PatchesUnavailable>Incident exclusion is unavailable because its required integration was not admitted.</Megamod_Content_PatchesUnavailable>
+  <Megamod_Content_Ambiguous>This content identity is ambiguous and cannot be edited safely.</Megamod_Content_Ambiguous>
+  <Megamod_Content_Missing>This content is no longer present. Its stored choice is retained.</Megamod_Content_Missing>
+  <Megamod_Content_StaleChoice>This filter choice is no longer available. Reopen the menu.</Megamod_Content_StaleChoice>
+  <Megamod_Content_DefinitionsInvalidated>Incident controls are unavailable after definitions were reloaded or cleared. Requested choices and previous applied decisions are retained; definition reload recovery is not available yet.</Megamod_Content_DefinitionsInvalidated>
+  <Megamod_Content_OpenBrowser>Content selection…</Megamod_Content_OpenBrowser>
+  <Megamod_Content_Enabled>Enable content exclusions</Megamod_Content_Enabled>
+  <Megamod_Content_EnabledHelp>Apply exclusions when starting or loading a game. Turning this off retains every individual and preset choice; save and reload to apply a change.</Megamod_Content_EnabledHelp>
+  <Megamod_Content_DisabledRetained>Content exclusions are off for this game. Your individual and preset choices are retained.</Megamod_Content_DisabledRetained>
+</LanguageData>

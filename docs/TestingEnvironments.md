@@ -27,6 +27,12 @@ It source-links only product `Core` folders and references neither game assembli
 Use `test_run` with `suite: "Megamod.Unit"` and an exact filter for the current behavior. It is
 excluded from the legacy `All` aggregate and does not prove runtime wiring or native gameplay.
 
+`Megamod.Harmony` is the separate .NET10 tier for explicitly owned patches on scoped host methods.
+It source-links only Patching/Core and Patching/Harmony, with the installed1.7 Harmony provider;
+it has no Verse/game references or active mods. The typed runner records provider identity/hash,
+uses exact filters and excludes this suite from legacy All. Every test restores its exact owned
+patches in guaranteed cleanup. Actual game targets and startup still require isolated native runs.
+
 `Megamod.Defs` is the separate .NET 10 tier for native data adapters using constructed Defs.
 Its first consumer is S029 drug-policy storage. It source-links that adapter and its policy core,
 references the installed 1.7 game/platform data types, and never loads a mod or Harmony. Each

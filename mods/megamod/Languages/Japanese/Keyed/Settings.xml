@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Settings_UseGlobal>全体設定を使用</Megamod_Settings_UseGlobal>
+  <Megamod_Settings_CurrentSave>現在のセーブ</Megamod_Settings_CurrentSave>
+  <Megamod_Settings_GlobalDefault>全体の既定値</Megamod_Settings_GlobalDefault>
+  <Megamod_Settings_NoActiveSave>コロニーをロードすると、現在のセーブの設定を変更できます。</Megamod_Settings_NoActiveSave>
+  <Megamod_Settings_GlobalOnly>この設定はゲームのプロセス全体に適用されます。</Megamod_Settings_GlobalOnly>
+  <Megamod_Settings_Inheriting>現在の全体の既定値を使用中です。「全体設定を使用」を外すと、このセーブの設定を変更できます。</Megamod_Settings_Inheriting>
+  <Megamod_Settings_On>オン</Megamod_Settings_On>
+  <Megamod_Settings_Off>オフ</Megamod_Settings_Off>
+  <Megamod_Settings_InvalidStoredValue>保存された値が無効なため、この適用範囲では組み込みの既定値を使用します。</Megamod_Settings_InvalidStoredValue>
+  <Megamod_Settings_InvalidInteger>許容範囲内の整数を入力してください。</Megamod_Settings_InvalidInteger>
+  <Megamod_Settings_SaveScopeUnavailable>必要なセーブのライフサイクル機能を有効にできなかったため、現在のセーブの設定は利用できません。</Megamod_Settings_SaveScopeUnavailable>
+  <Megamod_Settings_OriginalProviderOff>元のModが読み込まれているため無効です。設定は保持されます。</Megamod_Settings_OriginalProviderOff>
+</LanguageData>

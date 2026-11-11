@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Messages_Enabled>メッセージ配置を有効化</Megamod_Messages_Enabled>
+  <Megamod_Messages_EnabledHelp>設定したオフセットを使用し、メッセージを画面内に収めます。無効にすると保存済みオフセットを保持したまま標準位置に戻ります。</Megamod_Messages_EnabledHelp>
+  <Megamod_Messages_Category>表示 / メッセージ</Megamod_Messages_Category>
+  <Megamod_Messages_PositionOffset>表示位置の調整</Megamod_Messages_PositionOffset>
+  <Megamod_Messages_PositionOffsetHelp>現在の画面サイズに対して −100% から +100% の範囲で、両方の座標をまとめて調整します。負の値では入植者バーと重なることがあります。画面内への収まりを優先するため、大きすぎるメッセージ群は一部が切れる場合があります。適用すると、この列の2つの値だけが変わります。</Megamod_Messages_PositionOffsetHelp>
+  <Megamod_Messages_Horizontal>横方向（%）</Megamod_Messages_Horizontal>
+  <Megamod_Messages_Vertical>縦方向（%）</Megamod_Messages_Vertical>
+  <Megamod_Messages_ApplyPair>両方を適用</Megamod_Messages_ApplyPair>
+  <Megamod_Messages_ResetPair>0 / 0 に戻す</Megamod_Messages_ResetPair>
+  <Megamod_Messages_ResetPairHelp>この列だけを初期値に戻します。「全体設定を使用」ともう一方の列は変わりません。</Megamod_Messages_ResetPairHelp>
+  <Megamod_Messages_InvalidOffsetPair>−100 から 100 までの有限の数値を2つ入力してください。</Megamod_Messages_InvalidOffsetPair>
+  <Megamod_Messages_BarIntegrationPending>入植者バーとの間隔の自動調整はまだ組み込まれていません。</Megamod_Messages_BarIntegrationPending>
+</LanguageData>

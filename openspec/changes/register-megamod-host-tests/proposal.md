@@ -15,6 +15,8 @@ owned by megamod's existing feature changes; this change owns suite dispatch and
 - Run its host-only .NET 10 project without requiring the legacy 1.6 Managed directory.
 - Preserve exact filtering, nonzero-test enforcement, failed-test exit status and canonical evidence.
 - Keep the opt-in megamod suite out of the legacy `All` aggregate.
+- Register the first concrete owned-patch suite `Megamod.Harmony` separately on .NET 10, resolving
+  the installed 1.7 Harmony provider and retaining its identity without loading a real game/mod.
 - Register `Megamod.Defs` separately for S029's actual native policy data and scoped constructed
   definitions, without active mods, Harmony or XML-loaded game content.
 

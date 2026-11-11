@@ -19,7 +19,7 @@
 
 ## Behavior inventory
 
-All rows are **specified, unimplemented**. Source evidence is inspection, not native acceptance.
+Rows are **specified**; the narrow implemented portions are listed below. No row is natively accepted.
 
 | ID | Action → intended result | Defaults, edge cases and source comparison | Owning requirement |
 | --- | --- | --- | --- |
@@ -78,7 +78,34 @@ an explicit backup/atomicity/restore/postcondition contract. No source file or n
 
 ## Implementation and coverage
 
-**Implemented portion: none.** No runtime hooks, host tests, target validators or native evidence.
+**Implemented portion: provider policy, protected startup output and warning-only ordinary muting.** Exact active `bs.betterlog`
+suppresses the owned debug-log decision independently of S094; the provider test family is green.
+Pure shared startup admission now has sixteen green cases; the full-core review's cleanup-warning
+finding is fixed and passed reviewer recheck. The shared Harmony receipt also passed independent
+review with four scoped-host cases; that initial milestone did not register an actual S035 game target.
+The protected sink now composes guarded direct native Warning-category output, a uniquely owned
+session fallback file and stderr last resort. Four Unit and ten native-shaped/filesystem host cases
+pass; independent protected-output review found no issues, while native delivery acceptance remains pending. See
+[LOG-PROTECTED-WARNING](../patch-targets/LOG-PROTECTED-WARNING.md).
+
+The next warning-only slice adds `log.muteWarnings=false` through common global-only settings and a
+seven-language row showing requested and effective state. One shared Warning adapter gates before
+category output and native effects; disabled/provider/unavailable states fail open, a capture fault
+does not disable independent S094 projection, native Once identities survive and protected category
+output bypasses the gate. The shared reporting composition now keeps S035 Warning independently
+admitted while S094 still publishes only with both severities ready. Three Unit option cases and
+37 affected Harmony cases pass after the reviewer-confirmed P1 capture/context coupling fix; that
+fix passed independent recheck, retained in the root part ledger's 2026-11-07 16:46 UTC section.
+Root has since connected the
+registered global setting, process-lifetime warning owner, existing UI and safe reporting refresh
+in the product bootstrap. That small composition passed independent review after actual XML-loader
+RED; it does not itself re-review every adapter or accept mute behavior. The authored native log
+selection/copy scenario and exact expected-fixture-error accounting still require their reviewed
+isolated run. Native warning-mute actions and the full S035 contract remain unverified.
+See [LOG-CAPTURE-WARNING](../patch-targets/LOG-CAPTURE-WARNING.md) and the
+[native action handoff](debug-log-native-scenarios.md). Message/Error muting, limits, announcements,
+presentation, Harmony-file suppression, pseudo-translation and probe UI remain unimplemented.
+Local RED/GREEN receipts are in `artifacts/Implementation/megamod-p0-a/tdd-ledger.md`.
 All inventory rows require their corresponding tasks and final evidence. Intentional deviations:
 top-only diagnostic UI, native filters/trace controls, raw-preserving colors, bounded announcements,
 Game-policy default, non-destructive default-off Harmony suppression and common scope controls.

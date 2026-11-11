@@ -1,8 +1,8 @@
 # Mod Options Sort replacement
 
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), **1.7 beta**.
-Origin: replacement, **S047 / P1-40, P2-30**. Status: **analyzed; observable draft independently reviewed/validated**.
-No runtime implementation or native/provider compatibility acceptance.
+Origin: replacement, **S047 / P1-40, P2-30**. Status: **bounded pure chooser projection; review pending**.
+No native/provider integration or compatibility acceptance.
 
 ## Source and intent
 
@@ -24,10 +24,10 @@ and [tasks](../../../../openspec/changes/specify-megamod-mod-settings-navigation
 
 | Source behavior | Selected contract | Implemented / deviation / missing |
 | --- | --- | --- |
-| Existing settings list | MO-01 preserves exact independent page identities | Nothing; duplicate package/title must not collapse distinct settings packs |
-| Author/name sorting and singles | MO-02 retains source defaults, groups, complete-list counts and Various Authors last | Nothing; add stable tie ordering |
-| Special group aliases | MO-03 retains VE/Sarg/Helixien conventions and source singleton rule | Nothing; keep raw attribution, correct modern HugsLib classification and unknown-author fallback |
-| Search by title/name/author/group | MO-04 preserves substring search and broadens it to original authors hidden by aliases | Nothing; no search inside arbitrary foreign controls |
+| Existing settings list | MO-01 preserves exact independent page identities | Pure projection retains each supplied page and opaque opening token; actual collection/opening pending |
+| Author/name sorting and singles | MO-02 retains source defaults, groups, complete-list counts and Various Authors last | Pure sorting/grouping and stable ties implemented; native controls/session state pending |
+| Special group aliases | MO-03 retains VE/Sarg/Helixien conventions and source singleton rule | Pure aliases, retained raw attribution and unknown fallback; positive HugsLib identity must come from a future admitted adapter |
+| Search by title/name/author/group | MO-04 preserves substring search and broadens it to original authors hidden by aliases | Pure current-view search implemented; hidden Various Authors does not match in name mode unless another field matches |
 | Cards and browse controls | MO-05 retains session-only sort/group choices and fresh-query reset | Nothing; seven-language/readable layout and robust icons instead of hardcoded English/unsafe dereference |
 | Native/provider pages | MO-06 preserves each actual owner and normal edit/close persistence | Nothing; admitted optional HugsLib route instead of failed-reflection click crashes |
 | Compatibility | MO-07 preserves compatible entries and ordinary fallback | Nothing; semantic atomic admission, owned-only rollback and bounded error isolation |
@@ -37,6 +37,11 @@ No configuration rows, own settings page, save component or gameplay toolbar are
 source. Sort/group choices are transient navigation state and reset at restart; search resets on a
 fresh chooser opening. This adds no persisted global-only preference and therefore no inheritance
 exception. If persistence is later desired it needs a common-settings scope contract.
+
+The [host projection note](../../Source/Features/ModSettingsNavigation/Implementation.md) records the
+bounded API. The source searched a calculated group even without a displayed heading; the selected
+contract deliberately searches only the current displayed group. Raw and normalized authors remain
+searchable in either mode, and full-list group membership survives filtering and mode changes.
 
 Keep controls with the existing Options → Mods list. One megamod entry leads to its common structured
 settings, whose configuration still uses normal global/save inheritance and disabled main-menu save

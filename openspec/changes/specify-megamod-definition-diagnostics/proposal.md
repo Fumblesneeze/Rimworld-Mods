@@ -7,7 +7,9 @@ can locate the affected content without guessing which mod caused the underlying
 ## Owner
 
 Exactly one owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`).
-Target **RimWorld 1.7 beta**. S094/P2-23, Log After Def Error (Continued). Specification only.
+Target **RimWorld 1.7 beta**. S094/P2-23, Log After Def Error (Continued). Initial implementation
+and bootstrap composition are implemented-unverified; remaining integration and native acceptance
+obligations are open.
 
 ## What Changes
 
@@ -36,9 +38,13 @@ composes directly with that channel instead of duplicating or patching the owned
 
 ## Impact
 
-Future native definition conversion/logging adapters and one common global-only setting. Core and
-external Harmony are required on implementation. Original Log After Def Error, its continuation,
-Better Log, VersionFromManifest and HugsLib/Log Uploader are not dependencies; external-provider
-coexistence requires explicit admission. No DLC, XML Extensions operation, Thing cache, new content,
+Native definition conversion/logging adapters and one common global-only setting. Core and
+external Harmony are required. Original Log After Def Error, its continuation,
+Better Log, VersionFromManifest and HugsLib/Log Uploader are not dependencies. Active originals trigger
+a bounded startup warning and best-effort ordinary context-feature off behavior, without rewriting
+stored preferences or modifying the originals. Original API/consumer/facade and coexistence work is
+excluded; effective native target admission and genuine integrations actually used remain required.
+No DLC, XML Extensions operation, Thing cache, new content,
 foreign DLL or Gateway dependency. Any later XML patch requires the repository's guarded XML
-Extensions workflow and dependency at first use. Nothing is implemented or accepted by this draft.
+Extensions workflow and dependency at first use. Host tests and review do not accept the feature;
+the reviewed native loading/select/copy/reload and target-admission workflows remain required.

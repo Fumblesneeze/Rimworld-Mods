@@ -1,6 +1,6 @@
 # Fumblesneeze RimWorld mods
 
-This repository is the Windows development monorepo for Fumblesneeze's RimWorld mods. Established product mods target 1.6; the new megamod scaffold targets 1.7 beta. The developer-only Gateway and explicitly opted-in verification bundles also support the inspected 1.7 beta runtime. The repository owns mod sources, host and in-game tests, OpenSpec contracts, release profiles, and typed MCP/CLI automation for building, verifying, installing, and publishing them.
+This repository is the Windows development monorepo for Fumblesneeze's RimWorld mods. Established product mods target 1.6; megamod development targets 1.7 beta. The developer-only Gateway and explicitly opted-in verification bundles also support the inspected 1.7 beta runtime. The repository owns mod sources, host and in-game tests, OpenSpec contracts, release profiles, and typed MCP/CLI automation for building, verifying, installing, and publishing them.
 
 ## Mods
 
@@ -10,7 +10,7 @@ This repository is the Windows development monorepo for Fumblesneeze's RimWorld 
 | [Immersive Chefs](mods/ImmersiveChefs/README.md) | `fumblesneeze.immersivechefs` | Makes kitchenware, preparation, meal condition, service, dining, and sanitation part of colony play. |
 | [Thin Walls](mods/ThinWalls/README.md) | `fumblesneeze.thinwalls` | Adds Stuff-made walls and doors that occupy tile edges instead of whole cells. |
 | [Personal Bugfixes](mods/PersonalBugfixes/README.md) | `fumblesneeze.personalbugfixes` | Local-only, self-checking repairs for personal games; no Workshop publication. |
-| [Make Rimworld Great Again](mods/megamod/README.md) | `fumblesneeze.megamod` | RimWorld 1.7 beta scaffold for independently specified replacement features and shared infrastructure; no gameplay implemented yet. |
+| [Make Rimworld Great Again](mods/megamod/README.md) | `fumblesneeze.megamod` | RimWorld 1.7 beta development of independently specified replacement features and shared infrastructure; native acceptance incomplete. |
 | [RimWorld Dev Gateway](mods/RimWorldDevGateway/README.md) | `fumblesneeze.rimworlddevgateway` | Developer-only authenticated loopback control, observation, testing, and unrestricted C# execution. |
 
 Each OpenSpec change and capability has exactly one owner: either one mod or one repository-tooling component. Repository-owned mods do not depend on one another, and product mods never ship, reference, or load-order-hint the Gateway; it is isolated development infrastructure, not a gameplay dependency.
@@ -22,7 +22,7 @@ Each OpenSpec change and capability has exactly one owner: either one mod or one
 | Windows, Git, and PowerShell 7 | Repository development and isolated RimWorld process control. |
 | .NET 10 SDK; .NET 8 runtime for host tools | Restore, build, test, MCP server, and companion tools. `global.json` pins the SDK policy; existing host tools still target .NET 8. |
 | Matching RimWorld installation from Steam | 1.6 for established products; 1.7 beta for megamod and opted-in Gateway verification. The beta port does not make other products or the full legacy test suite 1.7-compatible. |
-| Harmony Workshop item `2009463077` | Required by mods that use Harmony and by the Dev Gateway; loaded before Core in isolated runs. The inert megamod scaffold does not use it yet. |
+| Harmony Workshop item `2009463077` | Required by mods that use Harmony, including megamod, and by the Dev Gateway; loaded before Core in isolated runs. |
 | XML Extensions Workshop item `2574315206` | Required by Immersive Chefs, and by any other owning mod that uses an `XmlExtensions.*` patch operation; never bundled. |
 | Node.js LTS and OpenSpec `1.2.0` | Contract validation. Install with `npm install -g @fission-ai/openspec@1.2.0`. |
 | FlaUiCli | Optional exact-window evidence for workflows that genuinely require desktop UI. |

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Diagnostics_Category>Diagnose</Megamod_Diagnostics_Category>
+  <Megamod_Diagnostics_DefinitionContext>Kontext für Definitionsdiagnosen</Megamod_Diagnostics_DefinitionContext>
+  <Megamod_Diagnostics_DefinitionContextHelp>Ergänzt künftige Warnungen und Fehler beim Laden von Definitionen um die aktuelle Definition, Mod und Datei. Die ursprüngliche Diagnose bleibt erhalten.</Megamod_Diagnostics_DefinitionContextHelp>
+  <Megamod_Diagnostics_GlobalOnlyReason>Gilt für das gesamte laufende Spiel: Definitionen werden vor dem Laden eines Spielstands geladen. Ihre Diagnosen gelten unabhängig vom Spielstand.</Megamod_Diagnostics_GlobalOnlyReason>
+  <Megamod_Diagnostics_CaptureCategory>Diagnose / Protokoll — Erfassung</Megamod_Diagnostics_CaptureCategory>
+  <Megamod_Diagnostics_MuteWarnings>Warnungen unterdrücken</Megamod_Diagnostics_MuteWarnings>
+  <Megamod_Diagnostics_MuteWarningsHelp>Künftige gewöhnliche Warnungen werden weder im Protokoll noch in der Datei erfasst; auch ihre automatischen Fenstereffekte entfallen. Dies ist kein Anzeigefilter: Frühere Einträge bleiben erhalten, verlorene Warnungen lassen sich nicht wiederherstellen. Direkte Dateischreiber und erforderliche Startwarnungen sind ausgenommen.</Megamod_Diagnostics_MuteWarningsHelp>
+  <Megamod_Diagnostics_CaptureGlobalOnlyReason>Nur global: Die Erfassung betrifft gemeinsame Start- und Prozessprotokolle und darf sich beim Wechsel des Spielstands nicht ändern.</Megamod_Diagnostics_CaptureGlobalOnlyReason>
+  <Megamod_Diagnostics_WarningCaptureOff>Wirksam: Gewöhnliche Warnungen werden erfasst.</Megamod_Diagnostics_WarningCaptureOff>
+  <Megamod_Diagnostics_WarningCaptureOn>Wirksam: Künftige gewöhnliche Warnungen werden verworfen.</Megamod_Diagnostics_WarningCaptureOn>
+  <Megamod_Diagnostics_WarningCaptureUnavailable>Inaktiv: Der Warnungskanal ist nicht verfügbar. Dein Wunsch bleibt gespeichert; die gewöhnliche Protokollierung läuft weiter.</Megamod_Diagnostics_WarningCaptureUnavailable>
+</LanguageData>

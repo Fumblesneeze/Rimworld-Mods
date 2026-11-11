@@ -195,3 +195,38 @@ combined cost/native rendering/input have not been measured or accepted.
 
 No runtime code/Defs/assets, tests, build/install, game launch, upstream execution, Workshop edits or
 normal save/configuration mutation occurred.
+
+## Implementation continuation — 2026-11-07
+
+The original statement above describes the research pass. S071 now has a pure, unregistered
+placement policy and atomic common-setting pair under `Source/Features/MessagePlacement/Core/`.
+The installed selected DLL still hashes to `91B07FC549323BA0EB794999539E9C88F16DC89B4B87A2F4B85ABC70BCC862B1`;
+its README and retained full decompilation were re-read as reference. No upstream implementation was
+copied. The native source described above remains historical 1.7.4998 evidence: no 1.7.5000 native
+patch or visible-layout compatibility is inferred from it. Current target/body/geometry inspection
+remains open before native integration.
+
+The policy consumes already-measured native rectangles, preserving their baseline/lesson/order,
+and exports one logical translation. The pair uses the existing settings store and strict codec;
+no renderer/cache/private storage was added. Focused behavioral RED/GREEN evidence and source hashes
+are retained under `artifacts/Megamod/P0-B/messages-handoff.md`. Independent review, native hooks,
+scope editor/preview, seven language catalogs and all real player workflows remain outstanding.
+Full S071 stays incomplete; the continuation does not promote source research or host tests into
+native acceptance.
+
+## Current native observation tranche — 2026-11-07
+
+Current Assembly-CSharp SHA256 `D55AA8E47FA3C5463CA85B0ECCD51F195B4BBCD04F56DA3AF21C2F6688A81254`
+was decompiled read-only for Messages, Message, WindowStack, ImmediateWindow, UIRoot/UIRoot_Play and
+ColonistBar. Native draw still captures its padded rectangle and the exact message in one Action;
+ImmediateWindow queues that Action during repaint, and UIRoot_Play draws windows later. This enables
+an actual-coordinate observer without reconstructing the native 26-unit stride or lesson baseline.
+The callback capture, window rectangle and lastDrawRect must stay coherent across repaint/input.
+
+The first guarded observer now has `MSG-NATIVE-DRAW` target documentation and focused host Harmony
+fixtures proving transparent registration/callback preservation, benign foreign edits, rejected
+changed rectangle production, and later repatch revocation. A pure pass-local batch translates
+observed irregular rectangles together and restores prior state on failure. No native adapter,
+prepared-bar provider, common editor, seven catalogs or executable native workflow is yet delivered;
+the call-site observer remains unregistered. Independent review is underway. Earlier source/mod
+claims, absence of native acceptance and all open S071 tasks remain unchanged.

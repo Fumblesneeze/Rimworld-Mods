@@ -2,8 +2,8 @@
 
 - [ ] 1.1 Resolve CK-Q1's exact 1.7 setup/load/teardown timing and first catalogue slice; document stable targets and executable admission before any hook.
 - [ ] 1.2 Inventory each remaining family's exact native selection/action boundary, required dependencies and unsupported hard-reference paths; split work into focused vertical slices without narrowing promised coverage silently.
-- [ ] 1.3 Prove the authored-list parser/provider shapes and XML Extensions attribute/conditional operation behavior, including legacy mode and composite gates; record CK-Q2 decisions.
-- [ ] 1.4 Refresh exact optional Ancients/VEF/VPE/Senator and actual consumer evidence; record package/Def/member guards and unsupported bindings under CK-Q4.
+- [ ] 1.3 Establish the owned preset identity/member loading path and its invalid/cyclic/missing-member behavior; record CK-Q2 decisions without a Cherry Picker legacy-format or dependency-gate adapter.
+- [ ] 1.4 Refresh exact optional Ancients/VEF/VPE/Senator gameplay-content evidence; record package/Def/member guards under CK-Q4 without original-mod consumer parity work.
 
 ## 2. Policy and settings vertical slices
 
@@ -22,7 +22,7 @@
 - [ ] 3.5 RED/GREEN and implement configurable factions, pawn kinds/races, biomes, map steps and scatter entries with explicit impossible-request outcomes.
 - [ ] 3.6 RED/GREEN and implement traits, backstories, body/appearance choices, weapon traits and naming-group exclusions for new selection.
 - [ ] 3.7 RED/GREEN and implement incidents/quests, trader kinds, gatherings, weather, breaks/inspirations and raid strategy/arrival/age selection; keep ongoing instances.
-- [ ] 3.8 RED/GREEN and implement new hediff/thought/apparel restrictions with retained existing state; compose S029 reconciliation with drug-policy publication atomically, including original DPF suppression and later-policy failure rollback.
+- [ ] 3.8 RED/GREEN and implement new hediff/thought/apparel restrictions with retained existing state; compose S029 reconciliation with drug-policy publication atomically, including effective owned-maintenance off/unavailable and later-policy failure rollback.
 - [ ] 3.9 RED/GREEN and implement Ideology choices/styles/requirements with active-DLC admission and existing ideology preservation.
 - [ ] 3.10 RED/GREEN and implement genes, xenotypes and supported ability grants, preserving existing pawn state and rejecting invalid new combinations.
 - [ ] 3.11 RED/GREEN and implement optional powers/paths/psycasts, prerequisite projection and absent/changed-provider isolation through narrow adapters.
@@ -31,16 +31,22 @@
 
 ## 4. Compatibility, composition and packages
 
-- [ ] 4.1 Implement the guarded merge-preserving authored-preset XML adapter with all-or-none updates, original-absent checks and honest unsupported-gate/parser behavior; add required XML Extensions/Harmony metadata in the same runtime slice.
-- [ ] 4.2 RED/GREEN original-provider selection, retained owned settings and no foreign mutation; verify no package/type impersonation or automatic import.
+- [ ] 4.1 Implement owned presets through their specified loading path; any actual declarative patch retains XML Extensions guards, additive preservation and required dependency metadata. Do not implement the removed Cherry Picker format/API adapter.
+- [ ] 4.2 RED/GREEN the bounded original-loaded startup warning and effective feature off through the ordinary per-feature settings disable path, best effort; preserve ordinary disable retention and avoid foreign mutation, spoofing or import. No original-provider compatibility matrix.
 - [ ] 4.3 For each real patch, test minimal semantic predicates, benign edits, compatible foreign patches, changed argument use, ambiguous matches, actual incoming transpiler streams, later repatches, repeated startup, rollback and bounded warnings in the proper environment.
 - [ ] 4.4 Compose S012/S020/S029/S036 and future S136 eligibility directly, preserve S014 work/quota and S068 retained-memory fading/catalog state, distinguish applied/pending choices, and prove refused counselling awards cannot be falsely reported; admit truthful outcome reporting or pre-cost action refusal, otherwise leave the coupled exclusion group unavailable. Shared physical data still includes excluded goods without duplicate scans/caches.
 - [ ] 4.5 Run focused affected tests, exact owning build and package/dependency/localization checks; benchmark only concrete shared-data/selection costs before making a performance claim.
 
 ## 5. Review and native acceptance
 
+2026-11-11 continuation: content master, transient original-provider mapping, and dedicated browser
+are implemented pending independent review/native acceptance. Focused master/lifecycle/policy and
+provider/composition checks passed 71 cases after the retained RED runs. Updated selector and
+save-override scenarios enter the browser natively; `megamod.content.native-master-off-save-reload`
+adds the off/pending/reload/physical-incident path. No aggregate task closes from authored scenarios.
+
 - [ ] 5.1 Independently review the scoped implementation and resolve findings; rerun affected verification and retain reviewed build identity.
-- [ ] 5.2 On the reviewed build, personally observe minimized fresh-game player workflows for catalogue/presets/settings, pending application, save switches, source coexistence and absent/present/changed authored-list providers.
+- [ ] 5.2 On the reviewed build, personally observe minimized fresh-game player workflows for owned catalogue/presets/settings, pending application, save switches and ordinary feature disablement; no source coexistence or legacy-list compatibility run is required.
 - [ ] 5.3 Personally observe focused native production, construction, research, generation, apparel/health/quest and existing-object workflows for each delivered family; logs, loaded Defs and direct state setup alone do not close these tasks.
 - [ ] 5.4 Personally verify remaining UI/DLC/optional-provider and composed workflows in exact isolated mod lists, including S068 retained excluded memories, pending/applied acquisition, captured/fallback counselling award refusal and truthful reporting/action-unavailable fallback, unsupported-family warnings and resource preservation; retain causal screenshots, actions, config hashes and cleanup.
 - [ ] 5.5 Complete semantic playability/balance review of progression, acquisition, empty required sets, survival effects, costs and optional dependency behavior; update coverage and OpenSpec tasks only for behavior satisfying the root acceptance gate.

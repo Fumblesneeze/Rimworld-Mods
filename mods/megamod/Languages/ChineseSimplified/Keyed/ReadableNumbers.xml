@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Numbers_Category>数字格式</Megamod_Numbers_Category>
+  <Megamod_Numbers_Enabled>启用</Megamod_Numbers_Enabled>
+  <Megamod_Numbers_EnabledHelp>调整数量的显示格式，不改变实际数值。</Megamod_Numbers_EnabledHelp>
+  <Megamod_Numbers_MinimumIntegerDigits>最少整数位数</Megamod_Numbers_MinimumIntegerDigits>
+  <Megamod_Numbers_MinimumIntegerDigitsHelp>仅当某个数的整数部分达到此位数时才分组（4 至 2,147,483,647）。</Megamod_Numbers_MinimumIntegerDigitsHelp>
+  <Megamod_Numbers_MinimumIntegerDigitsInvalid>最少整数位数必须是 4 至 2,147,483,647 之间的整数。</Megamod_Numbers_MinimumIntegerDigitsInvalid>
+  <Megamod_Numbers_PunctuationInvalid>请使用两个不同的标点或符号，每项仅限一个字符。只有分组分隔符可以使用空格。</Megamod_Numbers_PunctuationInvalid>
+  <Megamod_Numbers_Punctuation>分隔符</Megamod_Numbers_Punctuation>
+  <Megamod_Numbers_PunctuationHelp>切换预设会保留自定义符号。在自定义模式下编辑两个符号，然后应用完整符号对。</Megamod_Numbers_PunctuationHelp>
+  <Megamod_Numbers_PresetCycleHelp>点击选择下一个格式；已保存的自定义符号会保留。</Megamod_Numbers_PresetCycleHelp>
+  <Megamod_Numbers_GroupMark>自定义分组符</Megamod_Numbers_GroupMark>
+  <Megamod_Numbers_DecimalMark>自定义小数符</Megamod_Numbers_DecimalMark>
+  <Megamod_Numbers_ApplyPair>应用自定义符号对</Megamod_Numbers_ApplyPair>
+  <Megamod_Numbers_Preview>预览（已保存选项）</Megamod_Numbers_Preview>
+  <Megamod_Numbers_CommaPeriod>逗号 / 句点</Megamod_Numbers_CommaPeriod>
+  <Megamod_Numbers_PeriodComma>句点 / 逗号</Megamod_Numbers_PeriodComma>
+  <Megamod_Numbers_SpacePeriod>空格 / 句点</Megamod_Numbers_SpacePeriod>
+  <Megamod_Numbers_SpaceComma>空格 / 逗号</Megamod_Numbers_SpaceComma>
+  <Megamod_Numbers_ApostrophePeriod>撇号 / 句点</Megamod_Numbers_ApostrophePeriod>
+  <Megamod_Numbers_ApostropheComma>撇号 / 逗号</Megamod_Numbers_ApostropheComma>
+  <Megamod_Numbers_Custom>自定义</Megamod_Numbers_Custom>
+  <Megamod_Numbers_Grouping>数字分组</Megamod_Numbers_Grouping>
+  <Megamod_Numbers_GroupingHelp>点击依次切换：每三位一组、先三位后每两位一组、每四位一组或不分组。仅对整数部分分组；分隔符和最小整数位数仍然有效。</Megamod_Numbers_GroupingHelp>
+  <Megamod_Numbers_GroupingInvalid>请选择每三位、先三位后每两位、每四位或不分组。</Megamod_Numbers_GroupingInvalid>
+  <Megamod_Numbers_GroupingThree>每三位一组</Megamod_Numbers_GroupingThree>
+  <Megamod_Numbers_GroupingThreeThenTwo>先三位，后每两位</Megamod_Numbers_GroupingThreeThenTwo>
+  <Megamod_Numbers_GroupingFour>每四位一组</Megamod_Numbers_GroupingFour>
+  <Megamod_Numbers_GroupingNone>不分组</Megamod_Numbers_GroupingNone>
+  <Megamod_Numbers_SmallDecimals>对小数值应用小数格式</Megamod_Numbers_SmallDecimals>
+  <Megamod_Numbers_SmallDecimalsHelp>整数位数低于最小值时，也使用所选的小数分隔符。达到该位数时始终使用所选分隔符，即使关闭分组。小数位和零保持不变。</Megamod_Numbers_SmallDecimalsHelp>
+</LanguageData>

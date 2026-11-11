@@ -1,5 +1,24 @@
 ## ADDED Requirements
 
+### Requirement: Ordinary startup master preserves policy state
+
+Drug-policy maintenance SHALL expose an enabled-by-default master in the common mod settings.
+This master SHALL be global-only and apply on restart, with both restrictions explained in the UI:
+initial preset factories run before a save is active, so no implicit save may control that startup
+operation. Save-scope controls SHALL remain disabled. Turning the feature off SHALL omit its owned
+startup maintenance registration without editing existing policies, assignments or stored settings.
+Later settings edits SHALL remain pending until restart. Active-original handling SHALL force only
+this effective startup master off while retaining the requested global preference.
+
+#### Scenario: Disable maintenance through ordinary settings
+- **WHEN** the player disables drug-policy maintenance and restarts RimWorld
+- **THEN** owned preset maintenance is inactive and native policy behavior remains
+- **AND** existing policy choices and assignments are not rolled back or rewritten.
+
+#### Scenario: Original provider becomes inactive later
+- **WHEN** a startup that suppressed maintenance is followed by one without the original provider
+- **THEN** the retained global master resolves normally, without a permanent automatic settings edit.
+
 ### Requirement: Drug policies follow the current content catalog
 Make Rimworld Great Again SHALL maintain one usable row for each currently available drug type in every supported drug policy.
 Owner: Make Rimworld Great Again (`fumblesneeze.megamod`, `mods/megamod`), target RimWorld 1.7 beta.
@@ -99,6 +118,22 @@ content-error recovery.
 - **WHEN** a supported preset contains a now-unavailable drug alongside valid entries
 - **THEN** the policy is created without that unavailable row or its missing-drug error
 - **AND** the valid entries retain the preset's intended values.
+
+#### Scenario: Unavailable preset entry precedes valid choices
+- **GIVEN** the game has finished loading its drug definitions and a supported preset lists a removed or no-longer-drug item before valid drugs
+- **WHEN** a policy is created from that preset
+- **THEN** the unavailable entry is ignored and the following valid choices are applied in their listed order
+- **AND** the policy retains its intended recreational permissions, valid explicit choices, name and association with the selected preset; the preset itself is unchanged.
+
+#### Scenario: Available drugs cannot be determined reliably
+- **WHEN** content has not finished loading, or a currently available drug has incomplete data required for drug policies
+- **THEN** megamod leaves preset creation to the game or active provider and reports that its missing-content protection is unavailable
+- **AND** it does not silently discard that drug or conceal unrelated creation failures.
+
+#### Scenario: Preset construction precedes save content choices
+- **WHEN** presets are created before the new colony's or loading save's own content choices are available
+- **THEN** missing-content protection follows the drugs currently loaded by the game
+- **AND** pending global changes, another save's choices and unapplied drug exclusions do not remove entries from those presets.
 
 #### Scenario: Customized or external valid preset
 - **WHEN** supported active content supplies different valid explicit preset choices
@@ -211,9 +246,11 @@ unchanged policies produce no repeated normal log chatter.
 ### Requirement: Compatibility checks isolate unsupported behavior
 The feature SHALL check each required patch target before enabling its behavior and warn at startup when an enabled patch cannot be safely applied.
 Warnings identify the patch, failed condition, affected behavior and fallback. Compatible foreign
-changes and unrelated method edits are allowed. With the original Drug Policy Fix active, the owned
-overlapping maintenance and presentation are withheld with an explanation; no foreign patch is
-removed and no source identity is impersonated. If the early maintenance group is unavailable,
+changes and unrelated method edits are allowed. With the original Drug Policy Fix active, the mod
+SHALL emit a bounded startup warning and use the ordinary per-feature settings disable path for the
+owned overlap, with the same effective off behavior as a user disabling it. This is best effort,
+not a promise of cooperative compatibility; no original API, binary or save-format parity checks
+or facades are required. No foreign patch is removed or source identity impersonated. If the early maintenance group is unavailable,
 native/provider behavior remains and missing-content recovery is not claimed. Presentation failure
 alone leaves native row order while admitted maintenance remains available.
 
@@ -234,5 +271,5 @@ alone leaves native row order while admitted maintenance remains available.
 
 #### Scenario: Original provider active
 - **WHEN** the original Drug Policy Fix is active alongside the megamod
-- **THEN** owned overlap is withheld and its reason is reported
-- **AND** the source is not unpatched and its own sorting/repair behavior is not advertised as owned corrected behavior.
+- **THEN** startup reports the overlap and requests the ordinary settings disable path for the owned feature, on a best-effort basis
+- **AND** this uses ordinary feature-off behavior without unpatching the source or claiming its sorting/repair is compatible or corrected.

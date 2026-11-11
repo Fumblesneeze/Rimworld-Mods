@@ -1,0 +1,11 @@
+{
+  "schema": "RimWorldDevGateway/XmlFixture/v1",
+  "ownerPackageId": "fumblesneeze.megamod",
+  "packageId": "fumblesneeze.megamoddrugpresetsfixture",
+  "rimWorldVersion": "1.7",
+  "packageInclude": [
+    "About/About.xml",
+    "Defs/DrugPolicies.xml"
+  ],
+  "expectedErrors": []
+}

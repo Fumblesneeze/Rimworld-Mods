@@ -144,22 +144,27 @@ is a separate explicit action governed by S038, never a side effect of selecting
 
 ### Requirement: Composition confines behavior to the owned content page
 The selectors SHALL be directly composed into the owned content-configuration page and SHALL NOT replace unrelated dropdowns, add another content-management page or require the original source add-on.
-Source add-on presence alone does not disable these owned controls: its selectors belong to its
-original provider. Activation of the underlying content-configuration feature, including
-coexistence with original Cherry Picker, is governed by S038. This change cannot enable a content
-feature that S038 has withheld. No automatic foreign settings import or original-mod identity claim
-is made by providing these selectors.
+An active original add-on SHALL trigger a bounded startup warning and best-effort use of this
+feature's ordinary off behavior and timing, without rewriting stored preferences or modifying the
+original. Installed-but-inactive sources SHALL NOT trigger that handling. Activation of the underlying
+content-configuration feature is governed by S038; this change cannot enable a host that S038 has
+withheld. No original API parity, foreign settings import or coexistence guarantee is provided.
 
 #### Scenario: Original add-on absent
 - **WHEN** the supported owned content page is active without Cherry picker scroll bars installed
 - **THEN** both owned selectors retain their search, navigation and exact selection behavior.
+
+#### Scenario: Original add-on active
+- **WHEN** Cherry picker scroll bars is active
+- **THEN** one bounded startup warning identifies the source and best-effort ordinary selector-feature off handling
+- **AND** stored preferences, content configuration and unrelated features remain unchanged; the warning does not promise coexistence safety.
 
 #### Scenario: Other menus
 - **WHEN** the player opens an unrelated mod setting, bill menu or assignment dropdown
 - **THEN** this feature does not change its menu, labels, selection or close behavior.
 
 #### Scenario: Underlying feature unavailable
-- **WHEN** the owned content feature has been withheld by its compatibility policy
+- **WHEN** the owned content feature is unavailable under its target admission or effective feature settings
 - **THEN** these selectors do not reactivate it or present apparently working content-edit controls
 - **AND** the owning page explains the unavailability without modifying content configuration.
 

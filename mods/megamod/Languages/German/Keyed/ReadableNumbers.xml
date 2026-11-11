@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Numbers_Category>Zahlenformatierung</Megamod_Numbers_Category>
+  <Megamod_Numbers_Enabled>Aktivieren</Megamod_Numbers_Enabled>
+  <Megamod_Numbers_EnabledHelp>Angezeigte Mengen formatieren, ohne ihre Werte zu verändern.</Megamod_Numbers_EnabledHelp>
+  <Megamod_Numbers_MinimumIntegerDigits>Mindestzahl an Ganzzahlstellen</Megamod_Numbers_MinimumIntegerDigits>
+  <Megamod_Numbers_MinimumIntegerDigitsHelp>Jede Zahl wird erst gruppiert, wenn ihr ganzzahliger Teil mindestens so viele Stellen hat (4 bis 2.147.483.647).</Megamod_Numbers_MinimumIntegerDigitsHelp>
+  <Megamod_Numbers_MinimumIntegerDigitsInvalid>Die Mindestzahl an Ganzzahlstellen muss eine ganze Zahl von 4 bis 2.147.483.647 sein.</Megamod_Numbers_MinimumIntegerDigitsInvalid>
+  <Megamod_Numbers_PunctuationInvalid>Verwende zwei unterschiedliche Satz- oder Symbolzeichen, jeweils ein Zeichen. Nur die Gruppierung darf ein Leerzeichen nutzen.</Megamod_Numbers_PunctuationInvalid>
+  <Megamod_Numbers_Punctuation>Trennzeichen</Megamod_Numbers_Punctuation>
+  <Megamod_Numbers_PunctuationHelp>Voreinstellungen behalten deine eigenen Zeichen. Bearbeite unter „Benutzerdefiniert“ beide Zeichen und übernimm das ganze Paar.</Megamod_Numbers_PunctuationHelp>
+  <Megamod_Numbers_PresetCycleHelp>Klicken wählt das nächste Format; eigene Zeichen bleiben gespeichert.</Megamod_Numbers_PresetCycleHelp>
+  <Megamod_Numbers_GroupMark>Gruppenzeichen</Megamod_Numbers_GroupMark>
+  <Megamod_Numbers_DecimalMark>Dezimalzeichen</Megamod_Numbers_DecimalMark>
+  <Megamod_Numbers_ApplyPair>Zeichenpaar übernehmen</Megamod_Numbers_ApplyPair>
+  <Megamod_Numbers_Preview>Vorschau (gespeichert)</Megamod_Numbers_Preview>
+  <Megamod_Numbers_CommaPeriod>Komma / Punkt</Megamod_Numbers_CommaPeriod>
+  <Megamod_Numbers_PeriodComma>Punkt / Komma</Megamod_Numbers_PeriodComma>
+  <Megamod_Numbers_SpacePeriod>Leerzeichen / Punkt</Megamod_Numbers_SpacePeriod>
+  <Megamod_Numbers_SpaceComma>Leerzeichen / Komma</Megamod_Numbers_SpaceComma>
+  <Megamod_Numbers_ApostrophePeriod>Apostroph / Punkt</Megamod_Numbers_ApostrophePeriod>
+  <Megamod_Numbers_ApostropheComma>Apostroph / Komma</Megamod_Numbers_ApostropheComma>
+  <Megamod_Numbers_Custom>Benutzerdefiniert</Megamod_Numbers_Custom>
+  <Megamod_Numbers_Grouping>Zifferngruppierung</Megamod_Numbers_Grouping>
+  <Megamod_Numbers_GroupingHelp>Klicken wechselt zwischen Dreiergruppen, erst drei dann zwei Ziffern, Vierergruppen und keiner Gruppierung. Nur ganzzahlige Stellen werden gruppiert; Trennzeichen und Mindestziffernzahl gelten weiterhin.</Megamod_Numbers_GroupingHelp>
+  <Megamod_Numbers_GroupingInvalid>Wähle drei Ziffern, erst drei dann zwei Ziffern, vier Ziffern oder keine Gruppierung.</Megamod_Numbers_GroupingInvalid>
+  <Megamod_Numbers_GroupingThree>Drei Ziffern</Megamod_Numbers_GroupingThree>
+  <Megamod_Numbers_GroupingThreeThenTwo>Erst drei, dann zwei Ziffern</Megamod_Numbers_GroupingThreeThenTwo>
+  <Megamod_Numbers_GroupingFour>Vier Ziffern</Megamod_Numbers_GroupingFour>
+  <Megamod_Numbers_GroupingNone>Keine</Megamod_Numbers_GroupingNone>
+  <Megamod_Numbers_SmallDecimals>Dezimalformat auf kleine Zahlen anwenden</Megamod_Numbers_SmallDecimals>
+  <Megamod_Numbers_SmallDecimalsHelp>Das gewählte Dezimalzeichen auch unterhalb der Mindestzahl ganzzahliger Stellen verwenden. Ab dieser Grenze gilt es immer, auch ohne Gruppierung. Nachkommastellen und Nullen bleiben unverändert.</Megamod_Numbers_SmallDecimalsHelp>
+</LanguageData>

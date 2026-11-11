@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Content_IncidentExcluded>Los ajustes de contenido aplicados a esta partida excluyen {0}. Los cambios surtirán efecto al volver a cargarla.</Megamod_Content_IncidentExcluded>
+  <Megamod_Content_Category>Selección de contenido</Megamod_Content_Category>
+  <Megamod_Content_IncidentKind>Incidente</Megamod_Content_IncidentKind>
+  <Megamod_Content_AllowEntry>Permitir {0} ({1})</Megamod_Content_AllowEntry>
+  <Megamod_Content_ChoiceHelp>Activado permite este contenido. Desactivado solicita su exclusión. Los ajustes globales y de la partida se aplican tras guardar y volver a cargar; los objetos existentes se conservan.</Megamod_Content_ChoiceHelp>
+  <Megamod_Content_IncidentScope>Esta primera sección solo controla incidentes. Los demás tipos de contenido y preajustes aún no están disponibles aquí.</Megamod_Content_IncidentScope>
+  <Megamod_Content_AllTypes>Todos los tipos</Megamod_Content_AllTypes>
+  <Megamod_Content_AllSources>Todas las fuentes</Megamod_Content_AllSources>
+  <Megamod_Content_Search>Buscar nombre, identificador, fuente o tipo</Megamod_Content_Search>
+  <Megamod_Content_Matching>{0} de {1} incidentes</Megamod_Content_Matching>
+  <Megamod_Content_NoMatches>No hay incidentes coincidentes.</Megamod_Content_NoMatches>
+  <Megamod_Content_AppliedAllowed>Aplicado: permitido.</Megamod_Content_AppliedAllowed>
+  <Megamod_Content_AppliedExcluded>Aplicado: excluido.</Megamod_Content_AppliedExcluded>
+  <Megamod_Content_PendingAllow>Pendiente: permitir tras guardar y volver a cargar. Actualmente excluido.</Megamod_Content_PendingAllow>
+  <Megamod_Content_PendingExclude>Pendiente: excluir tras guardar y volver a cargar. Actualmente permitido.</Megamod_Content_PendingExclude>
+  <Megamod_Content_NextLoad>Se aplica a la próxima partida nueva o cargada. No hay ninguna partida activa.</Megamod_Content_NextLoad>
+  <Megamod_Content_ApplicationUnavailable>No hay ninguna regla de incidentes aplicada a esta partida. Las elecciones solicitadas siguen guardadas.</Megamod_Content_ApplicationUnavailable>
+  <Megamod_Content_OriginalProvider>El mod Cherry Picker original está activo. Los controles de contenido propios no están disponibles; se conservan las elecciones guardadas.</Megamod_Content_OriginalProvider>
+  <Megamod_Content_PatchesUnavailable>La exclusión de incidentes no está disponible porque no se admitió la integración necesaria.</Megamod_Content_PatchesUnavailable>
+  <Megamod_Content_Ambiguous>La identidad de este contenido es ambigua y no puede editarse con seguridad.</Megamod_Content_Ambiguous>
+  <Megamod_Content_Missing>Este contenido ya no está presente. Se conserva su elección guardada.</Megamod_Content_Missing>
+  <Megamod_Content_StaleChoice>Esta opción de filtro ya no está disponible. Vuelve a abrir el menú.</Megamod_Content_StaleChoice>
+  <Megamod_Content_DefinitionsInvalidated>Los controles de incidentes no están disponibles tras recargar o borrar las definiciones. Se conservan las opciones solicitadas y las decisiones aplicadas anteriormente; la recuperación tras la recarga aún no está disponible.</Megamod_Content_DefinitionsInvalidated>
+  <Megamod_Content_OpenBrowser>Selección de contenido…</Megamod_Content_OpenBrowser>
+  <Megamod_Content_Enabled>Activar exclusiones de contenido</Megamod_Content_Enabled>
+  <Megamod_Content_EnabledHelp>Aplica exclusiones al iniciar o cargar una partida. Desactivar conserva las elecciones individuales y predefinidas; guarda y carga para aplicar cambios.</Megamod_Content_EnabledHelp>
+  <Megamod_Content_DisabledRetained>Las exclusiones están desactivadas en esta partida. Tus elecciones individuales y predefinidas se conservan.</Megamod_Content_DisabledRetained>
+</LanguageData>

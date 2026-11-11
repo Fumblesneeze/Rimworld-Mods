@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Numbers_Category>Number formatting</Megamod_Numbers_Category>
+  <Megamod_Numbers_Enabled>Enable</Megamod_Numbers_Enabled>
+  <Megamod_Numbers_EnabledHelp>Format displayed quantities without changing their values.</Megamod_Numbers_EnabledHelp>
+  <Megamod_Numbers_MinimumIntegerDigits>Minimum integer digits</Megamod_Numbers_MinimumIntegerDigits>
+  <Megamod_Numbers_MinimumIntegerDigitsHelp>Group each quantity only when its integer part has at least this many digits (4 to 2,147,483,647).</Megamod_Numbers_MinimumIntegerDigitsHelp>
+  <Megamod_Numbers_MinimumIntegerDigitsInvalid>Minimum integer digits must be a whole number from 4 to 2,147,483,647.</Megamod_Numbers_MinimumIntegerDigitsInvalid>
+  <Megamod_Numbers_PunctuationInvalid>Use two different punctuation marks or symbols, one character each. Only grouping may use a space.</Megamod_Numbers_PunctuationInvalid>
+  <Megamod_Numbers_Punctuation>Punctuation</Megamod_Numbers_Punctuation>
+  <Megamod_Numbers_PunctuationHelp>Presets retain your custom marks. In Custom mode, edit both marks and apply the complete pair.</Megamod_Numbers_PunctuationHelp>
+  <Megamod_Numbers_PresetCycleHelp>Click for the next format; saved custom marks are retained.</Megamod_Numbers_PresetCycleHelp>
+  <Megamod_Numbers_GroupMark>Custom group</Megamod_Numbers_GroupMark>
+  <Megamod_Numbers_DecimalMark>Custom decimal</Megamod_Numbers_DecimalMark>
+  <Megamod_Numbers_ApplyPair>Apply custom pair</Megamod_Numbers_ApplyPair>
+  <Megamod_Numbers_Preview>Preview (saved choices)</Megamod_Numbers_Preview>
+  <Megamod_Numbers_CommaPeriod>Comma / period</Megamod_Numbers_CommaPeriod>
+  <Megamod_Numbers_PeriodComma>Period / comma</Megamod_Numbers_PeriodComma>
+  <Megamod_Numbers_SpacePeriod>Space / period</Megamod_Numbers_SpacePeriod>
+  <Megamod_Numbers_SpaceComma>Space / comma</Megamod_Numbers_SpaceComma>
+  <Megamod_Numbers_ApostrophePeriod>Apostrophe / period</Megamod_Numbers_ApostrophePeriod>
+  <Megamod_Numbers_ApostropheComma>Apostrophe / comma</Megamod_Numbers_ApostropheComma>
+  <Megamod_Numbers_Custom>Custom</Megamod_Numbers_Custom>
+  <Megamod_Numbers_Grouping>Digit grouping</Megamod_Numbers_Grouping>
+  <Megamod_Numbers_GroupingHelp>Click to cycle through groups of three, three then two, four, or no grouping. Only integer digits are grouped; punctuation and the minimum digit count still apply.</Megamod_Numbers_GroupingHelp>
+  <Megamod_Numbers_GroupingInvalid>Choose Three digits, Three then two digits, Four digits, or None.</Megamod_Numbers_GroupingInvalid>
+  <Megamod_Numbers_GroupingThree>Three digits</Megamod_Numbers_GroupingThree>
+  <Megamod_Numbers_GroupingThreeThenTwo>Three then two digits</Megamod_Numbers_GroupingThreeThenTwo>
+  <Megamod_Numbers_GroupingFour>Four digits</Megamod_Numbers_GroupingFour>
+  <Megamod_Numbers_GroupingNone>None</Megamod_Numbers_GroupingNone>
+  <Megamod_Numbers_SmallDecimals>Apply decimal format to small numbers</Megamod_Numbers_SmallDecimals>
+  <Megamod_Numbers_SmallDecimalsHelp>Use the chosen decimal mark below the minimum integer digit count. At or above that count the chosen mark always applies, even with no grouping. Fractional digits and zeros stay unchanged.</Megamod_Numbers_SmallDecimalsHelp>
+</LanguageData>

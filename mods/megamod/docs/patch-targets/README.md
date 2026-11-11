@@ -1,9 +1,55 @@
 # Patch target specs
 
-**Patch inventory: empty.** The scaffold installs no patches and has no admission runtime. Create
-one document per patch from [TEMPLATE.md](TEMPLATE.md) before introducing any Harmony or XML mutation.
+**Current composition includes common settings, early diagnostics and initial incident selection.**
+These are incomplete P0 components. Scoped native observations do not accept a whole feature or part;
+the local evidence ledger records the tested build and remaining workflows. S071 message placement
+remains unregistered. Create one document per patch
+from [TEMPLATE.md](TEMPLATE.md) before introducing any Harmony or XML mutation.
 Index every real patch here with its stable ID, owning feature spec, target document, validator/code,
 and verification state. Do not populate a registry with illustrative fake game targets.
+
+The following targets come from inspected current game seams. Rows marked design only have no
+startup registration or native acceptance. Their documents must link concrete validators,
+implementation, tests and evidence before admission.
+
+Plan revision12 adds target-specific handling of Harmony 3 inner transformations after ordinary
+transpilers. Current ordinary-patch evidence does not establish those combinations or persistence
+rewriting. C01's pending shared effect assessment must preserve compatible/unrelated modifications
+and reject only unproved required relationships. S071's revised prepared-render boundary is still
+under design; its existing execution receipt is not sufficient to activate placement.
+
+| Candidate ID | Owning feature | Target design | Status |
+|---|---|---|---|
+| `DDI-GUARD-NEW` | S094 definition diagnostics | [Default entry coverage](DDI-GUARD-NEW.md) | Independently reviewed; default reload tracer observed; remaining native compositions pending |
+| `DDI-GUARD-LEGACY` | S094 definition diagnostics | [Legacy entry coverage](DDI-GUARD-LEGACY.md) | Independently reviewed; native legacy acceptance pending |
+| `DDI-CONVERT-NEW` | S094 definition diagnostics | [Current XML converter](DDI-CONVERT-NEW.md) | Composed and independently reviewed; initial default-loader log workflow observed; affected helper rerun and broader S094 workflows pending |
+| `DDI-CONVERT-LEGACY` | S094 definition diagnostics | [Legacy XML converter](DDI-CONVERT-LEGACY.md) | Composed, host tested and independently reviewed; native legacy-loader workflow pending |
+| `DDI-REPORT-WARNING` | S094 definition diagnostics | [Warning context](DDI-REPORT-WARNING.md) | Shared physical warning route composed/reviewed; initial default-loader contextual warnings observed; broader workflows pending |
+| `DDI-REPORT-ERROR` | S094 definition diagnostics | [Error context](DDI-REPORT-ERROR.md) | Composed/reviewed; initial default-loader contextual error observed; broader workflows pending |
+| `LOG-CAPTURE-WARNING` | S035 debug log | [Warning capture policy](LOG-CAPTURE-WARNING.md) | Shared DDI warning route composed; independent capture admission host tested/reviewed; native capture/muting workflows pending |
+| `LOG-PRESENTATION-PALETTE` | S035 debug log | [Severity palette](LOG-PRESENTATION-PALETTE.md) | Design only |
+| `LOG-PROTECTED-WARNING` | C01 admission / S035 protected diagnostics | [Protected warning output](LOG-PROTECTED-WARNING.md) | Guarded callable adapter composed, host tested and independently reviewed; dedicated native protection/fallback workflows pending |
+| `MM.DRUG.DisplayRows` | S029 drug-policy maintenance | [Alphabetical presentation](MM.DRUG.DisplayRows.md) | Design only |
+| `MM.DRUG.PresetEntries` | S029 drug-policy maintenance | [Unavailable preset entries](MM.DRUG.PresetEntries.md) | 36 focused host checks reviewed; initial preset and unchanged-catalog native save/reload workflows verified, 98 steps and 20 inspected captures; revised warning/ordinary-settings-off handling and content-change/general-repair work remain open; no original-provider compatibility gate |
+| `SETTINGS-GAME-CONTEXT` | C02 common settings | [Actual game identity](SETTINGS-GAME-CONTEXT.md) | Composed, host tested/reviewed; scoped native settings interactions observed; full save/lifecycle acceptance pending |
+| `SETTINGS-LIFECYCLE-PUMP` | C02 common settings | [Main-thread lifecycle handoff](settings.lifecycle-pump.md) | Same required settings group; composed, host tested/reviewed; full save/lifecycle acceptance pending |
+| `MM.CONTENT.IncidentEligibility` | S038 content selection | [Incident eligibility](MM.CONTENT.IncidentEligibility.md) | Composed, host tested/reviewed; native incident eligibility workflow pending |
+| `MM.CONTENT.IncidentExecute` | S038 content selection | [Incident execution](MM.CONTENT.IncidentExecute.md) | Composed, host tested/reviewed; native execution workflow pending |
+| `MM.CONTENT.IncidentExecuteResult` | S038 content selection | [Incident refusal result](MM.CONTENT.IncidentExecuteResult.md) | Composed, host tested/reviewed; native refusal workflow pending |
+| `MM.CONTENT.IncidentEligibilityGeneration` | S038 content selection | [Eligibility rebuild observation](MM.CONTENT.IncidentEligibilityGeneration.md) | Composed, host tested/reviewed; native repatch workflow pending |
+| `MM.CONTENT.IncidentExecuteGeneration` | S038 content selection | [Execution rebuild observation](MM.CONTENT.IncidentExecuteGeneration.md) | Composed, host tested/reviewed; native repatch workflow pending |
+| `MM.CONTENT.HotReloadDefs` | S038 content selection | [Def reload invalidation](MM.CONTENT.HotReloadDefs.md) | Composed, host tested/reviewed; native invalidation pending; successful subsequent catalog recovery still unfinished |
+| `MM.CONTENT.ClearAllPlayData` | S038 content selection | [Def clearing invalidation](MM.CONTENT.ClearAllPlayData.md) | Required lifecycle group composed, host tested/reviewed; native acceptance pending |
+| `numbers.shared-style-text` | S034 readable numbers | [Paired text measurement and drawing](numbers.shared-style-text.md) | Design only |
+| `MSG-NATIVE-DRAW` | S071 message placement | [Native message window registration](MSG-NATIVE-DRAW.md) | Observer and atomic batch host tested and independently reviewed; no startup registration or native placement acceptance |
+| `MSG-NATIVE-FRAME` | S071 message placement | [Native GUI pass](MSG-NATIVE-FRAME.md) | Host tested/reviewed; native composition authored; unregistered/unverified |
+| `MSG-NATIVE-QUEUE` | S071 message placement | [Queued registration relationships](MSG-NATIVE-FRAME.md#msg-native-queue-registration-relationships-only) | Host tested/reviewed; unregistered/unverified |
+| `MSG-NATIVE-CONSUMPTION` | S071 message placement | [Active-pass consumer veto](MSG-NATIVE-FRAME.md#msg-native-consumption-active-pass-consumer-veto-only) | Host tested/reviewed; unregistered/unverified |
+| `MSG-NATIVE-EVENT` | S071 message placement | [Outer invocation timing](MSG-NATIVE-FRAME.md#msg-native-event-bounded-outer-invocation-timing) | Host tested/reviewed; unregistered/unverified |
+| `MSG-WINDOW-STACK` | S071 message placement | [Entry message fallback](MSG-WINDOW-STACK.md) | First-consumer fallback host tested/reviewed; unregistered and native acceptance pending |
+| `MSG-BAR-PREPARED` | S071 message placement | [Prepared renderer handoff](MSG-BAR-LAYOUT-PREP.md) | Timing handoff and metadata-failure correction host tested/reviewed; native geometry integration pending |
+| `MSG-BAR-ENTRIES` | S071 message placement | [Revised prepared-render contract](MSG-BAR-LAYOUT-PREP.md) | Retired revision12 experiment; source/standalone fixtures removed; historical evidence retained |
+| `MSG-BAR-EXECUTION` | S071 message placement | [Revised prepared-render contract](MSG-BAR-LAYOUT-PREP.md) | Retired revision12 experiment; source/standalone fixtures removed; historical evidence retained |
 
 The normative requirements are in
 [megamod-patch-target-specs](../../../../openspec/changes/add-megamod-foundation/specs/megamod-patch-target-specs/spec.md)

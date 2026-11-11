@@ -25,10 +25,12 @@ Target **RimWorld 1.7 beta**. S071 is a replacement reference, not a co-owner.
 - Replace source-generated test messages with an inert, labeled settings preview; make reset and
   inheritance obey their explicitly selected scope. No new bottom tab or operational toggle.
 - Correct source double-origin addition, estimated row counts, physical-resolution offsets and
-  partial patch failure. Use semantic admission, bounded fallback and original-provider authority.
+  partial patch failure. Use semantic admission, bounded fallback and best-effort original-provider handling.
 
-This is a **specification-only draft**. No gameplay, patches, settings implementation or verified
-replacement is delivered. Proposed layout choices remain visible in refinement for later review.
+Implementation has begun with pure placement calculations, an unregistered common setting and a
+guarded native call-site observer tested in host fixtures. No native placement, settings UI or
+verified replacement is delivered. Layout choices and
+remaining native evidence obligations stay visible in refinement.
 
 ## Capabilities
 
@@ -52,7 +54,9 @@ feature's observable contract.
 - Harmony is **required when the integration is implemented**; the original mod and optional
   colonist-bar providers are **optional**. No DLC requirement. No selected XML change or new XML
   Extensions dependency; any later XML contribution must separately follow the guarded XML rules.
-- Original-provider coexistence disables only owned placement, preserving preferences. Unrecognized
+- An active original triggers a bounded startup warning and best-effort ordinary placement-off
+  behavior, preserving stored preferences and the original. Original API/consumer/facade and
+  coexistence work are excluded. Unrecognized
   bar layouts do not imply a whole-megamod incompatibility; automatic clearance may be unavailable
   while admitted manual/native positioning remains usable.
 - No upstream assembly, source helper dependency, other repository mod or Dev Gateway dependency.

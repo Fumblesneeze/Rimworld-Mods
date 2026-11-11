@@ -8,6 +8,10 @@ Target **RimWorld 1.7 beta**. Specification draft; no implementation or acceptan
 ### Requirement: Browse an identifiable content catalogue in settings
 
 The mod SHALL provide a Content selection section in mod settings. It SHALL list supported content
+through one explicit Content selection browser entry; individual catalogue rows SHALL appear only
+inside that browser, not as separate entries in the general settings list. The browser SHALL retain
+the common global/save editors, catalogue filters and requested/applied states described below.
+The general section SHALL expose the feature master and the browser entry. It SHALL list content
 from Core, active DLC and active mods with a readable name, content kind, source and distinguishing
 identifier. It SHALL retain excluded entries for restoration. The catalogue SHALL cover every
 content family in the companion availability specification, with items, buildings, plants and pawn
@@ -89,6 +93,26 @@ the requested choices; unrelated admitted groups SHALL remain usable.
 - **THEN** setup uses global choices and the loaded save resolves its own choices without retaining
   the first save's exclusions
 
+#### Scenario: Incident patch revalidation does not apply pending choices
+- **WHEN** compatible incident patches are rebuilt while a player has pending content changes
+- **THEN** incident exclusions are unavailable until their required ordering is revalidated
+- **AND** successful revalidation restores only the previously applied policy for that exact game
+  and load generation, leaving the pending choices unchanged
+- **AND** an unknown identity/result-writing order keeps the affected incident behavior unavailable
+
+#### Scenario: A stale load receipt cannot publish incident choices
+- **WHEN** the active game or its load generation changes during incident-policy preparation
+- **THEN** the old receipt cannot publish or supply availability for the new game
+- **AND** an unfinished or unavailable load boundary does not consume its requested choices
+
+#### Scenario: Native Def rebuilding invalidates incident availability
+- **WHEN** native HotReloadDefs or ClearAllPlayData begins while owned incident policy is active
+- **THEN** that policy and its editing controls become unavailable before the native body can mutate Defs
+- **AND** stored requested choices and the previous immutable applied key decisions remain retained
+- **AND** pending edits do not become applied merely because the native call returns or loading becomes idle
+- **AND** a protected bounded explanation identifies the unavailable Def lifecycle
+- **AND** recovery requires a separately proven successful Def generation and coherent catalog/UI reconciliation
+
 #### Scenario: One unavailable content family
 - **WHEN** an installed update prevents a content family from being controlled safely
 - **THEN** the page identifies that family's unavailable exclusions and startup logs identify skipped
@@ -116,26 +140,6 @@ Missing, malformed and unsupported members SHALL be reported without aborting ot
   browsing or applying the preset completes without an endless loop
 - **AND** deactivating the parent does not erase the child's independent activation choice
 
-### Requirement: Preserve authored lists from compatible providers
-
-Compatible mod-authored Cherry Picker removal lists SHALL remain available with their authored
-names, source identity and current member additions, even when original Cherry Picker is absent.
-Members added by another compatible mod SHALL not be discarded or duplicated in their effects.
-Provider/DLC requirements SHALL remain respected. An unsupported provider binding SHALL produce
-an explanation rather than an empty list falsely presented as working. The mod SHALL not pretend
-to be the original package, satisfy unrelated original-only dependency checks, or claim that every
-Cherry Picker add-on is compatible.
-
-#### Scenario: Provider appends a preset member
-- **WHEN** a compatible provider supplies a removal list and another compatible addition extends it
-- **THEN** activating the list excludes the resolved original and added members together
-- **AND** provider names and the added member's own identity remain visible
-
-#### Scenario: Provider has an unsupported original-only binding
-- **WHEN** a provider's list cannot be supplied without original Cherry Picker or required DLC
-- **THEN** that integration is reported as unavailable without weakening the requirement or
-  preventing ordinary content choices from working
-
 ### Requirement: Restoration preserves existing worlds and unrelated choices
 
 Content exclusion SHALL not delete existing physical items, buildings, plants, pawns, settlements,
@@ -156,18 +160,44 @@ disappears with an inactive provider SHALL retain its saved choices for later re
 - **THEN** the owned exclusion ends at the next application but the other restriction remains
 - **AND** unrelated entries, costs and completed progress remain unchanged
 
-### Requirement: Original-provider coexistence and settings ownership are explicit
+### Requirement: Original-loaded warnings use ordinary feature disablement
 
-If original Cherry Picker is active, the owned content application and preset adaptation SHALL
-remain inactive, identify the original as the selected provider and log a bounded warning for the
-skipped owned behavior. The mod SHALL not uninstall, unpatch or modify the original. Owned choices
-SHALL remain stored for later use. Original settings SHALL never be imported or changed silently.
+The content master SHALL default on and use the common global-default/save-override model.
+Turning it off SHALL remove owned exclusions at the same new-game/load application boundary as
+individual choices. Existing applied exclusions SHALL remain until that boundary; the UI SHALL
+explain the pending timing. Off SHALL retain all individual choices, preset activations, dormant
+overrides and malformed or unavailable stored entries without attempting to apply them. It SHALL
+not rewrite every individual allowed value. Re-enabling SHALL resume retained requested choices
+at a subsequent application boundary. An applied off policy SHALL visibly report retained choices
+instead of presenting individual exclusions as currently active.
+
+#### Scenario: Open the catalogue from ordinary settings
+- **WHEN** the player opens mod settings and activates Content selection
+- **THEN** a dedicated browser opens with individual entries, type/source selectors and search
+- **AND** closing it returns to general settings without changing choices or adding a bottom tab.
+
+#### Scenario: Disable exclusions for one save
+- **WHEN** the player overrides the content master to off and saves and reloads the colony
+- **THEN** supported incident actions follow native eligibility without the retained owned exclusions
+- **AND** global defaults, individual exclusions and preset activations remain stored for re-enabling.
+
+#### Scenario: Disabled choices include an unsupported preset
+- **WHEN** content selection is off and a retained preset or individual choice is unavailable or malformed
+- **THEN** that dormant choice cannot prevent ordinary feature disablement and remains stored unchanged.
+
+If original Cherry Picker is active, the mod SHALL log a bounded startup warning and request the
+ordinary per-feature settings disable path for owned content selection, with the same effective
+off behavior as a user disabling it. This is best effort, not a cooperative-compatibility guarantee.
+Original API, binary, save or preset-format compatibility checks and facades are outside scope.
+The mod SHALL not uninstall, unpatch or modify the original. Ordinary feature-disable retention
+still applies to owned choices. Original settings SHALL never be imported or changed silently.
 There SHALL be no extra bottom tab or bottom-right content-editing toggle; this is configuration.
 
 #### Scenario: Original provider is co-installed
 - **WHEN** the game starts with both providers active
-- **THEN** only the original applies its content choices, the owned page explains its inactive
-  application, and neither provider's stored configuration is rewritten by migration
+- **THEN** startup reports the overlap and the ordinary settings disable path is requested for the
+  owned feature, best effort, without claiming that the original's behavior is compatible
+- **AND** the original configuration is not imported or rewritten
 
 #### Scenario: Start without original settings migration
 - **WHEN** the original is removed from the active list and owned content selection is first used

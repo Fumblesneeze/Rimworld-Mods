@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Diagnostics_Category>诊断</Megamod_Diagnostics_Category>
+  <Megamod_Diagnostics_DefinitionContext>定义诊断上下文</Megamod_Diagnostics_DefinitionContext>
+  <Megamod_Diagnostics_DefinitionContextHelp>在加载定义期间，为后续警告和错误添加当前定义、模组及文件信息。原始诊断内容保持不变。</Megamod_Diagnostics_DefinitionContextHelp>
+  <Megamod_Diagnostics_GlobalOnlyReason>适用于整个游戏进程：定义在进入存档前就已加载，其诊断信息由所有存档共享。</Megamod_Diagnostics_GlobalOnlyReason>
+  <Megamod_Diagnostics_CaptureCategory>诊断 / 日志 — 记录</Megamod_Diagnostics_CaptureCategory>
+  <Megamod_Diagnostics_MuteWarnings>屏蔽警告</Megamod_Diagnostics_MuteWarnings>
+  <Megamod_Diagnostics_MuteWarningsHelp>不再将后续普通警告写入日志列表和文件，也不触发其自动打开窗口的效果。这不是显示筛选：已有记录保留，被丢弃的警告无法恢复。直接写入文件的程序和必要的启动警告不受影响。</Megamod_Diagnostics_MuteWarningsHelp>
+  <Megamod_Diagnostics_CaptureGlobalOnlyReason>仅全局：记录控制影响整个进程及启动时共享的日志，切换存档不应改变这些控制。</Megamod_Diagnostics_CaptureGlobalOnlyReason>
+  <Megamod_Diagnostics_WarningCaptureOff>实际状态：正常记录普通警告。</Megamod_Diagnostics_WarningCaptureOff>
+  <Megamod_Diagnostics_WarningCaptureOn>实际状态：丢弃后续普通警告。</Megamod_Diagnostics_WarningCaptureOn>
+  <Megamod_Diagnostics_WarningCaptureUnavailable>未启用：警告通道不可用。你的选择已保存，普通日志继续记录。</Megamod_Diagnostics_WarningCaptureUnavailable>
+</LanguageData>

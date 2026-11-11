@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Messages_Enabled>Activer le placement des messages</Megamod_Messages_Enabled>
+  <Megamod_Messages_EnabledHelp>Utilise les décalages configurés et ajuste les messages à l’écran. La désactivation restaure la position normale sans modifier les décalages enregistrés.</Megamod_Messages_EnabledHelp>
+  <Megamod_Messages_Category>Interface / Messages</Megamod_Messages_Category>
+  <Megamod_Messages_PositionOffset>Décalage de position</Megamod_Messages_PositionOffset>
+  <Megamod_Messages_PositionOffsetHelp>Réglez les deux coordonnées ensemble, de −100% à +100% de la taille actuelle de l’écran. Les valeurs négatives peuvent superposer les messages à la barre des colons. Le maintien à l’écran est prioritaire ; les piles trop grandes peuvent être tronquées. Appliquer ne change que les deux valeurs de cette colonne.</Megamod_Messages_PositionOffsetHelp>
+  <Megamod_Messages_Horizontal>Horizontal (%)</Megamod_Messages_Horizontal>
+  <Megamod_Messages_Vertical>Vertical (%)</Megamod_Messages_Vertical>
+  <Megamod_Messages_ApplyPair>Appliquer les deux</Megamod_Messages_ApplyPair>
+  <Megamod_Messages_ResetPair>Remettre à 0 / 0</Megamod_Messages_ResetPair>
+  <Megamod_Messages_ResetPairHelp>Réinitialise uniquement cette colonne. L’option « Utiliser global » et l’autre colonne restent inchangées.</Megamod_Messages_ResetPairHelp>
+  <Megamod_Messages_InvalidOffsetPair>Saisissez deux nombres finis entre −100 et 100.</Megamod_Messages_InvalidOffsetPair>
+  <Megamod_Messages_BarIntegrationPending>L’espacement automatique sous la barre des colons n’est pas encore intégré.</Megamod_Messages_BarIntegrationPending>
+</LanguageData>

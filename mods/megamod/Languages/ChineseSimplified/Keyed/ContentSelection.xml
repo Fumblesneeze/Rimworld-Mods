@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Content_IncidentExcluded>此存档当前生效的内容设置已排除“{0}”。更改将在重新载入存档后生效。</Megamod_Content_IncidentExcluded>
+  <Megamod_Content_Category>内容选择</Megamod_Content_Category>
+  <Megamod_Content_IncidentKind>事件</Megamod_Content_IncidentKind>
+  <Megamod_Content_AllowEntry>允许 {0}（{1}）</Megamod_Content_AllowEntry>
+  <Megamod_Content_ChoiceHelp>开启表示允许此内容，关闭表示请求排除。全局及存档设置会在保存并重新载入后生效；现有物品会保留。</Megamod_Content_ChoiceHelp>
+  <Megamod_Content_IncidentScope>此部分目前仅控制事件。其他内容类型和预设尚未开放。</Megamod_Content_IncidentScope>
+  <Megamod_Content_AllTypes>全部类型</Megamod_Content_AllTypes>
+  <Megamod_Content_AllSources>全部来源</Megamod_Content_AllSources>
+  <Megamod_Content_Search>搜索名称、标识符、来源或类型</Megamod_Content_Search>
+  <Megamod_Content_Matching>显示 {0} / {1} 个事件</Megamod_Content_Matching>
+  <Megamod_Content_NoMatches>没有匹配的事件。</Megamod_Content_NoMatches>
+  <Megamod_Content_AppliedAllowed>当前生效：允许。</Megamod_Content_AppliedAllowed>
+  <Megamod_Content_AppliedExcluded>当前生效：排除。</Megamod_Content_AppliedExcluded>
+  <Megamod_Content_PendingAllow>待生效：保存并重新载入后允许。目前已排除。</Megamod_Content_PendingAllow>
+  <Megamod_Content_PendingExclude>待生效：保存并重新载入后排除。目前允许。</Megamod_Content_PendingExclude>
+  <Megamod_Content_NextLoad>将在下一次新建或载入游戏时生效。目前没有活动存档。</Megamod_Content_NextLoad>
+  <Megamod_Content_ApplicationUnavailable>此存档尚未应用事件规则。请求的设置仍已保存。</Megamod_Content_ApplicationUnavailable>
+  <Megamod_Content_OriginalProvider>原版 Cherry Picker 模组已启用。本模组的内容控制不可用；已保存的选择会保留。</Megamod_Content_OriginalProvider>
+  <Megamod_Content_PatchesUnavailable>所需的集成未通过检查，因此事件排除不可用。</Megamod_Content_PatchesUnavailable>
+  <Megamod_Content_Ambiguous>此内容的身份不明确，无法安全编辑。</Megamod_Content_Ambiguous>
+  <Megamod_Content_Missing>此内容已不存在。其已保存的选择会保留。</Megamod_Content_Missing>
+  <Megamod_Content_StaleChoice>此筛选选项已不可用。请重新打开菜单。</Megamod_Content_StaleChoice>
+  <Megamod_Content_DefinitionsInvalidated>重新加载或清除定义后，事件控制不可用。已保留请求的设置和此前应用的选择；暂不支持定义重载后的恢复。</Megamod_Content_DefinitionsInvalidated>
+  <Megamod_Content_OpenBrowser>内容选择…</Megamod_Content_OpenBrowser>
+  <Megamod_Content_Enabled>启用内容排除</Megamod_Content_Enabled>
+  <Megamod_Content_EnabledHelp>在开始或载入游戏时应用排除。关闭后会保留所有单项和预设选择；保存并重新载入后应用更改。</Megamod_Content_EnabledHelp>
+  <Megamod_Content_DisabledRetained>本局游戏已关闭内容排除。单项和预设选择均已保留。</Megamod_Content_DisabledRetained>
+</LanguageData>

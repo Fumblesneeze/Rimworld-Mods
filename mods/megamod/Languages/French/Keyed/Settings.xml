@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Settings_UseGlobal>Utiliser global</Megamod_Settings_UseGlobal>
+  <Megamod_Settings_CurrentSave>Partie actuelle</Megamod_Settings_CurrentSave>
+  <Megamod_Settings_GlobalDefault>Valeur globale</Megamod_Settings_GlobalDefault>
+  <Megamod_Settings_NoActiveSave>Chargez une colonie pour modifier les paramètres de la partie actuelle.</Megamod_Settings_NoActiveSave>
+  <Megamod_Settings_GlobalOnly>Ce réglage s’applique à toute la session du jeu.</Megamod_Settings_GlobalOnly>
+  <Megamod_Settings_Inheriting>La valeur globale actuelle est utilisée. Décochez « Utiliser global » pour modifier cette partie.</Megamod_Settings_Inheriting>
+  <Megamod_Settings_On>Activé</Megamod_Settings_On>
+  <Megamod_Settings_Off>Désactivé</Megamod_Settings_Off>
+  <Megamod_Settings_InvalidStoredValue>La valeur enregistrée est invalide ; la valeur intégrée par défaut est utilisée pour cette portée.</Megamod_Settings_InvalidStoredValue>
+  <Megamod_Settings_InvalidInteger>Saisissez un nombre entier dans la plage autorisée.</Megamod_Settings_InvalidInteger>
+  <Megamod_Settings_SaveScopeUnavailable>Les paramètres de la partie actuelle sont indisponibles, car la prise en charge nécessaire de son cycle de vie n’a pas pu être activée.</Megamod_Settings_SaveScopeUnavailable>
+  <Megamod_Settings_OriginalProviderOff>Désactivé car un mod d’origine est chargé. Vos préférences sont conservées.</Megamod_Settings_OriginalProviderOff>
+</LanguageData>

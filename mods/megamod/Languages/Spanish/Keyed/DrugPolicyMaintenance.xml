@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugPolicy_Category>Políticas de drogas</Megamod_DrugPolicy_Category>
+  <Megamod_DrugPolicy_Enabled>Activar mantenimiento de políticas de drogas</Megamod_DrugPolicy_Enabled>
+  <Megamod_DrugPolicy_EnabledHelp>Mantiene políticas utilizables y recupera preajustes compatibles. Los cambios se aplican al reiniciar RimWorld. Se conservan las ediciones y asignaciones existentes.</Megamod_DrugPolicy_EnabledHelp>
+  <Megamod_DrugPolicy_GlobalOnlyReason>Una opción global de inicio: las primeras políticas se crean antes de activar una partida. Reinicia RimWorld para aplicar cambios.</Megamod_DrugPolicy_GlobalOnlyReason>
+</LanguageData>

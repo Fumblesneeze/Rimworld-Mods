@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(DefaultSteamModContentFolder)/2009463077/1.7/Assemblies/0Harmony.dll</HarmonyAssemblyPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyAssemblyPath)</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Compile Include="../../mods/megamod/Source/Patching/Core/**/*.cs" Link="Product/Core/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Patching/Harmony/**/*.cs" Link="Product/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/ContentSelection/Core/**/*.cs" Link="Product/ContentSelection/Core/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/ContentSelection/Harmony/**/*.cs" Link="Product/ContentSelection/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/Harmony/**/*.cs" Link="Product/MessagePlacement/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/Core/MessageGuiPass.cs" Link="Product/MessagePlacement/Core/MessageGuiPass.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/Core/MessageGuiEvent.cs" Link="Product/MessagePlacement/Core/MessageGuiEvent.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/Core/MessagePlacementBatch.cs" Link="Product/MessagePlacement/Core/MessagePlacementBatch.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/Core/MessagePlacement.cs" Link="Product/MessagePlacement/Core/MessagePlacement.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/Core/MessageWindowBindings.cs" Link="Product/MessagePlacement/Core/MessageWindowBindings.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/Core/MessageBarBoundsReceipt.cs" Link="Product/MessagePlacement/Core/MessageBarBoundsReceipt.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/BarBounds/Core/**/*.cs" Link="Product/MessagePlacement/BarBounds/Core/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/BarBounds/Harmony/**/*.cs" Link="Product/MessagePlacement/BarBounds/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/**/*.cs" Link="Product/DrugPolicyMaintenance/Core/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Harmony/**/*.cs" Link="Product/DrugPolicyMaintenance/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Settings/Core/**/*.cs" Link="Product/Settings/Core/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Settings/Harmony/**/*.cs" Link="Product/Settings/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/Diagnostics/Core/DefinitionContextScope.cs" Link="Product/Diagnostics/DefinitionContextScope.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/Diagnostics/Core/WarningCaptureSettings.cs" Link="Product/Diagnostics/WarningCaptureSettings.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/Diagnostics/Core/WarningCaptureOptionsSource.cs" Link="Product/Diagnostics/WarningCaptureOptionsSource.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/Diagnostics/WarningCaptureRuntime.cs" Link="Product/Diagnostics/WarningCaptureRuntime.cs" />
+  </ItemGroup>
+</Project>

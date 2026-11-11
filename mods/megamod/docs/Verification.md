@@ -1,6 +1,6 @@
 # Verification boundaries
 
-The initial scaffold has no C# source behavior, runtime entry point, Harmony patches, XML patches,
+At the initial scaffold checkpoint there was no C# source behavior, runtime entry point, Harmony patches, XML patches,
 or Defs. Its assembly contains SDK metadata only. Build, schema, package, dependency, source/package
 catalog parity, documentation links, and independent review are meaningful checks here. Creating an
 empty test project or a startup message would not prove any gameplay. No native feature acceptance
@@ -28,7 +28,9 @@ Use [TestingEnvironments.md](../../../docs/TestingEnvironments.md) and the root 
 Create test projects under repository `tests/` only when concrete assertions need them, and register
 their exact suites through the owning typed tooling contract. Suggested owning names are
 `Megamod.Unit`, `Megamod.Harmony`, `Megamod.Defs`, `Megamod.InGame.IntegrationTests`, and
-`Megamod.EndToEndTests`; **none exists or is registered yet**.
+`Megamod.EndToEndTests`. Unit, Harmony, Defs and EndToEndTests now exist; inspect current typed
+registration and exact scenario selection before using them. A proposed integration-test project
+does not exist merely because its name is listed here.
 
 - Unit: pure rule/predicate/package-selection inputs; no loaded mods/Harmony/populated Def databases.
 - Harmony: the explicitly owned target/patch only, with guaranteed cleanup of that owner.
@@ -63,10 +65,13 @@ smallest exact ordered mod list. Drive the same native action a player uses and 
 the before/action/after result from that exact process. Direct state mutation can arrange fixtures
 but cannot manufacture the result. Repeat affected native workflows after runtime-affecting edits.
 
-Run separate provider/consumer combinations for claimed compatibility and replacement-only versus
-original-provider-present policy. Include composed behavior when selected source mods modify one
-another. Preserve API/save/settings semantics or record the exact deviation; a compile pass cannot
-establish a drop-in claim. Check contextual translations and render required locales with real UI.
+Run separate provider combinations for genuine third-party integrations deliberately used by the
+owned feature. Original-mod drop-in/API compatibility and coexistence matrices are outside scope
+under the [2026-11-08 decision](refinement/2026-11-08-drug-policy-additions.md). The original-loaded
+warning and best-effort effective-disable path use the ordinary feature-off contract, retaining
+saved preferences; they make no compatibility promise. Include direct composed behavior when selected
+sources modify one another, and retain owned save/settings continuity. Check contextual translations
+and render required locales with real UI.
 
 Retain build/package hashes, active order, actions, observations, screenshots, relevant requests/logs,
 normal-config before/after hashes, cleanup, and review decisions beneath ignored `artifacts/`.

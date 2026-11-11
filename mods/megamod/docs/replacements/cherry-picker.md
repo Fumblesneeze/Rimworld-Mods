@@ -96,10 +96,10 @@ remain CK-Q2. Proposed preset compatibility is **not yet a verified drop-in clai
 
 | Scope | Implemented | Deviation / possible conflict | Missing or omitted |
 | --- | --- | --- | --- |
-| CK-01–15 | Nothing | Source global mutable definitions replaced by per-save availability policy | All runtime implementation, per-patch target documents/checks, tests and native evidence |
+| CK-01–15 | Reviewed pure stable key/catalog slices; common requested-settings connection in independent review; unregistered native catalog reader | Source global mutable definitions replaced by per-save availability policy | Applied publication, availability families, native wiring, per-patch admission and native evidence |
 | Restoration and costs | Nothing | Preserve existing goods and costs; block invalid work instead of source zeroing/removal | Exact saved-job/native refusal paths |
-| Application timing | Nothing | Load-boundary application; visible pending requests rather than partial immediate restore | Lifecycle proof and reviewed UI |
-| Presets | Nothing | Independent reasons; deactivate only own contribution, including TMM_All rather than unconditional revive/reset | Guarded authored-data adapter and real provider validation |
+| Application timing | Immutable requested snapshot uses real common detached save/global reads; no applied publication | Load-boundary application; visible pending requests rather than partial immediate restore | Lifecycle wiring, publication and reviewed UI |
+| Presets | Independent cached common activation definitions and captured requested values; no graph application | Independent reasons; deactivate only own contribution, including TMM_All rather than unconditional revive/reset | Reason graph, guarded authored-data adapter and real provider validation |
 | Dependencies | Nothing changed in scaffold | Harmony/XML Extensions required when implementation uses them; other providers/DLC optional | Correct actual package and exact active-mod verification |
 | Import/arbitrary Def editor | None | No automatic foreign settings import, no identity spoof | Deliberately outside this change; possible future migration CK-Q5 |
 
@@ -109,6 +109,15 @@ tolerance, actual incoming-stream checks, repatch handling and bounded skipped-p
 
 ## Verification and acceptance
 
+Implementation checkpoint 2026-11-08: the first incident-only native save-override workflow passed
+38 steps. The orchestrator personally inspected all8 captures: inherited exclusion, enabling the
+save editor, continued refusal while the edit was pending, then a physical ship chunk after native
+save/load applied the override. Globals remained unchanged; exact build, logs and cleanup evidence
+is retained in `artifacts/Implementation/megamod-p0/native-incident-save-override-reviewed.md`.
+This supports that component on its tested build. Other content families, full selector/preset
+workflows, provider combinations, successful Def-reload reconciliation and the integrated P0 gate
+remain incomplete; Cherry Picker replacement is not accepted.
+
 Document/schema review does not establish runtime compatibility. CK-Q1–6 track exact game/provider
 seams, adapter proof, proposed timing/dependency decisions, migration boundaries and final native
 workflows. All implementation tasks stay unchecked. Later work must retain focused RED/GREEN,
@@ -117,7 +126,7 @@ Gateway runs, including save transitions and real provider presence/absence/shap
 
 Semantic review preserves costs, work, value and nutrition; makes research bypass and threat removal
 explicit; and rejects impossible generation without retries or fabricated resources. It does not
-claim in-game balance or optimization. No game launch is required for this documentation-only draft.
+claim in-game balance or optimization. Pure host slices do not close any native acceptance task.
 
 Independent source review corrected the missing PawnKindDef inventory and the trigger for style
 database removal. Contract review added original-DPF/unavailable-maintenance fallback, explicit

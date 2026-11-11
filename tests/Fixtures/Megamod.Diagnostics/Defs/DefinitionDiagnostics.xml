@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <StatCategoryDef>
+    <defName>MegamodDiagnosticsFixtureFirst</defName>
+    <label>first diagnostic fixture</label>
+    <displayOrder>37.5</displayOrder>
+  </StatCategoryDef>
+  <StatCategoryDef>
+    <defName>MegamodDiagnosticsFixtureSecond</defName>
+    <label>second diagnostic fixture</label>
+    <displayOrder>37.5</displayOrder>
+  </StatCategoryDef>
+  <MegamodDiagnosticsFixtureMissingDefType>
+    <defName>MegamodDiagnosticsFixtureMissingType</defName>
+  </MegamodDiagnosticsFixtureMissingDefType>
+</Defs>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Messages_Enabled>启用消息定位</Megamod_Messages_Enabled>
+  <Megamod_Messages_EnabledHelp>使用配置的偏移量并将消息调整到屏幕范围内。禁用后恢复原生位置，保留已保存的偏移量。</Megamod_Messages_EnabledHelp>
+  <Megamod_Messages_Category>界面 / 消息</Megamod_Messages_Category>
+  <Megamod_Messages_PositionOffset>位置偏移</Megamod_Messages_PositionOffset>
+  <Megamod_Messages_PositionOffsetHelp>同时调整两个坐标，范围为当前屏幕尺寸的 −100% 到 +100%。负值可能使消息与殖民者栏重叠。优先保证消息位于屏幕内；过大的消息组可能被裁切。应用操作仅更改本列的两个数值。</Megamod_Messages_PositionOffsetHelp>
+  <Megamod_Messages_Horizontal>水平（%）</Megamod_Messages_Horizontal>
+  <Megamod_Messages_Vertical>垂直（%）</Megamod_Messages_Vertical>
+  <Megamod_Messages_ApplyPair>应用两个值</Megamod_Messages_ApplyPair>
+  <Megamod_Messages_ResetPair>重置为 0 / 0</Megamod_Messages_ResetPair>
+  <Megamod_Messages_ResetPairHelp>仅重置本列。“使用全局设置”和另一列保持不变。</Megamod_Messages_ResetPairHelp>
+  <Megamod_Messages_InvalidOffsetPair>请输入两个介于 −100 和 100 之间的有限数值。</Megamod_Messages_InvalidOffsetPair>
+  <Megamod_Messages_BarIntegrationPending>尚未整合殖民者栏的自动避让功能。</Megamod_Messages_BarIntegrationPending>
+</LanguageData>

@@ -6,6 +6,24 @@ behavior. Source evidence and technical admission plans belong in the adjacent d
 
 ## ADDED Requirements
 
+### Requirement: Capture admission follows published reporting effects
+Owned capture SHALL bind its permission to the actual published reporting generation, including
+relevant inner patches after ordinary transpilers. Changes to native suppression or owned capture
+helpers that invalidate required semantics leave capture inactive and ordinary logging available.
+Unrelated effects and compatible observations SHALL remain eligible without an owner blacklist.
+Inspection SHALL NOT construct foreign attributes or invoke foreign callbacks or factories as probes. This classifies supplied
+bindings and required operations; it does not sandbox arbitrary foreign side effects.
+
+#### Scenario: An inner effect invalidates native eligibility
+- **WHEN** a published inner patch changes the native suppression result used by owned warning capture
+- **THEN** capture is unavailable for that generation rather than muting events under unproven eligibility
+- **AND** a later compatible published rebuild can restore capture after safe refresh, preserving callback-fault latches and stored settings
+
+#### Scenario: Published capture metadata exceeds the inspection boundary
+- **WHEN** its exact published metadata entry exceeds the owned 4 MiB inspection bound or uses an unsupported format
+- **THEN** capture remains inactive with a specific explanation while ordinary native output remains available
+- **AND** this owned inspection policy is not represented as a limit imposed by the native logging provider
+
 ### Requirement: Diagnostic access follows the developer UI
 The mod SHALL use the existing top developer-toolbar log entry and native log shortcut to open one diagnostic window, without adding a bottom tab, bottom-right button, or pause/main-menu log button.
 
@@ -105,6 +123,32 @@ Required startup warnings and the limit-reached control notice are the explicit 
 - **WHEN** the player unmutes errors and a new otherwise eligible error occurs
 - **THEN** normal capture and native error consequences resume, without replaying errors discarded while muted
 
+#### Scenario: A muted once-only warning is not replayed
+- **WHEN** a natively eligible once-only warning is muted and its native identity is used again after unmuting
+- **THEN** the discarded warning stays absent and that already-used identity does not create a new occurrence
+- **AND** a new eligible warning identity can be recorded normally
+
+#### Scenario: The warning control cannot provide its requested behavior
+- **WHEN** Mute warnings is saved as enabled but its required route is unavailable or its capture callback fails
+- **THEN** the common settings row distinguishes the saved request from inactive muting and ordinary native warning output continues
+- **AND** a callback failure produces one protected explanation and does not disable independently working definition-context formatting
+
+#### Scenario: Only warning muting has incompatible semantics
+- **WHEN** the warning path can safely add definition context but cannot safely suppress the occurrence and its subsequent effects
+- **THEN** admitted definition context continues on that same shared path and ordinary warning capture continues
+- **AND** an eligible saved mute request is shown as inactive with one protected explanation, while a disabled or original-provider-blocked request does not reject context or emit a dormant capture failure
+- **AND** later setting changes preserve both the saved request and independently working context, and safe revalidation can restore muting after a compatible rebuild without resetting a prior capture-callback fault
+
+#### Scenario: Definition context is unavailable while warning muting remains admitted
+- **WHEN** the warning route is compatible but definition-context reporting is disabled, suppressed by its original provider, or lacks its required error route
+- **THEN** enabled admitted warning muting continues independently
+- **AND** partial definition context is never published, while required startup warnings remain exempt from muting
+
+#### Scenario: A compatible warning route is rebuilt
+- **WHEN** another patch rebuilds the warning route with compatible semantics
+- **THEN** owned muting temporarily becomes inactive and ordinary logging continues until safe revalidation establishes the new composition
+- **AND** revalidation restores an already-admitted requested behavior without enabling a disabled feature or recovering discarded messages
+
 ### Requirement: Capture limits are separate from retained history
 The mod SHALL offer global capture-limit modes Game policy, Custom and Unlimited, defaulting to Game policy; Custom has an initial value of 2,000 and accepts whole numbers from 1 through 10,000.
 
@@ -161,6 +205,12 @@ failed notification attempts must not recursively generate more copies of the sa
 #### Scenario: A patch fails while warnings are muted
 - **WHEN** an enabled patch fails its startup prerequisite check while Mute warnings is on and the ordinary custom limit is exhausted
 - **THEN** its single compatibility warning is written to the startup log and can be inspected while retained, without resuming unrelated ordinary capture
+
+#### Scenario: Native startup output is unavailable
+- **WHEN** a required startup warning cannot use the admitted native file-output route
+- **THEN** the mod attempts a separate uniquely named startup-warning file beneath the active save-data Logs directory, without altering existing evidence or resuming ordinary capture
+- **AND** each record is bounded, every required warning still receives a delivery attempt, and recursive notification failures cannot produce a warning loop
+- **AND** process stderr is a last resort if the owned file fails, while complete delivery failures retain an inspectable total and bounded failure details rather than aborting unrelated feature admission
 
 ### Requirement: Optional announcements belong to the top debug controls
 The mod SHALL provide separate announcement preferences for Messages, Warnings and Errors, defaulting to off, off and on respectively, with announcement sound enabled by default.
@@ -279,18 +329,22 @@ The mod SHALL activate each enabled logging behavior only when its documented se
 Unsupported behavior remains inactive with one bounded startup warning per skipped enabled patch,
 while independent admitted behavior and native logging remain usable. A control whose behavior
 cannot be provided explains its unavailability instead of silently claiming success. When the
-original Better Log package is active, owned overlapping Log enhancements are suppressed as a
-group with a clear warning; no source removal, settings import, foreign patch removal or package
-identity impersonation occurs. Native filters and native log entry remain native. No universal
-third-party compatibility or automatic repair of errors is promised.
+original Better Log package is active, a bounded startup warning SHALL identify best-effort
+disablement of corresponding owned Log enhancements through their ordinary feature-off path, with
+the same behavior and timing as manually off. Stored preferences SHALL remain intact; an inactive
+installed source SHALL NOT trigger this rule. No source removal, settings import, foreign patch
+removal or package identity impersonation occurs. Native filters and native log entry remain native.
+No original API/drop-in or coexistence compatibility, universal third-party compatibility or automatic
+repair of errors is promised.
 
 #### Scenario: The capture path changes while inspection still works
 - **WHEN** capture-limit prerequisites fail but native inspection and color presentation remain compatible
 - **THEN** the limit control is unavailable with a startup explanation, while inspecting and coloring ordinary native logs remains usable
 
-#### Scenario: Original provider is co-installed
+#### Scenario: Original provider is active
 - **WHEN** Better Log is active alongside the megamod
-- **THEN** owned overlapping Log enhancements remain inactive with a warning, and the source configuration and patches are left untouched
+- **THEN** a bounded startup warning describes best-effort ordinary feature-off handling for the corresponding Log enhancements
+- **AND** manual-off behavior and timing apply, stored owned preferences and source configuration/patches remain intact, and unrelated features remain available without a coexistence guarantee
 
 ### Requirement: Diagnostic probes are finite and explicitly requested
 The mod SHALL offer a developer-only Emit sample error action in the top debug output menu that produces one clearly labeled synthetic error per activation through the ordinary logging path.

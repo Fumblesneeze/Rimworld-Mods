@@ -3,7 +3,7 @@ Specification-stage draft only. All implementation and native acceptance tasks r
 
 ## 1. Resolve the owned host contract before implementation
 
-- [ ] 1.1 Complete S038's content catalogue/filter scope, application timing, original-provider coexistence and actual consumed-contract analysis; carry this selector's exact-source identity rule into that contract.
+- [ ] 1.1 Complete the owned S038 content catalogue/filter scope and application timing; align ordinary feature-off handling with its host activation and carry this selector's exact-source identity rule into that contract. Original API/consumer/facade work is excluded.
 - [ ] 1.2 Resolve or explicitly retain SC-Q1–4, including distinguishing identifiers, unavailable choice reasons and supported UI scales; amend observable scenarios for changed assumptions.
 - [ ] 1.3 Verify the exact beta native window close/input/resize paths. Keep owned selector calls direct; if any external patch becomes necessary, first document its individual semantic target, admission, fallback and revalidation scenarios.
 
@@ -18,7 +18,7 @@ Specification-stage draft only. All implementation and native acceptance tasks r
 
 ## 3. Verify composition and packaging
 
-- [ ] 3.1 Exercise focused host/source-present and source-absent composition scenarios using the exact S038 coexistence policy; prove unrelated menus stay unchanged and original add-on presence alone does not intercept ours.
+- [ ] 3.1 Exercise direct owned host/selector composition and unchanged unrelated menus. Verify bounded startup warning and best-effort ordinary feature-off handling for an active source, no trigger for an inactive installed source, retained preferences and no modification of originals; do not claim original coexistence safety or add a compatibility matrix.
 - [ ] 3.2 If patches are introduced, execute appropriate honest-environment tests for compatible foreign changes, altered/ambiguous required flows, effective code, repeat initialization, rollback and bounded startup warnings; otherwise record that the slice has no patch targets.
 - [ ] 3.3 Translate and check all seven baseline languages, long/duplicate labels, neutral icons, narrow/wide screens, supported UI scales and main-menu/save-scope explanations.
 - [ ] 3.4 Run affected typed builds/package checks and strict OpenSpec validation. Confirm exact runtime dependencies and no upstream/Gateway assembly, identity spoof or undeclared XML Extensions use.

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <DrugPolicyDef>
+    <defName>MegamodDrugPresetFixtureRecovery</defName>
+    <label>fixture recovery</label>
+    <allowPleasureDrugs>true</allowPleasureDrugs>
+    <entries>
+      <!-- Steel is a real Core item but is not a drug. Its cross-reference is valid. -->
+      <li>
+        <drug>Steel</drug>
+        <allowScheduled>true</allowScheduled>
+        <takeToInventory>9</takeToInventory>
+      </li>
+      <li>
+        <drug>Beer</drug>
+        <allowedForAddiction>false</allowedForAddiction>
+        <allowedForJoy>false</allowedForJoy>
+        <allowScheduled>true</allowScheduled>
+        <daysFrequency>2</daysFrequency>
+        <onlyIfMoodBelow>0.65</onlyIfMoodBelow>
+        <onlyIfJoyBelow>0.75</onlyIfJoyBelow>
+        <takeToInventory>2</takeToInventory>
+      </li>
+      <li>
+        <drug>SmokeleafJoint</drug>
+        <allowedForAddiction>true</allowedForAddiction>
+        <allowedForJoy>true</allowedForJoy>
+        <allowScheduled>true</allowScheduled>
+        <daysFrequency>3</daysFrequency>
+        <onlyIfMoodBelow>0.45</onlyIfMoodBelow>
+        <onlyIfJoyBelow>0.55</onlyIfJoyBelow>
+        <takeToInventory>1</takeToInventory>
+      </li>
+    </entries>
+  </DrugPolicyDef>
+</Defs>

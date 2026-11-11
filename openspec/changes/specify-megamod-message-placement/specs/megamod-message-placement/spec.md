@@ -1,10 +1,27 @@
 # Message placement
 
 Owner **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`; **RimWorld 1.7 beta**.
-Origin replacement, S071 Better Message Placement (Continued). **Specified only; nothing implemented
-or verified.** Numerical layout choices below are draft defaults retained for review.
+Origin replacement, S071 Better Message Placement (Continued). **Implementation underway; native
+behavior remains unimplemented and unverified.** Numerical layout choices below remain the specified defaults.
 
 ## ADDED Requirements
+
+### Requirement: Ordinary feature-off preserves message preferences
+Message placement SHALL have a common global/save Boolean enable setting, initially enabled,
+applied on the next display. Disabling SHALL retain both stored offsets and inheritance choices
+while leaving native message placement and interactions available. An active original provider
+SHALL use this same effective-off setting without overwriting requested preferences.
+
+#### Scenario: Disable and reenable manual placement
+- **WHEN** the player disables placement with nonzero offsets and then reenables it
+- **THEN** native placement is used while disabled and the retained offsets apply on the next display after reenablement
+- **AND** disabling is not reported as a failed patch or an unavailable GUI context
+
+#### Scenario: Incremental manual placement is explicitly bounded
+- **WHEN** the manual-positioning implementation is available before automatic bar geometry integration
+- **THEN** settings visibly explain that automatic clearance is unavailable
+- **AND** admitted manual offsets and viewport fitting remain usable without claiming bar clearance or changing the stored pair
+- **AND** the implementation milestone does not satisfy automatic-placement, preview or native interaction acceptance obligations
 
 ### Requirement: Automatic placement follows the visible colonist bar
 Owned short-message placement SHALL begin at the ordinary native position, including its active
@@ -171,6 +188,16 @@ from supported manual positioning. Repeated draws SHALL not flood the log.
 - **THEN** the entire affected owned position contribution remains inactive, with no horizontal-only or vertical-only result
 - **AND** the bounded diagnostic names native/provider placement as fallback; unrelated features and foreign patches remain intact
 
+#### Scenario: Target admission does not run another mod's behavior
+- **WHEN** owned placement checks the required effective game or deliberately used integration behavior
+- **THEN** checking alone does not run that mod's gameplay or initialization behavior
+- **AND** its ordinary operation remains unchanged; an unavailable check disables only the affected owned contribution with its bounded diagnostic
+
+#### Scenario: Uncertain display order preserves completed native effects
+- **WHEN** message drawing or interaction is attempted before a safe placement update, or an unexpected repeated or nested update makes the remaining display order uncertain
+- **THEN** further affected owned movement is skipped with a bounded diagnostic and ordinary message behavior continues
+- **AND** already completed display and native interaction effects are preserved rather than undone; the feature does not promise retroactive atomicity for an entire UI update
+
 #### Scenario: Automatic clearance is unavailable for a bar provider
 - **WHEN** native positioning remains supported but the active bar's visible bounds cannot be verified
 - **THEN** admitted manual offsets and viewport fitting use the native anchor without an invented bar reserve
@@ -178,6 +205,6 @@ from supported manual positioning. Repeated draws SHALL not flood the log.
 
 #### Scenario: The original mod is active
 - **WHEN** Mlie.BetterMessagePlacement is active
-- **THEN** it is the sole placement provider and owned placement is dormant
-- **AND** settings explain that its layout/defaults differ, retain owned preferences and show the owned preview as unavailable
-- **AND** no source configuration is imported or overwritten and no whole-megamod incompatibility is inferred
+- **THEN** a bounded startup warning identifies best-effort handling through the ordinary owned placement-off path, with the same behavior, timing and preview availability as manually off
+- **AND** stored owned preferences and source configuration remain unchanged; inactive installed sources do not trigger this handling
+- **AND** unrelated features remain available and no source-only placement, rollback of earlier effects or coexistence compatibility is promised

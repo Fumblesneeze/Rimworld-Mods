@@ -196,6 +196,18 @@ or fallback to forbidden content.
 - **THEN** that option is not selected and remaining candidates keep their ordinary rules
 - **AND** excluding every candidate does not create unbounded retries
 
+#### Scenario: Explicit excluded incident is refused before effects
+- **WHEN** a player requests an incident excluded by the applied policy through a supported native command
+- **THEN** the incident is refused before its native effects and fired-history changes
+- **AND** the player receives a localized explanation identifying the incident and reload timing
+- **AND** existing outcomes and the original Def identity remain unchanged
+
+#### Scenario: Refusal notification fails after the decision
+- **WHEN** the owned incident gate has already refused an excluded incident and its notification fails
+- **THEN** that invocation remains refused without native incident effects
+- **AND** the affected policy becomes unavailable with a bounded diagnostic rather than allowing
+  a later result writer to advertise that refused invocation as successful
+
 ### Requirement: Health and thought exclusions do not erase existing state
 
 A newly applied excluded health condition SHALL be refused by the supported condition-addition
@@ -237,8 +249,8 @@ S029's fresh-row behavior rather than resurrecting discarded policy instructions
 stock SHALL retain ordinary properties; this filter SHALL not independently rewrite all explicit
 ingestion or medical-order rules.
 
-Drug-item exclusion SHALL depend on available owned drug-policy maintenance. If original Drug
-Policy Fix is active, or the required owned maintenance cannot run successfully, drug-item
+Drug-item exclusion SHALL depend on available owned drug-policy maintenance. If that feature is
+disabled through its ordinary settings path, or the required owned maintenance cannot run successfully, drug-item
 exclusions SHALL be withheld with a visible reason and bounded warning. Requested individual and
 preset choices SHALL remain stored, but those drug items SHALL not be shown as successfully
 excluded. Other supported content families SHALL continue working. Application SHALL not leave
@@ -255,10 +267,10 @@ policy changes when that application fails.
 - **THEN** current drug policies reconcile once to omit it, even though hauling and stock search
   still see its physical stacks
 
-#### Scenario: Original Drug Policy Fix or unavailable maintenance
-- **WHEN** original Drug Policy Fix is active or required owned policy maintenance is unavailable
+#### Scenario: Disabled or unavailable owned maintenance
+- **WHEN** required owned policy maintenance is off or unavailable
 - **THEN** requested drug-item exclusions are visibly withheld while other supported exclusions apply
-- **AND** no claim is made that the original understands the owned content choices
+- **AND** no original-provider adapter substitutes for the required owned maintenance
 
 #### Scenario: Drug-policy application fails
 - **WHEN** policy cleanup fails while applying requested drug exclusions

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Numbers_Category>Format des nombres</Megamod_Numbers_Category>
+  <Megamod_Numbers_Enabled>Activer</Megamod_Numbers_Enabled>
+  <Megamod_Numbers_EnabledHelp>Formater les quantités affichées sans modifier leurs valeurs.</Megamod_Numbers_EnabledHelp>
+  <Megamod_Numbers_MinimumIntegerDigits>Nombre minimal de chiffres entiers</Megamod_Numbers_MinimumIntegerDigits>
+  <Megamod_Numbers_MinimumIntegerDigitsHelp>Grouper une quantité seulement si sa partie entière contient au moins ce nombre de chiffres (4 à 2 147 483 647).</Megamod_Numbers_MinimumIntegerDigitsHelp>
+  <Megamod_Numbers_MinimumIntegerDigitsInvalid>Le nombre minimal de chiffres entiers doit être un entier compris entre 4 et 2 147 483 647.</Megamod_Numbers_MinimumIntegerDigitsInvalid>
+  <Megamod_Numbers_PunctuationInvalid>Choisissez deux signes de ponctuation ou symboles différents, d’un caractère chacun. Seul le groupement accepte une espace.</Megamod_Numbers_PunctuationInvalid>
+  <Megamod_Numbers_Punctuation>Séparateurs</Megamod_Numbers_Punctuation>
+  <Megamod_Numbers_PunctuationHelp>Les formats prédéfinis conservent vos signes. En mode Personnalisé, modifiez les deux signes puis appliquez la paire complète.</Megamod_Numbers_PunctuationHelp>
+  <Megamod_Numbers_PresetCycleHelp>Cliquez pour passer au format suivant ; les signes personnalisés sont conservés.</Megamod_Numbers_PresetCycleHelp>
+  <Megamod_Numbers_GroupMark>Groupement perso.</Megamod_Numbers_GroupMark>
+  <Megamod_Numbers_DecimalMark>Décimale perso.</Megamod_Numbers_DecimalMark>
+  <Megamod_Numbers_ApplyPair>Appliquer la paire</Megamod_Numbers_ApplyPair>
+  <Megamod_Numbers_Preview>Aperçu (valeurs enregistrées)</Megamod_Numbers_Preview>
+  <Megamod_Numbers_CommaPeriod>Virgule / point</Megamod_Numbers_CommaPeriod>
+  <Megamod_Numbers_PeriodComma>Point / virgule</Megamod_Numbers_PeriodComma>
+  <Megamod_Numbers_SpacePeriod>Espace / point</Megamod_Numbers_SpacePeriod>
+  <Megamod_Numbers_SpaceComma>Espace / virgule</Megamod_Numbers_SpaceComma>
+  <Megamod_Numbers_ApostrophePeriod>Apostrophe / point</Megamod_Numbers_ApostrophePeriod>
+  <Megamod_Numbers_ApostropheComma>Apostrophe / virgule</Megamod_Numbers_ApostropheComma>
+  <Megamod_Numbers_Custom>Personnalisé</Megamod_Numbers_Custom>
+  <Megamod_Numbers_Grouping>Groupement des chiffres</Megamod_Numbers_Grouping>
+  <Megamod_Numbers_GroupingHelp>Cliquez pour alterner entre des groupes de trois, trois puis deux, quatre, ou aucun groupement. Seuls les chiffres entiers sont groupés ; la ponctuation et le nombre minimal de chiffres restent applicables.</Megamod_Numbers_GroupingHelp>
+  <Megamod_Numbers_GroupingInvalid>Choisissez Trois chiffres, Trois puis deux chiffres, Quatre chiffres ou Aucun.</Megamod_Numbers_GroupingInvalid>
+  <Megamod_Numbers_GroupingThree>Trois chiffres</Megamod_Numbers_GroupingThree>
+  <Megamod_Numbers_GroupingThreeThenTwo>Trois puis deux chiffres</Megamod_Numbers_GroupingThreeThenTwo>
+  <Megamod_Numbers_GroupingFour>Quatre chiffres</Megamod_Numbers_GroupingFour>
+  <Megamod_Numbers_GroupingNone>Aucun</Megamod_Numbers_GroupingNone>
+  <Megamod_Numbers_SmallDecimals>Appliquer le format décimal aux petits nombres</Megamod_Numbers_SmallDecimals>
+  <Megamod_Numbers_SmallDecimalsHelp>Utiliser le séparateur décimal choisi sous le nombre minimal de chiffres entiers. À partir de ce seuil, il s'applique toujours, même sans groupement. Les décimales et les zéros restent inchangés.</Megamod_Numbers_SmallDecimalsHelp>
+</LanguageData>

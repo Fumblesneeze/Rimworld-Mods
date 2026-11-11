@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Diagnostics_Category>Diagnostic</Megamod_Diagnostics_Category>
+  <Megamod_Diagnostics_DefinitionContext>Contexte du diagnostic des définitions</Megamod_Diagnostics_DefinitionContext>
+  <Megamod_Diagnostics_DefinitionContextHelp>Ajoute la définition, le mod et le fichier en cours aux prochains avertissements et erreurs pendant le chargement des définitions. Le diagnostic d’origine reste intact.</Megamod_Diagnostics_DefinitionContextHelp>
+  <Megamod_Diagnostics_GlobalOnlyReason>S’applique à toute la session : les définitions sont chargées avant qu’une sauvegarde soit active, et leurs diagnostics sont communs aux sauvegardes.</Megamod_Diagnostics_GlobalOnlyReason>
+  <Megamod_Diagnostics_CaptureCategory>Diagnostic / Journal — Enregistrement</Megamod_Diagnostics_CaptureCategory>
+  <Megamod_Diagnostics_MuteWarnings>Ignorer les avertissements</Megamod_Diagnostics_MuteWarnings>
+  <Megamod_Diagnostics_MuteWarningsHelp>Écarte les futurs avertissements ordinaires du journal et du fichier, ainsi que leur ouverture automatique de fenêtre. Ce n’est pas un filtre d’affichage : les anciennes entrées restent et les avertissements perdus sont irrécupérables. Les écritures directes dans des fichiers et les avertissements de démarrage obligatoires restent actifs.</Megamod_Diagnostics_MuteWarningsHelp>
+  <Megamod_Diagnostics_CaptureGlobalOnlyReason>Global uniquement : l’enregistrement concerne les journaux partagés du démarrage et du processus ; changer de partie ne doit pas le modifier.</Megamod_Diagnostics_CaptureGlobalOnlyReason>
+  <Megamod_Diagnostics_WarningCaptureOff>Effectif : enregistrement des avertissements ordinaires.</Megamod_Diagnostics_WarningCaptureOff>
+  <Megamod_Diagnostics_WarningCaptureOn>Effectif : les futurs avertissements ordinaires sont écartés.</Megamod_Diagnostics_WarningCaptureOn>
+  <Megamod_Diagnostics_WarningCaptureUnavailable>Inactif : le canal des avertissements est indisponible. Votre choix est conservé ; le journal ordinaire continue.</Megamod_Diagnostics_WarningCaptureUnavailable>
+</LanguageData>

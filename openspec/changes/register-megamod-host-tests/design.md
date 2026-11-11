@@ -1,7 +1,7 @@
 ## Context
 
 Owner: repository tooling **RimWorldModding.Mcp**. The current runner has an explicit suite registry;
-its Unit alternatives already support .NET 10 without loading game assemblies. Megamod now has
+its Unit alternatives already support .NET 10 without loading game assemblies. Megamod now has three
 concrete first behavior tests, owned by its P0 feature changes, requiring the same honest environment.
 
 ## Goals / Non-Goals
@@ -26,6 +26,20 @@ the runner fails for zero executed tests. This is command verification, not game
 Registry metadata can drift → verify actual selected framework, counts and filter in the returned
 result. Product tests can fail independently → preserve their failure status rather than treating
 dispatch success as a passing behavior test. No broad aggregate run is needed.
+
+## First owned-Harmony environment
+
+The first S094 runtime adapter needs actual owned-patch/coexistence/rollback proof. Add the separate
+`Megamod.Harmony` net10 project, source-linking only `Source/Patching/Core` and
+`Source/Patching/Harmony`; neither contains Verse/Game types. Scoped host methods are the targets,
+with guaranteed exact owner cleanup. Real converters and loaded mod startup remain in isolated game
+scenarios. This combination does not fit the pure Unit environment or the legacy1.6 Harmony suites.
+
+Resolve this exact suite's default provider from Workshop `2009463077/1.7/Assemblies/0Harmony.dll`,
+not the legacy `Current` folder. Preserve the existing explicit HarmonyAssemblyPath override and
+identity/MVID/hash receipt. The inspected provider identity is0Harmony3.0.0.0; this identifies current
+evidence, not a hash-based compatibility gate. Keep the suite out of All. The product gains Harmony
+metadata only with its first actual runtime use; the test binary is never packaged with the product.
 
 ## First native data adapter environment
 

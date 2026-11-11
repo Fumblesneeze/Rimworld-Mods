@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Content_IncidentExcluded>このセーブに適用されているコンテンツ設定により、{0}は除外されています。設定の変更は再ロード後に反映されます。</Megamod_Content_IncidentExcluded>
+  <Megamod_Content_Category>コンテンツ選択</Megamod_Content_Category>
+  <Megamod_Content_IncidentKind>事件</Megamod_Content_IncidentKind>
+  <Megamod_Content_AllowEntry>{0} を許可（{1}）</Megamod_Content_AllowEntry>
+  <Megamod_Content_ChoiceHelp>オンは許可、オフは除外の要求です。全体とセーブの設定は保存して再ロードすると適用され、既存の物は保持されます。</Megamod_Content_ChoiceHelp>
+  <Megamod_Content_IncidentScope>この最初の項目は事件のみを制御します。他のコンテンツ種別とプリセットはまだ利用できません。</Megamod_Content_IncidentScope>
+  <Megamod_Content_AllTypes>すべての種類</Megamod_Content_AllTypes>
+  <Megamod_Content_AllSources>すべての提供元</Megamod_Content_AllSources>
+  <Megamod_Content_Search>名前・識別子・提供元・種類を検索</Megamod_Content_Search>
+  <Megamod_Content_Matching>事件 {0} / {1} 件</Megamod_Content_Matching>
+  <Megamod_Content_NoMatches>一致する事件はありません。</Megamod_Content_NoMatches>
+  <Megamod_Content_AppliedAllowed>適用中：許可。</Megamod_Content_AppliedAllowed>
+  <Megamod_Content_AppliedExcluded>適用中：除外。</Megamod_Content_AppliedExcluded>
+  <Megamod_Content_PendingAllow>保留：保存と再ロード後に許可。現在は除外中。</Megamod_Content_PendingAllow>
+  <Megamod_Content_PendingExclude>保留：保存と再ロード後に除外。現在は許可中。</Megamod_Content_PendingExclude>
+  <Megamod_Content_NextLoad>次に新規開始またはロードしたゲームに適用されます。現在有効なセーブはありません。</Megamod_Content_NextLoad>
+  <Megamod_Content_ApplicationUnavailable>このセーブに事件のルールは適用されていません。要求された設定は保存されています。</Megamod_Content_ApplicationUnavailable>
+  <Megamod_Content_OriginalProvider>元の Cherry Picker が有効です。本モッドのコンテンツ操作は利用できませんが、保存済みの選択は保持されます。</Megamod_Content_OriginalProvider>
+  <Megamod_Content_PatchesUnavailable>必要な連携が認められなかったため、事件の除外は利用できません。</Megamod_Content_PatchesUnavailable>
+  <Megamod_Content_Ambiguous>コンテンツの識別が曖昧なため、安全に編集できません。</Megamod_Content_Ambiguous>
+  <Megamod_Content_Missing>このコンテンツは現在存在しません。保存済みの選択は保持されます。</Megamod_Content_Missing>
+  <Megamod_Content_StaleChoice>この絞り込み項目は利用できなくなりました。メニューを開き直してください。</Megamod_Content_StaleChoice>
+  <Megamod_Content_DefinitionsInvalidated>定義の再読み込みまたは消去後は、イベント設定を利用できません。要求した設定と以前の適用内容は保持されます。定義の再読み込み後の復旧にはまだ対応していません。</Megamod_Content_DefinitionsInvalidated>
+  <Megamod_Content_OpenBrowser>コンテンツの選択…</Megamod_Content_OpenBrowser>
+  <Megamod_Content_Enabled>コンテンツの除外を有効にする</Megamod_Content_Enabled>
+  <Megamod_Content_EnabledHelp>ゲームの開始時またはロード時に除外を適用します。無効にしても個別とプリセットの選択は保持されます。変更の適用にはセーブと再ロードが必要です。</Megamod_Content_EnabledHelp>
+  <Megamod_Content_DisabledRetained>このゲームではコンテンツの除外が無効です。個別とプリセットの選択は保持されています。</Megamod_Content_DisabledRetained>
+</LanguageData>

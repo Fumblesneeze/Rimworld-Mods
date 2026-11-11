@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Diagnostics_Category>Diagnostics</Megamod_Diagnostics_Category>
+  <Megamod_Diagnostics_DefinitionContext>Definition diagnostic context</Megamod_Diagnostics_DefinitionContext>
+  <Megamod_Diagnostics_DefinitionContextHelp>Add the current definition, mod and file to subsequent warnings and errors during definition loading. The original diagnostic remains intact.</Megamod_Diagnostics_DefinitionContextHelp>
+  <Megamod_Diagnostics_GlobalOnlyReason>Applies to the whole running game: definitions load before a save is active, and their diagnostics are shared across saves.</Megamod_Diagnostics_GlobalOnlyReason>
+  <Megamod_Diagnostics_CaptureCategory>Diagnostics / Log — Capture</Megamod_Diagnostics_CaptureCategory>
+  <Megamod_Diagnostics_MuteWarnings>Mute warnings</Megamod_Diagnostics_MuteWarnings>
+  <Megamod_Diagnostics_MuteWarningsHelp>Discard future ordinary warnings from the retained log and file, including their automatic window effects. This is not a display filter: earlier evidence stays, and lost warnings cannot be recovered. Direct file writers and required startup warnings are unaffected.</Megamod_Diagnostics_MuteWarningsHelp>
+  <Megamod_Diagnostics_CaptureGlobalOnlyReason>Global only: capture controls govern shared startup and process logs; changing saves must not alter them.</Megamod_Diagnostics_CaptureGlobalOnlyReason>
+  <Megamod_Diagnostics_WarningCaptureOff>Effective: ordinary warning capture.</Megamod_Diagnostics_WarningCaptureOff>
+  <Megamod_Diagnostics_WarningCaptureOn>Effective: future ordinary warnings are discarded.</Megamod_Diagnostics_WarningCaptureOn>
+  <Megamod_Diagnostics_WarningCaptureUnavailable>Inactive: the warning route is unavailable. Your request is saved; ordinary logging continues.</Megamod_Diagnostics_WarningCaptureUnavailable>
+</LanguageData>

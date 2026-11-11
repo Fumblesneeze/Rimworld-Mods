@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugPolicy_Category>Politiques de drogues</Megamod_DrugPolicy_Category>
+  <Megamod_DrugPolicy_Enabled>Activer la maintenance des politiques de drogues</Megamod_DrugPolicy_Enabled>
+  <Megamod_DrugPolicy_EnabledHelp>Maintient des politiques utilisables et rétablit les modèles pris en charge. Les changements prennent effet après le redémarrage de RimWorld. Les modifications et affectations sont conservées.</Megamod_DrugPolicy_EnabledHelp>
+  <Megamod_DrugPolicy_GlobalOnlyReason>Une option globale au démarrage : les premières politiques sont créées avant qu’une sauvegarde soit active. Redémarrez RimWorld pour appliquer les changements.</Megamod_DrugPolicy_GlobalOnlyReason>
+</LanguageData>

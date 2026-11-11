@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+  <ModSettings Class="Megamod.Settings.MegamodGlobalSettings">
+    <values>
+      <keys>
+        <li>content.allowed/15:ludeon.rimworld20:RimWorld.IncidentDef13:ShipChunkDrop</li>
+      </keys>
+      <values>
+        <li>false</li>
+      </values>
+    </values>
+  </ModSettings>
+</SettingsBlock>

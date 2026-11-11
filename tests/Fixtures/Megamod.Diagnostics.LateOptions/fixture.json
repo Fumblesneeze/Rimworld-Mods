@@ -1,0 +1,13 @@
+{
+  "schema": "RimWorldDevGateway/XmlFixture/v1",
+  "ownerPackageId": "fumblesneeze.megamod",
+  "packageId": "fumblesneeze.megamoddiagnosticslateoptions",
+  "rimWorldVersion": "1.7",
+  "packageInclude": ["About/About.xml", "Defs/LateOptions.xml"],
+  "expectedErrors": [
+    {
+      "message": "Unofficial OptionCategoryDef: megamod diagnostics late options fixture found, ignoring",
+      "count": 1
+    }
+  ]
+}

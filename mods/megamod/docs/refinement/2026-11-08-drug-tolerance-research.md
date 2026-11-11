@@ -155,3 +155,59 @@ Related contracts inspected: `specify-megamod-drug-policy-maintenance/design.md`
 `specify-megamod-drug-response/design.md`, and `specify-megamod-priority-treatment/design.md`
 under repository-root `openspec/changes/`. S138/S139 are only reserved here; no ledger, plan or
 OpenSpec change was edited by this research.
+
+## Follow-up: exact 1.7 routes and owned-state seams
+
+Later on 2026-11-08, bounded read-only inspection resolved the native route facts needed by the
+now-existing S138 draft. This addendum supplements the earlier source research; it does not claim
+implementation or close runtime tasks. The exact ignored evidence is
+`artifacts/Implementation/megamod-p0/drug-tolerance-route-research/handoff.md`; its original reviewed
+SHA256 is `9DCECEB2E64036A1FCD48360661927CE7B01600F5B1F5D5CA16F6FDA5C599BA0`.
+A later wording correction identifies S029 defaults accurately and retains that fingerprint in
+the handoff's addendum. The inspected native assembly remained 1.7.5000 rev1275 at
+`D55AA8E47FA3C5463CA85B0ECCD51F195B4BBCD04F56DA3AF21C2F6688A81254`.
+
+Typed `operation_list` still exposed only a live-session decompiler. Root authorized the existing
+offline `artifacts/Tools/ilspycmd/ilspycmd.cmd -t <type> <assembly>` fallback; stdout was inspected
+without executing game code, reconstructing foreign patches or retaining copied implementation.
+ILSpy 11.2.0.10050 executable SHA256:
+`A3596974949CAC05CAB79FE42AD4FC7A2FE1B40A996E7656295A922F1440B3F4`.
+The handoff lists exact commands/types and retained policy/UI source fingerprints. Core
+`Data/Core/Defs/Joy/JoyGivers.xml` SHA256 is
+`E35331B3CD709DE271871BDF75400C7BB45AD7181DCAD30BA8B9EFC0DCA1439F`;
+`Data/Core/Defs/ThinkTreeDefs/SubTrees_Misc.xml` is
+`C287C0C2A97F151D86516CF058E2EB54B4D87F1BCCF50BFA46FAF8B26EBA3071`.
+
+Observed native and current owned-code facts:
+
+- Map and caravan scheduled use both reach `ShouldTryToTakeScheduledNow` and then
+  `AllowedToTakeScheduledNow`. Later native timing/overdose decisions remain separate.
+- `JoyGiver_TakeDrug` inherits `JoyGiver_Ingest.CanIngestForJoy`; its positive-DrugDesire/mental-state
+  policy exception does not remove earlier ordinary eligibility checks. `JoyGiver_SocialRelax`
+  selects nurseable drinks separately through `TryFindIngestibleToNurse`, requiring `allowedForJoy`
+  without that bypass. A base joy hook alone misses social drinking. No drink still permits the
+  otherwise eligible native social job.
+- Manual orders, addiction/dependency relief and routine use share downstream ingestion helpers;
+  medical/caravan use can also reach `Thing.Ingested` directly. A shared helper or driver name does
+  not establish routine purpose. Native feeding passes the actual Deliveree to ingestion, not the
+  visitor/toil actor; S024's owned treat producer and recheck integration remain future work.
+- Native standalone refill excludes scheduled rows. A scheduled ingest job can collect extra stock
+  through `takeExtraIngestibles`, so blocking that dose also loses its attached pickup opportunity.
+  Preserving independent refill does not imply a new substitute refill job.
+- Native policy copy creates new entries, while save/load deep-serializes them. Current S029 storage
+  retains surviving row identity and snapshots seven native choices, with no tolerance codec or
+  side-state rollback extension. Its new-row defaults reflect native initialization followed by
+  S029 normalization, not unqualified native defaults. Current storage SHA256:
+  `DCC407D9A21BA2E9A136C87F82D41B24348CC4FC57C4A000CE75E3DE569A293B`.
+
+The owned draft now makes social drinking obey the tolerance choice without direct-recreation
+exceptions, preserves eligible drinkless social activity, and distinguishes independent refill
+from pickup attached to a withheld scheduled dose. These are explicit owned clarifications based
+on the observed routes, not claims that the original mod already enforces all of them.
+
+DT-Q2 remains open for final recheck timing, threshold changes during an executing routine job,
+purpose/recipient proof across pickup and save/resume, the future S024 treat boundary and effective
+native admission. No blanket ingestion veto or new cancellation policy is inferred. DT-Q1 remains
+open for the owned codec, invalid-record preservation, copy and S029 prepare/commit/rollback
+extension. Any/zero/default-on/malformed-choice review and seven-language native UI acceptance also
+remain open. No original API/consumer compatibility work, tests, builds or game launches were added.

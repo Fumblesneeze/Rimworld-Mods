@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Diagnostics_Category>Диагностика</Megamod_Diagnostics_Category>
+  <Megamod_Diagnostics_DefinitionContext>Контекст диагностики определений</Megamod_Diagnostics_DefinitionContext>
+  <Megamod_Diagnostics_DefinitionContextHelp>Добавляет сведения о текущем определении, моде и файле к последующим предупреждениям и ошибкам при загрузке определений. Исходное сообщение остаётся неизменным.</Megamod_Diagnostics_DefinitionContextHelp>
+  <Megamod_Diagnostics_GlobalOnlyReason>Действует на весь сеанс игры: определения загружаются до открытия сохранения, а их диагностические сообщения общие для всех сохранений.</Megamod_Diagnostics_GlobalOnlyReason>
+  <Megamod_Diagnostics_CaptureCategory>Диагностика / Журнал — Запись</Megamod_Diagnostics_CaptureCategory>
+  <Megamod_Diagnostics_MuteWarnings>Не записывать предупреждения</Megamod_Diagnostics_MuteWarnings>
+  <Megamod_Diagnostics_MuteWarningsHelp>Отбрасывает будущие обычные предупреждения в журнале и файле, включая автоматическое открытие окна. Это не фильтр отображения: прежние записи сохраняются, а потерянные предупреждения нельзя восстановить. Прямая запись в файлы и обязательные предупреждения при запуске не затрагиваются.</Megamod_Diagnostics_MuteWarningsHelp>
+  <Megamod_Diagnostics_CaptureGlobalOnlyReason>Только глобально: запись управляет общими журналами запуска и процесса и не должна меняться при смене сохранения.</Megamod_Diagnostics_CaptureGlobalOnlyReason>
+  <Megamod_Diagnostics_WarningCaptureOff>Действует: обычные предупреждения записываются.</Megamod_Diagnostics_WarningCaptureOff>
+  <Megamod_Diagnostics_WarningCaptureOn>Действует: будущие обычные предупреждения отбрасываются.</Megamod_Diagnostics_WarningCaptureOn>
+  <Megamod_Diagnostics_WarningCaptureUnavailable>Неактивно: канал предупреждений недоступен. Ваш выбор сохранён; обычная запись продолжается.</Megamod_Diagnostics_WarningCaptureUnavailable>
+</LanguageData>

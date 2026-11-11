@@ -84,10 +84,10 @@ The source calls FloatMenuOption.Chosen(false, null), then closes unconditionall
 checks Disabled (action == null), so disabled options do not execute their action; the source still
 draws them as ordinary rows and closes. Its custom renderer also bypasses FloatMenuOption.DoGUI's
 tooltips and other extra rendering. We preserve needed selector behavior, not a claim to render every
-possible FloatMenuOption extension. No actual external consumer of the add-on's public menu classes
-was found in the bounded installed literal scan.
+possible FloatMenuOption extension. Original add-on API parity, external-consumer audits and facades
+are outside scope; source behavior remains an independent research input.
 
-### Settings scope, coexistence and compatibility admission
+### Settings scope, original-provider handling and target admission
 
 The content page belongs in mod settings. Selector navigation is transient UI state, so there is no
 Use global row for search/scroll. Actual content enable/disable configuration, any reasoned scope
@@ -95,12 +95,14 @@ exception and save-specific main-menu restrictions belong to S038. Do not invent
 Browsing cannot activate content or modify a save override; changing the page's view filters remains
 per-page behavior, with its wider lifetime owned by S038.
 
-The source add-on only targets CherryPicker.Mod_CherryPicker; its presence does not by itself
-overlap our direct renderer. Do not suppress ours solely because lucius.cherryscroll is active, or
-patch/unpatch its provider. S038 must establish one underlying content-config implementation and
-its coexistence policy before our page activates. Do not impersonate Owlchemist.CherryPicker to make
-the old add-on attach. No external adapter or binary facade is currently selected. Source S038's
-full public contracts/consumers remain a separate required analysis.
+The source add-on targets CherryPicker.Mod_CherryPicker; that inspected fact is not a coexistence
+guarantee. Under the 2026-11-08 foundation policy, active `lucius.cherryscroll` triggers a bounded
+startup warning and best-effort suppression through S020's ordinary feature-off path, with the same
+behavior and timing as manually off. Keep stored preferences and the original unchanged. Inactive
+installed sources do not trigger this rule. S038 independently governs the owned host page and its
+original-provider handling; S020 cannot reactivate a withheld host. Do not impersonate
+Owlchemist.CherryPicker to make the old add-on attach. No source API/facade work or original-provider
+coexistence test matrix is required. Genuine used integrations and native target checks remain required.
 
 **No Harmony/XML patch is selected for this owned UI slice.** Direct calls need no target-spec
 document falsely describing an external patch. S038 owns any necessary native entry seams. If later
@@ -135,14 +137,14 @@ is required on its first operation, with package/Def/node existence checks and m
 ## Migration Plan
 
 No runtime migration or content edits occur. Later implement focused selector rules and UI against
-S038's owned catalogue when available; enable the host entry only when its own admission/coexistence
-contract permits it. Removing this selector enhancement cannot change enabled content or saved
+S038's owned catalogue when available; enable the host entry only when its own admission and effective
+feature settings permit it. Removing this selector enhancement cannot change enabled content or saved
 configuration. No source settings import, assembly copying or save conversion is promised.
 
 ## Open Questions
 
 SC-Q1 retains the proposed identity/disabled/full-label refinements for later UX review; SC-Q2 the
-exact S038 catalogue, scope, ownership and public contracts; SC-Q3 beta window behavior and any
+exact owned S038 catalogue, scope and ownership; SC-Q3 beta window behavior and any
 necessary target admission; SC-Q4 seven-language/layout/performance tests and final native acceptance.
 Questions stay recorded, not asked during the sequential deep dive.
 

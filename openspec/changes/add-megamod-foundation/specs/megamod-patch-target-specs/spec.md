@@ -1,7 +1,8 @@
 ## Owner and delivery
 
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`). These are mandatory
-contracts for future patches. The initial scaffold contains zero patches and no guard runtime.
+contracts for every owned patch. The initial scaffold contained zero patches; current P0 guard
+components are implemented-unverified and do not constitute complete compatibility acceptance.
 
 ## ADDED Requirements
 
@@ -50,6 +51,11 @@ effective body. Specify startup ordering and invalidation/revalidation for suppo
 changes. Transpilers SHALL validate their actual input on every invocation. Unknown required
 semantics fail closed; the mere presence of another patch does not.
 
+Required relationships SHALL remain valid after relevant transformations that occur later than the
+owned structural check. A valid earlier check does not certify a later changed operation, including
+changes to an owned observer. Revalidation must refer to the newly active result, not a stale patch
+inventory. Unrelated or demonstrably compatible transformations remain eligible.
+
 #### Scenario: Another mod removes the required argument-use region
 - **WHEN** original IL passes but the relevant effective instruction stream no longer contains the required region
 - **THEN** the dependent patch is skipped with a warning instead of relying on the original-only result
@@ -57,6 +63,11 @@ semantics fail closed; the mere presence of another patch does not.
 #### Scenario: Compatible patch coexistence
 - **WHEN** another owner's patch preserves the documented target predicates and execution guarantees
 - **THEN** both owners remain installed and the native workflow follows the specified combined behavior
+
+#### Scenario: A later transformation changes a required operation
+- **WHEN** a loaded modification changes a required operation after the owned structural check has passed
+- **THEN** the dependent behavior remains unavailable until its required relationships are established for the active result
+- **AND** a warning identifies the affected behavior and fallback without disabling unrelated compatible features
 
 #### Scenario: A later supported repatch invalidates a predicate
 - **WHEN** the supported patch lifecycle rebuilds or changes the observed surface

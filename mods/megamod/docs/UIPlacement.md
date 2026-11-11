@@ -50,8 +50,8 @@ editable last-loaded save. In a loaded game, bind to that exact save, including 
 no selected map; discard stale references on exit or save switch.
 
 Record upstream placement, chosen destination, rationale and intentional navigation deviations in
-each replacement report. Preserve supported external callable contracts where possible, but do not
-reintroduce an inappropriate tab to imitate upstream UI. Verify native entry-point/action/result,
+each replacement report. Do not preserve original-mod APIs or recreate a tab for source-compatibility
+purposes; that work is outside scope. Verify native entry-point/action/result,
 developer mode on/off, main-menu disabling, inheritance/override resolution, persistence, documented
 exceptions, scope isolation and switching between saves. Review all
 required locales on actual UI when the first settings/control slice is implemented.

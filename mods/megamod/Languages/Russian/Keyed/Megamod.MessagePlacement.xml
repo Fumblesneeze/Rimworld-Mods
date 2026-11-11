@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Messages_Enabled>Включить размещение сообщений</Megamod_Messages_Enabled>
+  <Megamod_Messages_EnabledHelp>Использует заданные смещения и размещает сообщения в пределах экрана. Отключение возвращает обычное положение, сохраняя смещения.</Megamod_Messages_EnabledHelp>
+  <Megamod_Messages_Category>Интерфейс / Сообщения</Megamod_Messages_Category>
+  <Megamod_Messages_PositionOffset>Смещение позиции</Megamod_Messages_PositionOffset>
+  <Megamod_Messages_PositionOffsetHelp>Изменяйте обе координаты вместе, от −100% до +100% текущего размера экрана. Отрицательные значения могут сдвинуть сообщения поверх панели колонистов. Сохранение сообщений в пределах экрана важнее; слишком большая группа может быть обрезана. Применение меняет только два значения в этом столбце.</Megamod_Messages_PositionOffsetHelp>
+  <Megamod_Messages_Horizontal>По горизонтали (%)</Megamod_Messages_Horizontal>
+  <Megamod_Messages_Vertical>По вертикали (%)</Megamod_Messages_Vertical>
+  <Megamod_Messages_ApplyPair>Применить пару</Megamod_Messages_ApplyPair>
+  <Megamod_Messages_ResetPair>Сбросить на 0 / 0</Megamod_Messages_ResetPair>
+  <Megamod_Messages_ResetPairHelp>Сбрасывает только этот столбец. Флажок «Использовать общие» и другой столбец не меняются.</Megamod_Messages_ResetPairHelp>
+  <Megamod_Messages_InvalidOffsetPair>Введите два конечных числа от −100 до 100.</Megamod_Messages_InvalidOffsetPair>
+  <Megamod_Messages_BarIntegrationPending>Автоматический отступ от панели колонистов ещё не интегрирован.</Megamod_Messages_BarIntegrationPending>
+</LanguageData>

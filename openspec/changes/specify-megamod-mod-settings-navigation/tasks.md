@@ -7,7 +7,7 @@ Specification only; all implementation and acceptance tasks remain open.
 
 - [ ] 1.1 Publish stable per-patch target documents for completed settings-entry discovery, native chooser/open/write behavior, effective foreign interactions and coherent fallback.
 - [ ] 1.2 Inspect actual beta HugsLib/fork selection and proxy/opening/injection contracts; define package-ID/shape-guarded optional adapters and prove preservation of existing provider access on failure.
-- [ ] 1.3 Record exact title/author/group and duplicate-page identities, late injection/language refresh and original-sorter suppression without package spoof or speculative API facade.
+- [ ] 1.3 Record exact title/author/group and duplicate-page identities and late injection/language refresh; map the original sorter to ordinary chooser feature-off handling and a bounded startup warning, retaining preferences. Original API/consumer/facade work is excluded.
 
 ## 2. Vertical chooser behavior
 
@@ -15,7 +15,7 @@ Specification only; all implementation and acceptance tasks remain open.
 - [ ] 2.2 Focused RED → GREEN for raw/normalized author, title/mod/group substring search, empty/no-match results, singleton membership stability and distinct provider packs.
 - [ ] 2.3 Implement the smallest admitted native chooser integration with exact page identities, native/provider-owned open paths and no foreign settings-value reflection or mutation during browsing.
 - [ ] 2.4 Test benign foreign additions, unsupported required semantics, failed install, repeated initialization, owned-only rollback and later revalidation; validate incoming streams on every invocation if transpiling.
-- [ ] 2.5 Test native/provider click routing and errors, absent/changed HugsLib, working original-sorter access versus unsupported pre-existing source failures, GUI-state recovery and bounded diagnostics.
+- [ ] 2.5 Test native/provider click routing and errors, absent/changed HugsLib, GUI-state recovery and bounded diagnostics. Check best-effort warning/ordinary-off handling for an active original and no trigger when inactive, without testing or promising original-sorter coexistence.
 
 ## 3. State, UI and lifecycle
 
@@ -35,5 +35,5 @@ Specification only; all implementation and acceptance tasks remain open.
 ## 5. Final reviewed-build native acceptance
 
 - [ ] 5.1 In a fresh minimized isolated game exercise native Options → Mods → search/sort/group → choose/edit/close and inspect causal results, including main-menu and loaded-save/world views.
-- [ ] 5.2 Exercise native/provider duplicate pages, source aliases, missing metadata/icons, long translated labels/scales, reopen/restart, exact HugsLib-present/absent and original/changed-provider fallbacks.
+- [ ] 5.2 Exercise native/provider duplicate pages, source aliases, missing metadata/icons, long translated labels/scales, reopen/restart and exact HugsLib-present/absent/changed-provider fallbacks. Original-loaded coverage is limited to warning/ordinary-off behavior and retained preferences, not a source coexistence run or guarantee.
 - [ ] 5.3 Complete root AGENTS.md acceptance on the reviewed build with personally inspected action/result evidence, exact ordered mods/package, supporting logs, normal-configuration protection and cleanup before closing gameplay tasks.

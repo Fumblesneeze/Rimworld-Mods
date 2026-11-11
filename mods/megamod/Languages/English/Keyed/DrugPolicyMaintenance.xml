@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugPolicy_Category>Drug policies</Megamod_DrugPolicy_Category>
+  <Megamod_DrugPolicy_Enabled>Enable drug-policy maintenance</Megamod_DrugPolicy_Enabled>
+  <Megamod_DrugPolicy_EnabledHelp>Maintain usable drug policies and recover supported presets. Changes take effect after restarting RimWorld. Existing policy edits and assignments are retained.</Megamod_DrugPolicy_EnabledHelp>
+  <Megamod_DrugPolicy_GlobalOnlyReason>One global startup choice: initial policy creation occurs before a save is active. Restart RimWorld to apply changes.</Megamod_DrugPolicy_GlobalOnlyReason>
+</LanguageData>

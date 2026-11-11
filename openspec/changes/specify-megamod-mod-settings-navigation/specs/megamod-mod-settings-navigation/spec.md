@@ -95,6 +95,13 @@ without editing the pages or searching opaque values inside unrelated settings c
 - **WHEN** a page's settings title differs from its mod name and the player searches the mod name
 - **THEN** the page appears as a match.
 
+#### Scenario: Group search follows the displayed view
+- **WHEN** a singleton page is displayed under Various Authors and the player searches that label
+- **THEN** it matches in author mode while that grouping is enabled; in name mode or with singleton
+  grouping disabled, the label alone does not match unless it occurs in another searchable field.
+- **AND** raw and normalized author search remain available in both modes, and returning to author
+  mode restores the remembered singleton choice using the complete available page list.
+
 #### Scenario: Clear or unmatched search
 - **WHEN** a query has no matches and the player then clears it
 - **THEN** the chooser first shows an empty-result state and then restores all available pages in
@@ -156,9 +163,12 @@ native page, silently claim an edit succeeded, reset foreign defaults or import 
 
 ### Requirement: MO-07 Compatibility failures leave settings accessible
 The mod SHALL enable the chooser integration only for supported native/provider behavior, preserving
-compatible added entries. An active original Mod Options Sort or unsupported required menu behavior
-SHALL leave the owned overlap unavailable with a bounded startup warning identifying the skipped
-change, reason and retained native/provider navigation. Recoverable per-entry metadata, icon or
+compatible added entries. Unsupported required menu behavior SHALL leave the owned overlap unavailable
+with a bounded startup warning identifying the skipped change, reason and retained native/provider
+navigation. Active original Mod Options Sort SHALL instead trigger the foundation's best-effort
+ordinary feature-off handling with a bounded startup warning, unchanged stored preferences and no
+modification of the original. It SHALL NOT promise source-menu usability or coexistence compatibility;
+an inactive installed original SHALL NOT trigger this policy. Recoverable per-entry metadata, icon or
 opening failures SHALL be isolated without repeated per-frame warnings or loss of unrelated pages.
 
 #### Scenario: Another provider contributes a compatible page
@@ -168,10 +178,9 @@ opening failures SHALL be isolated without repeated per-frame warnings or loss o
 
 #### Scenario: The original sorter is active
 - **WHEN** original Mod Options Sort is active
-- **THEN** its chooser behavior remains in charge, the owned overlap reports its unavailability
-  once at startup, and the megamod's common settings page remains registered and accessible through
-  otherwise-working source navigation; a broken source/provider menu is an unsupported combination,
-  not repaired or promised usable merely by disabling the owned chooser.
+- **THEN** one bounded startup warning names the source and best-effort handling through the ordinary chooser feature-off path
+- **AND** its effect and timing match manually off, stored preferences remain intact and the independently registered common settings page is not removed
+- **AND** no original-provider navigation or coexistence guarantee is made.
 
 #### Scenario: Required chooser behavior is unsupported
 - **WHEN** required menu behavior cannot be supported without losing another settings route

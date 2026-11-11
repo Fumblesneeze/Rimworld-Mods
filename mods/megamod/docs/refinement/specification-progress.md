@@ -12,14 +12,69 @@ interrupting the work. No runtime implementation or gameplay acceptance is claim
 Implementation planning now has a [shared-component design](../../../../openspec/changes/plan-megamod-parallel-implementation/design.md),
 [roadmap](../../../../openspec/changes/plan-megamod-parallel-implementation/roadmap.md) and
 [governing tasks](../../../../openspec/changes/plan-megamod-parallel-implementation/tasks.md).
-Revision 1 allocates all **137 feature drafts to 27 chunks across nine integration parts**. This
+Revision 17 retains the original 137 drafts plus S138/S139 for a total of **139 draft entries
+in 27 chunks across nine integration parts**. The additions have sequential public/source research
+and separate observable drafts; their listed research/design gates remain prerequisites to code.
+See the [2026-11-08 intake and policy decision](2026-11-08-drug-policy-additions.md). This
 coordination change is not an additional source feature or an implementation claim. Implementers
 remain narrow, inspect referenced mods without copying code, and hand over tests/review/scenarios;
 the orchestrator runs and personally validates combined native results after each part is ready.
 It may revise the plan on evidence, retaining the revision log, feature obligations and acceptance
 gates. No runtime task is closed by this planning pass.
+The current dispatch implements the common transient effective-off path with the first diagnostic
+consumers, and S071's single-transpiler entry participant. Root retains startup/UI composition and
+native verification; stored preferences, target guards and all feature obligations remain intact.
 The [planning audit](2026-11-07-implementation-planning-audit.md) records independent review,
 dependency corrections and documentation validation; only planning acceptance tasks are complete.
+
+Implementation started from full-repository checkpoint `c0a600e`. The [P0 dispatch](../../../../openspec/changes/plan-megamod-parallel-implementation/p0-dispatch.md)
+records the current 1.7.5000 target, bounded assignments, core milestones and remaining work.
+Shared settings/admission, diagnostics snapshots, content policies and number-formatting rules have
+focused host evidence and scoped reviews. The first save-lifecycle observer is startup registered;
+no runtime feature has passed integrated native acceptance. Core progress does not change replacement
+coverage claim. The local execution ledger is `artifacts/Implementation/megamod-p0/part-ledger.md`.
+
+Current revision12 progress: the prepared-barrier/bridge slice has41/41 focused Harmony checks and
+two CLEAR correction rechecks; native message placement remains unregistered. The reviewed incident
+save-override scenario passed38 native steps; root personally inspected all8 captures, including
+both refusals and the physical ship chunk after reload. Cleanup passed and normal configuration was
+unchanged. The immutable outer-role export and first Event reader migration passed independent
+review and focused checks; obsolete private-layout experiments were removed after a no-caller audit.
+Current Prepared checks passed10/10 and that product revision compiled cleanly. Converter cleanup
+admission reached120/120 checks but independent review found concurrency, metadata-refusal and
+nested-provenance gaps; focused correction precedes native reruns. The disjoint S047 chooser has18
+passing pure tests and a CLEAR independent correction recheck. S029's native storage adapter is starting in a separate
+constructed-Def environment; native maintenance hooks remain unregistered. Remaining message
+outer readers and native layout follow the shared-helper freeze. These component milestones
+leave all feature and part acceptance gates open. Gateway expected-refusal tooling alone is accepted
+and checkpointed at3a4830d.
+
+Revision13 records atomic two-loader diagnostic entry coverage following the reproduced nested
+provenance failure. Its first144Harmony/5Unit candidate exposed three further gaps; the corrected
+candidate passes58 affected Harmony/7 scope Unit checks and both independent rechecks are CLEAR.
+Scope-reader migration and its cleanup correction are independently CLEAR at60 affected checks;
+Consumption migration is now independently CLEAR at56 affected checks. Native message renderer
+integration remains open. The revised converter family passed163 native default-loader reload
+steps; root personally inspected both checkbox changes, plain versus contextual warnings, and the
+unrelated later Options error. Graceful cleanup passed with normal configuration unchanged; initial
+Copy and legacy-loader obligations remain open.
+S047's18-case pure chooser and S029's6-case storage/8-case catalog have CLEAR
+independent reviews; native adapters and lifecycle/UI workflows remain open. The standalone Gateway
+debug-action projection is checkpointed at1832bf4 after51 working-tree and45 isolated-export checks.
+The PC-sleep-interrupted test attempt produced no result and was replaced by the successful rerun;
+it is not product-failure evidence. No complete megamod feature or part is accepted.
+
+Revision14 keeps the same feature/part allocation and addresses the next concrete dependencies:
+declared native legacy-loader selection in the existing E2E tooling, current message renderer
+admission/integration, and a finalized native drug baseline before policy factories. The fixed
+loader proposal is separately owned by EndToEndHost; there is no arbitrary argument API. Strict
+typed OpenSpec validation after this reconciliation passed165 items with zero failures.
+
+The Draw admission correction is independently CLEAR with35 affected host checks and14 matching
+manifest hashes. Its actual oversized-metadata regression confirms that another mod can remove its
+patch while owned drawing falls back safely. Native registration/geometry and S071 acceptance remain
+open. Preset-entry guard implementation resumes under the separate Harmony output lease; the common
+Def invalidator and early baseline publication remain root-owned integration work.
 
 The decision records ([round one](2026-11-07-decisions-round-1.md),
 [round two](2026-11-07-decisions-round-2.md)) contain the user's answers1–19. Timing is clarified:
@@ -32,14 +87,17 @@ reconciled across the affected active drafts, designs, tasks and replacement cov
 Earlier conflicting research proposals and rejected interview recommendations remain historical;
 implementation research, runtime behavior, balance measurements and live acceptance remain open.
 
-Draft-completion checkpoint: **137 drafts /137 queue entries /576 recorded question rows**.
-Every queue entry has its own proposal, observable capability specification, design, tasks and
+Original draft-completion checkpoint: **137 drafts /137 queue entries /576 recorded question rows**.
+Every entry at that checkpoint had its own proposal, observable capability specification, design, tasks and
 coverage documentation. S137 [condition-driven medical bills](../replacements/condition-medical-bills.md)
 is independently reviewed; S133 portal loading remains explicitly excluded by the user.
-**The sequential drafting pass is complete.** [Completion audit](2026-11-07-specification-completion-audit.md)
+**That original drafting pass is complete; S138/S139 are subsequent drafts with explicit implementation blockers.** [Completion audit](2026-11-07-specification-completion-audit.md)
 records coverage and validation. Recorded questions include resolved research as well as remaining
 decisions and implementation investigations; they are not all unanswered user questions.
-All runtime work remains pending. The dated sections below retain historical checkpoints and next
+Runtime implementation is in progress. Narrow S029 initial-preset and unchanged-catalog save/reload
+workflows have reviewed native evidence (98 steps/20 root-inspected captures); broader feature/part
+acceptance remains pending. Original-mod drop-in/API compatibility is now excluded, with only a
+startup warning and best-effort ordinary feature-off behavior retained. The dated sections below retain historical checkpoints and next
 steps as they stood then; the status here and queue rows are current.
 
 - First draft: [CM Color Coded Mood Bar](../replacements/color-coded-mood-bar.md), with proposal,
@@ -943,8 +1001,17 @@ unresolved detail is recorded under its owner and does not cause unrelated resea
 | S135 | User addition, 2026-11-03 | Basic Caravan Loading — `LM420.BCL`, Workshop3370434966 | Public description, complete XML and native1.7 work/gather/unload contracts inspected; observable draft independently reviewed and validated156/0 | [Change](../../../../openspec/changes/specify-megamod-basic-caravan-loading/), [research](2026-11-07-basic-caravan-loading-research.md), [coverage](../replacements/basic-caravan-loading.md); BCL-Q1 resolved, runtime pending |
 | S136 | User addition,2026-11-03 | Floor Pipette Tool — `ferny.FloorPipetteTool`, Workshop3706877822 | Public/pinned source, complete binary/IL and focused native1.7 inspected; observable draft independently reviewed/validated157/0 | [Change](../../../../openspec/changes/specify-megamod-floor-sampling/), [research](2026-11-07-floor-pipette-research.md), [coverage](../replacements/floor-pipette.md); FPT-Q1 resolved, runtime pending |
 | S137 | User addition, 2026-11-05 | Original: click a health condition to filter medical bill recipes | Public UI references and focused native/source effects inspected; uniform general/heuristic/explicit matching and direct S007 composition reconciled; HBF-Q2 ancestor intent retained | [Change](../../../../openspec/changes/specify-megamod-condition-medical-bills/), [research](2026-11-07-condition-medical-bills-research.md), [coverage](../replacements/condition-medical-bills.md); independently reviewed, strict validation158/0; runtime unimplemented |
+| S138 | User addition,2026-11-08 | Only If 'Tolerance' Below in Drug Policy — `seohyeon.onlyIfToleranceBelow`, Workshop3088210509 | Public/source/native research and observable draft; explicit Any/numeric/invalid choices, recipient rules and S029 persistence; DT-Q1–4 gate affected implementation | [Change](../../../../openspec/changes/specify-megamod-drug-tolerance/), [research](2026-11-08-drug-tolerance-research.md), [coverage](../replacements/drug-tolerance.md); no runtime implementation or original API/drop-in parity |
+| S139 | User addition,2026-11-08 | Safe Drug Policy Generator — `seohyeon.bestdrugpolicy`, Workshop2582640021 | Idea-only reference, independently drafted after S138; explicit preview/new-policy workflow, retained existing choices, medical permission and bounded risk claims; calculations and atomic creation remain prerequisites | [Change](../../../../openspec/changes/specify-megamod-drug-policy-generation/), [research](2026-11-08-safe-drug-policy-generator-research.md), [coverage](../replacements/safe-drug-policy-generator.md); no runtime implementation or universal safety claim |
 
 ## Open questions and gaps
+
+Scope disposition,2026-11-08: any older row concerned only with original-mod API/drop-in parity,
+consumer contracts, compatibility facades or coexistence matrices is **out of scope**, not an
+unanswered user question or an implementation/release blocker. Keep its historical research facts;
+do not resume that work. The active requirement is a startup warning and best-effort ordinary
+feature-off handling. Genuine external integrations and semantic game-target admission remain due.
+See [the governing decision](2026-11-08-drug-policy-additions.md).
 
 | ID | Kind | Unresolved point | Handling / affected work |
 | --- | --- | --- | --- |
@@ -5223,3 +5290,64 @@ OpenSpec validation passed158 items with0 failures;128 changed documents passed 
 whitespace checks. No gameplay task was checked and no runtime tests/build/install/game launch was
 performed. Remaining exact-provider research, implementation, calibration and native acceptance
 remain open; the answered product choices are no longer listed as pending amendments.
+
+## 2026-11-07 — Implementation coordination, revision7
+
+The [roadmap](../../../../openspec/changes/plan-megamod-parallel-implementation/roadmap.md) records
+the first composed incident settings diagnostic and the separately reproduced native popup
+pointer-lifetime defect. Shared input scopes and runner recovery are under focused implementation
+and review before further native diagnostics. The initial specification checkpoint remains
+`c0a600e88d9e9dc97d5bde759c8291a901510156`; subsequent runtime work is not that checkpoint.
+All137 feature allocations remain. No megamod feature or P0 part has passed final native acceptance.
+
+## 2026-11-07 — Implementation coordination, revision8
+
+The reviewed scoped-pointer workflow and XML runner recovery now permit further diagnostic runs.
+Root observed native incident selectors and requested/pending/restored global choices on the exact
+reviewed product build. This is a narrow tracer, not complete content-selection acceptance.
+The roadmap assigns early definition-diagnostic/warning composition, actual XML-loader/native log
+selection-copy scenarios and a separate message-placement consumption guard. All137 allocations,
+unrun compatibility/reload cases and final part gates remain; no complete feature is accepted.
+
+Revision9 records actual XML-loader RED, reviewed early diagnostic composition and the newly
+demonstrated need for exact selected-fixture error accounting in verification tooling. The native
+selection/copy scenario remains under implementation; no logs-only result closes S094 or P0.
+
+Revision10 records passing real fixture-error accounting, a second real-loader context failure
+traced to native Error-overload selection, and its narrow implementation assignment. Native log/Copy
+scenario review is complete; execution remains open. The reviewed message event boundary advances
+to native composition alongside current bar-layout research. Automatic clearance, all137 features,
+and every remaining integrated acceptance obligation stay allocated.
+
+Revision11 records the reviewed Error-overload correction and passing initial-loader/native log
+selection/Copy tracer: all66 steps, all12 screenshots personally inspected, complete runner cleanup
+and unchanged normal configuration. The observed stdout-sharing defect was fixed, independently
+reviewed and rerun successfully. Next tranches are native settings/reload coverage, its narrow
+Gateway debug-action projection, and S071 bar authority/common paired-offset editor. Reviewed
+message composition remains unregistered. All137 features and final P0–P8 gates remain open.
+
+Revision12 records the inspected Harmony 3 inner-rewriting gap and adds a target-specific C01
+admission milestone. Prior ordinary-patch evidence does not claim those additional combinations.
+Independent S071 design review replaces a proposed private-calculator proof with the smaller
+observable boundary: coherent current prepared geometry actually consumed by rendering, stable
+through this pass. First-display/visibility and native acceptance obligations are unchanged.
+The S094 reload case and fixture correction passed review/preflight. The first native run timed
+out after the actual reload command; the reviewed diagnostic rerun passed163 steps but critical
+captures were blank. Root retained this gap and assigned a bounded native-readback fix to Gateway;
+reload and affected initial-case reruns remain required. C01's inspected plan now authorizes only
+the first NativeLogPatch inner-effect/publication slice. No feature or integration part is accepted.
+
+That NativeLog slice and review fixes are now61/61 focused Harmony GREEN, independently rechecked
+CLEAR; converter admission remains separate. S071 collection/later-commit timing is24/24 Unit and
+16/16 simulated-barrier Harmony GREEN, reviewed CLEAR. B has begun the narrowly leased native
+prepared-handoff/pending-lifetime slice from a real failing first-consumer test; registration,
+complete geometry, fallback and S001 remain open. Exact handoffs and causal RED/GREEN identities
+are retained under artifacts/Implementation/megamod-p0-a and artifacts/Megamod/P0-B.
+
+The reviewed screenshot fix is checkpointed at6c2324c. The subsequent163-step product reload
+passed with root-inspected causal screenshots and later-frame readback receipts. Its former blank
+capture gap is resolved for that run; native transient-unavailable recovery is still unproven.
+The affected initial-load/Copy rerun reached Copy but safely refused the current clipboard format,
+which its bounded text-only lease cannot restore. That workflow remains incomplete. See local
+artifacts/Implementation/megamod-p0/native-reload-reviewed.md. The user's incremental checkpoint
+policy is recorded at9893d90; no whole feature or part acceptance follows from either commit.

@@ -48,5 +48,7 @@ None. Foundation settings, UI placement, semantic admission and package rules ap
   **optional**, independently admitted integrations; source-wide compatibility remains unproven.
   Selected owned RimHUD composes directly, without patches against our own feature.
 - No copying source GPL-3.0 code/assemblies/assets, package identity emulation, automatic settings
-  migration, game-state mutation or gameplay acceptance. Source co-installation suppresses our
-  overlapping formatter with a startup warning and preserves the remaining owned UI features.
+  migration, game-state mutation or gameplay acceptance. An active source triggers a startup warning
+  and best-effort ordinary formatter-off behavior, with stored preferences and unrelated owned UI
+  features retained. Original API/consumer/facade and coexistence work are excluded; the deliberate
+  optional display integrations above still require their own admission and evidence.

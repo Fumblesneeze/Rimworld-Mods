@@ -1,0 +1,16 @@
+{
+  "schema": "RimWorldDevGateway/XmlFixture/v1",
+  "ownerPackageId": "fumblesneeze.megamod",
+  "packageId": "fumblesneeze.megamoddiagnosticsfixture",
+  "rimWorldVersion": "1.7",
+  "packageInclude": [
+    "About/About.xml",
+    "Defs/DefinitionDiagnostics.xml"
+  ],
+  "expectedErrors": [
+    {
+      "message": "Type MegamodDiagnosticsFixtureMissingDefType is not a Def type or could not be found, in file DefinitionDiagnostics.xml. Context: <MegamodDiagnosticsFixtureMissingDefType><defName>MegamodDiagnosticsFixtureMissingType</defName></MegamodDiagnosticsFixtureMissingDefType>",
+      "count": 1
+    }
+  ]
+}

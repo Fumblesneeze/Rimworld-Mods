@@ -22,6 +22,23 @@ not implicitly select this opted-in suite.
 - **WHEN** the selected filter executes zero tests
 - **THEN** the operation returns failure with an explanation and retained diagnostic evidence.
 
+### Requirement: Separate owned-patch host dispatch
+
+The typed test operation SHALL accept `Megamod.Harmony` as a separate .NET 10 environment for
+explicitly owned patches on scoped host targets. It MUST retain exact provider identity and actual
+test counts, honor the exact filter, and reject zero execution. Its default provider SHALL be the
+installed 1.7 Harmony assembly. It SHALL NOT load a real active mod, seed a representative Def
+database, require the legacy game layout, or enter the legacy All aggregate.
+
+#### Scenario: Verify one owned patch with a foreign owner present
+- **WHEN** the caller selects one existing Megamod.Harmony test
+- **THEN** that isolated host test executes using the selected provider and retains its identity and nonzero result
+- **AND** its cleanup removes only its owned test patches without treating host success as game compatibility
+
+#### Scenario: Owned-patch filter selects nothing
+- **WHEN** a Megamod.Harmony filter executes no tests
+- **THEN** dispatch fails with retained evidence instead of reporting a passing verification
+
 ### Requirement: Separate constructed-definition host dispatch
 
 The typed test operation SHALL accept `Megamod.Defs` as a separate .NET 10 process for real native

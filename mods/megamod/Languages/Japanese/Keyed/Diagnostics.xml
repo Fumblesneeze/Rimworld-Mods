@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Diagnostics_Category>診断</Megamod_Diagnostics_Category>
+  <Megamod_Diagnostics_DefinitionContext>定義診断のコンテキスト</Megamod_Diagnostics_DefinitionContext>
+  <Megamod_Diagnostics_DefinitionContextHelp>定義の読み込み中に発生する今後の警告とエラーに、現在の定義、Mod、ファイルの情報を追加します。元の診断メッセージは変更しません。</Megamod_Diagnostics_DefinitionContextHelp>
+  <Megamod_Diagnostics_GlobalOnlyReason>実行中のゲーム全体に適用されます。定義はセーブの読み込み前に読み込まれ、その診断情報はすべてのセーブで共有されます。</Megamod_Diagnostics_GlobalOnlyReason>
+  <Megamod_Diagnostics_CaptureCategory>診断 / ログ — 記録</Megamod_Diagnostics_CaptureCategory>
+  <Megamod_Diagnostics_MuteWarnings>警告を記録しない</Megamod_Diagnostics_MuteWarnings>
+  <Megamod_Diagnostics_MuteWarningsHelp>今後の通常の警告をログ一覧とファイルに記録せず、ウィンドウの自動表示も抑止します。表示フィルターではありません。過去の記録は残りますが、破棄した警告は復元できません。ファイルへの直接書き込みと必須の起動時警告には影響しません。</Megamod_Diagnostics_MuteWarningsHelp>
+  <Megamod_Diagnostics_CaptureGlobalOnlyReason>グローバル設定のみ：記録の制御は起動時とプロセス全体の共有ログに適用されるため、セーブを切り替えても変わりません。</Megamod_Diagnostics_CaptureGlobalOnlyReason>
+  <Megamod_Diagnostics_WarningCaptureOff>実際の動作：通常の警告を記録します。</Megamod_Diagnostics_WarningCaptureOff>
+  <Megamod_Diagnostics_WarningCaptureOn>実際の動作：今後の通常の警告を破棄します。</Megamod_Diagnostics_WarningCaptureOn>
+  <Megamod_Diagnostics_WarningCaptureUnavailable>未作動：警告の経路が利用できません。設定は保存され、通常のログ記録は継続します。</Megamod_Diagnostics_WarningCaptureUnavailable>
+</LanguageData>

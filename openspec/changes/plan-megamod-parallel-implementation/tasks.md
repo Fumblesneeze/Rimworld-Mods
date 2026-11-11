@@ -1,12 +1,15 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **1**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **18**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
-Documentation completion and future implementation are separate. All runtime tasks remain open.
+Documentation completion and implementation are separate. All aggregate runtime gates remain open.
+Revision17 dispatches foundation3.7's common transient effective-off resolution with its first
+S035/S094 consumers, and S071's single-transpiler entry participant. These narrow handoffs retain
+all existing feature/part gates; root owns integration and affected native verification.
 The orchestrator owns dispatch, central integration, canonical installation, part acceptance and
 replanning. Implementers own their leased code, focused tests, review fixes and executable scenario
 authoring. Composite feature tasks requiring native acceptance stay unchecked until the final gate.
@@ -21,7 +24,7 @@ and local scoped snapshots/checks under `artifacts/Refinement/megamod-parallel-p
 
 ## 2. Execution setup and recurring dispatch rule
 
-- [ ] 2.1 At implementation start inspect the current repository/tooling state, read all governing artifacts, confirm a clean ownership boundary around existing work and register the current plan revision. Do not assume historical blockers or old builds are current.
+- [x] 2.1 At implementation start inspect the current repository/tooling state, read all governing artifacts, confirm a clean ownership boundary around existing work and register the current plan revision. Do not assume historical blockers or old builds are current.
 - [ ] 2.2 Create the first part manifest with stable feature/requirement/test/scenario IDs, contract versions, active edit leases, exact optional-mod claims and later-composition obligations. Inspect referenced sources and existing helpers before coding.
 
 Repeat the dispatch manifest for every part. Every ready handoff must satisfy design section 7:
@@ -29,12 +32,148 @@ nonzero focused host evidence, real provider checks, independent review disposit
 traceability, executable native workflows and honest unresolved status. The orchestrator records
 failed/revised assignments in the roadmap log and updates affected tasks before proceeding.
 
+Execution setup evidence: clean full-repository checkpoint `c0a600e`, current game inspection and
+central/disjoint leases in [P0 dispatch](p0-dispatch.md), plus the local part ledger under
+`artifacts/Implementation/megamod-p0/`. Task 2.2 remains open until concrete executable scenario
+registrations and exact provider combinations complete that manifest.
+
+Revision4 corrects native loading-thread assumptions: C02 uses immutable worker requests and a
+guarded main-thread pump; C03's early loaded-policy receipt remains distinct from UI activation.
+This reopens adapter review and retains all native load/menu/failure scenarios. No feature gate is
+closed by the focused lifecycle tests or intermediate package build.
+
+Revision5 adds explicit Def reload invalidation and a later successful-generation reconciliation
+milestone to P0-C. Initial loader quiescence alone cannot authorize that recovery. Requested choices
+retain their existing application timing. No feature allocation, selected gate or acceptance
+obligation is removed; all P0 tasks below remain open.
+
+Revisions6–7 compose the first incident settings tracer and isolate its native popup failure in the
+Gateway. Explicit workflow pointer ownership, reviewed runner recovery and fresh native evidence
+are prerequisites to continuing that tracer. S071 continues through a separate timing proof.
+Host tests and a visibly rendered settings page do not close the selector/editing or final P0 gates.
+
+Revision8 records observed selector/global-edit success for the exact reviewed tracer build, then
+assigns early S035/S094 central composition and actual loader/native log selection-copy scenarios.
+S071's active-pass veto remains distinct from caller-order proof. No whole feature or P0 gate is
+closed; settings persistence, actual incident effects and the other selected scenarios remain due.
+
+Revision9 adds exact selected-fixture error accounting as an owned tooling prerequisite after the
+real initial-loader RED. The root early composition is independently reviewed; actual loader and
+native log workflows still require fresh reviewed-build evidence. Do not suppress generic errors
+or remove the intentional error fixture to pass a gate.
+
 ## 3. P0 — Activation, settings and content
+
+Revision12 adds target-specific admission for Harmony 3 transformations after ordinary transpilers
+to C01 before claiming those compatibility cases. It replaces S071's proposed private-calculator
+production proof with prepared-state/current-render-consumption admission, preserving all observable
+first-display, visibility, S001 and native interaction requirements. Existing partial execution
+receipts do not authorize registration. Root coordinates shared consumers and narrow leases; native
+S094 reload/helper-rerun evidence remains due. No aggregate gate is closed by either design change.
+
+Current revision12 supporting evidence: C01's NativeLog inner-effect/publication tranche is
+61/61 focused Harmony GREEN and independently rechecked CLEAR. S071's pure collection/later-commit
+tranche is24/24 Unit and16/16 simulated-barrier Harmony GREEN, reviewed CLEAR; actual native barrier
+integration remains due. Gateway readback is checkpointed at6c2324c with33/33 focused checks.
+The fresh163-step product reload has personally inspected causal captures and readback receipts.
+The initial helper rerun stopped safely at Copy because the existing clipboard could not be
+restored by its text-only lease; Copy remains open. B now owns the unregistered prepared-barrier
+handoff/bridge lifetime slice. All feature/part checkboxes below stay open.
+
+The prepared-handoff slice subsequently passed41 focused Harmony checks and both independent
+correction rechecks. Early-consumption veto, generation reuse/revocation and inherited-getter
+behavior have real RED/GREEN evidence. It remains unregistered pending native geometry and fallback.
+The reviewed incident save-override scenario passed38 native steps with all8 captures personally
+inspected, unchanged normal configuration and graceful cleanup. This component diagnostic does not
+complete the P0 gate. The outer-role export is now independently reviewed at68/68 plus strengthened
+7-case method-attribute coverage. Event migration is reviewed at34/34; retired unused bar experiments
+have a CLEAR dependency audit, current Prepared10/10 and a clean product compile. A now owns the
+next narrow converter cleanup/admission slice; Scope/Consumption migration and full native layout
+remain open. Precise Gateway expected-refusal support is checkpointed separately at3a4830d.
+
+The converter reached120 focused passing checks before independent review exposed concurrent
+admission, foreign-repatch refusal and nested-context gaps. A owns focused corrections and fresh
+native evidence remains due afterward. Concurrent S047 chooser work reached16 focused Unit checks;
+review requires separating a synthetic singleton group from an identically named real author.
+B owns that correction. C starts actual S029 native storage with a distinct root-registered
+constructed-Def host tier; no lifecycle hook or native policy workflow is accepted by that adapter.
+
+S047's collision correction subsequently passed two genuine RED/GREEN cases and the18-case affected
+fixture. Independent recheck is CLEAR; root verified the retained counters and eleven-file hash
+manifest. Its pure projection is ready for native integration, with all native/provider gates open.
+
+Revision13 adds atomic two-loader S094 entry coverage after a real nested-context failure, with
+DDI-GUARD-NEW/DDI-GUARD-LEGACY and a fixed-pair C01 snapshot. The first candidate144Harmony/5Unit
+is under independent review; native reruns wait. B owns only S071 Scope-reader migration against
+the frozen single-target API. S029 storage6/6 and catalog8/8 have CLEAR independent reviews in the
+separate Def environment; native admission, finalized availability and lifecycle/UI remain open.
+No feature or P0 checkbox closes from these component milestones. The standalone Gateway debug
+projection checkpoint1832bf4 passed an isolated45-case export; its native task remains open.
+
+The first converter-family review identified stale-body entry, pre-guard reporting and guard-only
+removal gaps. All three now have reviewed fixes:58 affected Harmony and7 scope Unit checks pass,
+and both independent rechecks are CLEAR. The corrected runtime passed163 native default reload
+steps with root's causal image inspection and clean ownership cleanup; legacy and Copy remain open.
+B's Scope-reader migration and independent cleanup fix are CLEAR at60 affected checks; Consumption
+migration is independently CLEAR at56 affected checks. C's next narrow preset guard has a draft
+target/design; finalized baseline publication remains unresolved and no new hook is enabled.
+
+Revision11 records a passing reviewed initial-loader/native log selection/Copy tracer and complete
+runner cleanup after the stdout-reader fix. It leaves all aggregate gates below open. Next work is
+native settings/reload coverage through the separately owned debug-action projection, S071 current
+bar authority and the common paired-offset editor. Reviewed unregistered components are not accepted
+features. Exact evidence is retained in the local part and early-diagnostics ledgers.
+
+Revision14 assigns the native legacy-loader tooling prerequisite to A, concrete native renderer
+planning to B, and early finalized drug-baseline lifecycle research to C. The fixed loader mode must
+be represented in grouping/launch/runtime admission before the legacy scenario is authored. Source
+references remain read-only inputs. Root owns all new central integration and native runs; the
+current default-loader tracer does not accept these future implementations.
+
+The Draw admission correction is independently CLEAR at35 affected host checks, including actual
+oversized-metadata failure/recovery; no native feature is accepted. Harmony output returned to C for
+the remaining preset-entry guard behaviors after its first actual1RED→1GREEN. B plans the remaining
+registration and native geometry integration. Root prepares one shared invalidation owner and early
+drug publication; central native wiring remains unfinished. Native-loader tooling is in implementation.
+
+Revision15 records reviewed initial S029 native publication wiring and the shared invalidator
+injection. The adapter passed3 focused Defs checks; exact original-provider suppression passed its
+RED/GREEN case. Root's two diagnostic review findings are corrected and re-reviewed CLEAR; the
+product compiles without warnings. Initial native preset/Assign controls subsequently passed 43
+steps with ten root-inspected screenshots and complete console/configuration/process cleanup.
+S029 task 2.5.3 closes only that workflow. Provider presence, persistence, broader content recovery
+and aggregate P0 remain open; the next narrowly leased scenario covers unchanged-catalog save/load.
+The S071 prepared-bar metadata correction is CLEAR at34 affected checks; geometry is still pending.
+The native-loader host fixture is now independent of product scenario files and independently CLEAR
+at6 focused checks. Default/legacy dry-run comparison is complete; native Copy remains constrained
+by the unchanged clipboard-preservation precondition. No aggregate or gameplay gate closes here.
+
+Revision16 adds S138 drug tolerance and S139 safe-policy generation to P0-C for sequential research
+and separate observable specifications before implementation. The generator is an independent
+implementation of the idea, coordinated with S029; historical source fragility is not a reason to
+copy its code or overwrite existing policies. The active queue now contains139 entries; the original
+137 drafted entries remain allocated. S138/S139 subsequently completed separate drafts, bringing
+the queue to139 drafts. Their route/state/calculation/atomic-creation prerequisites remain open;
+artifact completeness does not authorize implementing an unresolved algorithm.
+
+The user has removed original-mod drop-in/API compatibility work from the plan. Original-loaded
+handling is a bounded startup warning and best-effort effective feature disable through the same
+settings path as manually turning it off. It is not a coexistence guarantee or a required original-
+mod compatibility run. Preserve user preferences, unrelated features, genuine external integrations
+and all game-target admission checks. Reconcile the active feature docs and coverage with this rule.
+
+S029 tasks2.5.3/2.5.4 now have reviewed native evidence in group
+`20261108T104425075Z-09a7bfcbed474ee385e2073e8ef3f831`:98 steps and20 root-inspected captures,
+including retained edits/assignment after save/reload and both native consoles. Exact build/config,
+cleanup and log audit are retained in the persistence ledger. This closes only those two workflows.
+S071 entry-geometry work awaits a revised lease: its existing prepared transpiler must host the
+consumption participant; a second owned transpiler is not a viable independent slice. No geometry
+source was changed and no automatic-clearance or aggregate P0 task closes.
 
 - [ ] 3.1 Orchestrator: Recheck exact 1.7 tooling/profile/package gates; freeze early settings/admission/loader-hook contracts, stable catalog and applied-policy publication with S029 drug maintenance; assign central writers and honest test registrations. Record requirement slices, leases, source references and scenario IDs in the part manifest.
 - [ ] 3.2 Receive and inspect the **P0-A — Runtime admission and diagnostics** handoff for S035, S094. Require actual provider milestones, focused tests, independent review and executable native scenarios; keep gameplay acceptance open.
 - [ ] 3.3 Receive and inspect the **P0-B — Common settings and presentation** handoff for S034, S047, S071. Require actual provider milestones, focused tests, independent review and executable native scenarios; keep gameplay acceptance open.
-- [ ] 3.4 Receive and inspect the **P0-C — Content selection** handoff for S020, S029, S038. Require actual provider milestones, focused tests, independent review and executable native scenarios; keep gameplay acceptance open.
+- [ ] 3.4 Receive and inspect the **P0-C — Content selection and drug policies** handoff for S020, S029, S038, S138, S139. Require resolved calculation/creation prerequisites, actual provider milestones, focused tests, independent review and executable native scenarios; keep gameplay acceptance open.
 - [ ] 3.5 After all selected P0 chunks are ready, integrate and independently review the candidate, resolve findings, rerun affected checks and validate the exact package. Freeze runtime edits and record build identity plus the selected individual/combined scenarios from the roadmap.
 - [ ] 3.6 Orchestrator: run the P0 isolated loader checks and native player workflows on that reviewed build; personally inspect causal results. Delegate product/scenario/tooling failures to their owners, integrate reviewed fixes and rerun affected scenarios on the new build. Retain exact-process action, screenshots, mod order, config hashes and cleanup evidence.
 - [ ] 3.7 Complete the part playability/balance pass and coverage reconciliation; update only supported feature tasks and replacement states. Record later-composition obligations and accepted scope; do not close required blocked/unrun cases or use old-build evidence.
@@ -121,7 +260,7 @@ failed/revised assignments in the roadmap log and updates affected tasks before 
 
 ## 12. Accumulated development completion
 
-- [ ] 12.1 Audit all 137 allocations, foundation capabilities, target-spec records, provider suppressions, settings/languages and external contract claims against actual implementation and evidence. Keep omissions and deferred CE/multiplayer/import scope explicit; portal containers stay excluded.
+- [ ] 12.1 Audit all 139 allocations, foundation capabilities, target-spec records, best-effort original warning/effective-off handling, settings/languages and genuine external integration claims against actual implementation and evidence. Original-mod API/drop-in compatibility remains excluded. Keep omissions and deferred CE/multiplayer/import scope explicit; portal containers stay excluded.
 - [ ] 12.2 Reconcile all later-composition obligations with the reviewed final candidate; run any still-missing affected native workflows and personally inspect them. Do not use this task to launch an unrelated full repository suite.
 - [ ] 12.3 Complete independent accumulated integration review and the final semantic/playability review, resolve findings and repeat affected tests/package/native gates after fixes. Check every runtime revision's evidence and normal-configuration cleanup.
 - [ ] 12.4 Publish the development completion record locally with exact supported scope, feature task/coverage status and remaining blockers. Leave release preparation, release regression matrix, presentation and Workshop publication to their separately authorized workflow.

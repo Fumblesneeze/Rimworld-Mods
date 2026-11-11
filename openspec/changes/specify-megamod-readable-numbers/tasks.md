@@ -7,7 +7,7 @@ artifact completeness do not establish performance, universal UI support or live
 ## 1. Resolve implementation contracts
 
 - [ ] 1.1 Resolve RN-Q1 current native quantity/measurement/draw/input/name/date/history/quest targets and effective foreign-patch interactions; record stable minimal semantic target specs and atomic group/fallback policy for every planned hook.
-- [ ] 1.2 Resolve RN-Q2 actual optional HUD/readout/date/profiler methods and consumers; define admitted package/type/representation shapes, absent/changed behavior and exact co-installation policy without eager references or package spoofing.
+- [ ] 1.2 Resolve RN-Q2 deliberately used optional HUD/readout/date/profiler contracts; define admitted package/type/representation shapes and absent/changed behavior without eager references or package spoofing. Exclude original Readable Numbers API/consumer/facade research and coexistence work.
 - [ ] 1.3 Specify concrete source-representation/context provenance, structured styled quantities and generic ambiguity boundaries; establish the shared formatter contract with owned S127/S033/S032/production displays.
 
 ## 2. Vertical TDD and implementation
@@ -21,7 +21,7 @@ artifact completeness do not establish performance, universal UI support or live
 - [ ] 2.7 Integrate native quest reward translation/measurement, map quantity labels and ordinary supported UI through the same formatter; retain full-value access and native actions/selection/caret behavior.
 - [ ] 2.8 RED/GREEN external RimHUD precision/styles, Enable/exclusion/small-decimal consistency and owned direct composition; implement the admitted adapter without rewriting all periods in markup.
 - [ ] 2.9 RED/GREEN admitted Toggleable Readouts refresh/raw-value preservation, Dawn date exclusion and profiler context protection with missing/changed providers; implement only inspected optional contracts.
-- [ ] 2.10 RED/GREEN source co-installation suppression and safely isolated generic-path failure, retaining other owned actions; implement bounded warnings and developer-only diagnostics without routine log spam.
+- [ ] 2.10 RED/GREEN active-source startup warnings and best-effort ordinary formatter-off behavior, inactive-source handling and retained preferences, plus safely isolated generic-path failure and other owned actions; no source coexistence guarantee. Implement developer-only diagnostics without routine log spam.
 
 ## 3. Scoped review and checks
 
@@ -35,5 +35,5 @@ artifact completeness do not establish performance, universal UI support or live
 
 - [ ] 4.1 In a fresh minimized isolated game, open actual resource/stat/quest/map displays and settings, change formats/thresholds/exclusions and inspect before/action/after text and layout; include mixed-length values, styled decimals, long labels and full-value access.
 - [ ] 4.2 Exercise native numeric/name input, selection/copy, history/date/file metadata, resets, inherited/overridden settings and real save/main-menu switching; personally verify unchanged input/data and correct effective presentation.
-- [ ] 4.3 Run exact source/provider absent/present/shape-drift cases and owned HUD/search/count/bill composition; observe native user workflows rather than directly constructing formatted expected results.
+- [ ] 4.3 Run exact deliberately used provider absent/present/shape-drift cases and owned HUD/search/count/bill composition; observe native user workflows rather than directly constructing formatted expected results. Limit original-source coverage to warning/ordinary-off behavior without a coexistence compatibility matrix.
 - [ ] 4.4 Apply the root acceptance gate on the reviewed build: retain build/package identity, ordered mods, actions, personally inspected screenshots, supporting logs/config hashes and cleanup; update coverage only for actually verified behavior.

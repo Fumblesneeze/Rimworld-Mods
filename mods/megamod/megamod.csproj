@@ -9,9 +9,11 @@
     <Authors>Fumblesneeze</Authors>
     <AssemblyName>Megamod</AssemblyName>
     <RootNamespace>Megamod</RootNamespace>
-    <IncludeHarmony>false</IncludeHarmony>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IncludeHarmony>true</IncludeHarmony>
     <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
-    <Description>Development scaffold for Make Rimworld Great Again. No gameplay features or replacement mods are implemented yet. Targets RimWorld 1.7 beta.</Description>
+    <Description>Development build of Make Rimworld Great Again for RimWorld 1.7 beta. Shared settings and compatibility checks are under development; feature implementation and in-game verification are incomplete.</Description>
   </PropertyGroup>
   <Import Project="../../tools/RimWorld.Build/VersionedGame.props" />
   <Target Name="RequireMegamodGameVersion" BeforeTargets="PrepareForBuild">

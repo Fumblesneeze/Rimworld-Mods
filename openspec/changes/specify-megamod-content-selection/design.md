@@ -13,7 +13,7 @@ is already found. No runtime code, metadata dependency, patch or migration is ad
 
 ## Goals / Non-Goals
 
-**Goals:** preserve the full observable catalogue and practical authored-preset contract; define
+**Goals:** preserve the full observable catalogue and owned grouped-preset behavior; define
 precise exclusion effects and scope; compose owned selectors/policies directly; prevent cost loss,
 endless generation, ambiguous restoration and cross-save contamination.
 
@@ -22,6 +22,28 @@ foreign direct spawns, original package/assembly impersonation, copying upstream
 bottom tabs or speculative shared-cache frameworks. No live compatibility or performance claim.
 
 ## Decisions
+
+### 2026-11-11 ordinary master and dedicated catalogue browser
+
+The user confirmed that individual exclusions remain part of S038 but must live in a dedicated
+Content selection browser. General settings now contain one browser button and `content.enabled`;
+the browser creates another `SettingsRenderer` over the same `SettingsRuntime` and definitions.
+No parallel storage, save editor or inheritance logic is introduced. Existing native selector and
+save-override scenarios enter through the new button and retain their prior actions inside the browser.
+
+The content master defaults true, uses global/save scope, and is captured with the explicit save
+snapshot at the existing application boundary. An immutable startup effective-off reason overrides
+only this master; it never flips `content.allowed/*` or `content.preset-active/*`. Disabled application
+publishes allow-all key decisions with `Enabled=false`, bypasses unresolved retained member/preset
+application and does not call drug reconciliation. Prior live publications remain unchanged until
+the next genuine boundary. This is the existing incident-family milestone, not acceptance of early
+world setup or any unfinished catalogue family.
+
+`ContentProviderPolicy.FromActivePackages` supplies the master reason and a bounded warning for
+the exact original package. Root combines it with the other immutable effective-off inputs before
+constructing the common store. The old provider-specific incident admission gate is retired.
+The shared Def lifecycle guard and incident semantic admission remain independent safety gates.
+
 
 ### Policy is data; finalized definitions retain their identity
 
@@ -38,10 +60,183 @@ This replaces destructive mutation/snapshot restoration: a snapshot could overwr
 later changes and would still leak a policy across saves. No general-purpose Def mutation framework.
 
 Per-save dynamic policy cannot be faithfully encoded as static startup XML. Use direct owned calls
-and narrow runtime seams for that policy; reserve XML for declarative preset adaptation and any
+and narrow runtime seams for that policy; reserve XML for owned declarative definitions and any
 future genuinely static definition changes. This is the concrete reason for C# here.
 
+The first reviewed host slice represents a key as canonical lower-invariant source package ID,
+exact runtime full type name and exact defName. A length-prefixed tuple encodes persisted IDs
+without delimiter collisions; localized labels never participate. Catalog membership is detached,
+but each entry retains the exact native Def reference. Duplicate keys with different native
+references resolve as ambiguous, never as an arbitrary first match. Repeated enumeration of the
+same native reference remains resolvable. This is host identity evidence, not native enumeration
+or availability acceptance.
+
+Read-only 1.7.5000 inspection identifies `GenDefDatabase.AllDefTypesWithDatabases()` and
+`GetAllDefsInDatabaseForDef(Type)` as the native enumeration seam: the former accounts for a
+nonabstract base class owning the database. The adapter must use each Def's actual runtime type,
+not substitute the database's base type. Provenance uses `def.modContentPack.PackageIdPlayerFacing`
+then canonical case; native `ModMetaData.PackageId` can append `_steam` for duplicate discovery,
+whereas `PackageIdPlayerFacing` retains the metadata package identity. Do not strip arbitrary
+suffixes from user-supplied IDs or fabricate Core provenance for a null content pack. A Def lacking
+usable provenance/type/name remains unavailable and must not abort other catalog entries.
+
+Incident eligibility is the first concrete availability-family candidate. Current
+`StorytellerComp.UsableIncidentsInCategory` consumes `IncidentWorker.CanFireNow`; its ordinary
+selection retains native weights and returns no result for an empty candidate set. A separate
+`IncidentWorker.TryExecute` boundary invokes `TryExecuteWorker` and then records fired/codex state,
+so an execution refusal must precede those side effects. These are research facts, not admitted
+patches. Weather needs broader coupled treatment: its zero-weight fallback can still choose a
+biome weather or Clear, and initial/forced weather use separate paths. A commonality-only veto
+would not meet the exclusion contract. All other 45+3 family obligations remain unchanged.
+
+### First incident implementation boundary (unaccepted)
+
+The 2026-11-07 scoped implementation now provides five atomic native-shaped patch candidates:
+`MM.CONTENT.IncidentEligibility`, `IncidentExecute`, `IncidentExecuteResult`, and the two per-target
+`IncidentEligibilityGeneration` / `IncidentExecuteGeneration` observers. Root owns central admission
+and target indexing. The first three implement result eligibility, refusal before effects and the
+final result veto when an earlier foreign prefix skipped the owned prefix. The two observers return
+their incoming instruction streams unchanged and invalidate publication on normal Harmony rebuilds.
+This supersedes the earlier unimplemented-candidate status, not the remaining family requirements.
+
+Metadata inspection rejects factory-shaped callbacks before sorting: Harmony's sorter can invoke
+factories. The same immutable factory-free array is sorted. Compatible later observers remain
+admitted. Later prefixes with a writable worker/Def field, direct identity writes or opaque calls
+using the worker have no proven identity-preservation contract and reject publication. Later
+void postfix result writers and finalizers with writable results also reject it. Non-void pass-through
+postfixes reject it regardless of metadata position unless false preservation is independently proven:
+the inspected Harmony provider emits its void postfix phase before its pass-through chain, so an
+earlier-sorted pass-through writer can overwrite this void veto. Read-only void result observers
+remain compatible on either side. This is deliberately a
+narrow ordinary-native-path contract; foreign code performing incident effects itself is not covered.
+No foreign transpiler is executed as an inspection probe. Removing the owned compilation observer
+itself is outside automatic notification; explicit refresh detects its absence.
+
+The final group installation validates publication and throws into exact owned rollback on failure.
+Automatic incident patch revalidation is scheduled by compilation identity versus the last actual
+refresh attempt, only after all five group members install. Refresh consumes the attempt before
+metadata inspection; an unchanged denied generation is not scanned every main-thread frame. A later
+observed compilation permits another attempt. Explicit owner refresh still intentionally reinspects.
+Root reports the retained non-null denial reason once per scheduled attempt through the protected
+sink, without a second generic warning for exceptions already reported by the runtime wrapper.
+
+Callbacks consume immutable applied values and exact lifecycle owner/generation, never mutable
+settings. Faults latch the bridge unavailable; a refusal already made remains false even if its
+notification fails and an earlier postfix later writes true. The root's immutable canonical active
+package snapshot drove original Cherry Picker suppression through the common admission coordinator
+in that tranche. The revised policy requires a bounded startup warning plus the ordinary
+per-feature settings disable path, best effort; the earlier implementation is not evidence that
+this revised wiring is complete.
+
+`IncidentContentRuntime` is constructed after finalized Defs on the main thread. Root calls its
+`ProcessPendingLifecycle` after the common settings pump. This first family waits for Playing and
+no current/queued long event, using the immutable finalized save receipt, then applies exactly once
+per exact owner/generation. Receipts are rechecked around native owner reads and publication.
+Subsequent settings edits stay pending. A benign explicit patch refresh can restore only the same
+applied reference; it cannot consume pending settings. Unsupported requested exclusions, invalid
+values or persisted active presets reject this initial candidate instead of claiming them applied.
+The finished-main-thread incident boundary does **not** solve early map/save finalization, new-game
+setup or the other 45+3 families; those earlier receipts and independent-family status remain open.
+
+Before worker loading, `ContentSettings.PrepareLoadInputs` can pin the common runtime's immutable
+global snapshot plus registered Boolean definitions. Its detached reader retains no mutable store
+or registry and can resolve the loaded component snapshot without UI activation. This prepared
+input is infrastructure for the still-open early family boundary, not an applied policy.
+
+The localized explicit refusal message names the excluded incident and explains reload timing.
+Its seven baseline catalogs are authored from that gameplay context with identical `{0}` usage;
+native rendering and screenshot inspection remain unrun. Existing allowed/refusal executable
+scenarios exercise the direct command boundary; weighted selection, empty candidates, settings UI,
+ordinary feature-off behavior remains an additional acceptance obligation. No original-provider
+compatibility matrix is required; genuine content-provider integration checks remain separate.
+
 ### One common settings path with deliberate application timing
+
+#### Native Def reload safety milestone (recovery incomplete)
+
+On inspected 1.7.5000, HotReloadDefs queues a synchronous long event without clearing Loaded. Its
+body mutates existing Def objects, flushes queued shallow-copy actions, resolves references and
+queues physical-object/map/window finishing work. LongEventHandler catches both body and finishing
+action exceptions. Neither the outer method returning nor Loaded plus an idle event queue proves a
+successful finalized generation. ClearAllPlayData removes databases before clearing Loaded.
+
+The first safety milestone observes entry to exact public static void HotReloadDefs() and
+ClearAllPlayData(). Either call atomically invalidates the incident application before the native
+body; no worker callback reads Store, native Def fields or UI. The main-thread pump disables the
+bridge and reports one protected bounded explanation. Rows explain unavailable Def lifecycle and
+disable edits, while requested values and the original immutable applied stable-key decisions are
+retained. This is conservative invalidation even if another prefix later skips the native body.
+It never cancels native reload, reconstructs runtime/settings/patch registration or recaptures pending
+choices. No idle predicate, ordinary save switch or patch refresh clears this latch in this milestone.
+
+Before S029 shares this observer, root migrated its ownership inspection to the existing C01
+immutable publication reader. Only the owned prefix slot is consumed: filter owned registrations
+before projecting a receipt, without inspecting attributes, invoking factories, or sorting unrelated
+foreign callbacks. Other owners' factory-shaped patches are compatible with this observational latch;
+the latch does not depend on their body or ordering. Busy, unreadable or changed provider metadata
+withholds installation through the shared admission coordinator. Native entry itself only sets the
+latch and performs no metadata access. Exact acquired-slot rollback remains mandatory. Independent
+review is CLEAR after six affected host cases, including the actual foreign-factory RED/GREEN;
+earlier native tracers do not accept it. Root will inject the same instance into incident and drug baseline owners,
+admit it once before publication, and keep lifecycle availability independent of either original
+provider's feature suppression. No duplicate prefix pairs or general lifecycle framework are needed.
+
+Recovery remains a required next milestone, not restart-only supported behavior: establish a proven
+successful native Def generation, reconcile the same runtime/catalog/UI owners, and retain prior
+applied decisions for the exact save/load boundary. Handling genuinely new keys (proposed native
+allowed until a new application boundary) still requires an explicit approved contract; this guard
+does not encode it. Ordinary save/load and early-family application timing are unchanged. Native
+reload/recovery acceptance tasks remain open.
+
+The first settings presentation slice uses the existing common ContentSettings definitions and
+Store. ContentChoiceRow is a read-only projection of the requested value plus a separately supplied
+actual applied reference. It distinguishes pending allow/exclude, stable applied state, next-load
+main-menu state, unavailable application and invalid stored requests; a missing applied reference
+never becomes the requested value. Main-menu presentation reads globals even if a caller has not
+yet detached an earlier save. Validation errors remain distinct from feature unavailability so the
+common editor can repair malformed requested data. This is a host model, not native UI acceptance.
+
+ContentChoiceBrowser combines exact type/source IDs with the main literal, case-insensitive query
+inside individual displayed/identity fields. It never joins fields to create a match or applies the
+selector's separate all-word search rule. Order follows the requested effective exclusion: excluded
+first, then readable name and source using ordinal case-insensitive comparison, then canonical
+package/type/Def identity as ordinal ties. The page's applied/pending status stays separate from
+that requested ordering. Browsing returns a detached result and does not change store revisions.
+
+The reviewed shared renderer supplies dynamic boolean registration and a nonpersistent navigation
+section; the feature supplies visibility and deterministic display rank. It captures those values
+once per draw, retains common scope controls and rechecks feature availability plus the current
+binding at commit. ContentBrowseSession holds only transient query/type/source selection and caches
+immutable ranks by common store revision. Full menu choices remain reachable under another filter.
+No dummy persisted setting, duplicate settings store or copy of inheritance controls is introduced.
+
+The first native incident page maps the exact finalized catalog's native labels/source names to
+those definitions. It uses ordinary FloatMenus for type/source selection, with canonical identities
+in choices and stale native identity checks, and the main literal search field. The common row
+shows pending edits against IncidentContentRuntime's actual immutable current applied reference.
+Unadmitted integration, ambiguous/missing identities and the ordinary feature-off state disable
+edits without removing stored choices. Null application remains unavailable; supported globals can
+be edited from the main menu. Runtime failures use the root-supplied protected warning sink rather
+than a mutable native warning entry point. Root owns composition and native acceptance.
+
+All seven baseline page/status catalogs are authored. The executable native selector scenario opens
+and cancels native type/source menus, clicks the first incident's global checkbox off and back on,
+and captures pending/current labels for personal inspection. It uses captured native window identity,
+bounds and scale, never direct setting mutation. Its fresh default profile, inherited choices,
+untouched initial scroll/filter state and concrete renderer geometry are explicit preconditions.
+The first actual isolated run reached the real settings page, but the selector was absent because
+central composition had not been added. This is retained RED evidence. The root now constructs the
+protected warning sink before admission and snapshots canonical active package IDs once. The common
+main-thread pump reconciles settings first, then attempts initial catalog/runtime/UI setup once
+after Loaded and no pending/current long event. UI registration precedes guarded feature admission;
+setup exceptions do not disable the common settings pump or retry partial registrations. Both the
+Def lifecycle group and the incident group must be admitted before policy pumping. The same runtime
+is retained through idle transitions; hot reload cannot rebuild it or consume pending edits.
+The scenario also opens the native developer log for inspection. GREEN and final P0 acceptance
+remain unclaimed. Search typing, committed filter choices, save overrides, main-menu
+edits, reload application, absent/provider guards and language layouts still need native workflows.
+The full S020 searchable/resizable selector windows and all remaining S038 families/presets remain
+open; ordinary FloatMenus do not satisfy their richer contracts. No acceptance task is closed here.
 
 Register individual Allowed and preset Active choices with the common load/store/resolve/row
 renderer. Both inherit globally by default; retain dormant overrides. The displayed effective state
@@ -70,10 +265,9 @@ rewriting any member's direct setting. Bound diagnostics per invalid identity an
 members. Unavailable adapters contribute no claimed exclusion. Preserve provider list order for
 membership inspection while effective membership is a set.
 
-Legacy `DefList` semantics are adapted deliberately: unchecking a source removal-list row activates
-its exclusion, but the owned UI explicitly labels preset activation. Its inverse does not reproduce
-the source's broad removal of member keys. `TMM_CherryPicker_All` is therefore a group of exclusions,
-not an unconditional reset of every independent user choice; make this deviation visible.
+The owned UI explicitly labels preset activation. Its inverse removes only that preset's
+contribution, rather than the source's broad removal of member keys. This preserves the intended
+grouped-choice behavior without reading Cherry Picker `DefList` data or emulating third-party lists.
 
 ### Dependency behavior is explicit
 
@@ -102,36 +296,18 @@ SpecialThingFilter hiding does not rewrite existing filters into a broader allow
 visibility remains separate from actual work eligibility. Treat unsupported hard-reference paths
 as named coverage limitations, not blanket guarantees.
 
-### Narrow authored-preset compatibility adapter
+### Owned presets without a legacy compatibility adapter
 
-Actual installed consumer `Wara.toomanymods` emits `CherryPicker.DefList` nodes and patches their
-`defs` children. Preserve defName, label, member strings, source attribution and the XML element name
-for those XPath additions. Do not copy provider list contents or create duplicate legacy CLR types.
+Owned presets retain stable identity, label, source attribution and member choices for the
+reason-aware graph above. They use the owned definition/loading path; no CherryPicker.DefList
+parser, Class rewrite, original-only dependency-gate rewrite or external consumer parity is required.
+The inspected `Wara.toomanymods` and parser behavior remain historical research only. Do not copy
+provider list contents, spoof package/type identities or add a facade to make old add-ons activate.
 
-The inspected default 1.7 `DirectXmlToObjectNew.DefFromNodeNew` honors Class; the legacy parser does
-not use it for initial type lookup. A proposed guarded XML adapter can retain the node's name and
-set Class to an owned DefList implementation while replacing a **sole** original-package MayRequire
-with an owned-compatible condition. Perform no transformation when the original is active. Keep
-unrelated attributes and provider/DLC gates. Reject unsupported composite MayRequire/MayRequireAnyOf
-logic instead of weakening it. An existing provider Class must be admitted or left untouched.
-
-Use `XmlExtensions.FindMod` with `packageId=true` for external provider gates and
-`XmlExtensions.Conditional` for exact Def/node shapes. Installed operation inventory includes
-`XmlExtensions.PatchOperationAttributeAdd`, `PatchOperationAttributeRemove` and
-`PatchOperationAttributeSet`; their actual schemas and failure behavior must be read before use.
-The guessed name `XmlExtensions.AttributeSet` is not an established operation and must not be used.
-Validate all required attributes before changing any; preserve/recover original nodes on failure.
-Retain provider patch ordering: no rename or removal before patches targeting the original node.
-An adapter must prove the active parser's Class behavior and provider additions, not just presence
-of the parser type. Unsupported legacy mode remains inactive with a warning and honest UI status.
-
-This requires XML Extensions (`imranfish.xmlextensions`, 2574315206) and its Harmony dependency in
-the eventual package. Both are external required dependencies, never bundled. Original CP, preset
-providers and DLC remain optional. External code asking whether `Owlchemist.CherryPicker` is active
-will still receive false. Early original-only package-gated patches, hard metadata dependencies and
-compiled assembly/type consumers are not satisfied by this adapter. Record these limits instead of
-inventing a facade. S020's external scrollbar patch stays attached to the real original; owned
-selectors need no such API emulation.
+Actual owned declarative patches, if needed, still require XML Extensions existence/shape checks,
+external package/content guards where applicable, additive preservation and corresponding dependency
+metadata. Removing the legacy adapter does not waive those rules or genuine DLC/content admission.
+S020 selectors compose directly with owned content settings and need no source API emulation.
 
 ### Startup admission and failure isolation
 
@@ -148,7 +324,7 @@ targets or a license to share one vague validator across multiple patches:
 | Apparel/health/quests | Wear's actual garment argument, AddHediff's condition argument and state-changing body, quest-root use in add/letter paths; method signature alone cannot prove those argument semantics |
 | Appearance/social/UI | Current selection routes, random versus explicit interactions, work-column versus job behavior, hidden filters versus their acceptance predicates, native tab/selector safety |
 | Optional providers | Canonical package first, current types/members/Defs second; active content, not merely installed content; VEF/VPE/Ancients isolated from Core paths |
-| Authored-list XML | Provider package and exact nodes, parser behavior, original absence, unchanged dependency semantics, provider member additions, all-or-none attribute update |
+| Owned declarative preset changes, if selected | Actual owned nodes and member identities, external content requirements when used, duplicate-safe additive updates; no legacy-format/dependency-gate adapter |
 
 Inspect original versus effective methods and any relevant prefix/transpiler ordering. A compatible
 foreign patch or unrelated body edit is not grounds for rejection. If a prefix changes an argument,
@@ -164,22 +340,22 @@ behavior and fallback. Explicitly disabled candidates and absent optional provid
 failure spam. Do not mark a row excluded if its essential boundary is inactive. Retain requests for
 later compatible startup. Hashes in research identify evidence, never dictate runtime admission.
 
-### Coexistence, composition and data ownership
+### Original-loaded warning, composition and data ownership
 
-Original CP active: select original, disable owned content application and XML adaptation; preserve
-owned settings and emit bounded warnings for enabled owned patches skipped by that declared policy.
-Never unpatch foreign owners. Original mutation may already have changed native data; do not claim
-owned preservation guarantees while that provider is selected.
+Original CP active: emit a bounded startup warning and invoke the ordinary per-feature settings
+disable path for owned content selection, on a best-effort basis. Its effective off behavior and
+state retention are exactly the ordinary user-disable behavior, not a separate cooperative mode.
+Never modify the original's settings or patches. This does not certify what original mutation has
+already done to native data, and requires no original API/binary/save parity or coexistence run.
 
 Compose S020 selectors, S029 drug-catalogue reconciliation, S012 recipe browser, S014 whole-list
 workbench linking and S036 Architect directly. Content blocking preserves S014's shared bill identity,
 recoverable started work and quota accounting; no completion/credit is issued for a blocked job.
 No self-patches. Prepare policy publication and the dependent drug-row reconciliation together.
-Original `Mlie.DrugPolicyFix` suppresses owned S029 maintenance/presentation under its existing
-contract. It enumerates unchanged ingestible/drug-category fields and cannot see this separate
-availability policy. Therefore withhold the **drug-item exclusion group** when that original is
-active or S029's maintenance is not admitted; retain requested reasons and show unavailable status,
-without disabling unrelated item families. Do not claim cooperative original-provider support.
+The **drug-item exclusion group** requires effective, admitted owned S029 maintenance. If that
+feature is off through its ordinary settings path or its required semantics are unavailable, withhold
+this dependent group, retain requested reasons and show unavailable status without disabling unrelated
+item families. Do not inspect or adapt original Drug Policy Fix as a substitute for this owned dependency.
 
 For admitted owned maintenance, capture prior affected policy rows, prepare all relevant policy
 results against the candidate drug catalogue, then publish rows and applied drug choices together.
@@ -188,6 +364,13 @@ actions resume. This is cross-feature orchestration around S029's per-policy ato
 second maintenance implementation or foreign mutation. Tests must fail on a later policy to prove
 earlier prepared/committed results do not leak a partial application. Successful publication causes
 one coherent reconciliation; stock scans and later normal loads cannot resurrect excluded rows.
+If restoration itself fails, native state is unknown: invalidate the affected current application
+boundary and its prior applied reference before propagating the distinct restoration failure.
+That token cannot retry publication, even without another native write. A genuinely newer boundary
+must not be invalidated by an older boundary's restoration failure. Beginning a fresh boundary is
+a native lifecycle responsibility after loading fresh state, not a UI retry that certifies or repairs
+unknown rows. Clearing an applied reference does not mean restoration succeeded or gameplay is safe;
+the native owner must surface that failure and stop claiming the affected policy is available.
 S136 future floor sampling must respect current terrain eligibility without a second list of rules.
 Physical Thing data remains map-owned and shared with search/hauling; exclusion is an availability
 predicate, not deletion from the physical index. Inspect native listers first. Do not scan maps per
@@ -208,10 +391,11 @@ Benchmark combined consumers and invalidation before promising any optimization.
 - **Fixed supplies and incidental drops are intentionally reduced** → show omitted starting supplies,
   preserve allowed yields without compensation, and refuse empty-output butchering. This is content
   exclusion, not a claim that every acquisition leaves total resource yield unchanged.
-- **1.6 original and optional dependencies on 1.7** → source support labels are not compatibility;
-  exact absent/present/changed-provider evidence and semantic admission are still required.
-- **Legacy authored contracts cannot all be emulated** → narrow real data adapter, documented
-  unsatisfied checks and no package spoof or duplicate source CLR type.
+- **Optional content dependencies on 1.7** → source support labels are not compatibility;
+  exact absent/present/changed-provider evidence and semantic admission remain required for actual
+  Ancients/VEF/VPE/DLC integrations, not original-mod replacement compatibility.
+- **Legacy authored lists will not activate through this replacement** → intentional exclusion;
+  no compatibility-format adapter, consumer parity audit or package/type spoof.
 
 ## Migration Plan
 
@@ -237,8 +421,9 @@ owned requested choices dormant; it must not force other mods' restrictions back
 
 ## Verification and Open Questions
 
-CK-Q1–6 in the research and refinement ledger cover exact native seams, XML/provider bindings,
-proposed timing/dependency behavior, optional integrations, future migration and native acceptance.
+CK-Q1–6 in the research and refinement ledger cover exact native seams, owned preset/content bindings,
+proposed timing/dependency behavior, genuine optional integrations, future owned-data migration and
+native acceptance. Earlier legacy-list compatibility questions are superseded by the no-adapter policy.
 Use Unit for key/graph/policy calculations, Harmony for individually owned shape/admission tests,
 Defs only for scoped constructed fixtures, and fresh isolated games for real loaded databases,
 XML, providers and selection/generation/UI workflows. No fake active mods or copied Core Def state.

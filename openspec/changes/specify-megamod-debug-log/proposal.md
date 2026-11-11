@@ -46,8 +46,11 @@ its definition context composes with this ordinary diagnostic channel. This chan
 - Future owned diagnostics UI/settings and narrow native logging adapters, independent of the
   shared Thing index and gameplay jobs. No game economy, research or content changes.
 - Future Harmony integration requires `brrainz.harmony`. Better Log, Prepatcher, RocketMan,
-  Performance Fish and HugsLib are not runtime dependencies; present-provider behavior needs its
-  own evidence. No XML Extensions operation is currently proposed; if one becomes necessary it
+  Performance Fish and HugsLib are not runtime dependencies; deliberately used external integrations
+  need their own admission and evidence. An active original Better Log triggers a bounded startup
+  warning and best-effort ordinary feature-off behavior, leaving stored preferences and the original
+  unchanged. No original API/consumer/facade or coexistence work is included. No XML Extensions
+  operation is currently proposed; if one becomes necessary it
   requires XML Extensions and guarded content checks in that slice.
 - No foreign DLL, artwork, source settings, package identity or automatic configuration migration.
   No dependency on other repository mods or the developer Gateway.

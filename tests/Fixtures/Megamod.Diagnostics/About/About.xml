@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Megamod diagnostics fixture (development only)</name>
+  <author>Fumblesneeze</author>
+  <packageId>fumblesneeze.megamoddiagnosticsfixture</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <description>Disposable XML inputs for isolated Megamod definition-diagnostics verification. Deliberately emits native loader warnings and one invalid-type error. Never distribute with the product.</description>
+  <modDependencies><li><packageId>fumblesneeze.megamod</packageId><displayName>Make Rimworld Great Again</displayName></li></modDependencies>
+</ModMetaData>

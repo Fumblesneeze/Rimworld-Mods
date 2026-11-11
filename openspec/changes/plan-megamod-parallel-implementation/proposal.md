@@ -1,6 +1,7 @@
 ## Why
 
-The 137 researched feature drafts need one implementation plan that consolidates shared data and
+The original 137 researched feature drafts, plus the 2026-11-08 S138/S139 drug-policy additions,
+need one implementation plan that consolidates shared data and
 behavior while allowing several narrowly scoped agents to work at once. Coordinating contracts,
 integration and native verification centrally avoids duplicated caches, conflicting edits and
 premature acceptance of individually tested features that fail when combined.
@@ -16,7 +17,8 @@ tests, runtime dependency changes, deployment or live acceptance is delivered no
 
 - Plan concrete shared components, their first consumers, authority, lifetime, freshness and failure
   behavior; reuse native data and existing owned helpers before adding materialization.
-- Map every S001–S137 feature to an implementation chunk and dependency-aware integration part.
+- Map every S001–S139 feature to an implementation chunk and dependency-aware integration part.
+  S138/S139 require their own research and observable drafts before implementation.
   Preserve individual OpenSpec behavior contracts and task traceability instead of merging them away.
 - Authorize parallel implementation of multiple source-derived features within megamod. Implementers
   perform focused test-first work, independent review and executable verification-scenario authoring.
@@ -30,6 +32,9 @@ tests, runtime dependency changes, deployment or live acceptance is delivered no
   the owned specification/design. Unforeseen cross-chunk changes return to the orchestrator.
 - Add the explicitly user-authorized megamod-only process exception to root and local instructions,
   update development entry points, and distinguish implementation handoff from live acceptance.
+- Exclude original-mod drop-in/API compatibility work under the latest user decision. Retain startup
+  warnings and best-effort ordinary feature-off settings, without coexistence promises or persistent
+  preference rewrites. Game-target checks and genuine third-party integrations remain required.
 
 ## Capabilities
 
@@ -40,8 +45,9 @@ tests, runtime dependency changes, deployment or live acceptance is delivered no
 
 ### Modified Capabilities
 
-No archived gameplay capabilities change. Existing 137 feature drafts and the five foundation
-capabilities retain their observable behavior. The new design coordinates their implementation;
+No archived gameplay capabilities change. The existing 137 feature drafts and the five foundation
+capabilities retain their gameplay intent; original-mod compatibility obligations are superseded by
+the latest scope decision. S138/S139 add separate policy features. The design coordinates implementation;
 behavioral amendments, if later needed, belong in their original owning changes.
 
 ## Impact

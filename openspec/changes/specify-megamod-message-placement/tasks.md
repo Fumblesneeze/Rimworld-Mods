@@ -1,8 +1,24 @@
 ## 1. Resolve current contracts
 
+2026-11-11 batch: manual runtime wiring, ordinary enable/disable, visible unavailable-clearance
+status, seven language labels and the native reset/disable tracer are implemented pending integrated
+review/build/native execution. Focused evidence is in
+`artifacts/Megamod/P0-B/messages-manual-batch-20261111.md`. Automatic geometry, preview and full
+interaction obligations remain open; no checkbox below closes from this host evidence.
+
+The first pure placement/common-settings tranche is implemented but unregistered, pending independent
+review. Focused host evidence is retained under `artifacts/Megamod/P0-B/messages-handoff.md`; input/API
+boundaries and reserved native workflows are in `mods/megamod/Source/Features/MessagePlacement/`.
+This supports portions of2.1–2.3 and3.1 only. Native geometry, settings UI/preview, admission, package
+integration and all player-workflow acceptance remain open; no task below is closed by host tests.
+The next reviewed tranche adds a transparent guarded registration observer and a pass-local atomic
+batch, with evidence in `artifacts/Megamod/P0-B/messages-native-observer-handoff.md`. The orchestrator
+approved keeping frame/window timing and callback identity as the next independent boundary before
+native registration or common UI; no S071 obligation was removed.
+
 - [ ] 1.1 Resolve BMP-Q1–4 against the selected 1.7 build: native draw/lesson ordering, actual visible bar extensions, logical viewport and Unity clipping/input.
 - [ ] 1.2 Create each actual target document and index entry with minimal semantic admission, atomic contribution boundaries, effective foreign code, later-repatch behavior, fallback and native workflow.
-- [ ] 1.3 Complete exact provider/consumer analysis needed for claimed support; retain original authority and unsupported-bar fallback without source identity spoofing or whole-product incompatibility flags.
+- [ ] 1.3 Complete exact deliberately used bar-provider contract analysis and unsupported-bar fallback. Map the original to a bounded startup warning and best-effort ordinary placement-off behavior without changing stored preferences; exclude original API/consumer/facade and coexistence work, source identity spoofing and whole-product incompatibility flags.
 
 ## 2. Native placement and fitting
 
@@ -25,7 +41,7 @@
 
 - [ ] 4.1 Record RED/GREEN for compatible foreign patches, unrelated instruction changes, incompatible/ambiguous anchor use, skip-original interactions, actual incoming transpiler validation and unchanged-stream failure.
 - [ ] 4.2 Verify repeated startup/repatching, validator/install exceptions, owned-only atomic rollback and bounded per-skipped-enabled-patch warning contents without partial X/Y placement.
-- [ ] 4.3 Verify direct S001 effective-presentation bounds, including hidden/reduced entries, adjustable weapons and retained update timing, plus original sole-provider behavior and absent/present/changed optional adapters with distinct manual/automatic fallback.
+- [ ] 4.3 Verify direct S001 effective-presentation bounds, including hidden/reduced entries, adjustable weapons and retained update timing, plus absent/present/changed deliberately used optional adapters with distinct manual/automatic fallback. Original-loaded coverage is bounded warning/ordinary-off behavior with retained preferences, not sole-provider or coexistence proof.
 
 ## 5. Review and native acceptance
 
@@ -33,6 +49,6 @@
 - [ ] 5.2 Independently review the scoped implementation, resolve findings and rerun affected checks before the final native run.
 - [ ] 5.3 In a fresh minimized isolated game on the reviewed build, produce real messages through ordinary player workflows, inspect placement across rows/groups/labels/weapons/lessons/map/world views and test native hover/target/quest/dismiss actions.
 - [ ] 5.4 Through native settings and view controls, verify effective scopes, menu-disabled callbacks, reset/reload/save switching, UI scale/resolution, preview/history separation and small-screen overflow without direct state mutation as acceptance.
-- [ ] 5.5 Verify exact original/optional-provider absent/present/changed cases and coherent failure fallback; personally inspect causal before/action/after views rather than accepting logs, installed patches or a preview alone.
+- [ ] 5.5 Verify exact deliberately used optional-provider absent/present/changed cases and coherent failure fallback; personally inspect causal before/action/after views rather than accepting logs, installed patches or a preview alone. Limit original-source checks to startup warning, best-effort ordinary-off behavior, inactive-source handling and retained preferences; no coexistence compatibility matrix.
 - [ ] 5.6 Through native S001 settings, hide/reduce a lowest row and enlarge/move weapon icons; produce native messages and personally inspect clearance against the actually rendered content, retained group frames and unchanged bar settings/update timing.
 - [ ] 5.7 Complete the semantic/playability pass and root final native acceptance gate, retaining reviewed build/mod-list identity, action sequence, screenshots, supporting logs, normal-config hashes and cleanup before checking runtime tasks.

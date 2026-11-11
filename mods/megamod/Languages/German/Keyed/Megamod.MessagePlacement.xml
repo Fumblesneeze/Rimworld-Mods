@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Messages_Enabled>Nachrichtenpositionierung aktivieren</Megamod_Messages_Enabled>
+  <Megamod_Messages_EnabledHelp>Verwendet die eingestellten Abstände und passt Nachrichten an den Bildschirm an. Deaktivieren stellt die normale Position wieder her, ohne gespeicherte Abstände zu ändern.</Megamod_Messages_EnabledHelp>
+  <Megamod_Messages_Category>Oberfläche / Meldungen</Megamod_Messages_Category>
+  <Megamod_Messages_PositionOffset>Positionsversatz</Megamod_Messages_PositionOffset>
+  <Megamod_Messages_PositionOffsetHelp>Beide Koordinaten gemeinsam ändern, von −100% bis +100% der aktuellen Bildschirmgröße. Negative Werte können Meldungen über die Kolonistenleiste verschieben. Die Bildschirmbegrenzung hat Vorrang; zu große Meldungsstapel können abgeschnitten werden. Anwenden ändert nur die beiden Werte dieser Spalte.</Megamod_Messages_PositionOffsetHelp>
+  <Megamod_Messages_Horizontal>Horizontal (%)</Megamod_Messages_Horizontal>
+  <Megamod_Messages_Vertical>Vertikal (%)</Megamod_Messages_Vertical>
+  <Megamod_Messages_ApplyPair>Werte anwenden</Megamod_Messages_ApplyPair>
+  <Megamod_Messages_ResetPair>Auf 0 / 0 setzen</Megamod_Messages_ResetPair>
+  <Megamod_Messages_ResetPairHelp>Nur diese Spalte zurücksetzen. „Global verwenden“ und die andere Spalte bleiben unverändert.</Megamod_Messages_ResetPairHelp>
+  <Megamod_Messages_InvalidOffsetPair>Zwei endliche Zahlen zwischen −100 und 100 eingeben.</Megamod_Messages_InvalidOffsetPair>
+  <Megamod_Messages_BarIntegrationPending>Der automatische Abstand zur Kolonistenleiste ist noch nicht integriert.</Megamod_Messages_BarIntegrationPending>
+</LanguageData>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Content_IncidentExcluded>{0} ist durch die angewendeten Inhaltseinstellungen dieses Spielstands ausgeschlossen. Änderungen werden nach dem erneuten Laden wirksam.</Megamod_Content_IncidentExcluded>
+  <Megamod_Content_Category>Inhaltsauswahl</Megamod_Content_Category>
+  <Megamod_Content_IncidentKind>Ereignis</Megamod_Content_IncidentKind>
+  <Megamod_Content_AllowEntry>{0} zulassen ({1})</Megamod_Content_AllowEntry>
+  <Megamod_Content_ChoiceHelp>An lässt diesen Inhalt zu. Aus fordert seinen Ausschluss an. Spielstand- und globale Einstellungen werden nach Speichern und erneutem Laden angewendet; vorhandene Dinge bleiben erhalten.</Megamod_Content_ChoiceHelp>
+  <Megamod_Content_IncidentScope>Dieser erste Bereich steuert nur Ereignisse. Andere Inhaltsarten und Voreinstellungen sind hier noch nicht verfügbar.</Megamod_Content_IncidentScope>
+  <Megamod_Content_AllTypes>Alle Arten</Megamod_Content_AllTypes>
+  <Megamod_Content_AllSources>Alle Quellen</Megamod_Content_AllSources>
+  <Megamod_Content_Search>Name, Kennung, Quelle oder Art suchen</Megamod_Content_Search>
+  <Megamod_Content_Matching>{0} von {1} Ereignissen</Megamod_Content_Matching>
+  <Megamod_Content_NoMatches>Keine passenden Ereignisse.</Megamod_Content_NoMatches>
+  <Megamod_Content_AppliedAllowed>Angewendet: zugelassen.</Megamod_Content_AppliedAllowed>
+  <Megamod_Content_AppliedExcluded>Angewendet: ausgeschlossen.</Megamod_Content_AppliedExcluded>
+  <Megamod_Content_PendingAllow>Ausstehend: nach Speichern und erneutem Laden zulassen. Derzeit ausgeschlossen.</Megamod_Content_PendingAllow>
+  <Megamod_Content_PendingExclude>Ausstehend: nach Speichern und erneutem Laden ausschließen. Derzeit zugelassen.</Megamod_Content_PendingExclude>
+  <Megamod_Content_NextLoad>Gilt für das nächste neue oder geladene Spiel. Derzeit ist kein Spielstand aktiv.</Megamod_Content_NextLoad>
+  <Megamod_Content_ApplicationUnavailable>Für diesen Spielstand ist keine Ereignisrichtlinie angewendet. Angeforderte Einstellungen bleiben gespeichert.</Megamod_Content_ApplicationUnavailable>
+  <Megamod_Content_OriginalProvider>Das ursprüngliche Cherry Picker ist aktiv. Eigene Inhaltssteuerungen sind nicht verfügbar; gespeicherte Einstellungen bleiben erhalten.</Megamod_Content_OriginalProvider>
+  <Megamod_Content_PatchesUnavailable>Der Ereignisausschluss ist nicht verfügbar, weil seine erforderliche Integration nicht zugelassen wurde.</Megamod_Content_PatchesUnavailable>
+  <Megamod_Content_Ambiguous>Diese Inhaltskennung ist mehrdeutig und kann nicht sicher bearbeitet werden.</Megamod_Content_Ambiguous>
+  <Megamod_Content_Missing>Dieser Inhalt ist nicht mehr vorhanden. Seine gespeicherte Einstellung bleibt erhalten.</Megamod_Content_Missing>
+  <Megamod_Content_StaleChoice>Diese Filterauswahl ist nicht mehr verfügbar. Öffne das Menü erneut.</Megamod_Content_StaleChoice>
+  <Megamod_Content_DefinitionsInvalidated>Nach dem Neuladen oder Löschen der Definitionen sind die Ereignisoptionen nicht verfügbar. Gewünschte Einstellungen und zuvor angewendete Entscheidungen bleiben erhalten; die Wiederherstellung nach dem Neuladen ist noch nicht verfügbar.</Megamod_Content_DefinitionsInvalidated>
+  <Megamod_Content_OpenBrowser>Inhalte auswählen…</Megamod_Content_OpenBrowser>
+  <Megamod_Content_Enabled>Inhaltsausschlüsse aktivieren</Megamod_Content_Enabled>
+  <Megamod_Content_EnabledHelp>Ausschlüsse gelten beim Starten oder Laden eines Spiels. Ausschalten behält alle Einzel- und Vorgabenentscheidungen; Änderungen benötigen Speichern und Neuladen.</Megamod_Content_EnabledHelp>
+  <Megamod_Content_DisabledRetained>Inhaltsausschlüsse sind für dieses Spiel ausgeschaltet. Einzel- und Vorgabenentscheidungen bleiben erhalten.</Megamod_Content_DisabledRetained>
+</LanguageData>

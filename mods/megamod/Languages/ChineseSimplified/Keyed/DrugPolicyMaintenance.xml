@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugPolicy_Category>药物政策</Megamod_DrugPolicy_Category>
+  <Megamod_DrugPolicy_Enabled>启用药物政策维护</Megamod_DrugPolicy_Enabled>
+  <Megamod_DrugPolicy_EnabledHelp>维护可用的药物政策并修复支持的预设。更改将在重启 RimWorld 后生效。现有政策编辑和分配将保留。</Megamod_DrugPolicy_EnabledHelp>
+  <Megamod_DrugPolicy_GlobalOnlyReason>此为全局启动选项：初始政策在存档激活前创建。请重启 RimWorld 以应用更改。</Megamod_DrugPolicy_GlobalOnlyReason>
+</LanguageData>

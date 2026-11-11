@@ -39,9 +39,10 @@ this change specifies navigation of the outer native settings chooser.
 
 Future code: guarded native chooser integration, per-dialog metadata projection and narrow optional
 HugsLib adapter. Core and **Harmony (`brrainz.harmony`)** required when implemented. HugsLib and its
-consumers are optional; no DLC or XML Extensions operation required. Original Mod Options Sort
-suppresses the owned chooser overlap, preserving its behavior and native/provider access.
-That preserves otherwise-working routes, not a guarantee to repair pre-existing source/provider failures.
+consumers are optional; no DLC or XML Extensions operation required. Active original Mod Options Sort
+triggers a bounded startup warning and best-effort ordinary feature-off handling for the owned chooser,
+without modifying the original or stored preferences. No original API/drop-in or coexistence work is
+included; required native and deliberately used HugsLib navigation checks remain.
 No source assembly, private Harmony, Gateway or repository product dependency is added.
 
 [Research](../../../mods/megamod/docs/refinement/2026-11-03-mod-options-sort-research.md) records full

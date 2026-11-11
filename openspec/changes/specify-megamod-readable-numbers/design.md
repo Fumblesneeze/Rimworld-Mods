@@ -42,6 +42,13 @@ literal ordinal substring semantics over original visible text, not the source o
 Settings validate full punctuation pairs and exact exclusion lists before committing. These are
 owned corrections; do not silently inherit the source's permissive custom character failures.
 
+Implementation clarification, 2026-11-07: the observable "one character" punctuation rule is
+interpreted as one Unicode scalar, not one UTF-16 code unit. This inferred assumption is now explicit
+in the capability: supplementary punctuation/symbols are eligible, while multi-scalar sequences,
+unpaired surrogates, control/format and combining-only marks are not. Ordinary space is the only
+accepted invisible group mark and becomes nonbreaking. The complete preset plus dormant custom pair
+remains one validated setting; a change to a dormant pair is still validated even when a preset is active.
+
 ### Admit native display paths as coherent groups
 
 Prefer appropriate native/owned quantity surfaces and narrowly guarded shared text hooks over an
@@ -107,12 +114,13 @@ spam. No new bottom tab, bottom-right gameplay toggle or ordinary diagnostics se
   integration is optional. Inspect actual current methods/overloads before supported coverage.
   Source Analyzer.xml is its own profiling registration, not a required owned external type facade.
 
-All adapters require canonical package detection plus consumed type/member/semantics checks and
-absent-safe loading. The installed bounded text audit found no direct external source caller of
-Readable Numbers public utilities; binary/reflection consumers remain RN-Q2. Do not spoof the source
-assembly/package or expose its mutable global suppression flag without a proven contract.
-Co-installed source suppresses owned formatting overlap, leaving raw/native values available to all
-owned callers. Other owned feature actions remain enabled; no original is automatically removed.
+All deliberately used adapters require canonical package detection plus consumed type/member/semantics
+checks and absent-safe loading. Original Readable Numbers API/consumer audits, public utility/flag
+facades and drop-in/coexistence work are excluded. Do not spoof its assembly or package.
+An active source triggers a bounded startup warning and best-effort suppression through the ordinary
+owned formatter-off path, with the same behavior and timing as manually off. Keep stored preferences,
+unrelated owned features and the original untouched. Installed-but-inactive sources do not trigger
+this rule. No guarantee that only the source formats text or that all earlier effects are undone follows.
 
 ## Risks / Trade-offs
 
@@ -134,7 +142,7 @@ postcondition contracts before action. Disabling formatting preserves preference
 
 ## Verification plan and open questions
 
-RN-Q1–4 retain actual semantic targets, current optional providers/consumers, edge/performance evidence
+RN-Q1–4 retain actual semantic targets, deliberately used optional display integrations, edge/performance evidence
 and implementation acceptance. Pure formatting, threshold, exclusions, invalid config, context restoration
 and scope resolution fit ordinary Unit tests; explicitly owned hook cases belong in Harmony with cleanup.
 Loaded UI/translation/provider/render behavior belongs in fresh isolated native runs. Tests must demonstrate
@@ -142,5 +150,6 @@ multiple quantities in one label, same-string/different-context ambiguity, repea
 fractions, overlapping/escaped exclusions, long expansion, valid resets and game switches.
 After independent runtime review, native actions must open quest rewards/stats/map labels/settings,
 edit/copy real fields, inspect dates/history/save lists and admitted provider displays. Personally
-inspect before/action/after screenshots, including seven languages/scales and disabled/co-installed
-cases. Record actual text/layout and unchanged underlying values. No live acceptance from this prose.
+inspect before/action/after screenshots, including seven languages/scales and disabled/used-integration
+cases. Original-loaded checks cover only warning/ordinary-off behavior and retained preferences, not
+coexistence support. Record actual text/layout and unchanged underlying values. No live acceptance from this prose.

@@ -13,7 +13,7 @@ Origin: replacement, queue **S020**, **Cherry picker scroll bars**, `lucius.cher
 - Specify both selectors, case-insensitive all-word search, visible matching counts, empty results,
   scrolling, resizing into columns, source icons and exact selection/cancellation behavior.
 - Compose them directly into the future owned content-configuration page. This selected add-on
-  receives its own change; broader Cherry Picker behavior and contracts remain queued as S038.
+  receives its own change; broader owned content-configuration behavior remains queued as S038.
 - Propose identity-safe source selection when names collide, readable full labels and visibly
   unavailable choices, correcting limitations found in the source without inventing new settings.
 - Keep browsing transient and separate from changing enabled content. No extra bottom tab, generic
@@ -40,9 +40,11 @@ This owned UI slice needs no new external runtime dependency or Harmony/XML patc
 Harmony and Cherry Picker requirements describe its adapter, not a requirement to patch that mod
 again. If integration later needs a patch, its owning target spec and semantic admission must precede
 implementation; XML Extensions becomes required if an XML Extensions operation is introduced.
-No external adapter, original package impersonation or automatic source settings migration is promised.
-The source add-on can remain attached to its original provider without modifying our owned controls;
-S038 must settle coexistence of the underlying content configuration before activation.
+No original API/consumer audit, compatibility facade, package impersonation or source settings import
+is in scope. An active source add-on triggers a bounded startup warning and best-effort use of the
+ordinary selector-feature off path, without changing saved preferences or the original. This does
+not promise coexistence safety. S038 governs activation of the underlying owned content page;
+selector handling cannot reactivate a withheld host feature.
 
 [Research and recorded questions](../../../mods/megamod/docs/refinement/2026-11-02-cherry-picker-scrollbars-research.md)
-retain provenance, consumed callbacks, proposed corrections and remaining native verification.
+retain provenance, observed callback behavior, proposed corrections and remaining native verification.

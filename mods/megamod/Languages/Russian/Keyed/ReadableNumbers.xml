@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Numbers_Category>Формат чисел</Megamod_Numbers_Category>
+  <Megamod_Numbers_Enabled>Включить</Megamod_Numbers_Enabled>
+  <Megamod_Numbers_EnabledHelp>Форматировать отображаемые количества, не изменяя их значения.</Megamod_Numbers_EnabledHelp>
+  <Megamod_Numbers_MinimumIntegerDigits>Минимум цифр целой части</Megamod_Numbers_MinimumIntegerDigits>
+  <Megamod_Numbers_MinimumIntegerDigitsHelp>Группировать число, только если его целая часть содержит не меньше указанного количества цифр (от 4 до 2 147 483 647).</Megamod_Numbers_MinimumIntegerDigitsHelp>
+  <Megamod_Numbers_MinimumIntegerDigitsInvalid>Минимум цифр целой части должен быть целым числом от 4 до 2 147 483 647.</Megamod_Numbers_MinimumIntegerDigitsInvalid>
+  <Megamod_Numbers_PunctuationInvalid>Выберите два разных знака пунктуации или символа, по одному для каждого поля. Пробел допустим только для группировки.</Megamod_Numbers_PunctuationInvalid>
+  <Megamod_Numbers_Punctuation>Разделители</Megamod_Numbers_Punctuation>
+  <Megamod_Numbers_PunctuationHelp>Готовые форматы сохраняют ваши символы. В своём формате измените оба символа и примените всю пару.</Megamod_Numbers_PunctuationHelp>
+  <Megamod_Numbers_PresetCycleHelp>Щелчок выбирает следующий формат; свои символы сохраняются.</Megamod_Numbers_PresetCycleHelp>
+  <Megamod_Numbers_GroupMark>Группы: свой знак</Megamod_Numbers_GroupMark>
+  <Megamod_Numbers_DecimalMark>Дробь: свой знак</Megamod_Numbers_DecimalMark>
+  <Megamod_Numbers_ApplyPair>Применить пару</Megamod_Numbers_ApplyPair>
+  <Megamod_Numbers_Preview>Предпросмотр (сохранено)</Megamod_Numbers_Preview>
+  <Megamod_Numbers_CommaPeriod>Запятая / точка</Megamod_Numbers_CommaPeriod>
+  <Megamod_Numbers_PeriodComma>Точка / запятая</Megamod_Numbers_PeriodComma>
+  <Megamod_Numbers_SpacePeriod>Пробел / точка</Megamod_Numbers_SpacePeriod>
+  <Megamod_Numbers_SpaceComma>Пробел / запятая</Megamod_Numbers_SpaceComma>
+  <Megamod_Numbers_ApostrophePeriod>Апостроф / точка</Megamod_Numbers_ApostrophePeriod>
+  <Megamod_Numbers_ApostropheComma>Апостроф / запятая</Megamod_Numbers_ApostropheComma>
+  <Megamod_Numbers_Custom>Свой формат</Megamod_Numbers_Custom>
+  <Megamod_Numbers_Grouping>Группировка цифр</Megamod_Numbers_Grouping>
+  <Megamod_Numbers_GroupingHelp>Нажмите для переключения: по три цифры, сначала три, затем по две, по четыре или без группировки. Группируются только цифры целой части; разделители и минимальное число цифр продолжают действовать.</Megamod_Numbers_GroupingHelp>
+  <Megamod_Numbers_GroupingInvalid>Выберите «По три», «Сначала три, затем по две», «По четыре» или «Нет».</Megamod_Numbers_GroupingInvalid>
+  <Megamod_Numbers_GroupingThree>По три цифры</Megamod_Numbers_GroupingThree>
+  <Megamod_Numbers_GroupingThreeThenTwo>Сначала три, затем по две</Megamod_Numbers_GroupingThreeThenTwo>
+  <Megamod_Numbers_GroupingFour>По четыре цифры</Megamod_Numbers_GroupingFour>
+  <Megamod_Numbers_GroupingNone>Нет</Megamod_Numbers_GroupingNone>
+  <Megamod_Numbers_SmallDecimals>Десятичный формат для малых чисел</Megamod_Numbers_SmallDecimals>
+  <Megamod_Numbers_SmallDecimalsHelp>Использовать выбранный десятичный разделитель ниже минимального числа цифр целой части. Начиная с этого порога он применяется всегда, даже без группировки. Дробные цифры и нули не меняются.</Megamod_Numbers_SmallDecimalsHelp>
+</LanguageData>

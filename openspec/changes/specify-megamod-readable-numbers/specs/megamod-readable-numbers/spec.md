@@ -71,10 +71,13 @@ spaces so an individual number does not split at group separators. The selected 
 custom pair form one punctuation preference with one inheritance choice; the two marks cannot inherit
 from different scopes. Selecting another preset retains the saved custom pair, and returning to
 Custom restores it, including after saving/loading. A custom pair requires one
-character for each role and distinct characters. A group separator can be a printable punctuation
+Unicode scalar for each role and distinct characters. A supplementary-plane symbol counts as one
+character; a multi-scalar sequence or unpaired surrogate is invalid. A group separator can be a printable punctuation
 or symbol character, or a space treated as nonbreaking; a decimal mark must be a visible printable
 punctuation or symbol character. Digits, letters, plus/minus signs, markup delimiters `<`, `>` and
-`&`, line/control characters, empty input and multiple characters are rejected with an explanation.
+`&`, line/control/format characters, combining-only marks, empty input and multiple characters are
+rejected with an explanation. The ordinary space is the only invisible character accepted, and only
+for grouping; it is rendered as a nonbreaking space.
 Edits are provisional until the complete pair is valid; invalid input cannot silently replace it
 with another pair or corrupt the effective format. Provide examples of negative, large and small
 decimal quantities for the current choices.
@@ -90,6 +93,12 @@ decimal quantities for the current choices.
 #### Scenario: Return to a saved custom pair
 - **WHEN** a scope has saved Custom `#/@`, switches to comma/period, saves/reloads and then selects Custom again
 - **THEN** `#/@` returns unchanged; selecting the preset did not overwrite the stored custom pair.
+
+#### Scenario: Validate complete visible characters
+- **WHEN** a custom mark is a single supplementary-plane punctuation or symbol character
+- **THEN** it is treated as one mark rather than rejected for occupying two UTF-16 code units.
+- **WHEN** a mark instead contains a zero-width format character, a combining-only mark, an unpaired surrogate or multiple Unicode scalars
+- **THEN** the entire proposed pair is rejected with an explanation and the previous preference remains effective.
 
 #### Scenario: Inherit a complete punctuation preference
 - **WHEN** a save switches Use global on while global punctuation uses Custom `#/@`
@@ -177,6 +186,9 @@ inherit global. A save override does not modify globals or another save. Re-enab
 retains dormant overrides, and inherited values follow later global edits. At the main menu global
 controls remain usable while every save control and write path is disabled with an explanation.
 Valid changes take effect by the next normal redraw, including existing labels, with no restart.
+Malformed stored preferences use that complete row's built-in value with an explanation in their
+existing scope. An explicit save override with a missing value remains an invalid override rather
+than silently becoming inheritance; reading it does not rewrite its payload or another scope.
 Global Restore defaults restores all listed built-in global values, including the preset/custom
 pair, grouping and exclusions, without changing save overrides or their inheritance flags.
 The current-save reset is labeled Use global for all: it enables inheritance for every formatting
@@ -196,6 +208,10 @@ without stale text from the previous scope. Main-menu display uses global values
 #### Scenario: Configure from the main menu
 - **WHEN** the section is opened without a loaded game
 - **THEN** global preferences and preview work, while current-save inheritance, edits and resets are unavailable in both UI and write behavior.
+
+#### Scenario: Load an explicit override whose stored value is missing
+- **WHEN** the global minimum integer digits is nine and a save explicitly overrides it but contains no stored override value
+- **THEN** that save uses the built-in threshold four with an invalid-stored-value explanation, retains its override state and leaves the global nine unchanged.
 
 #### Scenario: Reset a mixed current-save configuration
 - **WHEN** globals use Three then two grouping and threshold five, while the save overrides grouping to Four digits and inherits threshold with a dormant override of six, and the player chooses Use global for all
@@ -240,13 +256,15 @@ Coupled measurement/drawing/protection changes apply atomically; failure leaves 
 original text and interaction intact. A patch changing a label argument must verify that the target
 still consumes it as required, not merely that a method name exists. Failure cannot remove foreign
 patches, damage stored settings or leave only half of a display path active. If original Readable
-Numbers is active, suppress the overlapping owned formatter, warn once for that feature decision
-and leave other owned displays/actions usable with native/source formatting. Do not remove the
-source automatically, impersonate its package or silently migrate its settings.
+Numbers is active, warn once and attempt best-effort suppression through the ordinary owned formatter-off
+path with the same behavior and timing as manually off. Retain stored preferences and unrelated owned
+displays/actions; do not modify the source, impersonate its package or migrate its settings. An
+inactive installed source SHALL NOT trigger this policy. No original API or coexistence guarantee is made.
 
 #### Scenario: Both formatters are installed
 - **WHEN** startup finds original Readable Numbers active alongside the owned feature
-- **THEN** only the selected source formatter owns the overlapping presentation and a warning explains the owned suppression, without disabling search, stock counts or HUD actions.
+- **THEN** a bounded startup warning explains best-effort ordinary formatter-off handling, without disabling search, stock counts or HUD actions or rewriting stored preferences
+- **AND** the warning does not promise source-only presentation, rollback of prior effects or coexistence compatibility.
 
 #### Scenario: A measurement target is no longer safe
 - **WHEN** the required paired measurement contract fails admission

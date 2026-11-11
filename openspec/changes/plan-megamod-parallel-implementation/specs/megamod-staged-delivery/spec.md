@@ -7,8 +7,10 @@ This capability specifies observable delivery records and acceptance states, not
 
 ### Requirement: Bounded assignments preserve feature coverage
 The implementation plan SHALL assign every selected feature to a primary chunk, record its
-dependencies and shared-component owner, and preserve its original observable specification and
-unfulfilled tasks. An implementer MUST receive a bounded assignment with explicit edit ownership.
+dependencies and shared-component owner, and preserve its currently authorized observable
+specification and unfulfilled tasks. Explicit later user scope changes SHALL supersede earlier
+obligations with a recorded disposition. An implementer MUST receive a bounded assignment with
+explicit edit ownership.
 
 #### Scenario: Parallel consumers need the same shared data
 - **WHEN** two chunks need Thing data or another common capability
@@ -46,6 +48,16 @@ silently remove requested functionality or weaken acceptance and safety requirem
 - **WHEN** an unforeseen blocker makes a chunk unsuitable for the current part
 - **THEN** the revised roadmap retains its feature coverage and outstanding verification obligations
 - **AND** the current part's manifest explicitly identifies its reduced scope and deferred dependency.
+
+#### Scenario: The user excludes original-mod compatibility work
+- **WHEN** the user removes original API/drop-in compatibility work while retaining startup warning and best-effort ordinary feature-off behavior
+- **THEN** the plan and current assignment scope remove the superseded consumer/facade/coexistence tasks rather than treating them as pending release blockers
+- **AND** independent source-behavior research, game-target admission, genuine external integrations and owned save continuity remain required.
+
+#### Scenario: The user adds drug-policy references during implementation
+- **WHEN** tolerance conditions and safe policy generation are added to the selected feature list
+- **THEN** each has a stable queue identity, a primary chunk and its own observable specification before implementation
+- **AND** the generator remains an independent implementation of the idea, with its safety assumptions and unresolved research visible rather than inherited from the source code.
 
 ### Requirement: Implementation handoff includes reviewable native scenarios
 Each ready chunk SHALL provide focused nonzero host-test evidence, independent review dispositions,
