@@ -31,12 +31,20 @@ remain the integration gate. Exact local receipts are retained under
 `artifacts/Implementation/megamod-p0/s138-native-persistence-batch/`; this is not full S138 acceptance.
 
 Revision20 current status: persistence support is now registered and reviewed; root observed the
-native copy/edit/save/reload workflow on its retained exact build. Failed-overwrite and late-load
-gates remain open. Additive decision, social-candidate and width-calculator guards now have47
+native copy/edit/save/reload workflow on its retained exact build. The scoped failed-overwrite
+and late-load workflows also passed reviewed fresh runs:55steps and38steps, personally inspected
+causal captures, exact retained-file hashes/diagnostics and completed cleanup. Late-load leaves a
+rejected partial game with readable restart guidance; automatic native scene recovery is not
+claimed. Exact builds and limitations are retained in
+`artifacts/Implementation/megamod-p0/revision20-native-verification.md`. These component gates do
+not accept the full tolerance editor/enforcement feature. Additive decision, social-candidate and
+width-calculator guards now have47
 distinct focused Harmony cases (9/28/10), with independent review findings resolved through
 actual alias and floating-cancellation RED/GREEN regressions. These guards remain unregistered;
 full editor/route resolution and atomic enablement are still required. The separate editor-call
-tracer, settings/editor drafts and native runtime composition are incomplete. Current evidence:
+guard has a reviewed committed checkpoint0e1c065 including executable arithmetic, reachable-read
+and copied-rectangle alias checks. Settings/editor integration and native runtime composition
+remain incomplete. Current evidence:
 `artifacts/Implementation/megamod-p0/s138-enforcement-editor-batch/handoff.md`.
 
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.

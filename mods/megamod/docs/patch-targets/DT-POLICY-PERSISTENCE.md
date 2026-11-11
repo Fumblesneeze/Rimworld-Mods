@@ -115,5 +115,11 @@ intended failure latch requires restart. Root owns reviewed build/native observa
 `megamod.drug-tolerance.late-load-failure` separately injects a PostLoadInit-only owned-field fault
 after a successful native baseline, then clicks the actual native Load button. It requires native
 failed-load state, the exact owned notice, and an unchanged source-file hash. It runs alone and
-does not mutate disposed Games during cleanup. Both fault scenarios remain unexecuted until the
-orchestrator observes them on the reviewed build.
+does not mutate disposed Games during cleanup. Root observed both scoped fault workflows on
+reviewed builds: failed-overwrite group `20261111T203059115Z-91360763f4bb4740bcd57dea107d3f16`
+and late-load group `20261111T210922605Z-4f2205b82258422d8beb1a194e11fe24`. The latter correctly
+rejects the load but exposes a native partial-map disposal error; the player sees the native error
+then readable restart guidance. It does not promise automatic scene recovery. Final exact
+accounting and cleanup passed; local evidence is in
+`artifacts/Implementation/megamod-p0/revision20-native-verification.md`. Full tolerance controls
+and routine enforcement retain their separate native gates.

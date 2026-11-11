@@ -879,3 +879,24 @@ The third revision20 slot resolves S139 DG-Q1–3 calculation/native-content res
 with only its owned contract/research documents leased. This prepares the required generator
 implementation instead of bypassing its numeric prerequisites. DG-Q4 atomic publication and all
 runtime/native gates remain; no algorithm or universal-safety claim follows from research alone.
+
+Revision21 — continue the reviewed revision20 checkpoints with two disjoint implementation batches.
+S138 owns its feature implementation, matching focused host tests, seven `DrugTolerance.xml`
+catalogs and owned specs/target documents: finish editor-call machine-arithmetic and reachable-use
+admission, then contextual Apply/Cancel controls and the atomic scheduled/direct-joy/social/editor
+runtime. Existing persistence and fault fixtures stay root-owned. S139 owns its feature/tests/specs:
+finish the staged native transaction's complete validation, intended-choice verification, disposal,
+ID/failure/rollback cases, then constructor/getter admission. Its narrow shared C01 metadata-only
+projection needs an explicit shared-source milestone and independent review before consumption;
+existing publication/failure semantics remain unchanged. Root retains central registration,
+project links, canonical builds/packages, native scenarios, integration and commits.
+
+Source/test work can resume after the current native run has built, deployed and launched its
+reviewed immutable package. Workers cannot build/install the product or mutate that package; their
+source-linked host outputs stay separate. S138 initially leases Harmony/Unit outputs; S139 starts
+with Defs transaction cases and coordinates later Harmony/C01 work before compiling. This shortens
+the source freeze without changing the identity or acceptance of the already running process.
+The observed native late-load cleanup limitation is recorded under S138, with exact fixture
+accounting and required visible rejection; it does not remove native acceptance or promise recovery.
+All139 feature obligations, P0–P8 gates and later compositions remain allocated and unaccepted
+until their own evidence exists.
