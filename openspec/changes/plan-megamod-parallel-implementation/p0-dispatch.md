@@ -576,3 +576,15 @@ before selected native runs. Workers freeze compile inputs for root build/stagin
 they do not launch or install. Earlier component observations retain their exact build identity
 and do not accept later runtime changes. No feature, aggregate part or remaining comparator/native
 workflow obligation is removed by this scheduling change.
+
+Revision20 generator checkpoint9eab5a4 adds reviewed detached native facts and common preference
+definitions, with the reviewed body-part metadata correction and seven-language validation text.
+Neither is exposed through runtime UI. `generator_research` now owns DG-POLICY-CREATE preparation,
+publication and effective constructor/getter admission, plus its narrow metadata-only C01 inner
+callback projection; root retains project links, central wiring, installs, native workflows and
+commits. S138's reviewed decision/width/social tranches continue through targeted review fixes;
+the separate editor-call tracer is still incomplete and unregistered. Runner diagnostic declarations
+are compiled selected-test metadata with hash-bound private handoff, never a user-supplied ignore
+list. Root's next native batch remains the exact message-layout, failed-overwrite and late-load
+scenarios after the relevant reviewed freeze. No full fixture or original-provider matrix replay
+is implied, and every remaining feature/part obligation stays open.

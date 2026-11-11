@@ -22,6 +22,12 @@ inactive with an explanation. Unavailable or inapplicable drugs SHALL not gain i
 - **WHEN** the player turns off both scheduled and recreational use on a row with a chosen limit
 - **THEN** that limit remains visible as inactive and returns when either use is enabled again.
 
+#### Scenario: Edit a row without changing it until Apply
+- **WHEN** the player opens the row's contextual tolerance editor and changes Any or its numeric percentage
+- **THEN** the current policy choice remains unchanged until Apply, and Cancel discards the draft
+- **AND** Apply accepts only a finite number from 0 through 100 using the current numeric locale,
+  preserves an unchanged valid value exactly, and revalidates the current game, policy and row identity.
+
 ### Requirement: Any and numeric thresholds have explicit meanings
 With the feature enabled and available, routine use governed by a numeric choice SHALL require
 current chemical tolerance to be strictly below that percentage. No current tolerance condition
@@ -241,3 +247,14 @@ changed. The warning SHALL not claim full coexistence safety or rollback of ever
 #### Scenario: Required behavior is unavailable
 - **WHEN** the game cannot support this feature's required enforcement or editor
 - **THEN** the feature explains that its extra protection is unavailable and does not pretend that a displayed limit is enforced.
+
+#### Scenario: Retained choices are evaluated before the first policy-window paint
+- **WHEN** a supported save loads with retained tolerance choices and routine eligibility runs before the player opens its policy window
+- **THEN** the atomic feature uses a proved native allocation and a current main-thread measurement of translated labels and viewport to establish editor availability
+- **AND** it does not wait for a first paint to silently begin enforcing those choices.
+
+#### Scenario: Actual native layout cannot fit the contextual controls
+- **WHEN** a header or row supplies a rectangle that no longer supports the admitted native allocation and owned controls
+- **THEN** that reservation leaves the native rectangle intact, the full feature becomes visibly unavailable, and subsequent routine eligibility adds no tolerance veto
+- **AND** preferences and policy choices remain intact, existing selected jobs keep native execution, and recovery requires a fresh supported geometry assessment rather than elapsed time alone.
+- **AND** the initial allocation requires calculator input widths from600 through1300 GUI units, at least600 native-column units and at least120 owned-column units or wider measured translated text; unsupported fits remain unavailable until a supported assessment succeeds.

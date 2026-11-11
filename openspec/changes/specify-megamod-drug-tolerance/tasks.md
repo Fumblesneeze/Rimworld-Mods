@@ -30,6 +30,15 @@ with focused evidence. Root registration/build/final-review/native evidence
 remain the integration gate. Exact local receipts are retained under
 `artifacts/Implementation/megamod-p0/s138-native-persistence-batch/`; this is not full S138 acceptance.
 
+Revision20 current status: persistence support is now registered and reviewed; root observed the
+native copy/edit/save/reload workflow on its retained exact build. Failed-overwrite and late-load
+gates remain open. Additive decision, social-candidate and width-calculator guards now have47
+distinct focused Harmony cases (9/28/10), with independent review findings resolved through
+actual alias and floating-cancellation RED/GREEN regressions. These guards remain unregistered;
+full editor/route resolution and atomic enablement are still required. The separate editor-call
+tracer, settings/editor drafts and native runtime composition are incomplete. Current evidence:
+`artifacts/Implementation/megamod-p0/s138-enforcement-editor-batch/handoff.md`.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.

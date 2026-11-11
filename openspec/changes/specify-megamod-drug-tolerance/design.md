@@ -247,3 +247,17 @@ field alone does not invent a tolerance effect. It reads the first matching curr
 native `AddictionUtility.FindToleranceHediff`, without summing duplicates or caching pawn permission.
 A missing health list or encountered malformed null entry is unavailable rather than known absent;
 the host reader tests use only explicitly registered constructed Defs and native Hediff objects.
+
+The prospective editor gate must prove the native initial size, window margins, policy sidebar,
+scrollbar allowance and consumed calculator allocation before enabling retained restrictions.
+Measure the current translations and viewport on the main thread before routine selection; first
+paint is not an activation event. Reserve at least120 GUI units or the wider measured owned text,
+retain at least600 native units, and admit calculator widths only within600..1300. These bounds
+still require the real seven-language and narrow-window gate. Integer width deductions27/108 or
+combined135 and one native Single multiplication are supported; arbitrary ideal affine algebra
+is not a floating-point proof. Actual header and row inputs are rechecked before changing a Rect.
+An unsupported actual allocation invalidates the entire atomic group for subsequent decisions,
+preserves native controls and stored choices, and displays the reason. Recovery requires a fresh
+supported allocation/locale/viewport assessment; an already-open manager with an actual-input
+failure additionally needs successful validation of its current allocation. A timer alone cannot
+clear that failure. Selected native jobs retain the already specified in-flight behavior.
