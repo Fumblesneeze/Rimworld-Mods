@@ -5,6 +5,27 @@ namespace RimWorldDevGateway.Tests;
 [TestFixture]
 public sealed class NativeWindowInputContractTests
 {
+    [Test]
+    public void MousePassReceiptDistinguishesMissingRejectedAndDeliveredPasses()
+    {
+        var absent = new GatewayNativeMousePassGate();
+        Assert.That(absent.Seen, Is.False);
+        var rejected = new GatewayNativeMousePassGate();
+        Assert.That(rejected.BeforePass(true, "stale-window", false), Is.False);
+        rejected.AfterPass(true);
+        Assert.Multiple(() =>
+        {
+            Assert.That(rejected.Seen, Is.True);
+            Assert.That(rejected.Admitted, Is.False);
+            Assert.That(rejected.OriginalObserved, Is.True);
+            Assert.That(rejected.Dispatched, Is.False);
+            Assert.That(rejected.Rejection, Is.EqualTo("stale-window"));
+        });
+        var delivered = new GatewayNativeMousePassGate();
+        Assert.That(delivered.BeforePass(true, null, false), Is.True);
+        delivered.AfterPass(true);
+        Assert.That(delivered.Seen && delivered.Admitted && delivered.OriginalObserved && delivered.Dispatched, Is.True);
+    }
     [TestCase(false)]
     [TestCase(true)]
     public void PublicationLossRejectsActivePassBeforeAbsentOrDisownedProvenance(bool hasProvenance)

@@ -1,10 +1,34 @@
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace RimWorldDevGateway;
 
 // Pure callable-shape policy; inspecting it never initializes native input or Harmony.
 internal static class GatewayNativeWindowInputContract
 {
+    // The tiny native projection has two inspected forms: height-y and height-1-y.
+    // Bind the actual mouse vector, its x/y fields and host height; unknown transforms refuse.
+    public static double? MouseOriginOffset(IReadOnlyList<GatewayNativeInstructionShape> body,
+        MethodInfo mousePosition, MethodInfo displayHeight, FieldInfo x, FieldInfo y, ConstructorInfo point)
+    {
+        if (body.Count is not (11 or 13) || body.Any(item => item.Targets.Count != 0 || item.Blocks.Count != 0)) return null;
+        bool Is(int index, OpCode code, object? operand = null) => body[index].Opcode == code.Value && Equals(body[index].Operand, operand);
+        object? local = body[1].Operand;
+        if (local == null || !Is(0, OpCodes.Call, mousePosition) || !Is(1, OpCodes.Stloc, local) ||
+            !Is(2, OpCodes.Ldloc, local) || !Is(3, OpCodes.Ldfld, x) || !Is(4, OpCodes.Ldarg, 0) ||
+            !(Is(5, OpCodes.Callvirt, displayHeight) || Is(5, OpCodes.Call, displayHeight))) return null;
+        int suffix = 6;
+        double offset = 0;
+        if (body.Count == 13)
+        {
+            if (!Is(6, OpCodes.Ldc_R4, 1f) || !Is(7, OpCodes.Sub)) return null;
+            suffix = 8; offset = 1;
+        }
+        return Is(suffix, OpCodes.Ldloc, local) && Is(suffix + 1, OpCodes.Ldfld, y) &&
+            Is(suffix + 2, OpCodes.Sub) && Is(suffix + 3, OpCodes.Newobj, point) && Is(suffix + 4, OpCodes.Ret)
+            ? offset : null;
+    }
+
     public static bool SupportsWindowIdentity(int nativeId, bool isImmediateWindow)
         // WindowStack.Add uses a zero-initialized counter; zero is an ordinary window ID.
         => nativeId >= 0 && !isImmediateWindow;
@@ -112,6 +136,10 @@ internal sealed class GatewayNativeMousePassGate
 {
     private bool seen;
     private bool admitted;
+    public bool Seen => seen;
+    public bool Admitted => admitted;
+    public bool OriginalObserved { get; private set; }
+    public string? Rejection { get; private set; }
     public bool Dispatched { get; private set; }
     // True preserves an unrelated pass; false rejects this invocation; null requires owned validation.
     public static bool? BeforeProvenance(bool exactActiveFrame, bool provenAuthority, bool providerAvailable,
@@ -124,10 +152,15 @@ internal sealed class GatewayNativeMousePassGate
     {
         if (seen) return false;
         seen = true;
+        Rejection = rejection;
         admitted = terminalPrefix && originalWillRun && rejection == null && !stopRequested;
         return admitted;
     }
-    public void AfterPass(bool originalRan) => Dispatched |= admitted && originalRan;
+    public void AfterPass(bool originalRan)
+    {
+        OriginalObserved |= originalRan;
+        Dispatched |= admitted && originalRan;
+    }
     public void ApplyReleaseTail(bool ownedRelease, int value, Action<int> nativeSetter)
     {
         if (ownedRelease && !Dispatched && value == 0) return;

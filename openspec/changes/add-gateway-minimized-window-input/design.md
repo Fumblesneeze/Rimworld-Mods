@@ -22,6 +22,34 @@ background OS input, supporting uninspected 1.6 input internals, or accepting ga
 
 ## Decisions
 
+### 2026-11-11 current-beta dispatch diagnosis
+
+The installed 1.7.5005 rev1082 runtime produced `native_input_not_dispatched` on the first enabled
+checkbox click in group `20261111T150038302Z-48cdb0c130a64b82aad38a2ed14ad6d6`.
+The original receipt reported neither press nor release dispatched and successful cleanup. Its
+generic failure could mean an omitted outer dispatch or an unconfirmed inner mouse pass, so it
+cannot identify pointer-scope lifetime as the cause. Standalone version1 input remains supported.
+
+Retain bounded primitive diagnostics from the existing gesture boundaries: queued edge observation,
+outer original observation, count of captured native/owned passes, last event kind, and whether
+the owned pass was seen, admitted, observed to run, or rejected. These are receipt observations,
+not a new dispatcher, an input fallback, or proof of a UI outcome. One fresh unchanged-checkbox
+workflow on the reviewed diagnostic build must determine the next correction before speculative
+input changes. Historical 1.7.5000 evidence does not accept this changed native runtime.
+
+The diagnostic rerun `20261111T151045374Z-8795e31c6e9f4391a038cbed92ac6043` confirmed outer
+dispatch and a queued press, but rejected the owned mouse pass as `native_mouse_pass_changed`.
+Read-only comparison found the concrete difference: native `ReadPhysMouse` changed from
+`height - y` to `height - 1 - y`. The prior inverse sent each click one rendered pixel too high.
+
+Resolve the offset from that tiny native projection's actual semantic sequence: mouse-position
+getter, shared vector local, x field, host display height, optional subtraction of one, y field,
+subtraction and Vector2 construction. Normalize harmless nops and local numbering using the existing
+metadata reader. Admit only the two inspected mappings; no arbitrary affine-transform interpreter
+or game-version hash allowlist. Each captured geometry stores its admitted inverse offset. Existing
+event-pass coordinate validation remains authoritative for effective/later projection changes and
+refuses mismatches before delivery; source-body inspection alone does not certify foreign rewrites.
+
 - Reuse the engine input queue used by its window bridge, capability-detected by the full consumed
   member shapes. Do not create a second GUI dispatcher or temporarily replace product outcomes.
   Exact game hashes identify research/builds, not sole runtime admission predicates.

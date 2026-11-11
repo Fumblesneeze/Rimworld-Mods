@@ -40,6 +40,20 @@ public sealed class NativeWindowLeaseTests
         Assert.That(point.InputY, Is.EqualTo(720));
     }
 
+    [TestCase(0)]
+    [TestCase(1)]
+    public void NativeProjectionRoundTripsBothInspectedPixelOrigins(double originOffset)
+    {
+        var view = new GatewayNativeWindowGeometry(0, 0, 1600, 900, 1, 1600, 900, originOffset);
+        foreach (double requestedY in new[] { 0d, 413d, 899d })
+        {
+            var point = view.ResolvePoint(946, requestedY);
+            Assert.That(point.Error, Is.Null);
+            double nativeGuiY = 900 - originOffset - point.InputY;
+            Assert.That(nativeGuiY, Is.EqualTo(requestedY));
+        }
+    }
+
     [TestCase(149, 180)]
     [TestCase(300, 74)]
     [TestCase(600, 180)]

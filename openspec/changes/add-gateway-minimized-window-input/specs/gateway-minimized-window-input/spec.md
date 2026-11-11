@@ -79,6 +79,12 @@ pressing a nearby control. It SHALL revalidate context before each pending gestu
 - **WHEN** the current runtime cannot supply the required native input operations
 - **THEN** discovery reports the capability unavailable and invocation performs no desktop fallback
 
+#### Scenario: Native pixel origin changes between supported beta runtimes
+- **WHEN** native mouse projection uses an admitted height-minus-y or height-minus-one-minus-y mapping
+- **THEN** captured-window input uses that mapping's inverse and reaches the exact requested rendered coordinate
+- **AND** an unrecognized mapping is unavailable rather than using a guessed offset
+- **AND** a later changed effective projection is refused before mouse delivery if its coordinates differ.
+
 #### Scenario: Another component changes a prepared mouse event
 - **WHEN** another runtime component changes the prepared mouse event before its native delivery
 - **THEN** the Gateway rejects the changed owned gesture instead of forwarding it as unrelated input
@@ -92,6 +98,13 @@ accepted UI results. They SHALL reject incompatible preexisting held input rathe
 the user's controls. Result evidence SHALL distinguish request acceptance, dispatched input,
 completion, rejection and partial failure. A successful dispatch SHALL NOT claim the requested
 gameplay outcome occurred.
+
+#### Scenario: Native dispatch completes without confirmed mouse delivery
+- **WHEN** a click fails because its owned native mouse pass was not confirmed
+- **THEN** its retained receipt distinguishes queued input edges, observed outer dispatch, captured
+  native and owned mouse passes, and the owned pass admission/delivery result
+- **AND** absent observations remain false or absent rather than implying the control changed
+- **AND** the same failure and cleanup rules apply without retrying or bypassing native controls.
 
 #### Scenario: Cancellation after a press
 - **WHEN** cancellation arrives after an injected press and before the gesture completes

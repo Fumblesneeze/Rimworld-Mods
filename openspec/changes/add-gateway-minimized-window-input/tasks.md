@@ -92,3 +92,14 @@ product behavior; adverse pointer ownership/reentry cases currently have host ev
 - [ ] 3.1 Independently review final Gateway/shared/MCP wiring and affected native scenarios, resolve findings, rerun only affected tests/builds and validate OpenSpec/package boundaries.
 - [ ] 3.2 Personally exercise and inspect the reviewed operation through real native dialogs in fresh minimized1.7 runs, including cancellation/partial completion, context replacement, distinct supported UI scales and main-menu restrictions. Retain exact-build evidence and cleanup under root AGENTS.
 - [ ] 3.3 Document the typed operation, supported runtime/limits, retained evidence and remaining limitations. Reuse it in the megamod P0 scenarios without claiming those product workflows accepted by this tooling run.
+
+### 1.7.5005 projection correction — 2026-11-11
+
+The native mouse origin changed to height-minus-one-minus-y. The correction admits either inspected
+projection, applies its exact inverse, and retains bounded input-phase diagnostics. Independent review
+found no actionable issue; 89 focused host checks passed. On the reviewed build, native checkbox run
+`20261111T153957927Z-d4d062a74ed94ff99f1257d9a921b50a` passed. Root personally inspected all four
+captures: initial unchecked controls, one native change, enabled checked with disabled unchanged, and
+the native console. Normal ModsConfig/Prefs hashes were unchanged and owned cleanup completed.
+Evidence: `artifacts/Implementation/megamod-p0/revision19-gateway-verification.md`.
+This renews only the basic click/console scope for 1.7.5005; wider section3 gates remain open.

@@ -108,7 +108,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             if (!GatewayNativeWindowInputContract.SupportsWindowIdentity(window.ID, window is ImmediateWindow)) continue;
             Rect bounds = window.windowRect;
             var geometry = new GatewayNativeWindowGeometry(bounds.x, bounds.y, bounds.width, bounds.height,
-                Prefs.UIScale, Screen.width, Screen.height);
+                Prefs.UIScale, Screen.width, Screen.height, contract!.MouseOriginOffset);
             string handle = Guid.NewGuid().ToString("N");
             var descriptor = new GatewayNativeWindowDescriptor(handle, window.GetType().FullName ??
                 window.GetType().Name, window.ID, geometry);
@@ -625,6 +625,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         if (frame == null || !UnityData.IsInMainThread || input == null ||
             !ReferenceEquals(__instance, service!.dispatchInstance) ||
             !ReferenceEquals(frame.Operation, service.active)) return;
+        frame.Backend.RecordPassCapture(input, __1);
         __state = new MousePassInvocation(service, frame, __instance, new GatewayNativeMouseProvenance(
             !__1 && frame.Backend.OwnsMousePass(input), input, __1, input.button,
             (int)input.type, (int)input.rawType, __0.x, __0.y));
@@ -708,6 +709,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             try
             {
                 bool delivered = originalRan && MousePass.Dispatched;
+                Backend.RecordDispatchResult(originalRan, MousePass);
                 Backend.ObserveDispatch(delivered);
                 Operation.AfterDispatch(delivered);
                 service.RetireCompleted();
@@ -759,10 +761,53 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         private NativeContract Contract => service.contract!;
         public GatewayNativePointerScope? Scope { get; }
         private string pointerState = "not-owned";
+        private int capturedPasses, capturedOwnedPasses;
+        private string? lastCapturedPass;
+        private bool originalDispatchObserved;
+        private bool queuedPressEdge, queuedReleaseEdge;
+        private GatewayNativeMousePassGate? observedMousePass;
         public string? ScopeFailure => Scope?.RejectLifetime(DateTimeOffset.UtcNow);
-        public IReadOnlyDictionary<string, object?> PointerReceipt => Scope == null ? new Dictionary<string, object?>() :
-            new Dictionary<string, object?> { ["pointerScopeHandle"] = Scope.Handle,
-                ["pointerScopeState"] = pointerState, ["pointerRestored"] = pointerState == "gesture-restored" };
+        public IReadOnlyDictionary<string, object?> PointerReceipt
+        {
+            get
+            {
+                var receipt = new Dictionary<string, object?>
+                {
+                    ["dispatchOriginalObserved"] = originalDispatchObserved,
+                    ["capturedNativePasses"] = capturedPasses,
+                    ["capturedOwnedMousePasses"] = capturedOwnedPasses,
+                    ["lastCapturedPass"] = lastCapturedPass,
+                    ["queuedPressEdgeObserved"] = queuedPressEdge,
+                    ["queuedReleaseEdgeObserved"] = queuedReleaseEdge,
+                    ["mouseOriginOffset"] = capture.Descriptor.Geometry.MouseOriginOffset,
+                    ["mousePassSeen"] = observedMousePass?.Seen ?? false,
+                    ["mousePassAdmitted"] = observedMousePass?.Admitted ?? false,
+                    ["mousePassOriginalObserved"] = observedMousePass?.OriginalObserved ?? false,
+                    ["mousePassRejection"] = observedMousePass?.Rejection
+                };
+                if (Scope != null)
+                {
+                    receipt["pointerScopeHandle"] = Scope.Handle;
+                    receipt["pointerScopeState"] = pointerState;
+                    receipt["pointerRestored"] = pointerState == "gesture-restored";
+                }
+                return receipt;
+            }
+        }
+
+        public void RecordPassCapture(Event input, bool drawing)
+        {
+            capturedPasses++;
+            bool owned = !drawing && OwnsMousePass(input);
+            if (owned) capturedOwnedPasses++;
+            lastCapturedPass = input.type + "/" + input.rawType + "/drawing=" + drawing;
+        }
+
+        public void RecordDispatchResult(bool originalRan, GatewayNativeMousePassGate mousePass)
+        {
+            originalDispatchObserved = originalRan;
+            observedMousePass = mousePass;
+        }
 
         public ClickBackend(VerseGatewayNativeWindowInput service, CaptureLease capture,
             double pixelX, double pixelY, GatewayNativeInputPoint point, GatewayNativePointerScope? scope)
@@ -862,6 +907,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             {
                 queuedEdgeThisDispatch = true;
                 InputSystem.QueueMouseButton(0, true, target);
+                queuedPressEdge = (bool)Contract.PressEdge.GetValue(Mouse.current.leftButton)!;
                 edgeReceipt.Record(service.inputGeneration, pressed: true);
                 ValidateQueuedEdge();
             }
@@ -898,6 +944,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             {
                 queuedEdgeThisDispatch |= preparingDispatch;
                 InputSystem.QueueMouseButton(0, false, mouse.position.ReadValue());
+                queuedReleaseEdge = (bool)Contract.ReleaseEdge.GetValue(mouse.leftButton)!;
                 edgeReceipt.Record(service.inputGeneration, pressed: false);
                 buttonClaimed = false;
                 ValidateQueuedEdge();
@@ -1024,6 +1071,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         public required MethodInfo FrameReset { get; init; }
         public required MethodInfo FrameResetBoundary { get; init; }
         public required MethodInfo PostResetPhase { get; init; }
+        public required double MouseOriginOffset { get; init; }
         public required PropertyInfo DisplayHeight { get; init; }
         public required PropertyInfo PressEdge { get; init; }
         public required PropertyInfo ReleaseEdge { get; init; }
@@ -1189,15 +1237,26 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
                 typeof(Waylith.EngineApplication));
             MethodInfo? postReset = ime.GetMethod("BeginFrame", BindingFlags.Public | BindingFlags.Instance |
                 BindingFlags.DeclaredOnly, null, Type.EmptyTypes, null);
+            MethodInfo? readMouse = dispatcher.GetMethod("ReadPhysMouse", BindingFlags.NonPublic | BindingFlags.Static |
+                BindingFlags.DeclaredOnly, null, new[] { host }, null);
+            MethodInfo? displayHeight = host.GetProperty("DisplayHeight", BindingFlags.Public | BindingFlags.Instance |
+                BindingFlags.DeclaredOnly)?.GetMethod;
+            double? mouseOriginOffset = readMouse is { IsPrivate: true, IsGenericMethod: false } &&
+                readMouse.ReturnType == typeof(Vector2) && displayHeight != null
+                ? GatewayNativeWindowInputContract.MouseOriginOffset(ReadOriginalEventBody(readMouse),
+                    typeof(Input).GetProperty(nameof(Input.mousePosition))!.GetMethod!, displayHeight,
+                    typeof(Vector3).GetField(nameof(Vector3.x))!, typeof(Vector3).GetField(nameof(Vector3.y))!,
+                    typeof(Vector2).GetConstructor(new[] { typeof(float), typeof(float) })!) : null;
             if (dispatch == null || eventDispatch == null || reset == null || boundary == null ||
                 mousePass == null || !mousePass.IsPrivate || mousePass.IsGenericMethod || mousePass.ReturnType != typeof(void) ||
                 !GatewayNativeWindowInputContract.Matches(hotSetter, typeof(GUIUtility), true, typeof(void), new[] { typeof(int) }) ||
                 !GatewayNativeWindowInputContract.Matches(postReset, ime, false, typeof(void), Type.EmptyTypes) ||
                 !GatewayNativeWindowInputContract.HasQueues(typeof(InputSystem), typeof(Vector2)) ||
-                !SupportsMetadataOnlyPatchOrdering()) return null;
+                mouseOriginOffset == null || !SupportsMetadataOnlyPatchOrdering()) return null;
             return new NativeContract
             {
                 Dispatch = dispatch, EventDispatch = eventDispatch, MouseInputPass = mousePass,
+                MouseOriginOffset = mouseOriginOffset.Value,
                 HotControlSetter = hotSetter!, FrameReset = reset,
                 OriginalEventBody = ReadOriginalEventBody(eventDispatch),
                 FrameResetBoundary = boundary, PostResetPhase = postReset!,
