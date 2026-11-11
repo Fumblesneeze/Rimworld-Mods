@@ -13,28 +13,57 @@ encodings and distinct row objects are supporting component assertions. The nati
 and serializer produce the copy/restored state. This does not accept tolerance editing or routine
 enforcement, neither of which is enabled by the support group.
 
-`megamod.drug-tolerance.save-failure-preserves-file` runs the same baseline, records the successful
-save SHA256, then adds a temporary test-owned Harmony prefix to `Scribe_Values.Look<string>`.
-Only a Saving call for the owned `megamodTolerance` field throws. The actual native Save menu and
+`megamod.drug-tolerance.save-failure-preserves-file` installs an unarmed temporary test-owned
+Harmony prefix on native `ScribeSaver.WriteElement(string,string)` before a focused baseline:
+one disposable policy with encoded Beer0 setup and one native successful SaveLoad action. It does
+not replay the ordinary duplicate/edit/reopen/console workflow or create an extra pawn. It
+must observe actual writes of `megamodTolerance` during the successful native save before arming
+the fault and recording the successful save SHA256. Only a subsequent Saving call for that owned
+field throws, before the native writer body. The actual native Save menu and
 the matching disposable file's Overwrite button trigger serialization. Native Scribe catches the
 row exception; the product finalization guard must still abort, leave the existing file unchanged,
 remove its `.new` file, and show the localized restart notice. A second native Overwrite must abort
 without repeating the notice or owned diagnostic. The test patch is removed in guaranteed cleanup.
+The fixture also observes the exact persistence report callback, invokes its original action
+unchanged and restores only the captured owner/delegate identity. Protected delivery deliberately
+bypasses Verse.Log.Messages even when native file delivery is available. Callback count/text and
+sink failure state establish the exact once report; the runtime's actual fallback path/content/hash
+are retained if present, and root separately verifies durable native/fallback delivery after shutdown.
+The fixture never constructs a new diagnostic sink, emits its own substitute warning or guesses a
+native log path. Automatic developer-log windows are closed through their native action before
+capturing and acknowledging the exact owned notice and both native SafeSaver errors. A separate
+final native console capture preserves the expected error evidence.
 The product failure latch deliberately remains set: **run this ID alone in a fresh process**.
 
-`megamod.drug-tolerance.late-load-failure` creates a successful native save/load baseline containing
-one disposable policy, then injects an error only for the owned string during PostLoadInit. An
+`megamod.drug-tolerance.late-load-failure` wraps the exact active persistence instance's owned
+serializer callback as test setup and calls its original action first. A successful native
+save/load baseline containing one disposable policy must reach that callback in Saving,
+LoadingVars and PostLoadInit before the fixture is armed. It then injects an owned callback error
+only after the original action in PostLoadInit; this is not a native parser failure. An
 actual native Load-menu/file-row click reaches that later phase inside ScribeLoader.FinalizeLoading.
 The first error is swallowed there, so the completion guard must reject the load. This scenario
 requires the owned notice, native failed-load/nonplayable state and unchanged source-file SHA256.
 It deliberately ends at native load recovery and runs alone in a fresh process. Cleanup removes
-its unique saved file, closes exact captured windows and removes only its fixture patch. It does
-not write through disposed Game/policy objects or reset the product latch.
+its unique saved file, closes exact captured windows and restores the captured callback only
+after verifying the exact mod, persistence-instance and wrapper-delegate identities. It does
+not write through disposed Game/policy objects or reset the product latch. Both fault scenarios
+retain phase/interception counts and bounded native window diagnostics immediately after their
+native action finishes, and assert the intended fault actually occurred before awaiting a notice.
+The late-load fixture likewise closes the automatic console before its notice capture/action and
+retains a separate visible console capture afterward.
 
 The save failure scenario intentionally produces the exact fixture error, a native per-row serialization
 error, a bounded `DT-POLICY-SCRIBE` warning and native SaveGame finalization errors. These are expected
 fault evidence, not an excuse to waive other log failures. The root must inspect the notice and
 console screenshots and the complete flushed log. The ordinary success scenario expects no errors.
+
+Fault scenarios declare exact selected-test diagnostics in compiled attributes. Failed save expects
+one owned row error, two SafeSaver warnings for the fixed disposable .rws.new path and two SaveGame
+abort errors. The finalization records require the exact immediate inner cause. Late load expects
+one PostLoadIniter row error and one asynchronous-event abort with its exact inner cause. These
+counts follow the inspected native path and remain subject to the live-run gate; a missing, extra,
+wrong-severity or unrelated record fails. Only the isolated launcher's savedata prefix is bound;
+there are no regex, filename wildcards or generic exception allowances.
 
 Native view geometry is read-only and follows the inspected 1.7.5005 native windows. Existing
 `NativeDrugPolicyView` supplies policy controls. Duplicate is immediately left of Delete in the
@@ -44,22 +73,24 @@ fails rather than choosing another file. No direct click callback/window constru
 tested result. File hashes, raw choices and failure counts are diagnostic observations.
 
 Cleanup binds the exact initial game or a single verified loaded replacement using saved source
-policy and pawn markers, removes only disposable policies/pawn/save, closes owned windows, restores
+policy markers (plus the pawn marker only in the ordinary copy scenario), removes only disposable
+policies/pawn/save, closes owned windows, restores
 speed and pointer state, and never resets the product failure latch. Native save/load restores the
 camera from the unchanged saved game; these scenarios do not move it or change selections/dev mode.
 
-Timeouts are bounded at 1,200 seconds for success and 1,800 for the fault scenario. The success path
+Timeouts are bounded at 1,200 seconds for success and the focused save-fault scenario. The success path
 has five screenshots at 30 seconds (150 seconds) and 24 native operations at 15 seconds (360
 seconds: eight captures, six clicks, four tab actions, two log actions and four pointer actions).
 The remaining 690 seconds cover native save/load, synchronous assertions/checkpoints, cancellations
-and arrangement/iteration overhead. Within the total 1,800-second save-fault scenario, the fault
-extension adds four screenshots (120 seconds), eight captures/seven clicks/ten pointer actions/three
-log actions (420 seconds), two 90-second waits (180 seconds) and three menu actions (45 seconds).
-The complete success-plus-fault fixed allowance is 1,275 seconds, leaving 525 seconds for native
-save/load and synchronous overhead. Exact native IDs distinguish and acknowledge the SafeSaver
+and arrangement/iteration overhead. The focused save-fault scenario has six screenshots (180
+seconds), eight captures/seven clicks/ten pointer actions/five log actions (450 seconds), three
+90-second waits (270 seconds) and three menu actions (45 seconds). Its fixed allowance is 945
+seconds, leaving 255 seconds for the minimal native save/load baseline and synchronous overhead.
+Exact native IDs distinguish and acknowledge the SafeSaver
 error box and the owned notice; type-only message-box selection/acceptance is not used.
-The late-load scenario has a 900-second cap: three screenshots (90), three captures/three clicks/
-four pointer actions (150), one 180-second wait and a menu action (15), leaving 465 seconds for the
+The late-load scenario has a 900-second cap: four screenshots (120), four captures/three clicks/
+four pointer actions/three log actions (210), two 180-second waits (360) and a menu action (15),
+leaving 195 seconds for the
 initial save/load and other overhead. Cleanup retains its separate 30-second deadline. These are
 harness allowances, not product timing promises.
 `MaxGameTicks=4800` is a secondary guard while the colony
@@ -70,4 +101,4 @@ Integration requires `NativeDrugTolerancePersistence.Create(diagnostics.Write)`,
 Early group and `Enable()` only after successful admission. Root's native lifecycle pump calls
 `NativeDrugTolerancePersistence.ProcessPendingFailure()` after it reaches the main thread. The
 ordinary enable setting does not gate this persistence support. The future editor/enforcement
-group must depend on its `Available` result.
+group must depend on its current `CanUseChoices` receipt.
