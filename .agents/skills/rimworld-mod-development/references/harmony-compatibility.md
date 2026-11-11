@@ -84,6 +84,16 @@ An observation-only hook should still require only the callable and execution fa
   registrations before projecting rollback receipts; unrelated factories need not be resolved or
   rejected when their ordering/effects are not consumed. Actual provider composition may execute
   factories; inspection must not execute them as probes.
+- Classify patch inputs by the provider's effective injected binding, not raw ParameterInfo.Name.
+  Parameter/method/type HarmonyArgument metadata can rename a result, argument or mutable argument
+  array. Read metadata without constructing foreign attributes, honor the inspected provider's
+  precedence, and refuse only unproved consumed bindings. Test an actual aliased output writer and
+  a harmless renamed observer; a reflection-only raw-name test cannot establish composition safety.
+- Preserve machine arithmetic when validating layout or numeric producer chains. Real-number
+  affine equality does not prove Single/Double evaluation equivalence: large cancellation,
+  overflow and reassociation can change consumed values. Keep the relevant operation order or
+  prove a bounded safe transformation; pair admitted arithmetic variants with actual output checks
+  at representative/boundary inputs. Do not broaden this into a general-purpose IL evaluator.
 - Revoke old admission before evaluating a newly composed stream. A validator/metadata failure
   inside a transpiler must preserve its incoming stream and cannot prevent another owner's patch
   removal. Test the actual failing provider path, including a subsequent successful rebuild when
