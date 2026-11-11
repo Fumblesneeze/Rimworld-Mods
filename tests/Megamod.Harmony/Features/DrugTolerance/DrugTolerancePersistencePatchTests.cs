@@ -165,6 +165,107 @@ public sealed class DrugTolerancePersistencePatchTests
     }
 
     [Test]
+    public void ChoiceUseDetectsRemovedGenerationObserverWithoutAnExplicitAvailabilityRefresh()
+    {
+        var reports = new List<string>();
+        var patch = Create(reports, new());
+        try
+        {
+            Assert.That(new AdmissionCoordinator(reports.Add).Apply(patch.Group, AdmissionPhase.Early), Is.True);
+            patch.Enable();
+            Assert.That(patch.CanUseChoices, Is.True);
+            new HarmonyLib.Harmony(OwnedHarmonyPatch.OwnerId).Unpatch(CopyTarget, HarmonyPatchType.Transpiler, OwnedHarmonyPatch.OwnerId);
+            Assert.That(patch.CanUseChoices, Is.False);
+            Assert.That(reports, Has.Count.EqualTo(1));
+            Assert.Throws<InvalidOperationException>(() => new Saver().FinalizeSaving());
+        }
+        finally { Cleanup(patch); }
+    }
+
+    [Test]
+    public void BusyPublicationWithholdsChoiceUseWithoutPermanentlyFaultingHealthyPersistence()
+    {
+        var reports = new List<string>();
+        var patch = Create(reports, new());
+        var gate = typeof(PatchProcessor).GetField("locker", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+        try
+        {
+            Assert.That(new AdmissionCoordinator(reports.Add).Apply(patch.Group, AdmissionPhase.Early), Is.True);
+            patch.Enable();
+            lock (gate) Assert.That(patch.CanUseChoices, Is.False);
+            Assert.That(patch.CanUseChoices, Is.True);
+            Assert.DoesNotThrow(() => new Saver().FinalizeSaving());
+            Assert.That(reports, Is.Empty);
+        }
+        finally { Cleanup(patch); }
+    }
+
+    [Test]
+    public void DiagnosticInstructionReadCannotAdmitAnAbsentCompiledGeneration()
+    {
+        var reports = new List<string>();
+        var patch = Create(reports, new());
+        try
+        {
+            Assert.That(new AdmissionCoordinator(reports.Add).Apply(patch.Group, AdmissionPhase.Early), Is.True);
+            patch.Enable();
+            Assert.That(patch.CanUseChoices, Is.True);
+            Assert.That(PatchProcessor.GetCurrentInstructions(CopyTarget), Is.Not.Empty);
+            Assert.That(patch.CanUseChoices, Is.False,
+                "A diagnostic invocation of transpilers is not a composed publication receipt.");
+            var destination = new Entry();
+            destination.CopyFrom(new Entry { Choice = DrugToleranceChoice.Numeric(0f) });
+            Assert.That(destination.Choice.Kind, Is.EqualTo(DrugToleranceChoiceKind.Any));
+            Assert.That(reports, Has.Count.EqualTo(1));
+            Assert.Throws<InvalidOperationException>(() => new Saver().FinalizeSaving());
+        }
+        finally { Cleanup(patch); }
+    }
+
+    [Test]
+    public void UnreadableChangedPublicationRevokesChoiceAndSerializationReceipts()
+    {
+        var reports = new List<string>();
+        var exposed = new List<Entry>();
+        var patch = Create(reports, exposed);
+        var foreign = new HarmonyLib.Harmony(new string('x', 4 * 1024 * 1024));
+        try
+        {
+            Assert.That(new AdmissionCoordinator(reports.Add).Apply(patch.Group, AdmissionPhase.Early), Is.True);
+            patch.Enable();
+            new HarmonyLib.Harmony(OwnedHarmonyPatch.OwnerId).Unpatch(ExposeTarget, HarmonyPatchType.Transpiler, OwnedHarmonyPatch.OwnerId);
+            foreign.Patch(ExposeTarget, prefix: new HarmonyMethod(typeof(DrugTolerancePersistencePatchTests), nameof(Observe)));
+            Assert.That(patch.CanUseChoices, Is.False);
+            var entry = new Entry();
+            entry.ExposeData();
+            Assert.That(entry.Exposed, Is.EqualTo(1), "Native row behavior remains intact.");
+            Assert.That(exposed, Is.Empty, "The stale receipt cannot authorize owned serialization.");
+            Assert.That(reports, Has.Count.EqualTo(1));
+            Assert.That(reports[0], Does.Contain("4 MiB"));
+            Assert.Throws<InvalidOperationException>(() => new Saver().FinalizeSaving());
+        }
+        finally { try { foreign.Unpatch(ExposeTarget, HarmonyPatchType.All, foreign.Id); } finally { Cleanup(patch); } }
+    }
+
+    [Test]
+    public void ChoiceUseReadmitsCompatibleRepatch()
+    {
+        var reports = new List<string>();
+        var patch = Create(reports, new());
+        var foreign = new HarmonyLib.Harmony("tests.tolerance.choice-repatch");
+        try
+        {
+            Assert.That(new AdmissionCoordinator(reports.Add).Apply(patch.Group, AdmissionPhase.Early), Is.True);
+            patch.Enable();
+            Assert.That(patch.CanUseChoices, Is.True);
+            foreign.Patch(CopyTarget, prefix: new HarmonyMethod(typeof(DrugTolerancePersistencePatchTests), nameof(Observe)));
+            Assert.That(patch.CanUseChoices, Is.True);
+            Assert.That(reports, Is.Empty);
+        }
+        finally { try { foreign.Unpatch(CopyTarget, HarmonyPatchType.All, foreign.Id); } finally { Cleanup(patch); } }
+    }
+
+    [Test]
     public void FailedSecondTargetInstallationRollsBackOnlyOwnedMembersAndReportsBothTargets()
     {
         var reports = new List<string>();

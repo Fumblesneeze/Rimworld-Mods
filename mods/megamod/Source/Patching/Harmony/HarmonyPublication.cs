@@ -22,6 +22,10 @@ internal static class HarmonyPublication
         null, new[] { typeof(byte[]), typeof(byte) }, null);
     private const int MaximumStateBytes = 4 * 1024 * 1024;
     private static readonly byte[] Envelope = System.Text.Encoding.ASCII.GetBytes("HARMONY-INFIX\0");
+    private sealed class StateBusyException : InvalidOperationException
+    {
+        internal StateBusyException() : base("The provider's published metadata state is busy.") { }
+    }
 
     private static object Gate => GateField?.FieldType == typeof(object) && GateField.IsInitOnly &&
         StateField?.FieldType == typeof(Dictionary<MethodBase, byte[]>) && StateField.IsInitOnly &&
@@ -37,7 +41,7 @@ internal static class HarmonyPublication
         if (StateField!.GetValue(null) is not Dictionary<MethodBase, byte[]> state ||
             HeaderField!.GetValue(null) is not byte[] header || !header.SequenceEqual(Envelope))
             throw new InvalidOperationException("The provider's published metadata state or envelope changed.");
-        if (!Monitor.TryEnter(state)) throw new InvalidOperationException("The provider's published metadata state is busy.");
+        if (!Monitor.TryEnter(state)) throw new StateBusyException();
         byte[] bytes;
         try
         {
@@ -85,6 +89,7 @@ internal static class HarmonyPublication
             var metadata = Read(target, out var identity);
             return inspect(new Snapshot(metadata, new Identity(target, identity)));
         }
+        catch (StateBusyException) { return false; }
         finally { Monitor.Exit(gate); }
     }
     internal static bool InspectPair(MethodBase first, MethodBase second, Func<Snapshot, Snapshot, bool> inspect)
@@ -98,6 +103,7 @@ internal static class HarmonyPublication
             return inspect(new Snapshot(firstMetadata, new Identity(first, firstIdentity)),
                 new Snapshot(secondMetadata, new Identity(second, secondIdentity)));
         }
+        catch (StateBusyException) { return false; }
         finally { Monitor.Exit(gate); }
     }
 

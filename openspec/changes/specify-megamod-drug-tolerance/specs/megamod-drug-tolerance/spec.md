@@ -169,6 +169,15 @@ success after this error. Repeated attempts SHALL remain blocked without repeati
 - **THEN** the native load still fails at its completion boundary and does not report a successfully loaded colony
 - **AND** the owned notice requires restart, the source save remains intact, and an existing native exception is not replaced.
 
+#### Scenario: Persistence publication becomes unreadable
+- **WHEN** required persistence support is removed or its newly published metadata cannot be safely inspected
+- **THEN** editing and enforcement remain unavailable and prior serialization authority cannot be reused to report successful save/load
+- **AND** transient metadata-monitor contention withholds the current choice-use attempt without permanently faulting otherwise healthy persistence.
+
+#### Scenario: Diagnostic instruction inspection is not a live receipt
+- **WHEN** a diagnostic instruction inspection invokes an observer outside native patch publication
+- **THEN** the missing compiled generation cannot authorize tolerance choices, even when the previously published metadata identity is unchanged.
+
 ### Requirement: Malformed saved choices are visible and conservative
 The malformed-data behavior SHALL distinguish an absent choice from an invalid saved
 choice. An absent choice defaults to Any. A recognized row containing an unreadable choice, an

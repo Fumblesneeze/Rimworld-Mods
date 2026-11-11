@@ -41,6 +41,8 @@ public sealed class DrugTolerancePersistencePatch
     }
 
     public PatchGroup Group { get; }
+    public bool CanUseChoices => enabled && Volatile.Read(ref faulted) == 0 && copy.ChoiceUsable() &&
+        scribe.ChoiceUsable() && saveFinalize.ChoiceUsable() && loadFinalize.ChoiceUsable();
     public bool Available => Volatile.Read(ref faulted) == 0 && copy.Admitted(force: true) && scribe.Admitted(force: true) &&
         saveFinalize.Admitted(force: true) && loadFinalize.Admitted(force: true);
     public void Enable()
@@ -67,6 +69,7 @@ public sealed class DrugTolerancePersistencePatch
         private OwnedHarmonyPatch? prefix, finalizer, generationObserver;
         private volatile bool installed;
         private Generation? generation, admitted;
+        private HarmonyPublication.Identity? identity;
         internal string? Failure;
 
         internal Route(DrugTolerancePersistencePatch owner, Type entryType, string methodName, string id,
@@ -120,16 +123,28 @@ public sealed class DrugTolerancePersistencePatch
             if (failures.Count != 0) throw new AggregateException("Tolerance persistence cleanup failed.", failures);
         }
 
-        internal bool Admitted(bool force = false)
+        internal bool ChoiceUsable()
+        {
+            var current = Volatile.Read(ref generation);
+            if (current != null && ReferenceEquals(current, Volatile.Read(ref admitted)) &&
+                Volatile.Read(ref identity)?.IsCurrent() == true) return true;
+            return Admitted(force: true, choiceUse: true);
+        }
+
+        internal bool Admitted(bool force = false, bool choiceUse = false)
         {
             var current = Volatile.Read(ref generation);
             if (!installed || current == null || Volatile.Read(ref Owner.faulted) != 0) return false;
             if (!force && ReferenceEquals(current, Volatile.Read(ref admitted))) return true;
-            Volatile.Write(ref admitted, null);
+            // A busy choice-use query must not revoke an otherwise healthy serialization receipt.
+            // Native copy/Scribe calls retain their stricter original admission/failure behavior.
+            if (!choiceUse) Volatile.Write(ref admitted, null);
+            bool examined = false;
             try
             {
                 var inspected = HarmonyPublication.Inspect(target!, snapshot =>
                 {
+                    examined = true;
                     if (snapshot.Version != current.Version || !ReferenceEquals(current, Volatile.Read(ref generation)))
                     { Failure = "The compiled persistence generation no longer matches publication."; return false; }
                     if (snapshot.Prefixes.Any(patch => patch.IsFactory) || snapshot.Finalizers.Any(patch => patch.IsFactory))
@@ -146,14 +161,31 @@ public sealed class DrugTolerancePersistencePatch
                     { Failure = "The finalization guard must run first and its abort exception cannot be changed by foreign finalizers."; return false; }
                     if ((!finalizationGuard && prefixes.LastOrDefault() != prefixMethod) || finalizers.FirstOrDefault() != finalizerMethod)
                     { Failure = "Persistence requires its last prefix and first finalizer around the native call."; return false; }
+                    Volatile.Write(ref identity, snapshot.Identity);
                     Volatile.Write(ref admitted, current);
                     Failure = null;
                     return true;
                 });
-                if (!inspected) Failure ??= "Persistence publication metadata is busy or unavailable.";
+                if (!inspected)
+                {
+                    if (examined)
+                    {
+                        Volatile.Write(ref admitted, null);
+                        if (choiceUse) Owner.Fail(this, Failure ?? "The owned persistence publication changed.");
+                    }
+                    else if (!choiceUse) Failure ??= "Persistence publication metadata is busy or unavailable.";
+                }
                 return inspected;
             }
-            catch (Exception error) { Failure = error.GetBaseException().Message; return false; }
+            catch (Exception error)
+            {
+                // Inspect returns false for transient monitor contention. An exception instead
+                // means the published metadata could not be safely read; no old receipt survives.
+                Volatile.Write(ref admitted, null);
+                Failure = error.GetBaseException().Message;
+                if (choiceUse) Owner.Fail(this, Failure);
+                return false;
+            }
         }
 
         internal Invocation? Begin(object receiver, object? source)

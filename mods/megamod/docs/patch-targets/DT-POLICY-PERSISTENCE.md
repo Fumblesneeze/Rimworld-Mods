@@ -67,6 +67,15 @@ restriction concerns only the two finalization targets.
 An instruction-preserving generation observer revokes the prior immutable receipt whenever Harmony
 recompiles a target. The next surviving callback admits that new publication; normal calls reuse
 its receipt without rebuilding metadata. Explicit availability queries refresh all four receipts.
+The enforcement/editor's `CanUseChoices` query additionally requires each admitted publication's
+current provider byte-array identity. Removing even the last owned observer therefore withholds
+choice use. The compiled generation must be non-null: a public diagnostic instruction read invokes
+transpilers outside publication and cannot create an admission receipt. A supported new generation is re-admitted; an inspected incompatible generation follows
+the persistence failure policy. A busy identity/publication lock withholds choice use for that
+attempt without itself permanently faulting serialization. Unreadable changed metadata, including
+an oversized published registration after observer removal, revokes the prior receipt and latches
+failure; subsequent native row calls cannot reuse that stale serialization authority. Native in-flight copy/Scribe behavior
+retains its prior generation-token contract.
 Removed, duplicated or reordered owned callbacks, unreadable metadata, or adapter failure disables
 the whole support group and emits one bounded diagnostic. Owned state is not committed after a
 generation change during a native call. Native copy and native exceptions stay authoritative;
