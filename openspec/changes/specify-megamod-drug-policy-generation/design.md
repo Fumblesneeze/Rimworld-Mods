@@ -235,6 +235,17 @@ records consumed native semantics and the pending verification matrix. Its stati
 the focused preparation/commit implementation; it does not accept that implementation or a live
 workflow. Indexed target admission must exist before runtime wiring.
 
+The first staged adapter implements detached preparation, one append, snapshot-based stale refusal
+and same-operation idempotence, with eight constructed-Defs checks. Its supplied currentness
+predicate and ordering delegate are explicit caller assumptions until the existing S029/C01
+receipts are integrated. The adapter still must validate exact complete edit membership, applicable
+flags, current native bounds/name and S138 availability, reject any borrowed planned row, and
+compare the written object with intended choices. Capturing the object after writing is not proof
+that a changed constructor/storage path wrote the intended choices. ID boundaries, failures and
+owned-tail rollback still require focused evidence; retained Game/database/delegate references
+need disposal before UI ownership. No production caller or effective constructor/getter guard is
+present in this tranche, so these host checks cannot authorize Create.
+
 A window-local one-shot confirmation identity prevents the same action/re-entrant click from
 committing twice. Subsequent deliberate fresh workflows can create independent policies. Do not
 deduplicate by translated policy name or turn repeated Generate into replacement. Dispose receipts

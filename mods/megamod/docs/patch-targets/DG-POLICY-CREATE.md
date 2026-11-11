@@ -1,6 +1,6 @@
 # DG-POLICY-CREATE: publish one complete generated policy
 
-**Proposed guarded native adapter; not implemented, registered or accepted.** Complete executable
+**Staged native adapter; not admitted, registered or accepted.** Complete executable
 admission and index this target before runtime wiring. This target describes the native preparation
 and publication boundary; the contextual Generate UI requires its own target contract.
 
@@ -12,7 +12,9 @@ and publication boundary; the contextual Generate UI requires its own target con
 - Kind: guarded native calls/field storage and one direct native database-list append. No mutation
   patch or patch of owned megamod code is proposed here. XML cannot prepare transient editable
   gameplay objects or atomically append a reviewed draft. Native factories publish before copying.
-- Implementation/validator/tests: pending; `DrugPolicySuggestions` is only the separate pure C1 model.
+- Staged implementation: `Source/Features/DrugPolicyGeneration/Runtime/NativeDrugPolicyCreation.cs`;
+  constructed native fixtures: `tests/Megamod.Defs/DrugPolicyGeneration/NativeDrugPolicyCreationTests.cs`.
+  Effective constructor/getter validation and complete controller integration remain pending.
 - Evidence game: 1.7.5005 rev1082, Assembly-CSharp SHA256
   `82387F78262461E53BB06A67C3945912B876D1FDB07235122BBB6E59D073F125`.
 
@@ -49,9 +51,32 @@ draft. No worker/global scan or invocation from the main menu is supported.
    Reentry cannot append twice. Failure before append discards detached state; owned-tail removal
    requires exact prior-list/prefix identity. Do not restore over a detected independent change.
 
-Executable checks are pending; these are obligations rather than claims of current admission.
+The staged adapter has eight focused constructed-Defs checks. They establish detached fresh rows,
+native ordering, exact choices/Any/numeric S138, same-confirmation idempotence, five changed-state
+refusals and ordering-callback reentry refusal for the unpatched native fixture. They do not establish
+effective constructor/getter admission, finalized catalog facts or any player workflow.
 Permit unrelated IL, local numbering, instruction offsets, other Harmony owners and compatible
 observers when the consumed semantics remain established. No whole-body hash or version gate.
+
+### Staged API boundary and unfinished checks
+
+The current API copies catalog/edit collections and accepts a caller-owned currentness/admission
+predicate plus S029 native ordering. The fixture predicate returning true is an explicit host-test
+assumption, not an executable receipt. No production caller or bootstrap registration uses this API.
+The controller must eventually supply the existing current-game/catalog/fact/preference/S138/C01
+receipts. The adapter must additionally validate exact complete edit membership, current applicable
+flags, native frequency/inventory/name bounds and S138 availability before preparation; these input
+checks are not yet implemented. The immutable draft's validation cannot replace them. Explicit
+fresh-plan-row checks and verification of the written object against intended choices also remain
+pending; the current snapshot only detects changes after the initial write.
+
+The object retains its database and delegate references; disposal and lifecycle integration are
+pending and are required before any window can own it. Checked ID arithmetic, empty-database
+refusal and owned-tail rollback exist in code but lack focused boundary/fault evidence in this
+tranche. No construction/order/storage-failure or post-append rollback proof is claimed. C01 must
+admit native no-escape construction and the actual-list getter before the caller predicate can be
+used as a real receipt. A metadata-only C01 callback projection and feature-local effective guards
+are planned, with no shared publication-helper change in this tranche.
 
 ## Composition, ordering, and invalidation
 
@@ -84,11 +109,11 @@ adapter installs no mutation patches of its own; the separate UI group's rollbac
 
 | Case | Expected result | Honest tier | Evidence / state |
 | --- | --- | --- | --- |
-| Admitted native construction and S029 complete plan | Prepared object absent from database; fresh ordered rows and exact choices/S138 | Defs with scoped constructed fixtures | Pending |
+| Native construction and S029 complete plan in an unpatched fixture | Prepared object absent from database; fresh ordered rows and exact choices/S138 | Defs with scoped constructed fixtures | Passing; effective admission pending |
 | Duplicate labels, high/negative prior IDs, exhausted next ID | Checked unique positive ID or explicit refusal; no overwrite | Unit controller and scoped Defs | Pending |
 | Empty database | Unavailable; no implicit default creation | Scoped Defs/native UI | Pending |
 | Preparation failure and post-append failure | No publication or only exact owned-tail rollback; prior prefix unchanged | Scoped Defs | Pending |
-| Currentness change or reentry/repeated confirmation | No stale/duplicate append; completed receipt reused | Unit/Defs | Pending |
+| Currentness change or reentry/repeated confirmation | No stale/duplicate append; completed receipt reused | Unit/Defs | Passing for caller predicate, membership, prior/prepared choice, prepared ID and ordering reentry; native receipt/lifecycle pending |
 | Benign foreign constructor/getter edits | Admitted when consumed semantics hold; foreign owner retained | Owned Harmony fixture | Pending |
 | Escape, list substitution, skip-original or unproved callback | Refuse unchanged before preparing/publishing; bounded reason | Owned Harmony fixture | Pending |
 | Relevant later repatch | Invalidate/revalidate before next creation | Owned Harmony fixture | Pending |
@@ -97,3 +122,5 @@ adapter installs no mutation patches of its own; the separate UI group's rollbac
 Retain reviewed build/package identity, ordered active mods, actual player input, causal captures,
 complete relevant logs/config hashes and cleanup. Source inspection and passing fixtures are not
 native acceptance. Native persistence and contextual layout remain distinct S138/UI obligations.
+The local three-slice RED/GREEN ledger and frozen source identities are in
+`artifacts/Implementation/megamod-p0/s139-native-creation/implementation.md`.

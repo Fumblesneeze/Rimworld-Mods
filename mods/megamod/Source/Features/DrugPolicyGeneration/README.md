@@ -3,9 +3,9 @@
 Owner: `fumblesneeze.megamod`, S139. The owning
 [change](../../../../../openspec/changes/specify-megamod-drug-policy-generation/design.md)
 defines the complete feature. The C1 calculation has an independent no-finding review. Detached
-draft editing is implemented with an independent no-finding review. Native definition projection
-is implemented, awaiting separate review; effective-method admission, settings/UI and publication
-remain unimplemented and unaccepted.
+draft editing and native definition projection are implemented with resolved independent reviews.
+Native creation is a staged, unregistered adapter awaiting review and completion. Effective-method
+admission and native settings/UI remain unimplemented; the feature is not accepted.
 
 `Core/DrugPolicySuggestions.cs` consumes immutable values and opaque canonical identity handles.
 It reuses S029's `DrugCatalogEntry`/`DrugPolicyChoices` and S138's immutable tolerance choice. It does
@@ -76,3 +76,13 @@ Any distinct from numeric 100% and retains malformed stored payloads for repair.
 messages exist in all seven baseline languages. These definitions are not registered in bootstrap
 or rendered yet; preview staleness, native UI and provider effective-off remain separate work.
 The focused preference ledger is `artifacts/Implementation/megamod-p0/revision20-generation-preferences.md`.
+
+`Runtime/NativeDrugPolicyCreation.cs` prepares fresh native rows through S029 storage and overlays
+the complete supplied choices, including S138. One transient confirmation appends its prepared
+object once, rejects changed captured state or reentry, and preserves the prior list prefix. Eight
+constructed-Defs checks pass. The supplied currentness predicate/native ordering are caller
+assumptions until integrated with actual receipts. Complete native input validation, intended-choice
+postwrite verification, effective constructor/getter admission, lifecycle disposal and boundary/fault
+proof remain open; the adapter has no production caller. Its owned-tail rollback code is not yet
+verified by a post-append failure case. See `docs/patch-targets/DG-POLICY-CREATE.md` and the local
+ledger `artifacts/Implementation/megamod-p0/s139-native-creation/implementation.md` before continuing.
