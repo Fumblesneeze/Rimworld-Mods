@@ -84,6 +84,11 @@ An observation-only hook should still require only the callable and execution fa
   registrations before projecting rollback receipts; unrelated factories need not be resolved or
   rejected when their ordering/effects are not consumed. Actual provider composition may execute
   factories; inspection must not execute them as probes.
+- Verify how the installed provider retains callback identity. A provider that persists only
+  module/token can lose a closed generic declaring type when it rehydrates a patch method. Prove
+  actual patch construction, invocation and cleanup; when constructed identity is not retained,
+  use concrete wrappers for typed engine arguments around the owned non-generic route. This does
+  not prohibit ordinary generic helpers or emitted generic calls whose identity is preserved.
 - Classify patch inputs by the provider's effective injected binding, not raw ParameterInfo.Name.
   Parameter/method/type HarmonyArgument metadata can rename a result, argument or mutable argument
   array. Read metadata without constructing foreign attributes, honor the inspected provider's
