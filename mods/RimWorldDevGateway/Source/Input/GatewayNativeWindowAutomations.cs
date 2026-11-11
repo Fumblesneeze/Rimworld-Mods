@@ -4,6 +4,7 @@ internal static class GatewayNativeWindowAutomations
 {
     public const string CaptureName = "native-window.capture";
     public const string ClickName = "native-window.click";
+    public const string ReplaceTextName = "native-window.replace-text";
     public const string BeginScopeName = "native-pointer-scope.begin";
     public const string EndScopeName = "native-pointer-scope.end";
 
@@ -13,8 +14,41 @@ internal static class GatewayNativeWindowAutomations
         Func<GatewayAutomationAvailability> availability,
         Func<DateTimeOffset, GatewayAutomationContext, IReadOnlyDictionary<string, object?>>? beginScope = null,
         Func<string, GatewayAutomationContext, IGatewayDeferredAutomationOperation>? endScope = null,
-        Func<string, double, double, GatewayAutomationContext, string, IGatewayDeferredAutomationOperation>? scopedClick = null)
+        Func<string, double, double, GatewayAutomationContext, string, IGatewayDeferredAutomationOperation>? scopedClick = null,
+        Func<string, string, string, GatewayAutomationContext, IGatewayDeferredAutomationOperation>? replaceText = null,
+        Func<GatewayAutomationAvailability>? textAvailability = null)
     {
+        if (replaceText != null)
+        {
+            registry.RegisterBuiltIn(new GatewayAutomationDescriptor(ReplaceTextName, "1.0",
+                    "Replace one captured focused native single-line text field through native selection, clear and character input.",
+                    new Dictionary<string, object?>
+                    {
+                        ["type"] = "object", ["additionalProperties"] = false,
+                        ["required"] = new[] { "version", "windowHandle", "controlHandle", "text" },
+                        ["properties"] = new Dictionary<string, object?>
+                        {
+                            ["version"] = new Dictionary<string, object?> { ["type"] = "integer", ["const"] = 1 },
+                            ["windowHandle"] = new Dictionary<string, object?> { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = 200 },
+                            ["controlHandle"] = new Dictionary<string, object?> { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = 200 },
+                            ["text"] = new Dictionary<string, object?> { ["type"] = "string", ["maxLength"] = GatewayNativeTextOperation.MaximumCharacters }
+                        }
+                    }, new[] { "inspected-native-text-provider", "exact-current-focused-text-control", "neutral-input" }, true),
+                (context, arguments) =>
+                {
+                    if (arguments.Count != 4 || !arguments.TryGetValue("version", out var version) || Number(version) != 1 ||
+                        !arguments.TryGetValue("windowHandle", out var windowValue) || windowValue is not string window ||
+                        string.IsNullOrWhiteSpace(window) || window.Length > 200 ||
+                        !arguments.TryGetValue("controlHandle", out var controlValue) || controlValue is not string control ||
+                        string.IsNullOrWhiteSpace(control) || control.Length > 200 ||
+                        !arguments.TryGetValue("text", out var textValue) || textValue is not string text ||
+                        !GatewayNativeTextOperation.ValidText(text))
+                        throw Invalid("Replacement requires current window/control handles and at most128 printable BMP characters.");
+                    context.AddArtifact("native-text-request", "native-input-request", new Dictionary<string, object?>
+                        { ["windowHandle"] = window, ["controlHandle"] = control, ["text"] = text });
+                    return replaceText(window, control, text, context);
+                }, textAvailability ?? availability);
+        }
         if (beginScope != null && endScope != null)
         {
             registry.RegisterBuiltIn(new GatewayAutomationDescriptor(BeginScopeName, "1.0",

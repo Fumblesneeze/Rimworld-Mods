@@ -34,7 +34,7 @@ param(
 
     [string]$SteamModContentFolder = 'F:\Steam\steamapps\workshop\content\294100',
 
-    [ValidateSet('All', 'PersonalBugfixes', 'PersonalBugfixes.Unit', 'PersonalBugfixes.Harmony', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ImmersiveSignalFire', 'ImmersiveSignalFire.Unit', 'ImmersiveSignalFire.Harmony', 'ImmersiveSignalFire.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape', 'RimWorldDevGateway.Waylith.Unit', 'PathfindingLab.Unit', 'Megamod.Unit', 'Megamod.Harmony', 'Megamod.Defs')]
+    [ValidateSet('All', 'PersonalBugfixes', 'PersonalBugfixes.Unit', 'PersonalBugfixes.Harmony', 'ImmersiveChefs', 'ImmersiveChefs.Unit', 'ImmersiveChefs.Harmony', 'ImmersiveChefs.Defs', 'ImmersiveSignalFire', 'ImmersiveSignalFire.Unit', 'ImmersiveSignalFire.Harmony', 'ImmersiveSignalFire.Defs', 'ThinWalls', 'ThinWalls.Unit', 'ThinWalls.Harmony', 'ThinWalls.Defs', 'GuestBedGizmo', 'GuestBedGizmo.Unit', 'GuestBedGizmo.Harmony', 'RimWorldModding.Mcp', 'RimWorldDevGateway', 'RimWorldDevGateway.Unit', 'RimWorldDevGateway.EndToEndHost.Unit', 'RimWorldDevGateway.Snapshots', 'RimWorldDevGateway.CircinusShape', 'RimWorldDevGateway.Waylith.Unit', 'RimWorldDevGateway.Waylith.Harmony', 'PathfindingLab.Unit', 'Megamod.Unit', 'Megamod.Harmony', 'Megamod.Defs')]
     [string]$Suite = 'All',
 
     [string]$HarmonyAssemblyPath,
@@ -104,7 +104,7 @@ try {
     $resolvedRimWorldPath = (Resolve-Path -LiteralPath $RimWorldPath).Path
     $resolvedWorkshopPath = (Resolve-Path -LiteralPath $SteamModContentFolder).Path
     $managedPath = Join-Path $resolvedRimWorldPath 'RimWorldWin64_Data\Managed'
-    if ($Suite -in @('RimWorldDevGateway.Waylith.Unit', 'Megamod.Defs')) {
+    if ($Suite -in @('RimWorldDevGateway.Waylith.Unit', 'RimWorldDevGateway.Waylith.Harmony', 'Megamod.Defs')) {
         $managedPath = $resolvedRimWorldPath
     }
     $assemblyPath = Join-Path $managedPath 'Assembly-CSharp.dll'
@@ -141,6 +141,11 @@ try {
             Name = 'RimWorldDevGateway.Waylith.Unit'
             Group = 'RimWorldDevGateway.Waylith'
             Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Waylith.Tests\RimWorldDevGateway.Waylith.Tests.csproj'
+        },
+        [pscustomobject]@{
+            Name = 'RimWorldDevGateway.Waylith.Harmony'
+            Group = 'RimWorldDevGateway.Waylith'
+            Project = Join-Path $repositoryRoot 'tests\RimWorldDevGateway.Waylith.Harmony.Tests\RimWorldDevGateway.Waylith.Harmony.Tests.csproj'
         },
         [pscustomobject]@{
             Name = 'PersonalBugfixes.Unit'
@@ -236,7 +241,7 @@ try {
     $selectedSuites = if ($Suite -eq 'All') {
         # This legacy aggregate runs against Unity/Mono. The beta process is an
         # explicit alternative, not another suite that can share 1.6 references.
-        @($availableSuites | Where-Object { $_.Name -notin @('RimWorldDevGateway.Waylith.Unit', 'Megamod.Unit', 'Megamod.Harmony', 'Megamod.Defs') })
+        @($availableSuites | Where-Object { $_.Name -notin @('RimWorldDevGateway.Waylith.Unit', 'RimWorldDevGateway.Waylith.Harmony', 'Megamod.Unit', 'Megamod.Harmony', 'Megamod.Defs') })
     }
     elseif ($Suite -in @('PersonalBugfixes', 'ImmersiveChefs', 'ImmersiveSignalFire', 'ThinWalls', 'GuestBedGizmo', 'RimWorldModding.Mcp', 'RimWorldDevGateway')) {
         @($availableSuites | Where-Object Group -EQ $Suite)
@@ -263,7 +268,7 @@ try {
     $harmonyDependency = $null
     if (@($selectedSuites | Where-Object Name -Like '*.Harmony').Count -gt 0) {
         $candidateHarmonyPath = if ([string]::IsNullOrWhiteSpace($HarmonyAssemblyPath)) {
-            if ($Suite -eq 'Megamod.Harmony') {
+            if ($Suite -in @('Megamod.Harmony', 'RimWorldDevGateway.Waylith.Harmony')) {
                 Join-Path $resolvedWorkshopPath '2009463077\1.7\Assemblies\0Harmony.dll'
             }
             else {
@@ -431,7 +436,7 @@ try {
             Passed = $passed
             Failed = $failed
             NotExecuted = $notExecuted
-            Framework = if ($selected.Name -in @('RimWorldDevGateway.Waylith.Unit', 'PathfindingLab.Unit', 'Megamod.Unit', 'Megamod.Harmony', 'Megamod.Defs')) { '.NET 10.0' } elseif ($selected.Name -eq 'RimWorldModding.Mcp' -or $selected.Name -eq 'RimWorldDevGateway.EndToEndHost.Unit') { '.NET 8.0' } else { '.NET Framework 4.8' }
+            Framework = if ($selected.Name -in @('RimWorldDevGateway.Waylith.Unit', 'RimWorldDevGateway.Waylith.Harmony', 'PathfindingLab.Unit', 'Megamod.Unit', 'Megamod.Harmony', 'Megamod.Defs')) { '.NET 10.0' } elseif ($selected.Name -eq 'RimWorldModding.Mcp' -or $selected.Name -eq 'RimWorldDevGateway.EndToEndHost.Unit') { '.NET 8.0' } else { '.NET Framework 4.8' }
             Results = $trxPath
             Log = $logPath
             DependencyEvidence = if ($selected.Name -like '*.Harmony') { $harmonyDependencyEvidencePath } else { $null }

@@ -57,6 +57,43 @@ the game, move the desktop pointer, or call a product setting setter in place of
 - **THEN** normal focus, selection and validation rules determine the visible result
 - **AND** another field or underlying game command does not receive an unintended gesture
 
+#### Scenario: Replace one captured focused native text field
+- **WHEN** the operator clicks a writable single-line native field, captures its exact focused-control handle and requests bounded replacement text
+- **THEN** native Ctrl+A, Backspace and text-input events replace it through its ordinary field path while the game remains minimized
+- **AND** empty text and printable BMP names/numeric-invalid strings are delivered without direct editor/value mutation, clipboard use or arbitrary keyboard input
+- **AND** the initial repository operation limit is128 characters and control/format/unassigned characters, line/paragraph separators and surrogate code units are rejected before input; this is not an engine text-length claim
+
+#### Scenario: A focused field changes during text delivery
+- **WHEN** focus, editor instance/rectangle, owning native window or geometry changes, including during the layout immediately before a key/text event
+- **THEN** remaining replacement input is refused before reaching another field or an underlying game command
+- **AND** retained evidence separates already delivered chord/clear/characters from undelivered input and confirmed owned cleanup
+
+#### Scenario: Text replacement is cancelled with owned input pending
+- **WHEN** cancellation or failure interrupts a replacement while a key or character remains owned
+- **THEN** cleanup releases only those owned keys/removes only the exactly owned unconsumed character, leaving accepted native edits and unrelated input intact
+- **AND** ambiguous ownership reports incomplete cleanup and quarantines further injection instead of clearing all input
+
+#### Scenario: Reset authority changes while text keys are held
+- **WHEN** the inspected reset body is rebuilt or reset verification fails during text input
+- **THEN** all text-key receipts are revoked and later same-shaped foreign edges cannot inherit ownership
+- **AND** cleanup independently attempts every still-provably-owned key and character, retaining all failures without releasing ambiguous input
+
+#### Scenario: Retain cleanup failures in the final text result
+- **WHEN** text cleanup fails after an action rejection or cancellation
+- **THEN** its final receipt retains the original action failure separately from up to four ordered cleanup-failure entries covering the fixed three keys and character queue
+- **AND** entries contain only bounded exception types and known failure codes, without arbitrary exception messages, stacks, Data or error-code payloads
+- **AND** larger unexpected aggregates explicitly report truncation without changing incomplete-cleanup or quarantine behavior
+
+#### Scenario: A captured layout is changed before native execution
+- **WHEN** another callback replaces or changes the captured layout event or its drawing/type/raw-type state, or layout execution/guard authority is lost
+- **THEN** it cannot authorize the following native key pass
+- **AND** owned cleanup runs without redirecting that key to a field
+
+#### Scenario: Replace text within an existing pointer workflow
+- **WHEN** a healthy owned pointer scope surrounds native text replacement
+- **THEN** the text action preserves its pointer position and uses the same current-window/focused-control checks
+- **AND** scope expiry or ending stops replacement and waits for owned key cleanup before restoring the pointer
+
 ### Requirement: Reject stale context and unsupported input before mutation
 
 The Gateway MUST bind each operation to the exact process and native dialog instance, current

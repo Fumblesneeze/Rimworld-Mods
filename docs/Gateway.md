@@ -335,6 +335,28 @@ in both minimized1.7 runs. UI scale1, ordinary window ID0, unchanged normal conf
 and completed cleanup are retained. Cancellation, other scales, main-menu, text and scroll cases,
 and full tooling acceptance remain incomplete.
 
+The focused text prerequisite adds optional `FocusedTextControlHandle` to captured windows and
+`native-window.replace-text` with `{"version":1,"windowHandle":"<captured window>","controlHandle":"<captured focus>","text":"12.5"}`.
+Invoke it through `gateway_mutation` with `kind:"automation"`, that name and the serialized arguments;
+use the same status/cancel operations for its retained run. First click the actual field and capture
+again. The control handle binds the existing writable single-line native editor and is invalidated
+by the next capture. It never creates an editor, assigns focus/text, invokes a product callback or
+uses desktop input. Native Ctrl+A, Backspace and character events pass through the inspected1.7
+dispatch path; the provider revalidates after each native layout. Empty text and at most128 printable
+BMP characters are supported; controls, formatting characters, line/paragraph separators, unassigned
+characters and surrogate code units refuse before input. There is no arbitrary keyboard or clipboard
+endpoint. Existing healthy pointer scopes can surround replacement; stopping that scope first waits
+for owned key cleanup. Text replacement itself does not move the pointer.
+
+`NativeWindowReplaceTextActionStep` uses that same operation and deferred cleanup receipt. Counts prove
+native event delivery, not that a field accepted the text: observe the actual native draft/validation
+and subsequent Apply result. `initialFailure` preserves the action rejection; `cleanupFailures`
+retains up to four ordered known-code/bounded-type entries without messages or stacks. Unexpected
+larger aggregates set `cleanupFailuresTruncated`; cleanup failure still quarantines input.
+The authored `gateway.native-window-text` scenario covers invalid/valid
+numeric drafts, empty text, a BMP name, an unchanged adjacent field and focus replacement during
+layout followed by fresh input. Its reviewed minimized native run remains pending.
+
 `native-log.set-open` accepts `{"version":1,"open":true}` (or false) through the same typed
 automation invocation surface. It invokes the inspected1.7 developer-log toolbar command,
 requires developer mode and settled UI, and observes the resulting native window. An already

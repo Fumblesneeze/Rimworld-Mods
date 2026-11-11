@@ -7,11 +7,12 @@ namespace RimWorldDevGateway.EndToEndTesting;
 public sealed class EndToEndNativeWindow
 {
     public EndToEndNativeWindow(string handle, string runtimeType, int nativeId, double x, double y,
-        double width, double height, double uiScale, int pixelWidth, int pixelHeight)
+        double width, double height, double uiScale, int pixelWidth, int pixelHeight, string? focusedTextControlHandle = null)
     {
         Handle = handle; RuntimeType = runtimeType; NativeId = nativeId;
         X = x; Y = y; Width = width; Height = height; UiScale = uiScale;
         PixelWidth = pixelWidth; PixelHeight = pixelHeight;
+        FocusedTextControlHandle = focusedTextControlHandle;
     }
     public string Handle { get; }
     public string RuntimeType { get; }
@@ -23,6 +24,23 @@ public sealed class EndToEndNativeWindow
     public double UiScale { get; }
     public int PixelWidth { get; }
     public int PixelHeight { get; }
+    public string? FocusedTextControlHandle { get; }
+}
+
+public sealed class NativeWindowReplaceTextActionStep : EndToEndStep
+{
+    public NativeWindowReplaceTextActionStep(string name, string windowHandle, string controlHandle, string text,
+        string? expectedFailureCode = null) : base(name, EndToEndStepKind.Act)
+    {
+        WindowHandle = StepValues.Required(windowHandle, nameof(windowHandle));
+        ControlHandle = StepValues.Required(controlHandle, nameof(controlHandle));
+        Text = text ?? throw new ArgumentNullException(nameof(text));
+        ExpectedFailureCode = expectedFailureCode == null ? null : StepValues.Required(expectedFailureCode, nameof(expectedFailureCode));
+    }
+    public string WindowHandle { get; }
+    public string ControlHandle { get; }
+    public string Text { get; }
+    public string? ExpectedFailureCode { get; }
 }
 
 public sealed class NativeWindowCaptureStep : EndToEndStep

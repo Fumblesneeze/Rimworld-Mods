@@ -6,6 +6,27 @@ namespace RimWorldModding.Mcp.Tests;
 [TestFixture]
 public sealed class RunLeaseAndGatewayPlannerTests
 {
+    [TestCase("")]
+    [TestCase("-12.5")]
+    [TestCase("Médicine 2")]
+    public void NativeTextReplacementUsesTheExistingExactProcessAutomationProjection(string text)
+    {
+        var root = TestRoot();
+        try
+        {
+            var manifest = Path.Combine(root, "artifacts", "run", "current.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(manifest)!); File.WriteAllText(manifest, "{}");
+            var arguments = System.Text.Json.JsonSerializer.Serialize(new { version = 1, windowHandle = "window-1", controlHandle = "control-1", text });
+            var plan = GatewayClientPlanner.Mutation(root, manifest, 123, "automation", "native-window.replace-text", arguments);
+            Assert.That(plan.Kind, Is.EqualTo("gateway_mutation"));
+            Assert.That(plan.Arguments, Does.Contain(manifest));
+            Assert.That(plan.Arguments, Does.Contain("123"));
+            Assert.That(plan.Arguments, Does.Contain("native-window.replace-text"));
+            Assert.That(plan.Arguments.Count(item => item == arguments), Is.EqualTo(1));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
     [Test]
     public void ExactProcessIdentity_DetectsRunningAndReusedPid()
     {

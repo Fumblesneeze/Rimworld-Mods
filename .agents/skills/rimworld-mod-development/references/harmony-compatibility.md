@@ -89,6 +89,11 @@ An observation-only hook should still require only the callable and execution fa
   actual patch construction, invocation and cleanup; when constructed identity is not retained,
   use concrete wrappers for typed engine arguments around the owned non-generic route. This does
   not prohibit ordinary generic helpers or emitted generic calls whose identity is preserved.
+  Also inspect the provider's `__state` key: callbacks declared on the same type can share one
+  state slot even when registered separately. Co-installed families with distinct state types
+  need distinct concrete declaring types, or one deliberately shared state contract. A partial
+  class does not separate those identities. Prove co-installation, normal/throwing invocation and
+  exact-owner cleanup together; isolated callback tests cannot reveal a shared-slot collision.
 - Classify patch inputs by the provider's effective injected binding, not raw ParameterInfo.Name.
   Parameter/method/type HarmonyArgument metadata can rename a result, argument or mutable argument
   array. Read metadata without constructing foreign attributes, honor the inspected provider's

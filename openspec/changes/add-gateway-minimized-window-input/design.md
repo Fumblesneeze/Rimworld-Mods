@@ -428,3 +428,73 @@ Manage policies remains an ordinary captured-window click; no product reference 
 Exact1.7 source references and proposed leases are retained in the P0-C native UI research. Native
 button semantics and the minimized action/result still require independent review and live evidence;
 host tests must not fabricate an active mod or a populated game Def database.
+
+### Focused native text replacement prerequisite
+
+On inspected1.7.5005, InputSystem.QueueKeyChange synchronously updates native key state/actions and
+QueueTextInput synchronously invokes keyboard text subscribers. ImguiDispatch.DispatchKeyboard
+then delivers queued characters and key edges through RunKeyPass. Each RunKeyPass performs layout
+before creating and dispatching its native Event. Successful queue calls alone cannot prove that
+the intended field received input; validate the focused control again after that layout.
+
+Extend native-window.capture with an optional FocusedTextControlHandle for the exact currently
+focused, writable, single-line native TextEditor of each captured window. Use QueryStateObject,
+the native keyboard control and control-to-window binding; never allocate an editor or assign
+focus, selection, editor text, product values or callbacks. Readonly observers surround the actual
+native TextFieldImpl call and retain its TrackControlWindow argument; a rectangle match alone does
+not establish which named control executed. Unsupported composed field/binding or key-producer
+methods refuse. Observe the existing character hook before admission. Bind the editor reference, control ID,
+rectangle, window instance/stack and rendered geometry. A fresh capture invalidates old handles.
+
+Register native-window.replace-text version1 with windowHandle, controlHandle and text through
+the existing gateway_mutation automation projection and status/cancel lifecycle. It performs the
+native Ctrl+A chord and release, Backspace and release, followed by native character input. It
+offers no arbitrary keyboard or clipboard endpoint. Empty text is valid. The initial repository
+workload bound is128 printable BMP UTF-16 characters: sufficient headroom above the inspected
+27-character policy name and numeric/invalid-input cases, with at most132 deferred dispatch phases.
+Control/format/unassigned characters, line/paragraph separators, surrogate text and oversized input refuse before injection; this
+is an explicit bounded operation policy, not a claimed engine limit. Unicode BMP names are kept.
+
+Every phase requires the same current native window/editor ownership, geometry and permitted
+focus. Post-layout replacement, changed focus, read-only/multiline fields, foreign held/queued
+input and unsupported native dispatch refuse without redirecting input. Cleanup releases only
+owned keys and removes only an exactly owned unconsumed character. Ambiguous ownership is an
+incomplete-cleanup/quarantined result, never a global input reset. Accepted native edits remain;
+focus is not reassigned and no old text is restored. A healthy existing pointer scope may surround
+text replacement without an additional argument because text does not move the pointer; scope
+ending/expiry stops the text gesture and waits for its key cleanup before pointer restoration.
+Retain per-phase delivery, character counts,
+rejection and cleanup separately from the native field's observed validation/result.
+
+NativeWindowReplaceTextActionStep uses the same registry and existing deferred E2E cleanup.
+The executable Gateway scenario must click a real native field, capture its focus lease, replace
+numeric text including invalid input and a name, observe unchanged adjacent controls, and exercise
+stale focus/after-layout refusal. Root owns the reviewed minimized native run and causal captures.
+
+The text and click DispatchInput callback families use separate concrete declaring types because
+Harmony3 keys each target's `__state` slot by patch declaring type. Their actual callbacks must
+co-install and invoke on one host-safe target in the separately owned
+RimWorldDevGateway.Waylith.Harmony environment; the ordinary Waylith.Unit tier remains Harmony-free.
+That host target proves callback composition/cleanup only, never native UI behavior. Reset-body
+republication or reset failure revokes every text key receipt as well as mouse ownership. A later
+queue callback cannot restore that gesture's revoked claims. Cleanup attempts each independently
+owned chord key and the character queue even if another key is ambiguous or throws, aggregates
+failures and preserves quarantine. A captured Layout must retain its exact event identity, type,
+raw type, drawing flag and current guard authority and actually execute before it authorizes a key.
+
+The final operation receipt retains cleanupFailures separately from initialFailure. It contains
+at most four ordered top-level entries, matching the three fixed keys and one character queue;
+each entry carries only a known native ownership/queue error code (otherwise
+native_text_cleanup_failed) and an exception type bounded to128 characters through the existing
+trusted exception formatter. It persists no exception messages, stacks, Data or arbitrary error
+codes and does not recursively traverse foreign inner exceptions. All four actual cleanup lanes
+fit this bound. An out-of-contract larger aggregate sets cleanupFailuresTruncated=true instead of
+silently dropping that fact. Terminal native_input_cleanup_incomplete, original action failure in
+initialFailure, partial-delivery counts and quarantine semantics remain unchanged.
+
+The native text probe budgets23 native operations at15s each,6 screenshots at30s each and one10s
+initial wait:535s total declared step allowance. An additional65s reserve covers assertions,
+checkpoints, persistence, native cancel and owned cleanup, giving600s scenario wall time.
+Its paused UI has no established frame-rate ceiling; both scenario and initial wait use int.MaxValue
+frame stops while keeping their independent tick/wall limits. Launch with at least900s, allowing
+180s startup and120s host shutdown/evidence headroom beyond the scenario.

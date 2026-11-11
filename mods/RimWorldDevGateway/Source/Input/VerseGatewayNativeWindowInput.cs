@@ -15,11 +15,13 @@ namespace RimWorldDevGateway;
 internal sealed class GatewayNativeWindowDescriptor
 {
     internal GatewayNativeWindowDescriptor(string handle, string runtimeType, int nativeId,
-        GatewayNativeWindowGeometry geometry)
-    { Handle = handle; RuntimeType = runtimeType; NativeId = nativeId; Geometry = geometry; }
+        GatewayNativeWindowGeometry geometry, string? focusedTextControlHandle = null)
+    { Handle = handle; RuntimeType = runtimeType; NativeId = nativeId; Geometry = geometry;
+      FocusedTextControlHandle = focusedTextControlHandle; }
     public string Handle { get; }
     public string RuntimeType { get; }
     public int NativeId { get; }
+    public string? FocusedTextControlHandle { get; }
     internal GatewayNativeWindowGeometry Geometry { get; }
     public double X => Geometry.X;
     public double Y => Geometry.Y;
@@ -32,7 +34,7 @@ internal sealed class GatewayNativeWindowDescriptor
 
 // This adapter is created, used and shut down on the actual Unity thread. No input is sent by
 // Capture, Begin or Advance: the engine's pre/post-dispatch boundary owns all gesture phases.
-internal sealed class VerseGatewayNativeWindowInput : IDisposable
+internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
 {
     public bool IsAvailable => UnavailableReason == null;
     public string? UnavailableReason
@@ -41,7 +43,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         {
 #if RIMWORLD_1_7
             if (failure != null) return failure;
-            if (active?.IsQuarantined == true) return "native_input_quarantined";
+            if (active?.IsQuarantined == true || textActive?.IsQuarantined == true) return "native_input_quarantined";
             if (pointerScope?.Result?.Error != null) return "native_pointer_scope_quarantined";
             if (!inputResetObserved) return "native_input_reset_not_observed";
             if (!HasPublishedMouseGuards()) return "native_mouse_guard_not_observed";
@@ -78,6 +80,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             harmony.Patch(contract.FrameReset,
                 postfix: new HarmonyMethod(Hook(nameof(AfterInputFrameReset))) { priority = Priority.First },
                 finalizer: new HarmonyMethod(Hook(nameof(FinalizeInputFrameReset))) { priority = Priority.Last });
+            InstallTextHooks();
             harmony.Patch(contract.FrameResetBoundary,
                 postfix: new HarmonyMethod(Hook(nameof(AfterInputResetBoundary))) { priority = Priority.First },
                 transpiler: new HarmonyMethod(Hook(nameof(ObserveResetBoundaryStream))) { priority = Priority.Last },
@@ -101,6 +104,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         if (stack.Windows.Count > MaximumWindows) throw Error("native_window_inventory_limit");
         if (!ValidExtent()) throw Error("native_render_extent_unavailable");
         captures.Clear();
+        textCaptures.Clear();
         var result = new List<GatewayNativeWindowDescriptor>();
         foreach (Window window in stack.Windows)
         {
@@ -110,9 +114,13 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             var geometry = new GatewayNativeWindowGeometry(bounds.x, bounds.y, bounds.width, bounds.height,
                 Prefs.UIScale, Screen.width, Screen.height, contract!.MouseOriginOffset);
             string handle = Guid.NewGuid().ToString("N");
+            var focus = TextUnavailableReason == null ? CapturableText(window) : null;
+            string? controlHandle = focus == null ? null : Guid.NewGuid().ToString("N");
             var descriptor = new GatewayNativeWindowDescriptor(handle, window.GetType().FullName ??
-                window.GetType().Name, window.ID, geometry);
-            captures.Add(handle, new CaptureLease(window, stack, descriptor, dispatchInstance!, dispatchHost!));
+                window.GetType().Name, window.ID, geometry, controlHandle);
+            var lease = new CaptureLease(window, stack, descriptor, dispatchInstance!, dispatchHost!);
+            captures.Add(handle, lease);
+            if (controlHandle != null) textCaptures.Add(controlHandle, new TextCapture(lease, focus!));
             result.Add(descriptor);
         }
         return result;
@@ -130,7 +138,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         if (context.CallerThreadId != Thread.CurrentThread.ManagedThreadId) throw Error("native_input_wrong_thread");
 #if RIMWORLD_1_7
         RetireCompleted();
-        if (active != null) throw Error("native_input_busy");
+        if (active != null || textActive != null) throw Error("native_input_busy");
         GatewayNativePointerScope? scope = null;
         if (pointerScopeHandle != null)
         {
@@ -164,7 +172,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
 #if RIMWORLD_1_7
         context.RunStep("native-pointer-scope-admission", () => { });
         RetireCompleted();
-        if (active != null || pointerScope != null && pointerScope.Result == null) throw Error("native_input_busy");
+        if (active != null || textActive != null || pointerScope != null && pointerScope.Result == null) throw Error("native_input_busy");
         if (deadlineUtc <= DateTimeOffset.UtcNow) throw Error("native_pointer_scope_expired");
         Mouse mouse = Mouse.current;
         if (new[] { mouse.leftButton, mouse.rightButton, mouse.middleButton, mouse.forwardButton, mouse.backButton }
@@ -204,6 +212,8 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         if (!scope.Ending) return;
         if (active != null && active.Advance(false) == null && ReferenceEquals(activeBackend?.Scope, scope))
         { active.Advance(true); return; }
+        if (textActive != null && textActive.Advance(false) == null)
+        { textActive.Advance(true); return; }
         scope.Close(ReadPointer, point =>
         {
             Mouse mouse = Mouse.current;
@@ -228,6 +238,12 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             active.AfterDispatch(false);
         }
         GatewayDeferredAutomationResult? result = activeResult?.Advance(false);
+        if (textActive != null && textActive.Advance(false) == null)
+        {
+            textActive.BeforeDispatch(true);
+            textActive.AfterDispatch(false);
+        }
+        result ??= textResult?.Advance(false);
         pointerScope?.RequestEnd();
         TickPointerScope();
         if (pointerScope?.SnapshotForShutdown() is GatewayDeferredAutomationResult scopeResult &&
@@ -246,6 +262,8 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             return GatewayDeferredAutomationResult.Failure("native_input_shutdown_incomplete",
                 "Native input hook cleanup was incomplete.", result?.Result);
         captures.Clear();
+        textCaptures.Clear();
+        lastFocusedText = null;
         return result;
 #else
         return null;
@@ -316,6 +334,24 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         bool complete = true;
         if (harmony != null && contract != null)
         {
+            foreach (string callback in new[] { nameof(TextDispatchHooks.BeforeNativeTextDispatch),
+                nameof(TextDispatchHooks.AfterNativeTextDispatch), nameof(TextDispatchHooks.FinalizeNativeTextDispatch) })
+            {
+                try { harmony.Unpatch(contract.Dispatch, TextHook(callback)); }
+                catch { complete = false; }
+            }
+            if (textContract != null)
+            {
+                foreach (var patch in new[] {
+                    (textContract.TextField, nameof(BeforeNativeTextField)),
+                    (textContract.TextField, nameof(ObserveNativeTextField)),
+                    (textContract.TextField, nameof(FinalizeNativeTextField)),
+                    (textContract.TrackControl, nameof(ObserveNativeTextControl)) })
+                {
+                    try { harmony.Unpatch(patch.Item1, Hook(patch.Item2)); }
+                    catch { complete = false; }
+                }
+            }
             foreach (var patch in new[]
             {
                 (contract.Dispatch, nameof(BeforeNativeDispatch)),
@@ -424,7 +460,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             version = ++observation.Version;
             observation.Stream = observation.Prefix = observation.Entry = null;
             previous = service.PublishedMetadata(__originalMethod);
-            if (service.active != null) service.failure ??= "native_mouse_guard_rebuilt_during_gesture";
+            if (service.active != null || service.textActive != null) service.failure ??= "native_mouse_guard_rebuilt_during_gesture";
         }
         var body = instructions.ToList();
         bool supported = true;
@@ -519,7 +555,8 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
             service.resetAdmission = null;
             service.inputResetObserved = false;
             service.activeBackend?.InvalidateEdgeOwnership();
-            if (service.active != null) service.failure ??= "native_input_reset_rebuilt_during_gesture";
+            service.textBackend?.InvalidateEdgeOwnership();
+            if (service.active != null || service.textActive != null) service.failure ??= "native_input_reset_rebuilt_during_gesture";
             previousPublication = service.PublishedResetMetadata();
         }
         // Invalidate before enumerating any lazily supplied incoming stream. An unsuccessful
@@ -548,17 +585,21 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         failure = "native_input_reset_unavailable";
         inputResetObserved = false;
         activeBackend?.InvalidateEdgeOwnership();
+        textBackend?.InvalidateEdgeOwnership();
     }
 
     private void RetireCompleted()
     {
         // Freeze the provider projection at the native completion boundary, before a future
         // shutdown or failed input frame can change the meaning of this finished gesture.
-        if (active == null || activeResult!.Advance(false) == null || active.IsQuarantined) return;
-        active = null;
-        activeResult = null;
-        activeBackend = null;
-        activeContext = null;
+        if (active != null && activeResult!.Advance(false) != null && !active.IsQuarantined)
+        {
+            active = null; activeResult = null; activeBackend = null; activeContext = null;
+        }
+        if (textActive != null && textResult!.Advance(false) != null && !textActive.IsQuarantined)
+        {
+            textActive = null; textResult = null; textBackend = null; textContext = null;
+        }
     }
 
     private static bool BeforeNativeDispatch(object __instance, object __0, bool __runOriginal,
@@ -567,7 +608,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         __state = null;
         VerseGatewayNativeWindowInput? service = installed;
         if (service == null || !UnityData.IsInMainThread) return true;
-        if (service.currentDispatchFrame != null)
+        if (service.currentDispatchFrame != null || service.textFrame != null)
         {
             // A nested dispatch could replay the outer gesture's raw edges.
             service.failure = "native_input_reentrant_dispatch";
@@ -622,6 +663,11 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         VerseGatewayNativeWindowInput? service = installed;
         DispatchFrame? frame = service?.currentDispatchFrame;
         Event? input = Event.current;
+        if (service != null && UnityData.IsInMainThread && input != null && ReferenceEquals(__instance, service.dispatchInstance))
+        {
+            if (input.rawType is EventType.layout or EventType.repaint) service.lastFocusedText = null;
+            service.textFrame?.Capture(input, __1);
+        }
         if (frame == null || !UnityData.IsInMainThread || input == null ||
             !ReferenceEquals(__instance, service!.dispatchInstance) ||
             !ReferenceEquals(frame.Operation, service.active)) return;
@@ -637,6 +683,11 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
         // Rebuilding during layout can put an unsupported prefix ahead of our capture. Its
         // missing/disowned state cannot be trusted until the exact active frame's proof is checked.
         VerseGatewayNativeWindowInput? activeService = installed;
+        if (activeService?.textFrame is TextFrame textFrame)
+        {
+            if (!UnityData.IsInMainThread || !ReferenceEquals(__instance, activeService.dispatchInstance)) return false;
+            return textFrame.Before(Event.current, __1, __runOriginal);
+        }
         DispatchFrame? activeFrame = activeService?.currentDispatchFrame;
         bool exactActiveFrame = activeFrame != null && UnityData.IsInMainThread &&
             ReferenceEquals(__instance, activeService!.dispatchInstance) &&
@@ -671,6 +722,7 @@ internal sealed class VerseGatewayNativeWindowInput : IDisposable
 
     private static void AfterNativeMousePass(bool __runOriginal, MousePassInvocation? __state)
     {
+        installed?.textFrame?.After(__runOriginal);
         if (__state?.Provenance.Owned == true) __state.Frame.MousePass.AfterPass(__runOriginal);
     }
 

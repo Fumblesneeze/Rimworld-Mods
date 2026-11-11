@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>RimWorldDevGateway.Waylith.Harmony.Tests</AssemblyName>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(DefaultSteamModContentFolder)/2009463077/1.7/Assemblies/0Harmony.dll</HarmonyAssemblyPath>
+    <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../mods/RimWorldDevGateway/RimWorldDevGateway.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
+    <Reference Include="0Harmony"><HintPath>$(HarmonyAssemblyPath)</HintPath><Private>true</Private></Reference>
+    <Reference Include="$(RimWorldPath)/Assembly-CSharp.dll;$(RimWorldPath)/UnityStubs.dll;$(RimWorldPath)/Waylith.dll;$(RimWorldPath)/Waylith.UnityCompat.dll;$(RimWorldPath)/Brutal.*.dll">
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

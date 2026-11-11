@@ -48,6 +48,14 @@ but no active mods, Harmony initialization or populated Def databases. Assembly-
 entry/exit guards enforce that distinction. It is not included in the legacy `All`
 aggregate, which still requires a 1.6 installation. It never proves live gameplay.
 
+`RimWorldDevGateway.Waylith.Harmony` is the separately invoked .NET10 environment for the
+Gateway's actual callback composition under the installed1.7 Harmony provider. It patches only
+owned host targets with explicit owners and guaranteed cleanup. Its first concrete use co-installs
+the native mouse/text dispatch callbacks, whose state-slot binding cannot be exercised honestly
+in Waylith.Unit. It loads no active mods or populated Def database and does not initialize a game
+or GUI. The real minimized native workflow remains required. This suite is excluded from `All`
+and the legacy Gateway aggregate; select it explicitly through `test_run` with a focused filter.
+
 Runtime layout, build-import and test-bundle selection rules are covered by focused
 `RimWorldModding.Mcp` tests without loading game assemblies. Versioned E2E metadata
 is inspected with the existing host rather than loading a net10 test DLL in net8.

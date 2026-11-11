@@ -67,12 +67,14 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
             catch (GatewayAutomationException exception)
             { return GatewayEndToEndCompletedStepOperation.Failed(exception.Code, exception.Message); }
         }
-        if (step is NativeWindowClickActionStep click)
+        if (step is NativeWindowClickActionStep or NativeWindowReplaceTextActionStep)
         {
+            var click = step as NativeWindowClickActionStep;
+            var text = step as NativeWindowReplaceTextActionStep;
             if (context is not GatewayEndToEndTestContext ownedContext)
                 return GatewayEndToEndCompletedStepOperation.Failed("native_input_cleanup_unavailable",
                     "Native input requires the owned asynchronous scenario cleanup context.");
-            if (click.PointerScopeHandle != null &&
+            if (click?.PointerScopeHandle != null &&
                 (!scopes.TryGetValue(ownedContext, out var pointerScope) || pointerScope.Closed ||
                     pointerScope.Handle != click.PointerScopeHandle))
                 return GatewayEndToEndCompletedStepOperation.Failed("native_pointer_scope_not_owned",
@@ -94,15 +96,21 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
             {
                 var arguments = new Dictionary<string, object?>
                 {
-                    ["version"] = click.PointerScopeHandle == null ? 1 : 2, ["windowHandle"] = click.WindowHandle,
-                    ["pixelX"] = click.PixelX, ["pixelY"] = click.PixelY
+                    ["version"] = click?.PointerScopeHandle == null ? 1 : 2,
+                    ["windowHandle"] = click?.WindowHandle ?? text!.WindowHandle
                 };
-                if (click.PointerScopeHandle != null) arguments["pointerScopeHandle"] = click.PointerScopeHandle;
-                var run = registry.StartRun(GatewayNativeWindowAutomations.ClickName, "e2e-native-" + Guid.NewGuid().ToString("N"),
+                if (click != null)
+                {
+                    arguments["pixelX"] = click.PixelX; arguments["pixelY"] = click.PixelY;
+                    if (click.PointerScopeHandle != null) arguments["pointerScopeHandle"] = click.PointerScopeHandle;
+                }
+                else { arguments["controlHandle"] = text!.ControlHandle; arguments["text"] = text.Text; }
+                var run = registry.StartRun(click != null ? GatewayNativeWindowAutomations.ClickName : GatewayNativeWindowAutomations.ReplaceTextName,
+                    "e2e-native-" + Guid.NewGuid().ToString("N"),
                     arguments, timeout: TimeSpan.FromSeconds(15));
                 retained = run;
                 deferredAdmitted = run.DeferredOperation != null;
-                return new ClickOperation(run, click);
+                return new InputOperation(run, arguments, click?.ExpectedFailureCode ?? text?.ExpectedFailureCode);
             }
             catch (GatewayAutomationException exception)
             { return GatewayEndToEndCompletedStepOperation.Failed(exception.Code, exception.Message); }
@@ -124,7 +132,7 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
             {
                 capture.Receive(windows.Select(window => new EndToEndNativeWindow(window.Handle, window.RuntimeType,
                     window.NativeId, window.X, window.Y, window.Width, window.Height, window.UiScale,
-                    window.PixelWidth, window.PixelHeight)).ToArray());
+                    window.PixelWidth, window.PixelHeight, window.FocusedTextControlHandle)).ToArray());
             }
             catch (Exception exception)
             {
@@ -296,19 +304,21 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
         }
     }
 
-    private sealed class ClickOperation : IGatewayEndToEndStepOperation, IGatewayEndToEndStepEvidence
+    private sealed class InputOperation : IGatewayEndToEndStepOperation, IGatewayEndToEndStepEvidence
     {
         private readonly GatewayAutomationRun run;
-        private readonly NativeWindowClickActionStep step;
-        public ClickOperation(GatewayAutomationRun run, NativeWindowClickActionStep step) { this.run = run; this.step = step; }
+        private readonly IReadOnlyDictionary<string, object?> request;
+        private readonly string? expectedFailure;
+        public InputOperation(GatewayAutomationRun run, IReadOnlyDictionary<string, object?> request, string? expectedFailure)
+        { this.run = run; this.request = request; this.expectedFailure = expectedFailure; }
         public bool IsCompleted => run.IsTerminal;
         public GatewayEndToEndStepOutcome GetOutcome()
         {
             if (!IsCompleted) throw new InvalidOperationException("Native input has not finished cleanup.");
             var artifacts = CaptureArtifacts();
-            if (step.ExpectedFailureCode != null)
+            if (expectedFailure != null)
             {
-                if (run.State == "failed" && run.Error?.Code == step.ExpectedFailureCode &&
+                if (run.State == "failed" && run.Error?.Code == expectedFailure &&
                     run.Result is IReadOnlyDictionary<string, object?> receipt &&
                     receipt.TryGetValue("cleanupComplete", out var clean) && clean is true)
                     return GatewayEndToEndStepOutcome.Pass(artifacts);
@@ -318,15 +328,19 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
             return run.State == "succeeded" ? GatewayEndToEndStepOutcome.Pass(artifacts)
                 : GatewayEndToEndStepOutcome.Fail(run.Error?.Code ?? "native_input_failed", run.Error?.Message ?? run.State, artifacts);
         }
-        public IReadOnlyDictionary<string, string> CaptureArtifacts() => new Dictionary<string, string>
+        public IReadOnlyDictionary<string, string> CaptureArtifacts()
+        {
+            var artifacts = new Dictionary<string, string>
             {
                 ["automationRunId"] = run.RunId, ["requestId"] = run.RequestId,
                 ["automationState"] = run.State, ["automationErrorCode"] = run.Error?.Code ?? string.Empty,
-                ["expectedFailureCode"] = step.ExpectedFailureCode ?? string.Empty,
-                ["windowHandle"] = step.WindowHandle,
-                ["pixelX"] = step.PixelX.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
-                ["pixelY"] = step.PixelY.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                ["expectedFailureCode"] = expectedFailure ?? string.Empty,
                 ["nativeInputReceipt"] = System.Text.Encoding.UTF8.GetString(GatewayJsonWriter.Write(run.Result))
             };
+            foreach (var pair in request)
+                artifacts[pair.Key] = pair.Value is double number ? number.ToString("R", System.Globalization.CultureInfo.InvariantCulture)
+                    : Convert.ToString(pair.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            return artifacts;
+        }
     }
 }

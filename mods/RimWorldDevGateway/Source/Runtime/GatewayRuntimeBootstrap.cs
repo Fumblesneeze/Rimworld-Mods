@@ -448,7 +448,10 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
                 nativeWindowInitializationFailure ?? nativeWindows?.UnavailableReason ?? "native_input_initializing"),
             beginScope: (deadline, context) => RequireNativeWindows().BeginPointerScope(deadline, context),
             endScope: (handle, context) => RequireNativeWindows().EndPointerScope(handle, context),
-            scopedClick: (handle, x, y, context, scopeHandle) => RequireNativeWindows().Begin(handle, x, y, context, scopeHandle));
+            scopedClick: (handle, x, y, context, scopeHandle) => RequireNativeWindows().Begin(handle, x, y, context, scopeHandle),
+            replaceText: (handle, control, text, context) => RequireNativeWindows().BeginReplaceText(handle, control, text, context),
+            textAvailability: () => new GatewayAutomationAvailability(nativeWindows?.TextUnavailableReason == null && nativeWindows != null,
+                nativeWindowInitializationFailure ?? nativeWindows?.TextUnavailableReason ?? "native_input_initializing"));
     }
 
     private VerseGatewayNativeWindowInput RequireNativeWindows() => nativeWindows ??

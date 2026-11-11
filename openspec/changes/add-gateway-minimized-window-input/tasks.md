@@ -103,3 +103,9 @@ captures: initial unchecked controls, one native change, enabled checked with di
 the native console. Normal ModsConfig/Prefs hashes were unchanged and owned cleanup completed.
 Evidence: `artifacts/Implementation/megamod-p0/revision19-gateway-verification.md`.
 This renews only the basic click/console scope for 1.7.5005; wider section3 gates remain open.
+
+### Focused text prerequisite — 2026-11-11
+
+- [ ] Implement exact focused-control capture and bounded native-window.replace-text through native queues and post-layout validation, with owned cleanup and focused host RED/GREEN.
+- [ ] Expose the same action through existing typed automation and E2E deferred lifecycle; author native numeric/invalid/name and stale-focus scenarios.
+- [ ] Independently review the frozen provider/contract/step changes and personally verify the reviewed minimized native scenario before accepting text delivery.

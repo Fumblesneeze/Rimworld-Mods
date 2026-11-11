@@ -6,6 +6,51 @@ namespace RimWorldDevGateway.Waylith.Tests;
 [TestFixture]
 public sealed class NativeWindowStepTests
 {
+    [TestCase("")]
+    [TestCase("-12.5")]
+    public void TextReplacementUsesOneRetainedRunAndItsOwnedCleanup(string text)
+    {
+        var registry = new GatewayAutomationRegistry();
+        var native = new PendingClick();
+        int calls = 0;
+        GatewayNativeWindowAutomations.Register(registry, () => Array.Empty<GatewayNativeWindowDescriptor>(),
+            (_, _, _, _) => throw new AssertionException("Text must not fall back to a click."),
+            () => GatewayAutomationAvailability.AvailableNow, replaceText: (window, control, value, _) =>
+            {
+                calls++;
+                Assert.That((window, control, value), Is.EqualTo(("window-1", "field-1", text)));
+                return native;
+            });
+        var context = Context();
+        var operation = new GatewayEndToEndNativeWindowDriver(new UnsupportedDriver(), registry).Begin(
+            new NativeWindowReplaceTextActionStep("replace", "window-1", "field-1", text), context);
+        Assert.That(operation.IsCompleted, Is.False);
+        Assert.That(calls, Is.EqualTo(1));
+        Assert.That(context.RunDeferredCleanup(), Is.EqualTo(DeferredCleanupStatus.Pending));
+        registry.Advance();
+        Assert.That(native.StopObserved, Is.True);
+        native.Complete = true; registry.Advance();
+        Assert.That(context.RunDeferredCleanup(), Is.EqualTo(DeferredCleanupStatus.Completed));
+        Assert.That(operation.GetOutcome().Artifacts["controlHandle"], Is.EqualTo("field-1"));
+        Assert.That(operation.GetOutcome().Artifacts["text"], Is.EqualTo(text));
+        Assert.That(registry.ListRuns(), Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void TextCaptureProjectsTheExactOptionalControlHandleWithoutInput()
+    {
+        var registry = new GatewayAutomationRegistry();
+        GatewayNativeWindowAutomations.Register(registry, () => new[] {
+            new GatewayNativeWindowDescriptor("window-1", "native.test", 0,
+                new GatewayNativeWindowGeometry(0, 0, 100, 100, 1, 1600, 900), "field-1") },
+            (_, _, _, _) => throw new AssertionException("Capture sent input."), () => GatewayAutomationAvailability.AvailableNow);
+        string? field = null;
+        var operation = new GatewayEndToEndNativeWindowDriver(new UnsupportedDriver(), registry).Begin(
+            new NativeWindowCaptureStep("capture", windows => field = windows.Single().FocusedTextControlHandle), Context());
+        Assert.That(operation.GetOutcome().Passed, Is.True);
+        Assert.That(field, Is.EqualTo("field-1"));
+    }
+
     [Test]
     public void DeveloperLogStepUsesTheRegisteredNativeCommandAndRetainsItsIdentity()
     {
