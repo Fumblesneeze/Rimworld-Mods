@@ -74,6 +74,11 @@ inventory. Unrelated or demonstrably compatible transformations remain eligible.
 - **THEN** admission is revalidated before the dependent behavior runs, or that feature fails closed with a warning
 - **AND** unsupported late-patching combinations remain documented limitations, not compatibility claims
 
+#### Scenario: A frequent consumer checks the same published generation
+- **WHEN** a feature has validated a published generation and repeatedly checks its authority during one native GUI workflow
+- **THEN** it may retain the inspected provider's opaque immutable publication identity and compare it under the same nonblocking composition boundary without replaying foreign code or deserializing every consumer call
+- **AND** republishing or removing the owned observer invalidates the old identity, busy/unreadable metadata is unavailable, and identity equality alone never establishes semantic admission.
+
 ### Requirement: Startup admission is idempotent and failures are isolated
 Before applying any enabled patch at its documented startup phase, the mod SHALL evaluate its target
 spec. It SHALL apply passing patches exactly once and skip failing ones. A declared atomic feature

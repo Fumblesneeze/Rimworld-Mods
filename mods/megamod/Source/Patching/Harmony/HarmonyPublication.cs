@@ -29,8 +29,10 @@ internal static class HarmonyPublication
         ValidateEnvelope?.ReturnType == typeof(void) && !ValidateEnvelope.IsGenericMethod &&
         ReadPayload?.ReturnType == typeof(PatchInfo) && !ReadPayload.IsGenericMethod && GateField.GetValue(null) is object gate
         ? gate : throw new InvalidOperationException("The provider's published-generation metadata boundary changed.");
-    private static PatchInfo? Read(MethodBase target)
+    private static PatchInfo? Read(MethodBase target) => Read(target, out _);
+    private static PatchInfo? Read(MethodBase target, out byte[]? identity)
     {
+        identity = null;
         if (!Monitor.IsEntered(Gate)) throw new InvalidOperationException("Published metadata requires the provider composition monitor.");
         if (StateField!.GetValue(null) is not Dictionary<MethodBase, byte[]> state ||
             HeaderField!.GetValue(null) is not byte[] header || !header.SequenceEqual(Envelope))
@@ -42,6 +44,7 @@ internal static class HarmonyPublication
             if (!state.TryGetValue(target, out byte[]? stored)) return null;
             if (stored == null || stored.Length == 0 || stored.Length > MaximumStateBytes)
                 throw new InvalidOperationException("Published metadata is empty or exceeds the 4 MiB inspection limit.");
+            identity = stored;
             bytes = (byte[])stored.Clone();
         }
         finally { Monitor.Exit(state); }
@@ -77,18 +80,59 @@ internal static class HarmonyPublication
     {
         object gate = Gate;
         if (Monitor.IsEntered(gate) || !Monitor.TryEnter(gate)) return false;
-        try { return inspect(new Snapshot(Read(target))); }
+        try
+        {
+            var metadata = Read(target, out var identity);
+            return inspect(new Snapshot(metadata, new Identity(target, identity)));
+        }
         finally { Monitor.Exit(gate); }
     }
     internal static bool InspectPair(MethodBase first, MethodBase second, Func<Snapshot, Snapshot, bool> inspect)
     {
         object gate = Gate;
         if (Monitor.IsEntered(gate) || !Monitor.TryEnter(gate)) return false;
-        try { return inspect(new Snapshot(Read(first)), new Snapshot(Read(second))); }
+        try
+        {
+            var firstMetadata = Read(first, out var firstIdentity);
+            var secondMetadata = Read(second, out var secondIdentity);
+            return inspect(new Snapshot(firstMetadata, new Identity(first, firstIdentity)),
+                new Snapshot(secondMetadata, new Identity(second, secondIdentity)));
+        }
         finally { Monitor.Exit(gate); }
     }
 
     internal readonly record struct Operation(OpCode Code, object? Operand);
+
+    internal sealed class Identity
+    {
+        private readonly MethodBase target;
+        private readonly byte[]? bytes;
+        internal Identity(MethodBase target, byte[]? bytes) { this.target = target; this.bytes = bytes; }
+        // The inspected provider serializes into a fresh array and replaces this dictionary entry
+        // only after publishing the detour. This identity supplements a validated snapshot; it
+        // never proves effective semantics and never executes/deserializes foreign metadata.
+        internal bool IsCurrent()
+        {
+            try
+            {
+                object gate = Gate;
+                if (Monitor.IsEntered(gate) || !Monitor.TryEnter(gate)) return false;
+                try
+                {
+                    if (StateField!.GetValue(null) is not Dictionary<MethodBase, byte[]> state || !Monitor.TryEnter(state)) return false;
+                    try
+                    {
+                        return state.TryGetValue(target, out var current)
+                            ? bytes != null && ReferenceEquals(current, bytes)
+                            : bytes == null;
+                    }
+                    finally { Monitor.Exit(state); }
+                }
+                finally { Monitor.Exit(gate); }
+            }
+            catch (Exception) { return false; }
+        }
+    }
 
     internal sealed class OuterRegistration
     {
@@ -133,16 +177,20 @@ internal static class HarmonyPublication
 
     internal sealed class Snapshot
     {
+        internal Identity Identity { get; }
         internal int Version { get; }
         internal Patch[] Transpilers { get; }
         internal IReadOnlyList<OuterRegistration> Prefixes { get; }
+        internal IReadOnlyList<OuterRegistration> Postfixes { get; }
         internal IReadOnlyList<OuterRegistration> Finalizers { get; }
         private readonly Effect[] effects;
-        internal Snapshot(PatchInfo? info)
+        internal Snapshot(PatchInfo? info, Identity identity)
         {
+            Identity = identity;
             Version = info?.VersionCount ?? 0;
             Transpilers = info?.transpilers.ToArray() ?? Array.Empty<Patch>();
             Prefixes = Array.AsReadOnly((info?.prefixes ?? Array.Empty<Patch>()).Select(patch => new OuterRegistration(patch)).ToArray());
+            Postfixes = Array.AsReadOnly((info?.postfixes ?? Array.Empty<Patch>()).Select(patch => new OuterRegistration(patch)).ToArray());
             Finalizers = Array.AsReadOnly((info?.finalizers ?? Array.Empty<Patch>()).Select(patch => new OuterRegistration(patch)).ToArray());
             effects = (info?.innerprefixes ?? Array.Empty<Patch>()).Select(patch => new Effect(patch, HarmonyPatchType.InnerPrefix))
                 .Concat((info?.innerpostfixes ?? Array.Empty<Patch>()).Select(patch => new Effect(patch, HarmonyPatchType.InnerPostfix)))

@@ -49,6 +49,14 @@ retry or effective-code revalidation mechanism. The first actual runtime adapter
 documented supported repatch check before later patching can be claimed safe. No speculative patch
 registry, foreign-transpiler runner or whole-method IL matcher is provided by this module.
 
+`HarmonyPublication.Identity` lets a target-specific hot path check whether its inspected publication
+is still current. It captures the exact provider-owned serialized publication object under the same
+inspection locks; the check compares that identity without deserializing metadata or running foreign
+code. Busy, reentrant, unreadable or changed publication returns false. Removal and reinstallation
+produce a new identity even when the patch list is otherwise equivalent. This is only a freshness
+receipt: each consumer must still prove its own required semantics and declare which actions require
+a fresh publication. Existing executing-frame receipts are not silently redefined by this helper.
+
 The root supplies the protected primary warning sink and independent fallback explicitly for runtime
 use. Pure admission performs no implicit file, console, Verse or UI I/O. Each skipped enabled patch
 gets one startup warning per attempted registration. The warning's six metadata fields each retain
