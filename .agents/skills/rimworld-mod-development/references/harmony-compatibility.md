@@ -94,6 +94,10 @@ An observation-only hook should still require only the callable and execution fa
   need distinct concrete declaring types, or one deliberately shared state contract. A partial
   class does not separate those identities. Prove co-installation, normal/throwing invocation and
   exact-owner cleanup together; isolated callback tests cannot reveal a shared-slot collision.
+  For inherited target lookup, distinguish `ReflectedType` from the actual declaration: looking up
+  one inherited method through a subclass can produce unequal MethodInfo objects. Compare the
+  module/token and exact declaring type within the admitted callable shape. Do not substitute
+  GetBaseDefinition equality, which can authorize an override whose effective body was never proved.
 - Classify patch inputs by the provider's effective injected binding, not raw ParameterInfo.Name.
   Parameter/method/type HarmonyArgument metadata can rename a result, argument or mutable argument
   array. Read metadata without constructing foreign attributes, honor the inspected provider's

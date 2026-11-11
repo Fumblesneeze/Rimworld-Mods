@@ -166,8 +166,8 @@ public sealed class NativeDrugToleranceRuntime
             if (type == null || !typeof(JoyGiver_Ingest).IsAssignableFrom(type) ||
                 (!typeof(JoyGiver_TakeDrug).IsAssignableFrom(type) && definition.thingDefs?.Any(d => d?.IsDrug == true) != true)) continue;
             if (!joyTypes.TryGetValue(type, out bool supported))
-                joyTypes[type] = supported = type.GetMethod("CanIngestForJoy", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-                    null, new[] { typeof(Pawn), typeof(Thing) }, null) == joyTarget;
+                joyTypes[type] = supported = DrugToleranceJoyProvider.UsesNativeDecision(type.GetMethod("CanIngestForJoy", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                    null, new[] { typeof(Pawn), typeof(Thing) }, null), joyTarget!);
             if (!supported) { Report("A direct drug joy provider overrides the admitted native decision: " + type.FullName); return false; }
         }
         return true;

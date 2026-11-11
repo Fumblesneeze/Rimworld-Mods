@@ -287,3 +287,8 @@ changed. The warning SHALL not claim full coexistence safety or rollback of ever
 - **WHEN** the player opens a manager while tolerance controls are effectively off or unavailable, or its actual layout becomes unsupported
 - **THEN** the current workflow gives a localized explanation at most once per reason for that open window
 - **AND** an intentional off state produces no failed-enabled-patch diagnostic; no global repeated message is emitted while no manager is open.
+
+#### Scenario: Native drug recreation inherits the admitted decision
+- **WHEN** a drug recreation worker inherits the admitted native decision without declaring another implementation
+- **THEN** looking up that same declaration through the worker does not make tolerance editing or enforcement unavailable
+- **AND** a separate override or hidden implementation still needs its own proved semantics; sharing a base definition alone does not authorize it.

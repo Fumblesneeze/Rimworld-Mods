@@ -22,6 +22,11 @@ the inherited method identity; it does not yet prove override delegation and the
 such a provider unavailable. No general provider compatibility is claimed. S024 is absent and
 will call the owned rule directly for its actual treat recipient.
 
+Inherited decision lookup compares module, metadata token and exact declaring type for the
+nongeneric native method. Its reflected worker type is not declaration identity: the ordinary
+TakeDrug worker inherits CanIngestForJoy. A different override or hidden method remains unavailable,
+including an override that calls base; GetBaseDefinition alone does not prove delegation semantics.
+
 An owned last prefix captures the final native argument identities; a first postfix records the
 successful effective native result before other outer postfixes. An owned last finalizer adds
 only an AND restriction, preserving native false, other outer rejection and native exceptions.
