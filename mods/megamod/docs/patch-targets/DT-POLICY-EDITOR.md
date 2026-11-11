@@ -19,6 +19,13 @@ Its receiver, rectangle argument and out-local destinations must be unambiguous.
 width adjustment may precede it. Supplied argument addresses/earlier local address escapes and
 branches into a partial producer chain must be accounted for; no name/signature-only admission
 or exact full-body match suffices. Labels on harmless no-ops still count as branch entries.
+The call guard evaluates constant operations as Single and permits only the native header's
+single16-unit subtraction from a variable width (plus identity operations). Its bounded output
+control-flow pass requires every normally returning path to read all nine calculated columns;
+unreachable reads cannot justify narrowing a rectangle. Forward entry into the entire producer
+chain remains supported. Executable fixtures cover lost-width cancellation and skipped drawing.
+Earlier rectangle-valued local copies are protected as well as argument/address aliases: a
+readonly getter is permitted, but a later overwrite or escaped address is unavailable.
 The width calculator must preserve its consumed allocation contract; relevant final provider
 effects and outer ordering are checked through HarmonyPublication, not speculative foreign calls.
 
