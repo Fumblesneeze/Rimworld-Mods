@@ -110,69 +110,10 @@ public sealed class DrugToleranceSocialPatch
     }
     private bool WritesOutput(ParameterInfo parameter)
     {
-        var binding = Binding(parameter);
+        var binding = DrugToleranceArgumentBinding.Resolve(target, parameter);
         return binding.Name == "__args" || (parameter.ParameterType.IsByRef &&
             (binding.Name == "__result" || binding.Name == "__resultRef" ||
              binding.Index == 2 || binding.Name == "___" + candidateList.Name));
-    }
-    private sealed record ArgumentAlias(string? Original, int Index, string? NewName);
-    // The inspected provider resolves injected names before original-argument indexes. Read its
-    // attribute metadata only; GetCustomAttributes/GetArgumentAttribute would execute constructors.
-    private (string Name, int Index) Binding(ParameterInfo parameter)
-    {
-        var aliases = new List<ArgumentAlias>();
-        void Add(IEnumerable<CustomAttributeData> attributes)
-        {
-            foreach (var attribute in attributes.Where(a => a.AttributeType.Name == nameof(HarmonyArgument)))
-            {
-                if (aliases.Count >= 64) throw new InvalidOperationException("Social completion argument metadata exceeds its bound.");
-                aliases.Add(ParseAlias(attribute));
-            }
-        }
-        var direct = parameter.CustomAttributes.Where(a => a.AttributeType.Name == nameof(HarmonyArgument)).FirstOrDefault();
-        ArgumentAlias? specific = direct == null ? null : ParseAlias(direct);
-        var callback = (MethodInfo)parameter.Member;
-        Add(callback.CustomAttributes);
-        int depth = 0;
-        for (var type = callback.DeclaringType; type != null; type = type.BaseType)
-        {
-            if (++depth > 32) throw new InvalidOperationException("Social completion attribute inheritance exceeds its bound.");
-            Add(type.CustomAttributes);
-        }
-        string raw = parameter.Name ?? string.Empty;
-        var mapped = aliases.FirstOrDefault(a => a.Original == raw);
-        string mappedName = !string.IsNullOrEmpty(mapped?.NewName) ? mapped!.NewName! : raw;
-        string name = specific != null ? specific.Original ?? raw : mappedName;
-        var originals = target.GetParameters();
-        int index;
-        if (specific != null && !string.IsNullOrEmpty(specific.Original))
-            index = Array.FindIndex(originals, p => p.Name == specific.Original);
-        else if (specific != null && specific.Index >= 0 && specific.Index < originals.Length) index = specific.Index;
-        else index = Array.FindIndex(originals, p => p.Name == mappedName);
-        // MethodCreatorTools.ResolveArgumentIndex parses the effective name, including aliases,
-        // rather than comparing a canonical spelling: __02 also binds original argument two.
-        if (name.StartsWith("__", StringComparison.Ordinal) && int.TryParse(name.Substring(2), out int numbered) &&
-            numbered >= 0 && numbered < originals.Length) index = numbered;
-        return (name, index);
-    }
-    private static ArgumentAlias ParseAlias(CustomAttributeData attribute)
-    {
-        var arguments = attribute.ConstructorArguments;
-        if (attribute.AttributeType != typeof(HarmonyArgument) || attribute.NamedArguments.Count != 0 ||
-            arguments.Count < 1 || arguments.Count > 2)
-            throw new InvalidOperationException("Social completion argument alias has an unproved metadata shape.");
-        string? original = null, replacement = null; int index = -1;
-        if (arguments[0].ArgumentType == typeof(string)) original = (string?)arguments[0].Value;
-        else if (arguments[0].ArgumentType == typeof(int)) index = (int)arguments[0].Value!;
-        else throw new InvalidOperationException("Social completion alias source is unproved.");
-        if (arguments.Count == 2)
-        {
-            if (arguments[1].ArgumentType == typeof(string)) replacement = (string?)arguments[1].Value;
-            else if (arguments[0].ArgumentType != typeof(string) || arguments[1].ArgumentType != typeof(ArgumentMode) ||
-                Convert.ToInt32(arguments[1].Value) != (int)ArgumentMode.Default)
-                throw new InvalidOperationException("Social completion uses an unsupported argument-binding mode.");
-        }
-        return new(original, index, replacement);
     }
     private static bool Factory(Patch patch) => patch.PatchMethod.ReturnType == typeof(MethodInfo) || patch.PatchMethod.ReturnType == typeof(DynamicMethod);
     private IReadOnlyList<Patch> Owned(HarmonyPatchType kind)
