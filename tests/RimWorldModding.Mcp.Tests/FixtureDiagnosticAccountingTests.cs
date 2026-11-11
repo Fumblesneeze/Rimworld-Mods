@@ -423,6 +423,119 @@ public sealed class FixtureDiagnosticAccountingTests
     }
 
     private static string Literal(string value) => "'" + value.Replace("'", "''") + "'";
+
+    [TestCase("-RunIntegrationTests", null)]
+    [TestCase("-Scenario", "gateway-regression")]
+    [TestCase("-InteractiveHoldSeconds", "60")]
+    [TestCase("-HangDumpProbe", null)]
+    [TestCase("-UserPlaytest", null)]
+    [TestCase("-RequireRawClick", null)]
+    public void E2e_rejects_mixed_smoke_modes_before_resolving_game_paths(string option, string? value)
+    {
+        using var sandbox = new Sandbox();
+        var start = new ProcessStartInfo("pwsh.exe")
+        {
+            UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardOutput = true, RedirectStandardError = true
+        };
+        foreach (string argument in new[]
+        {
+            "-NoProfile", "-NonInteractive", "-File", Path.Combine(FindRoot(), "scripts", "Invoke-GatewaySmoke.ps1"),
+            "-Quicktest", "-RunEndToEndTests", "-SkipBuildDeploy",
+            "-RimWorldPath", Path.Combine(sandbox.Root, "missing-game"),
+            "-SteamModContentFolder", Path.Combine(sandbox.Root, "missing-workshop"), option
+        }) start.ArgumentList.Add(argument);
+        if (value != null) start.ArgumentList.Add(value);
+        using var process = Process.Start(start)!;
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(30000)) { process.Kill(entireProcessTree: true); throw new TimeoutException(); }
+        string error = stderr.GetAwaiter().GetResult();
+        Assert.Multiple(() =>
+        {
+            Assert.That(process.ExitCode, Is.EqualTo(2), stdout.GetAwaiter().GetResult() + error);
+            Assert.That(error, Does.Contain("-RunEndToEndTests cannot be combined with general smoke modes"));
+            Assert.That(error, Does.Not.Contain("path does not exist"));
+        });
+    }
+
+    [TestCase(false, false)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public void Terminal_e2e_without_a_playable_game_reaches_log_accounting_without_generic_smoke(bool e2e, bool wrongPackages)
+    {
+        using var sandbox = new Sandbox();
+        string smoke = Path.Combine(FindRoot(), "scripts", "Invoke-GatewaySmoke.ps1");
+        string output = sandbox.Invoke($$"""
+            Import-Module {{Literal(Path.Combine(FindRoot(), "scripts", "RimWorldFixtureDiagnostics.Support.psm1"))}} -Force
+            $source = Get-Content -LiteralPath {{Literal(smoke)}} -Raw
+            $tokens=$null; $errors=$null
+            $ast = [Management.Automation.Language.Parser]::ParseInput($source, [ref]$tokens, [ref]$errors)
+            if ($errors.Count -ne 0) { throw 'Invalid smoke syntax' }
+            $helper = $ast.Find({ param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-GatewayLoadedModOrder' }, $true)
+            if ($null -ne $helper) { Invoke-Expression $helper.Extent.Text }
+            $start = $source.IndexOf('    if ($Quicktest', $source.IndexOf("throw 'Status did not report developerOnly"))
+            $end = $source.IndexOf('    if ($runGatewayRegressionScenario)', $source.IndexOf("'intermediate-log-accounting.json'", $start))
+            if ($start -lt 0 -or $end -le $start) { throw 'Missing smoke lifecycle boundary' }
+            $RunEndToEndTests = {{(e2e ? "$true" : "$false")}}
+            $Quicktest = $RunEndToEndTests
+            $TimeoutSeconds = 0
+            $runDirectory = {{Literal(sandbox.Root)}}
+            $savedDataPath = Join-Path $runDirectory 'SavedData'
+            $playerLogPath = {{Literal(sandbox.Log)}}
+            'RimWorld 1.7.5005' | Set-Content -LiteralPath $playerLogPath
+            $status = [pscustomobject]@{ result = [pscustomobject]@{ programState='Entry'; map=$null } }
+            $manifest = [pscustomobject]@{ runId='owned'; token='test-only-secret'; gameVersion='1.7.5005' }
+            $activeModIds = @('brrainz.harmony','ludeon.rimworld','fumblesneeze.rimworlddevgateway')
+            $selectedEndToEndTestIds = @('owned.fault')
+            $validatedLogMarkers = @()
+            $fixtureExpectations = $null
+            $endToEndTestsPath = Join-Path $runDirectory 'end-to-end-tests.json'
+            $endToEndTestsPendingPath = Join-Path $runDirectory 'end-to-end-tests-pending.json'
+            $baseUrl = 'http://127.0.0.1:1/api/v1'
+            $snapshot = [pscustomobject]@{
+                Enabled=$true; DiscoveryState='completed'; Failures=@(); ActivePackageIds=$activeModIds
+                Tests=@([pscustomobject]@{Id='owned.fault'})
+                Execution=[pscustomobject]@{
+                    IsTerminal=$true; GroupState='completed'; ProcessTainted=$false
+                    Results=@([pscustomobject]@{Id='owned.fault';Status='passed';CleanupState='passed'})
+                }
+            }
+            if ({{(wrongPackages ? "$true" : "$false")}}) { $snapshot.ActivePackageIds = @('ludeon.rimworld','brrainz.harmony','fumblesneeze.rimworlddevgateway') }
+            $persisted = Join-Path $savedDataPath 'DevGateway/Sessions/owned/end-to-end-tests.json'
+            $null = New-Item -ItemType Directory -Path (Split-Path -Parent $persisted) -Force
+            $snapshot | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $persisted
+            function Invoke-GatewayGet {
+                param($Uri, $Token, $RequestId)
+                if ($Uri -cne "$baseUrl/end-to-end-tests") { throw "Unexpected generic GET: $RequestId" }
+                [pscustomobject]@{StatusCode=200; Content=(@{ok=$true;result=$snapshot} | ConvertTo-Json -Depth 10)}
+            }
+            function New-GatewayDefSmokeRequest { @{} }
+            function Invoke-GatewayJsonPost { throw 'ordinary-def-export-reached' }
+            $defExportPath = Join-Path $runDirectory 'defs.json'
+            try {
+                Invoke-Expression $source.Substring($start, $end-$start)
+                if (-not $RunEndToEndTests) { throw 'Ordinary smoke skipped its probes' }
+                if (($loadedModIds -join ',') -cne ($activeModIds -join ',')) { throw 'Missing actual loaded package evidence' }
+                if (-not (Test-Path -LiteralPath $endToEndTestsPath)) { throw 'Missing terminal E2E evidence' }
+                Get-Content -LiteralPath (Join-Path $runDirectory 'intermediate-log-accounting.json') -Raw
+            } catch {
+                if ({{(wrongPackages ? "$true" : "$false")}} -and $_.Exception.Message -like 'RimWorld did not load the requested ordered mod list.*') {
+                    'wrong-packages-rejected'; return
+                }
+                if ($RunEndToEndTests -or $_.Exception.Message -cne 'ordinary-def-export-reached') { throw }
+                'ordinary-def-export-reached'
+            }
+            """);
+        if (wrongPackages) Assert.That(output.Trim(), Is.EqualTo("wrong-packages-rejected"));
+        else if (e2e)
+        {
+            using var accounting = JsonDocument.Parse(output);
+            Assert.That(accounting.RootElement.GetProperty("Passed").GetBoolean(), Is.True, output);
+        }
+        else Assert.That(output.Trim(), Is.EqualTo("ordinary-def-export-reached"));
+    }
+
     private static string FindRoot()
     {
         var root = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);

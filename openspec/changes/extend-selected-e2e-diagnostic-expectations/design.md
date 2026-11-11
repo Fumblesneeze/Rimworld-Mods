@@ -96,6 +96,18 @@ diagnostics. Missing/changed evidence or failed cleanup remains a failure indepe
 
 ## Scope and verification
 
+### Terminal E2E completion
+
+The selected late-load failure run on 2026-11-11 reached a passing, cleaned E2E terminal snapshot,
+then the adapter continued generic smoke probes and waited for Playing. A rejected partial game
+need not return to Playing; prolonging that process allowed later native update errors. The host
+must proceed from validated terminal evidence to its existing shutdown/accounting/cleanup path.
+E2E owns its initial readiness and player workflow. Its runtime snapshot supplies the actual ordered
+active package list, checked against the launch plan. Generic Def export, REPL/UI/action probes,
+post-workflow playable waits and generic screenshots belong only to ordinary smoke mode. Skipped
+probe artifacts are null in the result. Intermediate/final log accounting and cleanup remain shared;
+no new allowance or caller flag is introduced. Root owns the fresh native proof.
+
 Reuse `RimWorldModding.Mcp` host tests, including existing source-linked metadata/CLI/XML fixture
 tests. No new host tier, loaded mods or game launch is needed for RED/GREEN accounting tests. Exercise
 real metadata discovery and private runner invocation shapes, including empty and singleton lists.

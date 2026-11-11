@@ -10,12 +10,15 @@
 - [x] 2.3 RED/GREEN exact ERROR/WARN counts and parent-bound exact inner causes through existing accounting, including missing/extra/wrong-severity/adjacent errors and unchanged XML behavior.
 - [x] 2.4 RED/GREEN closed owned savedata expansion, traversal/unknown-token/wrong-file refusal and hash-bound private receipt projection.
 - [x] 2.5 Integrate private grouped/smoke handoff behind existing typed E2E/CLI selection and dry-run; document output and failure behavior.
+- [x] 2.6 RED/GREEN terminal E2E completion without a playable game: bypass generic smoke probes, retain actual ordered package evidence and shared accounting/cleanup; ordinary smoke retains its probe path.
 
 ## 3. Review and final verification
 
 - [x] 3.1 Run focused nonzero host checks and typed OpenSpec validation; retain durable RED/GREEN evidence and affected build identity.
 - [x] 3.2 Obtain independent scoped review, resolve findings and rerun affected checks.
 - [ ] 3.3 Root runs the reviewed native selected fault workflow, personally inspects causal images and retained diagnostics, and verifies exact-process/configuration/credential/stage cleanup.
+- [x] 3.4 Independently review the terminal E2E completion correction and resolve findings. Independent typed-path review was clear; root's mixed-mode finding was fixed by early preflight rejection, then independently re-reviewed with no findings.
+- [ ] 3.5 Root reruns a reviewed native fault workflow that leaves no playable game and verifies prompt host shutdown with complete exact final counts and cleanup.
 
 Host implementation and independent review are complete; native acceptance remains incomplete. No game launch, product edit, local
 installation or commit is authorized to this tooling worker; root owns those integration actions.

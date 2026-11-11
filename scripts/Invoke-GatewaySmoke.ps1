@@ -137,6 +137,19 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'RimWorldFixtureDiagnostics.Support.psm1') -Force
 
+function Assert-GatewayLoadedModOrder {
+    param([string[]]$Loaded, [string[]]$Expected)
+
+    if ($Loaded.Count -ne $Expected.Count) {
+        throw "RimWorld loaded $($Loaded.Count) mods instead of the $($Expected.Count) requested isolated mods. Loaded: $($Loaded -join ', ')"
+    }
+    for ($index = 0; $index -lt $Expected.Count; $index++) {
+        if (-not [string]::Equals($Loaded[$index], $Expected[$index], [StringComparison]::OrdinalIgnoreCase)) {
+            throw "RimWorld did not load the requested ordered mod list. Requested: $($Expected -join ', '); loaded: $($Loaded -join ', ')"
+        }
+    }
+}
+
 function Get-GatewayNativeXmlLoaderArguments {
     param([bool]$LegacyXmlDeserializer, [bool]$RunEndToEndTests, [string]$RimWorldMajorVersion)
     if (-not $LegacyXmlDeserializer) { return @() }
@@ -2736,6 +2749,10 @@ if ($validatedExpectedIntegrationTests.Count -gt 0 -and -not $RunIntegrationTest
 }
 if ($RunEndToEndTests -and -not $Quicktest) {
     Exit-InvalidInput '-RunEndToEndTests requires -Quicktest.'
+}
+if ($RunEndToEndTests -and ($RunIntegrationTests -or -not [string]::IsNullOrWhiteSpace($Scenario) -or
+        $InteractiveHoldSeconds -gt 0 -or $HangDumpProbe -or $UserPlaytest -or $RequireRawClick)) {
+    Exit-InvalidInput '-RunEndToEndTests cannot be combined with general smoke modes: integration tests, scenarios, interactive holds, hang probes, user playtests or raw-click verification.'
 }
 $selectedEndToEndTestIds = @(if ([string]::IsNullOrWhiteSpace($EndToEndTestIds)) {
 }
@@ -6231,7 +6248,7 @@ try {
         throw 'Status did not report developerOnly and unrestrictedExecutionEnabled.'
     }
 
-    if ($Quicktest) {
+    if ($Quicktest -and -not $RunEndToEndTests) {
         $playableDeadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
         while ([datetime]::UtcNow -lt $playableDeadline) {
             $playableStatusResponse = Invoke-GatewayGet `
@@ -6259,6 +6276,8 @@ try {
 
     $endToEndTestsEnvelope = $null
     $endToEndTestsPersistedPath = $null
+    $integrationTestsEnvelope = $null
+    $integrationTestsPersistedPath = $null
     if ($RunEndToEndTests) {
         $endToEndDeadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
         $endToEndAttempt = 0
@@ -6322,6 +6341,8 @@ try {
         }
 
         $endToEndSnapshot = $endToEndTestsEnvelope.result
+        $loadedModIds = @($endToEndSnapshot.ActivePackageIds)
+        Assert-GatewayLoadedModOrder -Loaded $loadedModIds -Expected $activeModIds
         $endToEndResults = @($endToEndSnapshot.Execution.Results)
         $failedEndToEndResults = @($endToEndResults | Where-Object {
             [string]$_.Status -ne 'passed' -or [string]$_.CleanupState -ne 'passed'
@@ -6364,6 +6385,9 @@ try {
         }
     }
 
+    # The native E2E runner owns readiness, actions and captures. A cleaned terminal result
+    # may deliberately leave no playable game; do not continue generic smoke controls.
+    if (-not $RunEndToEndTests) {
     $defExportResponse = Invoke-GatewayJsonPost `
         -Uri "$baseUrl/defs/export" `
         -Token $manifest.token `
@@ -6373,8 +6397,6 @@ try {
         -Response $defExportResponse `
         -ArtifactPath $defExportPath
 
-    $integrationTestsEnvelope = $null
-    $integrationTestsPersistedPath = $null
     if ($RunIntegrationTests) {
         $targetIntegrationLifecycle = if ($Quicktest) { 'PlayableMapLoaded' } else { 'MainMenuLoaded' }
         $expectedIntegrationLifecycleState = if ($IntegrationFailureProbe) { 'failed' } else { 'completed' }
@@ -6534,17 +6556,7 @@ try {
     }
 
     $loadedModIds = @(([string]$probeParts[6]).Split(',', [System.StringSplitOptions]::RemoveEmptyEntries))
-    if ($loadedModIds.Count -ne $activeModIds.Count) {
-        throw "RimWorld loaded $($loadedModIds.Count) mods instead of the $($activeModIds.Count) requested isolated mods. Loaded: $($loadedModIds -join ', ')"
-    }
-    for ($index = 0; $index -lt $activeModIds.Count; $index++) {
-        if (-not [string]::Equals(
-                [string]$loadedModIds[$index],
-                [string]$activeModIds[$index],
-                [StringComparison]::OrdinalIgnoreCase)) {
-            throw "RimWorld did not load the requested ordered mod list. Requested: $($activeModIds -join ', '); loaded: $($loadedModIds -join ', ')"
-        }
-    }
+    Assert-GatewayLoadedModOrder -Loaded $loadedModIds -Expected $activeModIds
     Assert-GatewayScenarioRequiredPackages `
         -ScenarioPlan $scenarioPlan `
         -PackageIds $loadedModIds `
@@ -7789,6 +7801,7 @@ try {
     if (($pngSignature -join ',') -ne ($expectedPngSignature -join ',')) {
         throw "Gateway screenshot is not a valid PNG: $gatewayScreenshotPath"
     }
+    }
 
     if ((Get-Content -LiteralPath $playerLogPath -Raw).Contains([string]$manifest.token)) {
         throw 'The bearer token leaked into Player.log.'
@@ -8186,8 +8199,8 @@ try {
         Manifest = $manifestPath
         PlayerLog = $playerLogPath
         StatusResponse = $statusPath
-        DefExportResponse = $defExportPath
-        IntegrationTestsResponse = $integrationTestsPath
+        DefExportResponse = if ($RunEndToEndTests) { $null } else { $defExportPath }
+        IntegrationTestsResponse = if ($RunEndToEndTests) { $null } else { $integrationTestsPath }
         IntegrationTestsPendingResponse = if ($RunIntegrationTests) { $integrationTestsPendingPath } else { $null }
         IntegrationTestsPersisted = $integrationTestsPersistedPath
         RunIntegrationTests = [bool]$RunIntegrationTests
@@ -8201,21 +8214,21 @@ try {
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
         HangDumpProbe = [bool]$HangDumpProbe
         HangDumpProbeResponse = if ($HangDumpProbe) { $hangDumpProbePath } else { $null }
-        UiStateResponse = $uiStatePath
-        LogsResponse = $logsPath
+        UiStateResponse = if ($RunEndToEndTests) { $null } else { $uiStatePath }
+        LogsResponse = if ($RunEndToEndTests) { $null } else { $logsPath }
         PostQuickstartStatusResponse = if ($runGatewayRegressionScenario) { $postQuickstartStatusPath } else { $null }
         PostQuickstartUiStateResponse = if ($runGatewayRegressionScenario) { $postQuickstartUiStatePath } else { $null }
         PostQuickstartLogsResponse = if ($runGatewayRegressionScenario) { $postQuickstartLogsPath } else { $null }
-        ActionsResponse = $actionsPath
-        AutomationsResponse = $automationsPath
-        GatewayScreenshot = $gatewayScreenshotPath
+        ActionsResponse = if ($RunEndToEndTests) { $null } else { $actionsPath }
+        AutomationsResponse = if ($RunEndToEndTests) { $null } else { $automationsPath }
+        GatewayScreenshot = if ($RunEndToEndTests) { $null } else { $gatewayScreenshotPath }
         DeveloperLogTraffic = if ($runGatewayRegressionScenario) { $developerLogTrafficPath } else { $null }
         DeveloperLogBeforeScreenshot = if ($runGatewayRegressionScenario) { $developerLogBeforeScreenshotPath } else { $null }
         DeveloperLogAfterScreenshot = if ($runGatewayRegressionScenario) { $developerLogAfterScreenshotPath } else { $null }
         ClickResponse = if ($runGatewayRegressionScenario) { $clickPath } else { $null }
         ClickOutcome = $clickOutcome
         ExecutionResponse = if ($runGatewayRegressionScenario) { $executionPath } else { $null }
-        ExecutionStateResponse = $executionStatePath
+        ExecutionStateResponse = if ($RunEndToEndTests) { $null } else { $executionStatePath }
         ExecutionRestoreResponse = if ($runGatewayRegressionScenario) { $executionRestorePath } else { $null }
         Quicktest = [bool]$Quicktest
         Scenario = [string]$scenarioPlan.Name

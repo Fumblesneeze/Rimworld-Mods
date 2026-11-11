@@ -107,3 +107,14 @@ remain failures even when diagnostic counts match.
 - **WHEN** root runs a reviewed selected fault scenario through actual native actions
 - **THEN** exact log accounting supplements the personally observed player-visible failure behavior
 - **AND** passing accounting alone does not accept product behavior or cleanup
+
+#### Scenario: Terminal E2E leaves no playable game
+- **WHEN** the selected E2E runner publishes a passing, cleaned terminal result after a native failure workflow
+- **THEN** the host retains and validates that result and the actual ordered active packages without requiring a playable game or running unrelated smoke probes
+- **AND** controlled shutdown, final exact diagnostic counts, credential removal, stage cleanup and normal-configuration verification still run
+- **AND** ordinary Gateway smoke runs retain their existing probes and playable-map requirements
+
+#### Scenario: E2E is combined with a general smoke mode
+- **WHEN** the private adapter is asked to combine E2E with integration tests, a scenario, an interactive hold, a hang probe, a user playtest or raw-click verification
+- **THEN** preflight rejects the invocation before resolving game paths or launching any process
+- **AND** ordinary typed E2E selection, staging, diagnostic receipts, audio and language options remain valid

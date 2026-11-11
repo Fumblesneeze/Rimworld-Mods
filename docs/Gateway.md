@@ -72,6 +72,14 @@ wildcards and traversal are rejected. Final `final-log-accounting.json` requires
 after shutdown; a matching fault neither accepts gameplay nor excuses a scenario or cleanup
 failure. Existing XML fixture ERROR declarations keep their existing contract.
 
+After a validated terminal E2E result, the host proceeds to log accounting and controlled shutdown.
+It uses the runner's actual ordered active-package snapshot and does not repeat generic smoke
+probes, screenshots or a Playing-state wait. A rejected-load scenario may legitimately leave no
+playable game. Final exact diagnostic counts and all process, credential, stage and normal-config
+checks remain required; skipped generic probe artifact fields are null in the host result.
+The private adapter rejects combining E2E with integration tests, named smoke scenarios, interactive
+holds, hang probes, user playtests or raw-click verification before resolving game paths.
+
 RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) is an intentionally dangerous, development-only RimWorld mod. Whenever it is loaded, unrestricted in-process C# and uploaded-assembly execution are enabled. There is no safety switch, allowlist, confirmation dialog, or sandbox.
 
 Use it only in a disposable isolated `-savedatafolder`. Uploaded code runs with the RimWorld process's full access, can corrupt game state or files, and cannot be unloaded from the AppDomain. Code that blocks the main thread can freeze the game even after the HTTP caller times out.
