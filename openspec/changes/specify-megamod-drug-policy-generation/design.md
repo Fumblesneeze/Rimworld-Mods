@@ -136,26 +136,48 @@ value is enforced. Re-enable can offer a newly prepared preview; existing polici
 
 The inspected native `NewDrugPolicyFromDef` first appends a new policy, then copies rows through a
 throwing drug indexer. It is not an atomic factory. A catch around that whole call, a global temporary
-DrugPolicyDef or source-style shared template would not meet the contract. Extend the owned S029
-prepare/commit boundary for this concrete creation consumer, by agreement with its owner.
+DrugPolicyDef or source-style shared template would not meet the contract. The exact 1.7.5005
+[DG-Q4 research](../../../mods/megamod/docs/refinement/2026-11-11-drug-policy-generation-publication-research.md)
+establishes the following implementation contract, pending independent review and executable proof.
+It consumes S029's existing row preparation/storage rather than adding another policy row store.
 
-DG-Q4 must establish an admitted native-object preparation and database publication path: prepare
-all row values and S138 side state while unpublished, allocate a current noncolliding native policy
-identity, validate every current drug/choice, and publish only the complete object. Snapshot prior
-database membership/order/default and every owned field touched before mutation. Keep existing
-policies/entries and pawn assignments unchanged. Same-thread validation and publication must not
-allow a stale game/catalog or an observer to consume a half-configured row. If a native path can
-invoke unrollbackable external callbacks before complete publication, it cannot be admitted as an
-atomic path; find a narrower native boundary or leave generation unavailable. Do not claim to undo
-arbitrary foreign side effects.
+1. On the game thread, capture the exact current Game/database, actual policy-list identity and
+   ordered prior object/ID/label/source/row snapshots, plus catalog/fact/preference/admission receipts.
+   The existing default is the first list element. Require a nonempty database: adding its first
+   policy would implicitly choose a default, contrary to this action's contract. Do not call
+   `DefaultDrugPolicy()` or pawn `CurrentPolicy` getters for snapshots; both can mutate state.
+2. Allocate a positive ID as checked `max(0, current IDs) + 1` in widened arithmetic. Refuse exhaustion
+   instead of wrapping or reusing a prior ID. An edited name is not identity or duplicate detection.
+   Prepare `new DrugPolicy()` with its admitted parameterless base constructor, then set ID, final
+   label and `sourceDef = null`. The parameterless path does not scan Defs or publish the object.
+   Do not call `MakeNewDrugPolicy`, `NewDrugPolicyFromDef` or the initializing two-argument constructor.
+3. Use `DrugPolicyReconciler.Plan(null, currentCatalog, admittedNativeOrdering)` to establish complete
+   native row order/defaults. Overlay the final validated draft choices by canonical drug identity.
+   Require every planned `RowIdentity` to be null; a prepared policy must never borrow an existing
+   mutable entry. `NativeDrugPolicyStorage.Apply` then creates fresh native entries, writes all
+   choices including S138 side state, and attaches the complete entry list to the unpublished policy.
+   S029's reconciliation batch is not an arbitrary editor or a database creation API.
+4. Verify the complete unpublished object and all captured current-state receipts/snapshots. Admit
+   the consumed constructor/getter/field semantics through C01: no prepared-object escape,
+   publication or unrollbackable callback is permitted. Compatible unrelated foreign work remains
+   allowed. Use a feature-local reentrancy guard and the existing S029 content-boundary receipt;
+   no async yield, external callback or new generic transaction registry belongs in this path.
+5. After the final current-state check, append the complete object once to the captured actual
+   native `List<DrugPolicy>`. The no-callback section covers validation, append and postcheck. Verify
+   the original prefix/order and fields, exactly one owned tail object and all prepared choices
+   before producing success. The existing default remains at index zero; no assignment/history
+   method is called. Select the result only after this verified completion receipt.
+6. Before append, failure discards only detached state. After append, rollback may remove only the
+   exact owned tail when the list identity and prior prefix still match; verify the original
+   snapshot. Never call `TryDelete`, which inspects/changes pawn policy references. Unexpected
+   independent/foreign mutation invalidates the draft and admission; do not overwrite it or report
+   successful restoration. This is a bounded admitted-path guarantee, not arbitrary foreign-side-
+   effect rollback. No autosave or file rewrite occurs.
 
-Verify the full result before reporting success/selecting it: exactly one new identity, final
-displayed choices, proper current catalog/native order, retained prior defaults/assignments/history.
-On failure remove only the unpublished/newly appended object owned by this action, restore any
-owned touched state and verify the original snapshot. Do not restore over independent player or
-foreign changes; the transaction must detect/reject reentrancy before allowing unsafe mutation.
-Selection changes only on successful completion. No autosave or file rewrite; normal player saves
-persist the result. The future design must prove these conditions before implementing Create.
+The [DG-POLICY-CREATE target contract](../../../mods/megamod/docs/patch-targets/DG-POLICY-CREATE.md)
+records consumed native semantics and the pending verification matrix. Its static proof permits
+the focused preparation/commit implementation; it does not accept that implementation or a live
+workflow. Indexed target admission must exist before runtime wiring.
 
 A window-local one-shot confirmation identity prevents the same action/re-entrant click from
 committing twice. Subsequent deliberate fresh workflows can create independent policies. Do not
@@ -224,8 +246,10 @@ and verified postconditions before implementation. Feature off preserves created
   shapes, partial ingestion, population variants and any positive recreation model need their own
   evidence/scenarios, not a guessed permissive fallback. Implement the established C1 slice once
   reviewed rather than substituting an empty-policy shell or indefinitely reopening the same research.
-- DG-Q4: Agree and prove atomic native policy publication/rollback, S138 side-state participation,
-  stale/reentrant refusal and confirmation idempotence with S029/C01 before the Create slice.
+- DG-Q4: The inspected parameterless-object/S029 fresh-row/single-list-append contract above resolves
+  the native design choice. Independent review and focused executable preparation/rollback,
+  S138 participation, stale/reentrant refusal and confirmation-idempotence proof remain required
+  before exposing Create. Native workflow acceptance remains separate.
 - DG-Q5: Confirm proposed reusable preferences and preview layout as owned decisions, including
   unsupported rows, unavailable S138, manual edits and seven-language fit. Do not invent a delay
   range or source tolerance multiplier merely to complete a settings page.

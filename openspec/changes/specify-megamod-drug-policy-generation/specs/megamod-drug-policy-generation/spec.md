@@ -201,6 +201,17 @@ can create another independent policy. Failure at any stage SHALL remove only th
 creation, restore all prior owned state and show an accurate failure instead of a success message.
 Creation SHALL not save the game automatically.
 
+Preparation SHALL allocate an unpublished native policy and fresh entries for the complete current
+catalog, including owned tolerance state. It SHALL not reuse an existing mutable entry or call a
+factory that appends before rows are complete. Publication SHALL be a single verified append to
+the current native database, with a current positive noncolliding ID; ID exhaustion SHALL refuse
+creation without wrapping. An empty native policy database SHALL make generation unavailable
+because its first policy would implicitly become the default. Ordinary native controls remain usable.
+The admitted path SHALL not invoke getters that assign missing policies while capturing prior
+state, and SHALL not call native deletion to roll back a failed append. Unsupported publication or
+callback semantics SHALL be refused before mutation. Unexpected foreign changes SHALL not be
+overwritten or described as successfully rolled back.
+
 #### Scenario: Successful creation and repeated confirmation
 - **WHEN** the player confirms a current valid preview and the same confirmation arrives twice
 - **THEN** one independent policy with the displayed choices appears, and prior policies and assignments remain unchanged.
@@ -208,6 +219,23 @@ Creation SHALL not save the game automatically.
 #### Scenario: Creation fails after work has begun
 - **WHEN** creation cannot finish or verify the complete intended result
 - **THEN** no partial new policy remains, previous state is restored and the player receives a failure explanation.
+
+#### Scenario: Native policy database has no existing default
+- **WHEN** the current native policy database is empty
+- **THEN** generation explains that it cannot preserve an existing default and adds nothing
+- **AND** the player can still use ordinary native policy controls.
+
+#### Scenario: Native policy identity range is exhausted
+- **WHEN** the checked next positive native policy ID cannot be represented
+- **THEN** creation refuses with an explanation and does not wrap, reuse an ID or modify the database.
+
+#### Scenario: Failure while preparing native entries
+- **WHEN** fresh entry construction or tolerance-state preparation fails before publication
+- **THEN** no policy becomes visible and existing entries, assignments, default and history remain unchanged.
+
+#### Scenario: Stale or reentrant publication
+- **WHEN** preparation observes a changed database, consumed facts or admission receipt, or the same operation reenters before completion
+- **THEN** it cannot publish a second or stale policy, and the preview explains the refusal without overwriting independent changes.
 
 ### Requirement: Created policy choices are ordinary persistent gameplay state
 Generated policies SHALL behave as ordinary native policies for editing, copying, renaming,
