@@ -913,3 +913,13 @@ independent review; direct draft setters cannot substitute. Constructor/getter a
 remaining generator runtime/UI resume after that prerequisite. Root retains central composition,
 native scenario execution and final visual observation. This supersedes the immediate S139 guard
 sequence only; no feature, acceptance case or part obligation is removed.
+
+Revision21 follow-through — after the C01 projection and generator preference UI checkpoints were
+reviewed and committed, a separate S139 implementer takes the constructor/getter admission lease
+while the Gateway author resolves the reviewed native-text prerequisite. This uses the newly free
+slot without overlapping source ownership or delaying the input fixes. The new lane owns only
+generation Harmony adapters, matching focused tests and its contract sections; root retains all
+central links, runtime integration, product builds and native evidence. Coordinate the Harmony
+output lease with the Gateway's concrete callback-state regression. Existing transaction and
+preference implementations remain intact. S138's reviewed runtime/geometry await native execution;
+all unrun feature, composition and part obligations remain open.

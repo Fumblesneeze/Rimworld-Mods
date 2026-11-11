@@ -99,8 +99,9 @@ Prefer action → wait → observation steps that exercise the same native path 
 
 - Budget every group honestly. Its frame, game-tick, and wall-time caps must exceed the sum of all
   sequential per-step maxima plus bounded action/screenshot/assertion/save-load overhead. A combined
-  group must cover every admitted case, not one case's deadline multiplied by hope. Before handoff,
-  retain a count × actual provider deadline calculation for screenshots, native input/commands and
+  group must cover every admitted case, not one case's deadline multiplied by hope. Calculate the
+  caps before writing the test attribute; do not copy another fixture's wall/frame limits. Retain
+  a count × actual provider deadline calculation for screenshots, native input/commands and
   other sequential operations; prior fast runs do not justify a cap below those declared allowances.
   Identify operations without their own bound and allocate an explicit shared scenario reserve,
   rather than claiming an engine timing guarantee. Frame/tick/wall limits are independent stop
