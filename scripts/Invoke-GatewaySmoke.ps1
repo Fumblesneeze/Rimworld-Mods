@@ -104,6 +104,8 @@ param(
     # Internal selected-fixture handoff from the grouped runner; no public ignore option.
     [string]$XmlFixtureExpectationsFile,
     [string]$XmlFixtureExpectationsSha256,
+    [string]$SelectedTestExpectationsFile,
+    [string]$SelectedTestExpectationsSha256,
 
     [switch]$Quicktest,
 
@@ -2752,6 +2754,12 @@ if (@($selectedEndToEndTestIds | Select-Object -Unique).Count -ne $selectedEndTo
 }
 if ($selectedEndToEndTestIds.Count -gt 0 -and -not $RunEndToEndTests) {
     Exit-InvalidInput '-EndToEndTestIds requires -RunEndToEndTests.'
+}
+if ($SelectedTestExpectationsFile -or $SelectedTestExpectationsSha256) {
+    if (-not $RunEndToEndTests -or -not $SkipBuildDeploy -or $selectedEndToEndTestIds.Count -ne 1 -or
+        -not $SelectedTestExpectationsFile -or -not $SelectedTestExpectationsSha256) {
+        Exit-InvalidInput 'Selected-test expectations require the exact single-test pre-staged grouped E2E child invocation.'
+    }
 }
 
 function Get-OptionalFileHash {
@@ -5655,6 +5663,16 @@ $manifestPath = Join-Path $savedDataPath 'DevGateway\current.json'
 $script:hostRequestJournalPath = $hostRequestJournalPath
 $script:lastHostRequestRecord = $null
 $null = New-Item -Path $configDirectory -ItemType Directory -Force
+if ($SelectedTestExpectationsFile) {
+    try {
+        $selectedExpectations = Read-RimWorldSelectedTestExpectations -Path $SelectedTestExpectationsFile `
+            -Sha256 $SelectedTestExpectationsSha256 -ActivePackageIds $activeModIds -SelectedTestIds $selectedEndToEndTestIds `
+            -ModsRoot (Join-Path $resolvedRimWorldPath 'Mods') -RimWorldVersion $rimWorldMajorVersion -SavedDataPath $savedDataPath
+        $fixtureExpectations = Merge-RimWorldDiagnosticExpectations -Fixture $fixtureExpectations -SelectedTest $selectedExpectations
+        [IO.File]::WriteAllText((Join-Path $runDirectory 'selected-test-expectations-resolved.json'),
+            ($selectedExpectations | ConvertTo-Json -Depth 16), [Text.UTF8Encoding]::new($false))
+    } catch { Exit-InvalidInput $_.Exception.Message }
+}
 Write-MinimalModsConfig -Path $modsConfigPath -Version $rimWorldVersion
 $renderWidth = 1600
 $renderHeight = 900

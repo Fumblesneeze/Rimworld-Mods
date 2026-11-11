@@ -55,6 +55,9 @@ public sealed class SecondBaseTest : IRimWorldEndToEndTest
     "ludeon.rimworld",
     "alpha.mod",
     "optional.mod")]
+[RimWorldEndToEndExpectedDiagnostic("owned-save", "WARN",
+    "An exception was thrown during saving to \"{savedata}\\Saves\\Owned-Fault.rws.new\": System.InvalidOperationException: owned fault", 2,
+    InnerCauses = new[] { " ---> System.InvalidOperationException: exact inner cause" })]
 public sealed class OptionalTest : IRimWorldEndToEndTest
 {
     public void Arrange(IEndToEndContext context)

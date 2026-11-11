@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net480</TargetFramework>
+    <TargetFrameworks>net480;net10.0</TargetFrameworks>
     <AssemblyName>EndToEndHost.ValidFixtures</AssemblyName>
     <RootNamespace>EndToEndHost.ValidFixtures</RootNamespace>
     <LangVersion>latest</LangVersion>

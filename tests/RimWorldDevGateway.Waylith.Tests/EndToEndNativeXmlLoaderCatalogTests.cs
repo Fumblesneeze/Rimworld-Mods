@@ -50,10 +50,13 @@ public sealed class EndToEndNativeXmlLoaderCatalogTests
     {
         using var stage = new Stage(manifest =>
         {
-            if (mutation == "unknown-schema") manifest.Schema = "RimWorldDevGateway.EndToEndTests/v3";
+            if (mutation == "unknown-schema") manifest.Schema = "RimWorldDevGateway.EndToEndTests/v999";
             if (mutation is "tampered-v2-mode" or "v1-false-is-default")
                 manifest.Tests.Single(test => test.Id == "alpha.legacy").LegacyXmlDeserializer = false;
-            if (mutation == "v1-false-is-default") manifest.Schema = EndToEndBundleManifest.SchemaValue;
+            if (mutation == "v1-false-is-default") {
+                manifest.Schema = EndToEndBundleManifest.SchemaValue;
+                foreach (var test in manifest.Tests) test.ExpectedDiagnostics = null;
+            }
             if (mutation == "hash") manifest.AssemblySha256 = new string('0', 64);
             if (mutation == "mvid") manifest.ModuleVersionId = Guid.Empty.ToString("D");
         });
@@ -185,7 +188,7 @@ public sealed class EndToEndNativeXmlLoaderCatalogTests
             File.WriteAllBytes(Path.Combine(directory, file), bytes);
             var manifest = new EndToEndBundleManifest
             {
-                Schema = EndToEndBundleManifest.NativeXmlLoaderSchemaValue,
+                Schema = EndToEndBundleManifest.DiagnosticExpectationsSchemaValue,
                 OwnerPackageId = "alpha.mod", Assembly = file,
                 AssemblyIdentity = GatewayEndToEndAssemblyIdentity.FormatDefinition(assembly.GetName()),
                 ModuleVersionId = assembly.ManifestModule.ModuleVersionId.ToString("D"),
@@ -208,6 +211,7 @@ public sealed class EndToEndNativeXmlLoaderCatalogTests
                             Id = descriptor.Id, TypeName = type.FullName!, OwnerPackageId = descriptor.OwnerPackageId,
                             ActivePackageIds = descriptor.ActivePackageIds.ToArray(),
                             LegacyXmlDeserializer = declaration.LegacyXmlDeserializer,
+                            ExpectedDiagnostics = descriptor.ExpectedDiagnostics.Count == 0 ? null : descriptor.ExpectedDiagnostics.ToArray(),
                             MaxFrames = descriptor.Deadline.MaxFrames, MaxGameTicks = descriptor.Deadline.MaxGameTicks,
                             MaxWallClockSeconds = (int)descriptor.Deadline.MaxWallClock.TotalSeconds
                         };

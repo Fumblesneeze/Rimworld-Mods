@@ -153,7 +153,9 @@ public static class EndToEndBundlePlanner
         var manifestFileName = metadata.AssemblyName + ".e2etests.json";
         var manifest = new EndToEndBundleManifest
         {
-            Schema = metadata.Declarations.Any(test => test.LegacyXmlDeserializer)
+            Schema = metadata.Declarations.Any(test => test.ExpectedDiagnostics.Count > 0)
+                ? EndToEndBundleManifest.DiagnosticExpectationsSchemaValue
+                : metadata.Declarations.Any(test => test.LegacyXmlDeserializer)
                 ? EndToEndBundleManifest.NativeXmlLoaderSchemaValue : EndToEndBundleManifest.SchemaValue,
             OwnerPackageId = ownerPackageId,
             Assembly = assemblyFileName,
@@ -187,7 +189,9 @@ public static class EndToEndBundlePlanner
                     MaxFrames = test.MaxFrames,
                     LegacyXmlDeserializer = test.LegacyXmlDeserializer,
                     MaxGameTicks = test.MaxGameTicks,
-                    MaxWallClockSeconds = test.MaxWallClockSeconds
+                    MaxWallClockSeconds = test.MaxWallClockSeconds,
+                    ExpectedDiagnostics = test.ExpectedDiagnostics.Count == 0 ? null :
+                        EndToEndDiagnosticExpectation.ValidateAndCopy(test.ExpectedDiagnostics)
                 })
                 .ToArray()
         };

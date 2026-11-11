@@ -116,13 +116,13 @@ public sealed class EndToEndNativeXmlLoaderTests
     public void Only_mode_bearing_bundles_require_v2_and_preserve_each_test_mode(bool includeLegacy)
     {
         var candidate = Candidate();
-        if (!includeLegacy)
+        // This case isolates the v1/v2 loader contract; diagnostic-bearing v3 is covered separately.
         {
             var source = candidate.Metadata;
             candidate = new EndToEndAssemblyCandidate(candidate.ProjectPath, candidate.ExpectedOwnerPackageId, candidate.ExpectedAssemblyName,
                 new EndToEndAssemblyMetadata(source.AssemblyPath, source.AssemblyName, source.AssemblyVersion,
                     source.AssemblyCulture, source.AssemblyPublicKey, source.ModuleVersionId, source.Length, source.Sha256,
-                    source.AssemblyReferences, source.Declarations.Where(test => !test.LegacyXmlDeserializer)));
+                    source.AssemblyReferences, source.Declarations.Where(test => test.ExpectedDiagnostics.Count == 0 && (includeLegacy || !test.LegacyXmlDeserializer))));
         }
         var plan = EndToEndBundlePlanner.Create(new[] { candidate }, new[] { "brrainz.harmony", "ludeon.rimworld", "alpha.mod" },
             Path.Combine(Path.GetTempPath(), "NativeXmlLoaderPlan", Guid.NewGuid().ToString("N"), "Mods"), "1.7",

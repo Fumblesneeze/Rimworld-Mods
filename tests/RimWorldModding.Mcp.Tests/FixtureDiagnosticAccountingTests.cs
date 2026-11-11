@@ -123,6 +123,24 @@ public sealed class FixtureDiagnosticAccountingTests
     }
 
     [Test]
+    public void Selected_test_can_expect_one_exact_native_warning_without_hiding_its_exception()
+    {
+        using var sandbox = new Sandbox();
+        const string message = "Deliberate runtime failure: System.InvalidOperationException: owned fixture fault";
+        File.WriteAllText(sandbox.Log, "21:03:07 WARN " + message + "\n21:03:07    at OwnedFixture.Fail()\n");
+        string expectations = "$expectations = [pscustomobject]@{ File='selected-test-expectations.json'; Sha256='" + new string('A', 64) +
+            "'; Errors=@([pscustomobject]@{OwnerPackageId='fumblesneeze.owner'; PackageId=''; ManifestSha256='" + new string('B', 64) +
+            "'; Severity='WARN'; Message=" + Literal(message) + "; Count=1}) }\n";
+        var output = sandbox.Invoke($"Import-Module {Literal(Path.Combine(FindRoot(), "scripts", "RimWorldFixtureDiagnostics.Support.psm1"))} -Force\n" +
+            expectations + $"Get-RimWorldFixtureLogAccounting -Path {Literal(sandbox.Log)} -Expectations $expectations -Final | ConvertTo-Json -Depth 12\n");
+        using var result = JsonDocument.Parse(output);
+        Assert.That(result.RootElement.GetProperty("Passed").GetBoolean(), Is.True, output);
+        Assert.That(result.RootElement.GetProperty("Expected")[0].GetProperty("ObservedCount").GetInt32(), Is.EqualTo(1));
+        Assert.That(result.RootElement.GetProperty("Expected")[0].GetProperty("Matches")[0].GetProperty("Lines").GetArrayLength(), Is.EqualTo(2));
+        Assert.That(result.RootElement.GetProperty("Unexpected").GetArrayLength(), Is.Zero);
+    }
+
+    [Test]
     public void Expectation_receipt_is_create_new_and_cannot_overwrite_an_existing_handoff()
     {
         using var sandbox = new Sandbox();
@@ -130,6 +148,65 @@ public sealed class FixtureDiagnosticAccountingTests
         string original = File.ReadAllText(receipt.Path);
         Assert.Throws<IOException>(() => sandbox.WriteReceipt());
         Assert.That(File.ReadAllText(receipt.Path), Is.EqualTo(original));
+    }
+
+    [Test]
+    public void Selected_test_binds_an_exact_inner_cause_to_its_declared_parent()
+    {
+        using var sandbox = new Sandbox();
+        const string message = "Exception while saving game: System.InvalidOperationException: Owned state was not preserved.";
+        const string cause = " ---> System.InvalidOperationException: Expected S138 native-save fault fixture";
+        File.WriteAllText(sandbox.Log, "21:03:07 ERROR " + message + "\n" + cause + "\n   at OwnedFixture.Fail()\n");
+        string expectations = "$expectations = [pscustomobject]@{ File='selected-test-expectations.json'; Sha256='" + new string('A', 64) +
+            "'; Errors=@([pscustomobject]@{OwnerPackageId='fumblesneeze.owner'; PackageId=''; ManifestSha256='" + new string('B', 64) +
+            "'; Severity='ERROR'; Message=" + Literal(message) + "; Count=1; InnerCauses=@(" + Literal(cause) + ")}) }\n";
+        var output = sandbox.Invoke($"Import-Module {Literal(Path.Combine(FindRoot(), "scripts", "RimWorldFixtureDiagnostics.Support.psm1"))} -Force\n" +
+            expectations + $"Get-RimWorldFixtureLogAccounting -Path {Literal(sandbox.Log)} -Expectations $expectations -Final | ConvertTo-Json -Depth 12\n");
+        using var result = JsonDocument.Parse(output);
+        Assert.That(result.RootElement.GetProperty("Passed").GetBoolean(), Is.True, output);
+        Assert.That(result.RootElement.GetProperty("Expected")[0].GetProperty("Matches")[0].GetProperty("Lines").GetArrayLength(), Is.EqualTo(3));
+        Assert.That(result.RootElement.GetProperty("Unexpected").GetArrayLength(), Is.Zero);
+    }
+
+    [TestCase("wrong-severity")]
+    [TestCase("missing-parent")]
+    [TestCase("extra-parent")]
+    [TestCase("missing-cause")]
+    [TestCase("changed-cause")]
+    [TestCase("extra-cause")]
+    [TestCase("other-parent")]
+    [TestCase("trace-before-cause")]
+    [TestCase("adjacent-error")]
+    public void Runtime_expectation_does_not_hide_different_or_adjacent_diagnostics(string mode)
+    {
+        using var sandbox = new Sandbox();
+        const string message = "Owned failure: System.InvalidOperationException: planned";
+        const string cause = " ---> System.InvalidOperationException: precise inner cause";
+        string record = "21:03:07 ERROR " + message + "\n" + cause + "\n   at OwnedFixture.Fail()\n";
+        string log = mode switch
+        {
+            "wrong-severity" => record.Replace(" ERROR ", " WARN "),
+            "missing-parent" => "21:03:07 INFO Ready\n",
+            "extra-parent" => record + record,
+            "missing-cause" => record.Replace(cause + "\n", ""),
+            "changed-cause" => record.Replace("precise inner cause", "other cause"),
+            "extra-cause" => record + cause + "\n",
+            "other-parent" => record.Replace("Owned failure:", "Foreign failure:"),
+            "trace-before-cause" => record.Replace(cause, "   at Unrelated.Trace()\n" + cause),
+            "adjacent-error" => record + "21:03:08 ERROR Independent failure\n",
+            _ => throw new ArgumentOutOfRangeException(nameof(mode))
+        };
+        File.WriteAllText(sandbox.Log, log);
+        string expectations = "$expectations = [pscustomobject]@{ File='selected-test-expectations.json'; Sha256='" + new string('A', 64) +
+            "'; Errors=@([pscustomobject]@{OwnerPackageId='fumblesneeze.owner'; PackageId=''; ManifestSha256='" + new string('B', 64) +
+            "'; Severity='ERROR'; Message=" + Literal(message) + "; Count=1; InnerCauses=@(" + Literal(cause) + ")}) }\n";
+        var output = sandbox.Invoke($"Import-Module {Literal(Path.Combine(FindRoot(), "scripts", "RimWorldFixtureDiagnostics.Support.psm1"))} -Force\n" +
+            expectations + $"Get-RimWorldFixtureLogAccounting -Path {Literal(sandbox.Log)} -Expectations $expectations -Final | ConvertTo-Json -Depth 12\n");
+        using var result = JsonDocument.Parse(output);
+        Assert.That(result.RootElement.GetProperty("Passed").GetBoolean(), Is.False, output);
+        Assert.That(result.RootElement.GetProperty("Unexpected").GetArrayLength() +
+            result.RootElement.GetProperty("CountMismatches").GetArrayLength() +
+            result.RootElement.GetProperty("InnerCauseMismatches").GetArrayLength(), Is.GreaterThan(0));
     }
 
     [TestCase("exact", true, 1)]
@@ -252,6 +329,99 @@ public sealed class FixtureDiagnosticAccountingTests
         Assert.That(result.RootElement.GetProperty("Phase").GetString(), Is.EqualTo("final"));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Selected_compiled_receipt_resolves_only_its_owned_save_path_and_accounts_native_warning(bool gatewayOwner)
+    {
+        using var sandbox = new Sandbox();
+        var selected = sandbox.WriteSelectedReceipt(gatewayOwner);
+        string active = gatewayOwner ? "'brrainz.harmony','ludeon.rimworld','fumblesneeze.rimworlddevgateway'" : "'brrainz.harmony','ludeon.rimworld','alpha.mod','optional.mod','fumblesneeze.rimworlddevgateway'";
+        string message = SelectedTestDiagnosticTests.Rule().Message.Replace("{savedata}", selected.SavedData);
+        string record = "21:03:07 WARN " + message + "\n" + SelectedTestDiagnosticTests.Rule().InnerCauses.Single() + "\n   at OwnedFixture.Fail()\n";
+        File.WriteAllText(sandbox.Log, record + record);
+        var output = sandbox.Invoke($"Import-Module {Literal(Path.Combine(FindRoot(), "scripts", "RimWorldFixtureDiagnostics.Support.psm1"))} -Force\n" +
+            $"Import-Module {Literal(Path.Combine(FindRoot(), "scripts", "RimWorldEndToEndRunner.Support.psm1"))} -Force\n" +
+            $"$receipt = {Literal(JsonSerializer.Serialize(selected.Receipt))} | ConvertFrom-Json\n" +
+            "$launch = New-RimWorldEndToEndSmokeLaunch -Arguments @('-Quicktest','-RunEndToEndTests','-SkipBuildDeploy','-EndToEndTestIds','alpha.optional') -SelectedTestExpectations $receipt\n" +
+            "$arguments = $launch.Arguments\n" +
+            "$expectations = Read-RimWorldSelectedTestExpectations -Path $arguments[([Array]::IndexOf($arguments, '-SelectedTestExpectationsFile') + 1)] -Sha256 $arguments[([Array]::IndexOf($arguments, '-SelectedTestExpectationsSha256') + 1)] " +
+            $"-ActivePackageIds @({active}) -SelectedTestIds @('alpha.optional') " +
+            $"-ModsRoot {Literal(selected.ModsRoot)} -RimWorldVersion '1.7' -SavedDataPath {Literal(selected.SavedData)}\n" +
+            $"Get-RimWorldFixtureLogAccounting -Path {Literal(sandbox.Log)} -Expectations $expectations -Final | ConvertTo-Json -Depth 16\n");
+        using var result = JsonDocument.Parse(output);
+        Assert.That(result.RootElement.GetProperty("Passed").GetBoolean(), Is.True, output);
+        Assert.That(result.RootElement.GetProperty("Expected")[0].GetProperty("ObservedCount").GetInt32(), Is.EqualTo(2));
+        Assert.That(result.RootElement.GetProperty("Expected")[0].GetProperty("TestId").GetString(), Is.EqualTo("alpha.optional"));
+        Assert.That(result.RootElement.GetProperty("Expected")[0].GetProperty("OwnerPackageId").GetString(), Is.EqualTo(gatewayOwner ? "fumblesneeze.rimworlddevgateway" : "alpha.mod"));
+    }
+
+    [TestCase("wrong-test")]
+    [TestCase("multiple-tests")]
+    [TestCase("wrong-group")]
+    [TestCase("changed-assembly")]
+    [TestCase("changed-manifest")]
+    [TestCase("changed-receipt")]
+    [TestCase("unknown-field")]
+    [TestCase("duplicate-field")]
+    [TestCase("severity")]
+    [TestCase("count")]
+    [TestCase("declaration-drift")]
+    [TestCase("other-token")]
+    [TestCase("traversal")]
+    [TestCase("wildcard")]
+    [TestCase("wrong-root")]
+    public void Selected_receipt_rejects_foreign_selection_or_modified_provenance(string mode)
+    {
+        using var sandbox = new Sandbox();
+        var selected = sandbox.WriteSelectedReceipt();
+        var receipt = selected.Receipt;
+        var document = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(receipt.Path))!;
+        if (mode == "changed-assembly") File.AppendAllText(Directory.GetFiles(selected.ModsRoot, "*.dll", SearchOption.AllDirectories).Single(), "changed");
+        if (mode == "changed-manifest") File.AppendAllText(Directory.GetFiles(selected.ModsRoot, "*.json", SearchOption.AllDirectories).Single(), "changed");
+        if (mode == "unknown-field") document["ignoreEverything"] = true;
+        var rule = document["expectedDiagnostics"]![0]!;
+        if (mode == "severity") rule["severity"] = "FATAL";
+        if (mode == "count") rule["count"] = 0;
+        if (mode == "declaration-drift") rule["count"] = 1;
+        if (mode == "other-token") rule["message"] = "Fault {other}";
+        if (mode == "traversal") rule["message"] = "Fault at \"{savedata}\\Saves\\..\\foreign.rws\"";
+        if (mode == "wildcard") rule["message"] = "Fault at \"{savedata}\\Saves\\*.rws\"";
+        File.WriteAllText(receipt.Path, document.ToJsonString());
+        if (mode == "duplicate-field") File.WriteAllText(receipt.Path, File.ReadAllText(receipt.Path).Replace("\"testId\":", "\"testId\":\"foreign\",\"testId\":"));
+        receipt = receipt with { Sha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(receipt.Path))) };
+        if (mode == "changed-receipt") File.AppendAllText(receipt.Path, " ");
+        string testIds = mode == "wrong-test" ? "'alpha.base-a'" : mode == "multiple-tests" ? "'alpha.optional','alpha.base-a'" : "'alpha.optional'";
+        string active = mode == "wrong-group" ? "'ludeon.rimworld','brrainz.harmony','alpha.mod','optional.mod','fumblesneeze.rimworlddevgateway'" : "'brrainz.harmony','ludeon.rimworld','alpha.mod','optional.mod','fumblesneeze.rimworlddevgateway'";
+        string output = sandbox.Invoke($"Import-Module {Literal(Path.Combine(FindRoot(), "scripts", "RimWorldFixtureDiagnostics.Support.psm1"))} -Force\n" +
+            $"try {{ $null = Read-RimWorldSelectedTestExpectations -Path {Literal(receipt.Path)} -Sha256 '{receipt.Sha256}' -ActivePackageIds @({active}) -SelectedTestIds @({testIds}) " +
+            $"-ModsRoot {Literal(selected.ModsRoot)} -RimWorldVersion '1.7' -SavedDataPath {Literal(mode == "wrong-root" ? sandbox.Root : selected.SavedData)}; throw 'unexpected acceptance' }} catch {{ if ($_.Exception.Message -eq 'unexpected acceptance') {{ throw }}; $_.Exception.Message }}\n");
+        Assert.That(output, Does.Not.Contain("unexpected acceptance"));
+    }
+
+    [TestCase("wrong-file")]
+    [TestCase("wrong-run")]
+    [TestCase("extra-inner-line")]
+    [TestCase("timestamped-inner-line")]
+    public void Selected_receipt_does_not_allow_nearby_paths_or_undeclared_inner_lines(string mode)
+    {
+        using var sandbox = new Sandbox();
+        var selected = sandbox.WriteSelectedReceipt();
+        var rule = SelectedTestDiagnosticTests.Rule();
+        string message = rule.Message.Replace("{savedata}", selected.SavedData);
+        if (mode == "wrong-file") message = message.Replace("Owned-Fault", "Unrelated-Fault");
+        if (mode == "wrong-run") message = message.Replace(selected.SavedData, Path.Combine(sandbox.Root, "other-run", "SavedData"));
+        string cause = (mode == "timestamped-inner-line" ? "21:03:07 " : "") + rule.InnerCauses.Single();
+        string record = "21:03:07 WARN " + message + "\n" + cause + "\n" + (mode == "extra-inner-line" ? " ---> Owned.Failure: other cause\n" : "");
+        File.WriteAllText(sandbox.Log, record + record);
+        string output = sandbox.Invoke($"Import-Module {Literal(Path.Combine(FindRoot(), "scripts", "RimWorldFixtureDiagnostics.Support.psm1"))} -Force\n" +
+            $"$expectations = Read-RimWorldSelectedTestExpectations -Path {Literal(selected.Receipt.Path)} -Sha256 '{selected.Receipt.Sha256}' " +
+            $"-ActivePackageIds @('brrainz.harmony','ludeon.rimworld','alpha.mod','optional.mod','fumblesneeze.rimworlddevgateway') -SelectedTestIds @('alpha.optional') " +
+            $"-ModsRoot {Literal(selected.ModsRoot)} -RimWorldVersion '1.7' -SavedDataPath {Literal(selected.SavedData)}\n" +
+            $"Get-RimWorldFixtureLogAccounting -Path {Literal(sandbox.Log)} -Expectations $expectations -Final | ConvertTo-Json -Depth 16\n");
+        using var result = JsonDocument.Parse(output);
+        Assert.That(result.RootElement.GetProperty("Passed").GetBoolean(), Is.False, output);
+    }
+
     private static string Literal(string value) => "'" + value.Replace("'", "''") + "'";
     private static string FindRoot()
     {
@@ -278,6 +448,21 @@ public sealed class FixtureDiagnosticAccountingTests
             if (includeHarmony) active = new[] { "brrainz.harmony" }.Concat(active).ToArray();
             var plans = EndToEndXmlFixturePlanner.PlanSelected(Root, new[] { manifest }, active, Array.Empty<string>(), Path.Combine(Root, "Mods"), "1.7");
             return EndToEndXmlFixtureExpectations.Write(plans, Path.Combine(Root, "fixture.lease.json"));
+        }
+        public (EndToEndXmlFixtureExpectationReceipt Receipt, string ModsRoot, string SavedData) WriteSelectedReceipt(bool gatewayOwner = false)
+        {
+            var candidate = SelectedTestDiagnosticTests.Candidate(new[] { SelectedTestDiagnosticTests.Rule() }, gatewayOwner);
+            string mods = Path.Combine(Root, "Mods");
+            var plan = EndToEndBundlePlanner.Create(new[] { candidate }, candidate.Metadata.Declarations.Single().ActivePackageIds,
+                mods, "1.7", new[] { "alpha.optional" }, Array.Empty<string>());
+            var owner = plan.OwnerStages.Single();
+            var bundle = owner.Bundles.Single();
+            Directory.CreateDirectory(owner.DestinationDirectory);
+            File.Copy(bundle.SourceAssemblyPath, Path.Combine(owner.DestinationDirectory, bundle.AssemblyFileName));
+            File.WriteAllText(Path.Combine(owner.DestinationDirectory, bundle.ManifestFileName), bundle.ManifestJson, new UTF8Encoding(false));
+            string savedData = Path.Combine(Root, "run", "SavedData");
+            Directory.CreateDirectory(savedData);
+            return (EndToEndSelectedTestExpectations.Write(plan, Path.Combine(Root, "stage.lease.json"))!, mods, savedData);
         }
         public string Invoke(string body)
         {

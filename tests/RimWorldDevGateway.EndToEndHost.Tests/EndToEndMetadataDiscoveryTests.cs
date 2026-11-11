@@ -62,6 +62,24 @@ public sealed class EndToEndMetadataDiscoveryTests
     }
 
     [Test]
+    public void Reader_preserves_exact_compiled_diagnostic_declarations_without_executing_tests()
+    {
+        var metadata = EndToEndAssemblyMetadataReader.Read(FixtureAssembly("EndToEndHost.ValidFixtures"));
+        var declaration = metadata.Declarations.Single(item => item.Id == "alpha.optional");
+        Assert.That(declaration.ExpectedDiagnostics, Has.Count.EqualTo(1));
+        var diagnostic = declaration.ExpectedDiagnostics.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("owned-save"));
+            Assert.That(diagnostic.Severity, Is.EqualTo("WARN"));
+            Assert.That(diagnostic.Count, Is.EqualTo(2));
+            Assert.That(diagnostic.Message, Is.EqualTo("An exception was thrown during saving to \"{savedata}\\Saves\\Owned-Fault.rws.new\": System.InvalidOperationException: owned fault"));
+            Assert.That(diagnostic.InnerCauses, Is.EqualTo(new[] { " ---> System.InvalidOperationException: exact inner cause" }));
+            Assert.That(metadata.Declarations.Single(item => item.Id == "alpha.base-a").ExpectedDiagnostics, Is.Empty);
+        });
+    }
+
+    [Test]
     public void Validator_groups_tests_by_the_exact_ordinal_package_sequence()
     {
         var metadata = EndToEndAssemblyMetadataReader.Read(FixtureAssembly("EndToEndHost.ValidFixtures"));

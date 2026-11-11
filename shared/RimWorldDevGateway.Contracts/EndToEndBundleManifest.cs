@@ -8,6 +8,7 @@ public sealed class EndToEndBundleManifest
 {
     public const string SchemaValue = "RimWorldDevGateway.EndToEndTests/v1";
     public const string NativeXmlLoaderSchemaValue = "RimWorldDevGateway.EndToEndTests/v2";
+    public const string DiagnosticExpectationsSchemaValue = "RimWorldDevGateway.EndToEndTests/v3";
 
     [DataMember(Name = "schema", IsRequired = true, Order = 1)]
     public string Schema { get; set; } = SchemaValue;
@@ -62,6 +63,8 @@ public sealed class EndToEndBundleDependency
 [DataContract]
 public sealed class EndToEndBundleTest
 {
+    [DataMember(Name = "expectedDiagnostics", EmitDefaultValue = false, Order = 24)]
+    public EndToEndDiagnosticExpectation[]? ExpectedDiagnostics { get; set; }
     public const string EndToEndKind = "e2e";
     public const string PerformanceKind = "performance";
 

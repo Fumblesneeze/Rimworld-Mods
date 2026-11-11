@@ -96,6 +96,12 @@ Use the applicable change ID in place of `add-rimworld-dev-gateway`. Update a ta
 
 ## Red, green, regression
 
+Fault-injection E2E tests use compiled exact diagnostic declarations and an exact single-test
+`e2e_run_start` selection. The existing typed operation and CLI derive the private log receipt;
+callers cannot supply an error-ignore option. See [Gateway diagnostic expectations](Gateway.md)
+for severity, count, inner-cause and isolated-save-path bounds. A dry-run reports the selected
+declarations; native acceptance still requires observing the reviewed player workflow.
+
 During ordinary feature work, run the exact focused test or exact active-mod group for the current slice. Run an owning suite only when the change affects shared behavior within that suite. Reserve the repository wrapper and complete compatibility/E2E matrices for explicit release preparation or deliberate maintenance/regression work:
 
 ```powershell

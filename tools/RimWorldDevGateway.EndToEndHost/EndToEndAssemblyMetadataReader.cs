@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
+using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway.EndToEndHost;
 
@@ -13,6 +14,8 @@ public static class EndToEndAssemblyMetadataReader
     private const string ContractTypeName =
         "RimWorldDevGateway.EndToEndTesting.IRimWorldEndToEndTest";
     private const string ContractAssemblyName = "RimWorldDevGateway.EndToEndTesting";
+    private const string DiagnosticAttributeTypeName =
+        "RimWorldDevGateway.EndToEndTesting.RimWorldEndToEndExpectedDiagnosticAttribute";
 
     public static EndToEndAssemblyMetadata Read(string assemblyPath)
     {
@@ -180,7 +183,40 @@ public static class EndToEndAssemblyMetadataReader
             isConcrete,
             ImplementsContract(reader, typeHandle, currentAssemblyName, new HashSet<TypeDefinitionHandle>()),
             HasPublicParameterlessConstructor(reader, typeDefinition),
-            legacyXmlDeserializer);
+            legacyXmlDeserializer,
+            ReadExpectedDiagnostics(reader, typeDefinition, currentAssemblyName));
+    }
+
+    private static IReadOnlyList<EndToEndDiagnosticExpectation> ReadExpectedDiagnostics(
+        MetadataReader reader, TypeDefinition type, string currentAssemblyName)
+    {
+        var diagnostics = new List<EndToEndDiagnosticExpectation>();
+        foreach (var handle in type.GetCustomAttributes())
+        {
+            var attribute = reader.GetCustomAttribute(handle);
+            var identity = GetAttributeTypeIdentity(reader, attribute, currentAssemblyName);
+            if (identity.TypeName != DiagnosticAttributeTypeName || identity.AssemblyName != ContractAssemblyName) continue;
+            CustomAttributeValue<string> value;
+            try { value = attribute.DecodeValue(AttributeTypeProvider.Instance); }
+            catch (Exception exception) { throw new EndToEndDiscoveryException("Could not decode expected diagnostic: " + exception.Message); }
+            if (value.FixedArguments.Length != 4 || value.FixedArguments[3].Value is not int count)
+                throw new EndToEndDiscoveryException("Expected diagnostic attribute has an invalid constructor shape.");
+            var diagnostic = new EndToEndDiagnosticExpectation
+            {
+                Id = value.FixedArguments[0].Value as string ?? string.Empty,
+                Severity = value.FixedArguments[1].Value as string ?? string.Empty,
+                Message = value.FixedArguments[2].Value as string ?? string.Empty,
+                Count = count
+            };
+            foreach (var named in value.NamedArguments)
+            {
+                if (named.Name != "InnerCauses" || named.Value is not ImmutableArray<CustomAttributeTypedArgument<string>>)
+                    throw new EndToEndDiscoveryException("Expected diagnostic has an unknown or invalid named argument.");
+                diagnostic.InnerCauses = DecodeStringArray(named.Value).ToArray();
+            }
+            diagnostics.Add(diagnostic);
+        }
+        return diagnostics;
     }
 
     private static IReadOnlyList<string> DecodeStringArray(object? value)

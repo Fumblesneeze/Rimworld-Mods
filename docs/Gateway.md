@@ -54,6 +54,24 @@ including a replacement game loaded from a private save copy. UI/notification/co
 deferred cleanup, and exact host process/stage/config/credential cleanup remain required. It is not
 an empty-map assertion or permission to reuse a user game; ordinary fixtures keep destructive reset.
 
+Intentional fault fixtures can declare repeatable `RimWorldEndToEndExpectedDiagnostic` attributes
+on their E2E test class: stable ID, exact `ERROR` or `WARN` first line, and count 1–16. At most 16
+declarations are allowed. Optional `InnerCauses` contains up to four exact ordered native
+` ---> ` lines, required immediately after each matching parent; it never exempts other errors.
+Select exactly one such test through `e2e_run_start` or its matching CLI projection. There is no
+caller ignore option. Dry-run shows declarations and assembly/test provenance. The complete
+serialized receipt, including JSON escaping and provenance, must fit within
+64 KiB; dry-run rejects an oversized plan before deployment or staging. The real runner
+hash-binds its private receipt to the staged DLL and manifest, verifies selection and mod order,
+and retains the resolved declaration in `selected-test-expectations-resolved.json`.
+
+The sole message token is `{savedata}`, within a quoted `Saves/<literal-basename>.rws` or
+`.rws.new` path. It expands to that run's isolated directory before launch. Fixtures must check
+that their stable test-specific filename is absent before taking ownership. Other tokens,
+wildcards and traversal are rejected. Final `final-log-accounting.json` requires exact counts
+after shutdown; a matching fault neither accepts gameplay nor excuses a scenario or cleanup
+failure. Existing XML fixture ERROR declarations keep their existing contract.
+
 RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) is an intentionally dangerous, development-only RimWorld mod. Whenever it is loaded, unrestricted in-process C# and uploaded-assembly execution are enabled. There is no safety switch, allowlist, confirmation dialog, or sandbox.
 
 Use it only in a disposable isolated `-savedatafolder`. Uploaded code runs with the RimWorld process's full access, can corrupt game state or files, and cannot be unloaded from the AppDomain. Code that blocks the main thread can freeze the game even after the HTTP caller times out.

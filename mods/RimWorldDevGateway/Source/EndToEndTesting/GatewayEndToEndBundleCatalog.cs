@@ -274,7 +274,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         string manifestFileName)
     {
         if (!StringComparer.Ordinal.Equals(manifest.Schema, EndToEndBundleManifest.SchemaValue) &&
-            !StringComparer.Ordinal.Equals(manifest.Schema, EndToEndBundleManifest.NativeXmlLoaderSchemaValue))
+            !StringComparer.Ordinal.Equals(manifest.Schema, EndToEndBundleManifest.NativeXmlLoaderSchemaValue) &&
+            !StringComparer.Ordinal.Equals(manifest.Schema, EndToEndBundleManifest.DiagnosticExpectationsSchemaValue))
         {
             throw Failure("manifest_schema_mismatch", "The staged E2E manifest schema is unsupported.");
         }
@@ -319,6 +320,14 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         foreach (var test in manifest.Tests)
         {
             ValidateManifestTest(test, candidate.ContainingPackageId);
+            try
+            {
+                test.ExpectedDiagnostics = EndToEndDiagnosticExpectation.ValidateAndCopy(test.ExpectedDiagnostics ?? Array.Empty<EndToEndDiagnosticExpectation>());
+                if (test.ExpectedDiagnostics.Length > 0 &&
+                    (manifest.Schema != EndToEndBundleManifest.DiagnosticExpectationsSchemaValue || test.Kind == EndToEndBundleTest.PerformanceKind))
+                    throw new ArgumentException("Runtime diagnostic declarations require an ordinary E2E v3 manifest.");
+            }
+            catch (ArgumentException exception) { throw Failure("manifest_diagnostics_invalid", exception.Message); }
         }
     }
 
@@ -612,7 +621,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             type,
             EndToEndBundleTest.EndToEndKind,
             performanceDescriptor: null,
-            legacyXmlDeserializer);
+            legacyXmlDeserializer,
+            EndToEndTestContract.ReadExpectedDiagnostics(type));
     }
 
     private static CompiledTest ReadCompiledPerformanceTest(PerformanceTestDescriptor descriptor)
@@ -694,7 +704,9 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
                 actual.MaxFrames != expected.MaxFrames ||
                 actual.LegacyXmlDeserializer != expected.LegacyXmlDeserializer ||
                 actual.MaxGameTicks != expected.MaxGameTicks ||
-                actual.MaxWallClockSeconds != expected.MaxWallClockSeconds)
+                actual.MaxWallClockSeconds != expected.MaxWallClockSeconds ||
+                !EndToEndDiagnosticExpectation.Equivalent(actual.ExpectedDiagnostics,
+                    expected.ExpectedDiagnostics ?? Array.Empty<EndToEndDiagnosticExpectation>()))
             {
                 throw Failure("compiled_test_manifest_mismatch", "The compiled E2E test metadata differs from discovery.");
             }
@@ -840,7 +852,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             Type testType,
             string kind,
             PerformanceTestDescriptor? performanceDescriptor,
-            bool legacyXmlDeserializer = false)
+            bool legacyXmlDeserializer = false,
+            IReadOnlyList<EndToEndDiagnosticExpectation>? expectedDiagnostics = null)
         {
             Id = id;
             OwnerPackageId = ownerPackageId;
@@ -853,6 +866,7 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             Kind = kind;
             PerformanceDescriptor = performanceDescriptor;
             LegacyXmlDeserializer = legacyXmlDeserializer;
+            ExpectedDiagnostics = expectedDiagnostics ?? Array.Empty<EndToEndDiagnosticExpectation>();
         }
 
         public string Id { get; }
@@ -866,6 +880,7 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         public string Kind { get; }
         public PerformanceTestDescriptor? PerformanceDescriptor { get; }
         public bool LegacyXmlDeserializer { get; }
+        public IReadOnlyList<EndToEndDiagnosticExpectation> ExpectedDiagnostics { get; }
     }
 
     private sealed class GatewayEndToEndCatalogException : Exception

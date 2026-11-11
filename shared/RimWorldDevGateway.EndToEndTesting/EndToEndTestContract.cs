@@ -1,8 +1,27 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway.EndToEndTesting;
+
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public sealed class RimWorldEndToEndExpectedDiagnosticAttribute : Attribute
+{
+    public RimWorldEndToEndExpectedDiagnosticAttribute(string id, string severity, string message, int count)
+    {
+        Id = id;
+        Severity = severity;
+        Message = message;
+        Count = count;
+    }
+    public string Id { get; }
+    public string Severity { get; }
+    public string Message { get; }
+    public int Count { get; }
+    public string[] InnerCauses { get; set; } = Array.Empty<string>();
+}
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public sealed class RimWorldEndToEndTestAttribute : Attribute
@@ -185,6 +204,7 @@ public static class EndToEndContextExtensions
 
 public sealed class EndToEndTestDescriptor
 {
+    public IReadOnlyList<EndToEndDiagnosticExpectation> ExpectedDiagnostics { get; }
     public bool LegacyXmlDeserializer { get; }
     internal EndToEndTestDescriptor(
         Type testType,
@@ -200,6 +220,7 @@ public sealed class EndToEndTestDescriptor
         ActivePackageIds = activePackageIds;
         Deadline = deadline;
         LegacyXmlDeserializer = legacyXmlDeserializer;
+        ExpectedDiagnostics = EndToEndTestContract.ReadExpectedDiagnostics(testType);
 
         var launched = new string[activePackageIds.Count + 1];
         for (var index = 0; index < activePackageIds.Count; index++)
@@ -233,6 +254,33 @@ public sealed class EndToEndContractException : Exception
 
 public static class EndToEndTestContract
 {
+    public static EndToEndDiagnosticExpectation[] ReadExpectedDiagnostics(Type testType)
+    {
+        var rules = new List<EndToEndDiagnosticExpectation>();
+        foreach (var attribute in CustomAttributeData.GetCustomAttributes(testType)
+                     .Where(attribute => attribute.AttributeType == typeof(RimWorldEndToEndExpectedDiagnosticAttribute)))
+        {
+            if (attribute.ConstructorArguments.Count != 4 || attribute.ConstructorArguments[3].Value is not int count)
+                throw new EndToEndContractException("Expected diagnostic has an invalid constructor shape.");
+            var rule = new EndToEndDiagnosticExpectation
+            {
+                Id = attribute.ConstructorArguments[0].Value as string ?? string.Empty,
+                Severity = attribute.ConstructorArguments[1].Value as string ?? string.Empty,
+                Message = attribute.ConstructorArguments[2].Value as string ?? string.Empty,
+                Count = count
+            };
+            foreach (var named in attribute.NamedArguments)
+            {
+                if (named.MemberName != "InnerCauses" || named.TypedValue.Value is not IReadOnlyCollection<CustomAttributeTypedArgument> causes)
+                    throw new EndToEndContractException("Expected diagnostic has an unknown or invalid named argument.");
+                rule.InnerCauses = causes.Select(cause => cause.Value as string ?? string.Empty).ToArray();
+            }
+            rules.Add(rule);
+        }
+        try { return EndToEndDiagnosticExpectation.ValidateAndCopy(rules); }
+        catch (ArgumentException exception) { throw new EndToEndContractException(exception.Message); }
+    }
+
     public static bool UsesGeneratedMap(Type testType, int selectedTestCount)
     {
         if (!typeof(IEndToEndGeneratedMapFixture).IsAssignableFrom(testType)) return false;

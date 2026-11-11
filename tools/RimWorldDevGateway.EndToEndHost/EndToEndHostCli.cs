@@ -86,6 +86,7 @@ public static class EndToEndHostCli
             {
                 var plan = BuildPlan(options.Read(parseResult));
                 var leasePath = RequiredPath(parseResult.GetValue(leaseFile), "lease file");
+                var expectations = EndToEndSelectedTestExpectations.Write(plan, leasePath);
                 var publisher = new EndToEndStagePublisher();
                 var leases = EndToEndStageTransaction.PublishAll(
                     plan.OwnerStages,
@@ -94,7 +95,7 @@ public static class EndToEndHostCli
                     staged => WriteLeaseFile(leasePath, staged),
                     () => ClearLeaseFile(leasePath));
 
-                WritePlan(parseResult, plan, options.ReadOutput(parseResult), "staged", leases);
+                WritePlan(parseResult, plan, options.ReadOutput(parseResult), "staged", leases, expectations);
                 return 0;
             }));
         return command;
@@ -520,11 +521,14 @@ public static class EndToEndHostCli
         EndToEndBundlePlan plan,
         string output,
         string status,
-        IReadOnlyList<EndToEndStageLease>? leases)
+        IReadOnlyList<EndToEndStageLease>? leases,
+        EndToEndXmlFixtureExpectationReceipt? diagnosticExpectationsReceipt = null)
     {
         Write(parseResult, output, new
         {
             status,
+            diagnosticExpectations = EndToEndSelectedTestExpectations.Plan(plan),
+            diagnosticExpectationsReceipt,
             groups = plan.Discovery.Groups.Select(group => new
             {
                 group.GroupId,

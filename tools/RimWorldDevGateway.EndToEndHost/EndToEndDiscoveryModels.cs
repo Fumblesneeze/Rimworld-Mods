@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
+using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway.EndToEndHost;
 
 public sealed class EndToEndMetadataDeclaration
 {
+    public IReadOnlyList<EndToEndDiagnosticExpectation> ExpectedDiagnostics { get; }
     public bool LegacyXmlDeserializer { get; }
     public EndToEndMetadataDeclaration(
         string typeName,
@@ -16,7 +18,8 @@ public sealed class EndToEndMetadataDeclaration
         bool isConcrete,
         bool implementsContract,
         bool hasPublicParameterlessConstructor,
-        bool legacyXmlDeserializer = false)
+        bool legacyXmlDeserializer = false,
+        IEnumerable<EndToEndDiagnosticExpectation>? expectedDiagnostics = null)
     {
         TypeName = typeName;
         Id = id;
@@ -29,6 +32,8 @@ public sealed class EndToEndMetadataDeclaration
         ImplementsContract = implementsContract;
         HasPublicParameterlessConstructor = hasPublicParameterlessConstructor;
         LegacyXmlDeserializer = legacyXmlDeserializer;
+        ExpectedDiagnostics = new ReadOnlyCollection<EndToEndDiagnosticExpectation>(
+            (expectedDiagnostics ?? Array.Empty<EndToEndDiagnosticExpectation>()).ToArray());
     }
 
     public string TypeName { get; }
@@ -162,8 +167,10 @@ public sealed class EndToEndAssemblyCandidate
 
 public sealed class EndToEndDiscoveredTest
 {
+    public IReadOnlyList<EndToEndDiagnosticExpectation> ExpectedDiagnostics { get; } = Array.Empty<EndToEndDiagnosticExpectation>();
     internal EndToEndDiscoveredTest(EndToEndAssemblyCandidate candidate, EndToEndMetadataDeclaration declaration)
     {
+        ExpectedDiagnostics = declaration.ExpectedDiagnostics.ToArray();
         LegacyXmlDeserializer = declaration.LegacyXmlDeserializer;
         Id = declaration.Id.Trim();
         TypeName = declaration.TypeName;

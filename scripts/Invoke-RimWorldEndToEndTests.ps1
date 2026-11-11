@@ -529,6 +529,7 @@ if ($DryRun) {
         AudioEnabled = [bool]$EnableAudio
         Groups = @($launchPlans)
         StageOwners = @($plan.owners)
+        DiagnosticExpectations = $plan.diagnosticExpectations
         MutatedGame = $false
     })
     exit 0
@@ -622,6 +623,7 @@ try {
         throw "E2E stage publication failed. See $stageOutputPath"
     }
     $stagePublished = $true
+    $stagePlan = ConvertFrom-RequiredJson -Text $stage.StandardOutput -Description 'E2E stage publication'
 
     $groupIndex = 0
     foreach ($group in $selectedGroups) {
@@ -671,6 +673,7 @@ try {
         $smokeLaunch = New-RimWorldEndToEndSmokeLaunch `
             -Arguments @($smokeArguments) `
             -XmlDeserializer (Get-RimWorldEndToEndXmlDeserializer -Group $group) `
+            -SelectedTestExpectations $stagePlan.diagnosticExpectationsReceipt `
             -EnableAudio:$EnableAudio
 
         try {

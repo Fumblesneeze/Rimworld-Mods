@@ -198,7 +198,9 @@ function New-RimWorldEndToEndSmokeLaunch {
 
         [ValidateSet('default', 'legacy')][string]$XmlDeserializer = 'default',
 
-        [AllowNull()][object]$FixtureExpectations
+        [AllowNull()][object]$FixtureExpectations,
+
+        [AllowNull()][object]$SelectedTestExpectations
     )
 
     $projectedArguments = [System.Collections.Generic.List[string]]::new()
@@ -216,6 +218,14 @@ function New-RimWorldEndToEndSmokeLaunch {
         $projectedArguments.Add([string]$FixtureExpectations.path)
         $projectedArguments.Add('-XmlFixtureExpectationsSha256')
         $projectedArguments.Add([string]$FixtureExpectations.sha256)
+    }
+    if ($null -ne $SelectedTestExpectations) {
+        if ([string]::IsNullOrWhiteSpace([string]$SelectedTestExpectations.path) -or
+            [string]$SelectedTestExpectations.sha256 -cnotmatch '^[A-F0-9]{64}$') { throw 'Invalid staged selected-test expectation receipt.' }
+        $projectedArguments.Add('-SelectedTestExpectationsFile')
+        $projectedArguments.Add([string]$SelectedTestExpectations.path)
+        $projectedArguments.Add('-SelectedTestExpectationsSha256')
+        $projectedArguments.Add([string]$SelectedTestExpectations.sha256)
     }
 
     return [pscustomobject]@{

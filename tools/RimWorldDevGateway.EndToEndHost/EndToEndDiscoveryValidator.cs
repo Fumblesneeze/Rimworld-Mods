@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using RimWorldDevGateway.Contracts;
 
 namespace RimWorldDevGateway.EndToEndHost;
 
@@ -167,6 +168,8 @@ public static class EndToEndDiscoveryValidator
         ICollection<string> errors)
     {
         var displayId = string.IsNullOrWhiteSpace(declaration.Id) ? declaration.TypeName : declaration.Id;
+        try { EndToEndDiagnosticExpectation.ValidateAndCopy(declaration.ExpectedDiagnostics); }
+        catch (ArgumentException exception) { errors.Add($"'{displayId}': {exception.Message}"); }
         if (string.IsNullOrWhiteSpace(declaration.Id))
         {
             errors.Add($"'{declaration.TypeName}' has an empty test ID");
