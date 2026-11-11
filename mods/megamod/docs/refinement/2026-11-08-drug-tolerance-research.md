@@ -227,3 +227,32 @@ entry point and S029 failure restoration. The future admitted CopyFrom/Scribe ho
 reader/editor and final-decision purpose/timing proof remain unimplemented; DT-Q1 is therefore
 partially resolved, while DT-Q2/DT-Q3 still block the affected native work. See the owning design's
 2026-11-11 tranche for concrete encoding and unavailable semantics.
+
+## 2026-11-11 selection timing and serialization failure follow-up
+
+Current 1.7.5005 rev1082 read-only decompilation (same assembly hash above) reconfirmed
+`Pawn_DrugPolicyTracker`, `JoyGiver_Ingest`, `JoyGiver_SocialRelax`, `JobDriver_Ingest`,
+`DrugPolicyEntry`, `DrugPolicy`, `DrugPolicyDatabase`, `Scribe_Deep`, `Scribe_Values`, `SafeSaver`,
+`ScribeSaver`, `ScribeLoader`, `GameDataSaveLoader`, `Dialog_SaveFileList_Save` and `Dialog_FileList`.
+No source implementation was copied. Required route/field identities remain research inputs.
+
+The orchestrator resolved DT-Q2 to native selection timing: policy/tolerance/enable changes affect
+the next scheduled/direct joy/social selection; an already selected order retains native execution
+and save/resume behavior. No second ingestion veto, cancellation or persisted purpose tag is added.
+S024's absent treat implementation will call the owned rule with its actual recipient at its own
+selection boundary. This leaves base native routes implementable without pretending S024 exists.
+DT-Q4 retains explicit Any, strict numeric zero, default-on and conservative malformed data.
+
+`CompProperties_Drug.chemical` resolves `ChemicalDef.toleranceHediff`; native `CompDrug` reads the
+chemical's current tolerance through `AddictionUtility.FindToleranceHediff`. Applicability still
+requires the understood tolerance giver described above, rather than inventing a tolerance effect
+for every chemical. Different drugs sharing the chemical/hediff read the same current severity.
+
+Observed persistence caveat: native `Scribe_Deep` catches ordinary per-row ExposeData exceptions.
+The owned row callback alone cannot ensure failure of the complete save/load. Native `SafeSaver`
+finalizes a temporary save before replacing an old file; `GameDataSaveLoader.SaveGame` catches/logs
+failure. The save dialog emits Saved as before its queued operation executes, even for ordinary
+native failures. The chosen support group therefore also guards native save/load finalization and
+publishes one visible restart notice after an owned failure. Exact old-file hashes plus actual
+native Overwrite actions and the notice are required acceptance evidence. Host tests and authored
+scenarios do not establish native acceptance. See `DT-POLICY-PERSISTENCE` and the owning S138 design.

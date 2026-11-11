@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.DrugTolerance.PersistenceFailureTitle>Не удалось сохранить правила приёма наркотиков</Megamod.DrugTolerance.PersistenceFailureTitle>
+  <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again не удалось сохранить выбранные пределы толерантности к наркотикам. Сохранение и загрузка заблокированы до перезапуска RimWorld. После этой ошибки сообщение «Сохранено как» не означает, что сохранение прошло успешно. Эта неудачная попытка не заменила предыдущее сохранение. Перезапустите игру, прежде чем загрузить его или повторить попытку. Настройки и ограничения толерантности недоступны до конца этого сеанса. Подробности смотрите в журнале.</Megamod.DrugTolerance.PersistenceFailureBody>
+</LanguageData>

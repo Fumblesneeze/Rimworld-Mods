@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.DrugTolerance.PersistenceFailureTitle>Impossible de conserver les règles de drogue</Megamod.DrugTolerance.PersistenceFailureTitle>
+  <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again n’a pas pu conserver vos limites de tolérance aux drogues. La sauvegarde et le chargement sont bloqués jusqu’au redémarrage de RimWorld. Après cette erreur, un message « Sauvegardé sous » ne confirme pas la réussite de la sauvegarde. Cette tentative a échoué sans remplacer votre sauvegarde précédente. Redémarrez avant de la charger ou de réessayer. Les commandes et restrictions de tolérance sont indisponibles pour cette session. Consultez le journal pour plus de détails.</Megamod.DrugTolerance.PersistenceFailureBody>
+</LanguageData>

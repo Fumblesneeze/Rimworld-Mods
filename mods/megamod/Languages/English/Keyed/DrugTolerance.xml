@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.DrugTolerance.PersistenceFailureTitle>Drug policy data could not be preserved</Megamod.DrugTolerance.PersistenceFailureTitle>
+  <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again could not preserve your drug tolerance choices. Saving and loading are blocked until you restart RimWorld. Do not treat a “Saved as” message as a successful save after this error. Your previous save has not been replaced by this failed attempt. Restart before loading it or trying again. Tolerance controls and restrictions are unavailable for this session. See the log for details.</Megamod.DrugTolerance.PersistenceFailureBody>
+</LanguageData>

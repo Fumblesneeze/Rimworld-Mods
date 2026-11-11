@@ -5,12 +5,12 @@ using RimWorld;
 
 namespace Megamod.Features.DrugTolerance.Runtime;
 
-/// <summary>Game-thread-owned state on exact native rows; weak keys never retain a disposed save.</summary>
+/// <summary>Native-caller-thread state on exact rows; immutable values and weak keys retain no disposed save.</summary>
 public static class NativeDrugToleranceState
 {
     private sealed class EntryState
     {
-        public DrugToleranceChoice Choice = DrugToleranceChoice.Any;
+        public volatile DrugToleranceChoice Choice = DrugToleranceChoice.Any;
     }
 
     private static readonly ConditionalWeakTable<DrugPolicyEntry, EntryState> Entries = new();

@@ -54,6 +54,26 @@ consumption history. This feature SHALL not grant permission or promise addictio
 - **WHEN** tolerance falls below the chosen limit and every other scheduled-use condition is met
 - **THEN** the pawn can obtain and consume the ordinary permitted dose with its normal effects.
 
+### Requirement: Routine eligibility uses the next native selection boundary
+The tolerance rule SHALL be evaluated when a native routine route selects an eligible drug or
+creates its routine job. A later policy, tolerance or effective-setting change SHALL apply to the
+next such selection, without cancelling or adding a second tolerance veto to an already selected
+or executing native order. Native interruption, ingestion failure and save/resume behavior SHALL
+remain authoritative. Shared ingestion, medical and manual drivers SHALL not acquire a blanket
+tolerance veto or a new persisted purpose tag. S024 patient treats, when implemented, SHALL call
+the owned rule with the actual recipient at their own treat-selection boundary; absence of S024
+SHALL not disable the native scheduled, direct recreation and social-drinking routes.
+
+#### Scenario: Policy changes after a routine job was selected
+- **WHEN** a pawn already has a selected routine ingestion order and the player lowers its policy limit
+- **THEN** the existing order follows ordinary native execution and interruption rules
+- **AND** the new limit governs its next routine eligibility decision.
+
+#### Scenario: Tolerance changes while carrying a selected dose
+- **WHEN** tolerance reaches the chosen limit after a routine job selected its dose, including across save/load
+- **THEN** this feature does not cancel that order or add a final-ingestion veto
+- **AND** a subsequent routine selection observes the current tolerance and policy.
+
 ### Requirement: Recreation uses the recipient and retains native joy exceptions
 Ordinary recreational drug use SHALL apply the recipient's tolerance choice in addition to its other recreation permissions.
 Native exceptions for a positive drug-desire trait or a mental state SHALL retain their existing
@@ -124,8 +144,33 @@ remain isolated between saves.
 - **THEN** surviving valid choices remain and genuinely new rows begin at Any
 - **AND** a drug returning after its removal was saved does not recover a hidden old threshold.
 
+### Requirement: Owned serialization failures cannot silently discard choices
+Copy and Scribe support SHALL remain installed independently of the ordinary feature switch.
+After admitted support encounters an owned serialization or support-generation failure, it SHALL
+disable tolerance editing/enforcement, retain a bounded diagnostic and prevent successful native
+save/load finalization for that process. Retrying SHALL require a restart, rather than silently
+writing missing fields or treating them as Any. Ordinary successful copy/save/load and native
+exceptions SHALL retain their existing behavior. A native callback which is skipped or fails
+before owned serialization SHALL not commit owned state. Unsupported startup compositions SHALL
+report persistence and feature availability honestly; arbitrary removal of every owned observer
+or later exception-suppressing foreign code is outside this guarantee.
+Once the native UI is available after the failed operation, one localized notice SHALL explain the
+blocked save/load state, restart requirement and that native “Saved as” feedback does not prove
+success after this error. Repeated attempts SHALL remain blocked without repeating this notice.
+
+#### Scenario: Native row serializer catches an owned error
+- **WHEN** the owned Scribe adapter fails and native per-row handling catches that exception
+- **THEN** the enclosing save/load still fails before successful finalization, the tolerance controls become unavailable,
+  and the diagnostic and one visible notice require a restart before retrying
+- **AND** an existing save is not replaced with a supposedly successful file lacking owned choices.
+
+#### Scenario: The first owned error occurs during load finalization
+- **WHEN** native cross-reference or post-load initialization catches an owned row error inside load finalization
+- **THEN** the native load still fails at its completion boundary and does not report a successfully loaded colony
+- **AND** the owned notice requires restart, the source save remains intact, and an existing native exception is not replaced.
+
 ### Requirement: Malformed saved choices are visible and conservative
-The proposed malformed-data behavior SHALL distinguish an absent choice from an invalid saved
+The malformed-data behavior SHALL distinguish an absent choice from an invalid saved
 choice. An absent choice defaults to Any. A recognized row containing an unreadable choice, an
 unknown choice kind, a nonfinite number or a number outside 0–100% SHALL show Needs review and
 withhold routine use governed by the tolerance choice until the player explicitly selects a valid
@@ -152,7 +197,7 @@ SHALL not silently widen an invalid limit to Any, clamp it or rewrite valid neig
   native permission rather than treating the unknown value as zero or pretending to enforce a limit.
 
 ### Requirement: Feature configuration does not replace policy state
-The feature's proposed built-in enable default SHALL be on. Its enable switch SHALL use common
+The feature's built-in enable default SHALL be on. Its enable switch SHALL use common
 Global default, Use global and Current save controls in the Drug policies settings section. New
 save entries inherit; inherited saves follow current global values, and independent or dormant
 overrides remain intact. Main-menu save controls and their actions SHALL be unavailable. Turning

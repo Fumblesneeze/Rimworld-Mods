@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.DrugTolerance.PersistenceFailureTitle>No se pudieron conservar las pautas de drogas</Megamod.DrugTolerance.PersistenceFailureTitle>
+  <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again no pudo conservar tus límites de tolerancia a las drogas. No podrás guardar ni cargar hasta reiniciar RimWorld. Tras este error, el mensaje «Guardado como» no confirma que la partida se haya guardado. Este intento fallido no ha reemplazado tu partida anterior. Reinicia antes de cargarla o volver a intentarlo. Los controles y las restricciones de tolerancia no están disponibles durante esta sesión. Consulta el registro para más detalles.</Megamod.DrugTolerance.PersistenceFailureBody>
+</LanguageData>

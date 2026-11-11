@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.DrugTolerance.PersistenceFailureTitle>ドラッグ方針のデータを保持できませんでした</Megamod.DrugTolerance.PersistenceFailureTitle>
+  <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again はドラッグ耐性の上限設定を保持できませんでした。RimWorld を再起動するまで、セーブとロードは中止されます。このエラーの後は「保存しました」と表示されても、セーブが成功したとは限りません。今回の失敗によって以前のセーブが置き換えられることはありません。ロードや再試行の前にゲームを再起動してください。このセッションでは耐性設定とその制限を利用できません。詳細はログを確認してください。</Megamod.DrugTolerance.PersistenceFailureBody>
+</LanguageData>

@@ -1,9 +1,15 @@
 ## 1. Resolve owned contracts before implementation
 
-- [ ] 1.1 Review proposed Any versus numeric 100%, absent-tolerance zero, strict numeric zero, default-on and conservative invalid-state behavior; record any revised observable decision before code (DT-Q4).
+- [x] 1.1 Review proposed Any versus numeric 100%, absent-tolerance zero, strict numeric zero, default-on and conservative invalid-state behavior; record any revised observable decision before code (DT-Q4, orchestrator decision 2026-11-11; implementation/native acceptance below remains open).
 - [ ] 1.2 Resolve DT-Q1 with the S029 owner: pin owned schema, valid/missing/invalid decoding, row identity, copy, duplicate retention, save/load and prepare/commit/rollback integration.
 - [ ] 1.3 Resolve DT-Q2 using the retained native route research: pin final recheck timing, threshold changes during executing routine jobs, exact recipient/purpose across pickup and save/resume, the future S024 treat boundary and effective-body admission. Keep direct joy exceptions separate from social drinking and feeding; no broad medical/manual hooks.
 - [ ] 1.4 Create indexed target specs for the actual native hooks; pin C01 group lifetime, effective semantic admission, repatch behavior and visible unavailable fallback. Do not implement the affected hook before this evidence exists.
+
+2026-11-11 DT-Q2 timing decision: next native routine selection, no in-flight cancellation or
+second final-ingestion veto. The next S024 selector must call the owned rule for its actual patient;
+its absence does not block base native routes. Effective route admission and native workflow proof
+remain in 1.3/2.3/2.4. DT-Q1 has a concrete lossless codec/S029 transaction and now an authored
+four-target copy/Scribe/finalization support group; native success/failure proof remains open.
 
 ## 2. Implement one behavior at a time with durable RED and GREEN
 
@@ -14,6 +20,15 @@ copy/Scribe wiring, tolerance reader and editor are not registered. Independent 
 integration evidence are tracked in `artifacts/Implementation/megamod-p0/s138-state-batch/`.
 Tasks below remain open for their full stated obligations; host route values are not proof of
 native route/recipient classification or shared-chemical reads.
+
+The next native persistence tranche has 18 focused Harmony checks, including genuine RED/GREEN
+for successful copy, stale admission and swallowed-row finalization failure. It adds the admitted
+four-target support group, raw Scribe adapter, once-only localized restart notice and executable
+native copy/save, faulted-overwrite and late PostLoadInit-failure scenarios. Independent review
+required post-body finalization guards and exact failure-window identity; both were corrected
+with focused evidence. Root registration/build/final-review/native evidence
+remain the integration gate. Exact local receipts are retained under
+`artifacts/Implementation/megamod-p0/s138-native-persistence-batch/`; this is not full S138 acceptance.
 
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.

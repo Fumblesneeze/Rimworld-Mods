@@ -89,10 +89,11 @@ medical claim nor observes consumption twice. Actual chemical/hediff facts come 
 pawn at the eligibility boundary. Do not persist pawn/hediff references, cache per-pawn permission
 or create a private drug inventory index. The inspected native jobs do not repeat scheduled/joy
 policy at final ingestion, and manual, addiction/dependency and routine routes share downstream
-helpers. DT-Q2 remains unresolved for whether/when a final recheck is needed, threshold changes
-during an executing routine job, and the exact recipient/purpose proof across pickup and save/resume.
-Resolve that contract before the affected hook; do not infer purpose from a shared driver or add an
-unscoped `Thing.Ingested` veto. Feature-off still does not cancel an already executing native job.
+helpers. DT-Q2 is resolved at the native selection boundary: policy, tolerance and enable changes
+affect the next routine selection. An already selected order retains native execution/interruption
+and save/resume behavior, without a second final-ingestion veto or cancellation. Do not infer
+purpose from a shared driver or invent persisted job-purpose tags. The future S024 treat selector
+must pass the actual patient to the owned rule; its present absence does not block native routes.
 
 ### 3. One admitted enforcement-and-editor group
 
@@ -140,11 +141,11 @@ warning/effective-off verification suffices; no original API/drop-in test matrix
   show both boundary scenarios in native acceptance; no implicit upgrade of zero to Any.
 - Malformed choices can prevent routine use → visible per-row repair and bounded diagnostic; native
   joy exceptions and separate medical/manual routes retain their stated scope. This conservative
-  choice is proposed explicitly and must be reviewed before implementation.
+  choice is explicit in the accepted implementation contract.
 - Current tolerance does not prove post-dose safety → describe a preference/restriction only; no
   addiction/overdose guarantee, invisible body-size correction or invented dose prediction.
 - S029/C01 lifecycle milestones are incomplete → storage/admission integration is blocked on their
-  actual reviewed contracts, not a parallel private state store or another metadata reader.
+  actual reviewed contracts, not another settings store or metadata reader.
 - Native joy subclasses or patient feeding can bypass an assumed hook → research exact supported
   paths before the affected slice; preserve unavailable behavior if it cannot be proved.
 
@@ -187,16 +188,62 @@ on that exact route. Disabled state adds no veto. A successfully read absent hed
 nonfinite or negative reader data is unavailable and keeps native permission with an explicit
 unavailable result for the later adapter to report. A valid reader and malformed choice produces
 Needs review and blocks. Any does not impose a threshold, even above 100%. No cached permission,
-final-ingestion hook or medical/manual/refill interception is introduced. DT-Q2 remains open.
+final-ingestion hook or medical/manual/refill interception is introduced.
 
-- DT-Q1: Pin the exact S029 extension point and owned codec/invalid-record preservation before
-  persistence work; prove copy and rollback cover side data and saved duplicate handling.
-- DT-Q2: Native route facts now distinguish direct joy, social drinks, scheduled use and separate
-  medical/manual/refill paths. Final recheck timing, changes during executing routine jobs, exact
-  recipient/purpose across save/resume, the future S024 treat boundary and effective-body admission
-  remain unresolved before enforcement; no shared-driver inference or unscoped `Thing.Ingested` hook.
+- DT-Q1: The state tranche pins S029 capture/apply/restore and exact raw codec preservation.
+  The native support tranche uses the four-member `DT-POLICY-PERSISTENCE` group below; real copy,
+  native save/load and failure acceptance remain required before claiming persistence verified.
+- DT-Q2: Resolved 2026-11-11 with the orchestrator: current route eligibility is the selection
+  boundary, with no new in-flight cancellation/final veto. Native effective-body admission remains
+  required for the forthcoming enforcement group. S024 owns a future direct recipient-aware call.
 - DT-Q3: Verify the intended layout and failure presentation on the native target in all languages;
   no claim about readability follows from source inspection.
-- DT-Q4: Review the proposed Any/zero/default-on and invalid-state choices as explicit behavioral
-  decisions. Unknown tolerance-reader results must not be silently substituted with zero; define
-  a visible unavailable result and bounded diagnostic in the adapter tests.
+- DT-Q4: Resolved 2026-11-11: retain explicit Any versus numeric zero/100%, missing hediff zero,
+  default-on, invalid saved choice Needs review, and unknown reader unavailable/native permission.
+  The adapter/editor still owes visible feedback and bounded diagnostic acceptance.
+
+### 2026-11-11 native persistence support tranche
+
+`DrugTolerancePersistencePatch` admits `DrugPolicyEntry.CopyFrom`, `DrugPolicyEntry.ExposeData`,
+`ScribeSaver.FinalizeSaving` and `ScribeLoader.FinalizeLoading` as one C01 Early group, before
+policy factories and saves use it. Copy captures the final outer-prefix source's immutable choice
+and exact receiver; the first outer finalizer commits only a successfully executed native call.
+Scribe exports the raw encoding and imports only LoadingVars. This support runs independently of
+ordinary effective enablement. Immutable choices plus weak entry identity also work on native
+loader callers; they do not touch Unity/Def services or retain disposed games.
+
+Inspected 1.7.5005 `Scribe_Deep.Look` catches ordinary per-row ExposeData errors and continues.
+An entry exception alone therefore cannot guarantee persistence. A sticky failure latch aborts
+the enclosing native save/load finalization and subsequent attempts until restart. `SafeSaver`
+only replaces an existing save after its temporary save completes; an aborted finalization leaves
+that old file intact. Preserve native exceptions, never manufacture OutOfMemoryException to
+escape Scribe. Admit only finalization compositions whose owned guard runs first and whose foreign
+finalizers cannot change exceptions. A supported later repatch revokes generation receipts; normal
+callbacks reuse admitted immutable receipts rather than rebuilding metadata on every row.
+
+Startup rejection and arbitrary complete observer removal are explicitly unavailable, not a
+preservation promise. Later unsupported exception-suppressing foreign code may defeat an abort;
+the contract does not claim protection against that composition. No editor/enforcement may become
+available without persistence support. The native Duplicate/save/reload scenario proves component
+wiring with hidden-field assertions and visible copied native row edits; full tolerance editing,
+enforcement and native failure observation remain separate obligations.
+
+### Smallest next enforcement/editor batch
+
+Use one owned reader for the drug's resolved `CompProperties_Drug.chemical` and the pawn's matching
+tolerance hediff; absent recognized hediff is zero, unknown mapping/data is unavailable. Admit the
+scheduled policy tracker boundary shared by map and caravan selection, direct `JoyGiver_Ingest`
+candidate evaluation with its proven native exception scope, and the drink candidate inside
+`JoyGiver_SocialRelax.TryFindIngestibleToNurse` without vetoing social activity itself. All three
+routes and the contextual row editor must install atomically, composed directly with the owned
+rule and the common enable setting. Direct joy subclasses and stock/refill bypasses require the
+recorded route proof, not a shared JobDriver patch. S024 is absent and becomes a future direct
+consumer at its actual recipient-selection boundary; it does not require a pretend treat adapter
+or block the otherwise complete base feature. Native map/caravan/joy/social scenarios and all
+seven language layouts are still necessary to accept this next batch.
+
+The reader tranche uses native `DrugStatsUtility.GetToleranceGiver` for applicability, so a chemical
+field alone does not invent a tolerance effect. It reads the first matching current hediff, matching
+native `AddictionUtility.FindToleranceHediff`, without summing duplicates or caching pawn permission.
+A missing health list or encountered malformed null entry is unavailable rather than known absent;
+the host reader tests use only explicitly registered constructed Defs and native Hediff objects.

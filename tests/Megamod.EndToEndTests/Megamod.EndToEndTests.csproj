@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <RimWorldPath>$(DefaultRimWorldPath)</RimWorldPath>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(DefaultSteamModContentFolder)/2009463077/1.7/Assemblies/0Harmony.dll</HarmonyAssemblyPath>
     <AssemblyName>Megamod.EndToEndTests</AssemblyName>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -12,6 +13,10 @@
   <Import Project="../../tools/RimWorld.Build/VersionedGame.props" />
   <Import Project="../../tools/RimWorld.Build/VersionedGame.targets" />
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyAssemblyPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
     <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.Diagnostics/fixture.json" />
     <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.Diagnostics.LateOptions/fixture.json" />
     <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.DrugPresets/fixture.json" />

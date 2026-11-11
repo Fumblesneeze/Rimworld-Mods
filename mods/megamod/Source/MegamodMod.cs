@@ -10,6 +10,8 @@ using Megamod.Features.DrugPolicyMaintenance;
 using Megamod.Features.DrugPolicyMaintenance.Core;
 using Megamod.Features.DrugPolicyMaintenance.Harmony;
 using Megamod.Features.DrugPolicyMaintenance.Runtime;
+using Megamod.Features.DrugTolerance;
+using Megamod.Features.DrugTolerance.Runtime;
 using Megamod.Features.ReadableNumbers;
 using Megamod.Features.MessagePlacement;
 using Megamod.Patching;
@@ -33,6 +35,7 @@ public sealed class MegamodMod : Mod
     private readonly AdmissionCoordinator admission;
     private readonly string[] activePackageIds;
     private readonly bool drugPolicyEnabled;
+    private readonly DrugTolerancePersistencePatch drugTolerancePersistence;
     private MessagePlacementRuntime? messagePlacement;
     private readonly NativeContentInvalidationPatch definitionLifecycle = new(typeof(PlayDataLoader));
     private DrugPresetEntriesPatch? drugPresets;
@@ -81,6 +84,9 @@ public sealed class MegamodMod : Mod
         WarningCaptureSettingsUi.Register(renderer, warningCapture);
         DrugPolicySettingsUi.Register(renderer);
         MessagePlacementSettingsUi.Register(renderer, settings.Store, () => messagePlacement?.Available == true);
+        // Owned row state survives ordinary feature-off choices and precedes native policy factories.
+        drugTolerancePersistence = NativeDrugTolerancePersistence.Create(diagnostics.Write);
+        if (admission.Apply(drugTolerancePersistence.Group, AdmissionPhase.Early)) drugTolerancePersistence.Enable();
         gameObserver = new CurrentGameObserverPatch(typeof(Current), typeof(Game),
             actual => settings.OnGameChanged((Game?)actual), settings.ReportLifecycleFailure);
         settingsPump = new SettingsLifecyclePumpPatch(typeof(LongEventHandler),
@@ -159,6 +165,7 @@ public sealed class MegamodMod : Mod
     {
         settings.ProcessPendingLifecycle();
         if (!UnityData.IsInMainThread) return;
+        NativeDrugTolerancePersistence.ProcessPendingFailure();
         if (messagePlacement == null && settings.Store.GetEffective(MessagePlacementSettings.Enabled))
         {
             messagePlacement = new MessagePlacementRuntime(settings, activePackageIds, diagnostics.Write);

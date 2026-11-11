@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.DrugTolerance.PersistenceFailureTitle>Drogenrichtlinie konnte nicht erhalten werden</Megamod.DrugTolerance.PersistenceFailureTitle>
+  <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again konnte deine Toleranzgrenzen für Drogen nicht erhalten. Speichern und Laden sind bis zum Neustart von RimWorld gesperrt. Eine Meldung „Gespeichert als“ bedeutet nach diesem Fehler nicht, dass erfolgreich gespeichert wurde. Dein bisheriger Spielstand wurde durch diesen fehlgeschlagenen Versuch nicht ersetzt. Starte das Spiel neu, bevor du ihn lädst oder es erneut versuchst. Toleranzeinstellungen und ihre Beschränkungen sind für diese Sitzung nicht verfügbar. Einzelheiten stehen im Protokoll.</Megamod.DrugTolerance.PersistenceFailureBody>
+</LanguageData>

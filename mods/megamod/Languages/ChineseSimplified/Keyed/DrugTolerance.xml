@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.DrugTolerance.PersistenceFailureTitle>无法保留药物方针数据</Megamod.DrugTolerance.PersistenceFailureTitle>
+  <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again 无法保留你的药物耐受性上限设置。在重启 RimWorld 之前，保存和加载将被阻止。出现此错误后，即使显示“已保存为”，也不代表保存成功。本次失败的尝试没有替换之前的存档。请重启游戏后再加载存档或重试。本次运行期间，耐受性设置及其限制均不可用。详情请查看日志。</Megamod.DrugTolerance.PersistenceFailureBody>
+</LanguageData>
