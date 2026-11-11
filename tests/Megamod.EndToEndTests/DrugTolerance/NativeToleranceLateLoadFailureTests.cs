@@ -150,8 +150,11 @@ public sealed class NativeToleranceLateLoadFailureTests : IRimWorldEndToEndTest
             ["expectedErrors"] = "Injected owned callback failure after its original PostLoadInit action, native loader abort and failed-load scene recovery. This is not a native parser failure."
         });
         yield return new NativePointerScopeBeginStep("own pointer for exact late-load notice", value => pointer = value);
-        yield return Click("acknowledge the bound late-load restart notice", new Vector2(notice.windowRect.width / 2, notice.windowRect.height - 35.5f));
+        yield return Click("acknowledge the bound late-load restart notice", AcknowledgePoint(notice));
         yield return new NativePointerScopeEndStep("restore pointer after late-load notice", pointer);
+        yield return new WaitUntilStep("the acknowledged late-load notice leaves the native stack", _ =>
+            !Find.WindowStack.Windows.Any(current => ReferenceEquals(current, notice)),
+            new EndToEndDeadline(int.MaxValue, 120, TimeSpan.FromSeconds(5)));
         yield return new NativeDeveloperLogActionStep("open the native console after visible late-load failure evidence", true);
         yield return Capture("capture the native late-load error console", () => Find.WindowStack.WindowOfType<LudeonTK.EditWindow_Log>()!, _ => { });
         yield return new ScreenshotStep("native console after rejected late-phase load", Array.Empty<string>(), 0);
@@ -227,6 +230,14 @@ public sealed class NativeToleranceLateLoadFailureTests : IRimWorldEndToEndTest
     }
     private static Dialog_MessageBox? Notice() => Find.WindowStack.Windows.OfType<Dialog_MessageBox>().SingleOrDefault(box =>
         box.title == "Megamod.DrugTolerance.PersistenceFailureTitle".Translate().ToString());
+    private static Vector2 AcknowledgePoint(Dialog_MessageBox box)
+    {
+        EndToEndAssert.True(box.buttonBText == null && box.buttonCText == null && box.interactionDelay <= 0);
+        // Inspected 1.7.5005: margin18, two columns even without B, A in right column inset10.
+        float columnWidth = (box.windowRect.width - 2 * 18) / 2;
+        return new Vector2(18 + columnWidth + 10 + (columnWidth - 10) / 2,
+            box.windowRect.height - 18 - 35f / 2);
+    }
     private static string FileHash(string path)
     {
         using var sha = SHA256.Create();
@@ -238,6 +249,12 @@ public sealed class NativeToleranceLateLoadFailureTests : IRimWorldEndToEndTest
     private NativeWindowCaptureStep Capture<T>(string label, Func<T> select, Action<T> retain) where T : Window => new(label, windows =>
     {
         var current = select() ?? throw new InvalidOperationException("Missing exact native window for " + label);
+        if (current is Dialog_MessageBox message)
+        {
+            var button = AcknowledgePoint(message) + message.windowRect.position;
+            EndToEndAssert.True(Find.WindowStack.GetsInput(message) && ReferenceEquals(Find.WindowStack.GetWindowAt(button), message),
+                "The exact notice must receive native input at its OK button before capturing visible evidence.");
+        }
         Own(current);
         retain(current);
         window = windows.Single(item => item.NativeId == current.ID && item.RuntimeType == current.GetType().FullName);

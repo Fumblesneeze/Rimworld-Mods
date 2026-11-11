@@ -166,6 +166,9 @@ public sealed class NativeToleranceSaveFailureTests : IRimWorldEndToEndTest
         yield return new NativePointerScopeBeginStep("own pointer for the exact restart notice", value => pointer = value);
         yield return Click("acknowledge only the bound owned restart notice", AcknowledgePoint(failureNotice));
         yield return new NativePointerScopeEndStep("restore pointer after the owned notice", pointer);
+        yield return new WaitUntilStep("the acknowledged owned restart notice leaves the native stack", _ =>
+            !Find.WindowStack.Windows.Any(current => ReferenceEquals(current, failureNotice)),
+            new EndToEndDeadline(int.MaxValue, 120, TimeSpan.FromSeconds(5)));
         foreach (var step in DismissNativeSaveError("first failed overwrite")) yield return step;
         foreach (var step in Overwrite("retry after failure")) yield return step;
         yield return new WaitUntilStep("native retry finishes without another owned dialog", _ =>
@@ -241,13 +244,19 @@ public sealed class NativeToleranceSaveFailureTests : IRimWorldEndToEndTest
         yield return new NativePointerScopeBeginStep("own pointer for native save error " + phase, value => pointer = value);
         yield return Click("acknowledge the bound native save error " + phase, AcknowledgePoint(nativeError));
         yield return new NativePointerScopeEndStep("restore pointer after native save error " + phase, pointer);
+        yield return new WaitUntilStep("the acknowledged bound native save error leaves the stack " + phase, _ =>
+            !Find.WindowStack.Windows.Any(current => ReferenceEquals(current, nativeError)),
+            new EndToEndDeadline(int.MaxValue, 120, TimeSpan.FromSeconds(5)));
     }
 
     private static Vector2 AcknowledgePoint(Dialog_MessageBox box)
     {
         EndToEndAssert.True(box.buttonBText == null && box.buttonCText == null && box.interactionDelay <= 0);
-        // Native one-button MessageBox places button A across the content bottom (35 high).
-        return new Vector2(box.windowRect.width / 2, box.windowRect.height - 18 - 17.5f);
+        // Inspected 1.7.5005 Dialog_MessageBox still uses two columns without button B.
+        // Window contracts by margin18; button A occupies the right column, inset10.
+        float columnWidth = (box.windowRect.width - 2 * 18) / 2;
+        return new Vector2(18 + columnWidth + 10 + (columnWidth - 10) / 2,
+            box.windowRect.height - 18 - 35f / 2);
     }
 
     public static void FailOwnedElement(ScribeSaver __instance, string elementName)
@@ -369,6 +378,9 @@ public sealed class NativeToleranceSaveFailureTests : IRimWorldEndToEndTest
     private NativeWindowCaptureStep CaptureMessage(string label, Func<Dialog_MessageBox> select, Action<Dialog_MessageBox> retain) => new(label, windows =>
     {
         var current = select() ?? throw new InvalidOperationException("Missing exact native message box.");
+        var button = AcknowledgePoint(current) + current.windowRect.position;
+        EndToEndAssert.True(Find.WindowStack.GetsInput(current) && ReferenceEquals(Find.WindowStack.GetWindowAt(button), current),
+            "The exact message box must receive native input at its OK button before capturing visible evidence.");
         Own(current);
         retain(current);
         window = windows.Single(item => item.NativeId == current.ID && item.RuntimeType == current.GetType().FullName);

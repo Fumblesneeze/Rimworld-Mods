@@ -84,13 +84,20 @@ seconds: eight captures, six clicks, four tab actions, two log actions and four 
 The remaining 690 seconds cover native save/load, synchronous assertions/checkpoints, cancellations
 and arrangement/iteration overhead. The focused save-fault scenario has six screenshots (180
 seconds), eight captures/seven clicks/ten pointer actions/five log actions (450 seconds), three
-90-second waits (270 seconds) and three menu actions (45 seconds). Its fixed allowance is 945
-seconds, leaving 255 seconds for the minimal native save/load baseline and synchronous overhead.
+90-second waits (270 seconds), three 5-second dismissal waits (15 seconds) and three menu actions
+(45 seconds). Its fixed allowance is 960 seconds, leaving 240 seconds for the minimal native
+save/load baseline and synchronous overhead.
 Exact native IDs distinguish and acknowledge the SafeSaver
 error box and the owned notice; type-only message-box selection/acceptance is not used.
+The inspected 1.7.5005 `Dialog_MessageBox` keeps two button columns even when only A is present:
+after the native 18-unit content margin, A occupies the right column with a 10-unit left inset.
+At width 640 its center is local x476, not the window center x320. Both fixtures verify the exact
+message receives native input at that point before capturing it, then wait at most 5 seconds for
+that exact acknowledged window reference to leave the stack. Save acknowledges the top owned notice
+before the underlying SafeSaver box; it never treats successful input dispatch as proof of dismissal.
 The late-load scenario has a 900-second cap: four screenshots (120), four captures/three clicks/
-four pointer actions/three log actions (210), two 180-second waits (360) and a menu action (15),
-leaving 195 seconds for the
+four pointer actions/three log actions (210), two 180-second waits (360) and a menu action (15).
+Its one 5-second exact dismissal wait leaves 190 seconds for the
 initial save/load and other overhead. Cleanup retains its separate 30-second deadline. These are
 harness allowances, not product timing promises.
 `MaxGameTicks=4800` is a secondary guard while the colony
