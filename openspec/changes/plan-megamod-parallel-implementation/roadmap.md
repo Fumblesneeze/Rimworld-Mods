@@ -923,3 +923,12 @@ central links, runtime integration, product builds and native evidence. Coordina
 output lease with the Gateway's concrete callback-state regression. Existing transaction and
 preference implementations remain intact. S138's reviewed runtime/geometry await native execution;
 all unrun feature, composition and part obligations remain open.
+
+Revision21 native-route allocation — the S139 constructor/getter checkpoint6a71db4 is independently
+reviewed and compiled but remains unregistered. While the Gateway author fixes retained cleanup
+diagnostics, a separate S138 lane researches actual scheduled/direct-recreation pawn workflows.
+Its initial lease is local research/scenario planning only; root releases new fixture source after
+the editor bundle is frozen for its run. This avoids changing a compiling E2E project while root
+owns native text and editor verification. The lane cannot launch games, install packages or accept
+its own scenarios. Social/patient/refill, settings, language and all other pending feature cases
+remain required; this allocation selects the next executable routes without removing those cases.

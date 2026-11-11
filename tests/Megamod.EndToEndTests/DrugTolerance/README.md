@@ -1,9 +1,25 @@
-# Native tolerance persistence scenarios
+# Native tolerance workflows
 
 Owner: `fumblesneeze.megamod`, S138. These scenarios are authored, not accepted, until the
 orchestrator reviews the build and personally observes the retained action/result captures.
 They use the exact ordered Harmony, Core, megamod list with the Gateway appended by the harness.
 No original provider or fixture mod is required.
+
+`megamod.drug-tolerance.native-editor` opens Assign and the native policy manager, selects a
+disposable policy, and edits its Beer tolerance through the contextual button, Any checkbox,
+focused native text input, Apply and Cancel. It observes invalid `NaN` rejection, numeric zero,
+discarded numeric 100, applied numeric 100, a locale decimal and restored Any while retaining the
+surrounding native policy choices. Direct setup creates only the initial policy; no draft setter
+manufactures an input result. Exact control leases come from the Gateway's reviewed native-text
+provider. This scenario proves editor behavior only; actual routine jobs remain separate cases.
+
+Run this exact ID with `e2e_run_start`, scoped to `tests/Megamod.EndToEndTests/Megamod.EndToEndTests.csproj`
+and launcher timeout 1800. Its 1200-second scenario allowance covers 50 native operations at 15 seconds,
+10 screenshots at 30 seconds and five close waits at 5 seconds (1075 seconds total), leaving 125 seconds
+for synchronous work. Independent wall/frame limits permit paused native UI work. Root must inspect
+the edited 100 capture before Cancel and the unchanged zero row afterward, as well as the other
+causal captures and final native console. The fixture restores its exact windows, pointer scope,
+policy and speed; it refuses cleanup against an unrelated Game.
 
 `megamod.drug-tolerance.native-copy-save` opens Assign and native Manage drug policies, selects
 a disposable source, clicks the native Duplicate icon and changes the copy's Beer recreation
@@ -11,7 +27,7 @@ checkbox. It saves/reloads through the native command and reopens the copied row
 0, numeric 1 and an unknown schema are arranged on the source before the action; exact restored
 encodings and distinct row objects are supporting component assertions. The native Copy command
 and serializer produce the copy/restored state. This does not accept tolerance editing or routine
-enforcement, neither of which is enabled by the support group.
+enforcement, which are separate from the persistence support group.
 
 `megamod.drug-tolerance.save-failure-preserves-file` installs an unarmed temporary test-owned
 Harmony prefix on native `ScribeSaver.WriteElement(string,string)` before a focused baseline:
