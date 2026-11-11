@@ -78,7 +78,11 @@ Prefer action → wait → observation steps that exercise the same native path 
   dialogs, and which parent windows an action closes. Use named missing-member assertions. Native
   windows can round calculated rectangles before rendering; compare the consumed projection and
   exact window identity rather than assuming raw rectangle equality. When one such assumption fails,
-  inspect the remaining sequence together before retrying.
+  inspect the remaining sequence together before retrying. Derive click points from the actual
+  native control rectangle, including asymmetric one-button dialogs; a window's center is not
+  necessarily its button's center. After acknowledgement, wait for that exact window to disappear
+  before capturing or interacting with a dialog beneath it. An accepted input receipt does not
+  establish that the intended control received the click.
 - Prove fault injection is reached before judging failure handling. Install an unarmed interceptor
   before a successful native baseline, retain actual hit/phase counters, then arm only the intended
   field or owned callback. A registered Harmony detour, especially a closed generic added after
