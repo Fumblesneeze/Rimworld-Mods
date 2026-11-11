@@ -12,4 +12,9 @@
   <Megamod_Messages_ResetPairHelp>Nur diese Spalte zurücksetzen. „Global verwenden“ und die andere Spalte bleiben unverändert.</Megamod_Messages_ResetPairHelp>
   <Megamod_Messages_InvalidOffsetPair>Zwei endliche Zahlen zwischen −100 und 100 eingeben.</Megamod_Messages_InvalidOffsetPair>
   <Megamod_Messages_BarIntegrationPending>Der automatische Abstand zur Kolonistenleiste ist noch nicht integriert.</Megamod_Messages_BarIntegrationPending>
+  <Megamod_Messages_PreviewSave>Positionsvorschau — aktueller Spielstand</Megamod_Messages_PreviewSave>
+  <Megamod_Messages_PreviewGlobal>Positionsvorschau — globaler Standard</Megamod_Messages_PreviewGlobal>
+  <Megamod_Messages_PreviewDisabled>Platzierung ist aus. Gespeicherte Versätze bleiben erhalten; die native Position gilt.</Megamod_Messages_PreviewDisabled>
+  <Megamod_Messages_PreviewUnavailable>Platzierung ist im aktuellen Spielkontext nicht verfügbar. Die native Position gilt.</Megamod_Messages_PreviewUnavailable>
+  <Megamod_Messages_PreviewSample>Nur ein Beispielstapel: keine echten Meldungen, Töne oder Chronikeinträge.</Megamod_Messages_PreviewSample>
 </LanguageData>

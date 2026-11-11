@@ -1,12 +1,15 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **18**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **19**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
 Documentation completion and implementation are separate. All aggregate runtime gates remain open.
+Revision19 has logical Gateway and S138 state checkpoints plus bounded S071 native preview/manual
+placement evidence and the affected S029 save/reload regression. Its edit leases are closed; exact
+scope and local evidence are recorded in p0-dispatch.md. No aggregate task closes from those slices.
 Revision17 dispatches foundation3.7's common transient effective-off resolution with its first
 S035/S094 consumers, and S071's single-transpiler entry participant. These narrow handoffs retain
 all existing feature/part gates; root owns integration and affected native verification.

@@ -1,7 +1,7 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **18**, 2026-11-11. Status: **P0 implementation dispatched; native acceptance incomplete**.
+Plan revision **19**, 2026-11-11. Status: **P0 implementation dispatched; native acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
@@ -842,3 +842,23 @@ Content selection browser. The incident-only tracer must no longer populate the 
 list. Reuse the common scoped editors inside that browser; preserve all existing choices. The current
 installed beta is 1.7.5005 rev1082 (Steam build 26571351), so development package pins are refreshed
 from the actual installation and all affected native evidence must be regenerated on that build.
+
+Revision19 — continue the user's batch implementation and logical checkpoints from bfe5e0e.
+The previous content/master-switch and manual message runtime batch is committed; its native
+workflows remain due. Root reviews and verifies the inherited Gateway mouse-projection correction
+as a separately owned prerequisite. P0-B adds the required inert settings preview and explicit
+automatic-clearance status using the existing common settings/placement calculation. P0-C advances
+S138's lossless choice/route rules and exact native policy-row state through S029's existing
+capture/apply/rollback transaction. Native tolerance hooks, UI and save serialization remain
+explicit subsequent work, with no enabled enforcement claim. Existing automatic bar clearance,
+all 139 feature obligations and P0–P8 gates remain allocated. Revision18 leases are superseded by
+the revision19 section in p0-dispatch.md. Root retains central wiring, independent review, builds,
+installation, native evidence and commits; affected prior runtime evidence must be regenerated.
+
+Revision19 checkpoint: the two implementer leases have returned. The reviewed Gateway fix and S138
+state tranche are committed separately. Root's integrated S071 preview/startup correction has
+bounded English native evidence, including actual Reset/enable/disable actions, and the affected
+S029 native save/reload regression passes. A failed preview screenshot attempt is retained alongside
+the passing unchanged-build retry. The local revision19 ledger records build-specific evidence and
+the bounded semantic pass. No automatic geometry, tolerance enforcement or whole-part acceptance
+is inferred; all remaining obligations and the preceding unrun content cases stay allocated.

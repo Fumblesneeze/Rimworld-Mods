@@ -1,8 +1,10 @@
 # Message placement
 
 Owner **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`; **RimWorld 1.7 beta**.
-Origin replacement, S071 Better Message Placement (Continued). **Implementation underway; native
-behavior remains unimplemented and unverified.** Numerical layout choices below remain the specified defaults.
+Origin replacement, S071 Better Message Placement (Continued). **Manual runtime, settings controls
+and bounded preview are partially implemented with bounded reviewed English native verification;
+automatic clearance and full native acceptance
+remain unfinished.** Numerical layout choices below remain the specified defaults.
 
 ## ADDED Requirements
 
@@ -16,6 +18,11 @@ SHALL use this same effective-off setting without overwriting requested preferen
 - **WHEN** the player disables placement with nonzero offsets and then reenables it
 - **THEN** native placement is used while disabled and the retained offsets apply on the next display after reenablement
 - **AND** disabling is not reported as a failed patch or an unavailable GUI context
+
+#### Scenario: Start with placement disabled and enable it later
+- **WHEN** placement is effectively off at startup, including an active-original effective-off reason
+- **THEN** its native patch group is not attempted and disabled placement produces no failed-patch warning
+- **AND** a later ordinary effective enablement may admit the group and apply retained offsets on the next display
 
 #### Scenario: Incremental manual placement is explicitly bounded
 - **WHEN** the manual-positioning implementation is available before automatic bar geometry integration
@@ -169,6 +176,12 @@ quest actions. Closing settings SHALL remove the preview without clearing real m
 - **WHEN** the player repeatedly adjusts settings, switches saves or opens them at the main menu
 - **THEN** the labeled preview shows that context without creating a live notification, sound, history record or actionable target
 - **AND** closing settings removes only the preview, leaving ordinary messages intact
+
+#### Scenario: Incremental preview remains honest about unavailable clearance
+- **WHEN** manual placement is admitted but automatic bar geometry is not integrated
+- **THEN** the labeled sample diagram uses the current effective offsets, viewport and native anchor with an explicit automatic-clearance-unavailable explanation
+- **AND** it invents no bar reserve; disabled or unadmitted placement shows its explanation without drawing an active placement sample
+- **AND** this milestone does not accept current bar reserve, native message interactions or full preview coverage
 
 ### Requirement: Compatibility selects one provider and fails only unsupported contributions
 The feature SHALL apply only where required message-placement behavior can be verified, allowing

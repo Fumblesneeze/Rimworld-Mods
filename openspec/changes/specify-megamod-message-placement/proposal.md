@@ -27,10 +27,12 @@ Target **RimWorld 1.7 beta**. S071 is a replacement reference, not a co-owner.
 - Correct source double-origin addition, estimated row counts, physical-resolution offsets and
   partial patch failure. Use semantic admission, bounded fallback and best-effort original-provider handling.
 
-Implementation has begun with pure placement calculations, an unregistered common setting and a
-guarded native call-site observer tested in host fixtures. No native placement, settings UI or
-verified replacement is delivered. Layout choices and
-remaining native evidence obligations stay visible in refinement.
+Manual placement, common scoped controls and the bounded inert preview are partially implemented,
+with focused host evidence and reviewed English native reset/enable/disable/preview workflows.
+Automatic bar geometry, complete native
+interaction and preview coverage, rendered locale checks and final acceptance remain unfinished.
+No whole replacement is verified; layout choices and remaining evidence obligations stay visible
+in refinement.
 
 ## Capabilities
 

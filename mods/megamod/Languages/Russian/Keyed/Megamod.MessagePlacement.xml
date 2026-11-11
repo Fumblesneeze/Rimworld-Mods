@@ -12,4 +12,9 @@
   <Megamod_Messages_ResetPairHelp>Сбрасывает только этот столбец. Флажок «Использовать общие» и другой столбец не меняются.</Megamod_Messages_ResetPairHelp>
   <Megamod_Messages_InvalidOffsetPair>Введите два конечных числа от −100 до 100.</Megamod_Messages_InvalidOffsetPair>
   <Megamod_Messages_BarIntegrationPending>Автоматический отступ от панели колонистов ещё не интегрирован.</Megamod_Messages_BarIntegrationPending>
+  <Megamod_Messages_PreviewSave>Предпросмотр позиции — текущее сохранение</Megamod_Messages_PreviewSave>
+  <Megamod_Messages_PreviewGlobal>Предпросмотр позиции — глобальные настройки</Megamod_Messages_PreviewGlobal>
+  <Megamod_Messages_PreviewDisabled>Размещение отключено. Сохранённые смещения остаются; используется исходная позиция.</Megamod_Messages_PreviewDisabled>
+  <Megamod_Messages_PreviewUnavailable>Размещение недоступно в текущем игровом контексте. Используется исходная позиция.</Megamod_Messages_PreviewUnavailable>
+  <Megamod_Messages_PreviewSample>Только пример стопки: без настоящих сообщений, звуков и записей в истории.</Megamod_Messages_PreviewSample>
 </LanguageData>

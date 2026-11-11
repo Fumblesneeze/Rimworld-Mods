@@ -1,5 +1,15 @@
 # S071 paired offset editor
 
+2026-11-11 continuation: registration now additionally takes the common SettingsStore and a
+read-only placement-admission callback, and appends the stateless MessagePlacementPreviewUi.
+The diagram recalculates every draw with current effective values, viewport and native/lesson
+anchor; it neither persists transient state nor posts a native Message. Current automatic-clearance
+unavailability is explicit. Its detached model has focused scope/coordinate/availability tests;
+native preview/reset/close was subsequently run and personally inspected by root in English on
+1.7.5005. Wider rendered-language, scope and interaction gates remain open. The revision19
+integrated-verification ledger retains the exact build and causal evidence. Earlier references
+below to an unimplemented preview or unregistered editor describe the preceding editor tranche.
+
 Owner fumblesneeze.megamod. This slice is unregistered and awaits native acceptance. Its first
 observable result is one Interface / Messages compound row: editable horizontal and vertical
 percentages, one Apply pair action and one Reset to 0 / 0 action in each scope. Use global, scope
@@ -12,7 +22,8 @@ It has independent sliders, compares x+y, emits live sample messages, and resets
 Those are source observations, not parity requirements: our existing spec requires one atomic scoped
 pair, independent coordinates and an inert future preview. No upstream code is copied.
 
-Public integration: MessagePlacementSettingsUi.Register(SettingsRenderer). Root separately registers
+Current public integration: MessagePlacementSettingsUi.Register(SettingsRenderer, SettingsStore,
+Func<bool> placementAvailable). Root separately registers
 MessagePlacementSettings.PositionOffset before common settings initialization. The editor implements
 ISettingsCompositeEditor<MessageOffsets>, uses MessageOffsetInput for parsing and calls only the
 provided scoped commit delegate. MessageOffsetDraft owns transient text/error state only. A rejected

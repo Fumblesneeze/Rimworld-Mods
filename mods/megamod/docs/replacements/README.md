@@ -1,7 +1,8 @@
 # Replacement coverage
 
 **No whole-source replacement is accepted yet.** S029 has narrow verified preset/persistence
-workflows; its remaining behavior stays unfinished. This index is the entry point for source analysis and
+workflows; S071 has bounded native settings/preview evidence. Their remaining behavior stays
+unfinished. This index is the entry point for source analysis and
 the ongoing implemented/deviated/omitted ledger. A source name is an intake item, not a specification.
 
 The [sequential specification ledger](../refinement/specification-progress.md) tracks every selected
@@ -138,7 +139,7 @@ third-party integrations remain required.
 | All Memories Fade | S068 researched; observable draft independently reviewed/validated | Nothing | [Timed memory fading](all-memories-fade.md); stable ranges, shared settings, native lifetimes/counselling and MF-Q1–4 |
 | Auto-Cut Blight - 1.6 | S069 researched; observable draft independently reviewed/validated | Nothing | [Automatic blight cutting](auto-cut-blight.md); ordinary orders, extraction precedence, native work priorities, shared control and ACB-Q1–4 |
 | Automatic Night Owl | S070 researched; observable draft independently reviewed/validated | Nothing | [Initial nocturnal schedules](automatic-night-owl.md); custom preservation, common window/defaults, lifecycle and ANO-Q1–4 |
-| Better Message Placement (Continued) | S071 researched; observable draft independently reviewed/validated | Nothing | [Message placement](better-message-placement.md); current bar bounds, scoped offsets, inert preview, overflow and BMP-Q1–4 |
+| Better Message Placement (Continued) | S071 partially implemented; reviewed English native preview/reset and startup-off/enable slices | Manual placement, scoped pair editor and inert preview; automatic clearance unavailable | [Message placement](better-message-placement.md); current bar bounds, full scope/locale/input coverage and BMP-Q1–4 remain open |
 | Walls are solid | S072 researched; observable draft independently reviewed/validated | Nothing | [Structural damage](walls-are-solid.md); ordinary/crushing/breaching distinctions, scoped settings, mining/exit behavior and WAS-Q1–5 |
 | Use Bedrolls - Continued | S073 researched; three observable capability drafts independently reviewed/validated | Nothing | [Portable beds, home memory and tailoring](use-bedrolls.md); physical custody/capacity, source corrections, proposed work and PBR-Q1–5 |
 | Auto links | S074 complete selected-source/native/consumer research; observable draft independently reviewed/validated | Nothing | [Description relationships and native navigation](auto-links.md); additive current links, terrain/recipe-user corrections, Info Card Plus boundary and AL-Q1–4 |

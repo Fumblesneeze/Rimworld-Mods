@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+  <ModSettings Class="Megamod.Settings.MegamodGlobalSettings">
+    <values>
+      <keys>
+        <li>messages.enabled</li>
+        <li>messages.positionOffset</li>
+      </keys>
+      <values>
+        <li>false</li>
+        <li>{"HorizontalPercent":10,"VerticalPercent":10}</li>
+      </values>
+    </values>
+  </ModSettings>
+</SettingsBlock>

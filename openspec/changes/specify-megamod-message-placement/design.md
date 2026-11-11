@@ -2,8 +2,10 @@
 
 Owner **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`; **1.7 beta**.
 S071 replaces Better Message Placement (Continued), `Mlie.BetterMessagePlacement`, Workshop
-2259516339. The pure placement/settings tranche below is implemented but unregistered and unverified;
-native integration remains unimplemented. The [research](../../../mods/megamod/docs/refinement/2026-11-04-better-message-placement-research.md)
+2259516339. Manual runtime integration, common controls and the bounded inert preview are
+partially implemented with bounded reviewed English native verification; automatic geometry and
+the full native gate remain unfinished. Historical
+tranche descriptions below retain their original scope. The [research](../../../mods/megamod/docs/refinement/2026-11-04-better-message-placement-research.md)
 records documentation-first inspection, selected binary/hash/license and native 1.7.4998 rev1299 evidence.
 
 Source injects additions after loosely matched Vector2 x/y loads in Messages.MessagesDoGUI. Its
@@ -364,6 +366,26 @@ verification in its own contract. Disabling/removing owned placement leaves ordi
 native actions intact; do not clear messages, archive records or user preferences on admission failure.
 
 ## Open Questions
+
+### 2026-11-11 inert preview continuation
+
+The common settings page now has one stateless sample diagram beneath the compound offset row.
+`MessagePlacementPreview.Capture` reads the common effective enable/pair and current save identity;
+it returns detached sample rectangles after the same placement calculation. It owns no persistence,
+Message, Archive, sound, target or callback lifetime. Each draw recalculates using current logical
+viewport and native standard/lesson anchor, so coordinate sums, settings revisions and old save
+identities cannot suppress refresh. The UI restores state through the existing section renderer.
+The sample rectangles are labeled illustrations, not speculative measurements of live notifications.
+
+The current native runtime explicitly has no admitted automatic geometry. The preview therefore
+shows that status and no invented bar reserve. Disabled or unadmitted placement shows only its
+explanation and viewport, retaining preferences. The future geometry integration must supply actual
+current reserve before the whole preview task is accepted. Root passes common SettingsStore and a
+read-only runtime availability callback during registration; there is no second settings store or
+new shared API. Native scenario `megamod.messages.native-preview-reset` opens the real page, observes
+the diagram, clicks the real global Reset and observes the changed diagram, then closes. Empty live
+messages and unchanged native archive identities support its inertness claim; screenshots still
+require root's personal inspection. No game run or full S071 acceptance is implied by authoring it.
 
 ### 2026-11-11 manual placement integration batch
 

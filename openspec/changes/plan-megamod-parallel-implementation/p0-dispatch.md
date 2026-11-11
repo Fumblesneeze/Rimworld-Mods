@@ -458,3 +458,33 @@ and fixes, and logical commits. Root integrates the existing dirty tree and reta
 Workers do not launch games or commit. Output leases are returned before integrated builds. Author
 native cases using existing typed controls; no synthetic end state accepts a feature. Runtime
 changes require fresh affected evidence. No feature or part acceptance box closes on this dispatch.
+
+## Current leases — revision19 (2026-11-11)
+
+Revision18 assignments are closed; the committed batch ends at bfe5e0e. Current installation remains
+1.7.5005 rev1082. All unfinished feature obligations and native gates remain open.
+
+- `message_batch`: S071 MessagePlacement source, matching feature tests/catalogs/owning documents,
+  and a feature-local native preview scenario. Deliver inert effective-scope preview and honest
+  automatic-clearance status. Existing shared C01/settings providers and bootstrap are root-owned.
+- `tolerance_batch`: S138 DrugTolerance source, matching Unit/Defs tests and owning documents;
+  narrow S029 DrugPolicyRow and NativeDrugPolicyStorage extension to preserve immutable tolerance
+  choices through existing row transactions. Native patch registration and persistence hooks are
+  excluded from this first tranche. Unit output is shared sequentially with message_batch;
+  tolerance_batch owns Defs output until handoff.
+- `gateway_review`: read-only independent review of the inherited minimized-input geometry,
+  dispatch diagnostics, tests and owning contract. Root resolves findings and owns live runs.
+- Root: project source links, central UI wiring, integration review, canonical build/install,
+  exact selected native workflows, evidence and logical commits. No worker installs, launches a
+  game or commits. Review and runtime edits invalidate affected earlier native evidence.
+
+Revision19 handoffs are closed. Gateway input correction is checkpointed at9f0e1ed; S138's reviewed
+state/codec/S029 transaction tranche at5db35c3. S138 native hooks/editor/persistence remain unregistered.
+Root integrated and reviewed S071 preview and ordinary startup-off correction, and personally
+inspected English native preview/reset/close, placement disable/reenable/reset and affected S029
+save/reload workflows. The startup-off case has an actual failing RED and passing reviewed GREEN.
+The first preview attempt failed screenshot readback; the unchanged-build retry passed. Exact
+build identities, root observations, log classification and cleanup are retained locally in
+`artifacts/Implementation/megamod-p0/revision19-integrated-verification.md`. This closes the edit
+leases only. Automatic geometry, tolerance enforcement, wider native/localized cases and every
+whole-feature/part gate remain open; no unrun previous content/master-switch task is accepted.

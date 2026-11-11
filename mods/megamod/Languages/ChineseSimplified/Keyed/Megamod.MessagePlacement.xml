@@ -12,4 +12,9 @@
   <Megamod_Messages_ResetPairHelp>仅重置本列。“使用全局设置”和另一列保持不变。</Megamod_Messages_ResetPairHelp>
   <Megamod_Messages_InvalidOffsetPair>请输入两个介于 −100 和 100 之间的有限数值。</Megamod_Messages_InvalidOffsetPair>
   <Megamod_Messages_BarIntegrationPending>尚未整合殖民者栏的自动避让功能。</Megamod_Messages_BarIntegrationPending>
+  <Megamod_Messages_PreviewSave>位置预览 — 当前存档</Megamod_Messages_PreviewSave>
+  <Megamod_Messages_PreviewGlobal>位置预览 — 全局默认</Megamod_Messages_PreviewGlobal>
+  <Megamod_Messages_PreviewDisabled>消息定位已关闭。保留已保存的偏移量，使用原生位置。</Megamod_Messages_PreviewDisabled>
+  <Megamod_Messages_PreviewUnavailable>当前游戏环境无法使用消息定位。使用原生位置。</Megamod_Messages_PreviewUnavailable>
+  <Megamod_Messages_PreviewSample>仅显示示例消息：不会产生实际消息、声音或历史记录。</Megamod_Messages_PreviewSample>
 </LanguageData>

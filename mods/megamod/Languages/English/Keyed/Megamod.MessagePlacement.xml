@@ -12,4 +12,9 @@
   <Megamod_Messages_ResetPairHelp>Reset only this column. Use global and the other column remain unchanged.</Megamod_Messages_ResetPairHelp>
   <Megamod_Messages_InvalidOffsetPair>Enter two finite numbers between −100 and 100.</Megamod_Messages_InvalidOffsetPair>
   <Megamod_Messages_BarIntegrationPending>Automatic bar clearance is not yet integrated.</Megamod_Messages_BarIntegrationPending>
+  <Megamod_Messages_PreviewSave>Position preview — current save</Megamod_Messages_PreviewSave>
+  <Megamod_Messages_PreviewGlobal>Position preview — global default</Megamod_Messages_PreviewGlobal>
+  <Megamod_Messages_PreviewDisabled>Placement is off. Stored offsets are retained; native positioning is used.</Megamod_Messages_PreviewDisabled>
+  <Megamod_Messages_PreviewUnavailable>Placement is unavailable in the current game context. Native positioning is used.</Megamod_Messages_PreviewUnavailable>
+  <Megamod_Messages_PreviewSample>Sample stack only: no live messages, sounds or history entries.</Megamod_Messages_PreviewSample>
 </LanguageData>

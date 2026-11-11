@@ -1,8 +1,31 @@
 ## 1. Resolve current contracts
 
+2026-11-11 continuation batch: a stateless effective-scope settings diagram now projects the common
+store through the existing placement calculation. It retains explicit pending automatic-clearance,
+disabled and unavailable explanations; no bar geometry is invented. Three focused RED/GREEN slices
+and 40 affected Unit checks pass. Independent review is clear. Root ran and personally inspected
+the native settings/reset/close workflow on 1.7.5005: the inherited 15/20 sample moved to the native
+anchor after Reset, and closing settings left no sample notification. The first run failed its
+screenshot deadline; the unchanged-build retry passed with cleanup. This supports only the bounded
+English current-save preview/reset slice of 3.3/3.4; current bar reserve, wider scope/locale/native
+interaction coverage and whole-feature acceptance remain open. Handoff:
+`artifacts/Megamod/P0-B/messages-preview-batch-20261111.md`.
+
+Review follow-up: root skips runtime construction/admission while the ordinary effective enable
+setting is false. The authored `megamod.messages.native-startup-off-enable` scenario requires an
+explicit prelaunch-off fixture, asserts no attempted message admission or failed-patch diagnostics,
+then enables through the native global checkbox and observes actual fixture-message relocation.
+The reviewed native RED failed before the guard; GREEN passed after it. Root personally observed
+the original message position, the Off checkbox, native enabling and the same message relocated.
+This accepts only ordinary startup-off/later-enable, not active-original composition or posting.
+Run identities, screenshots, logs and scope limits are retained in
+`artifacts/Implementation/megamod-p0/revision19-integrated-verification.md`.
+
 2026-11-11 batch: manual runtime wiring, ordinary enable/disable, visible unavailable-clearance
-status, seven language labels and the native reset/disable tracer are implemented pending integrated
-review/build/native execution. Focused evidence is in
+status, seven language labels and the native reset/disable tracer are implemented. Root subsequently
+reviewed, built and personally inspected the English native disable/reenable/reset sequence on
+1.7.5005. The same prepared message returned to its native anchor when disabled, moved after
+reenabling and returned to the anchor after Reset; posting itself was fixture setup. Focused evidence is in
 `artifacts/Megamod/P0-B/messages-manual-batch-20261111.md`. Automatic geometry, preview and full
 interaction obligations remain open; no checkbox below closes from this host evidence.
 

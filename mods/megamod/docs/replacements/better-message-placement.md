@@ -1,8 +1,11 @@
 # Better Message Placement (Continued)
 
 Owner **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`; **1.7 beta**.
-Origin replacement, S071. **Observable draft independently reviewed and validated. Nothing
-implemented or verified.**
+Origin replacement, S071. **Partial implementation; no whole replacement acceptance.** Manual
+placement, the common scoped pair editor, enable control and inert preview are implemented.
+Root has personally inspected the reviewed English native preview/reset/close and ordinary
+startup-off/later-enable workflows on 1.7.5005. Automatic bar clearance remains unavailable;
+full locale, scope, geometry and native interaction gates remain open.
 
 Source **Mlie.BetterMessagePlacement**, Workshop **2259516339**, maintainer Mlie / author Dyrewulfe.
 Inspected **2026-11-04**: selected 1.7 DLL, manifest1.7.0, assembly1.7.0.0; MIT credits D. R. Gunter
@@ -17,7 +20,10 @@ and [tasks](../../../../openspec/changes/specify-megamod-message-placement/tasks
 
 ## Behavior inventory and coverage
 
-All rows are **specified only**; no implementation, target document, test or live acceptance exists.
+The rows describe the complete specified contract. Implementation covers only the bounded slices
+above, with focused host tests and scoped independent review. The local revision19 verification
+ledger under `artifacts/Implementation/megamod-p0/` retains exact runs, build hashes, causal captures,
+the failed screenshot attempt and cleanup. It does not close any row's wider obligations.
 Requirement names in the linked spec define the complete behavior and scenarios.
 
 | ID / requirement | Input → observable result | Source deviation / remaining limit |
@@ -59,7 +65,8 @@ Defaults **0%/0%**, finite range **−100%..+100%**, four-unit default bar clear
 global/dormant override/main-menu callback rules apply to the pair. Save reset requires an enabled
 override and preserves inheritance state; global reset changes only the default. Preview names its
 effective scope; global edits under an override do not move that save's preview. Valid settings apply
-next display without resetting message timers. Seven-language UI remains to implement/verify.
+next display without resetting message timers. Seven-language catalogs are implemented; rendered
+locale verification remains open.
 
 ## Contracts and providers
 
@@ -67,7 +74,7 @@ next display without resetting message timers. Seven-language UI remains to impl
 | --- | --- | --- |
 | Native Messages/Message posting, archive, targets and rectangles | Preserve native interfaces/behavior and relocate once | Exact effective integration and Unity geometry/input require native verification |
 | Source settings/helper types and xOffsetPercent/yOffsetPercent config | No facade or config import selected | Bounded installed XML/CS/JSON search found no actual runtime API consumer; not an all-binary audit |
-| Active Mlie.BetterMessagePlacement | Original sole provider, owned placement dormant and preferences retained | Source double-origin/row/offset behavior remains under its authority; owned preview unavailable |
+| Active Mlie.BetterMessagePlacement | Bounded startup warning and best-effort ordinary owned feature-off with preferences retained | No original API, sole-provider or coexistence guarantee; active-original native verification remains open |
 | Source metadata marks DerekBickley.LTOColonyGroupsFinal incompatible | Do not copy a whole-megamod flag; exact geometry adapter needed | Actual provider implementation not found/analyzed; no automatic-clearance support claim |
 | Other compatible bar/message providers | Minimal consumed semantic checks, narrow adapter only for proved contract | No rejection merely because a foreign Harmony owner exists; no universal provider support |
 
@@ -76,7 +83,7 @@ arbitrary third-party bindings and safe removal of source-specific data are not 
 migration needs backup, atomicity, restoration and postcondition verification. No original-mod
 configuration writes or foreign unpatching.
 
-Harmony becomes required at implementation. Original/bar providers and DLC are optional; no selected
+Harmony is required. Original/bar providers and DLC are optional; no selected
 XML change or new XML Extensions dependency. No source binary/helper, other repository mod or Gateway
 dependency. Every actual patch needs its semantic target document, actual effective/incoming validation,
 unchanged-stream failure, owned-only rollback and bounded warning. Static source hashes identify

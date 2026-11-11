@@ -80,7 +80,7 @@ public sealed class MegamodMod : Mod
         DiagnosticSettingsUi.Register(renderer);
         WarningCaptureSettingsUi.Register(renderer, warningCapture);
         DrugPolicySettingsUi.Register(renderer);
-        MessagePlacementSettingsUi.Register(renderer);
+        MessagePlacementSettingsUi.Register(renderer, settings.Store, () => messagePlacement?.Available == true);
         gameObserver = new CurrentGameObserverPatch(typeof(Current), typeof(Game),
             actual => settings.OnGameChanged((Game?)actual), settings.ReportLifecycleFailure);
         settingsPump = new SettingsLifecyclePumpPatch(typeof(LongEventHandler),
@@ -159,7 +159,7 @@ public sealed class MegamodMod : Mod
     {
         settings.ProcessPendingLifecycle();
         if (!UnityData.IsInMainThread) return;
-        if (messagePlacement == null)
+        if (messagePlacement == null && settings.Store.GetEffective(MessagePlacementSettings.Enabled))
         {
             messagePlacement = new MessagePlacementRuntime(settings, activePackageIds, diagnostics.Write);
             admission.Apply(messagePlacement.Group, AdmissionPhase.Early);

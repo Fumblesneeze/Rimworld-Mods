@@ -12,4 +12,9 @@
   <Megamod_Messages_ResetPairHelp>この列だけを初期値に戻します。「全体設定を使用」ともう一方の列は変わりません。</Megamod_Messages_ResetPairHelp>
   <Megamod_Messages_InvalidOffsetPair>−100 から 100 までの有限の数値を2つ入力してください。</Megamod_Messages_InvalidOffsetPair>
   <Megamod_Messages_BarIntegrationPending>入植者バーとの間隔の自動調整はまだ組み込まれていません。</Megamod_Messages_BarIntegrationPending>
+  <Megamod_Messages_PreviewSave>位置プレビュー — 現在のセーブ</Megamod_Messages_PreviewSave>
+  <Megamod_Messages_PreviewGlobal>位置プレビュー — 全体の既定値</Megamod_Messages_PreviewGlobal>
+  <Megamod_Messages_PreviewDisabled>配置は無効です。保存したオフセットを保持し、標準の位置を使用します。</Megamod_Messages_PreviewDisabled>
+  <Megamod_Messages_PreviewUnavailable>現在のゲーム状況では配置を利用できません。標準の位置を使用します。</Megamod_Messages_PreviewUnavailable>
+  <Megamod_Messages_PreviewSample>サンプル表示のみ：実際のメッセージ、音声、履歴は作成しません。</Megamod_Messages_PreviewSample>
 </LanguageData>
