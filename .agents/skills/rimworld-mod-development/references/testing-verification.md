@@ -12,6 +12,10 @@ Use the exact owning test project for the red-green loop. During ordinary featur
 
 For a red-green slice in a registered project, filter its exact wrapper suite and rerun that same focused selection after implementation or an affecting review fix. Rerun the exact owning suite only when the slice changes shared behavior across it. Do not replay completed scenarios or invoke the guarded repository/full E2E suite merely because another feature changed. A raw `dotnet test --filter` is acceptable only for an initial compile-time RED or with an explicit inspection of the executed count; VSTest can exit zero for zero matches. A command that reports zero executed tests is a failure even when tests were discovered/ignored and the underlying runner exits zero. Wrapper filters require one exact suite; grouped runs execute every selected project and aggregate failures. Keep deterministic seams for clocks, random tokens, process identity, filesystem roots, dispatch phases, and optional-mod catalogs.
 
+Source-linked host tests can compile product files under a newer C# language version than the owning
+mod project. Keep shared source within the product project's language version and perform the owning
+product build at the batch checkpoint; a passing host test does not prove product compilation.
+
 The Zlepper testing SDK only references game assemblies; it does not load mods, apply Harmony, or load Def XML. Keep ordinary, explicit-Harmony, and DefDatabase tests in separate projects/processes. Simulate package presence through the public package-ID boundary; use constructed lightweight `Def` fixtures only in an initially empty isolated Def database; use actual RimWorld for populated/Core/Workshop databases, `ThingDef`/`RecipeDef`, XML inheritance/cross-references/PatchOperations, or another mod's real lifecycle. Read [the host-test decision table](../../../../docs/TestingEnvironments.md) before adding such a test.
 
 Choose the environment from what the assertion genuinely needs:

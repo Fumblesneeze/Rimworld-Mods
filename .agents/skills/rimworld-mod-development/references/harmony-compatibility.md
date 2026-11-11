@@ -65,6 +65,9 @@ An observation-only hook should still require only the callable and execution fa
   A policy store dominating a loop does not prove its value came from the preceding creation call:
   a branch may enter the store with a different object on the stack. Account for branch/switch entry
   into the consumed receiver/call/store sequence, including labeled no-ops, and for escaped locals.
+  Cover addresses captured before the producing write and supplied argument addresses too: later
+  alias writes can replace a protected value without another direct `ldloca` or `starg`. Exercise
+  the bypass with valid executable fixture IL, not only a rearranged diagnostic instruction list.
   Reject only the unproved relationship; harmless aliases and unrelated edits should remain eligible.
   Exercise the alternate incoming path through a real owned-patch fixture before calling it guarded.
   Pair a rejection with a compatible counterexample: a branch entering at the start of an intact
