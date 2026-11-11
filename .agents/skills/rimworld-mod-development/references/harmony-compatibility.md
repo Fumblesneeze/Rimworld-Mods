@@ -101,7 +101,12 @@ An observation-only hook should still require only the callable and execution fa
   affine equality does not prove Single/Double evaluation equivalence: large cancellation,
   overflow and reassociation can change consumed values. Keep the relevant operation order or
   prove a bounded safe transformation; pair admitted arithmetic variants with actual output checks
-  at representative/boundary inputs. Do not broaden this into a general-purpose IL evaluator.
+  at representative/boundary inputs. A small absolute-magnitude bound alone does not make a
+  transformation safe: preserve explicit precision conversions and intermediate Single rounding,
+  including at typed stores. Track writes through every represented value type and managed-reference
+  alias; a Vector field write cannot be ignored merely because a Rect write is already checked.
+  Add a changed-consumer regression for each newly modeled aggregate. Do not broaden this into a
+  general-purpose IL evaluator; refuse unproved forms within the narrow consumed chain.
 - Revoke old admission before evaluating a newly composed stream. A validator/metadata failure
   inside a transpiler must preserve its incoming stream and cannot prevent another owner's patch
   removal. Test the actual failing provider path, including a subsequent successful rebuild when
