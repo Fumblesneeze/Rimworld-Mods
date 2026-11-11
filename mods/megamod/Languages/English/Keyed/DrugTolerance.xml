@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod.DrugTolerance.Enabled>Limit routine drug use by tolerance</Megamod.DrugTolerance.Enabled>
+  <Megamod.DrugTolerance.EnabledHelp>Add tolerance limits to drug-policy rows. Changes apply to the next routine selection; they do not interrupt existing orders or restrict manual or medical use. Row choices stay with their save.</Megamod.DrugTolerance.EnabledHelp>
+  <Megamod.DrugTolerance.Header>Tolerance</Megamod.DrugTolerance.Header>
+  <Megamod.DrugTolerance.Any>Any</Megamod.DrugTolerance.Any>
+  <Megamod.DrugTolerance.NeedsReview>Needs review</Megamod.DrugTolerance.NeedsReview>
+  <Megamod.DrugTolerance.Inactive>{0} (inactive)</Megamod.DrugTolerance.Inactive>
+  <Megamod.DrugTolerance.UnavailableShort>Unavailable</Megamod.DrugTolerance.UnavailableShort>
+  <Megamod.DrugTolerance.Unavailable>Tolerance limits are unavailable; native drug decisions remain in effect.</Megamod.DrugTolerance.Unavailable>
+  <Megamod.DrugTolerance.Off>Tolerance limits are turned off. This policy uses the game's normal drug rules; saved tolerance choices are retained.</Megamod.DrugTolerance.Off>
+  <Megamod.DrugTolerance.RuleHelp>Routine use is allowed only below this tolerance. Any adds no limit; 0% blocks routine use, and 100% is a numeric limit. This does not guarantee safety.</Megamod.DrugTolerance.RuleHelp>
+  <Megamod.DrugTolerance.Percentage>Tolerance limit (%)</Megamod.DrugTolerance.Percentage>
+  <Megamod.DrugTolerance.EditTitle>Tolerance: {0}</Megamod.DrugTolerance.EditTitle>
+  <Megamod.DrugTolerance.InvalidPercentage>Enter a percentage from 0 to 100.</Megamod.DrugTolerance.InvalidPercentage>
+  <Megamod.DrugTolerance.ContextUnavailable>Tolerance controls require a fully loaded colony.</Megamod.DrugTolerance.ContextUnavailable>
+  <Megamod.DrugTolerance.LayoutUnavailable>Tolerance limits are unavailable because the policy controls do not fit this layout.</Megamod.DrugTolerance.LayoutUnavailable>
+  <Megamod.DrugTolerance.CapabilityUnavailable>This drug has no supported tolerance reading. Its saved choice is retained.</Megamod.DrugTolerance.CapabilityUnavailable>
+  <Megamod.DrugTolerance.ReadingUnavailable>A current tolerance value could not be read. This routine drug decision follows the game's normal rules; saved tolerance limits are unchanged.</Megamod.DrugTolerance.ReadingUnavailable>
+  <Megamod.DrugTolerance.InactiveHelp>Neither recreation nor scheduled use is enabled. This choice is retained for later.</Megamod.DrugTolerance.InactiveHelp>
   <Megamod.DrugTolerance.PersistenceFailureTitle>Drug policy data could not be preserved</Megamod.DrugTolerance.PersistenceFailureTitle>
   <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again could not preserve your drug tolerance choices. Saving and loading are blocked until you restart RimWorld. Do not treat a “Saved as” message as a successful save after this error. Your previous save has not been replaced by this failed attempt. Restart before loading it or trying again. Tolerance controls and restrictions are unavailable for this session. See the log for details.</Megamod.DrugTolerance.PersistenceFailureBody>
 </LanguageData>

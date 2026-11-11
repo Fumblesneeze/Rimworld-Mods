@@ -226,7 +226,7 @@ public sealed class NativeDrugPolicyCreation : IDisposable
             actual.Buffers.Any(buffer => buffer != null) ||
             before!.Any(previous => ReferenceEquals(previous.Storage.StorageIdentity, actual.Storage.StorageIdentity)))
             throw new InvalidOperationException("Prepared policy identity or storage differs from the reviewed payload.");
-        var borrowed = new HashSet<object>(before.SelectMany(previous => previous.Storage.Rows ?? Array.Empty<DrugPolicyRow?>())
+        var borrowed = new HashSet<object>(before!.SelectMany(previous => previous.Storage.Rows ?? Array.Empty<DrugPolicyRow?>())
             .Where(row => row?.RowIdentity != null).Select(row => row!.RowIdentity!), ReferenceEqualityComparer.Instance);
         var fresh = new HashSet<object>(ReferenceEqualityComparer.Instance);
         for (int index = 0; index < rows.Count; index++)

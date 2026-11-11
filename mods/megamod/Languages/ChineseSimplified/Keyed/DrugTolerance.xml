@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod.DrugTolerance.Enabled>按耐受度限制日常用药</Megamod.DrugTolerance.Enabled>
+  <Megamod.DrugTolerance.EnabledHelp>为药物政策添加耐受度上限。更改在下次日常用药选择时生效，不中断现有指令，也不限制手动或医疗用药。各项选择随存档保存。</Megamod.DrugTolerance.EnabledHelp>
+  <Megamod.DrugTolerance.Header>耐受度</Megamod.DrugTolerance.Header>
+  <Megamod.DrugTolerance.Any>不限</Megamod.DrugTolerance.Any>
+  <Megamod.DrugTolerance.NeedsReview>需要检查</Megamod.DrugTolerance.NeedsReview>
+  <Megamod.DrugTolerance.Inactive>{0}（未启用）</Megamod.DrugTolerance.Inactive>
+  <Megamod.DrugTolerance.UnavailableShort>不可用</Megamod.DrugTolerance.UnavailableShort>
+  <Megamod.DrugTolerance.Unavailable>耐受度限制不可用；游戏原有的用药判断仍然生效。</Megamod.DrugTolerance.Unavailable>
+  <Megamod.DrugTolerance.Off>耐受度限制已关闭。此政策使用游戏原有的用药规则；已保存的耐受度选择会保留。</Megamod.DrugTolerance.Off>
+  <Megamod.DrugTolerance.RuleHelp>仅当耐受度低于此值时允许日常用药。“不限”不添加限制；0%禁止日常用药，100%仍是数值上限。这不能保证用药安全。</Megamod.DrugTolerance.RuleHelp>
+  <Megamod.DrugTolerance.Percentage>耐受度上限（%）</Megamod.DrugTolerance.Percentage>
+  <Megamod.DrugTolerance.EditTitle>耐受度：{0}</Megamod.DrugTolerance.EditTitle>
+  <Megamod.DrugTolerance.InvalidPercentage>请输入0到100之间的百分比。</Megamod.DrugTolerance.InvalidPercentage>
+  <Megamod.DrugTolerance.ContextUnavailable>耐受度设置需要完全载入的殖民地。</Megamod.DrugTolerance.ContextUnavailable>
+  <Megamod.DrugTolerance.LayoutUnavailable>政策控件无法在当前布局中完整显示，因此耐受度限制不可用。</Megamod.DrugTolerance.LayoutUnavailable>
+  <Megamod.DrugTolerance.CapabilityUnavailable>此药物没有受支持的耐受度读数。已保存的选择会保留。</Megamod.DrugTolerance.CapabilityUnavailable>
+  <Megamod.DrugTolerance.ReadingUnavailable>无法读取当前耐受度。本次日常用药判断遵循游戏原有规则；已保存的耐受度上限不变。</Megamod.DrugTolerance.ReadingUnavailable>
+  <Megamod.DrugTolerance.InactiveHelp>娱乐用药和定时用药均未启用。此选择会保留以供以后使用。</Megamod.DrugTolerance.InactiveHelp>
   <Megamod.DrugTolerance.PersistenceFailureTitle>无法保留药物方针数据</Megamod.DrugTolerance.PersistenceFailureTitle>
   <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again 无法保留你的药物耐受性上限设置。在重启 RimWorld 之前，保存和加载将被阻止。出现此错误后，即使显示“已保存为”，也不代表保存成功。本次失败的尝试没有替换之前的存档。请重启游戏后再加载存档或重试。本次运行期间，耐受性设置及其限制均不可用。详情请查看日志。</Megamod.DrugTolerance.PersistenceFailureBody>
 </LanguageData>

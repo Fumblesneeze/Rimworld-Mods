@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod.DrugTolerance.Enabled>Limiter la consommation habituelle selon la tolérance</Megamod.DrugTolerance.Enabled>
+  <Megamod.DrugTolerance.EnabledHelp>Ajoute des limites de tolérance aux politiques de drogues. Les changements s'appliquent à la prochaine sélection habituelle, sans interrompre les ordres en cours ni limiter les usages manuels ou médicaux. Les choix restent dans la sauvegarde.</Megamod.DrugTolerance.EnabledHelp>
+  <Megamod.DrugTolerance.Header>Tolérance</Megamod.DrugTolerance.Header>
+  <Megamod.DrugTolerance.Any>Sans limite</Megamod.DrugTolerance.Any>
+  <Megamod.DrugTolerance.NeedsReview>À vérifier</Megamod.DrugTolerance.NeedsReview>
+  <Megamod.DrugTolerance.Inactive>{0} (inactif)</Megamod.DrugTolerance.Inactive>
+  <Megamod.DrugTolerance.UnavailableShort>Indisponible</Megamod.DrugTolerance.UnavailableShort>
+  <Megamod.DrugTolerance.Unavailable>Les limites de tolérance sont indisponibles ; les décisions normales du jeu concernant les drogues restent en vigueur.</Megamod.DrugTolerance.Unavailable>
+  <Megamod.DrugTolerance.Off>Les limites de tolérance sont désactivées. Cette politique suit les règles normales du jeu concernant les drogues ; les choix enregistrés sont conservés.</Megamod.DrugTolerance.Off>
+  <Megamod.DrugTolerance.RuleHelp>La consommation habituelle n'est autorisée qu'en dessous de cette tolérance. Sans limite n'ajoute aucune restriction ; 0% bloque la consommation habituelle et 100% est une limite numérique. Cela ne garantit pas la sécurité.</Megamod.DrugTolerance.RuleHelp>
+  <Megamod.DrugTolerance.Percentage>Limite de tolérance (%)</Megamod.DrugTolerance.Percentage>
+  <Megamod.DrugTolerance.EditTitle>Tolérance : {0}</Megamod.DrugTolerance.EditTitle>
+  <Megamod.DrugTolerance.InvalidPercentage>Saisissez un pourcentage entre 0 et 100.</Megamod.DrugTolerance.InvalidPercentage>
+  <Megamod.DrugTolerance.ContextUnavailable>Les réglages de tolérance nécessitent une colonie entièrement chargée.</Megamod.DrugTolerance.ContextUnavailable>
+  <Megamod.DrugTolerance.LayoutUnavailable>Les limites de tolérance sont indisponibles, car les commandes de la politique ne tiennent pas dans cette disposition.</Megamod.DrugTolerance.LayoutUnavailable>
+  <Megamod.DrugTolerance.CapabilityUnavailable>La tolérance de cette drogue ne peut pas être lue de façon prise en charge. Le choix enregistré est conservé.</Megamod.DrugTolerance.CapabilityUnavailable>
+  <Megamod.DrugTolerance.ReadingUnavailable>Une valeur actuelle de tolérance n'a pas pu être lue. Cette décision de consommation habituelle suit les règles normales du jeu ; les limites enregistrées restent inchangées.</Megamod.DrugTolerance.ReadingUnavailable>
+  <Megamod.DrugTolerance.InactiveHelp>Ni l'usage récréatif ni l'usage programmé ne sont activés. Le choix est conservé pour plus tard.</Megamod.DrugTolerance.InactiveHelp>
   <Megamod.DrugTolerance.PersistenceFailureTitle>Impossible de conserver les règles de drogue</Megamod.DrugTolerance.PersistenceFailureTitle>
   <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again n’a pas pu conserver vos limites de tolérance aux drogues. La sauvegarde et le chargement sont bloqués jusqu’au redémarrage de RimWorld. Après cette erreur, un message « Sauvegardé sous » ne confirme pas la réussite de la sauvegarde. Cette tentative a échoué sans remplacer votre sauvegarde précédente. Redémarrez avant de la charger ou de réessayer. Les commandes et restrictions de tolérance sont indisponibles pour cette session. Consultez le journal pour plus de détails.</Megamod.DrugTolerance.PersistenceFailureBody>
 </LanguageData>

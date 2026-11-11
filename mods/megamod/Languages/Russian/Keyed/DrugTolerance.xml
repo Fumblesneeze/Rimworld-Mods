@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod.DrugTolerance.Enabled>Ограничивать обычный приём по толерантности</Megamod.DrugTolerance.Enabled>
+  <Megamod.DrugTolerance.EnabledHelp>Добавляет пределы толерантности в политики приёма препаратов. Изменения действуют при следующем обычном выборе, не прерывают текущие задания и не ограничивают ручное или медицинское применение. Выбор хранится в сохранении.</Megamod.DrugTolerance.EnabledHelp>
+  <Megamod.DrugTolerance.Header>Толерантность</Megamod.DrugTolerance.Header>
+  <Megamod.DrugTolerance.Any>Любая</Megamod.DrugTolerance.Any>
+  <Megamod.DrugTolerance.NeedsReview>Нужна проверка</Megamod.DrugTolerance.NeedsReview>
+  <Megamod.DrugTolerance.Inactive>{0} (неактивно)</Megamod.DrugTolerance.Inactive>
+  <Megamod.DrugTolerance.UnavailableShort>Недоступно</Megamod.DrugTolerance.UnavailableShort>
+  <Megamod.DrugTolerance.Unavailable>Пределы толерантности недоступны; действуют обычные правила игры для приёма препаратов.</Megamod.DrugTolerance.Unavailable>
+  <Megamod.DrugTolerance.Off>Пределы толерантности отключены. Эта политика следует обычным правилам игры для приёма препаратов; сохранённые значения остаются.</Megamod.DrugTolerance.Off>
+  <Megamod.DrugTolerance.RuleHelp>Обычный приём разрешён только при толерантности ниже этого значения. «Любая» не задаёт предела; 0% запрещает обычный приём, а 100% остаётся числовым пределом. Это не гарантирует безопасность.</Megamod.DrugTolerance.RuleHelp>
+  <Megamod.DrugTolerance.Percentage>Предел толерантности (%)</Megamod.DrugTolerance.Percentage>
+  <Megamod.DrugTolerance.EditTitle>Толерантность: {0}</Megamod.DrugTolerance.EditTitle>
+  <Megamod.DrugTolerance.InvalidPercentage>Введите процент от 0 до 100.</Megamod.DrugTolerance.InvalidPercentage>
+  <Megamod.DrugTolerance.ContextUnavailable>Настройки толерантности требуют полностью загруженной колонии.</Megamod.DrugTolerance.ContextUnavailable>
+  <Megamod.DrugTolerance.LayoutUnavailable>Пределы толерантности недоступны: элементы политики не помещаются в текущую разметку.</Megamod.DrugTolerance.LayoutUnavailable>
+  <Megamod.DrugTolerance.CapabilityUnavailable>Для этого препарата нет поддерживаемого значения толерантности. Сохранённый выбор остаётся.</Megamod.DrugTolerance.CapabilityUnavailable>
+  <Megamod.DrugTolerance.ReadingUnavailable>Не удалось прочитать текущее значение толерантности. Для этого обычного приёма действуют стандартные правила игры; сохранённые пределы не изменены.</Megamod.DrugTolerance.ReadingUnavailable>
+  <Megamod.DrugTolerance.InactiveHelp>Приём для отдыха и по расписанию отключён. Выбор сохранён на будущее.</Megamod.DrugTolerance.InactiveHelp>
   <Megamod.DrugTolerance.PersistenceFailureTitle>Не удалось сохранить правила приёма наркотиков</Megamod.DrugTolerance.PersistenceFailureTitle>
   <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again не удалось сохранить выбранные пределы толерантности к наркотикам. Сохранение и загрузка заблокированы до перезапуска RimWorld. После этой ошибки сообщение «Сохранено как» не означает, что сохранение прошло успешно. Эта неудачная попытка не заменила предыдущее сохранение. Перезапустите игру, прежде чем загрузить его или повторить попытку. Настройки и ограничения толерантности недоступны до конца этого сеанса. Подробности смотрите в журнале.</Megamod.DrugTolerance.PersistenceFailureBody>
 </LanguageData>

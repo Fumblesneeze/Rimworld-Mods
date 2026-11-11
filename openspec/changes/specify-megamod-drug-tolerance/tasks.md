@@ -47,6 +47,17 @@ and copied-rectangle alias checks. Settings/editor integration and native runtim
 remain incomplete. Current evidence:
 `artifacts/Implementation/megamod-p0/s138-enforcement-editor-batch/handoff.md`.
 
+Revision21 adds reviewed committed layout/draft-session/typed-editor bridges and the effective
+allocation binding correction. The remaining unregistered packet contains exact-row resolution,
+direct-joy exception admission, ordinary common settings, the native contextual window and one
+atomic runtime composition, plus all seven language catalogs. Focused evidence, hashes and native
+control/scenario handoff live under `artifacts/Implementation/megamod-p0/s138-revision21/`.
+Root has integrated the independently reviewed geometry and atomic runtime, resolved the grouped
+review findings and compiled/validated the product package. The authored native-editor scenario
+compiles and is discovered without launching a game. Native admission and action/result workflows
+are still outstanding; these host/package checks do not replace them. All tasks retain their full
+pending obligations. Current integration evidence is in `artifacts/Implementation/megamod-p0/revision21-native-verification.md`.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.

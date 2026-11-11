@@ -17,16 +17,23 @@ which consumes AllowedToTakeScheduledNow before its additional overdose/timing r
 inventory refill remains separate; extra stock attached to a rejected scheduled dose is withheld.
 JoyGiver_TakeDrug inherits the observed direct-joy eligibility method; its inventory and map
 candidate paths both call it. The runtime must reject a loaded direct drug joy provider that
-overrides this boundary without delegating to the admitted target; no general provider compatibility
-is claimed. S024 is absent and will call the owned rule directly for its actual treat recipient.
+overrides this boundary without delegating to the admitted target. The initial adapter admits
+the inherited method identity; it does not yet prove override delegation and therefore leaves
+such a provider unavailable. No general provider compatibility is claimed. S024 is absent and
+will call the owned rule directly for its actual treat recipient.
 
 An owned last prefix captures the final native argument identities; a first postfix records the
 successful effective native result before other outer postfixes. An owned last finalizer adds
 only an AND restriction, preserving native false, other outer rejection and native exceptions.
 The extra rule runs only when the original ran successfully and the captured generation survives.
 A skipped original or failed capture makes the whole enforcement/editor group unavailable; it
-does not manufacture a native result. This observes a callable/result boundary and changes no
-native argument or body instruction, so no native body fingerprint/field-write pattern is required.
+does not manufacture a native result. Scheduled use observes only this callable/result boundary
+and needs no body fingerprint. Direct joy additionally consumes the native exception meaning:
+its incoming body must retain the final story/traits, positive DrugDesire or mental-state decision,
+with the same true/false destinations and unmodified pawn argument. A changed threshold or a
+branch into a partial predicate is unavailable. The guard matches this consumed suffix rather
+than the whole native method; no foreign transpiler is replayed to obtain it. Its observer must
+be last, and final provider inner effects cannot rewrite the inspected body generation.
 
 Exact instance/nongeneric bool shape and reference-argument count/type are resolved before install.
 Existing HarmonyPublication supplies metadata and byte-array identity; no foreign attributes or
@@ -35,6 +42,14 @@ is required; factories whose ordering cannot be safely inspected are unavailable
 preserving observer tracks recompilation. Admitted immutable receipts plus current publication
 identity gate normal callbacks; compatible repatches re-admit, removed callbacks revoke use, and
 busy metadata withholds the extra restriction. No per-selection metadata reconstruction is used.
+
+`NativeDrugToleranceRuntime` forwards the exact current tracker/pawn and candidate to the owned
+reader and rule. It resolves the current Game database, exact policy membership and unique current
+row by reference, rather than policy/drug names. A mapped but unreadable current pawn value retains
+native permission and emits one localized player message and diagnostic per Game; weak notice
+tracking does not retain that Game or cache permission. An unsupported drug mapping is a disabled
+Unavailable row, with its choice retained. Direct joy exceptions stay on the direct route, and
+neither scheduled nor social selection imports them.
 
 These candidates belong to one group with DT-SOCIAL-DRINK, the policy header/row editor and the
 native runtime forwarding registration. Persistence CanUseChoices, common effective enablement,

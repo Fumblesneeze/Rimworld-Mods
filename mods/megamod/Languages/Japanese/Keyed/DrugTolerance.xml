@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod.DrugTolerance.Enabled>耐性値に応じて通常の薬物使用を制限する</Megamod.DrugTolerance.Enabled>
+  <Megamod.DrugTolerance.EnabledHelp>薬物方針に耐性の上限を追加します。変更は次の通常使用の選択時に反映され、実行中の指示や手動・医療目的の使用には影響しません。各設定はセーブデータに保存されます。</Megamod.DrugTolerance.EnabledHelp>
+  <Megamod.DrugTolerance.Header>耐性</Megamod.DrugTolerance.Header>
+  <Megamod.DrugTolerance.Any>制限なし</Megamod.DrugTolerance.Any>
+  <Megamod.DrugTolerance.NeedsReview>要確認</Megamod.DrugTolerance.NeedsReview>
+  <Megamod.DrugTolerance.Inactive>{0}（無効）</Megamod.DrugTolerance.Inactive>
+  <Megamod.DrugTolerance.UnavailableShort>利用不可</Megamod.DrugTolerance.UnavailableShort>
+  <Megamod.DrugTolerance.Unavailable>耐性による制限は利用できません。ゲーム本来の薬物使用の判断が適用されます。</Megamod.DrugTolerance.Unavailable>
+  <Megamod.DrugTolerance.Off>耐性による制限はオフになっています。この方針にはゲーム本来の薬物使用ルールが適用され、保存済みの耐性設定は保持されます。</Megamod.DrugTolerance.Off>
+  <Megamod.DrugTolerance.RuleHelp>耐性がこの値未満の場合のみ通常使用を許可します。「制限なし」は上限を設けず、0%は通常使用を禁止し、100%も数値による上限です。安全を保証するものではありません。</Megamod.DrugTolerance.RuleHelp>
+  <Megamod.DrugTolerance.Percentage>耐性の上限（%）</Megamod.DrugTolerance.Percentage>
+  <Megamod.DrugTolerance.EditTitle>耐性：{0}</Megamod.DrugTolerance.EditTitle>
+  <Megamod.DrugTolerance.InvalidPercentage>0から100までの割合を入力してください。</Megamod.DrugTolerance.InvalidPercentage>
+  <Megamod.DrugTolerance.ContextUnavailable>耐性の設定には、完全に読み込まれたコロニーが必要です。</Megamod.DrugTolerance.ContextUnavailable>
+  <Megamod.DrugTolerance.LayoutUnavailable>方針の操作欄が現在のレイアウトに収まらないため、耐性による制限は利用できません。</Megamod.DrugTolerance.LayoutUnavailable>
+  <Megamod.DrugTolerance.CapabilityUnavailable>この薬物には対応する耐性の読み取り方法がありません。保存済みの設定は保持されます。</Megamod.DrugTolerance.CapabilityUnavailable>
+  <Megamod.DrugTolerance.ReadingUnavailable>現在の耐性値を読み取れませんでした。今回の通常使用の判断にはゲーム本来のルールが適用され、保存済みの耐性上限は変更されません。</Megamod.DrugTolerance.ReadingUnavailable>
+  <Megamod.DrugTolerance.InactiveHelp>娯楽目的と定期的な使用はどちらも無効です。設定は今後のために保持されます。</Megamod.DrugTolerance.InactiveHelp>
   <Megamod.DrugTolerance.PersistenceFailureTitle>ドラッグ方針のデータを保持できませんでした</Megamod.DrugTolerance.PersistenceFailureTitle>
   <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again はドラッグ耐性の上限設定を保持できませんでした。RimWorld を再起動するまで、セーブとロードは中止されます。このエラーの後は「保存しました」と表示されても、セーブが成功したとは限りません。今回の失敗によって以前のセーブが置き換えられることはありません。ロードや再試行の前にゲームを再起動してください。このセッションでは耐性設定とその制限を利用できません。詳細はログを確認してください。</Megamod.DrugTolerance.PersistenceFailureBody>
 </LanguageData>

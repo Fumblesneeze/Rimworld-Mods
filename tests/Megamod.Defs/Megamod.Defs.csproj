@@ -18,6 +18,7 @@
     <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Core/DrugToleranceChoice.cs;../../mods/megamod/Source/Features/DrugTolerance/Core/DrugToleranceRule.cs" Link="Product/DrugTolerance/Core/%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Runtime/NativeDrugToleranceState.cs" Link="Product/DrugTolerance/NativeDrugToleranceState.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Runtime/NativeDrugToleranceReader.cs" Link="Product/DrugTolerance/NativeDrugToleranceReader.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Runtime/NativeDrugToleranceRows.cs" Link="Product/DrugTolerance/NativeDrugToleranceRows.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugPolicyStorage.cs" Link="Product/NativeDrugPolicyStorage.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugCatalog.cs" Link="Product/NativeDrugCatalog.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Core/DrugPolicySuggestions.cs" Link="Product/DrugPolicyGeneration/Core/DrugPolicySuggestions.cs" />

@@ -11,6 +11,7 @@ using Megamod.Features.DrugPolicyMaintenance.Core;
 using Megamod.Features.DrugPolicyMaintenance.Harmony;
 using Megamod.Features.DrugPolicyMaintenance.Runtime;
 using Megamod.Features.DrugTolerance;
+using Megamod.Features.DrugTolerance.Core;
 using Megamod.Features.DrugTolerance.Runtime;
 using Megamod.Features.ReadableNumbers;
 using Megamod.Features.MessagePlacement;
@@ -36,6 +37,7 @@ public sealed class MegamodMod : Mod
     private readonly string[] activePackageIds;
     private readonly bool drugPolicyEnabled;
     private readonly DrugTolerancePersistencePatch drugTolerancePersistence;
+    private NativeDrugToleranceRuntime? drugTolerance;
     private MessagePlacementRuntime? messagePlacement;
     private readonly NativeContentInvalidationPatch definitionLifecycle = new(typeof(PlayDataLoader));
     private DrugPresetEntriesPatch? drugPresets;
@@ -57,12 +59,14 @@ public sealed class MegamodMod : Mod
         var originalDrugPolicy = DrugPolicyProviderPolicy.FromActivePackages(activePackageIds);
         var store = new SettingsStore(SettingsEffectiveOff.Combine(originalDiagnostics.EffectiveOff,
             originalContent.EffectiveOff, originalDrugPolicy.EffectiveOff,
-            new SettingsEffectiveOff(MessagePlacementProviderPolicy.Reasons(activePackageIds))));
+            new SettingsEffectiveOff(MessagePlacementProviderPolicy.Reasons(activePackageIds)),
+            new SettingsEffectiveOff(DrugToleranceProviderPolicy.Reasons(activePackageIds))));
         ReadableNumbersSettings.Register(store);
         store.Register(ReadableNumbersSettings.Punctuation);
         DiagnosticSettings.Register(store);
         WarningCaptureSettings.Register(store);
         DrugPolicySettings.Register(store);
+        DrugToleranceSettings.Register(store);
         MessagePlacementSettings.Register(store);
         settings = SettingsRuntime.Initialize(store, GetSettings<MegamodGlobalSettings>(), exception =>
             diagnostics.Write("[fumblesneeze.megamod] common-settings-lifecycle observation failed; " +
@@ -72,7 +76,8 @@ public sealed class MegamodMod : Mod
         // admitted process-lifetime owners observe the initial loader's real diagnostics.
         drugPolicyEnabled = DrugPolicySettings.CaptureStartupEnabled(store);
         foreach (var warning in originalDiagnostics.StartupWarnings.Concat(originalContent.StartupWarnings)
-            .Concat(originalDrugPolicy.StartupWarnings).Concat(MessagePlacementProviderPolicy.StartupWarnings(activePackageIds)))
+            .Concat(originalDrugPolicy.StartupWarnings).Concat(MessagePlacementProviderPolicy.StartupWarnings(activePackageIds))
+            .Concat(DrugToleranceProviderPolicy.StartupWarnings(activePackageIds)))
             diagnostics.Write(warning);
         warningCapture = new WarningCaptureRuntime(store);
         definitionDiagnostics = new DefinitionDiagnosticsRuntime(
@@ -83,6 +88,7 @@ public sealed class MegamodMod : Mod
         DiagnosticSettingsUi.Register(renderer);
         WarningCaptureSettingsUi.Register(renderer, warningCapture);
         DrugPolicySettingsUi.Register(renderer);
+        DrugToleranceSettingsUi.Register(renderer, () => drugTolerance?.StatusKey);
         MessagePlacementSettingsUi.Register(renderer, settings.Store, () => messagePlacement?.Available == true,
             () => messagePlacement?.CurrentBarBounds);
         // Owned row state survives ordinary feature-off choices and precedes native policy factories.
@@ -167,6 +173,12 @@ public sealed class MegamodMod : Mod
         settings.ProcessPendingLifecycle();
         if (!UnityData.IsInMainThread) return;
         NativeDrugTolerancePersistence.ProcessPendingFailure();
+        if (drugTolerance == null && settings.Store.GetEffective(DrugToleranceSettings.Enabled))
+        {
+            drugTolerance = new NativeDrugToleranceRuntime(settings, drugTolerancePersistence, diagnostics.Write);
+            admission.Apply(drugTolerance.Group, AdmissionPhase.Early);
+        }
+        NativeDrugToleranceRuntime.ObserveContext(settings, drugTolerance);
         if (messagePlacement == null && settings.Store.GetEffective(MessagePlacementSettings.Enabled))
         {
             messagePlacement = new MessagePlacementRuntime(settings, activePackageIds, diagnostics.Write);

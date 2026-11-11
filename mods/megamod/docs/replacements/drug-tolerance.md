@@ -11,8 +11,10 @@
   `6C48ACE04DECFEDD65549489046CA5E23B7B40B2DD033331C9BB6E68AA7F6F29`.
 - MIT source, copyright 2023 SeoHyeon; no source/binary/art/translation copied. Public author links,
   complete source hashes and native seams are in the [research](../refinement/2026-11-08-drug-tolerance-research.md).
-- Status: choice/decision and policy-state components implemented-unverified; native hooks/UI and
-  player workflows remain unfinished. Source observations are evidence;
+- Status: choice/decision/state and native persistence components have focused implementation
+  evidence; root's persistence-only native gate is recorded separately. Revision21 authors the
+  unregistered enforcement/editor/runtime packet and seven catalogs, pending independent review,
+  geometry composition, owning compilation and native player workflows. Source observations are evidence;
   Any/zero semantics, distinct numeric 100%, invalid-state behavior and feature configuration are
   proposed owned decisions. No source API, saved-state import or original-mod compatibility work.
 
@@ -49,7 +51,7 @@ all-ingestion veto. Detailed composed scenarios are in the capability linked abo
 | Source copy/save hooks | Retain row choice | Gameplay state | Native policy lifecycle through S029 | Owned schema and explicit invalid-state presentation |
 | No source bottom tab or settings window | No navigation to preserve | Not applicable | No new tab | Common settings hosts only the owned feature enable switch |
 
-`drugTolerance.enabled` is proposed on, Drug policies section before generation, through common
+`drugTolerance.enabled` is authored on, Drug policies section before generation, through common
 Global default/Use global/Current save controls. Inherited saves resolve the current global value;
 dormant overrides remain, and all save controls/callbacks are disabled at main menu. Effect timing:
 next eligibility/editor refresh; no cancellation or reversal of an already executing dose. Exact
@@ -73,9 +75,9 @@ separate backup/staging/atomicity/restoration/postcondition contract before impl
 
 | Behavior | Implemented portion | Deviation / conflict | Missing / omitted | Target/tests/live evidence |
 | --- | --- | --- | --- | --- |
-| DT-02–04, DT-07–08 | Host-safe strict comparison, route-specific exception projection, explicit unknown-reader/Needs-review outcomes and lossless choice codec | Any differs from numeric 100%; missing hediff zero; native rejection remains; no medical/manual/refill route exists in this projection | Native reader, route proof, effective-body admission, controls and all player workflows | 56 affected Unit checks; no live acceptance |
-| DT-06 | Exact native-row weak state; S029 snapshots, first-duplicate retention, normalization, new-row Any and rollback; independent component copy | State follows surviving row identity rather than policy/drug name; deleted rows have no restore archive | Admitted native CopyFrom/ExposeData hooks and actual save/load/copy acceptance | 11 affected Defs checks; no live acceptance |
-| DT-01, DT-05, remaining DT-08 | None | Medical scope stays separate | Native editor, common setting, bounded original warning, route/medical workflows and seven-language presentation | [Design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/); target docs and native tests future |
+| DT-02–04, DT-07–08 | Host-safe comparison/codec, native reader, guarded selection/social patches, direct-joy exception proof and registered atomic runtime | Any differs from numeric 100%; missing hediff zero; native rejection remains; no medical/manual/refill hook | Actual native admission and all route workflows; future S024 recipient call | Focused Unit/Defs/Harmony ledgers and independent review; no full S138 live acceptance |
+| DT-06 | Exact native-row weak state, S029 capture/restore and native four-target copy/Scribe support | State follows row identity; deleted rows have no restore archive | Persistence-only root gate does not prove the new editor or routine selection | Root evidence: `artifacts/Implementation/megamod-p0/revision20-native-verification.md` |
+| DT-01, DT-05, remaining DT-08 | Reviewed drafts/layout/typed bridge, contextual Window, common setting/provider policy, atomic runtime and seven catalogs; root registration and compilation complete | Requested preference remains editable while effective capability is unavailable; medical scope stays separate | Native controls, ordinary off/original suppression, route exclusions and seven-language presentation | [Design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/); revision21 handoff and open acceptance tasks |
 
 Active original `seohyeon.onlyiftolerancebelow`: bounded startup warning plus best-effort suppression
 of `drugTolerance.enabled` through the ordinary effective-off path, with the timing/limitations
@@ -88,10 +90,12 @@ XML/XML Extensions or product Gateway dependency. Native semantic admission stil
 
 The 2026-11-11 component tranche has nonzero focused RED/GREEN in honest Unit and Defs tiers;
 the local ledger is `artifacts/Implementation/megamod-p0/s138-state-batch/handoff.md`.
-It does not install any tolerance decision, editor, copy or serialization patch. DT-Q1–4 retain
-their unfinished native integration obligations, with the concrete state contract now pinned.
-Independent review and integrated product checks remain separate evidence. The
-orchestrator must later personally observe the reviewed build's actual native policy edits, routine
+That original tranche installed no native hooks; the later root-owned persistence group and its
+scoped acceptance are recorded in the revision20 evidence above. The revision21 enforcement/editor
+packet is reviewed, registered and compiled but remains unaccepted in game, with its manifests and focused receipts in
+`artifacts/Implementation/megamod-p0/s138-revision21/`. DT-Q1–4 retain their remaining obligations.
+Independent review and integrated product checks are retained separately from live evidence. The
+orchestrator must personally observe the reviewed build's actual native policy edits, routine
 consumption/refusal, patient treats, medical independence, persistence and configuration transitions
 in minimized isolated Gateway runs. Include focused warning/effective-off cases, seven languages,
 exact build/mod/config identity, causal captures, complete relevant logs and cleanup. No general

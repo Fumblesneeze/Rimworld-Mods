@@ -135,6 +135,41 @@ inactive installation does nothing; later startup without the original resolves 
 normally. Never disable/unpatch the original or promise complete coexistence safety. Focused
 warning/effective-off verification suffices; no original API/drop-in test matrix is in scope.
 
+### Revision21 native composition assumptions
+
+The unregistered adapter binds each edit to the exact current Game, native policy database member,
+open manager/selected policy, unique drug row and original immutable choice. Replacing the row,
+switching the selection/game or another committed choice invalidates the draft; a rename or sort
+that preserves those identities does not. The window has explicit Any, percentage, Apply and Cancel
+controls. Native font measurement uses the current locale each assessment; ordinary enable
+preferences remain editable when semantic/layout support is unavailable. Seven catalogs are
+authored, with native layout and input acceptance still outstanding.
+
+The direct-joy adapter proves the consumed positive DrugDesire/mental-state suffix in each incoming
+generation before projecting the exception. The initial native resolver supports an inherited
+CanIngestForJoy identity; a loaded direct-drug provider override is unavailable until delegation
+can be proved. This is a bounded unsupported executable shape, not a mod identity blacklist.
+Unique current native rows are resolved by reference; no duplicate-drug or defName fallback exists.
+A mapped but invalid current tolerance read grants no new veto and emits a localized message and
+diagnostic once per current Game. Weak notice tracking retains no Game or pawn permission. Missing
+drug capability instead appears as a disabled Unavailable row, retaining its stored choice.
+
+Runtime registration, compilation against the separately owned geometry service, independent
+review and the integrated native workflows remain pending. The final activation marker and all
+geometry/allocation/editor/scheduled/direct-joy/social candidates belong to one C01 group; the
+existing persistence support remains independently active. This tranche does not accept S138.
+
+The reviewed correction tracks layout failures by exact policy and row identities within the
+open manager. Successful assessment of another row, switching selection or successful header
+layout cannot clear that row's failure. Current database/row reconciliation may discard removed
+or replaced allocations; closing the manager discards its state. Initial window admission is
+exact-native-type only: an open subclass could override a virtual producer without touching the
+admitted native body. Supporting a subclass later requires proving those consumed overrides.
+The existing lifecycle pump observes open policy managers and gives a localized explanation for
+off or unavailable controls, at most once per reason per window. It can explain initially-off
+state without constructing patches. No policy manager means no contextual notice, and ordinary
+off is not diagnosed as a failed enabled patch.
+
 ## Risks / Trade-offs
 
 - Strict zero can surprise users familiar with source behavior → distinguish Any, explain zero and
@@ -271,3 +306,23 @@ preserves native controls and stored choices, and displays the reason. Recovery 
 supported allocation/locale/viewport assessment; an already-open manager with an actual-input
 failure additionally needs successful validation of its current allocation. A timer alone cannot
 clear that failure. Selected native jobs retain the already specified in-flight behavior.
+
+### Revision21 upstream width proof
+
+Eight passive required-helper observers cover native InitialSize, Margin, initial window storage,
+inner contraction, manager right-area production, concrete config forwarding, header/row production
+and scroll-view adjustment. Final effective bodies must deliver the consumed widths; a constant
+inventory alone is insufficient. Each observer has a current immutable publication receipt and
+joins the same atomic editor/enforcement group. Missing observations, mutable outer bindings and
+skip/write effects on protected operations revoke availability without invoking native GUI code.
+Benign observation and unrelated incoming drawing remain composable. Construction is metadata-only;
+current physical Screen.width is queried only after the runtime's main-thread/live-game gate.
+
+The prospective native width is min(Screen.width-50,1300)-36-210. Header production retains this
+width and its separately guarded consumer subtracts16; conservative row input additionally removes
+22 for section margins and the largest native scrollbar deduction. Actual rectangles and logical
+UI.screenWidth fit are still checked at each invocation. Rect value primitives and the inspected
+GenUI.AtZero/ContractedBy/Rounded arithmetic remain the existing native-contract boundary; the new
+proof does not claim recursive engine certification. It supports the exact native manager and
+requires separate admission for virtual geometry overrides. The exact predicates and source identity
+are in DT-POLICY-EDITOR; focused host evidence does not establish native readability or acceptance.

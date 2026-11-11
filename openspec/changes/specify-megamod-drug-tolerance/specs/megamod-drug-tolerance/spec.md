@@ -213,6 +213,8 @@ SHALL not silently widen an invalid limit to Any, clamp it or rewrite valid neig
 - **WHEN** an otherwise applicable tolerance reader cannot supply a valid nonnegative finite value
 - **THEN** the feature reports that the extra restriction is unavailable and preserves ordinary
   native permission rather than treating the unknown value as zero or pretending to enforce a limit.
+- **AND** the initial adapter gives a localized player message and diagnostic at most once per Game,
+  retains the saved choice, and does not retain pawn permission or prevent later valid readings.
 
 ### Requirement: Feature configuration does not replace policy state
 The feature's built-in enable default SHALL be on. Its enable switch SHALL use common
@@ -256,8 +258,32 @@ changed. The warning SHALL not claim full coexistence safety or rollback of ever
 - **THEN** the atomic feature uses a proved native allocation and a current main-thread measurement of translated labels and viewport to establish editor availability
 - **AND** it does not wait for a first paint to silently begin enforcing those choices.
 
+#### Scenario: An upstream native geometry producer changes after admission
+- **WHEN** a required effective initial-size, margin, window, sidebar, header, row or scroll producer
+  changes so the concrete consumed-width proof is no longer current
+- **THEN** the entire tolerance editor/enforcement capability becomes unavailable before adding a
+  subsequent routine-use veto, leaves native behavior and saved choices intact, and reports a bounded reason
+- **AND** a fresh supported publication may recover availability; an unrelated observer or drawing
+  change does not become unsupported merely because it belongs to another patch owner.
+- **AND** this initial native-manager slice uses physical-screen initial sizing, conservative native
+  deductions and actual logical-GUI fit checks; unproved virtual geometry overrides remain unavailable.
+
 #### Scenario: Actual native layout cannot fit the contextual controls
 - **WHEN** a header or row supplies a rectangle that no longer supports the admitted native allocation and owned controls
 - **THEN** that reservation leaves the native rectangle intact, the full feature becomes visibly unavailable, and subsequent routine eligibility adds no tolerance veto
 - **AND** preferences and policy choices remain intact, existing selected jobs keep native execution, and recovery requires a fresh supported geometry assessment rather than elapsed time alone.
 - **AND** the initial allocation requires calculator input widths from600 through1300 GUI units, at least600 native-column units and at least120 owned-column units or wider measured translated text; unsupported fits remain unavailable until a supported assessment succeeds.
+
+#### Scenario: Another row fits after one row failed
+- **WHEN** one current policy row fails its actual allocation and another row or the header later fits
+- **THEN** the failed row still keeps the atomic feature unavailable
+- **AND** only that same allocation succeeding, removal/replacement of its current row/policy, or closing the manager clears that row's failure.
+
+#### Scenario: An open manager has unproved virtual producers
+- **WHEN** the policy workflow uses a subclass of the native manager whose geometry/drawing producers have not been admitted
+- **THEN** editing and extra restrictions remain unavailable while it is open; the initial implementation supports the exact native manager type only.
+
+#### Scenario: Policy workflow explains missing tolerance controls
+- **WHEN** the player opens a manager while tolerance controls are effectively off or unavailable, or its actual layout becomes unsupported
+- **THEN** the current workflow gives a localized explanation at most once per reason for that open window
+- **AND** an intentional off state produces no failed-enabled-patch diagnostic; no global repeated message is emitted while no manager is open.

@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod.DrugTolerance.Enabled>Regulären Drogenkonsum nach Toleranz begrenzen</Megamod.DrugTolerance.Enabled>
+  <Megamod.DrugTolerance.EnabledHelp>Ergänzt Toleranzgrenzen in Drogenrichtlinien. Änderungen gelten bei der nächsten regulären Auswahl; laufende Aufträge sowie manueller und medizinischer Konsum bleiben unberührt. Die Auswahl bleibt im Spielstand erhalten.</Megamod.DrugTolerance.EnabledHelp>
+  <Megamod.DrugTolerance.Header>Toleranz</Megamod.DrugTolerance.Header>
+  <Megamod.DrugTolerance.Any>Beliebig</Megamod.DrugTolerance.Any>
+  <Megamod.DrugTolerance.NeedsReview>Prüfung nötig</Megamod.DrugTolerance.NeedsReview>
+  <Megamod.DrugTolerance.Inactive>{0} (inaktiv)</Megamod.DrugTolerance.Inactive>
+  <Megamod.DrugTolerance.UnavailableShort>Nicht verfügbar</Megamod.DrugTolerance.UnavailableShort>
+  <Megamod.DrugTolerance.Unavailable>Toleranzgrenzen sind nicht verfügbar; die normalen Drogenentscheidungen des Spiels gelten weiterhin.</Megamod.DrugTolerance.Unavailable>
+  <Megamod.DrugTolerance.Off>Toleranzgrenzen sind ausgeschaltet. Für diese Richtlinie gelten die normalen Drogenregeln des Spiels; gespeicherte Toleranzwerte bleiben erhalten.</Megamod.DrugTolerance.Off>
+  <Megamod.DrugTolerance.RuleHelp>Regulärer Konsum ist nur unterhalb dieser Toleranz erlaubt. Beliebig setzt keine Grenze; 0% sperrt regulären Konsum, 100% ist eine numerische Grenze. Dies garantiert keine Sicherheit.</Megamod.DrugTolerance.RuleHelp>
+  <Megamod.DrugTolerance.Percentage>Toleranzgrenze (%)</Megamod.DrugTolerance.Percentage>
+  <Megamod.DrugTolerance.EditTitle>Toleranz: {0}</Megamod.DrugTolerance.EditTitle>
+  <Megamod.DrugTolerance.InvalidPercentage>Gib einen Prozentwert zwischen 0 und 100 ein.</Megamod.DrugTolerance.InvalidPercentage>
+  <Megamod.DrugTolerance.ContextUnavailable>Toleranzregeln erfordern eine vollständig geladene Kolonie.</Megamod.DrugTolerance.ContextUnavailable>
+  <Megamod.DrugTolerance.LayoutUnavailable>Toleranzgrenzen sind nicht verfügbar, da die Richtlinienfelder nicht in dieses Layout passen.</Megamod.DrugTolerance.LayoutUnavailable>
+  <Megamod.DrugTolerance.CapabilityUnavailable>Für diese Droge kann die Toleranz nicht zuverlässig gelesen werden. Die gespeicherte Auswahl bleibt erhalten.</Megamod.DrugTolerance.CapabilityUnavailable>
+  <Megamod.DrugTolerance.ReadingUnavailable>Ein aktueller Toleranzwert konnte nicht gelesen werden. Für diese reguläre Drogenentscheidung gelten die normalen Spielregeln; gespeicherte Toleranzgrenzen bleiben unverändert.</Megamod.DrugTolerance.ReadingUnavailable>
+  <Megamod.DrugTolerance.InactiveHelp>Weder Freizeitkonsum noch geplanter Konsum ist erlaubt. Die Auswahl bleibt für später erhalten.</Megamod.DrugTolerance.InactiveHelp>
   <Megamod.DrugTolerance.PersistenceFailureTitle>Drogenrichtlinie konnte nicht erhalten werden</Megamod.DrugTolerance.PersistenceFailureTitle>
   <Megamod.DrugTolerance.PersistenceFailureBody>Make Rimworld Great Again konnte deine Toleranzgrenzen für Drogen nicht erhalten. Speichern und Laden sind bis zum Neustart von RimWorld gesperrt. Eine Meldung „Gespeichert als“ bedeutet nach diesem Fehler nicht, dass erfolgreich gespeichert wurde. Dein bisheriger Spielstand wurde durch diesen fehlgeschlagenen Versuch nicht ersetzt. Starte das Spiel neu, bevor du ihn lädst oder es erneut versuchst. Toleranzeinstellungen und ihre Beschränkungen sind für diese Sitzung nicht verfügbar. Einzelheiten stehen im Protokoll.</Megamod.DrugTolerance.PersistenceFailureBody>
 </LanguageData>

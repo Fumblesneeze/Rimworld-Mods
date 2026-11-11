@@ -23,11 +23,12 @@ public sealed class DrugToleranceDecisionPatch
     private readonly Func<object, object, bool> extraAllowed;
     private readonly Func<bool> groupAvailable;
     private readonly Action<string> unavailable;
+    private readonly Func<IReadOnlyList<CodeInstruction>, string?>? validateBody;
     private readonly OwnedHarmonyPatch prefix, postfix, finalizer, observer;
     private bool installed;
     private Generation? generation;
     private Receipt? receipt;
-    private sealed record Generation(int Version);
+    private sealed record Generation(int Version, IReadOnlyList<HarmonyPublication.Operation>? Body);
     private sealed record Receipt(Generation Generation, HarmonyPublication.Identity Identity);
     private sealed class Invocation
     {
@@ -40,10 +41,12 @@ public sealed class DrugToleranceDecisionPatch
     }
 
     public DrugToleranceDecisionPatch(string id, MethodInfo target, bool trackerReceiver,
-        Func<object, object, bool> extraAllowed, Func<bool> groupAvailable, Action<string> unavailable)
+        Func<object, object, bool> extraAllowed, Func<bool> groupAvailable, Action<string> unavailable,
+        Func<IReadOnlyList<CodeInstruction>, string?>? validateBody = null)
     {
         this.target = target; this.trackerReceiver = trackerReceiver; this.extraAllowed = extraAllowed;
         this.groupAvailable = groupAvailable; this.unavailable = unavailable;
+        this.validateBody = validateBody;
         prefixMethod = Callback(trackerReceiver ? nameof(ScheduledPrefix) : nameof(JoyPrefix));
         prefix = new(target, HarmonyPatchType.Prefix, prefixMethod, () => Owned(HarmonyPatchType.Prefix));
         postfix = new(target, HarmonyPatchType.Postfix, PostfixMethod, () => Owned(HarmonyPatchType.Postfix));
@@ -83,6 +86,14 @@ public sealed class DrugToleranceDecisionPatch
                 var finalizers = PatchProcessor.GetSortedPatchMethods(target, snapshot.Finalizers.Select(p => p.ToOrderingPatch()).ToArray());
                 if (prefixes.LastOrDefault() != prefixMethod || postfixes.FirstOrDefault() != PostfixMethod || finalizers.LastOrDefault() != FinalizerMethod)
                 { Failure = "Selection needs the last capture prefix, first result postfix and last restriction finalizer."; return false; }
+                if (current.Body != null)
+                {
+                    if (snapshot.Transpilers.Any(p => p.PatchMethod.ReturnType == typeof(MethodInfo) || p.PatchMethod.ReturnType == typeof(System.Reflection.Emit.DynamicMethod)) ||
+                        PatchProcessor.GetSortedPatchMethods(target, snapshot.Transpilers).LastOrDefault() != ObserverMethod)
+                    { Failure = "The consumed direct-joy exception is not the final observed body."; return false; }
+                    Failure = snapshot.FailureFor(current.Body, new HashSet<int>(Enumerable.Range(0, current.Body.Count)));
+                    if (Failure != null) return false;
+                }
                 Volatile.Write(ref receipt, new(current, snapshot.Identity));
                 Failure = null;
                 return true;
@@ -178,13 +189,19 @@ public sealed class DrugToleranceDecisionPatch
     [HarmonyPriority(int.MinValue)]
     private static IEnumerable<CodeInstruction> Observe(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
     {
+        var body = instructions.ToList();
         if (Routes.TryGetValue(__originalMethod, out var route))
         {
             Volatile.Write(ref route.receipt, null); Volatile.Write(ref route.generation, null);
-            try { Volatile.Write(ref route.generation, new(HarmonyPublication.ExpectedVersion(__originalMethod))); }
+            try
+            {
+                route.Failure = route.validateBody?.Invoke(body);
+                if (route.Failure == null) Volatile.Write(ref route.generation, new(HarmonyPublication.ExpectedVersion(__originalMethod),
+                    route.validateBody == null ? null : body.Select(i => new HarmonyPublication.Operation(i.opcode, i.operand)).ToArray()));
+            }
             catch (Exception error) { route.Failure = error.GetBaseException().Message; }
         }
-        return instructions;
+        return body;
     }
     private static MethodInfo Callback(string name) => typeof(DrugToleranceDecisionPatch).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static)!;
 }
