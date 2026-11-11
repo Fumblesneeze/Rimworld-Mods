@@ -4,9 +4,11 @@ Sole owner: Make Rimworld Great Again (`fumblesneeze.megamod`, `mods/megamod`), 
 S139 is **idea-only**, not a port of the installed Safe Drug Policy Generator. The
 [research](../../../mods/megamod/docs/refinement/2026-11-08-safe-drug-policy-generator-research.md)
 pins author documentation, source/DLL/native hashes and static findings. User-reported historical
-fragility is not attributed to an unproven upstream revision. This draft specifies the workflow
-and invariants; **calculation work is blocked on DG-Q1–3 and task group 1**. Completed OpenSpec
-artifacts do not mean the algorithm or feature is ready to apply.
+fragility is not attributed to an unproven upstream revision. The
+[2026-11-11 native research](../../../mods/megamod/docs/refinement/2026-11-11-drug-policy-generation-calculation-research.md)
+resolves DG-Q1–3 into the bounded C1 calculation below. Independent review, finalized runtime
+fact/admission checks, DG-Q4 creation and DG-Q5 UI work remain prerequisites. No runtime behavior
+is accepted from these documents.
 
 ## Goals / Non-Goals
 
@@ -29,14 +31,55 @@ clamping and combined-chemical exposure make that insufficient as an owned safet
 Do not copy/translate the source algorithm or put its numbers behind a new label. Native helpers
 are inspected inputs, not a certified dosing model.
 
-Before any autonomous schedule/recreation rule is implemented, DG-Q1 must define admitted native
-pharmacology shapes and DG-Q2 must establish the calculation, rounding, limits, units and meaningful
-comparators. DG-Q3 must resolve combined chemical exposure and supported pawn assumptions (including
-body size, relevant genes and dose quantity/S085). Add every player-significant value and assumption
-to the observable spec, with evidence and balance reasoning. Until then this change is not
-numerically implementation-ready; a blank-policy shell does not fulfill the generation feature.
+Calculation C1 chooses **modeled tolerance clearance for one ordinary whole dose** as a conservative
+risk-reduction objective. It does not guarantee actual clearance or optimize the most frequent use
+below an addiction threshold. Native camera-driven batching can skip decay events, so the preview
+must disclose that actual tolerance can remain when a suggested schedule permits another dose.
+The research records exact 1.7.5005 native methods, source XML hashes, four Core comparisons and
+excluded cases. It is an independently derived model, not an adoption of `GetSafeDoseInterval`.
+Its positive initial candidates are native-shaped social/joy drugs with a finite positive addiction
+threshold, a single deterministic positive tolerance gain, deterministic negative decay and zero
+overdose fields. Require normalized gain strictly below the threshold, zero hediff minimum and
+known quantity/effect semantics. Unknown outcomes or effective method changes remain unavailable.
 
-After those decisions, a pure suggestion function consumes immutable catalog/established drug facts
+Use actual finalized facts, never the comparator names as an allowlist. The initial population is
+healthy ordinary adult humans with BodySize at least the displayed finalized Human-adult baseline
+(currently 1), neutral drug metabolism, no initial tolerance/addiction/dependency, no additional
+exposure and unsuspended normal ticking. Smaller bodies, relevant amplifying/unknown gene or hediff
+effects, unresolved S085 partial ingestion and dependency/treatment scheduling are outside C1.
+Weaker gene factors do not shorten suggestions. Disclose these assumptions; the policy does not
+inspect/enforce them for every assignee or future state. S138 remains an independent ordinary choice.
+
+Compute binary32 decay events from normalized gain `g`: `q = float(s * 0.0033333334f)` for admitted
+negative daily rate `s`; repeat `x = max(0, float(x + q))` until zero. Nonfinite/non-decreasing steps
+are unsupported. For the first zero event `k`, use `requiredTicks = 200*k + 415` and integer
+`days = 1 + ceil(requiredTicks / 60000)`. The modeled 200-tick cadence, a 14-tick dispatch allowance,
+two at-most-200-tick binary32 calendar-boundary errors and one ordering tick derive this budget.
+The 14-tick allowance is not a universal native bound: negative hash phases and camera-driven
+batch changes can skip whole events. C1 is a disclosed scheduling model, not a clearance monitor.
+The extra calendar day is necessary because the native policy compares day indices, not
+elapsed 24-hour periods. The research explains the nonnegative signed-int clock domain and rounding
+bound; clock rewrites/overflow or custom cadence are not supported. No guessed severity epsilon.
+
+The native editor offers a maximum of 25 days. This is a representability boundary, not a safety
+cap: a longer required interval receives no automatic schedule and is never shortened to 25.
+The recurrence may stop after 7,197 events, the largest count that can fit that editor under C1.
+Do not add a delay preference. Source-derived expected comparisons are Beer 3 days, psychite tea
+4, smokeleaf 4 and ambrosia 3; runtime facts must be finalized and admitted before those results
+can be offered. The model remains useful without Beer and recalculates from changed facts.
+
+No autonomous recreation is established in C1: native joy ignores schedule and a helper result of
+zero does not prove harmlessness (medical penoxycyline and psilocap are counterexamples). Manual
+recreation and schedule edits remain available, visibly identified as player choices.
+
+Connect rows when **either** their actual chemical identity or actual tolerance-Hediff identity is
+shared, including transitive connections. More than one otherwise eligible candidate in a connected
+channel withholds automatic schedules for that channel; never choose by name/order. Unsupported
+off rows such as Flake/Yayo do not alone suppress a tea candidate, but their manual/medical exposure
+is outside its stated assumption. Any manual recreation/additional schedule on that channel marks
+the combination uncalculated; do not prevent ordinary creation or imply C1 still covers it.
+
+After independent research review, a pure suggestion function consumes immutable catalog/established drug facts
 and preference values, returning row proposals plus supported/unsupported reasons. No Verse objects
 or loaded Def database in its Unit tier. Unknown data produces no autonomous routine-use suggestion;
 do not silently omit its visible row, borrow another drug's identity or choose a permissive fallback.
@@ -59,8 +102,9 @@ with visible medical permission. Missing suggestions never mean missing policy e
 Current proposed reusable preferences are enabled=true, initial mood=1, initial joy=1, initial
 tolerance=Any. Mood/joy 1 are native/source-unrestricted values; Any follows proposed S138 semantics,
 not the source minimum-tolerance multiplier. These defaults initialize a draft and are not safety
-calibration. No additional-days preference, numeric delay cap or source multiplier is adopted before
-DG-Q2. Every rebuild starts from fresh immutable baselines, not differences from prior entries.
+calibration. C1 has no additional-days preference or source multiplier; the admitted native editor
+bound must never shorten a required interval. Every rebuild starts from fresh immutable baselines,
+not differences from prior entries.
 Reset/return-to-1/Any writes the complete intended values rather than conditionally leaving old data.
 
 ### 3. A draft is transient gameplay editing, preferences are common configuration
@@ -173,15 +217,13 @@ and verified postconditions before implementation. Feature off preserves created
 
 ## Open Questions and implementation blockers
 
-- DG-Q1: Classify actual finalized pharmacology inputs and native helper limitations, including
-  unsupported/no-safe interval, nonfinite values and custom outcomes. Specify admitted versus unknown
-  rows before any autonomous suggestion code.
-- DG-Q2: Derive and validate each schedule/recreation suggestion, units, rounding, limits and optional
-  added delay against exact native behaviors and measured comparators. Put the resulting numeric
-  assumptions in the observable spec before implementation; no Beer or source-label shortcuts.
-- DG-Q3: Establish the policy's population/quantity and shared-chemical assumptions, relevant genes,
-  body size and S085 effects. Determine what can be claimed honestly by a policy shared among pawns;
-  unresolved cases receive no autonomous suggestion. No universal safety calibration is presumed.
+- DG-Q1–3: C1 is specified by the 2026-11-11 native/source research and this design/spec. Its
+  limited supported shapes, arithmetic and population/channel assumptions await independent review.
+  Task 1.6 still requires actual finalized facts and effective native semantics before exposing
+  suggestions; no loaded-Def or gameplay acceptance follows from source inspection. New content
+  shapes, partial ingestion, population variants and any positive recreation model need their own
+  evidence/scenarios, not a guessed permissive fallback. Implement the established C1 slice once
+  reviewed rather than substituting an empty-policy shell or indefinitely reopening the same research.
 - DG-Q4: Agree and prove atomic native policy publication/rollback, S138 side-state participation,
   stale/reentrant refusal and confirmation idempotence with S029/C01 before the Create slice.
 - DG-Q5: Confirm proposed reusable preferences and preview layout as owned decisions, including

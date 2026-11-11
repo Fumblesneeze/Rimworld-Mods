@@ -1,7 +1,8 @@
 ## Owner
 
 Make Rimworld Great Again — `fumblesneeze.megamod`, `mods/megamod`; RimWorld 1.7 beta.
-This capability is specified for later work. Suggestion calculations remain blocked on research;
+The bounded C1 suggestion calculation is specified from 2026-11-11 native/source research.
+Independent review, finalized runtime admission, implementation and native acceptance remain due;
 no runtime behavior is accepted by this draft.
 
 ## ADDED Requirements
@@ -33,9 +34,39 @@ frequency cap SHALL not serve as evidence of safety. The preview SHALL explain r
 including combined drugs sharing a chemical and pawn differences, instead of silently ignoring them.
 It SHALL not present unsupported drugs as safe merely because they are omitted from a calculation.
 
-The actual supported calculations, rounding, limits and calibration remain blocking research for
-this draft. No numeric schedule or safety guarantee is authorized until that research updates this
-observable contract. Source formulas and historical behavior are not automatically adopted.
+The initial calculation C1 SHALL suggest a schedule based on modeled clearance of a single ordinary
+whole dose's tolerance, under the following disclosed assumptions. This is a conservative chosen
+objective, not the most frequent usable schedule or a guarantee of actual clearance or harmless
+effects. The preview SHALL disclose that native camera-driven batching can skip decay events and
+actual tolerance may remain when the suggested interval permits another dose.
+It SHALL use current finalized admitted facts rather than the native safe-interval label or a drug
+name. C1 SHALL leave autonomous recreation off: recreation does not obey the scheduled interval,
+and non-addictiveness alone is not a sufficient positive recreation rule.
+
+C1 SHALL require an ordinary one-item native dose, non-medical routine use with positive joy,
+finite addictiveness strictly between zero and one, a positive addiction-tolerance threshold,
+an actual chemical/tolerance channel, one deterministic positive tolerance gain and one deterministic
+negative decay. Ordinary/random overdose fields SHALL be zero. The gain for the displayed baseline
+SHALL be strictly below the addiction threshold; its tolerance SHALL be removable at zero, without
+using a maximum-severity cap to make an excessive dose fit. Unknown callbacks/outcomes, nonfinite
+values, duplicate givers, random/reversed/gated decay, unproved amplification and unresolved partial
+ingestion SHALL receive no computed suggestion. Compatible content-added native shapes can qualify.
+
+The calculation SHALL use the game's binary32 severity arithmetic, 200-tick decay events and
+60,000-tick days. If `k` is the first decay event that clears the normalized dose to zero, C1 SHALL
+offer **1 + ceiling((200 × k + 415) / 60,000) calendar days**. The 415-tick budget consists of the
+modeled 14-tick dispatch allowance, 400 ticks covering both binary32 calendar-boundary
+errors over the nonnegative signed-int game clock, and one tick for strict ordering. The additional
+calendar day accounts for native day-index scheduling. Negative/rewritten/overflowing clocks and
+unproved tick-cadence changes are outside the model. Ordinary camera-driven batching also prevents
+this modeled allowance from establishing a universal elapsed-time clearance bound. The design/research define the exact decay
+recurrence and failure conditions; no guessed numeric epsilon SHALL shorten the interval.
+
+An automatic result SHALL be representable in the admitted native editor. Its inspected maximum
+is 25 days; a greater required interval SHALL be unavailable, never clamped to 25. No additional
+delay preference is part of C1. With the researched unmodified Core facts and adult baseline 1,
+expected proposals are Beer 3 days, psychite tea 4 days, smokeleaf 4 days and ambrosia 3 days.
+These are fact-derived comparator results, not a name-based table or finalized-runtime evidence.
 
 #### Scenario: Unsupported drug behavior
 - **WHEN** a current drug has an unknown tolerance effect or no established suggestion calculation
@@ -45,6 +76,61 @@ observable contract. Source formulas and historical behavior are not automatical
 #### Scenario: Shared chemical or different pawn needs
 - **WHEN** the proposed policy includes drugs sharing a chemical or could be assigned to pawns outside a suggestion's assumptions
 - **THEN** the preview identifies the limitation and withholds any autonomous suggestion not covered by the established calculation.
+
+#### Scenario: Measured native whole-dose suggestions
+- **WHEN** the admitted finalized inputs match the researched Core whole-dose gains and decay for the displayed adult baseline
+- **THEN** Beer and ambrosia propose three calendar days, psychite tea and smokeleaf propose four, all with recreation off and a modeled-clearance explanation including native batching limitations
+- **AND** removing or renaming Beer does not change another drug's calculation.
+
+#### Scenario: Native batching does not make a schedule a clearance guarantee
+- **WHEN** a player reviews or creates a C1 suggestion
+- **THEN** the preview explains that native timing can leave residual tolerance and the interval does not monitor or prevent that state
+- **AND** a bounded observed clearance run is never presented as proof for every camera/batching sequence.
+
+#### Scenario: Required interval exceeds native editing range
+- **WHEN** admitted slow decay requires more than the native editor's 25-day maximum
+- **THEN** the row explains that the required interval cannot be represented, leaves scheduled use off and does not shorten the result to 25 days.
+
+#### Scenario: A zero helper interval is not a recreation recommendation
+- **WHEN** the drug is non-addictive but medical, has a risky outcome, or otherwise lacks an established positive recreation model
+- **THEN** neither routine-use option is automatically enabled, even when the native safe-interval helper returns zero.
+
+### Requirement: The baseline population and exposure limits remain visible
+The preview SHALL state that C1 is for healthy ordinary adult humans whose actual BodySize is at
+least the displayed finalized Human-adult baseline (currently 1), with neutral drug metabolism,
+no initial relevant tolerance, addiction/dependency or interfering drug effects, ordinary whole
+doses and unsuspended normal ticking. It SHALL explain that children/smaller bodies, altered drug
+metabolism, extra medical/manual/recreational doses and existing addiction/dependency are outside
+that baseline. Weaker gene factors SHALL not shorten the automatic interval. A generated policy
+SHALL not imply that it enforces these assumptions for every present or future assignee. It SHALL
+not rewrite assignments, clear existing tolerance/history or become dependency treatment.
+
+Rows SHALL share an exposure channel whenever their actual chemical **or** tolerance-Hediff
+identity connects them, including transitive connections. When several otherwise eligible candidates
+share a channel, all their automatic routine suggestions SHALL remain off with a shared-exposure
+reason. Unsupported off rows alone SHALL not suppress an otherwise supported candidate; possible
+use of those rows outside the schedule SHALL be disclosed as uncalculated exposure.
+
+Player changes SHALL remain possible. A manually shortened interval, recreation, additional
+scheduled drug on the same channel or other departure from the C1 result SHALL be identified as
+a manual choice, with combined exposure no longer calculated where applicable. Creation SHALL not
+mislabel those edited choices as computed recommendations or silently revert the player's edits.
+
+#### Scenario: Same chemical with different tolerance givers
+- **WHEN** two otherwise eligible drug rows share a chemical but use different tolerance givers
+- **THEN** both receive the shared-exposure reason and no autonomous schedule; different givers do not bypass chemical grouping.
+
+#### Scenario: Different chemicals share tolerance
+- **WHEN** otherwise eligible rows have different chemical names but share the same actual tolerance HediffDef
+- **THEN** they are treated as one exposure channel and no independent automatic schedules are proposed.
+
+#### Scenario: Player enables combined use
+- **WHEN** the player enables recreation or an additional scheduled row on a computed row's exposure channel
+- **THEN** the preview retains the edit, marks the affected combination as manually edited and uncalculated, and does not claim that the displayed interval covers the extra doses.
+
+#### Scenario: Partial drug handling has unresolved effects
+- **WHEN** active S085 handling changes a row's quantity/timing or stochastic effects without an admitted contract preserving C1's dose bound
+- **THEN** that row has no autonomous C1 suggestion, with a partial-dose explanation, while unaffected whole-dose rows remain eligible.
 
 ### Requirement: Medical permission and ordinary policy defaults are explicit
 Generation SHALL start from S029's applicable native policy defaults: addiction permission on only
@@ -148,7 +234,7 @@ settings section with Global default, Use global and Current save controls. New 
 inherit current globals; overrides and dormant values SHALL remain independent. Main-menu save
 controls and callbacks SHALL be unavailable. Changes SHALL affect new/refreshed previews and make
 an open preview stale; they SHALL never rewrite existing policies. A draft-specific edit SHALL not
-write a global or save preference. No additional-delay range is specified before its research.
+write a global or save preference. C1 adds no additional-delay preference.
 
 #### Scenario: Global preference changes for inherited and overridden saves
 - **WHEN** the global initial mood threshold changes

@@ -14,8 +14,9 @@ Target: **RimWorld 1.7 beta**. Specification and research plan only; no gameplay
 - Use the current S029 catalog and its applicable native defaults, including visible addiction/medical
   permission. Preserve every existing policy and actual consumption history.
 - Present risk-reduction suggestions, not universal safety. Unknown or unsupported pharmacology
-  receives no autonomous schedule and a clear reason. Unestablished calculations remain explicit
-  implementation-blocking research tasks; this draft is not numerically ready for implementation.
+  receives no autonomous schedule and a clear reason. The independently reviewed C1 model now has
+  positive cadence-based suggestions and explicit native timing limitations; finalized runtime
+  admission and atomic native publication remain required before exposing them.
 - Give reset operations full, deterministic semantics; reject stale previews and restore all owned
   changes if creation fails. Repeated delivery of one confirmation creates at most one new policy.
 - Compose directly with S024, S124, S134 and S138. Use common inherited configuration for actual
