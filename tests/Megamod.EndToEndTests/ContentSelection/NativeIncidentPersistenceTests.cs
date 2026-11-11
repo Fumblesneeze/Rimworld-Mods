@@ -18,7 +18,7 @@ namespace Megamod.EndToEndTests.ContentSelection;
 // Setup supplies only the inherited global exclusion; both save edits use actual native checkboxes.
 [RimWorldEndToEndTest("megamod.content.native-incident-save-override", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
-    MaxFrames = 5400, MaxGameTicks = 4800, MaxWallClockSeconds = 240)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 4800, MaxWallClockSeconds = 600)]
 public sealed class NativeIncidentPersistenceTests : NativeIncidentPersistenceWorkflow
 {
     public NativeIncidentPersistenceTests() : base(false) { }
@@ -26,7 +26,7 @@ public sealed class NativeIncidentPersistenceTests : NativeIncidentPersistenceWo
 
 [RimWorldEndToEndTest("megamod.content.native-master-off-save-reload", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
-    MaxFrames = 5400, MaxGameTicks = 4800, MaxWallClockSeconds = 240)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 4800, MaxWallClockSeconds = 600)]
 public sealed class NativeIncidentMasterSwitchTests : NativeIncidentPersistenceWorkflow
 {
     public NativeIncidentMasterSwitchTests() : base(true) { }
@@ -124,6 +124,9 @@ public abstract class NativeIncidentPersistenceWorkflow : IRimWorldEndToEndTest
         context.DeferCleanup(() =>
         {
             if (ReferenceEquals(Find.WindowStack.WindowOfType<ContentSelectionWindow>(), ownedBrowser)) ownedBrowser?.Close();
+        });
+        context.DeferCleanup(() =>
+        {
             if (ReferenceEquals(Find.WindowStack.WindowOfType<Dialog_ModSettings>(), ownedWindow)) ownedWindow?.Close();
         });
         context.DeferCleanup(() =>
@@ -132,8 +135,9 @@ public abstract class NativeIncidentPersistenceWorkflow : IRimWorldEndToEndTest
         });
         context.DeferCleanup(() =>
         {
-            Find.TickManager?.Pause();
             var failures = new List<Exception>();
+            try { Find.TickManager?.Pause(); }
+            catch (Exception exception) { failures.Add(exception); }
             // If the native action failed its expected-result check, capture its paused side effects too.
             try { if (awaitingActionCapture) CaptureCreatedThings(); }
             catch (Exception exception) { failures.Add(exception); }
@@ -197,7 +201,7 @@ public abstract class NativeIncidentPersistenceWorkflow : IRimWorldEndToEndTest
         yield return new SaveLoadActionStep("save and reload the native colony with its override", saveName);
         yield return new WaitUntilStep("observe the same save under a fresh native activation", _ =>
                 !ReferenceEquals(Current.Game, originalGame) && settings.CurrentBinding is { } binding &&
-                !ReferenceEquals(binding, originalBinding), new EndToEndDeadline(600, 600, TimeSpan.FromSeconds(30)));
+                !ReferenceEquals(binding, originalBinding), new EndToEndDeadline(int.MaxValue, 600, TimeSpan.FromSeconds(30)));
         yield return new AssertionStep("native serialization retained only the requested save override", _ =>
         {
             EndToEndAssert.Equal(saveBefore.SaveIdentity, settings.CurrentBinding!.SaveIdentity);
@@ -222,7 +226,7 @@ public abstract class NativeIncidentPersistenceWorkflow : IRimWorldEndToEndTest
         {
             landedChunk = created.FirstOrDefault(thing => thing.def == ThingDefOf.ShipChunk && thing.Spawned);
             return landedChunk != null;
-        }, new EndToEndDeadline(900, 1800, TimeSpan.FromSeconds(45)));
+        }, new EndToEndDeadline(int.MaxValue, 1800, TimeSpan.FromSeconds(45)));
         yield return new TimeControlActionStep("pause on the persisted policy result", true, EndToEndGameSpeed.Normal);
         yield return new CameraActionStep("frame the chunk created after reload", new[] { landedChunk!.ThingID }, 120);
         yield return new ScreenshotStep("physical ship chunk after the save override applies", new[] { landedChunk!.ThingID }, 120);

@@ -15,7 +15,7 @@ namespace Megamod.EndToEndTests.ContentSelection;
 // Coordinates follow the inspected native dialog and owned renderer, not OS desktop input.
 [RimWorldEndToEndTest("megamod.content.native-selector-global-choice", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
-    MaxFrames = 1800, MaxGameTicks = 1800, MaxWallClockSeconds = 90)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 1800, MaxWallClockSeconds = 450)]
 public sealed class NativeIncidentSettingsTests : IRimWorldEndToEndTest
 {
     private SettingsRuntime settings = null!;
@@ -63,9 +63,21 @@ public sealed class NativeIncidentSettingsTests : IRimWorldEndToEndTest
         context.DeferCleanup(() =>
         {
             if (ReferenceEquals(Find.WindowStack.WindowOfType<EditWindow_Log>(), ownedLog)) ownedLog?.Close();
+        });
+        context.DeferCleanup(() =>
+        {
             if (ReferenceEquals(Find.WindowStack.WindowOfType<FloatMenu>(), ownedMenu)) ownedMenu?.Close();
+        });
+        context.DeferCleanup(() =>
+        {
             if (ReferenceEquals(Find.WindowStack.WindowOfType<ContentSelectionWindow>(), ownedBrowser)) ownedBrowser?.Close();
+        });
+        context.DeferCleanup(() =>
+        {
             if (ReferenceEquals(Find.WindowStack.WindowOfType<Dialog_ModSettings>(), ownedWindow)) ownedWindow?.Close();
+        });
+        context.DeferCleanup(() =>
+        {
             Find.TickManager.CurTimeSpeed = speed;
             // Successful execution restores the choice through the same native checkbox.
             // An interrupted run's configuration belongs only to its disposable profile.

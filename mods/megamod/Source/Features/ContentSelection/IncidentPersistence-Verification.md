@@ -15,6 +15,25 @@ affected evidence. The procedure below remains the reproducible scenario contrac
 
 ## Exact scenario and isolated setup
 
+### Current execution budgets (2026-11-11)
+
+Both `native-incident-save-override` and `native-master-off-save-reload` now allow 600 seconds
+wall time, with MaxFrames = int.MaxValue and an independent 4800-game-tick cap. Their waits retain
+30/45-second wall and 600/1800-tick limits; frame limits defer to the finite wall limits rather than
+assuming a refresh rate. The save-override path contains nine screenshots × 30 seconds (270),
+nine bounded native operations × 15 seconds (135: two captures, three clicks, two pointer-scope
+actions and two console actions), plus 75 seconds of waits: 480 seconds. The remaining 120 seconds
+cover save/load, settings-open/cancel commands, incident/time/camera actions, assertions and iterator
+overhead without separate provider deadlines. The master-off variant has eight captures of the
+rendered view (240 seconds), seven bounded native operations (105) and the same waits (75), leaving
+180 seconds of the same shared allowance. Neither reserve promises native engine timing.
+
+Each scenario retains the harness's separate 30-second cleanup allowance. A combined run must
+budget the selected scenario sum, cleanup per case and startup/host overhead. Native settings/browser
+window closure and fixture pause now have independent cleanup attempts, so one failure cannot skip
+the other owned window or exact incident-result destruction. No product behavior or result oracle
+changed with this budget correction. Historical evidence above retains its original scope.
+
 Test ID: `megamod.content.native-incident-save-override` in
 `tests/Megamod.EndToEndTests/ContentSelection/NativeIncidentPersistenceTests.cs`.
 The exact non-Gateway package order is Harmony, Core, megamod; the typed runner appends Gateway.

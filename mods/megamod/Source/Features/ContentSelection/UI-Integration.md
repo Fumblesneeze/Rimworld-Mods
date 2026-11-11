@@ -64,6 +64,14 @@ native review, particularly long source labels and narrow viewports.
 
 ## Authored native scenario
 
+The selector workflow's 2026-11-11 budget is 450 seconds wall time, MaxFrames = int.MaxValue and
+the existing independent 1800-game-tick bound. Seven screenshots × 30 seconds = 210 seconds;
+four native window captures, five clicks, two pointer-scope actions and two console actions ×
+15 seconds = 195 seconds. The remaining 45 seconds cover synchronous settings-open/menu/window
+cancellation, assertions and iteration. The harness supplies separate 30-second cleanup; the
+launcher must also include startup/host allowance. Each owned window and speed restoration is
+attempted independently during cleanup. These bounds do not establish gameplay acceptance.
+
 `megamod.content.native-selector-global-choice` opens the real mod settings dialog, captures its
 native handle/bounds, clicks the type and source FloatMenus and cancels each, then clicks the first
 row's real global checkbox off and back on. Read-only snapshots correlate those actions with only
