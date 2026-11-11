@@ -181,6 +181,24 @@ internal static class HarmonyPublication
         }
     }
 
+    internal sealed class InnerCallback
+    {
+        internal MethodInfo Method { get; }
+        internal HarmonyPatchType Role { get; }
+        internal bool OuterBinding { get; }
+        internal bool IsFactory { get; }
+        internal bool HasMatches { get; }
+        internal IReadOnlyList<int> SelectedOperations { get; }
+        internal InnerCallback(MethodInfo method, HarmonyPatchType role, bool outerBinding, bool hasMatches, int[] selected)
+        {
+            Method = method; Role = role; OuterBinding = outerBinding; HasMatches = hasMatches;
+            SelectedOperations = Array.AsReadOnly((int[])selected.Clone());
+            var parameters = method.GetParameters();
+            IsFactory = method.IsStatic && (method.ReturnType == typeof(MethodInfo) || method.ReturnType == typeof(DynamicMethod)) &&
+                parameters.Length == 1 && parameters[0].ParameterType == typeof(MethodBase);
+        }
+    }
+
     internal sealed class Snapshot
     {
         internal Identity Identity { get; }
@@ -190,6 +208,8 @@ internal static class HarmonyPublication
         internal IReadOnlyList<OuterRegistration> Postfixes { get; }
         internal IReadOnlyList<OuterRegistration> Finalizers { get; }
         private readonly Effect[] effects;
+        internal IReadOnlyList<InnerCallback> InnerCallbacks(IReadOnlyList<Operation> body) =>
+            Array.AsReadOnly(effects.Select(effect => effect.Project(body)).ToArray());
         internal Snapshot(PatchInfo? info, Identity identity)
         {
             Identity = identity;
@@ -233,6 +253,7 @@ internal static class HarmonyPublication
 
     private sealed class Effect
     {
+        private readonly MethodInfo callback;
         internal readonly int[] Positions;
         internal readonly bool OuterBinding;
         internal readonly bool Observation;
@@ -243,7 +264,7 @@ internal static class HarmonyPublication
         internal Effect(Patch patch, HarmonyPatchType role)
         {
             Role = role;
-            MethodInfo callback = patch.PatchMethod; // Resolves metadata, unlike GetMethod(original).
+            callback = patch.PatchMethod; // Resolves metadata, unlike GetMethod(original).
             var parameters = callback.GetParameters();
             OuterBinding = patch.uncheckedReferenceBinding || parameters.Any(parameter => parameter.CustomAttributes.Any(
                 attribute => attribute.AttributeType.FullName == "HarmonyLib.HarmonyOuter"));
@@ -264,6 +285,11 @@ internal static class HarmonyPublication
                 Positions = (int[])patch.innerTarget.positions.Clone();
             }
             else throw new InvalidOperationException("A published inner selector has no unambiguous representation.");
+        }
+        internal InnerCallback Project(IReadOnlyList<Operation> body)
+        {
+            var selected = SelectedOperations(body, out bool hasMatches);
+            return new InnerCallback(callback, Role, OuterBinding, hasMatches, selected);
         }
         internal int[] SelectedOperations(IReadOnlyList<Operation> body, out bool hasMatches)
         {

@@ -282,6 +282,11 @@ overwritten or described as successfully rolled back.
 - **WHEN** preparation observes a changed database, consumed facts or admission receipt, or the same operation reenters before completion
 - **THEN** it cannot publish a second or stale policy, and the preview explains the refusal without overwriting independent changes.
 
+#### Scenario: Native creation has composed inner callbacks
+- **WHEN** current constructor/getter admission examines published inner callbacks
+- **THEN** it uses immutable metadata and the existing C01 selector semantics without executing foreign attributes, factories, callbacks or transpilers for inspection
+- **AND** compatible or irrelevant effects can remain admitted only with the consumed no-escape/actual-list semantics proved; a changed publication invalidates the old receipt before creation.
+
 #### Scenario: A confirmation owner is disposed
 - **WHEN** the transient confirmation is disposed before preparation, during a preparation callback, or after completion
 - **THEN** it releases retained native objects and delegates, refuses further preparation/confirmation, and cannot resume a pending append

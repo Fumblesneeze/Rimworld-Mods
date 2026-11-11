@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using Megamod.Patching;
@@ -13,6 +14,7 @@ public sealed class HarmonyPublicationOuterRolesTests
     private static readonly MethodInfo Target = Method(nameof(Sample));
     private static int constructions, methodConstructions, prefixCalls, finalizerCalls, innerCalls, factoryCalls;
     private static readonly List<string> orderingCalls = new();
+    private static HarmonyPublication.Operation[] observedBody = Array.Empty<HarmonyPublication.Operation>();
     private static MethodInfo Method(string name) => typeof(HarmonyPublicationOuterRolesTests).GetMethod(name)!;
 
     [Test]
@@ -48,6 +50,140 @@ public sealed class HarmonyPublicationOuterRolesTests
             Assert.That(prefixCalls + finalizerCalls + innerCalls, Is.Zero);
             Assert.That(Sample(4), Is.EqualTo(5));
             Assert.That(new[] { prefixCalls, finalizerCalls, innerCalls }, Is.EqualTo(new[] { 1, 1, 1 }));
+        }
+        finally { foreign.Unpatch(Target, HarmonyPatchType.All, foreign.Id); }
+    }
+
+    [TestCase(1, 0)]
+    [TestCase(-1, 1)]
+    public void InnerProjectionUsesActualSelectorsWithoutExecutingMetadataAndSurvivesRepatch(int position, int selected)
+    {
+        var target = Method(nameof(SampleTwice));
+        var foreign = new HarmonyInstance("tests.megamod.publication.inner-projection");
+        try
+        {
+            constructions = methodConstructions = innerCalls = 0;
+            foreign.CreateProcessor(target)
+                .AddTranspiler(new HarmonyMethod(Method(nameof(CaptureInnerBody))) { priority = int.MinValue })
+                .AddInnerPostfix(new HarmonyMethod(Method(nameof(ObserveInner)))
+                { innerMethod = new InnerMethod(Method(nameof(Allowed)), position), uncheckedReferenceBinding = true }).Patch();
+            Assert.That(constructions, Is.GreaterThan(0));
+            constructions = methodConstructions = 0;
+            var expected = observedBody.Select((operation, index) => (operation, index))
+                .Where(pair => pair.operation.Operand is MethodInfo method && method == Method(nameof(Allowed))).Select(pair => pair.index).ToArray();
+            Assert.That(expected, Has.Length.EqualTo(2));
+            HarmonyPublication.Snapshot? retained = null;
+            IReadOnlyList<HarmonyPublication.InnerCallback>? callbacks = null;
+            Assert.That(HarmonyPublication.Inspect(target, snapshot =>
+            {
+                retained = snapshot;
+                callbacks = snapshot.InnerCallbacks(observedBody);
+                Assert.That(callbacks, Has.Count.EqualTo(1));
+                var callback = callbacks[0];
+                Assert.Multiple(() =>
+                {
+                    Assert.That(callback.Method, Is.EqualTo(Method(nameof(ObserveInner))));
+                    Assert.That(callback.Role, Is.EqualTo(HarmonyPatchType.InnerPostfix));
+                    Assert.That(callback.OuterBinding, Is.True);
+                    Assert.That(callback.IsFactory, Is.False);
+                    Assert.That(callback.HasMatches, Is.True);
+                    Assert.That(callback.SelectedOperations, Is.EqualTo(new[] { expected[selected] }));
+                    Assert.Throws<NotSupportedException>(() => ((IList<int>)callback.SelectedOperations)[0] = -1);
+                    Assert.Throws<NotSupportedException>(() => ((IList<HarmonyPublication.InnerCallback>)callbacks)[0] = callback);
+                    Assert.That(snapshot.FailureFor(observedBody, new HashSet<int>()), Is.Not.Null,
+                        "The existing outer-binding refusal must remain unchanged.");
+                });
+                return true;
+            }), Is.True);
+            Assert.That(retained!.Identity.IsCurrent(), Is.True);
+            Assert.That(constructions + methodConstructions + innerCalls, Is.Zero);
+            Assert.That(SampleTwice(), Is.EqualTo(2));
+            Assert.That(innerCalls, Is.EqualTo(1));
+            foreign.Unpatch(target, HarmonyPatchType.InnerPostfix, foreign.Id);
+            Assert.That(retained.Identity.IsCurrent(), Is.False);
+            Assert.That(callbacks!.Single().SelectedOperations, Is.EqualTo(new[] { expected[selected] }));
+            Assert.That(HarmonyPublication.Inspect(target, snapshot =>
+            {
+                Assert.That(snapshot.Version, Is.GreaterThan(retained.Version));
+                Assert.That(snapshot.InnerCallbacks(observedBody), Is.Empty);
+                return true;
+            }), Is.True);
+        }
+        finally { foreign.Unpatch(target, HarmonyPatchType.All, foreign.Id); }
+    }
+
+    public static IEnumerable<CodeInstruction> CaptureInnerBody(IEnumerable<CodeInstruction> instructions)
+    {
+        var body = instructions.ToList();
+        observedBody = body.Select(instruction => new HarmonyPublication.Operation(instruction.opcode, instruction.operand)).ToArray();
+        return body;
+    }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static int SampleTwice() => (Allowed() ? 1 : 0) + (Allowed() ? 1 : 0);
+
+    [TestCase(HarmonyPatchType.InnerPrefix)]
+    [TestCase(HarmonyPatchType.InnerPostfix)]
+    [TestCase(HarmonyPatchType.InnerFinalizer)]
+    public void InnerRoleProjectionPreservesNoMatchEvidenceWithoutExecutingCallbacks(HarmonyPatchType role)
+    {
+        var foreign = new HarmonyInstance("tests.megamod.publication.inner-roles");
+        try
+        {
+            constructions = methodConstructions = factoryCalls = innerCalls = 0;
+            var patch = new HarmonyMethod(Method(nameof(ObserveNoArgument))) { innerMethod = new InnerMethod(Method(nameof(Allowed))) };
+            var processor = foreign.CreateProcessor(Target)
+                .AddTranspiler(new HarmonyMethod(Method(nameof(CaptureInnerBody))) { priority = int.MinValue });
+            if (role == HarmonyPatchType.InnerPrefix) processor.AddInnerPrefix(patch);
+            else if (role == HarmonyPatchType.InnerPostfix) processor.AddInnerPostfix(patch);
+            else processor.AddInnerFinalizer(patch);
+            processor.Patch();
+            Assert.That(methodConstructions, Is.GreaterThan(0));
+            factoryCalls = constructions = methodConstructions = 0;
+            Assert.That(HarmonyPublication.Inspect(Target, snapshot =>
+            {
+                var callback = snapshot.InnerCallbacks(observedBody).Single();
+                Assert.Multiple(() =>
+                {
+                    Assert.That(callback.Method, Is.EqualTo(Method(nameof(ObserveNoArgument))));
+                    Assert.That(callback.Role, Is.EqualTo(role));
+                    Assert.That(callback.IsFactory, Is.False);
+                    Assert.That(callback.OuterBinding, Is.False);
+                    Assert.That(callback.HasMatches, Is.True);
+                    Assert.That(callback.SelectedOperations, Has.Count.EqualTo(1));
+                    var unmatched = snapshot.InnerCallbacks(Array.Empty<HarmonyPublication.Operation>()).Single();
+                    Assert.That(unmatched.HasMatches, Is.False);
+                    Assert.That(unmatched.SelectedOperations, Is.Empty);
+                    Assert.That(snapshot.FailureFor(Array.Empty<HarmonyPublication.Operation>(), new HashSet<int>()), Is.Not.Null);
+                });
+                return true;
+            }), Is.True);
+            Assert.That(factoryCalls + constructions + methodConstructions + innerCalls, Is.Zero);
+            Assert.That(Sample(4), Is.EqualTo(5));
+            Assert.That(innerCalls, Is.EqualTo(1));
+        }
+        finally { foreign.Unpatch(Target, HarmonyPatchType.All, foreign.Id); }
+    }
+
+    [TestCase(HarmonyPatchType.InnerPrefix)]
+    [TestCase(HarmonyPatchType.InnerPostfix)]
+    [TestCase(HarmonyPatchType.InnerFinalizer)]
+    public void ProviderRejectsInnerFactoriesWithoutExecutionAndMetadataStillIdentifiesTheirShape(HarmonyPatchType role)
+    {
+        var foreign = new HarmonyInstance("tests.megamod.publication.rejected-inner-factory");
+        try
+        {
+            factoryCalls = 0;
+            var factory = Method(nameof(InnerFactory));
+            var patch = new HarmonyMethod(factory) { innerMethod = new InnerMethod(Method(nameof(Allowed))) };
+            var processor = foreign.CreateProcessor(Target);
+            if (role == HarmonyPatchType.InnerPrefix) processor.AddInnerPrefix(patch);
+            else if (role == HarmonyPatchType.InnerPostfix) processor.AddInnerPostfix(patch);
+            else processor.AddInnerFinalizer(patch);
+            Assert.That(() => processor.Patch(), Throws.ArgumentException.With.Message.Contains("cannot be a method factory"));
+            Assert.That(factoryCalls, Is.Zero);
+            var defensiveProjection = new HarmonyPublication.InnerCallback(factory, role, false, true, new[] { 1 });
+            Assert.That(defensiveProjection.IsFactory, Is.True);
+            Assert.That(factoryCalls, Is.Zero, "Defensive metadata recognition must not resolve a rejected factory.");
         }
         finally { foreign.Unpatch(Target, HarmonyPatchType.All, foreign.Id); }
     }
@@ -218,7 +354,9 @@ public sealed class HarmonyPublicationOuterRolesTests
     public static bool Allowed() => true;
     [CountingMethod] public static void ObservePrefix([Counting] int value) => prefixCalls++;
     [CountingMethod] public static Exception? ObserveFinalizer([Counting] Exception? __exception) { finalizerCalls++; return __exception; }
-    public static void ObserveInner([Counting] bool __result) => innerCalls++;
+    [CountingMethod] public static void ObserveInner([Counting] bool __result) => innerCalls++;
+    [CountingMethod] public static MethodInfo InnerFactory(MethodBase original) { factoryCalls++; return Method(nameof(ObserveNoArgument)); }
+    [CountingMethod] public static void ObserveNoArgument() => innerCalls++;
     public static void OtherCallback() { }
     [CountingMethod] public static MethodInfo PrefixFactory(MethodBase original) { factoryCalls++; return Method(nameof(ObservePrefix)); }
     [CountingMethod] public static MethodInfo FinalizerFactory(MethodBase original) { factoryCalls++; return Method(nameof(ObserveFinalizer)); }

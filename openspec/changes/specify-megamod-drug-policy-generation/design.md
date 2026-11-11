@@ -288,6 +288,16 @@ body changes, skip-original, compatible patches, supported repatching and bounde
 whole-method or version/hash gate. Withhold Generate if complete creation cannot be supported while
 preserving ordinary native controls. Do not inspect external consumers or construct source facades.
 
+The shared C01 addition for creation admission is an immutable inner-callback metadata projection
+from an already captured HarmonyPublication snapshot. It retains the registered MethodInfo, role,
+outer-binding/factory flags, match presence and exact selected operation indexes. The existing
+Effect selector remains the sole interpretation of target kinds and positive/negative positions;
+FailureFor and FailureForConversion retain their existing semantics. The projection invokes no
+foreign attribute, factory, callback or transpiler and exposes no mutable provider patch/selector
+array. Snapshot Version/Identity still govern currentness; this metadata alone proves no callback
+body safe and enables no native action. The creation guard must prove its consumed no-escape and
+actual-list semantics, admitting irrelevant/compatible effects and refusing unproved effects.
+
 Active canonical `seohyeon.bestdrugpolicy` produces one bounded startup overlap warning and
 best-effort ordinary effective-off for `drug-generation.enabled`: no new previews/commit,
 cancel transient preview, keep all prior policies and stored preferences. No rollback of source
