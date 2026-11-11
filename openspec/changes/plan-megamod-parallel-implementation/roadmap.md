@@ -900,3 +900,16 @@ The observed native late-load cleanup limitation is recorded under S138, with ex
 accounting and required visible rejection; it does not remove native acceptance or promise recovery.
 All139 feature obligations, P0–P8 gates and later compositions remain allocated and unaccepted
 until their own evidence exists.
+
+Revision21 allocation update — the reviewed shared inner-callback projection is committed before
+its S139 consumer. S138 runtime/UI and native geometry admission now use disjoint implementer
+leases: runtime owns current policy/row identity and contextual Apply/Cancel; geometry owns the
+effective upstream window/sidebar/header/row producers and their currentness. Both remain one
+atomic feature at integration. Inspection found that captured-window native clicks are available,
+but typed text still uses desktop input. The S139 implementer temporarily owns the narrowly scoped
+Gateway native focused-text prerequisite so numeric editor and generator entry can be verified in
+minimized runs. It must use the actual native input path with an owned contract, focused tests and
+independent review; direct draft setters cannot substitute. Constructor/getter admission and the
+remaining generator runtime/UI resume after that prerequisite. Root retains central composition,
+native scenario execution and final visual observation. This supersedes the immediate S139 guard
+sequence only; no feature, acceptance case or part obligation is removed.
