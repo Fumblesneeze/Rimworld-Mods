@@ -167,6 +167,11 @@ applicable. Omitted suggestions SHALL not remove the drug's policy row.
 - **WHEN** an addictive drug has no supported routine-use suggestion
 - **THEN** it still has a visible policy row, routine-use suggestions off and its applicable addiction permission on.
 
+#### Scenario: Disabled or unknown rows retain valid complete numeric fields
+- **WHEN** the complete preview includes an unsupported or otherwise unscheduled row
+- **THEN** that row retains the explicit one-day frequency, 100% mood/recreation thresholds and zero inventory baseline unless deliberately edited
+- **AND** final validation applies native bounds to all fields even while scheduled use is off; an unchanged complete off-schedule preview remains creatable when its other receipts are current.
+
 #### Scenario: Suggested schedule retains separate medical choice
 - **WHEN** an established suggestion enables scheduled use for an addictive drug
 - **THEN** the player can separately see and change addiction permission before creation
@@ -180,6 +185,24 @@ SHALL not retain an earlier lower limit. Reset draft SHALL discard draft edits a
 whole preview from the current catalog, established suggestion rules and current effective generation
 preferences, showing that existing edits will be lost before the player confirms reset. Reset SHALL
 not change an existing policy. Invalid draft input SHALL be explained and block creation.
+For the initial native editor contract, a new name SHALL contain 1–27 UTF-16 code units consisting
+only of Unicode letters, ASCII digits, spaces, apostrophes or hyphens. Creation SHALL preserve the
+reviewed name without trimming or substituting it. Duplicate labels remain valid independent names;
+spaces are permitted as in native renaming. A supplied frequency SHALL be finite and within
+0.1–25 days, mood/joy thresholds within 0–1, and inventory an integer from zero through that drug's
+current native null-map pickup limit (zero when no ordered-take group exists). Commit SHALL preserve
+the exact reviewed frequency without clamping or rounding; the preview's native slider performs
+its ordinary whole-day or reciprocal-integer rounding when edited.
+
+#### Scenario: Invalid or incomplete final native choices
+- **WHEN** a name or native bound is invalid, an edit is missing/extra/duplicated, its canonical drug identity is stale, or an addiction/recreation permission is inapplicable
+- **THEN** creation refuses before publishing a policy and leaves existing native state unchanged
+- **AND** a new tolerance choice requiring review or a numeric choice in an unavailable-tolerance preview is rejected rather than silently changed at commit.
+
+#### Scenario: Reviewed input survives the native write unchanged
+- **WHEN** detached native preparation completes
+- **THEN** every row is fresh and distinct, in the admitted complete native order, and contains exactly the final reviewed native and tolerance choices
+- **AND** a write that omits, replaces, duplicates, borrows or changes a row is refused before publication.
 
 #### Scenario: Lower a limit and restore its unrestricted value
 - **WHEN** the player lowers a draft mood limit and returns it to 100%, or chooses numeric tolerance and returns it to Any
@@ -258,6 +281,11 @@ overwritten or described as successfully rolled back.
 #### Scenario: Stale or reentrant publication
 - **WHEN** preparation observes a changed database, consumed facts or admission receipt, or the same operation reenters before completion
 - **THEN** it cannot publish a second or stale policy, and the preview explains the refusal without overwriting independent changes.
+
+#### Scenario: A confirmation owner is disposed
+- **WHEN** the transient confirmation is disposed before preparation, during a preparation callback, or after completion
+- **THEN** it releases retained native objects and delegates, refuses further preparation/confirmation, and cannot resume a pending append
+- **AND** disposal never deletes a successfully created policy or restores over an independent change.
 
 ### Requirement: Created policy choices are ordinary persistent gameplay state
 Generated policies SHALL behave as ordinary native policies for editing, copying, renaming,

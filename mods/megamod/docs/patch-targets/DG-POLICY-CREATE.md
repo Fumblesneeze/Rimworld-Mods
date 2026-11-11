@@ -51,32 +51,35 @@ draft. No worker/global scan or invocation from the main menu is supported.
    Reentry cannot append twice. Failure before append discards detached state; owned-tail removal
    requires exact prior-list/prefix identity. Do not restore over a detected independent change.
 
-The staged adapter has eight focused constructed-Defs checks. They establish detached fresh rows,
-native ordering, exact choices/Any/numeric S138, same-confirmation idempotence, five changed-state
-refusals and ordering-callback reentry refusal for the unpatched native fixture. They do not establish
-effective constructor/getter admission, finalized catalog facts or any player workflow.
+The staged adapter's focused constructed-Defs checks establish detached fresh rows, native ordering,
+exact choices/Any/numeric S138, input/payload validation, same-confirmation idempotence, stale-state
+and reentry refusal, disposal and owned-tail rollback/conflict handling. They do not establish
+effective constructor/getter admission, finalized catalog facts or any player workflow. Exact
+filters, counts and RED/GREEN evidence are retained in the local implementation ledger.
 Permit unrelated IL, local numbering, instruction offsets, other Harmony owners and compatible
 observers when the consumed semantics remain established. No whole-body hash or version gate.
 
 ### Staged API boundary and unfinished checks
 
 The current API copies catalog/edit collections and accepts a caller-owned currentness/admission
-predicate plus S029 native ordering. The fixture predicate returning true is an explicit host-test
-assumption, not an executable receipt. No production caller or bootstrap registration uses this API.
-The controller must eventually supply the existing current-game/catalog/fact/preference/S138/C01
-receipts. The adapter must additionally validate exact complete edit membership, current applicable
-flags, native frequency/inventory/name bounds and S138 availability before preparation; these input
-checks are not yet implemented. The immutable draft's validation cannot replace them. Explicit
-fresh-plan-row checks and verification of the written object against intended choices also remain
-pending; the current snapshot only detects changes after the initial write.
+predicate, S029 native ordering and an explicit S138-availability snapshot. The fixture predicate
+returning true is an explicit host-test assumption, not an executable receipt. No production caller
+or bootstrap registration uses this API. The controller must eventually supply the existing current
+game/catalog/fact/preference/S138/C01 receipts. The adapter validates complete reference-identity
+edits, current applicable flags, native frequency/inventory/name bounds and S138 choices; repeats
+current native input checks after preparation callbacks and when confirming an existing preparation;
+then compares actual direct storage to the exact intended ordered fresh payload before publication.
+S138-off numeric values are rejected instead of coerced. The immutable draft alone is insufficient.
 
-The object retains its database and delegate references; disposal and lifecycle integration are
-pending and are required before any window can own it. Checked ID arithmetic, empty-database
-refusal and owned-tail rollback exist in code but lack focused boundary/fault evidence in this
-tranche. No construction/order/storage-failure or post-append rollback proof is claimed. C01 must
-admit native no-escape construction and the actual-list getter before the caller predicate can be
-used as a real receipt. A metadata-only C01 callback projection and feature-local effective guards
-are planned, with no shared publication-helper change in this tranche.
+Disposal drops owned database, collection, prepared-policy and delegate references and invalidates
+busy work, without deleting a published policy. Checked ID arithmetic, empty-database refusal,
+ordering/storage failures and post-append rollback/conflicts have constructed-Defs coverage. An
+internal preparation-only factory wraps the existing S029 storage interface for failure proofs;
+public construction always selects sealed native storage. The internal publication receipt exposes
+the same Append/VerifyOrRollback operations used synchronously by Confirm, with no interposed
+callback. These seams are not runtime options or native effective-admission evidence. C01 must still
+admit no-escape construction and the actual-list getter. A metadata-only C01 callback projection and
+feature-local effective guards are planned; this tranche changes no shared publication helper.
 
 ## Composition, ordering, and invalidation
 
@@ -110,9 +113,9 @@ adapter installs no mutation patches of its own; the separate UI group's rollbac
 | Case | Expected result | Honest tier | Evidence / state |
 | --- | --- | --- | --- |
 | Native construction and S029 complete plan in an unpatched fixture | Prepared object absent from database; fresh ordered rows and exact choices/S138 | Defs with scoped constructed fixtures | Passing; effective admission pending |
-| Duplicate labels, high/negative prior IDs, exhausted next ID | Checked unique positive ID or explicit refusal; no overwrite | Unit controller and scoped Defs | Pending |
-| Empty database | Unavailable; no implicit default creation | Scoped Defs/native UI | Pending |
-| Preparation failure and post-append failure | No publication or only exact owned-tail rollback; prior prefix unchanged | Scoped Defs | Pending |
+| Duplicate labels, high/negative prior IDs, exhausted next ID | Checked unique positive ID or explicit refusal; no overwrite | Unit controller and scoped Defs | Constructed-Defs passing; native workflow pending |
+| Empty database | Unavailable; no implicit default creation | Scoped Defs/native UI | Constructed-Defs refusal passing; native UI pending |
+| Preparation failure and post-append failure | No publication or only exact owned-tail rollback; prior prefix unchanged | Scoped Defs | Constructed storage/order failures and receipt rollback/conflict passing; effective constructors pending |
 | Currentness change or reentry/repeated confirmation | No stale/duplicate append; completed receipt reused | Unit/Defs | Passing for caller predicate, membership, prior/prepared choice, prepared ID and ordering reentry; native receipt/lifecycle pending |
 | Benign foreign constructor/getter edits | Admitted when consumed semantics hold; foreign owner retained | Owned Harmony fixture | Pending |
 | Escape, list substitution, skip-original or unproved callback | Refuse unchanged before preparing/publishing; bounded reason | Owned Harmony fixture | Pending |
@@ -122,5 +125,5 @@ adapter installs no mutation patches of its own; the separate UI group's rollbac
 Retain reviewed build/package identity, ordered active mods, actual player input, causal captures,
 complete relevant logs/config hashes and cleanup. Source inspection and passing fixtures are not
 native acceptance. Native persistence and contextual layout remain distinct S138/UI obligations.
-The local three-slice RED/GREEN ledger and frozen source identities are in
+The local RED/GREEN ledger and frozen source identities are in
 `artifacts/Implementation/megamod-p0/s139-native-creation/implementation.md`.

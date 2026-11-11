@@ -79,10 +79,13 @@ The focused preference ledger is `artifacts/Implementation/megamod-p0/revision20
 
 `Runtime/NativeDrugPolicyCreation.cs` prepares fresh native rows through S029 storage and overlays
 the complete supplied choices, including S138. One transient confirmation appends its prepared
-object once, rejects changed captured state or reentry, and preserves the prior list prefix. Eight
-constructed-Defs checks pass. The supplied currentness predicate/native ordering are caller
-assumptions until integrated with actual receipts. Complete native input validation, intended-choice
-postwrite verification, effective constructor/getter admission, lifecycle disposal and boundary/fault
-proof remain open; the adapter has no production caller. Its owned-tail rollback code is not yet
-verified by a post-append failure case. See `docs/patch-targets/DG-POLICY-CREATE.md` and the local
+object once, rejects changed captured state or reentry, and preserves the prior list prefix. It
+validates complete edits and native bounds, checks the written fresh ordered payload against every
+reviewed choice, refuses S138-off numeric edits, and releases transient references on disposal.
+Constructed-Defs checks cover preparation failures, IDs, stale state and the production receipt's
+owned-tail rollback/conflict refusal. The supplied currentness predicate/native ordering remain
+caller assumptions until integrated with actual receipts. Effective constructor/getter admission,
+controller lifecycle integration and native player proof remain open; the adapter has no production
+caller. The internal failure seam is a Defs proof, not native admission. See
+`docs/patch-targets/DG-POLICY-CREATE.md` and the local
 ledger `artifacts/Implementation/megamod-p0/s139-native-creation/implementation.md` before continuing.

@@ -162,6 +162,22 @@ The native creation boundary must additionally validate the current admitted fre
 per-drug `PawnUtility.GetMaxAllowedToPickUp` limit, policy name and all currentness receipts. Those
 native constraints are not inferred from a fixed inventory cap or a successful pure projection.
 
+Transaction validation uses the native rename character set and length1–27 (UTF-16), without silent
+trimming or duplicate-label rejection. Spaces remain valid native characters. It preserves finite
+reviewed frequencies in0.1–25 exactly; only the preview's native slider rounds an edit to whole days
+or a reciprocal integer. Per-row inventory uses the actual null-map native pickup helper, including
+zero without an ordered-take group. Current effective helper/catalog authority remains part of the
+runtime admission gate. It rejects incomplete/reference-mismatched edits and unresolved S138 values;
+unavailable S138 accepts only a refreshed all-Any preview, never silent commit-time coercion.
+
+Constructed-Defs failure checks may wrap the existing IDrugPolicyStorage contract through an internal
+preparation-only seam; public construction always uses sealed NativeDrugPolicyStorage. Final append
+and verification use direct captured storage, with no injected callback between them. A feature-local
+publication receipt separates Append from VerifyOrRollback so tests can exercise an owned completed
+append and independent conflict through the same production operations; public Confirm calls those
+operations synchronously back-to-back. This is not a new registry, runtime fault option, or proof of
+effective native admission. Disposal clears native references/delegates and invalidates busy work.
+
 ### 3. A draft is transient gameplay editing, preferences are common configuration
 
 Add Generate in `Dialog_ManageDrugPolicies` through a narrow admitted contextual extension. Preview
@@ -235,16 +251,13 @@ records consumed native semantics and the pending verification matrix. Its stati
 the focused preparation/commit implementation; it does not accept that implementation or a live
 workflow. Indexed target admission must exist before runtime wiring.
 
-The first staged adapter implements detached preparation, one append, snapshot-based stale refusal
-and same-operation idempotence, with eight constructed-Defs checks. Its supplied currentness
-predicate and ordering delegate are explicit caller assumptions until the existing S029/C01
-receipts are integrated. The adapter still must validate exact complete edit membership, applicable
-flags, current native bounds/name and S138 availability, reject any borrowed planned row, and
-compare the written object with intended choices. Capturing the object after writing is not proof
-that a changed constructor/storage path wrote the intended choices. ID boundaries, failures and
-owned-tail rollback still require focused evidence; retained Game/database/delegate references
-need disposal before UI ownership. No production caller or effective constructor/getter guard is
-present in this tranche, so these host checks cannot authorize Create.
+The current staged adapter has65 constructed-Defs checks for detached preparation, exact complete
+edit membership, flags, native bounds/name, S138 availability, fresh rows and intended-choice
+verification. It also covers positive ID allocation/exhaustion, stale/reentrant refusal, one append,
+same-operation idempotence, preparation failures, owned-tail rollback/conflict refusal and disposal.
+Its supplied currentness predicate and ordering delegate remain explicit caller assumptions until
+the existing S029/C01 receipts are integrated. No production caller or effective constructor/getter
+guard is present, so these host checks cannot authorize Create or establish real controller lifetime.
 
 A window-local one-shot confirmation identity prevents the same action/re-entrant click from
 committing twice. Subsequent deliberate fresh workflows can create independent policies. Do not
