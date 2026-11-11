@@ -2,8 +2,9 @@
 
 Owner: `fumblesneeze.megamod`, S139. The owning
 [change](../../../../../openspec/changes/specify-megamod-drug-policy-generation/design.md)
-defines the complete feature. This tranche is **implemented, awaiting independent review; native
-projection, settings/UI and publication are not implemented or accepted**.
+defines the complete feature. The C1 calculation has an independent no-finding review. Detached
+draft editing is implemented with an independent no-finding review; native projection, settings/UI and publication
+are not implemented or accepted.
 
 `Core/DrugPolicySuggestions.cs` consumes immutable values and opaque canonical identity handles.
 It reuses S029's `DrugCatalogEntry`/`DrugPolicyChoices` and S138's immutable tolerance choice. It does
@@ -34,6 +35,14 @@ when recreation or multiple schedules make exposure uncalculated. It rejects unk
 row handles. Reapplying original choices restores computed provenance without mutating an earlier
 view. The future draft/commit layer must independently validate name/ranges/applicable flags,
 S138 availability, current game/catalog/fact/preference generations and confirmation identity.
+
+`Core/DrugPolicyDraft.cs` now provides immutable whole-row projection, editing, renaming and full
+reset from fresh suggestions/preferences. Unsupported rows remain visible. Missing tolerance
+support creates only Any values and rejects numeric edits, preserving stored preferences. Complete
+edits recompute provenance across affected channels. Basic detached validation rejects unresolved
+tolerance choices, unknown row identities and invalid percentages/permissions. This is not a
+currentness or creation receipt: native name/frequency/inventory limits, lifecycle disposal and
+current facts still belong to the upcoming native controller. Reset confirmation belongs to its UI.
 
 Focused Unit checks cover positive output, float residue, dose/body/decay variation, the native
 editing boundary, unsupported values and shapes, identity/channel composition, and edit provenance.

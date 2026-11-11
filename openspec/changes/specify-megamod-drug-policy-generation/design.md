@@ -107,6 +107,15 @@ bound must never shorten a required interval. Every rebuild starts from fresh im
 not differences from prior entries.
 Reset/return-to-1/Any writes the complete intended values rather than conditionally leaving old data.
 
+The initial detached draft implementation adopts those proposed initial mood/joy/tolerance defaults.
+It projects every row, including unsupported off-schedule rows, from fresh C1/native defaults before
+applying preferences. Edits replace complete immutable choices by canonical identity; resets accept
+entirely new catalog/fact/preference inputs. This layer rejects unresolved tolerance encodings,
+inapplicable permission flags, nonfinite/out-of-range percentages and negative inventory targets.
+The native creation boundary must additionally validate the current admitted frequency range,
+per-drug `PawnUtility.GetMaxAllowedToPickUp` limit, policy name and all currentness receipts. Those
+native constraints are not inferred from a fixed inventory cap or a successful pure projection.
+
 ### 3. A draft is transient gameplay editing, preferences are common configuration
 
 Add Generate in `Dialog_ManageDrugPolicies` through a narrow admitted contextual extension. Preview
