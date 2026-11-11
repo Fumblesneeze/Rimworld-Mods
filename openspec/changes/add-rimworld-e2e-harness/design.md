@@ -43,6 +43,8 @@ The host build tool reads those attributes from compiled metadata without execut
 
 An explicit source manifest was considered, but it would duplicate method identity and mod requirements. A source generator was also considered; metadata inspection is smaller and keeps the attribute itself authoritative while still allowing the host to group before launch.
 
+Focused-run package preflight is selection-aware: the internal host `plan` and `stage` commands receive the runner's exact test/group filters. Structural declaration and duplicate-ID validation always covers the complete compiled inventory. Only after validating exact selectors and their nonempty intersection does package availability apply to the selected tests. No filters retains strict availability for all tests. The returned plan and staged manifests keep all declarations; this does not weaken runtime identity validation or change the runner's existing execution filter. Existing public planner/validator overloads retain their strict unfiltered behavior.
+
 ### 2. The contract is an iterator-based multi-frame protocol
 
 `Arrange` runs once on the Unity main thread against an already reset playable map and may directly create disposable preconditions. `Execute` returns an `IEnumerator<EndToEndStep>`. The Gateway advances at most one ready transition per frame, allowing a step to wait across rendered frames and game ticks without blocking Unity.
@@ -158,6 +160,28 @@ The first tracer is the adverse meal outcome because it requires arrangement, a 
 6. Make E2E a documented pre-acceptance gate for relevant gameplay changes.
 
 Rollback is deletion of marker-owned staged E2E bundles and omission of the startup flag. The launcher always uses isolated `ModsConfig.xml` and `Prefs.xml`; it never edits the user's normal files, verifies both hashes in `finally`, and closes only the exact launched PID.
+
+## Native immediate debug-action projection
+
+The concrete next consumer is megamod's S094 setting-off/on native definition reload workflow.
+Add a host-safe immediate-action catalog and handle-based step, plus a small Gateway catalog adapter
+and step-driver wrapper. Reuse GatewayDebugActionRegistry query paging, descriptor identity and exact
+invocation validation. Require immediate mode inside the same final resolution used for invocation,
+before calling the native delegate; do not activate a pointer tool and reject it afterward. Keep the
+existing generic Invoke(string) entry point and its pointer modes compatible.
+
+The context exposes the catalog, and central runtime composition supplies the same registry to both
+catalog and driver. Query retains the existing 1–1000 page bound and bounded native tree discovery;
+no additional blanket enumeration or provider execution is introduced. The existing E2E state
+machine owns durable step admission, serialized Unity-thread execution and cancellation-before-start.
+The driver records the native handle/path/mode and delegate-return result; it does not equate that
+receipt with completion of queued long events. A thrown callback is a failed invocation, never a
+reason to retry automatically. A following observation step owns the reload-specific deadline.
+
+Standalone debug-action query/invoke currently exists only through authenticated HTTP. Its missing
+typed MCP/client projection must reuse those routes and exact run/PID ownership rather than add a
+new script, loader endpoint or independent action registry. Shared dispatch and public operation
+wiring are separately coordinated; no product dependency on the Gateway is introduced.
 
 ## Open Questions
 

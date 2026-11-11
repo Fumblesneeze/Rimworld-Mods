@@ -525,6 +525,23 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
             Does.Not.Contain(readinessCredential));
     }
 
+    [Test]
+    public void Failed_native_step_retains_its_partial_input_artifacts_in_the_durable_snapshot()
+    {
+        var clock = new FakeClock();
+        var driver = new RecordingDriver
+        {
+            Operation = GatewayEndToEndCompletedStepOperation.FromOutcome(GatewayEndToEndStepOutcome.Fail(
+                "stale_window_instance", "The target changed after press.",
+                new Dictionary<string, string> { ["automationRunId"] = "run-1", ["pressDispatched"] = "True" }))
+        };
+        var machine = Machine(clock, driver, Descriptor<DurableWorkflowTest>("native-failure"));
+        AdvanceUntil(machine, clock, snapshot => snapshot.CurrentStep?.Status == "failed");
+        Assert.That(machine.Snapshot.CurrentStep!.Artifacts!["automationRunId"], Is.EqualTo("run-1"));
+        Assert.That(machine.Snapshot.CurrentStep.Artifacts["pressDispatched"], Is.EqualTo("True"));
+        Assert.That(machine.PersistencePending, Is.True);
+    }
+
     private static GatewayEndToEndExecutionStateMachine Machine(
         FakeClock clock,
         RecordingDriver driver,

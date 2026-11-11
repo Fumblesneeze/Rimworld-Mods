@@ -20,6 +20,8 @@ public sealed class RimWorldEndToEndTestAttribute : Attribute
 
     public string[] ActivePackageIds { get; }
 
+    public bool LegacyXmlDeserializer { get; set; }
+
     public int MaxFrames { get; set; } = 3_600;
 
     public int MaxGameTicks { get; set; } = 60_000;
@@ -183,18 +185,21 @@ public static class EndToEndContextExtensions
 
 public sealed class EndToEndTestDescriptor
 {
+    public bool LegacyXmlDeserializer { get; }
     internal EndToEndTestDescriptor(
         Type testType,
         string id,
         string ownerPackageId,
         IReadOnlyList<string> activePackageIds,
-        EndToEndDeadline deadline)
+        EndToEndDeadline deadline,
+        bool legacyXmlDeserializer = false)
     {
         TestType = testType;
         Id = id;
         OwnerPackageId = ownerPackageId;
         ActivePackageIds = activePackageIds;
         Deadline = deadline;
+        LegacyXmlDeserializer = legacyXmlDeserializer;
 
         var launched = new string[activePackageIds.Count + 1];
         for (var index = 0; index < activePackageIds.Count; index++)
@@ -317,7 +322,8 @@ public static class EndToEndTestContract
             new EndToEndDeadline(
                 attribute.MaxFrames,
                 attribute.MaxGameTicks,
-                TimeSpan.FromSeconds(attribute.MaxWallClockSeconds)));
+                TimeSpan.FromSeconds(attribute.MaxWallClockSeconds)),
+            attribute.LegacyXmlDeserializer);
     }
 
     public static bool HasValidLaunchPrefix(IReadOnlyList<string> packages)

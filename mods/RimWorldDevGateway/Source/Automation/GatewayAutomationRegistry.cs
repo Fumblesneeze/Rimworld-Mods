@@ -210,6 +210,11 @@ public sealed class GatewayAutomationRun
     internal string ArgumentFingerprint { get; }
     internal CancellationToken CancellationToken => cancellation.Token;
     internal bool IsTerminal => State is "succeeded" or "failed" or "cancelled" or "timed-out";
+    internal IGatewayDeferredAutomationOperation? DeferredOperation { get; set; }
+    internal string? DeferredStopState { get; set; }
+    internal GatewayAutomationError? DeferredStopError { get; set; }
+    internal CancellationTokenRegistration DeferredCancellation { get; set; }
+    internal int DeferredThreadId { get; set; }
 
     internal void MarkRunning(DateTimeOffset now)
     {
@@ -358,6 +363,7 @@ public sealed class GatewayAutomationRegistry
     private readonly Func<DateTimeOffset> utcNow;
     private readonly Func<string> runIdFactory;
     private readonly GatewayLogBuffer? diagnostics;
+    private int advancing;
 
     public GatewayAutomationRegistry(
         int historyCapacity = 128,
@@ -477,6 +483,12 @@ public sealed class GatewayAutomationRegistry
                     exception);
             }
 
+            // Active work cannot be evicted: reject before the handler can acquire more input.
+            // Reclaim terminal history only after request validation, before retaining the new run.
+            TrimHistory(historyCapacity - 1);
+            if (runs.Count >= historyCapacity)
+                throw Error("automation_capacity_reached", "All retained automation slots have active work.");
+
             run = new GatewayAutomationRun(
                 runId,
                 registration.Descriptor,
@@ -495,9 +507,14 @@ public sealed class GatewayAutomationRegistry
             }
         }
 
-        using var externalCancellation = cancellationToken.Register(
+        var externalCancellation = cancellationToken.Register(
             () => run.RequestCancellation());
-        Execute(registration, run, argumentSnapshot);
+        run.DeferredCancellation = externalCancellation;
+        try { Execute(registration, run, argumentSnapshot); }
+        finally
+        {
+            if (run.DeferredOperation == null) externalCancellation.Dispose();
+        }
         TrimHistory();
         return run;
     }
@@ -523,6 +540,82 @@ public sealed class GatewayAutomationRegistry
     public bool Cancel(string runId)
     {
         return GetRun(runId).RequestCancellation();
+    }
+
+    public void Advance()
+    {
+        if (Interlocked.CompareExchange(ref advancing, 1, 0) != 0)
+            throw Error("automation_advance_reentrant", "Deferred work is already advancing.");
+        try { AdvanceDeferred(); }
+        finally { Volatile.Write(ref advancing, 0); }
+    }
+
+    private void AdvanceDeferred()
+    {
+        GatewayAutomationRun[] allPending;
+        lock (sync) { allPending = runs.Values.Where(run => run.DeferredOperation != null).ToArray(); }
+        var pending = allPending.Where(run => run.DeferredThreadId == Thread.CurrentThread.ManagedThreadId).ToArray();
+        if (allPending.Length != 0 && pending.Length == 0)
+            throw Error("automation_thread_mismatch", "Deferred work must advance on its original handler thread.");
+        foreach (var run in pending)
+        {
+            ObserveDeferredStop(run);
+            GatewayDeferredAutomationResult? outcome;
+            try { outcome = run.DeferredOperation!.Advance(run.DeferredStopState != null); }
+            catch (Exception exception)
+            {
+                if (run.DeferredStopState != null)
+                {
+                    CompleteDeferred(run, "failed", null, new GatewayAutomationError(
+                        "automation_cleanup_incomplete", "Owned cleanup did not complete: " + exception.Message));
+                    continue;
+                }
+                if (exception is GatewayAutomationTimeoutException)
+                {
+                    run.DeferredStopState = "timed-out";
+                    run.DeferredStopError = new GatewayAutomationError("automation_timed_out", "The automation exceeded its timeout.");
+                }
+                else if (exception is OperationCanceledException)
+                {
+                    run.DeferredStopState = "cancelled";
+                    run.DeferredStopError = new GatewayAutomationError("automation_cancelled", "The automation was cancelled.");
+                }
+                else
+                {
+                    run.DeferredStopState = "failed";
+                    run.DeferredStopError = new GatewayAutomationError(
+                        exception is GatewayAutomationException known ? known.Code : "automation_failed", exception.Message);
+                }
+                continue;
+            }
+            if (outcome == null) continue;
+            ObserveDeferredStop(run);
+            CompleteDeferred(run, outcome.Error != null ? "failed" : run.DeferredStopState ?? "succeeded",
+                outcome.Result, outcome.Error ?? run.DeferredStopError);
+        }
+        TrimHistory();
+    }
+
+    private void CompleteDeferred(GatewayAutomationRun run, string state, object? result, GatewayAutomationError? error)
+    {
+        run.DeferredOperation = null;
+        run.Complete(state, utcNow(), result, error);
+        run.DeferredCancellation.Dispose();
+        run.DeferredCancellation = default;
+    }
+
+    private void ObserveDeferredStop(GatewayAutomationRun run)
+    {
+        if (run.DeferredStopState == null && run.CancellationToken.IsCancellationRequested)
+        {
+            run.DeferredStopState = "cancelled";
+            run.DeferredStopError = new GatewayAutomationError("automation_cancelled", "The automation was cancelled.");
+        }
+        else if (run.DeferredStopState == null && run.DeadlineUtc.HasValue && utcNow() >= run.DeadlineUtc.Value)
+        {
+            run.DeferredStopState = "timed-out";
+            run.DeferredStopError = new GatewayAutomationError("automation_timed_out", "The automation exceeded its timeout.");
+        }
     }
 
     private void Register(
@@ -556,6 +649,12 @@ public sealed class GatewayAutomationRegistry
             var context = new GatewayAutomationContext(run, utcNow);
             run.ThrowIfStopRequested(utcNow());
             var result = registration.Handler(context, arguments);
+            if (result is IGatewayDeferredAutomationOperation deferred)
+            {
+                run.DeferredThreadId = context.CallerThreadId;
+                run.DeferredOperation = deferred;
+                return;
+            }
             run.ThrowIfStopRequested(utcNow());
             run.Complete("succeeded", utcNow(), result);
         }
@@ -584,20 +683,17 @@ public sealed class GatewayAutomationRegistry
         }
     }
 
-    private void TrimHistory()
+    private void TrimHistory(int? maximumCount = null)
     {
         lock (sync)
         {
-            while (history.Count > historyCapacity)
+            while (history.Count > (maximumCount ?? historyCapacity))
             {
                 var candidate = history.First!;
+                while (candidate != null && !runs[candidate.Value].IsTerminal) candidate = candidate.Next;
+                if (candidate == null) return;
                 var run = runs[candidate.Value];
-                if (!run.IsTerminal)
-                {
-                    return;
-                }
-
-                history.RemoveFirst();
+                history.Remove(candidate);
                 runs.Remove(candidate.Value);
                 if (run.IdempotencyKey is not null)
                 {

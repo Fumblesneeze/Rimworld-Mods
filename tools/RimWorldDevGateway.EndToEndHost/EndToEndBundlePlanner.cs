@@ -69,6 +69,9 @@ public sealed class EndToEndBundlePlan
 
     public EndToEndDiscoveryResult Discovery { get; }
 
+    public IReadOnlyDictionary<string, IReadOnlyList<EndToEndXmlFixturePlan>> XmlFixturesByGroup { get; internal set; } =
+        new ReadOnlyDictionary<string, IReadOnlyList<EndToEndXmlFixturePlan>>(new Dictionary<string, IReadOnlyList<EndToEndXmlFixturePlan>>());
+
     public IReadOnlyList<EndToEndOwnerStagePlan> OwnerStages { get; }
 }
 
@@ -78,11 +81,26 @@ public static class EndToEndBundlePlanner
         IEnumerable<EndToEndAssemblyCandidate> assemblyCandidates,
         IEnumerable<string> resolvablePackageIds,
         string modsRoot,
-        string rimWorldVersion)
+        string rimWorldVersion) => Create(assemblyCandidates, resolvablePackageIds, modsRoot, rimWorldVersion,
+            Array.Empty<string>(), Array.Empty<string>());
+
+    public static EndToEndBundlePlan Create(
+        IEnumerable<EndToEndAssemblyCandidate> assemblyCandidates,
+        IEnumerable<string> resolvablePackageIds,
+        string modsRoot,
+        string rimWorldVersion,
+        IEnumerable<string> selectedTestIds,
+        IEnumerable<string> selectedGroupIds,
+        string? repositoryRoot = null)
     {
         var candidates = assemblyCandidates?.ToArray() ??
             throw new ArgumentNullException(nameof(assemblyCandidates));
-        var discovery = EndToEndDiscoveryValidator.ValidateAndGroup(candidates, resolvablePackageIds);
+        var discovery = EndToEndDiscoveryValidator.DiscoverAndSelect(candidates, selectedTestIds, selectedGroupIds);
+        if (rimWorldVersion != "1.7" && discovery.SelectedTests.Any(test => test.LegacyXmlDeserializer))
+            throw new EndToEndDiscoveryException("Legacy XML deserialization requires a supported RimWorld 1.7 E2E run.");
+        var fixturePlans = repositoryRoot is null ? null : EndToEndProjectXmlFixtures.PlanSelected(
+            repositoryRoot, discovery, resolvablePackageIds, modsRoot, rimWorldVersion);
+        EndToEndDiscoveryValidator.ValidatePackageAvailability(discovery, resolvablePackageIds, fixturePlans);
         var root = Path.GetFullPath(
             string.IsNullOrWhiteSpace(modsRoot)
                 ? throw new ArgumentException("A mods root is required.", nameof(modsRoot))
@@ -93,7 +111,9 @@ public static class EndToEndBundlePlanner
             .OrderBy(group => group.Key, StringComparer.Ordinal)
             .Select(group => CreateOwnerStage(root, rimWorldVersion, group.Key, group))
             .ToArray();
-        return new EndToEndBundlePlan(discovery, ownerStages);
+        var plan = new EndToEndBundlePlan(discovery, ownerStages);
+        if (fixturePlans is not null) plan.XmlFixturesByGroup = fixturePlans;
+        return plan;
     }
 
     private static EndToEndOwnerStagePlan CreateOwnerStage(
@@ -133,6 +153,8 @@ public static class EndToEndBundlePlanner
         var manifestFileName = metadata.AssemblyName + ".e2etests.json";
         var manifest = new EndToEndBundleManifest
         {
+            Schema = metadata.Declarations.Any(test => test.LegacyXmlDeserializer)
+                ? EndToEndBundleManifest.NativeXmlLoaderSchemaValue : EndToEndBundleManifest.SchemaValue,
             OwnerPackageId = ownerPackageId,
             Assembly = assemblyFileName,
             AssemblyIdentity = metadata.AssemblyIdentity,
@@ -163,6 +185,7 @@ public static class EndToEndBundlePlanner
                         .Select(packageId => packageId.Trim().ToLowerInvariant())
                         .ToArray(),
                     MaxFrames = test.MaxFrames,
+                    LegacyXmlDeserializer = test.LegacyXmlDeserializer,
                     MaxGameTicks = test.MaxGameTicks,
                     MaxWallClockSeconds = test.MaxWallClockSeconds
                 })

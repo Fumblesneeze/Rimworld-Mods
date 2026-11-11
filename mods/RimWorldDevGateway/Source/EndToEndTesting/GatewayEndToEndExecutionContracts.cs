@@ -23,6 +23,13 @@ public interface IGatewayEndToEndStepOperation
     GatewayEndToEndStepOutcome GetOutcome();
 }
 
+// Pending native actions can retain admission identity and later cleanup evidence even if the
+// enclosing scenario expires before GetOutcome. Reading evidence never advances the operation.
+internal interface IGatewayEndToEndStepEvidence
+{
+    IReadOnlyDictionary<string, string> CaptureArtifacts();
+}
+
 public sealed class GatewayEndToEndStepOutcome
 {
     private GatewayEndToEndStepOutcome(
@@ -49,14 +56,16 @@ public sealed class GatewayEndToEndStepOutcome
         IReadOnlyDictionary<string, string>? artifacts = null) =>
         new(true, null, null, artifacts);
 
-    public static GatewayEndToEndStepOutcome Fail(string code, string message) =>
+    public static GatewayEndToEndStepOutcome Fail(string code, string message) => Fail(code, message, null);
+
+    public static GatewayEndToEndStepOutcome Fail(string code, string message, IReadOnlyDictionary<string, string>? artifacts) =>
         new(
             false,
             string.IsNullOrWhiteSpace(code)
                 ? throw new ArgumentException("A step failure code is required.", nameof(code))
                 : code,
             message ?? throw new ArgumentNullException(nameof(message)),
-            null);
+            artifacts);
 }
 
 public sealed class GatewayEndToEndCompletedStepOperation : IGatewayEndToEndStepOperation
@@ -135,6 +144,8 @@ public sealed class GatewayEndToEndTestContext : IEndToEndContext
     }
 
     public long FrameCount => frameCount();
+
+    internal DateTimeOffset? WorkflowDeadlineUtc { get; set; }
 
     public int GameTick => gameTick();
 

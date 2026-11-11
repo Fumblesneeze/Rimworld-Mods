@@ -134,6 +134,10 @@ public sealed class GatewayCliApp
                 {
                     RunAutomation(globals, tail.Skip(1).ToArray(), output);
                 }
+                else if (tail.Length > 0 && (tail[0] == "status" || tail[0] == "cancel"))
+                {
+                    OperateAutomationRun(globals, tail.Skip(1).ToArray(), tail[0] == "cancel", output);
+                }
                 else
                 {
                     RequireNoArguments(command, tail);
@@ -516,6 +520,18 @@ public sealed class GatewayCliApp
             output);
     }
 
+    private void OperateAutomationRun(GlobalOptions globals, string[] tail, bool cancel, TextWriter output)
+    {
+        var options = CommandOptions.Parse("automations " + (cancel ? "cancel" : "status"), tail,
+            Array.Empty<string>(), Array.Empty<string>(), 1, 1);
+        var runId = options.Positionals[0];
+        if (!System.Text.RegularExpressions.Regex.IsMatch(runId, "\\A[A-Za-z0-9][A-Za-z0-9._-]{0,199}\\z"))
+            throw new GatewayCliUsageException("The automation run ID must be one bounded literal identity.");
+        WriteJsonResponse(Send(LoadSession(globals), cancel ? "POST" : "GET",
+                "/automation-runs/" + Uri.EscapeDataString(runId) + (cancel ? "/cancel" : ""), cancel ? "{}" : null),
+            globals.Output, output);
+    }
+
     private void RunAutomation(GlobalOptions globals, string[] tail, TextWriter output)
     {
         var options = CommandOptions.Parse("run", tail, Array.Empty<string>(), new[] { "arguments", "idempotency-key" }, 1, 1);
@@ -690,6 +706,8 @@ public sealed class GatewayCliApp
         output.WriteLine("  automations                      List named automations");
         output.WriteLine("  run NAME [--arguments JSON]      Run a named automation");
         output.WriteLine("  automations run NAME ...         Alias for run");
+        output.WriteLine("  automations status RUN_ID        Inspect retained progress/result without rerunning");
+        output.WriteLine("  automations cancel RUN_ID        Request stop; inspect status until cleanup completes");
         output.WriteLine("  quickstart DESCRIPTOR.json       Run quickstart.spawn");
         output.WriteLine("  shutdown                         Stop this gateway session");
         output.WriteLine();

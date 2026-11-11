@@ -18,11 +18,20 @@
       <Private>true</Private>
     </Reference>
     <Compile Include="../RimWorldDevGateway.Tests/GatewayCSharpEvaluatorTests.cs" Link="GatewayCSharpEvaluatorTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/GatewayAutomationRegistryTests.cs" Link="GatewayAutomationRegistryTests.cs" />
     <Compile Include="../RimWorldDevGateway.Tests/GatewayEndToEndNativeActionsTests.cs" Link="GatewayEndToEndNativeActionsTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/GatewayEndToEndDebugActionTests.cs" Link="GatewayEndToEndDebugActionTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/GatewayDebugActionsTests.cs" Link="GatewayDebugActionsTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/GatewayEndToEndExecutionStateMachineTests.cs" Link="GatewayEndToEndExecutionStateMachineTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/GatewayEndToEndDiscoveryCoordinatorTests.cs" Link="GatewayEndToEndDiscoveryCoordinatorTests.cs" />
     <Compile Include="../RimWorldDevGateway.Tests/GatewayScreenshotServiceTests.cs" Link="GatewayScreenshotServiceTests.cs" />
     <Compile Include="../RimWorldDevGateway.Tests/UnityGatewayScreenshotBackendTests.cs" Link="UnityGatewayScreenshotBackendTests.cs" />
     <Compile Include="../RimWorldDevGateway.Tests/GatewayScreenshotCropPlannerTests.cs" Link="GatewayScreenshotCropPlannerTests.cs" />
     <Compile Include="../../tools/RimWorldDevGateway.Client/DotNetGatewaySourceCompiler.cs" Link="Client/DotNetGatewaySourceCompiler.cs" />
     <Compile Include="../../tools/RimWorldDevGateway.Client/GatewayClientContracts.cs" Link="Client/GatewayClientContracts.cs" />
   </ItemGroup>
+  <Target Name="BuildNativeXmlLoaderMetadataFixture" BeforeTargets="Build">
+    <MSBuild Projects="../Fixtures/EndToEndHost.ValidFixtures/EndToEndHost.ValidFixtures.csproj"
+             Targets="Restore;Build" Properties="Configuration=$(Configuration)" />
+  </Target>
 </Project>

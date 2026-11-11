@@ -19,6 +19,8 @@ public static class EndToEndHostCli
         root.Subcommands.Add(CreatePlanCommand());
         root.Subcommands.Add(CreateStageCommand());
         root.Subcommands.Add(CreateCleanCommand());
+        root.Subcommands.Add(CreateFixtureCleanCommand());
+        root.Subcommands.Add(CreateFixtureStageCommand());
         root.Subcommands.Add(CreatePerformancePlanCommand());
         root.Subcommands.Add(CreatePerformanceStageCommand());
         root.Subcommands.Add(CreatePerformanceBaselineCommand());
@@ -151,6 +153,46 @@ public static class EndToEndHostCli
         return command;
     }
 
+    private static Command CreateFixtureStageCommand()
+    {
+        var options = CommonOptions.Create();
+        var leaseFile = new Option<string>("--lease-file") { Required = true, Description = "Exact XML fixture lease journal." };
+        var command = new Command("fixture-stage", "Publish XML-only fixtures required by one exact selected E2E group.");
+        options.AddTo(command);
+        command.Options.Add(leaseFile);
+        command.SetAction(result => Execute(result, () =>
+        {
+            var input = options.Read(result);
+            if (input.GroupIds.Count != 1) throw new ArgumentException("XML fixture staging requires one exact --group-id.");
+            var plan = BuildPlan(input);
+            if (!plan.XmlFixturesByGroup.TryGetValue(input.GroupIds[0], out var fixtures) || fixtures.Count == 0)
+                throw new ArgumentException("The selected group declares no XML fixtures.");
+            string path = RequiredPath(result.GetValue(leaseFile), "lease file");
+            var expectations = EndToEndXmlFixtureExpectations.Write(fixtures, path);
+            var leases = EndToEndXmlFixtureStaging.Stage(fixtures, path);
+            Write(result, options.ReadOutput(result), new { status = "staged", groupId = input.GroupIds[0], fixtures, leases, leaseFile = path, expectations });
+            return 0;
+        }));
+        return command;
+    }
+
+    private static Command CreateFixtureCleanCommand()
+    {
+        var leaseFile = new Option<string>("--lease-file") { Required = true, Description = "Exact XML fixture lease journal." };
+        var output = OutputOption();
+        var command = new Command("fixture-clean", "Clean only XML fixture paths owned by the exact journal after caller-confirmed child exit.");
+        command.Options.Add(leaseFile);
+        command.Options.Add(output);
+        command.SetAction(result => Execute(result, () =>
+        {
+            string path = RequiredExistingFile(result.GetValue(leaseFile), "lease file");
+            int count = EndToEndXmlFixtureStaging.Clean(path);
+            Write(result, result.GetValue(output), new { status = "cleaned", leaseFile = path, cleanedCount = count });
+            return 0;
+        }));
+        return command;
+    }
+
     private static Command CreatePerformancePlanCommand()
     {
         var common = CommonOptions.Create();
@@ -164,11 +206,8 @@ public static class EndToEndHostCli
             Description = "Exact benchmark ID filter. Repeat to select more than one benchmark.",
             AllowMultipleArgumentsPerToken = true
         };
-        var groupIds = new Option<string[]>("--group-id")
-        {
-            Description = "Exact performance group ID filter. Repeat to select more than one group.",
-            AllowMultipleArgumentsPerToken = true
-        };
+        var groupIds = common.GroupIds;
+        groupIds.Description = "Exact performance group ID filter. Repeat to select more than one group.";
         var warmUpTicks = new Option<int?>("--warm-up-ticks")
         {
             Description = "Optional non-negative warm-up tick override."
@@ -200,7 +239,6 @@ public static class EndToEndHostCli
         command.Options.Add(diagnosticProfiler);
         command.Options.Add(diagnosticSelector);
         command.Options.Add(benchmarkIds);
-        command.Options.Add(groupIds);
         command.SetAction(parseResult => Execute(parseResult, () =>
         {
             var input = common.Read(parseResult);
@@ -258,17 +296,11 @@ public static class EndToEndHostCli
             Description = "Exact benchmark ID filter for staged bundles.",
             AllowMultipleArgumentsPerToken = true
         };
-        var groupIds = new Option<string[]>("--group-id")
-        {
-            Description = "Exact performance group ID filter for staged bundles.",
-            AllowMultipleArgumentsPerToken = true
-        };
-        var projectPaths = new Option<string[]>("--project-path")
-        {
-            Description = "Exact performance fixture project allowlist selected by the prior run plan.",
-            AllowMultipleArgumentsPerToken = true,
-            Required = true
-        };
+        var groupIds = common.GroupIds;
+        groupIds.Description = "Exact performance group ID filter for staged bundles.";
+        var projectPaths = common.ProjectPaths;
+        projectPaths.Description = "Exact performance fixture project allowlist selected by the prior run plan.";
+        projectPaths.Required = true;
         var command = new Command(
             "performance-stage",
             "Build marked performance fixtures and atomically publish their exact manifests for one run.");
@@ -277,8 +309,6 @@ public static class EndToEndHostCli
         command.Options.Add(diagnosticProfiler);
         command.Options.Add(diagnosticSelector);
         command.Options.Add(benchmarkIds);
-        command.Options.Add(groupIds);
-        command.Options.Add(projectPaths);
         command.SetAction(parseResult => Execute(parseResult, () =>
         {
             var input = common.Read(parseResult);
@@ -479,7 +509,10 @@ public static class EndToEndHostCli
             assemblies,
             input.PackageIds,
             input.ModsRoot,
-            input.RimWorldVersion);
+            input.RimWorldVersion,
+            input.TestIds,
+            input.GroupIds,
+            input.RepositoryRoot);
     }
 
     private static void WritePlan(
@@ -496,7 +529,10 @@ public static class EndToEndHostCli
             {
                 group.GroupId,
                 activePackageIds = group.ActivePackageIds,
-                tests = group.Tests.Select(test => test.Id).ToArray()
+                xmlDeserializer = group.LegacyXmlDeserializer ? "legacy" : "default",
+                tests = group.Tests.Select(test => test.Id).ToArray(),
+                xmlFixtures = plan.XmlFixturesByGroup.TryGetValue(group.GroupId, out var fixtures)
+                    ? fixtures : Array.Empty<EndToEndXmlFixturePlan>()
             }).ToArray(),
             owners = plan.OwnerStages.Select(owner => new
             {
@@ -697,6 +733,18 @@ public static class EndToEndHostCli
             AllowMultipleArgumentsPerToken = true
         };
 
+        public Option<string[]> TestIds { get; } = new("--test-id")
+        {
+            Description = "Optional exact test IDs for package preflight; complete metadata remains validated and reported.",
+            AllowMultipleArgumentsPerToken = true
+        };
+
+        public Option<string[]> GroupIds { get; } = new("--group-id")
+        {
+            Description = "Optional exact group IDs intersected with test IDs for package preflight.",
+            AllowMultipleArgumentsPerToken = true
+        };
+
         public Option<int> BuildTimeoutSeconds { get; } = new("--build-timeout-seconds")
         {
             Description = "Per build/property-query timeout.",
@@ -717,6 +765,8 @@ public static class EndToEndHostCli
             command.Options.Add(PackageIdFile);
             command.Options.Add(Configuration);
             command.Options.Add(ProjectPaths);
+            command.Options.Add(TestIds);
+            command.Options.Add(GroupIds);
             command.Options.Add(BuildTimeoutSeconds);
             command.Options.Add(Output);
         }
@@ -752,6 +802,8 @@ public static class EndToEndHostCli
                 packageIds,
                 RequiredToken(result.GetValue(Configuration), "configuration"),
                 (result.GetValue(ProjectPaths) ?? Array.Empty<string>()).Select(Path.GetFullPath).ToArray(),
+                result.GetValue(TestIds) ?? Array.Empty<string>(),
+                result.GetValue(GroupIds) ?? Array.Empty<string>(),
                 result.GetValue(RimWorldPath) is { } gamePath ? RequiredExistingDirectory(gamePath, "RimWorld path") : null,
                 timeout);
         }
@@ -777,6 +829,8 @@ public static class EndToEndHostCli
         IReadOnlyList<string> PackageIds,
         string Configuration,
         IReadOnlyList<string> ProjectPaths,
+        IReadOnlyList<string> TestIds,
+        IReadOnlyList<string> GroupIds,
         string? RimWorldPath,
         int BuildTimeoutSeconds);
 

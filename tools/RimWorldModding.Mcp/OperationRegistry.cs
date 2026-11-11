@@ -113,7 +113,7 @@ public sealed class OperationRegistry
                 longRunning: true,
                 timeoutSeconds: 3900,
                 "Retains exact-process product hashes, action/screenshots/results, normal-config hashes, and cleanup evidence.",
-                static async (registry, arguments, cancellationToken) => await RepositoryOperations.ExecuteAsync(
+                static async (registry, arguments, cancellationToken) => await EndToEndRunRecovery.ExecuteAsync(
                     RepositoryOperationPlanner.EndToEnd(
                         registry._repositoryRoot,
                         OptionalString(arguments, "groupId"),
@@ -220,6 +220,11 @@ public sealed class OperationRegistry
                 "Mutation remains attributable to the exact run/request; direct mutation is diagnostic/setup evidence, not gameplay acceptance.",
                 static async (registry, arguments, cancellationToken) => await registry.InvokeGatewayMutation(arguments, cancellationToken)),
             Register(
+                "gateway_automation_status", "Inspect one retained automation run in an exact leased process without repeating its action.",
+                OperationRisk.Read, false, 180,
+                "Returns retained progress, deadline, partial result and cleanup state; never starts another automation.",
+                static async (registry, arguments, token) => await registry.InvokeGatewayAutomationRun(arguments, false, token)),
+            Register(
                 "gateway_debug_actions", "Query native debug-action leaves with exact filters and continuation cursor in one ready leased process.",
                 OperationRisk.Read, false, 180, "Returns native handles and request identity without credentials; does not invoke an action.",
                 static async (registry, arguments, token) => await registry.InvokeGatewayDebugAction(arguments, false, token)),
@@ -227,6 +232,11 @@ public sealed class OperationRegistry
                 "gateway_debug_action_invoke", "Invoke one exact native debug-action handle or activate its pointer tool in one ready leased process.",
                 OperationRisk.DestructiveLocal, false, 180, "Preserves native refusal or pointer activation; command dispatch alone does not prove its game result.",
                 static async (registry, arguments, token) => await registry.InvokeGatewayDebugAction(arguments, true, token)),
+            Register(
+                "gateway_automation_cancel", "Request cancellation of one retained automation run in an exact leased process.",
+                OperationRisk.DestructiveLocal, false, 180,
+                "Acknowledges cancellation intent; terminal status requires owned input cleanup and is inspected separately.",
+                static async (registry, arguments, token) => await registry.InvokeGatewayAutomationRun(arguments, true, token)),
             Register(
                 "gateway_scene_time",
                 "Set current-map local time or restore a captured calendar offset without advancing simulation ticks.",
@@ -237,6 +247,15 @@ public sealed class OperationRegistry
                 static async (registry, arguments, cancellationToken) => await registry.InvokeGatewayMutation(
                     GatewaySceneTimeArguments.Parse(arguments),
                     cancellationToken)),
+            Register(
+                "gateway_main_tab",
+                "Open or close one exact native bottom tab through its ordinary button while preserving native input restrictions.",
+                OperationRisk.DestructiveLocal,
+                longRunning: false,
+                timeoutSeconds: 180,
+                "Exact leased process; retains native before, attempted and observed after states without desktop input.",
+                static async (registry, arguments, cancellationToken) => await registry.InvokeGatewayMutation(
+                    GatewayMainTabArguments.Parse(arguments), cancellationToken)),
             Register(
                 "gateway_raw_mutation",
                 "Compile and execute one bounded raw C# mutation in an exact leased live Gateway process for one-off development or diagnosis.",
@@ -548,6 +567,16 @@ public sealed class OperationRegistry
                 RequiredString(arguments, "name"),
                 OptionalString(arguments, "argumentsJson") ?? "{}"),
             cancellationToken);
+    }
+
+    private async Task<object> InvokeGatewayAutomationRun(JsonElement arguments, bool cancel, CancellationToken cancellationToken)
+    {
+        var status = new RunLeaseManager(_repositoryRoot).Status(RequiredString(arguments, "runId"));
+        if (status.State != "ready" || status.GameProcessId is null || status.GatewayManifestPath is null)
+            throw new ArgumentException("The selected run has no exact ready Gateway process and manifest.");
+        return await RepositoryOperations.ExecuteAsync(
+            GatewayClientPlanner.AutomationRun(_repositoryRoot, status.GatewayManifestPath,
+                status.GameProcessId.Value, RequiredString(arguments, "automationRunId"), cancel), cancellationToken);
     }
 
     private async Task<object> InvokeGatewayDebugAction(JsonElement arguments, bool invoke, CancellationToken cancellationToken)

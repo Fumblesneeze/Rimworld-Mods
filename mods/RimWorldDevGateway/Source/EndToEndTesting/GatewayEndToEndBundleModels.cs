@@ -38,6 +38,7 @@ public sealed class GatewayEndToEndLoadFailure
 
 public sealed class GatewayEndToEndRuntimeTestDescriptor
 {
+    public bool LegacyXmlDeserializer { get; }
     internal GatewayEndToEndRuntimeTestDescriptor(
         string id,
         string ownerPackageId,
@@ -46,7 +47,8 @@ public sealed class GatewayEndToEndRuntimeTestDescriptor
         int maxFrames,
         int maxGameTicks,
         int maxWallClockSeconds,
-        Type testType)
+        Type testType,
+        bool legacyXmlDeserializer = false)
         : this(
             id,
             ownerPackageId,
@@ -58,7 +60,8 @@ public sealed class GatewayEndToEndRuntimeTestDescriptor
             testType,
             () => (IRimWorldEndToEndTest?)Activator.CreateInstance(testType) ??
                   throw new InvalidOperationException("The admitted E2E test constructor returned null."),
-            performanceDescriptor: null)
+            performanceDescriptor: null,
+            legacyXmlDeserializer)
     {
     }
 
@@ -72,7 +75,8 @@ public sealed class GatewayEndToEndRuntimeTestDescriptor
         int maxWallClockSeconds,
         Type testType,
         Func<IRimWorldEndToEndTest> testFactory,
-        PerformanceTestDescriptor? performanceDescriptor)
+        PerformanceTestDescriptor? performanceDescriptor,
+        bool legacyXmlDeserializer = false)
     {
         Id = id;
         OwnerPackageId = ownerPackageId;
@@ -84,6 +88,7 @@ public sealed class GatewayEndToEndRuntimeTestDescriptor
         TestType = testType;
         TestFactory = testFactory ?? throw new ArgumentNullException(nameof(testFactory));
         PerformanceDescriptor = performanceDescriptor;
+        LegacyXmlDeserializer = legacyXmlDeserializer;
     }
 
     public string Id { get; }

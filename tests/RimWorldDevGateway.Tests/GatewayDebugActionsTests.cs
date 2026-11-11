@@ -1,3 +1,5 @@
+using NUnit.Framework;
+
 namespace RimWorldDevGateway.Tests;
 
 [TestFixture]

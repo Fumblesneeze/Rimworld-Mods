@@ -53,6 +53,8 @@
 
 ## 4. host runner — CLI TDD and orchestration
 
+- [ ] 4.0 TDD/REVIEW: Route exact test/group selection through host plan and stage package preflight; preserve complete declaration checks and manifests, strict unfiltered behavior, and missing-selected-package/unknown/duplicate/empty-intersection rejection. Retain focused host RED/GREEN and review evidence; the orchestrator verifies the selected product workflow separately.
+
 - [x] 4.1 TDD RED: Add a real dry-run helper and failing CLI tests for discovery, group/test filters, one process per exact group, deterministic command plans, table/JSON output, JUnit/aggregate artifacts, exit codes 0/1/2, zero selection, failure continuation, and guaranteed cleanup.
 - [x] 4.2 TDD GREEN: Implement `scripts/Invoke-RimWorldEndToEndTests.ps1` by composing the existing exact-PID isolated launcher and E2E staging/polling contracts.
 - [x] 4.2a TDD/IN-GAME: Add exact stable `-TestId` selection from host planning through restart-bound Gateway admission/execution, reject missing or additional IDs, and prove one selected test runs alone inside a multi-test exact mod group.
@@ -73,6 +75,13 @@
 - [ ] 6.2 REGRESSION: Run focused tests, full Gateway and repository suites with nonzero discovery, Release/package inspection, and strict OpenSpec validation.
 - [ ] 6.3 REVIEW: Independently review contract honesty, metadata/staging safety, multi-frame/thread ownership, reset completeness, native-action fidelity, failure isolation, CLI contracts, package boundaries, and KISS; resolve findings and rerun affected gates.
 - [ ] 6.4 IN-GAME: On the reviewed build, run at least two exact mod groups in one host invocation, personally inspect retained native before/action/after behavior for the adverse-meal tracer and one optional-mod workflow, and prove sequential cleanup, controlled exact-PID shutdown, stage/credential removal, final log scans, and unchanged normal configuration hashes.
+
+## 8. Native immediate debug-action projection
+
+- [ ] 8.1 SPEC/TDD: Add bounded host-safe native immediate-action catalog/step and reuse the existing registry; retain actual nonzero RED/GREEN for exact invocation/receipt and rejection before callbacks.
+- [ ] 8.2 TDD/REVIEW: Wire the shared registry into the context and driver; preserve stale/ambiguous/disabled/pointer-mode rejection, cancellation-before-dispatch, exception isolation, unrelated-step delegation and existing generic invocation behavior.
+- [ ] 8.3 TDD/REVIEW: Add the missing standalone typed MCP/client query/invoke projection through existing exact-process transport and routes; retain request/validation/dispatch/error evidence without raw HTTP orchestration.
+- [ ] 8.4 IN-GAME: On the reviewed build, invoke the real Hot reload Defs command in a fresh minimized exact-group scenario, observe completion and personally inspect causal native UI results; invocation receipts alone do not accept the feature.
 
 ## 7. Explicitly disruptive process-input naming
 

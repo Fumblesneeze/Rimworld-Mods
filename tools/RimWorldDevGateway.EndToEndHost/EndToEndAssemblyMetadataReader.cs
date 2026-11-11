@@ -142,11 +142,17 @@ public static class EndToEndAssemblyMetadataReader
         var maxFrames = 3_600;
         var maxGameTicks = 60_000;
         var maxWallClockSeconds = 120;
+        var legacyXmlDeserializer = false;
         foreach (var namedArgument in value.NamedArguments)
         {
             var intValue = namedArgument.Value is int number ? number : 0;
             switch (namedArgument.Name)
             {
+                case "LegacyXmlDeserializer":
+                    if (namedArgument.Value is not bool legacy)
+                        throw new EndToEndDiscoveryException("LegacyXmlDeserializer must be a Boolean declaration.");
+                    legacyXmlDeserializer = legacy;
+                    break;
                 case "MaxFrames":
                     maxFrames = intValue;
                     break;
@@ -173,7 +179,8 @@ public static class EndToEndAssemblyMetadataReader
             maxWallClockSeconds,
             isConcrete,
             ImplementsContract(reader, typeHandle, currentAssemblyName, new HashSet<TypeDefinitionHandle>()),
-            HasPublicParameterlessConstructor(reader, typeDefinition));
+            HasPublicParameterlessConstructor(reader, typeDefinition),
+            legacyXmlDeserializer);
     }
 
     private static IReadOnlyList<string> DecodeStringArray(object? value)

@@ -4,6 +4,7 @@ namespace RimWorldDevGateway.EndToEndHost;
 
 public sealed class EndToEndMetadataDeclaration
 {
+    public bool LegacyXmlDeserializer { get; }
     public EndToEndMetadataDeclaration(
         string typeName,
         string id,
@@ -14,7 +15,8 @@ public sealed class EndToEndMetadataDeclaration
         int maxWallClockSeconds,
         bool isConcrete,
         bool implementsContract,
-        bool hasPublicParameterlessConstructor)
+        bool hasPublicParameterlessConstructor,
+        bool legacyXmlDeserializer = false)
     {
         TypeName = typeName;
         Id = id;
@@ -26,6 +28,7 @@ public sealed class EndToEndMetadataDeclaration
         IsConcrete = isConcrete;
         ImplementsContract = implementsContract;
         HasPublicParameterlessConstructor = hasPublicParameterlessConstructor;
+        LegacyXmlDeserializer = legacyXmlDeserializer;
     }
 
     public string TypeName { get; }
@@ -161,6 +164,7 @@ public sealed class EndToEndDiscoveredTest
 {
     internal EndToEndDiscoveredTest(EndToEndAssemblyCandidate candidate, EndToEndMetadataDeclaration declaration)
     {
+        LegacyXmlDeserializer = declaration.LegacyXmlDeserializer;
         Id = declaration.Id.Trim();
         TypeName = declaration.TypeName;
         OwnerPackageId = declaration.OwnerPackageId.Trim().ToLowerInvariant();
@@ -196,6 +200,8 @@ public sealed class EndToEndDiscoveredTest
 
     public string ProjectPath { get; }
 
+    public bool LegacyXmlDeserializer { get; }
+
     public string AssemblyPath { get; }
 
     public string AssemblyName { get; }
@@ -224,6 +230,8 @@ public sealed class EndToEndTestGroup
 
     public string GroupId { get; }
 
+    public bool LegacyXmlDeserializer => Tests[0].LegacyXmlDeserializer;
+
     public IReadOnlyList<string> ActivePackageIds { get; }
 
     public IReadOnlyList<EndToEndDiscoveredTest> Tests { get; }
@@ -231,12 +239,15 @@ public sealed class EndToEndTestGroup
 
 public sealed class EndToEndDiscoveryResult
 {
-    internal EndToEndDiscoveryResult(IEnumerable<EndToEndTestGroup> groups)
+    internal EndToEndDiscoveryResult(IEnumerable<EndToEndTestGroup> groups,
+        IEnumerable<EndToEndDiscoveredTest>? selectedTests = null)
     {
         Groups = new ReadOnlyCollection<EndToEndTestGroup>(groups.ToArray());
+        SelectedTests = new ReadOnlyCollection<EndToEndDiscoveredTest>((selectedTests ?? Groups.SelectMany(group => group.Tests)).ToArray());
     }
 
     public IReadOnlyList<EndToEndTestGroup> Groups { get; }
+    public IReadOnlyList<EndToEndDiscoveredTest> SelectedTests { get; }
 }
 
 public sealed class EndToEndProjectRecord

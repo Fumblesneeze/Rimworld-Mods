@@ -3,12 +3,37 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
+using System.Linq;
 
 namespace RimWorldDevGateway.EndToEndHost.Tests;
 
 [TestFixture]
 public sealed class EndToEndHostCliTests
 {
+    [TestCase("performance-plan")]
+    [TestCase("performance-stage")]
+    public void Performance_selectors_have_one_unambiguous_binding(string commandName)
+    {
+        var command = EndToEndHostCli.CreateCommand().Subcommands.Single(item => item.Name == commandName);
+        Assert.That(command.Options.Count(option => option.Name == "--group-id"), Is.EqualTo(1));
+        Assert.That(command.Options.Count(option => option.Name == "--project-path"), Is.EqualTo(1));
+        var groups = (System.CommandLine.Option<string[]>)command.Options.Single(option => option.Name == "--group-id");
+        var parse = command.Parse(new[] { "--group-id", "alpha|beta", "--group-id", "gamma|delta" });
+        Assert.That(parse.GetValue(groups), Is.EqualTo(new[] { "alpha|beta", "gamma|delta" }));
+    }
+
+    [TestCase("plan")]
+    [TestCase("stage")]
+    [TestCase("fixture-stage")]
+    public void Focused_preflight_selectors_are_discoverable(string command)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        Assert.That(EndToEndHostCli.Invoke(new[] { command, "--help" }, output, error), Is.Zero);
+        Assert.That(output.ToString(), Does.Contain("--test-id").And.Contain("--group-id")
+            .And.Contain("package preflight"));
+    }
+
     [Test]
     public void Help_is_discoverable_and_successful()
     {

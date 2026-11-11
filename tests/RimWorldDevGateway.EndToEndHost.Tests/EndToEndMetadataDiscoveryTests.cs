@@ -77,7 +77,7 @@ public sealed class EndToEndMetadataDiscoveryTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Groups, Has.Count.EqualTo(2));
+            Assert.That(result.Groups, Has.Count.EqualTo(3));
             Assert.That(result.Groups[0].ActivePackageIds, Is.EqualTo(new[]
             {
                 "brrainz.harmony",
@@ -89,10 +89,134 @@ public sealed class EndToEndMetadataDiscoveryTests
                 "alpha.base-a",
                 "alpha.base-b"
             }));
-            Assert.That(result.Groups[1].Tests.Select(test => test.Id), Is.EqualTo(new[] { "alpha.optional" }));
+            Assert.That(result.Groups[1].Tests.Select(test => test.Id), Is.EqualTo(new[] { "alpha.legacy" }));
+            Assert.That(result.Groups[2].Tests.Select(test => test.Id), Is.EqualTo(new[] { "alpha.optional" }));
             Assert.That(result.Groups.Select(group => group.GroupId), Is.Ordered);
         });
     }
+
+    [Test]
+    public void Focused_selection_does_not_require_an_unrelated_package_and_keeps_complete_metadata()
+    {
+        var metadata = EndToEndAssemblyMetadataReader.Read(FixtureAssembly("EndToEndHost.ValidFixtures"));
+        var candidate = new EndToEndAssemblyCandidate(Project("EndToEndHost.ValidFixtures"),
+            "alpha.mod", "EndToEndHost.ValidFixtures", metadata);
+
+        var result = EndToEndDiscoveryValidator.ValidateAndGroup(new[] { candidate },
+            new[] { "brrainz.harmony", "ludeon.rimworld", "alpha.mod" },
+            new[] { "alpha.base-a" }, Array.Empty<string>());
+
+        Assert.That(result.Groups.SelectMany(group => group.Tests).Select(test => test.Id),
+            Is.EquivalentTo(new[] { "alpha.base-a", "alpha.base-b", "alpha.legacy", "alpha.optional" }));
+    }
+
+    [Test]
+    public void Focused_group_selection_checks_only_that_groups_packages()
+    {
+        var result = EndToEndDiscoveryValidator.ValidateAndGroup(new[] { ValidCandidate() },
+            BasePackages, Array.Empty<string>(), new[] { BaseGroup });
+        Assert.That(result.Groups, Has.Count.EqualTo(3));
+    }
+
+    [TestCase("alpha.optional", "", "unresolvable package 'optional.mod'")]
+    [TestCase("", "brrainz.harmony|ludeon.rimworld|alpha.mod|optional.mod", "unresolvable package 'optional.mod'")]
+    [TestCase("", "", "unresolvable package 'optional.mod'")]
+    [TestCase("missing.test", "", "Unknown exact E2E test ID")]
+    [TestCase("ALPHA.BASE-A", "", "Unknown exact E2E test ID")]
+    [TestCase("alpha.base-a,alpha.base-a", "", "Duplicate exact E2E test ID")]
+    [TestCase("", "missing.group", "Unknown exact E2E group ID")]
+    [TestCase("", "BRRAINZ.HARMONY|LUDEON.RIMWORLD|ALPHA.MOD", "Unknown exact E2E group ID")]
+    [TestCase("", "brrainz.harmony|ludeon.rimworld|alpha.mod,brrainz.harmony|ludeon.rimworld|alpha.mod", "Duplicate exact E2E group ID")]
+    [TestCase("alpha.optional", "brrainz.harmony|ludeon.rimworld|alpha.mod", "zero tests")]
+    public void Focused_selection_rejects_missing_packages_and_invalid_exact_selections(
+        string tests, string groups, string message)
+    {
+        var error = Assert.Throws<EndToEndDiscoveryException>(() =>
+            EndToEndDiscoveryValidator.ValidateAndGroup(new[] { ValidCandidate() }, BasePackages,
+                tests.Split(',', StringSplitOptions.RemoveEmptyEntries),
+                groups.Split(',', StringSplitOptions.RemoveEmptyEntries)));
+        Assert.That(error!.Message, Does.Contain(message));
+    }
+
+    [Test]
+    public void Focused_selection_still_validates_unselected_declarations()
+    {
+        var invalid = new EndToEndAssemblyCandidate(Project("EndToEndHost.InvalidFixtures"),
+            "alpha.mod", "EndToEndHost.InvalidFixtures",
+            EndToEndAssemblyMetadataReader.Read(FixtureAssembly("EndToEndHost.InvalidFixtures")));
+        var error = Assert.Throws<EndToEndDiscoveryException>(() =>
+            EndToEndDiscoveryValidator.ValidateAndGroup(new[] { ValidCandidate(), invalid }, BasePackages,
+                new[] { "alpha.base-a" }, Array.Empty<string>()));
+        Assert.That(error!.Message, Does.Contain("invalid.abstract").And.Contain("invalid.interface")
+            .And.Contain("invalid.owner").And.Contain("invalid.duplicate-package")
+            .And.Contain("invalid.harmony-order").And.Contain("invalid.explicit-gateway")
+            .And.Contain("invalid.deadline").And.Contain("duplicate test ID"));
+    }
+
+    [Test]
+    public void Focused_bundle_plan_preserves_all_declarations_in_the_manifest()
+    {
+        var plan = EndToEndBundlePlanner.Create(new[] { ValidCandidate() }, BasePackages,
+            TestContext.CurrentContext.WorkDirectory, "1.7",
+            new[] { "alpha.base-a" }, Array.Empty<string>());
+        Assert.That(plan.OwnerStages.Single().Bundles.Single().Manifest.Tests.Select(test => test.Id),
+            Is.EquivalentTo(new[] { "alpha.base-a", "alpha.base-b", "alpha.legacy", "alpha.optional" }));
+    }
+
+    private const string BaseGroup = "brrainz.harmony|ludeon.rimworld|alpha.mod";
+
+    [TestCase("--test-id", "alpha.base-a", 0)]
+    [TestCase("--group-id", BaseGroup, 0)]
+    [TestCase("--test-id", "alpha.legacy", 0)]
+    [TestCase("--group-id", BaseGroup + "::legacy-xml", 0)]
+    [TestCase("--test-id", "alpha.optional", 2)]
+    public void Host_cli_routes_exact_selection_into_package_preflight(string option, string id, int expectedExit)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "e2e-selected-plan-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            // Reuse the real compiled metadata fixture. This build adapter only reports its
+            // output properties, keeping the public CLI test independent of game assemblies.
+            var document = new System.Xml.Linq.XDocument(new System.Xml.Linq.XElement("Project",
+                new System.Xml.Linq.XElement("PropertyGroup",
+                    new System.Xml.Linq.XElement("TargetFramework", "net480"),
+                    new System.Xml.Linq.XElement("AssemblyName", "EndToEndHost.ValidFixtures"),
+                    new System.Xml.Linq.XElement("TargetPath", FixtureAssembly("EndToEndHost.ValidFixtures")),
+                    new System.Xml.Linq.XElement("RimWorldEndToEndTest", "true"),
+                    new System.Xml.Linq.XElement("RimWorldEndToEndTestOwnerPackageId", "alpha.mod")),
+                new System.Xml.Linq.XElement("Target", new System.Xml.Linq.XAttribute("Name", "Restore")),
+                new System.Xml.Linq.XElement("Target", new System.Xml.Linq.XAttribute("Name", "Build"))));
+            document.Save(Path.Combine(directory, "Fixture.csproj"));
+            using var output = new StringWriter();
+            using var error = new StringWriter();
+            var exitCode = EndToEndHostCli.Invoke(new[]
+            {
+                "plan", "--repository-root", directory, "--mods-root", directory,
+                "--rimworld-version", "1.7", "--package-id", "brrainz.harmony", "ludeon.rimworld", "alpha.mod",
+                option, id, "--output", "json"
+            }, output, error);
+            Assert.That(exitCode, Is.EqualTo(expectedExit), error.ToString());
+            if (expectedExit == 0)
+            {
+                using var json = System.Text.Json.JsonDocument.Parse(output.ToString());
+                var groups = json.RootElement.GetProperty("groups").EnumerateArray().ToArray();
+                Assert.That(groups.Length, Is.EqualTo(3));
+                Assert.That(groups.Single(group => group.GetProperty("groupId").GetString() == BaseGroup)
+                    .GetProperty("xmlDeserializer").GetString(), Is.EqualTo("default"));
+                Assert.That(groups.Single(group => group.GetProperty("groupId").GetString() == BaseGroup + "::legacy-xml")
+                    .GetProperty("xmlDeserializer").GetString(), Is.EqualTo("legacy"));
+                Assert.That(error.ToString(), Is.Empty);
+            }
+            else Assert.That(error.ToString(), Does.Contain("unresolvable package 'optional.mod'"));
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    private static readonly string[] BasePackages = { "brrainz.harmony", "ludeon.rimworld", "alpha.mod" };
+    private static EndToEndAssemblyCandidate ValidCandidate() => new(
+        Project("EndToEndHost.ValidFixtures"), "alpha.mod", "EndToEndHost.ValidFixtures",
+        EndToEndAssemblyMetadataReader.Read(FixtureAssembly("EndToEndHost.ValidFixtures")));
 
     [Test]
     public void Validator_rejects_invalid_compiled_declarations_with_actionable_errors()

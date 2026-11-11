@@ -110,7 +110,8 @@ public static class GatewayRuntimeBootstrap
                     (operation, exception) => Log.Error(
                         "[RimWorldDevGateway] End-to-end test " + operation +
                         " failed: " + exception),
-                    featureSelection.SelectedEndToEndTestIds));
+                    featureSelection.SelectedEndToEndTestIds,
+                    GenCommandLine.CommandLineArgPassed("legacy-xml-deserializer")));
 
             gameObject = new GameObject("[RimWorldDevGateway] Runtime");
 #if !RIMWORLD_1_7
@@ -199,6 +200,7 @@ public static class GatewayRuntimeBootstrap
                 GatewayQuickstartAutomation.Register(automations);
                 GatewaySceneTimeAutomation.Register(automations);
                 GatewayDiagnosticAutomations.Register(automations, logBuffer.Errors);
+                runtimeHost.AttachNativeWindowAutomations(automations);
                 var screenshots = new GatewayScreenshotService(
                     activeDispatcher,
                     new UnityGatewayScreenshotBackend(),
@@ -214,6 +216,7 @@ public static class GatewayRuntimeBootstrap
                 var gizmos = new GatewayGizmoRegistry(
                     new VerseGatewayGizmoSource(logBuffer));
                 runtimeHost.AttachGizmoRegistry(gizmos);
+                var debugActions = new GatewayDebugActionRegistry(new VerseGatewayDebugActionSource());
 
                 if (endToEndTests.Snapshot.Enabled)
                 {
@@ -239,7 +242,8 @@ public static class GatewayRuntimeBootstrap
                         [typeof(GatewayWindowsInput)] = windowsInput,
                         [typeof(IGatewayEndToEndFloatMenuActions)] = floatMenus,
                         [typeof(IEndToEndFloatMenuCatalog)] = floatMenus,
-                        [typeof(IEndToEndGizmoCatalog)] = gizmoCatalog
+                        [typeof(IEndToEndGizmoCatalog)] = gizmoCatalog,
+                        [typeof(IEndToEndDebugActionCatalog)] = new GatewayEndToEndDebugActionCatalog(debugActions)
                     };
                     endToEndTests.ConfigureExecution(
                         new VerseGatewayEndToEndExecutionReadiness(),
@@ -278,7 +282,7 @@ public static class GatewayRuntimeBootstrap
                                         ? service
                                         : null);
                             },
-                            artifactDirectory => new GatewayEndToEndNativeStepDriver(
+                            artifactDirectory => new GatewayEndToEndDebugActionDriver(new GatewayEndToEndNativeWindowDriver(new GatewayEndToEndNativeStepDriver(
                                 new GatewayEndToEndNativeActions(
                                     new GatewayEndToEndGatewayBackend(
                                         gameControl,
@@ -290,7 +294,7 @@ public static class GatewayRuntimeBootstrap
                                         tradeDialogs,
                                         windowsInput,
                                         screenshots,
-                                        artifactDirectory))),
+                                        artifactDirectory))), automations), debugActions),
                             isolation));
                 }
 
@@ -313,8 +317,7 @@ public static class GatewayRuntimeBootstrap
                         gameControl: gameControl,
                         camera: camera,
                         things: things,
-                        debugActions: new GatewayDebugActionRegistry(
-                            new VerseGatewayDebugActionSource()),
+                        debugActions: debugActions,
                         gizmos: gizmos,
                         automations: automations,
                         defExporter: new GatewayDefExporter(
@@ -332,6 +335,9 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
     private GatewayIntegrationTestCoordinator? integrationTests;
     private GatewayEndToEndCoordinator? endToEndTests;
     private GatewayGizmoRegistry? gizmos;
+    private GatewayAutomationRegistry? automations;
+    private VerseGatewayNativeWindowInput? nativeWindows;
+    private string? nativeWindowInitializationFailure;
     private readonly GatewayShutdownLifecycle shutdownLifecycle = new();
     private int stopping;
     private int shutdownInitialized;
@@ -429,6 +435,25 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
         gizmos = value;
     }
 
+    internal void AttachNativeWindowAutomations(GatewayAutomationRegistry registry)
+    {
+        if (automations != null) throw new InvalidOperationException("The automation registry is already attached.");
+        automations = registry;
+        VerseGatewayDeveloperLog.Register(registry);
+        VerseGatewayMainTab.Register(registry);
+        GatewayNativeWindowAutomations.Register(registry,
+            () => RequireNativeWindows().Capture(),
+            (handle, x, y, context) => RequireNativeWindows().Begin(handle, x, y, context),
+            () => new GatewayAutomationAvailability(nativeWindows?.IsAvailable == true,
+                nativeWindowInitializationFailure ?? nativeWindows?.UnavailableReason ?? "native_input_initializing"),
+            beginScope: (deadline, context) => RequireNativeWindows().BeginPointerScope(deadline, context),
+            endScope: (handle, context) => RequireNativeWindows().EndPointerScope(handle, context),
+            scopedClick: (handle, x, y, context, scopeHandle) => RequireNativeWindows().Begin(handle, x, y, context, scopeHandle));
+    }
+
+    private VerseGatewayNativeWindowInput RequireNativeWindows() => nativeWindows ??
+        throw new GatewayAutomationException("native_input_unavailable", "Native input has not initialized on the game thread.");
+
     private void Update()
     {
         var active = runtime;
@@ -439,7 +464,20 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
 
         if (!active.IsShutdownRequested)
         {
+            // ExecuteWhenFinished can execute on a loading caller in 1.7. Construct the input
+            // hooks only at this actual native main-thread lifecycle boundary.
+            if (automations != null && nativeWindows == null && nativeWindowInitializationFailure == null)
+            {
+                try { nativeWindows = new VerseGatewayNativeWindowInput(); }
+                catch (Exception exception)
+                {
+                    nativeWindowInitializationFailure = "native_input_initialization_failed";
+                    Log.Warning("[RimWorldDevGateway] Native window input initialization failed: " + exception.GetType().Name);
+                }
+            }
             active.Drain(DispatchPhase.Update);
+            nativeWindows?.TickPointerScope();
+            automations?.Advance();
             if (!active.IsShutdownRequested)
             {
                 integrationTests?.Tick();
@@ -514,12 +552,11 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
         }
 
         var attempt = shutdownLifecycle.TryShutdown(
-            () =>
-            {
-                runtime?.Stop();
-                integrationTests?.Dispose();
-                endToEndTests?.Dispose();
-            },
+            () => GatewayNativeWindowShutdown.Cleanup(automations,
+                () => nativeWindows?.Shutdown(),
+                () => runtime?.Stop(),
+                () => integrationTests?.Dispose(),
+                () => endToEndTests?.Dispose()),
             allowRetry,
             DateTimeOffset.UtcNow);
         if (attempt.ReportableFailure is not null)
@@ -552,6 +589,7 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
         Volatile.Write(ref stopping, 0);
         return false;
     }
+
 }
 
 internal static class GatewayRuntimeOverlayPolicy

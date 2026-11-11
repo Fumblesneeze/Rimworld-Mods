@@ -16,6 +16,7 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
     private readonly List<GatewayEndToEndRuntimeTestDescriptor> runtimeTests = new();
     private readonly HashSet<string> discoveredTestIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> selectedTestIds = new(StringComparer.Ordinal);
+    private readonly bool observedLegacyXmlDeserializer;
     private readonly List<GatewayEndToEndFailureSnapshot> failures = new();
     private readonly GatewayEndToEndSnapshot disabledSnapshot = new(false, "disabled");
     private GatewayEndToEndSnapshot snapshot;
@@ -52,7 +53,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         IGatewayEndToEndExecutionReadiness? executionReadiness,
         IGatewayEndToEndExecutionFactory? executionFactory,
         Action<string, Exception?>? diagnostics,
-        IReadOnlyCollection<string>? selectedTestIds)
+        IReadOnlyCollection<string>? selectedTestIds,
+        bool observedLegacyXmlDeserializer)
     {
         this.source = source ?? throw new ArgumentNullException(nameof(source));
         _ = inspector ?? throw new ArgumentNullException(nameof(inspector));
@@ -68,7 +70,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         this.selectedTestIds = new HashSet<string>(
             selectedTestIds ?? Array.Empty<string>(),
             StringComparer.Ordinal);
-        snapshot = new GatewayEndToEndSnapshot(true, "awaiting_session");
+        this.observedLegacyXmlDeserializer = observedLegacyXmlDeserializer;
+        snapshot = new GatewayEndToEndSnapshot(true, "awaiting_session", observedLegacyXmlDeserializer: observedLegacyXmlDeserializer);
     }
 
     public GatewayEndToEndSnapshot Snapshot => snapshot;
@@ -99,9 +102,11 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         string saveDataFolder,
         IGatewayEndToEndManifestSource source,
         Action<string, Exception?>? diagnostics = null,
-        IReadOnlyCollection<string>? selectedTestIds = null)
+        IReadOnlyCollection<string>? selectedTestIds = null,
+        bool observedLegacyXmlDeserializer = false)
     {
-        var inspector = new GatewayEndToEndBundleCatalog();
+        var inspector = new GatewayEndToEndBundleCatalog(
+            observedLegacyXmlDeserializer: observedLegacyXmlDeserializer, selectedTestIds: selectedTestIds);
         return CreateEnabledWithStore(
             source,
             inspector,
@@ -110,7 +115,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             executionReadiness: null,
             executionFactory: null,
             diagnostics: diagnostics,
-            selectedTestIds: selectedTestIds);
+            selectedTestIds: selectedTestIds,
+            observedLegacyXmlDeserializer: observedLegacyXmlDeserializer);
     }
 
     public void ConfigureExecution(
@@ -156,7 +162,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
         IGatewayEndToEndExecutionReadiness? executionReadiness = null,
         IGatewayEndToEndExecutionFactory? executionFactory = null,
         Action<string, Exception?>? diagnostics = null,
-        IReadOnlyCollection<string>? selectedTestIds = null) =>
+        IReadOnlyCollection<string>? selectedTestIds = null,
+        bool observedLegacyXmlDeserializer = false) =>
         new(
             source,
             inspector,
@@ -165,7 +172,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             executionReadiness,
             executionFactory,
             diagnostics,
-            selectedTestIds);
+            selectedTestIds,
+            observedLegacyXmlDeserializer);
 
     public void AttachSession(string runId, string? bearerToken = null)
     {
@@ -560,7 +568,8 @@ public sealed class GatewayEndToEndCoordinator : IDisposable
             bundles,
             tests,
             failures,
-            execution?.Snapshot);
+            execution?.Snapshot,
+            observedLegacyXmlDeserializer);
     }
 
     private void AdvanceExecution()

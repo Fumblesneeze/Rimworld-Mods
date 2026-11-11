@@ -15,6 +15,7 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
     private readonly IGatewayEndToEndTestIsolation isolation;
     private readonly string? sessionCredential;
     private readonly List<TestRecord> completed = new();
+    private readonly Dictionary<StepRecord, IGatewayEndToEndStepEvidence> stepEvidence = new();
     private GatewayEndToEndExecutionSnapshot snapshot = new("pending");
     private GatewayEndToEndExecutionSnapshot? persistenceCandidate;
     private ExecutionPhase phase = ExecutionPhase.Selecting;
@@ -153,6 +154,7 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
 
         if (testIndex >= descriptors.Length)
         {
+            stepEvidence.Clear();
             current = null;
             phase = ExecutionPhase.Complete;
             Publish(completed.All(test => test.Status == "passed")
@@ -162,6 +164,7 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
         }
 
         descriptor = descriptors[testIndex++];
+        stepEvidence.Clear();
         current = new TestRecord(descriptor, clock) { Status = "arranging" };
         currentStep = null;
         context = null;
@@ -204,6 +207,7 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
         {
             context = contextFactory() ??
                 throw new InvalidOperationException("The E2E context factory returned null.");
+            context.WorkflowDeadlineUtc = current!.StartedUtc.AddSeconds(descriptor!.MaxWallClockSeconds);
         }
         catch (Exception exception)
         {
@@ -376,6 +380,12 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
         {
             stepOperation = stepDriver.Begin(step, context!) ??
                 throw new InvalidOperationException("The E2E step driver returned a null operation.");
+            if (stepOperation is IGatewayEndToEndStepEvidence admitted)
+            {
+                stepEvidence[currentStep!] = admitted;
+                currentStep!.Artifacts = admitted.CaptureArtifacts().ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+                if (!stepOperation.IsCompleted) Publish("running");
+            }
         }
 
         if (!stepOperation.IsCompleted)
@@ -396,6 +406,7 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
             outcome.FailureCode ?? "step_action_failed",
             outcome.FailureMessage ?? "The E2E action failed.",
             null);
+        currentStep!.Artifacts = outcome.Artifacts.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         FailCurrentStep(failure);
     }
 
@@ -479,6 +490,17 @@ public sealed class GatewayEndToEndExecutionStateMachine : IGatewayEndToEndExecu
             else if (deferred == DeferredCleanupStatus.Failed)
             {
                 cleanupTrustworthy = false;
+            }
+            // A completed begin step can still own deferred workflow cleanup. Refresh its
+            // retained receipt after cleanup even when a later assertion or wait failed.
+            foreach (var evidence in stepEvidence)
+            {
+                try
+                {
+                    evidence.Key.Artifacts = evidence.Value.CaptureArtifacts()
+                        .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+                }
+                catch { cleanupTrustworthy = false; }
             }
             try
             {

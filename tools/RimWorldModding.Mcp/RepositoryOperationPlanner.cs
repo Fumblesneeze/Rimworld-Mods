@@ -152,9 +152,12 @@ public static class RepositoryOperationPlanner
         }
         else
         {
-            var packageIds = selector.Split('|');
+            const string legacySuffix = "::legacy-xml";
+            var packageSequence = selector.EndsWith(legacySuffix, StringComparison.Ordinal)
+                ? selector[..^legacySuffix.Length] : selector;
+            var packageIds = packageSequence.Split('|');
             if (packageIds.Length == 0 || packageIds.Any(packageId => !LiteralIdentifier.IsMatch(packageId)))
-                throw new ArgumentException("groupId must be one pipe-delimited sequence of bounded package IDs.");
+                throw new ArgumentException("groupId must be one pipe-delimited sequence of bounded package IDs, optionally followed by ::legacy-xml.");
         }
         RequireLiteral(language, "language");
         if (timeoutSeconds is < 60 or > 3600)
@@ -178,13 +181,20 @@ public static class RepositoryOperationPlanner
         if (dryRun) arguments.Add("-DryRun");
         AddPrelaunchConfig(root, arguments, prelaunchConfigDirectory);
         if (enableAudio) arguments.Add("-EnableAudio");
+        var evidenceRoot = Path.Combine(root, "artifacts", "EndToEndRuns", "Grouped");
+        if (!dryRun)
+        {
+            evidenceRoot = Path.Combine(evidenceRoot, RunLeaseManager.ReserveRunId());
+            arguments.Add("-OwnedRunDirectory");
+            arguments.Add(evidenceRoot);
+        }
         return new AdapterCommand(
             "e2e_run",
             "pwsh",
             arguments,
             root,
             TimeSpan.FromSeconds(timeoutSeconds + 300),
-            Path.Combine(root, "artifacts", "EndToEndRuns", "Grouped"));
+            evidenceRoot);
     }
 
     public static AdapterCommand GatewayRun(

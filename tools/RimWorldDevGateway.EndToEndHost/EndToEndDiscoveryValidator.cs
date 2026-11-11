@@ -4,22 +4,30 @@ namespace RimWorldDevGateway.EndToEndHost;
 
 public static class EndToEndDiscoveryValidator
 {
+    public static string GroupId(EndToEndDiscoveredTest test) => string.Join("|", test.ActivePackageIds) +
+        (test.LegacyXmlDeserializer ? "::legacy-xml" : string.Empty);
     public const string HarmonyPackageId = "brrainz.harmony";
     public const string CorePackageId = "ludeon.rimworld";
     public const string GatewayPackageId = "fumblesneeze.rimworlddevgateway";
 
     public static EndToEndDiscoveryResult ValidateAndGroup(
         IEnumerable<EndToEndAssemblyCandidate> assemblyCandidates,
-        IEnumerable<string> resolvablePackageIds)
+        IEnumerable<string> resolvablePackageIds,
+        IEnumerable<string> selectedTestIds,
+        IEnumerable<string> selectedGroupIds)
+    {
+        var discovery = DiscoverAndSelect(assemblyCandidates, selectedTestIds, selectedGroupIds);
+        ValidatePackageAvailability(discovery, resolvablePackageIds);
+        return discovery;
+    }
+
+    public static EndToEndDiscoveryResult DiscoverAndSelect(
+        IEnumerable<EndToEndAssemblyCandidate> assemblyCandidates,
+        IEnumerable<string> selectedTestIds, IEnumerable<string> selectedGroupIds)
     {
         if (assemblyCandidates is null)
         {
             throw new ArgumentNullException(nameof(assemblyCandidates));
-        }
-
-        if (resolvablePackageIds is null)
-        {
-            throw new ArgumentNullException(nameof(resolvablePackageIds));
         }
 
         var candidates = assemblyCandidates
@@ -30,16 +38,11 @@ public static class EndToEndDiscoveryValidator
             throw new EndToEndDiscoveryException("E2E discovery selected zero marked assemblies.");
         }
 
-        var packageCatalog = new HashSet<string>(
-            resolvablePackageIds
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Select(value => value.Trim().ToLowerInvariant()),
-            StringComparer.OrdinalIgnoreCase);
         var errors = new List<string>();
         var discovered = new List<EndToEndDiscoveredTest>();
         foreach (var candidate in candidates)
         {
-            ValidateAssembly(candidate, packageCatalog, errors, discovered);
+            ValidateAssembly(candidate, errors, discovered);
         }
 
         foreach (var duplicate in discovered
@@ -59,19 +62,80 @@ public static class EndToEndDiscoveryValidator
         }
 
         var groups = discovered
-            .GroupBy(test => string.Join("|", test.ActivePackageIds), StringComparer.Ordinal)
+            .GroupBy(GroupId, StringComparer.Ordinal)
             .OrderBy(group => group.Key, StringComparer.Ordinal)
             .Select(group => new EndToEndTestGroup(
                 group.Key,
                 group.First().ActivePackageIds,
                 group.OrderBy(test => test.Id, StringComparer.Ordinal)))
             .ToArray();
-        return new EndToEndDiscoveryResult(groups);
+        var testIds = ValidateSelectors(selectedTestIds, discovered.Select(test => test.Id), "test");
+        var groupIds = ValidateSelectors(selectedGroupIds, groups.Select(group => group.GroupId), "group");
+        var selected = groups
+            .Where(group => groupIds.Count == 0 || groupIds.Contains(group.GroupId))
+            .SelectMany(group => group.Tests)
+            .Where(test => testIds.Count == 0 || testIds.Contains(test.Id))
+            .ToArray();
+        if (selected.Length == 0)
+        {
+            throw new EndToEndDiscoveryException("E2E selection matched zero tests.");
+        }
+
+        return new EndToEndDiscoveryResult(groups, selected);
+    }
+
+    public static void ValidatePackageAvailability(EndToEndDiscoveryResult discovery,
+        IEnumerable<string> installedPackageIds,
+        IReadOnlyDictionary<string, IReadOnlyList<EndToEndXmlFixturePlan>>? fixturePlans = null)
+    {
+        ArgumentNullException.ThrowIfNull(installedPackageIds);
+        var packageCatalog = new HashSet<string>(installedPackageIds
+            .Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()), StringComparer.OrdinalIgnoreCase);
+        var errors = new List<string>();
+        foreach (var test in discovery.SelectedTests)
+        {
+            var fixtureIds = fixturePlans is not null && fixturePlans.TryGetValue(GroupId(test), out var plans)
+                ? plans.Select(plan => plan.PackageId).ToArray() : Array.Empty<string>();
+            foreach (var package in test.ActivePackageIds.Where(value => value.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (!packageCatalog.Contains(package) && !fixtureIds.Contains(package, StringComparer.OrdinalIgnoreCase))
+                {
+                    errors.Add($"'{test.Id}' declares unresolvable package '{package}'");
+                }
+            }
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new EndToEndDiscoveryException("E2E package preflight failed:" + Environment.NewLine +
+                string.Join(Environment.NewLine, errors.Select(error => "- " + error)));
+        }
+
+    }
+
+    public static EndToEndDiscoveryResult ValidateAndGroup(
+        IEnumerable<EndToEndAssemblyCandidate> assemblyCandidates,
+        IEnumerable<string> resolvablePackageIds) =>
+        ValidateAndGroup(assemblyCandidates, resolvablePackageIds, Array.Empty<string>(), Array.Empty<string>());
+
+    private static HashSet<string> ValidateSelectors(
+        IEnumerable<string> selectors, IEnumerable<string> available, string kind)
+    {
+        if (selectors is null) throw new ArgumentNullException(nameof(selectors));
+        var known = new HashSet<string>(available, StringComparer.Ordinal);
+        var selected = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var id in selectors)
+        {
+            if (string.IsNullOrWhiteSpace(id) || !known.Contains(id))
+                throw new EndToEndDiscoveryException($"Unknown exact E2E {kind} ID '{id}'.");
+            if (!selected.Add(id))
+                throw new EndToEndDiscoveryException($"Duplicate exact E2E {kind} ID '{id}'.");
+        }
+        return selected;
     }
 
     private static void ValidateAssembly(
         EndToEndAssemblyCandidate candidate,
-        ISet<string> packageCatalog,
         ICollection<string> errors,
         ICollection<EndToEndDiscoveredTest> discovered)
     {
@@ -91,7 +155,7 @@ public static class EndToEndDiscoveryValidator
         var expectedOwner = Normalize(candidate.ExpectedOwnerPackageId);
         foreach (var declaration in candidate.Metadata.Declarations.OrderBy(item => item.TypeName, StringComparer.Ordinal))
         {
-            ValidateDeclaration(candidate, declaration, expectedOwner, packageCatalog, errors);
+            ValidateDeclaration(candidate, declaration, expectedOwner, errors);
             discovered.Add(new EndToEndDiscoveredTest(candidate, declaration));
         }
     }
@@ -100,7 +164,6 @@ public static class EndToEndDiscoveryValidator
         EndToEndAssemblyCandidate candidate,
         EndToEndMetadataDeclaration declaration,
         string expectedOwner,
-        ISet<string> packageCatalog,
         ICollection<string> errors)
     {
         var displayId = string.IsNullOrWhiteSpace(declaration.Id) ? declaration.TypeName : declaration.Id;
@@ -164,14 +227,6 @@ public static class EndToEndDiscoveryValidator
             !packages.Contains(owner, StringComparer.OrdinalIgnoreCase))
         {
             errors.Add($"'{displayId}' active packages do not contain owner '{owner}'");
-        }
-
-        foreach (var package in packages.Where(value => !string.IsNullOrEmpty(value)).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            if (!packageCatalog.Contains(package))
-            {
-                errors.Add($"'{displayId}' declares unresolvable package '{package}'");
-            }
         }
 
         if (declaration.MaxFrames <= 0 ||

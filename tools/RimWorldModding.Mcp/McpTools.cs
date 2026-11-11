@@ -169,6 +169,15 @@ public static class McpTools
         OperationJson.Serialize(await registry.InvokeAsync(
             "gateway_mutation", JsonSerializer.SerializeToElement(new { runId, kind, name, argumentsJson }), cancellationToken));
 
+    [McpServerTool(Name = "gateway_automation_status"), Description("Inspect one retained automation run without repeating its action.")]
+    public static async Task<string> GatewayAutomationStatus(
+        OperationRegistry registry,
+        [Description("Exact ready game run ID.")] string runId,
+        [Description("Retained automation RunId returned by invocation.")] string automationRunId,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_automation_status",
+            JsonSerializer.SerializeToElement(new { runId, automationRunId }), cancellationToken));
+
     [McpServerTool(Name = "gateway_debug_actions"), Description("Query native debug-action leaves in one exact ready run; preserves native handles and cursor. Does not invoke actions.")]
     public static async Task<string> GatewayDebugActions(OperationRegistry registry,
         [Description("Exact ready game run ID.")] string runId, CancellationToken cancellationToken,
@@ -188,6 +197,15 @@ public static class McpTools
         OperationJson.Serialize(await registry.InvokeAsync("gateway_debug_action_invoke",
             JsonSerializer.SerializeToElement(new { runId, handle }), cancellationToken));
 
+    [McpServerTool(Name = "gateway_automation_cancel"), Description("Request cancellation of one retained automation run. Inspect status until owned cleanup completes.")]
+    public static async Task<string> GatewayAutomationCancel(
+        OperationRegistry registry,
+        [Description("Exact ready game run ID.")] string runId,
+        [Description("Retained automation RunId returned by invocation.")] string automationRunId,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_automation_cancel",
+            JsonSerializer.SerializeToElement(new { runId, automationRunId }), cancellationToken));
+
     [McpServerTool(Name = "gateway_scene_time"), Description("Set current-map local time or restore a captured calendar offset without advancing simulation ticks. Disposable scene setup only.")]
     public static async Task<string> GatewaySceneTime(
         OperationRegistry registry,
@@ -198,6 +216,16 @@ public static class McpTools
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync("gateway_scene_time",
             JsonSerializer.SerializeToElement(new { runId, mapHandle, minuteOfDay, gameStartAbsTick }), cancellationToken));
+
+    [McpServerTool(Name = "gateway_main_tab"), Description("Open or close one exact native bottom tab through its normal button command. Preserves native hidden, disabled and modal-input restrictions without desktop input.")]
+    public static async Task<string> GatewayMainTab(
+        OperationRegistry registry,
+        [Description("Exact ready game run ID.")] string runId,
+        [Description("Exact native main-button Def name, for example Assign.")] string defName,
+        [Description("Desired open state. Closing a different already-closed tab leaves the current tab unchanged.")] bool open,
+        CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("gateway_main_tab",
+            JsonSerializer.SerializeToElement(new { runId, defName, open }), cancellationToken));
 
     [McpServerTool(Name = "gateway_raw_mutation"), Description("Compile and execute one bounded raw C# mutation in an exact leased live Gateway process. For one-off development/diagnosis only; it never proves gameplay acceptance.")]
     public static async Task<string> GatewayRawMutation(

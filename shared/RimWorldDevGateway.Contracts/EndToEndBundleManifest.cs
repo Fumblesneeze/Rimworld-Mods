@@ -7,6 +7,7 @@ namespace RimWorldDevGateway.Contracts;
 public sealed class EndToEndBundleManifest
 {
     public const string SchemaValue = "RimWorldDevGateway.EndToEndTests/v1";
+    public const string NativeXmlLoaderSchemaValue = "RimWorldDevGateway.EndToEndTests/v2";
 
     [DataMember(Name = "schema", IsRequired = true, Order = 1)]
     public string Schema { get; set; } = SchemaValue;
@@ -63,6 +64,9 @@ public sealed class EndToEndBundleTest
 {
     public const string EndToEndKind = "e2e";
     public const string PerformanceKind = "performance";
+
+    [DataMember(Name = "legacyXmlDeserializer", EmitDefaultValue = false, Order = 23)]
+    public bool LegacyXmlDeserializer { get; set; }
 
     [DataMember(Name = "id", IsRequired = true, Order = 1)]
     public string Id { get; set; } = string.Empty;

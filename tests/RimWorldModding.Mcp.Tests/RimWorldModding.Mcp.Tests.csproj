@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="../RimWorldDevGateway.EndToEndHost.Tests/EndToEndXmlFixtureTests.cs" Link="EndToEndXmlFixtureTests.cs" />
+    <Compile Include="../RimWorldDevGateway.EndToEndHost.Tests/EndToEndNativeXmlLoaderTests.cs" Link="EndToEndNativeXmlLoaderTests.cs" />
+    <Compile Include="../RimWorldDevGateway.EndToEndHost.Tests/EndToEndMetadataDiscoveryTests.cs" Link="EndToEndMetadataDiscoveryTests.cs" />
+    <Compile Include="../RimWorldDevGateway.EndToEndHost.Tests/EndToEndHostCliTests.cs" Link="EndToEndHostCliTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/RimWorldEndToEndRunnerCliTests.cs" Link="RimWorldEndToEndRunnerCliTests.cs" />
+    <Compile Include="../RimWorldDevGateway.Tests/GatewaySmokeCleanupAggregationTests.cs" Link="GatewaySmokeCleanupAggregationTests.cs" />
     <ProjectReference Include="..\..\tools\RimWorldModding.Mcp\RimWorldModding.Mcp.csproj" />
     <ProjectReference Include="..\..\tools\RimWorldDevGateway.EndToEndHost\RimWorldDevGateway.EndToEndHost.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
@@ -19,6 +25,11 @@
 
   <Target Name="BuildGatewayCompanionFixture" BeforeTargets="Build">
     <MSBuild Projects="../../tools/RimWorldDevGateway.Client/RimWorldDevGateway.Client.csproj"
+             Targets="Restore;Build" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="BuildEndToEndMetadataFixtures" BeforeTargets="Build">
+    <MSBuild Projects="../Fixtures/EndToEndHost.ValidFixtures/EndToEndHost.ValidFixtures.csproj;../Fixtures/EndToEndHost.InvalidFixtures/EndToEndHost.InvalidFixtures.csproj;../Fixtures/EndToEndHost.LookalikeFixtures/EndToEndHost.LookalikeFixtures.csproj"
              Targets="Restore;Build" Properties="Configuration=$(Configuration)" />
   </Target>
 </Project>

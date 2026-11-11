@@ -42,6 +42,8 @@ param(
 
     [string]$ArtifactsPath,
 
+    [string]$OwnedRunDirectory,
+
     [string]$PrelaunchConfigDirectory,
 
     [ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')]
@@ -197,7 +199,8 @@ function Invoke-BoundedProcess {
         [Parameter(Mandatory)][string]$ExecutablePath,
         [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$Arguments,
         [Parameter(Mandatory)][ValidateRange(1000, 3780000)][int]$TimeoutMilliseconds,
-        [Parameter(Mandatory)][string]$Description
+        [Parameter(Mandatory)][string]$Description,
+        [string]$ProcessLeaseFile
     )
 
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
@@ -215,6 +218,19 @@ function Invoke-BoundedProcess {
     try {
         if (-not $process.Start()) {
             throw "Could not start $Description."
+        }
+        if (-not [string]::IsNullOrWhiteSpace($ProcessLeaseFile)) {
+            $temporary = $ProcessLeaseFile + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
+            try {
+                $bytes = [Text.UTF8Encoding]::new($false).GetBytes((@{
+                    schema='RimWorldDevGateway/ProcessLease/v1'; processId=$process.Id
+                    processStartUtc=$process.StartTime.ToUniversalTime().ToString('O')
+                } | ConvertTo-Json -Compress))
+                $stream = [IO.FileStream]::new($temporary, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
+                try { $stream.Write($bytes); $stream.Flush($true) } finally { $stream.Dispose() }
+                [IO.File]::Move($temporary, $ProcessLeaseFile)
+            }
+            finally { if ([IO.File]::Exists($temporary)) { Remove-Item -LiteralPath $temporary -Force } }
         }
         $standardOutput = $process.StandardOutput.ReadToEndAsync()
         $standardError = $process.StandardError.ReadToEndAsync()
@@ -251,16 +267,22 @@ function Invoke-HostTool {
         [Parameter(Mandatory)][string]$RimWorldPath,
         [Parameter(Mandatory)][string[]]$ResolvablePackageIds,
         [string[]]$ProjectPaths = @(),
-        [AllowNull()][string]$LeaseFile
+        [string[]]$SelectedTestIds = @(),
+        [string[]]$SelectedGroupIds = @(),
+        [AllowNull()][string]$LeaseFile,
+        [string]$ProcessLeaseFile
     )
 
     $packageIdFile = $null
     try {
         $arguments = [System.Collections.Generic.List[string]]::new()
-        foreach ($argument in @('run', '--project', $HostProject, '--configuration', 'Release', '--', $Operation)) {
+        $hostArguments = if ($Operation -in @('fixture-clean', 'fixture-stage')) {
+            @((Join-Path ([IO.Path]::GetDirectoryName($HostProject)) 'bin/Release/net8.0/RimWorldDevGateway.EndToEndHost.dll'), $Operation)
+        } else { @('run', '--project', $HostProject, '--configuration', 'Release', '--', $Operation) }
+        foreach ($argument in $hostArguments) {
             $arguments.Add($argument)
         }
-        if ($Operation -ne 'clean') {
+        if ($Operation -notin @('clean', 'fixture-clean')) {
             foreach ($argument in @(
                 '--repository-root', $RepositoryRoot,
                 '--mods-root', $ModsRoot,
@@ -277,6 +299,14 @@ function Invoke-HostTool {
                 [System.Text.UTF8Encoding]::new($false))
             $arguments.Add('--package-id-file')
             $arguments.Add($packageIdFile)
+            foreach ($selectedTestId in $SelectedTestIds) {
+                $arguments.Add('--test-id')
+                $arguments.Add($selectedTestId)
+            }
+            foreach ($selectedGroupId in $SelectedGroupIds) {
+                $arguments.Add('--group-id')
+                $arguments.Add($selectedGroupId)
+            }
         }
         if (-not [string]::IsNullOrWhiteSpace($LeaseFile)) {
             $arguments.Add('--lease-file')
@@ -293,6 +323,7 @@ function Invoke-HostTool {
             -ExecutablePath 'dotnet' `
             -Arguments @($arguments) `
             -TimeoutMilliseconds 300000 `
+            -ProcessLeaseFile $ProcessLeaseFile `
             -Description "E2E host $Operation"
     }
     finally {
@@ -395,6 +426,8 @@ $planInvocation = Invoke-HostTool `
     -ModsRoot $modsRoot `
     -ResolvablePackageIds $packageIds `
     -ProjectPaths $ProjectPath `
+    -SelectedTestIds $testIdFilters `
+    -SelectedGroupIds $GroupId `
     -LeaseFile $null
 if ($planInvocation.ExitCode -ne 0) {
     [Console]::Error.WriteLine($planInvocation.StandardError.Trim())
@@ -429,7 +462,9 @@ $selectedGroups = @(foreach ($group in $candidateGroups) {
         [pscustomobject]@{
             groupId = [string]$group.groupId
             activePackageIds = @($group.activePackageIds)
+            xmlDeserializer = Get-RimWorldEndToEndXmlDeserializer -Group $group
             tests = $selectedTests
+            xmlFixtures = @($group.xmlFixtures)
         }
     }
 })
@@ -460,9 +495,7 @@ foreach ($group in $selectedGroups) {
         '-TimeoutSeconds', [string]$TimeoutSeconds,
         '-Output', 'json'
     )
-    if ($testIdFilters.Count -gt 0) {
-        $plannedCommand += @('-EndToEndTestIds', (@($group.tests) -join ','))
-    }
+    $plannedCommand += @('-EndToEndTestIds', (@($group.tests) -join ','))
     if (-not [string]::IsNullOrWhiteSpace($PrelaunchConfigDirectory)) {
         $plannedCommand += @('-PrelaunchConfigDirectory', $PrelaunchConfigDirectory)
     }
@@ -471,14 +504,17 @@ foreach ($group in $selectedGroups) {
     }
     $plannedSmokeLaunch = New-RimWorldEndToEndSmokeLaunch `
         -Arguments $plannedCommand `
+        -XmlDeserializer (Get-RimWorldEndToEndXmlDeserializer -Group $group) `
         -EnableAudio:$EnableAudio
 
     $launchPlans.Add([pscustomobject]@{
         GroupId = [string]$group.groupId
+        XmlDeserializer = $plannedSmokeLaunch.XmlDeserializer
         Language = $Language
         AudioEnabled = [bool]$plannedSmokeLaunch.AudioEnabled
         ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
         Tests = @($group.tests)
+        XmlFixtures = @($group.xmlFixtures)
         AdditionalModIds = $additionalIds
         AdditionalModIdsFile = $plannedAdditionalIdsFile
         ArtifactsPath = $plannedGroupDirectory
@@ -504,8 +540,14 @@ if ($existingRimWorld.Count -ne 0) {
 }
 
 $runId = [datetime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ', [Globalization.CultureInfo]::InvariantCulture)
-$runDirectory = Join-Path $artifactRoot $runId
-$null = New-Item -Path $runDirectory -ItemType Directory -Force
+if ([string]::IsNullOrWhiteSpace($OwnedRunDirectory)) {
+    $runDirectory = Join-Path $artifactRoot $runId
+    $null = New-Item -Path $runDirectory -ItemType Directory -Force
+}
+else {
+    $runDirectory = Initialize-RimWorldEndToEndOwnedRun -RepositoryRoot $repositoryRoot -OwnedRunDirectory $OwnedRunDirectory
+    $runId = [IO.Path]::GetFileName($runDirectory)
+}
 $leaseFile = Join-Path $runDirectory 'stage.lease.json'
 $stageOutputPath = Join-Path $runDirectory 'stage.json'
 $productDeploymentEvidencePath = Join-Path $runDirectory 'product-deployment-evidence.json'
@@ -569,6 +611,8 @@ try {
         -ModsRoot $modsRoot `
         -ResolvablePackageIds $packageIds `
         -ProjectPaths $ProjectPath `
+        -SelectedTestIds $testIdFilters `
+        -SelectedGroupIds $GroupId `
         -LeaseFile $leaseFile
     [System.IO.File]::WriteAllText(
         $stageOutputPath,
@@ -588,6 +632,9 @@ try {
         $groupArtifactRoot = Join-Path $runDirectory ('smoke-{0:D3}' -f $groupIndex)
         $stdoutPath = Join-Path $groupDirectory 'stdout.json'
         $stderrPath = Join-Path $groupDirectory 'stderr.txt'
+        $fixtureLeaseFile = Join-Path $groupDirectory 'fixture.lease.json'
+        $gameProcessLease = Join-Path $groupArtifactRoot 'game-process.json'
+        $hasXmlFixtures = @($group.xmlFixtures).Count -gt 0
         $additionalIds = @($group.activePackageIds | Where-Object {
             [string]$_ -ine 'ludeon.rimworld' -and [string]$_ -ine 'fumblesneeze.rimworlddevgateway'
         })
@@ -603,9 +650,11 @@ try {
             '-Output', 'json')) {
             $smokeArguments.Add($argument)
         }
-        if ($testIdFilters.Count -gt 0) {
-            $smokeArguments.Add('-EndToEndTestIds')
-            $smokeArguments.Add((@($group.tests) -join ','))
+        $smokeArguments.Add('-EndToEndTestIds')
+        $smokeArguments.Add((@($group.tests) -join ','))
+        if ($hasXmlFixtures) {
+            $smokeArguments.Add('-ProcessLeaseFile')
+            $smokeArguments.Add($gameProcessLease)
         }
         if (-not [string]::IsNullOrWhiteSpace($PrelaunchConfigDirectory)) {
             $smokeArguments.Add('-PrelaunchConfigDirectory')
@@ -621,14 +670,43 @@ try {
         }
         $smokeLaunch = New-RimWorldEndToEndSmokeLaunch `
             -Arguments @($smokeArguments) `
+            -XmlDeserializer (Get-RimWorldEndToEndXmlDeserializer -Group $group) `
             -EnableAudio:$EnableAudio
 
         try {
-            $smoke = Invoke-BoundedProcess `
-                -ExecutablePath 'pwsh' `
-                -Arguments @($smokeLaunch.Arguments) `
-                -TimeoutMilliseconds (($TimeoutSeconds + 180) * 1000) `
-                -Description "RimWorld E2E group '$($group.groupId)'"
+            $launchGroup = {
+                Invoke-BoundedProcess `
+                    -ExecutablePath 'pwsh' `
+                    -Arguments @($smokeLaunch.Arguments) `
+                    -TimeoutMilliseconds (($TimeoutSeconds + 180) * 1000) `
+                    -Description "RimWorld E2E group '$($group.groupId)'"
+            }
+            if ($hasXmlFixtures) {
+                if ([string]::IsNullOrWhiteSpace($OwnedRunDirectory)) { throw 'XML fixtures require the typed owned E2E invocation.' }
+                $smoke = Invoke-RimWorldEndToEndFixtureLaunch `
+                    -ExternalStage `
+                    -RunDirectory $runDirectory -FixtureLeaseFile $fixtureLeaseFile -ProcessLeaseFile $gameProcessLease `
+                    -Stage {
+                        $published = Invoke-HostTool -Operation 'fixture-stage' -HostProject $hostProject `
+                            -RepositoryRoot $repositoryRoot -ModsRoot $modsRoot -RimWorldPath $resolvedRimWorldPath `
+                            -RimWorldVersion $rimWorldMajorVersion -ResolvablePackageIds $packageIds `
+                            -ProjectPaths $ProjectPath -SelectedTestIds @($group.tests) `
+                            -SelectedGroupIds @([string]$group.groupId) -LeaseFile $fixtureLeaseFile `
+                            -ProcessLeaseFile (Join-Path $groupDirectory 'fixture-stage-process.json')
+                        $published | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $groupDirectory 'fixture-stage.json') -Encoding UTF8
+                        if ($published.ExitCode -ne 0) { throw 'Selected XML fixture publication failed; inspect fixture-stage.json.' }
+                        $staged = ConvertFrom-RequiredJson -Text $published.StandardOutput -Description 'Selected XML fixture publication'
+                        $projected = New-RimWorldEndToEndSmokeLaunch -Arguments @($smokeLaunch.Arguments) -FixtureExpectations $staged.expectations
+                        $smokeLaunch.Arguments = @($projected.Arguments)
+                    } -Launch $launchGroup -Clean {
+                        $cleaned = Invoke-HostTool -Operation 'fixture-clean' -HostProject $hostProject `
+                            -RepositoryRoot $repositoryRoot -ModsRoot $modsRoot -RimWorldPath $resolvedRimWorldPath `
+                            -RimWorldVersion $rimWorldMajorVersion -ResolvablePackageIds $packageIds -LeaseFile $fixtureLeaseFile
+                        $cleaned | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $groupDirectory 'fixture-cleanup.json') -Encoding UTF8
+                        if ($cleaned.ExitCode -ne 0) { throw 'Selected XML fixture cleanup failed; inspect fixture-cleanup.json.' }
+                    }
+            }
+            else { $smoke = & $launchGroup }
             [System.IO.File]::WriteAllText($stdoutPath, $smoke.StandardOutput, [System.Text.UTF8Encoding]::new($false))
             [System.IO.File]::WriteAllText($stderrPath, $smoke.StandardError, [System.Text.UTF8Encoding]::new($false))
 
@@ -652,6 +730,7 @@ try {
                 [string]$smokeResult.Status -eq 'passed'
             $groupResults.Add([pscustomobject]@{
                 GroupId = [string]$group.groupId
+                XmlDeserializer = $smokeLaunch.XmlDeserializer
                 Language = $Language
                 AudioEnabled = [bool]$smokeLaunch.AudioEnabled
                 ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
@@ -671,22 +750,30 @@ try {
         }
         catch {
             $groupFailure = $_.Exception.Message
-            if (-not (Test-Path -LiteralPath $stdoutPath -PathType Leaf)) {
+            $retainedLaunch = $_.Exception.Data['LaunchResult']
+            $retainedSmokeResult = $null
+            if ($null -ne $retainedLaunch) {
+                [System.IO.File]::WriteAllText($stdoutPath, [string]$retainedLaunch.StandardOutput, [System.Text.UTF8Encoding]::new($false))
+                try { $retainedSmokeResult = [string]$retainedLaunch.StandardOutput | ConvertFrom-Json -ErrorAction Stop } catch { }
+            }
+            elseif (-not (Test-Path -LiteralPath $stdoutPath -PathType Leaf)) {
                 [System.IO.File]::WriteAllText($stdoutPath, '', [System.Text.UTF8Encoding]::new($false))
             }
-            [System.IO.File]::WriteAllText($stderrPath, $groupFailure, [System.Text.UTF8Encoding]::new($false))
+            $retainedError = if ($null -ne $retainedLaunch) { [string]$retainedLaunch.StandardError + [Environment]::NewLine } else { '' }
+            [System.IO.File]::WriteAllText($stderrPath, $retainedError + $groupFailure, [System.Text.UTF8Encoding]::new($false))
             $groupResults.Add([pscustomobject]@{
                 GroupId = [string]$group.groupId
+                XmlDeserializer = $smokeLaunch.XmlDeserializer
                 Language = $Language
                 AudioEnabled = [bool]$smokeLaunch.AudioEnabled
                 ActivePackageIds = @($group.activePackageIds) + @('fumblesneeze.rimworlddevgateway')
                 PlannedTests = @($group.tests)
                 Status = 'failed'
                 Message = $groupFailure
-                ExitCode = $null
+                ExitCode = if ($null -ne $retainedLaunch) { $retainedLaunch.ExitCode } else { $null }
                 StandardOutput = $stdoutPath
                 StandardError = $stderrPath
-                SmokeResult = $null
+                SmokeResult = $retainedSmokeResult
             })
         }
     }

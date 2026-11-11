@@ -252,7 +252,11 @@ public sealed class GatewayDebugActionRegistry
         return new GatewayDebugActionPage(items, start + items.Length < all.Length);
     }
 
-    public GatewayDebugActionInvocationResult Invoke(string handle)
+    public GatewayDebugActionInvocationResult Invoke(string handle) => InvokeResolved(handle, requireImmediate: false);
+
+    public GatewayDebugActionInvocationResult InvokeImmediate(string handle) => InvokeResolved(handle, requireImmediate: true);
+
+    private GatewayDebugActionInvocationResult InvokeResolved(string handle, bool requireImmediate)
     {
         if (string.IsNullOrWhiteSpace(handle))
         {
@@ -285,6 +289,12 @@ public sealed class GatewayDebugActionRegistry
             throw new GatewayDebugActionException(
                 "debug_action_unsupported",
                 $"Debug action '{match.Descriptor.Path}' has an unsupported native action type.");
+        }
+
+        if (requireImmediate && match.Descriptor.Mode != GatewayDebugActionMode.Immediate)
+        {
+            throw new GatewayDebugActionException("debug_action_requires_immediate",
+                "This action step requires an immediate native debug action; no pointer tool was activated.");
         }
 
         match.Candidate.Invoke();

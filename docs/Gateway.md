@@ -245,7 +245,9 @@ required player workflow. The 1.6 capture/retry path is unchanged.
 | `POST /executions/csharp` | direct HTTP | Evaluate raw UTF-8 C# in the stateful in-process REPL |
 | `POST /executions/assembly` | `execute-source ...` | Compile on the host, upload, and invoke an assembly |
 | `GET /automations` | `automations` | Discover named automations and availability |
-| `POST /automations/{name}/runs` | `run NAME [--arguments JSON]` | Run synchronously and return a terminal automation run; `automations run` is an alias |
+| `POST /automations/{name}/runs` | `run NAME [--arguments JSON]` | Invoke once; synchronous work returns terminal, deferred work returns a retained pending run; `automations run` is an alias |
+| `GET /automation-runs/{id}` | `automations status RUN_ID` | Inspect the retained run without repeating its action |
+| `POST /automation-runs/{id}/cancel` | `automations cancel RUN_ID` | Request cancellation; inspect status until owned cleanup completes |
 | `POST /defs/export` | direct HTTP | Bounded deterministic JSON snapshots from finalized live Def databases |
 | `GET /integration-tests` | direct HTTP | Startup-gated in-game integration-test state and immutable results |
 | `GET /end-to-end-tests` | direct HTTP | Startup-gated multi-frame E2E discovery, current step, durable terminal results, and screenshot artifacts |
@@ -284,6 +286,51 @@ client does not retry, select a label match or treat command dispatch as gamepla
 The typed adapter retains the existing65,536-character output bound and explicitly fails larger
 debug-action responses instead of returning truncated JSON. Reduce the page size for a query;
 do not retry a native invocation merely because its response was too large.
+
+The in-development 1.7 native-dialog provider registers `native-window.capture` with arguments
+`{"version":1}` and `native-window.click` with `{"version":1,"windowHandle":"<captured handle>","pixelX":123,"pixelY":456}`.
+
+Capture returns instance handles, GUI bounds, UI scale and rendered extent. Click coordinates use
+top-left rendered pixels; the provider rechecks the exact window, hit target, geometry and neutral
+input at each phase. It never restores the game window or sends desktop input. Capability discovery
+can refuse an unobserved/unsupported input boundary; do not bypass that refusal with guessed handles.
+Clicks may return pending runs: use `gateway_automation_status` and `gateway_automation_cancel` with
+the separate leased game-run ID and retained automation-run ID. Terminal dispatch is not evidence
+that a widget changed. E2E `NativeWindowCaptureStep`/`NativeWindowClickActionStep` share these operations
+and retain request, partial-result and cleanup evidence, including scenario timeouts and rejected
+capture observations. The reviewed `gateway.native-window-checkbox` run
+`artifacts/EndToEndRuns/Grouped/20261107T181928426Z-52180318cc514846b59391553fcc98ab` visibly changed
+an enabled checkbox once while leaving a disabled checkbox unchanged. The separately reviewed
+`gateway.native-window-layout-replacement` run
+`artifacts/EndToEndRuns/Grouped/20261107T182434919Z-844e07c2a933480ab865de56501440b2` rejected press
+and release after layout replaced the target, preserved the replacement's native control capture,
+and then accepted fresh clicks. Root personally inspected the causal captures and native console
+in both minimized1.7 runs. UI scale1, ordinary window ID0, unchanged normal configuration hashes
+and completed cleanup are retained. Cancellation, other scales, main-menu, text and scroll cases,
+and full tooling acceptance remain incomplete.
+
+`native-log.set-open` accepts `{"version":1,"open":true}` (or false) through the same typed
+automation invocation surface. It invokes the inspected1.7 developer-log toolbar command,
+requires developer mode and settled UI, and observes the resulting native window. An already
+matching state is preserved. It neither enables developer mode nor clears or adds log entries.
+`NativeDeveloperLogActionStep` exposes the same command to E2E scenarios; personally inspect its
+subsequent screenshot. The runs above proved native open/capture/close;1.6 remains unverified.
+
+`gateway_main_tab` takes an exact leased `runId`, native button `defName` (for example `Assign`),
+and Boolean `open`. It projects to `native-main-tab.set-open` with
+`{"version":1,"defName":"Assign","open":true}`. The 1.7 adapter resolves the actual displayed bar
+and invokes its ordinary button command while preserving visibility, disabled state, modal input
+and settled-game restrictions. A satisfied request makes no native call; closing an already-closed
+target leaves another open tab unchanged. Before/attempt/after observations are retained without
+retaining game or window objects. No desktop input or direct dialog construction is used.
+`NativeMainTabActionStep` uses this same action in E2E scenarios. The S029 initial-preset run
+`20261108T101457394Z-77b75d40df7043a793a9594469afc0a5` proved Assign opening followed by native
+policy edits/assignment and closure, with personally inspected screenshots and console. Host tests
+cover adverse gates; this one run does not claim all native refusal or scale combinations.
+
+```powershell
+dotnet artifacts/HostTools/Release/net8.0/RimWorldModding.Mcp.dll tool call gateway_main_tab --arguments '{"runId":"EXACT_READY_RUN","defName":"Assign","open":true}' -o json
+```
 
 The version-one status result remains intentionally narrow: `developerOnly`, `longEventActive`, nullable `map`, `pendingDispatches`, `processId`, `programState`, `rootType`, nullable `tick`, `unrestrictedExecutionEnabled`, and `warning`. `longEventActive` is RimWorld's native `LongEventHandler.AnyEventNowOrWaiting` signal; a non-null map can therefore be distinguished from a settled playable lifecycle. A non-null map has `Handle`, `Biome`, `Width`, and `Height`. The UI-state result contains `programState`, `rootType`, nullable effective `paused`, nullable native `speed`, nullable rendered `clientArea`, up to 256 selection entries (`Handle`, `Label`), and up to 128 window entries (`Handle`, `Type`, `Modal`). `clientArea` reports positive `Width`/`Height` and `CoordinateOrigin: TopLeft`; this is the exact client-pixel coordinate space accepted by `/input/may-maximize-window/click` and `/input/may-maximize-window/drag`, independent of desktop screenshot scaling. Richer developer controls live in the dedicated `/game-state`, `/camera`, `/things`, and `/selection` contracts. Versions come from the session manifest, and action schemas and availability come from their discovery routes.
 
@@ -562,7 +609,7 @@ Compile, upload, and invoke it while the same game process remains running:
   -o json
 ```
 
-The method runs through the Unity main-thread dispatcher. The API result contains `Value`, `Truncated`, and `OriginalUtf8Bytes`; `Value` is deterministically limited to 10 MiB UTF-8 including the truncation marker. This bound is chosen so worst-case sixfold JSON escaping still fits the transport's 64 MiB response ceiling. Context-aware code receives the dispatch cancellation token. A registered automation is process-session scoped, appears in `GET /automations`, receives at most 1 MiB of normalized argument JSON plus its automation cancellation token, and has the same 10 MiB result bound. Its metadata is limited to 64 schema entries, 64 prerequisites, 256 UTF-8 bytes per schema key, 4,096 UTF-8 bytes per schema value/prerequisite, and 512 KiB total. Empty/null or oversized metadata fails before registration. HTTP request/deadline cancellation is linked into the run token for cooperative started handlers; this is transport lifecycle handling, not a version-one remote-cancel API. The legacy one-string signature remains accepted but cannot observe cancellation after invocation. The server intentionally does not authorize, sandbox, or unload uploaded assemblies.
+The method runs through the Unity main-thread dispatcher. The API result contains `Value`, `Truncated`, and `OriginalUtf8Bytes`; `Value` is deterministically limited to 10 MiB UTF-8 including the truncation marker. This bound is chosen so worst-case sixfold JSON escaping still fits the transport's 64 MiB response ceiling. Context-aware code receives the dispatch cancellation token. A registered automation is process-session scoped, appears in `GET /automations`, receives at most 1 MiB of normalized argument JSON plus its automation cancellation token, and has the same 10 MiB result bound. Its metadata is limited to 64 schema entries, 64 prerequisites, 256 UTF-8 bytes per schema key, 4,096 UTF-8 bytes per schema value/prerequisite, and 512 KiB total. Empty/null or oversized metadata fails before registration. HTTP request/deadline cancellation is linked into the run token for cooperative started handlers. Retained automation runs also expose explicit status and cancellation-request routes; cancellation cannot interrupt a synchronous handler that never checks its token. The legacy one-string signature remains accepted but cannot observe cancellation after invocation. The server intentionally does not authorize, sandbox, or unload uploaded assemblies.
 
 The checked-in `scripts\Fixtures\GatewayAssemblyExecutionSmoke.cs` is the canonical live probe for context-aware upload and no-restart session registration.
 
@@ -768,9 +815,33 @@ The version-1 descriptor rejects unknown fields. A complete example is:
 
 `quickstart.spawn` requires `ProgramState.Playing`, a current map, and no active long event. It parses and resolves all feasible Defs and cells before mutation, clears the bounded area, spawns/configures the scene, completes research, starts conditions, and tries to center the camera. A camera failure is a non-fatal `camera_focus_failed` warning. The result reports `Center`, every `ResolvedDefinition`, each spawned object's handle/category/Def/stuff/count/quality/position, warnings, and an ordered mutation ledger.
 
-Inspect `GET /automations` for the live schema and availability. Version-one invocation is synchronous: `POST /automations/{name}/runs` waits for the main-thread handler and returns a terminal `succeeded`, `failed`, `cancelled`, or `timed-out` run with completed bounded progress/artifacts, result or error, and mutation ledger. An idempotency key replays that same terminal run ID and result and rejects reuse with different arguments.
+Inspect `GET /automations` for the live schema and availability. `POST /automations/{name}/runs`
+invokes its handler once through the main-thread dispatcher. Synchronous handlers return a terminal
+`succeeded`, `failed`, `cancelled`, or `timed-out` run. Deferred handlers return a retained `running`
+run and advance in bounded phases. Inspect that exact automation RunId; do not invoke the action
+again to poll it. An idempotency key returns the same retained run and rejects different arguments.
 
-Version one has no HTTP route for listing runs, looking up a run, polling or streaming incremental progress, or remotely cancelling a run. The registry has internal lifecycle and cooperative-cancellation mechanics, but those are not a remote contract. Add any such route through a future OpenSpec/API change.
+The repository tools `gateway_automation_status` and `gateway_automation_cancel` take both the
+leased game `runId` and the `automationRunId` returned by invocation. The corresponding CLI is:
+
+```powershell
+dotnet artifacts/HostTools/Release/net8.0/RimWorldModding.Mcp.dll tool call gateway_automation_status `
+  --arguments '{"runId":"GAME_RUN_ID","automationRunId":"AUTOMATION_RUN_ID"}' -o json
+dotnet artifacts/HostTools/Release/net8.0/RimWorldModding.Mcp.dll tool call gateway_automation_cancel `
+  --arguments '{"runId":"GAME_RUN_ID","automationRunId":"AUTOMATION_RUN_ID"}' -o json
+```
+
+Cancellation acknowledges intent, not completed cleanup. Inspect until the terminal run includes
+its partial result and cleanup outcome. A generic HTTP automation retains the router's response
+budget as its own deadline (normally15 seconds), even after the initial HTTP response completes.
+Pending work must release only its owned input before claiming completion. Dispatch receipts do
+not prove that a native control or gameplay outcome changed. Runtime installation of the new
+minimized-input provider and its live acceptance remain in progress under
+`openspec/changes/add-gateway-minimized-window-input`; existing synchronous automations are unchanged.
+
+Version one supports lookup, polling and cooperative cancellation by the exact run ID returned at
+admission, as documented above. Listing all runs and streaming incremental progress are not remote
+contracts; add either through an owning OpenSpec/API change.
 
 Use the raw C# endpoint for one-off verification logic. Use a host-compiled uploaded assembly only when the older REPL language surface or reference model is insufficient. Add a named built-in automation when the flow is reusable and has a tested, discoverable contract. Product mods may own scenario JSON, but must not reference the gateway assembly.
 

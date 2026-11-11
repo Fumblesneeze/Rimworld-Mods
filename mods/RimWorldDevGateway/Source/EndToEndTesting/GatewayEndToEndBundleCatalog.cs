@@ -13,10 +13,17 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
 {
     private const string ManifestSuffix = ".e2etests.json";
     private readonly IGatewayEndToEndAssemblyLoader assemblyLoader;
+    private readonly bool observedLegacyXmlDeserializer;
+    private readonly HashSet<string> selectedTestIds;
 
-    public GatewayEndToEndBundleCatalog(IGatewayEndToEndAssemblyLoader? assemblyLoader = null)
+    public GatewayEndToEndBundleCatalog(
+        IGatewayEndToEndAssemblyLoader? assemblyLoader = null,
+        bool observedLegacyXmlDeserializer = false,
+        IReadOnlyCollection<string>? selectedTestIds = null)
     {
         this.assemblyLoader = assemblyLoader ?? new GatewayEndToEndAssemblyByteLoader();
+        this.observedLegacyXmlDeserializer = observedLegacyXmlDeserializer;
+        this.selectedTestIds = new HashSet<string>(selectedTestIds ?? Array.Empty<string>(), StringComparer.Ordinal);
     }
 
     public IReadOnlyList<GatewayEndToEndBundleInspectionResult> InspectAll(
@@ -111,8 +118,19 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             manifestFileName,
             manifest.Assembly);
         ValidateManifest(manifest, candidate, activePackageIds, manifestFileName);
+        var wrongMode = manifest.Tests.FirstOrDefault(test =>
+            selectedTestIds.Contains(test.Id) && MatchesActiveGroup(test.ActivePackageIds, activePackageIds) &&
+            test.LegacyXmlDeserializer != observedLegacyXmlDeserializer);
+        if (wrongMode is not null)
+        {
+            throw Failure("xml_loader_mode_mismatch",
+                "Selected E2E test '" + wrongMode.Id + "' requested '" +
+                (wrongMode.LegacyXmlDeserializer ? "legacy" : "default") + "' XML loader but observed '" +
+                (observedLegacyXmlDeserializer ? "legacy" : "default") + "'.");
+        }
         var matchingTests = manifest.Tests
-            .Where(test => MatchesActiveGroup(test.ActivePackageIds, activePackageIds))
+            .Where(test => MatchesActiveGroup(test.ActivePackageIds, activePackageIds) &&
+                test.LegacyXmlDeserializer == observedLegacyXmlDeserializer)
             .OrderBy(test => test.Id, StringComparer.Ordinal)
             .ToArray();
         if (matchingTests.Length == 0)
@@ -182,7 +200,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
                     test.MaxFrames,
                     test.MaxGameTicks,
                     test.MaxWallClockSeconds,
-                    compiled.TestType)
+                    compiled.TestType,
+                    test.LegacyXmlDeserializer)
                 : new GatewayEndToEndRuntimeTestDescriptor(
                     test.Id,
                     test.OwnerPackageId,
@@ -254,7 +273,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         IReadOnlyList<string> activePackageIds,
         string manifestFileName)
     {
-        if (!StringComparer.Ordinal.Equals(manifest.Schema, EndToEndBundleManifest.SchemaValue))
+        if (!StringComparer.Ordinal.Equals(manifest.Schema, EndToEndBundleManifest.SchemaValue) &&
+            !StringComparer.Ordinal.Equals(manifest.Schema, EndToEndBundleManifest.NativeXmlLoaderSchemaValue))
         {
             throw Failure("manifest_schema_mismatch", "The staged E2E manifest schema is unsupported.");
         }
@@ -280,6 +300,12 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         if (manifest.Tests is null || manifest.Tests.Length == 0)
         {
             throw Failure("manifest_tests_invalid", "The staged E2E manifest contains no tests.");
+        }
+
+        if (StringComparer.Ordinal.Equals(manifest.Schema, EndToEndBundleManifest.SchemaValue) &&
+            manifest.Tests.Any(test => test.LegacyXmlDeserializer))
+        {
+            throw Failure("manifest_xml_loader_invalid", "A v1 E2E manifest can declare only the default XML loader.");
         }
 
         var duplicateId = manifest.Tests
@@ -552,11 +578,17 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         var maxFrames = 3_600;
         var maxGameTicks = 60_000;
         var maxWallClockSeconds = 120;
+        var legacyXmlDeserializer = false;
         foreach (var named in attribute.NamedArguments)
         {
             var value = named.TypedValue.Value is int number ? number : 0;
             switch (named.MemberName)
             {
+                case "LegacyXmlDeserializer":
+                    if (named.TypedValue.Value is not bool legacy)
+                        throw Failure("compiled_test_manifest_mismatch", "The compiled XML loader mode is invalid.");
+                    legacyXmlDeserializer = legacy;
+                    break;
                 case "MaxFrames":
                     maxFrames = value;
                     break;
@@ -579,7 +611,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             maxWallClockSeconds,
             type,
             EndToEndBundleTest.EndToEndKind,
-            performanceDescriptor: null);
+            performanceDescriptor: null,
+            legacyXmlDeserializer);
     }
 
     private static CompiledTest ReadCompiledPerformanceTest(PerformanceTestDescriptor descriptor)
@@ -659,6 +692,7 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
                 !StringComparer.OrdinalIgnoreCase.Equals(actual.OwnerPackageId, expected.OwnerPackageId) ||
                 !effectivePackages.SequenceEqual(expected.ActivePackageIds, StringComparer.OrdinalIgnoreCase) ||
                 actual.MaxFrames != expected.MaxFrames ||
+                actual.LegacyXmlDeserializer != expected.LegacyXmlDeserializer ||
                 actual.MaxGameTicks != expected.MaxGameTicks ||
                 actual.MaxWallClockSeconds != expected.MaxWallClockSeconds)
             {
@@ -805,7 +839,8 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             int maxWallClockSeconds,
             Type testType,
             string kind,
-            PerformanceTestDescriptor? performanceDescriptor)
+            PerformanceTestDescriptor? performanceDescriptor,
+            bool legacyXmlDeserializer = false)
         {
             Id = id;
             OwnerPackageId = ownerPackageId;
@@ -817,6 +852,7 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
             TestType = testType;
             Kind = kind;
             PerformanceDescriptor = performanceDescriptor;
+            LegacyXmlDeserializer = legacyXmlDeserializer;
         }
 
         public string Id { get; }
@@ -829,6 +865,7 @@ public sealed class GatewayEndToEndBundleCatalog : IGatewayEndToEndBundleInspect
         public Type TestType { get; }
         public string Kind { get; }
         public PerformanceTestDescriptor? PerformanceDescriptor { get; }
+        public bool LegacyXmlDeserializer { get; }
     }
 
     private sealed class GatewayEndToEndCatalogException : Exception

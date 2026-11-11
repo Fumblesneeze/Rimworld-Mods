@@ -101,6 +101,10 @@ param(
 
     [string]$ProcessLeaseFile,
 
+    # Internal selected-fixture handoff from the grouped runner; no public ignore option.
+    [string]$XmlFixtureExpectationsFile,
+    [string]$XmlFixtureExpectationsSha256,
+
     [switch]$Quicktest,
 
     [string]$Scenario,
@@ -108,6 +112,8 @@ param(
     [switch]$RunIntegrationTests,
 
     [switch]$RunEndToEndTests,
+
+    [switch]$LegacyXmlDeserializer,
 
     [string]$EndToEndTestIds = '',
 
@@ -127,6 +133,16 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'RimWorldFixtureDiagnostics.Support.psm1') -Force
+
+function Get-GatewayNativeXmlLoaderArguments {
+    param([bool]$LegacyXmlDeserializer, [bool]$RunEndToEndTests, [string]$RimWorldMajorVersion)
+    if (-not $LegacyXmlDeserializer) { return @() }
+    if (-not $RunEndToEndTests -or $RimWorldMajorVersion -cne '1.7') {
+        throw 'Legacy XML deserialization requires an isolated RimWorld 1.7 E2E run.'
+    }
+    return @('-legacy-xml-deserializer')
+}
 
 function Wait-GatewayStoppedTombstone {
     param(
@@ -1432,15 +1448,15 @@ function Assert-GatewaySmokeUnchangedHash {
 function Get-GatewayRuntimeLogErrors {
     param([Parameter(Mandatory)][string]$Path)
 
-    return @(Select-String `
-        -LiteralPath $Path `
-        -Pattern '(?i)(FileNotFoundException|TypeLoadException|MissingMethodException|ReflectionTypeLoadException|Root level exception|Exception:|Error while instantiating a mod|Could not instantiate|Could not resolve cross-reference|XML error|not a Def type or could not be found|Patch operation .* failed|EmbedIO.*(error|exception)|Mono\.CSharp.*(error|exception)|Swan\.Lite.*(error|exception)|System\.ValueTuple.*(error|exception))')
+    return @((Get-RimWorldFixtureLogAccounting -Path $Path).Unexpected)
 }
 
 function Assert-GatewayFinalPlayerLog {
     param(
         [Parameter(Mandatory)][string]$Path,
-        [AllowEmptyString()][string]$BearerToken
+        [AllowEmptyString()][string]$BearerToken,
+        [AllowNull()][object]$FixtureExpectations,
+        [string]$EvidencePath
     )
 
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
@@ -1453,10 +1469,8 @@ function Assert-GatewayFinalPlayerLog {
         throw 'The bearer token leaked into Player.log after scenario execution or shutdown.'
     }
 
-    $finalRuntimeErrors = @(Get-GatewayRuntimeLogErrors -Path $Path)
-    if ($finalRuntimeErrors.Count -gt 0) {
-        throw "Player.log contains a mod or gateway load/runtime error after scenario execution and exact-process shutdown. See $Path"
-    }
+    if ([string]::IsNullOrWhiteSpace($EvidencePath)) { $EvidencePath = Join-Path ([IO.Path]::GetDirectoryName($Path)) 'final-log-accounting.json' }
+    Assert-RimWorldFixtureLog -Path $Path -Expectations $FixtureExpectations -Final -EvidencePath $EvidencePath
 }
 
 function Read-ValidatedGatewayCurrentManifest {
@@ -2700,6 +2714,17 @@ function Get-GatewayActiveModIds {
 }
 
 $activeModIds = @(Get-GatewayActiveModIds -AdditionalPackageIds $validatedAdditionalModIds)
+$fixtureExpectations = $null
+if ($XmlFixtureExpectationsFile -or $XmlFixtureExpectationsSha256) {
+    if (-not $RunEndToEndTests -or -not $SkipBuildDeploy -or -not $ProcessLeaseFile -or
+        -not $XmlFixtureExpectationsFile -or -not $XmlFixtureExpectationsSha256) {
+        Exit-InvalidInput 'Fixture expectations require the exact pre-staged grouped E2E child invocation.'
+    }
+    try {
+        $fixtureExpectations = Read-RimWorldFixtureExpectations -Path $XmlFixtureExpectationsFile `
+            -Sha256 $XmlFixtureExpectationsSha256 -ActivePackageIds $activeModIds
+    } catch { Exit-InvalidInput $_.Exception.Message }
+}
 
 if ($IntegrationFailureProbe -and (-not $RunIntegrationTests -or -not $Quicktest)) {
     Exit-InvalidInput '-IntegrationFailureProbe requires both -RunIntegrationTests and -Quicktest.'
@@ -5440,6 +5465,13 @@ $rimWorldExecutable = [string]$gameInstallation.executablePath
 $managedPath = [string]$gameInstallation.managedPath
 $rimWorldVersion = [string]$gameInstallation.version
 $rimWorldMajorVersion = [string]$gameInstallation.majorVersion
+try {
+    $nativeXmlLoaderArguments = @(Get-GatewayNativeXmlLoaderArguments `
+        -LegacyXmlDeserializer ([bool]$LegacyXmlDeserializer) `
+        -RunEndToEndTests ([bool]$RunEndToEndTests) `
+        -RimWorldMajorVersion $rimWorldMajorVersion)
+}
+catch { Exit-InvalidInput $_.Exception.Message }
 $validatedAdditionalModProjects = [System.Collections.Generic.List[object]]::new()
 $additionalModProjectPackages = [System.Collections.Generic.HashSet[string]]::new(
     [System.StringComparer]::OrdinalIgnoreCase)
@@ -5661,7 +5693,7 @@ $launchArguments = @(
     "-savedatafolder=`"$savedDataPath`"",
     '-logFile',
     "`"$playerLogPath`""
-) + $unityWindowArguments
+) + $unityWindowArguments + $nativeXmlLoaderArguments
 if ($rimWorldMajorVersion -eq '1.7') {
     # Waylith ignores Unity's -logFile and otherwise writes to the normal profile.
     # Capture its console logger into this process's evidence directory instead.
@@ -5747,6 +5779,7 @@ if ($DryRun) {
         RunsGatewayRegressionScenario = $runGatewayRegressionScenario
         RunIntegrationTests = [bool]$RunIntegrationTests
         RunEndToEndTests = [bool]$RunEndToEndTests
+        RequestedXmlDeserializer = if ($LegacyXmlDeserializer) { 'legacy' } else { 'default' }
         SelectedEndToEndTestIds = $selectedEndToEndTestIds
         SkipBuildDeploy = [bool]$SkipBuildDeploy
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
@@ -7754,10 +7787,8 @@ try {
         }
     }
 
-    $runtimeErrors = @(Get-GatewayRuntimeLogErrors -Path $playerLogPath)
-    if ($runtimeErrors.Count -gt 0) {
-        throw "Player.log contains a mod or gateway load/runtime error. See $playerLogPath"
-    }
+    Assert-RimWorldFixtureLog -Path $playerLogPath -Expectations $fixtureExpectations `
+        -EvidencePath (Join-Path $runDirectory 'intermediate-log-accounting.json')
 
     if ($runGatewayRegressionScenario) {
     $serviceStatusBefore = Invoke-FlaUiJson -Arguments @('service', 'status')
@@ -8146,6 +8177,7 @@ try {
         EndToEndTestsPendingResponse = if ($RunEndToEndTests) { $endToEndTestsPendingPath } else { $null }
         EndToEndTestsPersisted = $endToEndTestsPersistedPath
         RunEndToEndTests = [bool]$RunEndToEndTests
+        RequestedXmlDeserializer = if ($LegacyXmlDeserializer) { 'legacy' } else { 'default' }
         SelectedEndToEndTestIds = $selectedEndToEndTestIds
         SkipBuildDeploy = [bool]$SkipBuildDeploy
         IntegrationFailureProbe = [bool]$IntegrationFailureProbe
@@ -8700,7 +8732,9 @@ $finalBearerToken = if ($null -ne $manifest) { [string]$manifest.token } else { 
 try {
     Assert-GatewayFinalPlayerLog `
         -Path $playerLogPath `
-        -BearerToken $finalBearerToken
+        -BearerToken $finalBearerToken `
+        -FixtureExpectations $fixtureExpectations `
+        -EvidencePath (Join-Path $runDirectory 'final-log-accounting.json')
 }
 catch {
     Add-GatewaySmokeFailure `
@@ -8755,9 +8789,12 @@ catch {
     }
 }
 try {
-    $cleanupStatus |
-        ConvertTo-Json -Depth 10 |
-        Set-Content -LiteralPath $cleanupStatusPath -Encoding UTF8
+    $cleanupJson = $cleanupStatus | ConvertTo-Json -Depth 10
+    $cleanupBearerToken = if ($null -ne $manifest) { [string]$manifest.token } else { '' }
+    if (-not [string]::IsNullOrEmpty($cleanupBearerToken)) {
+        $cleanupJson = $cleanupJson.Replace($cleanupBearerToken, '[REDACTED]')
+    }
+    Set-Content -LiteralPath $cleanupStatusPath -Value $cleanupJson -Encoding UTF8
 }
 catch {
     Add-GatewaySmokeFailure `
@@ -8766,13 +8803,50 @@ catch {
         -Message "Aggregate cleanup-status persistence failed: $($_.Exception.Message)"
 }
 
-if ($failureRecords.Count -ne 0) {
-    foreach ($failure in $failureRecords) {
-        [Console]::Error.WriteLine("[$($failure.Category)] $($failure.Message)")
+if ($null -eq $result) {
+    # A scenario can fail before the success result is constructed. Preserve only captured facts.
+    $result = [pscustomobject][ordered]@{
+        Status = 'failed'
+        RunId = $runId
+        RunDirectory = $runDirectory
+        ConfiguredGameVersion = $rimWorldVersion
+        LiveGameVersion = if ($null -ne $manifest) { [string]$manifest.gameVersion } else { $null }
+        GatewayModVersion = if ($null -ne $manifest) { [string]$manifest.modVersion } else { $null }
+        ProcessId = if ($null -ne $launchedProcess) { [int]$launchedProcess.Id } else { $null }
+        ProcessStartUtc = if ($null -ne $launchedProcessStartUtc) { $launchedProcessStartUtc.ToUniversalTime().ToString('O', [Globalization.CultureInfo]::InvariantCulture) } else { $null }
+        ActiveMods = @($activeModIds)
+        LoadedMods = @($loadedModIds)
+        RequiredAssemblyEvidence = @($requiredAssemblyEvidence)
+        ProductPackageEvidence = @($productPackageEvidence)
+        NormalConfigHashBefore = $normalConfigHashBefore
+        NormalPrefsHashBefore = $normalPrefsHashBefore
+        LaunchWindowStyle = $launchWindowStyle
+        VisibleWindow = $launchVisible
+        PlayerLog = $playerLogPath
+        BuildLog = $buildLogPath
+        FailureDiagnostics = $failureDiagnosticsPath
+        ProcessCleanup = $processCleanupPath
+        EndToEndTestsResponse = if ($RunEndToEndTests) { $endToEndTestsPath } else { $null }
+        SelectedEndToEndTestIds = @($selectedEndToEndTestIds)
     }
-    [Console]::Error.WriteLine("Gateway smoke artifacts: $runDirectory")
-    exit 1
 }
+
+if ($failureRecords.Count -ne 0) { $result.Status = 'failed' }
+$completionIdentity = [ordered]@{
+    RunId = $runId
+    RunDirectory = $runDirectory
+    ProcessStartUtc = if ($null -ne $launchedProcessStartUtc) { $launchedProcessStartUtc.ToUniversalTime().ToString('O', [Globalization.CultureInfo]::InvariantCulture) } else { $null }
+}
+foreach ($entry in $completionIdentity.GetEnumerator()) {
+    $result | Add-Member -MemberType NoteProperty -Name ([string]$entry.Key) -Value $entry.Value -Force
+}
+$summaryBearerToken = if ($null -ne $manifest) { [string]$manifest.token } else { '' }
+$summaryFailures = @($failureRecords | ForEach-Object {
+    $message = [string]$_.Message
+    if (-not [string]::IsNullOrEmpty($summaryBearerToken)) { $message = $message.Replace($summaryBearerToken, '[REDACTED]') }
+    [pscustomobject]@{ Category = [string]$_.Category; Message = $message }
+})
+$result | Add-Member -MemberType NoteProperty -Name 'Failures' -Value $summaryFailures -Force
 
 $result = Set-GatewaySmokeCompletionMetadata `
     -Result $result `
@@ -8799,14 +8873,21 @@ $result | Add-Member `
     -Value $workshopOverrideCleanupPath `
     -Force
 try {
-    $summaryBearerToken = if ($null -ne $manifest) { [string]$manifest.token } else { '' }
     Write-GatewaySmokeEvidenceSummary `
         -Result $result `
         -Path $evidenceSummaryPath `
         -BearerToken $summaryBearerToken
 }
 catch {
-    [Console]::Error.WriteLine("[primary] Final evidence-summary persistence failed: $($_.Exception.Message)")
+    Add-GatewaySmokeFailure -Failures $failureRecords -Category 'primary' `
+        -Message "Final evidence-summary persistence failed: $($_.Exception.Message)"
+}
+if ($failureRecords.Count -ne 0) {
+    foreach ($failure in $failureRecords) {
+        $message = [string]$failure.Message
+        if (-not [string]::IsNullOrEmpty($summaryBearerToken)) { $message = $message.Replace($summaryBearerToken, '[REDACTED]') }
+        [Console]::Error.WriteLine("[$($failure.Category)] $message")
+    }
     [Console]::Error.WriteLine("Gateway smoke artifacts: $runDirectory")
     exit 1
 }

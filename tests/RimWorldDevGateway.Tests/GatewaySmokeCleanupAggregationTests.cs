@@ -256,6 +256,107 @@ public sealed class GatewaySmokeCleanupAggregationTests
     }
 
     [Test]
+    public void Failed_completion_tail_persists_captured_identity_hashes_and_cleanup_before_nonzero_exit()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeCompletionTail();
+
+        Assert.That(run.ExitCode, Is.EqualTo(1), run.StandardError);
+        Assert.That(File.Exists(fixture.ArtifactPath), Is.True, run.StandardError);
+        var summary = File.ReadAllText(fixture.ArtifactPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(summary, Does.Contain("\"Status\": \"failed\""));
+            Assert.That(summary, Does.Contain("\"ProcessId\": 314"));
+            Assert.That(summary, Does.Contain("2026-11-07T10:00:00"));
+            Assert.That(summary, Does.Contain("BUILD-SHA256"));
+            Assert.That(summary, Does.Contain("CONFIG-BEFORE"));
+            Assert.That(summary, Does.Contain("CONFIG-AFTER"));
+            Assert.That(summary, Does.Contain("PREFS-BEFORE"));
+            Assert.That(summary, Does.Contain("PREFS-AFTER"));
+            Assert.That(summary, Does.Contain("cleanup-only.json"));
+            Assert.That(summary, Does.Contain("checkbox verification failed"));
+            Assert.That(summary, Does.Not.Contain("sensitive-token"));
+        });
+    }
+
+    [Test]
+    public void Failed_completion_tail_before_launch_preserves_null_identity_and_hashes()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeCompletionTail(
+            "$manifest = $null; $launchedProcess = $null; $launchedProcessStartUtc = $null; $requiredAssemblyEvidence = @(); $normalConfigHashBefore = $null; $normalConfigHashAfter = $null");
+        Assert.That(run.ExitCode, Is.EqualTo(1), run.StandardError);
+        var summary = File.ReadAllText(fixture.ArtifactPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(summary, Does.Contain("\"ProcessId\": null"));
+            Assert.That(summary, Does.Contain("\"ProcessStartUtc\": null"));
+            Assert.That(summary, Does.Contain("\"NormalConfigHashBefore\": null"));
+            Assert.That(summary, Does.Contain("\"NormalConfigHashAfter\": null"));
+            Assert.That(summary, Does.Not.Contain("BUILD-SHA256"));
+        });
+    }
+
+    [Test]
+    public void Cleanup_failure_changes_passed_result_to_failed_without_losing_scenario_evidence()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeCompletionTail(
+            "$result = [pscustomobject]@{ Status = 'passed'; ScenarioEvidence = 'before-action-after'; NormalConfigHashBefore = $normalConfigHashBefore; NormalPrefsHashBefore = $normalPrefsHashBefore }; $failureRecords.Clear(); $processCleanupStatus = 'failed'; Add-GatewaySmokeFailure -Failures $failureRecords -Category 'process-cleanup' -Message 'owned process still alive'");
+        Assert.That(run.ExitCode, Is.EqualTo(1), run.StandardError);
+        var summary = File.ReadAllText(fixture.ArtifactPath);
+        Assert.Multiple(() =>
+        {
+            Assert.That(summary, Does.Contain("\"Status\": \"failed\""));
+            Assert.That(summary, Does.Contain("before-action-after"));
+            Assert.That(summary, Does.Contain("owned process still alive"));
+            Assert.That(summary, Does.Contain("CONFIG-AFTER"));
+        });
+    }
+
+    [Test]
+    public void Token_bearing_failures_are_redacted_in_final_summary_cleanup_and_console()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeCompletionTail(
+            "$failureRecords.Clear(); Add-GatewaySmokeFailure -Failures $failureRecords -Category 'primary' -Message 'request sensitive-token failed'");
+        Assert.That(run.ExitCode, Is.EqualTo(1), run.StandardError);
+        var summary = File.ReadAllText(fixture.ArtifactPath);
+        var cleanup = File.ReadAllText(Path.Combine(Path.GetDirectoryName(fixture.ArtifactPath)!, "cleanup-only.json"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(summary, Does.Not.Contain("sensitive-token"));
+            Assert.That(cleanup, Does.Not.Contain("sensitive-token"));
+            Assert.That(run.StandardError, Does.Not.Contain("sensitive-token"));
+            Assert.That(summary, Does.Contain("request [REDACTED] failed"));
+        });
+    }
+
+    [Test]
+    public void Summary_write_failure_reports_prior_failure_and_stays_nonzero()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeCompletionTail("Set-Content -LiteralPath $artifactPath -Value 'existing evidence'");
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.ExitCode, Is.EqualTo(1));
+            Assert.That(run.StandardError, Does.Contain("checkbox verification failed"));
+            Assert.That(run.StandardError, Does.Contain("Final evidence-summary persistence failed"));
+            Assert.That(File.ReadAllText(fixture.ArtifactPath).Trim(), Is.EqualTo("existing evidence"));
+        });
+    }
+
+    [Test]
+    public void Successful_completion_tail_still_persists_and_returns_success()
+    {
+        using var fixture = Fixture.Create();
+        var run = fixture.InvokeCompletionTail("$failureRecords.Clear(); $result = [pscustomobject]@{ Status = 'passed'; NormalConfigHashBefore = $normalConfigHashBefore; NormalPrefsHashBefore = $normalPrefsHashBefore }");
+        Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+        Assert.That(File.ReadAllText(fixture.ArtifactPath), Does.Contain("\"Status\": \"passed\""));
+    }
+
+    [Test]
     public void Main_smoke_wires_each_failure_category_and_explicit_component_artifact()
     {
         var source = File.ReadAllText(Path.Combine(
@@ -359,6 +460,28 @@ public sealed class GatewaySmokeCleanupAggregationTests
             File.WriteAllText(invocationPath, invocation, new UTF8Encoding(false));
             return RunPowerShell(invocationPath);
         }
+
+        public InvocationResult InvokeCompletionTail(string overrides = "") => Invoke(
+            "$runDirectory = Split-Path -Parent $artifactPath\n" +
+            "$runId = 'fixture-run'; $rimWorldVersion = '1.7.fixture'\n" +
+            "$manifest = [pscustomobject]@{ token = 'sensitive-token'; modVersion = 'fixture'; gameVersion = '1.7.fixture' }\n" +
+            "$launchedProcess = [pscustomobject]@{ Id = 314 }; $launchedProcessStartUtc = [datetime]'2026-11-07T10:00:00Z'\n" +
+            "$activeModIds = @('brrainz.harmony','ludeon.rimworld','fumblesneeze.rimworlddevgateway'); $loadedModIds = $activeModIds\n" +
+            "$requiredAssemblyEvidence = @([pscustomobject]@{ FileName = 'Gateway.dll'; Sha256 = 'BUILD-SHA256' }); $productPackageEvidence = @()\n" +
+            "$normalConfigHashBefore = 'CONFIG-BEFORE'; $normalConfigHashAfter = 'CONFIG-AFTER'; $normalPrefsHashBefore = 'PREFS-BEFORE'; $normalPrefsHashAfter = 'PREFS-AFTER'\n" +
+            "$processCleanupStatus = 'completed'; $credentialCleanupStatus = 'completed'; $integrationStageCleanupStatus = 'not-requested'; $workshopOverrideCleanupStatus = 'not-required'\n" +
+            "$integrationTestsStageCleaned = $true; $credentialsSanitized = $true; $launchWindowStyle = 'Minimized'; $launchVisible = $false\n" +
+            "$failureRecords = [System.Collections.Generic.List[object]]::new(); Add-GatewaySmokeFailure -Failures $failureRecords -Category 'primary' -Message 'checkbox verification failed'\n" +
+            "$result = $null; $evidenceSummaryPath = $artifactPath; $cleanupStatusPath = Join-Path $runDirectory 'cleanup-only.json'\n" +
+            "$credentialCleanupPath = 'credentials.json'; $integrationStageCleanupPath = 'stages.json'; $workshopOverridesPath = 'workshop.json'; $workshopOverrideCleanupPath = 'workshop-cleanup.json'\n" +
+            "$processCleanupPath = 'process.json'; $failureDiagnosticsPath = 'failure.json'; $playerLogPath = 'Player.log'; $buildLogPath = 'build.log'\n" +
+            "$endToEndTestsPath = 'e2e.json'; $selectedEndToEndTestIds = @('native.checkbox'); $RunEndToEndTests = $true\n" +
+            "function Write-Result { param([object]$Value) $Value | ConvertTo-Json -Depth 12 }\n" +
+            overrides + "\n" +
+            "$source = $ast.Extent.Text\n" +
+            "$tailStart = $source.LastIndexOf('$cleanupStatus = $null', [StringComparison]::Ordinal)\n" +
+            "if ($tailStart -lt 0) { throw 'Smoke completion tail not found.' }\n" +
+            "Invoke-Expression $source.Substring($tailStart)");
 
         public void Dispose() => Directory.Delete(root, recursive: true);
     }

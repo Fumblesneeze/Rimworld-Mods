@@ -11,7 +11,7 @@ The repository SHALL provide a separately packaged `RimWorldDevGateway.EndToEndT
 - **THEN** the product's ordinary release artifact contains neither the E2E assembly nor a Gateway reference
 
 #### Scenario: A test declaration is ambiguous
-- **WHEN** a test ID is duplicated, a non-Gateway owner is absent from its package sequence, an owner is neither present nor the exact implicit Gateway owner, Gateway is listed explicitly, or its package sequence is empty, duplicated, missing, or unresolvable
+- **WHEN** any discovered test ID is duplicated, a non-Gateway owner is absent from its package sequence, an owner is neither present nor the exact implicit Gateway owner, Gateway is listed explicitly, or its package sequence is empty, duplicated, or missing
 - **THEN** discovery fails before launching RimWorld with an actionable validation error
 
 #### Scenario: Harmony is placed after Core
@@ -35,6 +35,16 @@ The runner SHALL accept one or more exact stable test-ID filters independently f
 #### Scenario: A requested test ID is not admitted
 - **WHEN** a selected stable ID is unknown at host planning or absent after runtime bundle and active-mod validation
 - **THEN** the run fails before test arrangement and never substitutes a same-group or similarly named test
+
+#### Scenario: An unrelated optional fixture is unavailable during a focused run
+- **WHEN** exact test or group filters select workflows whose packages are available, but another discovered workflow requires an unavailable package
+- **THEN** planning and staging permit the focused run without requiring that unrelated package
+- **THEN** all discovered declarations still undergo ownership, output identity, interface, constructor, package-sequence, deadline, and duplicate-ID validation, and bundle manifests retain the complete declaration inventory
+
+#### Scenario: Selection cannot bypass package or declaration checks
+- **WHEN** a selected workflow requires an unavailable package, a requested exact test or group is unknown or duplicated, their intersection selects no tests, or any discovered declaration is invalid
+- **THEN** planning fails before staging or launch with an actionable error
+- **THEN** omitting both filters still requires every discovered workflow's packages to be available
 
 #### Scenario: Three tests share two mod combinations
 - **WHEN** two tests declare the same Harmony/Core/product sequence and a third also declares one optional mod
@@ -338,6 +348,30 @@ The runner SHALL emit one aggregate JSON result, one JUnit XML result, and table
 #### Scenario: No test matches a filter
 - **WHEN** a caller supplies a test or group filter that selects zero tests
 - **THEN** the command exits `2`, launches no process, and reports the unmatched filter
+
+### Requirement: E2E can discover and invoke one native immediate debug action
+The shared host-safe contract SHALL expose a bounded, paged catalog of immediate native debug actions
+with their existing registry handles, path, category, source type, visibility, availability and
+discovery errors. It SHALL use the existing native debug-action registry without invoking lazy
+submenu providers or retaining native delegates in a test bundle. An explicit action step SHALL
+re-resolve its exact handle and require a visible, active immediate action before invoking it once.
+Stale, ambiguous, unavailable, unsupported or pointer-mode actions SHALL fail before their callback.
+Existing generic debug-action invocation behavior SHALL remain available to its existing callers.
+
+The action SHALL run on the scenario's existing Unity-thread lane and retain its invocation identity
+and outcome in scenario evidence. A returned delegate proves only invocation completion; queued work,
+dialogs, reload completion and player-visible results SHALL require subsequent bounded observation.
+Cancellation before dispatch SHALL not invoke the action; a started native delegate cannot be
+preempted or silently retried. Unrelated steps SHALL retain their existing driver behavior.
+
+#### Scenario: Reload definitions through the native developer command
+- **WHEN** a running-game workflow discovers the native immediate Hot reload Defs action and submits its exact handle
+- **THEN** the step invokes the same registered action as the developer menu without calling a loader directly or using desktop input
+- **AND** evidence identifies the action while the scenario separately waits for native reload completion and inspects its resulting records
+
+#### Scenario: A debug action changes after discovery
+- **WHEN** its handle is stale or ambiguous, its visibility or availability is lost, or the selected action requires a pointer tool
+- **THEN** the immediate-action step fails without invoking that callback or a neighboring action
 
 ### Requirement: Existing gameplay scenarios migrate without weakening evidence
 Manual Gateway scenarios SHALL be migrated into product-owned E2E tests by player-visible behavior. A descriptor MAY remain for interactive exploration, but duplicate automated orchestration SHALL be deleted after its E2E replacement proves the same or stronger native action and observable result on the reviewed build. The migration inventory SHALL track every existing scenario as pending, converted, interactive-only, or retired.

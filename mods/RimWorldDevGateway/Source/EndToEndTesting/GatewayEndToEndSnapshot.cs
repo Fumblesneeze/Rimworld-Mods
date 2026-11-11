@@ -11,7 +11,8 @@ public sealed class GatewayEndToEndSnapshot
         IEnumerable<GatewayEndToEndBundleSnapshot>? bundles = null,
         IEnumerable<GatewayEndToEndTestSnapshot>? tests = null,
         IEnumerable<GatewayEndToEndFailureSnapshot>? failures = null,
-        GatewayEndToEndExecutionSnapshot? execution = null)
+        GatewayEndToEndExecutionSnapshot? execution = null,
+        bool observedLegacyXmlDeserializer = false)
     {
         Enabled = enabled;
         DiscoveryState = string.IsNullOrWhiteSpace(discoveryState)
@@ -24,9 +25,11 @@ public sealed class GatewayEndToEndSnapshot
             .OrderBy(test => test.Id, StringComparer.Ordinal));
         Failures = ReadOnly(failures ?? Array.Empty<GatewayEndToEndFailureSnapshot>());
         Execution = execution;
+        ObservedXmlDeserializer = observedLegacyXmlDeserializer ? "legacy" : "default";
     }
 
     public bool Enabled { get; }
+    public string ObservedXmlDeserializer { get; }
 
     public string DiscoveryState { get; }
 
@@ -81,9 +84,11 @@ public sealed class GatewayEndToEndBundleSnapshot
 
 public sealed class GatewayEndToEndTestSnapshot
 {
+    public string RequestedXmlDeserializer { get; }
     internal GatewayEndToEndTestSnapshot(GatewayEndToEndRuntimeTestDescriptor descriptor)
     {
         Id = descriptor.Id;
+        RequestedXmlDeserializer = descriptor.LegacyXmlDeserializer ? "legacy" : "default";
         OwnerPackageId = descriptor.OwnerPackageId;
         ActivePackageIds = new ReadOnlyCollection<string>(descriptor.ActivePackageIds.ToArray());
         TypeName = descriptor.TypeName;

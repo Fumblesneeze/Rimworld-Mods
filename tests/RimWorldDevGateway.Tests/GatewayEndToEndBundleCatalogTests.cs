@@ -476,8 +476,13 @@ public sealed class GatewayEndToEndBundleCatalogTests
             long length,
             string assemblyFileName)
         {
+            var declaredTests = assembly.GetTypes()
+                .Where(type => type.GetCustomAttributes(typeof(RimWorldEndToEndTestAttribute), inherit: false).Length == 1)
+                .Select(EndToEndTestContract.Describe).ToArray();
             return new EndToEndBundleManifest
             {
+                Schema = declaredTests.Any(test => test.LegacyXmlDeserializer)
+                    ? EndToEndBundleManifest.NativeXmlLoaderSchemaValue : EndToEndBundleManifest.SchemaValue,
                 OwnerPackageId = "alpha.mod",
                 Assembly = assemblyFileName,
                 AssemblyIdentity = GatewayEndToEndAssemblyIdentity.FormatDefinition(assembly.GetName()),
@@ -497,9 +502,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
                         Identity = GatewayEndToEndAssemblyIdentity.FormatReference(reference)
                     })
                     .ToArray(),
-                Tests = assembly.GetTypes()
-                    .Where(type => type.GetCustomAttributes(typeof(RimWorldEndToEndTestAttribute), inherit: false).Length == 1)
-                    .Select(EndToEndTestContract.Describe)
+                Tests = declaredTests
                     .OrderBy(test => test.Id, StringComparer.Ordinal)
                     .Select(test => new EndToEndBundleTest
                     {
@@ -507,6 +510,7 @@ public sealed class GatewayEndToEndBundleCatalogTests
                         TypeName = test.TestType.FullName!,
                         OwnerPackageId = test.OwnerPackageId,
                         ActivePackageIds = test.ActivePackageIds.ToArray(),
+                        LegacyXmlDeserializer = test.LegacyXmlDeserializer,
                         MaxFrames = test.Deadline.MaxFrames,
                         MaxGameTicks = test.Deadline.MaxGameTicks,
                         MaxWallClockSeconds = (int)test.Deadline.MaxWallClock.TotalSeconds

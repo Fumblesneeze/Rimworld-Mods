@@ -37,6 +37,16 @@ public static class GatewayClientPlanner
         return Plan(repositoryRoot, manifestPath, processId, "gateway_mutation", [command, name, "--arguments", argumentsJson]);
     }
 
+    public static AdapterCommand AutomationRun(
+        string repositoryRoot, string manifestPath, int processId, string automationRunId, bool cancel)
+    {
+        if (!Regex.IsMatch(automationRunId, "\\A[A-Za-z0-9][A-Za-z0-9._-]{0,199}\\z", RegexOptions.CultureInvariant))
+            throw new ArgumentException("automationRunId must be one bounded literal run identity.");
+        return Plan(repositoryRoot, manifestPath, processId,
+            cancel ? "gateway_automation_cancel" : "gateway_automation_status",
+            ["automations", cancel ? "cancel" : "status", automationRunId]);
+    }
+
     public static AdapterCommand DebugActions(string repositoryRoot, string manifestPath, int processId,
         string? search, string[] categories, string[] modes, string[] allowedGameStates, string? after, int limit)
     {

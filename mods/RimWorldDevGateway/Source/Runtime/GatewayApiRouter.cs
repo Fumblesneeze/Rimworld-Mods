@@ -22,6 +22,8 @@ public sealed class GatewayApiRouter
     private const int MaximumDefExportResponseNodes = GatewayDefExporter.MaximumSerializedPageNodes;
     private const int MaximumDefExportResponseDepth = 64;
     private static readonly TimeSpan DebugActionResponseTimeout = TimeSpan.FromSeconds(60);
+    private static readonly GatewayJsonLimits AutomationRunJsonLimits = new(
+        maximumDepth: 16, maximumNodes: 100_000, maximumUtf8Bytes: GatewayLoopbackServer.MaximumResponseBytes);
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
     private readonly GatewayDispatcher dispatcher;
     private readonly IGatewayStateProvider stateProvider;
@@ -630,6 +632,30 @@ public sealed class GatewayApiRouter
             }
 
             const string automationPrefix = "/api/v1/automations/";
+            const string automationRunPrefix = "/api/v1/automation-runs/";
+            const string automationCancelSuffix = "/cancel";
+            if (request.Method == "POST" && request.Path.StartsWith(automationRunPrefix, StringComparison.Ordinal) &&
+                request.Path.EndsWith(automationCancelSuffix, StringComparison.Ordinal))
+            {
+                var automations = Require(services.Automations, "automations_unavailable");
+                var runId = ReadAutomationRunId(request.Path.Substring(automationRunPrefix.Length,
+                    request.Path.Length - automationRunPrefix.Length - automationCancelSuffix.Length));
+                return DispatchSnapshot(request, requestId, "automation.cancel", () =>
+                    new Dictionary<string, object?>
+                    {
+                        ["cancellationRequested"] = automations.Cancel(runId),
+                        ["automationRunId"] = runId
+                    }, stopwatch);
+            }
+
+            if (request.Method == "GET" && request.Path.StartsWith(automationRunPrefix, StringComparison.Ordinal))
+            {
+                var automations = Require(services.Automations, "automations_unavailable");
+                var runId = ReadAutomationRunId(request.Path.Substring(automationRunPrefix.Length));
+                return DispatchSnapshotWithCancellation(request, requestId, "automation.status",
+                    _ => automations.GetRun(runId), stopwatch, AutomationRunJsonLimits);
+            }
+
             const string runSuffix = "/runs";
             if (request.Method == "POST" &&
                 request.Path.StartsWith(automationPrefix, StringComparison.Ordinal) &&
@@ -655,12 +681,10 @@ public sealed class GatewayApiRouter
                         requestId,
                         payload.Arguments,
                         payload.IdempotencyKey,
+                        timeout: responseTimeout,
                         cancellationToken: cancellationToken),
                     stopwatch,
-                    new GatewayJsonLimits(
-                        maximumDepth: 16,
-                        maximumNodes: 100_000,
-                        maximumUtf8Bytes: GatewayLoopbackServer.MaximumResponseBytes));
+                    AutomationRunJsonLimits);
             }
 
             if (request.Method == "POST" && request.Path == "/api/v1/server/shutdown")
@@ -880,6 +904,15 @@ public sealed class GatewayApiRouter
         return jsonLimits is null
             ? Success(requestId, result, stopwatch)
             : Success(requestId, result, stopwatch, jsonLimits: jsonLimits);
+    }
+
+    private static string ReadAutomationRunId(string encoded)
+    {
+        var id = Uri.UnescapeDataString(encoded);
+        if (id.Length < 1 || id.Length > 200 || id.Any(character =>
+                !(character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '.' or '_' or '-')))
+            throw new FormatException("The automation run identity must be one bounded literal segment.");
+        return id;
     }
 
     private object CaptureExpandedGameState()

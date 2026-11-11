@@ -55,6 +55,31 @@ public sealed class RunLeaseAndGatewayPlannerTests
         }
     }
 
+    [Test]
+    public void AutomationLifecyclePlannerBindsTheExactRunAndSeparatesReadFromCancellation()
+    {
+        var root = TestRoot();
+        try
+        {
+            var manifest = Path.Combine(root, "artifacts", "run", "current.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(manifest)!);
+            File.WriteAllText(manifest, "{}");
+            var read = GatewayClientPlanner.AutomationRun(root, manifest, 123, "gesture-1", false);
+            var cancel = GatewayClientPlanner.AutomationRun(root, manifest, 123, "gesture-1", true);
+            Assert.That(read.Kind, Is.EqualTo("gateway_automation_status"));
+            Assert.That(cancel.Kind, Is.EqualTo("gateway_automation_cancel"));
+            Assert.That(read.Arguments.SkipWhile(value => value != "automations").Take(3),
+                Is.EqualTo(new[] { "automations", "status", "gesture-1" }));
+            Assert.That(cancel.Arguments.SkipWhile(value => value != "automations").Take(3),
+                Is.EqualTo(new[] { "automations", "cancel", "gesture-1" }));
+            Assert.That(read.Arguments, Does.Contain(manifest));
+            Assert.That(cancel.Arguments, Does.Contain("123"));
+            foreach (var invalid in new[] { "", "../other", "gesture-1\n", new string('x', 201) })
+                Assert.Throws<ArgumentException>(() => GatewayClientPlanner.AutomationRun(root, manifest, 123, invalid, false));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
     internal static string TestRoot()
     {
         var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"gateway-{Guid.NewGuid():N}");

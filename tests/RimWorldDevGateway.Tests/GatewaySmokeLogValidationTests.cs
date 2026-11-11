@@ -83,6 +83,7 @@ public sealed class GatewaySmokeLogValidationTests
             var invocation =
                 "$ErrorActionPreference = 'Stop'\n" +
                 "Set-StrictMode -Version Latest\n" +
+                $"Import-Module {PowerShellLiteral(Path.Combine(Path.GetDirectoryName(smokePath)!, "RimWorldFixtureDiagnostics.Support.psm1"))} -Force\n" +
                 "$tokens = $null; $parseErrors = $null\n" +
                 $"$ast = [System.Management.Automation.Language.Parser]::ParseFile({PowerShellLiteral(smokePath)}, [ref]$tokens, [ref]$parseErrors)\n" +
                 "$functionAst = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Get-GatewayRuntimeLogErrors' }, $true)\n" +
