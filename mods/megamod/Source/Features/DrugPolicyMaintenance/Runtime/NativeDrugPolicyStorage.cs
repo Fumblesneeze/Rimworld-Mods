@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Megamod.Features.DrugPolicyMaintenance.Core;
+using Megamod.Features.DrugTolerance.Core;
+using Megamod.Features.DrugTolerance.Runtime;
 using RimWorld;
 using Verse;
 
@@ -21,7 +23,8 @@ public sealed class NativeDrugPolicyStorage : IDrugPolicyStorage
         return new DrugPolicyStorageSnapshot(entries, entries?.Select(entry => entry == null ? null :
             new DrugPolicyRow(entry, entry.drug, new DrugPolicyChoices(
                 entry.allowedForAddiction, entry.allowedForJoy, entry.allowScheduled,
-                entry.daysFrequency, entry.onlyIfMoodBelow, entry.onlyIfJoyBelow, entry.takeToInventory))).ToArray());
+                entry.daysFrequency, entry.onlyIfMoodBelow, entry.onlyIfJoyBelow, entry.takeToInventory),
+                NativeDrugToleranceState.Read(entry))).ToArray());
     }
 
     public void Apply(DrugPolicyPlan plan)
@@ -63,5 +66,6 @@ public sealed class NativeDrugPolicyStorage : IDrugPolicyStorage
         entry.onlyIfMoodBelow = row.Choices.MoodThreshold;
         entry.onlyIfJoyBelow = row.Choices.RecreationThreshold;
         entry.takeToInventory = row.Choices.InventoryTarget;
+        NativeDrugToleranceState.Write(entry, row.ToleranceChoice ?? DrugToleranceChoice.Any);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Megamod.Features.DrugTolerance.Core;
 
 namespace Megamod.Features.DrugPolicyMaintenance.Core;
 
@@ -13,7 +14,8 @@ public sealed record DrugPolicyChoices(
     int InventoryTarget);
 
 // These handles identify existing engine objects without loading Verse in the policy layer.
-public sealed record DrugPolicyRow(object? RowIdentity, object? DrugIdentity, DrugPolicyChoices Choices);
+public sealed record DrugPolicyRow(
+    object? RowIdentity, object? DrugIdentity, DrugPolicyChoices Choices, DrugToleranceChoice? ToleranceChoice = null);
 
 public sealed record DrugCatalogEntry(object Identity, bool Addictive, bool Pleasure);
 

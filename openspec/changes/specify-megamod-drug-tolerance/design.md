@@ -158,6 +158,37 @@ reversible gameplay switch, not save conversion. All runtime tasks remain unchec
 
 ## Open Questions and implementation blockers
 
+### 2026-11-11 state tranche
+
+The first implementation tranche pins an immutable, host-safe choice and one raw string codec.
+The owned field is `megamodTolerance`; absent (`null`) means Any. Schema 1 encodes `1:any` or
+`1:limit:<invariant round-trip Single fraction>`, including distinct numeric 0 and 1. Unknown schema,
+unknown kind, empty/malformed text and nonfinite/out-of-range fractions remain Needs review and
+retain their exact original text until an explicit valid edit. Known input also retains its encoding
+so ordinary capture/save does not normalize or widen a value. This introduces no migration.
+
+The concrete S029 extension is an immutable optional choice on `DrugPolicyRow`, captured from the
+exact `DrugPolicyEntry` by `NativeDrugToleranceState`. A weak table associates state with native
+entries, never policy names, drug names or save-global keys. S029's existing plan carries a surviving
+row's snapshot through normalization and duplicate selection; new rows use Any. Apply/Restore write
+that snapshot with the native values, covering later-policy failure without another transaction.
+Removed rows have no archive; a subsequently created entry starts at Any. The weak association does
+not retain disposed games or deleted rows. Copy uses the source's immutable choice and replaces only
+the destination association, so later edits are independent.
+
+Current 1.7.5005 `DrugPolicyEntry.CopyFrom(DrugPolicyEntry)` and `ExposeData()` remain the native
+copy/save boundaries. This tranche supplies explicit state/encoding entry points for those future
+adapters; it does **not** register them or claim native copy/save persistence. Their C01 target
+documents, admitted hooks and native workflow are still required before exposing the editor.
+
+The routine decision projection accepts only scheduled, direct recreation, social drink and
+patient-treat routes. It preserves native rejection and treats the direct-recreation exception only
+on that exact route. Disabled state adds no veto. A successfully read absent hediff is zero; invalid,
+nonfinite or negative reader data is unavailable and keeps native permission with an explicit
+unavailable result for the later adapter to report. A valid reader and malformed choice produces
+Needs review and blocks. Any does not impose a threshold, even above 100%. No cached permission,
+final-ingestion hook or medical/manual/refill interception is introduced. DT-Q2 remains open.
+
 - DT-Q1: Pin the exact S029 extension point and owned codec/invalid-record preservation before
   persistence work; prove copy and rollback cover side data and saved duplicate handling.
 - DT-Q2: Native route facts now distinguish direct joy, social drinks, scheduled use and separate

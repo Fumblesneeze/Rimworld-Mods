@@ -211,3 +211,19 @@ native admission. No blanket ingestion veto or new cancellation policy is inferr
 open for the owned codec, invalid-record preservation, copy and S029 prepare/commit/rollback
 extension. Any/zero/default-on/malformed-choice review and seven-language native UI acceptance also
 remain open. No original API/consumer compatibility work, tests, builds or game launches were added.
+
+## 2026-11-11 owned-state implementation boundary
+
+Read-only inspection of current `DrugPolicyEntry` in 1.7.5005 rev1082, Assembly-CSharp SHA256
+`82387F78262461E53BB06A67C3945912B876D1FDB07235122BBB6E59D073F125`, reconfirms the exact
+`CopyFrom(DrugPolicyEntry)` and `ExposeData()` boundaries. The first copies native row values;
+the second scribes each native field on that entry. This observation pins a future hook target,
+not a claim that a component method called from a host test exercised the native copy/save path.
+
+The first independently implemented state tranche adds a version-1 raw-string choice codec,
+detached routine rule, exact-entry weak association and a choice snapshot on S029's existing
+transaction. Source copy/storage code was not reused. Its host tests cover the standalone copy
+entry point and S029 failure restoration. The future admitted CopyFrom/Scribe hooks, native
+reader/editor and final-decision purpose/timing proof remain unimplemented; DT-Q1 is therefore
+partially resolved, while DT-Q2/DT-Q3 still block the affected native work. See the owning design's
+2026-11-11 tranche for concrete encoding and unavailable semantics.

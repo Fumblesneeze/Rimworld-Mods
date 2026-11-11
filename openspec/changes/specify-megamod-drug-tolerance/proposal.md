@@ -5,7 +5,8 @@ tolerance limit. S138 adds that player choice while keeping medical assistance a
 separate from routine recreation and scheduled use.
 
 Sole owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`.
-Target: **RimWorld 1.7 beta**. This change specifies later work only; it delivers no gameplay behavior.
+Target: **RimWorld 1.7 beta**. Choice/decision rules and S029 state transactions are implemented
+as unregistered components; this change delivers no accepted player-facing tolerance behavior yet.
 
 ## What Changes
 
@@ -33,7 +34,7 @@ None. This new capability consumes S029/S024/S124/S134 contracts without editing
 
 ## Impact
 
-Future code belongs to the megamod policy feature, its shared configuration and native decision/UI
+Code belongs to the megamod policy feature, its shared configuration and native decision/UI
 adapters. Core is required; Harmony (`brrainz.harmony`) is required for planned native hooks and is
 already a product dependency. No XML Extensions operation is planned. DLC drug content is optional
 and capability-resolved; the source mod and Prepatcher are not runtime dependencies. No dependency

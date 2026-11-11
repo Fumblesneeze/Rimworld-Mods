@@ -141,6 +141,16 @@ SHALL not silently widen an invalid limit to Any, clamp it or rewrite valid neig
 - **WHEN** an otherwise valid megamod policy has no saved tolerance choice
 - **THEN** it receives Any without being reported as corrupt.
 
+#### Scenario: Unknown saved schema remains repairable
+- **WHEN** a saved tolerance choice uses an unknown schema or malformed encoding
+- **THEN** its original value is retained without silent conversion, the row needs review,
+  and an explicit valid choice repairs only that row.
+
+#### Scenario: Current tolerance cannot be read
+- **WHEN** an otherwise applicable tolerance reader cannot supply a valid nonnegative finite value
+- **THEN** the feature reports that the extra restriction is unavailable and preserves ordinary
+  native permission rather than treating the unknown value as zero or pretending to enforce a limit.
+
 ### Requirement: Feature configuration does not replace policy state
 The feature's proposed built-in enable default SHALL be on. Its enable switch SHALL use common
 Global default, Use global and Current save controls in the Drug policies settings section. New

@@ -11,7 +11,8 @@
   `6C48ACE04DECFEDD65549489046CA5E23B7B40B2DD033331C9BB6E68AA7F6F29`.
 - MIT source, copyright 2023 SeoHyeon; no source/binary/art/translation copied. Public author links,
   complete source hashes and native seams are in the [research](../refinement/2026-11-08-drug-tolerance-research.md).
-- Status: drafted specification, unimplemented and unverified. Source observations are evidence;
+- Status: choice/decision and policy-state components implemented-unverified; native hooks/UI and
+  player workflows remain unfinished. Source observations are evidence;
   Any/zero semantics, distinct numeric 100%, invalid-state behavior and feature configuration are
   proposed owned decisions. No source API, saved-state import or original-mod compatibility work.
 
@@ -59,7 +60,7 @@ Individual row choices are save-local gameplay state and never use configuration
 
 | Owned state or integration | Required contract | Behavior/errors/persistence | Limits | Verification |
 | --- | --- | --- | --- | --- |
-| Policy row tolerance choice | Own Any/numeric/invalid codec; S029 row/copy/rollback boundary, unresolved DT-Q1 | Valid copy/load retained; absent Any; malformed visibly withheld pending explicit repair | No original field import; no hidden deleted-row archive | Copy, repair and save/reload scenarios |
+| Policy row tolerance choice | Own version-1 Any/numeric/invalid codec and S029 row/rollback boundary; native copy/Scribe admission remains DT-Q1 | Component copy and rollback retain immutable choices and raw unknown data; absent Any | No original field import; no hidden deleted-row archive; no native save claim yet | Focused Unit/Defs evidence; native copy, repair and save/reload still pending |
 | Common enable preference | C02 global/save/inheritance and game lifecycle | Preserve dormant overrides and row choices while off | No previous-save callback; next decision only | Main menu and save switching |
 | Native scheduled/joy routes | Current Core semantics and required Harmony | Narrow successful native choices; fail feature unavailable on unknown semantics | No medical/manual/refill expansion | Actual blocked/allowed native use |
 
@@ -72,7 +73,9 @@ separate backup/staging/atomicity/restoration/postcondition contract before impl
 
 | Behavior | Implemented portion | Deviation / conflict | Missing / omitted | Target/tests/live evidence |
 | --- | --- | --- | --- | --- |
-| DT-01–08 | None | Explicit Any/zero and malformed-state corrections; medical scope stays separate | All runtime/UI/storage work pending | [Design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/); target docs and tests future |
+| DT-02–04, DT-07–08 | Host-safe strict comparison, route-specific exception projection, explicit unknown-reader/Needs-review outcomes and lossless choice codec | Any differs from numeric 100%; missing hediff zero; native rejection remains; no medical/manual/refill route exists in this projection | Native reader, route proof, effective-body admission, controls and all player workflows | 56 affected Unit checks; no live acceptance |
+| DT-06 | Exact native-row weak state; S029 snapshots, first-duplicate retention, normalization, new-row Any and rollback; independent component copy | State follows surviving row identity rather than policy/drug name; deleted rows have no restore archive | Admitted native CopyFrom/ExposeData hooks and actual save/load/copy acceptance | 11 affected Defs checks; no live acceptance |
+| DT-01, DT-05, remaining DT-08 | None | Medical scope stays separate | Native editor, common setting, bounded original warning, route/medical workflows and seven-language presentation | [Design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/); target docs and native tests future |
 
 Active original `seohyeon.onlyiftolerancebelow`: bounded startup warning plus best-effort suppression
 of `drugTolerance.enabled` through the ordinary effective-off path, with the timing/limitations
@@ -83,8 +86,11 @@ XML/XML Extensions or product Gateway dependency. Native semantic admission stil
 
 ## Verification and acceptance
 
-No runtime tests, build or game run belong to this draft. DT-Q1–4 block their affected implementation
-slices. Focused RED/GREEN must use honest Unit/Harmony/Defs tiers and independent review. The
+The 2026-11-11 component tranche has nonzero focused RED/GREEN in honest Unit and Defs tiers;
+the local ledger is `artifacts/Implementation/megamod-p0/s138-state-batch/handoff.md`.
+It does not install any tolerance decision, editor, copy or serialization patch. DT-Q1–4 retain
+their unfinished native integration obligations, with the concrete state contract now pinned.
+Independent review and integrated product checks remain separate evidence. The
 orchestrator must later personally observe the reviewed build's actual native policy edits, routine
 consumption/refusal, patient treats, medical independence, persistence and configuration transitions
 in minimized isolated Gateway runs. Include focused warning/effective-off cases, seven languages,

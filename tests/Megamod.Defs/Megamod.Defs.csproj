@@ -14,7 +14,9 @@
     <Reference Include="$(RimWorldPath)/Assembly-CSharp.dll;$(RimWorldPath)/UnityStubs.dll;$(RimWorldPath)/Waylith.dll;$(RimWorldPath)/Waylith.UnityCompat.dll;$(RimWorldPath)/Brutal.*.dll">
       <Private>true</Private>
     </Reference>
-    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/*.cs" Link="Product/Core/%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/DrugPolicyBatch.cs;../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/DrugPolicyReconciler.cs;../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/PresetEntriesRead.cs" Link="Product/Core/%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Core/*.cs" Link="Product/DrugTolerance/Core/%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Runtime/NativeDrugToleranceState.cs" Link="Product/DrugTolerance/NativeDrugToleranceState.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugPolicyStorage.cs" Link="Product/NativeDrugPolicyStorage.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugCatalog.cs" Link="Product/NativeDrugCatalog.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugPresetBaseline.cs" Link="Product/NativeDrugPresetBaseline.cs" />

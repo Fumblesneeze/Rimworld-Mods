@@ -7,6 +7,14 @@
 
 ## 2. Implement one behavior at a time with durable RED and GREEN
 
+2026-11-11 implementation tranche: immutable choices and the version-1 lossless codec, detached
+routine decision projection, weak native-entry state, and S029 Capture/Apply/Restore composition
+have focused host evidence (56 Unit and 11 Defs checks). The ordinary target hooks, actual native
+copy/Scribe wiring, tolerance reader and editor are not registered. Independent review and root
+integration evidence are tracked in `artifacts/Implementation/megamod-p0/s138-state-batch/`.
+Tasks below remain open for their full stated obligations; host route values are not proof of
+native route/recipient classification or shared-chemical reads.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.

@@ -29,6 +29,7 @@
     <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/BarBounds/Core/**/*.cs" Link="Product/MessagePlacement/BarBounds/Core/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/BarBounds/Harmony/**/*.cs" Link="Product/MessagePlacement/BarBounds/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/**/*.cs" Link="Product/DrugPolicyMaintenance/Core/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Core/DrugToleranceChoice.cs" Link="Product/DrugTolerance/Core/DrugToleranceChoice.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Harmony/**/*.cs" Link="Product/DrugPolicyMaintenance/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Settings/Core/**/*.cs" Link="Product/Settings/Core/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Settings/Harmony/**/*.cs" Link="Product/Settings/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
