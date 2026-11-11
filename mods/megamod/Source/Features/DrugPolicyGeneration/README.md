@@ -3,8 +3,9 @@
 Owner: `fumblesneeze.megamod`, S139. The owning
 [change](../../../../../openspec/changes/specify-megamod-drug-policy-generation/design.md)
 defines the complete feature. The C1 calculation has an independent no-finding review. Detached
-draft editing is implemented with an independent no-finding review; native projection, settings/UI and publication
-are not implemented or accepted.
+draft editing is implemented with an independent no-finding review. Native definition projection
+is implemented, awaiting separate review; effective-method admission, settings/UI and publication
+remain unimplemented and unaccepted.
 
 `Core/DrugPolicySuggestions.cs` consumes immutable values and opaque canonical identity handles.
 It reuses S029's `DrugCatalogEntry`/`DrugPolicyChoices` and S138's immutable tolerance choice. It does
@@ -17,9 +18,13 @@ and connects exposure through actual chemical **or** tolerance reference identit
 can connect a channel, but a channel needs multiple otherwise eligible candidates before automatic
 schedules are withheld. Display names/equality overrides do not establish identity.
 
-The future native fact reader must supply `OrdinaryWholeDose` only after admitting the complete
-quantity, effect, tolerance and deterministic-decay contract in the design/research. Other enum
-values preserve a concrete unavailable reason. Passing ordinary numeric fields is not admission.
+`Runtime/NativeDrugGenerationFacts.Capture` consumes the already captured S029 catalog and explicit
+unresolved partial-dose identities. It does not rescan DefDatabase, invoke ingestion/random effects
+or create a lifecycle registry. It preserves catalog identity/order, rejects duplicate/non-native
+handles and projects raw scalar values into immutable facts. `OrdinaryWholeDose` denotes only the
+inspected definition shape in this adapter. Runtime callers still need the current effective native
+method/finalized-input gate in task 1.6; this adapter is deliberately not registered or exposed.
+Other enum values preserve a concrete unavailable reason. Passing ordinary numeric fields is not admission.
 The scalar fields retain raw values so malformed/nonfinite input cannot be normalized into a
 permissive proposal. Body-size division follows the admitted giver flag and supplied actual adult
 baseline; no gain is clamped to a threshold or maximum to manufacture eligibility.
@@ -27,7 +32,15 @@ baseline; no gain is clamped to a threshold or maximum to manufacture eligibilit
 Every set carries its baseline and the `NativeBatchingMayLeaveTolerance` disclosure. C1 is a
 cadence-based suggestion, not a bound on actual native clearance. Runtime UI must translate and
 display the full population/exposure/batching assumptions before Create; no live reader or UI is
-present in this tranche to establish that behavior.
+present to establish that behavior.
+
+The reader admits the exact bounded shapes in the owning design, including inactive native secondary
+givers and Alcohol branches only inside the modeled single-dose range. It never claims those
+branches stay inactive after actual residual accumulation. Side highs must clear within the derived
+297-event model budget. Fresh-dose/no-prior-effect assumptions and remaining impairment/food-poison
+risks still need visible UI disclosure. All four source-comparator profiles are covered by constructed
+Defs tests; those fixtures are not loaded Core definitions or evidence of finalized mod-list behavior.
+The native contract and remaining runtime gate are in `docs/patch-targets/DG-NATIVE-FACTS.md`.
 
 `ReviewEdits` is a detached provenance projection, not creation validation. It retains the player's
 choices, identifies departures from the proposal, and marks every affected exposure-channel row
@@ -47,5 +60,19 @@ current facts still belong to the upcoming native controller. Reset confirmation
 Focused Unit checks cover positive output, float residue, dose/body/decay variation, the native
 editing boundary, unsupported values and shapes, identity/channel composition, and edit provenance.
 The local RED/GREEN ledger is `artifacts/Implementation/megamod-p0/revision20-drug-generation.md`.
+The native projection's seven initial RED/GREEN slices and84 focused Defs checks are retained in
+`artifacts/Implementation/megamod-p0/s139-native-facts/implementation.md`; its explicit source links
+were added by root. Defs fixtures register all required definitions in initially empty owned databases.
 Host success does not accept finalized pharmacology or any player workflow. Root owns review,
 canonical build/install, native scenarios and commits.
+Independent review added a two-case RED/GREEN correction for body-part-only PostMake metadata;
+four affected positive comparator checks still pass. All86 distinct cases and the resolved review
+are recorded in the same ledger. No full fixture suite was replayed for that correction.
+
+`Core/DrugGenerationSettings.cs` declares the enabled, initial mood/joy and initial tolerance
+preferences through the common store. Capture returns immutable effective preferences for a new
+draft. Validation rejects invalid edits without changing prior values; invariant persistence keeps
+Any distinct from numeric 100% and retains malformed stored payloads for repair. The two validation
+messages exist in all seven baseline languages. These definitions are not registered in bootstrap
+or rendered yet; preview staleness, native UI and provider effective-off remain separate work.
+The focused preference ledger is `artifacts/Implementation/megamod-p0/revision20-generation-preferences.md`.

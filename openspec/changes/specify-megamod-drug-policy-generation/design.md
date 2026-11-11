@@ -88,6 +88,52 @@ Any automatic result must identify its assumptions and avoid implying it holds f
 
 ### 2. Consume the current S029 catalog and native defaults directly
 
+The first native projection consumes an **already captured** S029 catalog and explicit identities
+whose partial-dose handling remains unresolved. It returns detached scalar facts in that order,
+without a DefDatabase scan, new catalog/lifecycle registry, native-effect invocation or permissive
+name lookup. A positive definition-shape result is not a current effective-method admission receipt:
+task 1.6 and the owning C01 target still gate every player-facing use. Changed inputs require a new
+projection; the creation controller must validate all consumed shape/fact inputs, not only C1's
+numeric output. Constructed Defs tests cannot establish finalized runtime data or active patches.
+
+The initial inspected shape is exact native ThingWithComps with one CompProperties_Drug/CompDrug,
+known native Forbiddable/Rottable auxiliary comps, explicit quantity 1/1 and exact chance-1
+GiveHediff outcomes. Rottable can cause food poisoning: fresh doses are a disclosed model assumption,
+not a rule enforced on each assignee/item. Unknown classes/comps or unresolved quantities stay off.
+The unique chemical tolerance giver requires positive explicit gain and the checked private
+divideByBodySize field; no initialSeverity fallback or guessed body flag. Tolerance uses exact
+HediffWithComps, zero minimum, finite positive maximum, one exact deterministic negative
+SeverityPerDay comp (range 0/0, reversal 0, minAge 0, mechanitor factor 1), and unit stage decay
+factors. Its optional exact DrugEffectFactor must use the same chemical. Neutral gene/metabolism
+and no-prior-effect assumptions remain unchanged; the reader does not inspect or enforce pawn state.
+Initial/lethal severity metadata must be finite; a nonnegative lethal threshold, chemical-need
+attachment, ability attachment or remove-with-tags lifecycle effect is outside the plain decay shape.
+Nonempty onlyLifeThreateningTo is also unsupported for tolerance and side highs: the native
+whole-body GiveHediff path supplies no Part, while PostMake dereferences Part.def for this metadata.
+
+Secondary native RandomDrugEffect givers are supported only by their inspected early-return bound:
+their first curve X (or minSeverity without a curve) must be at least minToleranceToAddict. C1
+subsequently requires normalized gain strictly below that threshold; native secondary effects
+return for severity less than or equal to their own threshold. Curves must be nonempty with finite,
+strictly increasing nonnegative X and positive finite nonincreasing Y. This proves inactivity only
+inside the modeled single-dose range, not after actual residual accumulation from native batching.
+Unknown/reachable givers and malformed/nonmonotone curves remain unavailable.
+
+Side outcomes initially admit exact native High/Alcohol GiveHediff and Rest OffsetNeed shapes.
+Distinct high identities require a positive finite explicit dose without body division, same/null
+chemical modifier, monotone stage minima beginning at zero and deterministic negative decay. Active
+secondary/mental-state givers or unproved effecter branches remain unavailable. Alcohol's native
+hangover branch requires stage index at least 3; support requires its modeled peak to stay below
+that index. An effecter's configured stage interval must be unreachable throughout the modeled
+zero-to-peak range. Each side high must clear within 297 binary32 decay events: `200*297+415=59815`
+fits the earliest modeled one-day elapsed gap represented by C1's minimum two-calendar-day result.
+This prevents **modeled** side-high accumulation without changing C1's interval calculation; it
+does not guarantee actual high clearance. Slower/unknown side effects stay unavailable. Rest offsets
+require exact Need_Rest, finite offset, chance 1, perIngested false and same/null modifier chemical;
+the inspected perIngested branch multiplies by remaining stack count. Impairment and other native
+risks are not certified harmless. All four Core comparison obligations remain subject to these
+actual finalized shape checks, with no drug-name allowlist.
+
 Use C03's finalized available Item/IsDrug identities, applicable flags and publication generation.
 Physical stock, research completion and current map are not catalog admission criteria. Share this
 catalog; do not create a new per-source scan/cache or invent drug availability from names. Respect
@@ -99,7 +145,7 @@ addiction false, and its explicitly generated rows copy that false; this acciden
 is intentionally omitted. Suggestions and preview edits apply explicit fields over the full base,
 with visible medical permission. Missing suggestions never mean missing policy entries.
 
-Current proposed reusable preferences are enabled=true, initial mood=1, initial joy=1, initial
+Initial reusable preferences are enabled=true, initial mood=1, initial joy=1, initial
 tolerance=Any. Mood/joy 1 are native/source-unrestricted values; Any follows proposed S138 semantics,
 not the source minimum-tolerance multiplier. These defaults initialize a draft and are not safety
 calibration. C1 has no additional-days preference or source multiplier; the admitted native editor
@@ -107,7 +153,7 @@ bound must never shorten a required interval. Every rebuild starts from fresh im
 not differences from prior entries.
 Reset/return-to-1/Any writes the complete intended values rather than conditionally leaving old data.
 
-The initial detached draft implementation adopts those proposed initial mood/joy/tolerance defaults.
+The initial detached draft implementation adopts those initial mood/joy/tolerance defaults.
 It projects every row, including unsupported off-schedule rows, from fresh C1/native defaults before
 applying preferences. Edits replace complete immutable choices by canonical identity; resets accept
 entirely new catalog/fact/preference inputs. This layer rejects unresolved tolerance encodings,
@@ -125,8 +171,9 @@ Create button. Use S029 identity-safe display sorting without changing native ex
 Measure the layout in all seven languages; determine fit from the actual native window, not copied
 source sizes. Normal ordinary policy controls remain available if generation is unavailable.
 
-Common C02 preferences in Drug policies → Generation are `drugPolicyGeneration.enabled`,
-`initialMoodLimit`, `initialJoyLimit`, `initialTolerance`. Use one shared load/resolve/store/renderer,
+Common C02 preferences in Drug policies → Generation use stable IDs `drug-generation.enabled`,
+`drug-generation.initialMood`, `drug-generation.initialJoy`, `drug-generation.initialTolerance`.
+Use one shared load/resolve/store/renderer,
 current-global inheritance, dormant overrides and main-menu mutation guards. Overrides are saved
 with the current game. Effects apply to the next preview/reset; a relevant preference revision
 invalidates an open preview rather than silently changing reviewed choices. A draft edit does not
@@ -218,7 +265,7 @@ whole-method or version/hash gate. Withhold Generate if complete creation cannot
 preserving ordinary native controls. Do not inspect external consumers or construct source facades.
 
 Active canonical `seohyeon.bestdrugpolicy` produces one bounded startup overlap warning and
-best-effort ordinary effective-off for `drugPolicyGeneration.enabled`: no new previews/commit,
+best-effort ordinary effective-off for `drug-generation.enabled`: no new previews/commit,
 cancel transient preview, keep all prior policies and stored preferences. No rollback of source
 startup Defs, original policies or earlier effects is promised. Inactive installation does nothing;
 later startup without the original resolves retained preferences normally. Never change/unpatch

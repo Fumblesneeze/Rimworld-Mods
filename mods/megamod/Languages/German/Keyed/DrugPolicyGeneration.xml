@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugGeneration_InvalidThreshold>Gib einen endlichen Prozentwert von 0 bis 100 ein.</Megamod_DrugGeneration_InvalidThreshold>
+  <Megamod_DrugGeneration_InvalidTolerance>Wähle Beliebig oder eine numerische Toleranz von 0% bis 100%.</Megamod_DrugGeneration_InvalidTolerance>
+</LanguageData>

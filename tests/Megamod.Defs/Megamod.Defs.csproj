@@ -20,6 +20,8 @@
     <Compile Include="../../mods/megamod/Source/Features/DrugTolerance/Runtime/NativeDrugToleranceReader.cs" Link="Product/DrugTolerance/NativeDrugToleranceReader.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugPolicyStorage.cs" Link="Product/NativeDrugPolicyStorage.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugCatalog.cs" Link="Product/NativeDrugCatalog.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Core/DrugPolicySuggestions.cs" Link="Product/DrugPolicyGeneration/Core/DrugPolicySuggestions.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Runtime/NativeDrugGenerationFacts.cs" Link="Product/DrugPolicyGeneration/Runtime/NativeDrugGenerationFacts.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugPresetBaseline.cs" Link="Product/NativeDrugPresetBaseline.cs" />
   </ItemGroup>
 </Project>

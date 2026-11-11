@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugGeneration_InvalidThreshold>Introduce un porcentaje finito entre 0 y 100.</Megamod_DrugGeneration_InvalidThreshold>
+  <Megamod_DrugGeneration_InvalidTolerance>Elige Sin límite o una tolerancia numérica entre 0% y 100%.</Megamod_DrugGeneration_InvalidTolerance>
+</LanguageData>

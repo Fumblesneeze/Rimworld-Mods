@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_DrugGeneration_InvalidThreshold>请输入 0 到 100 之间的有限百分比。</Megamod_DrugGeneration_InvalidThreshold>
+  <Megamod_DrugGeneration_InvalidTolerance>请选择“任意”或 0% 到 100% 之间的耐受度数值。</Megamod_DrugGeneration_InvalidTolerance>
+</LanguageData>

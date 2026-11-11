@@ -132,6 +132,28 @@ mislabel those edited choices as computed recommendations or silently revert the
 - **WHEN** active S085 handling changes a row's quantity/timing or stochastic effects without an admitted contract preserving C1's dose bound
 - **THEN** that row has no autonomous C1 suggestion, with a partial-dose explanation, while unaffected whole-dose rows remain eligible.
 
+#### Scenario: Native definitions have only modeled unreachable secondary effects
+- **WHEN** an otherwise admitted tolerance has exact native RandomDrugEffect givers whose valid first-curve-X or no-curve minimum is at least the addiction threshold, while C1's normalized gain is strictly below it
+- **THEN** the definition projection can retain a positive modeled suggestion because the native giver returns at or below that bound
+- **AND** the preview still discloses that real residual accumulation and other exposure can leave this modeled range.
+
+#### Scenario: Secondary effects have unproved reachable behavior
+- **WHEN** a secondary giver is reachable in the modeled range, its curve is malformed/nonmonotone, a side high cannot clear within the documented 297-event model bound, or an unknown callback could change exposure or decay
+- **THEN** the row remains visible with no automatic suggestion and an unsupported-effect or decay reason.
+
+#### Scenario: Whole-body ingestion cannot create a body-part-only effect
+- **WHEN** a tolerance or side-high definition has nonempty onlyLifeThreateningTo metadata requiring a body part during native PostMake
+- **THEN** the row receives no computed suggestion, because the ordinary drug GiveHediff path creates a whole-body effect without that part.
+
+#### Scenario: Definition projection is detached and not runtime admission
+- **WHEN** the native reader projects an already captured S029 catalog
+- **THEN** it preserves that catalog's identities/order and returns immutable scalar facts without another catalog scan or invoking native ingestion/random effects
+- **AND** no positive shape result is exposed to the player until current effective native semantics and finalized inputs have passed their separate admission gate.
+
+#### Scenario: Fresh-dose and side-high assumptions remain visible
+- **WHEN** the preview uses an admitted ordinary native high, Alcohol, Rest-offset or rottable drug shape
+- **THEN** it states the fresh whole-dose/no-prior-effect assumptions and explains that ordinary impairment, food poisoning and residual high/tolerance are not prevented by the suggestion.
+
 ### Requirement: Medical permission and ordinary policy defaults are explicit
 Generation SHALL start from S029's applicable native policy defaults: addiction permission on only
 for addictive drugs, recreation and scheduled use off, frequency one day, mood and recreation
@@ -254,15 +276,25 @@ defaults with S138 Any; generation suggestions SHALL not be silently applied to 
 - **THEN** that row receives ordinary new-row defaults, while existing rows and consumption history remain unchanged.
 
 ### Requirement: Generation preferences use common configuration without owning policy state
-Proposed reusable generation preferences SHALL be feature enabled on, initial mood threshold 100%,
+Initial reusable generation preferences SHALL be feature enabled on, initial mood threshold 100%,
 initial recreation threshold 100% and initial tolerance Any. The numeric threshold preferences SHALL
-allow 0–100%; tolerance SHALL also distinguish Any from numeric 100%. These are proposed preview
+allow 0–100%; tolerance SHALL also distinguish Any from numeric 100%. These are preview
 defaults, not validated safety calculations. They SHALL use the common Drug policies → Generation
 settings section with Global default, Use global and Current save controls. New save entries SHALL
 inherit current globals; overrides and dormant values SHALL remain independent. Main-menu save
 controls and callbacks SHALL be unavailable. Changes SHALL affect new/refreshed previews and make
 an open preview stale; they SHALL never rewrite existing policies. A draft-specific edit SHALL not
 write a global or save preference. C1 adds no additional-delay preference.
+
+Preference writes SHALL reject nonfinite/out-of-range thresholds and unresolved tolerance choices
+without changing the existing value or revision. Malformed stored preferences SHALL retain their
+original payload, report validation failure and use the built-in default in the affected scope.
+Invariant serialization SHALL preserve numeric 100% separately from Any and keep captured preview
+preferences immutable when later global or save values change.
+
+#### Scenario: Invalid preference is retained for repair
+- **WHEN** a stored generation threshold or tolerance choice cannot be interpreted in its supported range
+- **THEN** the affected scope uses its built-in default with a validation indication, and the stored payload remains unchanged until an explicit edit.
 
 #### Scenario: Global preference changes for inherited and overridden saves
 - **WHEN** the global initial mood threshold changes

@@ -38,6 +38,7 @@ reviewed-build native gate.
 | `DT-SAVE-FINALIZE` | S138 drug tolerance | [Save failure completion guard](DT-POLICY-PERSISTENCE.md) | Same reviewed persistence group; native failed-overwrite gate open |
 | `DT-LOAD-FINALIZE` | S138 drug tolerance | [Load failure completion guard](DT-POLICY-PERSISTENCE.md) | Same reviewed persistence group; native late-load failure gate open |
 | `DG-POLICY-CREATE` | S139 drug-policy generation | [Unpublished preparation and one creation](DG-POLICY-CREATE.md) | Proposed guarded adapter independently reviewed; executable admission, publication and native acceptance pending |
+| `DG-NATIVE-FACTS` | S139 drug-policy generation | [Bounded native drug fact projection](DG-NATIVE-FACTS.md) | Detached definition-shape adapter reviewed with86 distinct constructed-Defs cases; effective/current-process admission and native workflow remain pending |
 | `SETTINGS-GAME-CONTEXT` | C02 common settings | [Actual game identity](SETTINGS-GAME-CONTEXT.md) | Composed, host tested/reviewed; scoped native settings interactions observed; full save/lifecycle acceptance pending |
 | `SETTINGS-LIFECYCLE-PUMP` | C02 common settings | [Main-thread lifecycle handoff](settings.lifecycle-pump.md) | Same required settings group; composed, host tested/reviewed; full save/lifecycle acceptance pending |
 | `MM.CONTENT.IncidentEligibility` | S038 content selection | [Incident eligibility](MM.CONTENT.IncidentEligibility.md) | Composed, host tested/reviewed; native incident eligibility workflow pending |
