@@ -73,6 +73,23 @@ Prefer action → wait → observation steps that exercise the same native path 
 
 ### E2E authoring invariants learned from live failures
 
+- Audit the complete native UI sequence before launching a new fixture: exact public/private,
+  static/instance and declaring-type reflection bindings, actual layout transforms, confirmation
+  dialogs, and which parent windows an action closes. Use named missing-member assertions. Native
+  windows can round calculated rectangles before rendering; compare the consumed projection and
+  exact window identity rather than assuming raw rectangle equality. When one such assumption fails,
+  inspect the remaining sequence together before retrying.
+- Prove fault injection is reached before judging failure handling. Install an unarmed interceptor
+  before a successful native baseline, retain actual hit/phase counters, then arm only the intended
+  field or owned callback. A registered Harmony detour, especially a closed generic added after
+  warm-up, does not establish interception. After the real action finishes, checkpoint hit counts
+  and bounded window/log state before waiting for an expected notice; a missed injection should
+  fail immediately with diagnostics. Keep intentional errors precisely accounted for and preserve
+  unrelated error detection.
+- Preserve native fixture data contracts. Generated human pawns may participate in later relation
+  generation, so use native human-style names (`NameTriple`) instead of replacing them with
+  `NameSingle` before generating additional humans. Direct setup must not create the tested result.
+
 - Budget every group honestly. Its frame, game-tick, and wall-time caps must exceed the sum of all
   sequential per-step maxima plus bounded action/screenshot/assertion/save-load overhead. A combined
   group must cover every admitted case, not one case's deadline multiplied by hope. Before handoff,
