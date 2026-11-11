@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_DrugGeneration_Category>ドラッグ方針の生成</Megamod_DrugGeneration_Category>
+  <Megamod_DrugGeneration_Enabled>方針の生成を有効にする</Megamod_DrugGeneration_Enabled>
+  <Megamod_DrugGeneration_EnabledHelp>通常のドラッグ方針管理画面に「生成」を表示します。新しい方針を作成する前に、プレビューを確認して編集してください。</Megamod_DrugGeneration_EnabledHelp>
+  <Megamod_DrugGeneration_InitialMood>初期の心情しきい値</Megamod_DrugGeneration_InitialMood>
+  <Megamod_DrugGeneration_InitialJoy>初期の娯楽しきい値</Megamod_DrugGeneration_InitialJoy>
+  <Megamod_DrugGeneration_InitialTolerance>初期の耐性設定</Megamod_DrugGeneration_InitialTolerance>
+  <Megamod_DrugGeneration_PreferenceHelp>「適用」で、新規またはリセット後のプレビューに使う割合を保存します。開いているプレビューは古い状態になります。既存の方針の値は保持されます。</Megamod_DrugGeneration_PreferenceHelp>
+  <Megamod_DrugGeneration_ToleranceHelp>「適用」で、新規またはリセット後のプレビューに使う「制限なし」か数値上限を保存します。「制限なし」は無制限ですが、数値の100%は上限です。耐性機能が無効または利用できない場合、更新したプレビューは「制限なし」を使い、この設定は保持されます。</Megamod_DrugGeneration_ToleranceHelp>
+  <Megamod_DrugGeneration_Any>制限なし</Megamod_DrugGeneration_Any>
+  <Megamod_DrugGeneration_Percentage>割合（0–100）</Megamod_DrugGeneration_Percentage>
   <Megamod_DrugGeneration_InvalidThreshold>0から100までの有限のパーセント値を入力してください。</Megamod_DrugGeneration_InvalidThreshold>
   <Megamod_DrugGeneration_InvalidTolerance>「制限なし」または0%から100%までの耐性値を選んでください。</Megamod_DrugGeneration_InvalidTolerance>
 </LanguageData>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_Settings_Apply>应用</Megamod_Settings_Apply>
   <Megamod_Settings_UseGlobal>使用全局设置</Megamod_Settings_UseGlobal>
   <Megamod_Settings_CurrentSave>当前存档</Megamod_Settings_CurrentSave>
   <Megamod_Settings_GlobalDefault>全局默认值</Megamod_Settings_GlobalDefault>

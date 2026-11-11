@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_DrugGeneration_Category>Generación de políticas de drogas</Megamod_DrugGeneration_Category>
+  <Megamod_DrugGeneration_Enabled>Activar generación de políticas</Megamod_DrugGeneration_Enabled>
+  <Megamod_DrugGeneration_EnabledHelp>Muestra Generar en el gestor habitual de políticas de drogas. Revisa y edita la vista previa antes de crear una política nueva.</Megamod_DrugGeneration_EnabledHelp>
+  <Megamod_DrugGeneration_InitialMood>Umbral inicial de ánimo</Megamod_DrugGeneration_InitialMood>
+  <Megamod_DrugGeneration_InitialJoy>Umbral inicial de recreación</Megamod_DrugGeneration_InitialJoy>
+  <Megamod_DrugGeneration_InitialTolerance>Opción inicial de tolerancia</Megamod_DrugGeneration_InitialTolerance>
+  <Megamod_DrugGeneration_PreferenceHelp>Aplicar guarda este porcentaje para vistas previas nuevas o restablecidas. Las vistas previas abiertas quedan desactualizadas. Las políticas existentes conservan sus valores.</Megamod_DrugGeneration_PreferenceHelp>
+  <Megamod_DrugGeneration_ToleranceHelp>Aplicar guarda Sin límite o un umbral numérico para vistas previas nuevas o restablecidas. Sin límite no restringe; el valor numérico 100 % sí es un límite. Si la función de tolerancia está desactivada o no disponible, las vistas previas actualizadas usan Sin límite y conservan esta preferencia.</Megamod_DrugGeneration_ToleranceHelp>
+  <Megamod_DrugGeneration_Any>Sin límite</Megamod_DrugGeneration_Any>
+  <Megamod_DrugGeneration_Percentage>Porcentaje (0–100)</Megamod_DrugGeneration_Percentage>
   <Megamod_DrugGeneration_InvalidThreshold>Introduce un porcentaje finito entre 0 y 100.</Megamod_DrugGeneration_InvalidThreshold>
   <Megamod_DrugGeneration_InvalidTolerance>Elige Sin límite o una tolerancia numérica entre 0% y 100%.</Megamod_DrugGeneration_InvalidTolerance>
 </LanguageData>

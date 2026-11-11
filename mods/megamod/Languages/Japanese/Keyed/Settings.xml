@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_Settings_Apply>適用</Megamod_Settings_Apply>
   <Megamod_Settings_UseGlobal>全体設定を使用</Megamod_Settings_UseGlobal>
   <Megamod_Settings_CurrentSave>現在のセーブ</Megamod_Settings_CurrentSave>
   <Megamod_Settings_GlobalDefault>全体の既定値</Megamod_Settings_GlobalDefault>

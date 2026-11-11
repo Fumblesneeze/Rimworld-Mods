@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_Settings_Apply>Anwenden</Megamod_Settings_Apply>
   <Megamod_Settings_UseGlobal>Global verwenden</Megamod_Settings_UseGlobal>
   <Megamod_Settings_CurrentSave>Aktueller Spielstand</Megamod_Settings_CurrentSave>
   <Megamod_Settings_GlobalDefault>Globaler Standard</Megamod_Settings_GlobalDefault>

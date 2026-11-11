@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_DrugGeneration_Category>Создание политик приёма наркотиков</Megamod_DrugGeneration_Category>
+  <Megamod_DrugGeneration_Enabled>Включить создание политик</Megamod_DrugGeneration_Enabled>
+  <Megamod_DrugGeneration_EnabledHelp>Показывает кнопку «Создать» в обычном окне политик приёма наркотиков. Проверьте и измените предварительный вариант перед созданием новой политики.</Megamod_DrugGeneration_EnabledHelp>
+  <Megamod_DrugGeneration_InitialMood>Начальный порог настроения</Megamod_DrugGeneration_InitialMood>
+  <Megamod_DrugGeneration_InitialJoy>Начальный порог отдыха</Megamod_DrugGeneration_InitialJoy>
+  <Megamod_DrugGeneration_InitialTolerance>Начальное ограничение толерантности</Megamod_DrugGeneration_InitialTolerance>
+  <Megamod_DrugGeneration_PreferenceHelp>«Применить» сохраняет процент для новых или сброшенных предварительных вариантов. Открытые варианты устаревают. Существующие политики сохраняют свои значения.</Megamod_DrugGeneration_PreferenceHelp>
+  <Megamod_DrugGeneration_ToleranceHelp>«Применить» сохраняет «Без ограничения» или числовой порог для новых или сброшенных вариантов. «Без ограничения» не задаёт порог; 100 % остаётся ограничением. Если функция толерантности отключена или недоступна, обновлённые варианты используют «Без ограничения», сохраняя эту настройку.</Megamod_DrugGeneration_ToleranceHelp>
+  <Megamod_DrugGeneration_Any>Без ограничения</Megamod_DrugGeneration_Any>
+  <Megamod_DrugGeneration_Percentage>Процент (0–100)</Megamod_DrugGeneration_Percentage>
   <Megamod_DrugGeneration_InvalidThreshold>Введите конечное значение в процентах от 0 до 100.</Megamod_DrugGeneration_InvalidThreshold>
-  <Megamod_DrugGeneration_InvalidTolerance>Выберите «Любая» или числовой предел толерантности от 0% до 100%.</Megamod_DrugGeneration_InvalidTolerance>
+  <Megamod_DrugGeneration_InvalidTolerance>Выберите «Без ограничения» или числовой предел толерантности от 0% до 100%.</Megamod_DrugGeneration_InvalidTolerance>
 </LanguageData>

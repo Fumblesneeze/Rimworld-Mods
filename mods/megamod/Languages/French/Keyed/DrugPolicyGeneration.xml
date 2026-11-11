@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_DrugGeneration_Category>Génération de politiques de drogues</Megamod_DrugGeneration_Category>
+  <Megamod_DrugGeneration_Enabled>Activer la génération de politiques</Megamod_DrugGeneration_Enabled>
+  <Megamod_DrugGeneration_EnabledHelp>Affiche Générer dans le gestionnaire habituel des politiques de drogues. Vérifiez et modifiez l’aperçu avant de créer une nouvelle politique.</Megamod_DrugGeneration_EnabledHelp>
+  <Megamod_DrugGeneration_InitialMood>Seuil d’humeur initial</Megamod_DrugGeneration_InitialMood>
+  <Megamod_DrugGeneration_InitialJoy>Seuil de loisirs initial</Megamod_DrugGeneration_InitialJoy>
+  <Megamod_DrugGeneration_InitialTolerance>Choix de tolérance initial</Megamod_DrugGeneration_InitialTolerance>
+  <Megamod_DrugGeneration_PreferenceHelp>Appliquer enregistre ce pourcentage pour les aperçus nouveaux ou réinitialisés. Les aperçus ouverts deviennent obsolètes. Les politiques existantes conservent leurs valeurs.</Megamod_DrugGeneration_PreferenceHelp>
+  <Megamod_DrugGeneration_ToleranceHelp>Appliquer enregistre Sans limite ou un seuil numérique pour les aperçus nouveaux ou réinitialisés. Sans limite n’impose aucun seuil ; 100 % reste une limite. Si la fonction de tolérance est désactivée ou indisponible, les aperçus actualisés utilisent Sans limite tout en conservant cette préférence.</Megamod_DrugGeneration_ToleranceHelp>
+  <Megamod_DrugGeneration_Any>Sans limite</Megamod_DrugGeneration_Any>
+  <Megamod_DrugGeneration_Percentage>Pourcentage (0–100)</Megamod_DrugGeneration_Percentage>
   <Megamod_DrugGeneration_InvalidThreshold>Saisissez un pourcentage fini compris entre 0 et 100.</Megamod_DrugGeneration_InvalidThreshold>
   <Megamod_DrugGeneration_InvalidTolerance>Choisissez Sans limite ou une tolérance numérique de 0% à 100%.</Megamod_DrugGeneration_InvalidTolerance>
 </LanguageData>

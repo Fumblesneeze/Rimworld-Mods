@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_Settings_Apply>Aplicar</Megamod_Settings_Apply>
   <Megamod_Settings_UseGlobal>Usar global</Megamod_Settings_UseGlobal>
   <Megamod_Settings_CurrentSave>Partida actual</Megamod_Settings_CurrentSave>
   <Megamod_Settings_GlobalDefault>Valor global</Megamod_Settings_GlobalDefault>

@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_DrugGeneration_Category>Drug policy generation</Megamod_DrugGeneration_Category>
+  <Megamod_DrugGeneration_Enabled>Enable policy generation</Megamod_DrugGeneration_Enabled>
+  <Megamod_DrugGeneration_EnabledHelp>Show Generate in the native drug-policy manager. Review and edit a preview before creating a new policy.</Megamod_DrugGeneration_EnabledHelp>
+  <Megamod_DrugGeneration_InitialMood>Initial mood threshold</Megamod_DrugGeneration_InitialMood>
+  <Megamod_DrugGeneration_InitialJoy>Initial recreation threshold</Megamod_DrugGeneration_InitialJoy>
+  <Megamod_DrugGeneration_InitialTolerance>Initial tolerance choice</Megamod_DrugGeneration_InitialTolerance>
+  <Megamod_DrugGeneration_PreferenceHelp>Apply stores this percentage for new or reset previews. Open previews become out of date. Existing policies keep their values.</Megamod_DrugGeneration_PreferenceHelp>
+  <Megamod_DrugGeneration_ToleranceHelp>Apply stores Any or a numeric limit for new or reset previews. Any is unrestricted; numeric 100% is a limit. When tolerance support is off or unavailable, refreshed previews use Any while retaining this preference.</Megamod_DrugGeneration_ToleranceHelp>
+  <Megamod_DrugGeneration_Any>Any</Megamod_DrugGeneration_Any>
+  <Megamod_DrugGeneration_Percentage>Percentage (0–100)</Megamod_DrugGeneration_Percentage>
   <Megamod_DrugGeneration_InvalidThreshold>Enter a finite percentage from 0 to 100.</Megamod_DrugGeneration_InvalidThreshold>
   <Megamod_DrugGeneration_InvalidTolerance>Choose Any or a numeric tolerance from 0% to 100%.</Megamod_DrugGeneration_InvalidTolerance>
 </LanguageData>

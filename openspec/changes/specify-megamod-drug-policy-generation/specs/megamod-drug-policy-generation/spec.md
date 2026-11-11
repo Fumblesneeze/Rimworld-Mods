@@ -325,6 +325,12 @@ original payload, report validation failure and use the built-in default in the 
 Invariant serialization SHALL preserve numeric 100% separately from Any and keep captured preview
 preferences immutable when later global or save values change.
 
+#### Scenario: Apply a scoped percentage draft
+- **WHEN** the player edits a generation percentage in the common settings section
+- **THEN** the localized text and Any choice remain transient until Apply succeeds through the current scope binding
+- **AND** invalid input or a refused commit retains the text for repair without changing the stored value; an unchanged numeric value is preserved exactly
+- **AND** a changed stored value, numeric locale or save activation discards only the transient text before further editing.
+
 #### Scenario: Invalid preference is retained for repair
 - **WHEN** a stored generation threshold or tolerance choice cannot be interpreted in its supported range
 - **THEN** the affected scope uses its built-in default with a validation indication, and the stored payload remains unchanged until an explicit edit.

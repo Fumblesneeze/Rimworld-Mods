@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_DrugGeneration_Category>Drogenrichtlinien erstellen</Megamod_DrugGeneration_Category>
+  <Megamod_DrugGeneration_Enabled>Richtliniengenerator aktivieren</Megamod_DrugGeneration_Enabled>
+  <Megamod_DrugGeneration_EnabledHelp>Zeigt „Generieren“ in der normalen Drogenrichtlinienverwaltung. Prüfe und bearbeite die Vorschau, bevor du eine neue Richtlinie erstellst.</Megamod_DrugGeneration_EnabledHelp>
+  <Megamod_DrugGeneration_InitialMood>Anfängliche Stimmungsschwelle</Megamod_DrugGeneration_InitialMood>
+  <Megamod_DrugGeneration_InitialJoy>Anfängliche Erholungsschwelle</Megamod_DrugGeneration_InitialJoy>
+  <Megamod_DrugGeneration_InitialTolerance>Anfängliche Toleranzwahl</Megamod_DrugGeneration_InitialTolerance>
+  <Megamod_DrugGeneration_PreferenceHelp>„Anwenden“ speichert diesen Prozentwert für neue oder zurückgesetzte Vorschauen. Offene Vorschauen werden ungültig. Bestehende Richtlinien behalten ihre Werte.</Megamod_DrugGeneration_PreferenceHelp>
+  <Megamod_DrugGeneration_ToleranceHelp>„Anwenden“ speichert „Beliebig“ oder einen Grenzwert für neue oder zurückgesetzte Vorschauen. „Beliebig“ ist unbeschränkt; numerische 100 % sind ein Grenzwert. Ist die Toleranzfunktion aus oder nicht verfügbar, verwenden erneuerte Vorschauen „Beliebig“ und behalten diese Voreinstellung.</Megamod_DrugGeneration_ToleranceHelp>
+  <Megamod_DrugGeneration_Any>Beliebig</Megamod_DrugGeneration_Any>
+  <Megamod_DrugGeneration_Percentage>Prozentwert (0–100)</Megamod_DrugGeneration_Percentage>
   <Megamod_DrugGeneration_InvalidThreshold>Gib einen endlichen Prozentwert von 0 bis 100 ein.</Megamod_DrugGeneration_InvalidThreshold>
   <Megamod_DrugGeneration_InvalidTolerance>Wähle Beliebig oder eine numerische Toleranz von 0% bis 100%.</Megamod_DrugGeneration_InvalidTolerance>
 </LanguageData>

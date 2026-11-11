@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_Settings_Apply>Применить</Megamod_Settings_Apply>
   <Megamod_Settings_UseGlobal>Использовать общие</Megamod_Settings_UseGlobal>
   <Megamod_Settings_CurrentSave>Текущее сохранение</Megamod_Settings_CurrentSave>
   <Megamod_Settings_GlobalDefault>Общее значение</Megamod_Settings_GlobalDefault>

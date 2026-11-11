@@ -298,6 +298,14 @@ array. Snapshot Version/Identity still govern currentness; this metadata alone p
 body safe and enables no native action. The creation guard must prove its consumed no-escape and
 actual-list semantics, admitting irrelevant/compatible effects and refusing unproved effects.
 
+Generation preference controls use the common composite-settings renderer. A small transient
+percentage draft reuses S138's localized percentage parser and exact unchanged-value preservation;
+it owns no persisted settings or policy rows. The mood/recreation controls accept numeric values,
+and the tolerance control additionally exposes Any. Apply uses the renderer's current scope commit;
+invalid input or rejected binding retains text. Stored-value, numeric-culture and save-activation
+changes reset the transient editor. Global/save lifecycle enforcement remains in C02, while the
+generator controller must still invalidate an open preview after an effective preference change.
+
 Active canonical `seohyeon.bestdrugpolicy` produces one bounded startup overlap warning and
 best-effort ordinary effective-off for `drug-generation.enabled`: no new previews/commit,
 cancel transient preview, keep all prior policies and stored preferences. No rollback of source

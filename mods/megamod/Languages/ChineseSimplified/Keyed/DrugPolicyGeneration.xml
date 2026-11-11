@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <Megamod_DrugGeneration_Category>药物政策生成</Megamod_DrugGeneration_Category>
+  <Megamod_DrugGeneration_Enabled>启用政策生成</Megamod_DrugGeneration_Enabled>
+  <Megamod_DrugGeneration_EnabledHelp>在原版药物政策管理器中显示“生成”。创建新政策前，请检查并编辑预览。</Megamod_DrugGeneration_EnabledHelp>
+  <Megamod_DrugGeneration_InitialMood>初始心情阈值</Megamod_DrugGeneration_InitialMood>
+  <Megamod_DrugGeneration_InitialJoy>初始娱乐阈值</Megamod_DrugGeneration_InitialJoy>
+  <Megamod_DrugGeneration_InitialTolerance>初始耐受度选项</Megamod_DrugGeneration_InitialTolerance>
+  <Megamod_DrugGeneration_PreferenceHelp>“应用”会保存此百分比，用于新建或重置的预览。已打开的预览将过期。现有政策保留原值。</Megamod_DrugGeneration_PreferenceHelp>
+  <Megamod_DrugGeneration_ToleranceHelp>“应用”会保存“不限”或数值上限，用于新建或重置的预览。“不限”没有限制，数值 100% 仍是上限。耐受度功能关闭或不可用时，刷新的预览使用“不限”，并保留此偏好设置。</Megamod_DrugGeneration_ToleranceHelp>
+  <Megamod_DrugGeneration_Any>不限</Megamod_DrugGeneration_Any>
+  <Megamod_DrugGeneration_Percentage>百分比（0–100）</Megamod_DrugGeneration_Percentage>
   <Megamod_DrugGeneration_InvalidThreshold>请输入 0 到 100 之间的有限百分比。</Megamod_DrugGeneration_InvalidThreshold>
-  <Megamod_DrugGeneration_InvalidTolerance>请选择“任意”或 0% 到 100% 之间的耐受度数值。</Megamod_DrugGeneration_InvalidTolerance>
+  <Megamod_DrugGeneration_InvalidTolerance>请选择“不限”或 0% 到 100% 之间的耐受度数值。</Megamod_DrugGeneration_InvalidTolerance>
 </LanguageData>
