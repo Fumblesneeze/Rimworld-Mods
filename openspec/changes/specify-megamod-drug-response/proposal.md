@@ -46,11 +46,12 @@ their policy definitions, medicine ceilings, quantities or donor permissions.
   (`imranfish.xmlextensions`, Workshop2574315206) is required with any declarative XML integration.
   No source assemblies, source runtime dependencies, or repository product/Gateway dependencies.
 - Drug and illness providers, DLC and UI providers are optional, package-resolved and shape-admitted.
-  An absent provider supplies no content. Candidate source adapters are catalogued in design;
+  An absent provider supplies no content. Genuine gameplay-content adapters are catalogued in design;
   each needs individual admission and native evidence before being called supported.
-- Existing original Drug Response wins over this overlapping automation when co-installed;
-  unsupported external automatic medication overlap likewise suspends only owned overlapping
-  scheduling with a warning. Never remove, configure or unpatch another provider.
+- Active original Drug Response or Priority Treatment produces a bounded startup warning and
+  requests the ordinary per-feature settings disable path for owned overlapping scheduling,
+  best effort. This is not a cooperative handoff or compatibility guarantee. Never remove,
+  configure or unpatch another provider; no original-provider compatibility run is required.
 - **Intentional contract changes:** configuration navigation, successful-dose timing, safe automatic
   interruption and bounded pending-order ownership. No upstream save/settings import, package
-  spoof, binary compatibility facade or multiplayer guarantee is included.
+  spoof, API/binary compatibility facade, consumer-parity checks or multiplayer guarantee is included.

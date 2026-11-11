@@ -51,8 +51,8 @@ S021 supplies one capacity budget and actual tracked transfer results for bill c
 items. No capacity disable setting. Respect kept supplies and player unload/equip decisions through
 split, merge, temporary carry, partial deposit, failure, map exit and save. An inventory TryAdd result
 does not identify the last element as the transferred item. Do not dynamically attach source comps
-or globally mark whole stacks as unloadable. Consume source-specific quantity projections only via
-their admitted adapter, preserving exact lifetime and cancellation.
+or globally mark whole stacks as unloadable. Consume owned quantity state directly; any genuinely
+used external inventory projection needs its admitted capability adapter, not a source-parity facade.
 
 Packing delay max(30,count×baseMass/10) is an explicit source-derived work cost in the supplies spec;
 it is independent of recipe labor. Use integer-tick completion without reusing bill work fields.
@@ -79,8 +79,9 @@ Explicit manual unload tracks only selected quantities, their prior keep/unowned
 remaining delivery. Cancellation restores that prior state for the cancelled remainder unless a
 newer player choice supersedes it. Pre-existing S021 cargo remains a separate delivery obligation;
 selecting it cannot create another manual order. Splits/merges preserve these portions, not stack flags.
-Pending explicit orders held by source coexistence/admission need explicit Resume, not automatic
-reactivation. Source Simple Sidearms forgetting occurs only after successful owned unloading through
+Pending explicit orders held by unavailable admission need explicit Resume, not automatic
+reactivation. Original-loaded disablement uses the ordinary settings disable/recovery path.
+Optional Simple Sidearms forgetting occurs only after successful owned unloading through
 a complete admitted signature; missing provider hooks cannot cause a pickup/drop loop.
 
 ### Food and needs preserve actual permission and effects
@@ -186,23 +187,24 @@ that stream unchanged on failure. No compiler-local index/first-branch matcher, 
 no-foreign-owner test or speculative rerunning of foreign transpilers. Repatch revalidation/suspension,
 atomic own-group rollback and one bounded startup warning per skipped enabled patch are mandatory.
 
-### Incoming contracts and provider policy
+### Ordinary feature disablement and genuine provider integrations
 
-Original Common Sense active withholds owned overlap without writing its fields or uninstalling it.
-The research consumer table records actual public/writable/private bindings. A writable static global
-setting facade would contradict save-specific settings; a fake private Hauling_Opportunity body would
-not satisfy an external distance transpiler. Do not spoof its assembly/package/Harmony owner, jobs,
-Def names or save keys merely to make detection pass. No blanket drop-in claim.
+Active original Common Sense produces a bounded startup warning and invokes the ordinary
+per-feature settings disable path for the owned overlap, best effort. Active original While You're
+Up invokes that same path for the overlapping owned detour. Do not inspect its internal enabled
+state or establish a cooperative handoff. Neither decision promises that source and owned behavior
+work together. Do not write source settings, uninstall/unpatch a provider or emulate its API.
+Source consumer tables remain research; no facade, binary/save contract or consumer-parity work is
+required, even for a newly identified caller of upstream internals.
 
-External While You're Up gets the overlapping detour when active/enabled, or ours is withheld if its state
-cannot be safely determined. Support other providers through actual narrow routes: hygiene needs
+Support genuine other providers through actual narrow routes: hygiene needs
 and native fixture eligibility; inventory UI insertions; sidearm forgetting; baby-carry ordering;
 cross-level path costs; explicit no-opportunity jobs. Pin packages and exact signatures during their
 implementation, not display-name guesses. CashRegister's opt-out stays intact. Glittertech's warning
 probe disappearing is not evidence of compatibility; custom bill handling remains unadmitted until
-its physical lifecycle is proven. Repository ImmersiveChefs's exact source adapter remains an
-unsupported incoming binding here, with no runtime dependency; a future consumer change has its own
-OpenSpec owner. No unrelated repository mod is edited by this draft.
+its physical lifecycle is proven. Repository ImmersiveChefs remains independent; its source-specific
+adapter is not a replacement-compatibility task or runtime dependency. No unrelated repository mod
+is edited by this draft.
 
 ## Risks / Trade-offs
 
@@ -221,7 +223,9 @@ No runtime migration in this prose change. Deserialize and round-trip dormant ow
 when runtime admission fails; retain orders, quantities and entity choices without executing them.
 Admission gates activation and action-capable reconciliation, not retention. Rebuild candidate facts
 and reconcile physical quantities safely before supported actions resume, without replay. Unsafe
-side work is held; source-overlap explicit unload orders require Resume. Do not import source
+side work is held; pending unload orders suspended by unavailable admission require Resume. An
+original-loaded disable uses the ordinary settings path and its existing recovery semantics, not
+a special source-coexistence mode. Do not import source
 CompUnloadChecker/CompJoyToppedOff/DoCleanComp, SocialRelaxCommonSense jobs or global settings. Any
 future importer/removal process needs a separate backup, atomic conversion/restoration and verified
 postcondition contract. Never use draft specs as proof that a save can safely remove this mod.

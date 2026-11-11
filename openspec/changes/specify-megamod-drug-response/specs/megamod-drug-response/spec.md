@@ -433,9 +433,11 @@ patch, reason, lost behavior and fallback. Compatible unrelated patches SHALL re
 An absent optional drug/illness provider SHALL contribute no choices or edits. A present changed
 provider SHALL leave its affected rules unavailable without partially modifying content.
 
-Co-installed original Drug Response SHALL retain its own operation while overlapping owned S124
-automation is disabled and reported. Unsupported external automatic-medication overlap, including
-external Priority Treatment, SHALL likewise disable only the owned overlapping ordering scope under the initial original-provider precedence policy; no external bill, setting or patch is changed. Ordinary
+Active original Drug Response or Priority Treatment SHALL trigger a bounded startup warning and
+the ordinary per-feature settings disable path for the owned overlapping ordering scope, with the
+same effective off behavior as a user disabling it. This is best effort, not a cooperative
+compatibility guarantee or source-specific scheduling handoff. No original API/binary/save parity
+checks or facade are required; no external bill, setting or patch is changed. Ordinary
 manual drug use, native policies and medical operations remain available. Required content and
 provider checks SHALL preserve unrelated content additions and existing extensions.
 
@@ -449,4 +451,5 @@ provider checks SHALL preserve unrelated content additions and existing extensio
 
 #### Scenario: Original installed alongside replacement
 - **WHEN** original Drug Response is active with the megamod
-- **THEN** the owned overlap is inactive and clearly reported, with no deletion of source settings, source bills or foreign patches.
+- **THEN** startup reports the overlap and requests the ordinary settings disable path for the owned feature, best effort
+- **AND** its ordinary off/withdrawal semantics apply without deleting source settings, source bills or foreign patches or promising their compatibility.

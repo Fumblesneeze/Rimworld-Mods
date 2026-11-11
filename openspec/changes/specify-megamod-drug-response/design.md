@@ -60,10 +60,10 @@ Baseline condition Def names and optional candidates are fully inventoried in re
 catalog adapters bind actual canonical package IDs and each Def shape before implementation; do not
 reuse ModLister.HasActiveModWithName or a single sentinel for a whole catalog. The special MSMental
 exclusion needs its concrete provider binding. Unknown external types require a new admitted mapping,
-not string similarity. The publicly documented MSPainDrug.ManagesPain marker is a consumed XML
-contract; no installed external text consumer was found. Investigate actual compiled/reflected and
-third-party XML consumers before deciding a narrow facade. A same-name marker class with competing
-assemblies is not automatically safe.
+not string similarity. The publicly documented MSPainDrug.ManagesPain marker remains source
+research. Do not implement or audit that legacy XML/API identity for replacement compatibility.
+Use actual effect facts and any explicitly owned pain-eligibility metadata; genuine optional drug
+content still needs its package/Def/effect checks, not a facade or original-consumer parity scan.
 
 ### 3. Declarative setup, shared map facts and direct native actions
 
@@ -172,10 +172,12 @@ failure. Late repatches need supported invalidation/revalidation; no speculative
 transpilers. An atomic group's failure rolls back newly owned patches only and emits one bounded
 startup warning per skipped enabled patch with spec/patch/target/predicate/behavior/fallback.
 
-Original Mlie.DrugResponse or pelador.drugresponse active means no owned S124 execution. External
-Dreadarm.PriorityTreatment is not our S134: initially disable owned
-overlapping automatic medication scheduling, not unrelated displays/tending or foreign code.
-Display why. Never spoof package IDs, rewrite another mod's settings, or adopt its bills.
+Active original Mlie.DrugResponse, pelador.drugresponse or Dreadarm.PriorityTreatment triggers a
+bounded startup warning and the ordinary per-feature settings disable path for owned overlapping
+automatic medication scheduling, best effort. Use the existing disable/withdrawal semantics and
+shared pending authority, not a source-specific handoff or alternate recovery path. Unrelated
+features continue through their own settings. Do not promise coordinated operation with the
+original or test its API/binary/save parity. Never rewrite its settings, unpatch it or adopt its bills.
 
 ## Risks / Trade-offs
 
@@ -207,6 +209,7 @@ mid-action remains unverified; do not claim save-removal safety from the author'
 DR-Q1: drafted UI, pending real usability/localization. DR-Q2: observed overlap and proposed shared
 contract, pending full S134 review. DR-Q3: exact1.7 dispatch/consume/cancel/recipe/optional XML targets.
 DR-Q4: actual pharmacology/interval/immunity and caravan incapacity playability. DR-Q5: actual
-optional package identities, extension consumers, binary contracts/license provenance. DR-Q6:
+genuine optional content package identities and license provenance; earlier source extension/API
+consumer-parity work is superseded and out of scope. DR-Q6:
 player-edit/cancel ownership across providers/save/map/caravan. DR-Q7: reviewed-build native UI,
-real consumption, provider-present/absent/drift and composed performance evidence.
+real consumption, genuine content-provider present/absent/drift and composed performance evidence.

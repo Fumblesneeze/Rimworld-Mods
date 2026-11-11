@@ -55,13 +55,16 @@ consumption history. This feature SHALL not grant permission or promise addictio
 - **THEN** the pawn can obtain and consume the ordinary permitted dose with its normal effects.
 
 ### Requirement: Recreation uses the recipient and retains native joy exceptions
-Ordinary recreational drug use SHALL apply the recipient's tolerance choice in addition to its
-other recreation permissions. Native joy exceptions for a positive drug-desire trait or a mental
-state SHALL retain their existing native joy-route scope: this extra tolerance veto does not apply
-to those exceptions, but they grant no scheduled-use or patient-feeding exception. S024 patient
-treats SHALL retain required recipient joy-policy permission and add the numeric tolerance veto
-without a new drug-desire or mental-state exception. Inventory-sourced recreation SHALL retain the
-exceptions of its actual originating route. Neither route uses the visitor's choices to grant use.
+Ordinary recreational drug use SHALL apply the recipient's tolerance choice in addition to its other recreation permissions.
+Native exceptions for a positive drug-desire trait or a mental state SHALL retain their existing
+direct self-recreation scope: this extra tolerance veto does not apply to those exceptions on that
+route, but they grant no scheduled-use, social-drinking or patient-feeding exception. Social drinks
+SHALL require the tolerance choice and ordinary joy permission without importing those exceptions.
+When the choice rejects a social drink, otherwise eligible social activity without a drink SHALL
+remain available. S024 patient treats SHALL retain required recipient joy-policy permission and add
+the numeric tolerance veto without a new drug-desire or mental-state exception. Inventory-sourced
+recreation SHALL retain the exceptions of its actual originating route. A visitor's choices SHALL
+not grant permission to the patient.
 
 #### Scenario: Visitor could take a drug that the patient cannot
 - **WHEN** an eligible visitor selects a recreational drug whose tolerance limit rejects the patient
@@ -72,16 +75,23 @@ exceptions of its actual originating route. Neither route uses the visitor's cho
 - **THEN** S024 does not deliver that drug by extending a native self-recreation exception to feeding.
 
 #### Scenario: Joy exception does not become scheduled permission
-- **WHEN** a pawn qualifies for an ordinary joy-policy exception while its numeric tolerance limit is reached
-- **THEN** that exception remains available only on its ordinary joy route
+- **WHEN** a pawn qualifies for an ordinary direct self-recreation exception while its numeric tolerance limit is reached
+- **THEN** that exception remains available only on that direct self-recreation route
 - **AND** scheduled use remains subject to the tolerance choice.
 
+#### Scenario: Social drink does not inherit a direct recreation exception
+- **WHEN** an otherwise eligible social participant has joy permission for a drink, its numeric tolerance limit is reached, and it has a positive drug-desire trait or a mental state
+- **THEN** that drink is withheld without importing a direct self-recreation exception
+- **AND** otherwise eligible social activity without a drink remains available.
+
 ### Requirement: Medical and explicit orders retain their own authority
-The tolerance preference SHALL not add a restriction to addiction relief, medical administration,
-S124 condition or pain responses, S134 dependency assistance, explicit manual orders or inventory
-refill. Those routes SHALL retain their own permission, medical eligibility, quantity, claims and
+The tolerance preference SHALL not add a restriction to addiction relief, medical administration, S124 condition or pain responses, S134 dependency assistance, explicit manual orders or inventory refill.
+Those routes SHALL retain their own permission, medical eligibility, quantity, claims and
 actual-consumption rules. A routine-use choice SHALL neither authorize treatment nor create a
 second pending dose. Merely carrying a drug SHALL not count as consuming it.
+When a scheduled dose is withheld, any extra-stock pickup attached to that dose is withheld as
+well; this feature does not promise a separate refill to replace it. Independently permitted refill
+SHALL remain available.
 
 #### Scenario: Needed dependency assistance
 - **WHEN** routine use is blocked by numeric zero but S134 independently permits dependency assistance
@@ -90,6 +100,11 @@ second pending dose. Merely carrying a drug SHALL not count as consuming it.
 #### Scenario: Manual order or carried supply
 - **WHEN** the player gives an otherwise valid explicit ingestion order or the pawn refills permitted carried stock
 - **THEN** this feature does not add a routine tolerance veto to that action or record consumption before it occurs.
+
+#### Scenario: Blocked dose also withholds its attached pickup
+- **WHEN** the tolerance choice rejects a scheduled dose that would also collect extra carried stock
+- **THEN** that dose and its attached pickup do not occur, without a promised replacement refill trip
+- **AND** independently permitted refill remains available under its ordinary rules.
 
 ### Requirement: Policy maintenance preserves deliberate choices
 Tolerance choices SHALL remain save-local policy gameplay state, not inherited mod configuration.

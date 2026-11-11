@@ -44,26 +44,55 @@ stock or defName-only cached eligibility. The minimal persistence codec, schema 
 identity must be pinned before the storage slice, including handling a future unknown version without
 overwriting its raw data. This research decision does not approve a migration implementation.
 
+The follow-up native research confirms that policy copy creates new entry objects and save/load
+deep-serializes entries. Current S029 storage snapshots retained row identity and seven native
+choices; it has no tolerance codec or side-state rollback contract. Retained identity alone cannot
+cover copy, load-created rows or partial failure. DT-Q1 remains blocking until one owned extension
+covers those cases; new-row defaults are S029's native initialization followed by normalization.
+
 ### 2. Native route restriction, not a general ingestion veto
 
-Inspected candidates are `Pawn_DrugPolicyTracker.AllowedToTakeScheduledNow(ThingDef)` and
-`JoyGiver_Ingest.CanIngestForJoy(Pawn,Thing)` with native `DrugStatsUtility.GetToleranceGiver`.
-Native false remains false. Scheduled eligibility combines native result, S024's potential-mood
-predicate and the owned tolerance predicate. On the native joy route, the existing positive
-DrugDesire/mental-state exception skips only this additional joy veto. Unknown/changed native
-exception semantics require admission failure, not a guessed trait-name rule. S024 patient treats
-retain their existing recipient joy-policy permission and call the shared numeric comparison at
-selection and the appropriate native action boundary, without importing native self-recreation
-trait/mental-state exceptions into feeding. Keep exception policy at its proven route, outside the
-shared threshold comparison; inventory sourcing never changes purpose. Do not Harmony-patch our
-own S024 implementation.
+The inspected map and caravan scheduled paths reach
+`Pawn_DrugPolicyTracker.ShouldTryToTakeScheduledNow(ThingDef)`, which requires
+`AllowedToTakeScheduledNow(ThingDef)`. The latter is a candidate shared eligibility boundary with
+native `DrugStatsUtility.GetToleranceGiver`. Native false remains false. Scheduled eligibility
+combines native result, S024's potential-mood predicate and the owned tolerance predicate, while
+the later native timing/overdose decisions remain authoritative.
+
+`JoyGiver_TakeDrug` inherits `JoyGiver_Ingest.CanIngestForJoy(Pawn,Thing)`. On this direct
+self-recreation route, the native positive DrugDesire/mental-state policy exception skips only the
+additional tolerance veto; earlier ordinary eligibility remains required. Native
+`JoyGiver_SocialRelax` instead selects drinks through its separate
+`TryFindIngestibleToNurse(IntVec3,Pawn,out Thing)` path. That path requires joy permission and a
+nurseable drug without those exceptions. Apply the tolerance choice to social drinks without
+importing the direct joy-route bypass; rejecting the drink retains an otherwise eligible social
+job without a drink. A base joy hook alone does not cover this route. Unknown/changed native
+exception semantics require admission failure, not a guessed trait-name rule.
+
+S024 patient treats retain their existing recipient joy-policy permission and call the shared
+numeric comparison at selection and the appropriate native action boundary, without importing
+self-recreation exceptions into feeding. Native `JobDriver_FoodFeedPatient` passes its Deliveree
+to chewing/final ingestion; the visitor/toil actor is not the recipient. The driver also serves
+ordinary feeding, so its type alone cannot prove an S024 recreational purpose. Keep exception
+policy at its proven route, outside the shared threshold comparison; inventory sourcing never
+changes purpose. Do not Harmony-patch our own S024 implementation.
+
+Native standalone `AllowedToTakeToInventory` excludes scheduled rows. A scheduled ingest job can
+instead carry `takeExtraIngestibles` through `DrugAIUtility` and `JobDriver_Ingest`. Withholding
+that dose also withholds its attached pickup; preserve independent native refill without promising
+or inventing a substitute refill job. This does not alter inventory targets or add a direct refill
+veto. The exact inspected routes and identities are retained in the refinement research addendum.
 
 Medical/manual/addiction-relief/refill paths do not call a blanket tolerance veto. S124 and S134
 retain their current eligibility and shared pending-chemical authority; S138 neither acquires a
 medical claim nor observes consumption twice. Actual chemical/hediff facts come from the current
 pawn at the eligibility boundary. Do not persist pawn/hediff references, cache per-pawn permission
-or create a private drug inventory index. Any final pre-ingestion recheck must be researched on the
-real native path and cannot accidentally broaden scope to manual or medical ingestion.
+or create a private drug inventory index. The inspected native jobs do not repeat scheduled/joy
+policy at final ingestion, and manual, addiction/dependency and routine routes share downstream
+helpers. DT-Q2 remains unresolved for whether/when a final recheck is needed, threshold changes
+during an executing routine job, and the exact recipient/purpose proof across pickup and save/resume.
+Resolve that contract before the affected hook; do not infer purpose from a shared driver or add an
+unscoped `Thing.Ingested` veto. Feature-off still does not cancel an already executing native job.
 
 ### 3. One admitted enforcement-and-editor group
 
@@ -131,8 +160,10 @@ reversible gameplay switch, not save conversion. All runtime tasks remain unchec
 
 - DT-Q1: Pin the exact S029 extension point and owned codec/invalid-record preservation before
   persistence work; prove copy and rollback cover side data and saved duplicate handling.
-- DT-Q2: Establish actual native subclass, social-drink and S024 feeding admission/recheck seams
-  and route identity before enforcement; no unscoped `Thing.Ingested` hook as a shortcut.
+- DT-Q2: Native route facts now distinguish direct joy, social drinks, scheduled use and separate
+  medical/manual/refill paths. Final recheck timing, changes during executing routine jobs, exact
+  recipient/purpose across save/resume, the future S024 treat boundary and effective-body admission
+  remain unresolved before enforcement; no shared-driver inference or unscoped `Thing.Ingested` hook.
 - DT-Q3: Verify the intended layout and failure presentation on the native target in all languages;
   no claim about readability follows from source inspection.
 - DT-Q4: Review the proposed Any/zero/default-on and invalid-state choices as explicit behavioral

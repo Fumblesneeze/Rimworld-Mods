@@ -58,8 +58,8 @@ storage and workers, direct urgent/storage composition, protected personal suppl
 data and graceful recovery. Retain documented options through the common settings mechanism.
 
 **Non-goals:** globally rewrite vanilla heavy-item hauling; grant inventories/training to animals;
-copy source job/cache/private hooks; automatically import foreign saves; provide every legacy binary
-binding; claim CE/cross-map/custom-storage compatibility without proof; implement this draft now.
+copy source job/cache/private hooks; automatically import foreign saves; implement or test original
+API/binary/save parity or consumer facades; claim CE/cross-map/custom-storage compatibility without proof; implement this draft now.
 
 ## Decisions
 
@@ -220,94 +220,36 @@ languages, screen/UI scale, same-type mixed quantities and actions while drafted
 tab, unused global keep-default control or extra Hauling work column. Job text should distinguish
 collection, delivery and unresolved cargo without exposing internal bookkeeping terminology.
 
-### Contracts and optional integrations
+### Owned composition and genuine optional integrations
 
-The research table lists actual consumers; no full PickUpAndHaul assembly, class tree, Def-name or
-ThingsHauledToInventory save emulation is promised. Several consumers patch private toils, fields
-and generated pickup methods. A facade that happens to have the right names would not preserve their
-control flow and could activate unsafe assumptions. Preserve observable cooperation through narrow
-adapters where feasible, record unsupported bindings explicitly and avoid original package spoofing.
+Source consumer tables remain research. Do not implement or test PickUpAndHaul API/type/Def/save
+parity, private-toil compatibility, HashSet facades, package detection emulation or original Allow
+Tool delegate/lifetime bridges. Newly found source consumers do not create compatibility work.
 
 Owned S008 invokes the batch planner directly with exact urgent quantities and shared order lifetime.
-Its held cancellation and mixed loose-stack attribution use the same quantity rules as the
-external bridge below; both owned batch and ordinary urgent fallback clamp to the outstanding
-portion. A positive loose-stack marker never authorizes cancelled/ordinary units. S008's capability
-and tasks explicitly share this contract, including saved cancellation and contextual quantities.
-Optional original Allow Tool can use a narrow adapter to its public static
-WorkGiver_HaulUrgently.JobOnThingDelegate (nested TryGetJobOnThing(Pawn,Thing,bool) -> Job).
-Resolve canonical UnlimitedHugs.AllowTool, its designation and delegate shape/lifecycle. The source
-consumer currently locates our absent upstream work-giver type by name; a direct delegate adapter
-preserves the public behavior without creating that type. Capture the actual existing delegate;
-do not overwrite an unknown foreign replacement. Only compose with a proved native/default or
-compatible delegate. On unsupported batching, invoke the preserved supported ordinary route with
-the same seed/forced meaning. Do not duplicate urgent work categories or keep self-patches. If another
-mod later replaces the delegate, detect ownership loss and revalidate or relinquish; never overwrite
-that later owner during cleanup.
+Both owned batch and ordinary urgent fallback clamp to the outstanding portion at planning and
+successful pickup. A positive loose-stack marker never authorizes cancelled/ordinary units. Gear
+provides contextual held-quantity cancellation; loose-stack cancellation removes its urgent portion
+without deleting items. PH-T2 split/merge/transfer accounting retains urgent, ordinary/cancelled and
+kept attribution. Pickup or automatic ground-marker cleanup does not complete the order; only
+actual delivery, consumption, destruction or explicit cancellation retires the relevant quantity.
+Failed placement and safe nearby dropping retain outstanding intent. Reconcile current holders on
+reload without restoring cancelled quantities from old routes or marker absence. If an owned
+fallback cannot honor the quantity bound, defer that mixed stack with a visible reason.
 
-The delegate is insufficient for urgency lifetime. The inspected provider's
-DesignationCleanupHandler.CleanupDesignations removes urgent marks when Things leave native
-haulables (scheduled every 60 ticks per map); ToilsHaul_PlaceInCell_Patch clears the mark before
-invoking the placement initAction. S008 is withheld while original Allow Tool is active, so its
-owned designation lifecycle cannot be assumed to intercept either path. The external adapter must
-capture urgent intent before each successful pickup, attach it to the actual accepted cargo quantity
-and preserve it through PH-T2 split/merge/transfer accounting independently of ground designations.
-Automatic source cleanup and pre-placement removal do not cancel or complete this owned intent.
-Successful physical placement retires only the delivered portion. A failed placement/nearby drop
-retains intent and reconciles one original urgent designation on each eligible loose Thing; it
-cannot create duplicates or redesignate explicitly cancelled portions. Unrelated source jobs and
-its finish-off designations remain untouched.
+Owned S125 and S024 use one direct opportunity/parent-job decision. An active selected original,
+including original Allow Tool or While You're Up for its corresponding feature, triggers only the
+bounded warning and ordinary feature-settings disable path, best effort; do not bind to source
+delegates, inspect source internals to negotiate a handoff or promise cooperative operation.
 
-Resolve actual explicit cancellation paths separately from automated RemoveDesignation calls;
-removal alone is not evidence of player intent. External cancellation of loose material clears the
-selected outstanding quantity; Gear supplies Cancel urgent delivery for held quantities. This is a
-contextual order action, not a setting or a second designation. Cancellation leaves the physical
-items and ordinary cargo recovery intact. Save the urgency/cancellation outcome with exact owned
-quantities, reconcile current holders on load and never recreate a cancelled order from an old
-route or absent marker. Provider loss disables new integration work, not owned saved-state recovery
-or cancellation. Exact cancellation/cleanup/place boundary shapes remain PH-Q3 implementation
-research; do not guess a safe hook from a common method name.
-
-The external designation is whole-Thing, so retain owned urgency quantities on dropped/merged loose
-stacks as well as held cargo. A reconciled external mark means positive outstanding urgency, not
-permission to promote every unit of a mixed stack. Show the exact urgent count in contextual item
-inspection. Split/merge transfers must retain urgent, cancelled/ordinary and kept attribution without
-converting one portion into another. External cancel on a loose stack clears all its urgent units;
-held Gear cancellation can select a portion. For dispatch, clamp both the batch and any supported
-ordinary urgent fallback to the current outstanding urgent count at planning and successful pickup.
-The source delegate has no quantity parameter: use a verified native job-count/actual-pickup seam
-with per-job ownership and effective semantics, not a guessed field assignment or generic seed
-designation check. Opportunistic additions also need current urgency quantities. If a fallback
-cannot honor this bound, defer that mixed stack's urgent work with a contextual reason; do not call
-the unbounded preserved delegate for it. Preserve ordinary external fallback for fully urgent,
-unmixed source items wherever its route is proved safe. This mixed-stack protection is part of
-saved-state recovery when the collection adapter later becomes unavailable, not optional UI sugar.
-
-Treat delegate installation plus this narrow lifetime bridge as one admission group within PH-T6.
-Individual target documents must prove required marking/cancellation provenance, mixed loose-stack
-quantity limits including fallback pickup, timing around successful pickup and placement, and
-effective cleanup/pre-placement behavior, with compatible
-foreign edits and later repatching accounted for. If any required predicate fails, do not install a
-delegate-only partial adapter: leave the supported ordinary external route and bounded warning.
-Existing owned cargo continues through independently admitted protection/recovery. This is proposed
-integration behavior for our cargo, not a claim that original Allow Tool already provides it.
-
-Keyz 1.6 has a direct binary/package-gated bridge; its 1.7 loadFolders omits PUAH support. It is not
-automatically compatible. Modern external While You're Up still discovers legacy private PUAH
-types/fields/methods, then uses GetHashSet and takenToInventory without complete discovery guards.
-Continued supplies those names; Reworked and Armful do not. Its unload substitution can turn stale
-references into whole same-Def personal stacks, and its ordinary fallback cannot see our ledger.
-Do not expose a misleading HashSet facade. If an external opportunity path can add an independent
-load or mutate owned quantities without safe coordination, withhold affected new collection with a
-warning; preserve independently admitted existing-cargo protection/recovery. This does not reject
-unrelated foreign patches. VMF and Shared Storage Access also need explicit adapter work. VMF cross-map destinations are
-outside initial same-map routing; normal movement between maps invalidates the plan. External
-While You're Up binding gaps do not describe future owned S125: it and S024 use one direct
-opportunity/parent-job decision. Neither writes the other's or a foreign mod's global preferences.
-Stack gap and external Kanban require exact acceptance budgets or provider-native fallback;
-own S049 calls directly.
-IHoldMultipleThings can be reflected through a supported provider's actual loaded interface and
-package identity, with bool success/out-capacity and stackability semantics guarded. Do not copy its
-downloaded contract assembly. No provider was established as currently requiring an owned facade.
+Genuine custom inventory and storage integrations still need their actual capacity, ownership and
+acceptance budgets. Shared Storage Access and same-map storage behavior need narrow admission if
+used; VMF cross-map destinations remain outside initial routing and map movement invalidates plans.
+Owned S049 calls directly. A genuinely used external stack-gap/acceptance provider requires its
+actual budget or a proven native fallback, not an original-source replacement interface.
+IHoldMultipleThings can be consumed through an actually used provider's loaded interface and package
+identity, with success/out-capacity and stackability semantics guarded. Do not copy its assembly or
+publish a legacy facade. These content/capability tests remain; original-provider compatibility runs do not.
 
 CE inventory integration is deferred outside initial support. Other custom inventory capability is optional. Prove actual package identity, capacity/fit/update
 semantics and effective native interactions before enabling its batch route. Missing knowledge
@@ -316,8 +258,7 @@ No CE provider was found in the bounded local metadata search; this is a recorde
 Continued's reflective CE weight/bulk/loadout adapter is a useful reference, but permissive fallback
 when per-pawn capability is absent is not accepted as proof of our combined limits.
 Immersive Chefs remains an independent repository product. Its old assembly/package-gated adapter
-does not activate for this mod; a later narrow optional consumer update needs its own owner/change,
-not a required runtime link between products.
+does not create a consumer-parity task or runtime dependency for this feature.
 
 ### Patch admission and recovery groups
 
@@ -330,7 +271,7 @@ These are candidate boundaries, not completed target documents or executable val
 | PH-T3 recovery opportunities | Genuine safe work/idle/delivery transition and pawn/job context; observing enumerable creation alone is not delivery proof | No duplicate recovery or priority override; expose manual supported recovery |
 | PH-T4 Gear/context commands | Actual pawn and row/item identity, appropriate UI action scope, native eligibility and result | Cosmetic marker can fail independently; unsafe command stays unavailable |
 | PH-T5 data invalidation/destination use | Consumed state mutation, map/holder identities, effective acceptance and capacity at commitment/use | Fresh native fallback or affected candidate/destination unavailable |
-| PH-T6 optional provider adapters | Canonical active package, actual type/member/Def shapes, required data flow and delegate ownership/provider invariants; external urgency requires cleanup versus explicit-cancel provenance, actual pickup/placement outcomes and saved quantity lifetime | Admit delegate and urgency bridge together or leave ordinary external hauling; preserve independently admitted saved-cargo recovery, no partial ownership takeover |
+| PH-T6 genuine inventory/storage capability adapters | Canonical active package, actual capacity/ownership/acceptance member and Def shapes, required data flow and provider invariants | Disable only an unsupported actual integration; retain independently admitted owned cargo recovery; no original API or urgency-delegate adapter |
 
 Before each actual Harmony or XML patch, create its individual stable target document, predicate,
 tests and startup/later-repatch policy. Method existence suffices only for an observer that needs
@@ -343,9 +284,11 @@ hashes, a pristine method or no other patch owners; never rerun foreign transpil
 Activate collection only with its required capacity, cargo conservation and recovery group admitted.
 Missing/unknown predicates, validator exceptions or install failure roll back only newly added owned
 patches in the group. Warn once per skipped enabled patch with package/patch/spec ID, target, reason,
-unavailable behavior and fallback. Deliberately disabled preferences are not failure spam. Source
-co-installation with Mehni PUAH, Continued, Reworked or Armful canonically withholds overlapping new work, while saved owned cargo remains visible
-and safely recoverable. If even recovery/protection cannot be established, fail activation explicitly;
+unavailable behavior and fallback. Deliberately disabled preferences are not failure spam. Active
+original Mehni PUAH, Continued, Reworked or Armful triggers a bounded startup warning and invokes the
+ordinary per-feature settings disable path, best effort. Its effective off/cargo recovery semantics
+match ordinary user disablement; this is not a compatibility test or a guarantee about foreign
+collection. If even owned recovery/protection cannot be established, fail activation explicitly;
 do not reinterpret owned cargo as untracked personal inventory or let another allowance build atop it.
 
 Use additive owned Job/WorkGiver Defs. No blanket XML injection into every Pawn is selected. Any later
@@ -361,8 +304,8 @@ Def collision, downloaded binary or Gateway dependency in the product.
   use; treat unknown external multi-stack behavior as unsupported rather than free capacity.
 - Quantity ownership spans native split/merge/removal → cover exact transfer results and failure
   conservation before collection can activate; protect personal supplies on ambiguity.
-- Direct source consumers have incompatible private assumptions → prefer narrow proved adapters and
-  document unsupported contracts; no package impersonation or promise of complete binary parity.
+- Source consumers have private/package assumptions → no replacement-compatibility adapter, facade
+  or consumer-parity audit; keep source research without making it implementation work.
 - A finite trip can unload sooner than source's repeated collection → deliberate delivery/fairness
   correction, benchmark actual throughput and emergency responsiveness rather than assuming faster.
 
@@ -372,13 +315,15 @@ No runtime migration occurs in this documentation change. Later add owned saved 
 safe recovery and current settings resolution before enabling any collection. On upgrade/load,
 reconcile only surviving exact identities/quantities and invalidate old route commitments. Original
 source save keys/jobs/comps are not silently imported. Any future foreign migration needs its own
-backup, atomic conversion, restoration on failure and native verified postconditions. Source/provider
-removal and repeated initialization must not lose items or duplicate job ownership.
+backup, atomic conversion, restoration on failure and native verified postconditions. Loss of
+genuinely consumed content/capabilities and repeated initialization must not lose owned
+items or duplicate owned job ownership; source co-installation has no compatibility guarantee.
 
 ## Open Questions
 
 PH-Q1 retains the mass/volume and ordinary-heavy-load interpretation; PH-Q2 exact beta worker,
-transfer and storage lifecycle; PH-Q3 real legacy/public adapters; PH-Q4 custom provider capability,
+transfer and storage lifecycle; PH-Q3's legacy/public replacement adapters are superseded and out
+of scope; PH-Q4 genuine custom provider capability,
 UI/languages, measurement and acceptance. No question interrupts sequential specification.
 
 Semantic pass: batches reduce travel, not item creation/cost, research or free work eligibility.

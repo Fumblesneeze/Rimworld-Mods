@@ -19,7 +19,7 @@ Specification only. All implementation and acceptance tasks remain unchecked.
 ## 3. Practical supplies with vertical RED/GREEN
 
 - [ ] 3.1 Implement bill batches through S021's shared capacity, actual quantities and kept-supply state; retain native fallback, S014 started-iteration material/radius/worker choices and one quota through trips/cleanup/reload, UFT/autonomous semantics and the separate physical packing delay.
-- [ ] 3.2 Connect the single S125 capacity-limited useful-surplus decision and canonical bill-supply preference, with one accepted detour per pending attempt through reload, actual admitted whole-trip routes, current destination/refill rules and external-provider overlap policy; do not create a separate whole-stack producer.
+- [ ] 3.2 Connect the single S125 capacity-limited useful-surplus decision and canonical bill-supply preference, with one accepted detour per pending attempt through reload, actual admitted whole-trip routes, current destination/refill rules and ordinary feature-off behavior; do not create a separate whole-stack producer or original-provider handoff adapter.
 - [ ] 3.3 Implement perishable ingredient and meal preference while retaining native potency, surgery, diet, recipe filters, radius and linked-storage access rules.
 - [ ] 3.4 Implement additive meal stacking restrictions and optional clearly inferred generated provenance; verify absent neutral recipes, actual crafted history, split/merge/reload stability and no invented production recipe.
 - [ ] 3.5 Implement read-only ingredient/category information through native surfaces and S009–S012; preserve custom summaries and actual filter intersections.
@@ -40,7 +40,7 @@ Specification only. All implementation and acceptance tasks remain unchecked.
 ## 5. Configuration, composition and regression
 
 - [ ] 5.1 Implement the complete common global/save preference inventory, dormant overrides, main-menu callback disabling and safe application timing; keep entity choices outside settings.
-- [ ] 5.2 Implement source coexistence, dependency/admission suspension and explicit unload Resume; round-trip dormant state during blocked saves, preserve real cargo and prevent previously completed effects from replaying.
+- [ ] 5.2 Implement bounded original-loaded startup warnings routed to ordinary per-feature settings disablement, best effort, plus dependency/admission suspension and explicit unload Resume; round-trip dormant state during blocked saves, preserve real cargo and prevent previously completed effects from replaying. Do not add a separate source-coexistence recovery mode.
 - [ ] 5.3 Add declarative Def/component/extension changes with XML Extensions existence/shape/package guards and additive duplicate-safe merging; declare actual Harmony/XML Extensions dependencies and preserve unrelated content.
 - [ ] 5.4 Compose the owned S021, bill-browser, drug, care and toddler/companion policies directly; use native listers/shared map facts and recheck pawn eligibility at action time.
 - [ ] 5.5 Test selected guards against benign foreign edits, changed consumed snippets, ambiguous matches, skipped originals, repeated initialization, every incoming transpiler execution, repatching, rollback and warning contents.
@@ -54,5 +54,5 @@ Specification only. All implementation and acceptance tasks remain unchecked.
 - [ ] 6.3 On the reviewed build in fresh isolated minimized RimWorld, personally observe native bill, cleaning, tending, eating and hauling workflows with real costs, physical quantities and parent continuation.
 - [ ] 6.4 Personally observe native unload/cancel/equip/drop, ingredient/meal selection, provenance displays and recreation/drug/meditation/sleep workflows, including interruption and already-completed effects.
 - [ ] 6.5 Exercise real wandering, unsafe/no shelter and single-cell confinement, room classification, weather clearing, settings inheritance/main-menu/save switching and saved held-order Resume.
-- [ ] 6.6 Run separate exact-provider/source-present and absent/changed-provider workflows for every compatibility claim; inspect actual player-visible results, not just admission logs.
+- [ ] 6.6 Run separate exact-provider present/absent/changed workflows for genuine hygiene, inventory, routing and custom-job integrations; inspect actual player-visible results. Original-mod API/binary/save parity and source-present compatibility runs are excluded; verify ordinary feature-off behavior and bounded warning routing instead.
 - [ ] 6.7 Retain reviewed build identity, ordered mods, real action sequences, personally inspected before/action/after views, supporting logs, normal-config hashes and cleanup; accept gameplay only under the root native-workflow gate.

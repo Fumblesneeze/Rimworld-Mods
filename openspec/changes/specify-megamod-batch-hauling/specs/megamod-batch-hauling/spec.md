@@ -163,31 +163,21 @@ against this feature. Unsupported special storage uses its verified ordinary rou
 ### Requirement: Urgent orders compose with batching
 An owned urgent trip SHALL collect only items carrying the same outstanding urgent-hauling intent and SHALL retain that intent through pickup, partial collection and interruption until actual delivery, consumption, destruction or cancellation.
 S008's work priorities and eligibility remain authoritative. Ordinary batch trips do not acquire
-urgent priority merely by finding urgent items. The optional external Allow Tool integration,
-when verified, supplies the same batch behavior through its existing urgent order without requiring
-another designation. Failed integration leaves ordinary urgent hauling available.
-Exact urgent quantities, held cancellation and mixed-stack protection apply equally to owned S008
-and the supported external adapter. The pawn's Gear view shows outstanding urgent cargo and permits
+urgent priority merely by finding urgent items. Composition uses owned S008 directly; an original
+Allow Tool API/delegate adapter or compatibility handoff is outside scope.
+Exact urgent quantities, held cancellation and mixed-stack protection apply to owned S008.
+The pawn's Gear view shows outstanding urgent cargo and permits
 cancelling a chosen held quantity without discarding it; ordinary cargo recovery remains. Cancelling
 an urgent order on a loose stack clears its outstanding urgent quantity, not its physical items.
 Merging urgent material with ordinary or cancelled units never promotes those other units. Both
 batch pickup and ordinary urgent fallback take at most the outstanding urgent quantity. If safe
 quantity-limited pickup is unavailable, defer that mixed stack with an explanation. Explicitly
 issuing a new urgent order may mark the currently selected eligible material again.
-For material actually collected by that integration, automatic removal of the external mod's
-ground designation is not completion or player cancellation. The remaining urgent quantities stay
-visible in the pawn's Gear view and can be explicitly cancelled there without discarding the items;
-ordinary cargo recovery still applies. Existing external cancel controls cancel the selected loose
-material's urgent order. Failed delivery and safe nearby dropping preserve the outstanding order,
-including the external urgent marker on eligible loose material. These protections apply to owned
-batch cargo; unrelated external ordinary hauling retains its provider's behavior.
-When urgent and cancelled or ordinary quantities share a loose stack, its external marker means
-that the stack contains outstanding urgent units, not that all its units became urgent. Urgent
-collection, including a supported single-load urgent fallback, takes at most the outstanding urgent
-quantity and leaves the other units for ordinary work. If that distinction cannot be enforced,
-urgent pickup of that mixed stack is deferred with an explanation; it must not silently broaden
-the order. Cancelling the loose stack through the external control cancels all its remaining urgent
-units, while held Gear cancellation can select a smaller quantity.
+For owned cargo, automatic ground-marker removal is not completion or player cancellation. Failed
+delivery and safe nearby dropping preserve the outstanding order and its exact quantity. The
+owned loose-stack marker denotes remaining urgent units rather than every merged unit. Cancelling
+that loose stack clears its remaining urgent quantity; held Gear cancellation can select a smaller
+quantity. These are owned order semantics, not a promise of compatibility with source designations.
 
 #### Scenario: Urgent trip with an unmarked neighbor
 - **WHEN** two urgent items and an unmarked item are close together and an urgent batch starts
@@ -202,41 +192,31 @@ units, while held Gear cancellation can select a smaller quantity.
 - **THEN** owned S008 shows three urgent units, and either an owned batch or its ordinary urgent fallback takes at most those three
 - **AND** the two cancelled units remain available for ordinary work without regaining urgency through merging or reload.
 
-#### Scenario: Original Allow Tool without the original hauling provider
-- **WHEN** the verified optional Allow Tool integration is active and the player uses its existing urgent order
-- **THEN** eligible work can use owned batching without installing original Pick Up And Haul
-- **AND** if batching is unavailable, the supported ordinary urgent job remains available.
-
-#### Scenario: External cleanup after pickup
-- **WHEN** original Allow Tool removes a ground designation after an owned batch collects the item and the player then drafts the hauler
+#### Scenario: Ground marker cleanup after owned pickup
+- **WHEN** an owned batch collects an urgent item, its ground marker is removed and the player then drafts the hauler
 - **THEN** the held quantity still shows an outstanding urgent delivery in Gear
 - **AND** neither pickup nor automatic designation cleanup completes or cancels that delivery.
 
-#### Scenario: External placement cleanup followed by failure
-- **WHEN** an external urgent marker is cleared before an owned cargo placement that subsequently fails
+#### Scenario: Owned placement fails after marker cleanup
+- **WHEN** an owned urgent marker is cleared before a cargo placement that subsequently fails
 - **THEN** the undelivered quantity retains its urgent order
-- **AND** if it is safely dropped nearby, eligible loose material again carries the existing external urgent marker without duplicating the material or the order.
+- **AND** if it is safely dropped nearby, its owned outstanding urgency is visible without duplicating the material or the order.
 
 #### Scenario: Explicit cancellation of held or loose urgent material
-- **WHEN** the player cancels a held quantity's urgent order in Gear or uses the external cancel control on loose urgent material
+- **WHEN** the player cancels a held quantity's urgent order in Gear or uses the owned cancel control on loose urgent material
 - **THEN** the selected material loses that urgent intent and it is not restored by later cleanup, dropping or reloading
 - **AND** the physical items remain, any held cargo can still unload ordinarily, and an uncancelled remainder keeps its own order.
 
-#### Scenario: Save after the external marker disappears
-- **WHEN** a save is reloaded after external cleanup removed the ground marker from undelivered owned cargo
+#### Scenario: Save after the owned ground marker disappears
+- **WHEN** a save is reloaded after ground-marker cleanup for undelivered owned cargo
 - **THEN** surviving held quantities retain their urgent status and cancellation control
 - **AND** delivery resumes only through current safe native work opportunities.
 
 #### Scenario: Cancelled and urgent units share a loose stack
 - **WHEN** two cancelled units and three still-urgent units are safely dropped or merged into one five-unit loose stack
-- **THEN** the external urgent marker represents only the three outstanding units and the current urgent quantity is visible when inspecting the stack
+- **THEN** the owned urgent marker represents only the three outstanding units and the current urgent quantity is visible when inspecting the stack
 - **AND** an urgent batch or supported ordinary urgent fallback takes at most those three, leaving the two cancelled units for ordinary work
-- **AND** if quantity-safe urgent pickup is unavailable, it defers rather than making all five urgent; external cancellation on the loose stack clears the remaining three.
-
-#### Scenario: External urgency lifetime cannot be protected
-- **WHEN** the external integration cannot distinguish player cancellation from automatic cleanup or establish safe completion tracking
-- **THEN** new external urgent batching stays unavailable with a startup explanation and supported ordinary external urgent hauling remains available
-- **AND** existing owned cargo retains visible status and its safe recovery and cancellation controls.
+- **AND** if quantity-safe urgent pickup is unavailable, it defers rather than making all five urgent; owned cancellation on the loose stack clears the remaining three.
 
 ### Requirement: Ordinary single-load fallback cannot extend a loaded batch
 The mod SHALL finish or safely unload existing owned cargo before starting ordinary single-load fallback for an item that cannot participate in batching.
@@ -307,9 +287,12 @@ freshness contract, not a measured performance claim.
 
 ### Requirement: Compatibility failure preserves ordinary work and physical cargo
 Unsupported batch-hauling integration SHALL stop only the affected new collection, explain which behavior is unavailable and leave supported ordinary work and recoverable cargo intact.
-An active original Pick Up And Haul, Continued, Reworked or Armful provider with overlapping
-collection withholds that owned collection; no mod is removed or impersonated. This policy is
-specific to competing implementations, not the presence of arbitrary compatible patches.
+An active original Pick Up And Haul, Continued, Reworked or Armful provider SHALL trigger a bounded
+startup warning and the ordinary per-feature settings disable path for overlapping owned collection,
+with the same effective off behavior as a user disabling it. This is best effort, not a cooperative
+compatibility guarantee or control over foreign hauling. No original API/binary/save checks,
+consumer-parity work or facade is required; no mod is removed or impersonated. Compatible unrelated
+patches still use ordinary semantic admission.
 An external opportunity provider that cannot respect the combined allowance and current owned
 cargo likewise withholds only the affected batching route with an explanation; no private source
 interface is emulated merely to activate its patches. Existing owned cargo uses a separately safe recovery path before ordinary hauling
@@ -322,10 +305,10 @@ compatible unrelated modifications alone do not disable the feature.
 - **THEN** affected inventory batching stays unavailable with an explanation, rather than using a guessed allowance
 - **AND** supported ordinary hauling remains available after safe cargo recovery.
 
-#### Scenario: Original provider active on a save with owned cargo
-- **WHEN** the original provider is present while a pawn still holds saved owned cargo
-- **THEN** our overlapping new collection is withheld, the cargo remains identifiable and recoverable, and no additional allowance is layered on top
-- **AND** inability to establish safe recovery is reported rather than silently losing cargo ownership.
+#### Scenario: Original provider active
+- **WHEN** startup detects an active original hauling provider
+- **THEN** it warns and requests ordinary settings disablement of the owned overlap, best effort
+- **AND** owned cargo follows the normal feature-off recovery contract without a compatibility guarantee about the original.
 
 #### Scenario: Uncoordinated external opportunity would add a hand load
 - **WHEN** an external opportunity provider cannot account for the owned cargo already filling a pawn's combined allowance

@@ -8,7 +8,7 @@ exists; use focused vertical RED/GREEN and truthful host/native environments.
 
 - [ ] 1.1 Reinspect exact1.7 map/caravan opportunities, real consumption/history, bill/job editing/cancellation and native patient recipes; resolve DR-Q3 without relying on upstream1.6 support.
 - [ ] 1.2 Create stable target documents and executable semantic admission for every actual patch, dependent atomic groups, effective stream/late repatch, compatible foreign edits and bounded warnings.
-- [ ] 1.3 Bind optional condition/drug catalogs to canonical package IDs and individual Def/effect shapes; inspect actual consumers and resolve DR-Q5 facade/license choices without copying source DLLs.
+- [ ] 1.3 Bind genuine optional condition/drug catalogs to canonical package IDs and individual Def/effect shapes; retain DR-Q5 license provenance without source API/XML-format facades, consumer-parity audits or copied source DLLs.
 - [ ] 1.4 Choose actual XML Extensions operations for any comp/marker additions, add required metadata in the same slice, and verify additive/idempotent merge with unrelated entries retained.
 - [ ] 1.5 Reconcile the full later S134 change with DR09–10's one pending-dose/hold authority and its distinct surgeon/chemical/quill scopes before implementing combined behavior.
 
@@ -33,7 +33,7 @@ exists; use focused vertical RED/GREEN and truthful host/native environments.
 ## 4. Contextual UI and compatibility
 
 - [ ] 4.1 Implement patient Health status, reasons, pending/consumed distinction, next times and hold/Resume with ordinary policy/operations navigation; preserve S007/S062 controls and S137's discovery-only contract.
-- [ ] 4.2 RED/GREEN notification distinctions/coalescing and unchanged-block suppression; verify source original/external automatic-medication policies and unavailable-provider fallback.
+- [ ] 4.2 RED/GREEN notification distinctions/coalescing and unchanged-block suppression; verify bounded original-loaded startup warnings and effective feature off through the ordinary settings disable path, best effort, plus genuine unavailable-content fallback. No original-provider compatibility matrix.
 - [ ] 4.3 RED/GREEN admission exception/false/unknown, rollback of only new owned patches, changed semantic operands and repeated initialization; leave manual/native care available.
 
 ## 5. Reviewed-build acceptance
@@ -42,5 +42,5 @@ exists; use focused vertical RED/GREEN and truthful host/native environments.
 - [ ] 5.2 Independently review the scoped implementation, resolve findings with evidence and rerun affected checks before final native acceptance.
 - [ ] 5.3 In fresh minimized isolated RimWorld, personally exercise actual rule edits and observe a pawn fetching/ingesting, a doctor administering, stock decreasing and ordinary drug/condition effects. Include failed pickup, inaccessible supply, no-care, schedule/addiction permission and protected player work.
 - [ ] 5.4 Personally exercise native concurrent S124/S134 ordering, suspended/deleted/edited operations, hold/resume, recovery, save/load and caravan/map transitions; prove one physical dose and no false completed treatment with before/action/after evidence.
-- [ ] 5.5 Verify inherited/overridden/main-menu settings, both rule slots, seven languages and Health/bill composition, plus separately isolated actual provider-present/absent/changed runs. Do not substitute Def/patch inspection or direct state mutation for player actions.
+- [ ] 5.5 Verify inherited/overridden/main-menu settings, both rule slots, seven languages and Health/bill composition, plus separately isolated genuine drug/illness/UI content-provider present/absent/changed runs. Exclude original-mod replacement-compatibility runs; do not substitute Def/patch inspection or direct state mutation for player actions.
 - [ ] 5.6 Complete final balance/playability review of actual dose intervals/effects, immunity waste, drug access/doctor eligibility, native/provider comparators and combined scan cost. Retain root-gate build/mod/action/screenshot/config-hash/cleanup evidence and update coverage only for personally observed accepted behavior.

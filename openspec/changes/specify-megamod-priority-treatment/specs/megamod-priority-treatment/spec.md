@@ -247,19 +247,25 @@ If a requirement is false or unknown, the affected family SHALL remain inactive 
 startup warning per skipped enabled patch stating its identity, failed requirement, unavailable
 behavior and fallback. Independent supported families continue; no foreign patch or list member
 is removed. Declarative scheduling additions SHALL preserve existing entries without duplication.
-If original Priority Treatment is active, the owned S134 overlap SHALL be withheld with a warning.
+If original Priority Treatment is active, a bounded startup warning SHALL identify the overlap and
+request the ordinary per-feature settings disable path, with the same effective off behavior as a
+user disabling it. This is best effort, not a cooperative-compatibility guarantee.
 Unsupported external drug-order automation SHALL not be presented as coordinated S124/S134 care.
 
 Saved state SHALL preserve owned order identity, actual dosing history and patient holds through
 load and map changes without saving stale eligibility or scheduling on load alone. No source
-settings/save migration or universal external API compatibility is claimed. Existing native medical
-bills remain ordinary bills. Source-installed saves with foreign serialized types require separate
-migration/removal verification; the feature SHALL not silently rewrite them.
+settings/save migration, original API/binary/save compatibility checks, facade or consumer parity is
+required. Existing native medical bills remain ordinary bills. Original-mod save import is outside
+scope; the feature SHALL not silently rewrite foreign serialized state.
 
 #### Scenario: Compatible modification and unsupported shape
 - **WHEN** one compatible mod changes unrelated behavior but another removes a required medical decision
 - **THEN** supported integrations remain active; the affected family is withheld and the startup log explains the fallback.
 
-#### Scenario: Original provider and save reload
-- **WHEN** Priority Treatment is active or an owned game is reloaded
-- **THEN** co-installation never runs two owned/source schedulers; reload restores holds and pending identity without granting treatment or duplicating a bill.
+#### Scenario: Original provider is active
+- **WHEN** startup detects active original Priority Treatment
+- **THEN** it warns and requests the ordinary per-feature settings disable path, best effort, without promising coordinated source/owned scheduling.
+
+#### Scenario: Owned save reload
+- **WHEN** an owned game is reloaded
+- **THEN** holds and pending identity are restored without granting treatment or duplicating a bill.

@@ -1,6 +1,6 @@
 ## 1. Pin contracts and admission
 
-- [ ] 1.1 Confirm current beta/native/source identities, actual consumer bindings and optional finalized Defs; resolve PT-Q2–4 before affected implementation.
+- [ ] 1.1 Confirm current beta/native/source research identities and actual optional gameplay Defs; resolve PT-Q2 and PT-Q4 before affected implementation. PT-Q3 source API/binary/save consumer parity is excluded.
 - [ ] 1.2 Create indexed per-patch target specs and honest RED/GREEN validators for missing/ambiguous semantics, changed argument use, effective foreign patches, incoming transpilers, repatching, idempotence, atomic rollback and bounded warnings.
 - [ ] 1.3 Add required Harmony/XML Extensions metadata with guarded merge-preserving scheduling XML; verify sibling retention, absent/present/changed optional content and package independence.
 
@@ -25,5 +25,5 @@
 
 - [ ] 4.1 Run focused nonzero tests in honest tiers, owning build/package checks and strict typed OpenSpec validation; obtain independent review and resolve findings.
 - [ ] 4.2 On the reviewed build use fresh minimized isolated Gateway runs to perform real emergency rescue/tending, shared-bed use, field-care and forced/automatic operation workflows; personally observe before/action/after results and retain causal evidence.
-- [ ] 4.3 In exact optional/provider-present and absent runs verify real drug/quill consumption/effects, duplicate/cancel/resume/reload behavior, UI navigation and unsupported/co-installed fallback; logs or synthetic assertions alone are not acceptance.
+- [ ] 4.3 In exact genuine optional-content present/absent runs verify real drug/quill consumption/effects, duplicate/cancel/resume/reload behavior, UI navigation and unsupported-content fallback. Verify bounded original-loaded warning routing and ordinary settings feature-off behavior, best effort, without an original-provider compatibility matrix; logs or synthetic assertions alone are not gameplay acceptance.
 - [ ] 4.4 Complete balance/playability review of response ordering, starvation/rest, scars, medicine/work cost and patient/job reachability; record build/mod/config hashes, screenshots, cleanup and update coverage only for observed accepted behavior.

@@ -18,8 +18,11 @@ Target **RimWorld 1.7 beta**. Specification for later implementation only.
 - Queue the available native porcupine-quill operation, with a persistent player stop/resume choice.
 - Keep configuration in inherited settings, automation switches bottom right and patient decisions
   in Health. No new main bottom tab and no automatic surgery from a condition click.
-- Preserve treatment costs, medicine rules and ordinary work. Document corrections, omitted source
-  defects and unsupported external bindings; do not impersonate an upstream package.
+- Preserve treatment costs, medicine rules and ordinary work. Document corrections and omitted source
+  defects; omit original API/binary/save compatibility checks and facades rather than impersonating
+  an upstream package.
+- Warn at startup when original Priority Treatment is active and request ordinary per-feature
+  settings disablement of the owned overlap, best effort, without a cooperative compatibility guarantee.
 
 ## Capabilities
 

@@ -35,7 +35,7 @@ Origin: replacement, **S024 / P1-18**, source `avilmask.CommonSense` (Workshop 1
 - `megamod-practical-supplies`: bill collection, food/material choice, meal metadata, inventory and information.
 - `megamod-practical-needs`: recreation, patient treats, drug policies, meditation and optional sleeping mood.
 - `megamod-considerate-wandering`: idle shelter and destination choices without general pathfinding replacement.
-- `megamod-common-sense-configuration`: complete preference inventory, scope, lifecycle and source coexistence.
+- `megamod-common-sense-configuration`: complete preference inventory, scope, lifecycle and ordinary feature disablement.
 
 ### Modified Capabilities
 
@@ -47,11 +47,11 @@ contracts remain authoritative; this change adds their Common Sense consumers ra
 Future native integration touches jobs, cleaning, bills, inventory/stack lifecycle, needs, ingestion,
 idle destinations, room labels and information panels. **Harmony** and **XML Extensions**
 (`imranfish.xmlextensions`, Workshop 2574315206) will be required for selected guarded integrations.
-Common Sense, DLC and external hygiene/inventory/path providers remain optional. No repository-owned
+DLC and genuine external hygiene/inventory/path integrations remain optional. No repository-owned
 product or Dev Gateway dependency, upstream assembly, package spoof or automatic foreign save import.
 
-Existing consumers include writable source settings, exact assembly/type lookups and a transpiler
-against source internals. Their bindings and unsupported differences are documented; a complete
-binary drop-in claim is not made. Original Common Sense active withholds overlapping owned behavior
-without editing its settings. Detailed proposals and unresolved beta/provider work remain in
+Recorded source consumers are research only; source API/binary/save compatibility checks, facades
+and consumer parity are outside scope. Active original Common Sense produces a bounded startup
+warning and uses the ordinary per-feature settings disable path for the owned overlap, best effort,
+without promising cooperative operation or editing the original's settings. Detailed proposals and unresolved beta/provider work remain in
 [research](../../../mods/megamod/docs/refinement/2026-11-02-common-sense-research.md).

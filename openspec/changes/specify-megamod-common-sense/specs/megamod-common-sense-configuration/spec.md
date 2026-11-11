@@ -1,4 +1,4 @@
-# Common Sense feature configuration and coexistence
+# Common Sense feature configuration and disablement
 
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), **1.7 beta**.
 S024 specification only. This capability governs the four sibling behavior capabilities and does
@@ -83,25 +83,29 @@ reenabling derives coherent state from the current need and retained save state.
 - **WHEN** the player disables recreation completion
 - **THEN** ordinary recreation selection uses native thresholds and the optional hygiene scheduling rule no longer changes provider choices.
 
-### Requirement: One admitted provider owns each overlapping behavior
-If original Common Sense is active, overlapping owned behavior SHALL remain unavailable with an explanation and bounded startup diagnostics, without removing the original mod or changing its preferences.
-Previously owned pending side work is held safely; retain physical items, damage/history and saved
+### Requirement: Disablement and unavailable admission preserve owned state
+If original Common Sense is active, the mod SHALL emit a bounded startup warning and use the
+ordinary per-feature settings disable path for the owned overlap, with the same effective off
+behavior as a user disabling it. This is best effort, not a cooperative-compatibility guarantee.
+The original mod and its preferences SHALL remain untouched. Ordinary disable behavior above
+continues to govern physical items and pending work; no source-specific handoff is promised.
+When required admission is unavailable, previously owned pending side work is held safely; retain physical items, damage/history and saved
 choices while ordinary valid parent jobs can continue. Restoring support does not replay old optional
-actions. Pending explicit unload orders require the player to resume them after the overlap clears.
+actions. Pending explicit unload orders held by unavailable admission require the player to resume them after support returns.
 Ordinary preferences can be edited for later use, clearly distinguished from active behavior.
 Loading and saving while support is unavailable still preserves dormant owned orders, remaining
 quantities and entity choices. Admission gates their execution, not whether the save retains them.
 
-An active external While You're Up bill-detour feature takes that opportunity; owned duplicate detours remain
-off whenever that original provider is loaded, without an initial cooperative-original exception.
-Withhold only the owned overlapping detour and leave normal bill collection usable. Do not write either provider's
-settings. Missing or changed optional providers disable only their affected integration, with a
+An active original While You're Up also produces a bounded startup warning and requests ordinary
+settings disablement of the owned overlapping detour, best effort. It does not grant or promise a
+coordinated opportunity to the external mod. Do not write the original's settings.
+Missing or changed genuine optional integrations disable only their affected route, with a
 reason and ordinary fallback. Compatible unrelated modifications do not disqualify a feature.
 
-#### Scenario: Original source installed alongside a pending order
-- **WHEN** a save with owned unload orders opens with Common Sense active
-- **THEN** the owned actions remain held, physical items are preserved and source-overlap status is shown
-- **AND** removing the source does not silently execute old unload orders before explicit resume.
+#### Scenario: Original source is active
+- **WHEN** startup detects active original Common Sense
+- **THEN** it reports the overlap and requests the ordinary per-feature settings disable path, best effort
+- **AND** the request uses ordinary feature-off behavior without a compatibility promise or changes to the original.
 
 #### Scenario: Save again while support is blocked
 - **WHEN** the player loads a save with a held two-unit unload order, saves again while support remains unavailable, then restores support and reloads
@@ -110,14 +114,14 @@ reason and ordinary fallback. Compatible unrelated modifications do not disquali
 Owned S024 and S125 instead share one bill-supply preference and parent-attempt decision under
 S125's useful-surplus and whole-trip contract; neither schedules a duplicate around the other.
 
-#### Scenario: Another detour provider
-- **WHEN** an external While You're Up supplies the overlapping bill-hauling opportunity
-- **THEN** only one detour is scheduled and neither mod's stored preferences are automatically changed.
+#### Scenario: Original detour provider is active
+- **WHEN** startup detects active original While You're Up
+- **THEN** it warns and requests ordinary settings disablement of the overlapping owned detour, best effort, without testing or emulating the source's private hauling integration.
 
 ### Requirement: UI and compatibility claims remain specific
 These features SHALL use structured mod settings, existing work/bill/item information, Gear controls and contextual building state, without adding a bottom-bar tab solely for preferences or toggles.
-Text, disabled reasons and controls are available in all seven baseline languages. Source API/save
-emulation and general drop-in compatibility are not claimed by these behavior specifications.
+Text, disabled reasons and controls are available in all seven baseline languages. Source API/binary/save
+emulation, facades, consumer-parity checks and original-provider compatibility runs are outside scope.
 Unsupported foreign hooks do not silently gain access to a different behavior under the original
 identity. An unavailable integration leaves normal valid gameplay accessible and warns once on
 startup for each skipped enabled patch, identifying the lost behavior and fallback. Unsupported

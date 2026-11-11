@@ -11,8 +11,8 @@ Use the [observable contract](specs/megamod-priority-treatment/spec.md) for beha
 quill automation with player holds, narrow startup admission and shared data.
 
 **Non-goals:** optimal medical triage, direct healing, automatic arbitrary surgery, broader faction
-rescue, hardcoded prescriptions, source binaries/settings migration, copying source API by name
-without actual consumer bindings, a second patient cache or patches against owned code.
+rescue, hardcoded prescriptions, original API/binary/save compatibility checks or facades,
+source settings migration, a second patient cache or patches against owned code.
 
 ## Decisions
 
@@ -94,19 +94,20 @@ Apply groups atomically, rollback only newly owned patches, report each skipped 
 at startup with package/patch/target/spec/predicate/behavior/fallback. Explicit off is not failure.
 Optional content absent is normal inactive scope; present but incompatible enabled paths warn.
 
-### External contracts and source co-installation
+### Source research and ordinary feature disablement
 
-Active canonical dreadarm.prioritytreatment withholds owned S134 overlap. Source public API
+Active canonical dreadarm.prioritytreatment triggers a bounded startup warning and the ordinary
+per-feature settings disable path for owned S134 overlap, best effort. Use the same effective off
+behavior, pending-reason withdrawal and safe physical completion as a user disabling the feature.
+This is not a compatibility guarantee or a separate cooperative scheduling mode. Source public API
 Dreadarm.PriorityTreatment.Api.V1, ContractVersion2, exposes bool BlocksSurgery(Pawn,Thing,bool),
 MatchesEmergencyPolicy(Pawn), CanRespondToEmergency(Pawn). They are read-only predicates, not job
 dispatch or universal permission. The documented binder checks package, assembly, API type,
 ContractVersion>=1 and exact signature, caches delegates after startup and uses neutral fallback.
-Our package/type alone cannot satisfy that binder. Author names Ability Loadout as consumer; it was
-not found installed, so no verified incoming consumer facade is selected. Do not spoof package ID.
-Document upstream WorkGiver/ThinkNode types and settings keys as unsupported external bindings;
-native medical bills use native serialization but source job workgiver references need save tests.
-S124 external ordering policy remains: withhold unsupported overlapping owned automatic dosing,
-preserve foreign work, report limits. No unsupported co-installation compatibility claim.
+These are research facts only; no binder/consumer-parity scan, source API facade or source save/job
+compatibility test is required. Do not spoof package identity. Native medical bills and owned
+pending/hold state retain their normal save-continuity obligations. S124 uses its ordinary settings
+disable path for detected original overlap; it does not coordinate with source schedulers.
 
 ## Risks / Trade-offs
 
@@ -116,7 +117,8 @@ preserve foreign work, report limits. No unsupported co-installation compatibili
   no invented disease clocks, current rechecks and honest fallback. Verify actual care outcomes.
 - Injuries alter actual capability/risk → preserve those rules while removing the categorical veto.
 
-- Source advertises safe removal/general compatibility → no acceptance without exact native runs.
+- Source advertises safe removal/general compatibility → neither claim is adopted or made an
+  original-provider verification obligation; owned save continuity remains required.
 - Concurrent/manual/foreign operations → common authority, current rechecks, preserved ownership.
 
 ## Migration Plan
@@ -129,6 +131,7 @@ separate backup, atomic application, failure restoration and verified postcondit
 ## Open Questions
 
 PT-Q1 inventory is resolved for specification. PT-Q2 records the selected urgency-first policy and
-actual-capability operation admission; PT-Q3 external consumer/save bindings; PT-Q4 effective target/optional Def admission;
+actual-capability operation admission; PT-Q3's source consumer/save parity work is superseded and
+out of scope; PT-Q4 effective target/optional Def admission;
 PT-Q5 shared lifecycle/performance; PT-Q6 reviewed implementation, translations and native acceptance.
 No user interrogation is needed to continue the sequential documentation work.

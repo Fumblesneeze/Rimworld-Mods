@@ -28,7 +28,8 @@ opportunity behavior and S133/S135 loading remain separate work; no whole fork i
   global/save settings, correcting misleading gear-only and boundary behavior. Include optional
   draft-time cargo dropping, initially off to preserve safe retention; never drop personal supplies.
 - Compose urgent hauling and future owned storage rules directly, with the shared Ctrl+F item data.
-  Preserve real optional contracts where supported; do not copy a private mod cache or internal patch stack.
+  Retain genuine optional capacity/storage integrations; do not copy a private mod cache, emulate
+  source APIs or retain an internal patch stack.
 - Make delivery progress, kept supplies, failed destinations and unavailable integrations observable;
   use exact cargo quantities, grouped physical destination visits and bounded recovery. An unchanged
   failed automatic recovery waits 600 simulation ticks; relevant change or a safe manual retry can
@@ -64,17 +65,17 @@ Haul, IHoldMultipleThings DLL or other repository-owned product mod. Owned Job/W
 additive; no blanket pawn-Def comp mutation is selected. If XML Extensions operations become necessary,
 XML Extensions becomes a required dependency and every mutation needs content/shape guards.
 
-Allow Tool is an optional external integration candidate through its actual urgent-job delegate
-and a guarded urgency-lifetime bridge for our cargo; automatic source designation cleanup must not
-erase an undelivered order, and explicit cancellation must remain effective. Owned S008 uses direct
-calls. Combat Extended integration is deferred. Other custom inventory or storage providers require explicit
+Owned S008 urgent hauling composes through direct calls and retains exact urgency quantities and
+cancellation. No original Allow Tool delegate/lifetime bridge or PUAH consumer-parity adapter is
+planned. Combat Extended integration is deferred. Genuine custom inventory or storage integrations require explicit
 capability validation and bounded adapters; unsupported capacity cannot silently mean unlimited.
 Continued has reflective CE handling, unlike the historical Mehni stubs; its permissive fallbacks
-are not our admission policy. Broader private
-hooks and source save identities are recorded as compatibility gaps, not silently promised emulation.
-Co-installing original PUAH, Continued, Reworked or Armful withholds overlapping owned collection
-while preserving safe recovery of existing owned cargo. External opportunity hooks also need proven
-owned-cargo protection. No automatic source migration, package impersonation or upstream assembly ships.
+are not our admission policy. Original API/binary/save compatibility checks and facades are outside
+scope. Active original PUAH, Continued, Reworked or Armful triggers a bounded startup warning and
+the ordinary per-feature settings disable path for overlapping owned collection, best effort.
+Ordinary disable/cargo recovery semantics still apply; no cooperative compatibility or control over
+foreign hauling is promised. No source-provider-present compatibility run, automatic source migration,
+package impersonation or upstream assembly ships.
 
 [Current decisions and linked source research](../../../mods/megamod/docs/refinement/2026-11-03-hauling-composition-decisions.md)
 separate confirmed user intent, source facts, proposed corrections and pending provider/native proof.
