@@ -70,6 +70,10 @@ public interface IEndToEndContext
     object? GetService(Type serviceType);
 
     void DeferCleanup(Action cleanupAction);
+
+    // Main-thread polling under the runner's existing aggregate cleanup deadline.
+    // Return false to wait for another frame; true confirms completion. Never block.
+    void DeferCleanupUntil(Func<bool> cleanupPoll);
 }
 
 public interface IEndToEndFloatMenuCatalog

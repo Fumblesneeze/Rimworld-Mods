@@ -90,5 +90,6 @@ internal sealed class GatewayPerformanceEndToEndAdapter : IRimWorldEndToEndTest
                 ? counter
                 : inner.GetService(serviceType);
         public void DeferCleanup(Action cleanupAction) => inner.DeferCleanup(cleanupAction);
+        public void DeferCleanupUntil(Func<bool> cleanupPoll) => inner.DeferCleanupUntil(cleanupPoll);
     }
 }

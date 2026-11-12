@@ -870,6 +870,9 @@ public sealed class EndToEndTestingContractTests
 
         public void DeferCleanup(Action cleanupAction) => cleanup.Add(cleanupAction);
 
+        public void DeferCleanupUntil(Func<bool> cleanupPoll) => cleanup.Add(() =>
+            Assert.That(cleanupPoll(), Is.True, "This synchronous fake requires immediately completed cleanup."));
+
         public void RunCleanup()
         {
             for (var index = cleanup.Count - 1; index >= 0; index--)

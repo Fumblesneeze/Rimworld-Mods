@@ -795,7 +795,7 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
         public static int PollCount { get; private set; }
 
         public void Arrange(IEndToEndContext context) =>
-            ((GatewayEndToEndTestContext)context).DeferCleanup(() => ++PollCount >= 3);
+            context.DeferCleanupUntil(() => ++PollCount >= 3);
 
         public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
         {
@@ -810,7 +810,7 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
         public static int PollCount { get; private set; }
 
         public void Arrange(IEndToEndContext context) =>
-            ((GatewayEndToEndTestContext)context).DeferCleanup(() =>
+            context.DeferCleanupUntil(() =>
             {
                 PollCount++;
                 return false;
@@ -831,9 +831,8 @@ public sealed class GatewayEndToEndExecutionStateMachineTests
 
         public void Arrange(IEndToEndContext context)
         {
-            var gateway = (GatewayEndToEndTestContext)context;
-            gateway.DeferCleanup(() => ++PollCount >= 2);
-            gateway.DeferCleanup(() =>
+            context.DeferCleanupUntil(() => ++PollCount >= 2);
+            context.DeferCleanup(() =>
             {
                 ThrowCount++;
                 throw new InvalidOperationException("expected cleanup failure");

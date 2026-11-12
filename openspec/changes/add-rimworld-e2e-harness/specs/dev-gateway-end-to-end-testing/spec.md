@@ -320,6 +320,12 @@ After native player control becomes available, before the first test and in guar
 ### Requirement: Failures are isolated and diagnostically complete
 An assertion, test exception, unsupported native action, stale handle, or ordinary test timeout SHALL fail only the current test when map reset remains trustworthy. Each failure SHALL retain the current step, bounded causal exception, live job/target and selection checkpoint when available, final screenshot, log cursor page, and cleanup result. Before any failure snapshot becomes persistable, the runtime SHALL redact the exact live session credential from every failure field and cap the failure message to the same 8 KiB UTF-8 diagnostic-message budget used by Gateway log entries; identity and stack fields SHALL remain separately bounded. A test failure MUST NOT be converted into a process success merely because later cleanup passed.
 
+#### Scenario: A test bundle waits for asynchronous restoration
+- **WHEN** a test registers `DeferCleanupUntil` through the shared context and its bounded callback returns false while a native restoration is pending
+- **THEN** the runner polls it on later frames in the existing LIFO cleanup order, without blocking the Unity thread or beginning isolation early
+- **AND** true completes that callback exactly once; an exception preserves independent remaining cleanup and reports failure
+- **AND** the existing aggregate30-second cleanup deadline taints the process if completion cannot be observed; the callback does not receive a new deadline
+
 #### Scenario: One test fails and cleanup succeeds
 - **WHEN** the first test in a group fails an observable assertion and the reset returns to a verified empty map
 - **THEN** the second test still runs

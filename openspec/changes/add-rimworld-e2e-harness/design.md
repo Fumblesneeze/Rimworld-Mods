@@ -10,6 +10,11 @@ not proof that the pictured player behavior succeeded.
 
 ## Context
 
+The shared test context exposes `DeferCleanupUntil(Func<bool>)` for native restoration that becomes
+observable on a later frame, such as a window resize. It forwards to the existing runner cleanup
+queue and aggregate30-second deadline. The distinct name preserves existing Action-lambda behavior;
+this adds no queue, worker, timeout policy or direct game dependency to the contract.
+
 The current verification stack has four distinct pieces: host NUnit suites, startup-gated in-game integration methods, isolated Gateway launches, and named scenario scripts that an agent finishes manually. The first two are repeatable but cannot prove multi-frame pawn jobs and player-visible consequences. The last two do prove those workflows, but every scenario is separately orchestrated and there is no command that discovers all applicable workflows, groups them by exact mod list, resets state, executes them in sequence, and emits one machine-readable result.
 
 The owning mod is RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`). Product mods remain independent. E2E assemblies are test-only inputs staged below their active owning mod for an isolated run and are never copied into a product's `Assemblies` directory or release artifact.

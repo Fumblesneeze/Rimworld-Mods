@@ -178,6 +178,13 @@ public sealed class GatewayEndToEndTestContext : IEndToEndContext
         });
     }
 
+    public void DeferCleanupUntil(Func<bool> cleanupPoll)
+    {
+        if (cleanupPoll is null) throw new ArgumentNullException(nameof(cleanupPoll));
+        if (cleaning) throw new InvalidOperationException("E2E cleanup has already started.");
+        DeferCleanup(cleanupPoll);
+    }
+
     internal void DeferCleanup(Func<bool> cleanupPoll)
     {
         if (cleanupPoll is null) throw new ArgumentNullException(nameof(cleanupPoll));
