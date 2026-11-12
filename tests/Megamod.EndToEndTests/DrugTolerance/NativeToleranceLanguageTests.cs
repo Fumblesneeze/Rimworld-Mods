@@ -17,7 +17,7 @@ namespace Megamod.EndToEndTests.DrugTolerance;
 // Run this exact case once per baseline language; the actual culture is observed, never assigned.
 [RimWorldEndToEndTest("megamod.drug-tolerance.native-language-slider", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
-    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 900)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 1080)]
 public sealed class NativeToleranceLanguageTests : IRimWorldEndToEndTest
 {
     private readonly NativeDrugPolicyView view = new();
@@ -77,8 +77,8 @@ public sealed class NativeToleranceLanguageTests : IRimWorldEndToEndTest
         }
         yield return new AssertionStep("count the complete selected language workflow", _ =>
         {
-            EndToEndAssert.Equal(29, nativeOperations); EndToEndAssert.Equal(7, screenshots); EndToEndAssert.Equal(16, waitSeconds);
-            EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 180 <= 900);
+            EndToEndAssert.Equal(33, nativeOperations); EndToEndAssert.Equal(7, screenshots); EndToEndAssert.Equal(22, waitSeconds);
+            EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 180 <= 1080);
         });
     }
 
@@ -140,14 +140,21 @@ public sealed class NativeToleranceLanguageTests : IRimWorldEndToEndTest
         yield return Click("place native pointer over " + description + " help", target());
         yield return Capture<Dialog_ManageDrugPolicies>("capture manager while native pointer remains on help", value => manager = value);
         yield return Wait("wait for actual native " + description + " tooltip window", 5, () => TipWindow(expected) != null);
+        int tooltipWindowId = 0;
         yield return new CheckpointStep("retain native " + description + " tooltip evidence", _ =>
         {
             var tip = TipWindow(expected) ?? throw new InvalidOperationException("The native tooltip disappeared before observation.");
+            tooltipWindowId = tip.ID;
             return new Dictionary<string, string> { ["key"] = key, ["text"] = expected, ["windowId"] = tip.ID.ToString(),
                 ["windowRect"] = tip.windowRect.ToString(), ["language"] = LanguageDatabase.activeLanguage.folderName,
                 ["action"] = "scoped native click then real pointer dwell; no draw or TipRegion invocation" };
         });
         yield return Shot("translated " + description + " tooltip drawn by native UI");
+        yield return Click("leave " + description + " tooltip through inert margin", new Vector2(9, manager.windowRect.height / 2));
+        yield return Capture<Dialog_ManageDrugPolicies>("recapture manager after leaving help", value => manager = value);
+        yield return Wait("wait for " + description + " tooltip to stop obscuring later controls", 3, () =>
+            !ActiveTips().Values.Any(t => t.signal.textGetter == null && t.signal.text == expected) &&
+            !Find.WindowStack.Windows.Any(w => w.ID == tooltipWindowId));
     }
 
     private Dictionary<int, ActiveTip> ActiveTips() { RequireGame(); return (Dictionary<int, ActiveTip>)Tips.GetValue(null)!; }

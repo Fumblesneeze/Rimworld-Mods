@@ -27,8 +27,10 @@ permissions off and back on while retaining the numeric choice. Actual pointer d
 native rule and inactive tooltips; passive observations never draw them. All neighboring native
 row values and the malformed Smokeleaf choice must remain unchanged.
 
-Run this exact ID once per baseline language. Each run has29 native actions/captures,7 screenshots
-and16s bounded waits; with180s reserve its841s budget fits the900s scenario and1200s launcher.
+Run this exact ID once per baseline language. Each run has33 native actions/captures,7 screenshots
+and22s bounded waits; with180s reserve its907s budget fits the1080s scenario and1200s launcher.
+After each tooltip capture, a native click on the inert margin and a bounded disappearance wait
+clear the tooltip before another control is used.
 English may share a3300s focused batch with the caravan case above; the other six languages use
 separate exact-language processes. Record the actual numeric culture without assigning one or
 claiming text-parser coverage. Independent review found no issues; all native language acceptance

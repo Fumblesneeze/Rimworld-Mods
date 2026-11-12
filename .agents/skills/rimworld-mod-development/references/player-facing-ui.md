@@ -54,6 +54,11 @@ Inspect the control's native event gate too: on Windows a slider can claim Mouse
 only on MouseDrag. A consumed press is not an adjustment. Native verification must send the real
 held movement and also check that a press without movement preserves retained precision.
 
+After capturing a native tooltip, move the scoped pointer to an unobscured inert window margin
+through ordinary input and observe the tooltip window disappearing before the next gesture.
+Native hit-testing can reject a later slider drag while that tooltip covers its path. Do not remove
+the tooltip directly or weaken the input obscuration guard; budget the native transition in the fixture.
+
 ## Keep terminology and localization coherent
 
 Choose one concept name and use it across Def labels, recipes, categories, jobs, alerts, settings,
