@@ -9,6 +9,10 @@ Target: **RimWorld 1.7 beta**. Choice/decision rules, S029 state transactions an
 runtime are implemented. Scoped persistence, English editor and scheduled/direct-recreation routes
 have reviewed live evidence; the full feature remains incomplete. See tasks for exact accepted scope.
 
+The next focused consumer compares separate numeric-zero and Any caravans through real world ticks,
+native Items and detailed Health, preserving the ordinary daily interval and physical stock. Its
+Gateway and slider prerequisites have scoped native acceptance; the consumer itself remains unaccepted.
+
 ## What Changes
 
 - Add an optional tolerance threshold to applicable drug-policy rows in the native policy window.

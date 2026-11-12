@@ -5,6 +5,35 @@ orchestrator reviews the build and personally observes the retained action/resul
 They use the exact ordered Harmony, Core, megamod list with the Gateway appended by the harness.
 No original provider or fixture mod is required.
 
+`megamod.drug-tolerance.native-caravan-scheduled` prepares separate one-adult caravans, each with
+two Beer and its own ordinary daily policy. Native slider input sets A to zero and leaves B at Any.
+Actual world ticks must produce repeated A refusals, one B dose and subsequent same-day interval
+refusals. Native Items and detailed Health before/after show the physical counts and Alcohol effects.
+The seven native trace surfaces only observe the real world-tick/schedule/direct-ingestion/split path;
+there is no map job, forced dose, needs refresh, history rewrite or attached-stock claim. Each detailed
+Health card is explicitly closed with a fresh native row capability before the next subject.
+
+Select this exact ID alone with launcher2400. Its100 counted steps comprise60 native actions/captures,
+13 screenshots and495s waits, including the30s clean-terrain/settled-World wait from the accepted
+Gateway prerequisite. Bounded work1785s plus90s reserve fits the2100s scenario; actual time is capped
+at3000 game ticks within one day. Scoped input cleanup, World restoration and exact owned object/trace
+cleanup remain required. The fixture is authored and compilation is supporting evidence only;
+independent review found no issues; root's native consumer gate remains pending in
+`artifacts/Implementation/megamod-p0/s138-caravan-consumer/`.
+
+`megamod.drug-tolerance.native-language-slider` opens the same native policy manager, inspects
+translated Any and Needs review labels, drags Beer to20%, and toggles native recreation/scheduled
+permissions off and back on while retaining the numeric choice. Actual pointer dwell reveals the
+native rule and inactive tooltips; passive observations never draw them. All neighboring native
+row values and the malformed Smokeleaf choice must remain unchanged.
+
+Run this exact ID once per baseline language. Each run has29 native actions/captures,7 screenshots
+and16s bounded waits; with180s reserve its841s budget fits the900s scenario and1200s launcher.
+English may share a3300s focused batch with the caravan case above; the other six languages use
+separate exact-language processes. Record the actual numeric culture without assigning one or
+claiming text-parser coverage. Independent review found no issues; all native language acceptance
+remains pending under `artifacts/Implementation/megamod-p0/s138-language-layout/`.
+
 `megamod.drug-tolerance.native-editor` opens Assign and the native policy manager, selects a
 disposable policy, and uses the same native horizontal slider as the adjacent mood/recreation
 controls. It checks retained12.5% and malformed values survive painting, then selects0%, numeric100%,

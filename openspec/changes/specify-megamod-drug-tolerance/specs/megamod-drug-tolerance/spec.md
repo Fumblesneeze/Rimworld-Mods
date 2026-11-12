@@ -31,6 +31,12 @@ inactive with an explanation. Unavailable or inapplicable drugs SHALL not gain i
 - **AND** a native press which only starts a gesture does not round a retained value; adjustments follow the native drag behavior
 - **AND** each commit revalidates the current Game, manager, selected policy, exact row/drug, original choice and effective availability, without retaining edit authority across frames.
 
+#### Scenario: Native policy labels and tooltips in every baseline language
+- **WHEN** the player opens the native policy manager in English, German, Spanish, French, Chinese Simplified, Russian or Japanese
+- **THEN** the row header, Any, Needs review, numeric and retained inactive labels render without clipping, fallback keys or missing glyphs, and ordinary pointer dwell shows RuleHelp and InactiveHelp
+- **AND** native slider dragging adjusts the value, while native recreation and scheduled-use toggles retain the choice when inactive and reactivate it when routine use is enabled again
+- **AND** this slider workflow makes no numeric-text parsing claim.
+
 ### Requirement: Any and numeric thresholds have explicit meanings
 With the feature enabled and available, routine use governed by a numeric choice SHALL require
 current chemical tolerance to be strictly below that percentage. No current tolerance condition
@@ -58,6 +64,12 @@ consumption history. This feature SHALL not grant permission or promise addictio
 #### Scenario: Mood or interval still rejects
 - **WHEN** tolerance is below the chosen limit but potential mood or the ordinary interval rejects a dose
 - **THEN** the pawn does not take it through scheduled use.
+
+#### Scenario: Separate caravans retain native scheduled consumption and history
+- **WHEN** two separate caravans each hold two Beer, with the same ordinary daily schedule and no prior dose history, and the player selects numeric zero for one pawn's policy while the other retains Any
+- **THEN** actual world ticks repeatedly withhold the zero pawn's dose without Alcohol effects, while the Any pawn consumes one ordinary unit and gains its native effects
+- **AND** the Any pawn's native same-day interval withholds its remaining unit on later actual attempts; the assigned policies, stock targets, native dose quantity and history semantics remain unchanged
+- **AND** native caravan Items and detailed Health show the before/after result; the caravan route directly ingests without inventing a map job or attached stock pickup.
 
 #### Scenario: Tolerance has fallen
 - **WHEN** tolerance falls below the chosen limit and every other scheduled-use condition is met

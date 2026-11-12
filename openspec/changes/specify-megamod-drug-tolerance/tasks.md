@@ -184,6 +184,13 @@ This accepts the corrected slider and scoped layout workflow only; the broader t
 
 ## 4. Independent review and integrated native acceptance
 
+The focused `megamod.drug-tolerance.native-caravan-scheduled` consumer is allocated after the
+reviewed native slider and Gateway caravan prerequisites. It compares separate0/Any caravans through
+actual world ticks and native Items/Health, including one ordinary Any dose and later same-day interval
+rejections. The fixed100-step sequence reserves1875s within2100s (launcher2400s). Source/build/review
+evidence belongs under `artifacts/Implementation/megamod-p0/s138-caravan-consumer/`; root's reviewed
+native action/result gate is still required. Tasks2.3/4.2/4.3 and full S138 acceptance remain open.
+
 - [ ] 4.1 Run affected nonzero focused suites, owning build/package checks and typed OpenSpec validation; obtain independent review and resolve each finding on the tested revision.
 - [ ] 4.2 Author executable native scenarios for policy editing/copy, Any/numeric boundaries, actual scheduled/direct-joy ingestion, social drinks and drinkless fallback, patient treats, independent refill versus attached pickup, exclusions, malformed choice repair and persistence; setup must not manufacture the action result.
 - [ ] 4.3 Orchestrator gate: personally observe those native player workflows on the reviewed build in fresh minimized isolated Gateway runs, including supported composition and honest unavailable state. Capture exact actions, build/mod/config hashes, screenshots, relevant complete logs and cleanup; authored or host-passing cases remain unaccepted until this occurs.

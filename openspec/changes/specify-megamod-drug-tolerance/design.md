@@ -178,6 +178,33 @@ off or unavailable controls, at most once per reason per window. It can explain 
 state without constructing patches. No policy manager means no contextual notice, and ordinary
 off is not diagnosed as a failed enabled patch.
 
+### Focused caravan consumer assumptions
+
+The paired Core-only caravan scenario prepares two separate stationary single-adult caravans, each
+with its own policy and two-Beer stack. Disposable setup removes traits/health confounders and starts
+food/rest/mood/joy full with no prior drug history. Beer scheduling is on, joy/addiction permissions
+off, daysFrequency1, mood/joy thresholds1 and stock target2; all other drug rows are disabled. The
+native policy slider changes A from Any to0; B retains Any. No needs, history, policy or consumed
+effects are assigned after native time starts. A600..2400-tick observation window remains within
+one game day; actual hunger, another ingestion route or changed current identities fails the case.
+The native caravan path calls IngestDrug/Thing.Ingested directly, with no map job or refill claim.
+Passive seven-method provenance ties actual caravan ticks to scheduled decisions, native Allowed
+results, ingestion and physical splitting, while native Items/Health captures remain the visible proof.
+The existing typed World lease, native generation wait, exact caravan/Health controls and pointer
+cleanup are reused. The100 counted steps reserve60 actions/captures,13 screenshots and495s waits:
+1785s bounded work plus90s reserve (including30s cleanup), scenario2100s/launcher2400s. This is an
+authored consumer allowance, not a gameplay duration or accepted native result.
+
+### Baseline-language slider observation
+
+The existing seven-language obligation uses the native row header, Any, Needs review, numeric and
+retained inactive labels, together with RuleHelp/InactiveHelp, at the supported native viewport.
+Verification selects an inert header or presses the unchanged native slider through scoped native
+input, retains its pointer and allows actual tooltip dwell; no separate hover route is required.
+Native dragging edits the value and ordinary joy/scheduled toggles demonstrate retention/reactivation.
+Every selected locale needs personally inspected text/glyph/clipping evidence. The removed dialog's
+numeric-text parsing is not a claim of this slider workflow.
+
 ## Risks / Trade-offs
 
 - Strict zero can surprise users familiar with source behavior → distinguish Any, explain zero and
