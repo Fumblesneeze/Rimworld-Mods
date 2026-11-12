@@ -160,6 +160,12 @@ mislabel those edited choices as computed recommendations or silently revert the
 - **THEN** admission checks the actual current root and callback bodies and withholds the partial receipt for unproved effects, even when method signatures are unchanged
 - **AND** compatible static-void scalar observers can remain admitted without executing them or replaying foreign transpilers as inspection probes; new observers require explicit revalidation and their owned observations are cleaned up after failed acquisition or removal.
 
+#### Scenario: The consumed pawn is the current native parent pawn
+- **WHEN** partial native-fact admission observes the effective comp pawn getter
+- **THEN** it proves the returned reference comes from that comp's current parent and that parent's actual pawn field, permitting harmless reference aliases but refusing substitution, native-reference writes or escape
+- **AND** inherited lookup aliases identify one actual method declaration; finite roots share relevant callback observations and failed acquisition cannot remove another bundle's owned observations
+- **AND** this projection alone does not establish parent/pawn initialization, hash timing, deterministic rate initialization or complete native facts.
+
 #### Scenario: Fresh-dose and side-high assumptions remain visible
 - **WHEN** the preview uses an admitted ordinary native high, Alcohol, Rest-offset or rottable drug shape
 - **THEN** it states the fresh whole-dose/no-prior-effect assumptions and explains that ordinary impairment, food poisoning and residual high/tolerance are not prevented by the suggestion.

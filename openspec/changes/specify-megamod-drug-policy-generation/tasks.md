@@ -20,6 +20,13 @@ This proves one conditional ref/float contribution in actual composed host bodie
 native helper semantics, complete decay, finalized inputs, preview authority or gameplay. Task1.6
 and all remaining F0–F5/native obligations stay open; no task below closes from this checkpoint.
 
+The next bounded checkpoint adds actual pawn-field projection and extracts only the existing
+generation observation lifecycle into one finite-root helper. Its affected host set is19/19
+(thirteen contribution regressions plus six projection/declaration/shared-callback/rollback cases).
+The helper remains unregistered; actual native binding and initialization/hash/rate dependencies
+remain open. The unfinished zero-range initialization draft is retained outside compilation for
+the next lease. This scheduling checkpoint closes no task1.6 or native acceptance obligation.
+
 - [ ] 2.1 After 1.1–1.3 and 1.7, RED/GREEN C1 one established suggestion at a time in Unit using immutable fact inputs; include binary32 decay boundaries, late/early day boundaries and dispatch margin, editor overflow without clamping, unsupported/negative/nonfinite/non-progress cases, chemical-or-tolerance connected groups, dose/population assumptions, manual provenance and no arbitrary drug-name dependency. Retain durable actual failures and passing nonzero counts; runtime exposure still requires 1.6.
   - Revision20 core implemented with five retained RED/GREEN slices and 46/46 focused Unit cases; independent review found no issues. Checkpoint e4f7827. `Source/Features/DrugPolicyGeneration/README.md` describes the bounded API and local evidence ledger. This does not close runtime fact admission, complete preference/reset editing or native creation.
 - [ ] 2.2 RED/GREEN complete baseline-to-draft projection, explicit applicable medical permission, off-schedule defaults, full resets, Any/100% reversal and independent edits; no tests that merely repeat literal tables.

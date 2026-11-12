@@ -329,6 +329,21 @@ The helper remains unregistered. Its positive receipt says nothing about pawn/ha
 rate initialization, other accumulators, outer comp dispatch or severity clamping. All remaining
 F0–F5 dependencies and finalized/native workflows are required before any suggestion is exposed.
 
+The next reviewed boundary extracts only the contribution observer's finite root/callback lifecycle
+into feature-local `DrugGenerationObservedBodies`, keeping the public contribution API and all
+opcode proofs separate. Its one-to32 declared roots are canonical actual method declarations;
+duplicate inherited lookup aliases cannot acquire competing routes. Multiple roots reuse one
+callback observation, and candidate rollback after a later root fails preserves another bundle's
+owned observer. Constructor admission and shared C01 remain unchanged. Eventual runtime union-bundle
+binding belongs to the orchestrator; overlapping independent claims are refused.
+
+`DrugGenerationPawnBodyGuard` proves the actual inherited getter returns the same comp's current
+parent.pawn field with no native-reference write/escape or substituted result, while allowing
+harmless reference locals. This is a positive field-projection subclaim and remains unregistered.
+It does not prove native instance initialization, hash semantics or future field stability.
+The seven-role deterministic SeverityPerDay initialization continuation remains outstanding; its
+unfinished draft is outside compiled sources during the integrated native build checkpoint.
+
 Generation preference controls use the common composite-settings renderer. A small transient
 percentage draft reuses S138's localized percentage parser and exact unchanged-value preservation;
 it owns no persisted settings or policy rows. The mood/recreation controls accept numeric values,

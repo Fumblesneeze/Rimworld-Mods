@@ -87,8 +87,15 @@ conditional data flow, including harmless local aliases/nops. It refuses changed
 receiver/ref provenance, arithmetic/order/rounding, duplicate contributions, unknown calls, other
 branches and exception regions; it is not a general IL evaluator or pristine-body hash check.
 
-`DrugGenerationDecayAdmission` owns a final observation transpiler over the actual incoming root
-and consumed callback bodies. `Available` is inspection-only; `Revalidate` explicitly acquires new
+`DrugGenerationDecayAdmission` delegates to the feature-local finite `DrugGenerationObservedBodies`
+bundle for final observation of the actual incoming root and consumed callback bodies. The extracted
+bundle owns no opcode semantics and does not change shared C01 or constructor proof. Its declared
+root set is fixed; runtime declaration handles canonicalize inherited reflected lookup aliases,
+and duplicate declarations are rejected before acquisition. Multiple roots share one callback
+observation. Later-root failure rolls back only the attempted bundle through the existing candidate
+lifecycle, preserving a separately owned bundle. Overlapping installed claims fail ownership;
+eventual native integration of a union of claims remains root-owned.
+`Available` is inspection-only; `Revalidate` explicitly acquires new
 callback observers and removes obsolete ones using a coherent dependency snapshot. Actual outer
 and selected inner callbacks can qualify as static-void scalar observers through the existing
 scalar callback proof; constructor grammar is unchanged. By-ref/native-reference writes or escapes,
@@ -103,6 +110,22 @@ body, interval/hash/calendar behavior, actual virtual rate body/initialization, 
 contributions, outer `HediffWithComps` accumulation or the final severity setter/clamp. Those
 dependencies and the complete F0–F5 fact gate remain required. The helper is unregistered and no
 preview, creation or ordinary-Core support claim is enabled by these host cases.
+
+The next bounded pawn projection is implemented by `DrugGenerationPawnBodyGuard`: the actual
+incoming `HediffComp.get_Pawn` must return `this.parent.pawn` through the bound nonstatic reference
+fields, without a substituted receiver/result, native-reference write or escape. Harmless reference
+locals/nops are supported. The same finite observation bundle provides callback/currentness and
+cleanup semantics. Six focused host cases cover the current reference result, actual replacement
+and escape, inherited alias/local compatibility, duplicate declaration refusal, later-root rollback
+and a shared scalar observer retained until its final root use disappears. The full affected set
+including the thirteen contribution cases passes19/19. This helper is unregistered: its result is
+the current field projection, not proof of parent/pawn initialization, permanent field stability,
+the hash helper or actual game binding.
+
+Deterministic SeverityPerDay initialization remains unimplemented in the compiled product. Its
+zero-helper research/test draft is retained under local artifacts for the next lease; unfinished
+draft source was removed before this checkpoint's build freeze. No initialization receipt or
+first-use static-initializer effect is authorized by the pawn projection.
 
 ## Effective native semantics still required before exposure
 

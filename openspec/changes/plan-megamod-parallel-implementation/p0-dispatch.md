@@ -605,3 +605,20 @@ Revision21 active leases after native route checkpoint9e0f032:
 Earlier source freezes are released for these explicit leases. Both lanes preserve every unrun
 feature/composition obligation and use native player paths, never direct end-state mutation, for
 acceptance. These leases supersede immediate assignments only, not the139-feature/P0–P8 scope.
+
+Revision21 next batch after5d2ef96: the reviewed contribution receipt is committed at7899799;
+social/drinkless and global off/on timing have scoped native acceptance. Full gates remain open.
+
+- `generation_admission` now owns the actual pawn-field projection and deterministic zero-range
+  SeverityPerDay initialization guards/admission plus exact focused Harmony tests and its owned
+  DG-NATIVE-FACTS contract sections. Follow the local `f1-next-admission-plan.md`: preserve native
+  field/call/Single-store ordering and actual zero-helper branches. No central registration,
+  broader rate/hash/calendar chain, C01/S029/C03 edits or duplicated observer infrastructure.
+  Request a shared lifecycle lease if finite-bundle reuse requires extraction. Harmony output is
+  leased for focused RED/GREEN; freeze compiling inputs when root requests native deployment.
+- `tolerance_native_routes` owns artifact-only positive20% equality→natural-decay native scenario
+  A and independent review. Planned Any-versus100 and shared-Psychite cases remain subsequent
+  obligations. Root owns compilation, exact integration, native runs and personal observations.
+- Root owns F0 catalog/currentness research and its subsequent explicitly recorded integration,
+  central files, package/install outputs, native acceptance and logical commits. The existing
+  initial native baseline is not relabeled as applied C03 drug-exclusion authority.
