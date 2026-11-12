@@ -34,8 +34,11 @@ After each tooltip capture, a native click on the inert margin and a bounded dis
 clear the tooltip before another control is used.
 English may share a3300s focused batch with the caravan case above; the other six languages use
 separate exact-language processes. Record the actual numeric culture without assigning one or
-claiming text-parser coverage. Independent review found no issues; all native language acceptance
-remains pending under `artifacts/Implementation/megamod-p0/s138-language-layout/`.
+claiming text-parser coverage. Reviewed `90f9245` passed all seven baseline languages: 56 steps each
+and 49 captures personally inspected. Exact evidence is in
+`artifacts/Implementation/megamod-p0/s138-language-layout/slider-language-native-verification.md`.
+The beta's missing Core translations use its native accented-English fallback; the real owned
+catalogs, slider actions and tooltips are verified, without claiming future Core-translated geometry.
 
 `megamod.drug-tolerance.native-editor` opens Assign and the native policy manager, selects a
 disposable policy, and uses the same native horizontal slider as the adjacent mood/recreation

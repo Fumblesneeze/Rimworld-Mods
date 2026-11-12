@@ -182,6 +182,16 @@ This accepts the corrected slider and scoped layout workflow only; the broader t
 - [ ] 3.3 Verify bounded active-original warning and best-effort ordinary effective-off without stored-preference edits; inactive-original behavior and later normal resolution, with no API/coexistence matrix.
 - [ ] 3.4 Resolve DT-Q3 and translate/measure all seven languages, narrow layouts, world view, save switching and disabled/inherited controls; retain no stale game/window context.
 
+The reviewed `90f9245` slider-language case passed seven fresh processes: 56 steps per language,
+392 total, and 49 captures personally inspected. All baseline owned catalogs render their Any,
+numeric, Needs review, inactive and unavailable labels plus native rule/inactive tooltips; actual
+drag and permission toggles preserve the chosen value and neighboring fields. Culture remains en-US;
+no text-parser claim. The 1.7 beta lacks Core translations and uses its native accented-English
+fallback, so future fully translated Core geometry is not accepted. Complete per-language builds,
+process identities, classified logs and graceful cleanup are retained in
+`artifacts/Implementation/megamod-p0/s138-language-layout/slider-language-native-verification.md`.
+Task 3.4 remains open for its remaining contexts; this is a scoped language gate only.
+
 ## 4. Independent review and integrated native acceptance
 
 The focused `megamod.drug-tolerance.native-caravan-scheduled` consumer is allocated after the
@@ -197,8 +207,9 @@ native sliderA0 retained two Beer and no Health effects after repeated actual sc
 BAny consumed one Beer and showed Alcohol/tolerance, then retained its native same-day interval.
 Exact stock/split/history/tick provenance, product/process identity, complete classified logs and
 successful cleanup are in `artifacts/Implementation/megamod-p0/s138-caravan-consumer/native-verification.md`.
-The later language fixture failed after its first tooltip; that separate case remains unaccepted
-pending its focused correction. S024 composition, medical consumers and full feature tasks remain open.
+The later language fixture failed after its first tooltip; its independently reviewed `90f9245`
+correction subsequently passed the seven-language gate above. S024 composition, medical consumers
+and full feature tasks remain open.
 
 - [ ] 4.1 Run affected nonzero focused suites, owning build/package checks and typed OpenSpec validation; obtain independent review and resolve each finding on the tested revision.
 - [ ] 4.2 Author executable native scenarios for policy editing/copy, Any/numeric boundaries, actual scheduled/direct-joy ingestion, social drinks and drinkless fallback, patient treats, independent refill versus attached pickup, exclusions, malformed choice repair and persistence; setup must not manufacture the action result.

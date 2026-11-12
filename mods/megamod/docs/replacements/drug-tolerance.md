@@ -2,123 +2,95 @@
 
 ## Identity and provenance
 
-- Owner: Make Rimworld Great Again (`fumblesneeze.megamod`, `mods/megamod`), target 1.7 beta.
-- Origin: replacement; independent behavior implementation, with explicit proposed Any/zero fixes.
+- Owner: Make Rimworld Great Again (`fumblesneeze.megamod`), target 1.7 beta.
+- Origin: replacement, independently implemented with accepted owned Any/zero semantics.
 - Source: SeoHyeon, [Workshop 3088210509](https://steamcommunity.com/sharedfiles/filedetails/?id=3088210509),
   package `seohyeon.onlyiftolerancebelow` (About uses mixed case).
-- Inspected 2026-11-08: installed `F:/Steam/steamapps/workshop/content/294100/3088210509`, selected
-  `1.7/Assemblies/DrugPolicyEnhanced.dll`, SHA256
+- Inspected 2026-11-08: installed `F:/Steam/steamapps/workshop/content/294100/3088210509`,
+  selected `1.7/Assemblies/DrugPolicyEnhanced.dll`, SHA256
   `6C48ACE04DECFEDD65549489046CA5E23B7B40B2DD033331C9BB6E68AA7F6F29`.
-- MIT source, copyright 2023 SeoHyeon; no source/binary/art/translation copied. Public author links,
-  complete source hashes and native seams are in the [research](../refinement/2026-11-08-drug-tolerance-research.md).
-- Status: choice/decision/state and native persistence components have focused implementation
-  evidence; root's persistence-only native gate is recorded separately. Revision21 authors the
-  unregistered enforcement/editor/runtime packet and seven catalogs, pending independent review,
-  geometry composition, owning compilation and native player workflows. Source observations are evidence;
-  Any/zero semantics, distinct numeric 100%, invalid-state behavior and feature configuration are
-  proposed owned decisions. No source API, saved-state import or original-mod compatibility work.
+- MIT source, copyright 2023 SeoHyeon; no source, binary, art or translation copied.
+  See [research](../refinement/2026-11-08-drug-tolerance-research.md) for source hashes and native seams.
+- Status: native runtime, persistence, common setting and seven catalogs are implemented.
+  Reviewed exact-build observations cover the native slider, map/caravan routes, boundaries,
+  save contexts and owned language rendering. Full S138 acceptance remains open.
 
-## Behavior inventory
+No source API compatibility, original saved-state import, identity spoofing or drop-in claim is made.
+All scenarios belong to the [owned capability](../../../../openspec/changes/specify-megamod-drug-tolerance/specs/megamod-drug-tolerance/spec.md).
+The [tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/tasks.md) retain full obligations
+and exact-build evidence references; a scoped observation does not close the whole feature.
 
-All scenarios belong to the [tolerance capability](../../../../openspec/changes/specify-megamod-drug-tolerance/specs/megamod-drug-tolerance/spec.md).
+## Behavior and coverage
 
-| Behavior ID | Native input/action → observable result | Options/defaults and edge cases | Evidence | Owning scenario | Status |
-| --- | --- | --- | --- | --- | --- |
-| DT-01 | Edit a policy row → choose Any or numeric tolerance | New row Any; numeric 100% distinct; inactive choices retained | Research UI/source; proposed correction | Open a new applicable row; Turn off routine uses | Drafted |
-| DT-02 | Pawn considers routine use → strict current-tolerance limit | Missing hediff zero; equality rejects; zero blocks; Any unrestricted by this feature | Research predicates; proposed Any/zero correction | Boundary and absent tolerance; Any differs from numeric 100 percent | Drafted |
-| DT-03 | Scheduled use with S024 → all conditions hold | No new interval, amount or history change | Research native seam and S024 | Mood or interval still rejects; Tolerance has fallen | Drafted |
-| DT-04 | Recreation/treat → recipient rule and native joy exceptions | No visitor-policy bypass; native joy exceptions do not extend to patient feeding | Research and direct owned composition | Visitor could take a drug that the patient cannot; Patient trait does not grant a new feeding exception; Joy exception does not become scheduled permission | Drafted |
-| DT-05 | Medical/manual/refill → existing route authority | No universal tolerance veto, dose grant or extra claim | Source scope and S124/S134 | Needed dependency assistance; Manual order or carried supply | Drafted |
-| DT-06 | Copy, repair, save/load → retain actual choices | S029 valid row identity; new/returned rows Any | Source copy/save seams; proposed owned schema | Copy and edit independently; Content repair and return after saved removal | Drafted |
-| DT-07 | Load malformed choice → visible repair needed | Withhold threshold-governed routine use; absent field Any | Proposed conservative behavior, not source parity | Invalid saved number; Older owned save lacks the new field | Drafted |
-| DT-08 | Disable/unavailable/original active → honest ordinary fallback | Proposed enabled by default; retain stored values; bounded best-effort warning | Common settings and latest user scope | Disable and re-enable in a loaded save; Required behavior is unavailable; Original is active | Drafted |
+| ID | Owned behavior | Implemented and observed scope | Remaining scope |
+| --- | --- | --- | --- |
+| DT-01 | Native row chooses Any or a strict numeric limit; inactive choice retained | Same native slider as neighboring controls, ordinary press versus drag, malformed repair, layout recovery and seven owned language catalogs/tooltips | Wider settings/world/inherited UI combinations |
+| DT-02 | Zero blocks governed routine use; equality rejects; missing hediff is zero; Any differs from numeric 100% | Map zero/Any, seeded positive/cap equality, natural-decay eligibility and actual Tea-to-Yayo shared tolerance | Other chemicals and full accumulation/clearance combinations |
+| DT-03 | Scheduled permission preserves native mood, interval, quantity and history; S024 adds potential mood | Map and caravan scheduled tolerance; caravan Any consumes one physical Beer and retains daily interval | S024 potential-mood producer and combined acceptance |
+| DT-04 | Direct joy keeps its native exceptions; social drinking lacks those exceptions; patient treats use the patient | Direct joy, positive DrugDesire exception, social drinking and drinkless social recreation | Party lifecycle and S024 patient-treat producer |
+| DT-05 | Medical/manual/refill retain their separate authority | Explicit manual Drink and independent refill; scheduled attached pickup remains coupled to its accepted dose | S124/S134 medical/dependency producers and remaining exclusions |
+| DT-06 | Copy/save/maintenance retain immutable owned choices by row identity | Native copy/edit/save/reload, failed overwrite, late-load rejection, save/inheritance contexts and in-flight dose save/resume | Full S029 maintenance/catalog combinations |
+| DT-07 | Malformed retained data is visible and conservatively blocks governed use; missing field means Any | Lossless codec, retained malformed bytes and actual native slider repair | Remaining malformed/route/save combinations |
+| DT-08 | Common default-on setting and honest unavailable/effective-off behavior preserve stored choices | Global timing, dormant save override, inheritance, two-save switching, main-menu guards and layout-unavailable recovery | Native original-provider suppression and remaining failure/composition contexts |
 
-## Interactions and composed result
+The table summarizes historical reviewed builds. Later affecting runtime changes require new
+focused native evidence; unrelated test additions do not replay completed workflows.
 
-S029 owns current row/catalog identity, surviving choices, copy and atomic maintenance. S138 adds
-one owned choice to those boundaries; maintenance never regenerates it. S024 scheduled potential
-mood and tolerance are conjunctive, while patient treats retain recipient joy permission and add
-the numeric veto without new self-recreation trait/mental-state exceptions. S124/S134 retain their medical eligibility, dose history and shared pending-chemical
-authority. S139 can later propose values through this owned state, not an upstream adapter.
-Source postfixes disappear into directly composed owned decisions; no self-patches or generic
-all-ingestion veto. Detailed composed scenarios are in the capability linked above.
+## Composition and ownership
 
-## UI audit and relocation
+S029 owns policy/catalog identity and maintenance transactions. S138 contributes its version-1
+Any/numeric/invalid state, weakly attached to the actual current row. Copy and rollback retain raw
+unknown bytes; there is no hidden archive for deleted rows and no import of the original mod's field.
+A later owned-schema migration requires its own backup, atomicity and restoration contract.
 
-| Source entry point / implementation | Purpose | Class | Megamod destination and rationale | Intentional change |
-| --- | --- | --- | --- | --- |
-| Injected native drug-policy column | Choose tolerance preference | Gameplay policy | Existing native row | Distinct Any/numeric 100%; no copied fixed-width reduction |
-| Source copy/save hooks | Retain row choice | Gameplay state | Native policy lifecycle through S029 | Owned schema and explicit invalid-state presentation |
-| No source bottom tab or settings window | No navigation to preserve | Not applicable | No new tab | Common settings hosts only the owned feature enable switch |
+S024 scheduled potential mood and tolerance are specified as a conjunction. Its future patient-treat
+selector must check the actual recipient without granting new self-recreation exceptions. These
+S024 producers are not implemented yet. S124/S134 likewise remain future producers with separate
+medical eligibility, dose history and shared pending-chemical ownership. S139 may later propose
+choices through owned state. No internal Harmony patch stack or universal ingestion veto is used.
 
-`drugTolerance.enabled` is authored on, Drug policies section before generation, through common
-Global default/Use global/Current save controls. Inherited saves resolve the current global value;
-dormant overrides remain, and all save controls/callbacks are disabled at main menu. Effect timing:
-next eligibility/editor refresh; no cancellation or reversal of an already executing dose. Exact
-save switching/world view and seven-language disabled/control layout require native verification.
-Individual row choices are save-local gameplay state and never use configuration inheritance.
+Core and Harmony are required. Prepatcher and the original mod are not dependencies; no XML
+Extensions or product Gateway dependency is introduced. Optional drug content uses resolved native
+capabilities; unsupported pharmacology is not guessed. No external provider adapter is required.
 
-## Own persistence and external integrations actually used
+## UI and configuration
 
-| Owned state or integration | Required contract | Behavior/errors/persistence | Limits | Verification |
-| --- | --- | --- | --- | --- |
-| Policy row tolerance choice | Own version-1 Any/numeric/invalid codec and S029 row/rollback boundary; native copy/Scribe admission remains DT-Q1 | Component copy and rollback retain immutable choices and raw unknown data; absent Any | No original field import; no hidden deleted-row archive; no native save claim yet | Focused Unit/Defs evidence; native copy, repair and save/reload still pending |
-| Common enable preference | C02 global/save/inheritance and game lifecycle | Preserve dormant overrides and row choices while off | No previous-save callback; next decision only | Main menu and save switching |
-| Native scheduled/joy routes | Current Core semantics and required Harmony | Narrow successful native choices; fail feature unavailable on unknown semantics | No medical/manual/refill expansion | Actual blocked/allowed native use |
+The row choice is save-local gameplay state in the existing native drug-policy manager. Following
+the user's 2026-11-12 correction, it uses the same native horizontal slider as the neighboring mood
+and recreation controls. There is no extra tolerance editor dialog or bottom tab. Numeric 100% and
+Any remain distinct. Actual adjustment uses native dragging; painting or an ordinary press preserves
+retained precision. Older modal-editor captures are historical to their exact builds.
 
-No genuine external adapter is currently required. Optional drug content uses current native
-capabilities; unsupported pharmacology is not guessed. Original APIs, consumers, identities, save
-imports and coexistence/drop-in tests are excluded. A later owned-schema migration requires a
-separate backup/staging/atomicity/restoration/postcondition contract before implementation.
+`drugTolerance.enabled` is default-on in Drug policies, through the common Global default,
+Use global and Current save model. Saves resolve the current inherited global value and retain
+dormant overrides. Save controls and callbacks are disabled at the main menu. Changes affect the next
+eligible selection/editor refresh and do not cancel or reverse an executing dose.
 
-## Implementation and coverage
+An active original `seohyeon.onlyiftolerancebelow` triggers the specified bounded startup warning
+and best-effort ordinary effective-off behavior. Stored preferences remain intact; merely installed
+but inactive does not trigger suppression. The original mod is never edited or unpatched.
+This policy's native workflow remains unaccepted; it is not a coexistence promise.
 
-| Behavior | Implemented portion | Deviation / conflict | Missing / omitted | Target/tests/live evidence |
-| --- | --- | --- | --- | --- |
-| DT-02–04, DT-07–08 | Host-safe comparison/codec, native reader, guarded selection/social patches, direct-joy exception proof and registered atomic runtime | Any differs from numeric 100%; missing hediff zero; native rejection remains; no medical/manual/refill hook | Further numeric boundaries, shared chemicals, caravan, refill and future S024 recipient call | Reviewed native scheduled/direct-joy/social zero/Any and positive-trait routes, drinkless social recreation and explicit manual Drink exclusion; no full S138 acceptance |
-| DT-06 | Exact native-row weak state, S029 capture/restore and native four-target copy/Scribe support | State follows row identity; deleted rows have no restore archive | Persistence-only root gate does not prove the new editor or routine selection | Root evidence: `artifacts/Implementation/megamod-p0/revision20-native-verification.md` |
-| DT-01, DT-05, remaining DT-08 | Reviewed drafts/layout/typed bridge, contextual Window, common setting/provider policy, atomic runtime and seven catalogs | Requested preference remains editable while effective capability is unavailable; medical scope stays separate | Original suppression, save override/switching, remaining route exclusions and seven-language presentation | Reviewed English native Any/zero/100/decimal/invalid input and Apply/Cancel; global off/on preserves the executing dose and restricts the next selection; [design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/) retain wider obligations |
+## Native evidence and limits
 
-Active original `seohyeon.onlyiftolerancebelow`: bounded startup warning plus best-effort suppression
-of `drugTolerance.enabled` through the ordinary effective-off path, with the timing/limitations
-above. Stored preferences are not rewritten; installed-inactive does nothing; unrelated features
-remain. Do not modify/unpatch the original or promise rollback of all effects. No original-provider
-compatibility matrix. Core/Harmony required; Prepatcher/source mod are not dependencies; no planned
-XML/XML Extensions or product Gateway dependency. Native semantic admission still required.
+The owning tasks link the earlier persistence, map routine/social, strict-boundary/shared-chemical,
+global/save/in-flight, two-save/main-menu and independent-refill gates. Those records include exact
+reviewed builds, causal player actions and personally inspected physical-item/Health outcomes.
 
-## Verification and acceptance
+Recent local ledgers under `artifacts/Implementation/megamod-p0/`:
 
-The 2026-11-11 component tranche has nonzero focused RED/GREEN in honest Unit and Defs tiers;
-the local ledger is `artifacts/Implementation/megamod-p0/s138-state-batch/handoff.md`.
-That original tranche installed no native hooks; the later root-owned persistence group and its
-scoped acceptance are recorded in the revision20 evidence above. The revision21 enforcement/editor
-packet is reviewed and registered, with its manifests and focused receipts in
-`artifacts/Implementation/megamod-p0/s138-revision21/`. The English editor workflow passed a reviewed
-78-step run after correcting inherited native-method identity. The subsequent scheduled and direct
-recreation workflows passed101/96steps; root inspected all19 captures of physical Beer use or
-retention, actual drinking and resulting native Health. Any, strict zero, the direct-only positive
-DrugDesire exception and explicit manual Drink exclusion are observed scoped results. Exact builds,
-actions, process identities, full logs and cleanup are retained in the revision21 ledger and
-`artifacts/Implementation/megamod-p0/s138-native-routes/native-verification.md`.
-The next reviewed batch at7899799 passed96 social steps and153 settings-transition steps. Root
-inspected all26 causal captures: native table/chair social recreation continued without a drink
-for both zero-limit pawns, while Any physically drank; native global off/on preserved an executing
-dose and restricted the next selection. Exact evidence, including the corrected fixture selection,
-is under `s138-native-social-routes/native-verification.md` and
-`s138-native-settings-routes/native-verification.md` in the same local evidence root. These are
-scoped social and global-setting results; party events and other configuration/lifecycle cases remain.
-DT-Q1–4 retain their remaining obligations; these slices do not accept all native routes or S138.
-The reviewed positive-boundary A run at805580c passed61steps/all8 root-inspected captures: an
-actual native decision rejected seeded20% equality, then native decay enabled an ordinary later
-same-Beer ingestion. Exact evidence is `s138-native-boundaries/positive-native-verification.md`
-under the same local root. Initial seeded tolerance is not natural-accumulation evidence; Any/100,
-shared chemicals and remaining route/lifecycle gates are still open.
-Independent review and integrated product checks are retained separately from live evidence. The
-orchestrator must personally observe the reviewed build's actual native policy edits, routine
-consumption/refusal, patient treats, medical independence, persistence and configuration transitions
-in minimized isolated Gateway runs. Include focused warning/effective-off cases, seven languages,
-exact build/mod/config identity, causal captures, complete relevant logs and cleanup. No general
-compatibility or addiction-safety claim follows from source inspection. The exercised inventory,
-routine ingestion and manual routes were reachable without changing cost, cadence or supply rules;
-no refill, optimal-schedule or broader pharmacology claim follows. Remaining balance and composed
-job-reachability review is pending with the unrun workflows.
+| Checkpoint | Scoped result | Ledger |
+| --- | --- | --- |
+| `812ae49` | Native slider editor/layout: 131 steps, all 15 captures inspected | `s138-native-slider/native-verification.md` |
+| `4d4d57e` | Caravan scheduled tolerance: 148 steps, all 13 captures inspected; zero retains two Beer/no effects, Any consumes one and keeps the native interval | `s138-caravan-consumer/native-verification.md` |
+| `90f9245` | Seven fresh language runs: 392 steps, all 49 captures inspected; native drag, inactive retention and both tooltips | `s138-language-layout/slider-language-native-verification.md` |
+
+The beta lacks Core translations. The launcher temporarily supplies language metadata so the real
+owned catalogs render alongside Core's accented-English fallback; cleanup removes that metadata.
+These observations do not accept future fully translated Core geometry. Numeric culture remained
+en-US in all seven runs; there is no removed-text-editor or alternate decimal-parser claim.
+
+Every accepted slice retains exact package/process/mod/config identity, complete classified logs,
+native console inspection and graceful cleanup. No broad compatibility, addiction safety or optimal
+schedule follows. The exercised routes preserve native costs, cadence, supplies and health effects.
+Full feature acceptance and the remaining composed playability review stay open.
