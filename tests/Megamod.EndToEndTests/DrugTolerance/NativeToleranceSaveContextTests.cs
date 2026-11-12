@@ -13,6 +13,7 @@ using Megamod.Features.DrugTolerance.Core;
 using Megamod.Features.DrugTolerance.Runtime;
 using Megamod.Settings;
 using RimWorld;
+using RimWorld.Planet;
 using RimWorldDevGateway.EndToEndTesting;
 using UnityEngine;
 using Verse;
@@ -49,6 +50,8 @@ internal sealed class NativeToleranceSaveContextFixture
     private static readonly FieldInfo RuntimeField = Field(typeof(MegamodMod), "drugTolerance");
     private static readonly FieldInfo PersistenceField = Field(typeof(MegamodMod), "drugTolerancePersistence");
     private static readonly FieldInfo SaveValuesField = Field(typeof(SettingsStore), "saveValues");
+    private static readonly FieldInfo SettingsBindingField = Field(typeof(SettingsRuntime), "binding");
+    private static readonly FieldInfo PawnPolicyField = Field(typeof(Pawn_DrugPolicyTracker), "curPolicy");
     private static readonly FieldInfo ChewingField = Field(typeof(JobDriver_Ingest), "chewing");
     private static readonly FieldInfo ToilsField = Field(typeof(JobDriver), "toils");
     private static readonly MethodInfo ColumnMeasure = typeof(NativeDrugToleranceRuntime).GetMethod("MeasureColumn", BindingFlags.Static | BindingFlags.NonPublic)
@@ -68,6 +71,7 @@ internal sealed class NativeToleranceSaveContextFixture
     private Game? cleanupBoundGame;
     private Map map = null!;
     private int mapId, policyId, savedTick, savedToil = -1, savedTicksLeft = -1;
+    private int loadedTick = -1, loadedToil = -1, loadedTicksLeft = -1;
     private DrugPolicy policy = null!;
     private DrugPolicyEntry beerEntry = null!;
     private ThingDef beerDef = null!;
@@ -88,6 +92,7 @@ internal sealed class NativeToleranceSaveContextFixture
     private string pointer = null!;
     private string choice = null!;
     private bool saveRequested, reloaded, traceFault, expectedEnabled = true, expectedInheritance = true;
+    private string? traceFailure;
     private string? expectedOverride;
     private int nativeOperations, screenshots, waitSeconds, saves, settingsScrollClicks;
     private string phase = "arranged preconditions";
@@ -113,6 +118,7 @@ internal sealed class NativeToleranceSaveContextFixture
         persistence = PersistenceField.GetValue(mod) as DrugTolerancePersistencePatch ?? throw new InvalidOperationException("Actual persistence support unavailable.");
         settingsView = new(() => pointer, DrugToleranceSettings.Enabled.Id);
         EndToEndAssert.True(SaveValuesField.FieldType == typeof(Dictionary<string, SaveSettingValue>) &&
+            SettingsBindingField.FieldType == typeof(SaveSettingsBinding) && PawnPolicyField.FieldType == typeof(DrugPolicy) &&
             ChewingField.FieldType == typeof(Toil) && ToilsField.FieldType == typeof(List<Toil>));
         var oldScroll = settingsView.Scroll; var oldSpeed = Find.TickManager.CurTimeSpeed;
         EndToEndAssert.False(File.Exists(SavePath));
@@ -254,7 +260,7 @@ internal sealed class NativeToleranceSaveContextFixture
         yield return Shot("the same native ingestion job still holds Beer after applying zero");
         foreach (var step in SaveAndRebind()) yield return step;
         yield return Frame("frame the fresh loaded pawn and the same serialized physical Beer");
-        yield return Select(first); yield return Shot("the reloaded native job resumes at its saved chewing progress with the same dose");
+        yield return Select(first); yield return Shot("the reloaded native job retains the same dose after its one initialization tick");
         foreach (var step in FinishDose(first)) yield return step;
         int blocked = next.Decisions.Count;
         foreach (var step in Undraft(context, next)) yield return step;
@@ -375,6 +381,8 @@ internal sealed class NativeToleranceSaveContextFixture
             RequireCurrent();
             EndToEndAssert.False(saveRequested, "This case permits exactly one native save/load request.");
             EndToEndAssert.True(Find.TickManager.Paused, "The native game must stay paused before saving; speed=" + Find.TickManager.CurTimeSpeed);
+            EndToEndAssert.False(DebugSettings.fastEcology, "The inspected native load tick requires ordinary ecology ticking.");
+            foreach (var subject in subjects) AssertNormalPawnTick(subject.Pawn, "before save: " + subject.Name);
             EndToEndAssert.False(File.Exists(SavePath), "The unique disposable save must not already exist: " + SaveName);
             AssertClosedEditors();
             EndToEndAssert.False(GameDataSaveLoader.SavingIsTemporarilyDisabled, "Native save admission must permit this real save action.");
@@ -383,12 +391,14 @@ internal sealed class NativeToleranceSaveContextFixture
             {
                 AssertSelected(subjects[0]); EndToEndAssert.True(IsChewing(subjects[0]) && subjects[0].Ingestions == 0);
                 savedToil = subjects[0].Pawn.jobs.curDriver.CurToilIndex; savedTicksLeft = subjects[0].Pawn.jobs.curDriver.ticksLeftThisToil;
+                EndToEndAssert.True(savedTicksLeft > 1, "The original dose must remain in chewing after the one native initialization tick; remaining=" + savedTicksLeft);
             }
             else EndToEndAssert.True(subjects.All(IsDraftedHold));
             saveRequested = true; phase = "native save/load requested";
         });
         yield return new CheckpointStep("immutable pre-save job/source/settings evidence", _ => Evidence());
         yield return new SaveLoadActionStep("native save and reload of this exact save-context case", SaveName);
+        yield return new CheckpointStep("observe actual fresh loaded values before rebinding or validating progress", _ => LoadedEvidence());
         yield return new AssertionStep("resolve every current reference from the newly loaded Game", _ => RebindLoaded());
         yield return new CheckpointStep("fresh loaded identities before further native action", _ => Evidence());
     }
@@ -396,40 +406,127 @@ internal sealed class NativeToleranceSaveContextFixture
     private void RebindLoaded()
     {
         var current = Current.Game;
-        EndToEndAssert.True(saveRequested && !reloaded && current != null && !ReferenceEquals(current, initial) &&
-            current.PlayerHasControl && !LongEventHandler.AnyEventNowOrWaiting && Current.ProgramState == ProgramState.Playing &&
-            current.CurrentMap.uniqueID == mapId && current.tickManager.Paused && current.tickManager.TicksGame == savedTick);
-        var loadedPolicy = current!.drugPolicyDatabase.AllPolicies.Single(item => item.id == policyId && item.label == marker);
-        var newBinding = settings.CurrentBinding ?? throw new InvalidOperationException("The new Game has no active settings binding.");
-        EndToEndAssert.True(binding.IsRevoked && !ReferenceEquals(newBinding, binding) && newBinding.Generation != binding.Generation &&
-            newBinding.SaveIdentity == binding.SaveIdentity && !ReferenceEquals(loadedPolicy, policy) && !ReferenceEquals(loadedPolicy[beerDef], beerEntry));
-        EndToEndAssert.True(serializedSave.Values.OrderBy(pair => pair.Key).SequenceEqual(settings.Store.ExportSave(newBinding).Values.OrderBy(pair => pair.Key)));
+        EndToEndAssert.True(saveRequested && !reloaded, "Rebinding follows exactly one requested native load.");
+        EndToEndAssert.True(current != null && !ReferenceEquals(current, initial), "Native load must replace the original Game object.");
+        EndToEndAssert.True(current!.PlayerHasControl, "The loaded Game must be player-controlled.");
+        EndToEndAssert.False(LongEventHandler.AnyEventNowOrWaiting, "The native load must finish its long events before rebinding.");
+        EndToEndAssert.Equal(ProgramState.Playing, Current.ProgramState, "The loaded Game must be Playing.");
+        var loadedMap = current.CurrentMap ?? throw new EndToEndAssertionException("The loaded Game must have a current map.");
+        EndToEndAssert.Equal(mapId, loadedMap.uniqueID, "The loaded current map must retain the original immutable map ID.");
+        EndToEndAssert.True(current.tickManager.Paused, "The native provider must restore the paused state.");
+        EndToEndAssert.False(DebugSettings.fastEcology, "The exact native initialization tick requires ordinary ecology ticking.");
+        // Game.LoadGame performs one DoSingleTick before setting Paused; this is not arbitrary slack.
+        EndToEndAssert.Equal(checked(savedTick + 1), current.tickManager.TicksGame, "Paused native load performs exactly one initialization tick.");
+        loadedTick = current.tickManager.TicksGame;
+        var policies = current.drugPolicyDatabase.AllPolicies.Where(item => item.id == policyId && item.label == marker).ToArray();
+        EndToEndAssert.Equal(1, policies.Length, "Resolve exactly one loaded policy by original immutable ID and owned marker.");
+        var loadedPolicy = policies[0];
+        var newBinding = SettingsBindingField.GetValue(settings) as SaveSettingsBinding
+            ?? throw new InvalidOperationException("The native lifecycle pump has not published a loaded settings binding.");
+        EndToEndAssert.True(ReferenceEquals(settings.LifecycleReceipt.Owner, current), "The native lifecycle receipt must own the actual loaded Game.");
+        EndToEndAssert.False(newBinding.IsRevoked, "The native published loaded binding must not be revoked.");
+        EndToEndAssert.True(binding.IsRevoked, "The original save binding must be revoked by native load.");
+        EndToEndAssert.False(ReferenceEquals(newBinding, binding), "Native load must publish a fresh binding object.");
+        EndToEndAssert.True(newBinding.Generation != binding.Generation, "The current binding must have a fresh activation generation.");
+        EndToEndAssert.Equal(binding.SaveIdentity, newBinding.SaveIdentity, "The serialized save identity must survive loading.");
+        EndToEndAssert.False(ReferenceEquals(loadedPolicy, policy), "Resolve a new policy object after loading.");
+        EndToEndAssert.False(ReferenceEquals(loadedPolicy[beerDef], beerEntry), "Resolve a new row object after loading.");
+        EndToEndAssert.True(serializedSave.Values.OrderBy(pair => pair.Key).SequenceEqual(settings.Store.ExportSave(newBinding).Values.OrderBy(pair => pair.Key)),
+            "Every serialized save setting must survive the native roundtrip unchanged.");
         foreach (var subject in subjects)
         {
-            var loadedPawn = current.CurrentMap.mapPawns.AllPawnsSpawned.Single(item => item.ThingID == subject.PawnId && item.Name?.ToStringFull == subject.FullName);
-            var loadedDose = loadedPawn.inventory.innerContainer.Concat(loadedPawn.carryTracker.innerContainer).Single(item => item.ThingID == subject.SourceId);
-            EndToEndAssert.True(!ReferenceEquals(loadedPawn, subject.Pawn) && !ReferenceEquals(loadedDose, subject.Source) && loadedDose.def == beerDef && loadedDose.stackCount == 1 &&
-                ReferenceEquals(loadedPawn.drugs.CurrentPolicy, loadedPolicy));
+            var pawns = loadedMap.mapPawns.AllPawnsSpawned.Where(item => item.ThingID == subject.PawnId && item.Name?.ToStringFull == subject.FullName).ToArray();
+            EndToEndAssert.Equal(1, pawns.Length, subject.Name + " must resolve once by its original ID/name.");
+            var loadedPawn = pawns[0]; AssertNormalPawnTick(loadedPawn, "after load: " + subject.Name);
+            var doses = loadedPawn.inventory.innerContainer.Concat(loadedPawn.carryTracker.innerContainer).Where(item => item.ThingID == subject.SourceId).ToArray();
+            EndToEndAssert.Equal(1, doses.Length, subject.Name + " must still hold its exact original physical dose.");
+            var loadedDose = doses[0];
+            EndToEndAssert.False(ReferenceEquals(loadedPawn, subject.Pawn), subject.Name + " must have a fresh loaded Pawn reference.");
+            EndToEndAssert.False(ReferenceEquals(loadedDose, subject.Source), subject.Name + " must have a fresh loaded source reference.");
+            EndToEndAssert.True(loadedDose.def == beerDef && loadedDose.stackCount == 1, subject.Name + " must retain the same single Beer.");
+            EndToEndAssert.True(ReferenceEquals(StoredPolicy(loadedPawn), loadedPolicy), subject.Name + " must already store the current loaded policy without default-policy fallback.");
             if (subject.Job != null)
             {
                 var loadedJob = loadedPawn.CurJob;
-                EndToEndAssert.True(loadedJob != null && !ReferenceEquals(loadedJob, subject.Job) && loadedJob.loadID == subject.JobId &&
-                    loadedJob.def == JobDefOf.Ingest && !loadedJob.playerForced && loadedJob.jobGiver?.GetType() == typeof(JobGiver_TakeDrugsForDrugPolicy) &&
-                    ReferenceEquals(loadedJob.targetA.Thing, loadedDose));
+                EndToEndAssert.True(loadedJob != null && !ReferenceEquals(loadedJob, subject.Job), subject.Name + " must have a fresh serialized current Job reference.");
+                EndToEndAssert.Equal(subject.JobId, loadedJob!.loadID, subject.Name + " must retain the original selected job loadID.");
+                EndToEndAssert.True(loadedJob.def == JobDefOf.Ingest && !loadedJob.playerForced, subject.Name + " must retain ordinary native ingestion.");
+                EndToEndAssert.True(loadedJob.jobGiver?.GetType() == typeof(JobGiver_TakeDrugsForDrugPolicy), subject.Name + " must retain its actual scheduled job giver.");
+                EndToEndAssert.True(ReferenceEquals(loadedJob.targetA.Thing, loadedDose), subject.Name + " must keep the exact loaded physical source as job target.");
                 subject.Job = loadedJob;
             }
             subject.Pawn = loadedPawn; subject.Source = loadedDose;
         }
-        game = current; map = current.CurrentMap; policy = loadedPolicy; beerEntry = loadedPolicy[beerDef]; binding = newBinding; reloaded = true;
+        game = current; map = loadedMap; policy = loadedPolicy; beerEntry = loadedPolicy[beerDef]; binding = newBinding; reloaded = true;
         AssertClosedEditors();
         if (resume)
         {
-            AssertSelected(subjects[0]); EndToEndAssert.True(IsChewing(subjects[0]) && subjects[0].Ingestions == 0 &&
-                subjects[0].Pawn.jobs.curDriver.CurToilIndex == savedToil && subjects[0].Pawn.jobs.curDriver.ticksLeftThisToil == savedTicksLeft);
+            AssertSelected(subjects[0]);
+            EndToEndAssert.True(IsChewing(subjects[0]), "The loaded original job must still be executing its reconstructed native chewing toil with the same carried dose.");
+            EndToEndAssert.Equal(0, subjects[0].Ingestions, "The one native load tick must not complete this deliberately unfinished dose.");
+            loadedToil = subjects[0].Pawn.jobs.curDriver.CurToilIndex;
+            loadedTicksLeft = subjects[0].Pawn.jobs.curDriver.ticksLeftThisToil;
+            EndToEndAssert.Equal(savedToil, loadedToil, "Native load must restore the same current chewing toil index.");
+            EndToEndAssert.Equal(savedTicksLeft - 1, loadedTicksLeft, "The one native load tick advances the same job by exactly one chewing tick.");
             AssertRetained(subjects[1]);
         }
-        else foreach (var subject in subjects) { EndToEndAssert.True(IsDraftedHold(subject)); AssertRetained(subject); }
+        else foreach (var subject in subjects) { EndToEndAssert.True(IsDraftedHold(subject), subject.Name + " must retain its native drafted hold after loading."); AssertRetained(subject); }
         phase = "fresh native save activation"; RequireCurrent();
+    }
+
+    private static void AssertNormalPawnTick(Pawn pawn, string context) => EndToEndAssert.True(pawn.Spawned &&
+        !pawn.Suspended && !pawn.IsWorldPawn() && pawn.def.tickerType == TickerType.Normal,
+        context + ": exact load progress requires the inspected spawned, nonsuspended normal Pawn.Tick path.");
+
+    private static DrugPolicy? StoredPolicy(Pawn pawn) => pawn.drugs == null ? null : PawnPolicyField.GetValue(pawn.drugs) as DrugPolicy;
+
+    private IReadOnlyDictionary<string, string> LoadedEvidence()
+    {
+        // Read only actual Current.Game references resolved by immutable IDs; never rebind or create state here.
+        var current = Current.Game; var currentMap = current?.CurrentMap;
+        // CurrentBinding pumps lifecycle work; this diagnostic observes the already-published field only.
+        var currentBinding = SettingsBindingField.GetValue(settings) as SaveSettingsBinding;
+        var result = new Dictionary<string, string>
+        {
+            ["saveRequested"] = saveRequested.ToString(), ["alreadyRebound"] = reloaded.ToString(),
+            ["newGame"] = (current != null && !ReferenceEquals(current, initial)).ToString(),
+            ["programState"] = Current.ProgramState.ToString(), ["longEvent"] = LongEventHandler.AnyEventNowOrWaiting.ToString(),
+            ["playerControl"] = current?.PlayerHasControl.ToString() ?? "no Game", ["map"] = currentMap?.uniqueID.ToString() ?? "none",
+            ["savedTick"] = savedTick.ToString(), ["expectedLoadTick"] = checked(savedTick + 1).ToString(),
+            ["actualLoadTick"] = current?.tickManager.TicksGame.ToString() ?? "no Game", ["paused"] = current?.tickManager.Paused.ToString() ?? "no Game",
+            ["fastEcology"] = DebugSettings.fastEcology.ToString(), ["savedToil"] = savedToil.ToString(), ["savedTicksLeft"] = savedTicksLeft.ToString(),
+            ["oldBindingRevoked"] = binding.IsRevoked.ToString(), ["binding"] = currentBinding == null ? "none" :
+                currentBinding.SaveIdentity + ":generation=" + currentBinding.Generation + ":revoked=" + currentBinding.IsRevoked,
+            ["lifecycleOwnerIsCurrent"] = ReferenceEquals(settings.LifecycleReceipt.Owner, current).ToString(),
+            ["nativeWindows"] = string.Join(";", Find.WindowStack.Windows.Select(value => value.GetType().FullName))
+        };
+        var policies = current?.drugPolicyDatabase.AllPolicies.Where(item => item.id == policyId && item.label == marker).ToArray() ?? Array.Empty<DrugPolicy>();
+        result["policyMatches"] = policies.Length.ToString();
+        if (policies.Length == 1)
+        {
+            var rows = Enumerable.Range(0, policies[0].Count).Select(index => policies[0][index]).Where(row => row?.drug == beerDef).ToArray();
+            result["rowMatches"] = rows.Length.ToString();
+            if (rows.Length == 1) result["loadedChoice"] = NativeDrugToleranceState.ReadEncoded(rows[0]) ?? "absent";
+        }
+        foreach (var subject in subjects)
+        {
+            var pawns = currentMap?.mapPawns.AllPawnsSpawned.Where(value => value.ThingID == subject.PawnId && value.Name?.ToStringFull == subject.FullName).ToArray() ?? Array.Empty<Pawn>();
+            result[subject.Name + " matches"] = pawns.Length.ToString();
+            if (pawns.Length != 1) continue;
+            var pawn = pawns[0]; var job = pawn.CurJob; var driver = pawn.jobs?.curDriver;
+            var inventory = pawn.inventory?.innerContainer?.AsEnumerable() ?? Enumerable.Empty<Thing>();
+            var carried = pawn.carryTracker?.innerContainer?.AsEnumerable() ?? Enumerable.Empty<Thing>();
+            var doses = inventory.Concat(carried).Where(value => value.ThingID == subject.SourceId).ToArray();
+            result[subject.Name] = "pawn=" + pawn.ThingID + ";samePreloadPawn=" + ReferenceEquals(pawn, subject.Pawn) +
+                ";spawned=" + pawn.Spawned + ";suspended=" + pawn.Suspended + ";ticker=" + pawn.def.tickerType + ";drafted=" + pawn.Drafted +
+                ";storedPolicy=" + StoredPolicy(pawn)?.id + ";savedJob=" + subject.JobId + ";job=" + job?.loadID + ";jobDef=" + job?.def?.defName +
+                ";giver=" + job?.jobGiver?.GetType().FullName + ";playerForced=" + job?.playerForced + ";target=" + job?.targetA.Thing?.ThingID +
+                ";driver=" + driver?.GetType().FullName + ";toil=" + driver?.CurToilIndex + ";ticksLeft=" + driver?.ticksLeftThisToil +
+                ";carried=" + pawn.carryTracker?.CarriedThing?.ThingID + ";sourceMatches=" + doses.Length + ";history=" + pawn.drugs?.HasEverTaken(beerDef);
+            if (doses.Length == 1) result[subject.Name + " source"] = doses[0].ThingID + ":def=" + doses[0].def.defName +
+                ":count=" + doses[0].stackCount + ":destroyed=" + doses[0].Destroyed + ":samePreloadSource=" + ReferenceEquals(doses[0], subject.Source);
+        }
+        return result;
     }
 
     private static void AssertClosedEditors()
@@ -521,10 +618,16 @@ internal sealed class NativeToleranceSaveContextFixture
     private static void BeginDecision(Pawn_DrugPolicyTracker __instance, ThingDef __0)
     {
         var fixture = active; var subject = fixture?.FindSubject(__instance.pawn);
-        if (fixture == null || subject == null || __0 != fixture.beerDef) return;
+        if (fixture == null || subject == null || __0 != fixture.beerDef || fixture.traceFault) return;
         if (subject.Decisions.Count >= 1024) { fixture.traceFault = true; return; }
+        var storedPolicy = PawnPolicyField.GetValue(__instance) as DrugPolicy;
+        if (storedPolicy == null)
+        { fixture.traceFault = true; fixture.traceFailure = "Native scheduled observer found no stored policy for " + subject.PawnId; return; }
+        var rows = Enumerable.Range(0, storedPolicy.Count).Select(index => storedPolicy[index]).Where(row => row?.drug == __0).ToArray();
+        if (rows.Length != 1)
+        { fixture.traceFault = true; fixture.traceFailure = "Native scheduled observer found " + rows.Length + " stored Beer rows for " + subject.PawnId; return; }
         var decision = new Decision { Tick = Find.TickManager.TicksGame, Epoch = fixture.reloaded ? 1 : 0,
-            Choice = NativeDrugToleranceState.ReadEncoded(__instance.CurrentPolicy[__0]) ?? "absent",
+            Choice = NativeDrugToleranceState.ReadEncoded(rows[0]) ?? "absent",
             Effective = fixture.settings.Store.GetEffective(DrugToleranceSettings.Enabled), History = __instance.HasEverTaken(__0),
             Before = fixture.Severity(subject, fixture.toleranceDef) };
         subject.Decisions.Add(decision); subject.Pending.Push(decision);
@@ -560,7 +663,7 @@ internal sealed class NativeToleranceSaveContextFixture
         Current.ProgramState == ProgramState.Playing && map.uniqueID == mapId, "Refuse stale or unrelated Game/map references.");
     private void RequireCurrent()
     {
-        RequireGame(); EndToEndAssert.False(traceFault);
+        RequireGame(); EndToEndAssert.False(traceFault, traceFailure ?? "Native observer provenance failed.");
         EndToEndAssert.True(ReferenceEquals(settings.CurrentBinding, binding) && !binding.IsRevoked && settings.SaveLifecycleAvailable &&
             binding.SaveIdentity == initialSave.SaveIdentity && persistence.CanUseChoices &&
             ReferenceEquals(RuntimeField.GetValue(mod), runtime) && ReferenceEquals(PersistenceField.GetValue(mod), persistence));
@@ -594,7 +697,7 @@ internal sealed class NativeToleranceSaveContextFixture
             beerEntry.daysFrequency == 1f && beerEntry.onlyIfMoodBelow == 1f && beerEntry.onlyIfJoyBelow == 1f);
         foreach (var subject in subjects)
             EndToEndAssert.True(subject.Pending.Count == 0 && subject.Pawn.Spawned && ReferenceEquals(subject.Pawn.Map, map) &&
-                subject.Pawn.ThingID == subject.PawnId && ReferenceEquals(subject.Pawn.drugs.CurrentPolicy, policy) &&
+                subject.Pawn.ThingID == subject.PawnId && ReferenceEquals(StoredPolicy(subject.Pawn), policy) &&
                 !subject.Pawn.Dead && !subject.Pawn.Downed && !subject.Pawn.InMentalState);
     }
     private void AssertGlobals() => EndToEndAssert.True(initialGlobals.Values.OrderBy(pair => pair.Key)
@@ -684,6 +787,7 @@ internal sealed class NativeToleranceSaveContextFixture
             ["available"] = runtime.Available.ToString(), ["persistenceCurrent"] = persistence.CanUseChoices.ToString(), ["traceOwner"] = traceOwner.Id,
             ["retainedAtomicReceipts"] = retainedAdmission,
             ["saveTick"] = savedTick.ToString(), ["savedToil"] = savedToil.ToString(), ["savedTicksLeft"] = savedTicksLeft.ToString(),
+            ["loadTick"] = loadedTick.ToString(), ["loadedToil"] = loadedToil.ToString(), ["loadedTicksLeft"] = loadedTicksLeft.ToString(),
             ["nativeOperations"] = nativeOperations.ToString(), ["screenshots"] = screenshots.ToString(), ["waitSeconds"] = waitSeconds.ToString(), ["saves"] = saves.ToString(),
             ["settingsScrollClicks"] = settingsScrollClicks.ToString(), ["saveLoadReserveSeconds"] = "300", ["synchronousReserveSeconds"] = "180",
             ["nativeOpenTab"] = Find.MainTabsRoot.OpenTab?.defName ?? "none", ["paused"] = Find.TickManager.Paused.ToString(),

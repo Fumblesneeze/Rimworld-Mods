@@ -104,9 +104,11 @@ Prefer action → wait → observation steps that exercise the same native path 
   `JobDriver_Ingest.GainingNutritionNow` excludes non-nutritive drugs. Observe their actual native
   chewing-toil identity with the same job and physical source instead; never add nutrition or
   change a Def to make an observer succeed.
-  Inspect getter side effects too: `MainButtonDef.TabWindow` can construct a window after load.
-  UI assertions and evidence must read actual existing stacked windows or an inert current cache,
-  with exact identity/cardinality checks, rather than create a default window to prove closed state.
+  Inspect getter side effects too: `MainButtonDef.TabWindow` can construct a window after load,
+  pawn `CurrentPolicy` can choose/create a default, and `SettingsRuntime.CurrentBinding` can pump
+  pending lifecycle work. Fresh-load evidence must inspect existing windows, stored policy and
+  already-published binding fields with checked shapes and identities, including malformed states;
+  it must not create a default or complete the lifecycle it claims to observe.
 
 - Budget every group honestly. Its frame, game-tick, and wall-time caps must exceed the sum of all
   sequential per-step maxima plus bounded action/screenshot/assertion/save-load overhead. A combined
@@ -132,6 +134,11 @@ Prefer action → wait → observation steps that exercise the same native path 
 - At stable checkpoints assert all relevant persistent state. Save/load tests compare exact Thing IDs,
   stack counts, ingredients, every serving/component field, sanitation, selection/graphic provenance,
   and holder ownership—not one representative field.
+  Separate serialized values from native load initialization. Inspect the selected game's load path:
+  pause-on-load may follow a mandatory native tick, advancing both game time and an executing job.
+  Retain saved and fresh loaded IDs/ticks/toil progress before assertions, prove the exact applicable
+  native delta and its preconditions, and preserve job/source identity. Never force loaded values back
+  or add arbitrary timing tolerance to satisfy a zero-progress assumption.
 - If time legitimately evolves state during a persistence-only fixture, disable that subsystem through
   the narrow product setting, register restoration before seeding state, and do not claim the fixture
   proves the disabled behavior.
