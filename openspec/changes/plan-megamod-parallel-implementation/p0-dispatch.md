@@ -674,3 +674,10 @@ No registration, shared helper, BCL patch, generic observation or stage-body ext
 this lease. The closed generic/interface stage gate remains separately allocated. Root retains
 project links, installs, games, integration and commits. This refines sequencing without removing
 any positive profile, native scenario, feature or P0–P8 obligation.
+
+During the corrected D/E native batch, `native_input_binding` has an artifact-only research lease
+for the actual Human adult inputs and drug effect-factor static curve needed by the committed F0
+snapshot. It inspects existing authorities and exact native APIs under ignored
+`s139-native-facts/native-input-binding`; no compiled/spec/project edits, tests, builds, installation
+or game control are delegated. Extraction, effective-method proof and still-unwired applied-save
+content authority remain distinct. Root decides the later implementation/native binding scope.

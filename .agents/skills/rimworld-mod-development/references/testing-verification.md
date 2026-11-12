@@ -104,6 +104,9 @@ Prefer action → wait → observation steps that exercise the same native path 
   `JobDriver_Ingest.GainingNutritionNow` excludes non-nutritive drugs. Observe their actual native
   chewing-toil identity with the same job and physical source instead; never add nutrition or
   change a Def to make an observer succeed.
+  Inspect getter side effects too: `MainButtonDef.TabWindow` can construct a window after load.
+  UI assertions and evidence must read actual existing stacked windows or an inert current cache,
+  with exact identity/cardinality checks, rather than create a default window to prove closed state.
 
 - Budget every group honestly. Its frame, game-tick, and wall-time caps must exceed the sum of all
   sequential per-step maxima plus bounded action/screenshot/assertion/save-load overhead. A combined
@@ -141,9 +144,11 @@ Prefer action → wait → observation steps that exercise the same native path 
   a stale or partial loaded Game must not skip safe renderer-scroll or other process-state restoration.
 - Frame related actors/Things with the camera, then select only the evidence target before a full-frame
   screenshot. RimWorld multi-selection hides the ordinary single-Thing inspect pane.
-  Selection and Health/Gear captures can reopen the native Inspect tab. If a later save/load boundary
-  requires no open main tab, use the native inspect-pane close action after the last capture;
-  closing a settings dialog or Assign does not establish that later selection left every tab closed.
+  Distinguish the selected pawn's inner Health/Gear pane from the main Inspect tab: native selection
+  can reopen Inspect on later GUI frames after a successful pane close. Use actual native save
+  eligibility and closed owned settings/editor windows for save boundaries; do not require a benign
+  Inspect main tab to stay absent while keeping its pawn selected. Verify the needed inner-pane state
+  separately, and do not infer later-frame state from one synchronous native close result.
 - Wait for `Game.PlayerHasControl` and a valid player faction before incidents/jobs/reset. Eliminate
   `Could not find player faction` sequencing errors; a green assertion with an error-severity log is
   not acceptable evidence.

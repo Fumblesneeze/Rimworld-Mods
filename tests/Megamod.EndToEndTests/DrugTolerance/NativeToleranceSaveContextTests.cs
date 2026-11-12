@@ -376,9 +376,8 @@ internal sealed class NativeToleranceSaveContextFixture
             EndToEndAssert.False(saveRequested, "This case permits exactly one native save/load request.");
             EndToEndAssert.True(Find.TickManager.Paused, "The native game must stay paused before saving; speed=" + Find.TickManager.CurTimeSpeed);
             EndToEndAssert.False(File.Exists(SavePath), "The unique disposable save must not already exist: " + SaveName);
-            EndToEndAssert.True(Find.MainTabsRoot.OpenTab == null, "Native tabs must be closed before saving; open=" + Find.MainTabsRoot.OpenTab?.defName);
-            EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ModSettings>(), "Native settings must be closed before saving.");
-            EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>(), "Native policy manager must be closed before saving.");
+            AssertClosedEditors();
+            EndToEndAssert.False(GameDataSaveLoader.SavingIsTemporarilyDisabled, "Native save admission must permit this real save action.");
             savedTick = Find.TickManager.TicksGame; serializedSave = settings.Store.ExportSave(binding);
             if (resume)
             {
@@ -422,9 +421,7 @@ internal sealed class NativeToleranceSaveContextFixture
             subject.Pawn = loadedPawn; subject.Source = loadedDose;
         }
         game = current; map = current.CurrentMap; policy = loadedPolicy; beerEntry = loadedPolicy[beerDef]; binding = newBinding; reloaded = true;
-        EndToEndAssert.True(Find.MainTabsRoot.OpenTab == null && !Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>() &&
-            !Find.WindowStack.IsOpen<Dialog_DrugTolerance>() && !Find.WindowStack.IsOpen<Dialog_ModSettings>(),
-            "Loaded selection runs without reopening a policy/settings window in the new Game.");
+        AssertClosedEditors();
         if (resume)
         {
             AssertSelected(subjects[0]); EndToEndAssert.True(IsChewing(subjects[0]) && subjects[0].Ingestions == 0 &&
@@ -433,6 +430,24 @@ internal sealed class NativeToleranceSaveContextFixture
         }
         else foreach (var subject in subjects) { EndToEndAssert.True(IsDraftedHold(subject)); AssertRetained(subject); }
         phase = "fresh native save activation"; RequireCurrent();
+    }
+
+    private static void AssertClosedEditors()
+    {
+        // SelectorOnGUI reopens the benign Inspect main tab while selection remains. The native
+        // Gear close clears OpenTabType; an absent Inspect main tab is not a stable save requirement.
+        var open = Find.MainTabsRoot.OpenTab;
+        var mainTabs = Find.WindowStack.Windows.OfType<MainTabWindow>().ToArray();
+        EndToEndAssert.True(mainTabs.Length <= 1 && mainTabs.All(tab => tab.GetType() == typeof(MainTabWindow_Inspect) &&
+            ReferenceEquals(tab.def, MainButtonDefOf.Inspect)),
+            "Only the ordinary selected-pawn Inspect main tab may remain; open=" + open?.defName);
+        // Observe only stacked native windows; TabWindow's lazy getter would construct UI after load.
+        var inspect = mainTabs.SingleOrDefault() as MainTabWindow_Inspect;
+        EndToEndAssert.True(inspect == null || inspect.OpenTabType == null,
+            "The native inner inspection tab must stay closed; inner=" + inspect?.OpenTabType?.FullName);
+        EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ModSettings>(), "Owned native settings must be closed at the save boundary.");
+        EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>(), "Owned native policy manager must be closed at the save boundary.");
+        EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_DrugTolerance>(), "Owned native tolerance editor must be closed at the save boundary.");
     }
 
     private IEnumerable<EndToEndStep> Undraft(IEndToEndContext context, Subject subject)
@@ -672,6 +687,8 @@ internal sealed class NativeToleranceSaveContextFixture
             ["nativeOperations"] = nativeOperations.ToString(), ["screenshots"] = screenshots.ToString(), ["waitSeconds"] = waitSeconds.ToString(), ["saves"] = saves.ToString(),
             ["settingsScrollClicks"] = settingsScrollClicks.ToString(), ["saveLoadReserveSeconds"] = "300", ["synchronousReserveSeconds"] = "180",
             ["nativeOpenTab"] = Find.MainTabsRoot.OpenTab?.defName ?? "none", ["paused"] = Find.TickManager.Paused.ToString(),
+            ["nativeInspectTab"] = Find.WindowStack.WindowOfType<MainTabWindow_Inspect>()?.OpenTabType?.FullName ?? "none",
+            ["nativeSaveBlocked"] = GameDataSaveLoader.SavingIsTemporarilyDisabled.ToString(),
             ["timeSpeed"] = Find.TickManager.CurTimeSpeed.ToString(), ["saveRequested"] = saveRequested.ToString(), ["savePathExists"] = File.Exists(SavePath).ToString()
         };
         foreach (var subject in subjects)
