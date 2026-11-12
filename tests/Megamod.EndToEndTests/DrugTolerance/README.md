@@ -207,4 +207,27 @@ provenance; no later severity/tick/job/result writes manufacture the outcome. Th
 not evidence of accumulated tolerance. Exact budget20 native operations/8 screenshots/210 wait
 seconds =750 fixed plus180 reserve, within1440; launcher1800, game-tick cap9000. Exact native evidence
 is in `artifacts/Implementation/megamod-p0/s138-native-boundaries/positive-native-verification.md`.
-Any-versus-numeric100 and shared-Psychite workflows remain separate subsequent cases.
+
+`megamod.drug-tolerance.native-any-vs-hundred` contrasts numeric100 with Any at the native
+AlcoholTolerance cap. Each subject receives one explicit severity1 setup seed after its native
+drafted-hold prelude. Paused Undraft must reject numeric100 at equality while Any starts its
+ordinary Beer job. Native health decay must then lower the numeric subject below1 before its
+later Undraft permits the same physical Beer. This is a cap-boundary claim, not natural accumulation
+or a claim about tolerance above the native cap. Budget36 native operations/14 screenshots/270 wait
+seconds =1230 fixed plus180 reserve, within1440; launcher1800 and game-tick cap12000.
+
+`megamod.drug-tolerance.native-shared-psychite` obtains tolerance through two actual manual Drink
+tea orders, with no tolerance seed. The resulting native PsychiteTolerance must lie strictly
+between the two Yayo policy limits,2% and4%. Ordinary scheduled Yayo must then remain blocked for
+the lower limit and be consumed for the higher limit, increasing the same tolerance hediff.
+This proves Tea-to-Yayo sharing only. Native overdose or other post-dose effects are retained;
+the scenario makes no safety claim. Budget45 native operations/15 screenshots/480 wait seconds
+=1605 fixed plus180 reserve, within1800; launcher2160 and game-tick cap18000. Its comparison is
+also bounded to12000 ticks after the first tea dose.
+
+Both cases passively bind actual decision, health and ingestion observations to the original
+physical source and executing job. Active native chewing-toil identity observes non-nutritive
+drugs without changing their Nutrition. Select these exact IDs individually; their combined declared
+caps are3240 seconds, or4680 including the positive-boundary case. Suggested individual launcher
+allowances total3960 seconds, or5760 including that case. Authored fixtures and review alone do not
+accept either scenario; final reviewed native evidence remains required.

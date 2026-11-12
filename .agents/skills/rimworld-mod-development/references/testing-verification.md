@@ -134,6 +134,9 @@ Prefer action → wait → observation steps that exercise the same native path 
   proves the disabled behavior.
 - Preserve the primary failure during cleanup. Attempt destruction/restoration for each fixture
   independently; aggregate cleanup-only failures without masking an existing assertion exception.
+  Within one registered cleanup callback, protect each owned object, policy and patch target
+  separately too: the harness can continue with another callback, but cannot resume a loop after
+  its first exception. Complete every safe cleanup attempt and verification before aggregating.
 - Frame related actors/Things with the camera, then select only the evidence target before a full-frame
   screenshot. RimWorld multi-selection hides the ordinary single-Thing inspect pane.
 - Wait for `Game.PlayerHasControl` and a valid player faction before incidents/jobs/reset. Eliminate
