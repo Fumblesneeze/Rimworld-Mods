@@ -132,7 +132,7 @@ public sealed class NativeToleranceSaveSwitchTests : IRimWorldEndToEndTest, IEnd
     {
         foreach (var step in InitialView(a)) yield return step;
         foreach (var step in SaveNative(a)) yield return step;
-        yield return Capture<MainTabWindow_Menu>("capture Menu reopened by native Save", _ => { });
+        yield return CaptureForInput<MainTabWindow_Menu>("capture Menu reopened by native Save", _ => { });
         yield return new AssertionStep("fresh paused Save permits native Quit without confirmation", _ =>
         { RequireCurrent(); EndToEndAssert.False(GameDataSaveLoader.CurrentGameStateIsValuable); });
         yield return ClickContent("native Quit to main menu", MenuButton("QuitToMainMenu").center);
@@ -218,13 +218,13 @@ public sealed class NativeToleranceSaveSwitchTests : IRimWorldEndToEndTest, IEnd
     {
         yield return new InspectPaneCloseActionStep("close Gear before saving " + save.Label, save.Subject.PawnId, typeof(ITab_Pawn_Gear).FullName!);
         yield return new EscapeMenuActionStep("open native Menu to save " + save.Label, true);
-        yield return Capture<MainTabWindow_Menu>("capture native Save entry", _ => { });
+        yield return CaptureForInput<MainTabWindow_Menu>("capture native Save entry", _ => { });
         yield return BeginPointer("own pointer for native save name and button");
         yield return ClickContent("open native Save dialog for " + save.Label, MenuButton("Save").center);
-        yield return Capture<Dialog_SaveFileList_Save>("capture native save name field", _ => { });
+        yield return CaptureForInput<Dialog_SaveFileList_Save>("capture native save name field", _ => { });
         float nameY = (float)window.Height - 36 - Window.CloseButSize.y - 18 - 35;
         yield return ClickContent("focus native MapNameField", new Vector2(205, nameY + 17.5f));
-        yield return Capture<Dialog_SaveFileList_Save>("capture focused native MapNameField", _ => { });
+        yield return CaptureForInput<Dialog_SaveFileList_Save>("capture focused native MapNameField", _ => { });
         EndToEndAssert.True(!string.IsNullOrEmpty(window.FocusedTextControlHandle));
         yield return new NativeWindowReplaceTextActionStep("type unique disposable save name", window.Handle, window.FocusedTextControlHandle!, save.Name);
         yield return new AssertionStep("bind immutable save inputs after native text entry", _ =>
@@ -250,9 +250,9 @@ public sealed class NativeToleranceSaveSwitchTests : IRimWorldEndToEndTest, IEnd
     {
         var departed = current ?? throw new InvalidOperationException("Load requires the actual current save.");
         if (!menuAlreadyOpen) yield return new EscapeMenuActionStep("open native Menu for save " + target.Label, true);
-        yield return Capture<MainTabWindow_Menu>("capture native Load entry", _ => { });
+        yield return CaptureForInput<MainTabWindow_Menu>("capture native Load entry", _ => { });
         yield return ClickContent("open native Load dialog for save " + target.Label, MenuButton("LoadGame").center);
-        yield return Capture<Dialog_SaveFileList_Load>("capture exact native save file row", _ => { });
+        yield return CaptureForInput<Dialog_SaveFileList_Load>("capture exact native save file row", _ => { });
         Vector2 button = LoadButton(target);
         yield return Shot("native Load dialog before choosing save " + target.Label);
         yield return ClickContent("load exact native save " + target.Label + " row", button);
@@ -265,14 +265,14 @@ public sealed class NativeToleranceSaveSwitchTests : IRimWorldEndToEndTest, IEnd
 
     private IEnumerable<EndToEndStep> EntrySettings()
     {
-        yield return Capture<Dialog_Options>("capture Entry Options", _ => { });
+        yield return CaptureForInput<Dialog_Options>("capture Entry Options", _ => { });
         yield return BeginPointer("retain pointer for Entry settings and disabled attempts");
         var options = (Dialog_Options)actualWindow;
         var categories = DefDatabase<OptionCategoryDef>.AllDefs.Where(item => (Prefs.DevMode || !item.isDev) &&
             item.modContentPack.IsOfficialMod && (item != OptionCategoryDefOf.Mods || Read<bool>(typeof(Dialog_Options), options, "hasModSettings"))).ToList();
         int index = categories.IndexOf(OptionCategoryDefOf.Mods); EndToEndAssert.True(index >= 0);
         yield return ClickContent("choose native Mods category at Entry", new Vector2(80, index * 50 + 24));
-        yield return Capture<Dialog_Options>("capture rendered Mods category", _ => { });
+        yield return CaptureForInput<Dialog_Options>("capture rendered Mods category", _ => { });
         yield return ClickContent("open megamod through its actual native settings entry", ModButton(options));
         foreach (var step in MeasureSetting()) yield return step;
         Rect global = settingsView.MeasureCheckbox(out bool visible); EndToEndAssert.True(visible && global.yMin >= 22);
@@ -287,7 +287,7 @@ public sealed class NativeToleranceSaveSwitchTests : IRimWorldEndToEndTest, IEnd
         yield return new CheckpointStep("Entry disabled actions leave globals and saved A untouched", _ => Evidence());
         yield return ClickOuter("close native megamod settings at Entry", new Vector2((float)window.Width / 2, (float)window.Height - 35));
         yield return Wait("the Entry mod dialog closes", _ => !Find.WindowStack.IsOpen<Dialog_ModSettings>(), 0, 5);
-        yield return Capture<Dialog_Options>("recapture Options beneath the closed mod dialog", _ => { });
+        yield return CaptureForInput<Dialog_Options>("recapture Options beneath the closed mod dialog", _ => { });
         yield return ClickContent("close Entry Options using native OK", new Vector2(((float)window.Width - 36) / 2, (float)window.Height - 36 - 20));
         yield return Wait("Options closes before new Game creation", _ => !Find.WindowStack.IsOpen<Dialog_Options>(), 0, 5);
         yield return EndPointer("restore Entry pointer before native Quicktest");
@@ -310,7 +310,7 @@ public sealed class NativeToleranceSaveSwitchTests : IRimWorldEndToEndTest, IEnd
     {
         for (int attempt = 0; ; attempt++)
         {
-            yield return Capture<Dialog_ModSettings>("capture current common settings row", _ => { });
+            yield return CaptureForInput<Dialog_ModSettings>("capture current common settings row", _ => { });
             settingsView.Bind(window, (Dialog_ModSettings)actualWindow);
             Rect target = settingsView.MeasureCheckbox(out bool visible);
             if (visible && target.yMin >= 22) yield break;
@@ -620,9 +620,15 @@ public sealed class NativeToleranceSaveSwitchTests : IRimWorldEndToEndTest, IEnd
         EndToEndAssert.Equal(1, actuals.Length, "Require exact native window " + typeof(T).FullName);
         actualWindow = actuals[0]; ownedWindows.Add(actualWindow);
         window = captures.Single(item => item.NativeId == actualWindow.ID && item.RuntimeType == actualWindow.GetType().FullName);
-        EndToEndAssert.True(string.IsNullOrEmpty(actualWindow.optionalTitle) && window.Width > 36 && window.Height > 36 &&
-            window.UiScale > 0 && Math.Abs(window.UiScale - Prefs.UIScale) < .001);
         receive((T)actualWindow);
+    });
+    private NativeWindowCaptureStep CaptureForInput<T>(string name, Action<T> receive) where T : Window => Capture<T>(name, actual =>
+    {
+        // The inspected interactive content origins require an untitled native window. Merely
+        // observing the titled developer console needs identity/ownership, not these coordinates.
+        EndToEndAssert.True(string.IsNullOrEmpty(actual.optionalTitle) && window.Width > 36 && window.Height > 36 &&
+            window.UiScale > 0 && Math.Abs(window.UiScale - Prefs.UIScale) < .001);
+        receive(actual);
     });
     private NativeEntryMenuCaptureStep EntryCapture(string name, string control) => new(name, controls =>
     {
