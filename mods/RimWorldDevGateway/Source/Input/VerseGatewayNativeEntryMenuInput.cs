@@ -273,14 +273,14 @@ internal sealed partial class VerseGatewayNativeWindowInput
             if (metadata == null || !HasPublishedMouseGuards()) return false;
             var info = PatchInfoSerialization.Deserialize(metadata);
             // Another finalizer could suppress a late exception before our publication. Fail closed.
-            return info.innerfinalizers.Length == 0 && info.finalizers.Length == 1 &&
-                info.finalizers[0].PatchMethod == EntryLayoutHook("Finish") &&
+            return info.innerfinalizers.Length == 0 && info.finalizers.Count(patch => patch.PatchMethod == EntryLayoutHook("Finish")) == 1 &&
+                info.finalizers.All(patch => KnownLayoutFinalizer(contract.EventDispatch, patch.PatchMethod)) &&
                 entryHooks.All(hook => {
                     byte[]? bytes = PublishedMetadata(hook.Target);
                     if (bytes == null) return false;
                     var published = PatchInfoSerialization.Deserialize(bytes);
                     return published.innerfinalizers.Length == 0 && published.finalizers.All(patch =>
-                        entryHooks.Any(owned => owned.Target == hook.Target && owned.Patch == patch.PatchMethod)) &&
+                        KnownLayoutFinalizer(hook.Target, patch.PatchMethod)) &&
                         published.prefixes.Concat(published.postfixes).Concat(published.finalizers)
                         .Count(patch => patch.PatchMethod == hook.Patch) == 1;
                 });

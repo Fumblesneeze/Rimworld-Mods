@@ -6,6 +6,11 @@ window. This prevents faithful minimized acceptance of the controls themselves.
 
 ## What Changes
 
+The unaccepted native caravan slice also guards late native contents failures, preserves visible
+Health rows beside clipped neighbours, drains frame-grown owned camera history incrementally,
+refuses restoration that could cancel foreign world activities, and partitions the existing
+cleanup deadline so lost input dispatch cannot consume fixture cleanup time.
+
 - Add bounded input to an exact current native dialog through the inspected 1.7 engine input path,
   without moving the desktop pointer, changing focus or restoring the game window.
 - Preserve native hit testing, disabled controls, focus, text editing and ordinary callbacks.
@@ -16,6 +21,10 @@ window. This prevents faithful minimized acceptance of the controls themselves.
 - Open or close a supported ordinary bottom tab through its native button command, preserving
   visibility, disabled-state and modal input restrictions. This supplies the missing Assign entry
   path for the drug-policy workflow; controls inside the tab still use native input.
+- Add a bounded native World-view round trip, exact player-caravan selection and Items/Health
+  navigation, with one observed pawn-Health row button on the existing minimized input lane.
+  Capture and restore the exact same game's camera/view state through a retained cleanup lease.
+  This is a Gateway prerequisite for caravan observation; it does not accept product ingestion.
 
 ## Capabilities
 

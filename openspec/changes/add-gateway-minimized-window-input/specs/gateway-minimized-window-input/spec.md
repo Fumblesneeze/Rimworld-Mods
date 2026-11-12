@@ -2,6 +2,93 @@
 
 Owner: repository tooling **RimWorld Dev Gateway**, `mods/RimWorldDevGateway`.
 
+### Requirement: Inspect an exact owned caravan through native World controls
+
+The Gateway SHALL expose typed named automations and matching E2E steps for a native World-view
+round trip, exact player-caravan jump/selection, Items/Health tab commands and the actual observed
+pawn-Health row button. It SHALL preserve native button visibility, disabled, modal and tutorial
+restrictions. Player actions MUST NOT fabricate a dialog, set the detailed Health pawn, invoke a UI drawing
+method to manufacture observation, guess root coordinates or broaden ordinary window input to
+arbitrary transient windows. Input delivery remains distinct from personally observed native results.
+
+#### Scenario: Open World and inspect the selected caravan
+- **WHEN** an operator captures an admitted settled map baseline and requests World open
+- **THEN** the displayed native World worker is invoked at most once and its actual before/after state is retained
+- **AND** an exact current player-caravan capability selects and centers that object through the native game command
+- **AND** its actual World inspect pane supplies the native Items/Health tab instances and tutorial-aware tab callback
+- **AND** closing World with an unrelated main tab open refuses rather than silently activating twice
+
+#### Scenario: Open the native detailed Health card
+- **WHEN** the exact selected caravan's visible pawn-Health row is captured from a completed native layout and clicked
+- **THEN** the existing minimized input lane delivers the captured button center through the actual native input path
+- **AND** the capability binds current Game, World, UI, caravan, pawn, tab, transient-window instance and layout geometry
+- **AND** the named pawn's resulting Health card is separately observed and captured
+- **AND** a reused negative native window ID alone never authorizes input
+
+#### Scenario: Preserve a valid detailed Health selection across tabs
+- **WHEN** a pawn's Health detail is already open and the operator changes Items to Health for that same caravan
+- **THEN** observation recognizes the retained detail instead of clicking its toggle again
+- **AND** a workflow that needs a later fresh open first closes the detail through its actual row button and observes closure
+
+#### Scenario: A neighbouring Health row is clipped
+- **WHEN** one row button is fully visible and another has supported geometry outside the actual intersected clip
+- **THEN** the visible row remains capturable and the clipped row is excluded
+- **AND** unknown or invalid geometry still invalidates the enclosing observation
+
+#### Scenario: Health detail drawing fails after the card returns
+- **WHEN** the exact immediate-window contents callback or one of its postfixes fails after drawing the card
+- **THEN** observation records that failure before the native window catches it and does not publish DetailVisible
+- **AND** successful outer dispatch and pending-window processing cannot override the incomplete contents witness
+
+#### Scenario: Refuse stale caravan controls
+- **WHEN** scene, ownership, selected caravan, pawn membership, tab, window, scale, scroll, clipping, geometry or modal input changes
+- **THEN** remaining pointer phases refuse before reaching another native control
+- **AND** failed, skipped, ambiguous or incomplete enclosing native layout cannot publish a control capability
+- **AND** cleanup preserves unrelated hot controls and reports ambiguous ownership honestly
+
+### Requirement: Restore only the captured game's owned World-view state
+
+The first World-view lease SHALL admit a fresh settled non-background map baseline with inactive
+world camera, empty world selection and drag history, no open World pane/main tab and no active
+world targeting or competing input. These are repository fixture limits, not native engine limits.
+Capture SHALL remain passive and retain the complete fixed camera state, pose and touched native
+selection/view flags. The same typed lease SHALL serve automation and existing E2E context cleanup.
+
+#### Scenario: Restore after the native round trip
+- **WHEN** the operator ends the same Game/World view lease after owned input has drained
+- **THEN** cleanup restores the captured None mode, deactivates that exact camera, and restores its fixed fields and pose without advancing smoothing
+- **AND** only owned selection entries are cleared and raw nullable selection/view fields are restored without lazy initialization
+- **AND** native pane closure and a later frame's equality are observed before restoration is reported complete
+- **AND** no simulation ticks, native sounds, tutorial opportunities or unrelated renderer caches are claimed rewound
+
+#### Scenario: A replacement game reuses the persistent camera
+- **WHEN** Game, World, map, UI, driver, config or owned state identity differs at restoration
+- **THEN** cleanup refuses writes into departed or replacement state even if the camera driver object survived the transition
+- **AND** its receipt distinguishes restored, skipped and unverifiable phases while independent fixture cleanup still runs
+
+#### Scenario: Normal World frames accumulate camera history
+- **WHEN** more than1024 native drag-history timestamps accumulate during the owned round trip without an active drag
+- **THEN** restoration drains the exact owned history in bounded advances after deactivating its driver
+- **AND** no frame-count ceiling or foreign-list replacement is used to claim restoration
+
+#### Scenario: Another world activity starts before restoration
+- **WHEN** a foreign targeter, route planner, tile picker or drag is active before restoration
+- **THEN** cleanup refuses the mode mutation and preserves that activity and its native state
+- **AND** the failed receipt does not claim a restored view
+
+#### Scenario: Cancel a captured view workflow
+- **WHEN** cancellation or failure follows capture or an admitted native action
+- **THEN** retained artifacts identify the owned view lease and actual attempted changes
+- **AND** existing deferred cleanup drains only owned input and applies the remaining shared cleanup deadline
+- **AND** timeout, failed later-frame observation or partial restoration cannot report complete cleanup
+- **AND** missing native input dispatch consumes at most15s of the shared30s cleanup period, then reports incomplete input ownership while allowing at most10s independent view restoration and the remaining fixture cleanup
+- **AND** a retained detailed Health selection may be cleared only during cleanup when its captured baseline was null, the exact same native tab and Game/World remain owned, and its current pawn belongs to a caravan selected by this lease; foreign detail is preserved and reported incomplete
+
+#### Scenario: Share native layout boundaries with the Entry observer
+- **WHEN** the caravan and Entry providers observe the same native event dispatch or pending-window processing
+- **THEN** each uses a separate Harmony state declaring type and admits only the exact registered Gateway finalizers
+- **AND** a foreign exception-suppressing finalizer or failed native body revokes observation publication
+
 ### Requirement: Click an exact observed Entry-menu control through native input
 
 The Gateway SHALL capture the actual rendered Options and developer quicktest controls in a

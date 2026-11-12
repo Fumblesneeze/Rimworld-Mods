@@ -526,3 +526,90 @@ checkpoints, persistence, native cancel and owned cleanup, giving600s scenario w
 Its paused UI has no established frame-rate ceiling; both scenario and initial wait use int.MaxValue
 frame stops while keeping their independent tick/wall limits. Launch with at least900s, allowing
 180s startup and120s host shutdown/evidence headroom beyond the scenario.
+
+### Native caravan inspection and World-view lease
+
+Implement the independently reviewed first-workflow plan retained at
+`artifacts/Implementation/gateway-world-controls/plan.md` (SHA256
+`09934902E20EA4A5CD694738D275604D8DBBF8330296FBD10DED69012C8C9DC4`). Exact installed1.7.5005
+Assembly-CSharp research hash is82387F78262461E53BB06A67C3945912B876D1FDB07235122BBB6E59D073F125;
+hashes identify research/builds, not a runtime admission allowlist. This is a new unaccepted slice.
+
+Keep semantic World, caravan jump/selection and Items/Health commands separate from a single
+observed Health-row pointer target. World uses MainButtonWorker_ToggleWorld.InterfaceTryActivate;
+tab changes use the exact private InspectPaneUtility.InterfaceToggleTab native callback, not
+the map-only OpenTab(Type). Resolve current native objects and their visible/input predicates,
+invoke at most once and retain before/attempted/after. The exact nongeneric native Health helper
+is static void DoOpenSpecificTabButton(Rect,Pawn,ref Pawn); observe its actual ButtonImage under
+the native Health FillTab. Actions never invoke drawing methods or assign the private pawn field.
+Tab navigation retains a still-valid detailed pawn. The native scenario proves Items→Health
+retention without another click; consumers explicitly close initial detail through a fresh
+native row click and observe it closed before a later fresh opening.
+The Gateway scenario also explicitly closes its final detail with a fresh native row toggle.
+Cancellation cleanup may restore only a captured-null detail field on an exact owned tab whose
+current pawn belongs to one of the lease's selected caravans; foreign detail fails that phase.
+
+ImmediateWindow request235086 (tab) and1439870015 (details) become negative native IDs. The same
+tab ID is reused, and repaint replaces its callback. Bind current native window object, owner
+tab/caravan/pawn, actual layout/button geometry, current GUI event/dispatcher and complete
+pending-window processing. Do not bind a repaint-created delegate across frames. Reuse existing
+IClickTarget/ClickBackend, reset and post-layout authority, input release and pointer cleanup.
+Do not relax ordinary window capture's transient-window exclusion. Detailed Health is an actual
+draw observation and full-frame screenshot, not another input surface.
+The draw witness binds the actual ExtraOnGUI immediate-window request and its current callback,
+then the matching native DrawPawnHealthCard call; the callback is refreshed on every repaint.
+Publication additionally requires the exact ImmediateWindow.DoWindowContents invocation to
+finish, including its native close-button callback and all postfixes. A finalizer records failure
+before Window.InnerWindowOnGUI can swallow it; host coverage invokes the production lifecycle.
+Physical row bounds use the inspected backend's GuiToDevicePoint and intersected hitClipStack,
+not GUIClip's top group alone. A maximum32 clip depth and completely visible axis-aligned rectangle
+are required.
+Known clipped row buttons are excluded individually; unsupported transforms or clip metadata
+still invalidate the frame. A clipped neighbour cannot erase a completely visible target.
+Event dispatch and pending-window callbacks have separate declaring types from
+Entry's callbacks; authority permits only the two exact owned families and rejects foreign finalizers.
+The maintained native caravan list is bounded before traversal at1024 entries, each caravan at64
+pawns, actual tabs at16, view-owned selections/captures at16, and the displayed button list at128.
+These are explicit Gateway workload limits, not RimWorld engine limits; over-budget inventories
+return unavailable and never partial absence.
+
+The first passive capture admits only a settled None-mode non-background map, inactive existing
+world camera, empty selection and drag-history list, no main tab/World pane or active targeting,
+and exact WorldCameraConfig_Normal. Bind Game.World (never Find.World's creating-world fallback),
+map, root/UI/stack, world renderer/interface/selector/pane, World worker, persistent camera/driver,
+config and native list/dictionary identities. The camera persists across games, so driver identity
+alone cannot authorize restoration. Capture all23 declared nonconstant driver fields, camera pose,
+raw nullable selected layer/tile, reset flags and closed pane geometry. Avoid MyCamera/TabRect/
+TabWindow and other lazy or mutating observation getters. Native configuration identity/values
+must remain unchanged; unsupported history is refused, not copied without a bound.
+Normal World frames append drag timestamps even without dragging. After exact-owner deactivation,
+drain the captured list from its tail in at most256 removals per advance, with no total-count or
+frame-rate assumption. Never replace that list or drain an active/departed driver's history.
+
+One retained native-world.capture/restore lease serves named automation and the existing E2E
+context; no second dispatcher, input queue or scene service. Register deferred cleanup before
+capture admission and retain its lease if cancellation wins afterward. Later registered input
+cleanup runs first through existing LIFO context cleanup. Same-scene restoration deactivates the
+camera only after rechecking targeter, route planner, tile picker and drag inactivity; otherwise
+it refuses mode changes that could cancel foreign native state. Supported restoration deactivates the
+camera through the actual renderer, then writes captured fixed fields/pose without invoking
+ApplyPositionToGameObject (which advances smoothing). Remove only owned selection entries; restore
+raw nullable state without native setters that reset selection or teach lessons. Await ordinary
+pane closure and a later frame's equality before claiming complete restoration. A replacement
+scene is never modified, partial cleanup remains explicit, and existing harness map/control/window
+cleanup runs independently. Sounds, tutorial opportunities, render caches and ticks are not rewound.
+
+The shared harness has a30s aggregate cleanup cap: allow at most15s owned-input retirement,10s view
+restoration/observation and5s remaining fixed fixture cleanup.
+Input retirement and view restoration have independent monotonic deadlines in their existing
+context cleanup callbacks; expiry records incomplete ownership, then throws to let the context
+continue later independent callbacks. Expiry never marks a pending input run terminal or clean.
+Ordinary explicit operations retain
+their15s bounds and screenshots30s. Gateway's singular native scenario has23 native actions/captures,
+eight screenshots, twelve15s waits,90s reserve and two15s view capture/restore steps:885s total under900s.
+There are46 emitted steps including the one ordinary pause command covered by the reserve. The
+reviewed840s proposal grew by45s for explicit final detail closure; this change was authorized
+before the fixture was finalized. The same-caravan Items→Health case performs no extra row click.
+Use1200s host budget and no assumed frame-rate ceiling. The separate future product scenario is
+1365s under1500s/1800s host and is not implemented by this slice. Recount actual emitted steps before
+launch; native results and personal inspection, not these planned numbers, establish acceptance.

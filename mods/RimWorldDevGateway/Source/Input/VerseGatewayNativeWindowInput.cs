@@ -82,6 +82,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                 finalizer: new HarmonyMethod(Hook(nameof(FinalizeInputFrameReset))) { priority = Priority.Last });
             InstallTextHooks();
             InstallEntryHooks();
+            InstallCaravanHooks();
             harmony.Patch(contract.FrameResetBoundary,
                 postfix: new HarmonyMethod(Hook(nameof(AfterInputResetBoundary))) { priority = Priority.First },
                 transpiler: new HarmonyMethod(Hook(nameof(ObserveResetBoundaryStream))) { priority = Priority.Last },
@@ -355,6 +356,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                 }
             }
             complete &= RemoveEntryHooks();
+            complete &= RemoveCaravanHooks();
             foreach (var patch in new[]
             {
                 (contract.Dispatch, nameof(BeforeNativeDispatch)),
@@ -670,6 +672,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
         {
             if (input.rawType is EventType.layout or EventType.repaint) service.lastFocusedText = null;
             service.BeginEntryLayout(input, __instance, __1);
+            service.BeginCaravanLayout(input, __instance, __1);
             service.textFrame?.Capture(input, __1);
         }
         if (frame == null || !UnityData.IsInMainThread || input == null ||

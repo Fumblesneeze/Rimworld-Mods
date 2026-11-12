@@ -109,6 +109,16 @@ UI state must include current pause/speed state. Screen-local input must use the
 not desktop assumptions. Screenshot APIs should support full-frame evidence and object/cell bounding
 boxes; frame related actors first, then select only the single Thing whose inspect pane must be shown.
 
+For native observation, prove completion of the whole owning callback before publishing a visible
+result. A child draw can return before a later control or postfix throws, and a native parent may
+catch that exception. Observe failure before that catch and exercise the production lifecycle hooks
+with active host-safe state; a fixture-only finalizer does not test the adapter. Distinguish a known
+clipped control from unknown geometry so one clipped neighbour cannot erase other visible targets.
+For restoration, inspect native per-frame state growth and revalidate foreign activities before
+mode changes; a captured baseline does not establish later ownership. Bound incremental work, not
+the assumed number of rendered frames. Partition a shared cleanup deadline among input retirement,
+view restoration and fixture cleanup, retaining incomplete ownership when an earlier phase expires.
+
 ## Diagnose before relaunching
 
 On a freeze/crash, stop repeating the same startup. Correlate the exact PID, request journal,

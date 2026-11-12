@@ -243,6 +243,7 @@ public static class GatewayRuntimeBootstrap
                         [typeof(IGatewayEndToEndFloatMenuActions)] = floatMenus,
                         [typeof(IEndToEndFloatMenuCatalog)] = floatMenus,
                         [typeof(IEndToEndGizmoCatalog)] = gizmoCatalog,
+                        [typeof(IEndToEndNativeCaravanObservation)] = runtimeHost,
                         [typeof(IEndToEndDebugActionCatalog)] = new GatewayEndToEndDebugActionCatalog(debugActions)
                     };
                     endToEndTests.ConfigureExecution(
@@ -282,7 +283,7 @@ public static class GatewayRuntimeBootstrap
                                         ? service
                                         : null);
                             },
-                            artifactDirectory => new GatewayEndToEndDebugActionDriver(new GatewayEndToEndNativeWindowDriver(new GatewayEndToEndNativeStepDriver(
+                            artifactDirectory => new GatewayEndToEndCaravanDriver(new GatewayEndToEndDebugActionDriver(new GatewayEndToEndNativeWindowDriver(new GatewayEndToEndNativeStepDriver(
                                 new GatewayEndToEndNativeActions(
                                     new GatewayEndToEndGatewayBackend(
                                         gameControl,
@@ -294,7 +295,7 @@ public static class GatewayRuntimeBootstrap
                                         tradeDialogs,
                                         windowsInput,
                                         screenshots,
-                                        artifactDirectory))), automations), debugActions),
+                                        artifactDirectory))), automations), debugActions), automations),
                             isolation));
                 }
 
@@ -329,7 +330,7 @@ public static class GatewayRuntimeBootstrap
     }
 }
 
-public sealed class GatewayRuntimeHost : MonoBehaviour
+public sealed class GatewayRuntimeHost : MonoBehaviour, IEndToEndNativeCaravanObservation
 {
     private GatewayRuntime? runtime;
     private GatewayIntegrationTestCoordinator? integrationTests;
@@ -337,6 +338,9 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
     private GatewayGizmoRegistry? gizmos;
     private GatewayAutomationRegistry? automations;
     private VerseGatewayNativeWindowInput? nativeWindows;
+    private GatewayCaravanInspectionAutomation? nativeCaravans;
+    public EndToEndCaravanHealthObservation ObserveHealth(string caravanHandle, string pawnLoadId) =>
+        RequireNativeWindows().ObserveCaravanHealth((nativeCaravans ?? throw new InvalidOperationException("Native caravans are unavailable.")).Require(caravanHandle), pawnLoadId);
     private string? nativeWindowInitializationFailure;
     private readonly GatewayShutdownLifecycle shutdownLifecycle = new();
     private int stopping;
@@ -441,6 +445,14 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
         automations = registry;
         VerseGatewayDeveloperLog.Register(registry);
         VerseGatewayMainTab.Register(registry);
+        var worldViews = new GatewayWorldViewAutomation(registry, new VerseGatewayWorldView(
+            () => nativeWindows?.WorldInputIdle == true, () => nativeWindows?.CompletedWorldFrame ?? 0));
+        nativeCaravans = new GatewayCaravanInspectionAutomation(registry, worldViews, new VerseGatewayCaravanInspection());
+        GatewayNativeCaravanHealthAutomations.Register(registry, nativeCaravans,
+            (caravan, pawn, resolve) => RequireNativeWindows().CaptureCaravanHealth(caravan, pawn, resolve),
+            (handle, context) => RequireNativeWindows().BeginCaravanHealthClick(handle, context),
+            () => new GatewayAutomationAvailability(nativeWindows != null && nativeWindows.CaravanHealthUnavailableReason == null,
+                nativeWindowInitializationFailure ?? nativeWindows?.CaravanHealthUnavailableReason ?? "native_input_initializing"));
         GatewayNativeEntryMenuAutomations.Register(registry,
             () => RequireNativeWindows().CaptureEntryMenu(),
             (handle, context) => RequireNativeWindows().BeginEntryClick(handle, context),
@@ -476,7 +488,7 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
             // hooks only at this actual native main-thread lifecycle boundary.
             if (automations != null && nativeWindows == null && nativeWindowInitializationFailure == null)
             {
-                try { nativeWindows = new VerseGatewayNativeWindowInput(); }
+                try { nativeWindows = new VerseGatewayNativeWindowInput { CaravanSource = () => nativeCaravans?.CurrentSelected() }; }
                 catch (Exception exception)
                 {
                     nativeWindowInitializationFailure = "native_input_initialization_failed";
