@@ -171,27 +171,29 @@ builds, process/action/log identities and cleanup are local in
 `artifacts/Implementation/megamod-p0/s138-native-routes/native-verification.md`. These are scoped
 zero/Any routes, not full S138 acceptance.
 
-`megamod.drug-tolerance.native-setting-transitions` adds an independently reviewed, not yet
-live-accepted continuation. Native global off permits the previously blocked zero-limit pawn's
+`megamod.drug-tolerance.native-setting-transitions` passed153 steps on the reviewed7899799 product
+after a reviewed fixture selection correction. Root inspected all15 causal captures. Native global off permits the previously blocked zero-limit pawn's
 ordinary scheduled dose. Native on during chewing preserves that same executing job; a passive
 actual ingestion observation binds completion to the immutable job ID and original physical Beer.
 Afterward, fresh native attempts by the second zero-limit pawn must remain drinkless. Stored policy
 choices and save inheritance remain unchanged. No direct setting setter or forced job is the test
 action. Cleanup restores initial globals/scroll and removes exact test-owned prefixes.
 
-Its complete allowance is at most68 native operations,15 screenshots and480 seconds of waits:
-1950 fixed seconds plus180 shared reserve within2400. Use launcher2700. The game-tick limit is24000
+Its complete allowance is at most69 native operations,15 screenshots and480 seconds of waits:
+1965 fixed seconds plus180 shared reserve within2400. Use launcher2700. The game-tick limit is24000
 and the independent frame cap is int.MaxValue. Runtime counters verify the actual yielded sequence.
 The two prior route sequences and their1440-second budgets remain intact; select only the new
-scenario for this addition. Native execution, personal image/log inspection and exact-build cleanup
-are still required. Main-menu, save override/switching and save/resume during ingestion remain open.
+scenario for this addition. Exact native build/actions, complete logs, reviewed correction and
+cleanup are in `artifacts/Implementation/megamod-p0/s138-native-settings-routes/native-verification.md`.
+Main-menu, save override/switching and save/resume during ingestion remain open.
 
-`megamod.drug-tolerance.native-social-drinks` is independently reviewed and compile-discovered;
-native acceptance remains pending. It activates the table's native gather-spot gizmo, then undrafts ordinary recreation
+`megamod.drug-tolerance.native-social-drinks` passed96 steps on the reviewed7899799 product;
+root inspected all11 causal captures. It activates the table's native gather-spot gizmo, then undrafts ordinary recreation
 subjects. Zero and positive-DrugDesire zero must make real rejected drink selections, occupy
 reserved chairs and gain social recreation without a drink. Any must select, carry and consume
 one exact ground Beer through native SocialRelax. The fixture checks current atomic admission,
 physical supplies and ordinary Health outcomes; it neither creates a job nor invokes the selector.
 This proves no party-event lifecycle. Budget37 native operations/11 screenshots/360 wait seconds,
 scenario1440 and launcher1800. Local plan/review/source evidence is under
-`artifacts/Implementation/megamod-p0/s138-native-social-routes/`; root owns final native observation.
+`artifacts/Implementation/megamod-p0/s138-native-social-routes/`, including root's native-verification.md.
+These results accept the exercised table route and global toggle timing only; full S138 stays open.

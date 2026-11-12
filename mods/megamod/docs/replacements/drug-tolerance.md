@@ -75,9 +75,9 @@ separate backup/staging/atomicity/restoration/postcondition contract before impl
 
 | Behavior | Implemented portion | Deviation / conflict | Missing / omitted | Target/tests/live evidence |
 | --- | --- | --- | --- | --- |
-| DT-02–04, DT-07–08 | Host-safe comparison/codec, native reader, guarded selection/social patches, direct-joy exception proof and registered atomic runtime | Any differs from numeric 100%; missing hediff zero; native rejection remains; no medical/manual/refill hook | Social/drinkless, further numeric boundaries, shared chemicals, caravan, refill and future S024 recipient call | Reviewed native scheduled/direct-joy zero/Any and positive-trait routes, plus explicit manual Drink exclusion; no full S138 acceptance |
+| DT-02–04, DT-07–08 | Host-safe comparison/codec, native reader, guarded selection/social patches, direct-joy exception proof and registered atomic runtime | Any differs from numeric 100%; missing hediff zero; native rejection remains; no medical/manual/refill hook | Further numeric boundaries, shared chemicals, caravan, refill and future S024 recipient call | Reviewed native scheduled/direct-joy/social zero/Any and positive-trait routes, drinkless social recreation and explicit manual Drink exclusion; no full S138 acceptance |
 | DT-06 | Exact native-row weak state, S029 capture/restore and native four-target copy/Scribe support | State follows row identity; deleted rows have no restore archive | Persistence-only root gate does not prove the new editor or routine selection | Root evidence: `artifacts/Implementation/megamod-p0/revision20-native-verification.md` |
-| DT-01, DT-05, remaining DT-08 | Reviewed drafts/layout/typed bridge, contextual Window, common setting/provider policy, atomic runtime and seven catalogs | Requested preference remains editable while effective capability is unavailable; medical scope stays separate | Ordinary off/original suppression, remaining route exclusions and seven-language presentation | Reviewed English native Any/zero/100/decimal/invalid input and Apply/Cancel; [design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/) retain wider obligations |
+| DT-01, DT-05, remaining DT-08 | Reviewed drafts/layout/typed bridge, contextual Window, common setting/provider policy, atomic runtime and seven catalogs | Requested preference remains editable while effective capability is unavailable; medical scope stays separate | Original suppression, save override/switching, remaining route exclusions and seven-language presentation | Reviewed English native Any/zero/100/decimal/invalid input and Apply/Cancel; global off/on preserves the executing dose and restricts the next selection; [design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/) retain wider obligations |
 
 Active original `seohyeon.onlyiftolerancebelow`: bounded startup warning plus best-effort suppression
 of `drugTolerance.enabled` through the ordinary effective-off path, with the timing/limitations
@@ -100,6 +100,13 @@ retention, actual drinking and resulting native Health. Any, strict zero, the di
 DrugDesire exception and explicit manual Drink exclusion are observed scoped results. Exact builds,
 actions, process identities, full logs and cleanup are retained in the revision21 ledger and
 `artifacts/Implementation/megamod-p0/s138-native-routes/native-verification.md`.
+The next reviewed batch at7899799 passed96 social steps and153 settings-transition steps. Root
+inspected all26 causal captures: native table/chair social recreation continued without a drink
+for both zero-limit pawns, while Any physically drank; native global off/on preserved an executing
+dose and restricted the next selection. Exact evidence, including the corrected fixture selection,
+is under `s138-native-social-routes/native-verification.md` and
+`s138-native-settings-routes/native-verification.md` in the same local evidence root. These are
+scoped social and global-setting results; party events and other configuration/lifecycle cases remain.
 DT-Q1–4 retain their remaining obligations; these slices do not accept all native routes or S138.
 Independent review and integrated product checks are retained separately from live evidence. The
 orchestrator must personally observe the reviewed build's actual native policy edits, routine

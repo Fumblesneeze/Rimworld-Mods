@@ -80,6 +80,18 @@ These scoped routes pass. Social/drinkless, further numeric boundaries, shared c
 settings/in-flight/save-resume, caravan, future S024 recipients, refill/pickup, medical/addiction
 compositions and wider language/layout cases remain open; no full-feature task is closed here.
 
+The next reviewed7899799 batch passed the social scenario96steps and, after an independently
+reviewed fixture selection correction, settings transitions153steps. Root inspected all26 causal
+captures on product SHA256`4592558576FD7A3C1C24EDB6BE1D9178A99DD4F44E9A10DDCF49A992F207BA30`:
+zero and trait-zero gained native social recreation without drinking; Any consumed its physical
+Beer. Native global off/on preserved the already executing dose and blocked the next zero-limit
+selection. Complete exact-build/process/action/log/cleanup records are in
+`artifacts/Implementation/megamod-p0/s138-native-social-routes/native-verification.md` and
+`artifacts/Implementation/megamod-p0/s138-native-settings-routes/native-verification.md`.
+This closes only those scoped workflow observations. Positive numeric boundaries/shared chemicals,
+save override/switching/resume, party events and all other unrun compositions remain open. No full
+feature task is checked from these results.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.

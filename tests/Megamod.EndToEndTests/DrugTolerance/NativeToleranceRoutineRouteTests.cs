@@ -239,7 +239,7 @@ internal sealed class NativeToleranceRouteFixture
         {
             if (settingsTransitions)
             {
-                EndToEndAssert.True(nativeOperations <= 68, "The bounded settings-scroll paths must fit the complete native-operation allowance.");
+                EndToEndAssert.True(nativeOperations <= 69, "The bounded settings-scroll paths must fit the complete native-operation allowance.");
                 EndToEndAssert.Equal(15, screenshots);
                 EndToEndAssert.Equal(480, waitSeconds);
                 EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 180 <= 2400);
@@ -352,6 +352,7 @@ internal sealed class NativeToleranceRouteFixture
         phase = "off allows native selection";
         // The starting zero-limit pawn now uses its original held Beer through ordinary scheduling.
         // Re-enable during the observed real chewing job: no new job or result is manufactured.
+        yield return Select(subjects[0], "select the previously blocked pawn for its native ingestion evidence ");
         foreach (var step in Consume(context, subjects[0], subjects[0].Supply, manual: false, reenableDuringJob: true)) yield return step;
         int earlierAttempts = held.ScheduledAttempts.DistinctTicks;
         int resumedAt = Find.TickManager.TicksGame;
