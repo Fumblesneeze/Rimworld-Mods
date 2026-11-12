@@ -778,3 +778,18 @@ and nongeneric Health-row observation seam. Independent review found that revisi
 caravan can retain an open Health detail; its author must correct desired-open handling and action
 budgets before a compiled lease. That Gateway tooling owner remains separate from S138's normal
 world-tick consumption contract. All139 features, full S138/S139 obligations and P0–P8 gates remain.
+
+The corrected World/Health plan passed independent re-review at artifactSHA09934902E20EA4A5CD694738D275604D8DBBF8330296FBD10DED69012C8C9DC4.
+Its explicit native detail closure and repeated-same-caravan case preserve1365s/840s counted budgets.
+`world_controls_plan` now owns the Gateway prerequisite compiled batch: native World command,
+caravan selection/Items/Health tab commands, observed Health-row input on the existing lane,
+same-Game/World camera capture/restore, shared typed steps/driver, narrow bootstrap integration,
+focused Waylith tests and singular Gateway scenario. It first amends the Gateway-owned contract;
+root retains installation, final independent review, native acceptance and commits. The S138
+consumer is a later lease. No new listener, queue or redundant MCP wrapper is allocated.
+
+`generation_rate` has only an artifact research/design lease for the family-publication/native
+execution premise after0374d55. It may not install generic/BCL observers, repeat the shared-code
+canary or infer actual execution from matching managed bodies. Its bounded proposed path must
+reuse the existing publication/reader, address native aliases/compile updates/inlining, and leave
+unproved capabilities explicit. No tracked-source or test-output lease is released for that plan.

@@ -136,6 +136,16 @@ completed graceful cleanup are retained in
 run exposed a fixture-only titled-console assumption, corrected and independently re-reviewed before
 this GREEN. This accepts the scoped menu/two-save workflow, not the remaining feature obligations.
 
+The reviewed38fcabc stock-route scenario passed126 steps in fresh group
+`20261112T171518923Z-f3a7b74e1a194caaa01cd393a8539022`. Root personally inspected all14 captures:
+numeric zero withheld A's scheduled dose and attached pickup; native Any edit allowed one consumed
+dose plus two carried extras; native Undraft B produced independent refill from empty despite its
+retained numeric zero, with no ingestion or Health change. Final physical conservation was one
+consumed, two carried by each pawn and one on the ground. Native job/split snapshots, exact build,
+full classified logs, unchanged configuration and graceful cleanup are retained in
+`artifacts/Implementation/megamod-p0/s138-next-batch/root-stock-integration.md`.
+This accepts that scoped stock workflow only; caravan, other compositions and full tasks remain open.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.
