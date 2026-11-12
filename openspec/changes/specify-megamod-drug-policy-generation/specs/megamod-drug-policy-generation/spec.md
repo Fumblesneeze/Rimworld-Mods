@@ -166,6 +166,21 @@ mislabel those edited choices as computed recommendations or silently revert the
 - **AND** inherited lookup aliases identify one actual method declaration; finite roots share relevant callback observations and failed acquisition cannot remove another bundle's owned observations
 - **AND** this projection alone does not establish parent/pawn initialization, hash timing, deterministic rate initialization or complete native facts.
 
+#### Scenario: Zero-range initialization preserves the actual rate producer
+- **WHEN** partial body admission observes the current seven initialization methods for a separately established nonnull comp/properties pair, finite negative rate, zero range endpoints/reversal and already initialized runtime types
+- **THEN** the actual helper branches return the original minimum and false without random sampling; the same-address range getter and calculator preserve the rate read before the call, binary32 sum and Single-local store before the reversal check
+- **AND** the actual hook forwards its original receiver/input once to the admitted base, obtains that comp's properties, calls its calculator once and writes that result once into the same comp's Single rate field; either signed zero remains eligible.
+
+#### Scenario: Changed initialization effects revoke only the partial body claim
+- **WHEN** a current helper, calculator, projection, hook or relevant callback has a changed receiver/field, escaped or written range address, substituted local, precision boundary, branch, call count or destination
+- **THEN** the actual composed body is rechecked and the unproved initialization claim is withheld, with a target-level reason
+- **AND** labeled nops and proved scalar observers remain compatible through the same finite observation bundle, with inspection-only availability, explicit callback acquisition and no speculative foreign execution.
+
+#### Scenario: Initialization body proof does not establish native prerequisites
+- **WHEN** the seven-method host proof succeeds
+- **THEN** generation remains unavailable until current F0 inputs, natural type initialization, native call-edge/repatch behavior and F2 construction/assignment/PostAdd dispatch are separately admitted
+- **AND** the proof does not certify save/load, later stored-rate writers, concrete daily-rate/hash/calendar/batching behavior, other accumulators or clamping, and does not close complete native-fact or player-workflow acceptance.
+
 #### Scenario: Fresh-dose and side-high assumptions remain visible
 - **WHEN** the preview uses an admitted ordinary native high, Alcohol, Rest-offset or rottable drug shape
 - **THEN** it states the fresh whole-dose/no-prior-effect assumptions and explains that ordinary impairment, food poisoning and residual high/tolerance are not prevented by the suggestion.
@@ -243,6 +258,18 @@ not replace those created Any choices; the retained preference applies only to n
 #### Scenario: Drug content changes while preview is open
 - **WHEN** a drug is removed or its relevant behavior changes after the preview was prepared
 - **THEN** Create new policy refuses the stale draft and explains that it must be refreshed.
+
+#### Scenario: Consumed definition inputs change without changing the displayed number
+- **WHEN** a consumed outcome, comp, stage, giver, curve, adult-baseline input or unresolved
+  partial-dose membership changes after capture, even if projected suggestion numbers remain equal
+- **THEN** the old preview cannot create a policy and must be refreshed from the current inputs
+- **AND** restoring a previously observed stale input does not reactivate that preview.
+
+#### Scenario: Complete input capture exceeds its bounded work allowance
+- **WHEN** a consumed collection exceeds4096 entries or one complete input capture exceeds65536
+  collected entries, including repeated references in the declared fixed-depth shape
+- **THEN** generation is unavailable with a bounded-work reason and ordinary policy controls remain
+  usable; no partial or truncated catalog is presented as a complete suggestion.
 
 #### Scenario: Save changes or tolerance support disappears
 - **WHEN** the player switches colonies or required tolerance support becomes unavailable

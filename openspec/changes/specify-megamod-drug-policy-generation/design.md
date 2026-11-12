@@ -341,8 +341,25 @@ binding belongs to the orchestrator; overlapping independent claims are refused.
 parent.pawn field with no native-reference write/escape or substituted result, while allowing
 harmless reference locals. This is a positive field-projection subclaim and remains unregistered.
 It does not prove native instance initialization, hash semantics or future field stability.
-The seven-role deterministic SeverityPerDay initialization continuation remains outstanding; its
-unfinished draft is outside compiled sources during the integrated native build checkpoint.
+The next seven-role `DrugGenerationSeverityInitializationGuard` is also unregistered and reuses
+the same finite observation bundle unchanged. It proves the actual zero-input Rand Range/Chance
+early returns, same-address FloatRange getter, properties calculator, comp properties projection,
+empty base PostAdd hook and concrete initialization write. The calculator reads the rate before
+the range call and stores the sum into Single before the zero-chance branch; the hook forwards
+the original receiver/input to its base once and stores one calculated result into that comp.
+Nops and proved scalar observers are compatible. Address writes/escape, substituted properties
+or destination, changed stores/order, skip/duplicate calls and relevant callback repatching refuse
+the current claim. All selected inner callbacks still receive the existing conservative proof,
+including selections in a specialized unreachable tail; no new reachability API is introduced.
+
+This is a conditional initialization producer, not a current-input or perpetual-field invariant.
+F0/F2 must separately bind the actual nonnull comp/properties pair and finite negative rate with
+zero endpoints/reversal; either signed zero is allowed. The real types, especially Rand, must
+already have naturally completed initialization. Host NoInlining fixtures do not prove native
+Mono call-edge/repatch behavior, actual construction/assignment/PostAdd dispatch, save/load or
+later field stability. The concrete rate and hash/calendar/batching/outer accumulation/clamp
+obligations remain open. Root integrates the native union of roots without overlapping observers;
+none of these partial receipts exposes generation or closes task1.6.
 
 Generation preference controls use the common composite-settings renderer. A small transient
 percentage draft reuses S138's localized percentage parser and exact unchanged-value preservation;

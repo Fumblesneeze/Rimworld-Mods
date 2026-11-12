@@ -24,8 +24,24 @@ The next bounded checkpoint adds actual pawn-field projection and extracts only 
 generation observation lifecycle into one finite-root helper. Its affected host set is19/19
 (thirteen contribution regressions plus six projection/declaration/shared-callback/rollback cases).
 The helper remains unregistered; actual native binding and initialization/hash/rate dependencies
-remain open. The unfinished zero-range initialization draft is retained outside compilation for
-the next lease. This scheduling checkpoint closes no task1.6 or native acceptance obligation.
+remain open. This scheduling checkpoint closes no task1.6 or native acceptance obligation.
+
+The following bounded continuation implements the seven-method zero-range initialization body
+guard with helper → calculator → hook focused RED/GREEN, using the same observation bundle
+unchanged. Its host tests execute actual signed-zero, calculator and instance-field behavior,
+changed receiver/field/address/store/call/branch effects and observer currentness. The helper is
+unregistered and conditional on F0/F2 inputs and naturally initialized runtime types; native
+Mono call edges/repatching, real PostAdd dispatch, save/load and remaining rate/hash/calendar/
+accumulator/clamp work are still open. Independent review closed after five same-shaped call-operand
+replacement regressions; the affected checkpoint passes62/62 (43initialization plus19existing).
+Root native integration remains a separate gate; this checkpoint closes none of the task boxes below.
+
+The detached F0 consumed-input snapshot also has four retained RED/GREEN batches and60/60 focused
+constructed-Defs cases with an independent no-finding review. It retains known field/reference
+shapes, exact floats, supplied Human/curve/partial inputs, lifetime/disposal and complete bounded
+refusal. The native origin of those supplied handles, Game/applied-availability authority and final
+F0–F5 audit remain open. Evidence is local in
+`artifacts/Implementation/megamod-p0/s139-native-facts/fact-inputs/implementation.md`.
 
 - [ ] 2.1 After 1.1–1.3 and 1.7, RED/GREEN C1 one established suggestion at a time in Unit using immutable fact inputs; include binary32 decay boundaries, late/early day boundaries and dispatch margin, editor overflow without clamping, unsupported/negative/nonfinite/non-progress cases, chemical-or-tolerance connected groups, dose/population assumptions, manual provenance and no arbitrary drug-name dependency. Retain durable actual failures and passing nonzero counts; runtime exposure still requires 1.6.
   - Revision20 core implemented with five retained RED/GREEN slices and 46/46 focused Unit cases; independent review found no issues. Checkpoint e4f7827. `Source/Features/DrugPolicyGeneration/README.md` describes the bounded API and local evidence ledger. This does not close runtime fact admission, complete preference/reset editing or native creation.

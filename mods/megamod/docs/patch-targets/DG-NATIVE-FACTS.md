@@ -1,7 +1,7 @@
 # DG-NATIVE-FACTS: current native facts for C1 suggestions
 
-Owner: `fumblesneeze.megamod`, S139. **Definition projection and a contribution-only F1 host
-admission milestone implemented; complete effective admission and native finalized-fact/player
+Owner: `fumblesneeze.megamod`, S139. **Definition projection, detached F0 inputs and partial F1 contribution, pawn and
+zero-range initialization body proofs implemented; complete effective admission and native finalized-fact/player
 acceptance pending.** No mutation patch, runtime registration or player-facing invocation is added.
 Index before wiring the runtime consumer.
 
@@ -122,10 +122,45 @@ including the thirteen contribution cases passes19/19. This helper is unregister
 the current field projection, not proof of parent/pawn initialization, permanent field stability,
 the hash helper or actual game binding.
 
-Deterministic SeverityPerDay initialization remains unimplemented in the compiled product. Its
-zero-helper research/test draft is retained under local artifacts for the next lease; unfinished
-draft source was removed before this checkpoint's build freeze. No initialization receipt or
-first-use static-initializer effect is authorized by the pawn projection.
+## F1 conditional zero-range initialization body proof
+
+`DrugGenerationSeverityInitializationGuard` supplies seven finite root validators to the existing
+`DrugGenerationObservedBodies`; it adds no observer graph, registration or general IL evaluator.
+The binding names the actual nongeneric declarations of `Rand.Range(float,float)`,
+`Rand.Chance(float)`, `FloatRange.get_RandomInRange`,
+`HediffCompProperties_SeverityPerDay.CalculateSeverityPerDay`, private
+`HediffComp_SeverityPerDay.get_Props`, `HediffComp.CompPostPostAdd(DamageInfo?)` and the concrete
+SeverityPerDay override. Dependencies are observed before their callers. Duplicate method/field
+roles, changed callable shapes and unknown roots refuse the claim.
+
+The claim requires a valid same nonnull comp/properties pair, a finite negative properties rate,
+both range endpoints and reversal equal to zero, and already naturally initialized runtime types.
+F0/F2 must establish these premises; the body guard does not read them or manufacture a comp.
+Either sign of zero is accepted. The two helpers' actual initial `bgt.un` comparisons fall through
+to the original minimum/false return for those inputs, without reaching random sampling. The
+range getter reads min then max from the same managed value-type receiver without writing or
+escaping it. The calculator reads the original properties rate before the range-address call,
+adds the helper result, stores to a Single local, reads reversal and calls Chance, then returns
+that same stored local on false. It preserves the native store and read timing rather than
+reassociating a real-number formula. Unreachable random/reversal tails are not evaluated; the
+existing bundle still conservatively checks all selected inner callbacks in the captured body.
+
+The properties getter reads the same comp's `props` field and casts to the bound concrete type.
+The actual base hook is an empty return. The concrete hook forwards its original this/nullable
+input once to that direct base call, obtains this comp's properties, performs one `callvirt` to
+the actual nonvirtual calculator and writes one Single result into this comp's `severityPerDay`.
+Labeled nops and proved scalar diagnostic callbacks remain eligible. Changed receivers, fields,
+address writes/escapes, call counts, precision stores, branches or callback effects refuse the
+affected current claim; inspection never invokes a foreign callback or replays its transpiler.
+
+The focused host cases execute signed-zero returns, actual calculator and instance-field writes,
+and changed helper/calculator/hook bodies before asserting refusal. Observer acquisition/repatch
+and harmless labeled nops use the unchanged finite-bundle lifecycle. Native Mono call edges and
+repatch/inlining, Rand's real type initialization, F0 current input identities and F2 actual
+creation/parent/props/PostAdd dispatch remain unproved. Save/load and later field writers are not
+covered by this initialization claim. Concrete daily-rate, hash/calendar/batching, other
+accumulators and clamp/removal obligations remain open. No preview or complete native facts are
+authorized; eventual runtime union-bundle integration remains root-owned and unregistered.
 
 ## Effective native semantics still required before exposure
 
@@ -162,6 +197,31 @@ does not publish a digest, manage generation or authorize preview/creation. Unkn
 must be refused by that future gate even when this static shape projector returns OrdinaryWholeDose.
 
 ## Failure, composition and diagnostics
+
+F0 consumed-input continuation: `DrugGenerationFactInputs` is a preview-local detached comparison
+over the same `DrugCatalogRead`, explicit current partial-dose membership, freshly read Human-adult
+inputs and a supplied current effect-factor curve. It snapshots the declared known field/reference
+shape with exact identity and binary32 values; equal projected numbers are insufficient. A failed
+comparison permanently disposes this receipt. It adds no Def database scan or mutation observer
+and cannot detect an unobserved change-and-restore cycle. Root must separately bind the finalized
+native Human fields and actual static curve, current Game and applied drug availability; neither
+an incident-only receipt nor a supplied detached object proves those premises. Unknown reachable
+shapes still require explicit refusal by the fact classifier/effective-body gate.
+
+The synchronous read has fixed-depth typed traversal, at most4096 entries per collection and65536
+collected entries in total, counting repeated references. Exceeding either limit refuses the whole
+capture/currentness check with an explicit reason; it never truncates an available-drug list.
+These work bounds protect the game-thread read and are not dose, risk or drug-count balance caps.
+Constructed-Defs tests prove snapshot/currentness behavior only; the runtime binding and complete
+F0–F5 footprint audit remain prerequisites before any preview is exposed.
+
+The F0 checkpoint has four retained RED/GREEN batches and60/60 constructed-Defs cases with an
+independent no-finding review. The initialization checkpoint has62/62 affected Harmony cases
+(43new plus19 contribution/pawn regressions); its review's five missing same-shaped call-operand
+replacement cases were added and independently closed. Root verified exact source hashes and
+nonzero TRX counts. Local ledgers are `s139-native-facts/fact-inputs/implementation.md` and
+`s139-native-facts/initialization-checkpoint.md` under the ignored implementation evidence root.
+These are unregistered implementation checkpoints, not native binding or gameplay acceptance.
 
 Unknown, UnsupportedEffects, UnsupportedTolerance, UnsupportedDecay and UnresolvedPartialDose are
 explicit row classifications; raw nonfinite risk values survive for C1's numeric rejection. No row
