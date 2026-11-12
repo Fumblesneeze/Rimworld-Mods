@@ -137,14 +137,18 @@ warning/effective-off verification suffices; no original API/drop-in test matrix
 
 ### Revision21 native composition assumptions
 
-The adapter binds each edit to the exact current Game, native policy database member,
-open manager/selected policy, unique drug row and original immutable choice. Replacing the row,
-switching the selection/game or another committed choice invalidates the draft; a rename or sort
-that preserves those identities does not. The window has explicit Any, percentage, Apply and Cancel
-controls. Native font measurement uses the current locale each assessment; ordinary enable
-preferences remain editable when semantic/layout support is unavailable. Seven catalogs are
-authored. Scoped English editor input has reviewed native evidence recorded in tasks; broader
-language, layout and input obligations remain outstanding.
+The2026-11-12 user correction supersedes the contextual dialog: use the same Widgets.HorizontalSlider
+as the adjacent native mood/recreation controls. Reuse its native rectangle offset/contract, middle
+alignment, rail, handle and current-value label; do not author another control. Position0..101 maps
+explicit interaction to whole numeric percentages0..100 and the final Any stop. Rounding happens
+only after interaction, so merely drawing a retained12.5% or other exact value never changes it.
+This one-percent edit granularity is an implementation assumption; the stored codec and comparison
+precision remain unchanged. Needs review retains its encoding until a deliberate slider selection.
+No extra modal, Apply or Cancel is involved. Before committing, revalidate the exact current Game,
+open manager/selected database policy, unique current drug row, original immutable choice and current
+effective availability. There is no cross-frame edit authority. Native font measurement still uses
+the current locale; ordinary enable preferences remain editable when support is unavailable.
+Earlier dialog-native evidence remains historical and cannot accept this changed control.
 
 The direct-joy adapter proves the consumed positive DrugDesire/mental-state suffix in each incoming
 generation before projecting the exception. The initial native resolver supports an inherited

@@ -163,6 +163,12 @@ display restoration, unchanged normal configuration and graceful cleanup are ret
 This accepts the scoped layout/scale UI behavior only. Resolution selection was setup, not a native
 workflow. Routine fail-open, seven-language/tooltips and all other pending compositions remain open.
 
+The2026-11-12 user correction supersedes the separate dialog with the same native horizontal
+slider as the adjacent controls. Older modal editor and layout captures remain historical to their
+exact builds. The new focused host batch covers retained fractions/malformed encodings,0..100
+and separate Any; executable editor/layout scenarios use the new control. Fresh independent review
+and personal native observation are still required before accepting the slider revision.
+
 ## 3. Configuration and native policy controls
 
 - [ ] 3.1 Add the common feature setting with current-global inheritance, dormant overrides, main-menu callback guards, next-decision application timing and exact save teardown.

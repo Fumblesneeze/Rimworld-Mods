@@ -43,6 +43,14 @@ event occurs.
 - Use the native float-menu/gizmo path and exact eligibility/rejection behavior. A direct job start is
   not proof that the player can issue the order.
 
+## Reuse the neighboring native control
+
+Before adding a button or modal editor for a value, inspect the controls beside its intended row.
+When the same kind of value already uses a native slider, call that control with its native
+geometry and interaction conventions. Do not add a separate editor unless a specified behavior
+needs it. Inspect normalization timing: some native slider rounding runs during every draw, so
+apply input rounding only after actual interaction when saved precision must survive painting.
+
 ## Keep terminology and localization coherent
 
 Choose one concept name and use it across Def labels, recipes, categories, jobs, alerts, settings,

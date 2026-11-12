@@ -23,11 +23,12 @@ inactive with an explanation. Unavailable or inapplicable drugs SHALL not gain i
 - **WHEN** the player turns off both scheduled and recreational use on a row with a chosen limit
 - **THEN** that limit remains visible as inactive and returns when either use is enabled again.
 
-#### Scenario: Edit a row without changing it until Apply
-- **WHEN** the player opens the row's contextual tolerance editor and changes Any or its numeric percentage
-- **THEN** the current policy choice remains unchanged until Apply, and Cancel discards the draft
-- **AND** Apply accepts only a finite number from 0 through 100 using the current numeric locale,
-  preserves an unchanged valid value exactly, and revalidates the current game, policy and row identity.
+#### Scenario: Edit tolerance with the native row slider
+- **WHEN** the player adjusts tolerance in the drug-policy row
+- **THEN** it uses the same native horizontal slider control, rail, handle, label and vertical alignment as the adjacent mood and recreation sliders, without a separate button, dialog or Apply/Cancel step
+- **AND** explicit slider interaction immediately commits a whole percentage from0 through100 or the separate rightmost Any stop; numeric100 and Any remain distinct
+- **AND** drawing alone preserves every existing exact numeric value and malformed saved encoding; an explicit valid slider interaction can repair Needs review
+- **AND** each commit revalidates the current Game, manager, selected policy, exact row/drug, original choice and effective availability, without retaining edit authority across frames.
 
 ### Requirement: Any and numeric thresholds have explicit meanings
 With the feature enabled and available, routine use governed by a numeric choice SHALL require

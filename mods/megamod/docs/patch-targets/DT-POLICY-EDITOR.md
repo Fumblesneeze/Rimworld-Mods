@@ -1,18 +1,19 @@
 # DT-POLICY-HEADER / DT-POLICY-ROW: contextual tolerance controls
 
 Owner `fumblesneeze.megamod`, S138. Contracts: contextual Any/numeric gameplay state, explicit
-Apply/Cancel, current policy identity, honest unavailable presentation and atomic enforcement.
+immediate native slider edits, current policy identity, honest unavailable presentation and atomic enforcement.
 Native private instance void targets on `Dialog_ManageDrugPolicies` are
 `DoColumnLabels(Rect)` and `DoEntryRow(Rect,DrugPolicyEntry,int)`. These are native game methods;
 no owned implementation or original-mod layout is patched/copied.
 
 Reserve a measured right-hand column from each incoming native rectangle, preserving the original
-rectangle for the owned label/button. The native body continues to calculate its existing widths
+rectangle for the owned label/slider. The native body continues to calculate its existing widths
 from the narrower rectangle. Header coordinates account for its existing 16-unit scrollbar inset;
-row coordinates use the actual native scroll view. A current native row button shows Any, the
-retained percentage, Needs review, inactive or unavailable. It opens an owned native contextual
-window bound to the exact current Game, manager, selected policy and row. The draft changes no
-policy before Apply. Apply rechecks that context and effective support, and Cancel discards it.
+row coordinates use the actual native scroll view. The tolerance row uses Widgets.HorizontalSlider
+with the same rectangle treatment and vertical alignment as the adjacent mood/recreation controls.
+Positions0..100 select integer percentages and101 is the distinct Any stop. Explicit interaction
+commits immediately in the same row. Drawing retains exact saved fractions and malformed encodings;
+no roundTo argument is supplied because native rounding also runs during repaint.
 
 Before argument changes, admit the actual incoming rectangle-to-CalculateColumnsWidths chain.
 Its receiver, rectangle argument and out-local destinations must be unambiguous. Header's native
@@ -48,9 +49,9 @@ Capture exact row/rectangle identities after compatible outer prefixes. Draw onl
 original execution with the same admitted generation and current context. Restore owned GUI
 font/color/anchor/enabled changes in a finally block. A skipped/failed native call cannot commit an
 edit or leave GUI state behind. The original native rectangle is not persisted or cached across
-windows/games; focus belongs to the current contextual draft only.
+windows/games; there is no separate draft or retained text focus.
 
-The first measured layout reserves at least 120 GUI units (or wider translated label/button text)
+The first measured layout reserves at least 120 GUI units (or wider translated label text)
 and keeps at least 600 for native columns. Those bounds are implementation assumptions awaiting
 real seven-language/narrow-window validation; unsupported widths keep choices unavailable and
 native UI intact instead of activating hidden limits. This does not copy upstream's three fixed
@@ -62,18 +63,17 @@ persistence CanUseChoices, common effective enablement, available native layout 
 context gate every edit and restriction. Every incoming transpiler generation is validated or
 returned unchanged; immutable receipts and provider identity revoke removed/changed callbacks.
 Only acquired owned slots are rolled back, with bounded unavailable diagnostics. Original-provider
-effective-off retains stored settings and row state. Native layout/edit/apply/cancel/save-switch
+effective-off retains stored settings and row state. Native layout/slider/save-switch
 scenarios and all required languages remain root acceptance obligations.
 
-## Revision21 contextual window and runtime composition
+## Native slider and runtime composition — user correction2026-11-12
 
-The staged native window uses an explicit Any checkbox, culture-aware percentage TextField,
-Apply and Cancel. Invalid text disables Apply; unchanged valid input retains the original exact
-choice. The draft session consumes its commit authority before writing and disposes it on close.
-The current-context predicate requires the exact Game, still-open manager, selected policy,
-unique current row/drug and unchanged original choice, as well as current atomic availability.
-Changing selection, replacing a row, editing that choice elsewhere or switching games revokes
-the draft. Native sorting/rename that retains those objects does not itself revoke it.
+The user explicitly requested the same native slider as the neighboring controls. This supersedes
+the earlier modal Any/TextField/Apply/Cancel design and its historical acceptance. Before each
+immediate write, the runtime revalidates exact Game, open manager, selected current policy, unique
+current row/drug, unchanged original choice and current atomic availability. A disabled or
+inapplicable row cannot interact. The choice codec retains its existing precision; whole-percent
+steps are an input affordance, not a storage migration.
 
 The runtime exposes one Early PatchGroup containing geometry admission, allocation, all three
 routine routes, header/row invocation bridges and a final runtime activation marker. Persistence
@@ -81,7 +81,7 @@ support remains independently owned. No callback is registered by these feature 
 integration. Common feature preferences stay editable when capability/layout support is missing,
 with a translated current status; effective original-provider suppression preserves requested
 global/save values. Seven complete catalogs are authored, but native readability and faithful
-TextField interaction remain unverified. The geometry and integrated runtime review findings are
+slider interaction require current reviewed native evidence. The geometry and integrated runtime review findings are
 resolved and owning product compilation passes. Exact native admission and action/result evidence
 remain outstanding. The frozen packets and controls are recorded under
 `artifacts/Implementation/megamod-p0/s138-revision21/`.

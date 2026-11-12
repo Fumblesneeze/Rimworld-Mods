@@ -990,3 +990,11 @@ patch or permanently unavailable generator substitutes for that obligation. The 
 refactor reads physical curve storage directly, preserving the current snapshot contract and all
 remaining native initialization/evaluation premises. This evidence-driven correction preserves the
 four positive C1 profiles, all139 features and the complete native acceptance plan.
+
+Revision21 user correction2026-11-12 — S138 uses the same native horizontal slider as adjacent
+mood/recreation controls. The modal button/dialog design is superseded. Root removes its draft
+session and migrates affected native scenarios as one batch; no new numeric persistence format is
+introduced. Whole-percent slider stops preserve a distinct Any endpoint, while painting retains
+exact existing fractions and malformed encodings. Earlier modal/native-layout evidence is historical;
+the reviewed slider/editor/layout batch requires fresh native observation. All remaining features,
+S138/S139 compositions and P0–P8 obligations remain allocated.

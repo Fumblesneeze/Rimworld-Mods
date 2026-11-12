@@ -829,3 +829,10 @@ graceful shutdown and unchanged normal hashes. Full evidence and scoped playabil
 `artifacts/Implementation/megamod-p0/s138-language-layout/native-verification.md`; native resolution
 selection and routine fail-open are unclaimed. Shared cleanup polling also has its host and native
 usage gate. Remaining S138/S139, seven-language/hover and all139/P0–P8 obligations remain allocated.
+
+The World/caravan correction batch now passes306Unit/15Harmony checks and its owning fixture
+compiles. Independent World and caravan-input re-reviews found no remaining issues; the25-file
+correction manifest is retained locally. Root owns the reviewed checkpoint and fresh exact native
+caravan inspection gate; no host result closes native acceptance. The user concurrently requested
+S138 use the same native slider as neighboring controls. Root prioritizes the complete slider,
+scenario migration and editor/layout gate, replacing the older modal design and its acceptance.

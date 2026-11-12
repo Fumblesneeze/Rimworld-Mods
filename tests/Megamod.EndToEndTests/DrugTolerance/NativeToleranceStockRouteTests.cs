@@ -33,7 +33,6 @@ public sealed class NativeToleranceStockRouteTests : IRimWorldEndToEndTest
     private static readonly FieldInfo TimesTakenField = Field(typeof(DrugTakeRecord), "timesTakenThisDayInt");
     private static readonly FieldInfo ChewingField = Field(typeof(JobDriver_Ingest), "chewing");
     private static readonly FieldInfo ToilsField = Field(typeof(JobDriver), "toils");
-    private static readonly FieldInfo ScrollField = Field(typeof(Dialog_ManageDrugPolicies), "scrollPosition");
     private static readonly MethodInfo ShouldTarget = Method(typeof(Pawn_DrugPolicyTracker), nameof(Pawn_DrugPolicyTracker.ShouldTryToTakeScheduledNow), typeof(ThingDef));
     private static readonly MethodInfo AllowedTarget = Method(typeof(Pawn_DrugPolicyTracker), nameof(Pawn_DrugPolicyTracker.AllowedToTakeScheduledNow), typeof(ThingDef));
     private static readonly MethodInfo SplitTarget = Method(typeof(ThingWithComps), nameof(Thing.SplitOff), typeof(int));
@@ -74,7 +73,6 @@ public sealed class NativeToleranceStockRouteTests : IRimWorldEndToEndTest
     private EndToEndNativeWindow window = null!;
     private MainTabWindow_Assign assign = null!;
     private Dialog_ManageDrugPolicies manager = null!;
-    private Dialog_DrugTolerance editor = null!;
     private string pointer = null!;
 
     public void Arrange(IEndToEndContext context)
@@ -82,12 +80,12 @@ public sealed class NativeToleranceStockRouteTests : IRimWorldEndToEndTest
         game = Current.Game; map = Find.CurrentMap; RequireGame();
         EndToEndAssert.True(active == null && game.PlayerHasControl && Prefs.DevMode && !LongEventHandler.AnyEventNowOrWaiting);
         EndToEndAssert.True(Find.MainTabsRoot.OpenTab == null && Find.Selector.SelectedObjects.Count == 0 &&
-            !Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>() && !Find.WindowStack.IsOpen<Dialog_DrugTolerance>() &&
+            !Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>() &&
             !Find.WindowStack.IsOpen<EditWindow_Log>() && map.mapPawns.AllPawnsSpawned.Count == 0,
             "This scenario requires the runner's empty disposable map, with no competing actors.");
         EndToEndAssert.True(BindingField.FieldType == typeof(SaveSettingsBinding) && PolicyField.FieldType == typeof(DrugPolicy) &&
             HistoryField.FieldType == typeof(List<DrugTakeRecord>) && TimesTakenField.FieldType == typeof(int) &&
-            ChewingField.FieldType == typeof(Toil) && ToilsField.FieldType == typeof(List<Toil>) && ScrollField.FieldType == typeof(Vector2));
+            ChewingField.FieldType == typeof(Toil) && ToilsField.FieldType == typeof(List<Toil>));
         settings = SettingsRuntime.Instance ?? throw new InvalidOperationException("Common settings unavailable.");
         binding = BindingField.GetValue(settings) as SaveSettingsBinding ?? throw new InvalidOperationException("Native lifecycle has not published a save binding.");
         initialGlobals = settings.Store.ExportGlobals(); initialSave = settings.Store.ExportSave(binding);
@@ -169,8 +167,8 @@ public sealed class NativeToleranceStockRouteTests : IRimWorldEndToEndTest
         }
         yield return new AssertionStep("verify exact stock-route action and deadline accounting", _ =>
         {
-            EndToEndAssert.Equal(51, nativeOperations); EndToEndAssert.Equal(14, screenshots); EndToEndAssert.Equal(335, waitSeconds);
-            EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 180 == 1700);
+            EndToEndAssert.Equal(47, nativeOperations); EndToEndAssert.Equal(14, screenshots); EndToEndAssert.Equal(330, waitSeconds);
+            EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 180 == 1635);
         });
         yield return new CheckpointStep("final native stock evidence; no broader S138 acceptance", _ => Evidence());
     }
@@ -272,22 +270,15 @@ public sealed class NativeToleranceStockRouteTests : IRimWorldEndToEndTest
         yield return Click("select A's exact scheduled policy", view.PolicyRow(manager, a.Policy).center);
         yield return Capture<Dialog_ManageDrugPolicies>("capture A's selected zero row", current => manager = current);
         yield return Shot("A's scheduled Beer row shows numeric zero before the native edit");
-        yield return Click("open A's contextual Beer tolerance editor", RowPoint());
-        yield return Capture<Dialog_DrugTolerance>("capture the native contextual draft", current => editor = current);
-        yield return Click("select Any in A's native contextual draft", AnyPoint());
-        yield return Capture<Dialog_DrugTolerance>("recapture the checked Any draft before Apply", current => editor = current);
-        yield return new AssertionStep("Any remains an unapplied draft", _ =>
-        { EndToEndAssert.True(editor.Any); EndToEndAssert.Equal("1:limit:0", NativeDrugToleranceState.ReadEncoded(a.Entry)); });
-        yield return Click("apply Any through the native button", new Vector2(18 + (editor.windowRect.width - 36) * .75f + 2.5f, editor.windowRect.height - 35.5f));
+        yield return Click("select Any with A's native tolerance slider", NativeToleranceSliderView.Point(manager, a.Policy, a.Entry, 101));
         yield return new AssertionStep("observe the native Any commit without changing B's zero", _ =>
         {
             EndToEndAssert.Equal("1:any", NativeDrugToleranceState.ReadEncoded(a.Entry));
             EndToEndAssert.Equal("1:limit:0", NativeDrugToleranceState.ReadEncoded(b.Entry));
             anyApplied = true; phase = 1; RequireCurrent(); AssertUntouched();
         });
-        yield return Wait("wait for the native Apply to close its exact editor", _ => !editor.IsOpen && !Find.WindowStack.Windows.Contains(editor), 120, 5);
         yield return Capture<Dialog_ManageDrugPolicies>("capture A's newly applied Any row", current => manager = current);
-        yield return Shot("native Apply changes A to Any while scheduling and stock target two remain intact");
+        yield return Shot("native slider changes A to Any while scheduling and stock target two remain intact");
         yield return new WindowCancelActionStep("close the native policy manager", typeof(Dialog_ManageDrugPolicies).FullName!);
         yield return new NativePointerScopeEndStep("restore the native editor pointer", pointer);
         yield return new NativeMainTabActionStep("close Assign after the native Any edit", "Assign", false);
@@ -489,24 +480,6 @@ public sealed class NativeToleranceStockRouteTests : IRimWorldEndToEndTest
         __state.Completed = true; __state.RanOriginal = __runOriginal;
     }
 
-    private Vector2 RowPoint()
-    {
-        EndToEndAssert.True(ReferenceEquals(view.Selected(manager), a.Policy) && (Vector2)ScrollField.GetValue(manager)! == Vector2.zero);
-        int index = Enumerable.Range(0, a.Policy.Count).Single(i => ReferenceEquals(a.Policy[i], a.Entry));
-        EndToEndAssert.True(147 + a.Policy.Count * 35 < manager.windowRect.height - 36 - Window.CloseButSize.y - 11);
-        return new(manager.windowRect.width - 18 - 1 - 60, 18 + 147 + index * 35 + 17.5f);
-    }
-    private Vector2 AnyPoint()
-    {
-        var font = Text.Font; bool wrap = Text.WordWrap;
-        try
-        {
-            Text.Font = GameFont.Small; Text.WordWrap = true;
-            float height = Text.CalcHeight("Megamod.DrugTolerance.RuleHelp".Translate(), editor.windowRect.width - 36);
-            return new(editor.windowRect.width - 30, 18 + 50 + height + 14);
-        }
-        finally { Text.Font = font; Text.WordWrap = wrap; }
-    }
     private NativeWindowCaptureStep Capture<T>(string name, Action<T> retain) where T : Window => new(name, windows =>
     {
         RequireCurrent();
@@ -547,7 +520,7 @@ public sealed class NativeToleranceStockRouteTests : IRimWorldEndToEndTest
             ["selectedAttachedJob"] = attachedJob?.ToString() ?? "unobserved", ["selectedRefillJob"] = refillJob?.ToString() ?? "unobserved",
             ["chewingTick"] = chewingTick.ToString(), ["doseCompletedTick"] = doseCompletedTick.ToString(), ["refillSelectedTick"] = refillSelectedTick.ToString(),
             ["traceOwner"] = traceOwner.Id, ["nativeOperations"] = nativeOperations.ToString(), ["screenshots"] = screenshots.ToString(),
-            ["maximumWaitSeconds"] = waitSeconds.ToString(), ["scopeBudgetSeconds"] = "1800; launcher2100; exact fixed+wait+reserve1700"
+            ["maximumWaitSeconds"] = waitSeconds.ToString(), ["scopeBudgetSeconds"] = "1800; launcher2100; exact fixed+wait+reserve1635"
         };
     }
     private string SubjectEvidence(Subject subject) => $"pawn={subject.Pawn.ThingID};policy={subject.Policy.id}:{subject.Policy.label};choice={NativeDrugToleranceState.ReadEncoded(subject.Entry)};scheduled={subject.Entry.allowScheduled};joy={subject.Entry.allowedForJoy};target={subject.Entry.takeToInventory};drafted={subject.Pawn.Drafted};currentJob=[{CurrentJobEvidence(subject.Pawn)}];inventory={string.Join(",", subject.Pawn.inventory.innerContainer.Select(ThingEvidence))};carried={ThingEvidence(subject.Pawn.carryTracker.CarriedThing)};history={string.Join(",", History(subject.Pawn).Select(record => record.drug.defName + ":tick=" + record.lastTakenTicks + ":count=" + TimesTakenField.GetValue(record)))};alcohol={Severity(subject, highDef).ToString("R", CultureInfo.InvariantCulture)};tolerance={Severity(subject, toleranceDef).ToString("R", CultureInfo.InvariantCulture)}";

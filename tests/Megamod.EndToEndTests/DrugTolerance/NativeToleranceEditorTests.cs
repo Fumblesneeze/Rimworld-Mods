@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using LudeonTK;
 using Megamod.EndToEndTests.DrugPolicyMaintenance;
-using Megamod.Features.DrugTolerance;
 using Megamod.Features.DrugTolerance.Core;
 using Megamod.Features.DrugTolerance.Runtime;
 using RimWorld;
@@ -17,32 +14,33 @@ namespace Megamod.EndToEndTests.DrugTolerance;
 
 [RimWorldEndToEndTest("megamod.drug-tolerance.native-editor", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
-    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 1200)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 900)]
 public sealed class NativeToleranceEditorTests : IRimWorldEndToEndTest
 {
     private readonly NativeDrugPolicyView view = new();
     private readonly HashSet<Window> ownedWindows = new();
-    private readonly string marker = "ToleranceEditor-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+    private readonly string marker = "ToleranceSlider-" + Guid.NewGuid().ToString("N").Substring(0, 8);
     private IEndToEndContext context = null!;
     private Game game = null!;
     private DrugPolicy policy = null!;
-    private DrugPolicyEntry beer = null!;
+    private DrugPolicyEntry beer = null!, smokeleaf = null!;
+    private DrugToleranceChoice retained = null!, malformed = null!;
     private MainTabWindow_Assign assign = null!;
     private Dialog_ManageDrugPolicies manager = null!;
-    private Dialog_DrugTolerance editor = null!;
     private EndToEndNativeWindow window = null!;
     private string pointerScope = null!;
+    private int nativeOperations, screenshots;
 
     public void Arrange(IEndToEndContext context)
     {
         this.context = context; game = Current.Game;
         EndToEndAssert.True(game.PlayerHasControl && Current.ProgramState == ProgramState.Playing && !LongEventHandler.AnyEventNowOrWaiting);
         EndToEndAssert.True(Find.MainTabsRoot.OpenTab == null && !Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>() &&
-            !Find.WindowStack.IsOpen<Dialog_DrugTolerance>() && !Find.WindowStack.IsOpen<EditWindow_Log>());
+            !Find.WindowStack.IsOpen<EditWindow_Log>());
         var speed = Find.TickManager.CurTimeSpeed;
         context.DeferCleanup(() => { RequireGame(); Find.TickManager.CurTimeSpeed = speed; });
         Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
-        // Disposable native policy setup; every accepted choice below is made through its UI.
+        // Disposable retained-value preconditions; every changed choice below uses the native slider.
         policy = game.drugPolicyDatabase.MakeNewDrugPolicy(); policy.label = marker;
         context.DeferCleanup(() =>
         {
@@ -50,11 +48,33 @@ public sealed class NativeToleranceEditorTests : IRimWorldEndToEndTest
             if (policy.label == marker) game.drugPolicyDatabase.AllPolicies.Remove(policy);
         });
         beer = policy[DefDatabase<ThingDef>.GetNamed("Beer")];
-        beer.allowScheduled = true; beer.allowedForJoy = false;
-        EndToEndAssert.Equal(DrugToleranceChoiceKind.Any, NativeDrugToleranceState.Read(beer).Kind);
+        smokeleaf = policy[DefDatabase<ThingDef>.GetNamed("SmokeleafJoint")];
+        beer.allowScheduled = smokeleaf.allowScheduled = true;
+        beer.allowedForJoy = smokeleaf.allowedForJoy = false;
+        beer.onlyIfMoodBelow = .65f; beer.onlyIfJoyBelow = .75f;
+        retained = DrugToleranceChoice.Numeric(.125f);
+        malformed = DrugToleranceChoice.Decode("unrecognized-retained-value");
+        NativeDrugToleranceState.Write(beer, retained);
+        NativeDrugToleranceState.Write(smokeleaf, malformed);
     }
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
+    {
+        foreach (var step in Workflow())
+        {
+            if (step is ScreenshotStep) screenshots++;
+            else if (step.Kind == EndToEndStepKind.Act || step is NativeWindowCaptureStep) nativeOperations++;
+            yield return step;
+        }
+        yield return new AssertionStep("count the complete native slider workflow", _ =>
+        {
+            EndToEndAssert.Equal(25, nativeOperations);
+            EndToEndAssert.Equal(8, screenshots);
+            EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + 180 <= 900);
+        });
+    }
+
+    private IEnumerable<EndToEndStep> Workflow()
     {
         yield return new NativeMainTabActionStep("open Assign for native tolerance editing", "Assign", true);
         yield return Capture<MainTabWindow_Assign>("capture native policy manager entry", current => assign = current);
@@ -62,125 +82,61 @@ public sealed class NativeToleranceEditorTests : IRimWorldEndToEndTest
         yield return Click("open the native drug-policy manager", view.ManageButton(assign).center);
         yield return Capture<Dialog_ManageDrugPolicies>("capture native policy list", current => manager = current);
         yield return Click("select the disposable policy", view.PolicyRow(manager, policy).center);
-        yield return Capture<Dialog_ManageDrugPolicies>("capture selected policy and tolerance column", current => manager = current);
-        yield return Shot("new policy shows Any beside native drug controls");
-        foreach (var step in OpenEditor()) yield return step;
-        yield return Click("switch Any off in the native contextual editor", AnyPoint());
-        foreach (var step in Replace("NaN")) yield return step;
-        yield return Shot("invalid native text leaves Apply disabled and policy unchanged");
-        yield return Click("attempt the visibly disabled Apply button", ApplyPoint());
-        yield return new AssertionStep("invalid input leaves the exact editor open and policy Any", _ =>
+        yield return Capture<Dialog_ManageDrugPolicies>("capture selected policy and native sliders", current => manager = current);
+        yield return Shot("retained 12.50 percent and needs-review values beside native mood and recreation sliders");
+        yield return new AssertionStep("painting preserves exact fractional and malformed choices", _ =>
         {
-            EndToEndAssert.True(editor.IsOpen && Find.WindowStack.Windows.Contains(editor));
-            EndToEndAssert.Equal("NaN", editor.Percentage);
+            EndToEndAssert.True(ReferenceEquals(retained, NativeDrugToleranceState.Read(beer)));
+            EndToEndAssert.True(ReferenceEquals(malformed, NativeDrugToleranceState.Read(smokeleaf)));
+        });
+        foreach (var step in Set(beer, 0, 0f, "zero percent")) yield return step;
+        foreach (var step in Set(beer, 100, 1f, "numeric hundred percent")) yield return step;
+        foreach (var step in Set(beer, 20, .2f, "twenty percent")) yield return step;
+        foreach (var step in Set(beer, 101, null, "unrestricted Any")) yield return step;
+        foreach (var step in Set(smokeleaf, 101, null, "repair needs-review to Any at the unchanged handle")) yield return step;
+        foreach (var step in Set(smokeleaf, 40, .4f, "forty percent")) yield return step;
+        yield return new AssertionStep("slider edits preserve surrounding native policy controls", _ =>
+        {
+            EndToEndAssert.True(beer.allowScheduled && !beer.allowedForJoy && smokeleaf.allowScheduled && !smokeleaf.allowedForJoy);
+            EndToEndAssert.Equal(.65f, beer.onlyIfMoodBelow); EndToEndAssert.Equal(.75f, beer.onlyIfJoyBelow);
+            EndToEndAssert.True(ReferenceEquals(view.Selected(manager), policy));
             EndToEndAssert.Equal(DrugToleranceChoiceKind.Any, NativeDrugToleranceState.Read(beer).Kind);
         });
-        foreach (var step in Replace("0")) yield return step;
-        yield return Shot("valid zero draft before native Apply");
-        foreach (var step in Apply(0f)) yield return step;
-        yield return Shot("native policy row shows numeric zero after Apply");
-
-        foreach (var step in OpenEditor()) yield return step;
-        foreach (var step in Replace("100")) yield return step;
-        yield return Shot("edited hundred-percent draft before native Cancel");
-        yield return Click("cancel the edited hundred-percent draft", CancelPoint());
-        yield return Closed("native Cancel discards the draft");
-        yield return Capture<Dialog_ManageDrugPolicies>("capture unchanged zero after Cancel", current => manager = current);
-        yield return new AssertionStep("Cancel retains numeric zero", _ => AssertChoice(0f));
-        yield return Shot("policy still shows zero after native Cancel");
-
-        foreach (var step in OpenEditor()) yield return step;
-        foreach (var step in Replace("100")) yield return step;
-        foreach (var step in Apply(1f)) yield return step;
-        yield return Shot("numeric hundred is a displayed limit distinct from Any");
-
-        foreach (var step in OpenEditor()) yield return step;
-        foreach (var step in Replace(12.5f.ToString(CultureInfo.CurrentCulture))) yield return step;
-        foreach (var step in Apply(.125f)) yield return step;
-        yield return Shot("native locale decimal is applied to the policy row");
-        foreach (var step in OpenEditor()) yield return step;
-        yield return Click("choose unrestricted Any in the contextual editor", AnyPoint());
-        yield return Click("apply Any through the native button", ApplyPoint());
-        yield return Closed("native Apply closes the Any draft");
-        yield return Capture<Dialog_ManageDrugPolicies>("capture restored Any policy row", current => manager = current);
-        yield return new AssertionStep("Any preserves the surrounding native policy choices", _ =>
-        {
-            EndToEndAssert.Equal(DrugToleranceChoiceKind.Any, NativeDrugToleranceState.Read(beer).Kind);
-            EndToEndAssert.True(beer.allowScheduled && !beer.allowedForJoy && ReferenceEquals(view.Selected(manager), policy));
-        });
-        yield return Shot("Any is restored while native scheduling remains selected");
-        yield return new CheckpointStep("native editor final owned choice", _ => new Dictionary<string, string>
+        yield return new CheckpointStep("native slider final owned choices", _ => new Dictionary<string, string>
         {
             ["policy"] = policy.id + ":" + policy.label,
-            ["choice"] = NativeDrugToleranceState.ReadEncoded(beer) ?? "absent",
-            ["workflow"] = "native tolerance button, Any checkbox, focused text replacement, Apply and Cancel",
-            ["scope"] = "editor only; routine job acceptance is a separate workflow"
+            ["beerChoice"] = NativeDrugToleranceState.ReadEncoded(beer) ?? "absent",
+            ["smokeleafChoice"] = NativeDrugToleranceState.ReadEncoded(smokeleaf) ?? "absent",
+            ["workflow"] = "same native HorizontalSlider as mood/recreation; retained fractional paint, 0, numeric100, 20, Any, malformed repair",
+            ["scope"] = "policy slider only; routine job acceptance is a separate workflow",
+            ["maximumBudgetSeconds"] = "795 including 180 reserve; scenario900"
         });
         yield return new WindowCancelActionStep("close the native policy manager", typeof(Dialog_ManageDrugPolicies).FullName!);
         yield return new NativePointerScopeEndStep("restore pointer after tolerance editing", pointerScope);
         yield return new NativeMainTabActionStep("close Assign after tolerance editing", "Assign", false);
-        yield return new NativeDeveloperLogActionStep("open native console after tolerance editor actions", true);
+        yield return new NativeDeveloperLogActionStep("open native console after tolerance slider actions", true);
         yield return Capture<EditWindow_Log>("retain the owned native console", _ => { });
-        yield return Shot("native console after the tolerance editor workflow");
+        yield return Shot("native console after the tolerance slider workflow");
         yield return new NativeDeveloperLogActionStep("close native console after tolerance editing", false);
     }
 
-    private IEnumerable<EndToEndStep> OpenEditor()
+    private IEnumerable<EndToEndStep> Set(DrugPolicyEntry entry, float position, float? expected, string description)
     {
-        yield return Click("open Beer tolerance through its native row button", RowPoint());
-        yield return Capture<Dialog_DrugTolerance>("capture the contextual tolerance editor", current => editor = current);
-    }
-    private IEnumerable<EndToEndStep> Replace(string text)
-    {
-        var before = NativeDrugToleranceState.Read(beer);
-        yield return Click("focus the native percentage text field", PercentagePoint());
-        yield return Capture<Dialog_DrugTolerance>("bind the exact focused percentage field", current => editor = current);
-        EndToEndAssert.True(!string.IsNullOrEmpty(window.FocusedTextControlHandle), "Native percentage field did not acquire an exact focused-control lease.");
-        yield return new NativeWindowReplaceTextActionStep("type percentage through native focused input", window.Handle, window.FocusedTextControlHandle!, text);
-        yield return new AssertionStep("native text changes only the unapplied draft", _ =>
+        EndToEndAssert.True(ReferenceEquals(view.Selected(manager), policy));
+        var windowsBefore = Find.WindowStack.Windows.ToArray();
+        yield return Click("move the native tolerance slider to " + description, NativeToleranceSliderView.Point(manager, policy, entry, position));
+        yield return Capture<Dialog_ManageDrugPolicies>("capture native policy after " + description, current => manager = current);
+        yield return new AssertionStep("slider immediately commits " + description + " in the existing window", _ =>
         {
-            EndToEndAssert.Equal(text, editor.Percentage);
-            EndToEndAssert.True(ReferenceEquals(before, NativeDrugToleranceState.Read(beer)));
+            var choice = NativeDrugToleranceState.Read(entry);
+            EndToEndAssert.Equal(expected.HasValue ? DrugToleranceChoiceKind.Limit : DrugToleranceChoiceKind.Any, choice.Kind);
+            if (expected.HasValue) EndToEndAssert.Equal(expected.Value, choice.Limit);
+            EndToEndAssert.True(windowsBefore.SequenceEqual(Find.WindowStack.Windows));
         });
+        yield return Shot("native policy slider displays " + description);
     }
-    private IEnumerable<EndToEndStep> Apply(float limit)
-    {
-        yield return Click("apply the numeric draft with the native button", ApplyPoint());
-        yield return Closed("native Apply closes its exact contextual window");
-        yield return Capture<Dialog_ManageDrugPolicies>("capture the applied native policy row", current => manager = current);
-        yield return new AssertionStep("native Apply commits the exact reviewed percentage", _ => AssertChoice(limit));
-    }
-    private void AssertChoice(float limit)
-    {
-        var choice = NativeDrugToleranceState.Read(beer);
-        EndToEndAssert.Equal(DrugToleranceChoiceKind.Limit, choice.Kind);
-        EndToEndAssert.Equal(limit, choice.Limit);
-    }
-    private WaitUntilStep Closed(string name) => new(name, _ => !editor.IsOpen && !Find.WindowStack.Windows.Contains(editor),
-        new EndToEndDeadline(int.MaxValue, 120, TimeSpan.FromSeconds(5)));
-    private Vector2 RowPoint()
-    {
-        RequireGame(); EndToEndAssert.True(ReferenceEquals(view.Selected(manager), policy));
-        var scroll = (Vector2)typeof(Dialog_ManageDrugPolicies).GetField("scrollPosition", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(manager)!;
-        EndToEndAssert.True(scroll == Vector2.zero);
-        int index = Enumerable.Range(0, policy.Count).Single(i => ReferenceEquals(policy[i], beer));
-        float rowY = 18 + 147 + index * 35;
-        EndToEndAssert.True(147 + policy.Count * 35 < manager.windowRect.height - 36 - Window.CloseButSize.y - 11,
-            "This bounded editor fixture needs native rows visible without scrolling.");
-        // The admitted column occupies the right edge and has at least120 GUI units.
-        return new(manager.windowRect.width - 18 - 1 - 60, rowY + 17.5f);
-    }
-    private float HelpHeight()
-    {
-        var font = Text.Font;
-        try { Text.Font = GameFont.Small; return Text.CalcHeight("Megamod.DrugTolerance.RuleHelp".Translate(), editor.windowRect.width - 36); }
-        finally { Text.Font = font; }
-    }
-    private Vector2 AnyPoint() => new(editor.windowRect.width - 18 - 12, 18 + 50 + HelpHeight() + 14);
-    private Vector2 PercentagePoint() => new(editor.windowRect.width - 18 - 70, 18 + 86 + HelpHeight() + 15);
-    private Vector2 ApplyPoint() => new(18 + (editor.windowRect.width - 36) * .75f + 2.5f, editor.windowRect.height - 18 - 17.5f);
-    private Vector2 CancelPoint() => new(18 + (editor.windowRect.width - 36) * .25f - 2.5f, editor.windowRect.height - 18 - 17.5f);
-    private void RequireGame() => EndToEndAssert.True(ReferenceEquals(Current.Game, game), "Refuse an unrelated game during editor cleanup or input.");
+
+    private void RequireGame() => EndToEndAssert.True(ReferenceEquals(Current.Game, game), "Refuse an unrelated game during slider cleanup or input.");
     private static ScreenshotStep Shot(string name) => new(name, Array.Empty<string>(), 0);
     private NativeWindowClickActionStep Click(string name, Vector2 local) => new(name, window.Handle,
         (window.X + local.x) * window.UiScale, (window.Y + local.y) * window.UiScale, null, pointerScope);

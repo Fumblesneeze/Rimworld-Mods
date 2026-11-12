@@ -54,8 +54,6 @@ internal sealed class NativeToleranceSaveContextFixture
     private static readonly FieldInfo PawnPolicyField = Field(typeof(Pawn_DrugPolicyTracker), "curPolicy");
     private static readonly FieldInfo ChewingField = Field(typeof(JobDriver_Ingest), "chewing");
     private static readonly FieldInfo ToilsField = Field(typeof(JobDriver), "toils");
-    private static readonly MethodInfo ColumnMeasure = typeof(NativeDrugToleranceRuntime).GetMethod("MeasureColumn", BindingFlags.Static | BindingFlags.NonPublic)
-        ?? throw new MissingMethodException(typeof(NativeDrugToleranceRuntime).FullName, "MeasureColumn");
     private static readonly MethodInfo ShouldTarget = typeof(Pawn_DrugPolicyTracker).GetMethod(nameof(Pawn_DrugPolicyTracker.ShouldTryToTakeScheduledNow))!;
     private static readonly MethodInfo AllowedTarget = typeof(Pawn_DrugPolicyTracker).GetMethod(nameof(Pawn_DrugPolicyTracker.AllowedToTakeScheduledNow))!;
     private static readonly MethodInfo IngestedTarget = typeof(Thing).GetMethod(nameof(Thing.Ingested), new[] { typeof(Pawn), typeof(float) })!;
@@ -88,7 +86,6 @@ internal sealed class NativeToleranceSaveContextFixture
     private EndToEndNativeWindow window = null!;
     private MainTabWindow_Assign assign = null!;
     private Dialog_ManageDrugPolicies manager = null!;
-    private Dialog_DrugTolerance editor = null!;
     private string pointer = null!;
     private string choice = null!;
     private bool saveRequested, reloaded, traceFault, expectedEnabled = true, expectedInheritance = true;
@@ -197,9 +194,9 @@ internal sealed class NativeToleranceSaveContextFixture
         {
             EndToEndAssert.Equal(1, saves);
             EndToEndAssert.True(settingsScrollClicks >= 0 && settingsScrollClicks <= (resume ? 0 : 12));
-            EndToEndAssert.Equal(resume ? 49 : 60 + 2 * settingsScrollClicks, nativeOperations);
+            EndToEndAssert.Equal(resume ? 43 : 60 + 2 * settingsScrollClicks, nativeOperations);
             EndToEndAssert.Equal(resume ? 12 : 21, screenshots);
-            EndToEndAssert.Equal(resume ? 245 : 360, waitSeconds);
+            EndToEndAssert.Equal(resume ? 240 : 360, waitSeconds);
             EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 300 + 180 <= (resume ? 2400 : 3000));
         });
         yield return new CheckpointStep("final scoped D/E accounting and provenance", _ => Evidence());
@@ -253,7 +250,7 @@ internal sealed class NativeToleranceSaveContextFixture
         yield return new AssertionStep("bind the actual ordinary Any job before its execution", _ =>
         { RequireCurrent(); AssertDecisions(first, start, true); BindSelected(first); AssertRetained(next); });
         foreach (var step in ReachChewing(first, start)) yield return step;
-        foreach (var step in SetZeroThroughEditor()) yield return step;
+        foreach (var step in SetZeroThroughSlider()) yield return step;
         yield return new AssertionStep("the native policy edit leaves the original carried dose executing", _ =>
         { RequireCurrent(); AssertSelected(first); EndToEndAssert.True(IsChewing(first) && first.Ingestions == 0); });
         yield return Select(first); yield return Frame("frame the original executing dose after the policy becomes zero");
@@ -319,7 +316,7 @@ internal sealed class NativeToleranceSaveContextFixture
         yield return new WindowCancelActionStep("close native settings after the save-scope action", typeof(Dialog_ModSettings).FullName!);
     }
 
-    private IEnumerable<EndToEndStep> SetZeroThroughEditor()
+    private IEnumerable<EndToEndStep> SetZeroThroughSlider()
     {
         yield return new NativeMainTabActionStep("open Assign while the original dose is paused in progress", "Assign", true);
         yield return Capture<MainTabWindow_Assign>("capture actual Assign policy-manager entry", value => assign = value);
@@ -328,46 +325,14 @@ internal sealed class NativeToleranceSaveContextFixture
         yield return Capture<Dialog_ManageDrugPolicies>("capture the current native policy list", value => manager = value);
         yield return Click("select the exact shared scheduled policy", policyView.PolicyRow(manager, policy).center);
         yield return Capture<Dialog_ManageDrugPolicies>("capture the selected policy before editing", value => manager = value);
-        yield return Click("open Beer tolerance through its native row button", ToleranceRowPoint());
-        yield return Capture<Dialog_DrugTolerance>("capture the contextual native tolerance editor", value => editor = value);
-        yield return Click("turn Any off in the native contextual editor", new Vector2(editor.windowRect.width - 30, 18 + 50 + HelpHeight() + 14));
-        yield return Click("focus the native percentage field", new Vector2(editor.windowRect.width - 88, 18 + 86 + HelpHeight() + 15));
-        yield return Capture<Dialog_DrugTolerance>("capture the exact focused native percentage lease", value => editor = value);
-        EndToEndAssert.True(!string.IsNullOrEmpty(window.FocusedTextControlHandle));
-        yield return new NativeWindowReplaceTextActionStep("type zero through native text input", window.Handle, window.FocusedTextControlHandle!, "0");
-        yield return new AssertionStep("typing changes only the draft while the original Any job remains", _ =>
-        { RequireCurrent(); EndToEndAssert.Equal("0", editor.Percentage); AssertSelected(subjects[0]); EndToEndAssert.True(IsChewing(subjects[0])); });
-        yield return Click("Apply the zero limit through its native button", new Vector2(18 + (editor.windowRect.width - 36) * .75f + 2.5f, editor.windowRect.height - 35.5f));
-        yield return Wait("wait for the exact applied contextual window to close", _ => !editor.IsOpen && !Find.WindowStack.Windows.Contains(editor), 120, 5);
-        yield return new AssertionStep("the native Apply committed zero without changing the in-flight job", _ =>
+        yield return Click("move the native Beer tolerance slider to zero", NativeToleranceSliderView.Point(manager, policy, beerEntry, 0));
+        yield return new AssertionStep("the native slider committed zero without changing the in-flight job", _ =>
         { choice = "1:limit:0"; RequireCurrent(); AssertSelected(subjects[0]); EndToEndAssert.True(IsChewing(subjects[0])); });
         yield return Capture<Dialog_ManageDrugPolicies>("capture the committed zero row", value => manager = value);
-        yield return Shot("native policy row displays zero after Apply while the selected dose remains in progress");
+        yield return Shot("native policy row displays zero after the slider action while the selected dose remains in progress");
         yield return new WindowCancelActionStep("close policy manager before native serialization", typeof(Dialog_ManageDrugPolicies).FullName!);
         yield return new NativePointerScopeEndStep("restore pointer before saving the executing order", pointer);
         yield return new NativeMainTabActionStep("close Assign before native serialization", "Assign", false);
-    }
-
-    private Vector2 ToleranceRowPoint()
-    {
-        RequireCurrent(); EndToEndAssert.True(ReferenceEquals(policyView.Selected(manager), policy));
-        var scroll = (Vector2)typeof(Dialog_ManageDrugPolicies).GetField("scrollPosition", PrivateInstance)!.GetValue(manager)!;
-        EndToEndAssert.True(scroll == Vector2.zero);
-        int index = Enumerable.Range(0, policy.Count).Single(i => ReferenceEquals(policy[i], beerEntry));
-        EndToEndAssert.True(147 + policy.Count * 35 < manager.windowRect.height - 36 - Window.CloseButSize.y - 11);
-        // Read the active owned reservation before native columns; never invoke Prepare/Draw/action.
-        float rowWidth = manager.windowRect.width - 36 - 210 - 2;
-        float measured = (float)ColumnMeasure.Invoke(null, null)!;
-        EndToEndAssert.True(DrugToleranceLayout.TryReserve(rowWidth, measured, false, out var reservation));
-        var owned = new Rect(18 + 210 + 1 + reservation.ColumnOffset, 18 + 147 + index * 35, reservation.ColumnWidth, 35).ContractedBy(2);
-        EndToEndAssert.True(owned.xMin >= 0 && owned.xMax <= manager.windowRect.width && owned.yMin >= 0 && owned.yMax <= manager.windowRect.height);
-        return owned.center;
-    }
-    private float HelpHeight()
-    {
-        var font = Text.Font;
-        try { Text.Font = GameFont.Small; return Text.CalcHeight("Megamod.DrugTolerance.RuleHelp".Translate(), editor.windowRect.width - 36); }
-        finally { Text.Font = font; }
     }
 
     private IEnumerable<EndToEndStep> SaveAndRebind()
@@ -544,7 +509,6 @@ internal sealed class NativeToleranceSaveContextFixture
             "The native inner inspection tab must stay closed; inner=" + inspect?.OpenTabType?.FullName);
         EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ModSettings>(), "Owned native settings must be closed at the save boundary.");
         EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>(), "Owned native policy manager must be closed at the save boundary.");
-        EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_DrugTolerance>(), "Owned native tolerance editor must be closed at the save boundary.");
     }
 
     private IEnumerable<EndToEndStep> Undraft(IEndToEndContext context, Subject subject)

@@ -12,9 +12,9 @@ using Verse;
 
 namespace Megamod.EndToEndTests.DrugTolerance;
 
-// Explicit disposable window sizes arrange two layouts; only scale changes and manager/editor
+// Explicit disposable window sizes arrange two layouts; only scale changes and manager
 // actions are native player workflows. Windowed Waylith offers no alternate resolution choices.
-// Budget:58 native operations*15 +7 screenshots*30 +40s waits +180s reserve =1300s.
+// Budget:55 native operations*15 +6 screenshots*30 +35s waits +180s reserve =1220s.
 // Attribute1500s; launcher1800s. No screenshot/wait between confirmation capture and native Keep.
 [RimWorldEndToEndTest("megamod.drug-tolerance.native-layout-unavailable", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
@@ -34,7 +34,6 @@ public sealed class NativeToleranceLayoutTests : IRimWorldEndToEndTest
     private EndToEndNativeWindow window = null!;
     private MainTabWindow_Assign assign = null!;
     private Dialog_ManageDrugPolicies manager = null!;
-    private Dialog_DrugTolerance editor = null!;
     private string pointer = null!;
     private string phase = "setup";
     private HashSet<Window>? windowsBeforeChoice;
@@ -47,7 +46,7 @@ public sealed class NativeToleranceLayoutTests : IRimWorldEndToEndTest
             !LongEventHandler.AnyEventNowOrWaiting && Prefs.DevMode);
         EndToEndAssert.True(Find.MainTabsRoot.OpenTab == null &&
             !Find.WindowStack.Windows.Any(w => w is Dialog_Options or Dialog_ResolutionConfirm or FloatMenu or
-                Dialog_ManageDrugPolicies or Dialog_DrugTolerance or EditWindow_Log));
+                Dialog_ManageDrugPolicies or EditWindow_Log));
         runtime = Read<NativeDrugToleranceRuntime>(typeof(MegamodMod), LoadedModManager.GetMod<MegamodMod>(), "drugTolerance");
         messages = Read<List<Message>>(typeof(Messages), null, "liveMessages");
         EndToEndAssert.Equal(0, messages.Count, "Start with an empty disposable notification surface.");
@@ -140,22 +139,6 @@ public sealed class NativeToleranceLayoutTests : IRimWorldEndToEndTest
             EndToEndAssert.True(WindowFits());
         });
         yield return Shot("native tolerance controls recovered after native1x scale choice");
-        int index = Enumerable.Range(0, policy.Count).Single(i => ReferenceEquals(policy[i], beer));
-        yield return new AssertionStep("retained row must be fully visible", _ =>
-        {
-            EndToEndAssert.True(Read<Vector2>(typeof(Dialog_ManageDrugPolicies), manager, "scrollPosition") == Vector2.zero);
-            EndToEndAssert.True(147 + policy.Count * 35 < manager.windowRect.height - 36 - Window.CloseButSize.y - 11);
-        });
-        yield return Click("open the recovered Beer tolerance control", new(manager.windowRect.width - 79, 18 + 147 + index * 35 + 17.5f));
-        yield return Capture<Dialog_DrugTolerance>("capture retained numeric draft after recovery", value => editor = value);
-        yield return new AssertionStep("native editor retains the original choice", _ =>
-        {
-            RequireChoice(); EndToEndAssert.False(editor.Any);
-            EndToEndAssert.Equal(12.5f.ToString(CultureInfo.CurrentCulture), editor.Percentage);
-        });
-        yield return Shot("recovered contextual editor retains the numeric choice");
-        yield return N(new WindowCancelActionStep("cancel recovered draft without changes", typeof(Dialog_DrugTolerance).FullName!));
-        yield return Wait("native contextual editor closed", () => !editor.IsOpen, 5);
         foreach (var step in CloseManager()) yield return step;
         foreach (var step in DisplayPrecondition(1600, 900)) yield return step;
         yield return NoManager("original fixture resolution restored", true);
@@ -165,8 +148,8 @@ public sealed class NativeToleranceLayoutTests : IRimWorldEndToEndTest
         yield return N(new NativeDeveloperLogActionStep("close native console", false));
         yield return new CheckpointStep("final bounded layout evidence; no routine-use claim", _ =>
         {
-            RequireChoice(); EndToEndAssert.Equal(58, nativeOperations); EndToEndAssert.Equal(7, screenshots);
-            EndToEndAssert.Equal(40, waitSeconds); return Evidence();
+            RequireChoice(); EndToEndAssert.Equal(55, nativeOperations); EndToEndAssert.Equal(6, screenshots);
+            EndToEndAssert.Equal(35, waitSeconds); return Evidence();
         });
     }
 

@@ -234,24 +234,6 @@ public sealed class NativeDrugToleranceRuntime
             else if (entry?.drug != null && NativeDrugToleranceRows.IsCurrent(policy, entry, entry.drug)) DrawRow(manager, entry, owned);
         });
     }
-    public bool TryOpenEditor(Dialog_ManageDrugPolicies manager, DrugPolicyEntry entry)
-    {
-        if (!Available || !OpenManager(manager) || Find.WindowStack.WindowOfType<Dialog_DrugTolerance>() != null) return false;
-        var game = Current.Game; var policy = Selected(manager); var drug = entry.drug;
-        if (policy == null || drug == null || !CurrentPolicy(game, policy) || !CurrentDrug(drug) || NativeDrugToleranceReader.Resolve(drug) == null ||
-            !NativeDrugToleranceRows.IsCurrent(policy, entry, drug)) return false;
-        var original = NativeDrugToleranceState.Read(entry);
-        bool CurrentContext() => ReferenceEquals(Current.Game, game) && Available && OpenManager(manager) &&
-            ReferenceEquals(Selected(manager), policy) && CurrentPolicy(game, policy) && CurrentDrug(drug) && NativeDrugToleranceReader.Resolve(drug) != null &&
-            NativeDrugToleranceRows.IsCurrent(policy, entry, drug) && ReferenceEquals(NativeDrugToleranceState.Read(entry), original);
-        var session = new DrugToleranceEditSession(original, CultureInfo.CurrentCulture, CurrentContext, choice =>
-        {
-            if (!CurrentContext()) throw new InvalidOperationException("The policy editor context changed before Apply.");
-            NativeDrugToleranceState.Write(entry, choice);
-        });
-        try { Find.WindowStack.Add(new Dialog_DrugTolerance("Megamod.DrugTolerance.EditTitle".Translate(drug.LabelCap), session, CurrentContext)); return true; }
-        catch { session.Dispose(); throw; }
-    }
     private static void DrawHeader(Rect rectangle) => WithGui(() =>
     {
         Text.Anchor = TextAnchor.MiddleCenter;
@@ -260,12 +242,28 @@ public sealed class NativeDrugToleranceRuntime
     });
     private void DrawRow(Dialog_ManageDrugPolicies manager, DrugPolicyEntry entry, Rect rectangle) => WithGui(() =>
     {
-        bool applicable = CurrentDrug(entry.drug) && NativeDrugToleranceReader.Resolve(entry.drug) != null;
-        string label = applicable ? ChoiceLabel(NativeDrugToleranceState.Read(entry)) : "Megamod.DrugTolerance.UnavailableShort".Translate().ToString();
+        var game = Current.Game; var policy = Selected(manager); var drug = entry.drug;
+        var original = NativeDrugToleranceState.Read(entry);
+        bool applicable = CurrentDrug(drug) && NativeDrugToleranceReader.Resolve(drug) != null;
+        string label = applicable ? ChoiceLabel(original) : "Megamod.DrugTolerance.UnavailableShort".Translate().ToString();
         bool inactive = !entry.allowedForJoy && !entry.allowScheduled;
         if (applicable && inactive) label = "Megamod.DrugTolerance.Inactive".Translate(label);
-        GUI.enabled = GUI.enabled && applicable;
-        if (Widgets.ButtonText(rectangle.ContractedBy(2), label)) TryOpenEditor(manager, entry);
+        if (GUI.enabled && applicable)
+        {
+            // Use the same native control and rectangle treatment as mood/recreation. Do not
+            // pass roundTo: native rounding also runs on repaint and would alter retained fractions.
+            float before = DrugToleranceSlider.Position(original);
+            bool mouseDown = Event.current.type == EventType.MouseDown;
+            float after = Widgets.HorizontalSlider(new Rect(rectangle.x, rectangle.y + 2, rectangle.width, rectangle.height).ContractedBy(4),
+                before, 0, DrugToleranceSlider.Maximum, middleAlignment: true, label: label);
+            bool interacted = after != before || mouseDown && Event.current.type == EventType.Used;
+            var choice = DrugToleranceSlider.Apply(original, after, interacted);
+            if (!ReferenceEquals(choice, original) && ReferenceEquals(Current.Game, game) && Available && OpenManager(manager) &&
+                policy != null && ReferenceEquals(Selected(manager), policy) && CurrentPolicy(game, policy) && CurrentDrug(drug) &&
+                NativeDrugToleranceReader.Resolve(drug) != null && NativeDrugToleranceRows.IsCurrent(policy, entry, drug) &&
+                ReferenceEquals(NativeDrugToleranceState.Read(entry), original)) NativeDrugToleranceState.Write(entry, choice);
+        }
+        else Widgets.Label(rectangle, label);
         TooltipHandler.TipRegion(rectangle, (applicable ? inactive ? "Megamod.DrugTolerance.InactiveHelp" : "Megamod.DrugTolerance.RuleHelp" : "Megamod.DrugTolerance.CapabilityUnavailable").Translate());
     });
     private static string ChoiceLabel(DrugToleranceChoice choice) => choice.Kind switch

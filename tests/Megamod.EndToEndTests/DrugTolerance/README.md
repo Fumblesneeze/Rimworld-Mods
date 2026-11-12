@@ -6,22 +6,20 @@ They use the exact ordered Harmony, Core, megamod list with the Gateway appended
 No original provider or fixture mod is required.
 
 `megamod.drug-tolerance.native-editor` opens Assign and the native policy manager, selects a
-disposable policy, and edits its Beer tolerance through the contextual button, Any checkbox,
-focused native text input, Apply and Cancel. It observes invalid `NaN` rejection, numeric zero,
-discarded numeric 100, applied numeric 100, a locale decimal and restored Any while retaining the
-surrounding native policy choices. Direct setup creates only the initial policy; no draft setter
-manufactures an input result. Exact control leases come from the Gateway's reviewed native-text
-provider. This scenario proves editor behavior only; actual routine jobs remain separate cases.
+disposable policy, and uses the same native horizontal slider as the adjacent mood/recreation
+controls. It checks retained12.5% and malformed values survive painting, then selects0%, numeric100%,
+20%, Any, malformed-to-Any at the unchanged handle and40% through native input. Every change is immediate in the existing window,
+with surrounding policy controls preserved. Setup creates only the initial retained choices.
 
-Run this exact ID with `e2e_run_start`, scoped to `tests/Megamod.EndToEndTests/Megamod.EndToEndTests.csproj`
-and launcher timeout 1800. Its 1200-second scenario allowance covers 50 native operations at 15 seconds,
-10 screenshots at 30 seconds and five close waits at 5 seconds (1075 seconds total), leaving 125 seconds
-for synchronous work. Independent wall/frame limits permit paused native UI work. Root must inspect
-the edited 100 capture before Cancel and the unchanged zero row afterward, as well as the other
-causal captures and final native console. The fixture restores its exact windows, pointer scope,
-policy and speed; it refuses cleanup against an unrelated Game.
+Run this exact ID with `e2e_run_start`, scoped to
+`tests/Megamod.EndToEndTests/Megamod.EndToEndTests.csproj`. The900-second scenario contains25 native
+operations at15 seconds and8 screenshots at30 seconds, plus180 seconds reserve (795 seconds total).
+Inspect each before/action/after capture and final native console. The fixture restores its exact
+windows, pointer scope, policy and speed and refuses cleanup against an unrelated Game.
+The selected slider/layout batch replaces the modal design at the user's2026-11-12 request.
+Older dialog evidence below is historical and cannot accept this revised runtime.
 
-Root observed this editor workflow on reviewed build9724e47 in group
+Root observed the previous dialog workflow on reviewed build9724e47 in group
 `20261111T233205965Z-abd820736c4c4f3caef98b41c4b1a026`:78 steps and all ten screenshots,
 English1600x900/UI scale1, with graceful process cleanup and unchanged normal configuration.
 Exact hashes and the preceding inherited-method failure/fix are in the local
