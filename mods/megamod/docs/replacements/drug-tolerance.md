@@ -75,9 +75,9 @@ separate backup/staging/atomicity/restoration/postcondition contract before impl
 
 | Behavior | Implemented portion | Deviation / conflict | Missing / omitted | Target/tests/live evidence |
 | --- | --- | --- | --- | --- |
-| DT-02–04, DT-07–08 | Host-safe comparison/codec, native reader, guarded selection/social patches, direct-joy exception proof and registered atomic runtime | Any differs from numeric 100%; missing hediff zero; native rejection remains; no medical/manual/refill hook | Actual native admission and all route workflows; future S024 recipient call | Focused Unit/Defs/Harmony ledgers and independent review; no full S138 live acceptance |
+| DT-02–04, DT-07–08 | Host-safe comparison/codec, native reader, guarded selection/social patches, direct-joy exception proof and registered atomic runtime | Any differs from numeric 100%; missing hediff zero; native rejection remains; no medical/manual/refill hook | Social/drinkless, further numeric boundaries, shared chemicals, caravan, refill and future S024 recipient call | Reviewed native scheduled/direct-joy zero/Any and positive-trait routes, plus explicit manual Drink exclusion; no full S138 acceptance |
 | DT-06 | Exact native-row weak state, S029 capture/restore and native four-target copy/Scribe support | State follows row identity; deleted rows have no restore archive | Persistence-only root gate does not prove the new editor or routine selection | Root evidence: `artifacts/Implementation/megamod-p0/revision20-native-verification.md` |
-| DT-01, DT-05, remaining DT-08 | Reviewed drafts/layout/typed bridge, contextual Window, common setting/provider policy, atomic runtime and seven catalogs; root registration and compilation complete | Requested preference remains editable while effective capability is unavailable; medical scope stays separate | Native controls, ordinary off/original suppression, route exclusions and seven-language presentation | [Design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/); revision21 handoff and open acceptance tasks |
+| DT-01, DT-05, remaining DT-08 | Reviewed drafts/layout/typed bridge, contextual Window, common setting/provider policy, atomic runtime and seven catalogs | Requested preference remains editable while effective capability is unavailable; medical scope stays separate | Ordinary off/original suppression, remaining route exclusions and seven-language presentation | Reviewed English native Any/zero/100/decimal/invalid input and Apply/Cancel; [design/tasks](../../../../openspec/changes/specify-megamod-drug-tolerance/) retain wider obligations |
 
 Active original `seohyeon.onlyiftolerancebelow`: bounded startup warning plus best-effort suppression
 of `drugTolerance.enabled` through the ordinary effective-off path, with the timing/limitations
@@ -92,12 +92,21 @@ The 2026-11-11 component tranche has nonzero focused RED/GREEN in honest Unit an
 the local ledger is `artifacts/Implementation/megamod-p0/s138-state-batch/handoff.md`.
 That original tranche installed no native hooks; the later root-owned persistence group and its
 scoped acceptance are recorded in the revision20 evidence above. The revision21 enforcement/editor
-packet is reviewed, registered and compiled but remains unaccepted in game, with its manifests and focused receipts in
-`artifacts/Implementation/megamod-p0/s138-revision21/`. DT-Q1–4 retain their remaining obligations.
+packet is reviewed and registered, with its manifests and focused receipts in
+`artifacts/Implementation/megamod-p0/s138-revision21/`. The English editor workflow passed a reviewed
+78-step run after correcting inherited native-method identity. The subsequent scheduled and direct
+recreation workflows passed101/96steps; root inspected all19 captures of physical Beer use or
+retention, actual drinking and resulting native Health. Any, strict zero, the direct-only positive
+DrugDesire exception and explicit manual Drink exclusion are observed scoped results. Exact builds,
+actions, process identities, full logs and cleanup are retained in the revision21 ledger and
+`artifacts/Implementation/megamod-p0/s138-native-routes/native-verification.md`.
+DT-Q1–4 retain their remaining obligations; these slices do not accept all native routes or S138.
 Independent review and integrated product checks are retained separately from live evidence. The
 orchestrator must personally observe the reviewed build's actual native policy edits, routine
 consumption/refusal, patient treats, medical independence, persistence and configuration transitions
 in minimized isolated Gateway runs. Include focused warning/effective-off cases, seven languages,
 exact build/mod/config identity, causal captures, complete relevant logs and cleanup. No general
-compatibility or addiction-safety claim follows from source inspection. Balance/job-reachability
-review and coverage updates remain pending.
+compatibility or addiction-safety claim follows from source inspection. The exercised inventory,
+routine ingestion and manual routes were reachable without changing cost, cadence or supply rules;
+no refill, optimal-schedule or broader pharmacology claim follows. Remaining balance and composed
+job-reachability review is pending with the unrun workflows.

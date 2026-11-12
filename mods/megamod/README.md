@@ -6,7 +6,9 @@ Initial target: **RimWorld 1.7 beta**.
 
 **Current state: implementation in progress; no whole feature accepted yet.** Initial shared settings,
 patch admission and content-policy rules have focused host tests. Drug-preset controls and unchanged-
-catalog save/reload have narrow reviewed native evidence; wider feature workflows remain unfinished.
+catalog save/reload have narrow reviewed native evidence. Tolerance editing and selected scheduled,
+recreation and manual drinking routes also have scoped native evidence; wider feature workflows
+remain unfinished.
 Allow Tool, Cherry Picker, Ctrl+F-style search and hauling are specified scope, not delivered
 compatibility or parity claims. See the [coverage index](docs/replacements/README.md).
 

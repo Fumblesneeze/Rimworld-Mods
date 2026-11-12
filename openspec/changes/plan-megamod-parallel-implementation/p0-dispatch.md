@@ -588,3 +588,20 @@ are compiled selected-test metadata with hash-bound private handoff, never a use
 list. Root's next native batch remains the exact message-layout, failed-overwrite and late-load
 scenarios after the relevant reviewed freeze. No full fixture or original-provider matrix replay
 is implied, and every remaining feature/part obligation stays open.
+
+Revision21 active leases after native route checkpoint9e0f032:
+
+- `generation_admission` owns the first F1 native decay-contribution guard/admission and matching
+  Harmony tests, plus its DG-NATIVE-FACTS contract sections. No central registration, C01/S029/C03
+  changes, installation, game launch or commit. The lease proves one contribution; remaining
+  effective-fact milestones stay open. It coordinates the shared Harmony output and freezes all
+  compiled inputs for root builds.
+- `tolerance_native_routes` owns social-drink/drinkless research and executable scenario drafts
+  under ignored artifacts only, followed by independent review. It does not edit the compiling E2E
+  tree or product source. Root integrates the reviewed exact hash at a coherent batch boundary.
+- Root records the passed scheduled/direct-recreation scope, integrates/reviews batches, builds,
+  installs, runs exact native scenarios, personally observes evidence and commits logical units.
+
+Earlier source freezes are released for these explicit leases. Both lanes preserve every unrun
+feature/composition obligation and use native player paths, never direct end-state mutation, for
+acceptance. These leases supersede immediate assignments only, not the139-feature/P0–P8 scope.

@@ -66,12 +66,19 @@ normal hashes are retained in the same revision21 ledger. This accepts that Engl
 slice only; routine pawn behavior, broader layout/settings/copy/save and full feature tasks below
 remain open. The new scheduled/direct-joy route scenarios are being authored separately.
 
-The next route batch now contains independently reviewed, compile-discovered scheduled and
-direct-recreation scenarios with real engine attempt observations, matched controls, native
-ingestion/Health captures and explicit manual exclusion. No product predicate is invoked as a
-test action, and an unavailable atomic group fails the scenario. Their full native gates remain
-pending; exact source/review/budget evidence lives under
-`artifacts/Implementation/megamod-p0/s138-native-routes/`.
+The reviewed native route batch at9e0f032 passed two fresh isolated runs (101 scheduled steps and
+96 direct-recreation steps) on product SHA256
+`B98675524E0088A5E7F664C19BFD4BC534C87920797BB02BA2DE07AB616DE174`.
+Root personally inspected all19 causal captures: Any allowed ordinary drinking, zero withheld it
+after observed native attempts, the positive DrugDesire exception applied only to direct joy, and
+an explicit manual Drink order remained usable. Native Health showed alcohol and tolerance after
+actual ingestion; rejected pawns retained their original physical Beer. Both runs retained current
+atomic admission and completed graceful shutdown, configuration checks and evidence cleanup.
+Exact group/PID/build/action/log evidence lives in
+`artifacts/Implementation/megamod-p0/s138-native-routes/native-verification.md`.
+These scoped routes pass. Social/drinkless, further numeric boundaries, shared chemicals,
+settings/in-flight/save-resume, caravan, future S024 recipients, refill/pickup, medical/addiction
+compositions and wider language/layout cases remain open; no full-feature task is closed here.
 
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.

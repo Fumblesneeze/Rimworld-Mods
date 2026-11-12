@@ -5,8 +5,9 @@ tolerance limit. S138 adds that player choice while keeping medical assistance a
 separate from routine recreation and scheduled use.
 
 Sole owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`.
-Target: **RimWorld 1.7 beta**. Choice/decision rules and S029 state transactions are implemented
-as unregistered components; this change delivers no accepted player-facing tolerance behavior yet.
+Target: **RimWorld 1.7 beta**. Choice/decision rules, S029 state transactions and the guarded native
+runtime are implemented. Scoped persistence, English editor and scheduled/direct-recreation routes
+have reviewed live evidence; the full feature remains incomplete. See tasks for exact accepted scope.
 
 ## What Changes
 
@@ -44,5 +45,5 @@ Research: `mods/megamod/docs/refinement/2026-11-08-drug-tolerance-research.md`.
 Source: SeoHyeon's Only If 'Tolerance' Below in Drug Policy, Workshop 3088210509,
 `seohyeon.onlyiftolerancebelow`; independent implementation only. Any/zero behavior and conservative
 malformed-data handling are explicit proposed corrections, not claims about source behavior or
-already accepted runtime. Native admission, focused TDD, review, seven-language UI, playability
-review and orchestrator-observed native acceptance remain future tasks.
+blanket runtime acceptance. Focused TDD, review and scoped native observations are retained; remaining
+route/composition, seven-language UI and playability gates are still required.

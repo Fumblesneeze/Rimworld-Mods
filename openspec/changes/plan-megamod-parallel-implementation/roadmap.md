@@ -932,3 +932,12 @@ the editor bundle is frozen for its run. This avoids changing a compiling E2E pr
 owns native text and editor verification. The lane cannot launch games, install packages or accept
 its own scenarios. Social/patient/refill, settings, language and all other pending feature cases
 remain required; this allocation selects the next executable routes without removing those cases.
+
+Revision21 next batch — the focused-text prerequisite, English tolerance editor and selected
+scheduled/direct-recreation routes now have reviewed native observations. Their exact builds and
+limits remain in the local ledgers; no full S138/P0 gate is closed. S139 resumes with the first
+bounded effective-decay contribution proof from its six-stage native-facts plan. A separate S138
+lane prepares social-drink/drinkless scenarios under ignored artifacts. Root owns compiled fixture
+integration, build freezes, native execution, observation and logical commits. S139's catalog
+authority, remaining decay/dose/profile/calendar proofs and final UI/publication remain allocated;
+incident-only content receipts cannot substitute for drug-catalog authority.
