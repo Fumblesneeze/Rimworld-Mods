@@ -144,9 +144,11 @@ This closes only these focused text prerequisites; section3's broader native mat
 
 The reviewed artifact plan is `artifacts/Implementation/gateway-world-controls/plan.md`, SHA256
 `09934902E20EA4A5CD694738D275604D8DBBF8330296FBD10DED69012C8C9DC4`.
-The implemented Gateway sequence has46 steps and885s allowance under900s, including explicit
-final native detail closure; the reviewed proposal had840s. The separate future S138 consumer
-allowance is1365s under1500s. Implementation, review and live acceptance remain unaccepted here. Product
+The implemented Gateway sequence has47 steps and915s allowance under960s, including explicit
+final native detail closure and a30s native terrain-generation wait; the reviewed proposal had840s.
+The separate future S138 consumer plan is retained under
+`artifacts/Implementation/megamod-p0/s138-caravan-plan/`; its original1845s budget requires this30s
+readiness addition before implementation. Implementation, review and live acceptance remain unaccepted here. Product
 runtime and its ingestion fixture are outside this Gateway implementation lease; the tooling
 scenario cannot close the product's normal-world-tick behavior.
 

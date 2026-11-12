@@ -80,6 +80,13 @@ active observation/publication lifecycle on an owned host target. Hook-compositi
 inactive service establish signature compatibility only, not stale-layout rejection. These host
 checks support the existing native workflow gate; they do not replace it.
 
+A native command can return before its next update queues a long event. For first World opening,
+ToggleWorld changes wantedMode before WorldUpdate draws and regenerates dirty terrain. A wait for
+no long event alone can therefore pass too early. In an exact Core-only fixture, also observe the
+captured visible terrain becoming clean and the current native camera becoming active, with the
+same scene owners and player control. Do not call regeneration or add a fixed sleep to manufacture
+readiness. Record and budget the bounded native transition wait before issuing the next command.
+
 ## Evidence discipline
 
 Both `current.json` and an active `session.json` can contain the bearer token. Never dump either

@@ -11,11 +11,11 @@ using Verse;
 namespace RimWorldDevGateway.EndToEndTests;
 
 // 23 native actions/captures ×15s +2 view capture/restore ×15s +12 waits ×15s
-// +8 screenshots ×30s +90s reserve (including aggregate30s cleanup) =885s.
+// +30s native World generation wait +8 screenshots ×30s +90s reserve (including aggregate30s cleanup) =915s.
 // Paused UI work assumes no FPS. The host run must allow at least1200s.
 [RimWorldEndToEndTest("gateway.native-caravan-inspection", EndToEndTestContract.GatewayPackageId,
     "brrainz.harmony", EndToEndTestContract.CorePackageId,
-    MaxFrames = int.MaxValue, MaxGameTicks = 60000, MaxWallClockSeconds = 900)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 60000, MaxWallClockSeconds = 960)]
 public sealed class GatewayNativeCaravanInspectionTests : IRimWorldEndToEndTest, IEndToEndProcessOwnedGameFixture
 {
     private Game game = null!;
@@ -71,10 +71,27 @@ public sealed class GatewayNativeCaravanInspectionTests : IRimWorldEndToEndTest,
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
+        var map = Find.CurrentMap;
+        var renderer = world.renderer;
+        var surface = world.grid.Surface;
+        var camera = WorldCameraManager.WorldCamera;
+        var driver = WorldCameraManager.WorldCameraDriver;
+        var terrain = surface.WorldDrawLayers.OfType<WorldDrawLayer_Terrain>().ToArray();
+        EndToEndAssert.True(terrain.Length > 0, "The Core-only fixture requires visible surface terrain to observe native generation.");
         yield return new TimeControlActionStep("pause the disposable caravan inspection", true, EndToEndGameSpeed.Normal);
         yield return new NativeWorldViewCaptureStep("capture the complete inactive World view", h => view = h);
         yield return Capture("map before native World command");
         yield return new NativeWorldViewActionStep("open World through its native main button", view, true);
+        // ToggleWorld sets wantedMode before a later WorldUpdate queues dirty terrain generation.
+        // Waiting only for no current long event can pass before that first render has started.
+        yield return new WaitUntilStep("wait for native World terrain generation and settled control", _ =>
+            ReferenceEquals(Current.Game, game) && ReferenceEquals(game.World, world) && ReferenceEquals(Find.CurrentMap, map) &&
+            ReferenceEquals(world.renderer, renderer) && ReferenceEquals(world.grid.Surface, surface) &&
+            ReferenceEquals(WorldCameraManager.WorldCamera, camera) && ReferenceEquals(WorldCameraManager.WorldCameraDriver, driver) &&
+            renderer.wantedMode == WorldRenderMode.Planet && WorldRendererUtility.WorldSelected && surface.Visible &&
+            camera.gameObject.activeSelf && driver.isActiveAndEnabled && !LongEventHandler.AnyEventNowOrWaiting && game.PlayerHasControl &&
+            terrain.All(layer => surface.WorldDrawLayers.Contains(layer) && !layer.Dirty),
+            new EndToEndDeadline(int.MaxValue, 60000, TimeSpan.FromSeconds(30)));
         yield return new NativeCaravanCaptureStep("capture exact owned caravan A", view, a.GetUniqueLoadID(), h => handleA = h);
         yield return new NativeCaravanSelectStep("jump and select caravan A through the native command", handleA);
         yield return Wait("wait for native caravan A inspect pane", () => Selected(a) && world.UI.inspectPane.IsOpen);

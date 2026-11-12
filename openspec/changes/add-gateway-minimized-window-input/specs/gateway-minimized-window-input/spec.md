@@ -36,6 +36,7 @@ arbitrary transient windows. Input delivery remains distinct from personally obs
 #### Scenario: Open World and inspect the selected caravan
 - **WHEN** an operator captures an admitted settled map baseline and requests World open
 - **THEN** the displayed native World worker is invoked at most once and its actual before/after state is retained
+- **AND** the Core-only verification workflow waits for actual surface terrain generation and settled player control before selecting a caravan; the command's immediate return is not proof that later native generation has finished
 - **AND** an exact current player-caravan capability selects and centers that object through the native game command
 - **AND** its actual World inspect pane supplies the native Items/Health tab instances and tutorial-aware tab callback
 - **AND** closing World with an unrelated main tab open refuses rather than silently activating twice

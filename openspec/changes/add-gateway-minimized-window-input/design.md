@@ -624,10 +624,19 @@ context cleanup callbacks; expiry records incomplete ownership, then throws to l
 continue later independent callbacks. Expiry never marks a pending input run terminal or clean.
 Ordinary explicit operations retain
 their15s bounds and screenshots30s. Gateway's singular native scenario has23 native actions/captures,
-eight screenshots, twelve15s waits,90s reserve and two15s view capture/restore steps:885s total under900s.
-There are46 emitted steps including the one ordinary pause command covered by the reserve. The
+eight screenshots, twelve15s waits, one30s native terrain-generation wait,90s reserve and two15s
+view capture/restore steps:915s total under960s. There are47 emitted steps including the one
+ordinary pause command covered by the reserve. The
 reviewed840s proposal grew by45s for explicit final detail closure; this change was authorized
 before the fixture was finalized. The same-caravan Items→Health case performs no extra row click.
-Use1200s host budget and no assumed frame-rate ceiling. The separate future product scenario is
-1365s under1500s/1800s host and is not implemented by this slice. Recount actual emitted steps before
-launch; native results and personal inspection, not these planned numbers, establish acceptance.
+The later30s readiness correction follows a native refusal before selection. ToggleWorld only sets
+wantedMode; a subsequent WorldUpdate activates the camera and queues dirty terrain regeneration.
+The exact Core-only fixture captures its nonempty surface terrain set and requires those same layers
+clean, the same Game/World/map/renderer/surface/camera/driver, active World camera/driver, Planet mode,
+visible surface, no pending long event and player control. This passive wait neither generates layers
+nor retries a refused command, and cannot pass merely because generation has not yet been queued.
+Use1200s host budget and no assumed frame-rate ceiling. The separate future product plan under
+`artifacts/Implementation/megamod-p0/s138-caravan-plan/` supersedes the earlier1365s estimate:
+its1845s base plus the30s readiness wait totals1875s under2100s/2400s host. That consumer remains
+unimplemented by this slice. Recount actual emitted steps before launch; native results and personal
+inspection, not these planned numbers, establish acceptance.
