@@ -9,6 +9,14 @@ the revised startup-warning/ordinary-settings-off path remains unverified. Unsup
 capture-result rewriting retains the explicit limit below; metadata rejection alone is not a
 universal native-fallback guarantee.
 
+Current F0 integration changes the initial publication source: `NativeDrugCatalog.CaptureInitial`
+publishes one `DrugCatalogRead` with ordered identities/flags independently of the S029 startup
+master; preset membership derives from it and adds this patch's availability. The shared definition
+lifetime still owns invalidation, and no save-exclusion authority is inferred. Focused host evidence
+is under `artifacts/Implementation/megamod-p0/s139-native-facts/catalog-publication.md`; review and
+affected native preset acceptance for this changed startup path are pending. Historical live runs
+above do not accept the revised runtime.
+
 ## Ownership and traceability
 
 - Owner: `fumblesneeze.megamod` (`mods/megamod`), S029 / Drug Policy Fix.

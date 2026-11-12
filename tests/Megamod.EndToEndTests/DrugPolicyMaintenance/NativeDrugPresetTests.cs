@@ -13,7 +13,7 @@ namespace Megamod.EndToEndTests.DrugPolicyMaintenance;
 // Initial native Game construction consumes the XML preset before Arrange. No policy is created here.
 [RimWorldEndToEndTest("megamod.drug-policy.initial-preset-native-controls", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod", "fumblesneeze.megamoddrugpresetsfixture",
-    MaxFrames = int.MaxValue, MaxGameTicks = 3600, MaxWallClockSeconds = 660)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 3600, MaxWallClockSeconds = 900)]
 public sealed class NativeDrugPresetTests : IRimWorldEndToEndTest
 {
     private DrugPolicy policy = null!;

@@ -18,7 +18,7 @@ public sealed class NativeDrugPresetBaselineTests
         noLongerDrug.ingestible.drugCategory = DrugCategory.None;
         using var definitions = new ThingDefScope(current, noLongerDrug);
 
-        var read = NativeDrugPresetBaseline.Capture(() => true);
+        var read = NativeDrugCatalog.CaptureInitial(() => true).ForPreset(() => true);
 
         Assert.Multiple(() =>
         {
@@ -39,7 +39,7 @@ public sealed class NativeDrugPresetBaselineTests
         using var definitions = new ThingDefScope(supported, malformed);
 
         var failure = Assert.Throws<InvalidOperationException>(() =>
-            NativeDrugPresetBaseline.Capture(() => true));
+            NativeDrugCatalog.CaptureInitial(() => true));
 
         Assert.That(failure!.Message, Does.Contain("ThingDef 'Megamod_MalformedDrug'"));
         Assert.That(DefDatabase<ThingDef>.AllDefsListForReading, Is.EqualTo(new[] { supported, malformed }));
@@ -52,7 +52,7 @@ public sealed class NativeDrugPresetBaselineTests
         bool current = true;
         PresetEntriesRead read;
         using (var definitions = new ThingDefScope(initial))
-            read = NativeDrugPresetBaseline.Capture(() => current);
+            read = NativeDrugCatalog.CaptureInitial(() => current).ForPreset(() => true);
         current = false;
         var replacement = Drug(initial.defName);
         using var nextDefinitions = new ThingDefScope(replacement);

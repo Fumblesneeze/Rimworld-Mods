@@ -35,6 +35,17 @@ no original-provider compatibility claim and does not close remaining native mai
 
 ### 1. Complete native maintenance at the relevant lifecycle boundary
 
+Root captures one immutable ordered `DrugCatalogRead` at the initial finalized main-thread boundary,
+after the shared definition-lifetime guard admits it, independently of the S029 startup master.
+The object itself identifies this publication; entries retain exact Def references and captured
+Addictive/Pleasure flags. Preset filtering derives its detached membership from that same read and
+adds its own patch-currentness requirement. Turning off preset maintenance must not revoke shared
+content authority. No second scan, reload observer or mutable worker-side settings access is added.
+The initial publication certifies native baseline content only, not an applied C03 save exclusion,
+current Game, complete pharmacology fact graph or generator Create authority. Those remain separate
+receipts. Its original lifetime is never renewed after invalidation; future applied drug exclusions
+must supply their own successful transaction-bound publication before a consumer can use that mode.
+
 Keep native DrugPolicy/DrugPolicyEntry objects and their ordinary Scribe representation. Prefer
 narrow corrections around native initialization/post-load and preset-copy behavior over replacing
 the database or installing source PatchAll. Reinspect effective 1.7 code before implementation.

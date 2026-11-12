@@ -1,6 +1,18 @@
 # Initial preset native controls
 
-Owner fumblesneeze.megamod; S029 task2.5.3. **Draft scenario, not compiled or executed.** Root owns
+The new `megamod.drug-policy.shared-catalog-preset-off` scenario requires the isolated prelaunch
+configuration at `artifacts/Implementation/megamod-p0/s139-native-facts/catalog-preset-off-config`.
+It uses only Harmony/Core/megamod plus Gateway. Supporting checks require the actual startup master
+off, no preset filter, and the exact current shared baseline. Native Assign/Manage/selection and
+Beer-checkbox change/restoration provide the player workflow; initial native policies are not
+constructed by setup.15 operations/4 screenshots cost345 seconds plus180 reserve within900;
+launcher1200. Its compiled sequence verifies those counts. Shared baseline availability does not
+certify applied save exclusions or generator facts/Create. Independent review and native acceptance
+remain pending in the catalog-publication ledger.
+
+Owner fumblesneeze.megamod; S029 task2.5.3. The initial and save/reload workflows have historical
+scoped native acceptance recorded in the owning tasks. The changed shared catalog publication and
+current S138-aware checkbox geometry require a fresh affected native run. Root owns
 shared-step availability, fixture/project registration, review, canonical deployment and live runs.
 
 Exact test: `megamod.drug-policy.initial-preset-native-controls`.
@@ -8,10 +20,10 @@ Ordered packages excluding appended Gateway: Harmony, Core, megamod,
 `fumblesneeze.megamoddrugpresetsfixture`. Use a fresh default English profile and the default native
 XML loader. The fixture declares no expected errors. No clipboard is read or changed.
 
-Initial scenario budget: 10 screenshots at the existing 30-second allowance plus 22 native
+Initial scenario budget: 10 screenshots at the existing 30-second allowance plus 23 native
 operations at 15 seconds (8 clicks, 8 captures, 2 tab actions, 2 log actions and 2 pointer-scope
-actions) total 630 seconds. The 660-second overall cap reserves another 30 seconds for its seven
-assertions, three checkpoints, one synchronous cancellation, arrangement and persistence/iteration
+actions, plus native cancellation) total645 seconds. The900-second overall cap includes180 seconds
+of shared reserve for assertions, checkpoints, arrangement and persistence/iteration
 overhead. These are scenario allowances, not engine timing guarantees. `MaxFrames = int.MaxValue`
 leaves wall time as the governing deadline rather than assuming a display refresh rate. The paused
 workflow retains the separate 3600-tick limit; cleanup has its own 30-second deadline.
@@ -35,6 +47,9 @@ native control rectangles. It refuses dirty, scrolled, grouped, multi-column-men
 outside this initial scenario; it does not write scroll state, invoke draw/action callbacks or
 substitute direct assignments when a control is inaccessible. Required initial dimensions must fit
 the five-policy list and Core drug rows. A failure retains evidence for a later native scroll action.
+When S138 is actually Available, it reads the owned column measurement and reservation before
+calculating the ordinary checkbox location. This read invokes no drawing, preparation or action
+callback. It leaves inactive/unavailable native geometry intact.
 
 Successful execution restores the edited permission and pawn assignment through native controls,
 closes the tab and releases the pointer scope. Independent deferred cleanup closes only retained
@@ -58,7 +73,8 @@ coverage remain separate unaccepted obligations.
 
 ## Preset save/reload controls
 
-Exact test: `megamod.drug-policy.preset-save-reload-controls`. **Authored, not built or executed.**
+Exact test: `megamod.drug-policy.preset-save-reload-controls`. Historical scoped acceptance is in
+the owning tasks; it is not automatically renewed by a later runtime change.
 This separate S029 scenario covers the existing preset-construction-before-save-choices and
 customized-preset preservation requirements, plus the unchanged-catalog portion of ordinary policy
 persistence. It does not complete general reconciliation, content changes, dose-history behavior,
@@ -73,7 +89,7 @@ operations at 15 seconds (480 seconds: 10 clicks, 12 captures, 4 tab actions, 2 
 assertions, two checkpoints, two cancellations, arrangement and persistence/iteration overhead.
 Save/load has no independent step cap; this is an explicit shared scenario allowance, not a promise
 about engine performance or an additional product timing assertion. Cleanup has its own 30-second
-deadline. A combined initial-plus-persistence run must budget the 1560-second scenario sum plus
+deadline. A combined initial-plus-persistence run must budget the1800-second scenario sum plus
 60 seconds for their cleanup and an explicit startup/host allowance. The orchestrator owns the
 selected exact IDs, build, independent review, deployment and personally observed native acceptance.
 

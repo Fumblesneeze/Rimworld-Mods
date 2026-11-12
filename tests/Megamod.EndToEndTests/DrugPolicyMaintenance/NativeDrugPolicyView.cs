@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Megamod.Features.DrugTolerance.Core;
+using Megamod.Features.DrugTolerance.Runtime;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using UnityEngine;
@@ -76,6 +78,16 @@ internal sealed class NativeDrugPolicyView
         int index = Enumerable.Range(0, policy.Count).Single(i => policy[i].drug.defName == "Beer");
         const float rightX = 210, rowTop = 147;
         float rowWidth = dialog.windowRect.width - 36 - rightX - 2;
+        // S138 reserves an owned column before native DoEntryRow calculates its columns.
+        // Read that current geometry; never invoke Prepare, drawing or an action callback.
+        var runtime = Read<NativeDrugToleranceRuntime?>(typeof(MegamodMod), LoadedModManager.GetMod<MegamodMod>(), "drugTolerance");
+        if (runtime?.Available == true)
+        {
+            float column = (float)(typeof(NativeDrugToleranceRuntime).GetMethod("MeasureColumn", BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new MissingMethodException(typeof(NativeDrugToleranceRuntime).FullName, "MeasureColumn")).Invoke(null, null)!;
+            EndToEndAssert.True(DrugToleranceLayout.TryReserve(rowWidth, column, false, out var reservation));
+            rowWidth = reservation.NativeWidth;
+        }
         float bottom = dialog.windowRect.height - 36 - Window.CloseButSize.y - 10 - 1;
         EndToEndAssert.True(rowTop + policy.Count * 35 < bottom, "This narrow scenario requires all native drug rows visible; do not guess scrollbar-adjusted columns.");
         float variable = rowWidth - 27 - 108;

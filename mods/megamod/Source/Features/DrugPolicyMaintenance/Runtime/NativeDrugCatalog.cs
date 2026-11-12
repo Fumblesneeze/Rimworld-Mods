@@ -8,6 +8,9 @@ namespace Megamod.Features.DrugPolicyMaintenance.Runtime;
 
 public static class NativeDrugCatalog
 {
+    // Called only by the owner of the finalized main-thread boundary.
+    public static DrugCatalogRead CaptureInitial(Func<bool> isCurrent) => new(Capture(_ => true), isCurrent);
+
     public static IReadOnlyList<DrugCatalogEntry> Capture(Func<ThingDef, bool> isAvailable)
     {
         if (isAvailable == null)

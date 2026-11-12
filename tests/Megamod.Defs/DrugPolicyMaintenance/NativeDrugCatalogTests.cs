@@ -10,6 +10,31 @@ namespace Megamod.Defs.Tests.DrugPolicyMaintenance;
 public sealed class NativeDrugCatalogTests
 {
     [Test]
+    public void InitialReadCapturesTheCompleteOrderedBaselineWithoutLaterDatabaseReads()
+    {
+        var first = Drug("Megamod_InitialFirst", 0.4f, 0f);
+        var second = Drug("Megamod_InitialSecond", 0f, 0.2f);
+        bool current = true;
+        DrugCatalogRead read;
+        using (var definitions = new ThingDefScope(first, second))
+            read = NativeDrugCatalog.CaptureInitial(() => current);
+
+        // A subsequent independent database cannot rewrite this detached initial publication.
+        var replacement = Drug(first.defName, 0f, 0.2f);
+        using var nextDefinitions = new ThingDefScope(replacement);
+        var membership = read.ForPreset(() => true);
+        Assert.That(read.Entries, Is.EqualTo(new[]
+        {
+            new DrugCatalogEntry(first, true, false), new DrugCatalogEntry(second, false, true)
+        }));
+        Assert.That(membership.Contains(replacement), Is.False);
+        Assert.That(membership.Contains(first), Is.True);
+        current = false;
+        Assert.That(read.IsCurrent, Is.False);
+        Assert.That(membership.IsCurrent, Is.False);
+    }
+
+    [Test]
     public void CaptureUsesRegisteredDrugItemIdentityAndNativePropertyFlags()
     {
         var drug = Drug("Megamod_TestDrug", 0.4f, 0.2f);

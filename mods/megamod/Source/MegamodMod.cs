@@ -41,6 +41,7 @@ public sealed class MegamodMod : Mod
     private MessagePlacementRuntime? messagePlacement;
     private readonly NativeContentInvalidationPatch definitionLifecycle = new(typeof(PlayDataLoader));
     private DrugPresetEntriesPatch? drugPresets;
+    private DrugCatalogRead? initialDrugCatalog;
     private PresetEntriesRead? drugBaseline;
     private bool initialDefinitionsAttempted;
     private IncidentContentRuntime? incidents;
@@ -125,12 +126,30 @@ public sealed class MegamodMod : Mod
         }
         // One shared guard remains useful when either original feature provider is active.
         if (!admission.Apply(definitionLifecycle.Group, AdmissionPhase.DefsReady)) return;
+        try
+        {
+            // Shared native baseline, captured once regardless of the preset feature switch.
+            // No save-specific drug exclusion publication exists at this boundary.
+            var catalog = NativeDrugCatalog.CaptureInitial(() =>
+                definitionLifecycle.Available && definitionLifecycle.InvalidatedBy == null);
+            if (!catalog.IsCurrent) throw new InvalidOperationException("Initial drug catalog admission expired before publication.");
+            Volatile.Write(ref initialDrugCatalog, catalog);
+        }
+        catch (Exception exception)
+        {
+            diagnostics.Write("[fumblesneeze.megamod] Initial drug catalog unavailable; " +
+                "drug preset filtering remains unavailable; fallback=Native preset behavior; reason=" +
+                exception.GetBaseException().Message);
+            return;
+        }
         InitializeDrugPresets();
     }
 
     private void InitializeDrugPresets()
     {
         if (!drugPolicyEnabled) return;
+        var catalog = Volatile.Read(ref initialDrugCatalog);
+        if (catalog == null || !catalog.IsCurrent) return;
         try
         {
             const BindingFlags instance = BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
@@ -149,10 +168,9 @@ public sealed class MegamodMod : Mod
             drugPresets = patch;
             var group = new PatchGroup("drug-policy.preset-entries", AdmissionPhase.DefsReady, new[] { patch.Candidate });
             if (!admission.Apply(group, AdmissionPhase.DefsReady)) return;
-            bool IsCurrent() => definitionLifecycle.Available && definitionLifecycle.InvalidatedBy == null && patch.Available;
-            // No save has authority here. Capture the complete native content baseline on the
-            // main thread, then let worker factories read only detached membership and receipts.
-            var baseline = NativeDrugPresetBaseline.Capture(IsCurrent);
+            // Worker factories consume detached membership with both shared content and
+            // feature-specific patch lifetime. Preset disablement does not revoke the catalog.
+            var baseline = catalog.ForPreset(() => patch.Available);
             if (!baseline.IsCurrent) throw new InvalidOperationException("Initial drug baseline admission expired before publication.");
             Volatile.Write(ref drugBaseline, baseline);
             patch.Enable();

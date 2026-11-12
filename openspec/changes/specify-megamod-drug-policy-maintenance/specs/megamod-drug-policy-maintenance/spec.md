@@ -135,6 +135,16 @@ content-error recovery.
 - **THEN** missing-content protection follows the drugs currently loaded by the game
 - **AND** pending global changes, another save's choices and unapplied drug exclusions do not remove entries from those presets.
 
+#### Scenario: Shared initial catalog while preset maintenance is off
+- **WHEN** finalized native drug content is available but the player has disabled preset maintenance
+- **THEN** other enabled owned features may still inspect that same complete initial drug catalog
+- **AND** disabling preset maintenance does not erase, filter or change its drug identities or applicable flags; native preset behavior remains unchanged.
+
+#### Scenario: Initial catalog loses its authority
+- **WHEN** the admitted finalized-definition lifetime expires
+- **THEN** all readers of that initial catalog refuse it for new decisions, including membership readers used by preset factories
+- **AND** its retained data is not treated as an applied save-specific exclusion policy or silently replaced by a worker-side scan.
+
 #### Scenario: Customized or external valid preset
 - **WHEN** supported active content supplies different valid explicit preset choices
 - **THEN** a fresh policy uses those choices rather than hard-coded replacements for familiar preset names
