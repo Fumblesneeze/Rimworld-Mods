@@ -81,8 +81,19 @@ use does not close section 3's adverse/context/scale matrix or all product featu
 
 ## 3. Integrated tooling acceptance
 
-- [ ] Add bounded native-window.drag and NativeWindowDragActionStep through existing exact-window input, including real MouseDrag provenance, owned slider-latch cleanup and focused RED/GREEN.
-- [ ] Independently review the drag slice and personally observe the reviewed native slider workflow, including ordinary-click preservation and one-pixel held movement; endpoint receipts alone do not accept slider behavior.
+- [x] Add bounded native-window.drag and NativeWindowDragActionStep through existing exact-window input, including real MouseDrag provenance, owned slider-latch cleanup and focused RED/GREEN.
+- [x] Independently review the drag slice and personally observe the reviewed native slider workflow, including ordinary-click preservation and one-pixel held movement; endpoint receipts alone do not accept slider behavior.
+
+The reviewed812ae49 native editor/layout group
+`20261112T195404895Z-b887624bb2834475be68349d64139eb1` passed131 steps. Root personally inspected
+all15 captures, including six native held drags, ordinary-click precision retention and one-pixel
+held movement repairing an unchanged-position malformed value. All six receipts observed native
+MouseDrag and completed cleanup. Exact builds, complete classified logs, configuration preservation
+and graceful shutdown are recorded in
+`artifacts/Implementation/megamod-p0/s138-native-slider/native-verification.md`.
+Independent review and350 Unit/15 Harmony checks are retained under
+`artifacts/Implementation/gateway-native-window-drag/`. This accepts the focused positive drag
+workflow; section3's wider native cancellation/context-replacement matrix remains open.
 
 Task2.6 has scoped reviewed native evidence in
 `artifacts/EndToEndRuns/Grouped/20261107T194544522Z-37b8743c67f04c349620e3ab1064c991/`.

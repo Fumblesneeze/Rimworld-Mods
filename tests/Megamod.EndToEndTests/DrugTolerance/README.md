@@ -238,3 +238,12 @@ in the evidence; these controls make no safety promise. Full logs, exact source/
 identity and successful cleanup are in
 `artifacts/Implementation/megamod-p0/s138-native-boundaries/cap-shared-native-verification.md`.
 No broader feature task closes from these two scoped observations.
+
+The user-requested native slider replacement passed the focused editor/layout gate on reviewed
+checkpoint812ae49:47 editor steps plus84 layout steps, with all15 captures personally inspected.
+An ordinary click preserves12.50%; actual held drags select0%,100%,20% and Any, including malformed
+repair at the unchanged endpoint. Existing mood/recreation controls remain unchanged. Native1.25x
+clipping and1x recovery were observed again using the slider. Exact evidence, package identity and
+cleanup are in `artifacts/Implementation/megamod-p0/s138-native-slider/native-verification.md`.
+Stock and save fixtures now use the same typed drag helper and compile; their earlier native runs
+remain historical evidence for their exact builds and were not replayed for this UI correction.

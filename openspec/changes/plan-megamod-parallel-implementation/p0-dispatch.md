@@ -848,3 +848,14 @@ Health detail postfix. Root owns that one-line correction and its later independ
 Both failed runs retained successful exact-process cleanup and unchanged normal configuration.
 Neither checkpoint accepts the remaining native workflows; the corrected batches require fresh
 reviewed runs and root's personal observation. All prior feature obligations remain allocated.
+
+The corrected slider batch is now accepted for its scoped UI workflow at reviewed812ae49:
+group20261112T195404895Z-b887624bb2834475be68349d64139eb1 passed131 steps, and root personally
+inspected all15 captures. Ordinary press retains fractional precision; six real native drags cover
+numeric endpoints, intermediate values, Any and malformed repair. Native layout/scale recovery,
+complete logs, exact package identity, normal configuration preservation and graceful cleanup are
+recorded under `artifacts/Implementation/megamod-p0/s138-native-slider/native-verification.md`.
+The same native control now replaces the modal editor. Full S138, seven-language and P0–P8 work
+remain open. Caravan consumer planning has resumed as an artifact-only assignment. The separate
+corrected Gateway run reached an earlier unsettled World-view refusal at selection, with successful
+cleanup; its Health correction remains unaccepted pending diagnosis and a fresh native run.

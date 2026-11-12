@@ -166,8 +166,14 @@ workflow. Routine fail-open, seven-language/tooltips and all other pending compo
 The2026-11-12 user correction supersedes the separate dialog with the same native horizontal
 slider as the adjacent controls. Older modal editor and layout captures remain historical to their
 exact builds. The new focused host batch covers retained fractions/malformed encodings,0..100
-and separate Any; executable editor/layout scenarios use the new control. Fresh independent review
-and personal native observation are still required before accepting the slider revision.
+and separate Any; executable editor/layout scenarios use the new control. Reviewed checkpoint812ae49
+passed the focused editor/layout group20261112T195404895Z-b887624bb2834475be68349d64139eb1:
+131 steps and15 personally inspected captures. Ordinary press/release retains12.50%; native held
+drags select0%,100%,20% and Any, and repair malformed data through the same control. Native scale
+recovery retains the value and surrounding controls. Exact package/build identity, six drag receipts,
+complete classified logs, unchanged normal configuration and graceful cleanup are retained in
+`artifacts/Implementation/megamod-p0/s138-native-slider/native-verification.md`.
+This accepts the corrected slider and scoped layout workflow only; the broader tasks remain open.
 
 ## 3. Configuration and native policy controls
 

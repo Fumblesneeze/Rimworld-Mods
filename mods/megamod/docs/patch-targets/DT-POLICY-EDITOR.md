@@ -80,11 +80,13 @@ routine routes, header/row invocation bridges and a final runtime activation mar
 support remains independently owned. No callback is registered by these feature files; root owns
 integration. Common feature preferences stay editable when capability/layout support is missing,
 with a translated current status; effective original-provider suppression preserves requested
-global/save values. Seven complete catalogs are authored, but native readability and faithful
-slider interaction require current reviewed native evidence. The geometry and integrated runtime review findings are
-resolved and owning product compilation passes. Exact native admission and action/result evidence
-remain outstanding. The frozen packets and controls are recorded under
-`artifacts/Implementation/megamod-p0/s138-revision21/`.
+global/save values. Seven complete catalogs are authored; their full native readability gate remains
+open. Reviewed812ae49 has current English slider/layout evidence:131 native scenario steps and15
+personally inspected captures prove press-retention, explicit held-drag changes, malformed repair
+and native scale recovery. Exact evidence and limitations are retained in
+`artifacts/Implementation/megamod-p0/s138-native-slider/native-verification.md`. Earlier frozen
+runtime packets remain under `artifacts/Implementation/megamod-p0/s138-revision21/`; their broader
+composition obligations are not closed by the slider gate.
 
 The revision21 review correction retains actual failures per exact policy/row allocation. A
 supported later row or another policy cannot clear that failure. Only a successful assessment
