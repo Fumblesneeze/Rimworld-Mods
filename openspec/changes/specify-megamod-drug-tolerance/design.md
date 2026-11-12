@@ -338,3 +338,9 @@ GenUI.AtZero/ContractedBy/Rounded arithmetic remain the existing native-contract
 proof does not claim recursive engine certification. It supports the exact native manager and
 requires separate admission for virtual geometry overrides. The exact predicates and source identity
 are in DT-POLICY-EDITOR; focused host evidence does not establish native readability or acceptance.
+
+The inspected1.7 windowed backend exposes only its current resolution in the native menu. The
+combined verification scenario therefore explicitly arranges1024x768 and1280x1024 windowed
+preconditions, then uses native manager opening and actual1.25/1 scale selections to prove unavailable
+controls and recovery. Native resolution selection is not claimed. Restore the original1600x900
+fixture size and observe eventual display restoration under the runner's bounded cleanup protocol.

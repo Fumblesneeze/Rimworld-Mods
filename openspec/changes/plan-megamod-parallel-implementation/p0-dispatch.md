@@ -801,7 +801,11 @@ finding has an executable RED/GREEN regression: only allocation failures persist
 fit remains current. The affected36-case batch and owning build pass, and re-review found no issues.
 This is implemented-unverified; older S138 evidence does not accept the revised runtime. Root owns
 the next native layout fixture and its combined bad-viewport/narrow-allocation/recovery gate, using
-offered native resolution/scale controls. Seven-language tooltip coverage awaits scoped Gateway
+offered native scale controls. Independent fixture review found the installed windowed backend
+offers only its current resolution, so explicit disposable size preconditions replace the impossible
+resolution-menu steps; only native opening/scale behavior will be accepted. Its asynchronous resize
+cleanup uses a minimal shared-context projection of the existing bounded runner cleanup queue.
+Seven-language tooltip coverage awaits scoped Gateway
 hover after the active world batch. The new UI skill guidance records the coordinate/recovery lesson.
 
 Independent S139 family-scope review requires explicit provider lifetime/revocation, same-interval
@@ -809,3 +813,9 @@ consumption, a concrete conditional stage consumer and a nongeneric detour-only 
 implementation. Those findings are retained under family-publication/review-disposition.md; no
 compiled receipt lease is released. The selected custom runtime's native alias premise remains open.
 All positive generator, complete S138,139-feature and P0–P8 obligations remain allocated.
+
+The24-file World/caravan batch reached297Unit/12Harmony checks and a clean owning scenario compile.
+The first independent review identified unbounded normal-frame drag history, foreign targeting during
+restore, and input retirement consuming the full cleanup budget. These findings remain pending and
+must be fixed together before root installation/native acceptance. A separate input/observer review
+also remains required; no world or caravan acceptance is inferred from the host results.

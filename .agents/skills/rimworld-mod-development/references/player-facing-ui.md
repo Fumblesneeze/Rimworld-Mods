@@ -64,7 +64,15 @@ bounds. Keep scroll-content coordinates distinct from absolute window/viewport c
 Keep transient viewport availability separate from persistent row/entity allocation failures.
 Otherwise painting policy A while offscreen can latch its valid rows as failed and block recovery
 after switching to policy B. Test recovery with both policies still current, and separately retain
-real row failures until that row's allocation is reassessed. For native verification, use offered
-resolution/scale controls and their confirmation/restore path; a scale rejected by the engine does
-not exercise a narrow layout. Capture no-manager availability before opening the window so its
-actual-window guard cannot mask a broken prospective check.
+real row failures until that row's allocation is reassessed. For native verification, inspect the
+installed backend behind offered resolution/scale controls, including windowed-mode filtering;
+the native menu's wrapper alone does not prove alternate choices exist. Use actual offered controls
+and their confirmation/restore path. If a window size must be disposable setup, label it as setup
+and accept only the subsequent native opening/scale workflow; do not claim native resizing. A scale
+rejected by the engine does not exercise a narrow layout. Capture no-manager availability before
+opening the window so its actual-window guard cannot mask a broken prospective check.
+
+Display setters can request a resize before native Screen dimensions publish on a later frame.
+Use bounded asynchronous cleanup observation through the test context, after closing exact owned
+confirmation windows. Keep independent object/control cleanup separate so a failed display restore
+does not skip it. A same-call dimension assertion is not proof of eventual restoration.
