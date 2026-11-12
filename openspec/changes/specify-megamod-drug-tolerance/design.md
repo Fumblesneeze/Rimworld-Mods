@@ -1,7 +1,7 @@
 ## Context
 
 Sole owner: Make Rimworld Great Again (`fumblesneeze.megamod`, `mods/megamod`), target 1.7 beta.
-S138 is a proposed independent behavior replacement. The pinned
+S138 is an independent behavior replacement under implementation. The pinned
 [research](../../../mods/megamod/docs/refinement/2026-11-08-drug-tolerance-research.md) records the
 installed source/DLL and native 1.7.5000 identities. It establishes source predicates, not live
 acceptance. Source UI conflates 1 with Any, yet its predicate still rejects severity at least 1;
@@ -137,13 +137,14 @@ warning/effective-off verification suffices; no original API/drop-in test matrix
 
 ### Revision21 native composition assumptions
 
-The unregistered adapter binds each edit to the exact current Game, native policy database member,
+The adapter binds each edit to the exact current Game, native policy database member,
 open manager/selected policy, unique drug row and original immutable choice. Replacing the row,
 switching the selection/game or another committed choice invalidates the draft; a rename or sort
 that preserves those identities does not. The window has explicit Any, percentage, Apply and Cancel
 controls. Native font measurement uses the current locale each assessment; ordinary enable
 preferences remain editable when semantic/layout support is unavailable. Seven catalogs are
-authored, with native layout and input acceptance still outstanding.
+authored. Scoped English editor input has reviewed native evidence recorded in tasks; broader
+language, layout and input obligations remain outstanding.
 
 The direct-joy adapter proves the consumed positive DrugDesire/mental-state suffix in each incoming
 generation before projecting the exception. The initial native resolver supports an inherited
@@ -154,10 +155,13 @@ A mapped but invalid current tolerance read grants no new veto and emits a local
 diagnostic once per current Game. Weak notice tracking retains no Game or pawn permission. Missing
 drug capability instead appears as a disabled Unavailable row, retaining its stored choice.
 
-Runtime registration, compilation against the separately owned geometry service, independent
-review and the integrated native workflows remain pending. The final activation marker and all
+Runtime registration and integration with the separately owned geometry service are implemented.
+Independent review and scoped native editor, route and persistence evidence are recorded with
+their exact tested builds in tasks; the full integrated acceptance remains pending. The final
+activation marker and all
 geometry/allocation/editor/scheduled/direct-joy/social candidates belong to one C01 group; the
-existing persistence support remains independently active. This tranche does not accept S138.
+existing persistence support remains independently active. These scoped results do not accept
+the whole S138 feature.
 
 The reviewed correction tracks layout failures by exact policy and row identities within the
 open manager. Successful assessment of another row, switching selection or successful header
@@ -186,11 +190,12 @@ off is not diagnosed as a failed enabled patch.
 
 ## Migration Plan
 
-This change only drafts future behavior. Introduce the owned field with missing = Any; retain/load
-megamod saves and copied policies. Do not import the original's field. No automated old-schema
+The owned field uses missing = Any and retains megamod saves and copied policies through the
+implemented persistence support. Do not import the original's field. No automated old-schema
 migration is authorized. If a later migration is needed, specify backup, staged conversion,
 atomic commit, restoration and verified postconditions before implementing it. Effective-off is a
-reversible gameplay switch, not save conversion. All runtime tasks remain unchecked.
+reversible gameplay switch, not save conversion. The task list records scoped evidence and remaining
+implementation/native obligations; dated tranche sections below retain their historical status.
 
 ## Open Questions and implementation blockers
 

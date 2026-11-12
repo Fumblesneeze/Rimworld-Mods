@@ -736,3 +736,21 @@ path or proven isolation. Root also owns the green F0 physical-curve-storage ref
 existing `DrugGenerationFactInputs`, using existing Defs coverage without new test tiers/APIs.
 One affected host regression/review batch follows the finished leaf/helper/refactor; native
 origin, first-use initialization, F0–F5 composition and generation acceptance remain open.
+
+After fd28279, root has integrated and compiled the independently reviewed S138 two-save fixture.
+Its source lease returns to root; the native run remains pending the Entry-menu Gateway review
+corrections. The Gateway author fixes the enclosing-layout publication and failed-capture evidence
+findings together, then returns frozen source for independent re-review. Root runs only the affected
+checkbox/layout-replacement pair, the singular process-owned Entry scenario, and the singular
+process-owned S138 scenario. The new exact-batch selector does not relax process-owned isolation.
+
+The next S139 lane is artifact-only passive published-body reader design and test drafts beneath
+`s139-native-facts/stage-membership/passive-observation`. Existing source remains frozen for S138
+deployment. Root will separately release the precise nongeneric reader/shared-gate paths after
+independent design review and immutable staging; no generic observer, stage registration or native
+proof is authorized by the draft. The separately reviewed S138 next-batch plan now selects an
+artifact-only `native-stock-routes` fixture under `s138-next-batch`: actual scheduled rejection,
+native Any edit with attached pickup, then independent refill from empty. Its author changes no
+compiled scenario and launches no game; root must review counted actions/cleanup before release.
+Caravan/world control and language-only runs remain separately allocated prerequisites. All
+remaining S138/S139 contracts, other features and P0–P8 gates stay allocated and unaccepted.

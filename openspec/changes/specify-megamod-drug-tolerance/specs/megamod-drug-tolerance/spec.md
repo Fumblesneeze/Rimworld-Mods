@@ -1,7 +1,8 @@
 ## Owner
 
 Make Rimworld Great Again — `fumblesneeze.megamod`, `mods/megamod`; RimWorld 1.7 beta.
-This capability is specified for later work; no runtime behavior is accepted by this draft.
+Implementation and scoped native acceptance are recorded in the owning tasks with exact tested
+builds. The full feature and every remaining scenario still require their stated evidence.
 
 ## ADDED Requirements
 
