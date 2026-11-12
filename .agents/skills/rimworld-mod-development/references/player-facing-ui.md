@@ -52,3 +52,19 @@ specific cookware set from the broader kitchenware category.
 
 All product UI text uses translated DefInjected or Keyed strings. Validate every required locale and
 render representative narrow UI surfaces; structural correctness in English is not localization.
+
+## Check the coordinate space and recovery owner
+
+Native window sizing can consume physical `Screen.width` while positioning and input use logical
+`UI.screenWidth`/`UI.screenHeight` after scale/DPI. Sufficient local column width does not prove that
+the window or controls fit the viewport. Inspect the actual native producer, test prospective fit
+before first paint when behavior depends on editor availability, and recheck current open-window
+bounds. Keep scroll-content coordinates distinct from absolute window/viewport coordinates.
+
+Keep transient viewport availability separate from persistent row/entity allocation failures.
+Otherwise painting policy A while offscreen can latch its valid rows as failed and block recovery
+after switching to policy B. Test recovery with both policies still current, and separately retain
+real row failures until that row's allocation is reassessed. For native verification, use offered
+resolution/scale controls and their confirmation/restore path; a scale rejected by the engine does
+not exercise a narrow layout. Capture no-manager availability before opening the window so its
+actual-window guard cannot mask a broken prospective check.

@@ -7,6 +7,24 @@ namespace Megamod.Unit.Tests.Features.DrugTolerance;
 public sealed class DrugToleranceWindowStateTests
 {
     [Test]
+    public void ViewportRecoveryUnderAnotherPolicyDoesNotRequireRepaintingTheEarlierPolicy()
+    {
+        var state = new DrugToleranceWindowState();
+        var firstPolicy = new object(); var firstRow = new object();
+        var nextPolicy = new object(); var nextRow = new object();
+        Assert.That(state.AssessHeader(true, false), Is.False);
+        Assert.That(state.AssessRow(firstPolicy, firstRow, true, false), Is.False);
+        Assert.That(state.AssessRow(nextPolicy, nextRow, true, false), Is.False);
+        Assert.That(state.AssessHeader(true, true), Is.True);
+        Assert.That(state.AssessRow(nextPolicy, nextRow, true, true), Is.True);
+        Assert.That(state.HasFailure((_, _) => true), Is.False, "all rows still exist, but none had an allocation failure");
+
+        state.AssessRow(firstPolicy, firstRow, false, false);
+        state.AssessRow(nextPolicy, nextRow, true, true);
+        Assert.That(state.HasFailure((_, _) => true), Is.True, "a real allocation failure remains independent of viewport recovery");
+    }
+
+    [Test]
     public void AnotherSupportedRowCannotClearTheFailedRowsAllocation()
     {
         var state = new DrugToleranceWindowState();

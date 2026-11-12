@@ -122,7 +122,12 @@ policy manager's actual right rectangle subtracts sidebar200 plus gap10. The hea
 width; its separately admitted consumer subtracts16. The row section contracts1 on both sides,
 and the guarded scroll helper removes either0 or20 from its view width. Prospective row input
 therefore reserves the conservative22-unit deduction. Native GUI positioning and actual fit use
-UI.screenWidth, not physical Screen.width; the invocation bridge rechecks actual inputs and fit.
+UI.screenWidth/UI.screenHeight, not physical Screen.width. The runtime checks prospective native
+window dimensions against that logical viewport before first paint, and requires each open exact
+native manager's actual windowRect to fit wholly within it before routine restrictions and column
+reservation. This corrects the earlier local-width-only bridge. It preserves native size, position
+and row scrolling; virtual row coordinates are not absolute viewport coordinates. Actual header/row
+allocation checks and their independent failure latches remain in place.
 
 The analysis tracks rectangle copies and earlier managed-reference aliases through their actual
 consumers, with bounded control flow and conservative refusal of unknown indirect writes or

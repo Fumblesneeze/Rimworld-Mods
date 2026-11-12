@@ -4,6 +4,12 @@ public readonly record struct DrugToleranceReservation(float NativeWidth, float 
 
 public static class DrugToleranceLayout
 {
+    public static bool FitsViewport(float x, float y, float width, float height, float viewportWidth, float viewportHeight) =>
+        float.IsFinite(x) && float.IsFinite(y) && float.IsFinite(width) && float.IsFinite(height) &&
+        float.IsFinite(viewportWidth) && float.IsFinite(viewportHeight) &&
+        x >= 0 && y >= 0 && width > 0 && height > 0 && viewportWidth > 0 && viewportHeight > 0 &&
+        width <= viewportWidth - x && height <= viewportHeight - y;
+
     public static bool TryReserve(float width, float measuredColumn, bool header, out DrugToleranceReservation reservation)
     {
         reservation = default;

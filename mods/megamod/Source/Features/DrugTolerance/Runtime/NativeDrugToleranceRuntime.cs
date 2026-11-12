@@ -109,9 +109,13 @@ public sealed class NativeDrugToleranceRuntime
                 if (!CoreAvailable()) return false;
                 var windows = Find.WindowStack;
                 for (int i = 0; i < windows.Count; i++)
-                    if (windows[i] is Dialog_ManageDrugPolicies manager &&
-                        !DrugToleranceWindowState.Supports(manager, typeof(Dialog_ManageDrugPolicies)))
-                    { status = "Megamod.DrugTolerance.Unavailable"; return false; }
+                    if (windows[i] is Dialog_ManageDrugPolicies manager)
+                    {
+                        if (!DrugToleranceWindowState.Supports(manager, typeof(Dialog_ManageDrugPolicies)))
+                        { status = "Megamod.DrugTolerance.Unavailable"; return false; }
+                        if (!NativeDrugToleranceGeometry.FitsCurrentViewport(manager.windowRect))
+                        { status = "Megamod.DrugTolerance.LayoutUnavailable"; return false; }
+                    }
                 float column = MeasureColumn();
                 if (!geometry!.TryGetProspectiveWidths(out float headerWidth, out float rowWidth) ||
                     !DrugToleranceLayout.TryReserve(headerWidth, column, true, out _) ||
@@ -215,8 +219,9 @@ public sealed class NativeDrugToleranceRuntime
         }
         var failure = windowStates.GetValue(manager, _ => new());
         DrugToleranceReservation space = default;
-        bool fits = Finite(rectangle) && DrugToleranceLayout.TryReserve(rectangle.width, MeasureColumn(), isHeader, out space);
-        if (isHeader) failure.AssessHeader(fits); else failure.AssessRow(policy, entry!, fits);
+        bool viewportFits = NativeDrugToleranceGeometry.FitsCurrentViewport(manager.windowRect);
+        bool allocationFits = Finite(rectangle) && DrugToleranceLayout.TryReserve(rectangle.width, MeasureColumn(), isHeader, out space);
+        bool fits = isHeader ? failure.AssessHeader(allocationFits, viewportFits) : failure.AssessRow(policy, entry!, allocationFits, viewportFits);
         if (!fits) { status = "Megamod.DrugTolerance.LayoutUnavailable"; Report("A native policy " + (isHeader ? "header" : "row") + " cannot fit its current tolerance control."); return null; }
         if (!Available) return null;
         var original = rectangle;

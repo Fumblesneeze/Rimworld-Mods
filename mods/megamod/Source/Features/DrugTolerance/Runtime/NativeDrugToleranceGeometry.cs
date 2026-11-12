@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Megamod.Features.DrugTolerance.Core;
 using Megamod.Patching;
 using RimWorld;
 using UnityEngine;
@@ -88,12 +89,17 @@ public sealed class NativeDrugToleranceGeometry
         int physicalWidth = Screen.width;
         if (physicalWidth <= 50) return false;
         float windowWidth = Math.Min(physicalWidth - 50, 1300);
+        // Native InitialSize consumes physical pixels, but Window positioning consumes GUI units.
+        // Refuse before first paint when that admitted size cannot fit the logical viewport.
+        if (!DrugToleranceLayout.FitsViewport(0, 0, windowWidth, 720, UI.screenWidth, UI.screenHeight)) return false;
         headerWidth = windowWidth - 36 - 210;
         // Native contracts one unit on each side and reserves at most twenty for scrolling.
-        // The invocation bridge separately validates the real header/row input and GUI fit.
+        // The runtime also checks the actual open manager bounds and header/row allocation.
         rowWidth = headerWidth - 22;
         return rowWidth > 0 && Available;
     }
+    public static bool FitsCurrentViewport(Rect window) => UnityData.IsInMainThread &&
+        DrugToleranceLayout.FitsViewport(window.x, window.y, window.width, window.height, UI.screenWidth, UI.screenHeight);
     private const BindingFlags All = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
     private static MethodInfo Method(Type type, string name, params Type[] args) => type.GetMethod(name, All, null, args, null) ?? throw new MissingMethodException(type.FullName, name);
     private static MethodInfo Property(Type type, string name) => type.GetProperty(name, All)?.GetMethod ?? throw new MissingMemberException(type.FullName, name);

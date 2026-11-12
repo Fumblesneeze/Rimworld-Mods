@@ -291,6 +291,12 @@ changed. The warning SHALL not claim full coexistence safety or rollback of ever
 - **AND** preferences and policy choices remain intact, existing selected jobs keep native execution, and recovery requires a fresh supported geometry assessment rather than elapsed time alone.
 - **AND** the initial allocation requires calculator input widths from600 through1300 GUI units, at least600 native-column units and at least120 owned-column units or wider measured translated text; unsupported fits remain unavailable until a supported assessment succeeds.
 
+#### Scenario: Native physical sizing exceeds the scaled logical viewport
+- **WHEN** the native manager's prospective dimensions exceed the current logical GUI viewport, even though its local columns would fit
+- **THEN** tolerance editing and extra routine restrictions are unavailable before the first manager paint, with retained choices and native behavior preserved
+- **AND** while the exact native manager is open, its actual window rectangle must also fit wholly within that logical viewport before reserving an owned column or adding a subsequent tolerance veto
+- **AND** a fresh supported viewport and current window allocation can restore availability; virtual scrolling of policy rows does not require every row to be on screen simultaneously.
+
 #### Scenario: Another row fits after one row failed
 - **WHEN** one current policy row fails its actual allocation and another row or the header later fits
 - **THEN** the failed row still keeps the atomic feature unavailable

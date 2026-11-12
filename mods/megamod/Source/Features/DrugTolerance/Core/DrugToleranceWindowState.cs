@@ -10,6 +10,16 @@ public sealed class DrugToleranceWindowState
     private readonly List<(object Policy, object Row)> failedRows = new();
     private readonly HashSet<string> notices = new(StringComparer.Ordinal);
     public void AssessHeader(bool fits) => headerFailed = !fits;
+    public bool AssessHeader(bool allocationFits, bool viewportFits)
+    {
+        AssessHeader(allocationFits);
+        return allocationFits && viewportFits;
+    }
+    public bool AssessRow(object policy, object row, bool allocationFits, bool viewportFits)
+    {
+        AssessRow(policy, row, allocationFits);
+        return allocationFits && viewportFits;
+    }
     public void AssessRow(object policy, object row, bool fits)
     {
         int found = failedRows.FindIndex(item => ReferenceEquals(item.Policy, policy) && ReferenceEquals(item.Row, row));

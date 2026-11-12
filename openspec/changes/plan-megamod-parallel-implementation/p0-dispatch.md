@@ -793,3 +793,19 @@ execution premise after0374d55. It may not install generic/BCL observers, repeat
 canary or infer actual execution from matching managed bodies. Its bounded proposed path must
 reuse the existing publication/reader, address native aliases/compile updates/inlining, and leave
 unproved capabilities explicit. No tracked-source or test-output lease is released for that plan.
+
+The S138 language/layout audit exposed a concrete logical-viewport omission. Root's correction
+requires prospective native dimensions and an open manager's actual bounds to fit the scaled GUI
+viewport; it preserves native geometry and scrolling. Independent review's stale-row recovery
+finding has an executable RED/GREEN regression: only allocation failures persist, while viewport
+fit remains current. The affected36-case batch and owning build pass, and re-review found no issues.
+This is implemented-unverified; older S138 evidence does not accept the revised runtime. Root owns
+the next native layout fixture and its combined bad-viewport/narrow-allocation/recovery gate, using
+offered native resolution/scale controls. Seven-language tooltip coverage awaits scoped Gateway
+hover after the active world batch. The new UI skill guidance records the coordinate/recovery lesson.
+
+Independent S139 family-scope review requires explicit provider lifetime/revocation, same-interval
+consumption, a concrete conditional stage consumer and a nongeneric detour-only regression before
+implementation. Those findings are retained under family-publication/review-disposition.md; no
+compiled receipt lease is released. The selected custom runtime's native alias premise remains open.
+All positive generator, complete S138,139-feature and P0–P8 obligations remain allocated.

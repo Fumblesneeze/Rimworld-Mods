@@ -325,8 +325,15 @@ current physical Screen.width is queried only after the runtime's main-thread/li
 
 The prospective native width is min(Screen.width-50,1300)-36-210. Header production retains this
 width and its separately guarded consumer subtracts16; conservative row input additionally removes
-22 for section margins and the largest native scrollbar deduction. Actual rectangles and logical
-UI.screenWidth fit are still checked at each invocation. Rect value primitives and the inspected
+22 for section margins and the largest native scrollbar deduction. The logical viewport must fit
+the admitted prospective window width and720-unit height before first paint. Each open exact native
+manager's actual windowRect must also fit wholly within UI.screenWidth/UI.screenHeight, both before
+routine restrictions and before reserving a header/row column. This corrects the initial bridge's
+local-width-only implementation: physical1280x1024 at accepted1.25 scale can yield a1230-wide window
+inside a1024-wide logical viewport. No native size or position is rewritten. Native row scrolling
+remains valid; virtual row coordinates are not mistaken for absolute screen bounds. A fresh valid
+viewport/window assessment restores this prerequisite, while existing per-row allocation failures
+still require their own successful assessment. Rect value primitives and the inspected
 GenUI.AtZero/ContractedBy/Rounded arithmetic remain the existing native-contract boundary; the new
 proof does not claim recursive engine certification. It supports the exact native manager and
 requires separate admission for virtual geometry overrides. The exact predicates and source identity
