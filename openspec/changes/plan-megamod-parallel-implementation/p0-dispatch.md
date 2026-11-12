@@ -817,5 +817,15 @@ All positive generator, complete S138,139-feature and P0–P8 obligations remain
 The24-file World/caravan batch reached297Unit/12Harmony checks and a clean owning scenario compile.
 The first independent review identified unbounded normal-frame drag history, foreign targeting during
 restore, and input retirement consuming the full cleanup budget. These findings remain pending and
-must be fixed together before root installation/native acceptance. A separate input/observer review
-also remains required; no world or caravan acceptance is inferred from the host results.
+must be fixed together before root installation/native acceptance. The separate input/observer review
+added clipped-row isolation and late detailed-card callback failure publication findings. The author
+now owns all five corrections as one focused test/review batch. No world or caravan acceptance is
+inferred from the host results.
+
+Atc0cb69c the combined S138 layout/scale workflow passed91steps. Root personally inspected all7
+captures showing native unavailable explanations, actual1.25x clipping, native1x recovery and retained
+numeric editor state. Exact typed group20261112T184115950Z-295e3f3cb10f47f8a9249516cc221113 completed
+graceful shutdown and unchanged normal hashes. Full evidence and scoped playability review are in
+`artifacts/Implementation/megamod-p0/s138-language-layout/native-verification.md`; native resolution
+selection and routine fail-open are unclaimed. Shared cleanup polling also has its host and native
+usage gate. Remaining S138/S139, seven-language/hover and all139/P0–P8 obligations remain allocated.

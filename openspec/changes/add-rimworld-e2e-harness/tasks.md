@@ -41,7 +41,7 @@
 
 ## 3. mods/RimWorldDevGateway — TDD destructive isolation
 
-- [ ] 3.5 Expose bounded asynchronous cleanup to test bundles, verify pending/completed/throwing/deadline behavior through the shared context, independently review it and observe native display restoration in the owning layout workflow.
+- [x] 3.5 Expose bounded asynchronous cleanup to test bundles, verify pending/completed/throwing/deadline behavior through the shared context, independently review it and observe native display restoration in the owning layout workflow. Reviewed f8a6777/c0cb69c,17 focused host cases and91-step native layout run; exact evidence in artifacts/Implementation/megamod-p0/s138-language-layout/native-verification.md. Interrupted native resize cleanup is not claimed from this successful run.
 
 - [x] 2.27 TDD/REVIEW/LIVE: Preserve the incident constructor ABI and add exact optional raid arrival/strategy Def selection, fail closed before native execution on invalid options, and personally observe native edge-walk-in raids in the corrected Pathfinding Lab setup. Evidence: ignored `artifacts/PathfindingLab/proactive-approach-20261024.md`; executed5-test RED/GREEN, independent fixture review, and native incident/save/reload group20261024T190125607Z with personally inspected edge-raid captures.
 

@@ -152,6 +152,17 @@ This accepts that scoped stock workflow only; caravan, other compositions and fu
 - [ ] 2.4 RED/GREEN direct joy restriction with only its native exceptions, social-drink restriction without those exceptions and eligible drinkless social fallback, plus recipient checks for S024 treats/inventory. Preserve separate medical/manual decisions and independent refill.
 - [ ] 2.5 RED/GREEN C01 atomic group install/rollback, supported/changed effective shapes, benign foreign edits, idempotence, repatch invalidation and bounded diagnostic provenance. Own and clean only the test patch owner.
 
+The reviewedc0cb69c combined layout case passed91steps and root personally inspected all7 captures.
+Explicit disposable1024x768 setup plus native manager opening showed the unavailable explanation;
+at1280x1024 the actual native1.25 scale choice produced a visibly offscreen manager and fresh notice.
+Native1x recovery restored the full native/tolerance columns and retained12.50% Beer control; its
+native contextual editor retained12.5. Before-first-paint checkpoints separately proved current
+prospective availability. Exact build/process/action evidence, complete classified logs, observed
+display restoration, unchanged normal configuration and graceful cleanup are retained in
+`artifacts/Implementation/megamod-p0/s138-language-layout/native-verification.md`.
+This accepts the scoped layout/scale UI behavior only. Resolution selection was setup, not a native
+workflow. Routine fail-open, seven-language/tooltips and all other pending compositions remain open.
+
 ## 3. Configuration and native policy controls
 
 - [ ] 3.1 Add the common feature setting with current-global inheritance, dormant overrides, main-menu callback guards, next-decision application timing and exact save teardown.
