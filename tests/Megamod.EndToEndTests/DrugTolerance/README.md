@@ -17,9 +17,10 @@ Select this exact ID alone with launcher2400. Its100 counted steps comprise60 na
 13 screenshots and495s waits, including the30s clean-terrain/settled-World wait from the accepted
 Gateway prerequisite. Bounded work1785s plus90s reserve fits the2100s scenario; actual time is capped
 at3000 game ticks within one day. Scoped input cleanup, World restoration and exact owned object/trace
-cleanup remain required. The fixture is authored and compilation is supporting evidence only;
-independent review found no issues; root's native consumer gate remains pending in
-`artifacts/Implementation/megamod-p0/s138-caravan-consumer/`.
+cleanup remain required. On reviewed4d4d57e the case passed148 steps; root inspected all13 captures
+showing A's retained two Beer/no effects and B's one remaining Beer/Alcohol effects after native time.
+Exact provenance, unchanged daily interval, full logs and cleanup are recorded in
+`artifacts/Implementation/megamod-p0/s138-caravan-consumer/native-verification.md`.
 
 `megamod.drug-tolerance.native-language-slider` opens the same native policy manager, inspects
 translated Any and Needs review labels, drags Beer to20%, and toggles native recreation/scheduled

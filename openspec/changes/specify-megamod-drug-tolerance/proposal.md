@@ -9,9 +9,9 @@ Target: **RimWorld 1.7 beta**. Choice/decision rules, S029 state transactions an
 runtime are implemented. Scoped persistence, English editor and scheduled/direct-recreation routes
 have reviewed live evidence; the full feature remains incomplete. See tasks for exact accepted scope.
 
-The next focused consumer compares separate numeric-zero and Any caravans through real world ticks,
-native Items and detailed Health, preserving the ordinary daily interval and physical stock. Its
-Gateway and slider prerequisites have scoped native acceptance; the consumer itself remains unaccepted.
+The focused caravan consumer passed on reviewed4d4d57e: separate numeric-zero and Any caravans
+exercise real world ticks, native Items and detailed Health, preserving the ordinary daily interval
+and physical stock. Root inspected all13 captures; full feature acceptance remains open.
 
 ## What Changes
 

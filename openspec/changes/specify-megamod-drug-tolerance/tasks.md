@@ -189,7 +189,16 @@ reviewed native slider and Gateway caravan prerequisites. It compares separate0/
 actual world ticks and native Items/Health, including one ordinary Any dose and later same-day interval
 rejections. The fixed100-step sequence reserves1875s within2100s (launcher2400s). Source/build/review
 evidence belongs under `artifacts/Implementation/megamod-p0/s138-caravan-consumer/`; root's reviewed
-native action/result gate is still required. Tasks2.3/4.2/4.3 and full S138 acceptance remain open.
+native action/result gate is recorded below. Tasks2.3/4.2/4.3 and full S138 acceptance remain open.
+
+The reviewed4d4d57e caravan case passed148 steps and cleanup in focused group
+`20261112T204843176Z-a640724cec804cd2a175b32206b9fb44`. Root inspected all13 causal captures:
+native sliderA0 retained two Beer and no Health effects after repeated actual schedule attempts;
+BAny consumed one Beer and showed Alcohol/tolerance, then retained its native same-day interval.
+Exact stock/split/history/tick provenance, product/process identity, complete classified logs and
+successful cleanup are in `artifacts/Implementation/megamod-p0/s138-caravan-consumer/native-verification.md`.
+The later language fixture failed after its first tooltip; that separate case remains unaccepted
+pending its focused correction. S024 composition, medical consumers and full feature tasks remain open.
 
 - [ ] 4.1 Run affected nonzero focused suites, owning build/package checks and typed OpenSpec validation; obtain independent review and resolve each finding on the tested revision.
 - [ ] 4.2 Author executable native scenarios for policy editing/copy, Any/numeric boundaries, actual scheduled/direct-joy ingestion, social drinks and drinkless fallback, patient treats, independent refill versus attached pickup, exclusions, malformed choice repair and persistence; setup must not manufacture the action result.
