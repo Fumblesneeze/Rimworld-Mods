@@ -701,3 +701,38 @@ F0 Defs outputs; rate leases only its focused Harmony outputs. No shared helper,
 BodySize proof, curve preparation, runtime registration, product build/install, game or commit is
 delegated. Each lane retains focused RED/GREEN and obtains independent review; root integrates
 the batch and records remaining native premises. No task or positive generator obligation is removed.
+
+After9833043/a82beb2, the Human-origin and age/flag/rate checkpoints are reviewed and committed.
+Root's canonical integrated build/install and65-file package validation pass; these unregistered
+helpers do not claim native generation acceptance. D/E's earlier exact-build one-save observations
+remain scoped to their retained evidence. Tooling checkpoint3697b57 adds exact single-group E2E
+batches with37 distinct focused checks and an actual two-ID, no-mutation dry-run.
+
+The next selected native obligation is S138 main-menu guards and two genuinely independent saves.
+`entry_menu_gateway` owns the narrow Gateway Entry-menu Options/DevQuickTest input prerequisite:
+new Input entry-menu lease/automations/native implementation, the existing minimized mouse backend's
+generic target seam, shared typed Entry-menu steps, E2E driver/bootstrap wiring, focused Waylith
+tests/native scenario and its Gateway-owned contract/docs. It must capture actual native controls,
+preserve scene/root/layout/DevMode/window stale checks and reuse the public typed automation surface.
+This is a Gateway-owned change; it adds no product dependency. Its exact path list and TDD ledger
+live under ignored `artifacts/Implementation/gateway-entry-menu`.
+
+`save_switch_fixture` owns artifact-only drafts under `s138-native-save-switch` for a new independent
+native scenario using that API. Existing D/E fixtures remain untouched. Root releases the compiling
+fixture only after reviewing the full UI sequence and counted budgets. `generation_rate` prepares
+the separately allocated closed generic/interface stage-membership plan under `s139-native-facts`;
+its next compiled lease awaits the exact supported native/host boundary. No worker installs packages,
+launches games or accepts native outcomes. Root retains integration, current package identity,
+personal observations and commits. Remaining native facts, compositions, all139 features and every
+P0–P8 obligation remain required.
+
+Stage follow-through: the owned closed-method canary demonstrated shared executable code while
+its sibling metadata receipt still reported current. This supersedes the proposed generic
+observer expansion. `generation_rate` completes the positive severity-field leaf only; root owns
+the focused pre-acquisition isolation refusal in `DrugGenerationObservedBodies` and its new
+`DrugGenerationObservationIsolationTests`. No BCL observer is installed. The native stage
+collection/helper proof is retained and requires a separately reviewed passive publication/body
+path or proven isolation. Root also owns the green F0 physical-curve-storage refactor in the
+existing `DrugGenerationFactInputs`, using existing Defs coverage without new test tiers/APIs.
+One affected host regression/review batch follows the finished leaf/helper/refactor; native
+origin, first-use initialization, F0–F5 composition and generation acceptance remain open.

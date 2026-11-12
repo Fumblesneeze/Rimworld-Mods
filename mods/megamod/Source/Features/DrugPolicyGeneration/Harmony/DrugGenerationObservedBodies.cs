@@ -64,15 +64,24 @@ internal sealed class DrugGenerationObservedBodies
     internal string? Failure { get; private set; }
     internal void Install()
     {
+        // Preflight the whole bundle: a later unsupported root must not leave earlier roots patched.
+        foreach (var root in roots.Keys) RequireIsolatedCode(root);
         foreach (var root in roots.Keys) Acquire(root);
         installed = true;
         if (!Revalidate()) throw new InvalidOperationException(Failure);
     }
     private void Acquire(MethodBase method)
     {
+        RequireIsolatedCode(method);
         if (nodes.ContainsKey(method)) return;
         if (!Routes.TryAdd(method, this)) throw new InvalidOperationException("The decay target/callback already has an owned observation route.");
         var node = new Node(method); nodes.Add(method, node); node.Patch.Install();
+    }
+    private void RequireIsolatedCode(MethodBase method)
+    {
+        if (!method.IsGenericMethod && method.DeclaringType?.IsGenericType != true) return;
+        Fail(method, "Closed generic code isolation is unproved; the observation cannot be acquired.");
+        throw new InvalidOperationException(Failure);
     }
     private bool Check(HashSet<MethodBase>? missing)
     {
@@ -165,7 +174,8 @@ internal sealed class DrugGenerationObservedBodies
             throw new InvalidOperationException("The decay contribution publication is busy.");
         return owned!;
     }
-    // Runtime handles remove inherited ReflectedType aliases while retaining constructed identities.
+    // Runtime handles remove inherited ReflectedType aliases. Metadata identity does not prove
+    // generic code isolation; acquisition checks that separate boundary before installing observers.
     private static MethodInfo Declaration(MethodInfo method) => (MethodInfo)MethodBase.GetMethodFromHandle(method.MethodHandle, method.DeclaringType!.TypeHandle)!;
     [HarmonyPriority(int.MinValue)]
     private static IEnumerable<CodeInstruction> Observe(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)

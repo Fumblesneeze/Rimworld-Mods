@@ -110,6 +110,14 @@ An observation-only hook should still require only the callable and execution fa
   runtime/CoreLib path and version separately from the host test runtime; confirm the loaded image
   in fresh native evidence before accepting call-edge/inlining behavior. A historical Mono assumption
   does not establish behavior for the inspected1.7 installation's Waylith CLR.
+- Before observing a closed generic method or a method on a constructed generic type, prove
+  code isolation on owned targets in the selected runtime/provider. Distinct MethodInfo keys and
+  closed operands do not establish independent native code: a retained host canary changed one
+  reference-type closure while its sibling changed too and still reported its old publication
+  current. Exercise sibling outputs after repatching and exact-owner cleanup, not only initial
+  calls or metadata. If isolation is unproved, refuse acquisition before adding any observer;
+  do not use a broad BCL patch or an unchanged sibling receipt as a workaround. Prefer a separately
+  proved passive publication/body inspection path where it can establish the consumed semantics.
 - Preserve machine arithmetic when validating layout or numeric producer chains. Real-number
   affine equality does not prove Single/Double evaluation equivalence: large cancellation,
   overflow and reassociation can change consumed values. Keep the relevant operation order or

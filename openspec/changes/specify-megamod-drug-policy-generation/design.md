@@ -388,6 +388,22 @@ NoInlining fixtures do not establish native call-edge/inlining or repatch behavi
 still needs its separately allocated closed generic/interface/List gate. The positive consumer
 receipt adds no registration or preview authority and closes none of task1.6 or F0–F5 acceptance.
 
+The stage continuation currently implements only `DrugGenerationStageBodyGuard`'s positive
+severity leaf: the actual virtual getter returns this hediff's current bound Single field, with
+no substituted receiver/field, reference escape or write. It uses the unchanged finite observation
+bundle and permits nops and proved scalar observers. The leaf does not prove actual native dispatch,
+current hediff identity/lifetime, stage membership or the other six planned stage-chain bodies.
+
+The planned generic expansion stopped at an executed owned-host canary. Two closed generic
+method roots initially returned1/2 and had distinct current body receipts. Rewriting only the
+first to return37 made its sibling return37 too, while the sibling's availability still reported
+true. Distinct MethodInfo/publication identity therefore did not establish isolated executable
+code for those host closures. The exact failed source and runs are retained under
+`artifacts/Implementation/megamod-p0/s139-native-facts/stage-membership/`. No List/BCL patch,
+generic-stage implementation or native-runtime conclusion was introduced. Root owns the shared
+observation acquisition boundary and investigation of an inert provider/publication path; the
+positive stage-chain and four-profile obligations remain required rather than abandoned.
+
 Generation preference controls use the common composite-settings renderer. A small transient
 percentage draft reuses S138's localized percentage parser and exact unchanged-value preservation;
 it owns no persisted settings or policy rows. The mood/recreation controls accept numeric values,
@@ -412,6 +428,23 @@ the actual pawn stage selector, cached/locked indices and BodySize method semant
 F2 obligations. This unregistered origin slice neither proves stage reachability nor exposes a
 generation preview. The static effect-curve origin and its first-use initialization are separate
 pending dependencies; no field read may silently claim to be inert while triggering initialization.
+
+F0 physical curve storage: the detached input snapshot now reads the checked declared instance
+`SimpleCurve.points : List<CurvePoint>` field for each supplied curve. It preserves the current
+container identity, null state, point order and exact float bits without calling the patchable
+`Points` getter. This is a green refactor of the captured-input contract, not static curve-origin
+or effective evaluator admission. First-use initialization, actual native field origin, List
+traversal semantics and F2's consumed curve/evaluation chain remain separate required proofs.
+No ordinary getter or BCL patch is installed by this read, and no new preview is exposed.
+
+The finite observed-body bundle currently permits only nongeneric method declarations on
+nongeneric declaring types. A real owned host canary demonstrated shared code: changing one closed
+reference-type method changed its sibling while the sibling's publication still appeared current.
+Therefore Install preflights every root before acquiring any observer, and callback acquisition
+checks the same boundary. This prevents partial acquisition of an unisolated bundle. The refusal
+is an explicit current capability limit, not a claim that generic runtime code is universally
+incompatible. Stage collection/helper semantics still require a separately proved passive
+publication/body path or actual selected-runtime code-isolation authority before positive use.
 
 ## Risks / Trade-offs
 

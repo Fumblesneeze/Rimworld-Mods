@@ -202,6 +202,16 @@ mislabel those edited choices as computed recommendations or silently revert the
 - **AND** the concrete flag's declaring type must have a type initializer for the existing no-initializer/own-scalar callback policy to protect it; an unproved protection premise refuses admission without executing that initializer
 - **AND** a Human adult definition does not prove a pawn's current age, the default negative tracker value is not silently treated as adult, and admitted Pawn/Props/CurStage bodies, current stage membership/effects and actual runtime call-edge/inlining behavior remain required before complete rate admission or suggestion exposure.
 
+#### Scenario: Stage preparation reads the current hediff severity only
+- **WHEN** partial stage admission observes the effective severity getter
+- **THEN** it proves the returned Single comes from that same hediff's current bound severity field, refusing a substituted receiver/field, reference write or escape
+- **AND** nops and proved scalar observers remain eligible, while native dispatch, current instance/lifetime and the actual stage-list membership proof remain separate prerequisites.
+
+#### Scenario: Separate closed publications do not prove isolated execution
+- **WHEN** a stage dependency requires closed generic observation whose actual execution isolation has not been established
+- **THEN** separate method identities or current publication receipts alone do not authorize that dependency or expose suggestions
+- **AND** the positive nongeneric severity leaf remains usable as a partial fact while the unresolved generic/interface/list and native call-edge proofs retain their explicit obligations.
+
 #### Scenario: Fresh-dose and side-high assumptions remain visible
 - **WHEN** the preview uses an admitted ordinary native high, Alcohol, Rest-offset or rottable drug shape
 - **THEN** it states the fresh whole-dose/no-prior-effect assumptions and explains that ordinary impairment, food poisoning and residual high/tolerance are not prevented by the suggestion.

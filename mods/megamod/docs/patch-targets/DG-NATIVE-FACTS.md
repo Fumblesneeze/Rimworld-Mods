@@ -207,6 +207,33 @@ stand-ins cannot prove native inlining. The separately allocated closed generic/
 stage gate is unchanged. Native save/load/later field writes, active Biotech, hash/calendar/batching,
 outer accumulators/clamp and all remaining F0–F5 obligations stay open. No suggestion is exposed.
 
+## F1 stage preparation: positive severity leaf, generic expansion stopped
+
+`DrugGenerationStageBodyGuard` currently binds only virtual `Hediff.get_Severity():float` and
+its actual instance `severityInt:float` field. The incoming body must load this hediff, read that
+field and return its Single value. Nops and the existing proved scalar callbacks remain eligible;
+substituted field/receiver, reference escape/write or a callback gaining an unproved reference
+effect revoke the partial claim. `DrugGenerationStageAdmissionTests` exercises actual current
+value replacement and changed effects through owned host targets. This is a positive severity
+producer, not an empty seven-body guard or complete stage-membership admission. Native instance
+identity, dispatch, initialization and later writes remain separate.
+
+The first actual closed-generic canary demonstrated why the planned expansion cannot yet use
+the existing observation mechanism unchanged. It installed two owned host `Probe<T>` closures
+whose actual initial calls returned1/2. A transpiler on only the first made both return37;
+the first receipt became unavailable but the sibling still reported available. This demonstrates
+host executable-code interference despite distinct metadata/current-publication receipts, not
+a claim about actual game List<T> or the native Waylith runtime. No BCL method was patched and
+the constructed-type hazard was not repeated after this stop condition.
+
+The exact failed canary source, two nonzero failure runs and the coherent severity checkpoint
+are retained in `artifacts/Implementation/megamod-p0/s139-native-facts/stage-membership/`.
+Root owns the necessary shared-helper acquisition refusal and an inert effective-body/publication
+alternative. CurStage, CurStageIndex, StageAtSeverity, closed NullOrEmpty, Count and Item remain
+unimplemented and unadmitted; the actual interface map, current `_size`/`_items`/member data,
+list-read timing, closed-code sharing and native inlining/repatch gates all remain required.
+This stop changes sequencing only and does not remove the positive four-profile/F0–F5 obligations.
+
 ## Effective native semantics still required before exposure
 
 The adapter's type/field checks do **not** prove effective method bodies. The future C01 consumer
@@ -274,8 +301,22 @@ race/stage operands. The first Adult developmental flag includes Core teenagers 
 full-grown baseline. Missing/ambiguous membership or malformed factors refuses this origin claim;
 additional stages alone do not. Native field origin and Single multiplication do not prove actual
 pawn stage reachability, cached/locked selection or BodySize execution. Effect-curve first-use
-initialization and physical points/getter binding are separately pending, as are all controller
+initialization and native origin/effective consumer binding are separately pending, as are all controller
 and applied-save content authorities. This slice must remain unregistered until those gates pass.
+
+The detached F0 snapshot's physical-points refactor uses checked `SimpleCurve.points` metadata
+(declared owner, instance kind and exact List<CurvePoint> type) and reads the current container
+directly. It preserves null/order/reference/float semantics and avoids the patchable Points
+getter. The two focused curve checks pass before the refactor and all60 affected F0 checks pass
+afterwards. This does not certify static origin/initialization, List traversal or the effective
+curve consumer; those native prerequisites remain open. No public behavior or task is accepted.
+
+The shared finite observation helper now refuses generic methods and methods on generic declaring
+types before acquiring any root observer, and before acquiring a callback observer. Host evidence
+showed distinct closed metadata/publications can share changed executable code. Whole-bundle
+preflight prevents an earlier ordinary root being patched before that refusal. Nongeneric roots
+remain supported. This does not resolve the native stage collection/helper path; its positive
+proof must use a separately admitted observation mechanism or proved runtime isolation.
 
 Unknown, UnsupportedEffects, UnsupportedTolerance, UnsupportedDecay and UnresolvedPartialDose are
 explicit row classifications; raw nonfinite risk values survive for C1's numeric rejection. No row

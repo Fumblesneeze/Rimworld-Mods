@@ -970,3 +970,23 @@ Human input selection/origin reader. The latter reuses the existing F0 DTO throu
 host-safe extraction, with root retaining the Defs project link. Explicit file/output leases are
 in `p0-dispatch.md`. Broader native stages/BodySize, curve initialization, current applied exclusions,
 F0–F5 composition, all139 features and every P0–P8 acceptance gate remain open as allocated.
+
+Revision21 aftera82beb2 — D/E's one-save workflows are recorded atf0d57f1, and the reviewed Human
+origin/rate checkpoints are committed with a green integrated canonical package. The next native
+slice exercises main-menu disabled save controls and actual A→B→A/B identity changes. Native Entry
+menu input is the concrete missing prerequisite; a bounded Gateway lane implements it while a
+separate artifact-only lane prepares the full S138 scenario. S139 continues stage-membership
+research with closed generic/interface dispatch and actual runtime proof kept distinct. Tooling
+checkpoint3697b57 provides exact same-group test batches without selecting unrelated scenarios.
+The dispatch document records edit/output leases. This changes sequencing only; no feature, native
+obligation, original user decision or P0–P8 gate is removed or accepted from these host checkpoints.
+
+Revision21 stage correction — an owned host canary proved closed generic code-sharing interference:
+repatching one closure changed its sibling while that sibling's old publication remained current.
+The planned stage observer expansion is superseded by a positive severity leaf and fail-before-
+acquisition protection of the existing finite helper. Actual stage/List/helper semantics remain
+allocated to passive publication/body inspection or separately proved runtime isolation; no BCL
+patch or permanently unavailable generator substitutes for that obligation. The parallel F0
+refactor reads physical curve storage directly, preserving the current snapshot contract and all
+remaining native initialization/evaluation premises. This evidence-driven correction preserves the
+four positive C1 profiles, all139 features and the complete native acceptance plan.

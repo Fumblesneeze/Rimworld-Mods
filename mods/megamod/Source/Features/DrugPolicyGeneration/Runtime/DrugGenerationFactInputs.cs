@@ -27,6 +27,8 @@ public sealed class DrugGenerationFactInputs : IDisposable
     private bool stale;
     private static readonly FieldInfo? BodyDivision = typeof(IngestionOutcomeDoer_GiveHediff).GetField(
         "divideByBodySize", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+    private static readonly FieldInfo? CurvePoints = typeof(SimpleCurve).GetField(
+        "points", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
 
     private DrugGenerationFactInputs(DrugCatalogRead catalog, Graph captured)
     { this.catalog = catalog; this.captured = captured; }
@@ -159,8 +161,17 @@ public sealed class DrugGenerationFactInputs : IDisposable
         return new(new(value), value.GetType(), new(value.hediff), effect);
     }
 
-    private static CurveNode? Curve(SimpleCurve? value, Budget budget) => value == null ? null :
-        new(new(value), value.GetType(), List(value.Points, point => new PointNode(S(point.x), S(point.y)), budget));
+    private static CurveNode? Curve(SimpleCurve? value, Budget budget)
+    {
+        if (value == null) return null;
+        if (CurvePoints?.DeclaringType != typeof(SimpleCurve) || CurvePoints.IsStatic ||
+            CurvePoints.FieldType != typeof(List<CurvePoint>))
+            throw new InvalidOperationException("The declared SimpleCurve points storage field is unavailable.");
+        // Capture physical storage without invoking the patchable Points getter. The supplied
+        // curve's native origin, initialization and effective evaluation remain separate premises.
+        var points = (List<CurvePoint>?)CurvePoints.GetValue(value);
+        return new(new(value), value.GetType(), List(points, point => new PointNode(S(point.x), S(point.y)), budget));
+    }
 
     private static HumanNode Human(HumanAdultInput value, Budget budget)
     {

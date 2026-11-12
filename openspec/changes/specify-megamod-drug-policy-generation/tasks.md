@@ -62,6 +62,15 @@ The existing finite observation bundle is unchanged. Current native fields, init
 stage membership/dispatch, runtime call edges and remaining F0–F5 proofs remain open. Evidence:
 `artifacts/Implementation/megamod-p0/s139-native-facts/rate-stage/implementation.md`.
 
+The next native-facts batch adds a conditional same-instance severity-field proof and refuses
+unproved generic observation before any root acquisition. An actual owned canary exposed
+cross-closure code sharing, so the proposed generic stage expansion is stopped pending an admitted
+passive/isolation strategy; positive stage/generation obligations remain. The existing F0 snapshot
+now captures checked physical curve storage without its patchable getter. Focused affected
+Harmony108/108 and F0 Defs60/60 pass; independent review found no issues, canonical
+build/install/package passed with zero warnings/errors, and strict OpenSpec passed168/168.
+Local evidence is under `s139-native-facts/stage-membership` and `curve-storage`; no native task is checked.
+
 - [ ] 2.1 After 1.1–1.3 and 1.7, RED/GREEN C1 one established suggestion at a time in Unit using immutable fact inputs; include binary32 decay boundaries, late/early day boundaries and dispatch margin, editor overflow without clamping, unsupported/negative/nonfinite/non-progress cases, chemical-or-tolerance connected groups, dose/population assumptions, manual provenance and no arbitrary drug-name dependency. Retain durable actual failures and passing nonzero counts; runtime exposure still requires 1.6.
   - Revision20 core implemented with five retained RED/GREEN slices and 46/46 focused Unit cases; independent review found no issues. Checkpoint e4f7827. `Source/Features/DrugPolicyGeneration/README.md` describes the bounded API and local evidence ledger. This does not close runtime fact admission, complete preference/reset editing or native creation.
 - [ ] 2.2 RED/GREEN complete baseline-to-draft projection, explicit applicable medical permission, off-schedule defaults, full resets, Any/100% reversal and independent edits; no tests that merely repeat literal tables.
