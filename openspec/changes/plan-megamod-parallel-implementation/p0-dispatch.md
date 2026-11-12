@@ -681,3 +681,10 @@ snapshot. It inspects existing authorities and exact native APIs under ignored
 `s139-native-facts/native-input-binding`; no compiled/spec/project edits, tests, builds, installation
 or game control are delegated. Extraction, effective-method proof and still-unwired applied-save
 content authority remain distinct. Root decides the later implementation/native binding scope.
+
+After that research, the same lane may prepare artifact-only drafts for the Human-origin slice:
+`Runtime/NativeDrugGenerationHumanInput.cs` under S139 and matching existing-tier focused tests.
+Use the explicit full-grown native Def reference and current ordered list, with pure selection
+tests over opaque identities; no native LifeStageAge construction in host tests. Curve initialization,
+stage/BodySize execution and controller registration are excluded. Root releases any compiled paths
+and project links only after the D/E deployment freeze; source authoring remains test-first then.

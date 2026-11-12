@@ -116,6 +116,11 @@ scheduled drug on the same channel or other departure from the C1 result SHALL b
 a manual choice, with combined exposure no longer calculated where applicable. Creation SHALL not
 mislabel those edited choices as computed recommendations or silently revert the player's edits.
 
+#### Scenario: The displayed adult baseline uses the full-grown Human stage
+- **WHEN** finalized Human life stages include both a smaller teenage stage classified as Adult and the ordinary full-grown adult stage
+- **THEN** the baseline uses the actual full-grown stage and current race body-size factors, not the first Adult classification or a guessed constant
+- **AND** missing or ambiguous full-grown membership makes that baseline unavailable; additional life stages alone do not invalidate it.
+
 #### Scenario: Same chemical with different tolerance givers
 - **WHEN** two otherwise eligible drug rows share a chemical but use different tolerance givers
 - **THEN** both receive the shared-exposure reason and no autonomous schedule; different givers do not bypass chemical grouping.

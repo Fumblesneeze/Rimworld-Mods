@@ -223,6 +223,15 @@ nonzero TRX counts. Local ledgers are `s139-native-facts/fact-inputs/implementat
 `s139-native-facts/initialization-checkpoint.md` under the ignored implementation evidence root.
 These are unregistered implementation checkpoints, not native binding or gameplay acceptance.
 
+The next F0 origin slice selects the unique actual `LifeStageDefOf.HumanlikeAdult` member of the
+current `ThingDefOf.Human.race.lifeStageAges` list, retaining all ordered entries and current
+race/stage operands. The first Adult developmental flag includes Core teenagers and is not the
+full-grown baseline. Missing/ambiguous membership or malformed factors refuses this origin claim;
+additional stages alone do not. Native field origin and Single multiplication do not prove actual
+pawn stage reachability, cached/locked selection or BodySize execution. Effect-curve first-use
+initialization and physical points/getter binding are separately pending, as are all controller
+and applied-save content authorities. This slice must remain unregistered until those gates pass.
+
 Unknown, UnsupportedEffects, UnsupportedTolerance, UnsupportedDecay and UnresolvedPartialDose are
 explicit row classifications; raw nonfinite risk values survive for C1's numeric rejection. No row
 is silently removed or assigned another drug's facts. No arbitrary drug-name table is used.

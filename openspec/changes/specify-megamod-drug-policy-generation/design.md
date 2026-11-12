@@ -376,6 +376,16 @@ startup Defs, original policies or earlier effects is promised. Inactive install
 later startup without the original resolves retained preferences normally. Never change/unpatch
 the original. Only focused warning/effective-off cases are required, not a coexistence matrix.
 
+The next F0 Human-origin slice binds the actual finalized `ThingDefOf.Human` and
+`LifeStageDefOf.HumanlikeAdult` references. It requires unique membership of that full-grown Def
+in the current race's ordered life-stage list and reads current race/stage factors, multiplying
+stage factor by race base size in native Single order. `AdultMinAge` selects the first Adult flag,
+which includes Core teenagers, and cannot identify this baseline. Added stages remain captured;
+the actual pawn stage selector, cached/locked indices and BodySize method semantics remain separate
+F2 obligations. This unregistered origin slice neither proves stage reachability nor exposes a
+generation preview. The static effect-curve origin and its first-use initialization are separate
+pending dependencies; no field read may silently claim to be inert while triggering initialization.
+
 ## Risks / Trade-offs
 
 - A helpful suggestion can be mistaken for a guarantee → precise reasons, visible assumptions,
