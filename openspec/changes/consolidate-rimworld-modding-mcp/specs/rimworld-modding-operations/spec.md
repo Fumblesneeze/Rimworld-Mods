@@ -84,6 +84,12 @@ The MCP/CLI SHALL start isolated game, smoke, integration, and grouped E2E work 
 - **WHEN** a caller passes an optional repository-contained `.csproj` path to the E2E run operation
 - **THEN** the operation builds and validates E2E assembly metadata only for that marked project, an unrelated project declaring an unresolvable package cannot block the selection, and a path outside the repository or without a `.csproj` extension is rejected with exit code `2`
 
+#### Scenario: Run an explicit focused E2E batch
+- **WHEN** a caller supplies a nonempty `testIds` array instead of `testId` or `groupId`
+- **THEN** the operation admits distinct exact test IDs, discovers only the optional owning project, and runs only those tests in one matching active-mod/loader group through the existing isolated grouped engine
+- **AND** invalid, duplicate, unknown or mixed-group selections fail before deployment or game launch; empty arrays and combined selector forms are usage errors
+- **AND** dry-run reports the exact selected IDs without launching a game, and live execution preserves the existing group timeout, per-test reset, failure propagation, evidence and cleanup behavior without silently adding other tests
+
 #### Scenario: Cancel after the launcher has exited
 - **WHEN** the launcher process has exited but the exact leased RimWorld PID and process-start identity remain live
 - **THEN** cancellation still requests bounded graceful completion and terminates only that exact orphaned game process before releasing the lease

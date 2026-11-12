@@ -55,11 +55,12 @@ public static class McpTools
         OperationJson.Serialize(await registry.InvokeAsync(
             "package_validate", JsonSerializer.SerializeToElement(new { packageId }), cancellationToken));
 
-    [McpServerTool(Name = "e2e_run_start"), Description("Run one exact grouped or test-selected isolated native player workflow and retain evidence.")]
+    [McpServerTool(Name = "e2e_run_start"), Description("Run an exact group, single test or explicit focused test batch and retain native-workflow evidence.")]
     public static async Task<string> RunEndToEnd(
         OperationRegistry registry,
-        [Description("Optional exact active-mod group ID; mutually exclusive with testId.")] string? groupId,
-        [Description("Optional exact E2E test ID; mutually exclusive with groupId.")] string? testId,
+        [Description("Optional exact active-mod group ID; mutually exclusive with testId and testIds.")] string? groupId,
+        [Description("Optional exact E2E test ID; mutually exclusive with groupId and testIds.")] string? testId,
+        [Description("Optional nonempty distinct exact E2E test IDs in one active-mod/loader group; mutually exclusive with groupId and testId.")] string[]? testIds,
         [Description("RimWorld language folder, default English.")] string? language,
         [Description("Scenario timeout in seconds, 60-3600.")] int? timeoutSeconds,
         [Description("True validates discovery and launch inputs without launching RimWorld.")] bool? dryRun,
@@ -69,7 +70,7 @@ public static class McpTools
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "e2e_run_start",
-            JsonSerializer.SerializeToElement(new { groupId, testId, language, timeoutSeconds, dryRun, enableAudio, projectPath, prelaunchConfigDirectory }),
+            JsonSerializer.SerializeToElement(new { groupId, testId, testIds, language, timeoutSeconds, dryRun, enableAudio, projectPath, prelaunchConfigDirectory }),
             cancellationToken));
 
     [McpServerTool(Name = "game_run_start"), Description("Start one leased isolated minimized Gateway-backed RimWorld process.")]

@@ -14,6 +14,50 @@ namespace RimWorldDevGateway.Tests;
 [NonParallelizable]
 public sealed class RimWorldEndToEndRunnerCliTests
 {
+    [TestCase("same")]
+    [TestCase("mixed")]
+    [TestCase("unknown")]
+    public void Explicit_batch_selects_exactly_one_group_or_refuses(string selection)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "RimWorldEndToEndBatchTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var source = string.Join(Environment.NewLine, new[]
+            {
+                "$ErrorActionPreference='Stop'",
+                "Import-Module " + PowerShellLiteral(SupportModulePath()) + " -Force",
+                "$tokens=$null; $errors=$null; $ast=[Management.Automation.Language.Parser]::ParseFile(" + PowerShellLiteral(RunnerPath()) + ",[ref]$tokens,[ref]$errors)",
+                "foreach($name in @('Write-RunnerResult','Get-SafeGroupDirectoryName','ConvertFrom-RequiredJson','Exit-InvalidInput')) { $function=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name},$true); . ([scriptblock]::Create($function.Extent.Text)) }",
+                "$artifactRoot=" + PowerShellLiteral(root),
+                "$GroupId=@(); $TestId=@(); $TestIdsCsv=" + PowerShellLiteral(selection == "unknown" ? "alpha.first,alpha.unknown" : "alpha.first,alpha.second"),
+                "$filter=$ast.Find({param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -eq '$testIdFilters'},$true); . ([scriptblock]::Create('param([string]$TestIdsCsv)' + [Environment]::NewLine + $filter.Extent.Text)) -TestIdsCsv $TestIdsCsv",
+                selection == "mixed"
+                    ? "$groups=@(@{groupId='ludeon.rimworld|alpha.mod';xmlDeserializer='default';activePackageIds=@('ludeon.rimworld','alpha.mod');tests=@('alpha.first','alpha.unrelated');xmlFixtures=@()},@{groupId='ludeon.rimworld|beta.mod';xmlDeserializer='default';activePackageIds=@('ludeon.rimworld','beta.mod');tests=@('alpha.second');xmlFixtures=@()})"
+                    : "$groups=@(@{groupId='ludeon.rimworld|alpha.mod';xmlDeserializer='default';activePackageIds=@('ludeon.rimworld','alpha.mod');tests=@('alpha.first','alpha.second','alpha.unrelated');xmlFixtures=@()})",
+                "$planInvocation=@{StandardOutput=(@{owners=@();groups=$groups}|ConvertTo-Json -Depth 8 -Compress)}",
+                "$Output='json'; $DryRun=$true; $packageIds=@('ludeon.rimworld','alpha.mod'); $EnableAudio=$false; $Language='English'; $TimeoutSeconds=300; $PrelaunchConfigDirectory=''; $smokeScript='smoke.ps1'; $resolvedRimWorldPath='game'; $resolvedWorkshopPath='workshop'",
+                "$text=$ast.Extent.Text; $begin=$text.IndexOf('$plan = ConvertFrom-RequiredJson'); $end=$text.IndexOf('$existingRimWorld =', $begin); & ([scriptblock]::Create($text.Substring($begin,$end-$begin)))"
+            });
+            var run = InvokeSource(source, root);
+            if (selection != "same")
+            {
+                Assert.That(run.ExitCode, Is.EqualTo(2), run.StandardError);
+                Assert.That(run.StandardError, Does.Contain(selection == "mixed" ? "one active-mod/loader group" : "Unknown or duplicate E2E test ID"));
+                Assert.That(run.StandardOutput, Is.Empty);
+                return;
+            }
+            Assert.That(run.ExitCode, Is.Zero, run.StandardError);
+            using var json = JsonDocument.Parse(run.StandardOutput);
+            var groups = json.RootElement.GetProperty("Groups");
+            Assert.That(groups.GetArrayLength(), Is.EqualTo(1));
+            Assert.That(groups[0].GetProperty("Tests").EnumerateArray().Select(item => item.GetString()),
+                Is.EqualTo(new[] { "alpha.first", "alpha.second" }));
+            Assert.That(json.RootElement.GetProperty("MutatedGame").GetBoolean(), Is.False);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
     [TestCase("1.6", true)]
     [TestCase("1.7", false)]
     public void Native_legacy_flag_is_refused_outside_the_supported_E2E_launch(string version, bool e2e)

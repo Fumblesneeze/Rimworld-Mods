@@ -24,6 +24,17 @@ The owner is repository tooling, specifically `RimWorldModding.Mcp` at `tools/Ri
 
 ## Decisions
 
+The focused E2E continuation adds optional `testIds` to the existing registry/MCP operation,
+mutually exclusive with singular `testId` and `groupId`. Every member uses the existing native
+test-ID grammar (maximum160 characters), duplicates refuse, and metadata discovery must resolve
+the complete selection to one exact active-mod/loader group. This keeps the current bounded
+single-group execution and cleanup model. The internal PowerShell adapter accepts the validated
+IDs as one comma-delimited argument because `pwsh -File` does not transport a string array;
+commas are excluded from valid IDs. Its existing filter/discovery path owns unknown-ID checks,
+selection, staging and execution. No second runner, public script or selection cache is added.
+Existing single-test/group calls keep their prior semantics. Focused CLI/adapter tests and actual
+dry-run exercise selection; personally observed gameplay remains required for selected mod claims.
+
 ### 1. One .NET 8 single-file executable serves MCP and CLI
 
 Create `tools/RimWorldModding.Mcp` targeting the repository-pinned .NET 8 SDK, with single-file publication, the official `ModelContextProtocol` 2.2.0 package, and `System.CommandLine`. `serve` starts a local stdio server; `tool list` and `tool call <name> --arguments <json>` invoke the same operation registry without MCP. Standard output is reserved for MCP frames or the selected `json|table` result, and diagnostics go to standard error.

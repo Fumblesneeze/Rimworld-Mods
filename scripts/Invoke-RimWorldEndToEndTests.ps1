@@ -38,6 +38,9 @@ param(
 
     [string[]]$TestId = @(),
 
+    # Internal typed-operation transport: IDs exclude commas; native -File cannot pass arrays.
+    [string]$TestIdsCsv,
+
     [string[]]$ProjectPath = @(),
 
     [string]$ArtifactsPath,
@@ -71,7 +74,13 @@ catch {
     [Console]::Error.WriteLine($_.Exception.Message)
     exit 2
 }
-$testIdFilters = @($TestId)
+$testIdFilters = @(if ($PSBoundParameters.ContainsKey('TestIdsCsv')) {
+    if ([string]::IsNullOrEmpty($TestIdsCsv) -or $TestId.Count -gt 0 -or $GroupId.Count -gt 0) {
+        [Console]::Error.WriteLine('TestIdsCsv requires a nonempty batch without TestId or GroupId.')
+        exit 2
+    }
+    $TestIdsCsv.Split(',')
+} else { $TestId })
 
 function Exit-InvalidInput {
     param([Parameter(Mandatory)][string]$Message)
@@ -470,6 +479,9 @@ $selectedGroups = @(foreach ($group in $candidateGroups) {
 })
 if ($selectedGroups.Count -eq 0) {
     Exit-InvalidInput 'The combined E2E group and test filters selected zero tests.'
+}
+if ($TestIdsCsv -and $selectedGroups.Count -ne 1) {
+    Exit-InvalidInput 'An explicit testIds batch must select exactly one active-mod/loader group; split the batch by group.'
 }
 
 $launchPlans = [System.Collections.Generic.List[object]]::new()

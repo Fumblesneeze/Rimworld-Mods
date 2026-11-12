@@ -140,17 +140,32 @@ public static class RepositoryOperationPlanner
         bool dryRun,
         bool enableAudio = false,
         string? projectPath = null,
-        string? prelaunchConfigDirectory = null)
+        string? prelaunchConfigDirectory = null,
+        IReadOnlyList<string>? testIds = null)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
-        if ((groupId is null) == (testId is null))
-            throw new ArgumentException("Exactly one of groupId or testId is required.");
-        var selector = groupId ?? testId!;
-        if (groupId is null)
+        if ((groupId is not null ? 1 : 0) + (testId is not null ? 1 : 0) + (testIds is not null ? 1 : 0) != 1)
+            throw new ArgumentException("Exactly one of groupId, testId or testIds is required.");
+        if (testIds is not null)
+        {
+            if (testIds.Count == 0)
+                throw new ArgumentException("testIds must contain at least one exact E2E test ID.");
+            var distinct = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var id in testIds)
+            {
+                RequireLiteral(id, "testIds");
+                if (id.Length > 160)
+                    throw new ArgumentException("testIds entries must not exceed the native 160-character test-ID limit.");
+                if (!distinct.Add(id))
+                    throw new ArgumentException("testIds must not contain duplicate test IDs.");
+            }
+        }
+        var selector = testIds is not null ? string.Join(',', testIds) : groupId ?? testId!;
+        if (testId is not null)
         {
             RequireLiteral(selector, "testId");
         }
-        else
+        else if (groupId is not null)
         {
             const string legacySuffix = "::legacy-xml";
             var packageSequence = selector.EndsWith(legacySuffix, StringComparison.Ordinal)
@@ -165,7 +180,7 @@ public static class RepositoryOperationPlanner
         var arguments = new List<string>
         {
             "-NoProfile", "-File", Path.Combine(root, "scripts", "Invoke-RimWorldEndToEndTests.ps1"),
-            groupId is null ? "-TestId" : "-GroupId", selector,
+            testIds is not null ? "-TestIdsCsv" : groupId is null ? "-TestId" : "-GroupId", selector,
             "-Language", language,
             "-TimeoutSeconds", timeoutSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "-Output", "json"

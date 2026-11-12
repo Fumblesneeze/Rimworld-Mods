@@ -108,7 +108,7 @@ public sealed class OperationRegistry
                 }),
             Register(
                 "e2e_run_start",
-                "Run one exact grouped or test-selected isolated native player workflow through the retained grouped engine.",
+                "Run one exact group, single test or explicit focused testIds batch through the retained isolated grouped engine.",
                 OperationRisk.DestructiveLocal,
                 longRunning: true,
                 timeoutSeconds: 3900,
@@ -123,7 +123,9 @@ public sealed class OperationRegistry
                         OptionalBoolean(arguments, "dryRun", false),
                         OptionalBoolean(arguments, "enableAudio", false),
                         OptionalString(arguments, "projectPath"),
-                        OptionalString(arguments, "prelaunchConfigDirectory")),
+                        OptionalString(arguments, "prelaunchConfigDirectory"),
+                        arguments.TryGetProperty("testIds", out var selectedTests) && selectedTests.ValueKind != JsonValueKind.Null
+                            ? OptionalStringArray(arguments, "testIds") : null),
                     cancellationToken)),
             Register(
                 "game_run_start",

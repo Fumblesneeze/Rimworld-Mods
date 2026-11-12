@@ -125,3 +125,9 @@
 - [ ] 16.1 Prove exact filtered/cursor query and native-handle invocation through focused companion transport and planner/registry RED/GREEN, including JSON/table output, validation and native refusal.
 - [ ] 16.2 Independently review the projection, resolve findings and validate OpenSpec.
 - [ ] 16.3 On the reviewed build, use the exact ready-run projection for a native player action, personally inspect the result and retain exact process/request/build/cleanup evidence.
+
+## 17. Explicit focused E2E batches — `tools/RimWorldModding.Mcp`
+
+- [x] 17.1 Focused RED/GREEN for exact batch transport, selector validation and existing-runner selection/refusal; preserve one-group lifecycle and singular calls. Four actual RED/GREEN slices and37 distinct affected checks pass; local evidence: `artifacts/Implementation/e2e-focused-batches/implementation.md`.
+- [x] 17.2 Independently review, resolve findings, run affected tests and strict specification validation, and exercise an actual project-scoped dry-run without launch. Independent review found no issues; strict validation passed168/168. The published CLI dry-run selected exactly the two requested megamod scenarios in one group, with `MutatedGame:false` and no stderr.
+- [ ] 17.3 Use a reviewed explicit batch for the next required native workflows and personally inspect their results and cleanup; do not replay completed gameplay solely to exercise batching.
