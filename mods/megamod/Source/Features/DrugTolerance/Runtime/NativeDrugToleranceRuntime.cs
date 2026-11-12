@@ -253,10 +253,10 @@ public sealed class NativeDrugToleranceRuntime
             // Use the same native control and rectangle treatment as mood/recreation. Do not
             // pass roundTo: native rounding also runs on repaint and would alter retained fractions.
             float before = DrugToleranceSlider.Position(original);
-            bool mouseDown = Event.current.type == EventType.MouseDown;
+            bool mouseDrag = Event.current.type == EventType.MouseDrag;
             float after = Widgets.HorizontalSlider(new Rect(rectangle.x, rectangle.y + 2, rectangle.width, rectangle.height).ContractedBy(4),
                 before, 0, DrugToleranceSlider.Maximum, middleAlignment: true, label: label);
-            bool interacted = after != before || mouseDown && Event.current.type == EventType.Used;
+            bool interacted = after != before || mouseDrag && Event.current.type == EventType.Used;
             var choice = DrugToleranceSlider.Apply(original, after, interacted);
             if (!ReferenceEquals(choice, original) && ReferenceEquals(Current.Game, game) && Available && OpenManager(manager) &&
                 policy != null && ReferenceEquals(Selected(manager), policy) && CurrentPolicy(game, policy) && CurrentDrug(drug) &&

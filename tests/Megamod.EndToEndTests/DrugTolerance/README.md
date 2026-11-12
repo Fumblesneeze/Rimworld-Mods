@@ -8,12 +8,13 @@ No original provider or fixture mod is required.
 `megamod.drug-tolerance.native-editor` opens Assign and the native policy manager, selects a
 disposable policy, and uses the same native horizontal slider as the adjacent mood/recreation
 controls. It checks retained12.5% and malformed values survive painting, then selects0%, numeric100%,
-20%, Any, malformed-to-Any at the unchanged handle and40% through native input. Every change is immediate in the existing window,
+20%, Any, malformed-to-Any at the unchanged handle and40% through native dragging. A press/release
+without movement preserves the retained12.5% value. Every change is immediate in the existing window,
 with surrounding policy controls preserved. Setup creates only the initial retained choices.
 
 Run this exact ID with `e2e_run_start`, scoped to
-`tests/Megamod.EndToEndTests/Megamod.EndToEndTests.csproj`. The900-second scenario contains25 native
-operations at15 seconds and8 screenshots at30 seconds, plus180 seconds reserve (795 seconds total).
+`tests/Megamod.EndToEndTests/Megamod.EndToEndTests.csproj`. The900-second scenario contains27 native
+operations at15 seconds and9 screenshots at30 seconds, plus180 seconds reserve (855 seconds total).
 Inspect each before/action/after capture and final native console. The fixture restores its exact
 windows, pointer scope, policy and speed and refuses cleanup against an unrelated Game.
 The selected slider/layout batch replaces the modal design at the user's2026-11-12 request.

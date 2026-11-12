@@ -325,7 +325,7 @@ internal sealed class NativeToleranceSaveContextFixture
         yield return Capture<Dialog_ManageDrugPolicies>("capture the current native policy list", value => manager = value);
         yield return Click("select the exact shared scheduled policy", policyView.PolicyRow(manager, policy).center);
         yield return Capture<Dialog_ManageDrugPolicies>("capture the selected policy before editing", value => manager = value);
-        yield return Click("move the native Beer tolerance slider to zero", NativeToleranceSliderView.Point(manager, policy, beerEntry, 0));
+        yield return NativeToleranceSliderView.Drag("drag the native Beer tolerance slider to zero", window, pointer, manager, policy, beerEntry, 0);
         yield return new AssertionStep("the native slider committed zero without changing the in-flight job", _ =>
         { choice = "1:limit:0"; RequireCurrent(); AssertSelected(subjects[0]); EndToEndAssert.True(IsChewing(subjects[0])); });
         yield return Capture<Dialog_ManageDrugPolicies>("capture the committed zero row", value => manager = value);

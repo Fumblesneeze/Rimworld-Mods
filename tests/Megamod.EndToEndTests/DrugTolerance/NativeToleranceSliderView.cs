@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using Megamod.Features.DrugTolerance.Core;
+using Megamod.Features.DrugTolerance.Runtime;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using UnityEngine;
@@ -11,6 +12,17 @@ namespace Megamod.EndToEndTests.DrugTolerance;
 // Read-only hit geometry for the ordinary native slider, never a product setter or draw call.
 internal static class NativeToleranceSliderView
 {
+    internal static NativeWindowDragActionStep Drag(string name, EndToEndNativeWindow window, string pointerScope,
+        Dialog_ManageDrugPolicies manager, DrugPolicy policy, DrugPolicyEntry entry, float percent)
+    {
+        var start = Point(manager, policy, entry, DrugToleranceSlider.Position(NativeDrugToleranceState.Read(entry)));
+        var end = Point(manager, policy, entry, percent);
+        // Even an unchanged endpoint needs actual native movement to adjust/repair the value.
+        end.y += 1;
+        return new(name, window.Handle, (window.X + start.x) * window.UiScale, (window.Y + start.y) * window.UiScale,
+            (window.X + end.x) * window.UiScale, (window.Y + end.y) * window.UiScale, null, pointerScope);
+    }
+
     internal static Vector2 Point(Dialog_ManageDrugPolicies manager, DrugPolicy policy, DrugPolicyEntry entry, float percent)
     {
         EndToEndAssert.True(percent >= 0 && percent <= 101);

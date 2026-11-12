@@ -28,6 +28,7 @@ inactive with an explanation. Unavailable or inapplicable drugs SHALL not gain i
 - **THEN** it uses the same native horizontal slider control, rail, handle, label and vertical alignment as the adjacent mood and recreation sliders, without a separate button, dialog or Apply/Cancel step
 - **AND** explicit slider interaction immediately commits a whole percentage from0 through100 or the separate rightmost Any stop; numeric100 and Any remain distinct
 - **AND** drawing alone preserves every existing exact numeric value and malformed saved encoding; an explicit valid slider interaction can repair Needs review
+- **AND** a native press which only starts a gesture does not round a retained value; adjustments follow the native drag behavior
 - **AND** each commit revalidates the current Game, manager, selected policy, exact row/drug, original choice and effective availability, without retaining edit authority across frames.
 
 ### Requirement: Any and numeric thresholds have explicit meanings

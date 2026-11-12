@@ -50,6 +50,9 @@ When the same kind of value already uses a native slider, call that control with
 geometry and interaction conventions. Do not add a separate editor unless a specified behavior
 needs it. Inspect normalization timing: some native slider rounding runs during every draw, so
 apply input rounding only after actual interaction when saved precision must survive painting.
+Inspect the control's native event gate too: on Windows a slider can claim MouseDown but update
+only on MouseDrag. A consumed press is not an adjustment. Native verification must send the real
+held movement and also check that a press without movement preserves retained precision.
 
 ## Keep terminology and localization coherent
 

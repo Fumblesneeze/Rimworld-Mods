@@ -68,8 +68,8 @@ public sealed class NativeToleranceEditorTests : IRimWorldEndToEndTest
         }
         yield return new AssertionStep("count the complete native slider workflow", _ =>
         {
-            EndToEndAssert.Equal(25, nativeOperations);
-            EndToEndAssert.Equal(8, screenshots);
+            EndToEndAssert.Equal(27, nativeOperations);
+            EndToEndAssert.Equal(9, screenshots);
             EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + 180 <= 900);
         });
     }
@@ -89,6 +89,11 @@ public sealed class NativeToleranceEditorTests : IRimWorldEndToEndTest
             EndToEndAssert.True(ReferenceEquals(retained, NativeDrugToleranceState.Read(beer)));
             EndToEndAssert.True(ReferenceEquals(malformed, NativeDrugToleranceState.Read(smokeleaf)));
         });
+        yield return Click("press and release the native slider without dragging", NativeToleranceSliderView.Point(manager, policy, beer, 0));
+        yield return Capture<Dialog_ManageDrugPolicies>("capture unchanged value after the ordinary native press", current => manager = current);
+        yield return new AssertionStep("a press alone retains the exact fractional choice", _ =>
+            EndToEndAssert.True(ReferenceEquals(retained, NativeDrugToleranceState.Read(beer))));
+        yield return Shot("ordinary native slider press preserves 12.50 percent before dragging");
         foreach (var step in Set(beer, 0, 0f, "zero percent")) yield return step;
         foreach (var step in Set(beer, 100, 1f, "numeric hundred percent")) yield return step;
         foreach (var step in Set(beer, 20, .2f, "twenty percent")) yield return step;
@@ -107,9 +112,9 @@ public sealed class NativeToleranceEditorTests : IRimWorldEndToEndTest
             ["policy"] = policy.id + ":" + policy.label,
             ["beerChoice"] = NativeDrugToleranceState.ReadEncoded(beer) ?? "absent",
             ["smokeleafChoice"] = NativeDrugToleranceState.ReadEncoded(smokeleaf) ?? "absent",
-            ["workflow"] = "same native HorizontalSlider as mood/recreation; retained fractional paint, 0, numeric100, 20, Any, malformed repair",
+            ["workflow"] = "same native HorizontalSlider as mood/recreation; fractional paint/press retention, native drag to0, numeric100,20,Any,malformed repair",
             ["scope"] = "policy slider only; routine job acceptance is a separate workflow",
-            ["maximumBudgetSeconds"] = "795 including 180 reserve; scenario900"
+            ["maximumBudgetSeconds"] = "855 including 180 reserve; scenario900"
         });
         yield return new WindowCancelActionStep("close the native policy manager", typeof(Dialog_ManageDrugPolicies).FullName!);
         yield return new NativePointerScopeEndStep("restore pointer after tolerance editing", pointerScope);
@@ -124,7 +129,7 @@ public sealed class NativeToleranceEditorTests : IRimWorldEndToEndTest
     {
         EndToEndAssert.True(ReferenceEquals(view.Selected(manager), policy));
         var windowsBefore = Find.WindowStack.Windows.ToArray();
-        yield return Click("move the native tolerance slider to " + description, NativeToleranceSliderView.Point(manager, policy, entry, position));
+        yield return NativeToleranceSliderView.Drag("drag the native tolerance slider to " + description, window, pointerScope, manager, policy, entry, position);
         yield return Capture<Dialog_ManageDrugPolicies>("capture native policy after " + description, current => manager = current);
         yield return new AssertionStep("slider immediately commits " + description + " in the existing window", _ =>
         {

@@ -836,3 +836,15 @@ correction manifest is retained locally. Root owns the reviewed checkpoint and f
 caravan inspection gate; no host result closes native acceptance. The user concurrently requested
 S138 use the same native slider as neighboring controls. Root prioritizes the complete slider,
 scenario migration and editor/layout gate, replacing the older modal design and its acceptance.
+
+Slider checkpoint0a19184 uses the same native control and removes the modal editor. Its selected
+native batch exposed the exact Windows event distinction: MouseDown claims a slider, MouseDrag
+adjusts it. Root fixes the premature rounding guard and adds press-retention plus real-drag
+scenarios. The Gateway author owns a minimal typed native-window drag extension in the existing
+input lane, shared NativeWindowSteps/driver, one bootstrap registration and focused tests/contracts;
+ordinary clicks remain unchanged. Caravan consumer planning is paused at its artifact handoff.
+The separate native caravan probe exposed a positive-versus-normalized-negative ID check in the
+Health detail postfix. Root owns that one-line correction and its later independent review.
+Both failed runs retained successful exact-process cleanup and unchanged normal configuration.
+Neither checkpoint accepts the remaining native workflows; the corrected batches require fresh
+reviewed runs and root's personal observation. All prior feature obligations remain allocated.

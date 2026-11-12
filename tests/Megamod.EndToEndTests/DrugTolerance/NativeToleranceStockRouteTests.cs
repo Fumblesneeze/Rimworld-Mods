@@ -270,7 +270,7 @@ public sealed class NativeToleranceStockRouteTests : IRimWorldEndToEndTest
         yield return Click("select A's exact scheduled policy", view.PolicyRow(manager, a.Policy).center);
         yield return Capture<Dialog_ManageDrugPolicies>("capture A's selected zero row", current => manager = current);
         yield return Shot("A's scheduled Beer row shows numeric zero before the native edit");
-        yield return Click("select Any with A's native tolerance slider", NativeToleranceSliderView.Point(manager, a.Policy, a.Entry, 101));
+        yield return NativeToleranceSliderView.Drag("select Any with A's native tolerance slider", window, pointer, manager, a.Policy, a.Entry, 101);
         yield return new AssertionStep("observe the native Any commit without changing B's zero", _ =>
         {
             EndToEndAssert.Equal("1:any", NativeDrugToleranceState.ReadEncoded(a.Entry));
